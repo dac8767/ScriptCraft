@@ -1,6 +1,12 @@
+/**
+ * ScriptNotes — ScriptNotesContent: OpenDraft's notes anchored to script text
+ * (filters, click-to-navigate, color sync), rendered as the Notes → Script
+ * sub-view of the unified Sticky Notes pane (StickyNotes.tsx).
+ * The standalone Notes panel this file used to render was merged into the
+ * Sticky Notes pane; there is no default export anymore.
+ */
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
-import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 import {
   useEditorStore,
   ELEMENT_LABELS,
@@ -25,10 +31,26 @@ const openInBrowser = (url: string) => {
   }
 };
 
-interface ScriptNotesProps {
+interface ScriptNotesContentProps {
   editor: Editor | null;
-  style?: React.CSSProperties;
 }
+
+/** Shared date formatter for note headers. */
+const formatDate = (iso: string) => {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+/** Resolve a NoteColor name to its hex value. */
+const getNoteColorHex = (colorName: NoteColor): string => {
+  const c = NOTE_COLORS.find((nc) => nc.name === colorName);
+  return c ? c.hex : NOTE_COLORS[0].hex;
+};
 
 /** Check if a string looks like an image URL */
 const isImageUrl = (url: string) =>
@@ -188,22 +210,18 @@ const NoteContentDisplay: React.FC<{
   return <div className="note-content-rendered">{elements}</div>;
 };
 
-const ScriptNotes: React.FC<ScriptNotesProps> = ({ editor, style }) => {
+/**
+ * Script (anchored) notes — filter bar + note list + delete dialog.
+ * Rendered as the "Script" tab inside the unified Sticky Notes pane.
+ */
+export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }) => {
   const {
     notes,
-    scriptNotesOpen,
     scenes,
     updateNote,
     deleteNote,
-    toggleScriptNotes,
     noteFilter,
     setNoteFilter,
-    generalNotes,
-    addGeneralNote,
-    updateGeneralNote,
-    deleteGeneralNote,
-    notesActiveTab: activeTab,
-    setNotesActiveTab: setActiveTab,
   } = useEditorStore();
 
   const { assets } = useAssetStore();
@@ -212,9 +230,6 @@ const ScriptNotes: React.FC<ScriptNotesProps> = ({ editor, style }) => {
 
   // Track which note is being edited (shows textarea), null = preview mode for all
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-
-  // Track which general note is being edited
-  const [editingGeneralNoteId, setEditingGeneralNoteId] = useState<string | null>(null);
 
   // @asset autocomplete state
   const [assetQuery, setAssetQuery] = useState<string | null>(null);
@@ -264,11 +279,6 @@ const ScriptNotes: React.FC<ScriptNotesProps> = ({ editor, style }) => {
     [scenes],
   );
 
-  const getNoteColorHex = (colorName: NoteColor): string => {
-    const c = NOTE_COLORS.find((nc) => nc.name === colorName);
-    return c ? c.hex : NOTE_COLORS[0].hex;
-  };
-
   const handleClearFilter = useCallback(() => {
     const cleared: NoteFilter = { elementType: null, contextLabel: null, color: null, noteId: null };
     setLocalFilter(cleared);
@@ -312,7 +322,6 @@ const ScriptNotes: React.FC<ScriptNotesProps> = ({ editor, style }) => {
   );
 
   const [pendingDeleteNoteId, setPendingDeleteNoteId] = useState<string | null>(null);
-  const [pendingDeleteGeneralNoteId, setPendingDeleteGeneralNoteId] = useState<string | null>(null);
 
   const handleDeleteRequest = useCallback((id: string) => {
     setPendingDeleteNoteId(id);
@@ -404,26 +413,6 @@ const ScriptNotes: React.FC<ScriptNotesProps> = ({ editor, style }) => {
     [editor],
   );
 
-  // ── General notes handlers ──
-  const handleAddGeneralNote = useCallback(() => {
-    const id = addGeneralNote({ title: '', content: '', color: 'Yellow' as NoteColor });
-    setEditingGeneralNoteId(id);
-  }, [addGeneralNote]);
-
-  const handleDeleteGeneralNoteConfirm = useCallback(() => {
-    if (!pendingDeleteGeneralNoteId) return;
-    deleteGeneralNote(pendingDeleteGeneralNoteId);
-    setPendingDeleteGeneralNoteId(null);
-    if (editingGeneralNoteId === pendingDeleteGeneralNoteId) setEditingGeneralNoteId(null);
-  }, [deleteGeneralNote, pendingDeleteGeneralNoteId, editingGeneralNoteId]);
-
-  // When external filter opens panel to a specific script note, switch to script tab
-  useEffect(() => {
-    if (noteFilter.noteId || noteFilter.elementType || noteFilter.contextLabel || noteFilter.color) {
-      setActiveTab('script');
-    }
-  }, [noteFilter]);
-
   /** Handle @asset autocomplete inside textarea */
   const handleTextareaChange = useCallback(
     (noteId: string, value: string) => {
@@ -505,51 +494,8 @@ const ScriptNotes: React.FC<ScriptNotesProps> = ({ editor, style }) => {
     [assetSuggestions, assetSugIdx, insertAssetRef],
   );
 
-  const formatDate = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const { shouldRender, animationState } = useDelayedUnmount(scriptNotesOpen, 250);
-  const panelRef = useRef<HTMLDivElement>(null);
-  useSwipeDismiss(panelRef, { direction: 'right', onDismiss: toggleScriptNotes, enabled: shouldRender });
-
-  if (!shouldRender) return null;
-
-  const panelClass = animationState === 'entered'
-    ? 'panel-open' : animationState === 'exiting' ? 'panel-closing' : '';
-
   return (
-    <div ref={panelRef} className={`script-notes-panel ${panelClass}`} style={style}>
-      <div className="script-notes-header">
-        <span className="script-notes-title">Notes</span>
-        <button className="script-notes-close" onClick={toggleScriptNotes} title="Close">
-          &times;
-        </button>
-      </div>
-
-      {/* ── Tab switcher ── */}
-      <div className="sn-tabs">
-        <button
-          className={`sn-tab${activeTab === 'general' ? ' active' : ''}`}
-          onClick={() => setActiveTab('general')}
-        >
-          General{generalNotes.length > 0 ? ` (${generalNotes.length})` : ''}
-        </button>
-        <button
-          className={`sn-tab${activeTab === 'script' ? ' active' : ''}`}
-          onClick={() => setActiveTab('script')}
-        >
-          Script{notes.length > 0 ? ` (${isFiltered ? `${filteredNotes.length}/` : ''}${notes.length})` : ''}
-        </button>
-      </div>
-
-      {activeTab === 'script' && <>
+    <>
       {/* ── Multi-dimensional filter bar ── */}
       <div className="script-notes-filters">
         {/* Active filter summary + clear */}
@@ -806,107 +752,6 @@ const ScriptNotes: React.FC<ScriptNotesProps> = ({ editor, style }) => {
           </div>
         </div>
       )}
-      </>}
-
-      {/* ── General Notes tab ── */}
-      {activeTab === 'general' && (
-        <>
-          <div className="general-notes-toolbar">
-            <button className="general-notes-add-btn" onClick={handleAddGeneralNote}>+ Add Note</button>
-          </div>
-          <div className="script-notes-list">
-            {generalNotes.length === 0 ? (
-              <div className="script-notes-empty">
-                No general notes yet. Click &ldquo;+ Add Note&rdquo; to create one.
-              </div>
-            ) : (
-              generalNotes.map((gn) => {
-                const hex = getNoteColorHex(gn.color);
-                const isEditing = editingGeneralNoteId === gn.id;
-                return (
-                  <div key={gn.id} className="note-item" style={{ borderLeftColor: hex }}>
-                    <div className="note-item-header">
-                      <span className="note-item-date">{formatDate(gn.createdAt)}</span>
-                    </div>
-                    {isEditing ? (
-                      <>
-                        <input
-                          className="general-note-title-input"
-                          value={gn.title}
-                          onChange={(e) => updateGeneralNote(gn.id, { title: e.target.value })}
-                          placeholder="Note title..."
-                          autoFocus
-                        />
-                        <textarea
-                          className="note-item-content"
-                          value={gn.content}
-                          onChange={(e) => updateGeneralNote(gn.id, { content: e.target.value })}
-                          onBlur={() => setTimeout(() => setEditingGeneralNoteId(null), 200)}
-                          placeholder="Write your note..."
-                          rows={4}
-                        />
-                      </>
-                    ) : (
-                      <div
-                        className="note-item-preview"
-                        onClick={() => setEditingGeneralNoteId(gn.id)}
-                        title="Click to edit"
-                      >
-                        {gn.title && <div className="general-note-title">{gn.title}</div>}
-                        {gn.content ? (
-                          <NoteContentDisplay content={gn.content} assets={assets} projectId={projectId} />
-                        ) : (
-                          <span className="note-item-placeholder">
-                            {gn.title ? '' : 'Click to add note...'}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    <div className="note-item-actions">
-                      <div className="note-item-colors">
-                        {NOTE_COLORS.map((c) => (
-                          <button
-                            key={c.name}
-                            className={`note-color-dot${gn.color === c.name ? ' active' : ''}`}
-                            style={{ background: c.hex }}
-                            onClick={() => updateGeneralNote(gn.id, { color: c.name })}
-                            title={c.name}
-                          />
-                        ))}
-                      </div>
-                      <button
-                        className="note-item-delete"
-                        onClick={() => setPendingDeleteGeneralNoteId(gn.id)}
-                        title="Delete note"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-          {pendingDeleteGeneralNoteId && (
-            <div className="dialog-overlay" onClick={() => setPendingDeleteGeneralNoteId(null)}>
-              <div className="dialog-box" onClick={(e) => e.stopPropagation()}>
-                <div className="dialog-header">Delete Note</div>
-                <div className="dialog-body">
-                  <p style={{ margin: 0 }}>Delete this general note?</p>
-                </div>
-                <div className="dialog-actions">
-                  <button onClick={() => setPendingDeleteGeneralNoteId(null)}>Cancel</button>
-                  <button className="dialog-primary" style={{ background: '#c0392b' }} onClick={handleDeleteGeneralNoteConfirm}>
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-    </div>
+    </>
   );
 };
-
-export default ScriptNotes;

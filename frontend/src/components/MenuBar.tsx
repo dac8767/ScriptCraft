@@ -162,8 +162,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     toggleIndexCards,
     beatBoardOpen,
     toggleBeatBoard,
-    scriptNotesOpen,
-    toggleScriptNotes,
+    shelfOpen,
+    toggleShelf,
     characterProfilesOpen,
     toggleCharacterProfiles,
     tagsPanelOpen,
@@ -1078,11 +1078,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaCompass />, label: navigatorOpen ? '\u2713 Navigator' : 'Navigator', action: toggleNavigator },
             { icon: <FaTh />, label: indexCardsOpen ? '\u2713 Index Cards' : 'Index Cards', action: toggleIndexCards },
             { icon: <FaStream />, label: beatBoardOpen ? '\u2713 Beat Board' : 'Beat Board', action: toggleBeatBoard },
-            { icon: <FaStickyNote />, label: scriptNotesOpen ? '\u2713 Notes Panel' : 'Notes Panel', action: () => {
-              const hasSelection = editor && !editor.state.selection.empty;
-              useEditorStore.getState().setNotesActiveTab(hasSelection ? 'script' : 'general');
-              toggleScriptNotes();
-            } },
+            { icon: <FaStickyNote />, label: shelfOpen ? '\u2713 Sticky Notes' : 'Sticky Notes', action: toggleShelf },
             { icon: <FaUsers />, label: characterProfilesOpen ? '\u2713 Characters' : 'Characters', action: toggleCharacterProfiles },
             { icon: <FaTags />, label: tagsPanelOpen ? '\u2713 Tags' : 'Tags', action: toggleTagsPanel },
             { icon: <FaCompass />, label: locationDatabaseOpen ? '\u2713 Locations' : 'Locations', action: toggleLocationDatabase },

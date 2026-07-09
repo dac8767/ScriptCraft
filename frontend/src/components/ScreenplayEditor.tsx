@@ -49,7 +49,7 @@ import SceneNavigator from './SceneNavigator';
 import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
 import ScriptStatistics from './ScriptStatistics';
-import ScriptNotes from './ScriptNotes';
+import StickyNotes, { makeSnippetCard } from './StickyNotes';
 import CharacterProfiles from './CharacterProfiles';
 import TagsPanel from './TagsPanel';
 import LocationDatabase from './LocationDatabase';
@@ -240,7 +240,7 @@ const ScreenplayEditor: React.FC = () => {
     setActiveElement, setScenes, setPageCount, setCurrentPage,
     zoomLevel, setZoomLevel, fontFamily, fontSize, pageLayout, tagsVisible, notesVisible,
     beatBoardOpen, statisticsOpen,
-    navigatorOpen, toggleNavigator, scriptNotesOpen, toggleScriptNotes,
+    navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
     characterProfilesOpen, tagsPanelOpen, locationDatabaseOpen,
     spellCheckEnabled, spellModalOpen, setSpellModalOpen,
     grammarCheckEnabled, grammarModalOpen, setGrammarModalOpen,
@@ -311,7 +311,7 @@ const ScreenplayEditor: React.FC = () => {
     document.body.style.userSelect = 'none';
   }, [navWidth, rightPanelWidth]);
 
-  const rightPanelVisible = scriptNotesOpen || characterProfilesOpen || tagsPanelOpen || locationDatabaseOpen;
+  const rightPanelVisible = shelfOpen || characterProfilesOpen || tagsPanelOpen || locationDatabaseOpen;
 
   // Yjs document & provider — stable across renders while collab is active
   const ydocRef = useRef<Y.Doc | null>(null);
@@ -533,7 +533,7 @@ const ScreenplayEditor: React.FC = () => {
 
       const content = scriptResp.content as Record<string, unknown> | null;
       if (content && typeof content === 'object' && 'type' in content && content.type === 'doc') {
-        const { _notes, _generalNotes, _tags, _tagCategories, _characterProfiles, _characterRelationships, _templateId, _pageLayout: _plCollab, ...pmDoc } = content as Record<string, unknown>;
+        const { _notes, _generalNotes, _shelf, _tags, _tagCategories, _characterProfiles, _characterRelationships, _templateId, _pageLayout: _plCollab, ...pmDoc } = content as Record<string, unknown>;
         collabInitialContent.current = pmDoc;
       } else if (content && typeof content === 'object' && Object.keys(content).length > 0) {
         collabInitialContent.current = content;
@@ -577,7 +577,7 @@ const ScreenplayEditor: React.FC = () => {
   });
   useSwipeEdge({
     edge: 'right',
-    onSwipe: toggleScriptNotes,
+    onSwipe: toggleShelf,
     enabled: isTouch && !rightPanelVisible,
   });
   usePinchZoom(editorMainRef, {
@@ -712,7 +712,7 @@ const ScreenplayEditor: React.FC = () => {
         if (scriptResp) {
           const content = scriptResp.content as Record<string, unknown> | null;
           if (content && typeof content === 'object' && 'type' in content && content.type === 'doc') {
-            const { _notes, _generalNotes, _tags, _tagCategories, _characterProfiles, _characterRelationships, _templateId, _pageLayout: _plGuest, ...pmDoc } = content as Record<string, unknown>;
+            const { _notes, _generalNotes, _shelf: _shGuest, _tags, _tagCategories, _characterProfiles, _characterRelationships, _templateId, _pageLayout: _plGuest, ...pmDoc } = content as Record<string, unknown>;
             collabInitialContent.current = pmDoc;
           } else if (content && typeof content === 'object' && Object.keys(content).length > 0) {
             collabInitialContent.current = content;
@@ -760,6 +760,7 @@ const ScreenplayEditor: React.FC = () => {
         ...doc,
         _notes: store.notes,
         _generalNotes: store.generalNotes,
+        _shelf: store.shelfCards,
         _tags: store.tags,
         _tagCategories: store.tagCategories,
         _characterProfiles: store.characterProfiles,
@@ -850,7 +851,7 @@ const ScreenplayEditor: React.FC = () => {
 
       const content = scriptResp.content as Record<string, unknown> | null;
       if (content && typeof content === 'object' && 'type' in content && content.type === 'doc') {
-        const { _notes, _generalNotes, _tags, _tagCategories, _characterProfiles, _characterRelationships, _templateId, ...pmDoc } = content as Record<string, unknown>;
+        const { _notes, _generalNotes, _shelf: _shHist, _tags, _tagCategories, _characterProfiles, _characterRelationships, _templateId, ...pmDoc } = content as Record<string, unknown>;
         collabInitialContent.current = pmDoc;
       } else if (content && typeof content === 'object' && Object.keys(content).length > 0) {
         collabInitialContent.current = content;
@@ -1473,7 +1474,7 @@ const ScreenplayEditor: React.FC = () => {
 
     // Save current editor content so it can seed the Yjs doc
     const doc = editor.getJSON();
-    const { _notes, _generalNotes: _gn3, _tags, _tagCategories, _characterProfiles, _characterRelationships, _templateId: _tpl3, _pageLayout: _pl3, ...pmDoc } = doc as Record<string, unknown>;
+    const { _notes, _generalNotes: _gn3, _shelf: _sh3, _tags, _tagCategories, _characterProfiles, _characterRelationships, _templateId: _tpl3, _pageLayout: _pl3, ...pmDoc } = doc as Record<string, unknown>;
     collabInitialContent.current = pmDoc;
 
     // The guest invite carries a session_nonce that makes the Yjs room unique
@@ -1953,6 +1954,7 @@ const ScreenplayEditor: React.FC = () => {
       ...doc,
       _notes: store.notes,
       _generalNotes: store.generalNotes,
+      _shelf: store.shelfCards,
       _tags: store.tags,
       _tagCategories: store.tagCategories,
       _characterProfiles: store.characterProfiles,
@@ -2119,6 +2121,7 @@ const ScreenplayEditor: React.FC = () => {
         state.characterProfiles === prev.characterProfiles &&
         state.notes === prev.notes &&
         state.generalNotes === prev.generalNotes &&
+        state.shelfCards === prev.shelfCards &&
         state.tags === prev.tags &&
         state.beats === prev.beats &&
         state.beatColumns === prev.beatColumns &&
@@ -2160,6 +2163,30 @@ const ScreenplayEditor: React.FC = () => {
 
     return () => { unsub(); if (timer) clearTimeout(timer); };
   }, [editor, currentProject, currentScriptId, buildSaveContent, isCollabGuest]);
+
+  // --- Sticky Notes snippet capture: ⌥⌘X (cut selection to sticky) / ⌥⌘C (copy) ---
+  // Creates a Snippet card from the current editor selection and opens the
+  // Sticky Notes panel. Cut additionally deletes the selection from the doc.
+  useEffect(() => {
+    if (!editor || isHistoryMode) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || !e.altKey || e.shiftKey) return;
+      if (e.code !== 'KeyX' && e.code !== 'KeyC') return;
+      const { from, to, empty } = editor.state.selection;
+      if (empty) return;
+      const text = editor.state.doc.textBetween(from, to, '\n');
+      if (!text.trim()) return;
+      e.preventDefault();
+      const store = useEditorStore.getState();
+      store.addShelfCard(makeSnippetCard(text));
+      store.openShelfTab('snippet');
+      if (e.code === 'KeyX' && editor.isEditable) {
+        editor.chain().focus().deleteSelection().run();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [editor, isHistoryMode]);
 
   // --- Persist project dictionary words when they change ---
   // Words live on the Project entity (shared by every script in the project).
@@ -2384,7 +2411,7 @@ const ScreenplayEditor: React.FC = () => {
         // Strip app metadata keys before feeding to ProseMirror
         let pmDoc: Record<string, unknown> | null = null;
         if (content && typeof content === 'object' && 'type' in content && content.type === 'doc') {
-          const { _notes, _generalNotes: _gn, _tags, _tagCategories, _characterProfiles, _characterRelationships, _beats, _beatColumns, _beatArrangeMode, _templateId: _tpl, _ignoredWords: _iw, _ignoredOnce: _io, _customDictWords: _cdw, _enabledGlobalDicts: _egd, _projectDictEnabled: _pde, _enabledLanguages: _elx, _ignoredGrammarRules: _igr, _ignoredGrammarOnce: _igo, _spellCheckEnabled: _sce, _grammarCheckEnabled: _gce, _sceneNumbersVisible: _snv, _sceneNumbersLocked: _snl, _pageLayout: _pl, ...rest } = content as any;
+          const { _notes, _generalNotes: _gn, _shelf: _sh, _tags, _tagCategories, _characterProfiles, _characterRelationships, _beats, _beatColumns, _beatArrangeMode, _templateId: _tpl, _ignoredWords: _iw, _ignoredOnce: _io, _customDictWords: _cdw, _enabledGlobalDicts: _egd, _projectDictEnabled: _pde, _enabledLanguages: _elx, _ignoredGrammarRules: _igr, _ignoredGrammarOnce: _igo, _spellCheckEnabled: _sce, _grammarCheckEnabled: _gce, _sceneNumbersVisible: _snv, _sceneNumbersLocked: _snl, _pageLayout: _pl, ...rest } = content as any;
           pmDoc = rest;
         }
 
@@ -2415,6 +2442,7 @@ const ScreenplayEditor: React.FC = () => {
           store.setCharacterRelationships([]);
           store.setNotes([]);
           store.setGeneralNotes([]);
+          store.setShelfCards([]);
           store.setTags([]);
           store.setTagCategories([...DEFAULT_TAG_CATEGORIES]);
           store.setBeats([]);
@@ -2431,6 +2459,8 @@ const ScreenplayEditor: React.FC = () => {
             if (notes.length > 0) store.setNotes(notes as import('../stores/editorStore').NoteInfo[]);
             const gNotes = parseAttr(c._generalNotes);
             if (gNotes.length > 0) store.setGeneralNotes(gNotes as import('../stores/editorStore').GeneralNote[]);
+            const shelfArr = parseAttr(c._shelf);
+            if (shelfArr.length > 0) store.setShelfCards(shelfArr as import('../stores/editorStore').ShelfCard[]);
             const tagsArr = parseAttr(c._tags);
             if (tagsArr.length > 0) store.setTags(tagsArr as import('../stores/editorStore').TagItem[]);
             const tagCats = parseAttr(c._tagCategories);
@@ -2774,7 +2804,7 @@ const ScreenplayEditor: React.FC = () => {
 
         try {
           if (content && typeof content === 'object' && 'type' in content && content.type === 'doc') {
-            const { _notes, _generalNotes: _gn2, _tags, _tagCategories, _characterProfiles, _characterRelationships, _beats, _beatColumns, _beatArrangeMode: _bam, _templateId: _tpl2, _ignoredWords: _iw2, _ignoredOnce: _io2, _customDictWords: _cdw2, _enabledGlobalDicts: _egd2, _projectDictEnabled: _pde2, _enabledLanguages: _elx2, _ignoredGrammarRules: _igr2, _ignoredGrammarOnce: _igo2, _spellCheckEnabled: _sce2, _grammarCheckEnabled: _gce2, _sceneNumbersVisible: _snv2, _sceneNumbersLocked: _snl2, _pageLayout: _pl2, ...pmDoc } = content as any;
+            const { _notes, _generalNotes: _gn2, _shelf: _sh2, _tags, _tagCategories, _characterProfiles, _characterRelationships, _beats, _beatColumns, _beatArrangeMode: _bam, _templateId: _tpl2, _ignoredWords: _iw2, _ignoredOnce: _io2, _customDictWords: _cdw2, _enabledGlobalDicts: _egd2, _projectDictEnabled: _pde2, _enabledLanguages: _elx2, _ignoredGrammarRules: _igr2, _ignoredGrammarOnce: _igo2, _spellCheckEnabled: _sce2, _grammarCheckEnabled: _gce2, _sceneNumbersVisible: _snv2, _sceneNumbersLocked: _snl2, _pageLayout: _pl2, ...pmDoc } = content as any;
             editor.commands.setContent(pmDoc);
           } else if (content && typeof content === 'object' && Object.keys(content).length > 0) {
             editor.commands.setContent(content);
@@ -3568,8 +3598,8 @@ const ScreenplayEditor: React.FC = () => {
         noteId: noteId,
       });
 
-      // Open the notes panel if not already open
-      if (!store.scriptNotesOpen) store.toggleScriptNotes();
+      // Open the Sticky Notes pane on the Script tab if not already there
+      store.openShelfTab('script');
     };
 
     const editorEl = editor.view.dom;
@@ -4009,7 +4039,7 @@ const ScreenplayEditor: React.FC = () => {
         {!isHistoryMode && rightPanelVisible && (
           <div className="panel-resize-handle" onPointerDown={(e) => handleResizePointerDown('right', e)} style={{ touchAction: 'none' }} />
         )}
-        {!isHistoryMode && <ScriptNotes editor={editor} style={{ width: rightPanelWidth, minWidth: rightPanelWidth }} />}
+        {!isHistoryMode && <StickyNotes editor={editor} style={{ width: rightPanelWidth, minWidth: rightPanelWidth }} />}
         {!isHistoryMode && <CharacterProfiles editor={editor} projectId={currentProject?.id || ''} style={{ width: rightPanelWidth, minWidth: rightPanelWidth }} />}
         {!isHistoryMode && <TagsPanel editor={editor} style={{ width: rightPanelWidth, minWidth: rightPanelWidth }} />}
         {!isHistoryMode && <LocationDatabase editor={editor} style={{ width: rightPanelWidth, minWidth: rightPanelWidth }} />}

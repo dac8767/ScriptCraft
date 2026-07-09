@@ -9,13 +9,14 @@ interface ViewState {
   navigatorOpen?: boolean;
   indexCardsOpen?: boolean;
   beatBoardOpen?: boolean;
-  scriptNotesOpen?: boolean;
+  shelfOpen?: boolean;
+  shelfTab?: string; // 'notes' | 'todo' | 'snippet' (legacy values migrated on load)
+  notesSubTab?: 'general' | 'script';
   characterProfilesOpen?: boolean;
   tagsPanelOpen?: boolean;
   locationDatabaseOpen?: boolean;
   notesVisible?: boolean;
   tagsVisible?: boolean;
-  notesActiveTab?: 'script' | 'general';
   zoomLevel?: number;
   toolbarMode?: 'compact' | 'comfortable' | 'hidden';
   characterSortBy?: 'name' | 'importance' | 'scenes' | 'dialogues' | 'appearance';
@@ -311,6 +312,47 @@ export interface GeneralNote {
   createdAt: string;
 }
 
+// ── Sticky Notes (the "Shelf": Comments / To-Do / Snippets) ──
+
+/** Sticky-note background colors: [hex, label]. */
+export const SHELF_COLORS: [string, string][] = [
+  ['#fff9c4', 'Yellow'], ['#ffd9e7', 'Pink'], ['#d6ecff', 'Blue'],
+  ['#dcf5dc', 'Green'], ['#ffe4c4', 'Orange'], ['#e9defa', 'Purple'],
+];
+export const SHELF_DEFAULT_COLOR = SHELF_COLORS[0][0];
+
+export type ShelfCardType = 'comment' | 'todo' | 'snippet';
+
+/**
+ * Top-level tabs of the unified Sticky Notes pane. The Notes tab houses two
+ * sub-views: General (free-form sticky cards) and Script (anchored notes).
+ */
+export type ShelfTopTab = 'notes' | 'todo' | 'snippet';
+export type NotesSubTab = 'general' | 'script';
+/** Accepted by openShelfTab: sub-tab names route into the Notes tab. */
+export type ShelfTab = ShelfTopTab | NotesSubTab;
+
+export interface ShelfTodoItem {
+  text: string;
+  done: boolean;
+}
+
+/**
+ * One sticky card. Data shape matches FreeScript v5.5's shelf exactly
+ * (cards from the old app's export can be imported verbatim).
+ */
+export interface ShelfCard {
+  id: string;
+  type: ShelfCardType;
+  color: string;
+  /** Editable card header; empty shows the type name as placeholder */
+  title?: string;
+  /** comment + snippet body */
+  text?: string;
+  /** todo entries */
+  items?: ShelfTodoItem[];
+}
+
 // ── Production Tagging (Final Draft TagData) ──
 
 export interface TagCategory {
@@ -454,10 +496,17 @@ interface EditorState {
   setStatisticsOpen: (open: boolean) => void;
   statisticsScrollTo: string | null;
   setStatisticsScrollTo: (id: string | null) => void;
-  scriptNotesOpen: boolean;
-  toggleScriptNotes: () => void;
-  notesActiveTab: 'script' | 'general';
-  setNotesActiveTab: (tab: 'script' | 'general') => void;
+  shelfOpen: boolean;
+  toggleShelf: () => void;
+  shelfTab: ShelfTopTab;
+  setShelfTab: (tab: ShelfTopTab) => void;
+  notesSubTab: NotesSubTab;
+  setNotesSubTab: (sub: NotesSubTab) => void;
+  /**
+   * Switch the Sticky Notes pane to a tab, opening the pane if it's closed.
+   * 'general' and 'script' land on the Notes tab with that sub-view active.
+   */
+  openShelfTab: (tab: ShelfTab) => void;
   notesVisible: boolean;
   setNotesVisible: (v: boolean) => void;
 
@@ -480,6 +529,11 @@ interface EditorState {
   addGeneralNote: (note: Omit<GeneralNote, 'id' | 'createdAt'>) => string;
   updateGeneralNote: (id: string, updates: Partial<Pick<GeneralNote, 'title' | 'content' | 'color'>>) => void;
   deleteGeneralNote: (id: string) => void;
+
+  // Sticky Notes ("Shelf") — file-level cards: comments, to-dos, snippets
+  shelfCards: ShelfCard[];
+  setShelfCards: (cards: ShelfCard[]) => void;
+  addShelfCard: (card: ShelfCard) => void;
 
   // Beats
   beatArrangeMode: BeatArrangeMode;
@@ -747,16 +801,32 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setStatisticsOpen: (open) => set({ statisticsOpen: open }),
   statisticsScrollTo: null,
   setStatisticsScrollTo: (id) => set({ statisticsScrollTo: id }),
-  scriptNotesOpen: _vs.scriptNotesOpen ?? false,
-  toggleScriptNotes: () => set((s) => {
-    const v = !s.scriptNotesOpen;
-    saveViewState({ scriptNotesOpen: v });
-    return { scriptNotesOpen: v };
+  shelfOpen: _vs.shelfOpen ?? false,
+  toggleShelf: () => set((s) => {
+    const v = !s.shelfOpen;
+    saveViewState({ shelfOpen: v });
+    return { shelfOpen: v };
   }),
-  notesActiveTab: _vs.notesActiveTab ?? 'general',
-  setNotesActiveTab: (tab) => {
-    saveViewState({ notesActiveTab: tab });
-    set({ notesActiveTab: tab });
+  // migrate pre-v0.2 persisted tabs: 'comment'/'general'/'script' → 'notes'
+  shelfTab: (_vs.shelfTab === 'todo' || _vs.shelfTab === 'snippet')
+    ? _vs.shelfTab : 'notes',
+  setShelfTab: (tab) => {
+    saveViewState({ shelfTab: tab });
+    set({ shelfTab: tab });
+  },
+  notesSubTab: _vs.notesSubTab ?? (_vs.shelfTab === 'script' ? 'script' : 'general'),
+  setNotesSubTab: (sub) => {
+    saveViewState({ notesSubTab: sub });
+    set({ notesSubTab: sub });
+  },
+  openShelfTab: (tab) => {
+    if (tab === 'general' || tab === 'script') {
+      saveViewState({ shelfTab: 'notes', notesSubTab: tab, shelfOpen: true });
+      set({ shelfTab: 'notes', notesSubTab: tab, shelfOpen: true });
+    } else {
+      saveViewState({ shelfTab: tab, shelfOpen: true });
+      set({ shelfTab: tab, shelfOpen: true });
+    }
   },
   notesVisible: _vs.notesVisible ?? false,
   setNotesVisible: (v) => {
@@ -819,6 +889,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })),
   deleteGeneralNote: (id) =>
     set((s) => ({ generalNotes: s.generalNotes.filter((n) => n.id !== id) })),
+
+  // Sticky Notes ("Shelf")
+  shelfCards: [],
+  setShelfCards: (shelfCards) => set({ shelfCards }),
+  addShelfCard: (card) => set((s) => ({ shelfCards: [...s.shelfCards, card] })),
 
   // Beats — undo/redo internals (not serialized)
   _beatUndoStack: [] as { beats: BeatInfo[]; beatColumns: BeatColumn[] }[],

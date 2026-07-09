@@ -39,7 +39,7 @@ const MobileAccessoryBar: React.FC<MobileAccessoryBarProps> = ({ editor }) => {
   const barRef = useRef<HTMLDivElement>(null);
 
   const {
-    scriptNotesOpen, toggleScriptNotes, addNote, setNoteFilter,
+    openShelfTab, addNote, setNoteFilter,
     tagsPanelOpen, toggleTagsPanel, setPendingTagSelection,
   } = useEditorStore();
 
@@ -158,8 +158,8 @@ const MobileAccessoryBar: React.FC<MobileAccessoryBarProps> = ({ editor }) => {
       .run();
 
     setNoteFilter({ elementType: null, contextLabel: null, color: null, noteId });
-    if (!scriptNotesOpen) toggleScriptNotes();
-  }, [editor, addNote, setNoteFilter, scriptNotesOpen, toggleScriptNotes]);
+    openShelfTab('script');
+  }, [editor, addNote, setNoteFilter, openShelfTab]);
 
   const handleTag = useCallback(() => {
     const { from, to } = editor.state.selection;

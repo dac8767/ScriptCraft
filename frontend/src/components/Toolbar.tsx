@@ -66,8 +66,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     setFontSize,
     setSearchOpen,
     setGoToPageOpen,
-    scriptNotesOpen,
-    toggleScriptNotes,
+    shelfOpen,
+    shelfTab,
+    notesSubTab,
+    toggleShelf,
+    openShelfTab,
     addNote,
     setNoteFilter,
     tagsPanelOpen,
@@ -385,7 +388,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // ── Notes handler (shared between inline and overflow) ──
   const handleNotesClick = useCallback((e: React.PointerEvent | React.MouseEvent) => {
     e.preventDefault();
-    if (!editor) { toggleScriptNotes(); return; }
+    const scriptTabShowing = shelfOpen && shelfTab === 'notes' && notesSubTab === 'script';
+    if (!editor) { if (scriptTabShowing) toggleShelf(); else openShelfTab('script'); return; }
 
     // Detect if cursor is on an existing note
     const noteMarkType = editor.schema.marks.scriptNote;
@@ -398,7 +402,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       }
       if (noteMark) {
         setNoteFilter({ elementType: null, contextLabel: null, color: null, noteId: noteMark.attrs.noteId as string });
-        if (!scriptNotesOpen) toggleScriptNotes();
+        openShelfTab('script');
         return;
       }
     }
@@ -454,11 +458,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       }
 
       setNoteFilter({ elementType: null, contextLabel: null, color: null, noteId });
-      if (!scriptNotesOpen) toggleScriptNotes();
+      openShelfTab('script');
+    } else if (scriptTabShowing) {
+      toggleShelf();
     } else {
-      toggleScriptNotes();
+      openShelfTab('script');
     }
-  }, [editor, scriptNotesOpen, toggleScriptNotes, addNote, setNoteFilter]);
+  }, [editor, shelfOpen, shelfTab, notesSubTab, toggleShelf, openShelfTab, addNote, setNoteFilter]);
 
   // ── Tags handler (shared between inline and overflow) ──
   const handleTagsClick = useCallback((e: React.PointerEvent | React.MouseEvent) => {
@@ -908,7 +914,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       {/* Notes & Tags — always visible */}
       <div className="toolbar-group">
         <button
-          className={`toolbar-btn${scriptNotesOpen ? ' active' : ''}`}
+          className={`toolbar-btn${shelfOpen && shelfTab === 'notes' && notesSubTab === 'script' ? ' active' : ''}`}
           title="Script Notes"
           onPointerDown={handleNotesClick}
         >

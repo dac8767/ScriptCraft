@@ -84,7 +84,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
 
   const {
     revisionMode, setRevisionMode, revisionColor, setRevisionColor,
-    toggleScriptNotes, scriptNotesOpen, addNote, deleteNote, setNoteFilter,
+    openShelfTab, addNote, deleteNote, setNoteFilter,
     toggleCharacterProfiles, characterProfilesOpen,
     deleteTag, tagsPanelOpen, toggleTagsPanel, setPendingTagSelection, setEditingTagId,
   } = useEditorStore();
@@ -358,8 +358,8 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
     // Filter to the newly created note
     setNoteFilter({ elementType: null, contextLabel: null, color: null, noteId });
 
-    // Open the notes panel
-    if (!scriptNotesOpen) toggleScriptNotes();
+    // Open the Sticky Notes pane on the Script tab
+    openShelfTab('script');
     onClose();
   };
 
@@ -372,7 +372,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
         noteId: existingNoteId,
       });
     }
-    if (!scriptNotesOpen) toggleScriptNotes();
+    openShelfTab('script');
     onClose();
   };
 
