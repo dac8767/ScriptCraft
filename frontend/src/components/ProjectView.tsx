@@ -226,7 +226,7 @@ const SortableScriptRow: React.FC<SortableScriptRowProps> = ({
           <span className="project-card-dot">&middot;</span>
           <span
             className={`source-badge source-badge--${source}`}
-            title={source === 'cloud' ? 'Stored on FreeScript Cloud' : 'Stored on this device'}
+            title={source === 'cloud' ? 'Stored on FreeDraft Cloud' : 'Stored on this device'}
           >
             {source === 'cloud' ? <FaCloud /> : <FaDesktop />}
             {source === 'cloud' ? 'Cloud' : 'Local'}
@@ -443,7 +443,7 @@ const ScriptCard: React.FC<ScriptCardProps> = ({
         <span>{formatDate(script.updated_at)}</span>
         <span
           className={`source-badge source-badge--${source}`}
-          title={source === 'cloud' ? 'Stored on FreeScript Cloud' : 'Stored on this device'}
+          title={source === 'cloud' ? 'Stored on FreeDraft Cloud' : 'Stored on this device'}
         >
           {source === 'cloud' ? <FaCloud /> : <FaDesktop />}
           {source === 'cloud' ? 'Cloud' : 'Local'}

@@ -6,11 +6,13 @@ import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../util
 import SynopsisModal from './SynopsisModal';
 
 interface IndexCardsProps {
+  /** Render inside a tool window: skip the open-flag gate, hide close */
+  embedded?: boolean;
   editor: Editor | null;
   scrollContainer: HTMLDivElement | null;
 }
 
-const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
+const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer, embedded = false }) => {
   const { scenes, indexCardsOpen, updateSceneSynopsis, updateSceneColor, toggleIndexCards, pageLayout } = useEditorStore();
 
   const [fullscreen, setFullscreen] = useState(false);
@@ -549,7 +551,7 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
     };
   }, [dragIdx, insertIdx]);
 
-  if (!indexCardsOpen) return null;
+  if (!indexCardsOpen && !embedded) return null;
 
   const containerClass = `index-cards${fullscreen ? ' index-cards-fullscreen' : ''}`;
   const indicatorStyle = getIndicatorStyle();
@@ -628,7 +630,7 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
           </button>
           <button
             className="ic-action-btn ic-close-btn"
-            onClick={() => { if (fullscreen) setFullscreen(false); toggleIndexCards(); }}
+            onClick={() => { if (fullscreen) setFullscreen(false); if (embedded) useEditorStore.getState().setActiveTool(null); else toggleIndexCards(); }}
             title="Close Index Cards"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">

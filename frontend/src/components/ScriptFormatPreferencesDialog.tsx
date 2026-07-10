@@ -20,9 +20,11 @@ interface Props {
   firstRun?: boolean;
   onConfirm: (selectedIds: string[]) => void;
   onCancel?: () => void;
+  /** Render only the content (no overlay/box) — used inside Preferences. */
+  embedded?: boolean;
 }
 
-const ScriptFormatPreferencesDialog: React.FC<Props> = ({ firstRun = false, onConfirm, onCancel }) => {
+const ScriptFormatPreferencesDialog: React.FC<Props> = ({ firstRun = false, onConfirm, onCancel, embedded = false }) => {
   const enabledScriptFormats = useSettingsStore((s) => s.enabledScriptFormats);
   const setEnabledScriptFormats = useSettingsStore((s) => s.setEnabledScriptFormats);
   const setFormatPreferencesInitialized = useSettingsStore((s) => s.setFormatPreferencesInitialized);
@@ -58,16 +60,12 @@ const ScriptFormatPreferencesDialog: React.FC<Props> = ({ firstRun = false, onCo
     onConfirm(finalIds);
   };
 
-  return (
-    <div className="dialog-overlay" onClick={firstRun ? undefined : onCancel}>
-      <div className="fmt-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="dialog-header">
-          {firstRun ? 'Welcome — choose your script formats' : 'Script Format Preferences'}
-        </div>
-        <div className="fmt-dialog-body">
+  const body = (
+    <>
+        <div className="fmt-dialog-body" style={embedded ? { padding: '4px 0 0' } : undefined}>
           <p className="fmt-dialog-hint">
             {firstRun
-              ? 'Pick the formats you commonly write in. When you create a new script, FreeScript will offer just these options. You can change this later from the Format menu.'
+              ? 'Pick the formats you commonly write in. When you create a new script, FreeDraft will offer just these options. You can change this later from the Format menu.'
               : 'Choose which formats appear in the New Screenplay picker. If only one is selected, new scripts use it directly without prompting.'}
           </p>
           <div className="fmt-card-list">
@@ -100,14 +98,26 @@ const ScriptFormatPreferencesDialog: React.FC<Props> = ({ firstRun = false, onCo
             })}
           </div>
         </div>
-        <div className="dialog-actions">
-          {!firstRun && (
+        <div className="dialog-actions" style={embedded ? { border: 'none', padding: '14px 0 0' } : undefined}>
+          {!firstRun && !embedded && (
             <button className="dialog-btn" onClick={onCancel}>Cancel</button>
           )}
           <button className="dialog-btn dialog-btn-primary" onClick={handleConfirm}>
             {firstRun ? 'Save & Continue' : 'Save'}
           </button>
         </div>
+    </>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <div className="dialog-overlay" onClick={firstRun ? undefined : onCancel}>
+      <div className="fmt-dialog" onClick={(e) => e.stopPropagation()}>
+        <div className="dialog-header">
+          {firstRun ? 'Welcome — choose your script formats' : 'Script Format Preferences'}
+        </div>
+        {body}
       </div>
     </div>
   );

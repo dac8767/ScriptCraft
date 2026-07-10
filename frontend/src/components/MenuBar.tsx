@@ -1,6 +1,27 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
+import { SaveWorkspaceDialog, EditWorkspacesDialog } from './WorkspaceDialogs';
+import PreferencesDialog from './PreferencesDialog';
+import SetDraftDialog from './SetDraftDialog';
+import RenameDialog from './RenameDialog';
+import HelpReferenceDialog from './HelpReferenceDialog';
 import { ALL_TOOLS } from './ToolDock';
+
+/** Project menu: script structure / story elements / project management. */
+const PROJECT_MENU_GROUPS: string[][] = [
+  ['navigator', 'pages', 'scenes'],
+  ['locations', 'characters'],
+  ['projects', 'assets'],
+];
+/** Tools menu: story planning / writing aids / production & analysis. */
+const TOOL_MENU_GROUPS: string[][] = [
+  ['beatboard', 'indexcards'],
+  ['sticky', 'fragments', 'todo', 'highlights'],
+  // 'tags' is intentionally absent: Production Tags opens from the
+  // Production menu (its conceptual home); the window itself remains a
+  // dockable Tool in Customize.
+  ['analytics', 'goals'],
+];
 import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import { useEditorStore, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_CATEGORIES } from '../stores/editorStore';
@@ -29,6 +50,7 @@ import { pluginRegistry } from '../plugins/registry';
 import AuthIndicator from './AuthIndicator';
 import { useNavigate } from 'react-router-dom';
 import { scriptApi } from '../services/scriptApi';
+import { mirrorSave, mirrorSnapshot } from '../services/saveLocations';
 import { useSettingsStore } from '../stores/settingsStore';
 import { clearEditorHistory } from '../editor/clearHistory';
 import { spellChecker } from '../editor/spellchecker';
@@ -38,13 +60,15 @@ import { getCompatEntries } from '../services/compat';
 import { reportSaveError } from '../stores/saveErrorStore';
 import type { MenuSection as PluginMenuSection } from '../plugins/registry';
 import {
+  FaExternalLinkAlt,
+  FaRegStickyNote,
+  FaCheckSquare,
   FaFile,
   FaPlus,
   FaPencilAlt,
   FaPalette,
   FaEye,
   FaWrench,
-  FaEllipsisH,
   FaFileImport,
   FaFolderOpen,
   FaSave,
@@ -79,19 +103,11 @@ import {
   FaFileAlt,
   FaCommentDots,
   FaImage,
-  FaCompass,
-  FaTh,
-  FaStream,
-  FaStickyNote,
-  FaUsers,
-  FaTags,
   FaHighlighter,
   FaAdjust,
-  FaToolbox,
   FaUserFriends,
   FaSignInAlt,
   FaProjectDiagram,
-  FaFilm,
   FaBoxes,
   FaBars,
   FaInfoCircle,
@@ -102,13 +118,13 @@ import {
   FaUpload,
   FaHistory,
   FaExchangeAlt,
-  FaCompressArrowsAlt,
-  FaExpandArrowsAlt,
-  FaEyeSlash,
   FaListUl,
   FaToggleOn,
   FaLock,
   FaFileSignature,
+  FaRegClone, FaStream, FaQuestionCircle,
+  FaClipboardList, FaEdit,
+  FaTags,
 } from 'react-icons/fa';
 
 interface MenuBarProps {
@@ -158,24 +174,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // Platform-aware modifier key symbol for shortcut labels
   const mod = /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl+';
   const {
-    navigatorOpen,
-    toggleNavigator,
-    indexCardsOpen,
-    toggleIndexCards,
-    beatBoardOpen,
-    toggleBeatBoard,
-    shelfOpen,
-    toggleShelf,
-    characterProfilesOpen,
-    toggleCharacterProfiles,
-    tagsPanelOpen,
-    toggleTagsPanel,
-    locationDatabaseOpen,
-    toggleLocationDatabase,
-    notesVisible,
-    setNotesVisible,
-    tagsVisible,
-    setTagsVisible,
+    previewMode,
+    viewStyle, setViewStyle,
     revisionMode,
     setRevisionMode,
     documentTitle,
@@ -194,8 +194,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     setSaveAsOpen,
     theme,
     setTheme,
+    workspaces,
+    workspaceOrder,
+    activeWorkspace,
+    saveWorkspace,
+    applyWorkspace,
     toolbarMode,
-    setToolbarMode,
     zoomLevel,
     setZoomLevel,
     navPanelWidth,
@@ -243,6 +247,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       _sceneNumbersVisible: store.sceneNumbersVisible,
       _sceneNumbersLocked: store.sceneNumbersLocked,
       _pageLayout: store.pageLayout,
+      _draftLabel: store.draftLabel,
     };
   }, [editor]);
 
@@ -260,6 +265,15 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       const content = buildSaveContent();
       await scriptApi.saveScript(currentProject.id, currentScriptId, { content });
       setSaveStatus('saved');
+      if (content) {
+        void mirrorSave({
+          projectId: currentProject.id,
+          scriptId: currentScriptId,
+          projectName: currentProject.name,
+          title: documentTitle || 'Untitled',
+          content,
+        });
+      }
     } catch (err) {
       console.error('Save failed:', err);
       const msg = err instanceof Error ? err.message : String(err);
@@ -269,7 +283,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       // get the blocking modal so the user can't miss them.
       reportSaveError(err, 'manual-save');
     }
-  }, [editor, currentProject, currentScriptId, buildSaveContent, setSaveAsOpen]);
+  }, [editor, currentProject, currentScriptId, buildSaveContent, setSaveAsOpen, documentTitle]);
 
   /** Save As: always opens the destination/project/filename picker, even when
    *  the current document is already saved. Use this to fork a local script
@@ -342,6 +356,14 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // ── Page Setup ──
   const [pageSetupOpen, setPageSetupOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [prefsOpen, setPrefsOpen] = useState(false);
+  const [helpForm, setHelpForm] = useState<{ title: string; url: string } | null>(null);
+  const [draftDialogOpen, setDraftDialogOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [saveWorkspaceOpen, setSaveWorkspaceOpen] = useState(false);
+  const [editWorkspacesOpen, setEditWorkspacesOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [knowledgeBaseOpen, setKnowledgeBaseOpen] = useState(false);
   const [templateSelectOpen, setTemplateSelectOpen] = useState(false);
 
   // ── Script-format preferences (multi-select) and per-script picker ──
@@ -421,6 +443,16 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       const result = await api.checkin(currentProject.id, checkinMessage.trim());
       if (result.hash) {
         showToast(`Version saved: ${result.short_hash}`, 'success');
+        const snapContent = buildSaveContent();
+        if (snapContent) {
+          void mirrorSnapshot({
+            projectId: currentProject.id,
+            projectName: currentProject.name,
+            title: documentTitle || 'Untitled',
+            content: snapContent,
+            message: checkinMessage.trim(),
+          });
+        }
       } else {
         showToast(result.message || 'No changes to commit', 'success');
       }
@@ -458,7 +490,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     try {
       const versions = await api.getVersions(currentProject.id);
       if (versions.length === 0) {
-        showToast('No versions yet — use File > Check In first', 'info');
+        showToast('No snapshots yet — use File > Take Snapshot first', 'info');
         return;
       }
 
@@ -474,7 +506,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         // Script didn't exist at the last check-in (created after the last commit)
         const msg = innerErr instanceof Error ? innerErr.message : '';
         if (msg.includes('404')) {
-          showToast('This script has no checked-in version yet — use File > Check In first', 'info');
+          showToast('This script has no snapshot yet — use File > Take Snapshot first', 'info');
         } else {
           showToast('Could not load the checked-in version. Try checking in first.', 'error');
         }
@@ -633,10 +665,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       setCurrentScriptId(null);
       setScripts([]);
       // Track that this is an imported document so Save As can warn the user
-      // that the save goes to FreeScript's library, not back to the source file.
+      // that the save goes to FreeDraft's library, not back to the source file.
       const fmtLabel = ext === 'fdx' ? 'Final Draft (.fdx)'
         : ext === 'fountain' ? 'Fountain (.fountain)'
-        : ext === 'odraft' ? 'FreeScript (.odraft)'
+        : ext === 'odraft' ? 'FreeDraft (.odraft)'
         : ext ? `.${ext}` : 'imported file';
       store.setImportedSource({ name, format: fmtLabel });
     } catch (err) {
@@ -897,7 +929,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       };
       await downloadOdraft(meta, editor.getJSON());
     } catch (err) {
-      console.error('FreeScript export failed:', err);
+      console.error('FreeDraft export failed:', err);
       showToast(`Export failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
     }
   }, [editor, documentTitle]);
@@ -923,7 +955,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   /** Submenu keys are scoped to their parent menu so a stale open submenu can
    *  never render under a different top-level menu (the "Analytics in the
    *  File menu" glitch). */
-  const submenuKey = (menuLabel: string, itemLabel: string) => `${menuLabel}:${itemLabel}`;
+  const submenuKey = (menuLabel: string, itemLabel: string, index?: number) =>
+    `${menuLabel}:${index ?? ''}:${itemLabel}`;
   const handleItemPointerEnter = (e: React.PointerEvent) => {
     if (e.pointerType === 'mouse') setOpenSubmenu(null);
   };
@@ -932,6 +965,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     e.preventDefault();
     e.stopPropagation();
     setOpenSubmenu((prev) => (prev === label ? null : label));
+  };
+
+  /** Insert an outline-style General line at the caret (Section '# ',
+   *  Marker '⚑ ', Checklist '[ ] ') — the Navigator recognizes these. */
+  const insertOutlineLine = (prefix: string) => {
+    if (!editor) return;
+    editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: prefix }] }).run();
   };
 
   const menus: MenuSection[] = [
@@ -961,14 +1001,28 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {
           icon: <FaFileImport />, label: 'Import',
           children: [
-            { icon: <FaFileCode />, label: 'Final Draft / Fountain / FreeScript...', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
+            { icon: <FaFileCode />, label: 'Final Draft / Fountain / FreeDraft...', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
             { icon: <FaFileWord />, label: 'Microsoft Word (.docx)...', action: handleImportDocx, disabled: isCollabGuest },
           ],
         },
-        { icon: <FaFolderOpen />, label: 'Open...', action: () => confirmOrRun(() => setOpenFileOpen(true)), disabled: isCollabGuest },
+        {
+          icon: <FaFolderOpen />, label: 'Open',
+          children: [
+            { icon: <FaFolderOpen />, label: 'From Library / Cloud...', action: () => confirmOrRun(() => setOpenFileOpen(true)), disabled: isCollabGuest },
+            { icon: <FaFileImport />, label: 'Local File...', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
+          ],
+        },
         { icon: <FaSave />, label: 'Save', shortcut: `${mod}S`, action: handleSave, disabled: isCollabGuest },
-        { icon: <FaSave />, label: 'Save As…', shortcut: `⇧${mod}S`, action: handleSaveAs, disabled: isCollabGuest },
+        { icon: <FaSave />, label: 'Save As…', shortcut: `⇧${mod}S`, action: handleExportOdraft, disabled: isCollabGuest },
+        {
+          icon: <FaUserFriends />, label: 'Collaboration',
+          children: [
+            { icon: <FaUserFriends />, label: isCollabActive ? '\u2713 Collaborate...' : 'Collaborate...', action: onCollaborate, disabled: isCollabGuest },
+            { icon: <FaSignInAlt />, label: 'Join Collaboration...', action: onJoinCollab, disabled: isCollabGuest },
+          ],
+        },
         { separator: true, label: '' },
+        { icon: <FaEye />, label: 'Preview', action: () => useEditorStore.getState().setPreviewMode(true) },
         {
           icon: <FaFileExport />, label: 'Export',
           children: [
@@ -976,30 +1030,14 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaFileAlt />, label: 'Fountain (.fountain)', action: handleExportFountain, disabled: isCollabGuest },
             { icon: <FaFilePdf />, label: 'PDF', action: handleExportPDF },
             { icon: <FaFileWord />, label: 'Microsoft Word (.docx)', action: handleExportDocx },
-            { icon: <FaFile />, label: 'FreeScript (.odraft)', action: handleExportOdraft, disabled: isCollabGuest },
+            { icon: <FaFile />, label: 'FreeDraft (.odraft)', action: handleExportOdraft, disabled: isCollabGuest },
           ],
         },
+        { icon: <FaPrint />, label: 'Print...', shortcut: `${mod}P`, action: () => setTimeout(() => window.print(), 60) },
         { separator: true, label: '' },
-        {
-          icon: <FaCodeBranch />, label: 'Versions',
-          disabled: isCollabGuest,
-          children: [
-            { icon: <FaUpload />, label: 'Check In...', action: handleCheckinOpen, disabled: isCollabGuest },
-            { icon: <FaHistory />, label: 'Version History', action: () => setVersionHistoryOpen(true), disabled: isCollabGuest },
-            { separator: true, label: '' },
-            {
-              icon: <FaExchangeAlt />,
-              label: trackChangesEnabled
-                ? '\u2713 Track Changes'
-                : 'Track Changes Since Last Check-In',
-              action: handleTrackChangesToggle,
-            },
-            { icon: <FaFileSignature />, label: 'Compare with Version\u2026', action: () => setCompareVersionOpen(true) },
-          ],
-        },
+        { icon: <FaEdit />, label: 'Rename...', action: () => setRenameOpen(true) },
         { separator: true, label: '' },
-        { icon: <FaCog />, label: 'Page Setup...', action: () => setPageSetupOpen(true) },
-        { icon: <FaPrint />, label: 'Print...', shortcut: `${mod}P`, action: () => window.print() },
+        { icon: <FaCog />, label: 'Settings...', action: () => setPrefsOpen(true) },
       ],
     },
     {
@@ -1015,35 +1053,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { separator: true, label: '' },
         { icon: <FaSearch />, label: 'Find & Replace...', shortcut: `${mod}F`, action: () => setSearchOpen(true) },
         { icon: <FaHashtag />, label: 'Go to Page...', shortcut: `${mod}G`, action: () => setGoToPageOpen(true) },
-        {
-          icon: <FaSpellCheck />, label: 'Spelling & Grammar',
-          children: [
-            { icon: <FaSpellCheck />, label: spellCheckEnabled ? '\u2713 Auto Spell Check' : 'Auto Spell Check', action: toggleSpellCheck },
-            { icon: <FaSpellCheck />, label: 'Spell Check\u2026', shortcut: 'F7', action: () => setSpellModalOpen(true) },
-            { separator: true, label: '' },
-            { icon: <FaSpellCheck />, label: grammarCheckEnabled ? '\u2713 Auto Writing Suggestions' : 'Auto Writing Suggestions', action: toggleGrammarCheck },
-            { icon: <FaSpellCheck />, label: 'Writing Suggestions\u2026', shortcut: '\u21e7F7', action: () => setGrammarModalOpen(true) },
-            { icon: <FaSpellCheck />, label: 'Grammar & Spelling Settings\u2026', action: () => setGrammarRulesPanelOpen(true) },
-          ],
-        },
       ],
     },
     {
       label: 'Format',
       items: [
-        {
-          icon: <FaListOl />, label: 'Element',
-          children: [
-            ...Object.values(activeTemplate.rules).filter((r) => r.enabled).map((r) => {
-              const shortcuts: Record<string, string> = {
-                sceneHeading: `${mod}1`, action: `${mod}2`, character: `${mod}3`, dialogue: `${mod}4`,
-                parenthetical: `${mod}5`, transition: `${mod}6`, general: `${mod}7`, shot: `${mod}8`,
-              };
-              return { label: r.label, shortcut: shortcuts[r.id], action: () => setElement(r.id as any) };
-            }),
-          ],
-        },
-        { separator: true, label: '' },
         {
           icon: <FaBold />, label: 'Style',
           children: [
@@ -1066,60 +1080,148 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           ],
         },
         { separator: true, label: '' },
-        { icon: <FaColumns />, label: 'Dual Dialogue', shortcut: `${mod}D`, action: () => (editor as any)?.commands?.toggleDualDialogue() },
-        { separator: true, label: '' },
-        { icon: <FaCommentDots />, label: 'Mores & Continueds...', action: () => useEditorStore.getState().setMoresContdsOpen(true) },
-        { icon: <FaImage />, label: 'Insert Image...', action: () => useEditorStore.getState().imageInsertHandler?.() },
-        { separator: true, label: '' },
-        { icon: <FaFileAlt />, label: 'Title Page...', action: () => useEditorStore.getState().setTitlePageEditorOpen(true) },
         { icon: <FaFileAlt />, label: `Formatting Template (${activeTemplate.name})...`, action: () => setTemplateSelectOpen(true) },
         { icon: <FaFileAlt />, label: 'Script Format Preferences...', action: () => setFormatPrefsOpen({ firstRun: false, afterSave: null }) },
       ],
     },
     {
+      label: 'Project',
+      items: PROJECT_MENU_GROUPS.flatMap((group, gi) => [
+        ...(gi > 0 ? [{ separator: true, label: '' }] : []),
+        ...group
+          .map((id) => ALL_TOOLS.find((t) => t.id === id))
+          .filter((t): t is typeof ALL_TOOLS[number] => !!t)
+          .map((t) => ({
+            icon: t.icon,
+            label: t.label,
+            action: () => useEditorStore.getState().openTool(t.id),
+          })),
+      ]),
+    },
+    {
+      label: 'Tools',
+      items: [
+        ...TOOL_MENU_GROUPS.flatMap((group, gi) => [
+          ...(gi > 0 ? [{ separator: true, label: '' }] : []),
+          ...group
+            .map((id) => ALL_TOOLS.find((t) => t.id === id))
+            .filter((t): t is typeof ALL_TOOLS[number] => !!t)
+            .map((t) => ({
+              icon: t.icon,
+              label: t.label,
+              action: () => useEditorStore.getState().openTool(t.id),
+            })),
+        ]),
+        { separator: true, label: '' },
+        {
+          icon: <FaSpellCheck />, label: 'Spelling & Grammar',
+          children: [
+            { icon: <FaSpellCheck />, label: spellCheckEnabled ? '\u2713 Auto Spell Check' : 'Auto Spell Check', action: toggleSpellCheck },
+            { icon: <FaSpellCheck />, label: 'Spell Check\u2026', shortcut: 'F7', action: () => setSpellModalOpen(true) },
+            { separator: true, label: '' },
+            { icon: <FaSpellCheck />, label: grammarCheckEnabled ? '\u2713 Auto Writing Suggestions' : 'Auto Writing Suggestions', action: toggleGrammarCheck },
+            { icon: <FaSpellCheck />, label: 'Writing Suggestions\u2026', shortcut: '\u21e7F7', action: () => setGrammarModalOpen(true) },
+            { icon: <FaSpellCheck />, label: 'Grammar & Spelling Settings\u2026', action: () => setGrammarRulesPanelOpen(true) },
+          ],
+        },
+        {
+          icon: <FaCodeBranch />, label: 'Script History',
+          disabled: isCollabGuest,
+          children: [
+            { icon: <FaUpload />, label: 'Take Snapshot...', action: handleCheckinOpen, disabled: isCollabGuest },
+            { icon: <FaHistory />, label: 'Snapshots', action: () => setVersionHistoryOpen(true), disabled: isCollabGuest },
+            { separator: true, label: '' },
+            {
+              icon: <FaExchangeAlt />,
+              label: trackChangesEnabled
+                ? '\u2713 Track Changes'
+                : 'Track Changes Since Last Snapshot',
+              action: handleTrackChangesToggle,
+            },
+            { icon: <FaFileSignature />, label: 'Compare with Snapshot\u2026', action: () => setCompareVersionOpen(true) },
+          ],
+        },
+      ],
+    },
+    {
+      label: 'Production',
+      items: [
+        { icon: <FaFileAlt />, label: 'Title Page...', action: () => useEditorStore.getState().setTitlePageEditorOpen(true) },
+        { icon: <FaFileSignature />, label: 'Set Draft Number...', action: () => setDraftDialogOpen(true) },
+        { separator: true, label: '' },
+        {
+          icon: <FaListUl />,
+          label: 'Add Scene Numbers',
+          action: () => setSceneNumbersVisible(true),
+          disabled: sceneNumbersVisible,
+        },
+        {
+          icon: <FaListUl />,
+          label: 'Remove Scene Numbers',
+          action: () => setSceneNumbersVisible(false),
+          disabled: !sceneNumbersVisible,
+        },
+        {
+          icon: <FaLock />,
+          label: sceneNumbersLocked ? '\u2713 Lock Scene Numbers' : 'Lock Scene Numbers',
+          action: () => setSceneNumbersLocked(!sceneNumbersLocked),
+          disabled: !sceneNumbersVisible,
+        },
+        { icon: <FaLock />, label: 'Lock Pages', disabled: true },
+        { separator: true, label: '' },
+        { icon: <FaToggleOn />, label: revisionMode ? '\u2713 Revision Mode' : 'Revision Mode', action: () => setRevisionMode(!revisionMode) },
+        { separator: true, label: '' },
+        { icon: <FaTags />, label: 'Production Tags', action: () => useEditorStore.getState().openTool('tags') },
+      ],
+    },
+    {
       label: 'View',
       items: [
+        { icon: <FaColumns />, label: 'Customize…', action: () => setCustomizeOpen(true) },
         {
-          icon: <FaColumns />, label: 'Panels',
+          icon: <FaColumns />, label: 'Workspaces',
           children: [
-            { icon: <FaCompass />, label: navigatorOpen ? '\u2713 Tools (Left Pane)' : 'Tools (Left Pane)', action: toggleNavigator },
-            { icon: <FaCompass />, label: shelfOpen ? '\u2713 Tools (Right Pane)' : 'Tools (Right Pane)', action: toggleShelf },
-            { icon: <FaTh />, label: indexCardsOpen ? '\u2713 Index Cards' : 'Index Cards', action: toggleIndexCards },
-            { icon: <FaStream />, label: beatBoardOpen ? '\u2713 Beat Board' : 'Beat Board', action: toggleBeatBoard },
-            { icon: <FaStickyNote />, label: 'Sticky Notes', action: () => useEditorStore.getState().openTool('sticky') },
-            { icon: <FaUsers />, label: characterProfilesOpen ? '\u2713 Characters' : 'Characters', action: toggleCharacterProfiles },
-            { icon: <FaTags />, label: tagsPanelOpen ? '\u2713 Tags' : 'Tags', action: toggleTagsPanel },
-            { icon: <FaCompass />, label: locationDatabaseOpen ? '\u2713 Locations' : 'Locations', action: toggleLocationDatabase },
+            ...workspaceOrder.filter((n) => workspaces[n]).map((name) => ({
+              icon: <FaColumns />,
+              label: activeWorkspace === name ? `\u2713 ${name}` : name,
+              action: () => applyWorkspace(name),
+            })),
+            ...(Object.keys(workspaces).length > 0 ? [{ separator: true, label: '' }] : []),
+            { icon: <FaColumns />, label: 'Save as New Workspace…', action: () => setSaveWorkspaceOpen(true) },
+            { icon: <FaColumns />, label: 'Save Changes to this Workspace', action: () => {
+              if (activeWorkspace) saveWorkspace(activeWorkspace);
+            }, disabled: !activeWorkspace },
+            { icon: <FaColumns />, label: 'Reset to Saved Layout', action: () => {
+              if (activeWorkspace) applyWorkspace(activeWorkspace);
+            }, disabled: !activeWorkspace },
+            { icon: <FaColumns />, label: 'Edit Workspaces…', action: () => setEditWorkspacesOpen(true) },
           ],
         },
-        { icon: <FaColumns />, label: 'Customize Toolbar & Panels…', action: () => setCustomizeOpen(true) },
+        { separator: true, label: '' },
+
         {
-          icon: <FaHighlighter />, label: 'Highlights',
+          icon: <FaColumns />, label: 'Editor',
           children: [
-            { icon: <FaHighlighter />, label: notesVisible ? '\u2713 Note Highlights' : 'Note Highlights', action: () => setNotesVisible(!notesVisible) },
-            { icon: <FaHighlighter />, label: tagsVisible ? '\u2713 Tag Highlights' : 'Tag Highlights', action: () => setTagsVisible(!tagsVisible) },
+            { icon: <FaRegClone />, label: !previewMode && viewStyle === 'page' ? '\u2713 Page View' : 'Page View', action: () => { useEditorStore.getState().setPreviewMode(false); setViewStyle('page'); } },
+            { icon: <FaStream />, label: !previewMode && viewStyle === 'continuous' ? '\u2713 Continuous View' : 'Continuous View', action: () => { useEditorStore.getState().setPreviewMode(false); setViewStyle('continuous'); } },
+            { icon: <FaEye />, label: previewMode ? '\u2713 Preview' : 'Preview', action: () => useEditorStore.getState().setPreviewMode(true) },
           ],
         },
         { separator: true, label: '' },
         {
-          icon: <FaAdjust />,
-          label: theme === 'light' ? '\u2713 Light Theme' : 'Light Theme',
-          action: () => setTheme(theme === 'light' ? 'dark' : 'light'),
+          icon: <FaAdjust />, label: 'Theme',
+          children: ([
+            ['dark', 'Dark'], ['light', 'Light'], ['sepia', 'Sepia'],
+            ['nord', 'Nord'], ['dracula', 'Dracula'],
+            ['solarized-dark', 'Solarized Dark'], ['solarized-light', 'Solarized Light'],
+            ['midnight', 'Midnight'],
+          ] as const).map(([id, label]) => ({
+            icon: <FaAdjust />,
+            label: theme === id ? `\u2713 ${label}` : label,
+            action: () => setTheme(id),
+          })),
         },
         { separator: true, label: '' },
-        {
-          icon: <FaToolbox />, label: 'Menu & Toolbar',
-          children: [
-            { icon: <FaCompressArrowsAlt />, label: toolbarMode === 'compact' ? '\u2713 Compact' : 'Compact', action: () => setToolbarMode('compact') },
-            { icon: <FaExpandArrowsAlt />, label: toolbarMode === 'comfortable' ? '\u2713 Comfortable' : 'Comfortable', action: () => setToolbarMode('comfortable') },
-            { icon: <FaEyeSlash />, label: toolbarMode === 'hidden' ? '\u2713 Hidden' : 'Hidden', action: () => {
-              setToolbarMode('hidden');
-              if (localStorage.getItem('opendraft:hiddenModeIntroShown') !== '1') {
-                setShowHiddenModeIntro(true);
-              }
-            }},
-          ],
-        },
         {
           icon: <FaSearchPlus />, label: `Zoom (${zoomLevel}%)`,
           children: [
@@ -1138,63 +1240,28 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       ],
     },
     {
-      label: 'Tools',
+      label: 'Insert',
       items: [
-        ...ALL_TOOLS.map((t) => ({
-          icon: t.icon,
-          label: t.label,
-          action: () => useEditorStore.getState().openTool(t.id),
-        })),
-        { separator: true, label: '' },
         {
-          icon: <FaUserFriends />, label: 'Collaboration',
+          icon: <FaListOl />, label: 'Element',
           children: [
-            { icon: <FaUserFriends />, label: isCollabActive ? '\u2713 Collaborate...' : 'Collaborate...', action: onCollaborate, disabled: isCollabGuest },
-            { icon: <FaSignInAlt />, label: 'Join Collaboration...', action: onJoinCollab, disabled: isCollabGuest },
+            ...Object.values(activeTemplate.rules).filter((r) => r.enabled && !['newAct', 'endOfAct', 'castList'].includes(r.id)).map((r) => {
+              const shortcuts: Record<string, string> = {
+                sceneHeading: `${mod}1`, action: `${mod}2`, character: `${mod}3`, dialogue: `${mod}4`,
+                parenthetical: `${mod}5`, transition: `${mod}6`, general: `${mod}7`, shot: `${mod}8`,
+              };
+              return { label: r.label, shortcut: shortcuts[r.id], action: () => setElement(r.id as any) };
+            }),
           ],
         },
+        { icon: <FaColumns />, label: 'Dual Dialogue', shortcut: `${mod}D`, action: () => (editor as any)?.commands?.toggleDualDialogue() },
+        { icon: <FaImage />, label: 'Insert Image...', action: () => useEditorStore.getState().imageInsertHandler?.() },
         { separator: true, label: '' },
-        { icon: <FaProjectDiagram />, label: 'Manage Projects...', action: () => { window.location.href = '/projects'; }, disabled: isCollabGuest },
-        { icon: <FaBoxes />, label: 'Asset Manager', action: () => useAssetStore.getState().toggleAssetManager() },
         { separator: true, label: '' },
-        {
-          icon: <FaStream />, label: 'Analytics',
-          children: [
-            { icon: <FaStream />, label: 'Script Statistics', action: () => {
-              const s = useEditorStore.getState();
-              s.setStatisticsScrollTo(null);
-              s.setStatisticsOpen(true);
-            } },
-            { icon: <FaHistory />, label: 'Timing Report', action: () => {
-              const s = useEditorStore.getState();
-              s.setStatisticsScrollTo('stats-timing-report');
-              s.setStatisticsOpen(true);
-            } },
-          ],
-        },
-        { separator: true, label: '' },
-        { icon: <FaCog />, label: 'System Settings...', action: () => navigate('/settings') },
-        { separator: true, label: '' },
-        {
-          icon: <FaFilm />, label: 'Production',
-          children: [
-            { icon: <FaToggleOn />, label: revisionMode ? '\u2713 Revision Mode' : 'Revision Mode', action: () => setRevisionMode(!revisionMode) },
-            { separator: true, label: '' },
-            {
-              icon: <FaListUl />,
-              label: sceneNumbersVisible ? '\u2713 Show Scene Numbers' : 'Show Scene Numbers',
-              action: () => setSceneNumbersVisible(!sceneNumbersVisible),
-            },
-            {
-              icon: <FaLock />,
-              label: sceneNumbersLocked ? '\u2713 Lock Scene Numbers' : 'Lock Scene Numbers',
-              action: () => setSceneNumbersLocked(!sceneNumbersLocked),
-              disabled: !sceneNumbersVisible,
-            },
-            { separator: true, label: '' },
-            { icon: <FaLock />, label: 'Lock Pages', disabled: true },
-          ],
-        },
+        { icon: <FaListOl />, label: 'Section', action: () => insertOutlineLine('# ') },
+        { icon: <FaRegStickyNote />, label: 'Script Note', action: () => useEditorStore.getState().openShelfTab('script') },
+        { icon: <FaCheckSquare />, label: 'Checklist Item', action: () => insertOutlineLine('[ ] ') },
+        { icon: <FaListOl />, label: 'Marker', action: () => insertOutlineLine('⚑ ') },
       ],
     },
   ];
@@ -1205,14 +1272,29 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     items: [
       {
         icon: <FaInfoCircle />,
-        label: 'About FreeScript',
+        label: 'About FreeDraft',
         action: () => setAboutOpen(true),
       },
       {
         icon: <FaKeyboard />,
         label: 'Keyboard Shortcuts',
-        action: () =>
-          showToast(`${mod}1-8: Elements | Tab: Next | ${mod}B/I/U: Format | ${mod}Z: Undo | ${mod}F: Find | ${mod}G: Go to Page`, 'success'),
+        action: () => setShortcutsOpen(true),
+      },
+      {
+        icon: <FaInfoCircle />,
+        label: 'Knowledge Base',
+        action: () => setKnowledgeBaseOpen(true),
+      },
+      { separator: true, label: '' },
+      {
+        icon: <FaExternalLinkAlt />,
+        label: 'Feature Request',
+        action: () => setHelpForm({ title: 'Feature Request', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagqeHW8Hd0qZZxD5/form' }),
+      },
+      {
+        icon: <FaExternalLinkAlt />,
+        label: 'Report a Bug',
+        action: () => setHelpForm({ title: 'Report a Bug', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagykyhflKTRjphGr/form' }),
       },
       {
         icon: <FaStethoscope />,
@@ -1221,6 +1303,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       },
     ],
   };
+
+  menus.push(helpMenu);
 
   // Append plugin menu items to each section (supports nested submenus)
   const pluginCtx = { editor };
@@ -1443,8 +1527,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     File: <FaFile />,
     Edit: <FaPencilAlt />,
     Format: <FaPalette />,
+    Production: <FaClipboardList />,
     View: <FaEye />,
     Tools: <FaWrench />,
+    Insert: <FaPlus />,
+    Project: <FaColumns />,
+    Help: <FaQuestionCircle />,
   };
 
   // Find the active menu's items (search both main menus and help)
@@ -1487,17 +1575,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       ))}
       <div className="menu-spacer" />
       <AuthIndicator />
-      <div
-        ref={(el) => { menuItemRefs.current['Help'] = el; }}
-        className={`menu-item menu-item--more ${activeMenu === 'Help' ? 'active' : ''}`}
-        onClick={() => handleMenuClick('Help')}
-        onMouseEnter={() => {
-          if (activeMenu) setActiveMenu('Help');
-        }}
-        title="Help & About"
-      >
-        <FaEllipsisH />
-      </div>
     </>
   );
 
@@ -1557,19 +1634,19 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             <div key={i} className="menu-separator" onPointerEnter={handleItemPointerEnter} />
           ) : item.children ? (
             <div
-              key={item.label}
-              className={`menu-dropdown-item has-children ${openSubmenu === submenuKey(activeMenuData.label, item.label!) ? 'submenu-open' : ''}`}
-              onPointerEnter={(e) => handleSubmenuPointerEnter(submenuKey(activeMenuData.label, item.label!), e)}
-              onTouchEnd={(e) => handleSubmenuTouchEnd(submenuKey(activeMenuData.label, item.label!), e)}
-              onClick={(e) => { e.stopPropagation(); setOpenSubmenu(submenuKey(activeMenuData.label, item.label!)); }}
+              key={`${i}:${item.label}`}
+              className={`menu-dropdown-item has-children ${openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? 'submenu-open' : ''}`}
+              onPointerEnter={(e) => handleSubmenuPointerEnter(submenuKey(activeMenuData.label, item.label!, i), e)}
+              onTouchEnd={(e) => handleSubmenuTouchEnd(submenuKey(activeMenuData.label, item.label!, i), e)}
+              onClick={(e) => { e.stopPropagation(); setOpenSubmenu(submenuKey(activeMenuData.label, item.label!, i)); }}
             >
               {item.icon && <span className="menu-dropdown-icon">{item.icon}</span>}
               <span>{item.label}</span>
-              <span className="menu-submenu-arrow">{openSubmenu === submenuKey(activeMenuData.label, item.label!) ? '\u25BE' : '\u25B8'}</span>
+              <span className="menu-submenu-arrow">{openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? '\u25BE' : '\u25B8'}</span>
               <div
-                className={`menu-submenu ${openSubmenu === submenuKey(activeMenuData.label, item.label!) ? 'submenu-visible' : ''}`}
+                className={`menu-submenu ${openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? 'submenu-visible' : ''}`}
                 ref={(el) => {
-                  if (el && openSubmenu === submenuKey(activeMenuData.label, item.label!)) {
+                  if (el && openSubmenu === submenuKey(activeMenuData.label, item.label!, i)) {
                     const rect = el.getBoundingClientRect();
                     if (rect.right > window.innerWidth) {
                       el.classList.add('submenu-flip');
@@ -1589,7 +1666,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                     <div key={j} className="menu-separator" />
                   ) : (
                     <div
-                      key={child.label}
+                      key={`${j}:${child.label}`}
                       className={`menu-dropdown-item ${child.disabled ? 'disabled' : ''}`}
                       onTouchEnd={(e) => e.stopPropagation()}
                       onClick={(e) => handleItemClick(child, e)}
@@ -1606,7 +1683,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             </div>
           ) : (
             <div
-              key={item.label}
+              key={`${i}:${item.label}`}
               className={`menu-dropdown-item ${item.disabled ? 'disabled' : ''}`}
               onPointerEnter={handleItemPointerEnter}
               onClick={(e) => handleItemClick(item, e)}
@@ -1687,6 +1764,24 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       </div>
     )}
     <CustomizePanelsDialog open={customizeOpen} onClose={() => setCustomizeOpen(false)} />
+    <SaveWorkspaceDialog open={saveWorkspaceOpen} onClose={() => setSaveWorkspaceOpen(false)} />
+    <EditWorkspacesDialog open={editWorkspacesOpen} onClose={() => setEditWorkspacesOpen(false)} />
+    <PreferencesDialog open={prefsOpen} onClose={() => setPrefsOpen(false)} />
+    <SetDraftDialog open={draftDialogOpen} onClose={() => setDraftDialogOpen(false)} editor={editor} />
+    <RenameDialog open={renameOpen} onClose={() => setRenameOpen(false)} />
+    {helpForm && (
+      <div className="dialog-overlay" onClick={() => setHelpForm(null)}>
+        <div className="dialog-box help-form-dialog" onClick={(e) => e.stopPropagation()}>
+          <div className="dialog-header">
+            {helpForm.title}
+            <button className="fs-dialog-x" onClick={() => setHelpForm(null)} title="Close">&times;</button>
+          </div>
+          <iframe className="help-form-frame" src={helpForm.url} title={helpForm.title} />
+        </div>
+      </div>
+    )}
+    <HelpReferenceDialog kind="shortcuts" open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+    <HelpReferenceDialog kind="knowledge" open={knowledgeBaseOpen} onClose={() => setKnowledgeBaseOpen(false)} />
     {pageSetupOpen && (
       <PageSetupDialog onClose={() => setPageSetupOpen(false)} />
     )}
@@ -1723,9 +1818,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {aboutOpen && (
       <div className="dialog-overlay" onClick={() => setAboutOpen(false)}>
         <div className="dialog-box about-dialog" onClick={(e) => e.stopPropagation()}>
-          <div className="dialog-header">About FreeScript</div>
+          <div className="dialog-header">About FreeDraft</div>
           <div className="dialog-body about-body">
-            <div className="about-title">FreeScript</div>
+            <div className="about-title">FreeDraft</div>
             <div className="about-version">Version 0.19.0</div>
             <div className="about-tagline">Free, open-source screenwriting software</div>
 
@@ -1781,7 +1876,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               <div className="about-subsection-title">v0.17.2</div>
               <ul className="about-list">
                 <li><strong>Save Reliability on Windows</strong> — Switched the local SQLite database to WAL journal mode and added a post-write byte-count verification step. Fixes silent save failures on large files (issue #39). Any remaining write corruption now produces a visible error instead of failing silently.</li>
-                <li><strong>OneDrive Detection</strong> — Warns you at startup if FreeScript's data folder is inside a OneDrive-synced location (a known cause of silent SQLite corruption on Windows) and shows how to fix it.</li>
+                <li><strong>OneDrive Detection</strong> — Warns you at startup if FreeDraft's data folder is inside a OneDrive-synced location (a known cause of silent SQLite corruption on Windows) and shows how to fix it.</li>
                 <li><strong>Diagnostics Dialog</strong> — New <em>Help → Diagnostics</em> with a Copy Report button. Captures storage backend, DB path, OS, and last storage error so it can be pasted into bug reports.</li>
               </ul>
 
@@ -1900,7 +1995,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                     data folder appears to be inside a OneDrive-synced
                     location. OneDrive can corrupt SQLite WAL files mid-write,
                     causing silent save failures. To fix this, exclude
-                    FreeScript's data folder from OneDrive backup, or move your
+                    FreeDraft's data folder from OneDrive backup, or move your
                     Windows AppData folder out of OneDrive sync.
                   </div>
                 )}
@@ -1961,7 +2056,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           <div className="dialog-header">Import from Word — Best-Effort Formatting</div>
           <div className="dialog-body">
             <p style={{ margin: '0 0 8px 0', fontSize: 14, color: 'var(--fd-text)' }}>
-              FreeScript will detect screenplay element types (scene heading, action,
+              FreeDraft will detect screenplay element types (scene heading, action,
               character, dialogue, parenthetical, transition, etc.) from the
               Word document&apos;s formatting.
             </p>

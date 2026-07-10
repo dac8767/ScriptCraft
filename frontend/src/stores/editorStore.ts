@@ -13,10 +13,16 @@ interface ViewState {
   activeTool?: string | null;
   activeToolRight?: string | null;
   toolConfig?: Record<string, ToolConfig>;
+  toolOrder?: string[];
+  viewStyle?: string;
+  workspaces?: Record<string, WorkspaceSnapshot>;
+  workspaceOrder?: string[];
+  activeWorkspace?: string | null;
   toolbarHiddenItems?: string[];
   toolbarPinnedTools?: string[];
   toolSizes?: Record<string, { w: number; h: number }>;
   writingGoal?: WritingGoal | null;
+  goalsCompleted?: number;
   shelfTab?: string; // 'notes' | 'todo' | 'snippet' (legacy values migrated on load)
   notesSubTab?: 'general' | 'script';
   characterProfilesOpen?: boolean;
@@ -251,20 +257,34 @@ export interface PageLayout {
 }
 
 export const DEFAULT_PAGE_LAYOUT: PageLayout = {
-  pageWidth: 8.26,
-  pageHeight: 11.69,
+  pageWidth: 8.5,         // US Letter — Final Draft's default paper
+  pageHeight: 11,
   topMargin: 72,
   bottomMargin: 72,
   headerMargin: 36,
   footerMargin: 36,
   leftMargin: 1.50,       // Final Draft default LeftIndent for Action
-  rightMargin: 0.76,      // 8.26 - 7.50 (default RightIndent)
+  rightMargin: 1.00,      // 8.5 - 7.50 (default RightIndent)
   headerContent: { ...DEFAULT_HEADER_CONTENT },
   footerContent: { ...DEFAULT_FOOTER_CONTENT },
   headerStartPage: 2,
   footerStartPage: 1,
   moresContds: { ...DEFAULT_MORES_CONTDS },
 };
+
+/** v0.12 migration: the app default moved from OpenDraft's inherited A4-ish
+ * geometry (8.26 x 11.69, right margin 0.76") to US Letter (8.5 x 11, right
+ * margin 1.0" — Final Draft's US defaults). Documents whose saved layout
+ * carries the exact old-default signature were never customized in Page
+ * Setup, so upgrade them; anything deliberately chosen (including the A4
+ * preset, which is 8.27) doesn't match and is left alone. */
+export function migratePageLayout(l: PageLayout): PageLayout {
+  const eq = (a: number, b: number) => Math.abs(a - b) < 0.005;
+  if (eq(l.pageWidth, 8.26) && eq(l.pageHeight, 11.69) && eq(l.leftMargin, 1.5) && eq(l.rightMargin, 0.76)) {
+    return { ...l, pageWidth: 8.5, pageHeight: 11, rightMargin: 1.0 };
+  }
+  return l;
+}
 
 export interface SceneInfo {
   id: string;
@@ -337,18 +357,47 @@ export type ShelfCardType = 'comment' | 'todo' | 'snippet';
 /** Tools available in the tool docks (Photoshop-style panel lists). */
 export type ToolId =
   | 'navigator' | 'scenes' | 'pages' | 'structure' | 'locations' | 'characters'
-  | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo';
+  | 'indexcards' | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets'
+  | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
+  /** legacy — Script Notes merged back into 'sticky' (Notes > Script tab); kept
+   *  in the type so persisted configs still typecheck, remapped on use. */
+  | 'scriptnotes';
 
 export type ToolSide = 'left' | 'right';
 export interface ToolConfig { side: ToolSide; enabled: boolean; }
 
+/** A saved layout: the full Window/tool arrangement (Premiere-style workspace). */
+export interface WorkspaceSnapshot {
+  toolConfig: Record<string, ToolConfig>;
+  toolOrder: string[];
+  toolbarHiddenItems: string[];
+  toolbarPinnedTools: string[];
+  navigatorOpen: boolean;
+  shelfOpen: boolean;
+  toolSizes: Record<string, { w: number; h: number }>;
+  /** v0.12: full-layout capture so Reset to Saved Layout rolls back EVERYTHING.
+   *  Optional for back-compat — workspaces saved before v0.12 simply leave
+   *  these aspects untouched when applied. */
+  toolbarMode?: 'compact' | 'comfortable' | 'hidden';
+  activeTool?: ToolId | null;
+  activeToolRight?: ToolId | null;
+}
+
 /** Default layout: script-structure tools left, everything else right. */
 export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
+  // Windows — script-info summaries — default to the LEFT panel.
   navigator: { side: 'left', enabled: true },
   scenes: { side: 'left', enabled: true },
   pages: { side: 'left', enabled: true },
   locations: { side: 'left', enabled: true },
   characters: { side: 'left', enabled: true },
+  indexcards: { side: 'right', enabled: true },
+  // Tools — everything else — default to the RIGHT panel.
+  beatboard: { side: 'right', enabled: true },
+  tags: { side: 'right', enabled: true },
+  highlights: { side: 'right', enabled: true },
+  projects: { side: 'left', enabled: true },
+  assets: { side: 'left', enabled: true },
   analytics: { side: 'right', enabled: true },
   goals: { side: 'right', enabled: true },
   sticky: { side: 'right', enabled: true },
@@ -366,6 +415,10 @@ export interface WritingGoal {
   done?: boolean;
 }
 
+export type ThemeId =
+  | 'dark' | 'light' | 'sepia' | 'nord' | 'dracula'
+  | 'solarized-dark' | 'solarized-light' | 'midnight';
+
 export type ShelfTopTab = 'notes' | 'todo' | 'snippet';
 export type NotesSubTab = 'general' | 'script';
 /** Accepted by openShelfTab: sub-tab names route into the Notes tab. */
@@ -377,7 +430,7 @@ export interface ShelfTodoItem {
 }
 
 /**
- * One sticky card. Data shape matches FreeScript v5.5's shelf exactly
+ * One sticky card. Data shape matches FreeDraft v5.5's shelf exactly
  * (cards from the old app's export can be imported verbatim).
  */
 export interface ShelfCard {
@@ -454,11 +507,11 @@ export interface CharacterProfile {
   age: string;
   /** Role in the story: Lead, Supporting, Featured, Background, Day Player */
   role: string;
-  /** Rich text backstory / character history (HTML string; FreeScript-only, not in FDX) */
+  /** Rich text backstory / character history (HTML string; FreeDraft-only, not in FDX) */
   backstory: string;
-  /** Character arc — how the character changes through the story (HTML string; FreeScript-only) */
+  /** Character arc — how the character changes through the story (HTML string; FreeDraft-only) */
   arc: string;
-  /** Dialogue voice profile (FreeScript-only) */
+  /** Dialogue voice profile (FreeDraft-only) */
   speechPattern: string;
   vocabulary: string;
   verbalTics: string;
@@ -560,6 +613,19 @@ interface EditorState {
   /** Per-tool placement + visibility (Customize Toolbar & Panels) */
   toolConfig: Record<string, ToolConfig>;
   setToolConfig: (cfg: Record<string, ToolConfig>) => void;
+  /** Dock ordering across both panels (Customize Layout ↑/↓) */
+  toolOrder: string[];
+  setToolOrder: (order: string[]) => void;
+  /** Named saved layouts (View → Workspaces) */
+  workspaces: Record<string, WorkspaceSnapshot>;
+  /** Display order for saved workspaces (menu + Edit Workspaces dialog). */
+  workspaceOrder: string[];
+  setWorkspaceOrder: (order: string[]) => void;
+  activeWorkspace: string | null;
+  saveWorkspace: (name: string) => void;
+  applyWorkspace: (name: string) => void;
+  deleteWorkspace: (name: string) => void;
+  renameWorkspace: (oldName: string, newName: string) => void;
   /** Tool open with no dock home: temporary floating window */
   tempTool: ToolId | null;
   setTempTool: (tool: ToolId | null) => void;
@@ -575,6 +641,14 @@ interface EditorState {
   setToolbarPinnedTools: (ids: ToolId[]) => void;
   /** Active writing goal (words / pages / time), persisted across reloads */
   goal: WritingGoal | null;
+  /** Per-destination mirror save status for the status bar (Save Locations). */
+  mirrorStatuses: Record<string, 'saving' | 'saved' | 'error'>;
+  setMirrorStatus: (name: string, st: 'saving' | 'saved' | 'error') => void;
+  clearMirrorStatuses: () => void;
+
+  /** Lifetime count of completed writing goals (Analytics > Overview). */
+  goalsCompleted: number;
+  incrementGoalsCompleted: () => void;
   setGoal: (g: WritingGoal | null | ((g: WritingGoal | null) => WritingGoal | null)) => void;
   notesVisible: boolean;
   setNotesVisible: (v: boolean) => void;
@@ -628,6 +702,30 @@ interface EditorState {
   _beatIsUndoing: boolean;
 
   // Scene numbering
+  /** Per-document draft label ("First Draft", "Second Draft", ...) — feeds the
+   *  Save As autofill and the Title Page draft line. Persisted in the doc. */
+  draftLabel: string;
+  setDraftLabel: (label: string) => void;
+
+  /** View > Editor: paged (simulated pages) vs continuous (thin page lines) */
+  viewStyle: 'page' | 'continuous';
+  setViewStyle: (v: 'page' | 'continuous') => void;
+
+  /** File > Preview: read-only formatted presentation (markup hidden, chrome minimized) */
+  previewMode: boolean;
+  /** Preview sidebar options (File > Preview) */
+  previewOpts: {
+    sections: boolean; notes: boolean; sceneNumbers: boolean; todos: boolean;
+    doubleSpaceHeaders: boolean; boldHeaders: boolean; underlineHeaders: boolean;
+  };
+  setPreviewOpt: (key: keyof EditorState['previewOpts'], value: boolean) => void;
+  setPreviewMode: (v: boolean) => void;
+
+  /** View > Preview: hide outline sections / doc checklist lines in the script */
+  sectionsVisible: boolean;
+  setSectionsVisible: (v: boolean) => void;
+  scriptTodosVisible: boolean;
+  setScriptTodosVisible: (v: boolean) => void;
   sceneNumbersVisible: boolean;
   setSceneNumbersVisible: (v: boolean) => void;
   sceneNumbersLocked: boolean;
@@ -696,8 +794,8 @@ interface EditorState {
   setPageLayout: (layout: PageLayout) => void;
 
   // Theme
-  theme: 'dark' | 'light';
-  setTheme: (t: 'dark' | 'light') => void;
+  theme: ThemeId;
+  setTheme: (t: ThemeId) => void;
 
   // Toolbar display mode
   toolbarMode: 'compact' | 'comfortable' | 'hidden';
@@ -802,7 +900,7 @@ interface EditorState {
   setPostSaveAction: (action: (() => void) | null) => void;
   /** If the current unsaved document was imported from an external file
    *  (.fdx, .fountain, .docx, etc.), tracks the source filename. Used by
-   *  SaveAsDialog to clarify that saves go to FreeScript's library rather than
+   *  SaveAsDialog to clarify that saves go to FreeDraft's library rather than
    *  writing back to the source file. Cleared on successful save. */
   importedSource: { name: string; format: string } | null;
   setImportedSource: (src: { name: string; format: string } | null) => void;
@@ -855,17 +953,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   }),
 
   indexCardsOpen: _vs.indexCardsOpen ?? false,
-  toggleIndexCards: () => set((s) => {
-    const v = !s.indexCardsOpen;
-    saveViewState({ indexCardsOpen: v });
-    return { indexCardsOpen: v };
-  }),
+  toggleIndexCards: () => get().openTool('indexcards'),
   beatBoardOpen: _vs.beatBoardOpen ?? false,
-  toggleBeatBoard: () => set((s) => {
-    const v = !s.beatBoardOpen;
-    saveViewState({ beatBoardOpen: v });
-    return { beatBoardOpen: v };
-  }),
+  toggleBeatBoard: () => get().openTool('beatboard'),
   statisticsOpen: false,
   setStatisticsOpen: (open) => set({ statisticsOpen: open }),
   statisticsScrollTo: null,
@@ -889,10 +979,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ notesSubTab: sub });
   },
   openShelfTab: (tab) => {
-    // Compatibility router: the old single sticky pane is now three tools.
-    if (tab === 'general' || tab === 'script') {
-      saveViewState({ notesSubTab: tab });
-      set({ notesSubTab: tab });
+    // Compatibility router for the merged tools (v0.15): Notes and To-Do each
+    // have General/Script sub-tabs again.
+    if (tab === 'script') {
+      get().setNotesSubTab('script');
+      get().openTool('sticky');
+    } else if (tab === 'general') {
+      get().setNotesSubTab('general');
       get().openTool('sticky');
     } else if (tab === 'snippet') {
       get().openTool('fragments');
@@ -921,9 +1014,84 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ toolConfig: cfg });
     set({ toolConfig: cfg });
   },
+  toolOrder: _vs.toolOrder ?? [],
+  setToolOrder: (order) => {
+    saveViewState({ toolOrder: order });
+    set({ toolOrder: order });
+  },
+  workspaces: _vs.workspaces ?? {},
+  workspaceOrder: _vs.workspaceOrder ?? Object.keys(_vs.workspaces ?? {}).sort(),
+  setWorkspaceOrder: (order) => {
+    saveViewState({ workspaceOrder: order });
+    set({ workspaceOrder: order });
+  },
+  activeWorkspace: _vs.activeWorkspace ?? null,
+  saveWorkspace: (name) => set((s) => {
+    const snap: WorkspaceSnapshot = {
+      toolConfig: s.toolConfig, toolOrder: s.toolOrder,
+      toolbarHiddenItems: s.toolbarHiddenItems, toolbarPinnedTools: s.toolbarPinnedTools,
+      navigatorOpen: s.navigatorOpen, shelfOpen: s.shelfOpen, toolSizes: s.toolSizes,
+      toolbarMode: s.toolbarMode, activeTool: s.activeTool, activeToolRight: s.activeToolRight,
+    };
+    const workspaces = { ...s.workspaces, [name]: snap };
+    const workspaceOrder = s.workspaceOrder.includes(name)
+      ? s.workspaceOrder : [...s.workspaceOrder, name];
+    saveViewState({ workspaces, workspaceOrder, activeWorkspace: name });
+    return { workspaces, workspaceOrder, activeWorkspace: name };
+  }),
+  applyWorkspace: (name) => set((s) => {
+    const snap = s.workspaces[name];
+    if (!snap) return {};
+    // v0.12 fields are optional (older snapshots): only restore when captured.
+    const extras: Partial<EditorState> = {};
+    if (snap.toolbarMode !== undefined) extras.toolbarMode = snap.toolbarMode;
+    if (snap.activeTool !== undefined) { extras.activeTool = snap.activeTool; extras.tempTool = null; }
+    if (snap.activeToolRight !== undefined) extras.activeToolRight = snap.activeToolRight;
+    saveViewState({
+      workspaces: s.workspaces, activeWorkspace: name,
+      toolConfig: snap.toolConfig, toolOrder: snap.toolOrder,
+      toolbarHiddenItems: snap.toolbarHiddenItems, toolbarPinnedTools: snap.toolbarPinnedTools as string[],
+      navigatorOpen: snap.navigatorOpen, shelfOpen: snap.shelfOpen, toolSizes: snap.toolSizes,
+      ...(snap.toolbarMode !== undefined ? { toolbarMode: snap.toolbarMode } : {}),
+      ...(snap.activeTool !== undefined ? { activeTool: snap.activeTool } : {}),
+      ...(snap.activeToolRight !== undefined ? { activeToolRight: snap.activeToolRight } : {}),
+    });
+    return {
+      activeWorkspace: name,
+      toolConfig: snap.toolConfig, toolOrder: snap.toolOrder,
+      toolbarHiddenItems: snap.toolbarHiddenItems,
+      toolbarPinnedTools: snap.toolbarPinnedTools as ToolId[],
+      navigatorOpen: snap.navigatorOpen, shelfOpen: snap.shelfOpen, toolSizes: snap.toolSizes,
+      ...extras,
+    };
+  }),
+  deleteWorkspace: (name) => set((s) => {
+    const workspaces = { ...s.workspaces };
+    delete workspaces[name];
+    const workspaceOrder = s.workspaceOrder.filter((n) => n !== name);
+    const activeWorkspace = s.activeWorkspace === name ? null : s.activeWorkspace;
+    saveViewState({ workspaces, workspaceOrder, activeWorkspace });
+    return { workspaces, workspaceOrder, activeWorkspace };
+  }),
+  renameWorkspace: (oldName, newName) => set((s) => {
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === oldName || !s.workspaces[oldName]) return {};
+    const workspaces = { ...s.workspaces, [trimmed]: s.workspaces[oldName] };
+    delete workspaces[oldName];
+    const workspaceOrder = s.workspaceOrder.map((n) => (n === oldName ? trimmed : n));
+    const activeWorkspace = s.activeWorkspace === oldName ? trimmed : s.activeWorkspace;
+    saveViewState({ workspaces, workspaceOrder, activeWorkspace });
+    return { workspaces, workspaceOrder, activeWorkspace };
+  }),
   tempTool: null,
   setTempTool: (tool) => set({ tempTool: tool }),
   openTool: (tool) => set((s) => {
+    if (tool === 'scriptnotes') {
+      // Legacy id — Script Notes lives inside Notes again (v0.15).
+      saveViewState({ notesSubTab: 'script' });
+      setTimeout(() => set({ notesSubTab: 'script' }), 0);
+      tool = 'sticky';
+    }
     const cfg = s.toolConfig[tool] ?? DEFAULT_TOOL_CONFIG[tool];
     if (cfg && cfg.enabled) {
       if (cfg.side === 'left') {
@@ -954,6 +1122,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const goal = typeof g === 'function' ? g(s.goal) : g;
     saveViewState({ writingGoal: goal });
     return { goal };
+  }),
+  mirrorStatuses: {},
+  setMirrorStatus: (name, st) => set((s) => ({ mirrorStatuses: { ...s.mirrorStatuses, [name]: st } })),
+  clearMirrorStatuses: () => set({ mirrorStatuses: {} }),
+  goalsCompleted: _vs.goalsCompleted ?? 0,
+  incrementGoalsCompleted: () => set((s) => {
+    const goalsCompleted = (s.goalsCompleted || 0) + 1;
+    saveViewState({ goalsCompleted });
+    return { goalsCompleted };
   }),
   notesVisible: _vs.notesVisible ?? false,
   setNotesVisible: (v) => {
@@ -1132,6 +1309,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   // Scene numbering
+  draftLabel: 'First Draft',
+  setDraftLabel: (label) => set({ draftLabel: label }),
+  viewStyle: (_vs.viewStyle === 'continuous' ? 'continuous' : 'page') as 'page' | 'continuous',
+  setViewStyle: (v) => {
+    saveViewState({ viewStyle: v });
+    set({ viewStyle: v });
+  },
+  previewMode: false,
+  setPreviewMode: (v) => set({ previewMode: v }),
+  previewOpts: {
+    sections: false, notes: false, sceneNumbers: false, todos: false,
+    doubleSpaceHeaders: false, boldHeaders: true, underlineHeaders: false,
+  },
+  setPreviewOpt: (key, value) => set((s) => ({ previewOpts: { ...s.previewOpts, [key]: value } })),
+  sectionsVisible: true,
+  setSectionsVisible: (v) => set({ sectionsVisible: v }),
+  scriptTodosVisible: true,
+  setScriptTodosVisible: (v) => set({ scriptTodosVisible: v }),
   sceneNumbersVisible: false,
   setSceneNumbersVisible: (v) => set({ sceneNumbersVisible: v }),
   sceneNumbersLocked: false,
@@ -1245,11 +1440,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ tagsVisible: v });
   },
   tagsPanelOpen: _vs.tagsPanelOpen ?? false,
-  toggleTagsPanel: () => set((s) => {
-    const v = !s.tagsPanelOpen;
-    saveViewState({ tagsPanelOpen: v });
-    return { tagsPanelOpen: v };
-  }),
+  toggleTagsPanel: () => get().openTool('tags'),
   locationDatabaseOpen: _vs.locationDatabaseOpen ?? false,
   toggleLocationDatabase: () => set((s) => {
     const v = !s.locationDatabaseOpen;
@@ -1274,7 +1465,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   pageLayout: DEFAULT_PAGE_LAYOUT,
   setPageLayout: (layout) => set({ pageLayout: layout }),
 
-  theme: (localStorage.getItem('opendraft:theme') as 'dark' | 'light') || 'dark',
+  theme: (localStorage.getItem('opendraft:theme') as ThemeId) || 'dark',
   setTheme: (t) => {
     localStorage.setItem('opendraft:theme', t);
     document.documentElement.setAttribute('data-theme', t);

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useEditorStore, ELEMENT_LABELS, type BuiltInElementType } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { computeSceneTiming, formatRuntime } from '../utils/scriptTiming';
 import { computeOverviewStats } from '../utils/scriptStatistics';
@@ -33,6 +34,12 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
   } = useEditorStore();
 
   const { currentProject } = useProjectStore();
+  const mirrorStatuses = useEditorStore((s) => s.mirrorStatuses);
+  const { saveToCloud, saveToGDrive, saveToOneDrive } = useSettingsStore();
+  const enabledMirrors = [saveToCloud && 'Cloud', saveToGDrive && 'Google Drive', saveToOneDrive && 'OneDrive'].filter(Boolean) as string[];
+  const mirrorChips: Array<[string, 'saving' | 'saved' | 'error']> = enabledMirrors
+    .filter((n) => mirrorStatuses[n])
+    .map((n) => [n, mirrorStatuses[n]]);
   const getActiveTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate);
 
   const saveDisplay = SAVE_STATUS_DISPLAY[saveStatus] || SAVE_STATUS_DISPLAY.idle;
@@ -81,17 +88,28 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
   return (
     <div className="status-bar">
       <div className="status-left">
-        {currentProject && (
-          <span className="status-item status-project">{currentProject.name}</span>
-        )}
-        {currentProject && <span className="status-sep">/</span>}
-        <span className="status-item">{documentTitle}</span>
+        <span className="status-item status-project">
+          {[currentProject?.name, documentTitle].filter(Boolean).join(' - ')}
+        </span>
         {saveDisplay.label && (
           <>
             <span className="status-sep">&middot;</span>
-            <span className={`status-item ${saveDisplay.className}`}>{saveDisplay.label}</span>
+            <span className={`status-item ${saveDisplay.className}`} title="Home save location">
+              {`Local System - ${saveDisplay.label}`}
+            </span>
           </>
         )}
+        {mirrorChips.map(([name, st]) => (
+          <React.Fragment key={name}>
+            <span className="status-sep">&middot;</span>
+            <span
+              className={`status-item ${st === 'saved' ? 'status-saved' : st === 'error' ? 'status-error' : 'status-saving'}`}
+              title={`${name} save location`}
+            >
+              {`${name} - ${st === 'saved' ? 'Saved' : st === 'error' ? 'Error' : 'Saving…'}`}
+            </span>
+          </React.Fragment>
+        ))}
       </div>
       <div className="status-center">
         <span className="status-item status-element">
@@ -102,8 +120,13 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
         {goal && goalProgress && (
           <button
             className={`status-item status-goal${goalProgress.done ? ' done' : ''}`}
-            title="Writing goal — click to open Goals"
-            onClick={() => setActiveTool('goals')}
+            title={goalProgress.done ? 'Goal complete — click to clear it' : 'Writing goal — click to open Goals'}
+            onClick={() => {
+              if (goalProgress.done) {
+                useEditorStore.getState().incrementGoalsCompleted();
+                useEditorStore.getState().setGoal(null);
+              } else setActiveTool('goals');
+            }}
           >
             <span className="status-goal-track"><span style={{ width: `${goalProgress.pct}%` }} /></span>
             {goalProgress.label}

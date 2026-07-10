@@ -6,6 +6,38 @@ import { resolveMoresContds } from '../stores/editorStore';
 
 export const paginationPluginKey = new PluginKey('pagination');
 
+/** Print mode: instead of pushing content down with pixel margins (which the
+ * printer's own page geometry turns into drift and mid-page gaps), each page's
+ * first node gets the `fd-print-break` class — CSS turns that into a real
+ * `break-before: page` plus the top margin, so printed pages match the editor's
+ * pagination exactly. Toggled from beforeprint/afterprint in ScreenplayEditor. */
+let printMode = false;
+export function setPaginationPrintMode(v: boolean): void {
+  printMode = v;
+}
+
+/** Continuous view (View > Editor Style): instead of the full simulated-page
+ * whitespace, page breaks get a thin fixed gap — the editor scrolls as one
+ * continuous document with a line marking each page boundary. */
+export const CONTINUOUS_GAP_PX = 64; // line slot plus one blank line above and below
+let continuousMode = false;
+export function setPaginationContinuousMode(v: boolean): void {
+  continuousMode = v;
+}
+export function isPaginationContinuous(): boolean {
+  return continuousMode;
+}
+
+/** Visibility-aware pagination (v0.29): outline lines hidden via the Preview
+ * sidebar (or preview mode defaults) render display:none, so they must count
+ * as ZERO lines — otherwise every page break lands lower than the visible
+ * content and the white sheets drift out of alignment. Double-spaced scene
+ * headers (a Preview template option) add one extra line per heading. */
+const visibilityOpts = { hideSections: false, hideTodos: false, doubleSpaceHeaders: false };
+export function setPaginationVisibility(opts: Partial<typeof visibilityOpts>): void {
+  Object.assign(visibilityOpts, opts);
+}
+
 /** Template hints that influence pagination — supplied by the active FormattingTemplate. */
 export interface TemplateHints {
   /** Element ids that must start on a new page (e.g. sitcom: every sceneHeading). */
@@ -124,11 +156,17 @@ export function createPaginationPlugin(
           const whitespacePx = Math.max(0, linesPerPage - brk.linesOnPage) * lineHeightPx;
           // Dialogue splits need extra space for the CONT'D label on the next page
           const contdPx = brk.isDialogueSplit && showDialogueBreakContd ? lineHeightPx : 0;
-          const marginTop = Math.round(whitespacePx + sepHeightPx + contdPx);
+          const marginTop = continuousMode
+            ? CONTINUOUS_GAP_PX
+            : Math.round(whitespacePx + sepHeightPx + contdPx);
           decos.push(
-            Decoration.node(brk.offset, brk.offset + brk.nodeSize, {
-              style: `margin-top: ${marginTop}px !important`,
-            })
+            printMode
+              ? Decoration.node(brk.offset, brk.offset + brk.nodeSize, {
+                  class: 'fd-print-break',
+                })
+              : Decoration.node(brk.offset, brk.offset + brk.nodeSize, {
+                  style: `margin-top: ${marginTop}px !important`,
+                })
           );
         }
         return DecorationSet.create(state.doc, decos);
@@ -153,12 +191,27 @@ function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = E
   doc.forEach((node, offset) => {
     const typeName = node.type.name;
     const elementId = getElementId(node);
-    const sb = isFirst ? 0 : (SPACE_BEFORE[typeName] ?? 0);
+    let sb = isFirst ? 0 : (SPACE_BEFORE[typeName] ?? 0);
     const lineMul = hints.lineHeightMultiplier[elementId] ?? 1;
     // Images occupy a fixed estimated number of lines (no text to wrap).
-    const fixedLines = typeName === 'screenplayImage'
+    let fixedLines = typeName === 'screenplayImage'
       ? Math.max(1, Number(node.attrs?.heightLines) || 8)
       : undefined;
+    // Outline lines hidden by the Preview options render display:none — they
+    // occupy zero lines and contribute no leading space.
+    if (typeName === 'general') {
+      const text = node.textContent || '';
+      const isSectionish = /^#+\s/.test(text) || text.startsWith('\u2691');
+      const isTodo = /^\[[ x]\]/.test(text);
+      if ((visibilityOpts.hideSections && isSectionish) || (visibilityOpts.hideTodos && isTodo)) {
+        fixedLines = 0;
+        sb = 0;
+      }
+    }
+    // Double-spaced scene headers (Preview template option) take one extra line.
+    if (typeName === 'sceneHeading' && visibilityOpts.doubleSpaceHeaders && !isFirst) {
+      sb += 1;
+    }
     nodes.push({ typeName, elementId, spaceBefore: sb, text: node.textContent || '', offset, nodeSize: node.nodeSize, lineMul, fixedLines });
     isFirst = false;
   });

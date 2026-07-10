@@ -104,7 +104,7 @@ function getAppVersion(): string {
 /** Format a report as plain text suitable for pasting into a GitHub issue. */
 export function formatReport(r: DiagnosticsReport): string {
   const lines: string[] = [];
-  lines.push(`FreeScript Diagnostics — ${r.collectedAt}`);
+  lines.push(`FreeDraft Diagnostics — ${r.collectedAt}`);
   lines.push(`Version: ${r.appVersion}`);
   lines.push(`OS: ${r.os}`);
   lines.push(`Storage backend: ${r.storageMode}`);
@@ -117,7 +117,7 @@ export function formatReport(r: DiagnosticsReport): string {
     lines.push('  be under a OneDrive-synced folder. OneDrive can corrupt SQLite WAL');
     lines.push('  files mid-write, causing silent save failures. Consider moving');
     lines.push('  C:\\Users\\<you>\\AppData out of OneDrive sync, or excluding the');
-    lines.push('  FreeScript data folder from OneDrive.');
+    lines.push('  FreeDraft data folder from OneDrive.');
   }
   lines.push('');
   lines.push('Compatibility:');

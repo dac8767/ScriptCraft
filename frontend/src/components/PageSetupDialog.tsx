@@ -4,6 +4,8 @@ import type { PageLayout, HeaderFooterContent } from '../stores/editorStore';
 
 interface PageSetupDialogProps {
   onClose: () => void;
+  /** Render only the content (no overlay/box) — used inside Preferences. */
+  embedded?: boolean;
 }
 
 const PAGE_SIZES: Array<{ label: string; width: number; height: number }> = [
@@ -20,7 +22,7 @@ function inToPt(inches: number): number {
   return Math.round(inches * 72);
 }
 
-const PageSetupDialog: React.FC<PageSetupDialogProps> = ({ onClose }) => {
+const PageSetupDialog: React.FC<PageSetupDialogProps> = ({ onClose, embedded = false }) => {
   const { pageLayout, setPageLayout } = useEditorStore();
 
   // Backwards-compatible: fill in missing headerContent/footerContent for old layouts
@@ -89,14 +91,9 @@ const PageSetupDialog: React.FC<PageSetupDialogProps> = ({ onClose }) => {
     setLayout({ ...DEFAULT_PAGE_LAYOUT });
   }, []);
 
-  return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div
-        className="dialog-box page-setup-dialog"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="dialog-header">Page Setup</div>
-        <div className="dialog-body">
+  const body = (
+    <>
+        <div className="dialog-body" style={embedded ? { padding: '4px 0 0' } : undefined}>
           {/* Page Size */}
           <div className="page-setup-section">
             <div className="page-setup-section-title">Page Size</div>
@@ -328,16 +325,29 @@ const PageSetupDialog: React.FC<PageSetupDialogProps> = ({ onClose }) => {
           </div>
         </div>
 
-        <div className="dialog-actions">
+        <div className="dialog-actions" style={embedded ? { border: 'none', padding: '14px 0 0' } : undefined}>
           <button className="page-setup-reset" onClick={handleReset}>
             Reset Default
           </button>
           <div className="page-setup-spacer" />
-          <button onClick={onClose}>Cancel</button>
+          {!embedded && <button onClick={onClose}>Cancel</button>}
           <button className="dialog-primary" onClick={handleApply}>
             Apply
           </button>
         </div>
+    </>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <div className="dialog-overlay" onClick={onClose}>
+      <div
+        className="dialog-box page-setup-dialog"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="dialog-header">Page Setup</div>
+        {body}
       </div>
     </div>
   );

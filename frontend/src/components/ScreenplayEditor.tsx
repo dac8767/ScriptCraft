@@ -36,12 +36,13 @@ import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { generateTemplateCss, injectTemplateCss } from '../utils/templateCss';
 import { docHasAnyText } from '../utils/docText';
 import { getCurrentElementRule, getLockedFormatting } from '../utils/effectiveFormatting';
-import { createPaginationPlugin, getPageMetrics } from '../editor/pagination';
+import { setPaginationPrintMode, setPaginationVisibility, setPaginationContinuousMode, CONTINUOUS_GAP_PX, createPaginationPlugin, getPageMetrics } from '../editor/pagination';
 import { createContdCasePlugin } from '../editor/contdCase';
 import { ScreenplayImage } from '../editor/extensions/ScreenplayImage';
 import { insertImageNode } from '../utils/insertImage';
 
-import { useEditorStore, DEFAULT_HEADER_CONTENT, DEFAULT_FOOTER_CONTENT, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_CATEGORIES, resolveMoresContds } from '../stores/editorStore';
+import type { PageLayout } from '../stores/editorStore';
+import { useEditorStore, migratePageLayout, DEFAULT_HEADER_CONTENT, DEFAULT_FOOTER_CONTENT, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_CATEGORIES, resolveMoresContds } from '../stores/editorStore';
 import type { ElementType } from '../stores/editorStore';
 import MenuBar from './MenuBar';
 import Toolbar from './Toolbar';
@@ -50,7 +51,6 @@ import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
 import ScriptStatistics from './ScriptStatistics';
 import { makeSnippetCard } from './StickyNotes';
-import TagsPanel from './TagsPanel';
 import LocationDatabase from './LocationDatabase';
 import FormatPanel from './FormatPanel';
 import StatusBar from './StatusBar';
@@ -87,6 +87,8 @@ import { parseFountain } from '../utils/fountainParser';
 import { parseFDXFull } from '../utils/fdxParser';
 import { parseOdraft } from '../utils/odraftFormat';
 import SaveAsDialog from './SaveAsDialog';
+import PreviewSidebar from './PreviewSidebar';
+import { mirrorSnapshot } from '../services/saveLocations';
 import TitlePageEditor from './TitlePageEditor';
 import MoresContdsDialog from './MoresContdsDialog';
 import ShareDialog from './ShareDialog';
@@ -238,6 +240,7 @@ const ScreenplayEditor: React.FC = () => {
   const {
     setActiveElement, setScenes, setPageCount, setCurrentPage,
     zoomLevel, setZoomLevel, fontFamily, fontSize, pageLayout, tagsVisible, notesVisible,
+    sectionsVisible, scriptTodosVisible, viewStyle, previewMode, previewOpts,
     beatBoardOpen, statisticsOpen,
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
     characterProfilesOpen, tagsPanelOpen, locationDatabaseOpen,
@@ -275,7 +278,7 @@ const ScreenplayEditor: React.FC = () => {
 
   // Sync nav width to store for floating menu positioning
   useEffect(() => {
-    useEditorStore.getState().setNavPanelWidth(navigatorOpen ? 160 : 0);
+    useEditorStore.getState().setNavPanelWidth(navigatorOpen ? 300 : 0);
   }, [navWidth, navigatorOpen]);
   const resizingRef = useRef<'left' | 'right' | null>(null);
   const resizeStartXRef = useRef(0);
@@ -1035,8 +1038,13 @@ const ScreenplayEditor: React.FC = () => {
       const el = children[brk.nodeIndex];
       if (!el) continue;
       const elRect = el.getBoundingClientRect();
-      const contdHeight = brk.isDialogueSplit ? lineHeightPx : 0;
-      const overlayTop = (elRect.top - pageRect.top) / scale - m.sepHeightPx - contdHeight;
+      // Continuous view: the boundary line owns the whole fixed gap — no
+      // CONT'D allowance is reserved there, so subtracting it drew the line
+      // one text-line too high, striking through the previous block.
+      const continuous = viewStyleRef.current === 'continuous';
+      const contdHeight = !continuous && brk.isDialogueSplit ? lineHeightPx : 0;
+      const sepSpace = continuous ? CONTINUOUS_GAP_PX : m.sepHeightPx;
+      const overlayTop = (elRect.top - pageRect.top) / scale - sepSpace - contdHeight;
       newOverlays.push({
         top: overlayTop,
         pageNumber: brk.pageNumber,
@@ -2088,6 +2096,128 @@ const ScreenplayEditor: React.FC = () => {
     return () => clearInterval(timer);
   }, [editor, currentProject, currentScriptId, buildSaveContent, isCollabGuest]);
 
+  // --- Preferences: remember the last edited script + reopen it on start ---
+  // Recorded whenever a real project script is open (not history/collab views);
+  // consumed once per app session when the "/" route loads with the preference on.
+  useEffect(() => {
+    if (!currentProject || !currentScriptId || isHistoryMode || urlCollabToken) return;
+    try {
+      localStorage.setItem('opendraft:lastOpenedScript',
+        JSON.stringify({ projectId: currentProject.id, scriptId: currentScriptId }));
+    } catch { /* ignore */ }
+  }, [currentProject, currentScriptId, isHistoryMode, urlCollabToken]);
+
+  useEffect(() => {
+    // Only from the bare "/" route, only once per session (the guard prevents a
+    // redirect loop if the remembered script was deleted and loading it bounces
+    // back to "/").
+    if (urlProjectId || urlScriptId || urlCollabToken) return;
+    if (!useSettingsStore.getState().autoLoadLastScript) return;
+    try {
+      if (sessionStorage.getItem('opendraft:autoLoadAttempted') === '1') return;
+      sessionStorage.setItem('opendraft:autoLoadAttempted', '1');
+      const raw = localStorage.getItem('opendraft:lastOpenedScript');
+      if (!raw) return;
+      const last = JSON.parse(raw) as { projectId?: string; scriptId?: string };
+      if (last.projectId && last.scriptId) {
+        navigate(`/project/${last.projectId}/edit/${last.scriptId}`, { replace: true });
+      }
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // --- Preferences: automatic snapshots (project version checkpoints) ---
+  // Silent api.checkin on the chosen interval; the backend commits only when
+  // something actually changed, so idle intervals create nothing.
+  const autoSnapshotMinutes = useSettingsStore((s) => s.autoSnapshotMinutes);
+  useEffect(() => {
+    if (!autoSnapshotMinutes || !currentProject || isCollabGuest || isHistoryMode) return;
+    const timer = setInterval(() => {
+      if (scriptSwitchingRef.current) return;
+      api.checkin(currentProject.id, 'Auto snapshot').then(() => {
+        const snapContent = buildSaveContent();
+        if (snapContent) {
+          void mirrorSnapshot({
+            projectId: currentProject.id,
+            projectName: currentProject.name,
+            title: useEditorStore.getState().documentTitle || 'Untitled',
+            content: snapContent,
+            message: 'Auto snapshot',
+          });
+        }
+        const keep = useSettingsStore.getState().autoSnapshotKeep;
+        if (keep > 0) {
+          return api.pruneVersions(currentProject.id, keep).catch((err) => {
+            console.warn('Snapshot retention prune failed:', err);
+          });
+        }
+      }).catch((err) => {
+        // Silent by design — a failed auto snapshot shouldn't interrupt writing.
+        console.warn('Auto snapshot failed:', err);
+      });
+    }, autoSnapshotMinutes * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [autoSnapshotMinutes, currentProject, isCollabGuest, isHistoryMode, buildSaveContent]);
+
+  // --- File > Preview: read-only formatted presentation ---
+  useEffect(() => {
+    if (!editor) return;
+    const baseEditable = !isHistoryMode && !(collabMode && collabRole === 'viewer');
+    editor.setEditable(baseEditable && !previewMode);
+  }, [editor, previewMode, isHistoryMode, collabMode, collabRole]);
+
+  // --- View > Editor Style: page view vs continuous view ---
+  const viewStyleRef = useRef(viewStyle);
+  viewStyleRef.current = previewMode ? 'page' : viewStyle;
+  useEffect(() => {
+    // Preview always paginates like Page View — it exists to show the final
+    // printed/exported document, so the continuous style is suspended while
+    // it's open and restored on exit.
+    setPaginationContinuousMode(viewStyle === 'continuous' && !previewMode);
+    if (editor) {
+      try { editor.view.dispatch(editor.state.tr); } catch { /* ignore */ }
+    }
+  }, [viewStyle, editor, previewMode]);
+
+  // --- Visibility-aware pagination: keep the paginator's line counts in sync
+  // with what's actually rendered. Preview mode (and its sidebar options) hide
+  // outline lines with display:none and can double-space scene headers; both
+  // change real content height, so the paginator must know — and the page-sep
+  // overlays must remeasure — every time any of these flip. (Root cause of the
+  // v0.28 page misalignment in Page View and Preview.)
+  useEffect(() => {
+    const hideSections = previewMode ? !previewOpts.sections : !sectionsVisible;
+    const hideTodos = previewMode ? !previewOpts.todos : !scriptTodosVisible;
+    const doubleSpaceHeaders = previewMode && previewOpts.doubleSpaceHeaders;
+    setPaginationVisibility({ hideSections, hideTodos, doubleSpaceHeaders });
+    if (editor) {
+      // Recompute breaks + decorations, which also re-runs overlay measurement.
+      requestAnimationFrame(() => {
+        try { editor.view.dispatch(editor.state.tr); } catch { /* ignore */ }
+      });
+    }
+  }, [editor, previewMode, previewOpts, sectionsVisible, scriptTodosVisible]);
+
+  // --- Print: swap pixel-margin page spacers for real page breaks ---
+  // The editor's page gaps are inline margin-top decorations sized to the
+  // on-screen page; printers use their own page geometry, so those margins
+  // printed as drift and mid-page voids. During printing the paginator emits
+  // an `fd-print-break` class instead (CSS: break-before + top margin), so
+  // printed pages match the editor's pagination exactly.
+  useEffect(() => {
+    if (!editor) return;
+    const refresh = () => { try { editor.view.dispatch(editor.state.tr); } catch { /* ignore */ } };
+    const before = () => { setPaginationPrintMode(true); refresh(); };
+    const after = () => { setPaginationPrintMode(false); refresh(); };
+    window.addEventListener('beforeprint', before);
+    window.addEventListener('afterprint', after);
+    return () => {
+      window.removeEventListener('beforeprint', before);
+      window.removeEventListener('afterprint', after);
+      setPaginationPrintMode(false);
+    };
+  }, [editor]);
+
   // --- Track unsaved changes for status bar ---
   useEffect(() => {
     if (!editor || !currentProject || !currentScriptId || isCollabGuest) return;
@@ -2569,7 +2699,8 @@ const ScreenplayEditor: React.FC = () => {
             store.setGrammarCheckEnabled(c._grammarCheckEnabled === true);
             // Restore per-document page layout (header/footer, margins)
             if (c._pageLayout && typeof c._pageLayout === 'object') {
-              store.setPageLayout({ ...DEFAULT_PAGE_LAYOUT, ...(c._pageLayout as Record<string, unknown>) });
+              store.setPageLayout(migratePageLayout({ ...DEFAULT_PAGE_LAYOUT, ...(c._pageLayout as Record<string, unknown>) } as PageLayout));
+            store.setDraftLabel(typeof (c as any)._draftLabel === 'string' && (c as any)._draftLabel ? (c as any)._draftLabel as string : 'First Draft');
             }
           }
         }
@@ -2585,6 +2716,10 @@ const ScreenplayEditor: React.FC = () => {
         if (errMsg.includes('404') && urlProjectId) {
           showToast('Script not found. It may have been removed by a version restore.', 'error');
           navigate(`/project/${urlProjectId}`, { replace: true });
+        } else if (errMsg.includes('401') || errMsg.includes('Authentication required')) {
+          // AuthGate has already opened the sign-in dialog for this 401; a red
+          // error toast on top of it is just noise. After a successful sign-in
+          // the load re-runs automatically (AuthGate bumps scriptReloadKey).
         } else {
           showToast(`Failed to load script: ${errMsg}`, 'error');
         }
@@ -2886,7 +3021,8 @@ const ScreenplayEditor: React.FC = () => {
           }
           // Restore per-document page layout (header/footer, margins)
           if (c._pageLayout && typeof c._pageLayout === 'object') {
-            store.setPageLayout({ ...DEFAULT_PAGE_LAYOUT, ...(c._pageLayout as Record<string, unknown>) });
+            store.setPageLayout(migratePageLayout({ ...DEFAULT_PAGE_LAYOUT, ...(c._pageLayout as Record<string, unknown>) } as PageLayout));
+            store.setDraftLabel(typeof (c as any)._draftLabel === 'string' && (c as any)._draftLabel ? (c as any)._draftLabel as string : 'First Draft');
           }
           // Restore per-document spell/grammar check toggles
           store.setSpellCheckEnabled(c._spellCheckEnabled === true);
@@ -3103,10 +3239,10 @@ const ScreenplayEditor: React.FC = () => {
       // Clear project context — this is a standalone opened file
       setCurrentProject(null);
       setCurrentScriptId(null);
-      // Mark as imported so Save As shows the "saved to FreeScript library" notice.
+      // Mark as imported so Save As shows the "saved to FreeDraft library" notice.
       const fmtLabel = ext === 'fdx' ? 'Final Draft (.fdx)'
         : ext === 'fountain' ? 'Fountain (.fountain)'
-        : ext === 'odraft' ? 'FreeScript (.odraft)'
+        : ext === 'odraft' ? 'FreeDraft (.odraft)'
         : ext ? `.${ext}` : 'imported file';
       useEditorStore.getState().setImportedSource({ name: filename, format: fmtLabel });
     } catch (err) {
@@ -3294,7 +3430,7 @@ const ScreenplayEditor: React.FC = () => {
       setShowWelcome(false);
       const fmtLabel = ext === 'fdx' ? 'Final Draft (.fdx)'
         : ext === 'fountain' ? 'Fountain (.fountain)'
-        : ext === 'odraft' ? 'FreeScript (.odraft)'
+        : ext === 'odraft' ? 'FreeDraft (.odraft)'
         : ext ? `.${ext}` : 'imported file';
       useEditorStore.getState().setImportedSource({ name: file.name, format: fmtLabel });
     } catch (err) {
@@ -3903,7 +4039,8 @@ const ScreenplayEditor: React.FC = () => {
         setShareDialogOpen(true);
       }} onJoinCollab={() => setJoinCollabOpen(true)} isCollabActive={collabMode} isCollabGuest={collabMode && !isCollabHost} />}
       {!isHistoryMode && <Toolbar editor={editor} />}
-      <div className="editor-layout">
+      <div className={`editor-layout${previewMode ? " preview-mode" : ""}`}>
+      {previewMode && <PreviewSidebar editor={editor} />}
         {!isHistoryMode && navigatorOpen && <ToolDock side="left" editor={editor} scrollContainer={editorMainRef.current} />}
         <div className="editor-center">
           {!isHistoryMode && <IndexCards editor={editor} scrollContainer={editorMainRef.current} />}
@@ -3931,7 +4068,7 @@ const ScreenplayEditor: React.FC = () => {
                 }}
               >
                 <div
-                  className={`page${!tagsVisible ? ' tags-hidden' : ''}${!notesVisible ? ' notes-hidden' : ''}${isHistoryMode ? ' history-readonly' : ''}${sceneNumbersVisible ? ' show-scene-numbers' : ''}`}
+                  className={`page${!tagsVisible || previewMode ? ' tags-hidden' : ''}${previewMode ? (previewOpts.notes ? '' : ' notes-hidden') : (!notesVisible ? ' notes-hidden' : '')}${isHistoryMode ? ' history-readonly' : ''}${previewMode ? (previewOpts.sceneNumbers ? ' show-scene-numbers' : '') : (sceneNumbersVisible ? ' show-scene-numbers' : '')}${previewMode ? (previewOpts.sections ? '' : ' hide-sections') : (!sectionsVisible ? ' hide-sections' : '')}${previewMode ? (previewOpts.todos ? '' : ' hide-script-todos') : (!scriptTodosVisible ? ' hide-script-todos' : '')}${previewMode && previewOpts.doubleSpaceHeaders ? ' pv-hdr-double' : ''}${previewMode && !previewOpts.boldHeaders ? ' pv-hdr-plain' : ''}${previewMode && previewOpts.underlineHeaders ? ' pv-hdr-underline' : ''}`}
                   ref={pageRef}
                   style={{
                     fontFamily: `'${fontFamily}', 'Courier New', Courier, monospace`,
@@ -3946,6 +4083,7 @@ const ScreenplayEditor: React.FC = () => {
                     ...{ '--pl': `${pageLayout.leftMargin}in` } as React.CSSProperties,
                     ...{ '--pr': `${pageLayout.rightMargin}in` } as React.CSSProperties,
                     ...{ '--pw': `${pageLayout.pageWidth}in` } as React.CSSProperties,
+                    ...{ '--ptop': `${pageLayout.topMargin}pt` } as React.CSSProperties,
                   }}
                 >
                   {/* Page break separators — absolutely positioned, full page width */}
@@ -3961,6 +4099,17 @@ const ScreenplayEditor: React.FC = () => {
                     // is unnumbered and carries no header/footer.
                     const footerPage = ov.pageNumber - 1;
                     const showFooterForPrev = footerPage >= fStart && !ov.isTitlePage;
+                    if (viewStyle === 'continuous' && !previewMode) {
+                      return (
+                        <div
+                          key={ov.pageNumber}
+                          className="page-sep page-sep-line"
+                          style={{ top: `${ov.top}px`, height: CONTINUOUS_GAP_PX }}
+                        >
+                          <span className="page-sep-line-label">Page {ov.pageNumber}</span>
+                        </div>
+                      );
+                    }
                     return (
                     <div
                       key={ov.pageNumber}
@@ -4037,7 +4186,6 @@ const ScreenplayEditor: React.FC = () => {
         )}
         {!isHistoryMode && <TempToolWindow editor={editor} scrollContainer={editorMainRef.current} />}
         {!isHistoryMode && shelfOpen && <ToolDock side="right" editor={editor} scrollContainer={editorMainRef.current} />}
-        {!isHistoryMode && <TagsPanel editor={editor} style={{ width: rightPanelWidth, minWidth: rightPanelWidth }} />}
         {!isHistoryMode && <LocationDatabase editor={editor} style={{ width: rightPanelWidth, minWidth: rightPanelWidth }} />}
         {!isHistoryMode && pluginRegistry.getPanels('right-sidebar').map((p) => (
           <p.component key={p.id} editor={editor} />

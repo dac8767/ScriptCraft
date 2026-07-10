@@ -4,6 +4,8 @@ import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 import { useEditorStore } from '../stores/editorStore';
 
 interface TagsPanelProps {
+  /** Render inside a tool window: always visible, no close/swipe */
+  embedded?: boolean;
   editor: Editor | null;
   style?: React.CSSProperties;
 }
@@ -19,7 +21,7 @@ interface TagOccurrence {
   elementType: string;
 }
 
-const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style }) => {
+const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style, embedded = false }) => {
   const {
     tagCategories,
     tags,
@@ -388,14 +390,15 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style }) => {
     setShowAddForm(false);
   }, [newCatName, newCatColor, addTagCategory]);
 
-  const { shouldRender, animationState } = useDelayedUnmount(tagsPanelOpen, 250);
+  const { shouldRender: gateRender, animationState } = useDelayedUnmount(tagsPanelOpen, 250);
+  const shouldRender = embedded || gateRender;
   const panelRef = useRef<HTMLDivElement>(null);
-  useSwipeDismiss(panelRef, { direction: 'right', onDismiss: toggleTagsPanel, enabled: shouldRender });
+  useSwipeDismiss(panelRef, { direction: 'right', onDismiss: toggleTagsPanel, enabled: !embedded && shouldRender });
 
   if (!shouldRender) return null;
 
-  const panelClass = animationState === 'entered'
-    ? 'panel-open' : animationState === 'exiting' ? 'panel-closing' : '';
+  const panelClass = embedded ? 'panel-open' : (animationState === 'entered'
+    ? 'panel-open' : animationState === 'exiting' ? 'panel-closing' : '');
 
   // Entities in the currently-selected pending category
   const pendingCatEntities = pendingCategoryId
@@ -419,14 +422,14 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style }) => {
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.36 11.35l2.06 2.06-.71.71L.65 0.06l.71-.71 2.68 2.68C5.19 1.38 6.55 1 8 1c3.64 0 6.74 2.28 8 5.5a9.77 9.77 0 01-2.64 3.85zM8 3.5c-1.1 0-2.12.53-2.75 1.4l1.18 1.18A2 2 0 018 4.83a2 2 0 012 2c0 .23-.04.44-.1.65l1.18 1.18c.87-.63 1.4-1.65 1.4-2.75A3.33 3.33 0 008 3.5zm-4.65.82L5.12 6.1a3.33 3.33 0 004.28 4.28l1.25 1.25C9.56 12.22 8.82 12.5 8 12.5c-3.64 0-6.74-2.28-8-5.5a9.77 9.77 0 013.35-3.68z"/></svg>
           )}
         </button>
-        <button
+        {!embedded && <button
           className="tags-panel-close"
           onClick={toggleTagsPanel}
           title="Close"
           aria-label="Close production tags panel"
         >
           &times;
-        </button>
+        </button>}
       </div>
 
       {/* ── Tab bar ──────────────────────────────────────────────────── */}

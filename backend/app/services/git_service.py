@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 from dulwich.repo import Repo
-from dulwich.objects import Blob, Tree
+from dulwich.objects import Blob, Commit, Tree
 from dulwich import porcelain
 from dulwich.patch import write_tree_diff
 
@@ -260,3 +260,86 @@ def _timestamp_to_iso(timestamp: int) -> str:
     """Convert a Unix timestamp to ISO 8601 string."""
     from datetime import datetime, timezone
     return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
+
+
+def prune_history(project_path: Path, keep: int) -> dict:
+    """Keep only the newest ``keep`` snapshots, squashing everything older
+    into a single baseline commit.
+
+    The baseline carries the exact tree of the oldest retained commit, so the
+    content of every retained snapshot is preserved bit-for-bit; only the
+    ability to restore *older* states is given up (which is the point of
+    retention). The working tree and index are untouched — the new HEAD's tree
+    is identical to the old HEAD's tree.
+
+    Safety guards:
+    - keep must be >= 1
+    - non-linear history (merge commits) aborts with no changes
+    """
+    if keep < 1:
+        raise ValueError("keep must be >= 1")
+
+    repo = Repo(str(project_path))
+    try:
+        head = repo.head()
+    except KeyError:
+        return {"pruned": 0, "kept": 0, "message": "No history"}
+
+    # Walk the linear chain newest -> oldest.
+    chain = []
+    cur = repo[head]
+    while True:
+        if len(cur.parents) > 1:
+            logger.warning("prune_history: non-linear history at %s; aborting", project_path)
+            return {"pruned": 0, "kept": len(chain), "message": "History is not linear; prune skipped"}
+        chain.append(cur)
+        if not cur.parents:
+            break
+        cur = repo[cur.parents[0]]
+
+    total = len(chain)
+    if total <= keep:
+        return {"pruned": 0, "kept": total, "message": "Nothing to prune"}
+
+    kept = chain[:keep]      # newest -> oldest
+    boundary = kept[-1]      # oldest retained snapshot
+    pruned_count = total - keep
+
+    def _clone_commit(old, parents):
+        c = Commit()
+        c.tree = old.tree
+        c.parents = parents
+        c.author = old.author
+        c.committer = old.committer
+        c.author_time = old.author_time
+        c.commit_time = old.commit_time
+        c.author_timezone = old.author_timezone
+        c.commit_timezone = old.commit_timezone
+        if old.encoding:
+            c.encoding = old.encoding
+        c.message = old.message
+        return c
+
+    # New root: the boundary commit, reborn parentless with a note.
+    new_root = _clone_commit(boundary, [])
+    note = f"\n\n[baseline \u2014 {pruned_count} older snapshot{'s' if pruned_count != 1 else ''} squashed into this checkpoint]"
+    new_root.message = boundary.message + note.encode("utf-8")
+    repo.object_store.add_object(new_root)
+
+    # Reparent the remaining retained commits (oldest -> newest) onto it.
+    prev_id = new_root.id
+    for old in reversed(kept[:-1]):
+        c = _clone_commit(old, [prev_id])
+        repo.object_store.add_object(c)
+        prev_id = c.id
+
+    # Point the branch that HEAD follows at the rewritten tip.
+    ref_names, _sha = repo.refs.follow(b"HEAD")
+    branch_ref = ref_names[-1]
+    repo.refs[branch_ref] = prev_id
+
+    logger.info(
+        "prune_history: %s -> kept %d, squashed %d at %s",
+        total, keep, pruned_count, project_path,
+    )
+    return {"pruned": pruned_count, "kept": keep, "message": f"Pruned {pruned_count} old snapshot{'s' if pruned_count != 1 else ''}"}

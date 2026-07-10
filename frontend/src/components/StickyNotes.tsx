@@ -1,5 +1,5 @@
 /**
- * StickyNotes — the FreeScript sticky-card system, now split into three
+ * StickyNotes — the FreeDraft sticky-card system, now split into three
  * right-dock tools:
  *   - StickyNotesTool ("Sticky Notes"): General / Script sub-tabs — General is
  *     free-form sticky cards, Script is OpenDraft's anchored notes. The 🔍
@@ -11,17 +11,14 @@
  * as placeholder), and creation dates. Data persists per script as the
  * `_shelf` key of the saved content JSON and syncs in collab via collabSync.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { Editor } from '@tiptap/react';
 import {
   useEditorStore,
   SHELF_COLORS,
   SHELF_DEFAULT_COLOR,
-  NOTE_COLORS,
   type ShelfCard,
   type ShelfCardType,
-  type NotesSubTab,
-  type NoteColor,
 } from '../stores/editorStore';
 import { ScriptNotesContent, formatDate } from './ScriptNotes';
 import { uuid } from '../utils/uuid';
@@ -46,11 +43,6 @@ export function makeSnippetCard(text: string): ShelfCard {
 const cardText = (c: ShelfCard): string => {
   const body = c.type === 'todo' ? (c.items || []).map((i) => i.text).join('\n') : c.text || '';
   return c.title ? `${c.title}\n${body}` : body;
-};
-
-const noteColorHex = (name: NoteColor): string => {
-  const c = NOTE_COLORS.find((nc) => nc.name === name);
-  return c ? c.hex : NOTE_COLORS[0].hex;
 };
 
 /* ═══════════ Shared card list (per card type) with drag reorder ═══════════ */
@@ -160,110 +152,55 @@ interface EditorToolProps {
 }
 
 export function StickyNotesTool({ editor }: EditorToolProps) {
-  const {
-    shelfCards, notesSubTab, setNotesSubTab,
-    notes, noteFilter, setNoteFilter,
-  } = useEditorStore();
+  const { shelfCards, notesSubTab, setNotesSubTab } = useEditorStore();
   const { add } = useCardOps();
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
 
-  // External flows (⌥-click a highlight, context menu, Navigator) target a
-  // script note: land on the Script sub-view. ScriptNotesContent scrolls to it.
-  useEffect(() => {
-    if (noteFilter.noteId || noteFilter.elementType || noteFilter.contextLabel || noteFilter.color) {
-      setNotesSubTab('script');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [noteFilter]);
-
   const q = query.trim().toLowerCase();
   const searching = searchOpen && q.length > 0;
-
-  const generalMatches = searching
+  const matches = searching
     ? shelfCards.filter((c) => c.type === 'comment' && cardText(c).toLowerCase().includes(q))
-    : [];
-  const scriptMatches = searching
-    ? notes.filter((n) =>
-        `${n.content}\n${n.anchorText || ''}\n${n.contextLabel || ''}`.toLowerCase().includes(q))
-    : [];
-  const totalMatches = generalMatches.length + scriptMatches.length;
-
-  const jumpToScript = (noteId: string) => {
-    setQuery(''); setSearchOpen(false);
-    setNoteFilter({ elementType: null, contextLabel: null, color: null, noteId });
-    setNotesSubTab('script');
-  };
-
-  const generalCount = shelfCards.filter((c) => c.type === 'comment').length;
+    : undefined;
 
   return (
     <div className="fs-sticky-tool">
+      <div className="fs-subtab-row">
+        <button
+          className={`fs-subtab${notesSubTab === 'general' ? ' active' : ''}`}
+          onClick={() => setNotesSubTab('general')}
+        >General</button>
+        <button
+          className={`fs-subtab${notesSubTab === 'script' ? ' active' : ''}`}
+          onClick={() => setNotesSubTab('script')}
+        >Script</button>
+      </div>
+      {notesSubTab === 'script' ? (
+        <ScriptNotesContent editor={editor} />
+      ) : (
+      <>
       <div className="fs-sticky-toolbar">
-        <div className="swn-subtabs">
-          {(['general', 'script'] as NotesSubTab[]).map((key) => {
-            const count = key === 'general' ? generalCount : notes.length;
-            return (
-              <button
-                key={key}
-                className={'swn-subtab' + (notesSubTab === key ? ' active' : '')}
-                onClick={() => setNotesSubTab(key)}
-              >
-                {key === 'general' ? 'General' : 'Script'}{count > 0 ? ` (${count})` : ''}
-              </button>
-            );
-          })}
-        </div>
+        <span className="swn-group-label" style={{ padding: 0, flex: 1 }}>
+          {shelfCards.filter((c) => c.type === 'comment').length} note{shelfCards.filter((c) => c.type === 'comment').length === 1 ? '' : 's'}
+        </span>
         <button
           className="swn-search-btn"
           title={searchOpen ? 'Close search' : 'Search notes'}
           onClick={() => { if (searchOpen) setQuery(''); setSearchOpen((o) => !o); }}
         >{searchOpen ? '✕' : '🔍'}</button>
       </div>
-
       {searchOpen && (
         <div className="swn-search-row">
-          <input
-            autoFocus
-            value={query}
-            placeholder="Search General + Script notes…"
-            onChange={(e) => setQuery(e.target.value)}
-          />
+          <input autoFocus value={query} placeholder="Search notes…" onChange={(e) => setQuery(e.target.value)} />
         </div>
       )}
-
-      {searching ? (
-        <div className="swn-scroll">
-          <div className="swn-hint">
-            {totalMatches === 0
-              ? 'No notes match.'
-              : `${totalMatches} match${totalMatches === 1 ? '' : 'es'}`}
-          </div>
-          {generalMatches.length > 0 && <div className="swn-group-label">General</div>}
-          {generalMatches.length > 0 && <CardList type="comment" cards={generalMatches} />}
-          {scriptMatches.length > 0 && <div className="swn-group-label">Script Notes</div>}
-          {scriptMatches.map((n) => (
-            <div
-              key={n.id}
-              className="swn-note-hit"
-              style={{ borderLeftColor: noteColorHex(n.color) }}
-              onClick={() => jumpToScript(n.id)}
-              title="Open in Script"
-            >
-              {n.anchorText && <div className="swn-note-hit-title">&ldquo;{n.anchorText}&rdquo;</div>}
-              <div className="swn-note-hit-snippet">{n.content.slice(0, 140) || 'No note text yet'}</div>
-            </div>
-          ))}
+      <CardList type="comment" cards={matches} />
+      {!searching && (
+        <div className="swn-add-row">
+          <button className="swn-add-btn" onClick={() => add('comment')}>+ Add</button>
         </div>
-      ) : notesSubTab === 'general' ? (
-        <>
-          <CardList type="comment" />
-          <div className="swn-add-row">
-            <button className="swn-add-btn" onClick={() => add('comment')}>+ Add</button>
-          </div>
-        </>
-      ) : (
-        <ScriptNotesContent editor={editor} />
+      )}
+      </>
       )}
     </div>
   );
@@ -281,14 +218,90 @@ export function FragmentsTool(_props: EditorToolProps) {
 
 /* ═══════════ Tool: To-Do ═══════════ */
 
-export function TodoTool(_props: EditorToolProps) {
+export function TodoTool({ editor }: EditorToolProps) {
   const { add } = useCardOps();
+  const [subTab, setSubTab] = useState<'general' | 'script'>('general');
+  const [docTick, setDocTick] = useState(0);
+
+  useEffect(() => {
+    if (!editor || subTab !== 'script') return;
+    const onUpdate = () => setDocTick((t) => t + 1);
+    editor.on('update', onUpdate);
+    return () => { editor.off('update', onUpdate); };
+  }, [editor, subTab]);
+
+  // Script sub-tab: checklist lines living in the document itself
+  // (Insert > Checklist Item), the same items the Navigator shows.
+  const docItems = useMemo(() => {
+    const out: Array<{ text: string; pos: number; done: boolean }> = [];
+    if (editor && subTab === 'script') {
+      editor.state.doc.descendants((node, pos) => {
+        if (node.type.name === 'general') {
+          const text = node.textContent || '';
+          if (/^\[[ x]\]/.test(text)) {
+            out.push({ text: text.slice(3).trim() || '(empty item)', pos, done: text[1] === 'x' });
+          }
+        }
+        return true;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return out;
+  }, [editor, subTab, docTick]);
+
+  const toggleDocItem = (it: { pos: number; done: boolean }) => {
+    if (!editor) return;
+    const tr = editor.state.tr.replaceWith(
+      it.pos + 1, it.pos + 4, editor.state.schema.text(it.done ? '[ ]' : '[x]'),
+    );
+    editor.view.dispatch(tr);
+  };
+
+  const jumpTo = (pos: number) => {
+    if (!editor) return;
+    editor.chain().focus().setTextSelection(pos + 1).run();
+  };
+
   return (
     <div className="fs-sticky-tool">
-      <CardList type="todo" />
-      <div className="swn-add-row">
-        <button className="swn-add-btn" onClick={() => add('todo')}>+ Add</button>
+      <div className="fs-subtab-row">
+        <button
+          className={`fs-subtab${subTab === 'general' ? ' active' : ''}`}
+          onClick={() => setSubTab('general')}
+        >General</button>
+        <button
+          className={`fs-subtab${subTab === 'script' ? ' active' : ''}`}
+          onClick={() => setSubTab('script')}
+        >Script</button>
       </div>
+      {subTab === 'general' ? (
+        <>
+          <CardList type="todo" />
+          <div className="swn-add-row">
+            <button className="swn-add-btn" onClick={() => add('todo')}>+ Add</button>
+          </div>
+        </>
+      ) : (
+        <div className="fs-doc-todo-list">
+          {docItems.length === 0 && (
+            <div className="fs-nav-empty">
+              No checklist items in the script yet.
+              <br />
+              Use <strong>Insert → Checklist Item</strong> to add one at the cursor.
+            </div>
+          )}
+          {docItems.map((it, i) => (
+            <div key={`${it.pos}-${i}`} className="fs-doc-todo-row">
+              <input type="checkbox" checked={it.done} onChange={() => toggleDocItem(it)} />
+              <span
+                className={it.done ? 'fs-nav-done' : ''}
+                onClick={() => jumpTo(it.pos)}
+                title="Click to jump to this item in the script"
+              >{it.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

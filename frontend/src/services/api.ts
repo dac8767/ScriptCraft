@@ -324,6 +324,12 @@ export const api = {
       `/projects/${projectId}/versions/${encodeURIComponent(hash)}/scripts/${encodeURIComponent(scriptId)}`
     ),
 
+  pruneVersions: (projectId: string, keep: number) =>
+    request<{ pruned: number; kept: number; message: string }>(`/projects/${projectId}/versions/prune`, {
+      method: 'POST',
+      body: JSON.stringify({ keep }),
+    }),
+
   restoreVersion: (projectId: string, hash: string) =>
     request<VersionInfo>(`/projects/${projectId}/versions/restore/${hash}`, {
       method: 'POST',

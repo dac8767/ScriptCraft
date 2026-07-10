@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import type { Editor } from '@tiptap/react';
 import { ELEMENT_LABELS, NOTE_COLORS, type ElementType } from '../stores/editorStore';
+import { uuid } from '../utils/uuid';
+import { showToast } from './Toast';
 import { useEditorStore } from '../stores/editorStore';
 import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { spellCheckPluginKey } from '../editor/extensions/SpellCheck';
@@ -84,9 +86,9 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
 
   const {
     revisionMode, setRevisionMode, revisionColor, setRevisionColor,
-    openShelfTab, addNote, deleteNote, setNoteFilter,
+    openShelfTab, addNote, deleteNote, setNoteFilter, addShelfCard,
     toggleCharacterProfiles, characterProfilesOpen,
-    deleteTag, tagsPanelOpen, toggleTagsPanel, setPendingTagSelection, setEditingTagId,
+    deleteTag, setPendingTagSelection, setEditingTagId,
   } = useEditorStore();
 
   // Per-attribute locking for the current element
@@ -502,7 +504,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
     });
 
     setPendingTagSelection({ from: selFrom, to: selTo, text: text.slice(0, 80), elementType: currentNodeType, sceneId });
-    if (!tagsPanelOpen) toggleTagsPanel();
+    useEditorStore.getState().openTool('tags');
     onClose();
   };
 
@@ -790,6 +792,58 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       )}
       <div className="ctx-separator" />
 
+      {/* Send selection to the Fragments / To-Do panels (v0.13) */}
+      {hasSelection && (
+        <>
+          <div className="ctx-item" onClick={() => {
+            const { from, to } = savedSelection.current;
+            const text = editor.state.doc.textBetween(from, to, '\n');
+            if (text.trim()) {
+              addShelfCard({ id: uuid(), type: 'snippet', color: '#f4d35e', text: text.trim(), createdAt: new Date().toISOString() });
+              useEditorStore.getState().openTool('fragments');
+              showToast('Copied to Snippets', 'success');
+            }
+            onClose();
+          }}>
+            <span>Copy to Snippets</span>
+          </div>
+          <div className="ctx-item" onClick={() => {
+            const { from, to } = savedSelection.current;
+            const text = editor.state.doc.textBetween(from, to, ' ');
+            if (text.trim()) {
+              addShelfCard({ id: uuid(), type: 'todo', color: '#f4d35e', items: [{ text: text.trim(), done: false }], createdAt: new Date().toISOString() });
+              useEditorStore.getState().openTool('todo');
+              showToast('Added to To-Do', 'success');
+            }
+            onClose();
+          }}>
+            <span>Add as To-Do Item</span>
+          </div>
+          <div className="ctx-separator" />
+        </>
+      )}
+
+      {/* Outline inserts (Section / Marker / Checklist) at the caret */}
+      <div className="ctx-item" onClick={() => {
+        editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '# ' }] }).run();
+        onClose();
+      }}>
+        <span>Insert Section</span>
+      </div>
+      <div className="ctx-item" onClick={() => {
+        editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '\u2691 ' }] }).run();
+        onClose();
+      }}>
+        <span>Insert Marker</span>
+      </div>
+      <div className="ctx-item" onClick={() => {
+        editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '[ ] ' }] }).run();
+        onClose();
+      }}>
+        <span>Insert Checklist Item</span>
+      </div>
+      <div className="ctx-separator" />
+
       {/* Production Tags */}
       {existingTagInfo ? (
         <>
@@ -797,7 +851,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
             if (existingTagInfo) {
               setEditingTagId(existingTagInfo.tagId);
             }
-            if (!tagsPanelOpen) toggleTagsPanel();
+            useEditorStore.getState().openTool('tags');
             onClose();
           }}>
             <span>Edit Tag...</span>

@@ -13,6 +13,7 @@ import SaveErrorDialog from './components/SaveErrorDialog';
 import OneDriveWarningDialog from './components/OneDriveWarningDialog';
 import VerifyEmailRoute from './components/VerifyEmailRoute';
 import ResetPasswordRoute from './components/ResetPasswordRoute';
+import OAuthCallback from './components/OAuthCallback';
 import { pluginRegistry } from './plugins/registry';
 import './styles/screenplay.css';
 import './styles/avScript.css';
@@ -27,6 +28,7 @@ function App() {
         <Route path="/" element={<ScreenplayEditor />} />
         <Route path="/verify" element={<VerifyEmailRoute />} />
         <Route path="/reset-password" element={<ResetPasswordRoute />} />
+        <Route path="/oauth-callback" element={<OAuthCallback />} />
         <Route path="/projects" element={<ProjectList />} />
         <Route path="/project/:projectId" element={<ProjectView />} />
         <Route path="/project/:projectId/edit/:scriptId" element={<ScreenplayEditor />} />

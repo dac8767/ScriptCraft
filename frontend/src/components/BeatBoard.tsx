@@ -635,7 +635,7 @@ const beatCollisionDetection: CollisionDetection = (args) => {
 };
 
 /* ─── Main Beat Board ─── */
-const BeatBoard: React.FC = () => {
+const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const {
     beats, beatBoardOpen, beatColumns, beatArrangeMode,
     addBeat, updateBeat, deleteBeat, setBeats,
@@ -753,12 +753,12 @@ const BeatBoard: React.FC = () => {
     }, 0);
   }, [defaultColumnId, beats.length, addBeat, addBeatColumn, updateBeat]);
 
-  if (!beatBoardOpen) return null;
+  if (!beatBoardOpen && !embedded) return null;
 
   return (
     <div className="beat-board" ref={boardRef}>
       <div className="beat-board-header">
-        <span className="beat-board-title">Beat Board</span>
+        <span className="beat-board-title">Outline</span>
         <span className="beat-board-info">
           {beats.length} beat{beats.length !== 1 ? 's' : ''}
         </span>
@@ -783,6 +783,12 @@ const BeatBoard: React.FC = () => {
           <button className="beat-board-add-col-btn" onClick={handleAddBeatFree}>+ Add Beat</button>
         )}
       </div>
+
+      {beatArrangeMode === 'auto' && (
+        <div className="beat-board-hint">
+          Create a column to organize scenes/beats. Example: Act 1, Act 2, Act 3.
+        </div>
+      )}
 
       {beatArrangeMode === 'auto' ? (
         <DndContext sensors={sensors} collisionDetection={beatCollisionDetection} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>

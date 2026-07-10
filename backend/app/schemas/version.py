@@ -24,3 +24,13 @@ class DiffResponse(BaseModel):
     diff: str
     from_hash: str
     to_hash: str
+
+
+class PruneRequest(BaseModel):
+    keep: int
+
+
+class PruneResponse(BaseModel):
+    pruned: int
+    kept: int
+    message: str

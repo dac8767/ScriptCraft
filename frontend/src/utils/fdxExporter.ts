@@ -354,7 +354,7 @@ export function exportFDX(doc: JSONContent, title: string = 'Untitled', characte
         lines.push('    </DualDialogue>');
       } else if (node.type === 'avBlock') {
         // AV block: emit each row as a pair of General paragraphs with custom attrs.
-        // FDX-aware FreeScript instances re-import this back into avBlock; Final Draft
+        // FDX-aware FreeDraft instances re-import this back into avBlock; Final Draft
         // sees a flat sequence of General paragraphs (acceptable degradation).
         if (node.content) {
           let rowIdx = 0;

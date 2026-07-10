@@ -22,6 +22,7 @@ import {
   FaHighlighter,
   FaEllipsisV,
   FaHashtag,
+  FaListOl, FaRegStickyNote, FaCheckSquare,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
 import { useEditorStore, NOTE_COLORS } from '../stores/editorStore';
@@ -38,7 +39,6 @@ import {
 import type { LockedFormatting } from '../utils/effectiveFormatting';
 import FontPicker from './FontPicker';
 import ColorPicker from './ColorPicker';
-import LanguageSelector from './LanguageSelector';
 import { FONT_REGISTRY, loadFont } from '../utils/fonts';
 
 interface ToolbarProps {
@@ -58,6 +58,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     activeElement,
     setActiveElement,
     zoomLevel,
+    viewStyle, setViewStyle,
     setZoomLevel,
     zoomPanelOpen,
     setZoomPanelOpen,
@@ -69,10 +70,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     setGoToPageOpen,
     activeToolRight,
     setActiveToolRight,
-    notesSubTab,
     openShelfTab,
     toolbarHiddenItems,
     toolbarPinnedTools,
+    previewMode,
     openTool,
     addNote,
     setNoteFilter,
@@ -238,6 +239,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   const handleElementChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const type = e.target.value;
     if (!editor) return;
+
     setActiveElement(type as ElementType);
     // Three cases:
     //   1. Built-in screenplay element (sceneHeading, action, etc.) — direct setNode
@@ -391,7 +393,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // ── Notes handler (shared between inline and overflow) ──
   const handleNotesClick = useCallback((e: React.PointerEvent | React.MouseEvent) => {
     e.preventDefault();
-    const scriptTabShowing = activeToolRight === 'sticky' && notesSubTab === 'script';
+    const scriptTabShowing = activeToolRight === 'scriptnotes';
     if (!editor) { if (scriptTabShowing) setActiveToolRight(null); else openShelfTab('script'); return; }
 
     // Detect if cursor is on an existing note
@@ -467,7 +469,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     } else {
       openShelfTab('script');
     }
-  }, [editor, activeToolRight, setActiveToolRight, notesSubTab, openShelfTab, addNote, setNoteFilter]);
+  }, [editor, activeToolRight, setActiveToolRight, openShelfTab, addNote, setNoteFilter]);
 
   // ── Tags handler (shared between inline and overflow) ──
   const handleTagsClick = useCallback((e: React.PointerEvent | React.MouseEvent) => {
@@ -486,7 +488,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
       if (tagMark) {
         setEditingTagId(tagMark.attrs.tagId as string);
-        if (!tagsPanelOpen) toggleTagsPanel();
+        openTool('tags');
         return;
       }
     }
@@ -506,7 +508,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         return true;
       });
       setPendingTagSelection({ from: selFrom, to: selTo, text: text.slice(0, 80), elementType: currentNodeType, sceneId });
-      if (!tagsPanelOpen) toggleTagsPanel();
+      openTool('tags');
     } else {
       toggleTagsPanel();
     }
@@ -701,7 +703,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
       <div className={inOverflow ? 'toolbar-overflow-sep' : 'toolbar-separator'} />
 
-      <LanguageSelector editor={editor} activeElement={activeElement} />
     </React.Fragment>
   ), [editor, isOverrideMode, activeTemplate, activeElement, textColorOpen, bgColorOpen, currentTextColor, currentBgColor, locked]);
 
@@ -845,7 +846,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   return (
     <div className={`toolbar${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}`} ref={toolbarRef}>
       {toolbarHiddenItems.length > 0 && (
-        <style>{toolbarHiddenItems.map((t) => `.toolbar [title^="${t.replace(/"/g, '')}"]`).join(',') + '{display:none !important}'}</style>
+        <style>{
+          toolbarHiddenItems.map((t) => `.toolbar [title^="${t.replace(/"/g, '')}"]`).join(',')
+          + (toolbarHiddenItems.includes('Zoom In') && toolbarHiddenItems.includes('Zoom Out') ? ',.toolbar [title="Zoom"]' : '')
+          + '{display:none !important}'
+        }</style>
       )}
       {/* Undo / Redo — always visible */}
       <div className="toolbar-group">
@@ -875,9 +880,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           className="element-selector"
           value={activeElement}
           onChange={handleElementChange}
+          title="Element"
         >
           {Object.values(activeTemplate.rules)
-            .filter((r) => r.enabled)
+            .filter((r) => r.enabled && !['newAct', 'endOfAct', 'castList'].includes(r.id))
             // When inside an AV cell, only cell-valid types make sense — selecting
             // sceneHeading/action/etc. silently fails the schema check anyway.
             .filter((r) => isInsideAvCell ? AV_CELL_ELEMENT_IDS.includes(r.id) : !AV_CELL_ELEMENT_IDS.includes(r.id))
@@ -888,6 +894,31 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             ))}
         </select>
       </div>
+
+      <div className="toolbar-group">
+        <button
+          className="toolbar-btn"
+          title="Insert Section"
+          onClick={() => editor?.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '# ' }] }).run()}
+        >
+          <FaListOl />
+        </button>
+        <button
+          className="toolbar-btn"
+          title="Insert Script Note"
+          onClick={() => useEditorStore.getState().openShelfTab('script')}
+        >
+          <FaRegStickyNote />
+        </button>
+        <button
+          className="toolbar-btn"
+          title="Insert Checklist Item"
+          onClick={() => editor?.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '[ ] ' }] }).run()}
+        >
+          <FaCheckSquare />
+        </button>
+      </div>
+
 
       <div className="toolbar-separator" />
 
@@ -920,14 +951,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       {/* Notes & Tags — always visible */}
       <div className="toolbar-group">
         <button
-          className={`toolbar-btn${activeToolRight === 'sticky' && notesSubTab === 'script' ? ' active' : ''}`}
+          className={`toolbar-btn${activeToolRight === 'scriptnotes' ? ' active' : ''}`}
           title="Script Notes"
           onPointerDown={handleNotesClick}
         >
           <FaStickyNote />
         </button>
         <button
-          className={`toolbar-btn${tagsPanelOpen ? ' active' : ''}`}
+          className={`toolbar-btn${activeToolRight === 'tags' ? ' active' : ''}`}
           title="Production Tags"
           onPointerDown={handleTagsClick}
         >
@@ -1024,6 +1055,27 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         >
           <FaSearchPlus />
         </button>
+      </div>
+
+      <div className="toolbar-separator" />
+
+      {/* Editor view: Page / Continuous (mirrors View > Editor) — last by default */}
+      <div className="toolbar-group toolbar-desktop-only">
+        <select
+          className="view-style-selector"
+          value={previewMode ? 'preview' : viewStyle}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === 'preview') { useEditorStore.getState().setPreviewMode(true); return; }
+            useEditorStore.getState().setPreviewMode(false);
+            setViewStyle(v === 'continuous' ? 'continuous' : 'page');
+          }}
+          title="Editor View"
+        >
+          <option value="page">Page View</option>
+          <option value="continuous">Continuous View</option>
+          <option value="preview">Preview</option>
+        </select>
       </div>
     </div>
   );

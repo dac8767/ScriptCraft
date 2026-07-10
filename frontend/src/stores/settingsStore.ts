@@ -49,6 +49,39 @@ interface SettingsState {
   // Until then, the New Screenplay action opens the prefs dialog instead of going straight in.
   formatPreferencesInitialized: boolean;
   setFormatPreferencesInitialized: (v: boolean) => void;
+
+  // Preferences > General: reopen the last edited script on app start.
+  autoLoadLastScript: boolean;
+  setAutoLoadLastScript: (v: boolean) => void;
+
+  // Preferences > General: automatic snapshot interval in minutes (0 = off).
+  // Snapshots are project version checkpoints (File > Script History), created
+  // silently; the backend skips the commit when nothing changed.
+  autoSnapshotMinutes: number;
+  setAutoSnapshotMinutes: (m: number) => void;
+
+  // Preferences > General: snapshots kept before old ones are squashed (0 = keep all).
+  autoSnapshotKeep: number;
+  setAutoSnapshotKeep: (n: number) => void;
+
+  // Settings > Save Locations
+  saveToCloud: boolean;
+  setSaveToCloud: (v: boolean) => void;
+  saveToGDrive: boolean;
+  setSaveToGDrive: (v: boolean) => void;
+  saveToOneDrive: boolean;
+  setSaveToOneDrive: (v: boolean) => void;
+  /** Snapshot copy destinations (local git history is always kept). */
+  snapToCloud: boolean;
+  setSnapToCloud: (v: boolean) => void;
+  snapToGDrive: boolean;
+  setSnapToGDrive: (v: boolean) => void;
+  snapToOneDrive: boolean;
+  setSnapToOneDrive: (v: boolean) => void;
+  gdriveClientId: string;
+  setGdriveClientId: (id: string) => void;
+  onedriveClientId: string;
+  setOnedriveClientId: (id: string) => void;
 }
 
 const STORAGE_KEY_URL = 'opendraft:collabServerUrl';
@@ -56,6 +89,20 @@ const STORAGE_KEY_AUTH = 'opendraft:collabAuth';
 const STORAGE_KEY_EXPIRY = 'opendraft:defaultInviteExpiry';
 const STORAGE_KEY_FORMATS = 'opendraft:enabledScriptFormats';
 const STORAGE_KEY_FORMATS_INIT = 'opendraft:formatPreferencesInitialized';
+const STORAGE_KEY_AUTOLOAD = 'opendraft:autoLoadLastScript';
+const STORAGE_KEY_AUTOSNAP = 'opendraft:autoSnapshotMinutes';
+const STORAGE_KEY_AUTOSNAP_KEEP = 'opendraft:autoSnapshotKeep';
+const SL_KEYS = {
+  cloud: 'opendraft:saveloc:cloud',
+  gdrive: 'opendraft:saveloc:gdrive',
+  onedrive: 'opendraft:saveloc:onedrive',
+  snaploc: 'opendraft:saveloc:snapshotLocation', // legacy single choice (migrated)
+  snapCloud: 'opendraft:saveloc:snapToCloud',
+  snapGDrive: 'opendraft:saveloc:snapToGDrive',
+  snapOneDrive: 'opendraft:saveloc:snapToOneDrive',
+  gdriveId: 'opendraft:saveloc:gdriveClientId',
+  onedriveId: 'opendraft:saveloc:onedriveClientId',
+};
 
 function loadEnabledScriptFormats(): string[] {
   try {
@@ -125,4 +172,41 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     try { localStorage.setItem(STORAGE_KEY_FORMATS_INIT, v ? '1' : '0'); } catch { /* ignore */ }
     set({ formatPreferencesInitialized: v });
   },
+  autoLoadLastScript: localStorage.getItem(STORAGE_KEY_AUTOLOAD) === '1',
+  setAutoLoadLastScript: (v) => {
+    try { localStorage.setItem(STORAGE_KEY_AUTOLOAD, v ? '1' : '0'); } catch { /* ignore */ }
+    set({ autoLoadLastScript: v });
+  },
+  autoSnapshotMinutes: (() => {
+    const raw = parseInt(localStorage.getItem(STORAGE_KEY_AUTOSNAP) || '0', 10);
+    return Number.isFinite(raw) && raw > 0 ? raw : 0;
+  })(),
+  setAutoSnapshotMinutes: (m) => {
+    try { localStorage.setItem(STORAGE_KEY_AUTOSNAP, String(m)); } catch { /* ignore */ }
+    set({ autoSnapshotMinutes: m });
+  },
+  autoSnapshotKeep: (() => {
+    const raw = parseInt(localStorage.getItem(STORAGE_KEY_AUTOSNAP_KEEP) || '0', 10);
+    return Number.isFinite(raw) && raw > 0 ? raw : 0;
+  })(),
+  setAutoSnapshotKeep: (n) => {
+    try { localStorage.setItem(STORAGE_KEY_AUTOSNAP_KEEP, String(n)); } catch { /* ignore */ }
+    set({ autoSnapshotKeep: n });
+  },
+  saveToCloud: localStorage.getItem(SL_KEYS.cloud) === '1',
+  setSaveToCloud: (v) => { try { localStorage.setItem(SL_KEYS.cloud, v ? '1' : '0'); } catch { /* ignore */ } set({ saveToCloud: v }); },
+  saveToGDrive: localStorage.getItem(SL_KEYS.gdrive) === '1',
+  setSaveToGDrive: (v) => { try { localStorage.setItem(SL_KEYS.gdrive, v ? '1' : '0'); } catch { /* ignore */ } set({ saveToGDrive: v }); },
+  saveToOneDrive: localStorage.getItem(SL_KEYS.onedrive) === '1',
+  setSaveToOneDrive: (v) => { try { localStorage.setItem(SL_KEYS.onedrive, v ? '1' : '0'); } catch { /* ignore */ } set({ saveToOneDrive: v }); },
+  snapToCloud: localStorage.getItem(SL_KEYS.snapCloud) === '1' || localStorage.getItem(SL_KEYS.snaploc) === 'cloud',
+  setSnapToCloud: (v) => { try { localStorage.setItem(SL_KEYS.snapCloud, v ? '1' : '0'); localStorage.removeItem(SL_KEYS.snaploc); } catch { /* ignore */ } set({ snapToCloud: v }); },
+  snapToGDrive: localStorage.getItem(SL_KEYS.snapGDrive) === '1' || localStorage.getItem(SL_KEYS.snaploc) === 'gdrive',
+  setSnapToGDrive: (v) => { try { localStorage.setItem(SL_KEYS.snapGDrive, v ? '1' : '0'); localStorage.removeItem(SL_KEYS.snaploc); } catch { /* ignore */ } set({ snapToGDrive: v }); },
+  snapToOneDrive: localStorage.getItem(SL_KEYS.snapOneDrive) === '1' || localStorage.getItem(SL_KEYS.snaploc) === 'onedrive',
+  setSnapToOneDrive: (v) => { try { localStorage.setItem(SL_KEYS.snapOneDrive, v ? '1' : '0'); localStorage.removeItem(SL_KEYS.snaploc); } catch { /* ignore */ } set({ snapToOneDrive: v }); },
+  gdriveClientId: localStorage.getItem(SL_KEYS.gdriveId) || '',
+  setGdriveClientId: (id) => { try { localStorage.setItem(SL_KEYS.gdriveId, id); } catch { /* ignore */ } set({ gdriveClientId: id }); },
+  onedriveClientId: localStorage.getItem(SL_KEYS.onedriveId) || '',
+  setOnedriveClientId: (id) => { try { localStorage.setItem(SL_KEYS.onedriveId, id); } catch { /* ignore */ } set({ onedriveClientId: id }); },
 }));

@@ -301,7 +301,7 @@ const LanguageInstallerDialog: React.FC<{ onClose: () => void }> = ({ onClose })
                           ? lang.source.npm
                           : lang.source.kind === 'libreoffice'
                             ? `LibreOffice/${lang.source.folder}`
-                            : `FreeScript/${lang.source.path}`
+                            : `FreeDraft/${lang.source.path}`
                       }
                     </div>
                   </div>

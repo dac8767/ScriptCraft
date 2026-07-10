@@ -1,10 +1,10 @@
 /**
  * AnalyticsTool — script analytics under one roof, organized into tabs:
- *   Overview | Scenes | Dialogue | Characters | Timing | Gender
+ *   Overview | Scenes | Dialogue | Gender
  * Overview: totals cards. Scenes: scene breakdown + pacing chart.
- * Dialogue: dialogue distribution. Characters: presence-by-scene map.
- * Timing: the per-scene timing report. Gender: OpenDraft's gender breakdown
- * plus the FreeScript assignment table (parity bars, two-plus-female-speakers
+ * Dialogue: dialogue distribution. Scenes also hosts the character
+ * presence-by-scene map and the timing report. Gender: OpenDraft's gender breakdown
+ * plus the FreeDraft assignment table (parity bars, two-plus-female-speakers
  * count; assignments write to Character Profiles).
  *
  * Tab filtering works via the data-sec attribute each statistics section
@@ -19,8 +19,6 @@ const TABS = [
   ['overview', 'Overview'],
   ['scenes', 'Scenes'],
   ['dialogue', 'Dialogue'],
-  ['characters', 'Characters'],
-  ['timing', 'Timing'],
   ['gender', 'Gender'],
 ] as const;
 

@@ -6,6 +6,7 @@ import { isWeb } from '../services/platform';
 import type { ProjectInfo } from '../services/api';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useEditorStore } from '../stores/editorStore';
+import { mirrorSave } from '../services/saveLocations';
 
 export type SaveDestination = 'local' | 'cloud';
 
@@ -42,7 +43,7 @@ const WEB_ONLY_CLOUD = isWeb();
 
 /** Banner shown when the user is saving a document that came from an external
  *  file (FDX, Fountain, DOCX, etc.). Clarifies that the save goes into
- *  FreeScript's library — it does *not* write back to the source file. */
+ *  FreeDraft's library — it does *not* write back to the source file. */
 const ImportedSourceNotice: React.FC = () => {
   const importedSource = useEditorStore((s) => s.importedSource);
   if (!importedSource) return null;
@@ -60,7 +61,7 @@ const ImportedSourceNotice: React.FC = () => {
       }}
     >
       <strong>Note:</strong> This document was imported from <strong>{importedSource.name}</strong>{' '}
-      ({importedSource.format}). Saving creates a new file inside FreeScript's library —
+      ({importedSource.format}). Saving creates a new file inside FreeDraft's library —
       it does <strong>not</strong> overwrite the original source file. To write back to
       the original format, use <em>File → Export</em> after saving.
     </div>
@@ -77,7 +78,18 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
 }) => {
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [projectName, setProjectName] = useState('');
-  const [fileName, setFileName] = useState(defaultFileName);
+  // v0.16: File Name is composed from Draft + Version. Draft autofills from
+  // the document's draft label (Edit > Set Draft Number), Version from
+  // today's date in MM/DD/YY — both editable.
+  void defaultFileName; // superseded by Draft + Version autofill (v0.16)
+  const initialDraft = useEditorStore.getState().draftLabel || 'First Draft';
+  const today = new Date();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const yy = String(today.getFullYear()).slice(-2);
+  const [draft, setDraft] = useState(initialDraft);
+  const [version, setVersion] = useState(`${mm}/${dd}/${yy}`);
+  const fileName = draft.trim() && version.trim() ? `${draft.trim()} - ${version.trim()}` : (draft.trim() || version.trim());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -261,6 +273,16 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
       });
 
       saveLastProjectName(trimmedProject);
+      // Fan out to enabled secondary save locations (Settings > Save Locations)
+      if (content) {
+        void mirrorSave({
+          projectId: project.id,
+          scriptId: scriptResp.meta.id,
+          projectName: trimmedProject,
+          title: trimmedFile,
+          content,
+        });
+      }
       onSaved(project.id, trimmedProject, scriptResp.meta.id, trimmedFile, destination);
     } catch (err) {
       // AuthGate / QuotaExceededDialog already showed a dialog for these —
@@ -312,12 +334,12 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
                   className={`open-file-source-tab ${destination === 'cloud' ? 'active' : ''}`}
                   onClick={() => setDestination('cloud')}
                 >
-                  <FaCloud /> FreeScript Cloud
+                  <FaCloud /> FreeDraft Cloud
                 </button>
               </div>
               {destination === 'cloud' && !signedIn && (
                 <div style={{ fontSize: 12, color: '#ff9966', marginTop: 6 }}>
-                  Sign in to save to FreeScript Cloud — pressing Save will open the login dialog.
+                  Sign in to save to FreeDraft Cloud — pressing Save will open the login dialog.
                 </div>
               )}
             </div>
@@ -407,13 +429,24 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
             </div>
           </div>
           <div className="dialog-row" style={{ marginTop: 12 }}>
-            <label>File Name</label>
+            <label>Draft</label>
             <input
               ref={fileInputRef}
-              value={fileName}
-              onChange={(e) => setFileName(e.target.value)}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
               placeholder="First Draft"
             />
+          </div>
+          <div className="dialog-row" style={{ marginTop: 12 }}>
+            <label>Version</label>
+            <input
+              value={version}
+              onChange={(e) => setVersion(e.target.value)}
+              placeholder={`${mm}/${dd}/${yy}`}
+            />
+          </div>
+          <div className="save-as-preview">
+            Saves as: <strong>{[projectName.trim(), fileName].filter(Boolean).join(' - ') || '—'}</strong>
           </div>
           {error && (
             <div style={{ color: '#ff6b6b', fontSize: 12, marginTop: 8 }}>{error}</div>

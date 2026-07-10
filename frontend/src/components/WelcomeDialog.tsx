@@ -12,7 +12,7 @@ const WelcomeDialog: React.FC<WelcomeDialogProps> = ({ onChoice }) => {
       <div className="welcome-card" onClick={(e) => e.stopPropagation()}>
         <div className="welcome-hero">
           <div className="welcome-logo">OD</div>
-          <h1 className="welcome-title">FreeScript</h1>
+          <h1 className="welcome-title">FreeDraft</h1>
           <p className="welcome-subtitle">Professional screenwriting, open source.</p>
         </div>
 

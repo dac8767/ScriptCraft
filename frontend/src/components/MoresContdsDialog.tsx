@@ -3,6 +3,8 @@ import { useEditorStore, resolveMoresContds, DEFAULT_MORES_CONTDS } from '../sto
 
 interface Props {
   onClose: () => void;
+  /** Render only the content (no overlay/box) — used inside Preferences. */
+  embedded?: boolean;
 }
 
 // Common industry presets; "Custom…" reveals a free-text override.
@@ -18,7 +20,7 @@ const CUSTOM = '__custom__';
  * The character (CONT'D) never carries across a scene heading — that is a fixed
  * industry rule, so there is no setting for it.
  */
-const MoresContdsDialog: React.FC<Props> = ({ onClose }) => {
+const MoresContdsDialog: React.FC<Props> = ({ onClose, embedded = false }) => {
   const { pageLayout, setPageLayout } = useEditorStore();
   const initial = resolveMoresContds(pageLayout);
 
@@ -55,11 +57,9 @@ const MoresContdsDialog: React.FC<Props> = ({ onClose }) => {
   const checkboxRow: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 4 };
   const helpStyle: React.CSSProperties = { fontSize: 12, opacity: 0.7, margin: '0 0 16px 26px' };
 
-  return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div className="tp-editor-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 540 }}>
-        <div className="dialog-header">Mores &amp; Continueds</div>
-        <div className="tp-editor-body" style={{ display: 'block', padding: 20 }}>
+  const body = (
+    <>
+        <div className="tp-editor-body" style={{ display: 'block', padding: embedded ? '4px 0 0' : 20 }}>
 
           <label style={checkboxRow}>
             <input type="checkbox" checked={characterContd} onChange={(e) => setCharacterContd(e.target.checked)} />
@@ -129,11 +129,21 @@ const MoresContdsDialog: React.FC<Props> = ({ onClose }) => {
             )}
           </div>
         </div>
-        <div className="dialog-actions">
+        <div className="dialog-actions" style={embedded ? { border: 'none', padding: '14px 0 0' } : undefined}>
           <button onClick={handleReset} style={{ marginRight: 'auto' }}>Reset to defaults</button>
-          <button onClick={onClose}>Cancel</button>
+          {!embedded && <button onClick={onClose}>Cancel</button>}
           <button className="dialog-primary" onClick={handleApply}>Apply</button>
         </div>
+    </>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <div className="dialog-overlay" onClick={onClose}>
+      <div className="tp-editor-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 540 }}>
+        <div className="dialog-header">Mores &amp; Continueds</div>
+        {body}
       </div>
     </div>
   );

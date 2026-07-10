@@ -19,7 +19,7 @@ const EXPIRY_OPTIONS = [
   { label: '30 days', hours: 720 },
 ];
 
-const SettingsPage: React.FC = () => {
+const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const navigate = useNavigate();
   const {
     collabServerUrl, setCollabServerUrl,
@@ -30,7 +30,7 @@ const SettingsPage: React.FC = () => {
   const [urlInput, setUrlInput] = useState(collabServerUrl);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
 
-  // FreeScript Cloud (HTTP backend) URL — distinct from the collab WebSocket
+  // FreeDraft Cloud (HTTP backend) URL — distinct from the collab WebSocket
   // server. On Tauri custom schemes the same-origin default doesn't work, so
   // the user must point at a real backend (e.g. https://opendraft.duckdns.org/api).
   const CLOUD_API_KEY = 'opendraft:cloudApiUrl';
@@ -134,7 +134,7 @@ const SettingsPage: React.FC = () => {
     try {
       if (trimmed) localStorage.setItem(CLOUD_API_KEY, trimmed);
       else localStorage.removeItem(CLOUD_API_KEY);
-      showToast('FreeScript Cloud URL saved', 'success');
+      showToast('FreeDraft Cloud URL saved', 'success');
     } catch {
       showToast('Could not save URL', 'error');
     }
@@ -506,7 +506,8 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="settings-page">
+    <div className={`settings-page${embedded ? ' settings-page-embedded' : ''}`}>
+      {!embedded && (
       <div className="settings-header">
         <button className="settings-back-btn" onClick={() => navigate(-1)} title="Go back">
           &larr;
@@ -514,6 +515,7 @@ const SettingsPage: React.FC = () => {
         <h1>System Settings</h1>
       </div>
 
+      )}
       <div className="settings-content">
         {/* ── Collaboration Server URL ── */}
         <section className="settings-section">
@@ -561,9 +563,9 @@ const SettingsPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ── FreeScript Cloud API URL ── */}
+        {/* ── FreeDraft Cloud API URL ── */}
         <section className="settings-section">
-          <h2 className="settings-section-title">FreeScript Cloud Server</h2>
+          <h2 className="settings-section-title">FreeDraft Cloud Server</h2>
           <p className="settings-section-desc">
             HTTP backend used for sign-in, projects, and cloud saves. Leave blank
             in the browser to use this site's <code>/api</code>. Required on the
@@ -1026,7 +1028,7 @@ const SettingsPage: React.FC = () => {
                       <div className="settings-delete-warning">
                         <strong>Before you continue:</strong>{' '}
                         {inventoryLoading ? (
-                          <>checking your FreeScript Cloud account for screenplays…</>
+                          <>checking your FreeDraft Cloud account for screenplays…</>
                         ) : cloudInventory && (cloudInventory.projects > 0 || cloudInventory.scripts > 0) ? (
                           <>
                             you have <strong>{cloudInventory.projects}</strong>{' '}
@@ -1037,14 +1039,14 @@ const SettingsPage: React.FC = () => {
                                 screenplay{cloudInventory.scripts === 1 ? '' : 's'}
                               </>
                             )}{' '}
-                            stored in FreeScript Cloud. They will be permanently deleted along
+                            stored in FreeDraft Cloud. They will be permanently deleted along
                             with this account and cannot be recovered. Please open each one in
-                            FreeScript and use <em>File → Save As / Export</em> to download a
+                            FreeDraft and use <em>File → Save As / Export</em> to download a
                             local copy before continuing.
                           </>
                         ) : (
                           <>
-                            any screenplays stored in FreeScript Cloud under this account will be
+                            any screenplays stored in FreeDraft Cloud under this account will be
                             deleted along with the account and cannot be recovered. Please make
                             sure you have downloaded them first.
                           </>

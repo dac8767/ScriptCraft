@@ -13,7 +13,7 @@ export interface SaveErrorInfo {
   /** Human-readable error message (already extracted from the Error). */
   message: string;
   /** Where the failure originated: auto-save, manual save, etc. */
-  source: 'auto-save' | 'metadata-save' | 'manual-save' | 'save-on-close';
+  source: 'auto-save' | 'metadata-save' | 'manual-save' | 'save-on-close' | 'save-location';
   /** Captured time so the dialog can show "just now" / timestamp. */
   at: number;
 }

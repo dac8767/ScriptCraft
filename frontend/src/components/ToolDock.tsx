@@ -17,6 +17,7 @@ import type { Editor } from '@tiptap/react';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
+  FaTh, FaStream, FaTags, FaHighlighter, FaProjectDiagram, FaBoxes,
 } from 'react-icons/fa';
 import { useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -26,6 +27,12 @@ import AnalyticsTool from './AnalyticsTool';
 import GoalsTool from './GoalsTool';
 import CharacterProfiles from './CharacterProfiles';
 import { StickyNotesTool, FragmentsTool, TodoTool } from './StickyNotes';
+import HighlightsTool from './HighlightsTool';
+import ProjectManagerTool from './ProjectManagerTool';
+import AssetManager from './AssetManager';
+import TagsPanel from './TagsPanel';
+import IndexCards from './IndexCards';
+import BeatBoard from './BeatBoard';
 
 export interface ToolDef {
   id: ToolId;
@@ -36,23 +43,37 @@ export interface ToolDef {
   group: number;
 }
 
+// Default heights sit at ~60% of the original panel lengths (v0.25) — drag
+// the resize handle to make any window taller; the new size sticks.
 export const ALL_TOOLS: ToolDef[] = [
-  { id: 'navigator', label: 'Navigator', icon: <FaRegCompass />, defaultSize: { w: 300, h: 520 }, group: 0 },
-  { id: 'scenes', label: 'Scenes', icon: <FaFilm />, defaultSize: { w: 320, h: 560 }, group: 1 },
-  { id: 'pages', label: 'Pages', icon: <FaRegClone />, defaultSize: { w: 340, h: 580 }, group: 1 },
-  { id: 'locations', label: 'Locations', icon: <FaMapMarkerAlt />, defaultSize: { w: 320, h: 540 }, group: 1 },
-  { id: 'characters', label: 'Characters', icon: <FaUserFriends />, defaultSize: { w: 420, h: 600 }, group: 1 },
-  { id: 'sticky', label: 'Sticky Notes', icon: <FaRegStickyNote />, defaultSize: { w: 320, h: 560 }, group: 2 },
-  { id: 'fragments', label: 'Fragments', icon: <FaRegClipboard />, defaultSize: { w: 320, h: 520 }, group: 2 },
-  { id: 'todo', label: 'To-Do', icon: <FaCheckSquare />, defaultSize: { w: 300, h: 480 }, group: 2 },
-  { id: 'analytics', label: 'Analytics', icon: <FaChartBar />, defaultSize: { w: 620, h: 640 }, group: 3 },
-  { id: 'goals', label: 'Goals', icon: <FaBullseye />, defaultSize: { w: 340, h: 440 }, group: 3 },
+  { id: 'navigator', label: 'Navigator', icon: <FaRegCompass />, defaultSize: { w: 300, h: 312 }, group: 0 },
+  { id: 'scenes', label: 'Scenes', icon: <FaFilm />, defaultSize: { w: 320, h: 336 }, group: 1 },
+  { id: 'pages', label: 'Pages', icon: <FaRegClone />, defaultSize: { w: 340, h: 348 }, group: 1 },
+  { id: 'locations', label: 'Locations', icon: <FaMapMarkerAlt />, defaultSize: { w: 320, h: 324 }, group: 1 },
+  { id: 'characters', label: 'Characters', icon: <FaUserFriends />, defaultSize: { w: 420, h: 360 }, group: 1 },
+  { id: 'indexcards', label: 'Index Cards', icon: <FaTh />, defaultSize: { w: 680, h: 372 }, group: 1 },
+  { id: 'beatboard', label: 'Outline', icon: <FaStream />, defaultSize: { w: 960, h: 372 }, group: 1 },
+  { id: 'sticky', label: 'Notes', icon: <FaRegStickyNote />, defaultSize: { w: 300, h: 336 }, group: 2 },
+  { id: 'fragments', label: 'Snippets', icon: <FaRegClipboard />, defaultSize: { w: 300, h: 312 }, group: 2 },
+  { id: 'todo', label: 'To-Do', icon: <FaCheckSquare />, defaultSize: { w: 300, h: 288 }, group: 2 },
+  { id: 'highlights', label: 'Highlights', icon: <FaHighlighter />, defaultSize: { w: 300, h: 312 }, group: 2 },
+  { id: 'tags', label: 'Production Tags', icon: <FaTags />, defaultSize: { w: 340, h: 336 }, group: 2 },
+  { id: 'projects', label: 'Project Manager', icon: <FaProjectDiagram />, defaultSize: { w: 300, h: 288 }, group: 3 },
+  { id: 'assets', label: 'Asset Manager', icon: <FaBoxes />, defaultSize: { w: 620, h: 372 }, group: 3 },
+  { id: 'analytics', label: 'Analytics', icon: <FaChartBar />, defaultSize: { w: 620, h: 384 }, group: 3 },
+  { id: 'goals', label: 'Goals', icon: <FaBullseye />, defaultSize: { w: 340, h: 264 }, group: 3 },
 ];
 
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
 
+/** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
+export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'projects', 'assets'];
+export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
+
 const MIN_W = 240;
 const MIN_H = 260;
+/** Dock column width; tools whose remembered width fits open inline. */
+export const DOCK_W = 300;
 
 /** Shared tool-content renderer (docked and temporary windows). */
 export function ToolContent({ id, editor, scrollContainer }: {
@@ -77,16 +98,28 @@ export function ToolContent({ id, editor, scrollContainer }: {
       return <StickyNotesTool editor={editor} />;
     case 'fragments':
       return <FragmentsTool editor={editor} />;
+    case 'highlights':
+      return <HighlightsTool editor={editor} scrollContainer={scrollContainer ?? null} />;
+    case 'projects':
+      return <ProjectManagerTool />;
+    case 'assets':
+      return <AssetManager projectId={currentProject?.id || ''} embedded />;
     case 'todo':
       return <TodoTool editor={editor} />;
+    case 'tags':
+      return <TagsPanel editor={editor} embedded />;
+    case 'indexcards':
+      return <IndexCards editor={editor} scrollContainer={scrollContainer ?? null} embedded />;
+    case 'beatboard':
+      return <BeatBoard embedded />;
     default:
       return null;
   }
 }
 
 /** Resizable window chrome shared by docked and temporary tool windows. */
-export function ToolWindowFrame({ tool, onClose, temporary, children }: {
-  tool: ToolDef; onClose: () => void; temporary?: boolean; children: React.ReactNode;
+export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
+  tool: ToolDef; onClose: () => void; temporary?: boolean; side?: ToolSide; children: React.ReactNode;
 }) {
   const { toolSizes, setToolSize } = useEditorStore();
   const size = toolSizes[tool.id] || tool.defaultSize;
@@ -103,7 +136,11 @@ export function ToolWindowFrame({ tool, onClose, temporary, children }: {
     let w = startW;
     let h = startH;
     const onMove = (ev: PointerEvent) => {
-      w = Math.max(MIN_W, startW + (ev.clientX - startX));
+      // Right-docked windows are anchored on their right edge, so they grow
+      // AWAY from the side panel (leftward); the handle sits bottom-left and
+      // dragging left widens the window.
+      const dx = ev.clientX - startX;
+      w = Math.max(MIN_W, startW + (side === 'right' ? -dx : dx));
       h = Math.max(MIN_H, startH + (ev.clientY - startY));
       el.style.width = `${w}px`;
       el.style.height = `${h}px`;
@@ -129,8 +166,15 @@ export function ToolWindowFrame({ tool, onClose, temporary, children }: {
         <button className="tool-window-close" onClick={onClose} title="Close">×</button>
       </div>
       <div className="tool-window-body">{children}</div>
+      {!temporary && (
+        <button
+          className={`tool-window-popin${side === 'right' ? ' tool-window-popin-right' : ''}`}
+          title="Pop back into the side panel"
+          onClick={() => setToolSize(tool.id, DOCK_W, size.h)}
+        >{side === 'right' ? '\u2922' : '\u2921'}</button>
+      )}
       <div
-        className="tool-window-resize"
+        className={`tool-window-resize${side === 'right' ? ' tool-window-resize-left' : ''}`}
         onPointerDown={startResize}
         title="Drag to resize — the new size becomes this tool's default"
       />
@@ -149,14 +193,43 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     activeTool, setActiveTool, activeToolRight, setActiveToolRight, toolConfig,
   } = useEditorStore();
 
+  const { toolOrder } = useEditorStore();
+  const orderIdx = (id: string) => {
+    const i = toolOrder.indexOf(id);
+    return i === -1 ? 1000 + ALL_TOOLS.findIndex((t) => t.id === id) : i;
+  };
   const tools = ALL_TOOLS.filter((t) => {
     const cfg = toolConfig[t.id] ?? DEFAULT_TOOL_CONFIG[t.id];
     return cfg && cfg.enabled && cfg.side === side;
-  });
+  }).sort((a, b) => orderIdx(a.id) - orderIdx(b.id));
 
   const activeId = side === 'left' ? activeTool : activeToolRight;
   const setActive = side === 'left' ? setActiveTool : setActiveToolRight;
   const active = tools.find((t) => t.id === activeId) || null;
+  const { toolSizes, setToolSize } = useEditorStore();
+  const activeSize = active ? (toolSizes[active.id] || active.defaultSize) : null;
+  // Small-enough windows open inline, pushing the buttons below them down.
+  const inline = !!(active && activeSize && activeSize.w <= DOCK_W);
+
+  const startInlineResize = (e: React.PointerEvent) => {
+    if (!active || !activeSize) return;
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = activeSize.h;
+    const el = (e.currentTarget as HTMLElement).previousElementSibling as HTMLElement | null;
+    let h = startH;
+    const onMove = (ev: PointerEvent) => {
+      h = Math.max(160, startH + (ev.clientY - startY));
+      if (el) el.style.height = `${h}px`;
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      setToolSize(active.id, activeSize.w, h);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  };
 
   // Clicking back into the script minimizes the open tool window
   useEffect(() => {
@@ -174,9 +247,8 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   return (
     <div className={`tool-dock-wrap tool-dock-${side}`}>
       <div className="tool-dock">
-        {tools.map((t, i) => (
+        {tools.map((t) => (
           <React.Fragment key={t.id}>
-            {i > 0 && tools[i - 1].group !== t.group && <div className="tool-dock-sep" />}
             <button
               className={'tool-dock-item' + (activeId === t.id ? ' active' : '')}
               onClick={() => setActive(activeId === t.id ? null : t.id)}
@@ -185,12 +257,29 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               <span className="tool-dock-icon">{t.icon}</span>
               <span className="tool-dock-label">{t.label}</span>
             </button>
+            {inline && active && active.id === t.id && (
+              <div className="tool-inline">
+                <button
+                  className={`tool-inline-popout${side === 'right' ? ' tool-inline-popout-left' : ''}`}
+                  title="Pop out into a floating window for resizing"
+                  onClick={() => setToolSize(active.id, DOCK_W + 140, activeSize!.h)}
+                >{side === 'right' ? '\u2921' : '\u2922'}</button>
+                <div className="tool-inline-body" style={{ height: activeSize!.h }}>
+                  <ToolContent id={active.id} editor={editor} scrollContainer={scrollContainer} />
+                </div>
+                <div
+                  className="tool-inline-resize"
+                  onPointerDown={startInlineResize}
+                  title="Drag to resize — the new height becomes this tool's default"
+                />
+              </div>
+            )}
           </React.Fragment>
         ))}
       </div>
 
-      {active && (
-        <ToolWindowFrame tool={active} onClose={() => setActive(null)}>
+      {active && !inline && (
+        <ToolWindowFrame tool={active} side={side} onClose={() => setActive(null)}>
           <ToolContent id={active.id} editor={editor} scrollContainer={scrollContainer} />
         </ToolWindowFrame>
       )}

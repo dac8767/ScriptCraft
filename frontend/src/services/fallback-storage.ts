@@ -84,7 +84,7 @@ const EMPTY_PROPS: ProjectProperties = {
 
 export function createFallbackStorage() {
   console.warn(
-    '%c[FreeScript] Using localStorage fallback — Tauri storage unavailable',
+    '%c[FreeDraft] Using localStorage fallback — Tauri storage unavailable',
     'color: #ff9f43; font-weight: bold'
   );
 

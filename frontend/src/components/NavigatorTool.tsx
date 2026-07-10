@@ -1,5 +1,5 @@
 /**
- * NavigatorTool — the outline at a glance, ported from FreeScript v5.5's
+ * NavigatorTool — the outline at a glance, ported from FreeDraft v5.5's
  * Navigator. Lists every jumpable landmark in the script:
  *   - Scenes:       scene headings (click to jump)
  *   - Acts:         new act / end of act markers (click to jump)
@@ -11,10 +11,11 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 
-const KINDS = ['scene', 'act', 'note', 'todo'] as const;
+const KINDS = ['scene', 'act', 'section', 'marker', 'note', 'todo'] as const;
 type Kind = typeof KINDS[number];
 const LABEL: Record<Kind, string> = {
-  scene: 'Scene Headers', act: 'Acts', note: 'Script Notes', todo: 'To-Dos',
+  scene: 'Scene Headers', act: 'Acts', section: 'Sections', marker: 'Markers',
+  note: 'Script Notes', todo: 'To-Dos',
 };
 
 interface Item {
@@ -36,7 +37,7 @@ interface NavigatorToolProps {
 }
 
 export default function NavigatorTool({ editor, scrollContainer }: NavigatorToolProps) {
-  const { notes, shelfCards, setShelfCards, setNoteFilter, openShelfTab } = useEditorStore();
+  const { notes, setNoteFilter, openShelfTab } = useEditorStore();
   const [filter, setFilter] = useState('');
   const [show, setShow] = useState<Record<Kind, boolean>>(
     () => Object.fromEntries(KINDS.map((k) => [k, true])) as Record<Kind, boolean>,
@@ -59,6 +60,16 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
           out.push({ kind: 'scene', text: node.textContent || '(untitled scene)', pos });
         } else if (node.type.name === 'newAct' || node.type.name === 'endOfAct') {
           out.push({ kind: 'act', text: node.textContent || '(act)', pos });
+        } else if (node.type.name === 'general') {
+          // Outline lines from Insert → Section / Marker / Checklist Item
+          const text = node.textContent || '';
+          if (/^#+\s/.test(text)) {
+            out.push({ kind: 'section', text: text.replace(/^#+\s*/, '') || '(section)', pos });
+          } else if (text.startsWith('⚑')) {
+            out.push({ kind: 'marker', text: text.replace(/^⚑\s*/, '') || '(marker)', pos });
+          } else if (/^\[[ x]\]/.test(text)) {
+            out.push({ kind: 'todo', text: text.slice(3).trim(), pos, done: text[1] === 'x' });
+          }
         }
         return true;
       });
@@ -66,16 +77,13 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
     for (const n of notes) {
       out.push({ kind: 'note', text: n.content || n.anchorText || '(empty note)', noteId: n.id });
     }
-    shelfCards.forEach((card) => {
-      if (card.type !== 'todo') return;
-      (card.items || []).forEach((it, idx) => {
-        out.push({ kind: 'todo', text: it.text, cardId: card.id, itemIdx: idx, done: it.done });
-      });
-    });
+    // v0.15: General To-Do cards intentionally do NOT appear here — the
+    // Navigator maps the SCRIPT, and only doc checklist lines have a location
+    // in it. General to-dos live solely in the To-Do window's General tab.
     return out;
     // docTick forces re-scan of editor content
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, docTick, notes, shelfCards]);
+  }, [editor, docTick, notes]);
 
   const visible = items.filter(
     (it) => show[it.kind] && (!filter || it.text.toLowerCase().includes(filter.toLowerCase())),
@@ -98,17 +106,17 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
     else if (it.kind === 'note' && it.noteId) {
       setNoteFilter({ elementType: null, contextLabel: null, color: null, noteId: it.noteId });
       openShelfTab('script');
-    } else if (it.kind === 'todo') {
-      openShelfTab('todo');
     }
   };
 
   const toggleTodo = (it: Item) => {
-    setShelfCards(shelfCards.map((c) =>
-      c.id === it.cardId
-        ? { ...c, items: (c.items || []).map((x, j) => (j === it.itemIdx ? { ...x, done: !x.done } : x)) }
-        : c,
-    ));
+    if (it.pos !== undefined && editor) {
+      // Doc checklist line: flip the [ ] / [x] prefix in place
+      const tr = editor.state.tr.replaceWith(
+        it.pos + 1, it.pos + 4, editor.state.schema.text(it.done ? '[ ]' : '[x]'),
+      );
+      editor.view.dispatch(tr);
+    }
   };
 
   return (
@@ -154,7 +162,7 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
               />
             )}
             <span className={it.done ? 'fs-nav-done' : ''}>
-              {it.kind === 'note' ? '📝 ' : it.kind === 'act' ? '§ ' : ''}
+              {it.kind === 'note' ? '📝 ' : it.kind === 'act' ? '§ ' : it.kind === 'marker' ? '⚑ ' : it.kind === 'section' ? '# ' : ''}
               {it.text.length > 80 ? it.text.slice(0, 80) + '…' : it.text || '(untitled)'}
             </span>
           </div>

@@ -1,0 +1,112 @@
+import React from 'react';
+
+/**
+ * HelpReferenceDialog — Help menu content, ported from FreeDraft v5.5's
+ * HelpModal and KnowledgeBaseModal and updated for this app:
+ *   - kind="shortcuts": the keyboard shortcut grid
+ *   - kind="knowledge": the in-app Knowledge Base document
+ */
+const isMac = navigator.platform.toUpperCase().includes('MAC');
+const mod = isMac ? '⌘' : 'Ctrl+';
+
+const SHORTCUTS: [string, string][] = [
+  [`${mod}1 – ${mod}8`, 'Set the current element (Scene Heading, Action, Character, Dialogue, Parenthetical, Transition, General, Shot)'],
+  ['Tab / Enter', 'Cycle to the next logical element while writing'],
+  [`${mod}D`, 'Toggle dual dialogue on a character cue'],
+  [`${mod}B / ${mod}I / ${mod}U`, 'Bold / Italic / Underline'],
+  [`${mod}Z / ⇧${mod}Z`, 'Undo / Redo'],
+  [`${mod}F`, 'Find & Replace'],
+  [`${mod}G`, 'Go to Page'],
+  [`${mod}S`, 'Save'],
+  [`⇧${mod}S`, 'Save As (local .odraft file)'],
+  [`${mod}N`, 'New screenplay'],
+  [`${mod}P`, 'Print'],
+  ['⌥⌘X', 'Cut selection to Snippets'],
+  ['⌥⌘C', 'Copy selection to Snippets'],
+  ['⌥-click a note highlight', 'Open Sticky Notes → Script focused on that note'],
+  ['Right-click selection', 'Add Script Note, Production Tag, and more'],
+];
+
+function Shortcuts() {
+  return (
+    <div className="fs-help-grid">
+      {SHORTCUTS.map(([k, d]) => (
+        <div key={k} className="fs-help-row">
+          <span className="fs-kbd">{k}</span>
+          <span>{d}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Knowledge() {
+  const H = ({ children }: { children: React.ReactNode }) => <h4 className="fs-kb-h">{children}</h4>;
+  const P = ({ children }: { children: React.ReactNode }) => <p className="fs-kb-p">{children}</p>;
+  return (
+    <div>
+      <P>FreeDraft is a screenplay editor. You write in formatted elements (scene headings,
+      action, dialogue, transitions) positioned at spec print columns — Courier, standard
+      margins, about 55 lines per page. Everything below is reachable from the menus, the
+      toolbar, or the Tool Panels on either side of the page.</P>
+
+      <H>File</H>
+      <P><b>Save</b> writes to the app's library; <b>Save As</b> downloads a local .odraft file;
+      <b> Save to Cloud</b> signs in and stores the script on your FreeDraft Cloud account.
+      <b> Snapshots</b> holds Check In plus every saved version — compare or restore any of them.
+      Import and export cover Final Draft (.fdx), Fountain, Word, and PDF.</P>
+
+      <H>Tool Panels</H>
+      <P>Photoshop-style tool lists flank the editor. Click a tool to open it — small tools expand
+      inside the panel; larger ones float in a resizable window. A window's size is remembered per
+      tool. <b>View → Customize Layout</b> controls which tools appear, on which side, the toolbar
+      mode, and pinned toolbar buttons.</P>
+
+      <H>Tools</H>
+      <P><b>Navigator</b> — the outline: scenes, acts, script notes, and to-dos, each jumpable.
+      <b> Scenes / Pages / Locations</b> — structure views of the script. <b>Characters</b> —
+      profiles, relationship map, and gender data. <b>Index Cards</b> and <b>Outline</b> —
+      story planning surfaces. <b>Analytics</b> — statistics organized into Overview, Scenes,
+      Dialogue, Characters, Timing, and Gender tabs. <b>Goals</b> — word, page, or timed writing
+      targets with live progress in the status bar.</P>
+
+      <H>Sticky Notes, Snippets, To-Do</H>
+      <P><b>Sticky Notes</b> holds General cards plus Script notes anchored to text (select text,
+      right-click, Add Script Note; ⌥-click a highlight to jump to its card). <b>Snippets</b>
+      receives text cut (⌥⌘X) or copied (⌥⌘C) from the editor. <b>To-Do</b> is checklist cards.
+      All cards take sticky colors, drag to reorder, have editable title headers, and show their
+      creation date.</P>
+
+      <H>Title Page</H>
+      <P>Insert → Title Page opens the structured editor: title (two rows, each with its own font
+      size), byline, draft, contact, and images. The title page always lays out as exactly one page.</P>
+
+      <H>Production</H>
+      <P><b>Production Tags</b> marks props, wardrobe, and more inline. <b>Revision Mode</b> marks
+      every line you touch. Scene numbers, watermarks, and MORE/CONT'D behavior live under Format.</P>
+    </div>
+  );
+}
+
+interface Props {
+  kind: 'shortcuts' | 'knowledge';
+  open: boolean;
+  onClose: () => void;
+}
+
+export default function HelpReferenceDialog({ kind, open, onClose }: Props) {
+  if (!open) return null;
+  return (
+    <div className="dialog-overlay" onClick={onClose}>
+      <div className="dialog-box fs-help-dialog" onClick={(e) => e.stopPropagation()}>
+        <div className="dialog-header">
+          {kind === 'shortcuts' ? 'Keyboard Shortcuts' : 'Knowledge Base'}
+          <button className="fs-dialog-x" onClick={onClose} title="Close">&times;</button>
+        </div>
+        <div className="dialog-body fs-help-body">
+          {kind === 'shortcuts' ? <Shortcuts /> : <Knowledge />}
+        </div>
+      </div>
+    </div>
+  );
+}

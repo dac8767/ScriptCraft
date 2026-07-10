@@ -164,7 +164,7 @@ const SortableCard: React.FC<SortableCardProps> = ({
           <span className="project-card-dot">&middot;</span>
           <span
             className={`source-badge source-badge--${source}`}
-            title={source === 'cloud' ? 'Stored on FreeScript Cloud' : 'Stored on this device'}
+            title={source === 'cloud' ? 'Stored on FreeDraft Cloud' : 'Stored on this device'}
           >
             {source === 'cloud' ? <FaCloud /> : <FaDesktop />}
             {source === 'cloud' ? 'Cloud' : 'Local'}
@@ -517,7 +517,7 @@ const ProjectList: React.FC = () => {
             className={`project-source-tab ${source === 'cloud' ? 'active' : ''}`}
             onClick={() => setSource('cloud')}
           >
-            <FaCloud /> FreeScript Cloud
+            <FaCloud /> FreeDraft Cloud
           </button>
         </div>
       )}
@@ -526,7 +526,7 @@ const ProjectList: React.FC = () => {
         <div className="project-list-title-area">
           <h1 className="project-list-title">Projects</h1>
           <span className="project-list-subtitle">
-            {source === 'cloud' ? 'FreeScript Cloud' : 'On this device'}
+            {source === 'cloud' ? 'FreeDraft Cloud' : 'On this device'}
             {source === 'cloud' && getApiBase() && (
               <>
                 {' · '}
@@ -586,7 +586,7 @@ const ProjectList: React.FC = () => {
       ) : source === 'cloud' && !signedIn ? (
         <div className="project-list-empty">
           <div className="project-list-empty-icon">&#9729;</div>
-          <div>Sign in to access FreeScript Cloud projects. Click the "Local only" indicator at the top to sign in.</div>
+          <div>Sign in to access FreeDraft Cloud projects. Click the "Local only" indicator at the top to sign in.</div>
         </div>
       ) : errorMsg ? (
         <div className="project-list-empty">
@@ -600,7 +600,7 @@ const ProjectList: React.FC = () => {
             {source === 'cloud'
               ? (WEB_ONLY_CLOUD
                   ? 'No projects yet. Create your first project to get started.'
-                  : 'No cloud projects yet. Create one or upload via File › Save As… and pick FreeScript Cloud.')
+                  : 'No cloud projects yet. Create one or upload via File › Save As… and pick FreeDraft Cloud.')
               : 'No projects yet. Create your first project to get started.'}
           </div>
         </div>

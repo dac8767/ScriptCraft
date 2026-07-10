@@ -14,6 +14,7 @@ import CollabLoginDialog from './CollabLoginDialog';
 import VerifyEmailDialog from './VerifyEmailDialog';
 import QuotaExceededDialog from './QuotaExceededDialog';
 import type { QuotaErrorDetail } from '../services/api';
+import { useProjectStore } from '../stores/projectStore';
 
 const AuthGate: React.FC = () => {
   const [loginOpen, setLoginOpen] = useState(false);
@@ -42,7 +43,11 @@ const AuthGate: React.FC = () => {
       {loginOpen && (
         <CollabLoginDialog
           onClose={() => setLoginOpen(false)}
-          onSuccess={() => setLoginOpen(false)}
+          onSuccess={() => {
+            setLoginOpen(false);
+            // Re-run the script load that 401'd and summoned this dialog.
+            useProjectStore.getState().triggerScriptReload();
+          }}
         />
       )}
       {verifyOpen && (

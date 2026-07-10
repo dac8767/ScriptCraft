@@ -33,6 +33,7 @@ function formatTime(minutes: number): string {
 }
 
 const ScriptStatistics: React.FC<Props> = ({ editor, embedded = false }) => {
+  const goalsCompleted = useEditorStore((s) => s.goalsCompleted);
   const { characterProfiles, pageCount, setStatisticsOpen, statisticsScrollTo, setStatisticsScrollTo } = useEditorStore();
 
   const doc = useMemo(() => editor.getJSON(), [editor]);
@@ -89,6 +90,11 @@ const ScriptStatistics: React.FC<Props> = ({ editor, embedded = false }) => {
             <div className="stats-card-value">{overview.totalWords.toLocaleString()}</div>
             <div className="stats-card-label">Words</div>
             <div className="stats-card-sub">{overview.totalPages > 0 ? Math.round(overview.totalWords / overview.totalPages) : 0} per page</div>
+          </div>
+          <div className="stats-card">
+            <div className="stats-card-value">{goalsCompleted}</div>
+            <div className="stats-card-label">Goals Completed</div>
+            <div className="stats-card-sub">writing goals hit</div>
           </div>
         </div>
 
@@ -316,7 +322,7 @@ const ScriptStatistics: React.FC<Props> = ({ editor, embedded = false }) => {
 
         {/* F. Character Presence Map */}
         {charPresence.length > 0 && (
-          <div className="stats-section" data-sec="characters">
+          <div className="stats-section" data-sec="scenes">
             <h3 className="stats-section-title">Character Presence by Scene</h3>
             <div className="stats-presence-scroll">
               <table className="stats-presence-table">
@@ -354,7 +360,7 @@ const ScriptStatistics: React.FC<Props> = ({ editor, embedded = false }) => {
 
         {/* G. Timing Report */}
         {timingResult.scenes.length > 0 && (
-          <div className="stats-section" id="stats-timing-report" data-sec="timing">
+          <div className="stats-section" id="stats-timing-report" data-sec="scenes">
             <h3 className="stats-section-title">Timing Report — Est. {formatRuntime(timingResult.totalSeconds)}</h3>
             <table className="stats-table">
               <thead>

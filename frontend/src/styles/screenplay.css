@@ -25,7 +25,7 @@
 }
 
 /* ============================================
-   FreeScript — Final Draft Exact Layout
+   FreeDraft — Final Draft Exact Layout
    ============================================
    All measurements match Final Draft defaults:
    - Page: 8.5" x 11" US Letter
@@ -2192,7 +2192,33 @@ body {
    space and reorder images freely. Per-field alignment only. */
 /* No block margin: the paginator counts pure text lines, and spacing on the
    title page comes from blank spacer lines (matches how it's built). */
-.title-page { text-align: center; margin: 0; }
+/* Title-page blocks span the full printable width with no body-element
+   indents, so centered text is centered on the page. */
+/* Centered title-page fields must center on the PAPER, not on the body content
+   box: the page's printable box is asymmetric (left margin 1.5in vs right
+   0.76in by default, matching screenplay body indents), so "centered in the
+   box" lands (pl - pr)/2 right of the paper's center — the off-center title
+   bug. Shifting each block by half that difference makes its left and right
+   insets equal ((pl+pr)/2 each side) so text-align:center hits the true paper
+   center, exactly where the PDF exporter puts it (pageWidth/2). Block WIDTH is
+   unchanged, so line wrapping and the paginator's line estimates are
+   unaffected. Left-anchored (draft) and right-anchored (contact/copyright)
+   fields keep the body anchors below, again matching the PDF exporter. */
+.title-page {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-left: calc((var(--pr, 0.76in) - var(--pl, 1.5in)) / 2);
+  margin-right: calc((var(--pl, 1.5in) - var(--pr, 0.76in)) / 2);
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+.title-page.title-page-draft,
+.title-page.title-page-contact,
+.title-page.title-page-copyright {
+  margin-left: 0;
+  margin-right: 0;
+}
 .title-page-title {
   font-weight: 700;
   text-transform: uppercase;
@@ -9423,11 +9449,16 @@ html.android .version-history-panel {
 
 /* ============ PRINT ============ */
 @media print {
-  /* Hide all chrome */
+  /* Hide ALL chrome — including the tool docks/panels (v0.6+) and the
+     portal-based menu dropdown, which is mounted on <body> and was being
+     captured in the printout when Print was chosen from the open File menu. */
   .menu-bar, .toolbar, .scene-navigator, .status-bar,
-  .search-replace-panel, .dialog-overlay,
+  .search-replace-panel, .dialog-overlay, .menu-dropdown, .menu-fab,
+  .tool-dock-wrap, .tool-window, .tool-temp-anchor, .tool-inline,
+  .mobile-accessory-bar, .toast-wrap, .toast, .demo-banner,
   .index-cards, .beat-board, .script-notes-panel, .char-profiles-panel, .tags-panel,
   .asset-manager, .asset-viewer-overlay, .history-banner,
+  .format-panel, .zoom-panel, .goto-page-panel,
   .version-history-panel { display: none !important; }
 
   /* Unclip the full document chain so all pages flow */
@@ -9444,6 +9475,40 @@ html.android .version-history-panel {
 
   /* Let the browser handle page breaks */
   .tiptap .ProseMirror > * { page-break-inside: avoid; }
+
+  /* v0.14: printed pages follow the EDITOR's pagination. During printing the
+     paginator swaps its pixel-margin spacers (which drift against the
+     printer's own page height and printed as mid-page voids) for this class:
+     a real page break plus the document's top margin. Zero @page margins keep
+     the geometry 1:1 with the on-screen page (and drop the browser's own
+     header/footer text); the .page element's own padding provides the paper
+     margins, exactly as on screen. */
+  @page { margin: 0; }
+  /* Fragmentation (break-before) only works when the whole ancestor chain is
+     plain block flow with visible overflow — any flex container or clipped box
+     between <body> and the ProseMirror content swallows the breaks and the
+     browser falls back to its own arbitrary pagination (the "offset pages"
+     bug). Flatten the chain explicitly. */
+  .editor-scroll, .page-container, .page, .page-sizer, .screenplay-content,
+  .tiptap, .tiptap .ProseMirror {
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    transform: none !important;
+  }
+  .fd-print-break {
+    break-before: page;
+    page-break-before: always; /* legacy alias — some engines still want it */
+    margin-top: 0 !important;
+    padding-top: var(--ptop, 1in) !important;
+  }
+  .page {
+    min-height: 0 !important;
+    padding-bottom: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
 }
 
 /* ── Collaboration ────────────────────────────────────────────────── */
@@ -11400,7 +11465,7 @@ html.android .version-history-panel {
   z-index: 30;
 }
 .tool-dock {
-  width: 160px;
+  width: 300px; /* same footprint as the original right panel */
   flex-shrink: 0;
   background: var(--fd-navigator-bg); /* same scheme as the Sticky Notes pane */
   border-right: 1px solid var(--fd-border);
@@ -11412,7 +11477,7 @@ html.android .version-history-panel {
 .tool-dock-sep {
   height: 1px;
   background: var(--fd-border);
-  margin: 6px 10px;
+  margin: 7px 10px;
   flex-shrink: 0;
 }
 .tool-dock-item {
@@ -11450,7 +11515,7 @@ html.android .version-history-panel {
 /* ── Floating tool window ── */
 .tool-window {
   position: absolute;
-  left: 168px;
+  left: 308px;
   top: 8px;
   background: var(--fd-navigator-bg); /* same scheme as the Sticky Notes pane */
   border: 1px solid var(--fd-border);
@@ -11857,8 +11922,8 @@ html.android .version-history-panel {
 .tool-dock-item {
   border: 1px solid var(--fd-border);
   border-radius: 6px;
-  margin: 2px 8px;
-  width: calc(100% - 16px);
+  margin: 2px 10px;
+  width: calc(100% - 20px);
   background: rgba(128, 128, 128, 0.06);
 }
 .tool-dock-item.active {
@@ -11882,7 +11947,7 @@ html.android .version-history-panel {
 
 /* Right-side dock: window opens to the LEFT of the dock */
 .tool-dock-right .tool-dock { border-right: none; border-left: 1px solid var(--fd-border); }
-.tool-dock-right .tool-window { left: auto; right: 168px; }
+.tool-dock-right .tool-window { left: auto; right: 308px; }
 
 /* Sticky tools */
 .fs-sticky-tool {
@@ -11912,14 +11977,14 @@ html.android .version-history-panel {
   z-index: 120;
 }
 
-/* Analytics tab filtering: only the active tab's sections render */
-.fs-analytics-stats[data-show] .stats-content > [data-sec] { display: none; }
-.fs-analytics-stats[data-show="overview"] .stats-content > [data-sec="overview"] { display: grid; }
-.fs-analytics-stats[data-show="dialogue"] .stats-content > [data-sec="dialogue"],
-.fs-analytics-stats[data-show="scenes"] .stats-content > [data-sec="scenes"],
-.fs-analytics-stats[data-show="characters"] .stats-content > [data-sec="characters"],
-.fs-analytics-stats[data-show="gender"] .stats-content > [data-sec="gender"],
-.fs-analytics-stats[data-show="timing"] .stats-content > [data-sec="timing"] { display: block; }
+/* Analytics tab filtering: hide only the sections that DON'T match the
+   active tab, so matching ones keep their natural display (grids, tables). */
+.fs-analytics-stats[data-show="overview"] .stats-content > [data-sec]:not([data-sec="overview"]),
+.fs-analytics-stats[data-show="dialogue"] .stats-content > [data-sec]:not([data-sec="dialogue"]),
+.fs-analytics-stats[data-show="scenes"] .stats-content > [data-sec]:not([data-sec="scenes"]),
+.fs-analytics-stats[data-show="characters"] .stats-content > [data-sec]:not([data-sec="characters"]),
+.fs-analytics-stats[data-show="gender"] .stats-content > [data-sec]:not([data-sec="gender"]),
+.fs-analytics-stats[data-show="timing"] .stats-content > [data-sec]:not([data-sec="timing"]) { display: none; }
 .fs-analytics-gender-assign { padding: 0 12px 12px; }
 .fs-analytics-gender-assign .fs-gender { padding: 0; }
 
@@ -11969,4 +12034,911 @@ html.android .version-history-panel {
   font-size: 12px;
   color: var(--fd-text);
   cursor: pointer;
+}
+
+
+/* ═══ v0.7: inline tool windows (open downward inside the dock) ═══ */
+.tool-inline {
+  margin: 0 10px 3px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: var(--fd-navigator-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.tool-inline-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.tool-inline-resize {
+  height: 8px;
+  cursor: ns-resize;
+  flex-shrink: 0;
+  background:
+    linear-gradient(to bottom, transparent 3px, var(--fd-border) 3px, var(--fd-border) 4px, transparent 4px);
+}
+.tool-inline-resize:hover { background-color: rgba(128, 128, 128, 0.15); }
+
+/* ═══ v0.8 ═══ */
+/* Item 4: uniform dock rhythm — separator zones match the item gap */
+.tool-dock-sep { display: none; }
+
+/* Item 5/7: dialog close button + help dialog */
+.fs-dialog-x {
+  float: right;
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.fs-dialog-x:hover { color: var(--fd-text); }
+.fs-help-dialog { max-width: 620px; width: 92vw; }
+.fs-help-body { max-height: 70vh; overflow-y: auto; font-size: 12.5px; }
+.fs-help-grid { display: flex; flex-direction: column; gap: 6px; }
+.fs-help-row { display: grid; grid-template-columns: 190px 1fr; gap: 12px; align-items: baseline; color: var(--fd-text); }
+.fs-kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  background: rgba(128, 128, 128, 0.15);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  justify-self: start;
+}
+.fs-kb-h {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fd-text-muted);
+  margin: 14px 0 4px;
+}
+.fs-kb-p { font-size: 12.5px; line-height: 1.55; margin: 4px 0; color: var(--fd-text); }
+
+/* Item 6: inline pop-out affordance */
+.tool-inline { position: relative; }
+.tool-inline-popout {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  z-index: 2;
+  background: var(--fd-navigator-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 5px;
+  cursor: pointer;
+}
+.tool-inline-popout:hover { color: var(--fd-text); border-color: var(--fd-accent, #4a90d9); }
+
+
+/* ═══ v0.9: themes ═══ */
+[data-theme="sepia"] {
+  --fd-bg: #efe6d5; --fd-toolbar-bg: #e7dcc7; --fd-menu-bg: #efe6d5;
+  --fd-menu-hover: #ddd0b8; --fd-accent: #a5673f; --fd-border: #d4c5a9;
+  --fd-text: #4a3f2f; --fd-text-muted: #8a7a5f; --fd-navigator-bg: #e7dcc7;
+  --fd-status-bg: #e0d4bd; --fd-dropdown-bg: #efe6d5; --fd-dialog-bg: #efe6d5;
+  --fd-input-bg: rgba(0, 0, 0, 0.06);
+  --fd-overlay-subtle: rgba(0,0,0,.03); --fd-overlay-light: rgba(0,0,0,.06);
+  --fd-overlay-medium: rgba(0,0,0,.12); --fd-shadow: rgba(90,70,40,.25);
+  --fd-chrome-separator: rgba(0,0,0,0.08);
+}
+[data-theme="nord"] {
+  --fd-bg: #2e3440; --fd-toolbar-bg: #3b4252; --fd-menu-bg: #3b4252;
+  --fd-menu-hover: #434c5e; --fd-accent: #88c0d0; --fd-border: #434c5e;
+  --fd-text: #eceff4; --fd-text-muted: #9aa5b8; --fd-navigator-bg: #272c36;
+  --fd-status-bg: #232830; --fd-dropdown-bg: #3b4252; --fd-dialog-bg: #3b4252;
+}
+[data-theme="dracula"] {
+  --fd-bg: #282a36; --fd-toolbar-bg: #21222c; --fd-menu-bg: #21222c;
+  --fd-menu-hover: #44475a; --fd-accent: #bd93f9; --fd-border: #44475a;
+  --fd-text: #f8f8f2; --fd-text-muted: #8a8fa8; --fd-navigator-bg: #21222c;
+  --fd-status-bg: #191a21; --fd-dropdown-bg: #282a36; --fd-dialog-bg: #282a36;
+}
+[data-theme="solarized-dark"] {
+  --fd-bg: #002b36; --fd-toolbar-bg: #073642; --fd-menu-bg: #073642;
+  --fd-menu-hover: #0d4a5a; --fd-accent: #268bd2; --fd-border: #0d4a5a;
+  --fd-text: #eee8d5; --fd-text-muted: #93a1a1; --fd-navigator-bg: #00252e;
+  --fd-status-bg: #00212b; --fd-dropdown-bg: #073642; --fd-dialog-bg: #073642;
+}
+[data-theme="solarized-light"] {
+  --fd-bg: #fdf6e3; --fd-toolbar-bg: #eee8d5; --fd-menu-bg: #fdf6e3;
+  --fd-menu-hover: #e4ddc8; --fd-accent: #268bd2; --fd-border: #d9d2be;
+  --fd-text: #586e75; --fd-text-muted: #93a1a1; --fd-navigator-bg: #eee8d5;
+  --fd-status-bg: #e4ddc8; --fd-dropdown-bg: #fdf6e3; --fd-dialog-bg: #fdf6e3;
+  --fd-input-bg: rgba(0, 0, 0, 0.05);
+  --fd-overlay-subtle: rgba(0,0,0,.03); --fd-overlay-light: rgba(0,0,0,.06);
+  --fd-overlay-medium: rgba(0,0,0,.12); --fd-shadow: rgba(88,110,117,.25);
+  --fd-chrome-separator: rgba(0,0,0,0.08);
+}
+[data-theme="midnight"] {
+  --fd-bg: #0d1117; --fd-toolbar-bg: #161b22; --fd-menu-bg: #161b22;
+  --fd-menu-hover: #21262d; --fd-accent: #58a6ff; --fd-border: #30363d;
+  --fd-text: #e6edf3; --fd-text-muted: #8b949e; --fd-navigator-bg: #0a0e14;
+  --fd-status-bg: #010409; --fd-dropdown-bg: #161b22; --fd-dialog-bg: #161b22;
+}
+/* Light-family themes keep the light editor chrome behaviors */
+[data-theme="sepia"] .menu-dropdown,
+[data-theme="solarized-light"] .menu-dropdown,
+[data-theme="sepia"] .dialog-box,
+[data-theme="solarized-light"] .dialog-box {
+  background: var(--fd-dropdown-bg);
+  color: var(--fd-text);
+}
+
+
+/* v0.10: reorder controls in Customize Layout */
+.fs-customize-order { display: inline-flex; flex-direction: column; gap: 1px; margin-right: 4px; }
+.fs-customize-order button {
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 3px;
+  color: var(--fd-text-muted);
+  font-size: 7px;
+  line-height: 1;
+  padding: 1px 4px;
+  cursor: pointer;
+}
+.fs-customize-order button:disabled { opacity: 0.3; cursor: default; }
+.fs-customize-order button:not(:disabled):hover { color: var(--fd-text); }
+
+
+/* ═══ v0.11 ═══ */
+
+/* Light theme: the tool/window buttons were nearly invisible on the light
+   dock — darken just the button fill and border (the rest of the light
+   palette is back to its pre-v0.10 values). */
+[data-theme="light"] .tool-dock-item {
+  background: #dedede;
+  border-color: #b5b5b5;
+}
+[data-theme="light"] .tool-dock-item:hover {
+  background: #d2d2d2;
+}
+[data-theme="light"] .tool-dock-item.active {
+  background: #cfe0f3;
+  border-color: var(--fd-accent, #1565c0);
+}
+
+/* Workspace dialogs (Save Workspace / Edit Workspaces) */
+.ws-dialog { max-width: 440px; width: 440px; }
+.ws-dialog-header-icon { margin-right: 8px; vertical-align: -1px; opacity: .8; }
+.ws-dialog .dialog-row label { line-height: 1.45; }
+.ws-overwrite-hint {
+  font-size: 12.5px;
+  color: var(--fd-text-muted);
+  min-height: 17px;
+  visibility: hidden;
+}
+.ws-overwrite-hint.visible { visibility: visible; color: #c9862b; }
+
+.ws-edit-dialog .dialog-body { padding: 12px; }
+.ws-empty {
+  text-align: center;
+  color: var(--fd-text-muted);
+  font-size: 13.5px;
+  line-height: 1.7;
+  padding: 22px 10px;
+}
+.ws-list { display: flex; flex-direction: column; gap: 4px; }
+.ws-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: var(--fd-overlay-subtle);
+}
+.ws-row.active { border-color: var(--fd-accent); }
+.ws-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--fd-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ws-active-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--fd-accent);
+  border: 1px solid var(--fd-accent);
+  border-radius: 10px;
+  padding: 1px 7px;
+  flex-shrink: 0;
+}
+.ws-rename-input {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-accent);
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 14px;
+  outline: none;
+}
+.ws-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text-muted);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.ws-icon-btn:hover { color: var(--fd-text); background: var(--fd-menu-hover); }
+.ws-icon-btn:disabled { opacity: .4; cursor: default; }
+.ws-icon-btn.ws-danger:hover { color: #d05050; border-color: #d05050; }
+.ws-icon-btn.ws-confirm:hover { color: var(--fd-accent); border-color: var(--fd-accent); }
+.ws-confirm-label { font-size: 12.5px; color: #d05050; font-weight: 600; flex-shrink: 0; }
+
+
+/* ═══ v0.12 ═══ */
+
+/* Inline pop-out button: bottom-right corner, same diagonal-grip icon as the
+   floating panel's resize handle (smaller). Sits just above the height-drag
+   strip so both remain reachable. */
+.tool-inline-popout {
+  top: auto;
+  bottom: 12px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+.tool-inline-popout::after {
+  content: '';
+  display: block;
+  width: 11px;
+  height: 11px;
+  background:
+    linear-gradient(135deg, transparent 50%, var(--fd-text-muted) 50%, var(--fd-text-muted) 55%,
+      transparent 55%, transparent 70%, var(--fd-text-muted) 70%, var(--fd-text-muted) 75%, transparent 75%);
+  opacity: 0.75;
+}
+.tool-inline-popout:hover::after { opacity: 1; }
+
+/* Outline (Beat Board) helper note */
+.beat-board-hint {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  padding: 4px 12px 6px;
+  flex-shrink: 0;
+}
+
+/* Edit Workspaces: reorder controls */
+.ws-order { display: inline-flex; flex-direction: column; gap: 1px; flex-shrink: 0; }
+.ws-order button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 3px;
+  color: var(--fd-text-muted);
+  font-size: 7px;
+  line-height: 1;
+  padding: 1px 5px;
+  cursor: pointer;
+}
+.ws-order button:disabled { opacity: 0.3; cursor: default; }
+.ws-order button:not(:disabled):hover { color: var(--fd-text); }
+
+
+/* ═══ v0.13: Preferences ═══ */
+.prefs-dialog {
+  max-width: 860px;
+  width: min(860px, 94vw);
+  height: min(640px, 86vh);
+}
+.prefs-dialog .dialog-header { display: flex; align-items: center; justify-content: space-between; }
+.prefs-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.prefs-tabs {
+  width: 190px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--fd-border);
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+.prefs-tab {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--fd-text);
+  font-size: 13px;
+  text-align: left;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.prefs-tab:hover { background: var(--fd-overlay-light); }
+.prefs-tab.active {
+  background: var(--fd-overlay-medium);
+  color: var(--fd-accent);
+  font-weight: 600;
+}
+.prefs-tab-icon { width: 16px; display: inline-flex; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.prefs-content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 16px 20px 20px;
+}
+.prefs-general section { margin-bottom: 26px; }
+.prefs-general h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--fd-text-muted);
+  margin: 0 0 10px;
+}
+.prefs-check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--fd-text);
+}
+.prefs-hint {
+  font-size: 12.5px;
+  color: var(--fd-text-muted);
+  line-height: 1.5;
+  margin: 6px 0 0 26px;
+  max-width: 520px;
+}
+.prefs-field-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--fd-text);
+}
+.prefs-field-row select {
+  height: 32px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 13.5px;
+}
+.prefs-field-row + .prefs-hint { margin-left: 0; }
+@media (max-width: 700px) {
+  .prefs-layout { flex-direction: column; }
+  .prefs-tabs { width: 100%; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--fd-border); }
+}
+
+
+/* ═══ v0.15 ═══ */
+
+/* Sub-tabs inside merged Notes / To-Do windows (General | Script) */
+.fs-subtab-row {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--fd-border);
+  flex-shrink: 0;
+}
+.fs-subtab {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  color: var(--fd-text-muted);
+  font-size: 12.5px;
+  padding: 5px 0;
+  cursor: pointer;
+}
+.fs-subtab:hover { color: var(--fd-text); }
+.fs-subtab.active {
+  background: var(--fd-overlay-medium);
+  color: var(--fd-accent);
+  border-color: var(--fd-accent);
+  font-weight: 600;
+}
+
+/* To-Do window > Script tab: doc checklist list */
+.fs-doc-todo-list { flex: 1; overflow-y: auto; padding: 8px; }
+.fs-doc-todo-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  font-size: 13px;
+  color: var(--fd-text);
+}
+.fs-doc-todo-row:hover { background: var(--fd-overlay-subtle); }
+.fs-doc-todo-row span { cursor: pointer; flex: 1; line-height: 1.4; }
+.fs-doc-todo-row input { margin-top: 2px; cursor: pointer; }
+
+/* Highlights window */
+.fs-highlights-tool { display: flex; flex-direction: column; height: 100%; }
+.fs-highlight-list { flex: 1; overflow-y: auto; padding: 6px 8px; }
+.fs-highlight-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.fs-highlight-row:hover { background: var(--fd-overlay-subtle); }
+.fs-highlight-swatch {
+  width: 12px; height: 12px;
+  border-radius: 3px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,.15);
+}
+.fs-highlight-text { flex: 1; font-size: 12.5px; line-height: 1.45; color: var(--fd-text); }
+.fs-highlight-remove {
+  background: none; border: none;
+  color: var(--fd-text-muted);
+  font-size: 14px; cursor: pointer;
+  padding: 0 2px; flex-shrink: 0;
+}
+.fs-highlight-remove:hover { color: #d05050; }
+.fs-highlight-toggles {
+  border-top: 1px solid var(--fd-border);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.fs-highlight-toggles label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; color: var(--fd-text); cursor: pointer;
+}
+
+/* View > Preview: hide outline kinds in the script */
+.page.hide-sections .ol-section,
+.page.hide-sections .ol-marker { display: none !important; }
+.page.hide-script-todos .ol-todo { display: none !important; }
+
+/* Navigator: make structural rows stand out (item 16) */
+.fs-nav-item.section {
+  color: var(--fd-accent);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.fs-nav-item.note { color: #d9a521; }
+.fs-nav-item.todo { color: #4caf7d; }
+.fs-nav-item.marker { color: #b06fd8; }
+[data-theme="light"] .fs-nav-item.note { color: #a97b0a; }
+[data-theme="light"] .fs-nav-item.todo { color: #2e7d54; }
+[data-theme="light"] .fs-nav-item.marker { color: #8e44ad; }
+
+/* Pop-out button: distinct expand-arrow glyph (was sharing the resize grip) */
+.tool-inline-popout {
+  font-size: 13px;
+  line-height: 1;
+  color: var(--fd-text-muted);
+  align-items: center;
+  justify-content: center;
+}
+.tool-inline-popout::after { content: none; }
+.tool-inline-popout:hover { color: var(--fd-text); }
+/* Right-pane panels: pop-out sits bottom-LEFT, expanding away from the panel */
+.tool-inline-popout-left { right: auto; left: 4px; }
+
+/* Right-docked floating windows: resize handle bottom-LEFT, mirrored grip */
+.tool-window-resize-left {
+  right: auto;
+  left: 0;
+  cursor: nesw-resize;
+  transform: scaleX(-1);
+}
+
+/* In-app help forms (Feature Request / Report a Bug) */
+.help-form-dialog {
+  width: min(720px, 94vw);
+  height: min(760px, 90vh);
+  display: flex;
+  flex-direction: column;
+}
+.help-form-dialog .dialog-header { display: flex; justify-content: space-between; align-items: center; }
+.help-form-frame {
+  flex: 1;
+  border: none;
+  width: 100%;
+  background: #fff;
+  border-radius: 0 0 8px 8px;
+}
+
+/* System Settings embedded as a Settings tab */
+.settings-page-embedded {
+  min-height: 0 !important;
+  height: auto !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+.settings-page-embedded .settings-content {
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+
+/* ═══ v0.16 ═══ */
+
+/* Continuous view: thin page-boundary line with a small page label */
+.page-sep-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  pointer-events: none;
+  background: var(--fd-page-bg);
+}
+.page-sep-line::before {
+  content: '';
+  flex: 1;
+  border-top: 1px dashed var(--fd-border);
+}
+.page-sep-line-label {
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+
+/* Save As: composed file-name preview */
+.save-as-preview {
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--fd-text-muted);
+}
+.save-as-preview strong { color: var(--fd-text); font-weight: 600; }
+
+
+/* ═══ v0.17 ═══ */
+
+/* 4) In-editor outline colors matching the Navigator */
+.page .ol-section {
+  color: var(--fd-accent);
+  font-weight: 700;
+}
+.page .ol-marker { color: #b06fd8; }
+.page .ol-todo { color: #4caf7d; }
+[data-theme="light"] .page .ol-marker { color: #8e44ad; }
+[data-theme="light"] .page .ol-todo { color: #2e7d54; }
+
+/* 5) Preview mode: hide editing chrome, banner to exit */
+.preview-mode .toolbar,
+.preview-mode .tool-dock-wrap,
+.preview-mode .tool-window,
+.preview-mode .status-bar { display: none !important; }
+.preview-banner {
+  position: fixed;
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--fd-menu-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: var(--fd-chrome-shadow, 0 2px 8px rgba(0,0,0,.25));
+  padding: 7px 14px;
+}
+.preview-banner-label {
+  font-size: 12.5px;
+  color: var(--fd-text-muted);
+  letter-spacing: .02em;
+}
+.preview-banner-exit {
+  background: var(--fd-accent);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.preview-banner-exit:hover { filter: brightness(1.1); }
+
+/* 5c) Toolbar editor-view dropdown */
+.view-style-selector {
+  height: 26px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 0 6px;
+}
+
+
+/* ═══ v0.18 ═══ */
+
+/* Preview sidebar (File > Preview) — old-app style option rail */
+.preview-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 272px;
+  z-index: 4500;
+  background: var(--fd-navigator-bg);
+  border-left: 1px solid var(--fd-border);
+  padding: 56px 18px 18px;
+  overflow-y: auto;
+  font-size: 13px;
+  color: var(--fd-text);
+}
+.preview-mode .editor-main { padding-right: 288px !important; }
+.pv-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--fd-text-muted);
+  margin: 18px 0 8px;
+}
+.pv-section-title:first-child { margin-top: 0; }
+.pv-check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  cursor: pointer;
+}
+.pv-hint {
+  font-size: 11.5px;
+  color: var(--fd-text-muted);
+  line-height: 1.5;
+  margin: 8px 0 0;
+}
+.pv-export-primary {
+  display: block;
+  width: 100%;
+  background: var(--fd-accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.pv-export-primary:hover { filter: brightness(1.1); }
+.pv-export-btn {
+  display: block;
+  width: 100%;
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  padding: 8px 0;
+  font-size: 12.5px;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+.pv-export-btn:hover { background: var(--fd-menu-hover); }
+.pv-export-primary:disabled, .pv-export-btn:disabled { opacity: .55; cursor: default; }
+
+/* Preview scene-header template options */
+.page.pv-hdr-double .scene-heading { margin-top: 24pt !important; }
+.page.pv-hdr-double .scene-heading:first-child { margin-top: 0 !important; }
+.page.pv-hdr-plain .scene-heading { font-weight: 400 !important; }
+.page.pv-hdr-underline .scene-heading { text-decoration: underline; }
+
+/* Floating windows: pop-in button (returns the tool to the side panel) */
+.tool-window-popin {
+  position: absolute;
+  bottom: 4px;
+  left: 6px;
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.tool-window-popin:hover { color: var(--fd-text); }
+.tool-window-popin-right { left: auto; right: 6px; }
+
+/* Customize: toolbar item sub-groups */
+.fs-customize-subgroup {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--fd-text-muted);
+  margin: 10px 0 4px;
+}
+
+/* Settings: language checklist */
+.prefs-lang-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 4px 18px;
+  max-width: 560px;
+}
+
+
+/* ═══ v0.21 ═══ */
+
+/* Customize: built-in toolbar items as boxed groups (no labels) */
+.fs-customize-boxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fs-customize-box {
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 130px;
+}
+.fs-customize-box label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--fd-text);
+  cursor: pointer;
+}
+
+/* Customize: pinned tool reorder arrows */
+.fs-customize-pin-row { display: flex; align-items: center; gap: 7px; }
+.fs-pin-order { display: inline-flex; gap: 2px; }
+.fs-pin-order button {
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 3px;
+  color: var(--fd-text-muted);
+  font-size: 8px;
+  line-height: 1;
+  padding: 2px 5px;
+  cursor: pointer;
+}
+.fs-pin-order button:disabled { opacity: .3; cursor: default; }
+.fs-pin-order button:not(:disabled):hover { color: var(--fd-text); }
+
+/* Preview sidebar: exit button at the top */
+.pv-exit-btn {
+  display: block;
+  width: 100%;
+  background: var(--fd-menu-bg);
+  color: var(--fd-accent);
+  border: 1px solid var(--fd-accent);
+  border-radius: 6px;
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+.pv-exit-btn:hover { background: var(--fd-menu-hover); }
+.pv-exit-bottom { margin-top: 18px; margin-bottom: 0; }
+
+
+/* ═══ v0.23 ═══ */
+
+/* Project Manager tool */
+.fs-projects-tool { display: flex; flex-direction: column; height: 100%; }
+.fs-projects-list { flex: 1; overflow-y: auto; padding: 8px; }
+.fs-project-row {
+  padding: 8px 10px;
+  border-radius: 5px;
+  font-size: 13px;
+  color: var(--fd-text);
+  cursor: pointer;
+}
+.fs-project-row:hover { background: var(--fd-overlay-subtle); }
+.fs-project-row.active { background: var(--fd-overlay-medium); color: var(--fd-accent); font-weight: 600; }
+
+/* Status bar: per-location save chips */
+.status-item.status-saved { color: #4caf7d; }
+.status-item.status-saving { color: var(--fd-text-muted); }
+.status-item.status-error { color: #d05050; }
+
+
+/* ═══ v0.25 ═══ */
+.fs-projects-crumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--fd-border);
+  flex-shrink: 0;
+}
+.fs-projects-back {
+  background: none;
+  border: none;
+  color: var(--fd-accent);
+  font-size: 12.5px;
+  cursor: pointer;
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+.fs-projects-crumb-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fd-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fs-project-row { display: flex; align-items: center; gap: 8px; }
+.fs-project-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fs-project-chevron { color: var(--fd-text-muted); }
+.fs-project-meta { color: var(--fd-text-muted); font-size: 11px; }
+.fs-projects-add-row { display: flex; gap: 6px; width: 100%; }
+.fs-projects-add-row input {
+  flex: 1;
+  height: 28px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 12.5px;
+}
+
+
+/* v0.30: account row in Save Options */
+.prefs-account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 13px;
+  color: var(--fd-text);
+  padding: 4px 0;
 }

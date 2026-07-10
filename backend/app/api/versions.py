@@ -6,6 +6,8 @@ from app.config import get_projects_dir
 from app.schemas.version import (
     CheckinRequest,
     DiffResponse,
+    PruneRequest,
+    PruneResponse,
     VersionCommitResponse,
     VersionInfo,
 )
@@ -107,3 +109,20 @@ async def restore_version(project_id: str, commit_hash: str):
         raise HTTPException(status_code=400, detail=str(exc))
 
     return result
+
+
+@router.post("/{project_id}/versions/prune", response_model=PruneResponse)
+async def prune_versions(project_id: str, body: PruneRequest):
+    """Keep only the newest N snapshots, squashing older ones into a baseline.
+
+    Retained snapshots are preserved exactly (same trees); only history older
+    than the retention window is compacted. Non-linear history is refused.
+    """
+    if body.keep < 1:
+        raise HTTPException(status_code=400, detail="keep must be >= 1")
+    path = _project_path(project_id)
+    git_service.init_repo(path)
+    try:
+        return git_service.prune_history(path, body.keep)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
