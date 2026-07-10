@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse
 import logging
 
 from app.api import scripts, auth, export, projects, versions, assets, collab, link_preview, formatting_templates, locations
+from app.security import validate_path_params
 from app.config import COLLAB_JWT_SECRET, PROJECTS_DIR_BASE, BASE_DIR, DEMO_MODE
 from app.dependencies import require_verified_user
 from app.middleware.user_context import UserContextMiddleware
@@ -78,7 +79,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 # User-scoped file routers — require a verified user on every request. The
 # UserContextMiddleware has already pushed user_id into the ContextVar so
 # services resolve paths under users/<id>/.
-_user_scoped = [Depends(require_verified_user)]
+_user_scoped = [Depends(require_verified_user), Depends(validate_path_params)]
 app.include_router(scripts.router, prefix="/api/scripts", tags=["scripts"], dependencies=_user_scoped)
 app.include_router(projects.router, prefix="/api/projects", tags=["projects"], dependencies=_user_scoped)
 app.include_router(versions.router, prefix="/api/projects", tags=["versions"], dependencies=_user_scoped)
@@ -93,7 +94,7 @@ app.include_router(collab.router, prefix="/api/collab", tags=["collab"], depende
 # Not user-scoped: export stubs, link previews, shared formatting templates.
 app.include_router(export.router, prefix="/api/export", tags=["export"])
 app.include_router(link_preview.router, prefix="/api/link", tags=["link-preview"])
-app.include_router(formatting_templates.router, prefix="/api/formatting-templates", tags=["formatting-templates"])
+app.include_router(formatting_templates.router, prefix="/api/formatting-templates", tags=["formatting-templates"], dependencies=[Depends(validate_path_params)])
 
 # Mount plugin routers (registered by external plugins before app startup)
 for _prefix, _router, _tags in get_plugin_routers():

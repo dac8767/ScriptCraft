@@ -7,6 +7,13 @@ from pathlib import Path
 from dulwich.repo import Repo as DulwichRepo
 
 from app.config import get_projects_dir
+from app.security import assert_safe_resource_id
+
+
+def _project_dir(project_id: str):
+    """Safe join of a validated project id under the projects root."""
+    assert_safe_resource_id(project_id, 'project')
+    return _project_dir(project_id)
 
 
 def _slugify(name: str) -> str:
@@ -31,7 +38,7 @@ def create_project(name: str) -> dict:
     if not project_id:
         raise ValueError("Project name produces an empty slug")
 
-    project_dir = get_projects_dir() / project_id
+    project_dir = _project_dir(project_id)
     if project_dir.exists():
         raise FileExistsError(f"Project '{project_id}' already exists")
 
@@ -80,7 +87,7 @@ def list_projects() -> list[dict]:
 
 def get_project(project_id: str) -> dict:
     """Read a single project's metadata."""
-    project_file = get_projects_dir() / project_id / "project.json"
+    project_file = _project_dir(project_id) / "project.json"
     if not project_file.exists():
         raise FileNotFoundError(f"Project '{project_id}' not found")
     data = json.loads(project_file.read_text(encoding="utf-8"))
@@ -100,7 +107,7 @@ def update_project(
     sort_order: int | None = None,
 ) -> dict:
     """Update a project's name, properties, and updated_at timestamp."""
-    project_file = get_projects_dir() / project_id / "project.json"
+    project_file = _project_dir(project_id) / "project.json"
     if not project_file.exists():
         raise FileNotFoundError(f"Project '{project_id}' not found")
 
@@ -126,7 +133,7 @@ def update_project(
 
 def delete_project(project_id: str) -> None:
     """Delete an entire project directory."""
-    project_dir = get_projects_dir() / project_id
+    project_dir = _project_dir(project_id)
     if not project_dir.exists():
         raise FileNotFoundError(f"Project '{project_id}' not found")
     shutil.rmtree(project_dir)
@@ -135,7 +142,7 @@ def delete_project(project_id: str) -> None:
 def ensure_default_project(default_name: str) -> dict:
     """Create the default project if it doesn't already exist, return its data."""
     project_id = _slugify(default_name)
-    project_file = get_projects_dir() / project_id / "project.json"
+    project_file = _project_dir(project_id) / "project.json"
     if project_file.exists():
         return json.loads(project_file.read_text(encoding="utf-8"))
     return create_project(default_name)

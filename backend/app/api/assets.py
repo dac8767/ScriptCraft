@@ -50,12 +50,20 @@ async def download_asset(
     try:
         entry = asset_service.get_asset_entry(project_id, asset_id)
         file_path = asset_service.get_asset_path(project_id, asset_id)
+        # Audit item S2: never let the browser sniff, and never render
+        # scriptable types (SVG can carry script) inline on the app origin.
+        # <img>/<audio>/<video> tags ignore the attachment disposition, so
+        # previews keep working.
+        mime = entry["mime_type"] or "application/octet-stream"
+        if mime in ("image/svg+xml", "text/html", "application/xhtml+xml", "text/xml", "application/xml"):
+            disposition = "attachment"
         response = FileResponse(
             path=str(file_path),
-            media_type=entry["mime_type"],
+            media_type=mime,
         )
-        fname = entry["original_name"]
+        fname = entry["original_name"].replace('"', '')
         response.headers["Content-Disposition"] = f'{disposition}; filename="{fname}"'
+        response.headers["X-Content-Type-Options"] = "nosniff"
         return response
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))

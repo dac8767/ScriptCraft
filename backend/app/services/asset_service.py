@@ -8,12 +8,26 @@ from pathlib import Path
 import aiofiles
 
 from app.config import get_projects_dir
+from app.security import assert_safe_resource_id
 
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
+
+# Media and document types the Asset Manager supports. Scriptable web types
+# (.html, .xhtml, .js, .swf ...) are deliberately absent; .svg is allowed but
+# always served with an attachment disposition (see api/assets.py).
+ALLOWED_ASSET_EXTENSIONS = {
+    '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff', '.svg',
+    '.pdf', '.txt', '.md', '.rtf', '.docx', '.doc', '.odt',
+    '.fountain', '.fdx', '.odraft', '.celtx',
+    '.mp3', '.wav', '.m4a', '.ogg', '.flac', '.aac',
+    '.mp4', '.mov', '.webm', '.m4v', '.avi',
+    '.zip', '.csv', '.json', '.xml',
+}
 
 
 def _assets_dir(project_id: str) -> Path:
     """Return the assets directory for a project, ensuring the project exists."""
+    assert_safe_resource_id(project_id, 'project')
     project_dir = get_projects_dir() / project_id
     if not project_dir.exists():
         raise FileNotFoundError(f"Project '{project_id}' not found")
@@ -59,8 +73,16 @@ async def upload_asset(
     if mime_type is None:
         mime_type = "application/octet-stream"
 
-    # Preserve original extension
+    # Preserve original extension — restricted to the media/document types
+    # the Asset Manager supports (audit item S2: an unrestricted extension
+    # like .html served from the app origin is stored XSS).
     _, ext = os.path.splitext(original_name)
+    ext = ext.lower()
+    if ext not in ALLOWED_ASSET_EXTENSIONS:
+        raise ValueError(
+            f"File type '{ext or '(none)'}' is not allowed. "
+            f"Allowed: {', '.join(sorted(ALLOWED_ASSET_EXTENSIONS))}"
+        )
     filename = f"{asset_id}{ext}"
 
     file_path = assets_path / filename

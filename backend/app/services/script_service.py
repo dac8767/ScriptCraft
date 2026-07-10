@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from app.config import get_projects_dir
+from app.security import assert_safe_resource_id
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ class EmptyOverwriteError(Exception):
 
 def _scripts_dir(project_id: str) -> Path:
     """Return the scripts directory for the active user's project."""
+    assert_safe_resource_id(project_id, 'project')
     scripts_path = get_projects_dir() / project_id / "scripts"
     if not scripts_path.exists():
         raise FileNotFoundError(f"Project '{project_id}' not found")
