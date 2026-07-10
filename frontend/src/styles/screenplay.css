@@ -13007,3 +13007,19 @@ html.android .version-history-panel {
   margin: 18px 0 10px;
 }
 .fs-customize-cat:first-child { margin-top: 0; }
+
+
+/* v0.40: Settings > Layout sub-tabs + toolbar sub-item checkboxes */
+.prefs-subtabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.prefs-subtabs button {
+  background: var(--fd-menu-bg);
+  color: var(--fd-text-muted);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.prefs-subtabs button.active { color: var(--fd-accent); border-color: var(--fd-accent); }
+.fs-tb-subitems { margin: 0 0 8px 44px; }
+.fs-customize-seg button:disabled { opacity: .35; cursor: default; }

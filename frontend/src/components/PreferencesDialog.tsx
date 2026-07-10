@@ -120,6 +120,25 @@ function LanguageSection() {
 }
 
 
+
+function LayoutTab() {
+  const [cat, setCat] = React.useState<'menu' | 'toolbar' | 'panels'>('menu');
+  return (
+    <div className="prefs-general">
+      <div className="prefs-subtabs">
+        {([['menu', 'Menu Bar'], ['toolbar', 'Tool Bar'], ['panels', 'Side Panels']] as const).map(([id, label]) => (
+          <button
+            key={id}
+            className={cat === id ? 'active' : ''}
+            onClick={() => setCat(id)}
+          >{label}</button>
+        ))}
+      </div>
+      <CustomizePanelsDialog open embedded category={cat} onClose={() => {}} />
+    </div>
+  );
+}
+
 function DraftNumberRow({ editor }: { editor: Editor | null }) {
   const draftLabel = useEditorStore((s) => s.draftLabel);
   const [value, setValue] = React.useState(draftLabel);
@@ -411,7 +430,7 @@ export default function PreferencesDialog({ open, onClose, editor }: { open: boo
           <div className="prefs-content">
             {tab === 'general' && <GeneralTab />}
             {tab === 'layout' && (
-              <CustomizePanelsDialog open embedded onClose={() => {}} />
+              <LayoutTab />
             )}
             {tab === 'formats' && (
               <ScriptFormatPreferencesDialog

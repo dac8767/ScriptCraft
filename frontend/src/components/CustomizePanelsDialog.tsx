@@ -26,15 +26,29 @@ const TOOLBAR_GROUPS: Array<{ name: string; items: string[] }> = [
   { name: 'View', items: ['Editor View'] },
 ];
 const TOOLBAR_ITEMS: string[] = TOOLBAR_GROUPS.flatMap((g) => g.items);
+/** Per-item checkboxes shown under each group row in the combined layout. */
+const GROUP_TOKEN_ITEMS: Record<string, string[]> = {
+  history: ['Undo', 'Redo', 'Element'],
+  insert: ['Insert Section', 'Insert Script Note', 'Insert Checklist Item'],
+  font: ['Font Family', 'Font Size'],
+  style: ['Bold', 'Italic', 'Underline', 'Strikethrough', 'Subscript', 'Superscript', 'Text Color', 'Highlight Color'],
+  align: ['Align Left', 'Align Center', 'Align Right', 'Justify'],
+  nav: ['Find & Replace', 'Go to Page'],
+  zoom: ['Zoom Out', 'Zoom In'],
+  view: ['Editor View'],
+  notes: [],
+};
 
 interface Props {
+  /** When set, render only that category's sections (Settings > Layout tabs). */
+  category?: 'menu' | 'toolbar' | 'panels';
   open: boolean;
   onClose: () => void;
   /** Render only the content (no overlay/box) — used inside Preferences. */
   embedded?: boolean;
 }
 
-export default function CustomizePanelsDialog({ open, onClose, embedded = false }: Props) {
+export default function CustomizePanelsDialog({ open, onClose, embedded = false, category }: Props) {
   const {
     toolConfig, setToolConfig,
     toolbarHiddenItems, setToolbarHiddenItems,
@@ -127,7 +141,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false 
 
   const body = (
         <div className="dialog-body fs-customize-body" style={embedded ? { padding: '4px 0 0', maxHeight: 'none', overflowY: 'visible' } : undefined}>
-          <div className="fs-customize-cat">Menu Bar</div>
+          {(!category) && <div className="fs-customize-cat">Menu Bar</div>}
+          {(!category || category === 'menu') && (<>
           <section>
             <h3>Menus</h3>
             <p className="fs-customize-hint">
@@ -179,14 +194,16 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false 
               })}
             </div>
           </section>
-          <div className="fs-customize-cat">Toolbar</div>
+          </>)}
+          {(!category) && <div className="fs-customize-cat">Toolbar</div>}
+          {(!category || category === 'toolbar') && (<>
           <section>
-            <h3>Layout & Pins</h3>
+            <h3>Toolbar Layout</h3>
             <p className="fs-customize-hint">
-              Two zones: Left flows from the left edge; Right sits at the far
-              right (zoom and Editor View live there by default). Move anything
-              between zones, reorder with the arrows, add divider lines, and pin
-              any window, tool, or command as a button.
+              One list for the whole toolbar. Left flows from the left edge;
+              Right sits at the far right. Built-in groups can move but not
+              hide (Hide is greyed) — untick their individual items instead.
+              Pins and dividers can do everything.
             </p>
             <div className="fs-customize-row">
               <span className="fs-customize-tool">Toolbar mode</span>
@@ -198,89 +215,90 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false 
                 ))}
               </span>
             </div>
+
             {(['left', 'right'] as const).map((zone) => {
               const tokens = zone === 'left' ? tbLeft : tbRight;
               const other = zone === 'left' ? tbRight : tbLeft;
-              const setZones = (l: string[], r: string[]) => setToolbarZones(l, r);
-              const update = (next: string[]) => zone === 'left' ? setZones(next, other) : setZones(other, next);
-              const moveTok = (idx: number, dir: -1 | 1) => {
-                const j = idx + dir;
-                if (j < 0 || j >= tokens.length) return;
-                const next = [...tokens];
-                [next[idx], next[j]] = [next[j], next[idx]];
-                update(next);
-              };
-              const sendToOther = (idx: number) => {
-                const tok = tokens[idx];
-                const nextSelf = tokens.filter((_, i) => i !== idx);
-                const nextOther = [...other, tok];
-                zone === 'left' ? setZones(nextSelf, nextOther) : setZones(nextOther, nextSelf);
-              };
-              const removeTok = (idx: number) => update(tokens.filter((_, i) => i !== idx));
-              return (
-                <div key={zone} className="fs-tbzone">
-                  <div className="fs-tbzone-title">{zone === 'left' ? 'Left zone' : 'Right zone (far right)'}</div>
-                  {tokens.map((tok, idx) => (
-                    <div key={`${tok}-${idx}`} className="fs-customize-row">
+              const update = (nextSelf: string[], nextOther?: string[]) =>
+                zone === 'left'
+                  ? setToolbarZones(nextSelf, nextOther ?? other)
+                  : setToolbarZones(nextOther ?? other, nextSelf);
+              return tokens.map((tok, idx) => {
+                const isGroup = tok.startsWith('g:');
+                const items = isGroup ? (GROUP_TOKEN_ITEMS[tok.slice(2)] || []) : [];
+                const moveTok = (dir: -1 | 1) => {
+                  const j = idx + dir;
+                  if (j < 0 || j >= tokens.length) return;
+                  const next = [...tokens];
+                  [next[idx], next[j]] = [next[j], next[idx]];
+                  update(next);
+                };
+                const toZone = (target: 'left' | 'right') => {
+                  if (target === zone) return;
+                  update(tokens.filter((_, i) => i !== idx), [...other, tok]);
+                };
+                const hideTok = () => {
+                  if (isGroup) return;
+                  update(tokens.filter((_, i) => i !== idx));
+                };
+                return (
+                  <React.Fragment key={`${tok}-${zone}-${idx}`}>
+                    <div className="fs-customize-row">
                       <span className="fs-customize-tool">
                         <span className="fs-customize-order">
-                          <button title="Move up" onClick={() => moveTok(idx, -1)} disabled={idx === 0}>▲</button>
-                          <button title="Move down" onClick={() => moveTok(idx, 1)} disabled={idx === tokens.length - 1}>▼</button>
+                          <button title="Move up within its zone" onClick={() => moveTok(-1)} disabled={idx === 0}>▲</button>
+                          <button title="Move down within its zone" onClick={() => moveTok(1)} disabled={idx === tokens.length - 1}>▼</button>
                         </span>
                         {tokenLabel(tok)}
                       </span>
                       <span className="fs-customize-seg">
-                        <button onClick={() => sendToOther(idx)}>{zone === 'left' ? '→ Right' : '← Left'}</button>
-                        {(tok.startsWith('d:') || tok.startsWith('t:') || tok.startsWith('c:')) && (
-                          <button onClick={() => removeTok(idx)}>Remove</button>
-                        )}
+                        <button className={zone === 'left' ? 'active' : ''} onClick={() => toZone('left')}>Left</button>
+                        <button className={zone === 'right' ? 'active' : ''} onClick={() => toZone('right')}>Right</button>
+                        <button disabled={isGroup} title={isGroup ? 'Built-in groups cannot be hidden — untick their items below' : 'Remove from the toolbar'} onClick={hideTok}>Hide</button>
                       </span>
                     </div>
-                  ))}
-                  <div className="fs-tbzone-adders">
-                    <button className="swn-add-btn" onClick={() => update([...tokens, `d:${Date.now()}`])}>+ Divider</button>
-                    <select
-                      value=""
-                      onChange={(e) => { if (e.target.value) { update([...tokens, e.target.value]); e.target.value = ''; } }}
-                    >
-                      <option value="">+ Pin window / tool / command…</option>
-                      <optgroup label="Windows & Tools">
-                        {ALL_TOOLS.filter((t) => !tokens.includes(`t:${t.id}`) && !other.includes(`t:${t.id}`)).map((t) => (
-                          <option key={t.id} value={`t:${t.id}`}>{t.label}</option>
+                    {items.length > 0 && (
+                      <div className="fs-customize-checks fs-tb-subitems">
+                        {items.map((item) => (
+                          <label key={item}>
+                            <input
+                              type="checkbox"
+                              checked={!toolbarHiddenItems.includes(item)}
+                              onChange={() => toggleHidden(item)}
+                            />
+                            {item}
+                          </label>
                         ))}
-                      </optgroup>
-                      <optgroup label="Commands">
-                        {TOOLBAR_COMMANDS.filter((c) => !tokens.includes(`c:${c.id}`) && !other.includes(`c:${c.id}`)).map((c) => (
-                          <option key={c.id} value={`c:${c.id}`}>{c.label}</option>
-                        ))}
-                      </optgroup>
-                    </select>
-                  </div>
-                </div>
-              );
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              });
             })}
-          </section>
-          <section>
-            <h3>Built-in Items</h3>
-            <p className="fs-customize-hint">Unchecked items are removed from the toolbar.</p>
-            <div className="fs-customize-boxes">
-              {TOOLBAR_GROUPS.map((group) => (
-                <div className="fs-customize-box" key={group.name}>
-                  {group.items.map((item) => (
-                    <label key={item}>
-                      <input
-                        type="checkbox"
-                        checked={!toolbarHiddenItems.includes(item)}
-                        onChange={() => toggleHidden(item)}
-                      />
-                      {item}
-                    </label>
+            <div className="fs-tbzone-adders">
+              <button className="swn-add-btn" onClick={() => setToolbarZones([...tbLeft, `d:${Date.now()}`], tbRight)}>+ Divider (Left)</button>
+              <button className="swn-add-btn" onClick={() => setToolbarZones(tbLeft, [...tbRight, `d:${Date.now()}`])}>+ Divider (Right)</button>
+              <select
+                value=""
+                onChange={(e) => { if (e.target.value) { setToolbarZones([...tbLeft, e.target.value], tbRight); e.target.value = ''; } }}
+              >
+                <option value="">+ Pin window / tool / command…</option>
+                <optgroup label="Windows & Tools">
+                  {ALL_TOOLS.filter((t) => !tbLeft.includes(`t:${t.id}`) && !tbRight.includes(`t:${t.id}`)).map((t) => (
+                    <option key={t.id} value={`t:${t.id}`}>{t.label}</option>
                   ))}
-                </div>
-              ))}
+                </optgroup>
+                <optgroup label="Commands">
+                  {TOOLBAR_COMMANDS.filter((c) => !tbLeft.includes(`c:${c.id}`) && !tbRight.includes(`c:${c.id}`)).map((c) => (
+                    <option key={c.id} value={`c:${c.id}`}>{c.label}</option>
+                  ))}
+                </optgroup>
+              </select>
             </div>
           </section>
-          <div className="fs-customize-cat">Side Panels</div>
+          </>)}
+          {(!category) && <div className="fs-customize-cat">Side Panels</div>}
+          {(!category || category === 'panels') && (<>
           <section>
             <h3>Panels</h3>
             <div className="fs-customize-row">
@@ -428,6 +446,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false 
               <button className="swn-add-btn" onClick={() => addPanelDivider('right')}>+ Divider in Right panel</button>
             </div>
           </section>
+          </>)}
         </div>
   );
 
