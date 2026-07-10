@@ -179,6 +179,25 @@ function getTextLines(text: string, cpl: number): number {
   return text.length === 0 ? 1 : Math.ceil(text.length / cpl);
 }
 
+/** Title-page blocks span the full printable width (~62 chars at 12pt). */
+const TITLE_CPL = 62;
+
+/**
+ * Line cost of a title-page block at a given font size, in 12pt line slots.
+ * The geometry contract (v0.45): the title-page builder, this paginator, and
+ * the rendered DOM (TitlePage renderHTML snaps line-height to a whole number
+ * of 12pt slots) must all agree, or an enlarged title silently pushes the
+ * bottom fields past the title page and offsets every page after it.
+ */
+export function titlePageBlockLines(text: string, sizePt: number): number {
+  const size = Number(sizePt) || 12;
+  if (size <= 12) return getTextLines(text, TITLE_CPL);
+  const slotsPerLine = Math.ceil(size / 12);
+  // Courier width scales linearly with size, so chars-per-line shrinks 12/size.
+  const cpl = Math.max(8, Math.floor(TITLE_CPL * (12 / size)));
+  return getTextLines(text, cpl) * slotsPerLine;
+}
+
 function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = EMPTY_HINTS): PaginationState {
   const { linesPerPage } = getPageMetrics(layout);
 
@@ -197,6 +216,16 @@ function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = E
     let fixedLines = typeName === 'screenplayImage'
       ? Math.max(1, Number(node.attrs?.heightLines) || 8)
       : undefined;
+    // Title/title2 blocks with a custom font size occupy ceil(size/12) line
+    // slots per wrapped line — must match TitlePage renderHTML's snapped
+    // line-height and the title-page builder's line budget.
+    if (typeName === 'titlePage') {
+      const field = (node.attrs as { field?: string })?.field;
+      if (field === 'title' || field === 'title2') {
+        const size = Number((node.attrs as { tpTitleFontSize?: number })?.tpTitleFontSize) || 12;
+        if (size > 12) fixedLines = titlePageBlockLines(node.textContent || '', size);
+      }
+    }
     // Outline lines hidden by the Preview options render display:none — they
     // occupy zero lines and contribute no leading space.
     if (typeName === 'general') {

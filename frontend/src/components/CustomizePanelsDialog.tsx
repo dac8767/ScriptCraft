@@ -58,15 +58,16 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     ].sort((a, b) => a.ord - b.ord).map(({ ord: _o, ...r }) => r as Row);
 
     const orderTokenOf = (r: Row) => r.kind === 'tool' ? r.id : `div:${r.id}`;
-    const moveRow = (idx: number, dir: -1 | 1) => {
-      const j = idx + dir;
-      if (j < 0 || j >= rows.length) return;
-      const a = orderTokenOf(rows[idx]);
-      const b = orderTokenOf(rows[j]);
-      const full = order.includes(a) && order.includes(b) ? [...order] : [...order, ...[a, b].filter((x) => !order.includes(x))];
-      const ai = full.indexOf(a), bi = full.indexOf(b);
-      [full[ai], full[bi]] = [full[bi], full[ai]];
-      setToolOrder(full);
+    const moveRowTo = (from: number, to: number) => {
+      const toks = rows.map(orderTokenOf);
+      const full = [...order];
+      for (const t of toks) if (!full.includes(t)) full.push(t);
+      const newToks = [...toks];
+      const [m] = newToks.splice(from, 1);
+      newToks.splice(to, 0, m);
+      const inRows = new Set(toks);
+      let k = 0;
+      setToolOrder(full.map((x) => (inRows.has(x) ? newToks[k++] : x)));
     };
     const setRowSide = (r: Row, target: 'left' | 'right' | 'hidden') => {
       if (r.kind === 'divider') {
@@ -105,6 +106,28 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         setTool(value.slice(2) as ToolId, { enabled: true, side });
       }
     };
+    const resetPanel = () => {
+      // Left default: every Project window. Right default: every tool +
+      // production item. Items belonging to the other family leave this side;
+      // this side's items come home from wherever they are.
+      const next = { ...toolConfig };
+      ALL_TOOLS.forEach((t) => {
+        const isWindow = WINDOW_IDS.includes(t.id);
+        const belongsHere = side === 'left' ? isWindow : !isWindow;
+        const c = cfgOf(t.id);
+        if (belongsHere) next[t.id] = { side, enabled: true };
+        else if (c.enabled && c.side === side) next[t.id] = { ...c, enabled: false };
+      });
+      setToolConfig(next);
+      const sideDivTokens = panelDividers.filter((d) => d.side === side).map((d) => `div:${d.id}`);
+      setPanelDividers(panelDividers.filter((d) => d.side !== side));
+      // Strip this side's ids from the custom order so they fall back to the
+      // canonical base order.
+      const homeIds = new Set(
+        ALL_TOOLS.filter((t) => (side === 'left' ? WINDOW_IDS.includes(t.id) : !WINDOW_IDS.includes(t.id))).map((t) => t.id as string),
+      );
+      setToolOrder(order.filter((tok) => !sideDivTokens.includes(tok) && !homeIds.has(tok)));
+    };
     const removeAll = () => {
       const next = { ...toolConfig };
       ALL_TOOLS.forEach((t) => {
@@ -125,12 +148,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           below). Divider labels are edited here only.
         </p>
         {rows.map((r, idx) => (
-          <div key={`${r.kind}-${r.id}`} className="fs-customize-row">
+          <div
+            key={`${r.kind}-${r.id}`}
+            className={`fs-customize-row${dragClass(`panel-${side}`, idx)}`}
+            {...dragProps(`panel-${side}`, idx, moveRowTo)}
+          >
             <span className="fs-customize-tool">
-              <span className="fs-customize-order">
-                <button title="Move up" onClick={() => moveRow(idx, -1)} disabled={idx === 0}>▲</button>
-                <button title="Move down" onClick={() => moveRow(idx, 1)} disabled={idx === rows.length - 1}>▼</button>
-              </span>
+              <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
               {r.kind === 'divider' ? (
                 <input
                   className="fs-divider-label-input"
@@ -167,6 +191,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             title="Remove everything from this panel (re-add items from the dropdown)"
             onClick={removeAll}
           >Remove All</button>
+          <button
+            className="swn-add-btn"
+            title={side === 'left' ? 'Restore the default Left Panel: all Project windows' : 'Restore the default Right Panel: all tool and production items'}
+            onClick={resetPanel}
+          >Reset to Default</button>
         </div>
       </section>
     );
@@ -177,6 +206,22 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones, toolbarZonesSet } = useEditorStore();
   const { panelDividers, setPanelDividers } = useEditorStore();
   const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'leftpanel' | 'rightpanel'>(category ?? 'menu');
+  // Drag-and-drop reordering (v0.45): one shared source marker; drops are
+  // only accepted within the same list.
+  const [dragInfo, setDragInfo] = React.useState<{ list: string; idx: number } | null>(null);
+  const dragProps = (list: string, idx: number, moveTo: (from: number, to: number) => void) => ({
+    draggable: true,
+    onDragStart: (e: React.DragEvent) => { setDragInfo({ list, idx }); e.dataTransfer.effectAllowed = 'move'; },
+    onDragOver: (e: React.DragEvent) => { if (dragInfo && dragInfo.list === list) e.preventDefault(); },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      if (dragInfo && dragInfo.list === list && dragInfo.idx !== idx) moveTo(dragInfo.idx, idx);
+      setDragInfo(null);
+    },
+    onDragEnd: () => setDragInfo(null),
+  });
+  const dragClass = (list: string, idx: number) =>
+    dragInfo && dragInfo.list === list && dragInfo.idx === idx ? ' dragging' : '';
 
   if (!open) return null;
 
@@ -288,20 +333,20 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             <div className="fs-customize-grid">
               {orderedMenuLabels.map((label, idx) => {
                 const hidden = menuBarHidden.includes(label);
-                const moveMenu = (dir: -1 | 1) => {
-                  const j = idx + dir;
-                  if (j < 0 || j >= orderedMenuLabels.length) return;
+                const moveMenuTo = (from: number, to: number) => {
                   const next = [...orderedMenuLabels];
-                  [next[idx], next[j]] = [next[j], next[idx]];
+                  const [m] = next.splice(from, 1);
+                  next.splice(to, 0, m);
                   setMenuBarOrder(next);
                 };
                 return (
-                  <div key={label} className="fs-customize-row">
+                  <div
+                    key={label}
+                    className={`fs-customize-row${dragClass('menu', idx)}`}
+                    {...dragProps('menu', idx, moveMenuTo)}
+                  >
                     <span className="fs-customize-tool">
-                      <span className="fs-customize-order">
-                        <button title="Move left in the menu bar" onClick={() => moveMenu(-1)} disabled={idx === 0}>▲</button>
-                        <button title="Move right in the menu bar" onClick={() => moveMenu(1)} disabled={idx === orderedMenuLabels.length - 1}>▼</button>
-                      </span>
+                      <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
                       {label}
                     </span>
                     <span className="fs-customize-seg">
@@ -333,6 +378,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   showToast('You can still customize the menu bar, toolbar, and side panels by going to Settings > Layout.', 'info');
                 }}
               >Remove All</button>
+              <button
+                className="swn-add-btn"
+                title="Restore the default menu bar: all menus, default order"
+                onClick={() => { setMenuBarOrder([...MENU_BAR_LABELS]); setMenuBarHidden([]); }}
+              >Reset to Default</button>
             </div>
           </section>
           </>)}
@@ -363,11 +413,10 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   ? setToolbarZones(nextSelf, nextOther ?? other)
                   : setToolbarZones(nextOther ?? other, nextSelf);
               return tokens.map((tok, idx) => {
-                const moveTok = (dir: -1 | 1) => {
-                  const j = idx + dir;
-                  if (j < 0 || j >= tokens.length) return;
+                const moveTokTo = (from: number, to: number) => {
                   const next = [...tokens];
-                  [next[idx], next[j]] = [next[j], next[idx]];
+                  const [m] = next.splice(from, 1);
+                  next.splice(to, 0, m);
                   update(next);
                 };
                 const toZone = (target: 'left' | 'right') => {
@@ -376,12 +425,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 };
                 const hideTok = () => update(tokens.filter((_, i) => i !== idx));
                 return (
-                  <div className="fs-customize-row" key={`${tok}-${zone}-${idx}`}>
+                  <div
+                    className={`fs-customize-row${dragClass(`tb-${zone}`, idx)}`}
+                    key={`${tok}-${zone}-${idx}`}
+                    {...dragProps(`tb-${zone}`, idx, moveTokTo)}
+                  >
                     <span className="fs-customize-tool">
-                      <span className="fs-customize-order">
-                        <button title="Move up within its zone" onClick={() => moveTok(-1)} disabled={idx === 0}>▲</button>
-                        <button title="Move down within its zone" onClick={() => moveTok(1)} disabled={idx === tokens.length - 1}>▼</button>
-                      </span>
+                      <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
                       {tokenLabel(tok)}
                     </span>
                     <span className="fs-customize-seg">
@@ -423,6 +473,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 title="Empty the toolbar (re-add items from the dropdown)"
                 onClick={() => setToolbarZones([], [])}
               >Remove All</button>
+              <button
+                className="swn-add-btn"
+                title="Restore the default toolbar: all toolbar items in default order"
+                onClick={() => setToolbarZones([...DEFAULT_TOOLBAR_LEFT], [...DEFAULT_TOOLBAR_RIGHT])}
+              >Reset to Default</button>
             </div>
           </section>
           </>)}

@@ -58,7 +58,14 @@ export const TitlePage = Node.create({
     };
     // Apply a custom title font size (default 12pt is left to CSS).
     // The title2 block carries its size in its own tpTitleFontSize attr.
-    if ((field === 'title' || field === 'title2') && size !== 12) attrs.style = `font-size: ${size}pt`;
+    // line-height snaps to a whole number of 12pt line slots so the rendered
+    // block height matches the paginator's and builder's line accounting —
+    // otherwise the title page grows past one page and every page after it
+    // starts on the wrong line.
+    if ((field === 'title' || field === 'title2') && size !== 12) {
+      const slots = Math.max(1, Math.ceil(size / 12));
+      attrs.style = `font-size: ${size}pt; line-height: ${slots * 12}pt`;
+    }
     return ['div', mergeAttributes(HTMLAttributes, attrs), 0];
   },
 });

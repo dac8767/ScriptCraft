@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { titlePageBlockLines } from '../editor/pagination';
 import type { Editor } from '@tiptap/react';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { TitlePageAttrs } from '../editor/extensions/TitlePage';
@@ -197,8 +198,14 @@ function buildTitlePageBlocks(
   const topSpacers = Math.max(2, TITLE_LINE - 1 - aboveLines);
   for (let i = 0; i < topSpacers; i++) blocks.push(blank());
   blocks.push(text('title', data.tpTitle || ''));
-  let used = aboveLines + topSpacers + 1;
-  if (data.tpTitle2) { blocks.push(text('title2', data.tpTitle2)); used += 1; }
+  // An enlarged title occupies ceil(size/12) line slots per wrapped line —
+  // budget its real height so the bottom block's spacer gap shrinks to match
+  // and everything stays on the title page (same math as the paginator).
+  let used = aboveLines + topSpacers + titlePageBlockLines(data.tpTitle || '', data.tpTitleFontSize);
+  if (data.tpTitle2) {
+    blocks.push(text('title2', data.tpTitle2));
+    used += titlePageBlockLines(data.tpTitle2, data.tpTitle2FontSize);
+  }
   if (byLine) { blocks.push(blank(), blank(), text('author', byLine)); used += 3; }
 
   const bottom: [string, string][] = [];
