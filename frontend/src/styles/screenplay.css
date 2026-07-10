@@ -12993,3 +12993,17 @@ html.android .version-history-panel {
   font-size: 12px;
   width: 150px;
 }
+
+
+/* v0.39: Customize category headers */
+.fs-customize-cat {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fd-accent);
+  border-bottom: 1px solid var(--fd-border);
+  padding-bottom: 4px;
+  margin: 18px 0 10px;
+}
+.fs-customize-cat:first-child { margin-top: 0; }

@@ -200,7 +200,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     activeWorkspace,
     saveWorkspace,
     applyWorkspace,
-    toolbarMode,
+    menuMode,
     zoomLevel,
     setZoomLevel,
     navPanelWidth,
@@ -1380,7 +1380,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
       // In floating mode, position relative to the panel edges (not individual items)
       // so the dropdown clears the rounded, padded floating menu panel.
-      if (toolbarMode === 'hidden' && menuRef.current) {
+      if (menuMode === 'hidden' && menuRef.current) {
         const panelRect = menuRef.current.getBoundingClientRect();
         if (panelRect.bottom > window.innerHeight * 0.55) {
           setDropdownPos({ bottom: window.innerHeight - panelRect.top + 4, left, top: undefined });
@@ -1391,7 +1391,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         setDropdownPos({ top: rect.bottom, left, bottom: undefined });
       }
     }
-  }, [activeMenu, toolbarMode]);
+  }, [activeMenu, menuMode]);
 
   // Floating menu toggle (hidden mode)
   const [floatingMenuOpen, setFloatingMenuOpen] = useState(false);
@@ -1544,7 +1544,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       document.removeEventListener('touchmove', onTouchMove);
       document.removeEventListener('touchend', onTouchEnd);
     };
-  }, [FAB_POS_KEY, FAB_SIZE, toolbarMode]);
+  }, [FAB_POS_KEY, FAB_SIZE, menuMode]);
 
   // Click: fallback for tap (works everywhere)
   const handleFabClick = useCallback(() => {
@@ -1588,7 +1588,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     return () => document.removeEventListener('mousedown', handler);
   }, [floatingMenuOpen]);
 
-  const menuBarClass = toolbarMode === 'comfortable' ? 'menu-bar chrome-comfortable' : 'menu-bar';
+  const menuBarClass = menuMode === 'comfortable' ? 'menu-bar chrome-comfortable' : 'menu-bar';
 
   const renderMenuItems = () => (
     <>
@@ -1613,7 +1613,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
   return (
     <>
-    {toolbarMode === 'hidden' ? (
+    {menuMode === 'hidden' ? (
       createPortal(
         <>
           <div
@@ -1659,7 +1659,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     )}
     {activeMenuData && createPortal(
       <div
-        className={`menu-dropdown${toolbarMode === 'comfortable' ? ' menu-dropdown--comfortable' : ''}${dropdownPos.bottom != null ? ' menu-dropdown--above' : ''}`}
+        className={`menu-dropdown${menuMode === 'comfortable' ? ' menu-dropdown--comfortable' : ''}${dropdownPos.bottom != null ? ' menu-dropdown--above' : ''}`}
         style={{ top: dropdownPos.top, bottom: dropdownPos.bottom, left: dropdownPos.left }}
       >
         {activeMenuData.items.map((item, i) =>

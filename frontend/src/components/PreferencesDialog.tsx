@@ -36,9 +36,10 @@ import { redirectUri } from '../services/oauthPkce';
 type PrefTab = 'general' | 'layout' | 'formats' | 'page' | 'mores' | 'saveloc' | 'system';
 
 const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
+  // App-wide first, then writing setup, then data, then system.
   { id: 'general', label: 'General', icon: <FaSlidersH /> },
   { id: 'layout', label: 'Layout', icon: <FaColumns /> },
-  { id: 'formats', label: 'Script Formats', icon: <FaFileAlt /> },
+  { id: 'formats', label: 'Templates', icon: <FaFileAlt /> },
   { id: 'page', label: 'Page Setup', icon: <FaRulerCombined /> },
   { id: 'mores', label: 'Mores & Continueds', icon: <FaCommentDots /> },
   { id: 'saveloc', label: 'Save Options', icon: <FaCloudUploadAlt /> },

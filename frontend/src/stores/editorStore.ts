@@ -37,6 +37,7 @@ interface ViewState {
   tagsVisible?: boolean;
   zoomLevel?: number;
   toolbarMode?: 'compact' | 'comfortable' | 'hidden';
+  menuMode?: 'compact' | 'comfortable' | 'hidden';
   characterSortBy?: 'name' | 'importance' | 'scenes' | 'dialogues' | 'appearance';
   grammarRulesEnabled?: Record<string, boolean>;
   spellingSettings?: SpellingSettings;
@@ -826,6 +827,9 @@ interface EditorState {
 
   // Toolbar display mode
   toolbarMode: 'compact' | 'comfortable' | 'hidden';
+  /** Menu bar mode, split from toolbarMode (v0.39); migrates from it. */
+  menuMode: 'compact' | 'comfortable' | 'hidden';
+  setMenuMode: (m: 'compact' | 'comfortable' | 'hidden') => void;
   setToolbarMode: (mode: 'compact' | 'comfortable' | 'hidden') => void;
 
   // Character sort preference
@@ -1522,6 +1526,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   toolbarMode: (_vs.toolbarMode as 'compact' | 'comfortable' | 'hidden') ?? 'compact',
+  menuMode: ((_vs.menuMode ?? _vs.toolbarMode) === 'comfortable' ? 'comfortable' : (_vs.menuMode ?? _vs.toolbarMode) === 'hidden' ? 'hidden' : 'compact') as 'compact' | 'comfortable' | 'hidden',
+  setMenuMode: (m) => {
+    saveViewState({ menuMode: m });
+    set({ menuMode: m });
+  },
   setToolbarMode: (mode) => { set({ toolbarMode: mode }); saveViewState({ toolbarMode: mode }); },
 
   characterSortBy: (_vs.characterSortBy as 'name' | 'importance' | 'scenes' | 'dialogues' | 'appearance') ?? 'importance',
