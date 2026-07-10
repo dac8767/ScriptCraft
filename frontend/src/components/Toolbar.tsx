@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Editor } from '@tiptap/react';
 import {
   FaBold,
@@ -26,6 +26,7 @@ import {
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
 import { commandDef } from './toolbarCommands';
+import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones } from './toolbarBuiltins';
 import { useEditorStore, NOTE_COLORS } from '../stores/editorStore';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
@@ -72,7 +73,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     activeToolRight,
     setActiveToolRight,
     openShelfTab,
-    toolbarHiddenItems,
     toolbarPinnedTools,
     previewMode,
     openTool,
@@ -515,30 +515,134 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     }
   }, [editor, tagsPanelOpen, toggleTagsPanel, setPendingTagSelection, setEditingTagId]);
 
-  // ── Shared renderers for toolbar groups (used both inline and in overflow) ──
+  // ── Toolbar zones (v0.42: flat per-item tokens) ────────────────────────
+  // Tokens: b:<key> built-in item · t:<toolId> pinned tool ·
+  // c:<commandId> pinned command · d:<n> user divider. Right zone renders
+  // after the flex spacer. Legacy g: group tokens and the retired
+  // toolbarHiddenItems checkboxes migrate via normalizeToolbarZones.
+  // NOTE: these hooks must stay ABOVE the toolbarMode early return below —
+  // a hook after an early return crashes React when the toolbar is toggled
+  // hidden ('Rendered fewer hooks than during the previous render').
+  const { toolbarLeft, toolbarRight, setToolbarZones } = useEditorStore();
+  const zonesReady = toolbarLeft.length > 0 || toolbarRight.length > 0;
+  useEffect(() => {
+    if (!zonesReady) {
+      setToolbarZones(
+        [...DEFAULT_TOOLBAR_LEFT, ...toolbarPinnedTools.map((id) => `t:${id}`)],
+        DEFAULT_TOOLBAR_RIGHT,
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zonesReady]);
+  const zones = normalizeToolbarZones(
+    zonesReady ? toolbarLeft : [...DEFAULT_TOOLBAR_LEFT, ...toolbarPinnedTools.map((id) => `t:${id}`)],
+    zonesReady ? toolbarRight : DEFAULT_TOOLBAR_RIGHT,
+  );
+  const leftTokens = zones.left;
+  const rightTokens = zones.right;
 
-  const renderFontFaceSize = useCallback((inOverflow = false) => (
-    <React.Fragment key="font-face-size">
-      <div className="toolbar-group" style={locked.fontFamily ? { opacity: 0.5, pointerEvents: 'none' } : undefined}>
-        <FontPicker
-          value={cursorFont}
-          extraFonts={extraFonts}
-          onChange={(val) => {
-            if (locked.fontFamily) return;
-            setFontFamily(val);
-            const entry = FONT_REGISTRY.find(f => f.name === val);
-            if (entry) loadFont(entry);
-            const DEFAULT_FONTS = ['Courier Final Draft', 'Courier Prime', 'Courier New', 'Courier'];
-            if (DEFAULT_FONTS.includes(val)) {
-              editor?.chain().focus(undefined, { scrollIntoView: false }).setMark('textStyle', { fontFamily: null }).removeEmptyTextStyle().run();
-            } else {
-              editor?.chain().focus(undefined, { scrollIntoView: false }).setMark('textStyle', { fontFamily: val }).run();
-            }
-            if (inOverflow) setOverflowOpen(false);
-          }}
-        />
-      </div>
-      <div className="toolbar-group">
+  if (toolbarMode === 'hidden') return null;
+
+  // Check if a given priority prefix has any collapsed items
+  const isHidden = (prefix: string) => {
+    for (const k of hiddenPriorities) { if (k.startsWith(prefix)) return true; }
+    return false;
+  };
+
+  // ── Per-item built-in controls (v0.42) ──────────────────────────────────
+  // Each built-in toolbar item renders independently (see toolbarBuiltins.ts).
+  // inOverflow: overflow-menu copy. showPopups: suppress ColorPicker popups
+  // on a collapsed inline copy so only the overflow copy owns popup state.
+  const renderBuiltinControl = (key: string, inOverflow = false, showPopups = true): React.ReactNode => {
+    switch (key) {
+      case 'undo': return (
+        <button
+          className="toolbar-btn"
+          title="Undo (⌘Z)"
+          onClick={() => { try { editor?.chain().focus().undo().run(); } catch {} }}
+          disabled={!editor || typeof (editor.can() as any).undo !== 'function' || !(editor.can() as any).undo()}
+        >
+          <FaUndo />
+        </button>
+      );
+      case 'redo': return (
+        <button
+          className="toolbar-btn"
+          title="Redo (⇧⌘Z)"
+          onClick={() => { try { editor?.chain().focus().redo().run(); } catch {} }}
+          disabled={!editor || typeof (editor.can() as any).redo !== 'function' || !(editor.can() as any).redo()}
+        >
+          <FaRedo />
+        </button>
+      );
+      case 'element': return (
+        <select
+          className="element-selector"
+          value={activeElement}
+          onChange={handleElementChange}
+          title="Element"
+        >
+          {Object.values(activeTemplate.rules)
+            .filter((r) => r.enabled && !['newAct', 'endOfAct', 'castList'].includes(r.id))
+            // When inside an AV cell, only cell-valid types make sense — selecting
+            // sceneHeading/action/etc. silently fails the schema check anyway.
+            .filter((r) => isInsideAvCell ? AV_CELL_ELEMENT_IDS.includes(r.id) : !AV_CELL_ELEMENT_IDS.includes(r.id))
+            .map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.label}
+              </option>
+            ))}
+        </select>
+      );
+      case 'insertSection': return (
+        <button
+          className="toolbar-btn"
+          title="Insert Section"
+          onClick={() => editor?.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '# ' }] }).run()}
+        >
+          <FaListOl />
+        </button>
+      );
+      case 'insertNote': return (
+        <button
+          className="toolbar-btn"
+          title="Insert Script Note"
+          onClick={() => useEditorStore.getState().openShelfTab('script')}
+        >
+          <FaRegStickyNote />
+        </button>
+      );
+      case 'insertChecklist': return (
+        <button
+          className="toolbar-btn"
+          title="Insert Checklist Item"
+          onClick={() => editor?.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '[ ] ' }] }).run()}
+        >
+          <FaCheckSquare />
+        </button>
+      );
+      case 'fontFamily': return (
+        <div className="toolbar-group" style={locked.fontFamily ? { opacity: 0.5, pointerEvents: 'none' } : undefined}>
+          <FontPicker
+            value={cursorFont}
+            extraFonts={extraFonts}
+            onChange={(val) => {
+              if (locked.fontFamily) return;
+              setFontFamily(val);
+              const entry = FONT_REGISTRY.find(f => f.name === val);
+              if (entry) loadFont(entry);
+              const DEFAULT_FONTS = ['Courier Final Draft', 'Courier Prime', 'Courier New', 'Courier'];
+              if (DEFAULT_FONTS.includes(val)) {
+                editor?.chain().focus(undefined, { scrollIntoView: false }).setMark('textStyle', { fontFamily: null }).removeEmptyTextStyle().run();
+              } else {
+                editor?.chain().focus(undefined, { scrollIntoView: false }).setMark('textStyle', { fontFamily: val }).run();
+              }
+              if (inOverflow) setOverflowOpen(false);
+            }}
+          />
+        </div>
+      );
+      case 'fontSize': return (
         <select
           className="font-size-selector"
           value={cursorSize ?? ''}
@@ -564,21 +668,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           {(cursorSize !== null && !FONT_SIZES.includes(cursorSize)
             ? [...FONT_SIZES, cursorSize].sort((a, b) => a - b)
             : FONT_SIZES
-          ).map((s) => (
-            <option key={s} value={s}>
-              {s}pt
+          ).map((sz) => (
+            <option key={sz} value={sz}>
+              {sz}pt
             </option>
           ))}
         </select>
-      </div>
-    </React.Fragment>
-  ), [cursorFont, cursorSize, extraFonts, editor, setFontFamily, setFontSize, locked]);
-
-  // showPopups: when false, only render buttons (no ColorPicker popups).
-  // This prevents the hidden inline copy from stealing popup state from the overflow copy.
-  const renderFontStyleColors = useCallback((inOverflow = false, showPopups = true) => (
-    <React.Fragment key="font-style-colors">
-      <div className="toolbar-group">
+      );
+      case 'bold': return (
         <button
           className={`toolbar-btn ${isActive('bold') ? 'active' : ''}`}
           title="Bold (⌘B)"
@@ -594,6 +691,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         >
           <FaBold />
         </button>
+      );
+      case 'italic': return (
         <button
           className={`toolbar-btn ${isActive('italic') ? 'active' : ''}`}
           title="Italic (⌘I)"
@@ -609,6 +708,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         >
           <FaItalic />
         </button>
+      );
+      case 'underline': return (
         <button
           className={`toolbar-btn ${isActive('underline') ? 'active' : ''}`}
           title="Underline (⌘U)"
@@ -624,6 +725,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         >
           <FaUnderline />
         </button>
+      );
+      case 'strike': return (
         <button
           className={`toolbar-btn ${isActive('strike') ? 'active' : ''}`}
           title="Strikethrough"
@@ -632,6 +735,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         >
           <FaStrikethrough />
         </button>
+      );
+      case 'subscript': return (
         <button
           className={`toolbar-btn ${isActive('subscript') ? 'active' : ''}`}
           title="Subscript"
@@ -640,6 +745,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         >
           <FaSubscript />
         </button>
+      );
+      case 'superscript': return (
         <button
           className={`toolbar-btn ${isActive('superscript') ? 'active' : ''}`}
           title="Superscript"
@@ -648,310 +755,120 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         >
           <FaSuperscript />
         </button>
-      </div>
-
-      <div className={inOverflow ? 'toolbar-overflow-sep' : 'toolbar-separator'} />
-
-      <div className="toolbar-group" style={{ position: 'relative' }}>
+      );
+      case 'textColor': return (
+        <div className="toolbar-group" style={{ position: 'relative' }}>
+          <button
+            className="toolbar-btn"
+            title="Text Color"
+            disabled={locked.textColor}
+            onClick={() => { if (!locked.textColor) { setTextColorOpen(!textColorOpen); setBgColorOpen(false); } }}
+          >
+            <FaPaintBrush style={{ color: currentTextColor }} />
+          </button>
+          {showPopups && textColorOpen && (
+            <ColorPicker
+              value={currentTextColor}
+              onChange={(color) => {
+                setCurrentTextColor(color || '#000000');
+                if (color) {
+                  editor?.chain().focus(undefined, { scrollIntoView: false }).setColor(color).run();
+                } else {
+                  editor?.chain().focus(undefined, { scrollIntoView: false }).unsetColor().run();
+                }
+                setTextColorOpen(false);
+              }}
+              onClose={() => setTextColorOpen(false)}
+            />
+          )}
+        </div>
+      );
+      case 'highlightColor': return (
+        <div className="toolbar-group" style={{ position: 'relative' }}>
+          <button
+            className="toolbar-btn"
+            title="Highlight Color"
+            disabled={locked.backgroundColor}
+            onClick={() => { if (!locked.backgroundColor) { setBgColorOpen(!bgColorOpen); setTextColorOpen(false); } }}
+          >
+            <FaHighlighter style={{ color: currentBgColor }} />
+          </button>
+          {showPopups && bgColorOpen && (
+            <ColorPicker
+              value={currentBgColor}
+              onChange={(color) => {
+                setCurrentBgColor(color || '#ffff00');
+                if (color) {
+                  editor?.chain().focus(undefined, { scrollIntoView: false }).toggleHighlight({ color }).run();
+                } else {
+                  editor?.chain().focus(undefined, { scrollIntoView: false }).unsetHighlight().run();
+                }
+                setBgColorOpen(false);
+              }}
+              onClose={() => setBgColorOpen(false)}
+            />
+          )}
+        </div>
+      );
+      case 'alignLeft': return (
+        <button
+          className={`toolbar-btn ${editor?.isActive({ textAlign: 'left' }) ? 'active' : ''}`}
+          title="Align Left"
+          onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+          disabled={locked.textAlign}
+        >
+          <FaAlignLeft />
+        </button>
+      );
+      case 'alignCenter': return (
+        <button
+          className={`toolbar-btn ${editor?.isActive({ textAlign: 'center' }) ? 'active' : ''}`}
+          title="Align Center"
+          onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+          disabled={locked.textAlign}
+        >
+          <FaAlignCenter />
+        </button>
+      );
+      case 'alignRight': return (
+        <button
+          className={`toolbar-btn ${editor?.isActive({ textAlign: 'right' }) ? 'active' : ''}`}
+          title="Align Right"
+          onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+          disabled={locked.textAlign}
+        >
+          <FaAlignRight />
+        </button>
+      );
+      case 'alignJustify': return (
+        <button
+          className={`toolbar-btn ${editor?.isActive({ textAlign: 'justify' }) ? 'active' : ''}`}
+          title="Justify"
+          onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
+          disabled={locked.textAlign}
+        >
+          <FaAlignJustify />
+        </button>
+      );
+      case 'find': return (
         <button
           className="toolbar-btn"
-          title="Text Color"
-          disabled={locked.textColor}
-          onClick={() => { if (!locked.textColor) { setTextColorOpen(!textColorOpen); setBgColorOpen(false); } }}
+          title="Find & Replace (⌘F)"
+          onClick={() => { setSearchOpen(true); if (inOverflow) setOverflowOpen(false); }}
         >
-          <FaPaintBrush style={{ color: currentTextColor }} />
+          <FaSearch />
         </button>
-        {showPopups && textColorOpen && (
-          <ColorPicker
-            value={currentTextColor}
-            onChange={(color) => {
-              setCurrentTextColor(color || '#000000');
-              if (color) {
-                editor?.chain().focus(undefined, { scrollIntoView: false }).setColor(color).run();
-              } else {
-                editor?.chain().focus(undefined, { scrollIntoView: false }).unsetColor().run();
-              }
-              setTextColorOpen(false);
-            }}
-            onClose={() => setTextColorOpen(false)}
-          />
-        )}
-
+      );
+      case 'goto': return (
         <button
           className="toolbar-btn"
-          title="Highlight Color"
-          disabled={locked.backgroundColor}
-          onClick={() => { if (!locked.backgroundColor) { setBgColorOpen(!bgColorOpen); setTextColorOpen(false); } }}
+          title="Go to Page (⌘G)"
+          onClick={() => { setGoToPageOpen(true); if (inOverflow) setOverflowOpen(false); }}
         >
-          <FaHighlighter style={{ color: currentBgColor }} />
+          <FaHashtag />
         </button>
-        {showPopups && bgColorOpen && (
-          <ColorPicker
-            value={currentBgColor}
-            onChange={(color) => {
-              setCurrentBgColor(color || '#ffff00');
-              if (color) {
-                editor?.chain().focus(undefined, { scrollIntoView: false }).toggleHighlight({ color }).run();
-              } else {
-                editor?.chain().focus(undefined, { scrollIntoView: false }).unsetHighlight().run();
-              }
-              setBgColorOpen(false);
-            }}
-            onClose={() => setBgColorOpen(false)}
-          />
-        )}
-      </div>
-
-      <div className={inOverflow ? 'toolbar-overflow-sep' : 'toolbar-separator'} />
-
-    </React.Fragment>
-  ), [editor, isOverrideMode, activeTemplate, activeElement, textColorOpen, bgColorOpen, currentTextColor, currentBgColor, locked]);
-
-  const renderAlignment = useCallback((_inOverflow = false) => (
-    <div className="toolbar-group" key="alignment">
-      <button
-        className={`toolbar-btn ${editor?.isActive({ textAlign: 'left' }) ? 'active' : ''}`}
-        title="Align Left"
-        onClick={() => editor?.chain().focus().setTextAlign('left').run()}
-        disabled={locked.textAlign}
-      >
-        <FaAlignLeft />
-      </button>
-      <button
-        className={`toolbar-btn ${editor?.isActive({ textAlign: 'center' }) ? 'active' : ''}`}
-        title="Align Center"
-        onClick={() => editor?.chain().focus().setTextAlign('center').run()}
-        disabled={locked.textAlign}
-      >
-        <FaAlignCenter />
-      </button>
-      <button
-        className={`toolbar-btn ${editor?.isActive({ textAlign: 'right' }) ? 'active' : ''}`}
-        title="Align Right"
-        onClick={() => editor?.chain().focus().setTextAlign('right').run()}
-        disabled={locked.textAlign}
-      >
-        <FaAlignRight />
-      </button>
-      <button
-        className={`toolbar-btn ${editor?.isActive({ textAlign: 'justify' }) ? 'active' : ''}`}
-        title="Justify"
-        onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
-        disabled={locked.textAlign}
-      >
-        <FaAlignJustify />
-      </button>
-    </div>
-  ), [editor, locked]);
-
-  const renderSearchGoto = useCallback((inOverflow = false) => (
-    <div className="toolbar-group" key="search-goto">
-      <button
-        className="toolbar-btn"
-        title="Find & Replace (⌘F)"
-        onClick={() => { setSearchOpen(true); if (inOverflow) setOverflowOpen(false); }}
-      >
-        <FaSearch />
-      </button>
-      <button
-        className="toolbar-btn"
-        title="Go to Page (⌘G)"
-        onClick={() => { setGoToPageOpen(true); if (inOverflow) setOverflowOpen(false); }}
-      >
-        <FaHashtag />
-      </button>
-    </div>
-  ), [setSearchOpen, setGoToPageOpen]);
-
-  const renderZoom = useCallback((_inOverflow = false) => (
-    <div className="toolbar-group zoom-group" key="zoom">
-      <button
-        className="toolbar-btn"
-        title="Zoom Out"
-        onClick={() => setZoomLevel(zoomLevel - 10)}
-        disabled={zoomLevel <= 50}
-      >
-        <FaSearchMinus />
-      </button>
-      {zoomEditing ? (
-        <input
-          ref={zoomInputRef}
-          className="zoom-input"
-          type="number"
-          min={50}
-          max={200}
-          step={10}
-          value={zoomInput}
-          onChange={(e) => setZoomInput(e.target.value)}
-          onBlur={commitZoom}
-          onKeyDown={(e) => { if (e.key === 'Enter') commitZoom(); if (e.key === 'Escape') { setZoomInput(String(zoomLevel)); setZoomEditing(false); } }}
-          autoFocus
-        />
-      ) : (
-        <span
-          className="zoom-label"
-          onClick={() => { setZoomEditing(true); setTimeout(() => zoomInputRef.current?.select(), 0); }}
-          title="Click to edit zoom"
-        >
-          {zoomLevel}%
-        </span>
-      )}
-      <button
-        className="toolbar-btn"
-        title="Zoom In"
-        onClick={() => setZoomLevel(zoomLevel + 10)}
-        disabled={zoomLevel >= 300}
-      >
-        <FaSearchPlus />
-      </button>
-    </div>
-  ), [zoomLevel, zoomEditing, zoomInput, setZoomLevel, commitZoom]);
-
-  const renderZoomMin = useCallback((_inOverflow = false) => (
-    <div className="toolbar-group zoom-group" key="zoom-min">
-      <button
-        className="toolbar-btn"
-        title="Zoom Out"
-        onClick={() => setZoomLevel(zoomLevel - 10)}
-        disabled={zoomLevel <= 50}
-      >
-        <FaSearchMinus />
-      </button>
-    </div>
-  ), [zoomLevel, setZoomLevel]);
-
-  // Check if a given prefix has any hidden items
-  const isHidden = useCallback((prefix: string) => {
-    for (const k of hiddenPriorities) { if (k.startsWith(prefix)) return true; }
-    return false;
-  }, [hiddenPriorities]);
-
-  // Build overflow menu content from hidden priorities
-  const overflowContent = useMemo(() => {
-    if (hiddenPriorities.size === 0) return null;
-    const items: React.ReactNode[] = [];
-    const addSep = () => { if (items.length > 0) items.push(<div className="toolbar-overflow-sep" key={`sep-${items.length}`} />); };
-
-    // Show items in logical order (most important first within overflow)
-    if (isHidden('5')) { addSep(); items.push(renderFontFaceSize(true)); }
-    if (isHidden('4')) { addSep(); items.push(renderFontStyleColors(true)); }
-    if (isHidden('3')) { addSep(); items.push(renderAlignment(true)); }
-    if (isHidden('2')) { addSep(); items.push(renderSearchGoto(true)); items.push(renderZoom(true)); }
-    if (isHidden('1') && !isHidden('2')) { addSep(); items.push(renderZoomMin(true)); }
-
-    return items;
-  }, [hiddenPriorities, isHidden, renderZoomMin, renderZoom, renderSearchGoto, renderAlignment, renderFontStyleColors, renderFontFaceSize]);
-
-  if (toolbarMode === 'hidden') return null;
-
-  const renderGroupToken = (g: string): React.ReactNode => {
-    switch (g) {
-      case 'history': return (<>
-      {/* Undo / Redo — always visible */}
-      <div className="toolbar-group">
-        <button
-          className="toolbar-btn"
-          title="Undo (⌘Z)"
-          onClick={() => { try { editor?.chain().focus().undo().run(); } catch {} }}
-          disabled={!editor || typeof (editor.can() as any).undo !== 'function' || !(editor.can() as any).undo()}
-        >
-          <FaUndo />
-        </button>
-        <button
-          className="toolbar-btn"
-          title="Redo (⇧⌘Z)"
-          onClick={() => { try { editor?.chain().focus().redo().run(); } catch {} }}
-          disabled={!editor || typeof (editor.can() as any).redo !== 'function' || !(editor.can() as any).redo()}
-        >
-          <FaRedo />
-        </button>
-      </div>
-
-      <div className="toolbar-separator" />
-      </>);
-      case 'element': return (<>
-      {/* Element type selector — always visible */}
-      <div className="toolbar-group">
-        <select
-          className="element-selector"
-          value={activeElement}
-          onChange={handleElementChange}
-          title="Element"
-        >
-          {Object.values(activeTemplate.rules)
-            .filter((r) => r.enabled && !['newAct', 'endOfAct', 'castList'].includes(r.id))
-            // When inside an AV cell, only cell-valid types make sense — selecting
-            // sceneHeading/action/etc. silently fails the schema check anyway.
-            .filter((r) => isInsideAvCell ? AV_CELL_ELEMENT_IDS.includes(r.id) : !AV_CELL_ELEMENT_IDS.includes(r.id))
-            .map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.label}
-              </option>
-            ))}
-        </select>
-      </div>
-      </>);
-      case 'insert': return (<>
-      <div className="toolbar-group">
-        <button
-          className="toolbar-btn"
-          title="Insert Section"
-          onClick={() => editor?.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '# ' }] }).run()}
-        >
-          <FaListOl />
-        </button>
-        <button
-          className="toolbar-btn"
-          title="Insert Script Note"
-          onClick={() => useEditorStore.getState().openShelfTab('script')}
-        >
-          <FaRegStickyNote />
-        </button>
-        <button
-          className="toolbar-btn"
-          title="Insert Checklist Item"
-          onClick={() => editor?.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '[ ] ' }] }).run()}
-        >
-          <FaCheckSquare />
-        </button>
-      </div>
-
-
-      <div className="toolbar-separator" />
-      </>);
-      case 'font': return (<>
-      {/* Priority 5: Font face & size — hidden on mobile, collapsible on desktop */}
-      <div className="toolbar-desktop-only toolbar-priority-block" data-priority="5">
-        {renderFontFaceSize()}
-        <div className="toolbar-separator" />
-      </div>
-      </>);
-      case 'style': return (<>
-      {/* Priority 4: Font style & colors — hidden on mobile, collapsible on desktop.
-          Suppress ColorPicker popups when hidden so they only render in the overflow copy. */}
-      <div className="toolbar-desktop-only toolbar-priority-block" data-priority="4">
-        {renderFontStyleColors(false, !isHidden('4'))}
-        <div className="toolbar-separator" />
-      </div>
-      </>);
-      case 'align': return (<>
-      {/* Priority 3: Alignment — hidden on mobile, collapsible on desktop */}
-      <div className="toolbar-desktop-only toolbar-priority-block" data-priority="3">
-        {renderAlignment()}
-        <div className="toolbar-separator" />
-      </div>
-      </>);
-      case 'nav': return (<>
-      {/* Priority 2: Search & Go to — collapsible on desktop */}
-      <div className="toolbar-priority-block" data-priority="2">
-        {renderSearchGoto()}
-      </div>
-
-      <div className="toolbar-separator" />
-      </>);
-      case 'notes': return (<>
-      {/* Notes & Tags — always visible */}
-      <div className="toolbar-group">
+      );
+      case 'scriptNotes': return (
         <button
           className={`toolbar-btn${activeToolRight === 'scriptnotes' ? ' active' : ''}`}
           title="Script Notes"
@@ -959,6 +876,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         >
           <FaStickyNote />
         </button>
+      );
+      case 'tags': return (
         <button
           className={`toolbar-btn${activeToolRight === 'tags' ? ' active' : ''}`}
           title="Production Tags"
@@ -966,11 +885,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         >
           <FaTags />
         </button>
-      </div>
-      </>);
-      case 'zoom': return (<>
-      {/* Zoom — desktop: P1 hides zoom-out, P2 hides zoom label/in */}
-      <div className="toolbar-priority-block zoom-group" data-priority="1">
+      );
+      case 'zoomOut': return (
         <button
           className="toolbar-btn"
           title="Zoom Out"
@@ -979,57 +895,43 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         >
           <FaSearchMinus />
         </button>
-      </div>
-      <div className="toolbar-priority-block zoom-group" data-priority="2b">
-        {zoomEditing ? (
-          <input
-            ref={zoomInputRef}
-            className="zoom-input"
-            type="number"
-            min={50}
-            max={200}
-            step={10}
-            value={zoomInput}
-            onChange={(e) => setZoomInput(e.target.value)}
-            onBlur={commitZoom}
-            onKeyDown={(e) => { if (e.key === 'Enter') commitZoom(); if (e.key === 'Escape') { setZoomInput(String(zoomLevel)); setZoomEditing(false); } }}
-            autoFocus
-          />
-        ) : (
-          <span
-            className="zoom-label"
-            onClick={() => { setZoomEditing(true); setTimeout(() => zoomInputRef.current?.select(), 0); }}
-            title="Click to edit zoom"
+      );
+      case 'zoomIn': return (
+        <>
+          {zoomEditing ? (
+            <input
+              ref={zoomInputRef}
+              className="zoom-input"
+              type="number"
+              min={50}
+              max={200}
+              step={10}
+              value={zoomInput}
+              onChange={(e) => setZoomInput(e.target.value)}
+              onBlur={commitZoom}
+              onKeyDown={(e) => { if (e.key === 'Enter') commitZoom(); if (e.key === 'Escape') { setZoomInput(String(zoomLevel)); setZoomEditing(false); } }}
+              autoFocus
+            />
+          ) : (
+            <span
+              className="zoom-label"
+              onClick={() => { setZoomEditing(true); setTimeout(() => zoomInputRef.current?.select(), 0); }}
+              title="Click to edit zoom"
+            >
+              {zoomLevel}%
+            </span>
+          )}
+          <button
+            className="toolbar-btn"
+            title="Zoom In"
+            onClick={() => setZoomLevel(zoomLevel + 10)}
+            disabled={zoomLevel >= 300}
           >
-            {zoomLevel}%
-          </span>
-        )}
-        <button
-          className="toolbar-btn"
-          title="Zoom In"
-          onClick={() => setZoomLevel(zoomLevel + 10)}
-          disabled={zoomLevel >= 300}
-        >
-          <FaSearchPlus />
-        </button>
-      </div>
-
-      {/* Zoom — mobile: single button */}
-      <div className="toolbar-group zoom-mobile-group">
-        <button
-          className="toolbar-btn"
-          title="Zoom"
-          onClick={() => setZoomPanelOpen(!zoomPanelOpen)}
-        >
-          <FaSearchPlus />
-        </button>
-      </div>
-
-      <div className="toolbar-separator" />
-      </>);
-      case 'view': return (<>
-      {/* Editor view: Page / Continuous (mirrors View > Editor) — last by default */}
-      <div className="toolbar-group toolbar-desktop-only">
+            <FaSearchPlus />
+          </button>
+        </>
+      );
+      case 'view': return (
         <select
           className="view-style-selector"
           value={previewMode ? 'preview' : viewStyle}
@@ -1045,31 +947,62 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           <option value="continuous">Continuous View</option>
           <option value="preview">Preview</option>
         </select>
-      </div>
-      </>);
+      );
       default: return null;
     }
   };
 
-  // ── v0.38 toolbar zones ────────────────────────────────────────────────
-  // Tokens: g:<group> built-in section · t:<toolId> pinned tool ·
-  // c:<commandId> pinned command · d:<n> divider. Right zone renders after
-  // the flex spacer. Legacy pinned tools migrate into the left zone once.
-  const { toolbarLeft, toolbarRight, setToolbarZones } = useEditorStore();
-  const DEFAULT_LEFT = ['g:history', 'g:element', 'g:insert', 'g:font', 'g:style', 'g:align', 'g:nav', 'g:notes'];
-  const DEFAULT_RIGHT = ['g:zoom', 'g:view'];
-  const zonesReady = toolbarLeft.length > 0 || toolbarRight.length > 0;
-  useEffect(() => {
-    if (!zonesReady) {
-      setToolbarZones(
-        [...DEFAULT_LEFT, ...toolbarPinnedTools.map((id) => `t:${id}`)],
-        DEFAULT_RIGHT,
+  /** Inline wrapper for a b: token — priority block, mobile classes, and the
+   *  item's own trailing separator (it hides and moves with the item). */
+  const renderBuiltinToken = (tok: string): React.ReactNode => {
+    const def = BUILTIN_BY_KEY[tok.slice(2)];
+    if (!def) return null;
+    const showPopups = !def.priority || !isHidden(def.priority);
+    const cls = 'toolbar-priority-block'
+      + (def.desktopOnly ? ' toolbar-desktop-only' : '')
+      + (def.zoom ? ' zoom-group' : '');
+    return (
+      <React.Fragment key={tok}>
+        <div className={cls} {...(def.priority ? { 'data-priority': def.priority } : {})}>
+          {renderBuiltinControl(def.key, false, showPopups)}
+          {def.sepAfter && <div className="toolbar-separator" />}
+        </div>
+        {def.key === 'zoomIn' && (
+          <div className="toolbar-group zoom-mobile-group">
+            <button
+              className="toolbar-btn"
+              title="Zoom"
+              onClick={() => setZoomPanelOpen(!zoomPanelOpen)}
+            >
+              <FaSearchPlus />
+            </button>
+          </div>
+        )}
+      </React.Fragment>
+    );
+  };
+
+  // Overflow menu: collapsed priorities re-render their PRESENT items only —
+  // items removed from the toolbar in Customize never reappear here.
+  const presentKeys = new Set(
+    [...leftTokens, ...rightTokens].filter((t) => t.startsWith('b:')).map((t) => t.slice(2)),
+  );
+  let overflowContent: React.ReactNode[] | null = null;
+  if (hiddenPriorities.size > 0) {
+    const items: React.ReactNode[] = [];
+    for (const prefix of ['5', '4', '3', '2', '1']) {
+      if (!isHidden(prefix)) continue;
+      const defs = TOOLBAR_BUILTINS.filter((d) => d.priority?.startsWith(prefix) && presentKeys.has(d.key));
+      if (defs.length === 0) continue;
+      if (items.length > 0) items.push(<div className="toolbar-overflow-sep" key={`ovsep-${prefix}`} />);
+      items.push(
+        <div className="toolbar-group" key={`ov-${prefix}`}>
+          {defs.map((d) => <React.Fragment key={d.key}>{renderBuiltinControl(d.key, true, true)}</React.Fragment>)}
+        </div>,
       );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zonesReady]);
-  const leftTokens = zonesReady ? toolbarLeft : [...DEFAULT_LEFT, ...toolbarPinnedTools.map((id) => `t:${id}`)];
-  const rightTokens = zonesReady ? toolbarRight : DEFAULT_RIGHT;
+    overflowContent = items.length ? items : null;
+  }
 
   const renderToken = (tok: string): React.ReactNode => {
     if (tok.startsWith('d:')) {
@@ -1093,26 +1026,19 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         </button>
       );
     }
-    const g = tok.slice(2);
-    return <React.Fragment key={tok}>{renderGroupToken(g)}</React.Fragment>;
+    if (tok.startsWith('b:')) return renderBuiltinToken(tok);
+    return null;
   };
 
   return (
     <div className={`toolbar${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}`} ref={toolbarRef}>
-      {toolbarHiddenItems.length > 0 && (
-        <style>{
-          toolbarHiddenItems.map((t) => `.toolbar [title^="${t.replace(/"/g, '')}"]`).join(',')
-          + (toolbarHiddenItems.includes('Zoom In') && toolbarHiddenItems.includes('Zoom Out') ? ',.toolbar [title="Zoom"]' : '')
-          + '{display:none !important}'
-        }</style>
-      )}
       {leftTokens.map(renderToken)}
 
       {/* Spacer */}
       <div style={{ flex: 1 }} />
 
       {/* Overflow 3-dot menu */}
-      {hasOverflow && (
+      {hasOverflow && overflowContent && (
         <div className="toolbar-group toolbar-overflow-wrap" ref={overflowRef}>
           <button
             className={`toolbar-btn toolbar-overflow-btn${overflowOpen ? ' active' : ''}`}

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { normalizeToolbarZones } from '../components/toolbarBuiltins';
 import { uuid } from '../utils/uuid';
 import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { findLanguage, urlsFor } from '../editor/languageCatalog';
@@ -64,6 +65,14 @@ function saveViewState(patch: Partial<ViewState>) {
   } catch { /* localStorage unavailable */ }
 }
 const _vs = loadViewState();
+// v0.42: toolbar zones are flat per-item token lists; expand any persisted
+// legacy g: group tokens (honoring the retired toolbarHiddenItems checkboxes)
+// so pre-0.42 layouts survive unchanged.
+const _tbZones = normalizeToolbarZones(
+  Array.isArray(_vs.toolbarLeft) ? _vs.toolbarLeft as string[] : [],
+  Array.isArray(_vs.toolbarRight) ? _vs.toolbarRight as string[] : [],
+  _vs.toolbarHiddenItems ?? [],
+);
 
 // ── Custom dictionary library (named global word lists) ──
 const DICTS_KEY = 'opendraft:dictionaries';
@@ -1342,8 +1351,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // Scene numbering
   draftLabel: 'First Draft',
   setDraftLabel: (label) => set({ draftLabel: label }),
-  toolbarLeft: Array.isArray(_vs.toolbarLeft) ? _vs.toolbarLeft as string[] : [],
-  toolbarRight: Array.isArray(_vs.toolbarRight) ? _vs.toolbarRight as string[] : [],
+  toolbarLeft: _tbZones.left,
+  toolbarRight: _tbZones.right,
   setToolbarZones: (left, right) => {
     saveViewState({ toolbarLeft: left, toolbarRight: right });
     set({ toolbarLeft: left, toolbarRight: right });

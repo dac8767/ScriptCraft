@@ -7,37 +7,16 @@ import React from 'react';
  * Hidden tools stay reachable from the Tools menu, opening as a temporary
  * window.
  *
- * Toolbar: pin any tool as a button (appears right of Production Tags), and
- * deactivate any built-in toolbar item. Ported from FreeDraft v5.5's
- * Customize Toolbar.
+ * Toolbar: a single flat list of items (v0.42) — every built-in control,
+ * pinned tool/window, pinned command, and divider is individually placeable
+ * with Left / Right / Hide. The old fixed groups and per-item deactivation
+ * checkboxes (a FreeDraft v5.5 holdover) are gone; hidden items are re-added
+ * from the Add dropdown. Item registry: toolbarBuiltins.ts.
  */
 import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
-
-/** Built-in toolbar items that can be deactivated (matched by title prefix). */
-const TOOLBAR_GROUPS: Array<{ name: string; items: string[] }> = [
-  { name: 'History', items: ['Undo', 'Redo', 'Element'] },
-  { name: 'Insert', items: ['Insert Section', 'Insert Script Note', 'Insert Checklist Item'] },
-  { name: 'Text Style', items: ['Font Family', 'Font Size', 'Bold', 'Italic', 'Underline', 'Strikethrough', 'Subscript', 'Superscript', 'Text Color', 'Highlight Color'] },
-  { name: 'Alignment', items: ['Align Left', 'Align Center', 'Align Right', 'Justify'] },
-  { name: 'Navigation', items: ['Find & Replace', 'Go to Page'] },
-  { name: 'Zoom', items: ['Zoom Out', 'Zoom In'] },
-  { name: 'View', items: ['Editor View'] },
-];
-const TOOLBAR_ITEMS: string[] = TOOLBAR_GROUPS.flatMap((g) => g.items);
-/** Per-item checkboxes shown under each group row in the combined layout. */
-const GROUP_TOKEN_ITEMS: Record<string, string[]> = {
-  history: ['Undo', 'Redo', 'Element'],
-  insert: ['Insert Section', 'Insert Script Note', 'Insert Checklist Item'],
-  font: ['Font Family', 'Font Size'],
-  style: ['Bold', 'Italic', 'Underline', 'Strikethrough', 'Subscript', 'Superscript', 'Text Color', 'Highlight Color'],
-  align: ['Align Left', 'Align Center', 'Align Right', 'Justify'],
-  nav: ['Find & Replace', 'Go to Page'],
-  zoom: ['Zoom Out', 'Zoom In'],
-  view: ['Editor View'],
-  notes: [],
-};
+import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from './toolbarBuiltins';
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
@@ -51,8 +30,7 @@ interface Props {
 export default function CustomizePanelsDialog({ open, onClose, embedded = false, category }: Props) {
   const {
     toolConfig, setToolConfig,
-    toolbarHiddenItems, setToolbarHiddenItems,
-    toolbarPinnedTools, setToolbarPinnedTools,
+    toolbarPinnedTools,
     menuBarOrder, setMenuBarOrder,
     menuBarHidden, setMenuBarHidden,
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
@@ -180,70 +158,21 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const setTool = (id: ToolId, patch: Partial<ToolConfig>) =>
     setToolConfig({ ...toolConfig, [id]: { ...cfgOf(id), ...patch } });
 
-  const toggleHidden = (item: string) =>
-    setToolbarHiddenItems(
-      toolbarHiddenItems.includes(item)
-        ? toolbarHiddenItems.filter((x) => x !== item)
-        : [...toolbarHiddenItems, item],
-    );
-
-  // Ordered tool list for the dialog + docks (unlisted tools keep base order)
-  const orderIdx = (id: string) => {
-    const i = toolOrder.indexOf(id);
-    return i === -1 ? 1000 + ALL_TOOLS.findIndex((t) => t.id === id) : i;
-  };
-  const orderedTools = [...ALL_TOOLS].sort((a, b) => orderIdx(a.id) - orderIdx(b.id));
   const menuIdx = (l: string) => {
     const i = menuBarOrder.indexOf(l);
     return i === -1 ? 100 + MENU_BAR_LABELS.indexOf(l) : i;
   };
   const orderedMenuLabels = [...MENU_BAR_LABELS].sort((a, b) => menuIdx(a) - menuIdx(b));
 
-  const TB_DEFAULT_LEFT = ['g:history', 'g:element', 'g:insert', 'g:font', 'g:style', 'g:align', 'g:nav', 'g:notes'];
-  const TB_DEFAULT_RIGHT = ['g:zoom', 'g:view'];
   const tbReady = tbLeftRaw.length > 0 || tbRightRaw.length > 0;
-  const tbLeft = tbReady ? tbLeftRaw : [...TB_DEFAULT_LEFT, ...toolbarPinnedTools.map((id) => `t:${id}`)];
-  const tbRight = tbReady ? tbRightRaw : TB_DEFAULT_RIGHT;
-  const GROUP_LABELS: Record<string, string> = {
-    history: 'Undo / Redo / Element… (editing)', element: 'Element dropdown', insert: 'Insert buttons',
-    font: 'Font family & size', style: 'Text style & colors', align: 'Alignment',
-    nav: 'Find & Go to Page', notes: 'Notes & Tags buttons', zoom: 'Zoom controls', view: 'Editor View dropdown',
-  };
+  const tbLeft = tbReady ? tbLeftRaw : [...DEFAULT_TOOLBAR_LEFT, ...toolbarPinnedTools.map((id) => `t:${id}`)];
+  const tbRight = tbReady ? tbRightRaw : DEFAULT_TOOLBAR_RIGHT;
   const tokenLabel = (tok: string): string => {
-    if (tok.startsWith('g:')) return GROUP_LABELS[tok.slice(2)] || tok;
+    if (tok.startsWith('b:')) return BUILTIN_BY_KEY[tok.slice(2)]?.label || tok;
     if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.label || tok;
     if (tok.startsWith('c:')) return TOOLBAR_COMMANDS.find((c) => c.id === tok.slice(2))?.label || tok;
     return '— Divider —';
   };
-
-  const addPanelDivider = (side: 'left' | 'right') => {
-    const id = String(Date.now());
-    setPanelDividers([...panelDividers, { id, label: '', side }]);
-    setToolOrder([...toolOrder.length ? toolOrder : orderedTools.map((t) => t.id as string), `div:${id}`]);
-  };
-  const orderedWindows = orderedTools.filter((t) => WINDOW_IDS.includes(t.id));
-  const orderedToolsOnly = orderedTools.filter((t) => !WINDOW_IDS.includes(t.id));
-
-  /** Swap a tool with its neighbor within its own category (Windows or
-   *  Tools), by swapping the two ids' positions in the global order. */
-  const moveWithin = (list: typeof orderedTools, idx: number, dir: -1 | 1) => {
-    const j = idx + dir;
-    if (j < 0 || j >= list.length) return;
-    const a = list[idx].id as string;
-    const b = list[j].id as string;
-    const ids = orderedTools.map((t) => t.id as string);
-    const ai = ids.indexOf(a);
-    const bi = ids.indexOf(b);
-    [ids[ai], ids[bi]] = [ids[bi], ids[ai]];
-    setToolOrder(ids);
-  };
-
-  const togglePinned = (id: ToolId) =>
-    setToolbarPinnedTools(
-      toolbarPinnedTools.includes(id)
-        ? toolbarPinnedTools.filter((x) => x !== id)
-        : [...toolbarPinnedTools, id],
-    );
 
   const body = (
         <div className="dialog-body fs-customize-body" style={embedded ? { padding: '4px 0 0', maxHeight: 'none', overflowY: 'visible' } : undefined}>
@@ -309,10 +238,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           <section>
             <h3>Toolbar Layout</h3>
             <p className="fs-customize-hint">
-              One list for the whole toolbar. Left flows from the left edge;
-              Right sits at the far right. Built-in groups can move but not
-              hide (Hide is greyed) — untick their individual items instead.
-              Pins and dividers can do everything.
+              One list for the whole toolbar — every item on its own row.
+              Left flows from the left edge; Right sits at the far right;
+              Hide removes an item (re-add it from the dropdown below).
             </p>
             <div className="fs-customize-row">
               <span className="fs-customize-tool">Toolbar mode</span>
@@ -333,8 +261,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   ? setToolbarZones(nextSelf, nextOther ?? other)
                   : setToolbarZones(nextOther ?? other, nextSelf);
               return tokens.map((tok, idx) => {
-                const isGroup = tok.startsWith('g:');
-                const items = isGroup ? (GROUP_TOKEN_ITEMS[tok.slice(2)] || []) : [];
                 const moveTok = (dir: -1 | 1) => {
                   const j = idx + dir;
                   if (j < 0 || j >= tokens.length) return;
@@ -346,41 +272,22 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   if (target === zone) return;
                   update(tokens.filter((_, i) => i !== idx), [...other, tok]);
                 };
-                const hideTok = () => {
-                  if (isGroup) return;
-                  update(tokens.filter((_, i) => i !== idx));
-                };
+                const hideTok = () => update(tokens.filter((_, i) => i !== idx));
                 return (
-                  <React.Fragment key={`${tok}-${zone}-${idx}`}>
-                    <div className="fs-customize-row">
-                      <span className="fs-customize-tool">
-                        <span className="fs-customize-order">
-                          <button title="Move up within its zone" onClick={() => moveTok(-1)} disabled={idx === 0}>▲</button>
-                          <button title="Move down within its zone" onClick={() => moveTok(1)} disabled={idx === tokens.length - 1}>▼</button>
-                        </span>
-                        {tokenLabel(tok)}
+                  <div className="fs-customize-row" key={`${tok}-${zone}-${idx}`}>
+                    <span className="fs-customize-tool">
+                      <span className="fs-customize-order">
+                        <button title="Move up within its zone" onClick={() => moveTok(-1)} disabled={idx === 0}>▲</button>
+                        <button title="Move down within its zone" onClick={() => moveTok(1)} disabled={idx === tokens.length - 1}>▼</button>
                       </span>
-                      <span className="fs-customize-seg">
-                        <button className={zone === 'left' ? 'active' : ''} onClick={() => toZone('left')}>Left</button>
-                        <button className={zone === 'right' ? 'active' : ''} onClick={() => toZone('right')}>Right</button>
-                        <button disabled={isGroup} title={isGroup ? 'Built-in groups cannot be hidden — untick their items below' : 'Remove from the toolbar'} onClick={hideTok}>Hide</button>
-                      </span>
-                    </div>
-                    {items.length > 0 && (
-                      <div className="fs-customize-checks fs-tb-subitems">
-                        {items.map((item) => (
-                          <label key={item}>
-                            <input
-                              type="checkbox"
-                              checked={!toolbarHiddenItems.includes(item)}
-                              onChange={() => toggleHidden(item)}
-                            />
-                            {item}
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                  </React.Fragment>
+                      {tokenLabel(tok)}
+                    </span>
+                    <span className="fs-customize-seg">
+                      <button className={zone === 'left' ? 'active' : ''} onClick={() => toZone('left')}>Left</button>
+                      <button className={zone === 'right' ? 'active' : ''} onClick={() => toZone('right')}>Right</button>
+                      <button title="Remove from the toolbar" onClick={hideTok}>Hide</button>
+                    </span>
+                  </div>
                 );
               });
             })}
@@ -391,7 +298,12 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 value=""
                 onChange={(e) => { if (e.target.value) { setToolbarZones([...tbLeft, e.target.value], tbRight); e.target.value = ''; } }}
               >
-                <option value="">+ Pin window / tool / command…</option>
+                <option value="">+ Add toolbar item / window / command…</option>
+                <optgroup label="Toolbar Items">
+                  {TOOLBAR_BUILTINS.filter((b) => !tbLeft.includes(`b:${b.key}`) && !tbRight.includes(`b:${b.key}`)).map((b) => (
+                    <option key={b.key} value={`b:${b.key}`}>{b.label}</option>
+                  ))}
+                </optgroup>
                 <optgroup label="Windows & Tools">
                   {ALL_TOOLS.filter((t) => !tbLeft.includes(`t:${t.id}`) && !tbRight.includes(`t:${t.id}`)).map((t) => (
                     <option key={t.id} value={`t:${t.id}`}>{t.label}</option>
