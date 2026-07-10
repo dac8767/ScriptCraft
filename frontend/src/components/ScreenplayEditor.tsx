@@ -232,6 +232,49 @@ function resolveHFFields(
     .replace(/\{revision\}/gi, revisionColor);
 }
 
+/**
+ * Compose the FULL save payload: the ProseMirror doc plus every underscore
+ * extra (tool data, dictionaries, layout, draft label). This is the ONLY
+ * place the extras list may live — every save path (manual save, Save As,
+ * autosave, snapshots, collab teardown) must serialize through it. A partial
+ * copy of this list in the collab stop path once wiped Outline beats and
+ * everything else it didn't know about; never fork this list again.
+ */
+export function composeSaveContent(doc: Record<string, unknown>): Record<string, unknown> {
+  const store = useEditorStore.getState();
+  const tplStore = useFormattingTemplateStore.getState();
+  return {
+    ...doc,
+    _notes: store.notes,
+    _generalNotes: store.generalNotes,
+    _shelf: store.shelfCards,
+    _tags: store.tags,
+    _tagCategories: store.tagCategories,
+    _characterProfiles: store.characterProfiles,
+    _characterRelationships: store.characterRelationships,
+    _beats: store.beats,
+    _beatColumns: store.beatColumns,
+    _beatArrangeMode: store.beatArrangeMode,
+    _draftLabel: store.draftLabel,
+    _templateId: tplStore.activeTemplateId,
+    _ignoredWords: spellChecker.getIgnoredWords(),
+    _ignoredOnce: spellChecker.getIgnoredOnce(),
+    // Project dictionary lives on the Project entity now; keep the script
+    // field empty so older clients don't show stale words after migration.
+    _customDictWords: [],
+    _enabledGlobalDicts: spellChecker.getEnabledGlobalDicts(),
+    _projectDictEnabled: spellChecker.isProjectDictionaryEnabled(),
+    _enabledLanguages: spellChecker.getEnabledLanguages(),
+    _ignoredGrammarRules: grammarIgnore.getIgnoredRules(),
+    _ignoredGrammarOnce: grammarIgnore.getIgnoredOnce(),
+    _spellCheckEnabled: store.spellCheckEnabled,
+    _grammarCheckEnabled: store.grammarCheckEnabled,
+    _sceneNumbersVisible: store.sceneNumbersVisible,
+    _sceneNumbersLocked: store.sceneNumbersLocked,
+    _pageLayout: store.pageLayout,
+  };
+}
+
 const ScreenplayEditor: React.FC = () => {
   const { projectId: urlProjectId, scriptId: urlScriptId, commitHash: urlCommitHash, collabToken: urlCollabToken } = useParams<{ projectId?: string; scriptId?: string; commitHash?: string; collabToken?: string }>();
   const navigate = useNavigate();
@@ -756,18 +799,8 @@ const ScreenplayEditor: React.FC = () => {
     // Host: save the latest editor content before tearing down collab so it's not lost
     const ed = collabEditorRef.current;
     if (isHost && ed && !ed.isDestroyed && currentProject && currentScriptId) {
-      const doc = ed.getJSON();
-      const store = useEditorStore.getState();
-      const content = {
-        ...doc,
-        _notes: store.notes,
-        _generalNotes: store.generalNotes,
-        _shelf: store.shelfCards,
-        _tags: store.tags,
-        _tagCategories: store.tagCategories,
-        _characterProfiles: store.characterProfiles,
-        _characterRelationships: store.characterRelationships,
-      };
+      // Full composer — a partial extras list here once wiped Outline beats.
+      const content = composeSaveContent(ed.getJSON());
       try {
         await scriptApi.saveScript(currentProject.id, currentScriptId, { content });
       } catch { /* best-effort — auto-save will catch up */ }
@@ -1481,7 +1514,7 @@ const ScreenplayEditor: React.FC = () => {
 
     // Save current editor content so it can seed the Yjs doc
     const doc = editor.getJSON();
-    const { _notes, _generalNotes: _gn3, _shelf: _sh3, _tags, _tagCategories, _characterProfiles, _characterRelationships, _templateId: _tpl3, _pageLayout: _pl3, ...pmDoc } = doc as Record<string, unknown>;
+    const { _notes, _generalNotes: _gn3, _shelf: _sh3, _tags, _tagCategories, _characterProfiles, _characterRelationships, _beats: _b3, _beatColumns: _bc3, _beatArrangeMode: _bam3, _draftLabel: _dl3, _templateId: _tpl3, _pageLayout: _pl3, ...pmDoc } = doc as Record<string, unknown>;
     collabInitialContent.current = pmDoc;
 
     // The guest invite carries a session_nonce that makes the Yjs room unique
@@ -1954,38 +1987,7 @@ const ScreenplayEditor: React.FC = () => {
   // Build a saveable content object: editor JSON + store metadata at top level
   const buildSaveContent = useCallback((): Record<string, unknown> | undefined => {
     if (!editor || editor.isDestroyed) return undefined;
-    const store = useEditorStore.getState();
-    const tplStore = useFormattingTemplateStore.getState();
-    const doc = editor.getJSON();
-    return {
-      ...doc,
-      _notes: store.notes,
-      _generalNotes: store.generalNotes,
-      _shelf: store.shelfCards,
-      _tags: store.tags,
-      _tagCategories: store.tagCategories,
-      _characterProfiles: store.characterProfiles,
-      _characterRelationships: store.characterRelationships,
-      _beats: store.beats,
-      _beatColumns: store.beatColumns,
-      _beatArrangeMode: store.beatArrangeMode,
-      _templateId: tplStore.activeTemplateId,
-      _ignoredWords: spellChecker.getIgnoredWords(),
-      _ignoredOnce: spellChecker.getIgnoredOnce(),
-      // Project dictionary lives on the Project entity now; keep the script
-      // field empty so older clients don't show stale words after migration.
-      _customDictWords: [],
-      _enabledGlobalDicts: spellChecker.getEnabledGlobalDicts(),
-      _projectDictEnabled: spellChecker.isProjectDictionaryEnabled(),
-      _enabledLanguages: spellChecker.getEnabledLanguages(),
-      _ignoredGrammarRules: grammarIgnore.getIgnoredRules(),
-      _ignoredGrammarOnce: grammarIgnore.getIgnoredOnce(),
-      _spellCheckEnabled: store.spellCheckEnabled,
-      _grammarCheckEnabled: store.grammarCheckEnabled,
-      _sceneNumbersVisible: store.sceneNumbersVisible,
-      _sceneNumbersLocked: store.sceneNumbersLocked,
-      _pageLayout: store.pageLayout,
-    };
+    return composeSaveContent(editor.getJSON());
   }, [editor]);
 
   // --- Auto-save to backend every 30 seconds if a project/script is active ---
@@ -2938,7 +2940,7 @@ const ScreenplayEditor: React.FC = () => {
 
         try {
           if (content && typeof content === 'object' && 'type' in content && content.type === 'doc') {
-            const { _notes, _generalNotes: _gn2, _shelf: _sh2, _tags, _tagCategories, _characterProfiles, _characterRelationships, _beats, _beatColumns, _beatArrangeMode: _bam, _templateId: _tpl2, _ignoredWords: _iw2, _ignoredOnce: _io2, _customDictWords: _cdw2, _enabledGlobalDicts: _egd2, _projectDictEnabled: _pde2, _enabledLanguages: _elx2, _ignoredGrammarRules: _igr2, _ignoredGrammarOnce: _igo2, _spellCheckEnabled: _sce2, _grammarCheckEnabled: _gce2, _sceneNumbersVisible: _snv2, _sceneNumbersLocked: _snl2, _pageLayout: _pl2, ...pmDoc } = content as any;
+            const { _notes, _generalNotes: _gn2, _shelf: _sh2, _tags, _tagCategories, _characterProfiles, _characterRelationships, _beats, _beatColumns, _beatArrangeMode: _bam, _draftLabel: _dl2, _templateId: _tpl2, _ignoredWords: _iw2, _ignoredOnce: _io2, _customDictWords: _cdw2, _enabledGlobalDicts: _egd2, _projectDictEnabled: _pde2, _enabledLanguages: _elx2, _ignoredGrammarRules: _igr2, _ignoredGrammarOnce: _igo2, _spellCheckEnabled: _sce2, _grammarCheckEnabled: _gce2, _sceneNumbersVisible: _snv2, _sceneNumbersLocked: _snl2, _pageLayout: _pl2, ...pmDoc } = content as any;
             editor.commands.setContent(pmDoc);
           } else if (content && typeof content === 'object' && Object.keys(content).length > 0) {
             editor.commands.setContent(content);

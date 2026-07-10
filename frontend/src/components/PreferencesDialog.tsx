@@ -1,5 +1,8 @@
+import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
 import { FaSlidersH, FaColumns, FaFileAlt, FaRulerCombined, FaCommentDots, FaCog, FaCloudUploadAlt } from 'react-icons/fa';
+import { applyDraftNumber } from './SetDraftDialog';
+import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import MoresContdsDialog from './MoresContdsDialog';
 import PageSetupDialog from './PageSetupDialog';
@@ -115,7 +118,32 @@ function LanguageSection() {
   );
 }
 
-function SaveLocationsTab() {
+
+function DraftNumberRow({ editor }: { editor: Editor | null }) {
+  const draftLabel = useEditorStore((s) => s.draftLabel);
+  const [value, setValue] = React.useState(draftLabel);
+  React.useEffect(() => { setValue(draftLabel); }, [draftLabel]);
+  const trimmed = value.trim();
+  return (
+    <div className="prefs-field-row">
+      <label htmlFor="prefs-draft-label">Draft label</label>
+      <input
+        id="prefs-draft-label"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="e.g. Second Draft"
+        style={{ minWidth: 180 }}
+      />
+      <button
+        className="dialog-primary"
+        disabled={!trimmed || trimmed === draftLabel}
+        onClick={() => applyDraftNumber(editor, trimmed)}
+      >Apply</button>
+    </div>
+  );
+}
+
+function SaveLocationsTab({ editor }: { editor: Editor | null }) {
   const {
     autoSnapshotMinutes, setAutoSnapshotMinutes,
     autoSnapshotKeep, setAutoSnapshotKeep,
@@ -167,6 +195,15 @@ function SaveLocationsTab() {
         <p className="prefs-hint">
           Full account management (sign out, verification, devices) lives in the
           System tab.
+        </p>
+      </section>
+
+      <section>
+        <h3>Draft Number</h3>
+        <DraftNumberRow editor={editor} />
+        <p className="prefs-hint">
+          Mirrors Production → Set Draft Number: updates the saved draft label
+          and the Title Page draft line (keeping its date).
         </p>
       </section>
 
@@ -345,7 +382,7 @@ function GeneralTab() {
   );
 }
 
-export default function PreferencesDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function PreferencesDialog({ open, onClose, editor }: { open: boolean; onClose: () => void; editor?: Editor | null }) {
   const [tab, setTab] = useState<PrefTab>('general');
 
   if (!open) return null;
@@ -387,7 +424,7 @@ export default function PreferencesDialog({ open, onClose }: { open: boolean; on
             {tab === 'mores' && (
               <MoresContdsDialog embedded onClose={() => showToast('Mores & Continueds applied', 'success')} />
             )}
-            {tab === 'saveloc' && <SaveLocationsTab />}
+            {tab === 'saveloc' && <SaveLocationsTab editor={editor ?? null} />}
             {tab === 'system' && <SettingsPage embedded />}
           </div>
         </div>

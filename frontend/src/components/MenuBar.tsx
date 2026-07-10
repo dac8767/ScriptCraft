@@ -1778,7 +1778,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     <CustomizePanelsDialog open={customizeOpen} onClose={() => setCustomizeOpen(false)} />
     <SaveWorkspaceDialog open={saveWorkspaceOpen} onClose={() => setSaveWorkspaceOpen(false)} />
     <EditWorkspacesDialog open={editWorkspacesOpen} onClose={() => setEditWorkspacesOpen(false)} />
-    <PreferencesDialog open={prefsOpen} onClose={() => setPrefsOpen(false)} />
+    <PreferencesDialog open={prefsOpen} onClose={() => setPrefsOpen(false)} editor={editor} />
     <SetDraftDialog open={draftDialogOpen} onClose={() => setDraftDialogOpen(false)} editor={editor} />
     <RenameDialog open={renameOpen} onClose={() => setRenameOpen(false)} />
     {helpForm && (

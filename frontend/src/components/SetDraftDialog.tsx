@@ -19,6 +19,42 @@ const ORDINALS = [
 ];
 const CUSTOM = '__custom__';
 
+
+/**
+ * Set the draft label everywhere it lives: the editor store (persisted as
+ * _draftLabel on save) and the Title Page draft line in place, preserving
+ * its date suffix ("First Draft - 2026-07-10" → "Second Draft - 2026-07-10").
+ * Shared by the Production dialog and the Settings mirror.
+ */
+export function applyDraftNumber(editor: Editor | null, finalLabel: string): void {
+  useEditorStore.getState().setDraftLabel(finalLabel);
+  if (editor) {
+    let updated = false;
+    editor.state.doc.descendants((node, pos) => {
+      if (updated) return false;
+      if (node.type.name === 'titlePage' && node.attrs?.field === 'draft') {
+        const oldText = node.textContent || '';
+        const dateMatch = oldText.match(/\s*[-–—]\s*(.+)$/);
+        const suffix = dateMatch ? ` - ${dateMatch[1]}` : '';
+        const newText = `${finalLabel}${suffix}`;
+        if (newText !== oldText) {
+          const tr = editor.state.tr.replaceWith(
+            pos + 1, pos + node.nodeSize - 1,
+            newText ? editor.state.schema.text(newText) : [],
+          );
+          editor.view.dispatch(tr);
+        }
+        updated = true;
+        return false;
+      }
+      return true;
+    });
+    showToast(updated
+      ? `Draft set to "${finalLabel}" — title page updated`
+      : `Draft set to "${finalLabel}"`, 'success');
+  }
+}
+
 export default function SetDraftDialog({ open, onClose, editor }: {
   open: boolean; onClose: () => void; editor: Editor | null;
 }) {
@@ -49,35 +85,7 @@ export default function SetDraftDialog({ open, onClose, editor }: {
 
   const apply = () => {
     if (!finalLabel) return;
-    setDraftLabel(finalLabel);
-
-    // Update the Title Page draft line in place, preserving its date suffix
-    // ("First Draft - 2026-07-10" → "Second Draft - 2026-07-10").
-    if (editor) {
-      let updated = false;
-      editor.state.doc.descendants((node, pos) => {
-        if (updated) return false;
-        if (node.type.name === 'titlePage' && node.attrs?.field === 'draft') {
-          const oldText = node.textContent || '';
-          const dateMatch = oldText.match(/\s*[-–—]\s*(.+)$/);
-          const suffix = dateMatch ? ` - ${dateMatch[1]}` : '';
-          const newText = `${finalLabel}${suffix}`;
-          if (newText !== oldText) {
-            const tr = editor.state.tr.replaceWith(
-              pos + 1, pos + node.nodeSize - 1,
-              newText ? editor.state.schema.text(newText) : [],
-            );
-            editor.view.dispatch(tr);
-          }
-          updated = true;
-          return false;
-        }
-        return true;
-      });
-      showToast(updated
-        ? `Draft set to "${finalLabel}" — title page updated`
-        : `Draft set to "${finalLabel}"`, 'success');
-    }
+    applyDraftNumber(editor, finalLabel);
     onClose();
   };
 
