@@ -1056,125 +1056,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       ],
     },
     {
-      label: 'Format',
-      items: [
-        {
-          icon: <FaBold />, label: 'Style',
-          children: [
-            { icon: <FaBold />, label: 'Bold', shortcut: `${mod}B`, action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(), disabled: locked.bold },
-            { icon: <FaItalic />, label: 'Italic', shortcut: `${mod}I`, action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(), disabled: locked.italic },
-            { icon: <FaUnderline />, label: 'Underline', shortcut: `${mod}U`, action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleUnderline().run(), disabled: locked.underline },
-            { icon: <FaStrikethrough />, label: 'Strikethrough', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleStrike().run(), disabled: locked.strikethrough },
-            { separator: true, label: '' },
-            { icon: <FaSubscript />, label: 'Subscript', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleSubscript().run(), disabled: locked.subscript },
-            { icon: <FaSuperscript />, label: 'Superscript', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleSuperscript().run(), disabled: locked.superscript },
-          ],
-        },
-        {
-          icon: <FaAlignLeft />, label: 'Alignment',
-          children: [
-            { icon: <FaAlignLeft />, label: 'Align Left', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('left').run(), disabled: locked.textAlign },
-            { icon: <FaAlignCenter />, label: 'Align Center', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('center').run(), disabled: locked.textAlign },
-            { icon: <FaAlignRight />, label: 'Align Right', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('right').run(), disabled: locked.textAlign },
-            { icon: <FaAlignJustify />, label: 'Justify', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('justify').run(), disabled: locked.textAlign },
-          ],
-        },
-        { separator: true, label: '' },
-        { icon: <FaFileAlt />, label: `Formatting Template (${activeTemplate.name})...`, action: () => setTemplateSelectOpen(true) },
-        { icon: <FaFileAlt />, label: 'Script Format Preferences...', action: () => setFormatPrefsOpen({ firstRun: false, afterSave: null }) },
-      ],
-    },
-    {
-      label: 'Project',
-      items: PROJECT_MENU_GROUPS.flatMap((group, gi) => [
-        ...(gi > 0 ? [{ separator: true, label: '' }] : []),
-        ...group
-          .map((id) => ALL_TOOLS.find((t) => t.id === id))
-          .filter((t): t is typeof ALL_TOOLS[number] => !!t)
-          .map((t) => ({
-            icon: t.icon,
-            label: t.label,
-            action: () => useEditorStore.getState().openTool(t.id),
-          })),
-      ]),
-    },
-    {
-      label: 'Tools',
-      items: [
-        ...TOOL_MENU_GROUPS.flatMap((group, gi) => [
-          ...(gi > 0 ? [{ separator: true, label: '' }] : []),
-          ...group
-            .map((id) => ALL_TOOLS.find((t) => t.id === id))
-            .filter((t): t is typeof ALL_TOOLS[number] => !!t)
-            .map((t) => ({
-              icon: t.icon,
-              label: t.label,
-              action: () => useEditorStore.getState().openTool(t.id),
-            })),
-        ]),
-        { separator: true, label: '' },
-        {
-          icon: <FaSpellCheck />, label: 'Spelling & Grammar',
-          children: [
-            { icon: <FaSpellCheck />, label: spellCheckEnabled ? '\u2713 Auto Spell Check' : 'Auto Spell Check', action: toggleSpellCheck },
-            { icon: <FaSpellCheck />, label: 'Spell Check\u2026', shortcut: 'F7', action: () => setSpellModalOpen(true) },
-            { separator: true, label: '' },
-            { icon: <FaSpellCheck />, label: grammarCheckEnabled ? '\u2713 Auto Writing Suggestions' : 'Auto Writing Suggestions', action: toggleGrammarCheck },
-            { icon: <FaSpellCheck />, label: 'Writing Suggestions\u2026', shortcut: '\u21e7F7', action: () => setGrammarModalOpen(true) },
-            { icon: <FaSpellCheck />, label: 'Grammar & Spelling Settings\u2026', action: () => setGrammarRulesPanelOpen(true) },
-          ],
-        },
-        {
-          icon: <FaCodeBranch />, label: 'Script History',
-          disabled: isCollabGuest,
-          children: [
-            { icon: <FaUpload />, label: 'Take Snapshot...', action: handleCheckinOpen, disabled: isCollabGuest },
-            { icon: <FaHistory />, label: 'Snapshots', action: () => setVersionHistoryOpen(true), disabled: isCollabGuest },
-            { separator: true, label: '' },
-            {
-              icon: <FaExchangeAlt />,
-              label: trackChangesEnabled
-                ? '\u2713 Track Changes'
-                : 'Track Changes Since Last Snapshot',
-              action: handleTrackChangesToggle,
-            },
-            { icon: <FaFileSignature />, label: 'Compare with Snapshot\u2026', action: () => setCompareVersionOpen(true) },
-          ],
-        },
-      ],
-    },
-    {
-      label: 'Production',
-      items: [
-        { icon: <FaFileAlt />, label: 'Title Page...', action: () => useEditorStore.getState().setTitlePageEditorOpen(true) },
-        { icon: <FaFileSignature />, label: 'Set Draft Number...', action: () => setDraftDialogOpen(true) },
-        { separator: true, label: '' },
-        {
-          icon: <FaListUl />,
-          label: 'Add Scene Numbers',
-          action: () => setSceneNumbersVisible(true),
-          disabled: sceneNumbersVisible,
-        },
-        {
-          icon: <FaListUl />,
-          label: 'Remove Scene Numbers',
-          action: () => setSceneNumbersVisible(false),
-          disabled: !sceneNumbersVisible,
-        },
-        {
-          icon: <FaLock />,
-          label: sceneNumbersLocked ? '\u2713 Lock Scene Numbers' : 'Lock Scene Numbers',
-          action: () => setSceneNumbersLocked(!sceneNumbersLocked),
-          disabled: !sceneNumbersVisible,
-        },
-        { icon: <FaLock />, label: 'Lock Pages', disabled: true },
-        { separator: true, label: '' },
-        { icon: <FaToggleOn />, label: revisionMode ? '\u2713 Revision Mode' : 'Revision Mode', action: () => setRevisionMode(!revisionMode) },
-        { separator: true, label: '' },
-        { icon: <FaTags />, label: 'Production Tags', action: () => useEditorStore.getState().openTool('tags') },
-      ],
-    },
-    {
       label: 'View',
       items: [
         { icon: <FaColumns />, label: 'Customize…', action: () => setCustomizeOpen(true) },
@@ -1263,6 +1144,125 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { icon: <FaCheckSquare />, label: 'Checklist Item', action: () => insertOutlineLine('[ ] ') },
         { icon: <FaListOl />, label: 'Marker', action: () => insertOutlineLine('⚑ ') },
       ],
+    },
+    {
+      label: 'Format',
+      items: [
+        {
+          icon: <FaBold />, label: 'Style',
+          children: [
+            { icon: <FaBold />, label: 'Bold', shortcut: `${mod}B`, action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(), disabled: locked.bold },
+            { icon: <FaItalic />, label: 'Italic', shortcut: `${mod}I`, action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(), disabled: locked.italic },
+            { icon: <FaUnderline />, label: 'Underline', shortcut: `${mod}U`, action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleUnderline().run(), disabled: locked.underline },
+            { icon: <FaStrikethrough />, label: 'Strikethrough', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleStrike().run(), disabled: locked.strikethrough },
+            { separator: true, label: '' },
+            { icon: <FaSubscript />, label: 'Subscript', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleSubscript().run(), disabled: locked.subscript },
+            { icon: <FaSuperscript />, label: 'Superscript', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleSuperscript().run(), disabled: locked.superscript },
+          ],
+        },
+        {
+          icon: <FaAlignLeft />, label: 'Alignment',
+          children: [
+            { icon: <FaAlignLeft />, label: 'Align Left', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('left').run(), disabled: locked.textAlign },
+            { icon: <FaAlignCenter />, label: 'Align Center', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('center').run(), disabled: locked.textAlign },
+            { icon: <FaAlignRight />, label: 'Align Right', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('right').run(), disabled: locked.textAlign },
+            { icon: <FaAlignJustify />, label: 'Justify', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('justify').run(), disabled: locked.textAlign },
+          ],
+        },
+        { separator: true, label: '' },
+        { icon: <FaFileAlt />, label: `Formatting Template (${activeTemplate.name})...`, action: () => setTemplateSelectOpen(true) },
+        { icon: <FaFileAlt />, label: 'Script Format Preferences...', action: () => setFormatPrefsOpen({ firstRun: false, afterSave: null }) },
+      ],
+    },
+    {
+      label: 'Production',
+      items: [
+        { icon: <FaFileAlt />, label: 'Title Page...', action: () => useEditorStore.getState().setTitlePageEditorOpen(true) },
+        { icon: <FaFileSignature />, label: 'Set Draft Number...', action: () => setDraftDialogOpen(true) },
+        { separator: true, label: '' },
+        {
+          icon: <FaListUl />,
+          label: 'Add Scene Numbers',
+          action: () => setSceneNumbersVisible(true),
+          disabled: sceneNumbersVisible,
+        },
+        {
+          icon: <FaListUl />,
+          label: 'Remove Scene Numbers',
+          action: () => setSceneNumbersVisible(false),
+          disabled: !sceneNumbersVisible,
+        },
+        {
+          icon: <FaLock />,
+          label: sceneNumbersLocked ? '\u2713 Lock Scene Numbers' : 'Lock Scene Numbers',
+          action: () => setSceneNumbersLocked(!sceneNumbersLocked),
+          disabled: !sceneNumbersVisible,
+        },
+        { icon: <FaLock />, label: 'Lock Pages', disabled: true },
+        { separator: true, label: '' },
+        { icon: <FaToggleOn />, label: revisionMode ? '\u2713 Revision Mode' : 'Revision Mode', action: () => setRevisionMode(!revisionMode) },
+        { separator: true, label: '' },
+        { icon: <FaTags />, label: 'Production Tags', action: () => useEditorStore.getState().openTool('tags') },
+      ],
+    },
+    {
+      label: 'Tools',
+      items: [
+        ...TOOL_MENU_GROUPS.flatMap((group, gi) => [
+          ...(gi > 0 ? [{ separator: true, label: '' }] : []),
+          ...group
+            .map((id) => ALL_TOOLS.find((t) => t.id === id))
+            .filter((t): t is typeof ALL_TOOLS[number] => !!t)
+            .map((t) => ({
+              icon: t.icon,
+              label: t.label,
+              action: () => useEditorStore.getState().openTool(t.id),
+            })),
+        ]),
+        { separator: true, label: '' },
+        {
+          icon: <FaSpellCheck />, label: 'Spelling & Grammar',
+          children: [
+            { icon: <FaSpellCheck />, label: spellCheckEnabled ? '\u2713 Auto Spell Check' : 'Auto Spell Check', action: toggleSpellCheck },
+            { icon: <FaSpellCheck />, label: 'Spell Check\u2026', shortcut: 'F7', action: () => setSpellModalOpen(true) },
+            { separator: true, label: '' },
+            { icon: <FaSpellCheck />, label: grammarCheckEnabled ? '\u2713 Auto Writing Suggestions' : 'Auto Writing Suggestions', action: toggleGrammarCheck },
+            { icon: <FaSpellCheck />, label: 'Writing Suggestions\u2026', shortcut: '\u21e7F7', action: () => setGrammarModalOpen(true) },
+            { icon: <FaSpellCheck />, label: 'Grammar & Spelling Settings\u2026', action: () => setGrammarRulesPanelOpen(true) },
+          ],
+        },
+        {
+          icon: <FaCodeBranch />, label: 'Script History',
+          disabled: isCollabGuest,
+          children: [
+            { icon: <FaUpload />, label: 'Take Snapshot...', action: handleCheckinOpen, disabled: isCollabGuest },
+            { icon: <FaHistory />, label: 'Snapshots', action: () => setVersionHistoryOpen(true), disabled: isCollabGuest },
+            { separator: true, label: '' },
+            {
+              icon: <FaExchangeAlt />,
+              label: trackChangesEnabled
+                ? '\u2713 Track Changes'
+                : 'Track Changes Since Last Snapshot',
+              action: handleTrackChangesToggle,
+            },
+            { icon: <FaFileSignature />, label: 'Compare with Snapshot\u2026', action: () => setCompareVersionOpen(true) },
+          ],
+        },
+      ],
+    },
+    {
+      label: 'Project',
+      items: PROJECT_MENU_GROUPS.flatMap((group, gi) => [
+        ...(gi > 0 ? [{ separator: true, label: '' }] : []),
+        ...group
+          .map((id) => ALL_TOOLS.find((t) => t.id === id))
+          .filter((t): t is typeof ALL_TOOLS[number] => !!t)
+          .map((t) => ({
+            icon: t.icon,
+            label: t.label,
+            action: () => useEditorStore.getState().openTool(t.id),
+          })),
+      ]),
     },
   ];
 
