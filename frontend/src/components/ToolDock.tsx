@@ -17,7 +17,7 @@ import type { Editor } from '@tiptap/react';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
-  FaTh, FaStream, FaTags, FaHighlighter, FaProjectDiagram, FaBoxes,
+  FaTh, FaStream, FaTags, FaHighlighter,
 } from 'react-icons/fa';
 import { useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -28,8 +28,6 @@ import GoalsTool from './GoalsTool';
 import CharacterProfiles from './CharacterProfiles';
 import { StickyNotesTool, FragmentsTool, TodoTool } from './StickyNotes';
 import HighlightsTool from './HighlightsTool';
-import ProjectManagerTool from './ProjectManagerTool';
-import AssetManager from './AssetManager';
 import TagsPanel from './TagsPanel';
 import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
@@ -58,8 +56,6 @@ export const ALL_TOOLS: ToolDef[] = [
   { id: 'todo', label: 'To-Do', icon: <FaCheckSquare />, defaultSize: { w: 300, h: 288 }, group: 2 },
   { id: 'highlights', label: 'Highlights', icon: <FaHighlighter />, defaultSize: { w: 300, h: 312 }, group: 2 },
   { id: 'tags', label: 'Production Tags', icon: <FaTags />, defaultSize: { w: 340, h: 336 }, group: 2 },
-  { id: 'projects', label: 'Project Manager', icon: <FaProjectDiagram />, defaultSize: { w: 720, h: 480 }, group: 3 },
-  { id: 'assets', label: 'Asset Manager', icon: <FaBoxes />, defaultSize: { w: 620, h: 372 }, group: 3 },
   { id: 'analytics', label: 'Analytics', icon: <FaChartBar />, defaultSize: { w: 620, h: 384 }, group: 3 },
   { id: 'goals', label: 'Goals', icon: <FaBullseye />, defaultSize: { w: 340, h: 264 }, group: 3 },
 ];
@@ -67,7 +63,7 @@ export const ALL_TOOLS: ToolDef[] = [
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
-export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'projects', 'assets'];
+export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters'];
 export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 
 const MIN_W = 240;
@@ -100,10 +96,6 @@ export function ToolContent({ id, editor, scrollContainer }: {
       return <FragmentsTool editor={editor} />;
     case 'highlights':
       return <HighlightsTool editor={editor} scrollContainer={scrollContainer ?? null} />;
-    case 'projects':
-      return <ProjectManagerTool />;
-    case 'assets':
-      return <AssetManager projectId={currentProject?.id || ''} embedded />;
     case 'todo':
       return <TodoTool editor={editor} />;
     case 'tags':

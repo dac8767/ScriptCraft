@@ -655,6 +655,14 @@ body {
 .about-credit a:hover { text-decoration: underline; }
 .about-oss { line-height: 1.6; }
 
+/* ── File > Manage Projects / Asset Manager windows (v0.54) ── */
+.fs-manager-dialog {
+  width: min(880px, 92vw); height: min(620px, 86vh);
+  max-width: none; display: flex; flex-direction: column;
+}
+.fs-manager-dialog-body { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+.fs-manager-dialog-body > * { flex: 1; min-height: 0; }
+
 /* ── Project Manager: embedded OpenDraft project pages (v0.52) ── */
 .fs-pm-embedded { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 0; }
 .fs-pm-embedded .project-list-page,

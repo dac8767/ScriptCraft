@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
+import ProjectManagerTool from './ProjectManagerTool';
+import AssetManager from './AssetManager';
 import { SaveWorkspaceDialog, EditWorkspacesDialog } from './WorkspaceDialogs';
 import PreferencesDialog from './PreferencesDialog';
 import SetDraftDialog from './SetDraftDialog';
@@ -11,7 +13,8 @@ import { ALL_TOOLS } from './ToolDock';
 const PROJECT_MENU_GROUPS: string[][] = [
   ['navigator', 'pages', 'scenes'],
   ['locations', 'characters'],
-  ['projects', 'assets'],
+  // 'projects' and 'assets' intentionally absent (v0.54): the Project
+  // Manager and Asset Manager live under File as full windows, not Tools.
 ];
 /** Tools menu: story planning / writing aids / production & analysis. */
 const TOOL_MENU_GROUPS: string[][] = [
@@ -408,6 +411,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   }, [diagnosticsReport]);
 
   // ── Check in (git commit) ──
+  const [projectManagerOpen, setProjectManagerOpen] = useState(false);
+  const [assetManagerOpen, setAssetManagerOpen] = useState(false);
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [checkinMessage, setCheckinMessage] = useState('');
   const [checkinSaving, setCheckinSaving] = useState(false);
@@ -1034,6 +1039,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaFileImport />, label: 'Local File...', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
           ],
         },
+        { separator: true, label: '' },
+        { icon: <FaProjectDiagram />, label: 'Manage Projects…', action: () => setProjectManagerOpen(true) },
+        { icon: <FaBoxes />, label: 'Asset Manager…', action: () => setAssetManagerOpen(true) },
+        { separator: true, label: '' },
         { icon: <FaSave />, label: 'Save', shortcut: `${mod}S`, action: handleSave, disabled: isCollabGuest },
         { icon: <FaSave />, label: 'Save As…', shortcut: `⇧${mod}S`, action: handleExportOdraft, disabled: isCollabGuest },
         {
@@ -1847,6 +1856,32 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         }}
         onCancel={() => setFormatPickerOpen(false)}
       />
+    )}
+    {projectManagerOpen && (
+      <div className="dialog-overlay" onClick={() => setProjectManagerOpen(false)}>
+        <div className="dialog-box fs-manager-dialog" onClick={(e) => e.stopPropagation()}>
+          <div className="dialog-header">
+            Project Manager
+            <button className="fs-dialog-x" onClick={() => setProjectManagerOpen(false)} title="Close">&times;</button>
+          </div>
+          <div className="fs-manager-dialog-body">
+            <ProjectManagerTool />
+          </div>
+        </div>
+      </div>
+    )}
+    {assetManagerOpen && (
+      <div className="dialog-overlay" onClick={() => setAssetManagerOpen(false)}>
+        <div className="dialog-box fs-manager-dialog" onClick={(e) => e.stopPropagation()}>
+          <div className="dialog-header">
+            Asset Manager
+            <button className="fs-dialog-x" onClick={() => setAssetManagerOpen(false)} title="Close">&times;</button>
+          </div>
+          <div className="fs-manager-dialog-body">
+            <AssetManager projectId={currentProject?.id || ''} embedded />
+          </div>
+        </div>
+      </div>
     )}
     {aboutOpen && (
       <div className="dialog-overlay" onClick={() => setAboutOpen(false)}>

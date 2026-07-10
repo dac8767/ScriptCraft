@@ -424,8 +424,6 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   beatboard: { side: 'right', enabled: true },
   tags: { side: 'right', enabled: true },
   highlights: { side: 'right', enabled: true },
-  projects: { side: 'left', enabled: true },
-  assets: { side: 'left', enabled: true },
   analytics: { side: 'right', enabled: true },
   goals: { side: 'right', enabled: true },
   sticky: { side: 'right', enabled: true },
