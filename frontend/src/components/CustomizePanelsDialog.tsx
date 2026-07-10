@@ -40,8 +40,8 @@ const GROUP_TOKEN_ITEMS: Record<string, string[]> = {
 };
 
 interface Props {
-  /** When set, render only that category's sections (Settings > Layout tabs). */
-  category?: 'menu' | 'toolbar' | 'panels';
+  /** Initial tab; the dialog always renders its own tab bar. */
+  category?: 'menu' | 'toolbar' | 'leftpanel' | 'rightpanel';
   open: boolean;
   onClose: () => void;
   /** Render only the content (no overlay/box) — used inside Preferences. */
@@ -61,10 +61,116 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     menuMode, setMenuMode,
   } = useEditorStore();
 
+
+  const PANEL_PRODUCTION_IDS: ToolId[] = ['tags'];
+  const renderPanelTab = (side: 'left' | 'right') => {
+    const order = toolOrder.length ? toolOrder : ALL_TOOLS.map((t) => t.id as string);
+    const oIdx = (id: string) => {
+      const i = order.indexOf(id);
+      return i === -1 ? 1000 : i;
+    };
+    type Row = { kind: 'tool'; id: ToolId; label: string } | { kind: 'divider'; id: string; label: string };
+    const rows: Row[] = [
+      ...ALL_TOOLS.filter((t) => {
+        const cfg = cfgOf(t.id);
+        return cfg.enabled && cfg.side === side;
+      }).map((t) => ({ kind: 'tool' as const, id: t.id, label: t.label, ord: oIdx(t.id) })),
+      ...panelDividers.filter((d) => d.side === side).map((d) => ({ kind: 'divider' as const, id: d.id, label: d.label, ord: oIdx(`div:${d.id}`) })),
+    ].sort((a, b) => a.ord - b.ord).map(({ ord: _o, ...r }) => r as Row);
+
+    const orderTokenOf = (r: Row) => r.kind === 'tool' ? r.id : `div:${r.id}`;
+    const moveRow = (idx: number, dir: -1 | 1) => {
+      const j = idx + dir;
+      if (j < 0 || j >= rows.length) return;
+      const a = orderTokenOf(rows[idx]);
+      const b = orderTokenOf(rows[j]);
+      const full = order.includes(a) && order.includes(b) ? [...order] : [...order, ...[a, b].filter((x) => !order.includes(x))];
+      const ai = full.indexOf(a), bi = full.indexOf(b);
+      [full[ai], full[bi]] = [full[bi], full[ai]];
+      setToolOrder(full);
+    };
+    const setRowSide = (r: Row, target: 'left' | 'right' | 'hidden') => {
+      if (r.kind === 'divider') {
+        if (target === 'hidden') {
+          setPanelDividers(panelDividers.filter((x) => x.id !== r.id));
+          setToolOrder(order.filter((t) => t !== `div:${r.id}`));
+        } else {
+          setPanelDividers(panelDividers.map((x) => x.id === r.id ? { ...x, side: target } : x));
+        }
+        return;
+      }
+      if (target === 'hidden') setTool(r.id, { enabled: false });
+      else setTool(r.id, { enabled: true, side: target });
+    };
+    const addOptions = [
+      ...ALL_TOOLS.filter((t) => WINDOW_IDS.includes(t.id) && !(cfgOf(t.id).enabled && cfgOf(t.id).side === side)).map((t) => ({ group: 'Project Windows', value: `t:${t.id}`, label: t.label })),
+      ...ALL_TOOLS.filter((t) => !WINDOW_IDS.includes(t.id) && !PANEL_PRODUCTION_IDS.includes(t.id) && !(cfgOf(t.id).enabled && cfgOf(t.id).side === side)).map((t) => ({ group: 'Tools', value: `t:${t.id}`, label: t.label })),
+      ...ALL_TOOLS.filter((t) => PANEL_PRODUCTION_IDS.includes(t.id) && !(cfgOf(t.id).enabled && cfgOf(t.id).side === side)).map((t) => ({ group: 'Production', value: `t:${t.id}`, label: t.label })),
+    ];
+    const onAdd = (value: string) => {
+      if (value === 'divider') {
+        const id = String(Date.now());
+        setPanelDividers([...panelDividers, { id, label: '', side }]);
+        setToolOrder([...order, `div:${id}`]);
+      } else if (value.startsWith('t:')) {
+        setTool(value.slice(2) as ToolId, { enabled: true, side });
+      }
+    };
+    return (
+      <section>
+        <h3>{side === 'left' ? 'Left Panel' : 'Right Panel'}</h3>
+        <p className="fs-customize-hint">
+          Everything currently in this panel, top to bottom. Left/Right moves an
+          item to the other panel; Hide removes it (re-add it from the dropdown
+          below). Divider labels are edited here only.
+        </p>
+        {rows.map((r, idx) => (
+          <div key={`${r.kind}-${r.id}`} className="fs-customize-row">
+            <span className="fs-customize-tool">
+              <span className="fs-customize-order">
+                <button title="Move up" onClick={() => moveRow(idx, -1)} disabled={idx === 0}>▲</button>
+                <button title="Move down" onClick={() => moveRow(idx, 1)} disabled={idx === rows.length - 1}>▼</button>
+              </span>
+              {r.kind === 'divider' ? (
+                <input
+                  className="fs-divider-label-input"
+                  value={r.label}
+                  placeholder="Divider label (optional)"
+                  onChange={(e) => setPanelDividers(panelDividers.map((x) => x.id === r.id ? { ...x, label: e.target.value } : x))}
+                />
+              ) : r.label}
+            </span>
+            <span className="fs-customize-seg">
+              <button className={side === 'left' ? 'active' : ''} onClick={() => setRowSide(r, 'left')}>Left</button>
+              <button className={side === 'right' ? 'active' : ''} onClick={() => setRowSide(r, 'right')}>Right</button>
+              <button onClick={() => setRowSide(r, 'hidden')}>Hide</button>
+            </span>
+          </div>
+        ))}
+        <div className="fs-tbzone-adders">
+          <select value="" onChange={(e) => { if (e.target.value) { onAdd(e.target.value); e.target.value = ''; } }}>
+            <option value="">Add item to {side === 'left' ? 'Left' : 'Right'} Panel…</option>
+            <optgroup label="Project Windows">
+              {addOptions.filter((o) => o.group === 'Project Windows').map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </optgroup>
+            <optgroup label="Tools">
+              {addOptions.filter((o) => o.group === 'Tools').map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </optgroup>
+            <optgroup label="Production">
+              {addOptions.filter((o) => o.group === 'Production').map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </optgroup>
+            <option value="divider">Divider</option>
+          </select>
+        </div>
+      </section>
+    );
+  };
+
   // ALL hooks must run before this early return — a hook below it crashes
   // React ('Rendered more hooks than during the previous render').
   const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones } = useEditorStore();
   const { panelDividers, setPanelDividers } = useEditorStore();
+  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'leftpanel' | 'rightpanel'>(category ?? 'menu');
 
   if (!open) return null;
 
@@ -141,8 +247,12 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
 
   const body = (
         <div className="dialog-body fs-customize-body" style={embedded ? { padding: '4px 0 0', maxHeight: 'none', overflowY: 'visible' } : undefined}>
-          {(!category) && <div className="fs-customize-cat">Menu Bar</div>}
-          {(!category || category === 'menu') && (<>
+          <div className="prefs-subtabs">
+            {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['leftpanel', 'Left Panel'], ['rightpanel', 'Right Panel']] as const).map(([id, label]) => (
+              <button key={id} className={activeCat === id ? 'active' : ''} onClick={() => setActiveCat(id)}>{label}</button>
+            ))}
+          </div>
+          {activeCat === 'menu' && (<>
           <section>
             <h3>Menus</h3>
             <p className="fs-customize-hint">
@@ -195,8 +305,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             </div>
           </section>
           </>)}
-          {(!category) && <div className="fs-customize-cat">Toolbar</div>}
-          {(!category || category === 'toolbar') && (<>
+          {activeCat === 'toolbar' && (<>
           <section>
             <h3>Toolbar Layout</h3>
             <p className="fs-customize-hint">
@@ -297,8 +406,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             </div>
           </section>
           </>)}
-          {(!category) && <div className="fs-customize-cat">Side Panels</div>}
-          {(!category || category === 'panels') && (<>
+          {activeCat === 'leftpanel' && (<>
           <section>
             <h3>Panels</h3>
             <div className="fs-customize-row">
@@ -316,136 +424,10 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               </span>
             </div>
           </section>
-          <section>
-            <h3>Project Windows</h3>
-            <p className="fs-customize-hint">
-              Project windows summarize your script and project. Pick where each
-              one lives — hidden items stay available from the Project menu and
-              open in a temporary panel.
-            </p>
-            <div className="fs-customize-grid">
-              {orderedWindows.map((t, idx) => {
-                const cfg = cfgOf(t.id);
-                const value = cfg.enabled ? cfg.side : 'hidden';
-                return (
-                  <div key={t.id} className="fs-customize-row">
-                    <span className="fs-customize-tool">
-                      <span className="fs-customize-order">
-                        <button title="Move up" onClick={() => moveWithin(orderedWindows, idx, -1)} disabled={idx === 0}>▲</button>
-                        <button title="Move down" onClick={() => moveWithin(orderedWindows, idx, 1)} disabled={idx === orderedWindows.length - 1}>▼</button>
-                      </span>
-                      <span className="tool-dock-icon">{t.icon}</span>{t.label}
-                    </span>
-                    <span className="fs-customize-seg">
-                      {(['left', 'right', 'hidden'] as const).map((opt) => (
-                        <button
-                          key={opt}
-                          className={value === opt ? 'active' : ''}
-                          onClick={() =>
-                            setTool(t.id, opt === 'hidden'
-                              ? { enabled: false }
-                              : { enabled: true, side: opt })}
-                        >
-                          {opt === 'left' ? 'Left' : opt === 'right' ? 'Right' : 'Hide'}
-                        </button>
-                      ))}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-          <section>
-            <h3>Tools</h3>
-            <p className="fs-customize-hint">
-              Everything that edits or manages, rather than summarizes. Hidden
-              tools stay available from the Tools menu.
-            </p>
-            <div className="fs-customize-grid">
-              {orderedToolsOnly.map((t, idx) => {
-                const cfg = cfgOf(t.id);
-                const value = cfg.enabled ? cfg.side : 'hidden';
-                return (
-                  <div key={t.id} className="fs-customize-row">
-                    <span className="fs-customize-tool">
-                      <span className="fs-customize-order">
-                        <button title="Move up" onClick={() => moveWithin(orderedToolsOnly, idx, -1)} disabled={idx === 0}>▲</button>
-                        <button title="Move down" onClick={() => moveWithin(orderedToolsOnly, idx, 1)} disabled={idx === orderedToolsOnly.length - 1}>▼</button>
-                      </span>
-                      <span className="tool-dock-icon">{t.icon}</span>{t.label}
-                    </span>
-                    <span className="fs-customize-seg">
-                      {(['left', 'right', 'hidden'] as const).map((opt) => (
-                        <button
-                          key={opt}
-                          className={value === opt ? 'active' : ''}
-                          onClick={() =>
-                            setTool(t.id, opt === 'hidden'
-                              ? { enabled: false }
-                              : { enabled: true, side: opt })}
-                        >
-                          {opt === 'left' ? 'Left' : opt === 'right' ? 'Right' : 'Hide'}
-                        </button>
-                      ))}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-          <section>
-            <h3>Dividers</h3>
-            <p className="fs-customize-hint">
-              Divider lines for the side panels, with an optional small label.
-              Reorder them among the windows and tools with the arrows.
-            </p>
-            {panelDividers.map((d) => {
-              const tok = `div:${d.id}`;
-              const order = toolOrder.length ? toolOrder : orderedTools.map((t) => t.id as string);
-              const idx = order.indexOf(tok);
-              const moveDiv = (dir: -1 | 1) => {
-                if (idx === -1) return;
-                const j = idx + dir;
-                if (j < 0 || j >= order.length) return;
-                const next = [...order];
-                [next[idx], next[j]] = [next[j], next[idx]];
-                setToolOrder(next);
-              };
-              return (
-                <div key={d.id} className="fs-customize-row">
-                  <span className="fs-customize-tool">
-                    <span className="fs-customize-order">
-                      <button title="Move up" onClick={() => moveDiv(-1)} disabled={idx <= 0}>▲</button>
-                      <button title="Move down" onClick={() => moveDiv(1)} disabled={idx === -1 || idx === order.length - 1}>▼</button>
-                    </span>
-                    <input
-                      className="fs-divider-label-input"
-                      value={d.label}
-                      placeholder="Label (optional)"
-                      onChange={(e) => setPanelDividers(panelDividers.map((x) => x.id === d.id ? { ...x, label: e.target.value } : x))}
-                    />
-                  </span>
-                  <span className="fs-customize-seg">
-                    {(['left', 'right'] as const).map((opt) => (
-                      <button
-                        key={opt}
-                        className={d.side === opt ? 'active' : ''}
-                        onClick={() => setPanelDividers(panelDividers.map((x) => x.id === d.id ? { ...x, side: opt } : x))}
-                      >{opt === 'left' ? 'Left' : 'Right'}</button>
-                    ))}
-                    <button onClick={() => {
-                      setPanelDividers(panelDividers.filter((x) => x.id !== d.id));
-                      setToolOrder((toolOrder.length ? toolOrder : []).filter((t) => t !== tok));
-                    }}>Remove</button>
-                  </span>
-                </div>
-              );
-            })}
-            <div className="fs-tbzone-adders">
-              <button className="swn-add-btn" onClick={() => addPanelDivider('left')}>+ Divider in Left panel</button>
-              <button className="swn-add-btn" onClick={() => addPanelDivider('right')}>+ Divider in Right panel</button>
-            </div>
-          </section>
+          {renderPanelTab('left')}
+          </>)}
+          {activeCat === 'rightpanel' && (<>
+          {renderPanelTab('right')}
           </>)}
         </div>
   );

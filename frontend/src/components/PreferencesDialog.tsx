@@ -122,21 +122,7 @@ function LanguageSection() {
 
 
 function LayoutTab() {
-  const [cat, setCat] = React.useState<'menu' | 'toolbar' | 'panels'>('menu');
-  return (
-    <div className="prefs-general">
-      <div className="prefs-subtabs">
-        {([['menu', 'Menu Bar'], ['toolbar', 'Tool Bar'], ['panels', 'Side Panels']] as const).map(([id, label]) => (
-          <button
-            key={id}
-            className={cat === id ? 'active' : ''}
-            onClick={() => setCat(id)}
-          >{label}</button>
-        ))}
-      </div>
-      <CustomizePanelsDialog open embedded category={cat} onClose={() => {}} />
-    </div>
-  );
+  return <CustomizePanelsDialog open embedded onClose={() => {}} />;
 }
 
 function DraftNumberRow({ editor }: { editor: Editor | null }) {
