@@ -47,6 +47,8 @@ interface Props {
 
 const EMPTY_ATTRS: Omit<TitlePageAttrs, 'field'> = {
   tpTitle: '',
+  tpTitle2: '',
+  tpTitle2FontSize: 12,
   tpWrittenBy: '',
   tpBasedOn: '',
   tpDraft: '',
@@ -82,6 +84,8 @@ function readTitlePageData(editor: Editor): Omit<TitlePageAttrs, 'field'> {
   if (titleNode && titleNode.attrs.tpTitle) {
     // Structured data exists — use it
     result.tpTitle = titleNode.attrs.tpTitle || '';
+    result.tpTitle2 = titleNode.attrs.tpTitle2 || '';
+    result.tpTitle2FontSize = Number(titleNode.attrs.tpTitle2FontSize) || 12;
     result.tpTitleFontSize = Number(titleNode.attrs.tpTitleFontSize) || 12;
     result.tpWrittenBy = titleNode.attrs.tpWrittenBy || '';
     result.tpBasedOn = titleNode.attrs.tpBasedOn || '';
@@ -101,6 +105,7 @@ function readTitlePageData(editor: Editor): Omit<TitlePageAttrs, 'field'> {
       const text = node.textContent || '';
       switch (field) {
         case 'title': result.tpTitle = text; break;
+        case 'title2': result.tpTitle2 = text; break;
         case 'author': result.tpWrittenBy = text; break;
         case 'contact': result.tpContact = text; break;
         case 'date': result.tpDraftDate = text; break;
@@ -172,7 +177,12 @@ function buildTitlePageBlocks(
   const { byLine, draftLine, copyrightLine } = deriveFields(data);
   const blank = () => titlePageType.create({ field: 'blank' });
   const text = (field: string, t: string): PMNode =>
-    titlePageType.create(field === 'title' ? { field: 'title', ...data } : { field }, t ? schema.text(t) : undefined);
+    titlePageType.create(
+      field === 'title' ? { field: 'title', ...data }
+        : field === 'title2' ? { field: 'title2', tpTitleFontSize: data.tpTitle2FontSize }
+        : { field },
+      t ? schema.text(t) : undefined,
+    );
   const imgLines = (a: Record<string, unknown>) => Math.max(1, Number(a.heightLines) || 8);
 
   const TITLE_LINE = 15;       // title sits ~⅓ down (line ~15 of ~54)
@@ -188,6 +198,7 @@ function buildTitlePageBlocks(
   for (let i = 0; i < topSpacers; i++) blocks.push(blank());
   blocks.push(text('title', data.tpTitle || ''));
   let used = aboveLines + topSpacers + 1;
+  if (data.tpTitle2) { blocks.push(text('title2', data.tpTitle2)); used += 1; }
   if (byLine) { blocks.push(blank(), blank(), text('author', byLine)); used += 3; }
 
   const bottom: [string, string][] = [];
@@ -380,6 +391,29 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
               </select>
             </div>
             )}
+            {showField('tpTitle') && (
+            <div className="props-field props-field-wide">
+              <label className="props-label">Title Line 2</label>
+              <input
+                className="props-input"
+                value={data.tpTitle2}
+                onChange={(e) => setField('tpTitle2', e.target.value)}
+                placeholder="Optional second title line"
+              />
+            </div>
+            )}
+            {showField('tpTitle') && data.tpTitle2 && (
+            <div className="props-field">
+              <label className="props-label">Title Line 2 Size</label>
+              <select
+                className="props-input"
+                value={data.tpTitle2FontSize}
+                onChange={(e) => setData((prev) => ({ ...prev, tpTitle2FontSize: Number(e.target.value) }))}
+              >
+                {TITLE_FONT_SIZES.map((s) => <option key={s} value={s}>{s} pt</option>)}
+              </select>
+            </div>
+            )}
             {showField('tpWrittenBy') && (
             <div className="props-field">
               <label className="props-label">Written By</label>
@@ -548,6 +582,11 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
               {imagesAbove.map((a, i) => <TpImageThumb key={`a${i}`} attrs={a} align />)}
               <div style={{ marginTop: '20%', textAlign: 'center' }}>
                 <div style={{ fontWeight: 700, textTransform: 'uppercase', fontSize: titlePx }}>{data.tpTitle || 'UNTITLED'}</div>
+                {data.tpTitle2 && (
+                  <div style={{ fontWeight: 700, textTransform: 'uppercase', fontSize: `${Math.max(8, Math.round(data.tpTitle2FontSize * 0.85))}px` }}>
+                    {data.tpTitle2}
+                  </div>
+                )}
                 {byLine && <div style={{ marginTop: 8, whiteSpace: 'pre-wrap' }}>{byLine}</div>}
               </div>
               <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', fontSize: 9, gap: 8 }}>

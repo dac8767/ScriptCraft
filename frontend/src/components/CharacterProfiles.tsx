@@ -85,12 +85,14 @@ const InlineRelForm: React.FC<{
 };
 
 interface CharacterProfilesProps {
+  /** Render inside a tool window: always visible, no close button/swipe */
+  embedded?: boolean;
   editor: Editor | null;
   projectId: string;
   style?: React.CSSProperties;
 }
 
-const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId, style }) => {
+const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId, style, embedded = false }) => {
   const {
     characters,
     characterProfiles,
@@ -836,14 +838,17 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     );
   };
 
-  const { shouldRender, animationState } = useDelayedUnmount(characterProfilesOpen, 250);
+  const { shouldRender: gateRender, animationState } = useDelayedUnmount(characterProfilesOpen, 250);
+  const shouldRender = embedded || gateRender;
   const panelRef = useRef<HTMLDivElement>(null);
-  useSwipeDismiss(panelRef, { direction: 'right', onDismiss: toggleCharacterProfiles, enabled: shouldRender && !isFullscreen });
+  useSwipeDismiss(panelRef, { direction: 'right', onDismiss: toggleCharacterProfiles, enabled: !embedded && shouldRender && !isFullscreen });
 
   if (!shouldRender) return null;
 
-  const panelClass = !isFullscreen && animationState === 'entered'
-    ? 'panel-open' : !isFullscreen && animationState === 'exiting' ? 'panel-closing' : '';
+  const panelClass = embedded
+    ? 'panel-open'
+    : (!isFullscreen && animationState === 'entered'
+      ? 'panel-open' : animationState === 'exiting' ? 'panel-closing' : '');
 
   return (
     <div ref={panelRef} className={`char-profiles-panel${isFullscreen ? ' char-profiles-fullscreen' : ''}${isFullscreen && fsViewMode === 'list' ? ' char-fs-list-mode' : ''} ${panelClass}`} style={isFullscreen ? undefined : style}>
@@ -882,9 +887,9 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             </button>
           </div>
         )}
-        <button className="char-profiles-close" onClick={() => { setIsFullscreen(false); toggleCharacterProfiles(); }} title="Close">
+        {!embedded && <button className="char-profiles-close" onClick={() => { setIsFullscreen(false); toggleCharacterProfiles(); }} title="Close">
           &times;
-        </button>
+        </button>}
       </div>
 
       {/* Tabs: Profiles / Relationship Map */}

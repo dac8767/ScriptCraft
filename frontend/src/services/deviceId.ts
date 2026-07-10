@@ -32,12 +32,12 @@ function detectPlatform(): string {
     const ua = navigator.userAgent || '';
     const isTauri = typeof (window as any).__TAURI__ !== 'undefined' || typeof (window as any).__TAURI_INTERNALS__ !== 'undefined';
     if (isTauri) {
-      if (/Android/i.test(ua)) return 'Android (OpenDraft)';
-      if (/iPhone|iPad|iPod/i.test(ua)) return 'iOS (OpenDraft)';
-      if (/Macintosh|Mac OS X/i.test(ua)) return 'macOS (OpenDraft)';
-      if (/Windows/i.test(ua)) return 'Windows (OpenDraft)';
-      if (/Linux/i.test(ua)) return 'Linux (OpenDraft)';
-      return 'Desktop (OpenDraft)';
+      if (/Android/i.test(ua)) return 'Android (FreeScript)';
+      if (/iPhone|iPad|iPod/i.test(ua)) return 'iOS (FreeScript)';
+      if (/Macintosh|Mac OS X/i.test(ua)) return 'macOS (FreeScript)';
+      if (/Windows/i.test(ua)) return 'Windows (FreeScript)';
+      if (/Linux/i.test(ua)) return 'Linux (FreeScript)';
+      return 'Desktop (FreeScript)';
     }
     if (/Android/i.test(ua)) return 'Android browser';
     if (/iPhone|iPad|iPod/i.test(ua)) return 'iOS browser';

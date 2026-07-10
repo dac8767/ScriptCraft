@@ -1,25 +1,18 @@
 /**
- * StickyNotes — the unified Sticky Notes pane ("the Shelf"), ported from
- * FreeScript v5.5 and extended to house OpenDraft's note systems.
- *
- * Top-level tabs: Notes / To-Do / Snippets. The Notes tab has two sub-views:
- *   - General: free-form sticky cards (the former Comments tab)
- *   - Script:  OpenDraft's anchored notes (filters, click-to-navigate),
- *              rendered by ScriptNotesContent
- * Every card header shows its type as placeholder text and is editable as a
- * title. The 🔍 search spans everything — all card types plus Script notes;
- * clicking a Script hit jumps to Notes → Script focused on that note.
- *
- * Snippets are created from the editor via ⌥⌘X (cut selection to sticky) and
- * ⌥⌘C (copy selection to sticky) — bound in ScreenplayEditor.
- *
- * Sticky cards persist per script as the `_shelf` top-level key of the saved
- * content JSON, and sync in collab via collabSync. The active tab and Notes
- * sub-view persist in view state (`shelfTab`, `notesSubTab`).
+ * StickyNotes — the FreeScript sticky-card system, now split into three
+ * right-dock tools:
+ *   - StickyNotesTool ("Sticky Notes"): General / Script sub-tabs — General is
+ *     free-form sticky cards, Script is OpenDraft's anchored notes. The 🔍
+ *     search spans both sub-views.
+ *   - FragmentsTool ("Fragments", formerly Snippets): text sent from the
+ *     editor via ⌥⌘X (cut) / ⌥⌘C (copy) — bound in ScreenplayEditor.
+ *   - TodoTool ("To-Do"): checklist cards.
+ * Cards keep sticky colors, drag-reorder, editable title headers (type name
+ * as placeholder), and creation dates. Data persists per script as the
+ * `_shelf` key of the saved content JSON and syncs in collab via collabSync.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
-import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 import {
   useEditorStore,
   SHELF_COLORS,
@@ -27,36 +20,16 @@ import {
   NOTE_COLORS,
   type ShelfCard,
   type ShelfCardType,
-  type ShelfTopTab,
   type NotesSubTab,
   type NoteColor,
 } from '../stores/editorStore';
-import { ScriptNotesContent } from './ScriptNotes';
+import { ScriptNotesContent, formatDate } from './ScriptNotes';
 import { uuid } from '../utils/uuid';
 
-const TABS: [ShelfTopTab, string][] = [
-  ['notes', 'Notes'],
-  ['todo', 'To-Do'],
-  ['snippet', 'Snippets'],
-];
-
-const SUB_TABS: [NotesSubTab, string][] = [
-  ['general', 'General'],
-  ['script', 'Script'],
-];
-
-/** The card type each top-level tab shows (Notes → General shows 'comment' cards). */
-const TAB_CARD_TYPE: Record<ShelfTopTab, ShelfCardType> = {
-  notes: 'comment',
-  todo: 'todo',
-  snippet: 'snippet',
-};
-
-/** Placeholder header text per card type — shown until the user types a title. */
 const CARD_PLACEHOLDERS: Record<ShelfCardType, string> = {
   comment: '💬 Note',
   todo: '✓ To-Do',
-  snippet: '📄 Snippet',
+  snippet: '📄 Fragment',
 };
 
 const EMPTY_HINTS: Record<ShelfCardType, string> = {
@@ -65,9 +38,9 @@ const EMPTY_HINTS: Record<ShelfCardType, string> = {
   snippet: 'Select text in the Editor and press ⌥⌘X to cut it here, or ⌥⌘C to copy it over.',
 };
 
-/** Build a snippet card from editor text (used by the capture shortcuts). */
+/** Build a fragment card from editor text (used by the capture shortcuts). */
 export function makeSnippetCard(text: string): ShelfCard {
-  return { id: uuid(), type: 'snippet', text, color: SHELF_DEFAULT_COLOR };
+  return { id: uuid(), type: 'snippet', text, color: SHELF_DEFAULT_COLOR, createdAt: new Date().toISOString() };
 }
 
 const cardText = (c: ShelfCard): string => {
@@ -80,82 +53,39 @@ const noteColorHex = (name: NoteColor): string => {
   return c ? c.hex : NOTE_COLORS[0].hex;
 };
 
-interface StickyNotesProps {
-  editor: Editor | null;
-  style?: React.CSSProperties;
+/* ═══════════ Shared card list (per card type) with drag reorder ═══════════ */
+
+function useCardOps() {
+  const { shelfCards, setShelfCards } = useEditorStore();
+  const update = (id: string, patch: Partial<ShelfCard>) =>
+    setShelfCards(shelfCards.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  const remove = (id: string) => setShelfCards(shelfCards.filter((c) => c.id !== id));
+  const add = (type: ShelfCardType) => {
+    const base: ShelfCard = { id: uuid(), type, color: SHELF_DEFAULT_COLOR, createdAt: new Date().toISOString() };
+    if (type === 'comment') base.text = '';
+    if (type === 'todo') base.items = [];
+    setShelfCards([...shelfCards, base]);
+  };
+  return { shelfCards, setShelfCards, update, remove, add };
 }
 
-export default function StickyNotes({ editor, style }: StickyNotesProps) {
-  const {
-    shelfOpen, toggleShelf, shelfCards, setShelfCards,
-    shelfTab: tab, setShelfTab,
-    notesSubTab, setNotesSubTab,
-    notes, noteFilter, setNoteFilter,
-  } = useEditorStore();
-  const cards = shelfCards;
+interface CardListProps {
+  type: ShelfCardType;
+  /** already-filtered cards to show (search); defaults to all of this type */
+  cards?: ShelfCard[];
+}
 
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [query, setQuery] = useState('');
+function CardList({ type, cards }: CardListProps) {
+  const { shelfCards, setShelfCards, update, remove } = useCardOps();
   const [dragId, setDragId] = useState<string | null>(null);
   const [startArmed, setStartArmed] = useState(false);
   const [endArmed, setEndArmed] = useState(false);
 
-  const { shouldRender, animationState } = useDelayedUnmount(shelfOpen, 250);
-  const panelRef = useRef<HTMLDivElement>(null);
-  useSwipeDismiss(panelRef, { direction: 'right', onDismiss: toggleShelf, enabled: shouldRender });
-
-  // When something external (context menu, toolbar, ⌥-click on a highlight)
-  // filters to a script note, land on Notes → Script.
-  useEffect(() => {
-    if (noteFilter.noteId || noteFilter.elementType || noteFilter.contextLabel || noteFilter.color) {
-      setShelfTab('notes');
-      setNotesSubTab('script');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [noteFilter]);
-
-  if (!shouldRender) return null;
-
-  const panelClass = animationState === 'entered'
-    ? 'panel-open' : animationState === 'exiting' ? 'panel-closing' : '';
-
-  const q = query.trim().toLowerCase();
-  const searching = searchOpen && q.length > 0;
-  const cardType = TAB_CARD_TYPE[tab];
-  const showingCards = tab !== 'notes' || notesSubTab === 'general';
-
-  // search spans everything; otherwise the active tab decides what renders
-  const stickyMatches = searching
-    ? cards.filter((c) => cardText(c).toLowerCase().includes(q))
-    : showingCards ? cards.filter((c) => c.type === cardType) : [];
-  const scriptMatches = searching
-    ? notes.filter((n) =>
-        `${n.content}\n${n.anchorText || ''}\n${n.contextLabel || ''}`.toLowerCase().includes(q))
-    : [];
-  const totalMatches = stickyMatches.length + scriptMatches.length;
-
-  const closeSearch = () => { setQuery(''); setSearchOpen(false); };
-
-  const jumpToScript = (noteId: string) => {
-    closeSearch();
-    setNoteFilter({ elementType: null, contextLabel: null, color: null, noteId });
-    setShelfTab('notes');
-    setNotesSubTab('script');
-  };
-
-  const update = (id: string, patch: Partial<ShelfCard>) =>
-    setShelfCards(cards.map((c) => (c.id === id ? { ...c, ...patch } : c)));
-  const remove = (id: string) => setShelfCards(cards.filter((c) => c.id !== id));
-  const add = () => {
-    const base: ShelfCard = { id: uuid(), type: cardType, color: SHELF_DEFAULT_COLOR };
-    if (cardType === 'comment') base.text = '';
-    if (cardType === 'todo') base.items = [];
-    setShelfCards([...cards, base]);
-  };
+  const visible = cards ?? shelfCards.filter((c) => c.type === type);
 
   const dropOn = (targetId: string) => {
     if (!dragId || dragId === targetId) { setDragId(null); return; }
-    const arr = [...cards];
+    const arr = [...shelfCards];
     const from = arr.findIndex((c) => c.id === dragId);
     if (from === -1) { setDragId(null); return; }
     const [moved] = arr.splice(from, 1);
@@ -166,11 +96,11 @@ export default function StickyNotes({ editor, style }: StickyNotesProps) {
   };
   const dropAtStart = () => {
     if (!dragId) return;
-    const arr = [...cards];
+    const arr = [...shelfCards];
     const from = arr.findIndex((c) => c.id === dragId);
     if (from === -1) { setDragId(null); return; }
     const [moved] = arr.splice(from, 1);
-    const firstIdx = arr.findIndex((c) => c.type === cardType);
+    const firstIdx = arr.findIndex((c) => c.type === type);
     arr.splice(firstIdx === -1 ? arr.length : firstIdx, 0, moved);
     setShelfCards(arr);
     setDragId(null);
@@ -178,7 +108,7 @@ export default function StickyNotes({ editor, style }: StickyNotesProps) {
   };
   const dropAtEnd = () => {
     if (!dragId) return;
-    const arr = [...cards];
+    const arr = [...shelfCards];
     const from = arr.findIndex((c) => c.id === dragId);
     if (from === -1) { setDragId(null); return; }
     const [moved] = arr.splice(from, 1);
@@ -188,25 +118,107 @@ export default function StickyNotes({ editor, style }: StickyNotesProps) {
     setEndArmed(false);
   };
 
-  const tabCount = (key: ShelfTopTab): number => {
-    const cardCount = cards.filter((c) => c.type === TAB_CARD_TYPE[key]).length;
-    return key === 'notes' ? cardCount + notes.length : cardCount;
+  return (
+    <div className="swn-scroll">
+      {visible.length === 0 && <div className="swn-hint">{EMPTY_HINTS[type]}</div>}
+      {dragId && visible.length > 0 && (
+        <div
+          className={'swn-drop-zone' + (startArmed ? ' armed' : '')}
+          onDragOver={(e) => { e.preventDefault(); setStartArmed(true); }}
+          onDragLeave={() => setStartArmed(false)}
+          onDrop={dropAtStart}
+        />
+      )}
+      {visible.map((card) => (
+        <StickyCard
+          key={card.id}
+          card={card}
+          dragging={dragId === card.id}
+          onDragStart={() => setDragId(card.id)}
+          onDragEnd={() => { setDragId(null); setStartArmed(false); setEndArmed(false); }}
+          onDropHere={() => dropOn(card.id)}
+          onUpdate={(p) => update(card.id, p)}
+          onRemove={() => remove(card.id)}
+        />
+      ))}
+      {dragId && visible.length > 0 && (
+        <div
+          className={'swn-drop-zone' + (endArmed ? ' armed' : '')}
+          onDragOver={(e) => { e.preventDefault(); setEndArmed(true); }}
+          onDragLeave={() => setEndArmed(false)}
+          onDrop={dropAtEnd}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ═══════════ Tool: Sticky Notes (General / Script sub-tabs) ═══════════ */
+
+interface EditorToolProps {
+  editor: Editor | null;
+}
+
+export function StickyNotesTool({ editor }: EditorToolProps) {
+  const {
+    shelfCards, notesSubTab, setNotesSubTab,
+    notes, noteFilter, setNoteFilter,
+  } = useEditorStore();
+  const { add } = useCardOps();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+
+  // External flows (⌥-click a highlight, context menu, Navigator) target a
+  // script note: land on the Script sub-view. ScriptNotesContent scrolls to it.
+  useEffect(() => {
+    if (noteFilter.noteId || noteFilter.elementType || noteFilter.contextLabel || noteFilter.color) {
+      setNotesSubTab('script');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noteFilter]);
+
+  const q = query.trim().toLowerCase();
+  const searching = searchOpen && q.length > 0;
+
+  const generalMatches = searching
+    ? shelfCards.filter((c) => c.type === 'comment' && cardText(c).toLowerCase().includes(q))
+    : [];
+  const scriptMatches = searching
+    ? notes.filter((n) =>
+        `${n.content}\n${n.anchorText || ''}\n${n.contextLabel || ''}`.toLowerCase().includes(q))
+    : [];
+  const totalMatches = generalMatches.length + scriptMatches.length;
+
+  const jumpToScript = (noteId: string) => {
+    setQuery(''); setSearchOpen(false);
+    setNoteFilter({ elementType: null, contextLabel: null, color: null, noteId });
+    setNotesSubTab('script');
   };
 
-  const showAddRow = !searching && (tab === 'todo' || (tab === 'notes' && notesSubTab === 'general'));
+  const generalCount = shelfCards.filter((c) => c.type === 'comment').length;
 
   return (
-    <div ref={panelRef} className={`script-notes-panel sticky-notes-panel ${panelClass}`} style={style}>
-      <div className="script-notes-header">
-        <span className="script-notes-title">Sticky Notes</span>
+    <div className="fs-sticky-tool">
+      <div className="fs-sticky-toolbar">
+        <div className="swn-subtabs">
+          {(['general', 'script'] as NotesSubTab[]).map((key) => {
+            const count = key === 'general' ? generalCount : notes.length;
+            return (
+              <button
+                key={key}
+                className={'swn-subtab' + (notesSubTab === key ? ' active' : '')}
+                onClick={() => setNotesSubTab(key)}
+              >
+                {key === 'general' ? 'General' : 'Script'}{count > 0 ? ` (${count})` : ''}
+              </button>
+            );
+          })}
+        </div>
         <button
           className="swn-search-btn"
-          title={searchOpen ? 'Close search' : 'Search all sticky notes'}
+          title={searchOpen ? 'Close search' : 'Search notes'}
           onClick={() => { if (searchOpen) setQuery(''); setSearchOpen((o) => !o); }}
         >{searchOpen ? '✕' : '🔍'}</button>
-        <button className="script-notes-close" onClick={toggleShelf} title="Close">
-          &times;
-        </button>
       </div>
 
       {searchOpen && (
@@ -214,65 +226,21 @@ export default function StickyNotes({ editor, style }: StickyNotesProps) {
           <input
             autoFocus
             value={query}
-            placeholder="Search all tabs…"
+            placeholder="Search General + Script notes…"
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
       )}
 
-      {!searching && (
-        <div className="swn-tabs">
-          {TABS.map(([key, label]) => {
-            const count = tabCount(key);
-            return (
-              <button key={key} className={'swn-tab' + (tab === key ? ' active' : '')} onClick={() => setShelfTab(key)}>
-                {label}{count > 0 ? ` (${count})` : ''}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── Notes tab: General / Script sub-switcher ── */}
-      {!searching && tab === 'notes' && (
-        <div className="swn-subtabs">
-          {SUB_TABS.map(([key, label]) => {
-            const count = key === 'general'
-              ? cards.filter((c) => c.type === 'comment').length
-              : notes.length;
-            return (
-              <button
-                key={key}
-                className={'swn-subtab' + (notesSubTab === key ? ' active' : '')}
-                onClick={() => setNotesSubTab(key)}
-              >
-                {label}{count > 0 ? ` (${count})` : ''}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── Search results: everything at once ── */}
-      {searching && (
+      {searching ? (
         <div className="swn-scroll">
           <div className="swn-hint">
             {totalMatches === 0
-              ? 'No sticky notes match.'
-              : `${totalMatches} match${totalMatches === 1 ? '' : 'es'} across all tabs`}
+              ? 'No notes match.'
+              : `${totalMatches} match${totalMatches === 1 ? '' : 'es'}`}
           </div>
-          {stickyMatches.map((card) => (
-            <StickyCard
-              key={card.id}
-              card={card}
-              dragging={false}
-              onDragStart={() => {}}
-              onDragEnd={() => {}}
-              onDropHere={() => {}}
-              onUpdate={(p) => update(card.id, p)}
-              onRemove={() => remove(card.id)}
-            />
-          ))}
+          {generalMatches.length > 0 && <div className="swn-group-label">General</div>}
+          {generalMatches.length > 0 && <CardList type="comment" cards={generalMatches} />}
           {scriptMatches.length > 0 && <div className="swn-group-label">Script Notes</div>}
           {scriptMatches.map((n) => (
             <div
@@ -280,65 +248,52 @@ export default function StickyNotes({ editor, style }: StickyNotesProps) {
               className="swn-note-hit"
               style={{ borderLeftColor: noteColorHex(n.color) }}
               onClick={() => jumpToScript(n.id)}
-              title="Open in Notes → Script"
+              title="Open in Script"
             >
               {n.anchorText && <div className="swn-note-hit-title">&ldquo;{n.anchorText}&rdquo;</div>}
               <div className="swn-note-hit-snippet">{n.content.slice(0, 140) || 'No note text yet'}</div>
             </div>
           ))}
         </div>
-      )}
-
-      {/* ── Card lists (Notes → General, To-Do, Snippets) ── */}
-      {!searching && showingCards && (
-        <div className="swn-scroll">
-          {stickyMatches.length === 0 && (
-            <div className="swn-hint">{EMPTY_HINTS[cardType]}</div>
-          )}
-          {dragId && stickyMatches.length > 0 && (
-            <div
-              className={'swn-drop-zone' + (startArmed ? ' armed' : '')}
-              onDragOver={(e) => { e.preventDefault(); setStartArmed(true); }}
-              onDragLeave={() => setStartArmed(false)}
-              onDrop={dropAtStart}
-            />
-          )}
-          {stickyMatches.map((card) => (
-            <StickyCard
-              key={card.id}
-              card={card}
-              dragging={dragId === card.id}
-              onDragStart={() => setDragId(card.id)}
-              onDragEnd={() => { setDragId(null); setStartArmed(false); setEndArmed(false); }}
-              onDropHere={() => dropOn(card.id)}
-              onUpdate={(p) => update(card.id, p)}
-              onRemove={() => remove(card.id)}
-            />
-          ))}
-          {dragId && stickyMatches.length > 0 && (
-            <div
-              className={'swn-drop-zone' + (endArmed ? ' armed' : '')}
-              onDragOver={(e) => { e.preventDefault(); setEndArmed(true); }}
-              onDragLeave={() => setEndArmed(false)}
-              onDrop={dropAtEnd}
-            />
-          )}
-        </div>
-      )}
-
-      {/* ── Notes → Script: OpenDraft's anchored notes ── */}
-      {!searching && tab === 'notes' && notesSubTab === 'script' && (
+      ) : notesSubTab === 'general' ? (
+        <>
+          <CardList type="comment" />
+          <div className="swn-add-row">
+            <button className="swn-add-btn" onClick={() => add('comment')}>+ Add</button>
+          </div>
+        </>
+      ) : (
         <ScriptNotesContent editor={editor} />
-      )}
-
-      {showAddRow && (
-        <div className="swn-add-row">
-          <button className="swn-add-btn" onClick={add}>+ Add</button>
-        </div>
       )}
     </div>
   );
 }
+
+/* ═══════════ Tool: Fragments (formerly Snippets) ═══════════ */
+
+export function FragmentsTool(_props: EditorToolProps) {
+  return (
+    <div className="fs-sticky-tool">
+      <CardList type="snippet" />
+    </div>
+  );
+}
+
+/* ═══════════ Tool: To-Do ═══════════ */
+
+export function TodoTool(_props: EditorToolProps) {
+  const { add } = useCardOps();
+  return (
+    <div className="fs-sticky-tool">
+      <CardList type="todo" />
+      <div className="swn-add-row">
+        <button className="swn-add-btn" onClick={() => add('todo')}>+ Add</button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════ Card + color picker (unchanged behavior) ═══════════ */
 
 function ColorDots({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: Partial<ShelfCard>) => void }) {
   const [open, setOpen] = useState(false);
@@ -420,6 +375,7 @@ function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere, onUpda
       onDrop={onDropHere}
     >
       {children}
+      {card.createdAt && <div className="swn-card-date">{formatDate(card.createdAt)}</div>}
     </div>
   );
 

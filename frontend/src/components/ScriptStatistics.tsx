@@ -18,6 +18,8 @@ import {
 import '../styles/statistics.css';
 
 interface Props {
+  /** Render without the full-screen header (used inside the Analytics tool window) */
+  embedded?: boolean;
   editor: Editor;
 }
 
@@ -30,7 +32,7 @@ function formatTime(minutes: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-const ScriptStatistics: React.FC<Props> = ({ editor }) => {
+const ScriptStatistics: React.FC<Props> = ({ editor, embedded = false }) => {
   const { characterProfiles, pageCount, setStatisticsOpen, statisticsScrollTo, setStatisticsScrollTo } = useEditorStore();
 
   const doc = useMemo(() => editor.getJSON(), [editor]);
@@ -58,14 +60,16 @@ const ScriptStatistics: React.FC<Props> = ({ editor }) => {
 
   return (
     <div className="stats-panel">
-      <div className="stats-header">
-        <h2 className="stats-title">Script Statistics</h2>
-        <button className="stats-close" onClick={() => setStatisticsOpen(false)} title="Close">&times;</button>
-      </div>
+      {!embedded && (
+        <div className="stats-header">
+          <h2 className="stats-title">Script Statistics</h2>
+          <button className="stats-close" onClick={() => setStatisticsOpen(false)} title="Close">&times;</button>
+        </div>
+      )}
 
       <div className="stats-content">
         {/* A. Overview Cards */}
-        <div className="stats-overview-cards">
+        <div className="stats-overview-cards" data-sec="overview">
           <div className="stats-card">
             <div className="stats-card-value">{overview.totalPages}</div>
             <div className="stats-card-label">Pages</div>
@@ -89,7 +93,7 @@ const ScriptStatistics: React.FC<Props> = ({ editor }) => {
         </div>
 
         {/* B. Dialogue Distribution */}
-        <div className="stats-section">
+        <div className="stats-section" data-sec="dialogue">
           <h3 className="stats-section-title">Dialogue Distribution</h3>
           <div className="stats-dialogue-chart">
             {charDialogue.length > 0 ? (
@@ -148,7 +152,7 @@ const ScriptStatistics: React.FC<Props> = ({ editor }) => {
 
         {/* C. Gender Analysis */}
         {genderStats.length > 0 && (
-          <div className="stats-section">
+          <div className="stats-section" data-sec="gender">
             <h3 className="stats-section-title">Gender Analysis</h3>
             <div className="stats-gender-row">
               <div className="stats-gender-chart">
@@ -200,7 +204,7 @@ const ScriptStatistics: React.FC<Props> = ({ editor }) => {
         )}
 
         {/* D. Scene Breakdown — 2×2 grid */}
-        <div className="stats-section">
+        <div className="stats-section" data-sec="scenes">
           <h3 className="stats-section-title">Scene Breakdown</h3>
           <div className="stats-breakdown-grid">
             {/* INT vs EXT */}
@@ -287,7 +291,7 @@ const ScriptStatistics: React.FC<Props> = ({ editor }) => {
 
         {/* E. Pacing Chart */}
         {pacingData.length > 0 && (
-          <div className="stats-section">
+          <div className="stats-section" data-sec="scenes">
             <h3 className="stats-section-title">Pacing — Dialogue vs Action by Scene</h3>
             <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={pacingData} margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
@@ -312,7 +316,7 @@ const ScriptStatistics: React.FC<Props> = ({ editor }) => {
 
         {/* F. Character Presence Map */}
         {charPresence.length > 0 && (
-          <div className="stats-section">
+          <div className="stats-section" data-sec="characters">
             <h3 className="stats-section-title">Character Presence by Scene</h3>
             <div className="stats-presence-scroll">
               <table className="stats-presence-table">
@@ -350,7 +354,7 @@ const ScriptStatistics: React.FC<Props> = ({ editor }) => {
 
         {/* G. Timing Report */}
         {timingResult.scenes.length > 0 && (
-          <div className="stats-section" id="stats-timing-report">
+          <div className="stats-section" id="stats-timing-report" data-sec="timing">
             <h3 className="stats-section-title">Timing Report — Est. {formatRuntime(timingResult.totalSeconds)}</h3>
             <table className="stats-table">
               <thead>

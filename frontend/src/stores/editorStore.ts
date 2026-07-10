@@ -10,6 +10,13 @@ interface ViewState {
   indexCardsOpen?: boolean;
   beatBoardOpen?: boolean;
   shelfOpen?: boolean;
+  activeTool?: string | null;
+  activeToolRight?: string | null;
+  toolConfig?: Record<string, ToolConfig>;
+  toolbarHiddenItems?: string[];
+  toolbarPinnedTools?: string[];
+  toolSizes?: Record<string, { w: number; h: number }>;
+  writingGoal?: WritingGoal | null;
   shelfTab?: string; // 'notes' | 'todo' | 'snippet' (legacy values migrated on load)
   notesSubTab?: 'general' | 'script';
   characterProfilesOpen?: boolean;
@@ -327,6 +334,38 @@ export type ShelfCardType = 'comment' | 'todo' | 'snippet';
  * Top-level tabs of the unified Sticky Notes pane. The Notes tab houses two
  * sub-views: General (free-form sticky cards) and Script (anchored notes).
  */
+/** Tools available in the tool docks (Photoshop-style panel lists). */
+export type ToolId =
+  | 'navigator' | 'scenes' | 'pages' | 'structure' | 'locations' | 'characters'
+  | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo';
+
+export type ToolSide = 'left' | 'right';
+export interface ToolConfig { side: ToolSide; enabled: boolean; }
+
+/** Default layout: script-structure tools left, everything else right. */
+export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
+  navigator: { side: 'left', enabled: true },
+  scenes: { side: 'left', enabled: true },
+  pages: { side: 'left', enabled: true },
+  locations: { side: 'left', enabled: true },
+  characters: { side: 'left', enabled: true },
+  analytics: { side: 'right', enabled: true },
+  goals: { side: 'right', enabled: true },
+  sticky: { side: 'right', enabled: true },
+  fragments: { side: 'right', enabled: true },
+  todo: { side: 'right', enabled: true },
+};
+
+/** A writing goal: word count, page count, or timed session. */
+export interface WritingGoal {
+  kind: 'words' | 'pages' | 'time';
+  target: number;
+  /** time goals: total seconds + wall-clock end */
+  total?: number;
+  endsAt?: number;
+  done?: boolean;
+}
+
 export type ShelfTopTab = 'notes' | 'todo' | 'snippet';
 export type NotesSubTab = 'general' | 'script';
 /** Accepted by openShelfTab: sub-tab names route into the Notes tab. */
@@ -347,6 +386,8 @@ export interface ShelfCard {
   color: string;
   /** Editable card header; empty shows the type name as placeholder */
   title?: string;
+  /** ISO timestamp; cards created before v0.3 have none and show no date */
+  createdAt?: string;
   /** comment + snippet body */
   text?: string;
   /** todo entries */
@@ -413,11 +454,11 @@ export interface CharacterProfile {
   age: string;
   /** Role in the story: Lead, Supporting, Featured, Background, Day Player */
   role: string;
-  /** Rich text backstory / character history (HTML string; OpenDraft-only, not in FDX) */
+  /** Rich text backstory / character history (HTML string; FreeScript-only, not in FDX) */
   backstory: string;
-  /** Character arc — how the character changes through the story (HTML string; OpenDraft-only) */
+  /** Character arc — how the character changes through the story (HTML string; FreeScript-only) */
   arc: string;
-  /** Dialogue voice profile (OpenDraft-only) */
+  /** Dialogue voice profile (FreeScript-only) */
   speechPattern: string;
   vocabulary: string;
   verbalTics: string;
@@ -507,6 +548,34 @@ interface EditorState {
    * 'general' and 'script' land on the Notes tab with that sub-view active.
    */
   openShelfTab: (tab: ShelfTab) => void;
+  /** Which tool window is open in the left dock (null = none) */
+  activeTool: ToolId | null;
+  setActiveTool: (tool: ToolId | null) => void;
+  /** Per-tool remembered window size; a resize becomes that tool's default */
+  toolSizes: Record<string, { w: number; h: number }>;
+  setToolSize: (tool: ToolId, w: number, h: number) => void;
+  /** Which tool window is open in the RIGHT dock (null = none) */
+  activeToolRight: ToolId | null;
+  setActiveToolRight: (tool: ToolId | null) => void;
+  /** Per-tool placement + visibility (Customize Toolbar & Panels) */
+  toolConfig: Record<string, ToolConfig>;
+  setToolConfig: (cfg: Record<string, ToolConfig>) => void;
+  /** Tool open with no dock home: temporary floating window */
+  tempTool: ToolId | null;
+  setTempTool: (tool: ToolId | null) => void;
+  /**
+   * Open a tool wherever it lives: its dock side if enabled (revealing the
+   * dock if hidden), or a temporary window if it's disabled in both panels.
+   */
+  openTool: (tool: ToolId) => void;
+  /** Toolbar customization: hidden built-in buttons + pinned tool shortcuts */
+  toolbarHiddenItems: string[];
+  setToolbarHiddenItems: (ids: string[]) => void;
+  toolbarPinnedTools: ToolId[];
+  setToolbarPinnedTools: (ids: ToolId[]) => void;
+  /** Active writing goal (words / pages / time), persisted across reloads */
+  goal: WritingGoal | null;
+  setGoal: (g: WritingGoal | null | ((g: WritingGoal | null) => WritingGoal | null)) => void;
   notesVisible: boolean;
   setNotesVisible: (v: boolean) => void;
 
@@ -733,7 +802,7 @@ interface EditorState {
   setPostSaveAction: (action: (() => void) | null) => void;
   /** If the current unsaved document was imported from an external file
    *  (.fdx, .fountain, .docx, etc.), tracks the source filename. Used by
-   *  SaveAsDialog to clarify that saves go to OpenDraft's library rather than
+   *  SaveAsDialog to clarify that saves go to FreeScript's library rather than
    *  writing back to the source file. Cleared on successful save. */
   importedSource: { name: string; format: string } | null;
   setImportedSource: (src: { name: string; format: string } | null) => void;
@@ -801,7 +870,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setStatisticsOpen: (open) => set({ statisticsOpen: open }),
   statisticsScrollTo: null,
   setStatisticsScrollTo: (id) => set({ statisticsScrollTo: id }),
-  shelfOpen: _vs.shelfOpen ?? false,
+  shelfOpen: _vs.shelfOpen ?? true,
   toggleShelf: () => set((s) => {
     const v = !s.shelfOpen;
     saveViewState({ shelfOpen: v });
@@ -820,14 +889,72 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ notesSubTab: sub });
   },
   openShelfTab: (tab) => {
+    // Compatibility router: the old single sticky pane is now three tools.
     if (tab === 'general' || tab === 'script') {
-      saveViewState({ shelfTab: 'notes', notesSubTab: tab, shelfOpen: true });
-      set({ shelfTab: 'notes', notesSubTab: tab, shelfOpen: true });
+      saveViewState({ notesSubTab: tab });
+      set({ notesSubTab: tab });
+      get().openTool('sticky');
+    } else if (tab === 'snippet') {
+      get().openTool('fragments');
     } else {
-      saveViewState({ shelfTab: tab, shelfOpen: true });
-      set({ shelfTab: tab, shelfOpen: true });
+      get().openTool('todo');
     }
   },
+  activeTool: (_vs.activeTool as ToolId | null) ?? null,
+  setActiveTool: (tool) => {
+    saveViewState({ activeTool: tool });
+    set({ activeTool: tool });
+  },
+  toolSizes: _vs.toolSizes ?? {},
+  setToolSize: (tool, w, h) => set((s) => {
+    const toolSizes = { ...s.toolSizes, [tool]: { w, h } };
+    saveViewState({ toolSizes });
+    return { toolSizes };
+  }),
+  activeToolRight: (_vs.activeToolRight as ToolId | null) ?? null,
+  setActiveToolRight: (tool) => {
+    saveViewState({ activeToolRight: tool });
+    set({ activeToolRight: tool });
+  },
+  toolConfig: { ...DEFAULT_TOOL_CONFIG, ...(_vs.toolConfig ?? {}) },
+  setToolConfig: (cfg) => {
+    saveViewState({ toolConfig: cfg });
+    set({ toolConfig: cfg });
+  },
+  tempTool: null,
+  setTempTool: (tool) => set({ tempTool: tool }),
+  openTool: (tool) => set((s) => {
+    const cfg = s.toolConfig[tool] ?? DEFAULT_TOOL_CONFIG[tool];
+    if (cfg && cfg.enabled) {
+      if (cfg.side === 'left') {
+        saveViewState({ activeTool: tool });
+        const patch: Partial<EditorState> = { activeTool: tool, tempTool: null };
+        if (!s.navigatorOpen) { patch.navigatorOpen = true; saveViewState({ navigatorOpen: true }); }
+        return patch;
+      }
+      saveViewState({ activeToolRight: tool });
+      const patch: Partial<EditorState> = { activeToolRight: tool, tempTool: null };
+      if (!s.shelfOpen) { patch.shelfOpen = true; saveViewState({ shelfOpen: true }); }
+      return patch;
+    }
+    return { tempTool: tool };
+  }),
+  toolbarHiddenItems: _vs.toolbarHiddenItems ?? [],
+  setToolbarHiddenItems: (ids) => {
+    saveViewState({ toolbarHiddenItems: ids });
+    set({ toolbarHiddenItems: ids });
+  },
+  toolbarPinnedTools: (_vs.toolbarPinnedTools as ToolId[]) ?? [],
+  setToolbarPinnedTools: (ids) => {
+    saveViewState({ toolbarPinnedTools: ids });
+    set({ toolbarPinnedTools: ids });
+  },
+  goal: _vs.writingGoal ?? null,
+  setGoal: (g) => set((s) => {
+    const goal = typeof g === 'function' ? g(s.goal) : g;
+    saveViewState({ writingGoal: goal });
+    return { goal };
+  }),
   notesVisible: _vs.notesVisible ?? false,
   setNotesVisible: (v) => {
     saveViewState({ notesVisible: v });
@@ -1078,11 +1205,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       characterRelationships: s.characterRelationships.filter((r) => r.id !== id),
     })),
   characterProfilesOpen: _vs.characterProfilesOpen ?? false,
-  toggleCharacterProfiles: () => set((s) => {
-    const v = !s.characterProfilesOpen;
-    saveViewState({ characterProfilesOpen: v });
-    return { characterProfilesOpen: v };
-  }),
+  toggleCharacterProfiles: () => get().openTool('characters'),
   selectedCharacter: null,
   setSelectedCharacter: (name) => set({ selectedCharacter: name }),
 

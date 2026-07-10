@@ -42,7 +42,7 @@ const WEB_ONLY_CLOUD = isWeb();
 
 /** Banner shown when the user is saving a document that came from an external
  *  file (FDX, Fountain, DOCX, etc.). Clarifies that the save goes into
- *  OpenDraft's library — it does *not* write back to the source file. */
+ *  FreeScript's library — it does *not* write back to the source file. */
 const ImportedSourceNotice: React.FC = () => {
   const importedSource = useEditorStore((s) => s.importedSource);
   if (!importedSource) return null;
@@ -60,7 +60,7 @@ const ImportedSourceNotice: React.FC = () => {
       }}
     >
       <strong>Note:</strong> This document was imported from <strong>{importedSource.name}</strong>{' '}
-      ({importedSource.format}). Saving creates a new file inside OpenDraft's library —
+      ({importedSource.format}). Saving creates a new file inside FreeScript's library —
       it does <strong>not</strong> overwrite the original source file. To write back to
       the original format, use <em>File → Export</em> after saving.
     </div>
@@ -312,12 +312,12 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
                   className={`open-file-source-tab ${destination === 'cloud' ? 'active' : ''}`}
                   onClick={() => setDestination('cloud')}
                 >
-                  <FaCloud /> OpenDraft Cloud
+                  <FaCloud /> FreeScript Cloud
                 </button>
               </div>
               {destination === 'cloud' && !signedIn && (
                 <div style={{ fontSize: 12, color: '#ff9966', marginTop: 6 }}>
-                  Sign in to save to OpenDraft Cloud — pressing Save will open the login dialog.
+                  Sign in to save to FreeScript Cloud — pressing Save will open the login dialog.
                 </div>
               )}
             </div>

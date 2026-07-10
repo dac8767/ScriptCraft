@@ -30,7 +30,7 @@ const SettingsPage: React.FC = () => {
   const [urlInput, setUrlInput] = useState(collabServerUrl);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
 
-  // OpenDraft Cloud (HTTP backend) URL — distinct from the collab WebSocket
+  // FreeScript Cloud (HTTP backend) URL — distinct from the collab WebSocket
   // server. On Tauri custom schemes the same-origin default doesn't work, so
   // the user must point at a real backend (e.g. https://opendraft.duckdns.org/api).
   const CLOUD_API_KEY = 'opendraft:cloudApiUrl';
@@ -134,7 +134,7 @@ const SettingsPage: React.FC = () => {
     try {
       if (trimmed) localStorage.setItem(CLOUD_API_KEY, trimmed);
       else localStorage.removeItem(CLOUD_API_KEY);
-      showToast('OpenDraft Cloud URL saved', 'success');
+      showToast('FreeScript Cloud URL saved', 'success');
     } catch {
       showToast('Could not save URL', 'error');
     }
@@ -561,9 +561,9 @@ const SettingsPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ── OpenDraft Cloud API URL ── */}
+        {/* ── FreeScript Cloud API URL ── */}
         <section className="settings-section">
-          <h2 className="settings-section-title">OpenDraft Cloud Server</h2>
+          <h2 className="settings-section-title">FreeScript Cloud Server</h2>
           <p className="settings-section-desc">
             HTTP backend used for sign-in, projects, and cloud saves. Leave blank
             in the browser to use this site's <code>/api</code>. Required on the
@@ -1026,7 +1026,7 @@ const SettingsPage: React.FC = () => {
                       <div className="settings-delete-warning">
                         <strong>Before you continue:</strong>{' '}
                         {inventoryLoading ? (
-                          <>checking your OpenDraft Cloud account for screenplays…</>
+                          <>checking your FreeScript Cloud account for screenplays…</>
                         ) : cloudInventory && (cloudInventory.projects > 0 || cloudInventory.scripts > 0) ? (
                           <>
                             you have <strong>{cloudInventory.projects}</strong>{' '}
@@ -1037,14 +1037,14 @@ const SettingsPage: React.FC = () => {
                                 screenplay{cloudInventory.scripts === 1 ? '' : 's'}
                               </>
                             )}{' '}
-                            stored in OpenDraft Cloud. They will be permanently deleted along
+                            stored in FreeScript Cloud. They will be permanently deleted along
                             with this account and cannot be recovered. Please open each one in
-                            OpenDraft and use <em>File → Save As / Export</em> to download a
+                            FreeScript and use <em>File → Save As / Export</em> to download a
                             local copy before continuing.
                           </>
                         ) : (
                           <>
-                            any screenplays stored in OpenDraft Cloud under this account will be
+                            any screenplays stored in FreeScript Cloud under this account will be
                             deleted along with the account and cannot be recovered. Please make
                             sure you have downloaded them first.
                           </>

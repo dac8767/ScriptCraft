@@ -68,6 +68,6 @@ init().catch((err) => {
   console.error('Fatal init error:', err);
   const d = document.createElement('div');
   d.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;background:#1a1a2e;color:#ff6b6b;font:14px/1.6 monospace;padding:40px;white-space:pre-wrap;';
-  d.textContent = 'OpenDraft failed to start:\n\n' + (err?.stack || err?.message || String(err));
+  d.textContent = 'FreeScript failed to start:\n\n' + (err?.stack || err?.message || String(err));
   document.body.appendChild(d);
 });

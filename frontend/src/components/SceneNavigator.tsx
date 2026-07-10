@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
-import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 import { useEditorStore } from '../stores/editorStore';
 import { computeSceneLengths, computePageBlocks, type PageContentInfo } from '../editor/pagination';
 import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../utils/scriptTiming';
@@ -11,10 +10,11 @@ import SynopsisModal from './SynopsisModal';
 interface SceneNavigatorProps {
   editor: Editor | null;
   scrollContainer?: HTMLDivElement | null;
-  style?: React.CSSProperties;
+  /** Which view to render — each view is now its own tool in the left dock. */
+  view: NavTab;
 }
 
-type NavTab = 'scenes' | 'pages' | 'locations' | 'structure';
+export type NavTab = 'scenes' | 'pages' | 'locations' | 'structure';
 
 // ── Scene heading parser ────────────────────────────────────────────────
 
@@ -190,12 +190,12 @@ const LINE_HEIGHT_PX = 12 * (96 / 72); // 16px — matches pagination LINE_HEIGH
 
 // ── Main component ──────────────────────────────────────────────────────
 
-const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer, style }) => {
-  const { scenes, navigatorOpen, toggleNavigator, updateSceneSynopsis, updateSceneColor } = useEditorStore();
+const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer, view }) => {
+  const { scenes, updateSceneSynopsis, updateSceneColor } = useEditorStore();
   const pageLayout = useEditorStore((s) => s.pageLayout);
   const fontFamily = useEditorStore((s) => s.fontFamily);
   const fontSize = useEditorStore((s) => s.fontSize);
-  const [activeTab, setActiveTab] = useState<NavTab>('scenes');
+  const activeTab = view;
   const [expandedLocation, setExpandedLocation] = useState<string | null>(null);
   const [renamingLocation, setRenamingLocation] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -627,28 +627,9 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     setExpandedLocation(newName.toUpperCase());
   }, [editor, renamingLocation, renameValue]);
 
-  const { shouldRender, animationState } = useDelayedUnmount(navigatorOpen, 250);
-  const navPanelRef = useRef<HTMLDivElement>(null);
-  useSwipeDismiss(navPanelRef, { direction: 'left', onDismiss: toggleNavigator, enabled: shouldRender });
-
-  if (!shouldRender) return null;
-
-  const panelClass = animationState === 'entered'
-    ? 'panel-open' : animationState === 'exiting' ? 'panel-closing' : '';
-
   return (
     <>
-    <div ref={navPanelRef} className={`scene-navigator ${panelClass}`} style={style}>
-      {/* Tab bar — horizontally scrollable tab strip + pinned close button */}
-      <div className="navigator-tabs">
-        <div className="navigator-tabs-scroll">
-          <button className={`navigator-tab${activeTab === 'scenes' ? ' active' : ''}`} onClick={() => setActiveTab('scenes')}>Scenes</button>
-          <button className={`navigator-tab${activeTab === 'pages' ? ' active' : ''}`} onClick={() => setActiveTab('pages')}>Pages</button>
-          <button className={`navigator-tab${activeTab === 'locations' ? ' active' : ''}`} onClick={() => setActiveTab('locations')}>Locations</button>
-          <button className={`navigator-tab${activeTab === 'structure' ? ' active' : ''}`} onClick={() => setActiveTab('structure')}>Structure</button>
-        </div>
-        <button className="navigator-close" onClick={toggleNavigator} title="Close Navigator">×</button>
-      </div>
+    <div className="scene-navigator scene-navigator-embed">
 
       {/* ── Scenes tab ───────────────────────────────────────────────── */}
       {activeTab === 'scenes' && (

@@ -16,6 +16,7 @@ const SYNC_KEYS = [
   'characterRelationships',
   'notes',
   'generalNotes',
+  'shelfCards',
   'tags',
   'tagCategories',
   'beats',
@@ -49,6 +50,7 @@ export function startCollabSync(ydoc: Y.Doc, isHost: boolean): void {
       metaMap!.set('characterRelationships', JSON.stringify(store.characterRelationships));
       metaMap!.set('notes', JSON.stringify(store.notes));
       metaMap!.set('generalNotes', JSON.stringify(store.generalNotes));
+      metaMap!.set('shelfCards', JSON.stringify(store.shelfCards));
       metaMap!.set('tags', JSON.stringify(store.tags));
       metaMap!.set('tagCategories', JSON.stringify(store.tagCategories));
       metaMap!.set('beats', JSON.stringify(store.beats));
@@ -107,6 +109,7 @@ function takeSnapshot(): Record<SyncKey, string> {
     characterRelationships: JSON.stringify(s.characterRelationships),
     notes: JSON.stringify(s.notes),
     generalNotes: JSON.stringify(s.generalNotes),
+    shelfCards: JSON.stringify(s.shelfCards),
     tags: JSON.stringify(s.tags),
     tagCategories: JSON.stringify(s.tagCategories),
     beats: JSON.stringify(s.beats),
@@ -143,6 +146,11 @@ function applyYjsToStore() {
     const gn = metaMap.get('generalNotes');
     if (gn) {
       try { store.setGeneralNotes(JSON.parse(gn)); } catch { /* ignore */ }
+    }
+
+    const sh = metaMap.get('shelfCards');
+    if (sh) {
+      try { store.setShelfCards(JSON.parse(sh)); } catch { /* ignore */ }
     }
 
     const t = metaMap.get('tags');

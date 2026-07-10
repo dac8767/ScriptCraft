@@ -4,6 +4,9 @@ export interface TitlePageAttrs {
   field: string;
   // Structured title page metadata
   tpTitle: string;
+  /** Optional second title line, sized independently. */
+  tpTitle2: string;
+  tpTitle2FontSize: number;
   tpWrittenBy: string;
   tpBasedOn: string;
   tpDraft: string;
@@ -27,6 +30,8 @@ export const TitlePage = Node.create({
       field: { default: 'title' },
       // Structured fields (stored on the title node with field='title')
       tpTitle: { default: '' },
+      tpTitle2: { default: '' },
+      tpTitle2FontSize: { default: 12 },
       tpWrittenBy: { default: '' },
       tpBasedOn: { default: '' },
       tpDraft: { default: '' },
@@ -52,7 +57,8 @@ export const TitlePage = Node.create({
       'data-field': field,
     };
     // Apply a custom title font size (default 12pt is left to CSS).
-    if (field === 'title' && size !== 12) attrs.style = `font-size: ${size}pt`;
+    // The title2 block carries its size in its own tpTitleFontSize attr.
+    if ((field === 'title' || field === 'title2') && size !== 12) attrs.style = `font-size: ${size}pt`;
     return ['div', mergeAttributes(HTMLAttributes, attrs), 0];
   },
 });

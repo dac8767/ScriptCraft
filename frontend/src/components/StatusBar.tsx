@@ -3,6 +3,8 @@ import { useEditorStore, ELEMENT_LABELS, type BuiltInElementType } from '../stor
 import { useProjectStore } from '../stores/projectStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { computeSceneTiming, formatRuntime } from '../utils/scriptTiming';
+import { computeOverviewStats } from '../utils/scriptStatistics';
+import { useGoalProgress } from './GoalsTool';
 import { computeScriptStructure } from '../utils/scriptStructure';
 
 const SAVE_STATUS_DISPLAY: Record<string, { label: string; className: string }> = {
@@ -26,6 +28,8 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
     revisionColor,
     documentTitle,
     saveStatus,
+    goal,
+    setActiveTool,
   } = useEditorStore();
 
   const { currentProject } = useProjectStore();
@@ -53,6 +57,14 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
       return '';
     }
   }, [editorDoc]);
+
+  // Word count for the active writing goal (words-kind goals only)
+  const goalWords = useMemo(() => {
+    if (!editorDoc || !goal || goal.kind !== 'words') return 0;
+    try { return computeOverviewStats(editorDoc as any, pageCount).totalWords; }
+    catch { return 0; }
+  }, [editorDoc, goal, pageCount]);
+  const goalProgress = useGoalProgress(goalWords, pageCount);
 
   const currentAct = useMemo(() => {
     if (!editorDoc) return '';
@@ -87,6 +99,16 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
         </span>
       </div>
       <div className="status-right">
+        {goal && goalProgress && (
+          <button
+            className={`status-item status-goal${goalProgress.done ? ' done' : ''}`}
+            title="Writing goal — click to open Goals"
+            onClick={() => setActiveTool('goals')}
+          >
+            <span className="status-goal-track"><span style={{ width: `${goalProgress.pct}%` }} /></span>
+            {goalProgress.label}
+          </button>
+        )}
         {currentAct && (
           <span className="status-item status-acts" title="Act structure">
             {currentAct}

@@ -114,7 +114,7 @@ export interface CharacterPresenceEntry {
 /**
  * Walk the document and extract per-scene data in one pass.
  */
-interface SceneData {
+export interface SceneData {
   heading: string;
   prefix: string;
   location: string;
@@ -124,7 +124,7 @@ interface SceneData {
   totalWords: number;
 }
 
-function extractSceneData(doc: JSONContent): SceneData[] {
+export function extractSceneData(doc: JSONContent): SceneData[] {
   const scenes: SceneData[] = [];
   let current: SceneData | null = null;
   let lastCharacter = '';

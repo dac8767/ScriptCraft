@@ -1,11 +1,11 @@
 /**
- * ScriptNotes — ScriptNotesContent: OpenDraft's notes anchored to script text
+ * ScriptNotes — ScriptNotesContent: FreeScript's notes anchored to script text
  * (filters, click-to-navigate, color sync), rendered as the Notes → Script
  * sub-view of the unified Sticky Notes pane (StickyNotes.tsx).
  * The standalone Notes panel this file used to render was merged into the
  * Sticky Notes pane; there is no default export anymore.
  */
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
 import {
   useEditorStore,
@@ -13,7 +13,6 @@ import {
   NOTE_COLORS,
   type NoteColor,
   type ElementType,
-  type NoteFilter,
 } from '../stores/editorStore';
 import { useAssetStore, type Asset } from '../stores/assetStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -35,8 +34,8 @@ interface ScriptNotesContentProps {
   editor: Editor | null;
 }
 
-/** Shared date formatter for note headers. */
-const formatDate = (iso: string) => {
+/** Shared date formatter for card/note headers (also used by StickyNotes). */
+export const formatDate = (iso: string) => {
   const d = new Date(iso);
   return d.toLocaleDateString(undefined, {
     month: 'short',
@@ -50,6 +49,12 @@ const formatDate = (iso: string) => {
 const getNoteColorHex = (colorName: NoteColor): string => {
   const c = NOTE_COLORS.find((nc) => nc.name === colorName);
   return c ? c.hex : NOTE_COLORS[0].hex;
+};
+
+/** Sticky-card pastel backgrounds per note color (matches SHELF_COLORS). */
+export const NOTE_STICKY_BG: Record<NoteColor, string> = {
+  Yellow: '#fff9c4', Red: '#ffd9e7', Blue: '#d6ecff',
+  Green: '#dcf5dc', Orange: '#ffe4c4', Purple: '#e9defa',
 };
 
 /** Check if a string looks like an image URL */
@@ -237,38 +242,27 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
   const [assetSugIdx, setAssetSugIdx] = useState(0);
   const textareaRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
 
-  // Sync external filter changes (from context menu) to panel
-  const [localFilter, setLocalFilter] = useState<NoteFilter>(noteFilter);
+  // When an external flow (⌥-click on a highlight, toolbar, context menu,
+  // Navigator) targets a note, scroll its card into view and flash it —
+  // the old filter bar that hid every other note is gone.
+  const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [flashNoteId, setFlashNoteId] = useState<string | null>(null);
   useEffect(() => {
-    setLocalFilter(noteFilter);
-  }, [noteFilter]);
-
-  // Unique context labels and element types from notes for filter chips
-  const filterOptions = useMemo(() => {
-    const types = new Set<string>();
-    const contexts = new Set<string>();
-    for (const n of notes) {
-      types.add(n.elementType);
-      if (n.contextLabel) contexts.add(n.contextLabel);
-    }
-    return {
-      types: Array.from(types).sort(),
-      contexts: Array.from(contexts).sort(),
-    };
-  }, [notes]);
-
-  const filteredNotes = useMemo(() => {
-    return notes.filter((n) => {
-      // If filtering to a specific note by ID, only show that one
-      if (localFilter.noteId) return n.id === localFilter.noteId;
-      if (localFilter.elementType && n.elementType !== localFilter.elementType) return false;
-      if (localFilter.contextLabel && n.contextLabel !== localFilter.contextLabel) return false;
-      if (localFilter.color && n.color !== localFilter.color) return false;
-      return true;
+    if (!noteFilter.noteId) return;
+    const id = noteFilter.noteId;
+    // Wait a frame so the pane/tab is mounted before scrolling
+    requestAnimationFrame(() => {
+      const el = cardRefs.current.get(id);
+      if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      setFlashNoteId(id);
+      setTimeout(() => setFlashNoteId((cur) => (cur === id ? null : cur)), 1600);
     });
-  }, [notes, localFilter]);
+    // consume the focus request so it can re-fire for the same note later
+    setNoteFilter({ elementType: null, contextLabel: null, color: null, noteId: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noteFilter.noteId]);
 
-  const isFiltered = localFilter.elementType || localFilter.contextLabel || localFilter.color || localFilter.noteId;
+  const filteredNotes = notes;
 
   const getSceneName = useCallback(
     (sceneId: string | null) => {
@@ -277,48 +271,6 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
       return scene ? scene.heading : null;
     },
     [scenes],
-  );
-
-  const handleClearFilter = useCallback(() => {
-    const cleared: NoteFilter = { elementType: null, contextLabel: null, color: null, noteId: null };
-    setLocalFilter(cleared);
-    setNoteFilter(cleared);
-  }, [setNoteFilter]);
-
-  const toggleTypeFilter = useCallback(
-    (type: string) => {
-      const next: NoteFilter = {
-        ...localFilter,
-        elementType: localFilter.elementType === type ? null : type,
-      };
-      setLocalFilter(next);
-      setNoteFilter(next);
-    },
-    [localFilter, setNoteFilter],
-  );
-
-  const toggleContextFilter = useCallback(
-    (ctx: string) => {
-      const next: NoteFilter = {
-        ...localFilter,
-        contextLabel: localFilter.contextLabel === ctx ? null : ctx,
-      };
-      setLocalFilter(next);
-      setNoteFilter(next);
-    },
-    [localFilter, setNoteFilter],
-  );
-
-  const toggleColorFilter = useCallback(
-    (color: NoteColor) => {
-      const next: NoteFilter = {
-        ...localFilter,
-        color: localFilter.color === color ? null : color,
-      };
-      setLocalFilter(next);
-      setNoteFilter(next);
-    },
-    [localFilter, setNoteFilter],
   );
 
   const [pendingDeleteNoteId, setPendingDeleteNoteId] = useState<string | null>(null);
@@ -496,114 +448,11 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
 
   return (
     <>
-      {/* ── Multi-dimensional filter bar ── */}
-      <div className="script-notes-filters">
-        {/* Active filter summary + clear */}
-        {isFiltered && (
-          <div className="sn-filter-active">
-            {localFilter.noteId && (
-              <span className="sn-filter-chip" onClick={handleClearFilter}>
-                Selected note
-                <span className="sn-chip-x">&times;</span>
-              </span>
-            )}
-            {localFilter.elementType && (
-              <span
-                className="sn-filter-chip"
-                onClick={() => toggleTypeFilter(localFilter.elementType!)}
-              >
-                {ELEMENT_LABELS[localFilter.elementType as ElementType] || localFilter.elementType}
-                <span className="sn-chip-x">&times;</span>
-              </span>
-            )}
-            {localFilter.contextLabel && (
-              <span
-                className="sn-filter-chip sn-chip-context"
-                onClick={() => toggleContextFilter(localFilter.contextLabel!)}
-              >
-                {localFilter.contextLabel}
-                <span className="sn-chip-x">&times;</span>
-              </span>
-            )}
-            {localFilter.color && (
-              <span
-                className="sn-filter-chip"
-                onClick={() => toggleColorFilter(localFilter.color!)}
-                style={{ borderColor: getNoteColorHex(localFilter.color) }}
-              >
-                {localFilter.color}
-                <span className="sn-chip-x">&times;</span>
-              </span>
-            )}
-            <button className="sn-filter-clear" onClick={handleClearFilter}>
-              Show All
-            </button>
-          </div>
-        )}
-
-        {/* Type filter row */}
-        {filterOptions.types.length > 1 && (
-          <div className="sn-filter-row">
-            <span className="sn-filter-label">Type</span>
-            <div className="sn-filter-chips">
-              {filterOptions.types.map((t) => (
-                <button
-                  key={t}
-                  className={`sn-chip${localFilter.elementType === t ? ' active' : ''}`}
-                  onClick={() => toggleTypeFilter(t)}
-                >
-                  {ELEMENT_LABELS[t as ElementType] || t}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Context filter row */}
-        {filterOptions.contexts.length > 0 && (
-          <div className="sn-filter-row">
-            <span className="sn-filter-label">Context</span>
-            <div className="sn-filter-chips">
-              {filterOptions.contexts.map((c) => (
-                <button
-                  key={c}
-                  className={`sn-chip sn-chip-ctx${localFilter.contextLabel === c ? ' active' : ''}`}
-                  onClick={() => toggleContextFilter(c)}
-                >
-                  {c.length > 25 ? c.slice(0, 25) + '...' : c}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Color filter */}
-        <div className="sn-filter-row sn-filter-colors">
-          {NOTE_COLORS.map((c) => {
-            const count = notes.filter((n) => n.color === c.name).length;
-            if (count === 0) return null;
-            return (
-              <button
-                key={c.name}
-                className={`sn-color-btn${localFilter.color === c.name ? ' active' : ''}`}
-                onClick={() => toggleColorFilter(c.name)}
-                title={`${c.name} (${count})`}
-                style={{ '--swatch-color': c.hex } as React.CSSProperties}
-              >
-                <span className="swatch" />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* ── Notes list ── */}
       <div className="script-notes-list">
         {filteredNotes.length === 0 ? (
           <div className="script-notes-empty">
-            {notes.length === 0
-              ? 'No notes yet. Select text in the editor, right-click, and choose "Add Script Note".'
-              : 'No notes match this filter.'}
+            No notes yet. Select text in the editor, right-click, and choose "Add Script Note".
           </div>
         ) : (
           filteredNotes.map((note) => {
@@ -615,20 +464,15 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
             return (
               <div
                 key={note.id}
-                className="note-item"
-                style={{ borderLeftColor: hex }}
+                ref={(el) => { if (el) cardRefs.current.set(note.id, el); else cardRefs.current.delete(note.id); }}
+                className={`note-item${flashNoteId === note.id ? ' note-item-flash' : ''}`}
+                style={{ background: NOTE_STICKY_BG[note.color] || NOTE_STICKY_BG.Yellow, borderTopColor: hex }}
               >
                 <div className="note-item-header">
                   <div className="note-item-context">
                     <span className="note-item-element">{elemLabel}</span>
                     {note.contextLabel && (
-                      <span
-                        className="note-item-ctx-label"
-                        onClick={() => toggleContextFilter(note.contextLabel)}
-                        title={`Filter by "${note.contextLabel}"`}
-                      >
-                        {note.contextLabel}
-                      </span>
+                      <span className="note-item-ctx-label">{note.contextLabel}</span>
                     )}
                     {sceneName && (
                       <span className="note-item-scene">{sceneName}</span>

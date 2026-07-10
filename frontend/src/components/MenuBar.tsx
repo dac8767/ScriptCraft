@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import CustomizePanelsDialog from './CustomizePanelsDialog';
+import { ALL_TOOLS } from './ToolDock';
 import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import { useEditorStore, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_CATEGORIES } from '../stores/editorStore';
@@ -339,6 +341,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
   // ── Page Setup ──
   const [pageSetupOpen, setPageSetupOpen] = useState(false);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
   const [templateSelectOpen, setTemplateSelectOpen] = useState(false);
 
   // ── Script-format preferences (multi-select) and per-script picker ──
@@ -630,10 +633,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       setCurrentScriptId(null);
       setScripts([]);
       // Track that this is an imported document so Save As can warn the user
-      // that the save goes to OpenDraft's library, not back to the source file.
+      // that the save goes to FreeScript's library, not back to the source file.
       const fmtLabel = ext === 'fdx' ? 'Final Draft (.fdx)'
         : ext === 'fountain' ? 'Fountain (.fountain)'
-        : ext === 'odraft' ? 'OpenDraft (.odraft)'
+        : ext === 'odraft' ? 'FreeScript (.odraft)'
         : ext ? `.${ext}` : 'imported file';
       store.setImportedSource({ name, format: fmtLabel });
     } catch (err) {
@@ -894,7 +897,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       };
       await downloadOdraft(meta, editor.getJSON());
     } catch (err) {
-      console.error('OpenDraft export failed:', err);
+      console.error('FreeScript export failed:', err);
       showToast(`Export failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
     }
   }, [editor, documentTitle]);
@@ -917,6 +920,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const handleSubmenuPointerEnter = (label: string, e: React.PointerEvent) => {
     if (e.pointerType === 'mouse') setOpenSubmenu(label);
   };
+  /** Submenu keys are scoped to their parent menu so a stale open submenu can
+   *  never render under a different top-level menu (the "Analytics in the
+   *  File menu" glitch). */
+  const submenuKey = (menuLabel: string, itemLabel: string) => `${menuLabel}:${itemLabel}`;
   const handleItemPointerEnter = (e: React.PointerEvent) => {
     if (e.pointerType === 'mouse') setOpenSubmenu(null);
   };
@@ -954,7 +961,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {
           icon: <FaFileImport />, label: 'Import',
           children: [
-            { icon: <FaFileCode />, label: 'Final Draft / Fountain / OpenDraft...', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
+            { icon: <FaFileCode />, label: 'Final Draft / Fountain / FreeScript...', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
             { icon: <FaFileWord />, label: 'Microsoft Word (.docx)...', action: handleImportDocx, disabled: isCollabGuest },
           ],
         },
@@ -969,7 +976,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaFileAlt />, label: 'Fountain (.fountain)', action: handleExportFountain, disabled: isCollabGuest },
             { icon: <FaFilePdf />, label: 'PDF', action: handleExportPDF },
             { icon: <FaFileWord />, label: 'Microsoft Word (.docx)', action: handleExportDocx },
-            { icon: <FaFile />, label: 'OpenDraft (.odraft)', action: handleExportOdraft, disabled: isCollabGuest },
+            { icon: <FaFile />, label: 'FreeScript (.odraft)', action: handleExportOdraft, disabled: isCollabGuest },
           ],
         },
         { separator: true, label: '' },
@@ -1075,15 +1082,17 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {
           icon: <FaColumns />, label: 'Panels',
           children: [
-            { icon: <FaCompass />, label: navigatorOpen ? '\u2713 Navigator' : 'Navigator', action: toggleNavigator },
+            { icon: <FaCompass />, label: navigatorOpen ? '\u2713 Tools (Left Pane)' : 'Tools (Left Pane)', action: toggleNavigator },
+            { icon: <FaCompass />, label: shelfOpen ? '\u2713 Tools (Right Pane)' : 'Tools (Right Pane)', action: toggleShelf },
             { icon: <FaTh />, label: indexCardsOpen ? '\u2713 Index Cards' : 'Index Cards', action: toggleIndexCards },
             { icon: <FaStream />, label: beatBoardOpen ? '\u2713 Beat Board' : 'Beat Board', action: toggleBeatBoard },
-            { icon: <FaStickyNote />, label: shelfOpen ? '\u2713 Sticky Notes' : 'Sticky Notes', action: toggleShelf },
+            { icon: <FaStickyNote />, label: 'Sticky Notes', action: () => useEditorStore.getState().openTool('sticky') },
             { icon: <FaUsers />, label: characterProfilesOpen ? '\u2713 Characters' : 'Characters', action: toggleCharacterProfiles },
             { icon: <FaTags />, label: tagsPanelOpen ? '\u2713 Tags' : 'Tags', action: toggleTagsPanel },
             { icon: <FaCompass />, label: locationDatabaseOpen ? '\u2713 Locations' : 'Locations', action: toggleLocationDatabase },
           ],
         },
+        { icon: <FaColumns />, label: 'Customize Toolbar & Panels…', action: () => setCustomizeOpen(true) },
         {
           icon: <FaHighlighter />, label: 'Highlights',
           children: [
@@ -1131,6 +1140,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {
       label: 'Tools',
       items: [
+        ...ALL_TOOLS.map((t) => ({
+          icon: t.icon,
+          label: t.label,
+          action: () => useEditorStore.getState().openTool(t.id),
+        })),
+        { separator: true, label: '' },
         {
           icon: <FaUserFriends />, label: 'Collaboration',
           children: [
@@ -1190,7 +1205,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     items: [
       {
         icon: <FaInfoCircle />,
-        label: 'About Open Draft',
+        label: 'About FreeScript',
         action: () => setAboutOpen(true),
       },
       {
@@ -1463,7 +1478,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           className={`menu-item ${activeMenu === menu.label ? 'active' : ''}`}
           onClick={() => handleMenuClick(menu.label)}
           onMouseEnter={() => {
-            if (activeMenu) setActiveMenu(menu.label);
+            if (activeMenu && activeMenu !== menu.label) { setActiveMenu(menu.label); setOpenSubmenu(null); }
           }}
         >
           {menuIcons[menu.label] && <span className="menu-icon">{menuIcons[menu.label]}</span>}
@@ -1543,18 +1558,18 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           ) : item.children ? (
             <div
               key={item.label}
-              className={`menu-dropdown-item has-children ${openSubmenu === item.label ? 'submenu-open' : ''}`}
-              onPointerEnter={(e) => handleSubmenuPointerEnter(item.label!, e)}
-              onTouchEnd={(e) => handleSubmenuTouchEnd(item.label!, e)}
-              onClick={(e) => { e.stopPropagation(); setOpenSubmenu((prev) => (prev === item.label ? null : item.label!)); }}
+              className={`menu-dropdown-item has-children ${openSubmenu === submenuKey(activeMenuData.label, item.label!) ? 'submenu-open' : ''}`}
+              onPointerEnter={(e) => handleSubmenuPointerEnter(submenuKey(activeMenuData.label, item.label!), e)}
+              onTouchEnd={(e) => handleSubmenuTouchEnd(submenuKey(activeMenuData.label, item.label!), e)}
+              onClick={(e) => { e.stopPropagation(); setOpenSubmenu(submenuKey(activeMenuData.label, item.label!)); }}
             >
               {item.icon && <span className="menu-dropdown-icon">{item.icon}</span>}
               <span>{item.label}</span>
-              <span className="menu-submenu-arrow">{openSubmenu === item.label ? '\u25BE' : '\u25B8'}</span>
+              <span className="menu-submenu-arrow">{openSubmenu === submenuKey(activeMenuData.label, item.label!) ? '\u25BE' : '\u25B8'}</span>
               <div
-                className={`menu-submenu ${openSubmenu === item.label ? 'submenu-visible' : ''}`}
+                className={`menu-submenu ${openSubmenu === submenuKey(activeMenuData.label, item.label!) ? 'submenu-visible' : ''}`}
                 ref={(el) => {
-                  if (el && openSubmenu === item.label) {
+                  if (el && openSubmenu === submenuKey(activeMenuData.label, item.label!)) {
                     const rect = el.getBoundingClientRect();
                     if (rect.right > window.innerWidth) {
                       el.classList.add('submenu-flip');
@@ -1671,6 +1686,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         </div>
       </div>
     )}
+    <CustomizePanelsDialog open={customizeOpen} onClose={() => setCustomizeOpen(false)} />
     {pageSetupOpen && (
       <PageSetupDialog onClose={() => setPageSetupOpen(false)} />
     )}
@@ -1707,9 +1723,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {aboutOpen && (
       <div className="dialog-overlay" onClick={() => setAboutOpen(false)}>
         <div className="dialog-box about-dialog" onClick={(e) => e.stopPropagation()}>
-          <div className="dialog-header">About Open Draft</div>
+          <div className="dialog-header">About FreeScript</div>
           <div className="dialog-body about-body">
-            <div className="about-title">Open Draft</div>
+            <div className="about-title">FreeScript</div>
             <div className="about-version">Version 0.19.0</div>
             <div className="about-tagline">Free, open-source screenwriting software</div>
 
@@ -1765,7 +1781,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               <div className="about-subsection-title">v0.17.2</div>
               <ul className="about-list">
                 <li><strong>Save Reliability on Windows</strong> — Switched the local SQLite database to WAL journal mode and added a post-write byte-count verification step. Fixes silent save failures on large files (issue #39). Any remaining write corruption now produces a visible error instead of failing silently.</li>
-                <li><strong>OneDrive Detection</strong> — Warns you at startup if OpenDraft's data folder is inside a OneDrive-synced location (a known cause of silent SQLite corruption on Windows) and shows how to fix it.</li>
+                <li><strong>OneDrive Detection</strong> — Warns you at startup if FreeScript's data folder is inside a OneDrive-synced location (a known cause of silent SQLite corruption on Windows) and shows how to fix it.</li>
                 <li><strong>Diagnostics Dialog</strong> — New <em>Help → Diagnostics</em> with a Copy Report button. Captures storage backend, DB path, OS, and last storage error so it can be pasted into bug reports.</li>
               </ul>
 
@@ -1884,7 +1900,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                     data folder appears to be inside a OneDrive-synced
                     location. OneDrive can corrupt SQLite WAL files mid-write,
                     causing silent save failures. To fix this, exclude
-                    OpenDraft's data folder from OneDrive backup, or move your
+                    FreeScript's data folder from OneDrive backup, or move your
                     Windows AppData folder out of OneDrive sync.
                   </div>
                 )}
@@ -1945,7 +1961,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           <div className="dialog-header">Import from Word — Best-Effort Formatting</div>
           <div className="dialog-body">
             <p style={{ margin: '0 0 8px 0', fontSize: 14, color: 'var(--fd-text)' }}>
-              OpenDraft will detect screenplay element types (scene heading, action,
+              FreeScript will detect screenplay element types (scene heading, action,
               character, dialogue, parenthetical, transition, etc.) from the
               Word document&apos;s formatting.
             </p>

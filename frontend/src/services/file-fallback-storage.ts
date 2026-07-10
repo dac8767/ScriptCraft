@@ -267,7 +267,7 @@ async function migrateFromLegacyLocalStorage(): Promise<void> {
 
 export async function createFileFallbackStorage() {
   console.warn(
-    '%c[OpenDraft] Using file-based fallback storage — Tauri SQLite unavailable',
+    '%c[FreeScript] Using file-based fallback storage — Tauri SQLite unavailable',
     'color: #ff9f43; font-weight: bold',
   );
 

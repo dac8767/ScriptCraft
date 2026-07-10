@@ -45,12 +45,11 @@ import { useEditorStore, DEFAULT_HEADER_CONTENT, DEFAULT_FOOTER_CONTENT, DEFAULT
 import type { ElementType } from '../stores/editorStore';
 import MenuBar from './MenuBar';
 import Toolbar from './Toolbar';
-import SceneNavigator from './SceneNavigator';
+import ToolDock, { TempToolWindow } from './ToolDock';
 import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
 import ScriptStatistics from './ScriptStatistics';
-import StickyNotes, { makeSnippetCard } from './StickyNotes';
-import CharacterProfiles from './CharacterProfiles';
+import { makeSnippetCard } from './StickyNotes';
 import TagsPanel from './TagsPanel';
 import LocationDatabase from './LocationDatabase';
 import FormatPanel from './FormatPanel';
@@ -276,7 +275,7 @@ const ScreenplayEditor: React.FC = () => {
 
   // Sync nav width to store for floating menu positioning
   useEffect(() => {
-    useEditorStore.getState().setNavPanelWidth(navigatorOpen ? navWidth : 0);
+    useEditorStore.getState().setNavPanelWidth(navigatorOpen ? 160 : 0);
   }, [navWidth, navigatorOpen]);
   const resizingRef = useRef<'left' | 'right' | null>(null);
   const resizeStartXRef = useRef(0);
@@ -3104,10 +3103,10 @@ const ScreenplayEditor: React.FC = () => {
       // Clear project context — this is a standalone opened file
       setCurrentProject(null);
       setCurrentScriptId(null);
-      // Mark as imported so Save As shows the "saved to OpenDraft library" notice.
+      // Mark as imported so Save As shows the "saved to FreeScript library" notice.
       const fmtLabel = ext === 'fdx' ? 'Final Draft (.fdx)'
         : ext === 'fountain' ? 'Fountain (.fountain)'
-        : ext === 'odraft' ? 'OpenDraft (.odraft)'
+        : ext === 'odraft' ? 'FreeScript (.odraft)'
         : ext ? `.${ext}` : 'imported file';
       useEditorStore.getState().setImportedSource({ name: filename, format: fmtLabel });
     } catch (err) {
@@ -3295,7 +3294,7 @@ const ScreenplayEditor: React.FC = () => {
       setShowWelcome(false);
       const fmtLabel = ext === 'fdx' ? 'Final Draft (.fdx)'
         : ext === 'fountain' ? 'Fountain (.fountain)'
-        : ext === 'odraft' ? 'OpenDraft (.odraft)'
+        : ext === 'odraft' ? 'FreeScript (.odraft)'
         : ext ? `.${ext}` : 'imported file';
       useEditorStore.getState().setImportedSource({ name: file.name, format: fmtLabel });
     } catch (err) {
@@ -3905,10 +3904,7 @@ const ScreenplayEditor: React.FC = () => {
       }} onJoinCollab={() => setJoinCollabOpen(true)} isCollabActive={collabMode} isCollabGuest={collabMode && !isCollabHost} />}
       {!isHistoryMode && <Toolbar editor={editor} />}
       <div className="editor-layout">
-        {!isHistoryMode && <SceneNavigator editor={editor} scrollContainer={editorMainRef.current} style={{ width: navWidth, minWidth: navWidth }} />}
-        {!isHistoryMode && navigatorOpen && (
-          <div className="panel-resize-handle" onPointerDown={(e) => handleResizePointerDown('left', e)} style={{ touchAction: 'none' }} />
-        )}
+        {!isHistoryMode && navigatorOpen && <ToolDock side="left" editor={editor} scrollContainer={editorMainRef.current} />}
         <div className="editor-center">
           {!isHistoryMode && <IndexCards editor={editor} scrollContainer={editorMainRef.current} />}
           {!isHistoryMode && statisticsOpen && editor ? (
@@ -4036,11 +4032,11 @@ const ScreenplayEditor: React.FC = () => {
             </div>
           )}
         </div>
-        {!isHistoryMode && rightPanelVisible && (
+        {!isHistoryMode && (tagsPanelOpen || locationDatabaseOpen) && (
           <div className="panel-resize-handle" onPointerDown={(e) => handleResizePointerDown('right', e)} style={{ touchAction: 'none' }} />
         )}
-        {!isHistoryMode && <StickyNotes editor={editor} style={{ width: rightPanelWidth, minWidth: rightPanelWidth }} />}
-        {!isHistoryMode && <CharacterProfiles editor={editor} projectId={currentProject?.id || ''} style={{ width: rightPanelWidth, minWidth: rightPanelWidth }} />}
+        {!isHistoryMode && <TempToolWindow editor={editor} scrollContainer={editorMainRef.current} />}
+        {!isHistoryMode && shelfOpen && <ToolDock side="right" editor={editor} scrollContainer={editorMainRef.current} />}
         {!isHistoryMode && <TagsPanel editor={editor} style={{ width: rightPanelWidth, minWidth: rightPanelWidth }} />}
         {!isHistoryMode && <LocationDatabase editor={editor} style={{ width: rightPanelWidth, minWidth: rightPanelWidth }} />}
         {!isHistoryMode && pluginRegistry.getPanels('right-sidebar').map((p) => (

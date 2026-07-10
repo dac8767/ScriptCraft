@@ -1,5 +1,5 @@
 /**
- * OpenDraft Plugin Registry
+ * FreeScript Plugin Registry
  *
  * Provides a central registration point for plugins to add menu items,
  * sidebar panels, routes, and editor extensions. The core app renders
@@ -57,7 +57,7 @@ export interface PluginRouteEntry {
   component: React.ComponentType<any>;
 }
 
-export interface OpenDraftPlugin {
+export interface FreeScriptPlugin {
   id: string;
   name: string;
   version: string;
@@ -71,7 +71,7 @@ export interface OpenDraftPlugin {
 
 // ── Grammar / writing-suggestion providers ──
 //
-// Plugins (including OpenDraft-Pro) can register grammar providers that
+// Plugins (including FreeScript-Pro) can register grammar providers that
 // supply additional issues — e.g. a cloud LLM or LanguageTool integration —
 // alongside the local rule-based provider that ships with core.
 
@@ -108,7 +108,7 @@ export interface RegisteredGrammarProvider {
 // ── Registry implementation ──
 
 class PluginRegistry {
-  private _plugins: Map<string, OpenDraftPlugin> = new Map();
+  private _plugins: Map<string, FreeScriptPlugin> = new Map();
   private _listeners: Array<() => void> = [];
   private _upgradeHandler: (() => void) | null = null;
   private _grammarProviders: Map<string, GrammarProvider> = new Map();
@@ -128,7 +128,7 @@ class PluginRegistry {
   }
 
   /** Register a plugin. Replaces any existing plugin with the same id. */
-  register(plugin: OpenDraftPlugin): void {
+  register(plugin: FreeScriptPlugin): void {
     this._plugins.set(plugin.id, plugin);
     this._notify();
   }
@@ -142,7 +142,7 @@ class PluginRegistry {
   }
 
   /** Get all registered plugins. */
-  getAll(): OpenDraftPlugin[] {
+  getAll(): FreeScriptPlugin[] {
     return Array.from(this._plugins.values());
   }
 

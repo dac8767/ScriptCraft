@@ -1,5 +1,5 @@
 /**
- * OpenDraft native format (.odraft) — import/export utilities.
+ * FreeScript native format (.odraft) — import/export utilities.
  *
  * An .odraft file is a JSON document containing the script metadata and
  * TipTap content, designed for lossless round-tripping.
@@ -51,7 +51,7 @@ export async function downloadOdraft(
   const text = await blob.text();
   const filename = `${meta.title || 'Untitled'}.odraft`;
   const { saveFile } = await import('./fileOps');
-  await saveFile(text, filename, [{ name: 'OpenDraft', extensions: ['odraft'] }]);
+  await saveFile(text, filename, [{ name: 'FreeScript', extensions: ['odraft'] }]);
 }
 
 /** Parse an .odraft JSON string back into meta + content. */

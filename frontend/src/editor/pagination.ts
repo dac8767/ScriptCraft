@@ -52,6 +52,9 @@ const SPACE_BEFORE: Record<string, number> = {
   sceneHeading: 1, action: 1, character: 1, dialogue: 0,
   parenthetical: 0, transition: 1, general: 0, shot: 1,
   newAct: 2, endOfAct: 2, lyrics: 0, showEpisode: 1, castList: 0,
+  // titlePage intentionally 0: title-page blocks have no CSS margin (the CSS
+  // was carrying a 12pt margin the estimator couldn't see — removed), so each
+  // block is exactly its text lines. Spacing comes from blank spacer blocks.
 };
 
 const DIALOGUE_BLOCK_TYPES = new Set(['dialogue', 'parenthetical', 'lyrics']);
@@ -219,7 +222,11 @@ function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = E
     // Force break: template can require certain elements to start a new page (e.g. sitcom sceneHeading).
     const forceBreak = lineCount > 0 && hints.forceBreakBefore.has(node.elementId);
 
-    if ((forceBreak || lineCount + blockLines > linesPerPage) && lineCount > 0) {
+    // The leading title region is a single unnumbered page by definition —
+    // never emit page breaks inside it (spacer blocks position its content).
+    const inTitleRegion = !titleBroken && sawTitlePage && isTitleRegionNode;
+
+    if (!inTitleRegion && (forceBreak || lineCount + blockLines > linesPerPage) && lineCount > 0) {
       const remaining = linesPerPage - lineCount;
 
       // Try to split character+dialogue blocks

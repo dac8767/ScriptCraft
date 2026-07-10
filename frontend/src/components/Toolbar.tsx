@@ -23,6 +23,7 @@ import {
   FaEllipsisV,
   FaHashtag,
 } from 'react-icons/fa';
+import { ALL_TOOLS } from './ToolDock';
 import { useEditorStore, NOTE_COLORS } from '../stores/editorStore';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
@@ -66,11 +67,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     setFontSize,
     setSearchOpen,
     setGoToPageOpen,
-    shelfOpen,
-    shelfTab,
+    activeToolRight,
+    setActiveToolRight,
     notesSubTab,
-    toggleShelf,
     openShelfTab,
+    toolbarHiddenItems,
+    toolbarPinnedTools,
+    openTool,
     addNote,
     setNoteFilter,
     tagsPanelOpen,
@@ -388,8 +391,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // ── Notes handler (shared between inline and overflow) ──
   const handleNotesClick = useCallback((e: React.PointerEvent | React.MouseEvent) => {
     e.preventDefault();
-    const scriptTabShowing = shelfOpen && shelfTab === 'notes' && notesSubTab === 'script';
-    if (!editor) { if (scriptTabShowing) toggleShelf(); else openShelfTab('script'); return; }
+    const scriptTabShowing = activeToolRight === 'sticky' && notesSubTab === 'script';
+    if (!editor) { if (scriptTabShowing) setActiveToolRight(null); else openShelfTab('script'); return; }
 
     // Detect if cursor is on an existing note
     const noteMarkType = editor.schema.marks.scriptNote;
@@ -460,11 +463,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       setNoteFilter({ elementType: null, contextLabel: null, color: null, noteId });
       openShelfTab('script');
     } else if (scriptTabShowing) {
-      toggleShelf();
+      setActiveToolRight(null);
     } else {
       openShelfTab('script');
     }
-  }, [editor, shelfOpen, shelfTab, notesSubTab, toggleShelf, openShelfTab, addNote, setNoteFilter]);
+  }, [editor, activeToolRight, setActiveToolRight, notesSubTab, openShelfTab, addNote, setNoteFilter]);
 
   // ── Tags handler (shared between inline and overflow) ──
   const handleTagsClick = useCallback((e: React.PointerEvent | React.MouseEvent) => {
@@ -841,6 +844,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
   return (
     <div className={`toolbar${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}`} ref={toolbarRef}>
+      {toolbarHiddenItems.length > 0 && (
+        <style>{toolbarHiddenItems.map((t) => `.toolbar [title^="${t.replace(/"/g, '')}"]`).join(',') + '{display:none !important}'}</style>
+      )}
       {/* Undo / Redo — always visible */}
       <div className="toolbar-group">
         <button
@@ -914,7 +920,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       {/* Notes & Tags — always visible */}
       <div className="toolbar-group">
         <button
-          className={`toolbar-btn${shelfOpen && shelfTab === 'notes' && notesSubTab === 'script' ? ' active' : ''}`}
+          className={`toolbar-btn${activeToolRight === 'sticky' && notesSubTab === 'script' ? ' active' : ''}`}
           title="Script Notes"
           onPointerDown={handleNotesClick}
         >
@@ -927,6 +933,20 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         >
           <FaTags />
         </button>
+        {toolbarPinnedTools.map((id) => {
+          const t = ALL_TOOLS.find((x) => x.id === id);
+          if (!t) return null;
+          return (
+            <button
+              key={id}
+              className="toolbar-btn"
+              title={t.label}
+              onClick={() => openTool(id)}
+            >
+              {t.icon}
+            </button>
+          );
+        })}
       </div>
 
       {/* Spacer */}

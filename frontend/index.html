@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Open Draft - Screenwriting</title>
+    <title>FreeScript - Screenwriting</title>
   </head>
   <body>
     <div id="root"></div>
@@ -17,7 +17,7 @@
           d = document.createElement('div');
           d.id = '_fatal';
           d.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;background:#1a1a2e;color:#ff6b6b;font:14px/1.6 monospace;padding:40px;overflow:auto;white-space:pre-wrap;';
-          d.innerHTML = '<h2 style="color:#fff;margin-bottom:12px;">OpenDraft failed to start</h2>';
+          d.innerHTML = '<h2 style="color:#fff;margin-bottom:12px;">FreeScript failed to start</h2>';
           document.body.appendChild(d);
         }
         d.innerHTML += '\n[ERROR] ' + (e.message || e) + '\n  at ' + (e.filename || '?') + ':' + (e.lineno || '?') + '\n';
@@ -28,7 +28,7 @@
           d = document.createElement('div');
           d.id = '_fatal';
           d.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;background:#1a1a2e;color:#ff6b6b;font:14px/1.6 monospace;padding:40px;overflow:auto;white-space:pre-wrap;';
-          d.innerHTML = '<h2 style="color:#fff;margin-bottom:12px;">OpenDraft failed to start</h2>';
+          d.innerHTML = '<h2 style="color:#fff;margin-bottom:12px;">FreeScript failed to start</h2>';
           document.body.appendChild(d);
         }
         var msg = e.reason ? (e.reason.stack || e.reason.message || String(e.reason)) : 'Unknown rejection';
@@ -44,7 +44,7 @@
             d.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;background:#1a1a2e;color:#ff9f43;font:14px/1.6 monospace;padding:40px;overflow:auto;white-space:pre-wrap;';
             document.body.appendChild(d);
           }
-          d.innerHTML += '<h2 style="color:#fff;margin-bottom:12px;">OpenDraft: Loading timed out</h2>';
+          d.innerHTML += '<h2 style="color:#fff;margin-bottom:12px;">FreeScript: Loading timed out</h2>';
           d.innerHTML += 'The app did not render within 8 seconds.\n';
           d.innerHTML += 'Tauri IPC available: ' + !!(window.__TAURI_INTERNALS__) + '\n';
           d.innerHTML += 'User agent: ' + navigator.userAgent + '\n';

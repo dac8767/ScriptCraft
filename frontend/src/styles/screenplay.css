@@ -25,7 +25,7 @@
 }
 
 /* ============================================
-   OpenDraft — Final Draft Exact Layout
+   FreeScript — Final Draft Exact Layout
    ============================================
    All measurements match Final Draft defaults:
    - Page: 8.5" x 11" US Letter
@@ -2190,8 +2190,15 @@ body {
    order, top-to-bottom, identically in the editor, dialog preview and PDF/DOCX.
    Spacing is modest and uniform; writers add blank title-page lines for vertical
    space and reorder images freely. Per-field alignment only. */
-.title-page { text-align: center; margin-top: 12pt; }
+/* No block margin: the paginator counts pure text lines, and spacing on the
+   title page comes from blank spacer lines (matches how it's built). */
+.title-page { text-align: center; margin: 0; }
 .title-page-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  text-align: center;
+}
+.title-page-title2 {
   font-weight: 700;
   text-transform: uppercase;
   text-align: center;
@@ -4136,21 +4143,21 @@ div[data-type="cast-list"].is-empty::before { content: 'Cast...'; color: #ccc; p
   line-height: 1.5;
 }
 /* ── Individual note card ── */
+/* Script notes render as sticky cards (background set inline per note color;
+   a thin top bar keeps the note's saturated highlight color visible). */
 .note-item {
-  background: var(--fd-dropdown-bg);
-  border: 1px solid var(--fd-border);
-  border-left: 3px solid var(--fd-accent);
-  border-radius: 6px;
-  padding: 10px;
-  margin-bottom: 8px;
+  border: none;
+  border-top: 3px solid var(--fd-accent);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  color: #333;
+  padding: 8px 10px 10px;
+  margin: 0 12px 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: border-color 0.15s;
 }
-.note-item:hover {
-  border-color: #555;
-}
+
 .note-item-header {
   display: flex;
   justify-content: space-between;
@@ -4165,14 +4172,14 @@ div[data-type="cast-list"].is-empty::before { content: 'Cast...'; color: #ccc; p
 }
 .note-item-element {
   font-size: 10px;
-  color: var(--fd-accent);
-  font-weight: 600;
+  color: #555;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 .note-item-scene {
   font-size: 10px;
-  color: var(--fd-text-muted);
+  color: #8a8a7a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4180,7 +4187,7 @@ div[data-type="cast-list"].is-empty::before { content: 'Cast...'; color: #ccc; p
 }
 .note-item-date {
   font-size: 10px;
-  color: var(--fd-text-muted);
+  color: #8a8a7a;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -4199,10 +4206,10 @@ div[data-type="cast-list"].is-empty::before { content: 'Cast...'; color: #ccc; p
 /* ── Anchor text (the quoted text the note is attached to) ── */
 .note-item-anchor {
   font-size: 11px;
-  color: var(--fd-text-muted);
+  color: #555;
   font-style: italic;
   padding: 4px 8px;
-  background: rgba(0,0,0,.15);
+  background: rgba(0, 0, 0, 0.06);
   border-radius: 3px;
   cursor: pointer;
   white-space: nowrap;
@@ -4211,14 +4218,14 @@ div[data-type="cast-list"].is-empty::before { content: 'Cast...'; color: #ccc; p
   transition: color .15s;
 }
 .note-item-anchor:hover {
-  color: var(--fd-accent);
+  color: #1a5ba6;
 }
 /* ── Edit area with @asset dropdown ── */
 .note-edit-area { position: relative; }
 .note-item-content {
   width: 100%;
-  background: rgba(0, 0, 0, 0.2);
-  color: var(--fd-text);
+  background: rgba(255, 255, 255, 0.55);
+  color: #333;
   border: 1px solid transparent;
   border-radius: 3px;
   padding: 6px 8px;
@@ -4229,32 +4236,32 @@ div[data-type="cast-list"].is-empty::before { content: 'Cast...'; color: #ccc; p
   outline: none;
 }
 .note-item-content::placeholder {
-  color: var(--fd-text-muted);
+  color: #8a8a7a;
   font-size: 11px;
 }
 .note-item-content:focus {
-  border-color: var(--fd-accent);
-  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.75);
 }
 /* ── Note preview (rendered view with media + @refs) ── */
 .note-item-preview {
   padding: 4px 8px;
-  background: rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.35);
   border: 1px solid transparent;
   border-radius: 3px;
   cursor: pointer;
   min-height: 28px;
   transition: border-color .15s;
 }
-.note-item-preview:hover { border-color: var(--fd-border); }
+.note-item-preview:hover { border-color: rgba(0, 0, 0, 0.2); }
 .note-item-placeholder {
-  color: var(--fd-text-muted);
+  color: #8a8a7a;
   font-size: 11px;
   font-style: italic;
 }
 .note-content-rendered {
   font-size: 12px;
-  color: var(--fd-text);
+  color: #333;
   line-height: 1.45;
 }
 .note-content-line { margin-bottom: 2px; }
@@ -4369,17 +4376,17 @@ div[data-type="cast-list"].is-empty::before { content: 'Cast...'; color: #ccc; p
   transition: border-color .15s, transform .1s;
 }
 .note-color-dot:hover { transform: scale(1.2); }
-.note-color-dot.active { border-color: #fff; }
+.note-color-dot.active { border-color: #555; }
 .note-item-delete {
   background: none;
   border: none;
-  color: var(--fd-text-muted);
+  color: #8a8a7a;
   font-size: 11px;
   cursor: pointer;
   padding: 2px 6px;
 }
 .note-item-delete:hover {
-  color: #ff6b6b;
+  color: #c0392b;
 }
 
 /* ── Script Note inline highlight in editor ── */
@@ -11263,6 +11270,12 @@ html.android .version-history-panel {
   font-size: 12px;
 }
 .swn-card.dragging { opacity: 0.45; }
+.swn-card-date {
+  margin-top: 6px;
+  font-size: 10px;
+  color: #8a8a7a;
+  text-align: right;
+}
 
 .swn-card-head {
   display: flex;
@@ -11378,3 +11391,582 @@ html.android .version-history-panel {
   cursor: pointer;
 }
 .swn-add-btn:hover { background: var(--fd-hover-bg, rgba(128, 128, 128, 0.15)); }
+
+/* ═══════════════ Tool Dock (Photoshop-style panel list) ═══════════════ */
+.tool-dock-wrap {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  z-index: 30;
+}
+.tool-dock {
+  width: 160px;
+  flex-shrink: 0;
+  background: var(--fd-navigator-bg); /* same scheme as the Sticky Notes pane */
+  border-right: 1px solid var(--fd-border);
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  overflow-y: auto;
+}
+.tool-dock-sep {
+  height: 1px;
+  background: var(--fd-border);
+  margin: 6px 10px;
+  flex-shrink: 0;
+}
+.tool-dock-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  color: var(--fd-text);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+.tool-dock-item:hover { background: rgba(128, 128, 128, 0.12); }
+.tool-dock-item.active {
+  background: rgba(128, 128, 128, 0.22);
+  color: var(--fd-accent, #4a90d9);
+}
+.tool-dock-icon {
+  width: 18px;
+  display: inline-flex;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.tool-dock-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Floating tool window ── */
+.tool-window {
+  position: absolute;
+  left: 168px;
+  top: 8px;
+  background: var(--fd-navigator-bg); /* same scheme as the Sticky Notes pane */
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  min-width: 240px;
+  min-height: 260px;
+  max-width: calc(100vw - 200px);
+  max-height: calc(100vh - 120px);
+  overflow: hidden;
+  z-index: 40;
+}
+.tool-window-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--fd-border);
+  flex-shrink: 0;
+  user-select: none;
+}
+.tool-window-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fd-text);
+}
+.tool-window-close {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+.tool-window-close:hover { color: var(--fd-text); }
+.tool-window-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.tool-window-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  background:
+    linear-gradient(135deg, transparent 50%, var(--fd-text-muted) 50%, var(--fd-text-muted) 55%,
+      transparent 55%, transparent 70%, var(--fd-text-muted) 70%, var(--fd-text-muted) 75%, transparent 75%);
+  opacity: 0.6;
+}
+.tool-window-resize:hover { opacity: 1; }
+
+/* Embedded former left-panel views fill the window */
+.tool-window .scene-navigator-embed {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: auto;
+  border: none;
+  overflow: hidden;
+}
+
+/* ── Navigator tool ── */
+.fs-navigator {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.fs-nav-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--fd-border);
+  flex-shrink: 0;
+}
+.fs-nav-showhide {
+  font-size: 10.5px;
+  background: transparent;
+  color: var(--fd-text-muted);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.fs-nav-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 4px 0;
+}
+.fs-nav-empty {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--fd-text-muted);
+}
+.fs-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--fd-text);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fs-nav-item:hover { background: rgba(128, 128, 128, 0.12); }
+.fs-nav-item.scene { font-weight: 600; }
+.fs-nav-item.act {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.fs-nav-item.note { color: var(--fd-text-muted); }
+.fs-nav-item.todo { padding-left: 18px; }
+.fs-nav-item span { overflow: hidden; text-overflow: ellipsis; }
+.fs-nav-done { text-decoration: line-through; opacity: 0.6; }
+.fs-nav-filter {
+  margin: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  background: transparent;
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  outline: none;
+  flex-shrink: 0;
+}
+.fs-nav-filter:focus { border-color: var(--fd-accent, #4a90d9); }
+
+/* ── Shared tool bits ── */
+.fs-tool-intro {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+
+/* ── Gender Analysis tool ── */
+.fs-gender {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+.fs-gender-legend {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 10.5px;
+  color: var(--fd-text-muted);
+  margin-bottom: 10px;
+}
+.fs-gender-legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  margin-right: 4px;
+}
+.fs-gender-metric { margin-bottom: 8px; }
+.fs-gender-metric b { font-size: 12px; color: var(--fd-text); }
+.fs-gender-bar {
+  display: flex;
+  height: 12px;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 3px;
+  background: rgba(128, 128, 128, 0.15);
+}
+.fs-gender-bechdel { font-size: 12px; color: var(--fd-text); margin: 10px 0; }
+.fs-gender-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  color: var(--fd-text);
+}
+.fs-gender-table th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fd-text-muted);
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--fd-border);
+}
+.fs-gender-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--fd-border);
+}
+.fs-gender-name {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Goals tool ── */
+.fs-goals {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+.fs-goal-progress {
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.fs-goal-progress.done { border-color: #4caf50; }
+.fs-goal-progress-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(128, 128, 128, 0.2);
+  overflow: hidden;
+}
+.fs-goal-progress-bar > div {
+  height: 100%;
+  background: var(--fd-accent, #4a90d9);
+  transition: width 0.4s;
+}
+.fs-goal-progress.done .fs-goal-progress-bar > div { background: #4caf50; }
+.fs-goal-progress-label {
+  font-size: 12px;
+  color: var(--fd-text);
+  margin-top: 6px;
+  font-weight: 600;
+}
+.fs-goal-stop {
+  margin-top: 8px;
+  background: none;
+  border: 1px solid var(--fd-border);
+  color: var(--fd-text-muted);
+  border-radius: 5px;
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.fs-goal-stop:hover { color: #c0392b; border-color: #c0392b; }
+.fs-goal-kinds {
+  display: inline-flex;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.fs-goal-kinds button {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.fs-goal-kinds button.active {
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+}
+.fs-goal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--fd-text);
+}
+.fs-goal-row input {
+  width: 80px;
+  padding: 5px 7px;
+  font-size: 12px;
+  background: transparent;
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  outline: none;
+}
+.fs-goal-start {
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.fs-goal-quick-label { font-size: 12px; color: var(--fd-text); }
+.fs-goal-quick {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.fs-goal-quick button {
+  background: rgba(128, 128, 128, 0.15);
+  border: none;
+  color: var(--fd-text);
+  border-radius: 5px;
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.fs-goal-quick button:hover { background: rgba(128, 128, 128, 0.28); }
+.fs-goal-current { font-size: 11px; color: var(--fd-text-muted); }
+
+/* ── Status bar goal chip ── */
+.status-goal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 10px;
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  padding: 1px 8px;
+  cursor: pointer;
+}
+.status-goal.done { border-color: #4caf50; color: #4caf50; }
+.status-goal-track {
+  width: 46px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(128, 128, 128, 0.25);
+  overflow: hidden;
+  display: inline-block;
+}
+.status-goal-track > span {
+  display: block;
+  height: 100%;
+  background: var(--fd-accent, #4a90d9);
+}
+.status-goal.done .status-goal-track > span { background: #4caf50; }
+
+/* ── Script note focus flash (replaces the old "Selected note" filter) ── */
+@keyframes note-flash {
+  0%, 60% { box-shadow: 0 0 0 2px var(--fd-accent, #4a90d9), 0 1px 3px rgba(0, 0, 0, 0.25); }
+  100% { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
+}
+.note-item-flash { animation: note-flash 1.6s ease-out; }
+
+/* ── Analytics tool (Statistics + Gender under one roof) ── */
+.fs-analytics {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.fs-analytics-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px 0;
+  border-bottom: 1px solid var(--fd-border);
+  flex-shrink: 0;
+}
+.fs-analytics-tabs button {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--fd-text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 10px 7px;
+  cursor: pointer;
+}
+.fs-analytics-tabs button.active {
+  color: var(--fd-text);
+  border-bottom-color: var(--fd-accent, #4a90d9);
+}
+.fs-analytics-stats {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* The embedded stats panel keeps its own scrolling; hide its close button
+   and duplicate title (the tool window supplies the chrome). */
+.fs-analytics-stats .stats-close { display: none; }
+
+/* Statistics embedded in the Analytics tool window: fill and scroll */
+.fs-analytics-stats {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.fs-analytics-stats .stats-panel { background: transparent; }
+
+/* ═══ v0.6: defined borders for tool buttons + right dock + customize ═══ */
+.tool-dock-item {
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  margin: 2px 8px;
+  width: calc(100% - 16px);
+  background: rgba(128, 128, 128, 0.06);
+}
+.tool-dock-item.active {
+  border-color: var(--fd-accent, #4a90d9);
+}
+.fs-analytics-tabs button,
+.fs-goal-kinds button,
+.fs-nav-showhide {
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+}
+.fs-analytics-tabs { flex-wrap: wrap; gap: 4px; }
+.fs-analytics-tabs button.active {
+  border-color: var(--fd-accent, #4a90d9);
+  background: color-mix(in srgb, var(--fd-accent, #4a90d9) 14%, transparent);
+  color: var(--fd-text);
+}
+.fs-goal-kinds { border: none; gap: 4px; }
+.fs-goal-kinds button { background: rgba(128, 128, 128, 0.06); }
+.fs-goal-kinds button.active { border-color: var(--fd-accent, #4a90d9); }
+
+/* Right-side dock: window opens to the LEFT of the dock */
+.tool-dock-right .tool-dock { border-right: none; border-left: 1px solid var(--fd-border); }
+.tool-dock-right .tool-window { left: auto; right: 168px; }
+
+/* Sticky tools */
+.fs-sticky-tool {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.fs-sticky-tool .swn-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+.fs-sticky-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 0;
+  flex-shrink: 0;
+}
+.fs-sticky-toolbar .swn-subtabs { flex: 1; padding: 0; }
+
+/* Temporary tool window (tool disabled in both panels) */
+.tool-temp-anchor { position: relative; }
+.tool-window-temp {
+  position: fixed;
+  left: 50%;
+  top: 90px;
+  right: auto;
+  transform: translateX(-50%);
+  z-index: 120;
+}
+
+/* Analytics tab filtering: only the active tab's sections render */
+.fs-analytics-stats[data-show] .stats-content > [data-sec] { display: none; }
+.fs-analytics-stats[data-show="overview"] .stats-content > [data-sec="overview"] { display: grid; }
+.fs-analytics-stats[data-show="dialogue"] .stats-content > [data-sec="dialogue"],
+.fs-analytics-stats[data-show="scenes"] .stats-content > [data-sec="scenes"],
+.fs-analytics-stats[data-show="characters"] .stats-content > [data-sec="characters"],
+.fs-analytics-stats[data-show="gender"] .stats-content > [data-sec="gender"],
+.fs-analytics-stats[data-show="timing"] .stats-content > [data-sec="timing"] { display: block; }
+.fs-analytics-gender-assign { padding: 0 12px 12px; }
+.fs-analytics-gender-assign .fs-gender { padding: 0; }
+
+/* Customize dialog */
+.fs-customize-dialog { max-width: 560px; width: 92vw; }
+.fs-customize-body { max-height: 70vh; overflow-y: auto; }
+.fs-customize-body h3 { font-size: 13px; margin: 14px 0 4px; color: var(--fd-text); }
+.fs-customize-hint { font-size: 11.5px; color: var(--fd-text-muted); margin: 0 0 8px; }
+.fs-customize-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0;
+}
+.fs-customize-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--fd-text);
+}
+.fs-customize-seg { display: inline-flex; gap: 4px; }
+.fs-customize-seg button {
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  background: rgba(128, 128, 128, 0.06);
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.fs-customize-seg button.active {
+  border-color: var(--fd-accent, #4a90d9);
+  color: var(--fd-text);
+  background: color-mix(in srgb, var(--fd-accent, #4a90d9) 14%, transparent);
+}
+.fs-customize-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 4px 12px;
+}
+.fs-customize-checks label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fd-text);
+  cursor: pointer;
+}
