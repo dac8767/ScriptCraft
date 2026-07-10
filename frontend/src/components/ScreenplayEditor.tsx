@@ -2175,7 +2175,7 @@ const ScreenplayEditor: React.FC = () => {
     // it's open and restored on exit.
     setPaginationContinuousMode(viewStyle === 'continuous' && !previewMode);
     if (editor) {
-      try { editor.view.dispatch(editor.state.tr); } catch { /* ignore */ }
+      try { editor.view.dispatch(editor.state.tr.setMeta('forceRepaginate', true)); } catch { /* ignore */ }
     }
   }, [viewStyle, editor, previewMode]);
 
@@ -2193,7 +2193,7 @@ const ScreenplayEditor: React.FC = () => {
     if (editor) {
       // Recompute breaks + decorations, which also re-runs overlay measurement.
       requestAnimationFrame(() => {
-        try { editor.view.dispatch(editor.state.tr); } catch { /* ignore */ }
+        try { editor.view.dispatch(editor.state.tr.setMeta('forceRepaginate', true)); } catch { /* ignore */ }
       });
     }
   }, [editor, previewMode, previewOpts, sectionsVisible, scriptTodosVisible]);
@@ -2206,7 +2206,7 @@ const ScreenplayEditor: React.FC = () => {
   // printed pages match the editor's pagination exactly.
   useEffect(() => {
     if (!editor) return;
-    const refresh = () => { try { editor.view.dispatch(editor.state.tr); } catch { /* ignore */ } };
+    const refresh = () => { try { editor.view.dispatch(editor.state.tr.setMeta('forceRepaginate', true)); } catch { /* ignore */ } };
     const before = () => { setPaginationPrintMode(true); refresh(); };
     const after = () => { setPaginationPrintMode(false); refresh(); };
     window.addEventListener('beforeprint', before);
