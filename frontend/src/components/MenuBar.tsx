@@ -1863,6 +1863,33 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               </a>{' '}
               source code by Proteus Technologies.
             </div>
+            <div className="about-credit about-oss">
+              Made possible by open source:{' '}
+              <a href="https://react.dev" target="_blank" rel="noopener noreferrer">React</a>,{' '}
+              <a href="https://tiptap.dev" target="_blank" rel="noopener noreferrer">TipTap</a> /{' '}
+              <a href="https://prosemirror.net" target="_blank" rel="noopener noreferrer">ProseMirror</a>,{' '}
+              <a href="https://yjs.dev" target="_blank" rel="noopener noreferrer">Yjs</a> &{' '}
+              <a href="https://tiptap.dev/hocuspocus" target="_blank" rel="noopener noreferrer">Hocuspocus</a>,{' '}
+              <a href="https://vite.dev" target="_blank" rel="noopener noreferrer">Vite</a>,{' '}
+              <a href="https://www.typescriptlang.org" target="_blank" rel="noopener noreferrer">TypeScript</a>,{' '}
+              <a href="https://zustand.docs.pmnd.rs" target="_blank" rel="noopener noreferrer">Zustand</a>,{' '}
+              <a href="https://reactrouter.com" target="_blank" rel="noopener noreferrer">React Router</a>,{' '}
+              <a href="https://recharts.org" target="_blank" rel="noopener noreferrer">Recharts</a>,{' '}
+              <a href="https://dndkit.com" target="_blank" rel="noopener noreferrer">dnd kit</a>,{' '}
+              <a href="https://react-icons.github.io/react-icons/" target="_blank" rel="noopener noreferrer">React Icons</a>,{' '}
+              <a href="https://github.com/parallax/jsPDF" target="_blank" rel="noopener noreferrer">jsPDF</a>,{' '}
+              <a href="https://github.com/dolanmiu/docx" target="_blank" rel="noopener noreferrer">docx</a>,{' '}
+              <a href="https://stuk.github.io/jszip/" target="_blank" rel="noopener noreferrer">JSZip</a>,{' '}
+              <a href="https://github.com/cure53/DOMPurify" target="_blank" rel="noopener noreferrer">DOMPurify</a>,{' '}
+              <a href="https://writewithharper.com" target="_blank" rel="noopener noreferrer">Harper</a>,{' '}
+              <a href="https://github.com/cfinke/Typo.js" target="_blank" rel="noopener noreferrer">Typo.js</a>,{' '}
+              <a href="https://github.com/retextjs/retext" target="_blank" rel="noopener noreferrer">retext</a> /{' '}
+              <a href="https://unifiedjs.com" target="_blank" rel="noopener noreferrer">unified</a>,{' '}
+              <a href="https://tauri.app" target="_blank" rel="noopener noreferrer">Tauri</a>,{' '}
+              <a href="https://fastapi.tiangolo.com" target="_blank" rel="noopener noreferrer">FastAPI</a>,{' '}
+              <a href="https://www.dulwich.io" target="_blank" rel="noopener noreferrer">Dulwich</a>, and{' '}
+              <a href="https://alembic.sqlalchemy.org" target="_blank" rel="noopener noreferrer">Alembic</a>.
+            </div>
 
             <div className="about-whats-new">
               <div className="about-section-title">What's New in 0.19</div>
