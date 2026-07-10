@@ -631,6 +631,13 @@ body {
   text-align: center; font-variant-numeric: tabular-nums;
 }
 
+/* ── Customize: equal-width adder rows (v0.46) ── */
+.fs-tbzone-adders.fs-adders-equal { display: flex; gap: 6px; }
+.fs-tbzone-adders.fs-adders-equal > select,
+.fs-tbzone-adders.fs-adders-equal > button {
+  flex: 1 1 0; min-width: 0; width: auto; box-sizing: border-box;
+}
+
 /* ── Customize: drag-and-drop reordering (v0.45) ── */
 .fs-customize-row[draggable="true"] { cursor: grab; }
 .fs-customize-row.dragging { opacity: 0.45; }

@@ -171,15 +171,21 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             </span>
           </div>
         ))}
-        <div className="fs-tbzone-adders">
+        <div className="fs-tbzone-adders fs-adders-equal">
           <select value="" onChange={(e) => { if (e.target.value) { onAdd(e.target.value); e.target.value = ''; } }}>
             <option value="">Add item to {side === 'left' ? 'Left' : 'Right'} Panel…</option>
+            {(['Project Windows', 'Tools', 'Production'] as const).some((g) => addOptions.some((o) => o.group === g)) && (
+              <optgroup label="Show All">
+                {(['Project Windows', 'Tools', 'Production'] as const)
+                  .filter((g) => addOptions.some((o) => o.group === g))
+                  .map((g) => <option key={`all-${g}`} value={`all:${g}`}>Show all {g}</option>)}
+              </optgroup>
+            )}
             {(['Project Windows', 'Tools', 'Production'] as const).map((group) => {
               const opts = addOptions.filter((o) => o.group === group);
               if (opts.length === 0) return null;
               return (
                 <optgroup key={group} label={group}>
-                  {opts.length > 1 && <option value={`all:${group}`}>Add all {group}</option>}
                   {opts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </optgroup>
               );
@@ -188,9 +194,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           </select>
           <button
             className="swn-add-btn"
-            title="Remove everything from this panel (re-add items from the dropdown)"
+            title="Hide everything in this panel (re-add items from the dropdown)"
             onClick={removeAll}
-          >Remove All</button>
+          >Hide All</button>
           <button
             className="swn-add-btn"
             title={side === 'left' ? 'Restore the default Left Panel: all Project windows' : 'Restore the default Right Panel: all tool and production items'}
@@ -370,14 +376,20 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 );
               })}
             </div>
-            <div className="fs-tbzone-adders">
+            <div className="fs-tbzone-adders fs-adders-equal">
               <button
                 className="swn-add-btn"
+                title="Show every menu"
+                onClick={() => setMenuBarHidden([])}
+              >Show All</button>
+              <button
+                className="swn-add-btn"
+                title="Hide every menu except File"
                 onClick={() => {
                   setMenuBarHidden(MENU_BAR_LABELS.filter((l) => l !== 'File'));
                   showToast('You can still customize the menu bar, toolbar, and side panels by going to Settings > Layout.', 'info');
                 }}
-              >Remove All</button>
+              >Hide All</button>
               <button
                 className="swn-add-btn"
                 title="Restore the default menu bar: all menus, default order"
@@ -443,7 +455,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 );
               });
             })}
-            <div className="fs-tbzone-adders">
+            <div className="fs-tbzone-adders fs-adders-equal">
               <select
                 value=""
                 onChange={(e) => {
@@ -459,10 +471,16 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   setToolbarZones([...tbLeft, v], tbRight);
                 }}
               >
-                <option value="">+ Add toolbar item…</option>
+                <option value="">+ Add item to toolbar…</option>
+                {tbAddCategories.some((cat) => cat.options.length > 0) && (
+                  <optgroup label="Show All">
+                    {tbAddCategories.filter((cat) => cat.options.length > 0).map((cat) => (
+                      <option key={`all-${cat.id}`} value={`all:${cat.id}`}>Show all {cat.label}</option>
+                    ))}
+                  </optgroup>
+                )}
                 {tbAddCategories.map((cat) => (
                   <optgroup key={cat.id} label={cat.label}>
-                    {cat.options.length > 1 && <option value={`all:${cat.id}`}>Add all {cat.label}</option>}
                     {cat.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </optgroup>
                 ))}
@@ -470,9 +488,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               </select>
               <button
                 className="swn-add-btn"
-                title="Empty the toolbar (re-add items from the dropdown)"
+                title="Hide every toolbar item (re-add items from the dropdown)"
                 onClick={() => setToolbarZones([], [])}
-              >Remove All</button>
+              >Hide All</button>
               <button
                 className="swn-add-btn"
                 title="Restore the default toolbar: all toolbar items in default order"
