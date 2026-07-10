@@ -1105,8 +1105,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {
           icon: <FaColumns />, label: 'Editor',
           children: [
-            { icon: <FaRegClone />, label: !previewMode && viewStyle === 'page' ? '\u2713 Page View' : 'Page View', action: () => { useEditorStore.getState().setPreviewMode(false); setViewStyle('page'); } },
-            { icon: <FaStream />, label: !previewMode && viewStyle === 'continuous' ? '\u2713 Continuous View' : 'Continuous View', action: () => { useEditorStore.getState().setPreviewMode(false); setViewStyle('continuous'); } },
+            { icon: <FaRegClone />, label: !previewMode && viewStyle === 'page' ? '\u2713 Page' : 'Page', action: () => { useEditorStore.getState().setPreviewMode(false); setViewStyle('page'); } },
+            { icon: <FaStream />, label: !previewMode && viewStyle === 'continuous' ? '\u2713 Continuous' : 'Continuous', action: () => { useEditorStore.getState().setPreviewMode(false); setViewStyle('continuous'); } },
             { icon: <FaEye />, label: previewMode ? '\u2713 Preview' : 'Preview', action: () => useEditorStore.getState().setPreviewMode(true) },
           ],
         },

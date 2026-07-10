@@ -17,6 +17,7 @@ import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from './toolbarBuiltins';
+import { showToast } from './Toast';
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
@@ -90,9 +91,30 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         const id = String(Date.now());
         setPanelDividers([...panelDividers, { id, label: '', side }]);
         setToolOrder([...order, `div:${id}`]);
+      } else if (value.startsWith('all:')) {
+        const group = value.slice(4);
+        const next = { ...toolConfig };
+        addOptions
+          .filter((o) => o.group === group && o.value.startsWith('t:'))
+          .forEach((o) => {
+            const id = o.value.slice(2) as ToolId;
+            next[id] = { ...cfgOf(id), enabled: true, side };
+          });
+        setToolConfig(next);
       } else if (value.startsWith('t:')) {
         setTool(value.slice(2) as ToolId, { enabled: true, side });
       }
+    };
+    const removeAll = () => {
+      const next = { ...toolConfig };
+      ALL_TOOLS.forEach((t) => {
+        const c = cfgOf(t.id);
+        if (c.enabled && c.side === side) next[t.id] = { ...c, enabled: false };
+      });
+      setToolConfig(next);
+      const sideDivTokens = panelDividers.filter((d) => d.side === side).map((d) => `div:${d.id}`);
+      setPanelDividers(panelDividers.filter((d) => d.side !== side));
+      if (sideDivTokens.length) setToolOrder(order.filter((t) => !sideDivTokens.includes(t)));
     };
     return (
       <section>
@@ -128,17 +150,23 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         <div className="fs-tbzone-adders">
           <select value="" onChange={(e) => { if (e.target.value) { onAdd(e.target.value); e.target.value = ''; } }}>
             <option value="">Add item to {side === 'left' ? 'Left' : 'Right'} Panel…</option>
-            <optgroup label="Project Windows">
-              {addOptions.filter((o) => o.group === 'Project Windows').map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </optgroup>
-            <optgroup label="Tools">
-              {addOptions.filter((o) => o.group === 'Tools').map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </optgroup>
-            <optgroup label="Production">
-              {addOptions.filter((o) => o.group === 'Production').map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </optgroup>
-            <option value="divider">Divider</option>
+            {(['Project Windows', 'Tools', 'Production'] as const).map((group) => {
+              const opts = addOptions.filter((o) => o.group === group);
+              if (opts.length === 0) return null;
+              return (
+                <optgroup key={group} label={group}>
+                  {opts.length > 1 && <option value={`all:${group}`}>Add all {group}</option>}
+                  {opts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </optgroup>
+              );
+            })}
+            <option value="divider">Add divider</option>
           </select>
+          <button
+            className="swn-add-btn"
+            title="Remove everything from this panel (re-add items from the dropdown)"
+            onClick={removeAll}
+          >Remove All</button>
         </div>
       </section>
     );
@@ -146,7 +174,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
 
   // ALL hooks must run before this early return — a hook below it crashes
   // React ('Rendered more hooks than during the previous render').
-  const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones } = useEditorStore();
+  const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones, toolbarZonesSet } = useEditorStore();
   const { panelDividers, setPanelDividers } = useEditorStore();
   const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'leftpanel' | 'rightpanel'>(category ?? 'menu');
 
@@ -164,9 +192,56 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   };
   const orderedMenuLabels = [...MENU_BAR_LABELS].sort((a, b) => menuIdx(a) - menuIdx(b));
 
-  const tbReady = tbLeftRaw.length > 0 || tbRightRaw.length > 0;
+  const tbReady = toolbarZonesSet;
   const tbLeft = tbReady ? tbLeftRaw : [...DEFAULT_TOOLBAR_LEFT, ...toolbarPinnedTools.map((id) => `t:${id}`)];
   const tbRight = tbReady ? tbRightRaw : DEFAULT_TOOLBAR_RIGHT;
+
+  // ── Add-dropdown categories (v0.44): Toolbar / Production / Tools / Project,
+  //    mirroring the menu bar taxonomy. Script Notes and Production Tags live
+  //    under Tools and Production (not Toolbar); c:productionTags is excluded
+  //    as a duplicate of the smarter b:tags button. Only absent items listed.
+  const tbPlaced = (v: string) => tbLeft.includes(v) || tbRight.includes(v);
+  const PRODUCTION_CMDS = ['titlePage', 'setDraft', 'addSceneNumbers', 'removeSceneNumbers', 'lockSceneNumbers', 'revisionMode'];
+  const TOOLS_CMDS = ['spellCheck', 'writingSuggestions', 'takeSnapshot', 'snapshots', 'trackChanges', 'compareSnapshot'];
+  const PROJECT_CMDS = ['rename'];
+  const cmdOpt = (id: string) => {
+    const c = TOOLBAR_COMMANDS.find((x) => x.id === id);
+    return c ? [{ value: `c:${c.id}`, label: c.label }] : [];
+  };
+  const toolOpt = (id: string) => {
+    const t = ALL_TOOLS.find((x) => x.id === id);
+    return t ? [{ value: `t:${t.id}`, label: t.label }] : [];
+  };
+  const tbAddCategories: Array<{ id: string; label: string; options: Array<{ value: string; label: string }> }> = [
+    {
+      id: 'toolbar', label: 'Toolbar',
+      options: TOOLBAR_BUILTINS
+        .filter((b) => b.key !== 'tags' && b.key !== 'scriptNotes')
+        .map((b) => ({ value: `b:${b.key}`, label: b.label })),
+    },
+    {
+      id: 'production', label: 'Production',
+      options: [
+        { value: 'b:tags', label: 'Production Tags' },
+        ...PRODUCTION_CMDS.flatMap(cmdOpt),
+      ],
+    },
+    {
+      id: 'tools', label: 'Tools',
+      options: [
+        ...ALL_TOOLS.filter((t) => !WINDOW_IDS.includes(t.id) && t.id !== 'tags').flatMap((t) => toolOpt(t.id)),
+        { value: 'b:scriptNotes', label: 'Script Notes' },
+        ...TOOLS_CMDS.flatMap(cmdOpt),
+      ],
+    },
+    {
+      id: 'project', label: 'Project',
+      options: [
+        ...ALL_TOOLS.filter((t) => WINDOW_IDS.includes(t.id)).flatMap((t) => toolOpt(t.id)),
+        ...PROJECT_CMDS.flatMap(cmdOpt),
+      ],
+    },
+  ].map((cat) => ({ ...cat, options: cat.options.filter((o) => !tbPlaced(o.value)) }));
   const tokenLabel = (tok: string): string => {
     if (tok.startsWith('b:')) return BUILTIN_BY_KEY[tok.slice(2)]?.label || tok;
     if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.label || tok;
@@ -192,12 +267,24 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               <span className="fs-customize-tool">Menu bar mode</span>
               <span className="fs-customize-seg">
                 {(['compact', 'comfortable', 'hidden'] as const).map((m) => (
-                  <button key={m} className={menuMode === m ? 'active' : ''} onClick={() => setMenuMode(m)}>
+                  <button
+                    key={m}
+                    className={menuMode === m ? 'active' : ''}
+                    onClick={() => {
+                      setMenuMode(m);
+                      if (m === 'hidden' && menuMode !== 'hidden') showToast('You can still customize the menu bar, toolbar, and side panels by going to Settings > Layout.', 'info');
+                    }}
+                  >
                     {m[0].toUpperCase() + m.slice(1)}
                   </button>
                 ))}
               </span>
             </div>
+            {(menuMode === 'hidden' || menuBarHidden.includes('View')) && (
+              <p className="fs-customize-hint fs-customize-stuck-hint">
+                You can still customize the menu bar, toolbar, and side panels by going to Settings {'>'} Layout.
+              </p>
+            )}
             <div className="fs-customize-grid">
               {orderedMenuLabels.map((label, idx) => {
                 const hidden = menuBarHidden.includes(label);
@@ -225,12 +312,27 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                       <button
                         className={hidden ? 'active' : ''}
                         disabled={label === 'File'}
-                        onClick={() => { if (label !== 'File' && !hidden) setMenuBarHidden([...menuBarHidden, label]); }}
+                        onClick={() => {
+                          if (label === 'File' || hidden) return;
+                          setMenuBarHidden([...menuBarHidden, label]);
+                          // View hosts this Customize dialog — tell the user
+                          // where the other way in lives so they aren't stuck.
+                          if (label === 'View') showToast('You can still customize the menu bar, toolbar, and side panels by going to Settings > Layout.', 'info');
+                        }}
                       >Hide</button>
                     </span>
                   </div>
                 );
               })}
+            </div>
+            <div className="fs-tbzone-adders">
+              <button
+                className="swn-add-btn"
+                onClick={() => {
+                  setMenuBarHidden(MENU_BAR_LABELS.filter((l) => l !== 'File'));
+                  showToast('You can still customize the menu bar, toolbar, and side panels by going to Settings > Layout.', 'info');
+                }}
+              >Remove All</button>
             </div>
           </section>
           </>)}
@@ -292,29 +394,35 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               });
             })}
             <div className="fs-tbzone-adders">
-              <button className="swn-add-btn" onClick={() => setToolbarZones([...tbLeft, `d:${Date.now()}`], tbRight)}>+ Divider (Left)</button>
-              <button className="swn-add-btn" onClick={() => setToolbarZones(tbLeft, [...tbRight, `d:${Date.now()}`])}>+ Divider (Right)</button>
               <select
                 value=""
-                onChange={(e) => { if (e.target.value) { setToolbarZones([...tbLeft, e.target.value], tbRight); e.target.value = ''; } }}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (!v) return;
+                  e.target.value = '';
+                  if (v === 'divider') { setToolbarZones([...tbLeft, `d:${Date.now()}`], tbRight); return; }
+                  if (v.startsWith('all:')) {
+                    const cat = tbAddCategories.find((c) => c.id === v.slice(4));
+                    if (cat) setToolbarZones([...tbLeft, ...cat.options.map((o) => o.value)], tbRight);
+                    return;
+                  }
+                  setToolbarZones([...tbLeft, v], tbRight);
+                }}
               >
-                <option value="">+ Add toolbar item / window / command…</option>
-                <optgroup label="Toolbar Items">
-                  {TOOLBAR_BUILTINS.filter((b) => !tbLeft.includes(`b:${b.key}`) && !tbRight.includes(`b:${b.key}`)).map((b) => (
-                    <option key={b.key} value={`b:${b.key}`}>{b.label}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Windows & Tools">
-                  {ALL_TOOLS.filter((t) => !tbLeft.includes(`t:${t.id}`) && !tbRight.includes(`t:${t.id}`)).map((t) => (
-                    <option key={t.id} value={`t:${t.id}`}>{t.label}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Commands">
-                  {TOOLBAR_COMMANDS.filter((c) => !tbLeft.includes(`c:${c.id}`) && !tbRight.includes(`c:${c.id}`)).map((c) => (
-                    <option key={c.id} value={`c:${c.id}`}>{c.label}</option>
-                  ))}
-                </optgroup>
+                <option value="">+ Add toolbar item…</option>
+                {tbAddCategories.map((cat) => (
+                  <optgroup key={cat.id} label={cat.label}>
+                    {cat.options.length > 1 && <option value={`all:${cat.id}`}>Add all {cat.label}</option>}
+                    {cat.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </optgroup>
+                ))}
+                <option value="divider">Add divider</option>
               </select>
+              <button
+                className="swn-add-btn"
+                title="Empty the toolbar (re-add items from the dropdown)"
+                onClick={() => setToolbarZones([], [])}
+              >Remove All</button>
             </div>
           </section>
           </>)}

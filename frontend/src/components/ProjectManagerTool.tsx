@@ -11,6 +11,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, type ProjectInfo, type ScriptMeta } from '../services/api';
 import { useProjectStore } from '../stores/projectStore';
+import { useSettingsStore } from '../stores/settingsStore';
+import { useEditorStore } from '../stores/editorStore';
+import { mirrorSave } from '../services/saveLocations';
 import { showToast } from './Toast';
 
 type Level = { view: 'projects' } | { view: 'scripts'; project: ProjectInfo };
@@ -84,6 +87,84 @@ export default function ProjectManagerTool() {
     }
   };
 
+  // ── Rename / Delete (v0.44) ────────────────────────────────────────────
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<ProjectInfo | null>(null);
+  const [deleteText, setDeleteText] = useState('');
+  const [backupFirst, setBackupFirst] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const startRename = (p: ProjectInfo) => { setRenamingId(p.id); setRenameValue(p.name); };
+  const commitRename = async (p: ProjectInfo) => {
+    const name = renameValue.trim();
+    setRenamingId(null);
+    if (!name || name === p.name) return;
+    try {
+      const updated = await api.updateProject(p.id, { name });
+      if (currentProject?.id === p.id) {
+        useProjectStore.getState().setCurrentProject({ ...currentProject, name: updated.name ?? name });
+      }
+      showToast(`Project renamed to "${name}"`, 'success');
+      loadProjects();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Rename failed', 'error');
+    }
+  };
+
+  const openDelete = (p: ProjectInfo) => {
+    setDeleteTarget(p);
+    setDeleteText('');
+    setBackupFirst(false);
+  };
+  const closeDelete = () => { if (!deleting) setDeleteTarget(null); };
+
+  const confirmDelete = async () => {
+    const p = deleteTarget;
+    if (!p || deleteText !== 'Delete Project' || deleting) return;
+    if (currentProject?.id === p.id) return; // belt-and-braces; the button never offers it
+    setDeleting(true);
+    try {
+      if (backupFirst) {
+        const st = useSettingsStore.getState();
+        if (!st.saveToCloud && !st.saveToGDrive && !st.saveToOneDrive) {
+          showToast('No save locations are enabled — enable one in Settings > Save Options first.', 'error');
+          setDeleting(false);
+          return;
+        }
+        // Fan every script out to the enabled save locations, then verify —
+        // the project is only deleted if every backup destination succeeded.
+        useEditorStore.getState().clearMirrorStatuses();
+        const projScripts = await api.listScripts(p.id);
+        for (const sc of projScripts) {
+          const resp = await api.getScript(p.id, sc.id);
+          await mirrorSave({
+            projectId: p.id,
+            scriptId: sc.id,
+            projectName: p.name,
+            title: resp.meta.title,
+            content: resp.content ?? {},
+          });
+        }
+        const statuses = useEditorStore.getState().mirrorStatuses;
+        if (Object.values(statuses).includes('error')) {
+          showToast('Backup failed for one or more save locations — the project was NOT deleted.', 'error');
+          setDeleting(false);
+          return;
+        }
+        showToast(`"${p.name}" backed up to your save locations`, 'success');
+      }
+      await api.deleteProject(p.id);
+      showToast(`Project "${p.name}" deleted`, 'success');
+      setDeleteTarget(null);
+      loadProjects();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Delete failed', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="fs-sticky-tool fs-projects-tool">
       {level.view === 'scripts' && (
@@ -104,10 +185,31 @@ export default function ProjectManagerTool() {
               <div
                 key={p.id}
                 className={`fs-project-row${currentProject?.id === p.id ? ' active' : ''}`}
-                onClick={() => openProject(p)}
-                title="Show this project's scripts"
+                onClick={() => { if (renamingId !== p.id) openProject(p); }}
+                title={renamingId === p.id ? undefined : "Show this project's scripts"}
               >
-                <span className="fs-project-name">{p.name}</span>
+                {renamingId === p.id ? (
+                  <input
+                    className="fs-project-rename-input"
+                    autoFocus
+                    value={renameValue}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onBlur={() => void commitRename(p)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { e.preventDefault(); void commitRename(p); }
+                      if (e.key === 'Escape') setRenamingId(null);
+                    }}
+                  />
+                ) : (
+                  <span className="fs-project-name">{p.name}</span>
+                )}
+                <span className="fs-project-actions" onClick={(e) => e.stopPropagation()}>
+                  <button title="Rename project" onClick={() => startRename(p)}>✎</button>
+                  {currentProject?.id !== p.id && (
+                    <button title="Delete project…" onClick={() => openDelete(p)}>🗑</button>
+                  )}
+                </span>
                 <span className="fs-project-chevron">›</span>
               </div>
             ))}
@@ -153,6 +255,53 @@ export default function ProjectManagerTool() {
           </button>
         )}
       </div>
+
+      {deleteTarget && (
+        <div className="dialog-overlay" onClick={closeDelete}>
+          <div className="dialog-box fs-delete-project-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="dialog-header">
+              Delete Project
+              <button className="fs-dialog-x" onClick={closeDelete} title="Close">&times;</button>
+            </div>
+            <div className="dialog-body">
+              <p>
+                This permanently deletes <b>{deleteTarget.name}</b> and all of its
+                scripts. This cannot be undone.
+              </p>
+              <label className="fs-delete-backup-check">
+                <input
+                  type="checkbox"
+                  checked={backupFirst}
+                  onChange={(e) => setBackupFirst(e.target.checked)}
+                />
+                Back up first — save all of this project's scripts to your enabled
+                save locations, then remove the project from the Project Manager
+              </label>
+              <p className="fs-delete-confirm-label">
+                Type <b>Delete Project</b> to confirm:
+              </p>
+              <input
+                className="fs-delete-confirm-input"
+                autoFocus
+                value={deleteText}
+                placeholder="Delete Project"
+                onChange={(e) => setDeleteText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') void confirmDelete(); }}
+              />
+            </div>
+            <div className="dialog-footer">
+              <button onClick={closeDelete} disabled={deleting}>Cancel</button>
+              <button
+                className="dialog-btn-primary"
+                disabled={deleteText !== 'Delete Project' || deleting}
+                onClick={() => void confirmDelete()}
+              >
+                {deleting ? (backupFirst ? 'Backing up…' : 'Deleting…') : 'OK'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

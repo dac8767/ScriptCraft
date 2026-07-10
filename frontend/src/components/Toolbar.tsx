@@ -523,8 +523,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // NOTE: these hooks must stay ABOVE the toolbarMode early return below —
   // a hook after an early return crashes React when the toolbar is toggled
   // hidden ('Rendered fewer hooks than during the previous render').
-  const { toolbarLeft, toolbarRight, setToolbarZones } = useEditorStore();
-  const zonesReady = toolbarLeft.length > 0 || toolbarRight.length > 0;
+  const { toolbarLeft, toolbarRight, setToolbarZones, toolbarZonesSet } = useEditorStore();
+  // Explicit flag, not length>0 — 'Remove All' legitimately empties the zones
+  // and must not re-trigger default seeding.
+  const zonesReady = toolbarZonesSet;
   useEffect(() => {
     if (!zonesReady) {
       setToolbarZones(
@@ -932,21 +934,24 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         </>
       );
       case 'view': return (
-        <select
-          className="view-style-selector"
-          value={previewMode ? 'preview' : viewStyle}
-          onChange={(e) => {
-            const v = e.target.value;
-            if (v === 'preview') { useEditorStore.getState().setPreviewMode(true); return; }
-            useEditorStore.getState().setPreviewMode(false);
-            setViewStyle(v === 'continuous' ? 'continuous' : 'page');
-          }}
-          title="Editor View"
-        >
-          <option value="page">Page View</option>
-          <option value="continuous">Continuous View</option>
-          <option value="preview">Preview</option>
-        </select>
+        <>
+          <span className="view-style-label">Editor View</span>
+          <select
+            className="view-style-selector"
+            value={previewMode ? 'preview' : viewStyle}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === 'preview') { useEditorStore.getState().setPreviewMode(true); return; }
+              useEditorStore.getState().setPreviewMode(false);
+              setViewStyle(v === 'continuous' ? 'continuous' : 'page');
+            }}
+            title="Editor View"
+          >
+            <option value="page">Page</option>
+            <option value="continuous">Continuous</option>
+            <option value="preview">Preview</option>
+          </select>
+        </>
       );
       default: return null;
     }

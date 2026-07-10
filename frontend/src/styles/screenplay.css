@@ -631,6 +631,40 @@ body {
   text-align: center; font-variant-numeric: tabular-nums;
 }
 
+/* ── Project Manager: row actions + delete confirmation (v0.44) ── */
+.fs-project-actions { display: none; align-items: center; gap: 2px; margin-left: auto; }
+.fs-project-row:hover .fs-project-actions { display: inline-flex; }
+.fs-project-actions button {
+  background: transparent; border: none; color: var(--fd-text-muted);
+  cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 4px; line-height: 1;
+}
+.fs-project-actions button:hover { background: var(--fd-overlay-light); color: var(--fd-text); }
+.fs-project-rename-input {
+  flex: 1; min-width: 0; height: 22px; background: var(--fd-input-bg);
+  color: var(--fd-text); border: 1px solid var(--fd-accent); border-radius: 4px;
+  padding: 0 6px; font-size: 12px; outline: none;
+}
+.fs-delete-project-dialog { max-width: 420px; }
+.fs-delete-project-dialog .dialog-body p { margin: 0 0 10px; font-size: 12.5px; line-height: 1.45; }
+.fs-delete-backup-check {
+  display: flex; align-items: flex-start; gap: 8px; margin: 0 0 12px;
+  font-size: 12px; line-height: 1.45; color: var(--fd-text); cursor: pointer;
+}
+.fs-delete-backup-check input { margin-top: 2px; }
+.fs-delete-confirm-label { margin-bottom: 6px !important; }
+.fs-delete-confirm-input {
+  width: 100%; height: 26px; background: var(--fd-input-bg); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: 5px; padding: 0 8px;
+  font-size: 12.5px; outline: none; box-sizing: border-box;
+}
+.fs-delete-confirm-input:focus { border-color: var(--fd-accent); }
+.fs-customize-stuck-hint { color: var(--fd-accent); }
+
+.view-style-label {
+  color: var(--fd-text-muted); font-size: 11px; margin-right: 4px;
+  white-space: nowrap; user-select: none;
+}
+
 /* ── Editable zoom input (desktop toolbar) ── */
 .zoom-input {
   width: 40px;

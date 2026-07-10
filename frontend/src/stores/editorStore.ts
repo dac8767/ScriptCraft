@@ -20,6 +20,7 @@ interface ViewState {
   menuBarHidden?: string[];
   toolbarLeft?: string[];
   toolbarRight?: string[];
+  toolbarZonesSet?: boolean;
   panelDividers?: { id: string; label: string; side: 'left' | 'right' }[];
   workspaces?: Record<string, WorkspaceSnapshot>;
   workspaceOrder?: string[];
@@ -395,6 +396,15 @@ export interface WorkspaceSnapshot {
    *  these aspects untouched when applied. */
   toolbarMode?: 'compact' | 'comfortable' | 'hidden';
   activeTool?: ToolId | null;
+  /** v0.44: capture the Customize state too — toolbar zones, menu bar, and
+   *  panel dividers — so Reset to Saved Layout actually rolls those back.
+   *  Optional for back-compat with older workspaces. */
+  toolbarLeft?: string[];
+  toolbarRight?: string[];
+  menuBarOrder?: string[];
+  menuBarHidden?: string[];
+  menuMode?: 'compact' | 'comfortable' | 'hidden';
+  panelDividers?: { id: string; label: string; side: 'left' | 'right' }[];
   activeToolRight?: ToolId | null;
 }
 
@@ -587,6 +597,7 @@ interface EditorState {
    *  "defaults not yet materialized" — the Toolbar builds them lazily. */
   toolbarLeft: string[];
   toolbarRight: string[];
+  toolbarZonesSet: boolean;
   setToolbarZones: (left: string[], right: string[]) => void;
 
   /** Labeled divider lines for the side panels, ordered via toolOrder using
@@ -1072,6 +1083,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       toolbarHiddenItems: s.toolbarHiddenItems, toolbarPinnedTools: s.toolbarPinnedTools,
       navigatorOpen: s.navigatorOpen, shelfOpen: s.shelfOpen, toolSizes: s.toolSizes,
       toolbarMode: s.toolbarMode, activeTool: s.activeTool, activeToolRight: s.activeToolRight,
+      toolbarLeft: s.toolbarLeft, toolbarRight: s.toolbarRight,
+      menuBarOrder: s.menuBarOrder, menuBarHidden: s.menuBarHidden, menuMode: s.menuMode,
+      panelDividers: s.panelDividers,
     };
     const workspaces = { ...s.workspaces, [name]: snap };
     const workspaceOrder = s.workspaceOrder.includes(name)
@@ -1087,11 +1101,26 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (snap.toolbarMode !== undefined) extras.toolbarMode = snap.toolbarMode;
     if (snap.activeTool !== undefined) { extras.activeTool = snap.activeTool; extras.tempTool = null; }
     if (snap.activeToolRight !== undefined) extras.activeToolRight = snap.activeToolRight;
+    // v0.44 Customize capture (older workspaces leave these untouched)
+    if (snap.toolbarLeft !== undefined && snap.toolbarRight !== undefined) {
+      extras.toolbarLeft = snap.toolbarLeft; extras.toolbarRight = snap.toolbarRight;
+      extras.toolbarZonesSet = true;
+    }
+    if (snap.menuBarOrder !== undefined) extras.menuBarOrder = snap.menuBarOrder;
+    if (snap.menuBarHidden !== undefined) extras.menuBarHidden = snap.menuBarHidden;
+    if (snap.menuMode !== undefined) extras.menuMode = snap.menuMode;
+    if (snap.panelDividers !== undefined) extras.panelDividers = snap.panelDividers;
     saveViewState({
       workspaces: s.workspaces, activeWorkspace: name,
       toolConfig: snap.toolConfig, toolOrder: snap.toolOrder,
       toolbarHiddenItems: snap.toolbarHiddenItems, toolbarPinnedTools: snap.toolbarPinnedTools as string[],
       navigatorOpen: snap.navigatorOpen, shelfOpen: snap.shelfOpen, toolSizes: snap.toolSizes,
+      ...(snap.toolbarLeft !== undefined && snap.toolbarRight !== undefined
+        ? { toolbarLeft: snap.toolbarLeft, toolbarRight: snap.toolbarRight, toolbarZonesSet: true } : {}),
+      ...(snap.menuBarOrder !== undefined ? { menuBarOrder: snap.menuBarOrder } : {}),
+      ...(snap.menuBarHidden !== undefined ? { menuBarHidden: snap.menuBarHidden } : {}),
+      ...(snap.menuMode !== undefined ? { menuMode: snap.menuMode } : {}),
+      ...(snap.panelDividers !== undefined ? { panelDividers: snap.panelDividers } : {}),
       ...(snap.toolbarMode !== undefined ? { toolbarMode: snap.toolbarMode } : {}),
       ...(snap.activeTool !== undefined ? { activeTool: snap.activeTool } : {}),
       ...(snap.activeToolRight !== undefined ? { activeToolRight: snap.activeToolRight } : {}),
@@ -1353,9 +1382,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setDraftLabel: (label) => set({ draftLabel: label }),
   toolbarLeft: _tbZones.left,
   toolbarRight: _tbZones.right,
+  toolbarZonesSet: _vs.toolbarZonesSet === true || _tbZones.left.length > 0 || _tbZones.right.length > 0,
   setToolbarZones: (left, right) => {
-    saveViewState({ toolbarLeft: left, toolbarRight: right });
-    set({ toolbarLeft: left, toolbarRight: right });
+    saveViewState({ toolbarLeft: left, toolbarRight: right, toolbarZonesSet: true });
+    set({ toolbarLeft: left, toolbarRight: right, toolbarZonesSet: true });
   },
   panelDividers: Array.isArray(_vs.panelDividers) ? _vs.panelDividers as { id: string; label: string; side: 'left' | 'right' }[] : [],
   setPanelDividers: (panelDividers) => {
