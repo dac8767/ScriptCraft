@@ -24,6 +24,8 @@ import { useSettingsStore } from '../stores/settingsStore';
 import type { ProjectInfo } from '../services/api';
 import { importProjectFromZip } from '../utils/zipImport';
 import { showToast } from './Toast';
+import { useEditorStore } from '../stores/editorStore';
+import { mirrorSave } from '../services/saveLocations';
 
 type ProjectSource = 'local' | 'cloud';
 
@@ -46,6 +48,8 @@ interface ProjectWithCount extends ProjectInfo {
 
 interface SortableCardProps {
   project: ProjectWithCount;
+  /** The currently open project can't be deleted. */
+  isCurrent: boolean;
   sortKey: SortKey;
   source: ProjectSource;
   onNavigate: (id: string) => void;
@@ -58,6 +62,7 @@ interface SortableCardProps {
 
 const SortableCard: React.FC<SortableCardProps> = ({
   project,
+  isCurrent,
   sortKey,
   source,
   onNavigate,
@@ -221,9 +226,11 @@ const SortableCard: React.FC<SortableCardProps> = ({
           </div>
           <div className="dropdown-separator" />
           <div
-            className="dropdown-item dropdown-item-danger"
+            className={`dropdown-item dropdown-item-danger${isCurrent ? ' dropdown-item-disabled' : ''}`}
             role="menuitem"
-            onClick={() => { setShowActions(false); onDelete(project.id); }}
+            aria-disabled={isCurrent}
+            title={isCurrent ? 'The currently open project can\u2019t be deleted' : undefined}
+            onClick={() => { if (isCurrent) return; setShowActions(false); onDelete(project.id); }}
           >
             Delete
           </div>
@@ -252,8 +259,16 @@ const SortableCard: React.FC<SortableCardProps> = ({
 
 // ── Main component ───────────────────────────────────────────────────────
 
-const ProjectList: React.FC = () => {
+interface ProjectListProps {
+  /** Render inside the Project Manager tool window (no route navigation). */
+  embedded?: boolean;
+  /** Embedded: open a project's script level in place of route navigation. */
+  onOpenProject?: (id: string) => void;
+}
+
+const ProjectList: React.FC<ProjectListProps> = ({ embedded = false, onOpenProject }) => {
   const navigate = useNavigate();
+  const openProjectById = (id: string) => (onOpenProject ? onOpenProject(id) : navigate(`/project/${id}`));
   const [projects, setProjects] = useState<ProjectWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewDialog, setShowNewDialog] = useState(false);
@@ -267,6 +282,10 @@ const ProjectList: React.FC = () => {
     return (localStorage.getItem('opendraft:projectSort') as SortKey) || 'custom';
   });
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deleteText, setDeleteText] = useState('');
+  const [backupFirst, setBackupFirst] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const currentProject = useProjectStore((s) => s.currentProject);
   const [errorMsg, setErrorMsg] = useState<string>('');
 
   const accessToken = useSettingsStore((s) => s.collabAuth.accessToken);
@@ -442,24 +461,63 @@ const ProjectList: React.FC = () => {
   );
 
   const handleDelete = useCallback((id: string) => {
+    if (currentProject?.id === id) {
+      showToast('The currently open project can\u2019t be deleted', 'error');
+      return;
+    }
+    setDeleteText('');
+    setBackupFirst(false);
     setPendingDeleteId(id);
-  }, []);
+  }, [currentProject]);
 
   const confirmDelete = useCallback(async () => {
-    if (!pendingDeleteId) return;
+    if (!pendingDeleteId || deleteText !== 'Delete Project' || deleting) return;
+    if (currentProject?.id === pendingDeleteId) return; // belt-and-braces
+    setDeleting(true);
     try {
+      if (backupFirst && source === 'local') {
+        const st = useSettingsStore.getState();
+        if (!st.saveToCloud && !st.saveToGDrive && !st.saveToOneDrive) {
+          showToast('No save locations are enabled — enable one in Settings > Save Options first.', 'error');
+          setDeleting(false);
+          return;
+        }
+        // Fan every script out to the enabled save locations, then verify —
+        // the project is only deleted if every backup destination succeeded.
+        useEditorStore.getState().clearMirrorStatuses();
+        const proj = projects.find((p) => p.id === pendingDeleteId);
+        const projScripts = await api.listScripts(pendingDeleteId);
+        for (const sc of projScripts) {
+          const resp = await api.getScript(pendingDeleteId, sc.id);
+          await mirrorSave({
+            projectId: pendingDeleteId,
+            scriptId: sc.id,
+            projectName: proj?.name || 'Project',
+            title: resp.meta.title,
+            content: resp.content ?? {},
+          });
+        }
+        const statuses = useEditorStore.getState().mirrorStatuses;
+        if (Object.values(statuses).includes('error')) {
+          showToast('Backup failed for one or more save locations — the project was NOT deleted.', 'error');
+          setDeleting(false);
+          return;
+        }
+        showToast('Project backed up to your save locations', 'success');
+      }
       await client.deleteProject(pendingDeleteId);
       if (source === 'cloud') unmarkCloudProject(pendingDeleteId);
       showToast('Project deleted', 'success');
       await fetchProjects();
+      setPendingDeleteId(null);
     } catch (err) {
       showToast(
         `Delete failed: ${err instanceof Error ? err.message : String(err)}`,
         'error',
       );
     }
-    setPendingDeleteId(null);
-  }, [pendingDeleteId, fetchProjects, client, source, unmarkCloudProject]);
+    setDeleting(false);
+  }, [pendingDeleteId, deleteText, deleting, backupFirst, source, currentProject, projects, fetchProjects, client, unmarkCloudProject]);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -498,7 +556,7 @@ const ProjectList: React.FC = () => {
   };
 
   return (
-    <div className="project-list-page">
+    <div className={`project-list-page${embedded ? ' project-list-embedded' : ''}`}>
       {!WEB_ONLY_CLOUD && (
         <div className="project-source-bar" role="tablist">
           <button
@@ -560,7 +618,7 @@ const ProjectList: React.FC = () => {
                   const newId = await importProjectFromZip(result.content);
                   await fetchProjects();
                   showToast('Project imported', 'success');
-                  navigate(`/project/${newId}`);
+                  openProjectById(newId);
                 } catch (err) {
                   showToast(
                     `Import failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -624,7 +682,8 @@ const ProjectList: React.FC = () => {
                       project={project}
                       sortKey={sortKey}
                       source={source}
-                      onNavigate={(id) => navigate(`/project/${id}`)}
+                      isCurrent={currentProject?.id === project.id}
+                      onNavigate={openProjectById}
                       onPin={handlePin}
                       onColor={handleColor}
                       onDelete={handleDelete}
@@ -650,7 +709,8 @@ const ProjectList: React.FC = () => {
                       project={project}
                       sortKey={sortKey}
                       source={source}
-                      onNavigate={(id) => navigate(`/project/${id}`)}
+                      isCurrent={currentProject?.id === project.id}
+                      onNavigate={openProjectById}
                       onPin={handlePin}
                       onColor={handleColor}
                       onDelete={handleDelete}
@@ -702,23 +762,47 @@ const ProjectList: React.FC = () => {
 
       {/* Delete Confirmation Dialog */}
       {pendingDeleteId && (
-        <div className="dialog-overlay" onClick={() => setPendingDeleteId(null)}>
-          <div className="dialog-box" onClick={(e) => e.stopPropagation()}>
+        <div className="dialog-overlay" onClick={() => { if (!deleting) setPendingDeleteId(null); }}>
+          <div className="dialog-box fs-delete-project-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="dialog-header">Delete Project</div>
             <div className="dialog-body">
               <p>
-                Are you sure you want to delete this project? This cannot be
-                undone.
+                This permanently deletes{' '}
+                <b>{projects.find((p) => p.id === pendingDeleteId)?.name || 'this project'}</b>{' '}
+                and all of its scripts. This cannot be undone.
               </p>
+              {source === 'local' && (
+                <label className="fs-delete-backup-check">
+                  <input
+                    type="checkbox"
+                    checked={backupFirst}
+                    onChange={(e) => setBackupFirst(e.target.checked)}
+                  />
+                  Back up first — save all of this project's scripts to your enabled
+                  save locations, then remove the project from the Project Manager
+                </label>
+              )}
+              <p className="fs-delete-confirm-label">
+                Type <b>Delete Project</b> to confirm:
+              </p>
+              <input
+                className="fs-delete-confirm-input"
+                autoFocus
+                value={deleteText}
+                placeholder="Delete Project"
+                onChange={(e) => setDeleteText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') void confirmDelete(); }}
+              />
             </div>
             <div className="dialog-actions">
-              <button onClick={() => setPendingDeleteId(null)}>Cancel</button>
+              <button onClick={() => setPendingDeleteId(null)} disabled={deleting}>Cancel</button>
               <button
                 className="dialog-primary"
                 style={{ background: '#c0392b' }}
-                onClick={confirmDelete}
+                disabled={deleteText !== 'Delete Project' || deleting}
+                onClick={() => void confirmDelete()}
               >
-                Delete
+                {deleting ? (backupFirst ? 'Backing up…' : 'Deleting…') : 'Delete'}
               </button>
             </div>
           </div>

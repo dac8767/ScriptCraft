@@ -58,7 +58,7 @@ export const ALL_TOOLS: ToolDef[] = [
   { id: 'todo', label: 'To-Do', icon: <FaCheckSquare />, defaultSize: { w: 300, h: 288 }, group: 2 },
   { id: 'highlights', label: 'Highlights', icon: <FaHighlighter />, defaultSize: { w: 300, h: 312 }, group: 2 },
   { id: 'tags', label: 'Production Tags', icon: <FaTags />, defaultSize: { w: 340, h: 336 }, group: 2 },
-  { id: 'projects', label: 'Project Manager', icon: <FaProjectDiagram />, defaultSize: { w: 300, h: 288 }, group: 3 },
+  { id: 'projects', label: 'Project Manager', icon: <FaProjectDiagram />, defaultSize: { w: 720, h: 480 }, group: 3 },
   { id: 'assets', label: 'Asset Manager', icon: <FaBoxes />, defaultSize: { w: 620, h: 372 }, group: 3 },
   { id: 'analytics', label: 'Analytics', icon: <FaChartBar />, defaultSize: { w: 620, h: 384 }, group: 3 },
   { id: 'goals', label: 'Goals', icon: <FaBullseye />, defaultSize: { w: 340, h: 264 }, group: 3 },

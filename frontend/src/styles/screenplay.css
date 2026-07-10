@@ -654,6 +654,13 @@ body {
 .about-credit a { color: var(--fd-accent); text-decoration: none; }
 .about-credit a:hover { text-decoration: underline; }
 
+/* ── Project Manager: embedded OpenDraft project pages (v0.52) ── */
+.fs-pm-embedded { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 0; }
+.fs-pm-embedded .project-list-page,
+.fs-pm-embedded .project-view { flex: 1; min-height: 0; height: auto; padding: 14px; overflow-y: auto; }
+.fs-pm-embedded .project-list-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; max-width: none; }
+.dropdown-item.dropdown-item-disabled { opacity: 0.4; cursor: default; }
+
 /* ── Project Manager: project action chooser (v0.50) ── */
 .fs-project-chooser-dialog { max-width: 300px; }
 .fs-project-chooser-body { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }

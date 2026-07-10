@@ -470,8 +470,18 @@ const ScriptCard: React.FC<ScriptCardProps> = ({
 
 // ── Main component ───────────────────────────────────────────────────────
 
-const ProjectView: React.FC = () => {
-  const { projectId } = useParams<{ projectId: string }>();
+interface ProjectViewProps {
+  /** Render inside the Project Manager tool window (no route navigation for Back). */
+  embedded?: boolean;
+  /** Embedded: project id supplied by the tool instead of the route. */
+  projectIdProp?: string;
+  /** Embedded: return to the project grid inside the tool. */
+  onBack?: () => void;
+}
+
+const ProjectView: React.FC<ProjectViewProps> = ({ embedded = false, projectIdProp, onBack }) => {
+  const { projectId: routeProjectId } = useParams<{ projectId: string }>();
+  const projectId = projectIdProp ?? routeProjectId;
   const navigate = useNavigate();
   // Project's storage source — drives both the routing dispatchers (already
   // handled by projectApi) and the visual badges on individual scripts.
@@ -889,11 +899,11 @@ const ProjectView: React.FC = () => {
   }
 
   return (
-    <div className="project-view">
+    <div className={`project-view${embedded ? ' project-view-embedded' : ''}`}>
       <div className="project-view-header">
         <button
           className="project-back-btn"
-          onClick={() => navigate('/projects')}
+          onClick={() => (onBack ? onBack() : navigate('/projects'))}
         >
           &#x2190; Projects
         </button>
