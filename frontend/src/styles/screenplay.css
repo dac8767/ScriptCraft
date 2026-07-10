@@ -567,7 +567,6 @@ body {
 .toolbar {
   display: flex; align-items: center; height: 30px;
   background: var(--fd-toolbar-bg); border-bottom: none;
-  box-shadow: var(--fd-chrome-shadow);
   padding: 0 8px; gap: 2px; flex-shrink: 0;
   position: relative; z-index: 1;
 }
