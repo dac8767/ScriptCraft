@@ -631,6 +631,13 @@ body {
   text-align: center; font-variant-numeric: tabular-nums;
 }
 
+/* ── Settings > System: Reset All Settings (v0.48) ── */
+.fs-reset-confirm-overlay { z-index: 10060; }
+.fs-reset-confirm-dialog { max-width: 400px; }
+.fs-reset-confirm-dialog .dialog-body p { margin: 0; font-size: 12.5px; line-height: 1.5; }
+.settings-reset-all-btn { border-color: #c62828 !important; color: #e57373; }
+.settings-reset-all-btn:hover { background: rgba(198, 40, 40, 0.12) !important; }
+
 /* ── Customize: 'still reachable via Settings > Layout' warning (v0.47) ── */
 .fs-stuck-warn-overlay { z-index: 10050; }
 .fs-stuck-warn-dialog { max-width: 380px; }

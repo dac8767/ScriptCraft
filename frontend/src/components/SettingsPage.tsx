@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useEditorStore } from '../stores/editorStore';
 import { collabAuthApi, handleAuthResponse, performLogout, isDeviceChallenge } from '../services/collabAuth';
 import type { CollabServerConfig, DeviceRecord } from '../services/collabAuth';
 import { initDemoInfo, isDemoMode } from '../services/demoInfo';
@@ -503,6 +504,14 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
 
   const handleKeyDown = (e: React.KeyboardEvent, action: () => void) => {
     if (e.key === 'Enter') action();
+  };
+
+  // ── Reset all settings (v0.48) ──
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const handleResetAll = () => {
+    useEditorStore.getState().resetAllSettings();
+    setResetConfirmOpen(false);
+    showToast('All settings reset to default', 'success');
   };
 
   return (
@@ -1133,7 +1142,42 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
             </select>
           </div>
         </section>
+
+        {/* ── Reset All Settings ── */}
+        <section className="settings-section">
+          <h2 className="settings-section-title">Reset</h2>
+          <p className="settings-section-desc">
+            Reset all settings to their defaults: the default workspace, menu bar,
+            toolbar, left and right panels, page template settings, and Page view
+            for Editor View. This does not delete anything in your scripts and does
+            not remove project or tool information.
+          </p>
+          <div className="settings-row">
+            <button className="dialog-btn settings-reset-all-btn" onClick={() => setResetConfirmOpen(true)}>
+              Reset All Settings to Default
+            </button>
+          </div>
+        </section>
       </div>
+
+      {resetConfirmOpen && (
+        <div className="dialog-overlay fs-reset-confirm-overlay" onClick={() => setResetConfirmOpen(false)}>
+          <div className="dialog-box fs-reset-confirm-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="dialog-header">Are you sure?</div>
+            <div className="dialog-body">
+              <p>
+                This resets the workspace, menu bar, toolbar, panels, page template
+                settings, and Editor View back to their defaults. Your scripts,
+                projects, saved workspaces, and tool information are not affected.
+              </p>
+            </div>
+            <div className="dialog-footer">
+              <button onClick={() => setResetConfirmOpen(false)}>Cancel</button>
+              <button className="dialog-btn-primary" onClick={handleResetAll}>Yes</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

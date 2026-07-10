@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { normalizeToolbarZones } from '../components/toolbarBuiltins';
+import { normalizeToolbarZones, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
 import { uuid } from '../utils/uuid';
 import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { findLanguage, urlsFor } from '../editor/languageCatalog';
@@ -599,6 +599,9 @@ interface EditorState {
   toolbarRight: string[];
   toolbarZonesSet: boolean;
   setToolbarZones: (left: string[], right: string[]) => void;
+  /** Settings > System: reset every layout/view setting to factory defaults.
+   *  Never touches script content, projects, saved workspaces, or tool data. */
+  resetAllSettings: () => void;
 
   /** Labeled divider lines for the side panels, ordered via toolOrder using
    *  div:<id> tokens. */
@@ -1386,6 +1389,31 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setToolbarZones: (left, right) => {
     saveViewState({ toolbarLeft: left, toolbarRight: right, toolbarZonesSet: true });
     set({ toolbarLeft: left, toolbarRight: right, toolbarZonesSet: true });
+  },
+  resetAllSettings: () => {
+    // Factory layout: no active workspace, default menu bar / toolbar /
+    // panels / page layout, Page view. Saved workspaces, projects, scripts,
+    // and tool data are untouched.
+    const patch: Partial<EditorState> = {
+      activeWorkspace: null,
+      menuBarOrder: [], menuBarHidden: [], menuMode: 'compact',
+      toolbarLeft: [...DEFAULT_TOOLBAR_LEFT], toolbarRight: [...DEFAULT_TOOLBAR_RIGHT],
+      toolbarZonesSet: true, toolbarMode: 'compact',
+      toolbarHiddenItems: [], toolbarPinnedTools: [],
+      toolConfig: { ...DEFAULT_TOOL_CONFIG }, toolOrder: [], panelDividers: [],
+      navigatorOpen: true, shelfOpen: true,
+      viewStyle: 'page', previewMode: false,
+      pageLayout: { ...DEFAULT_PAGE_LAYOUT },
+    };
+    saveViewState({
+      activeWorkspace: null,
+      menuBarOrder: [], menuBarHidden: [], menuMode: 'compact',
+      toolbarLeft: patch.toolbarLeft, toolbarRight: patch.toolbarRight, toolbarZonesSet: true,
+      toolbarMode: 'compact', toolbarHiddenItems: [], toolbarPinnedTools: [],
+      toolConfig: patch.toolConfig, toolOrder: [], panelDividers: [],
+      navigatorOpen: true, shelfOpen: true, viewStyle: 'page',
+    });
+    set(patch);
   },
   panelDividers: Array.isArray(_vs.panelDividers) ? _vs.panelDividers as { id: string; label: string; side: 'left' | 'right' }[] : [],
   setPanelDividers: (panelDividers) => {

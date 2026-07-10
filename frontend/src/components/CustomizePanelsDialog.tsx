@@ -20,7 +20,7 @@ import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
-  category?: 'menu' | 'toolbar' | 'leftpanel' | 'rightpanel';
+  category?: 'menu' | 'toolbar' | 'panels';
   open: boolean;
   onClose: () => void;
   /** Render only the content (no overlay/box) — used inside Preferences. */
@@ -41,19 +41,25 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
 
 
   const PANEL_PRODUCTION_IDS: ToolId[] = ['tags'];
-  const renderPanelTab = (side: 'left' | 'right') => {
+  // One combined Panels tab (v0.48): every panel item in one list — the
+  // Left / Right buttons on each row already choose the side, so separate
+  // Left Panel and Right Panel tabs were redundant.
+  const renderPanelsTab = () => {
     const order = toolOrder.length ? toolOrder : ALL_TOOLS.map((t) => t.id as string);
     const oIdx = (id: string) => {
       const i = order.indexOf(id);
       return i === -1 ? 1000 : i;
     };
-    type Row = { kind: 'tool'; id: ToolId; label: string } | { kind: 'divider'; id: string; label: string };
+    type Row =
+      | { kind: 'tool'; id: ToolId; label: string; side: 'left' | 'right' }
+      | { kind: 'divider'; id: string; label: string; side: 'left' | 'right' };
     const rows: Row[] = [
-      ...ALL_TOOLS.filter((t) => {
-        const cfg = cfgOf(t.id);
-        return cfg.enabled && cfg.side === side;
-      }).map((t) => ({ kind: 'tool' as const, id: t.id, label: t.label, ord: oIdx(t.id) })),
-      ...panelDividers.filter((d) => d.side === side).map((d) => ({ kind: 'divider' as const, id: d.id, label: d.label, ord: oIdx(`div:${d.id}`) })),
+      ...ALL_TOOLS.filter((t) => cfgOf(t.id).enabled).map((t) => ({
+        kind: 'tool' as const, id: t.id, label: t.label, side: cfgOf(t.id).side, ord: oIdx(t.id),
+      })),
+      ...panelDividers.map((d) => ({
+        kind: 'divider' as const, id: d.id, label: d.label, side: d.side, ord: oIdx(`div:${d.id}`),
+      })),
     ].sort((a, b) => a.ord - b.ord).map(({ ord: _o, ...r }) => r as Row);
 
     const orderTokenOf = (r: Row) => r.kind === 'tool' ? r.id : `div:${r.id}`;
@@ -81,15 +87,18 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       if (target === 'hidden') setTool(r.id, { enabled: false });
       else setTool(r.id, { enabled: true, side: target });
     };
+    /** Default side for a tool coming back from hidden. */
+    const homeSide = (id: ToolId): 'left' | 'right' =>
+      DEFAULT_TOOL_CONFIG[id]?.side ?? (WINDOW_IDS.includes(id) ? 'left' : 'right');
     const addOptions = [
-      ...ALL_TOOLS.filter((t) => WINDOW_IDS.includes(t.id) && !(cfgOf(t.id).enabled && cfgOf(t.id).side === side)).map((t) => ({ group: 'Project Windows', value: `t:${t.id}`, label: t.label })),
-      ...ALL_TOOLS.filter((t) => !WINDOW_IDS.includes(t.id) && !PANEL_PRODUCTION_IDS.includes(t.id) && !(cfgOf(t.id).enabled && cfgOf(t.id).side === side)).map((t) => ({ group: 'Tools', value: `t:${t.id}`, label: t.label })),
-      ...ALL_TOOLS.filter((t) => PANEL_PRODUCTION_IDS.includes(t.id) && !(cfgOf(t.id).enabled && cfgOf(t.id).side === side)).map((t) => ({ group: 'Production', value: `t:${t.id}`, label: t.label })),
+      ...ALL_TOOLS.filter((t) => WINDOW_IDS.includes(t.id) && !cfgOf(t.id).enabled).map((t) => ({ group: 'Project Windows', value: `t:${t.id}`, label: t.label })),
+      ...ALL_TOOLS.filter((t) => !WINDOW_IDS.includes(t.id) && !PANEL_PRODUCTION_IDS.includes(t.id) && !cfgOf(t.id).enabled).map((t) => ({ group: 'Tools', value: `t:${t.id}`, label: t.label })),
+      ...ALL_TOOLS.filter((t) => PANEL_PRODUCTION_IDS.includes(t.id) && !cfgOf(t.id).enabled).map((t) => ({ group: 'Production', value: `t:${t.id}`, label: t.label })),
     ];
     const onAdd = (value: string) => {
       if (value === 'divider') {
         const id = String(Date.now());
-        setPanelDividers([...panelDividers, { id, label: '', side }]);
+        setPanelDividers([...panelDividers, { id, label: '', side: 'left' }]);
         setToolOrder([...order, `div:${id}`]);
       } else if (value.startsWith('all:')) {
         const group = value.slice(4);
@@ -98,59 +107,49 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           .filter((o) => o.group === group && o.value.startsWith('t:'))
           .forEach((o) => {
             const id = o.value.slice(2) as ToolId;
-            next[id] = { ...cfgOf(id), enabled: true, side };
+            next[id] = { ...cfgOf(id), enabled: true, side: homeSide(id) };
           });
         setToolConfig(next);
       } else if (value.startsWith('t:')) {
-        setTool(value.slice(2) as ToolId, { enabled: true, side });
+        const id = value.slice(2) as ToolId;
+        setTool(id, { enabled: true, side: homeSide(id) });
       }
     };
-    const resetPanel = () => {
-      // Left default: every Project window. Right default: every tool +
-      // production item. Items belonging to the other family leave this side;
-      // this side's items come home from wherever they are.
+    const resetPanels = () => {
+      // Defaults: every Project window on the left; every tool + production
+      // item on the right. Dividers and custom ordering cleared.
       const next = { ...toolConfig };
       ALL_TOOLS.forEach((t) => {
-        const isWindow = WINDOW_IDS.includes(t.id);
-        const belongsHere = side === 'left' ? isWindow : !isWindow;
-        const c = cfgOf(t.id);
-        if (belongsHere) next[t.id] = { side, enabled: true };
-        else if (c.enabled && c.side === side) next[t.id] = { ...c, enabled: false };
+        next[t.id] = { side: WINDOW_IDS.includes(t.id) ? 'left' : 'right', enabled: true };
       });
       setToolConfig(next);
-      const sideDivTokens = panelDividers.filter((d) => d.side === side).map((d) => `div:${d.id}`);
-      setPanelDividers(panelDividers.filter((d) => d.side !== side));
-      // Strip this side's ids from the custom order so they fall back to the
-      // canonical base order.
-      const homeIds = new Set(
-        ALL_TOOLS.filter((t) => (side === 'left' ? WINDOW_IDS.includes(t.id) : !WINDOW_IDS.includes(t.id))).map((t) => t.id as string),
-      );
-      setToolOrder(order.filter((tok) => !sideDivTokens.includes(tok) && !homeIds.has(tok)));
+      setPanelDividers([]);
+      setToolOrder([]);
     };
     const removeAll = () => {
       const next = { ...toolConfig };
       ALL_TOOLS.forEach((t) => {
         const c = cfgOf(t.id);
-        if (c.enabled && c.side === side) next[t.id] = { ...c, enabled: false };
+        if (c.enabled) next[t.id] = { ...c, enabled: false };
       });
       setToolConfig(next);
-      const sideDivTokens = panelDividers.filter((d) => d.side === side).map((d) => `div:${d.id}`);
-      setPanelDividers(panelDividers.filter((d) => d.side !== side));
-      if (sideDivTokens.length) setToolOrder(order.filter((t) => !sideDivTokens.includes(t)));
+      const divTokens = panelDividers.map((d) => `div:${d.id}`);
+      setPanelDividers([]);
+      if (divTokens.length) setToolOrder(order.filter((t) => !divTokens.includes(t)));
     };
     return (
       <section>
-        <h3>{side === 'left' ? 'Left Panel' : 'Right Panel'}</h3>
+        <h3>Panel Items</h3>
         <p className="fs-customize-hint">
-          Everything currently in this panel, top to bottom. Left/Right moves an
-          item to the other panel; Hide removes it (re-add it from the dropdown
-          below). Divider labels are edited here only.
+          Everything in both panels, in order. Left/Right chooses an item's
+          panel; Hide removes it (re-add it from the dropdown below). Divider
+          labels are edited here only.
         </p>
         {rows.map((r, idx) => (
           <div
             key={`${r.kind}-${r.id}`}
-            className={`fs-customize-row${dragClass(`panel-${side}`, idx)}`}
-            {...dragProps(`panel-${side}`, idx, moveRowTo)}
+            className={`fs-customize-row${dragClass('panels', idx)}`}
+            {...dragProps('panels', idx, moveRowTo)}
           >
             <span className="fs-customize-tool">
               <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
@@ -164,15 +163,15 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               ) : r.label}
             </span>
             <span className="fs-customize-seg">
-              <button className={side === 'left' ? 'active' : ''} onClick={() => setRowSide(r, 'left')}>Left</button>
-              <button className={side === 'right' ? 'active' : ''} onClick={() => setRowSide(r, 'right')}>Right</button>
+              <button className={r.side === 'left' ? 'active' : ''} onClick={() => setRowSide(r, 'left')}>Left</button>
+              <button className={r.side === 'right' ? 'active' : ''} onClick={() => setRowSide(r, 'right')}>Right</button>
               <button onClick={() => setRowSide(r, 'hidden')}>Hide</button>
             </span>
           </div>
         ))}
         <div className="fs-tbzone-adders fs-adders-equal">
           <select value="" onChange={(e) => { if (e.target.value) { onAdd(e.target.value); e.target.value = ''; } }}>
-            <option value="">Add item to {side === 'left' ? 'Left' : 'Right'} Panel…</option>
+            <option value="">+ Add item to Panels…</option>
             {(['Project Windows', 'Tools', 'Production'] as const).some((g) => addOptions.some((o) => o.group === g)) && (
               <optgroup label="Show All">
                 {(['Project Windows', 'Tools', 'Production'] as const)
@@ -193,13 +192,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           </select>
           <button
             className="swn-add-btn"
-            title="Hide everything in this panel (re-add items from the dropdown)"
+            title="Hide everything in both panels (re-add items from the dropdown)"
             onClick={removeAll}
           >Hide All</button>
           <button
             className="swn-add-btn"
-            title={side === 'left' ? 'Restore the default Left Panel: all Project windows' : 'Restore the default Right Panel: all tool and production items'}
-            onClick={resetPanel}
+            title="Restore the defaults: all Project windows left, all tool and production items right"
+            onClick={resetPanels}
           >Reset to Default</button>
         </div>
       </section>
@@ -210,7 +209,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // React ('Rendered more hooks than during the previous render').
   const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones, toolbarZonesSet } = useEditorStore();
   const { panelDividers, setPanelDividers } = useEditorStore();
-  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'leftpanel' | 'rightpanel'>(category ?? 'menu');
+  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'panels'>(category ?? 'menu');
   // Drag-and-drop reordering (v0.45): one shared source marker; drops are
   // only accepted within the same list.
   const [dragInfo, setDragInfo] = React.useState<{ list: string; idx: number } | null>(null);
@@ -305,7 +304,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const body = (
         <div className="dialog-body fs-customize-body" style={embedded ? { padding: '4px 0 0', maxHeight: 'none', overflowY: 'visible' } : undefined}>
           <div className="prefs-subtabs">
-            {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['leftpanel', 'Left Panel'], ['rightpanel', 'Right Panel']] as const).map(([id, label]) => (
+            {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Panels']] as const).map(([id, label]) => (
               <button key={id} className={activeCat === id ? 'active' : ''} onClick={() => setActiveCat(id)}>{label}</button>
             ))}
           </div>
@@ -501,7 +500,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             </div>
           </section>
           </>)}
-          {activeCat === 'leftpanel' && (<>
+          {activeCat === 'panels' && (<>
           <section>
             <h3>Panels</h3>
             <div className="fs-customize-row">
@@ -519,10 +518,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               </span>
             </div>
           </section>
-          {renderPanelTab('left')}
-          </>)}
-          {activeCat === 'rightpanel' && (<>
-          {renderPanelTab('right')}
+          {renderPanelsTab()}
           </>)}
           {stuckWarnOpen && (
             <div className="dialog-overlay fs-stuck-warn-overlay" onClick={() => setStuckWarnOpen(false)}>
