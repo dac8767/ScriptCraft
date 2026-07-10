@@ -203,6 +203,15 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     return cfg && cfg.enabled && cfg.side === side;
   }).sort((a, b) => orderIdx(a.id) - orderIdx(b.id));
 
+  // Labeled divider lines (Customize > Dividers), ordered among the tools via
+  // div:<id> tokens in toolOrder. Rendered as entries interleaved by order.
+  const { panelDividers } = useEditorStore();
+  type DockEntry = { kind: 'tool'; tool: typeof ALL_TOOLS[number] } | { kind: 'divider'; id: string; label: string };
+  const entries: DockEntry[] = [
+    ...tools.map((t) => ({ kind: 'tool' as const, tool: t, ord: orderIdx(t.id) })),
+    ...panelDividers.filter((d) => d.side === side).map((d) => ({ kind: 'divider' as const, id: d.id, label: d.label, ord: orderIdx(`div:${d.id}`) })),
+  ].sort((a, b) => a.ord - b.ord).map(({ ord: _o, ...rest }) => rest as DockEntry);
+
   const activeId = side === 'left' ? activeTool : activeToolRight;
   const setActive = side === 'left' ? setActiveTool : setActiveToolRight;
   const active = tools.find((t) => t.id === activeId) || null;
@@ -247,7 +256,13 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   return (
     <div className={`tool-dock-wrap tool-dock-${side}`}>
       <div className="tool-dock">
-        {tools.map((t) => (
+        {entries.map((entry) => entry.kind === 'divider' ? (
+          <div key={`div-${entry.id}`} className="tool-dock-divider">
+            <span className="tool-dock-divider-line" />
+            {entry.label && <span className="tool-dock-divider-label">{entry.label}</span>}
+            {entry.label && <span className="tool-dock-divider-line" />}
+          </div>
+        ) : (() => { const t = entry.tool; return (
           <React.Fragment key={t.id}>
             <button
               className={'tool-dock-item' + (activeId === t.id ? ' active' : '')}
@@ -275,7 +290,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               </div>
             )}
           </React.Fragment>
-        ))}
+        ); })())}
       </div>
 
       {active && !inline && (

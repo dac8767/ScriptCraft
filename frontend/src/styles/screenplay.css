@@ -12942,3 +12942,54 @@ html.android .version-history-panel {
   color: var(--fd-text);
   padding: 4px 0;
 }
+
+
+/* ═══ v0.38: toolbar zones, user dividers, panel dividers ═══ */
+.toolbar-user-divider {
+  align-self: stretch;
+  margin: 4px 6px;
+  width: 1px;
+  background: var(--fd-border);
+}
+
+.tool-dock-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 4px;
+}
+.tool-dock-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--fd-border);
+}
+.tool-dock-divider-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
+}
+
+.fs-tbzone { border: 1px solid var(--fd-border); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; }
+.fs-tbzone-title { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fd-text-muted); margin-bottom: 6px; }
+.fs-tbzone-adders { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+.fs-tbzone-adders select {
+  height: 26px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  font-size: 12px;
+}
+.fs-divider-label-input {
+  height: 24px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: 12px;
+  width: 150px;
+}

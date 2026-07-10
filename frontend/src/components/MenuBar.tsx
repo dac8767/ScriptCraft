@@ -537,6 +537,27 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     setTrackChangesLabel,
   ]);
 
+  // Pinned toolbar commands (Customize > Toolbar Layout) dispatch
+  // 'freedraft:command'; the dialogs live here, so route them here.
+  useEffect(() => {
+    const onCmd = (e: Event) => {
+      const id = (e as CustomEvent).detail as string;
+      switch (id) {
+        case 'setDraft': setDraftDialogOpen(true); break;
+        case 'rename': setRenameOpen(true); break;
+        case 'takeSnapshot': handleCheckinOpen(); break;
+        case 'snapshots': setVersionHistoryOpen(true); break;
+        case 'compareSnapshot': setCompareVersionOpen(true); break;
+        case 'trackChanges': handleTrackChangesToggle(); break;
+        case 'spellCheck': setSpellModalOpen(true); break;
+        case 'writingSuggestions': setGrammarModalOpen(true); break;
+        default: break;
+      }
+    };
+    window.addEventListener('freedraft:command', onCmd);
+    return () => window.removeEventListener('freedraft:command', onCmd);
+  }, [handleCheckinOpen, handleTrackChangesToggle]);
+
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   // Capture the portal dropdown element via a callback ref on the portal

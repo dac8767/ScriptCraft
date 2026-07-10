@@ -17,6 +17,9 @@ interface ViewState {
   viewStyle?: string;
   menuBarOrder?: string[];
   menuBarHidden?: string[];
+  toolbarLeft?: string[];
+  toolbarRight?: string[];
+  panelDividers?: { id: string; label: string; side: 'left' | 'right' }[];
   workspaces?: Record<string, WorkspaceSnapshot>;
   workspaceOrder?: string[];
   activeWorkspace?: string | null;
@@ -568,6 +571,19 @@ export interface BeatInfo {
 export type BeatArrangeMode = 'auto' | 'custom';
 
 interface EditorState {
+  /** Toolbar zones (v0.38). Tokens: g:<group> built-in section, t:<toolId>
+   *  pinned tool, c:<commandId> pinned command, d:<n> divider line. The right
+   *  zone renders after the flex spacer (far right). Empty arrays mean
+   *  "defaults not yet materialized" — the Toolbar builds them lazily. */
+  toolbarLeft: string[];
+  toolbarRight: string[];
+  setToolbarZones: (left: string[], right: string[]) => void;
+
+  /** Labeled divider lines for the side panels, ordered via toolOrder using
+   *  div:<id> tokens. */
+  panelDividers: { id: string; label: string; side: 'left' | 'right' }[];
+  setPanelDividers: (d: { id: string; label: string; side: 'left' | 'right' }[]) => void;
+
   /** Menu bar customization: display order + hidden menus (File cannot hide). */
   menuBarOrder: string[];
   setMenuBarOrder: (order: string[]) => void;
@@ -1322,6 +1338,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // Scene numbering
   draftLabel: 'First Draft',
   setDraftLabel: (label) => set({ draftLabel: label }),
+  toolbarLeft: Array.isArray(_vs.toolbarLeft) ? _vs.toolbarLeft as string[] : [],
+  toolbarRight: Array.isArray(_vs.toolbarRight) ? _vs.toolbarRight as string[] : [],
+  setToolbarZones: (left, right) => {
+    saveViewState({ toolbarLeft: left, toolbarRight: right });
+    set({ toolbarLeft: left, toolbarRight: right });
+  },
+  panelDividers: Array.isArray(_vs.panelDividers) ? _vs.panelDividers as { id: string; label: string; side: 'left' | 'right' }[] : [],
+  setPanelDividers: (panelDividers) => {
+    saveViewState({ panelDividers });
+    set({ panelDividers });
+  },
   menuBarOrder: Array.isArray(_vs.menuBarOrder) ? _vs.menuBarOrder as string[] : [],
   setMenuBarOrder: (order) => {
     saveViewState({ menuBarOrder: order });

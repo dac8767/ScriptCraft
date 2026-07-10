@@ -13,6 +13,7 @@ import React from 'react';
  */
 import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
+import { TOOLBAR_COMMANDS } from './toolbarCommands';
 
 /** Built-in toolbar items that can be deactivated (matched by title prefix). */
 const TOOLBAR_GROUPS: Array<{ name: string; items: string[] }> = [
@@ -71,6 +72,31 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false 
     return i === -1 ? 100 + MENU_BAR_LABELS.indexOf(l) : i;
   };
   const orderedMenuLabels = [...MENU_BAR_LABELS].sort((a, b) => menuIdx(a) - menuIdx(b));
+
+  const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones } = useEditorStore();
+  const TB_DEFAULT_LEFT = ['g:history', 'g:element', 'g:insert', 'g:font', 'g:style', 'g:align', 'g:nav', 'g:notes'];
+  const TB_DEFAULT_RIGHT = ['g:zoom', 'g:view'];
+  const tbReady = tbLeftRaw.length > 0 || tbRightRaw.length > 0;
+  const tbLeft = tbReady ? tbLeftRaw : [...TB_DEFAULT_LEFT, ...toolbarPinnedTools.map((id) => `t:${id}`)];
+  const tbRight = tbReady ? tbRightRaw : TB_DEFAULT_RIGHT;
+  const GROUP_LABELS: Record<string, string> = {
+    history: 'Undo / Redo / Element… (editing)', element: 'Element dropdown', insert: 'Insert buttons',
+    font: 'Font family & size', style: 'Text style & colors', align: 'Alignment',
+    nav: 'Find & Go to Page', notes: 'Notes & Tags buttons', zoom: 'Zoom controls', view: 'Editor View dropdown',
+  };
+  const tokenLabel = (tok: string): string => {
+    if (tok.startsWith('g:')) return GROUP_LABELS[tok.slice(2)] || tok;
+    if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.label || tok;
+    if (tok.startsWith('c:')) return TOOLBAR_COMMANDS.find((c) => c.id === tok.slice(2))?.label || tok;
+    return '— Divider —';
+  };
+
+  const { panelDividers, setPanelDividers } = useEditorStore();
+  const addPanelDivider = (side: 'left' | 'right') => {
+    const id = String(Date.now());
+    setPanelDividers([...panelDividers, { id, label: '', side }]);
+    setToolOrder([...toolOrder.length ? toolOrder : orderedTools.map((t) => t.id as string), `div:${id}`]);
+  };
   const orderedWindows = orderedTools.filter((t) => WINDOW_IDS.includes(t.id));
   const orderedToolsOnly = orderedTools.filter((t) => !WINDOW_IDS.includes(t.id));
 
@@ -247,41 +273,128 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false 
           </section>
 
           <section>
-            <h3>Toolbar — pinned tools</h3>
+            <h3>Panel Dividers</h3>
             <p className="fs-customize-hint">
-              Pinned tools appear as buttons to the right of Production Tags.
+              Divider lines for the side panels, with an optional small label.
+              Reorder them among the windows and tools with the arrows.
             </p>
-            <div className="fs-customize-checks">
-              {[
-                ...toolbarPinnedTools.map((id) => ALL_TOOLS.find((t) => t.id === id)).filter(Boolean) as typeof ALL_TOOLS,
-                ...ALL_TOOLS.filter((t) => !toolbarPinnedTools.includes(t.id)),
-              ].map((t) => {
-                const pinnedIdx = toolbarPinnedTools.indexOf(t.id);
-                const movePinned = (dir: -1 | 1) => {
-                  const j = pinnedIdx + dir;
-                  if (pinnedIdx < 0 || j < 0 || j >= toolbarPinnedTools.length) return;
-                  const next = [...toolbarPinnedTools];
-                  [next[pinnedIdx], next[j]] = [next[j], next[pinnedIdx]];
-                  setToolbarPinnedTools(next);
-                };
-                return (
-                  <label key={t.id} className="fs-customize-pin-row">
+            {panelDividers.map((d) => {
+              const tok = `div:${d.id}`;
+              const order = toolOrder.length ? toolOrder : orderedTools.map((t) => t.id as string);
+              const idx = order.indexOf(tok);
+              const moveDiv = (dir: -1 | 1) => {
+                if (idx === -1) return;
+                const j = idx + dir;
+                if (j < 0 || j >= order.length) return;
+                const next = [...order];
+                [next[idx], next[j]] = [next[j], next[idx]];
+                setToolOrder(next);
+              };
+              return (
+                <div key={d.id} className="fs-customize-row">
+                  <span className="fs-customize-tool">
+                    <span className="fs-customize-order">
+                      <button title="Move up" onClick={() => moveDiv(-1)} disabled={idx <= 0}>▲</button>
+                      <button title="Move down" onClick={() => moveDiv(1)} disabled={idx === -1 || idx === order.length - 1}>▼</button>
+                    </span>
                     <input
-                      type="checkbox"
-                      checked={pinnedIdx >= 0}
-                      onChange={() => togglePinned(t.id)}
+                      className="fs-divider-label-input"
+                      value={d.label}
+                      placeholder="Label (optional)"
+                      onChange={(e) => setPanelDividers(panelDividers.map((x) => x.id === d.id ? { ...x, label: e.target.value } : x))}
                     />
-                    <span style={{ flex: 1 }}>{t.label}</span>
-                    {pinnedIdx >= 0 && (
-                      <span className="fs-pin-order">
-                        <button type="button" title="Move left on the toolbar" disabled={pinnedIdx === 0} onClick={(e) => { e.preventDefault(); movePinned(-1); }}>▲</button>
-                        <button type="button" title="Move right on the toolbar" disabled={pinnedIdx === toolbarPinnedTools.length - 1} onClick={(e) => { e.preventDefault(); movePinned(1); }}>▼</button>
-                      </span>
-                    )}
-                  </label>
-                );
-              })}
+                  </span>
+                  <span className="fs-customize-seg">
+                    {(['left', 'right'] as const).map((opt) => (
+                      <button
+                        key={opt}
+                        className={d.side === opt ? 'active' : ''}
+                        onClick={() => setPanelDividers(panelDividers.map((x) => x.id === d.id ? { ...x, side: opt } : x))}
+                      >{opt === 'left' ? 'Left' : 'Right'}</button>
+                    ))}
+                    <button onClick={() => {
+                      setPanelDividers(panelDividers.filter((x) => x.id !== d.id));
+                      setToolOrder((toolOrder.length ? toolOrder : []).filter((t) => t !== tok));
+                    }}>Remove</button>
+                  </span>
+                </div>
+              );
+            })}
+            <div className="fs-tbzone-adders">
+              <button className="swn-add-btn" onClick={() => addPanelDivider('left')}>+ Divider in Left panel</button>
+              <button className="swn-add-btn" onClick={() => addPanelDivider('right')}>+ Divider in Right panel</button>
             </div>
+          </section>
+
+          <section>
+            <h3>Toolbar Layout</h3>
+            <p className="fs-customize-hint">
+              Two zones: Left flows from the left edge; Right sits at the far
+              right (zoom and Editor View live there by default). Move anything
+              between zones, reorder with the arrows, add divider lines, and pin
+              any window, tool, or command as a button.
+            </p>
+            {(['left', 'right'] as const).map((zone) => {
+              const tokens = zone === 'left' ? tbLeft : tbRight;
+              const other = zone === 'left' ? tbRight : tbLeft;
+              const setZones = (l: string[], r: string[]) => setToolbarZones(l, r);
+              const update = (next: string[]) => zone === 'left' ? setZones(next, other) : setZones(other, next);
+              const moveTok = (idx: number, dir: -1 | 1) => {
+                const j = idx + dir;
+                if (j < 0 || j >= tokens.length) return;
+                const next = [...tokens];
+                [next[idx], next[j]] = [next[j], next[idx]];
+                update(next);
+              };
+              const sendToOther = (idx: number) => {
+                const tok = tokens[idx];
+                const nextSelf = tokens.filter((_, i) => i !== idx);
+                const nextOther = [...other, tok];
+                zone === 'left' ? setZones(nextSelf, nextOther) : setZones(nextOther, nextSelf);
+              };
+              const removeTok = (idx: number) => update(tokens.filter((_, i) => i !== idx));
+              return (
+                <div key={zone} className="fs-tbzone">
+                  <div className="fs-tbzone-title">{zone === 'left' ? 'Left zone' : 'Right zone (far right)'}</div>
+                  {tokens.map((tok, idx) => (
+                    <div key={`${tok}-${idx}`} className="fs-customize-row">
+                      <span className="fs-customize-tool">
+                        <span className="fs-customize-order">
+                          <button title="Move up" onClick={() => moveTok(idx, -1)} disabled={idx === 0}>▲</button>
+                          <button title="Move down" onClick={() => moveTok(idx, 1)} disabled={idx === tokens.length - 1}>▼</button>
+                        </span>
+                        {tokenLabel(tok)}
+                      </span>
+                      <span className="fs-customize-seg">
+                        <button onClick={() => sendToOther(idx)}>{zone === 'left' ? '→ Right' : '← Left'}</button>
+                        {(tok.startsWith('d:') || tok.startsWith('t:') || tok.startsWith('c:')) && (
+                          <button onClick={() => removeTok(idx)}>Remove</button>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="fs-tbzone-adders">
+                    <button className="swn-add-btn" onClick={() => update([...tokens, `d:${Date.now()}`])}>+ Divider</button>
+                    <select
+                      value=""
+                      onChange={(e) => { if (e.target.value) { update([...tokens, e.target.value]); e.target.value = ''; } }}
+                    >
+                      <option value="">+ Pin window / tool / command…</option>
+                      <optgroup label="Windows & Tools">
+                        {ALL_TOOLS.filter((t) => !tokens.includes(`t:${t.id}`) && !other.includes(`t:${t.id}`)).map((t) => (
+                          <option key={t.id} value={`t:${t.id}`}>{t.label}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Commands">
+                        {TOOLBAR_COMMANDS.filter((c) => !tokens.includes(`c:${c.id}`) && !other.includes(`c:${c.id}`)).map((c) => (
+                          <option key={c.id} value={`c:${c.id}`}>{c.label}</option>
+                        ))}
+                      </optgroup>
+                    </select>
+                  </div>
+                </div>
+              );
+            })}
           </section>
 
           <section>

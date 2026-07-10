@@ -25,6 +25,7 @@ import {
   FaListOl, FaRegStickyNote, FaCheckSquare,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
+import { commandDef } from './toolbarCommands';
 import { useEditorStore, NOTE_COLORS } from '../stores/editorStore';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
@@ -843,15 +844,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
   if (toolbarMode === 'hidden') return null;
 
-  return (
-    <div className={`toolbar${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}`} ref={toolbarRef}>
-      {toolbarHiddenItems.length > 0 && (
-        <style>{
-          toolbarHiddenItems.map((t) => `.toolbar [title^="${t.replace(/"/g, '')}"]`).join(',')
-          + (toolbarHiddenItems.includes('Zoom In') && toolbarHiddenItems.includes('Zoom Out') ? ',.toolbar [title="Zoom"]' : '')
-          + '{display:none !important}'
-        }</style>
-      )}
+  const renderGroupToken = (g: string): React.ReactNode => {
+    switch (g) {
+      case 'history': return (<>
       {/* Undo / Redo — always visible */}
       <div className="toolbar-group">
         <button
@@ -873,7 +868,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       </div>
 
       <div className="toolbar-separator" />
-
+      </>);
+      case 'element': return (<>
       {/* Element type selector — always visible */}
       <div className="toolbar-group">
         <select
@@ -894,7 +890,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             ))}
         </select>
       </div>
-
+      </>);
+      case 'insert': return (<>
       <div className="toolbar-group">
         <button
           className="toolbar-btn"
@@ -921,33 +918,38 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
 
       <div className="toolbar-separator" />
-
+      </>);
+      case 'font': return (<>
       {/* Priority 5: Font face & size — hidden on mobile, collapsible on desktop */}
       <div className="toolbar-desktop-only toolbar-priority-block" data-priority="5">
         {renderFontFaceSize()}
         <div className="toolbar-separator" />
       </div>
-
+      </>);
+      case 'style': return (<>
       {/* Priority 4: Font style & colors — hidden on mobile, collapsible on desktop.
           Suppress ColorPicker popups when hidden so they only render in the overflow copy. */}
       <div className="toolbar-desktop-only toolbar-priority-block" data-priority="4">
         {renderFontStyleColors(false, !isHidden('4'))}
         <div className="toolbar-separator" />
       </div>
-
+      </>);
+      case 'align': return (<>
       {/* Priority 3: Alignment — hidden on mobile, collapsible on desktop */}
       <div className="toolbar-desktop-only toolbar-priority-block" data-priority="3">
         {renderAlignment()}
         <div className="toolbar-separator" />
       </div>
-
+      </>);
+      case 'nav': return (<>
       {/* Priority 2: Search & Go to — collapsible on desktop */}
       <div className="toolbar-priority-block" data-priority="2">
         {renderSearchGoto()}
       </div>
 
       <div className="toolbar-separator" />
-
+      </>);
+      case 'notes': return (<>
       {/* Notes & Tags — always visible */}
       <div className="toolbar-group">
         <button
@@ -964,43 +966,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         >
           <FaTags />
         </button>
-        {toolbarPinnedTools.map((id) => {
-          const t = ALL_TOOLS.find((x) => x.id === id);
-          if (!t) return null;
-          return (
-            <button
-              key={id}
-              className="toolbar-btn"
-              title={t.label}
-              onClick={() => openTool(id)}
-            >
-              {t.icon}
-            </button>
-          );
-        })}
       </div>
-
-      {/* Spacer */}
-      <div style={{ flex: 1 }} />
-
-      {/* Overflow 3-dot menu */}
-      {hasOverflow && (
-        <div className="toolbar-group toolbar-overflow-wrap" ref={overflowRef}>
-          <button
-            className={`toolbar-btn toolbar-overflow-btn${overflowOpen ? ' active' : ''}`}
-            title="More formatting options"
-            onClick={() => setOverflowOpen(!overflowOpen)}
-          >
-            <FaEllipsisV />
-          </button>
-          {overflowOpen && (
-            <div className="toolbar-overflow-menu">
-              {overflowContent}
-            </div>
-          )}
-        </div>
-      )}
-
+      </>);
+      case 'zoom': return (<>
       {/* Zoom — desktop: P1 hides zoom-out, P2 hides zoom label/in */}
       <div className="toolbar-priority-block zoom-group" data-priority="1">
         <button
@@ -1058,7 +1026,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       </div>
 
       <div className="toolbar-separator" />
-
+      </>);
+      case 'view': return (<>
       {/* Editor view: Page / Continuous (mirrors View > Editor) — last by default */}
       <div className="toolbar-group toolbar-desktop-only">
         <select
@@ -1077,6 +1046,90 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           <option value="preview">Preview</option>
         </select>
       </div>
+      </>);
+      default: return null;
+    }
+  };
+
+  // ── v0.38 toolbar zones ────────────────────────────────────────────────
+  // Tokens: g:<group> built-in section · t:<toolId> pinned tool ·
+  // c:<commandId> pinned command · d:<n> divider. Right zone renders after
+  // the flex spacer. Legacy pinned tools migrate into the left zone once.
+  const { toolbarLeft, toolbarRight, setToolbarZones } = useEditorStore();
+  const DEFAULT_LEFT = ['g:history', 'g:element', 'g:insert', 'g:font', 'g:style', 'g:align', 'g:nav', 'g:notes'];
+  const DEFAULT_RIGHT = ['g:zoom', 'g:view'];
+  const zonesReady = toolbarLeft.length > 0 || toolbarRight.length > 0;
+  useEffect(() => {
+    if (!zonesReady) {
+      setToolbarZones(
+        [...DEFAULT_LEFT, ...toolbarPinnedTools.map((id) => `t:${id}`)],
+        DEFAULT_RIGHT,
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zonesReady]);
+  const leftTokens = zonesReady ? toolbarLeft : [...DEFAULT_LEFT, ...toolbarPinnedTools.map((id) => `t:${id}`)];
+  const rightTokens = zonesReady ? toolbarRight : DEFAULT_RIGHT;
+
+  const renderToken = (tok: string): React.ReactNode => {
+    if (tok.startsWith('d:')) {
+      return <div key={tok} className="toolbar-separator toolbar-user-divider" />;
+    }
+    if (tok.startsWith('t:')) {
+      const t = ALL_TOOLS.find((x) => x.id === tok.slice(2));
+      if (!t) return null;
+      return (
+        <button key={tok} className="toolbar-btn" title={t.label} onClick={() => openTool(t.id)}>
+          {t.icon}
+        </button>
+      );
+    }
+    if (tok.startsWith('c:')) {
+      const c = commandDef(tok.slice(2));
+      if (!c) return null;
+      return (
+        <button key={tok} className="toolbar-btn" title={c.label} onClick={() => c.run()}>
+          {c.icon}
+        </button>
+      );
+    }
+    const g = tok.slice(2);
+    return <React.Fragment key={tok}>{renderGroupToken(g)}</React.Fragment>;
+  };
+
+  return (
+    <div className={`toolbar${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}`} ref={toolbarRef}>
+      {toolbarHiddenItems.length > 0 && (
+        <style>{
+          toolbarHiddenItems.map((t) => `.toolbar [title^="${t.replace(/"/g, '')}"]`).join(',')
+          + (toolbarHiddenItems.includes('Zoom In') && toolbarHiddenItems.includes('Zoom Out') ? ',.toolbar [title="Zoom"]' : '')
+          + '{display:none !important}'
+        }</style>
+      )}
+      {leftTokens.map(renderToken)}
+
+      {/* Spacer */}
+      <div style={{ flex: 1 }} />
+
+      {/* Overflow 3-dot menu */}
+      {hasOverflow && (
+        <div className="toolbar-group toolbar-overflow-wrap" ref={overflowRef}>
+          <button
+            className={`toolbar-btn toolbar-overflow-btn${overflowOpen ? ' active' : ''}`}
+            title="More formatting options"
+            onClick={() => setOverflowOpen(!overflowOpen)}
+          >
+            <FaEllipsisV />
+          </button>
+          {overflowOpen && (
+            <div className="toolbar-overflow-menu">
+              {overflowContent}
+            </div>
+          )}
+        </div>
+      )}
+
+      {rightTokens.map(renderToken)}
     </div>
   );
 };
