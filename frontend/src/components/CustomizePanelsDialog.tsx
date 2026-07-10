@@ -47,6 +47,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false 
     menuMode, setMenuMode,
   } = useEditorStore();
 
+  // ALL hooks must run before this early return — a hook below it crashes
+  // React ('Rendered more hooks than during the previous render').
+  const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones } = useEditorStore();
+  const { panelDividers, setPanelDividers } = useEditorStore();
+
   if (!open) return null;
 
   const cfgOf = (id: ToolId): ToolConfig =>
@@ -74,7 +79,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false 
   };
   const orderedMenuLabels = [...MENU_BAR_LABELS].sort((a, b) => menuIdx(a) - menuIdx(b));
 
-  const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones } = useEditorStore();
   const TB_DEFAULT_LEFT = ['g:history', 'g:element', 'g:insert', 'g:font', 'g:style', 'g:align', 'g:nav', 'g:notes'];
   const TB_DEFAULT_RIGHT = ['g:zoom', 'g:view'];
   const tbReady = tbLeftRaw.length > 0 || tbRightRaw.length > 0;
@@ -92,7 +96,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false 
     return '— Divider —';
   };
 
-  const { panelDividers, setPanelDividers } = useEditorStore();
   const addPanelDivider = (side: 'left' | 'right') => {
     const id = String(Date.now());
     setPanelDividers([...panelDividers, { id, label: '', side }]);
