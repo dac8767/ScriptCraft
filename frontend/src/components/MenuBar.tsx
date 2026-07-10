@@ -174,6 +174,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // Platform-aware modifier key symbol for shortcut labels
   const mod = /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl+';
   const {
+    menuBarOrder, menuBarHidden,
     previewMode,
     viewStyle, setViewStyle,
     revisionMode,
@@ -1306,6 +1307,17 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
   menus.push(helpMenu);
 
+  // Customize > Menu Bar: apply user order + hidden set (File never hides;
+  // menus not in the saved order — e.g. added in later versions — keep their
+  // natural position at the end of the ordered ones).
+
+  const visibleMenus = menus.filter((m) => m.label === 'File' || !menuBarHidden.includes(m.label));
+  const orderIdxOf = (label: string) => {
+    const i = menuBarOrder.indexOf(label);
+    return i === -1 ? 100 + menus.findIndex((m) => m.label === label) : i;
+  };
+  const orderedMenus = [...visibleMenus].sort((a, b) => orderIdxOf(a.label) - orderIdxOf(b.label));
+
   // Append plugin menu items to each section (supports nested submenus)
   const pluginCtx = { editor };
   const mapPluginChildren = (children: any[]): MenuItem[] =>
@@ -1559,7 +1571,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
   const renderMenuItems = () => (
     <>
-      {menus.map((menu) => (
+      {orderedMenus.map((menu) => (
         <div
           key={menu.label}
           ref={(el) => { menuItemRefs.current[menu.label] = el; }}

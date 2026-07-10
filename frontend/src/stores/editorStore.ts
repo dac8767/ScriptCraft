@@ -15,6 +15,8 @@ interface ViewState {
   toolConfig?: Record<string, ToolConfig>;
   toolOrder?: string[];
   viewStyle?: string;
+  menuBarOrder?: string[];
+  menuBarHidden?: string[];
   workspaces?: Record<string, WorkspaceSnapshot>;
   workspaceOrder?: string[];
   activeWorkspace?: string | null;
@@ -384,6 +386,9 @@ export interface WorkspaceSnapshot {
 }
 
 /** Default layout: script-structure tools left, everything else right. */
+/** Canonical menu-bar labels in default order (File islocked visible). */
+export const MENU_BAR_LABELS = ['File', 'Edit', 'View', 'Insert', 'Format', 'Project', 'Tools', 'Production', 'Help'];
+
 export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   // Windows — script-info summaries — default to the LEFT panel.
   navigator: { side: 'left', enabled: true },
@@ -563,6 +568,12 @@ export interface BeatInfo {
 export type BeatArrangeMode = 'auto' | 'custom';
 
 interface EditorState {
+  /** Menu bar customization: display order + hidden menus (File cannot hide). */
+  menuBarOrder: string[];
+  setMenuBarOrder: (order: string[]) => void;
+  menuBarHidden: string[];
+  setMenuBarHidden: (hidden: string[]) => void;
+
   // Current element type
   activeElement: ElementType;
   setActiveElement: (el: ElementType) => void;
@@ -1311,6 +1322,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // Scene numbering
   draftLabel: 'First Draft',
   setDraftLabel: (label) => set({ draftLabel: label }),
+  menuBarOrder: Array.isArray(_vs.menuBarOrder) ? _vs.menuBarOrder as string[] : [],
+  setMenuBarOrder: (order) => {
+    saveViewState({ menuBarOrder: order });
+    set({ menuBarOrder: order });
+  },
+  menuBarHidden: (Array.isArray(_vs.menuBarHidden) ? _vs.menuBarHidden as string[] : []).filter((l) => l !== 'File'),
+  setMenuBarHidden: (hidden) => {
+    const safe = hidden.filter((l) => l !== 'File');
+    saveViewState({ menuBarHidden: safe });
+    set({ menuBarHidden: safe });
+  },
   viewStyle: (_vs.viewStyle === 'continuous' ? 'continuous' : 'page') as 'page' | 'continuous',
   setViewStyle: (v) => {
     saveViewState({ viewStyle: v });

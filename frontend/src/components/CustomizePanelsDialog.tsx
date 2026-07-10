@@ -11,7 +11,7 @@ import React from 'react';
  * deactivate any built-in toolbar item. Ported from FreeDraft v5.5's
  * Customize Toolbar.
  */
-import { useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig } from '../stores/editorStore';
+import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 
 /** Built-in toolbar items that can be deactivated (matched by title prefix). */
@@ -38,6 +38,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false 
     toolConfig, setToolConfig,
     toolbarHiddenItems, setToolbarHiddenItems,
     toolbarPinnedTools, setToolbarPinnedTools,
+    menuBarOrder, setMenuBarOrder,
+    menuBarHidden, setMenuBarHidden,
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
     toolOrder, setToolOrder,
     toolbarMode, setToolbarMode,
@@ -64,6 +66,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false 
     return i === -1 ? 1000 + ALL_TOOLS.findIndex((t) => t.id === id) : i;
   };
   const orderedTools = [...ALL_TOOLS].sort((a, b) => orderIdx(a.id) - orderIdx(b.id));
+  const menuIdx = (l: string) => {
+    const i = menuBarOrder.indexOf(l);
+    return i === -1 ? 100 + MENU_BAR_LABELS.indexOf(l) : i;
+  };
+  const orderedMenuLabels = [...MENU_BAR_LABELS].sort((a, b) => menuIdx(a) - menuIdx(b));
   const orderedWindows = orderedTools.filter((t) => WINDOW_IDS.includes(t.id));
   const orderedToolsOnly = orderedTools.filter((t) => !WINDOW_IDS.includes(t.id));
 
@@ -90,6 +97,48 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false 
 
   const body = (
         <div className="dialog-body fs-customize-body" style={embedded ? { padding: '4px 0 0', maxHeight: 'none', overflowY: 'visible' } : undefined}>
+          <section>
+            <h3>Menu Bar</h3>
+            <p className="fs-customize-hint">
+              Hide menus you never use and put the rest in your order. File
+              always stays visible.
+            </p>
+            <div className="fs-customize-grid">
+              {orderedMenuLabels.map((label, idx) => {
+                const hidden = menuBarHidden.includes(label);
+                const moveMenu = (dir: -1 | 1) => {
+                  const j = idx + dir;
+                  if (j < 0 || j >= orderedMenuLabels.length) return;
+                  const next = [...orderedMenuLabels];
+                  [next[idx], next[j]] = [next[j], next[idx]];
+                  setMenuBarOrder(next);
+                };
+                return (
+                  <div key={label} className="fs-customize-row">
+                    <span className="fs-customize-tool">
+                      <span className="fs-customize-order">
+                        <button title="Move left in the menu bar" onClick={() => moveMenu(-1)} disabled={idx === 0}>▲</button>
+                        <button title="Move right in the menu bar" onClick={() => moveMenu(1)} disabled={idx === orderedMenuLabels.length - 1}>▼</button>
+                      </span>
+                      {label}
+                    </span>
+                    <span className="fs-customize-seg">
+                      <button
+                        className={!hidden ? 'active' : ''}
+                        onClick={() => setMenuBarHidden(menuBarHidden.filter((l: string) => l !== label))}
+                      >Show</button>
+                      <button
+                        className={hidden ? 'active' : ''}
+                        disabled={label === 'File'}
+                        onClick={() => { if (label !== 'File' && !hidden) setMenuBarHidden([...menuBarHidden, label]); }}
+                      >Hide</button>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
           <section>
             <h3>Layout</h3>
             <div className="fs-customize-row">
