@@ -46,23 +46,6 @@ const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   { id: 'system', label: 'System', icon: <FaCog /> },
 ];
 
-const RETENTION_CHOICES: Array<{ keep: number; label: string }> = [
-  { keep: 0, label: 'Keep all auto saves' },
-  { keep: 10, label: 'Keep newest 10' },
-  { keep: 25, label: 'Keep newest 25' },
-  { keep: 50, label: 'Keep newest 50' },
-  { keep: 100, label: 'Keep newest 100' },
-];
-
-const SNAPSHOT_CHOICES: Array<{ minutes: number; label: string }> = [
-  { minutes: 0, label: 'Off (manual only)' },
-  { minutes: 5, label: 'Every 5 minutes' },
-  { minutes: 10, label: 'Every 10 minutes' },
-  { minutes: 15, label: 'Every 15 minutes' },
-  { minutes: 30, label: 'Every 30 minutes' },
-  { minutes: 60, label: 'Every hour' },
-];
-
 function LanguageSection() {
   const [enabled, setEnabled] = useStateReact<string[]>(() => spellChecker.getEnabledLanguages());
   const [loading, setLoading] = useStateReact<string | null>(null);
@@ -163,6 +146,7 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
     onedriveClientId, setOnedriveClientId,
     collabAuth,
   } = useSettingsStore();
+  const lastAutoSaveMinutes = React.useRef(autoSnapshotMinutes > 0 ? autoSnapshotMinutes : 5);
   const [gConnected, setGConnected] = useStateReact(gdriveConnected());
   const [oConnected, setOConnected] = useStateReact(onedriveConnected());
   const [busy, setBusy] = useStateReact<string | null>(null);
@@ -265,42 +249,58 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
       </section>
 
       <section>
-        <h3>Automatic auto saves</h3>
-        <div className="prefs-field-row">
-          <label htmlFor="prefs-autosnap">Take an auto save</label>
-          <select
+        <h3>Auto Saves</h3>
+        <label className="prefs-check-row" style={{ marginBottom: 10 }}>
+          <input
+            type="checkbox"
+            checked={autoSnapshotMinutes > 0}
+            onChange={(e) => {
+              if (e.target.checked) {
+                setAutoSnapshotMinutes(lastAutoSaveMinutes.current || 5);
+              } else {
+                if (autoSnapshotMinutes > 0) lastAutoSaveMinutes.current = autoSnapshotMinutes;
+                setAutoSnapshotMinutes(0);
+              }
+            }}
+          />
+          <span>Automatically save projects</span>
+        </label>
+        <div className="prefs-field-row prefs-autosave-row">
+          <label htmlFor="prefs-autosnap">Automatically Save Every:</label>
+          <input
             id="prefs-autosnap"
-            value={autoSnapshotMinutes}
-            onChange={(e) => setAutoSnapshotMinutes(parseInt(e.target.value, 10) || 0)}
-          >
-            {SNAPSHOT_CHOICES.map((c) => (
-              <option key={c.minutes} value={c.minutes}>{c.label}</option>
-            ))}
-          </select>
+            type="number"
+            min={1}
+            max={720}
+            className="prefs-num-input"
+            disabled={autoSnapshotMinutes === 0}
+            value={autoSnapshotMinutes === 0 ? (lastAutoSaveMinutes.current || 5) : autoSnapshotMinutes}
+            onChange={(e) => {
+              const v = Math.max(1, parseInt(e.target.value, 10) || 1);
+              lastAutoSaveMinutes.current = v;
+              if (autoSnapshotMinutes > 0) setAutoSnapshotMinutes(v);
+            }}
+          />
+          <span className="prefs-unit-label">minute(s)</span>
+        </div>
+        <div className="prefs-field-row prefs-autosave-row">
+          <label htmlFor="prefs-autosnap-keep">Maximum Project Versions:</label>
+          <input
+            id="prefs-autosnap-keep"
+            type="number"
+            min={0}
+            max={999}
+            className="prefs-num-input"
+            value={autoSnapshotKeep}
+            onChange={(e) => setAutoSnapshotKeep(Math.max(0, parseInt(e.target.value, 10) || 0))}
+          />
         </div>
         <p className="prefs-hint">
           Auto saves are version checkpoints of the whole project (Tools →
-          Script History → Auto Saves). Automatic auto saves are taken silently
-          and skipped when nothing has changed since the last one, so turning
-          this on won't create empty entries.
-        </p>
-        <div className="prefs-field-row" style={{ marginTop: 14 }}>
-          <label htmlFor="prefs-autosnap-keep">Retention</label>
-          <select
-            id="prefs-autosnap-keep"
-            value={autoSnapshotKeep}
-            onChange={(e) => setAutoSnapshotKeep(parseInt(e.target.value, 10) || 0)}
-          >
-            {RETENTION_CHOICES.map((c) => (
-              <option key={c.keep} value={c.keep}>{c.label}</option>
-            ))}
-          </select>
-        </div>
-        <p className="prefs-hint">
-          When a limit is set, the oldest auto saves beyond it are squashed into
-          a single baseline checkpoint after each automatic auto save. The
-          retained auto saves are preserved exactly — only history older than
-          the window is compacted.
+          Script History → Auto Saves), taken silently and skipped when nothing
+          has changed. When a maximum is set, the oldest auto saves beyond it
+          are squashed into a single baseline checkpoint — retained versions are
+          preserved exactly. 0 keeps every version.
         </p>
       </section>
 
