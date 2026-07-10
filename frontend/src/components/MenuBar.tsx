@@ -491,7 +491,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     try {
       const versions = await api.getVersions(currentProject.id);
       if (versions.length === 0) {
-        showToast('No snapshots yet — use File > Take Snapshot first', 'info');
+        showToast('No auto saves yet — use Tools > Script History > Take Auto Save first', 'info');
         return;
       }
 
@@ -507,7 +507,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         // Script didn't exist at the last check-in (created after the last commit)
         const msg = innerErr instanceof Error ? innerErr.message : '';
         if (msg.includes('404')) {
-          showToast('This script has no snapshot yet — use File > Take Snapshot first', 'info');
+          showToast('This script has no auto save yet — use Tools > Script History > Take Auto Save first', 'info');
         } else {
           showToast('Could not load the checked-in version. Try checking in first.', 'error');
         }
@@ -1240,17 +1240,17 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           icon: <FaCodeBranch />, label: 'Script History',
           disabled: isCollabGuest,
           children: [
-            { icon: <FaUpload />, label: 'Take Snapshot...', action: handleCheckinOpen, disabled: isCollabGuest },
-            { icon: <FaHistory />, label: 'Snapshots', action: () => setVersionHistoryOpen(true), disabled: isCollabGuest },
+            { icon: <FaUpload />, label: 'Take Auto Save...', action: handleCheckinOpen, disabled: isCollabGuest },
+            { icon: <FaHistory />, label: 'Auto Saves', action: () => setVersionHistoryOpen(true), disabled: isCollabGuest },
             { separator: true, label: '' },
             {
               icon: <FaExchangeAlt />,
               label: trackChangesEnabled
                 ? '\u2713 Track Changes'
-                : 'Track Changes Since Last Snapshot',
+                : 'Track Changes Since Last Auto Save',
               action: handleTrackChangesToggle,
             },
-            { icon: <FaFileSignature />, label: 'Compare with Snapshot\u2026', action: () => setCompareVersionOpen(true) },
+            { icon: <FaFileSignature />, label: 'Compare with Auto Save\u2026', action: () => setCompareVersionOpen(true) },
           ],
         },
       ],

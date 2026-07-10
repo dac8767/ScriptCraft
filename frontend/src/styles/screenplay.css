@@ -11968,6 +11968,15 @@ html.android .version-history-panel {
    and duplicate title (the tool window supplies the chrome). */
 .fs-analytics-stats .stats-close { display: none; }
 
+/* Gender tab (v0.49): ONE scroll container for the whole tab. The stats
+   card and the assignment table each had their own scroller; the lower one
+   never got a workable height inside the clipped tab, so the wheel did
+   nothing below the card. Scoped to the gender tab only. */
+.fs-analytics-stats[data-show="gender"] { display: block; overflow-y: auto; }
+.fs-analytics-stats[data-show="gender"] .stats-panel { display: block; flex: none; overflow: visible; }
+.fs-analytics-stats[data-show="gender"] .stats-content { flex: none; overflow: visible; }
+.fs-analytics-stats[data-show="gender"] .fs-gender { flex: none; min-height: auto; overflow: visible; }
+
 /* Statistics embedded in the Analytics tool window: fill and scroll */
 .fs-analytics-stats {
   flex: 1;

@@ -38,16 +38,16 @@ type PrefTab = 'general' | 'layout' | 'formats' | 'page' | 'mores' | 'saveloc' |
 const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   // App-wide first, then writing setup, then data, then system.
   { id: 'general', label: 'General', icon: <FaSlidersH /> },
+  { id: 'saveloc', label: 'Save Options', icon: <FaCloudUploadAlt /> },
   { id: 'layout', label: 'Layout', icon: <FaColumns /> },
   { id: 'formats', label: 'Templates', icon: <FaFileAlt /> },
   { id: 'page', label: 'Page Setup', icon: <FaRulerCombined /> },
   { id: 'mores', label: 'Mores & Continueds', icon: <FaCommentDots /> },
-  { id: 'saveloc', label: 'Save Options', icon: <FaCloudUploadAlt /> },
   { id: 'system', label: 'System', icon: <FaCog /> },
 ];
 
 const RETENTION_CHOICES: Array<{ keep: number; label: string }> = [
-  { keep: 0, label: 'Keep all snapshots' },
+  { keep: 0, label: 'Keep all auto saves' },
   { keep: 10, label: 'Keep newest 10' },
   { keep: 25, label: 'Keep newest 25' },
   { keep: 50, label: 'Keep newest 50' },
@@ -240,7 +240,7 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
       </section>
 
       <section>
-        <h3>Snapshot Locations</h3>
+        <h3>Auto Save Locations</h3>
         <label className="prefs-check-row">
           <input type="checkbox" checked disabled />
           <span>Local version history (always on)</span>
@@ -251,23 +251,23 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
         </label>
         <label className="prefs-check-row">
           <input type="checkbox" checked={snapToGDrive} onChange={(e) => setSnapToGDrive(e.target.checked)} disabled={!gConnected} />
-          <span>Google Drive — Snapshots folder{!gConnected ? ' — connect below first' : ''}</span>
+          <span>Google Drive — Auto Saves folder{!gConnected ? ' — connect below first' : ''}</span>
         </label>
         <label className="prefs-check-row">
           <input type="checkbox" checked={snapToOneDrive} onChange={(e) => setSnapToOneDrive(e.target.checked)} disabled={!oConnected} />
-          <span>OneDrive — Snapshots folder{!oConnected ? ' — connect below first' : ''}</span>
+          <span>OneDrive — Auto Saves folder{!oConnected ? ' — connect below first' : ''}</span>
         </label>
         <p className="prefs-hint">
           The local version history (Tools → Script History) is always kept.
           Every checked location additionally receives a timestamped copy of
-          the script whenever a snapshot is taken, manual or automatic.
+          the script whenever an auto save is taken, manual or automatic.
         </p>
       </section>
 
       <section>
-        <h3>Automatic snapshots</h3>
+        <h3>Automatic auto saves</h3>
         <div className="prefs-field-row">
-          <label htmlFor="prefs-autosnap">Take a snapshot</label>
+          <label htmlFor="prefs-autosnap">Take an auto save</label>
           <select
             id="prefs-autosnap"
             value={autoSnapshotMinutes}
@@ -279,8 +279,8 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
           </select>
         </div>
         <p className="prefs-hint">
-          Snapshots are version checkpoints of the whole project (File →
-          Script History → Snapshots). Automatic snapshots are taken silently
+          Auto saves are version checkpoints of the whole project (Tools →
+          Script History → Auto Saves). Automatic auto saves are taken silently
           and skipped when nothing has changed since the last one, so turning
           this on won't create empty entries.
         </p>
@@ -297,9 +297,9 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
           </select>
         </div>
         <p className="prefs-hint">
-          When a limit is set, the oldest snapshots beyond it are squashed into
-          a single baseline checkpoint after each automatic snapshot. The
-          retained snapshots are preserved exactly — only history older than
+          When a limit is set, the oldest auto saves beyond it are squashed into
+          a single baseline checkpoint after each automatic auto save. The
+          retained auto saves are preserved exactly — only history older than
           the window is compacted.
         </p>
       </section>

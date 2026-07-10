@@ -2136,7 +2136,7 @@ const ScreenplayEditor: React.FC = () => {
     if (!autoSnapshotMinutes || !currentProject || isCollabGuest || isHistoryMode) return;
     const timer = setInterval(() => {
       if (scriptSwitchingRef.current) return;
-      api.checkin(currentProject.id, 'Auto snapshot').then(() => {
+      api.checkin(currentProject.id, 'Auto save').then(() => {
         const snapContent = buildSaveContent();
         if (snapContent) {
           void mirrorSnapshot({
@@ -2144,7 +2144,7 @@ const ScreenplayEditor: React.FC = () => {
             projectName: currentProject.name,
             title: useEditorStore.getState().documentTitle || 'Untitled',
             content: snapContent,
-            message: 'Auto snapshot',
+            message: 'Auto save',
           });
         }
         const keep = useSettingsStore.getState().autoSnapshotKeep;

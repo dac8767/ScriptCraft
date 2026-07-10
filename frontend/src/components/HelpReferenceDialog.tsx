@@ -53,7 +53,7 @@ function Knowledge() {
       <H>File</H>
       <P><b>Save</b> writes to the app's library; <b>Save As</b> downloads a local .odraft file;
       <b> Save to Cloud</b> signs in and stores the script on your FreeDraft Cloud account.
-      <b> Snapshots</b> holds Check In plus every saved version — compare or restore any of them.
+      <b> Auto Saves</b> holds Check In plus every saved version — compare or restore any of them.
       Import and export cover Final Draft (.fdx), Fountain, Word, and PDF.</P>
 
       <H>Tool Panels</H>

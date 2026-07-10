@@ -290,7 +290,7 @@ export async function mirrorSnapshot(args: {
           map[`p:${args.projectId}`] = cloudProjectId;
           mapSet(CLOUD_MAP, map);
         }
-        await cloudApi.createScript(cloudProjectId, { title: `Snapshot — ${label}`, content: args.content });
+        await cloudApi.createScript(cloudProjectId, { title: `Auto Save — ${label}`, content: args.content });
       }
     } catch (err) {
       console.error(`Snapshot copy to ${loc} failed:`, err);
