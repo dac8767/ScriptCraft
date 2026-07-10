@@ -661,6 +661,28 @@ body {
 .fs-pm-embedded .project-view { flex: 1; min-height: 0; height: auto; padding: 14px; overflow-y: auto; }
 .fs-pm-embedded .project-list-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; max-width: none; }
 .dropdown-item.dropdown-item-disabled { opacity: 0.4; cursor: default; }
+/* Compact assets so the grid fits a ~300px side panel with no horizontal
+   cutoff (v0.53.1). Expanding the tool window shows more/bigger columns. */
+.fs-pm-embedded .project-list-page { overflow-x: hidden; }
+.fs-pm-embedded .project-list-title { font-size: 18px; letter-spacing: -0.3px; }
+.fs-pm-embedded .project-list-subtitle { font-size: 11px; overflow-wrap: anywhere; }
+.fs-pm-embedded .project-list-header {
+  flex-wrap: wrap; gap: 8px; align-items: flex-start;
+  margin-bottom: 16px; max-width: none;
+}
+.fs-pm-embedded .project-list-controls { flex-wrap: wrap; gap: 6px; }
+.fs-pm-embedded .project-list-controls > * { max-width: 100%; }
+.fs-pm-embedded .sort-select { height: 26px; font-size: 11px; padding: 0 6px; }
+.fs-pm-embedded .project-source-bar { max-width: none; margin-bottom: 12px; }
+.fs-pm-embedded .project-source-tab { padding: 7px 10px; font-size: 12px; }
+.fs-pm-embedded .project-list-grid {
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px;
+}
+.fs-pm-embedded .project-card { padding: 12px; }
+.fs-pm-embedded .project-card-name { font-size: 14px; margin-bottom: 5px; overflow-wrap: anywhere; }
+.fs-pm-embedded .project-card-meta { font-size: 11px; gap: 4px; flex-wrap: wrap; }
+.fs-pm-embedded .project-card-actions { margin-top: 7px; }
+.fs-pm-embedded .project-view-header { flex-wrap: wrap; gap: 8px; }
 
 /* ── Project Manager: project action chooser (v0.50) ── */
 .fs-project-chooser-dialog { max-width: 300px; }
