@@ -67,12 +67,15 @@ export const BUILTIN_BY_KEY: Record<string, ToolbarBuiltin> = Object.fromEntries
   TOOLBAR_BUILTINS.map((b) => [b.key, b]),
 );
 
+// scriptNotes and tags are NOT in the default — they add from the dropdown's
+// Tools and Production groups (legacy g:notes migration still preserves them
+// in layouts that already had them).
 export const DEFAULT_TOOLBAR_LEFT: string[] = [
   'undo', 'redo', 'element', 'insertSection', 'insertNote', 'insertChecklist',
   'fontFamily', 'fontSize', 'bold', 'italic', 'underline', 'strike',
   'subscript', 'superscript', 'textColor', 'highlightColor',
   'alignLeft', 'alignCenter', 'alignRight', 'alignJustify',
-  'find', 'goto', 'scriptNotes', 'tags',
+  'find', 'goto',
 ].map((k) => `b:${k}`);
 
 export const DEFAULT_TOOLBAR_RIGHT: string[] = ['zoomOut', 'zoomIn', 'view'].map((k) => `b:${k}`);

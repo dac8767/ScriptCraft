@@ -17,7 +17,6 @@ import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from './toolbarBuiltins';
-import { showToast } from './Toast';
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
@@ -215,6 +214,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // Drag-and-drop reordering (v0.45): one shared source marker; drops are
   // only accepted within the same list.
   const [dragInfo, setDragInfo] = React.useState<{ list: string; idx: number } | null>(null);
+  // Warning window shown whenever the View menu (or the whole menu bar)
+  // gets hidden — the user must acknowledge where customization lives.
+  const [stuckWarnOpen, setStuckWarnOpen] = React.useState(false);
   const dragProps = (list: string, idx: number, moveTo: (from: number, to: number) => void) => ({
     draggable: true,
     onDragStart: (e: React.DragEvent) => { setDragInfo({ list, idx }); e.dataTransfer.effectAllowed = 'move'; },
@@ -323,7 +325,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                     className={menuMode === m ? 'active' : ''}
                     onClick={() => {
                       setMenuMode(m);
-                      if (m === 'hidden' && menuMode !== 'hidden') showToast('You can still customize the menu bar, toolbar, and side panels by going to Settings > Layout.', 'info');
+                      if (m === 'hidden' && menuMode !== 'hidden') setStuckWarnOpen(true);
                     }}
                   >
                     {m[0].toUpperCase() + m.slice(1)}
@@ -368,7 +370,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                           setMenuBarHidden([...menuBarHidden, label]);
                           // View hosts this Customize dialog — tell the user
                           // where the other way in lives so they aren't stuck.
-                          if (label === 'View') showToast('You can still customize the menu bar, toolbar, and side panels by going to Settings > Layout.', 'info');
+                          if (label === 'View') setStuckWarnOpen(true);
                         }}
                       >Hide</button>
                     </span>
@@ -387,7 +389,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 title="Hide every menu except File"
                 onClick={() => {
                   setMenuBarHidden(MENU_BAR_LABELS.filter((l) => l !== 'File'));
-                  showToast('You can still customize the menu bar, toolbar, and side panels by going to Settings > Layout.', 'info');
+                  setStuckWarnOpen(true);
                 }}
               >Hide All</button>
               <button
@@ -522,6 +524,22 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           {activeCat === 'rightpanel' && (<>
           {renderPanelTab('right')}
           </>)}
+          {stuckWarnOpen && (
+            <div className="dialog-overlay fs-stuck-warn-overlay" onClick={() => setStuckWarnOpen(false)}>
+              <div className="dialog-box fs-stuck-warn-dialog" onClick={(e) => e.stopPropagation()}>
+                <div className="dialog-header">Heads Up</div>
+                <div className="dialog-body">
+                  <p>
+                    You can still customize the menu bar, toolbar, and side panels
+                    by going to Settings {'>'} Layout.
+                  </p>
+                </div>
+                <div className="dialog-footer">
+                  <button className="dialog-btn-primary" autoFocus onClick={() => setStuckWarnOpen(false)}>OK</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
   );
 
