@@ -88,6 +88,7 @@ export default function ProjectManagerTool() {
   };
 
   // ── Rename / Delete (v0.44) ────────────────────────────────────────────
+  const [chooserTarget, setChooserTarget] = useState<ProjectInfo | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<ProjectInfo | null>(null);
@@ -185,8 +186,8 @@ export default function ProjectManagerTool() {
               <div
                 key={p.id}
                 className={`fs-project-row${currentProject?.id === p.id ? ' active' : ''}`}
-                onClick={() => { if (renamingId !== p.id) openProject(p); }}
-                title={renamingId === p.id ? undefined : "Show this project's scripts"}
+                onClick={() => { if (renamingId !== p.id) setChooserTarget(p); }}
+                title={renamingId === p.id ? undefined : 'Open, rename, or delete this project'}
               >
                 {renamingId === p.id ? (
                   <input
@@ -204,13 +205,6 @@ export default function ProjectManagerTool() {
                 ) : (
                   <span className="fs-project-name">{p.name}</span>
                 )}
-                <span className="fs-project-actions" onClick={(e) => e.stopPropagation()}>
-                  <button title="Rename project" onClick={() => startRename(p)}>✎</button>
-                  {currentProject?.id !== p.id && (
-                    <button title="Delete project…" onClick={() => openDelete(p)}>🗑</button>
-                  )}
-                </span>
-                <span className="fs-project-chevron">›</span>
               </div>
             ))}
           </>
@@ -255,6 +249,36 @@ export default function ProjectManagerTool() {
           </button>
         )}
       </div>
+
+      {chooserTarget && (
+        <div className="dialog-overlay" onClick={() => setChooserTarget(null)}>
+          <div className="dialog-box fs-project-chooser-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="dialog-header">
+              {chooserTarget.name}
+              <button className="fs-dialog-x" onClick={() => setChooserTarget(null)} title="Close">&times;</button>
+            </div>
+            <div className="dialog-body fs-project-chooser-body">
+              <button
+                className="dialog-btn dialog-btn-primary"
+                autoFocus
+                onClick={() => { const t = chooserTarget; setChooserTarget(null); openProject(t); }}
+              >Open</button>
+              <button
+                className="dialog-btn"
+                onClick={() => { const t = chooserTarget; setChooserTarget(null); startRename(t); }}
+              >Rename</button>
+              <button
+                className="dialog-btn"
+                disabled={currentProject?.id === chooserTarget.id}
+                title={currentProject?.id === chooserTarget.id
+                  ? 'The currently open project can\u2019t be deleted'
+                  : 'Delete this project\u2026'}
+                onClick={() => { const t = chooserTarget; setChooserTarget(null); openDelete(t); }}
+              >Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {deleteTarget && (
         <div className="dialog-overlay" onClick={closeDelete}>

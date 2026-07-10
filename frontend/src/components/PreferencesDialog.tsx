@@ -310,7 +310,7 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
           One-time setup: create an OAuth client (type "Web application") at
           console.cloud.google.com → APIs &amp; Services → Credentials, enable
           the Drive API, add <code>{redirectUri()}</code> as an authorized
-          redirect URI, and paste the Client ID here. FreeScript only ever sees
+          redirect URI, and paste the Client ID here. FreeDraft only ever sees
           files it created (drive.file scope).
         </p>
         <div className="prefs-field-row">

@@ -4,7 +4,7 @@
  *   - StickyNotesTool ("Sticky Notes"): General / Script sub-tabs — General is
  *     free-form sticky cards, Script is OpenDraft's anchored notes. The 🔍
  *     search spans both sub-views.
- *   - FragmentsTool ("Fragments", formerly Snippets): text sent from the
+ *   - FragmentsTool ("Snippets"): text sent from the
  *     editor via ⌥⌘X (cut) / ⌥⌘C (copy) — bound in ScreenplayEditor.
  *   - TodoTool ("To-Do"): checklist cards.
  * Cards keep sticky colors, drag-reorder, editable title headers (type name
@@ -26,7 +26,7 @@ import { uuid } from '../utils/uuid';
 const CARD_PLACEHOLDERS: Record<ShelfCardType, string> = {
   comment: '💬 Note',
   todo: '✓ To-Do',
-  snippet: '📄 Fragment',
+  snippet: '📄 Snippet',
 };
 
 const EMPTY_HINTS: Record<ShelfCardType, string> = {
@@ -35,7 +35,7 @@ const EMPTY_HINTS: Record<ShelfCardType, string> = {
   snippet: 'Select text in the Editor and press ⌥⌘X to cut it here, or ⌥⌘C to copy it over.',
 };
 
-/** Build a fragment card from editor text (used by the capture shortcuts). */
+/** Build a snippet card from editor text (used by the capture shortcuts). */
 export function makeSnippetCard(text: string): ShelfCard {
   return { id: uuid(), type: 'snippet', text, color: SHELF_DEFAULT_COLOR, createdAt: new Date().toISOString() };
 }
@@ -206,7 +206,7 @@ export function StickyNotesTool({ editor }: EditorToolProps) {
   );
 }
 
-/* ═══════════ Tool: Fragments (formerly Snippets) ═══════════ */
+/* ═══════════ Tool: Snippets ═══════════ */
 
 export function FragmentsTool(_props: EditorToolProps) {
   return (

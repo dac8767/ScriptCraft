@@ -638,6 +638,17 @@ body {
 .settings-reset-all-btn { border-color: #c62828 !important; color: #e57373; }
 .settings-reset-all-btn:hover { background: rgba(198, 40, 40, 0.12) !important; }
 
+/* ── About: OpenDraft attribution (v0.50) ── */
+.about-credit { font-size: 11.5px; color: var(--fd-text-muted); margin: 4px 0 10px; }
+.about-credit a { color: var(--fd-accent); text-decoration: none; }
+.about-credit a:hover { text-decoration: underline; }
+
+/* ── Project Manager: project action chooser (v0.50) ── */
+.fs-project-chooser-dialog { max-width: 300px; }
+.fs-project-chooser-body { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
+.fs-project-chooser-body .dialog-btn { width: 100%; height: 32px; }
+.fs-project-chooser-body .dialog-btn:disabled { opacity: 0.4; cursor: default; }
+
 /* ── Customize: 'still reachable via Settings > Layout' warning (v0.47) ── */
 .fs-stuck-warn-overlay { z-index: 10050; }
 .fs-stuck-warn-dialog { max-width: 380px; }

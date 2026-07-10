@@ -1856,6 +1856,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             <div className="about-title">FreeDraft</div>
             <div className="about-version">Version 0.19.0</div>
             <div className="about-tagline">Free, open-source screenwriting software</div>
+            <div className="about-credit">
+              Built from the{' '}
+              <a href="https://github.com/Proteus-Technologies-Private-Limited/OpenDraft" target="_blank" rel="noopener noreferrer">
+                OpenDraft
+              </a>{' '}
+              source code by Proteus Technologies.
+            </div>
 
             <div className="about-whats-new">
               <div className="about-section-title">What's New in 0.19</div>

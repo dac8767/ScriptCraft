@@ -6,7 +6,7 @@
  * enabled destination:
  *   - Cloud       — a mirrored project/script pair on the collab account,
  *                   mapped persistently (separate ID spaces).
- *   - Google Drive— the document JSON written to a FreeScript folder
+ *   - Google Drive— the document JSON written to a FreeDraft folder
  *                   (drive.file scope: the app only ever sees its own files).
  *   - OneDrive    — same, via Microsoft Graph path addressing.
  *
@@ -162,7 +162,7 @@ async function driveUpload(token: string, fileName: string, json: string, folder
 
 async function saveToGDrive(args: SavePayload): Promise<void> {
   const token = await getAccessToken(gdriveConfig());
-  const root = await driveEnsureFolder(token, 'FreeScript');
+  const root = await driveEnsureFolder(token, 'FreeDraft');
   const fileName = `${safeName(args.projectName)} — ${safeName(args.title)}.odraft.json`;
   const map = mapGet(GDRIVE_MAP);
   const key = `${args.projectId}/${args.scriptId}`;
@@ -182,7 +182,7 @@ async function saveToGDrive(args: SavePayload): Promise<void> {
 
 async function snapshotToGDrive(projectName: string, label: string, json: string): Promise<void> {
   const token = await getAccessToken(gdriveConfig());
-  const root = await driveEnsureFolder(token, 'FreeScript');
+  const root = await driveEnsureFolder(token, 'FreeDraft');
   const snaps = await driveEnsureFolder(token, 'Snapshots', root);
   await driveUpload(token, `${safeName(projectName)} — ${safeName(label)}.json`, json, snaps);
 }
@@ -204,13 +204,13 @@ async function onedrivePut(token: string, path: string, json: string): Promise<v
 
 async function saveToOneDrive(args: SavePayload): Promise<void> {
   const token = await getAccessToken(onedriveConfig());
-  const path = `FreeScript/${safeName(args.projectName)} — ${safeName(args.title)}.odraft.json`;
+  const path = `FreeDraft/${safeName(args.projectName)} — ${safeName(args.title)}.odraft.json`;
   await onedrivePut(token, path, JSON.stringify(args.content));
 }
 
 async function snapshotToOneDrive(projectName: string, label: string, json: string): Promise<void> {
   const token = await getAccessToken(onedriveConfig());
-  await onedrivePut(token, `FreeScript/Snapshots/${safeName(projectName)} — ${safeName(label)}.json`, json);
+  await onedrivePut(token, `FreeDraft/Snapshots/${safeName(projectName)} — ${safeName(label)}.json`, json);
 }
 
 /* ── Orchestration ─────────────────────────────────────────────────────── */
