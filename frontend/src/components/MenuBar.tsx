@@ -1175,35 +1175,18 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       ],
     },
     {
-      label: 'Production',
-      items: [
-        { icon: <FaFileAlt />, label: 'Title Page...', action: () => useEditorStore.getState().setTitlePageEditorOpen(true) },
-        { icon: <FaFileSignature />, label: 'Set Draft Number...', action: () => setDraftDialogOpen(true) },
-        { separator: true, label: '' },
-        {
-          icon: <FaListUl />,
-          label: 'Add Scene Numbers',
-          action: () => setSceneNumbersVisible(true),
-          disabled: sceneNumbersVisible,
-        },
-        {
-          icon: <FaListUl />,
-          label: 'Remove Scene Numbers',
-          action: () => setSceneNumbersVisible(false),
-          disabled: !sceneNumbersVisible,
-        },
-        {
-          icon: <FaLock />,
-          label: sceneNumbersLocked ? '\u2713 Lock Scene Numbers' : 'Lock Scene Numbers',
-          action: () => setSceneNumbersLocked(!sceneNumbersLocked),
-          disabled: !sceneNumbersVisible,
-        },
-        { icon: <FaLock />, label: 'Lock Pages', disabled: true },
-        { separator: true, label: '' },
-        { icon: <FaToggleOn />, label: revisionMode ? '\u2713 Revision Mode' : 'Revision Mode', action: () => setRevisionMode(!revisionMode) },
-        { separator: true, label: '' },
-        { icon: <FaTags />, label: 'Production Tags', action: () => useEditorStore.getState().openTool('tags') },
-      ],
+      label: 'Project',
+      items: PROJECT_MENU_GROUPS.flatMap((group, gi) => [
+        ...(gi > 0 ? [{ separator: true, label: '' }] : []),
+        ...group
+          .map((id) => ALL_TOOLS.find((t) => t.id === id))
+          .filter((t): t is typeof ALL_TOOLS[number] => !!t)
+          .map((t) => ({
+            icon: t.icon,
+            label: t.label,
+            action: () => useEditorStore.getState().openTool(t.id),
+          })),
+      ]),
     },
     {
       label: 'Tools',
@@ -1251,18 +1234,35 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       ],
     },
     {
-      label: 'Project',
-      items: PROJECT_MENU_GROUPS.flatMap((group, gi) => [
-        ...(gi > 0 ? [{ separator: true, label: '' }] : []),
-        ...group
-          .map((id) => ALL_TOOLS.find((t) => t.id === id))
-          .filter((t): t is typeof ALL_TOOLS[number] => !!t)
-          .map((t) => ({
-            icon: t.icon,
-            label: t.label,
-            action: () => useEditorStore.getState().openTool(t.id),
-          })),
-      ]),
+      label: 'Production',
+      items: [
+        { icon: <FaFileAlt />, label: 'Title Page...', action: () => useEditorStore.getState().setTitlePageEditorOpen(true) },
+        { icon: <FaFileSignature />, label: 'Set Draft Number...', action: () => setDraftDialogOpen(true) },
+        { separator: true, label: '' },
+        {
+          icon: <FaListUl />,
+          label: 'Add Scene Numbers',
+          action: () => setSceneNumbersVisible(true),
+          disabled: sceneNumbersVisible,
+        },
+        {
+          icon: <FaListUl />,
+          label: 'Remove Scene Numbers',
+          action: () => setSceneNumbersVisible(false),
+          disabled: !sceneNumbersVisible,
+        },
+        {
+          icon: <FaLock />,
+          label: sceneNumbersLocked ? '\u2713 Lock Scene Numbers' : 'Lock Scene Numbers',
+          action: () => setSceneNumbersLocked(!sceneNumbersLocked),
+          disabled: !sceneNumbersVisible,
+        },
+        { icon: <FaLock />, label: 'Lock Pages', disabled: true },
+        { separator: true, label: '' },
+        { icon: <FaToggleOn />, label: revisionMode ? '\u2713 Revision Mode' : 'Revision Mode', action: () => setRevisionMode(!revisionMode) },
+        { separator: true, label: '' },
+        { icon: <FaTags />, label: 'Production Tags', action: () => useEditorStore.getState().openTool('tags') },
+      ],
     },
   ];
 
