@@ -13,7 +13,7 @@ import React from 'react';
  * checkboxes (a FreeDraft v5.5 holdover) are gone; hidden items are re-added
  * from the Add dropdown. Item registry: toolbarBuiltins.ts.
  */
-import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig } from '../stores/editorStore';
+import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from './toolbarBuiltins';
@@ -45,7 +45,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // Left / Right buttons on each row already choose the side, so separate
   // Left Panel and Right Panel tabs were redundant.
   const renderPanelsTab = () => {
-    const order = toolOrder.length ? toolOrder : ALL_TOOLS.map((t) => t.id as string);
+    const order = toolOrder.length ? toolOrder : [...DEFAULT_TOOL_ORDER];
     const oIdx = (id: string) => {
       const i = order.indexOf(id);
       return i === -1 ? 1000 : i;
@@ -142,15 +142,16 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       }
     };
     const resetPanels = () => {
-      // Defaults: every Project window on the left; every tool + production
-      // item on the right. Dividers and custom ordering cleared.
-      const next = { ...toolConfig };
+      // Restore the canonical default layout (DEFAULT_TOOL_CONFIG /
+      // DEFAULT_TOOL_ORDER) rather than re-deriving one here — a second,
+      // divergent definition of "default" is how the v0.63 mismatch happened.
+      const next: Record<string, ToolConfig> = {};
       ALL_TOOLS.forEach((t) => {
-        next[t.id] = { side: WINDOW_IDS.includes(t.id) ? 'left' : 'right', enabled: true };
+        next[t.id] = { ...(DEFAULT_TOOL_CONFIG[t.id] ?? { side: 'right', enabled: true }) };
       });
       setToolConfig(next);
       setPanelDividers([]);
-      setToolOrder([]);
+      setToolOrder([...DEFAULT_TOOL_ORDER]);
     };
     const removeAll = () => {
       const next = { ...toolConfig };
@@ -343,7 +344,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const body = (
         <div className="dialog-body fs-customize-body" style={embedded ? { padding: '4px 0 0', maxHeight: 'none', overflowY: 'visible' } : undefined}>
           <div className="prefs-subtabs">
-            {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Panels']] as const).map(([id, label]) => (
+            {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels']] as const).map(([id, label]) => (
               <button key={id} className={activeCat === id ? 'active' : ''} onClick={() => setActiveCat(id)}>{label}</button>
             ))}
           </div>

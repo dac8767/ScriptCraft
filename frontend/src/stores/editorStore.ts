@@ -414,32 +414,39 @@ export interface WorkspaceSnapshot {
 export const MENU_BAR_LABELS = ['File', 'Edit', 'View', 'Insert', 'Format', 'Project', 'Tools', 'Production', 'Help'];
 
 export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
-  // Windows — script-info summaries — default to the LEFT panel.
+  // v0.68: the default panel layout. LEFT = script-structure windows;
+  // RIGHT = writing tools. Production Tags is hidden by default (it opens from
+  // the Production menu). EVERY tool in ALL_TOOLS must have an entry here —
+  // see toolConfigFor() below and the v0.63 bug it prevents.
   navigator: { side: 'left', enabled: true },
   scenes: { side: 'left', enabled: true },
   pages: { side: 'left', enabled: true },
-  locations: { side: 'left', enabled: true },
-  characters: { side: 'left', enabled: true },
-  indexcards: { side: 'right', enabled: true },
-  // Tools — everything else — default to the RIGHT panel.
-  beatboard: { side: 'right', enabled: true },
-  tags: { side: 'right', enabled: true },
-  highlights: { side: 'right', enabled: true },
-  analytics: { side: 'right', enabled: true },
-  goals: { side: 'right', enabled: true },
-  sticky: { side: 'right', enabled: true },
-  fragments: { side: 'right', enabled: true },
-  todo: { side: 'right', enabled: true },
-  // v0.63: these were missing, so ToolDock (toolConfig[id] ?? DEFAULT[id])
-  // resolved undefined and never rendered them, while Customize's own
-  // fallback showed them as enabled/right — a tool appeared "in the right
-  // panel" that wasn't there until you toggled it. EVERY entry in ALL_TOOLS
-  // must have a default here; toolConfigFor() below is the shared resolver
-  // so the two views can never disagree again.
-  assets: { side: 'left', enabled: true },
-  spelling: { side: 'right', enabled: true },
   titlepage: { side: 'left', enabled: true },
+  characters: { side: 'left', enabled: true },
+  locations: { side: 'left', enabled: true },
+  spelling: { side: 'left', enabled: true },
+  assets: { side: 'left', enabled: true },
+
+  sticky: { side: 'right', enabled: true },
+  todo: { side: 'right', enabled: true },
+  fragments: { side: 'right', enabled: true },
+  beatboard: { side: 'right', enabled: true },
+  indexcards: { side: 'right', enabled: true },
+  highlights: { side: 'right', enabled: true },
+  goals: { side: 'right', enabled: true },
+  analytics: { side: 'right', enabled: true },
+
+  tags: { side: 'right', enabled: false },
 };
+
+/** Default row order for the panels, matching DEFAULT_TOOL_CONFIG's grouping.
+ *  Customize renders a stable partition by side, so this is also the order
+ *  within each panel. 'Reset to Default' restores exactly this. */
+export const DEFAULT_TOOL_ORDER: string[] = [
+  'navigator', 'scenes', 'pages', 'titlepage', 'characters', 'locations', 'spelling', 'assets',
+  'sticky', 'todo', 'fragments', 'beatboard', 'indexcards', 'highlights', 'goals', 'analytics',
+  'tags',
+];
 
 /** Single source of truth for a tool's effective config. Used by ToolDock and
  *  the Customize dialog so a tool can never display in one place and be
@@ -1093,7 +1100,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ toolConfig: cfg });
     set({ toolConfig: cfg });
   },
-  toolOrder: _vs.toolOrder ?? [],
+  toolOrder: _vs.toolOrder ?? [...DEFAULT_TOOL_ORDER],
   setToolOrder: (order) => {
     saveViewState({ toolOrder: order });
     set({ toolOrder: order });
