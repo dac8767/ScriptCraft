@@ -12,6 +12,7 @@
  */
 
 import { api, type DemoInfo } from './api';
+import { getApiBase } from '../config';
 
 let cached: DemoInfo | null = null;
 let pending: Promise<DemoInfo> | null = null;
@@ -19,6 +20,13 @@ let pending: Promise<DemoInfo> | null = null;
 export async function initDemoInfo(): Promise<DemoInfo> {
   if (cached) return cached;
   if (pending) return pending;
+  // No cloud backend configured (desktop running offline on local SQLite) —
+  // skip the probe entirely rather than firing a startup request at whatever
+  // host happens to be defaulted. Demo mode is a hosted-backend concept.
+  if (!getApiBase()) {
+    cached = { demo: false, message: null };
+    return cached;
+  }
   pending = api.getDemoInfo()
     .then((info) => { cached = info; return info; })
     .catch(() => {

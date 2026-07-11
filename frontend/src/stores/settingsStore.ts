@@ -115,7 +115,11 @@ function loadEnabledScriptFormats(): string[] {
   return [];
 }
 
-const DEFAULT_COLLAB_URL = 'wss://collab.open-draft.com';
+// Empty until FreeDraft's own collab server is deployed. Set
+// VITE_COLLAB_WS_URL at build time (e.g. wss://collab.freedraft.com), or
+// point at a self-hosted server in Settings. Never default to a third
+// party's infrastructure — the desktop app must not phone home.
+const DEFAULT_COLLAB_URL = (import.meta.env.VITE_COLLAB_WS_URL as string | undefined) || '';
 
 function loadAuth(): CollabAuth {
   try {

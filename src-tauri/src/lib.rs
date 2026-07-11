@@ -1127,7 +1127,7 @@ pub fn run() {
                 .expect("failed to resolve app data directory");
             std::fs::create_dir_all(&app_data_dir).ok();
 
-            eprintln!("OpenDraft starting — local SQLite storage");
+            eprintln!("FreeDraft starting — local SQLite storage");
             eprintln!("Data dir: {}", app_data_dir.display());
 
             // ── Check for file association launch ──────────────────────────

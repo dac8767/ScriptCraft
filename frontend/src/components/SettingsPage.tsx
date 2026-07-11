@@ -541,7 +541,7 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
                 className="dialog-input settings-url-input"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                placeholder="wss://collab.open-draft.com"
+                placeholder="wss://your-host.example.com"
                 onKeyDown={(e) => handleKeyDown(e, handleSaveUrl)}
               />
               <button className="dialog-btn dialog-btn-primary" onClick={handleSaveUrl}>
@@ -577,9 +577,10 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
           <h2 className="settings-section-title">FreeDraft Cloud Server</h2>
           <p className="settings-section-desc">
             HTTP backend used for sign-in, projects, and cloud saves. Leave blank
-            in the browser to use this site's <code>/api</code>. Required on the
-            desktop and mobile apps — defaults to <code>https://open-draft.com</code>;
-            override to point at a self-hosted backend like
+            in the browser to use this site's <code>/api</code>. On the desktop and
+            mobile apps this is empty by default — the app runs fully offline on its
+            local database. Point it at a FreeDraft cloud backend or your own
+            self-hosted server like
             <code> https://your-host.example.com</code> (the <code>/api</code> suffix
             is added automatically if missing).
           </p>
@@ -591,7 +592,7 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
                 className="dialog-input settings-url-input"
                 value={cloudApiInput}
                 onChange={(e) => setCloudApiInput(e.target.value)}
-                placeholder="https://open-draft.com"
+                placeholder="https://your-host.example.com"
                 onKeyDown={(e) => handleKeyDown(e, handleSaveCloudApi)}
               />
               <button className="dialog-btn dialog-btn-primary" onClick={handleSaveCloudApi}>
