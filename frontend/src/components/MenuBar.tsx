@@ -53,6 +53,7 @@ import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
 import { getCurrentElementRule, getLockedFormatting } from '../utils/effectiveFormatting';
 import { pluginRegistry } from '../plugins/registry';
 import AuthIndicator from './AuthIndicator';
+import { MENU_ICONS } from './uiIcons';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { eventToCombo, COMMAND_BY_ID, formatCombo } from './shortcuts';
 import { useShortcutStore } from '../stores/shortcutStore';
@@ -75,10 +76,7 @@ import {
   FaCheckSquare,
   FaFile,
   FaPlus,
-  FaPencilAlt,
-  FaPalette,
   FaEye,
-  FaWrench,
   FaFileImport,
   FaFolderOpen,
   FaSave,
@@ -112,9 +110,7 @@ import {
   FaAlignJustify,
   FaColumns,
   FaFileAlt,
-  FaCommentDots,
   FaImage,
-  FaHighlighter,
   FaAdjust,
   FaUserFriends,
   FaSignInAlt,
@@ -1672,17 +1668,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   }, []);
 
   // Icon map for menu labels
-  const menuIcons: Record<string, React.ReactNode> = {
-    File: <FaFile />,
-    Edit: <FaPencilAlt />,
-    Format: <FaPalette />,
-    Production: <FaClipboardList />,
-    View: <FaEye />,
-    Tools: <FaWrench />,
-    Insert: <FaPlus />,
-    Project: <FaColumns />,
-    Help: <FaQuestionCircle />,
-  };
 
   // Find the active menu's items (search both main menus and help)
   const activeMenuData = activeMenu
@@ -1731,7 +1716,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             if (activeMenu && activeMenu !== menu.label) { setActiveMenu(menu.label); setOpenSubmenu(null); }
           }}
         >
-          {menuIcons[menu.label] && <span className="menu-icon">{menuIcons[menu.label]}</span>}
+          {MENU_ICONS[menu.label] && <span className="menu-icon">{MENU_ICONS[menu.label]}</span>}
           <span className="menu-label">{menu.label}</span>
         </div>
       ))}

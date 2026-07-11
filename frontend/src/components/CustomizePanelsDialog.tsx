@@ -1,5 +1,6 @@
 import React from 'react';
 import AddMenu from './AddMenu';
+import { MENU_ICONS, TOOLBAR_ICONS } from './uiIcons';
 /**
  * CustomizePanelsDialog — View → Customize Layout.
  *
@@ -324,6 +325,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 >
                   <span className="fs-customize-tool">
                     <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
+                    {iconSlot(r.kind === 'tool'
+                      ? (ALL_TOOLS.find((t) => t.id === r.id)?.icon ?? null)
+                      : null)}
                     {r.kind === 'divider' && r.spacer ? (
                       <>
                         <span className="fs-spacer-row-label">— Spacer —</span>
@@ -368,7 +372,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               ...(['Project Windows', 'Tools', 'Production'] as const).map((group) => ({
                 label: group,
                 options: addOptions.filter((o) => o.group === group)
-                  .map((o) => ({ value: o.value, label: o.label })),
+                  .map((o) => ({ value: o.value, label: o.label, icon: tokenIcon(o.value) })),
               })),
               {
                 label: 'Utility',
@@ -588,6 +592,25 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     const n = Number(tok.split(':')[2]);
     return Number.isFinite(n) && n > 0 ? n : DEFAULT_TOOLBAR_SPACER;
   };
+  /**
+   * v0.99 — the icon a row's item wears in the real UI. Resolved from the SAME
+   * sources the UI itself draws from (MENU_ICONS, TOOLBAR_ICONS, and a tool's own
+   * ToolDef.icon), so a Customize row can't end up showing an icon the button
+   * doesn't have. Dividers and spacers have none, and get a blank of the same
+   * width so every label still lines up.
+   */
+  const tokenIcon = (tok: string): React.ReactNode => {
+    if (tok.startsWith('b:')) return TOOLBAR_ICONS[tok.slice(2)] ?? null;
+    if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.icon ?? null;
+    if (tok.startsWith('c:')) return TOOLBAR_ICONS[tok.slice(2)] ?? null;
+    return null;   // spacer / divider
+  };
+
+  /** Icon slot: fixed width whether or not there's an icon, so labels align. */
+  const iconSlot = (node: React.ReactNode) => (
+    <span className="fs-customize-icon">{node}</span>
+  );
+
   const tokenLabel = (tok: string): string => {
     if (tok.startsWith('b:')) return BUILTIN_BY_KEY[tok.slice(2)]?.label || tok;
     if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.label || tok;
@@ -664,6 +687,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   >
                     <span className="fs-customize-tool">
                       <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
+                      {iconSlot(MENU_ICONS[label] ?? null)}
                       {label}
                     </span>
                     <span className="fs-customize-seg">
@@ -781,6 +805,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   >
                     <span className="fs-customize-tool">
                       <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
+                      {iconSlot(tokenIcon(tok))}
                       {tokenLabel(tok)}
                       {tok.startsWith('s:') && (
                         <SpacerSize
@@ -832,7 +857,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   },
                   ...tbAddCategoriesAll.map((cat) => ({
                     label: cat.label,
-                    options: cat.options.map((o) => ({ value: o.value, label: o.label })),
+                    options: cat.options.map((o) => ({ value: o.value, label: o.label, icon: tokenIcon(o.value) })),
                   })),
                 ]}
               />

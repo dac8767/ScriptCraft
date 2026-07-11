@@ -15,7 +15,8 @@ import React from 'react';
 
 export interface AddMenuGroup {
   label: string;
-  options: { value: string; label: string }[];
+  /** v0.99: an option shows the same icon its row (and the real button) shows. */
+  options: { value: string; label: string; icon?: React.ReactNode }[];
 }
 
 export default function AddMenu({ groups, onPick, label = '+ Add Item', title }: {
@@ -63,7 +64,10 @@ export default function AddMenu({ groups, onPick, label = '+ Add Item', title }:
                   key={o.value}
                   className="fs-addmenu-item"
                   onClick={() => { onPick(o.value); setOpen(false); }}
-                >{o.label}</button>
+                >
+                  <span className="fs-customize-icon">{o.icon ?? null}</span>
+                  {o.label}
+                </button>
               ))}
             </div>
           ))}
