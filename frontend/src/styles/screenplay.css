@@ -390,8 +390,6 @@ body {
 .menu-item:hover .menu-icon, .menu-item.active .menu-icon { color: var(--fd-text); }
 .menu-label { font-size: 12.5px; color: var(--fd-text); font-weight: 450; }
 .menu-spacer { flex: 1; }
-/* v0.95: the gap between the Local Only chip and File. */
-.menu-auth-gap { width: 22px; flex: none; }
 
 /* ── "+ Add Item" menu (v0.95) ─────────────────────────────────────────────
    Replaces the native <select>s in Customize. A native select always ticks its
@@ -455,7 +453,7 @@ body {
 /* Auth indicator — sits at the right end of the menu bar. */
 .auth-indicator {
   display: inline-flex; align-items: center; gap: 6px;
-  margin-left: 0;                /* v0.95: now the first thing in the menu bar */
+  margin-left: 18px;             /* v0.97: back beside Help, with air */
   background: transparent;
   border: 1px solid var(--fd-border, rgba(255,255,255,0.12));
   color: var(--fd-text-muted, #aaa);
@@ -652,7 +650,13 @@ body {
 .toolbar-btn.active { background: var(--fd-overlay-medium); border-color: transparent; }
 .toolbar-btn:disabled { opacity: .3; cursor: default; }
 .toolbar-btn-text { width: auto; padding: 0 8px; font-size: 11px; }
-.toolbar-separator { width: 1px; height: 16px; background: var(--fd-border); opacity: 0.5; margin: 0 5px; }
+.toolbar-separator {
+  width: 2px; height: 18px;
+  background: var(--fd-text-muted);
+  opacity: 0.55;               /* v0.97: was 1px @ .5 on --fd-border — invisible */
+  border-radius: 1px;
+  margin: 0 6px;
+}
 .toolbar.toolbar-comfortable .toolbar-btn { width: 28px; height: 26px; font-size: 13px; }
 .toolbar.toolbar-comfortable .toolbar-separator { height: 20px; margin: 0 6px; }
 
@@ -13210,6 +13214,31 @@ html.android .version-history-panel {
 }
 .fs-script-link:hover { filter: brightness(1.2); }
 
+/* Help > Keyboard Shortcuts (v0.97): grouped, and rendered from the LIVE
+   bindings, so a rebound key shows here and is marked as customized. */
+.fs-help-group + .fs-help-group { margin-top: 14px; }
+.fs-help-group-head {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--fd-text-muted);
+}
+.fs-kbd-custom {
+  border-color: var(--fd-accent);
+  color: var(--fd-accent);
+}
+.fs-help-custom-tag {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--fd-overlay-subtle);
+  border: 1px solid var(--fd-border);
+  font-size: 10px;
+  color: var(--fd-text-muted);
+}
+
 /* v0.96: a script-anchored card sits in the grip's slot with a jump arrow — it
    follows the script, so it can't be dragged into an arbitrary order. Same size
    and position as the grip, so the card's shape is unchanged. */
@@ -13714,12 +13743,14 @@ html.android .version-history-panel {
 }
 .tool-dock-divider-line {
   flex: 1;
-  height: 1px;
-  background: var(--fd-border);
+  height: 2px;                 /* v0.97: 1px on --fd-border read as nothing */
+  background: var(--fd-text-muted);
+  opacity: 0.45;
+  border-radius: 1px;
 }
 .tool-dock-divider-label {
   font-size: 10.5px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--fd-text-muted);

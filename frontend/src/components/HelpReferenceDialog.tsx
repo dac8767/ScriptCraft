@@ -1,4 +1,6 @@
 import React from 'react';
+import { useShortcutStore } from '../stores/shortcutStore';
+import { SHORTCUT_COMMANDS, formatCombo } from './shortcuts';
 
 /**
  * HelpReferenceDialog — Help menu content, ported from FreeDraft v5.5's
@@ -6,36 +8,67 @@ import React from 'react';
  *   - kind="shortcuts": the keyboard shortcut grid
  *   - kind="knowledge": the in-app Knowledge Base document
  */
-const isMac = navigator.platform.toUpperCase().includes('MAC');
-const mod = isMac ? '⌘' : 'Ctrl+';
 
-const SHORTCUTS: [string, string][] = [
-  [`${mod}1 – ${mod}8`, 'Set the current element (Scene Heading, Action, Character, Dialogue, Parenthetical, Transition, General, Shot)'],
+/**
+ * v0.97 — this list used to be a hardcoded array, so a shortcut you rebound in
+ * Customize was still shown here with its OLD key. It now reads the LIVE bindings
+ * from the shortcut store, which is the same source the menus and the key handler
+ * use — so rebinding, clearing or resetting a shortcut shows up here immediately,
+ * and this window can't drift out of date again.
+ */
+const EXTRA_SHORTCUTS: [string, string][] = [
+  // Gestures and behaviours, not rebindable commands — so they have no entry in
+  // the registry and are listed alongside it.
   ['Tab / Enter', 'Cycle to the next logical element while writing'],
-  [`${mod}D`, 'Toggle dual dialogue on a character cue'],
-  [`${mod}B / ${mod}I / ${mod}U`, 'Bold / Italic / Underline'],
-  [`${mod}Z / ⇧${mod}Z`, 'Undo / Redo'],
-  [`${mod}F`, 'Find & Replace'],
-  [`${mod}G`, 'Go to Page'],
-  [`${mod}S`, 'Save'],
-  [`⇧${mod}S`, 'Save As (local .odraft file)'],
-  [`${mod}N`, 'New screenplay'],
-  [`${mod}P`, 'Print'],
-  ['⌥⌘X', 'Cut selection to Snippets'],
-  ['⌥⌘C', 'Copy selection to Snippets'],
-  ['⌥-click a note highlight', 'Open Sticky Notes → Script focused on that note'],
+  ['⌥-click a note highlight', 'Open Notes focused on that note'],
   ['Right-click selection', 'Add Script Note, Production Tag, and more'],
 ];
 
 function Shortcuts() {
+  const bindings = useShortcutStore((s) => s.bindings);
+  const overrides = useShortcutStore((s) => s.overrides);
+
+  // Group in registry order; only commands that actually have a key.
+  const groups: { group: string; rows: { label: string; combo: string; custom: boolean }[] }[] = [];
+  for (const cmd of SHORTCUT_COMMANDS) {
+    const combo = bindings[cmd.id];
+    if (!combo) continue;                       // unbound — nothing to show
+    let g = groups.find((x) => x.group === cmd.group);
+    if (!g) { g = { group: cmd.group, rows: [] }; groups.push(g); }
+    g.rows.push({
+      label: cmd.label,
+      combo: formatCombo(combo),
+      custom: Object.prototype.hasOwnProperty.call(overrides, cmd.id)
+        && overrides[cmd.id] !== cmd.defaultCombo,
+    });
+  }
+
   return (
-    <div className="fs-help-grid">
-      {SHORTCUTS.map(([k, d]) => (
-        <div key={k} className="fs-help-row">
-          <span className="fs-kbd">{k}</span>
-          <span>{d}</span>
+    <div className="fs-help-shortcuts">
+      {groups.map((g) => (
+        <div key={g.group} className="fs-help-group">
+          <h4 className="fs-help-group-head">{g.group}</h4>
+          <div className="fs-help-grid">
+            {g.rows.map((r) => (
+              <div key={r.label} className="fs-help-row">
+                <span className={`fs-kbd${r.custom ? ' fs-kbd-custom' : ''}`}>{r.combo}</span>
+                <span>{r.label}{r.custom && <span className="fs-help-custom-tag">customized</span>}</span>
+              </div>
+            ))}
+          </div>
         </div>
       ))}
+      <div className="fs-help-group">
+        <h4 className="fs-help-group-head">Other</h4>
+        <div className="fs-help-grid">
+          {EXTRA_SHORTCUTS.map(([k, d]) => (
+            <div key={k} className="fs-help-row">
+              <span className="fs-kbd">{k}</span>
+              <span>{d}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

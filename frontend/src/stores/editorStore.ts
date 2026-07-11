@@ -1730,7 +1730,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   toolbarMode: (_vs.toolbarMode as 'compact' | 'comfortable' | 'hidden') ?? 'compact',
-  menuMode: ((_vs.menuMode ?? _vs.toolbarMode) === 'comfortable' ? 'comfortable' : (_vs.menuMode ?? _vs.toolbarMode) === 'hidden' ? 'hidden' : 'compact') as 'compact' | 'comfortable' | 'hidden',
+  // v0.97: the menu bar can no longer be hidden — hiding it took File off screen
+  // with it. Anyone already sitting on the hidden mode would otherwise be stuck
+  // with no menu bar and no way back, so that setting is migrated on load.
+  menuMode: ((_vs.menuMode ?? _vs.toolbarMode) === 'comfortable' ? 'comfortable' : 'compact') as 'compact' | 'comfortable' | 'hidden',
   setMenuMode: (m) => {
     saveViewState({ menuMode: m });
     set({ menuMode: m });

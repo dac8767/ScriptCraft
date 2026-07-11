@@ -363,7 +363,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 label: 'Show All',
                 options: (['Project Windows', 'Tools', 'Production'] as const)
                   .filter((g) => addOptions.some((o) => o.group === g))
-                  .map((g) => ({ value: `all:${g}`, label: `Show All ${titleCase(g)}` })),
+                  .map((g) => ({ value: `all:${g}`, label: `Show All - ${titleCase(g)}` })),
               },
               ...(['Project Windows', 'Tools', 'Production'] as const).map((group) => ({
                 label: group,
@@ -624,17 +624,18 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               always stays visible.
             </p>
             <div className="fs-customize-row">
-              <span className="fs-customize-tool">Menu Bar Mode</span>
+              <span className="fs-customize-tool">Menu Bar Size</span>
               <span className="fs-customize-seg">
-                {(['compact', 'comfortable', 'custom', 'hidden'] as const).map((m) => (
+                {/* v0.97: no Hide. Hiding the menu bar took File off screen with
+                    it, and File has to stay reachable. Individual menus can still
+                    be hidden below — except File, for the same reason. */}
+                {(['compact', 'comfortable', 'custom'] as const).map((m) => (
                   <button
                     key={m}
                     className={menuMode === m ? 'active' : ''}
-                    onClick={() => {
-                      setMenuMode(m);
-                    }}
+                    onClick={() => setMenuMode(m)}
                   >
-                    {m === 'hidden' ? 'Hide' : m[0].toUpperCase() + m.slice(1)}
+                    {m[0].toUpperCase() + m.slice(1)}
                   </button>
                 ))}
               </span>
@@ -711,7 +712,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               Hide removes an item (re-add it from the dropdown below).
             </p>
             <div className="fs-customize-row">
-              <span className="fs-customize-tool">Toolbar Mode</span>
+              <span className="fs-customize-tool">Toolbar Size</span>
               <span className="fs-customize-seg">
                 {(['compact', 'comfortable', 'custom', 'hidden'] as const).map((m) => (
                   <button key={m} className={toolbarMode === m ? 'active' : ''} onClick={() => setToolbarMode(m)}>
@@ -827,7 +828,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                     label: 'Show All',
                     options: tbAddCategoriesAll
                       .filter((cat) => !cat.utility && cat.options.length > 0)
-                      .map((cat) => ({ value: `all:${cat.id}`, label: `Show All ${titleCase(cat.label)}` })),
+                      .map((cat) => ({ value: `all:${cat.id}`, label: `Show All - ${titleCase(cat.label)}` })),
                   },
                   ...tbAddCategoriesAll.map((cat) => ({
                     label: cat.label,
@@ -863,8 +864,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               Windows docked inside a panel resize to fit it.
             </p>
             {([
-              ['left', 'Left Panel', navigatorOpen, toggleNavigator] as const,
-              ['right', 'Right Panel', shelfOpen, toggleShelf] as const,
+              ['left', 'Left Panel Size', navigatorOpen, toggleNavigator] as const,
+              ['right', 'Right Panel Size', shelfOpen, toggleShelf] as const,
             ]).map(([side, label, isOpen, toggle]) => (
               <React.Fragment key={side}>
                 <div className="fs-customize-row">

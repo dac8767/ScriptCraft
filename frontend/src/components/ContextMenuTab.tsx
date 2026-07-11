@@ -120,7 +120,7 @@ export default function ContextMenuTab() {
               label: 'Show All',
               options: CONTEXT_MENU_GROUPS
                 .filter((g) => hiddenIn(g).length > 0)
-                .map((g) => ({ value: `all:${g}`, label: `Show All ${titleCase(g)}` })),
+                .map((g) => ({ value: `all:${g}`, label: `Show All - ${titleCase(g)}` })),
             },
             ...CONTEXT_MENU_GROUPS.map((g) => ({
               label: g,
