@@ -328,6 +328,9 @@ export type NoteColor = typeof NOTE_COLORS[number]['name'];
 export interface NoteInfo {
   id: string;
   content: string;
+  /** v0.96: notes render as the same card as everything else, and a card has an
+   *  editable title. Optional — notes made before this have none. */
+  title?: string;
   /** Anchored text snippet the note is attached to */
   anchorText: string;
   /** Element type where the note is anchored */
@@ -472,7 +475,6 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   analytics: { side: 'right', enabled: true },
 
   tags: { side: 'right', enabled: false },
-  customize: { side: 'right', enabled: false },
 };
 
 /** Default row order for the panels, matching DEFAULT_TOOL_CONFIG's grouping.
@@ -481,7 +483,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
 export const DEFAULT_TOOL_ORDER: string[] = [
   'navigator', 'scenes', 'pages', 'titlepage', 'characters', 'locations', 'spelling', 'assets',
   'sticky', 'todo', 'fragments', 'beatboard', 'indexcards', 'highlights', 'goals', 'analytics',
-  'tags', 'customize',
+  'tags',
 ];
 
 /** Single source of truth for a tool's effective config. Used by ToolDock and
@@ -793,7 +795,7 @@ interface EditorState {
   notes: NoteInfo[];
   setNotes: (notes: NoteInfo[]) => void;
   addNote: (note: Omit<NoteInfo, 'id' | 'createdAt'>) => string;
-  updateNote: (id: string, updates: Partial<Pick<NoteInfo, 'content' | 'color'>>) => void;
+  updateNote: (id: string, updates: Partial<Pick<NoteInfo, 'content' | 'color' | 'title'>>) => void;
   deleteNote: (id: string) => void;
   noteFilter: NoteFilter;
   setNoteFilter: (filter: NoteFilter) => void;

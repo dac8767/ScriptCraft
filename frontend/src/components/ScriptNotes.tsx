@@ -13,7 +13,10 @@ import {
   NOTE_COLORS,
   type NoteColor,
   type ElementType,
+  type ShelfCard,
+  SHELF_COLORS,
 } from '../stores/editorStore';
+import { ColorDots } from './StickyCard';
 import { useAssetStore, type Asset } from '../stores/assetStore';
 import { useProjectStore } from '../stores/projectStore';
 import { api } from '../services/api';
@@ -43,6 +46,21 @@ export const formatDate = (iso: string) => {
     hour: '2-digit',
     minute: '2-digit',
   });
+};
+
+/**
+ * v0.96 — the card's colour dots speak SHELF_COLORS (pastel card backgrounds);
+ * a note stores a NoteColor name. Both palettes are the same six colours in the
+ * same order, so they bridge by LABEL — not by comparing hexes, which would
+ * silently pick the wrong one the day either palette is retuned.
+ */
+export const shelfHexForNote = (name: NoteColor): string => {
+  const i = NOTE_COLORS.findIndex((c) => c.name === name);
+  return SHELF_COLORS[i >= 0 ? i : 0][0];
+};
+export const noteColorForShelfHex = (hex: string): NoteColor => {
+  const i = SHELF_COLORS.findIndex(([h]) => h === hex);
+  return NOTE_COLORS[i >= 0 ? i : 0].name;
 };
 
 /** Resolve a NoteColor name to its hex value. */
@@ -465,22 +483,36 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
               <div
                 key={note.id}
                 ref={(el) => { if (el) cardRefs.current.set(note.id, el); else cardRefs.current.delete(note.id); }}
-                className={`note-item${flashNoteId === note.id ? ' note-item-flash' : ''}`}
+                className={`swn-card note-item${flashNoteId === note.id ? ' note-item-flash' : ''}`}
                 style={{ background: NOTE_STICKY_BG[note.color] || NOTE_STICKY_BG.Yellow, borderTopColor: hex }}
               >
-                {/* v0.94: a script-linked note now looks like any other note. The
-                    context used to be spelled out here in three passive labels;
-                    it's one LINK at the foot of the note instead — click it and
-                    you land on the note in the editor. Same treatment as To-Do. */}
-                <div className="note-item-header">
-                  <span className="note-item-date">{formatDate(note.createdAt)}</span>
-                </div>
-
-                <button
-                  className="fs-script-link"
-                  onClick={() => handleNavigateToNote(note.id)}
-                  title="Go to this note in the script"
-                >{sceneName || note.contextLabel || elemLabel || 'View in script'}</button>
+                {/* v0.96: the SAME header as a note made in the window — link (in
+                    the grip's slot, because a script note follows the script and
+                    can't be dragged into an arbitrary order), editable title,
+                    colour dots, delete. The body keeps the note's own editor,
+                    which does @asset references and media the plain card can't. */}
+                <h5 className="swn-card-head">
+                  <button
+                    className="swn-card-jump"
+                    title={`Go to this note in the script — ${sceneName || note.contextLabel || elemLabel}`}
+                    onClick={() => handleNavigateToNote(note.id)}
+                  >↗</button>
+                  <input
+                    className="swn-card-title"
+                    value={note.title || ''}
+                    placeholder="Note"
+                    onChange={(e) => updateNote(note.id, { title: e.target.value })}
+                  />
+                  <span className="swn-card-actions">
+                    <ColorDots
+                      card={{ id: note.id, type: 'comment', color: shelfHexForNote(note.color) } as ShelfCard}
+                      onUpdate={(patch) => {
+                        if (patch.color) updateNote(note.id, { color: noteColorForShelfHex(patch.color) });
+                      }}
+                    />
+                    <button className="swn-x" title="Delete" onClick={() => handleDeleteRequest(note.id)}>✕</button>
+                  </span>
+                </h5>
 
                 {/* Note content: edit mode or rendered preview */}
                 {isEditing ? (

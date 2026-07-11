@@ -11,23 +11,18 @@
  * as placeholder), and creation dates. Data persists per script as the
  * `_shelf` key of the saved content JSON and syncs in collab via collabSync.
  */
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Editor } from '@tiptap/react';
 import {
   useEditorStore,
-  SHELF_COLORS,
   SHELF_DEFAULT_COLOR,
   type ShelfCard,
   type ShelfCardType,
 } from '../stores/editorStore';
-import { ScriptNotesContent, formatDate } from './ScriptNotes';
+import { ScriptNotesContent } from './ScriptNotes';
+import { StickyCard } from './StickyCard';
 import { uuid } from '../utils/uuid';
 
-const CARD_PLACEHOLDERS: Record<ShelfCardType, string> = {
-  comment: '💬 Note',
-  todo: '✓ To-Do',
-  snippet: '📄 Snippet',
-};
 
 const EMPTY_HINTS: Record<ShelfCardType, string> = {
   comment: 'Notes to self, research links, themes to keep present. Hit + Add below.',
@@ -246,29 +241,52 @@ export function TodoTool({ editor }: EditorToolProps) {
     return () => { editor.off('update', onUpdate); };
   }, [editor]);
 
-  // To-dos that live in the script: [ ] lines in the document. Each one records
-  // the scene it falls under — that's the Location shown on its row.
-  const docTodos = useMemo(() => {
-    const out: Array<{ text: string; pos: number; done: boolean; linkLabel: string }> = [];
+  /**
+   * To-do lists that live in the script. Consecutive [ ] lines are ONE list —
+   * which is exactly what Enter builds (v0.94) — so they surface as one card,
+   * the same card a list made in this window gets. Title and colour ride on the
+   * first line's attrs, so the card is genuinely the same thing, not a lookalike.
+   */
+  const scriptLists = useMemo(() => {
+    type Line = { text: string; done: boolean; pos: number; size: number };
+    const out: Array<{
+      start: number; end: number; lines: Line[];
+      title: string; color: string | null; scene: string;
+    }> = [];
     if (editor) {
       let scene = '';
+      let run: typeof out[number] | null = null;
       editor.state.doc.descendants((node, pos) => {
         if (node.type.name === 'sceneHeading') {
           scene = node.textContent || '(untitled scene)';
-        } else if (node.type.name === 'general') {
+          run = null;
+          return true;
+        }
+        if (node.type.name === 'general') {
           const text = node.textContent || '';
           if (/^\[[ x]\]/.test(text)) {
-            out.push({
-              text: text.slice(3).trim() || '(empty to-do)',
-              pos,
+            const line: Line = {
+              text: text.slice(3).trim(),
               done: text[1] === 'x',
-              // The label is just what you click — the scene it's in when there
-              // is one, otherwise a plain "View in script". Not a description of
-              // where it lives; a way to get there.
-              linkLabel: scene || 'View in script',
-            });
+              pos,
+              size: node.nodeSize,
+            };
+            if (run && run.end === pos) {
+              run.lines.push(line);
+              run.end = pos + node.nodeSize;
+            } else {
+              run = {
+                start: pos, end: pos + node.nodeSize, lines: [line],
+                title: (node.attrs.todoTitle as string) || '',
+                color: (node.attrs.todoColor as string) || null,
+                scene,
+              };
+              out.push(run);
+            }
+            return true;
           }
         }
+        run = null;
         return true;
       });
     }
@@ -276,12 +294,30 @@ export function TodoTool({ editor }: EditorToolProps) {
     return out;
   }, [editor, docTick]);
 
-  const toggleDocTodo = (it: { pos: number; done: boolean }) => {
+  /** Rewrite a whole run from its items — one transaction, so undo is one step. */
+  const writeLines = (
+    list: { start: number; end: number; title: string; color: string | null },
+    lines: Array<{ text: string; done: boolean }>,
+    attrs?: { todoTitle?: string | null; todoColor?: string | null },
+  ) => {
     if (!editor) return;
-    const tr = editor.state.tr.replaceWith(
-      it.pos + 1, it.pos + 4, editor.state.schema.text(it.done ? '[ ]' : '[x]'),
-    );
+    const { schema } = editor.state;
+    const nodes = lines.map((l, i) => schema.nodes.general.create(
+      i === 0
+        ? {
+            todoTitle: attrs?.todoTitle !== undefined ? attrs.todoTitle : (list.title || null),
+            todoColor: attrs?.todoColor !== undefined ? attrs.todoColor : list.color,
+          }
+        : {},
+      schema.text(`[${l.done ? 'x' : ' '}] ${l.text || ''}`),
+    ));
+    const tr = editor.state.tr.replaceWith(list.start, list.end, nodes);
     editor.view.dispatch(tr);
+  };
+
+  const removeList = (list: { start: number; end: number }) => {
+    if (!editor) return;
+    editor.view.dispatch(editor.state.tr.delete(list.start, list.end));
   };
 
   const jumpTo = (pos: number) => {
@@ -292,30 +328,39 @@ export function TodoTool({ editor }: EditorToolProps) {
   return (
     <div className="fs-sticky-tool">
       <div className="fs-todo-list">
-        {/* v0.94: a to-do added in the script uses the SAME card format as one
-            added here — the only difference is the link at the bottom, which
-            takes you to it in the editor. It doesn't describe where it is; you
-            just click through. */}
-        {docTodos.map((it, i) => (
-          <div key={`${it.pos}-${i}`} className="swn-card swn-card-script">
-            <label className="swn-todo-item">
-              <input type="checkbox" checked={it.done} onChange={() => toggleDocTodo(it)} />
-              <span style={{ textDecoration: it.done ? 'line-through' : 'none', color: it.done ? '#8a8a7a' : '#333' }}>
-                {it.text}
-              </span>
-            </label>
-            <button
-              className="fs-script-link"
-              onClick={() => jumpTo(it.pos)}
-              title="Go to this to-do in the script"
-            >{it.linkLabel}</button>
-          </div>
-        ))}
+        {scriptLists.map((list) => {
+          const card: ShelfCard = {
+            id: `doc:${list.start}`,
+            type: 'todo',
+            color: list.color || SHELF_DEFAULT_COLOR,
+            title: list.title,
+            items: list.lines.map((l) => ({ text: l.text, done: l.done })),
+          };
+          return (
+            <StickyCard
+              key={card.id}
+              card={card}
+              dragging={false}
+              onDragStart={() => {}}
+              onDragEnd={() => {}}
+              onDropHere={() => {}}
+              link={{ label: list.scene || 'View in script', onClick: () => jumpTo(list.start) }}
+              onUpdate={(patch) => {
+                const lines = patch.items ?? card.items ?? [];
+                writeLines(list, lines, {
+                  ...(patch.title !== undefined ? { todoTitle: patch.title || null } : {}),
+                  ...(patch.color !== undefined ? { todoColor: patch.color || null } : {}),
+                });
+              }}
+              onRemove={() => removeList(list)}
+            />
+          );
+        })}
 
-        {/* Standalone to-do lists — nothing to link to, so no link. */}
+        {/* Lists made here. Same card — they just have nothing to link to. */}
         <CardList type="todo" />
 
-        {docTodos.length === 0 && (
+        {scriptLists.length === 0 && (
           <div className="fs-nav-empty fs-todo-hint">
             Add a to-do below, or use <strong>Insert → To-Do List</strong> to add one
             in the script.
@@ -327,154 +372,4 @@ export function TodoTool({ editor }: EditorToolProps) {
       </div>
     </div>
   );
-}
-
-/* ═══════════ Card + color picker (unchanged behavior) ═══════════ */
-
-function ColorDots({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: Partial<ShelfCard>) => void }) {
-  const [open, setOpen] = useState(false);
-  const cur = card.color || SHELF_DEFAULT_COLOR;
-  // when open, the trigger dot joins the row: the current color sits rightmost,
-  // exactly where the single circle was, and the rest fan out to the LEFT so
-  // the row always stays inside the pane
-  const ordered = [...SHELF_COLORS.filter(([c]) => c !== cur), ...SHELF_COLORS.filter(([c]) => c === cur)];
-  return (
-    <span
-      className="swn-color-pick"
-      onClick={(e) => e.stopPropagation()}
-      draggable={false}
-      onDragStart={(e) => e.preventDefault()}
-    >
-      <span
-        className="swn-dot"
-        style={{ background: cur, visibility: open ? 'hidden' : 'visible' }}
-        title="Sticky color"
-        onClick={() => setOpen(true)}
-      />
-      {open && (
-        <span className="swn-color-pop" onMouseLeave={() => setOpen(false)}>
-          {ordered.map(([c, name]) => (
-            <span
-              key={c}
-              className="swn-dot"
-              title={name}
-              style={{ background: c, outline: c === cur ? '2px solid #666' : 'none' }}
-              onClick={() => { onUpdate({ color: c }); setOpen(false); }}
-            />
-          ))}
-        </span>
-      )}
-    </span>
-  );
-}
-
-interface StickyCardProps {
-  card: ShelfCard;
-  dragging: boolean;
-  onDragStart: () => void;
-  onDragEnd: () => void;
-  onDropHere: () => void;
-  onUpdate: (p: Partial<ShelfCard>) => void;
-  onRemove: () => void;
-}
-
-function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere, onUpdate, onRemove }: StickyCardProps) {
-  // Header: ⠿ grip drags; the type name is placeholder text in an editable title
-  const head = (extra?: React.ReactNode) => (
-    <h5 className="swn-card-head">
-      <span
-        className="swn-drag-grip"
-        draggable
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        title="Drag to reorder"
-      >⠿</span>
-      <input
-        className="swn-card-title"
-        value={card.title || ''}
-        placeholder={CARD_PLACEHOLDERS[card.type]}
-        onChange={(e) => onUpdate({ title: e.target.value })}
-      />
-      <span className="swn-card-actions">
-        <ColorDots card={card} onUpdate={onUpdate} />
-        {extra}
-        <button className="swn-x" title="Delete" onClick={onRemove}>✕</button>
-      </span>
-    </h5>
-  );
-
-  const wrap = (children: React.ReactNode) => (
-    <div
-      className={'swn-card' + (dragging ? ' dragging' : '')}
-      style={{ background: card.color || SHELF_DEFAULT_COLOR }}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={onDropHere}
-    >
-      {children}
-      {card.createdAt && <div className="swn-card-date">{formatDate(card.createdAt)}</div>}
-    </div>
-  );
-
-  if (card.type === 'comment') {
-    return wrap(<>
-      {head()}
-      <textarea
-        className="swn-comment-input"
-        value={card.text || ''}
-        placeholder="Research links, themes to keep present, notes to self…"
-        onChange={(e) => onUpdate({ text: e.target.value })}
-      />
-    </>);
-  }
-
-  if (card.type === 'todo') {
-    const items = card.items || [];
-    return wrap(<>
-      {head((
-        <button
-          className="swn-x"
-          title="Clear completed"
-          onClick={() => onUpdate({ items: items.filter((i) => !i.done) })}
-        >⌫</button>
-      ))}
-      {items.map((it, i) => (
-        <label key={i} className="swn-todo-item">
-          <input
-            type="checkbox"
-            checked={it.done}
-            onChange={() =>
-              onUpdate({ items: items.map((x, j) => (j === i ? { ...x, done: !x.done } : x)) })}
-          />
-          <span style={{ textDecoration: it.done ? 'line-through' : 'none', color: it.done ? '#8a8a7a' : '#333' }}>
-            {it.text}
-          </span>
-        </label>
-      ))}
-      <input
-        className="swn-todo-new"
-        placeholder="New to-do…"
-        onKeyDown={(e) => {
-          const el = e.target as HTMLInputElement;
-          if (e.key === 'Enter' && el.value.trim()) {
-            onUpdate({ items: [...items, { text: el.value.trim(), done: false }] });
-            el.value = '';
-          }
-        }}
-      />
-    </>);
-  }
-
-  if (card.type === 'snippet') {
-    return wrap(<>
-      {head((
-        <button
-          className="swn-x"
-          title="Copy to clipboard"
-          onClick={() => { if (navigator.clipboard) navigator.clipboard.writeText(card.text || ''); }}
-        >⧉</button>
-      ))}
-      <div className="swn-snippet">{card.text}</div>
-    </>);
-  }
-  return null;
 }

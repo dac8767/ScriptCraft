@@ -18,12 +18,11 @@ import { CHROME_SCALES, chromePx } from './chromeSizes';
 import AssetManager from './AssetManager';
 import TitlePagePanel from './TitlePagePanel';
 import VersionHistory from './VersionHistory';
-import CustomizePanelsDialog from './CustomizePanelsDialog';
 import SpellCheckPanel from './SpellCheckPanel';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
-  FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaSlidersH, FaHistory,} from 'react-icons/fa';
+  FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,} from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { type NavTab } from './SceneNavigator';
@@ -76,8 +75,10 @@ export const ALL_TOOLS: ToolDef[] = [
   // to it exactly and can't be resized. Nothing else is fixed; every other tool
   // genuinely uses the space it's given.
   { id: 'titlepage', label: 'Title Page', icon: <FaFileAlt />, defaultSize: { w: 520, h: 560 }, group: 3, noPanelFit: true, fixedSize: true },
-  // Same size as the Customize dialog; noPanelFit keeps it that size in a panel.
-  { id: 'customize', label: 'Customize', icon: <FaSlidersH />, defaultSize: { w: 560, h: 680 }, group: 3, noPanelFit: true },
+  // v0.96: Customize is NOT a tool. It's the permanent button in the chrome, so
+  // it can't be docked, hidden, or added to a panel/toolbar — removing it from
+  // ALL_TOOLS is what takes it out of both Customize tabs, since those lists are
+  // built from this one.
   { id: 'assets', label: 'Asset Manager', icon: <FaBoxes />, defaultSize: { w: 620, h: 372 }, group: 3 },
   { id: 'spelling', label: 'Spelling & Grammar', icon: <FaSpellCheck />, defaultSize: { w: 420, h: 440 }, group: 3 },
   // v0.84: Script History is dockable again — VersionHistory already had an
@@ -88,7 +89,7 @@ export const ALL_TOOLS: ToolDef[] = [
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
-export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'titlepage', 'customize', 'history'];
+export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'titlepage', 'history'];
 export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 
 const MIN_W = 240;
@@ -126,8 +127,6 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
       return <CharacterProfiles editor={editor} projectId={currentProject?.id || ''} embedded />;
     case 'titlepage':
       return <TitlePagePanel editor={editor} onClose={onClose} />;
-    case 'customize':
-      return <CustomizePanelsDialog open embedded onClose={() => {}} />;
     case 'assets':
       return <AssetManager projectId={currentProject?.id || ''} embedded />;
     case 'spelling':

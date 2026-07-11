@@ -37,7 +37,6 @@ export const CONTEXT_MENU_SECTIONS: { id: string; label: string; group: ContextM
   { id: 'font', label: 'Font…', group: 'Context Menu' },
   { id: 'sceneProperties', label: 'Scene Properties…', group: 'Context Menu' },
   { id: 'characterProfile', label: 'Character Profile…', group: 'Context Menu' },
-  { id: 'dualDialogue', label: 'Dual Dialogue', group: 'Format' },
   { id: 'revisionMode', label: 'Revision Mode', group: 'Production' },
   { id: 'revisionColor', label: 'Revision Color', group: 'Production' },
   { id: 'addScriptNote', label: 'Add Script Note', group: 'Context Menu' },
@@ -184,7 +183,6 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
   const hasSelection = !savedSelection.current.empty;
 
   // Context-sensitive: show dual dialogue for character/dialogue/parenthetical
-  const showDualDialogue = ['character', 'dialogue', 'parenthetical'].includes(currentNodeType);
   // Context-sensitive: show scene properties for scene headings
   const showSceneProps = currentNodeType === 'sceneHeading';
 
@@ -740,10 +738,6 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
           onClose();
         }}>
           <span>Character Profile...</span>
-        </div></>) : null,
-    dualDialogue: showDualDialogue ? (<><div className="ctx-item" onClick={() => { console.log('[CtxMenu] Dual Dialogue clicked, commands:', Object.keys(editor.commands).filter(k => k.includes('dual') || k.includes('Dual'))); const result = (editor as any).commands.toggleDualDialogue(); console.log('[CtxMenu] result:', result); onClose(); }}>
-          <span>Dual Dialogue</span>
-          <span className="ctx-shortcut">{mod}D</span>
         </div></>) : null,
     revisionMode: (<><div className="ctx-item" onClick={() => { setRevisionMode(!revisionMode); onClose(); }}>
         <span>{revisionMode ? '\u2713 ' : ''}Revision Mode</span>

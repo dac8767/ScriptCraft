@@ -13209,6 +13209,24 @@ html.android .version-history-panel {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .fs-script-link:hover { filter: brightness(1.2); }
+
+/* v0.96: a script-anchored card sits in the grip's slot with a jump arrow — it
+   follows the script, so it can't be dragged into an arbitrary order. Same size
+   and position as the grip, so the card's shape is unchanged. */
+.swn-card-jump {
+  flex: none;
+  width: 14px; height: 14px;
+  padding: 0;
+  background: none; border: none;
+  color: #555;
+  font-size: 12px; line-height: 1;
+  cursor: pointer;
+  opacity: .6;
+}
+.swn-card-jump:hover { opacity: 1; }
+/* A script note IS a card now — drop the old bespoke note styling that fought it. */
+.note-item.swn-card { border-top: none; }
+.note-item.swn-card .fs-script-link { color: #2c5e98; }
 /* A script to-do uses the same card as one made in the window. */
 .swn-card-script .swn-todo-item { margin-top: 2px; }
 
