@@ -9,14 +9,18 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
 import {
   useEditorStore,
-  ELEMENT_LABELS,
   NOTE_COLORS,
   type NoteColor,
-  type ElementType,
+  type NoteInfo,
   type ShelfCard,
   SHELF_COLORS,
 } from '../stores/editorStore';
-import { ColorDots } from './StickyCard';
+import { ColorDots, StickyCard, formatDate } from './StickyCard';
+export { formatDate };
+import {
+  ListToolbar, arrangeEntries, reorderKeys, entryDragProps,
+  type ListEntry, type ListFilter, type ListSort,
+} from './ListControls';
 import { useAssetStore, type Asset } from '../stores/assetStore';
 import { useProjectStore } from '../stores/projectStore';
 import { api } from '../services/api';
@@ -37,16 +41,6 @@ interface ScriptNotesContentProps {
   editor: Editor | null;
 }
 
-/** Shared date formatter for card/note headers (also used by StickyNotes). */
-export const formatDate = (iso: string) => {
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
 
 /**
  * v0.96 — the card's colour dots speak SHELF_COLORS (pastel card backgrounds);
@@ -246,7 +240,6 @@ const NoteContentDisplay: React.FC<{
 export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }) => {
   const {
     notes,
-    scenes,
     updateNote,
     deleteNote,
     noteFilter,
@@ -286,16 +279,7 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [noteFilter.noteId]);
 
-  const filteredNotes = notes;
 
-  const getSceneName = useCallback(
-    (sceneId: string | null) => {
-      if (!sceneId) return null;
-      const scene = scenes.find((s) => s.id === sceneId);
-      return scene ? scene.heading : null;
-    },
-    [scenes],
-  );
 
   const [pendingDeleteNoteId, setPendingDeleteNoteId] = useState<string | null>(null);
 
@@ -470,114 +454,194 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
     [assetSuggestions, assetSugIdx, insertAssetRef],
   );
 
+  // ── v1.0 supporting state: one list, filter + sort + manual drag ──
+  const { shelfCards, setShelfCards, noteOrder, setNoteOrder } = useEditorStore();
+  const [filter, setFilter] = useState<ListFilter>('all');
+  const [sort, setSort] = useState<ListSort>('manual');
+  const [dragKey, setDragKey] = useState<string | null>(null);
+
+  /** Where in the script a note's highlight sits — its "page", for sorting. */
+  const notePos = useCallback((noteId: string): number | null => {
+    if (!editor) return null;
+    const markType = editor.state.schema.marks.scriptNote;
+    if (!markType) return null;
+    let found: number | null = null;
+    editor.state.doc.descendants((node, pos) => {
+      if (found !== null) return false;
+      if (!node.isText) return;
+      if (node.marks.some((m) => m.type === markType && m.attrs.noteId === noteId)) found = pos;
+    });
+    return found;
+  }, [editor]);
+
+  /** The scene a note falls under — the text of its link. */
+  const sceneFor = useCallback((noteId: string): string | null => {
+    if (!editor) return null;
+    const at = notePos(noteId);
+    if (at == null) return null;
+    let scene: string | null = null;
+    editor.state.doc.descendants((node, pos) => {
+      if (pos > at) return false;
+      if (node.type.name === 'sceneHeading') scene = node.textContent || '(untitled scene)';
+      return true;
+    });
+    return scene;
+  }, [editor, notePos]);
+
+  const onDropKey = (from: string, to: string) => {
+    setSort('manual');
+    setNoteOrder(reorderKeys(noteOrder, allKeys, from, to));
+  };
+
+  const renderGeneralNote = (card: ShelfCard) => {
+    const dp = entryDragProps(`card:${card.id}`, sort === 'manual', dragKey, setDragKey, onDropKey);
+    return (
+      <div {...dp.card}>
+        <StickyCard
+          card={card}
+          dragging={dragKey === `card:${card.id}`}
+          onDragStart={dp.grip.onDragStart}
+          onDragEnd={dp.grip.onDragEnd}
+          onDropHere={() => {}}
+          anchor={{ label: 'General Note' }}
+          onUpdate={(patch) => setShelfCards(shelfCards.map((c) => (c.id === card.id ? { ...c, ...patch } : c)))}
+          onRemove={() => setShelfCards(shelfCards.filter((c) => c.id !== card.id))}
+        />
+      </div>
+    );
+  };
+
+  const renderScriptNote = (note: NoteInfo) => {
+    const hex = getNoteColorHex(note.color);
+    const isEditing = editingNoteId === note.id;
+    const scene = sceneFor(note.id);
+    const key = `note:${note.id}`;
+    const dp = entryDragProps(key, sort === 'manual', dragKey, setDragKey, onDropKey);
+    return (
+      <div
+        ref={(el) => { if (el) cardRefs.current.set(note.id, el); else cardRefs.current.delete(note.id); }}
+        className={`swn-card note-item${flashNoteId === note.id ? ' note-item-flash' : ''}${dragKey === key ? ' dragging' : ''}`}
+        style={{ background: NOTE_STICKY_BG[note.color] || NOTE_STICKY_BG.Yellow, borderTopColor: hex }}
+        {...dp.card}
+      >
+        <h5 className="swn-card-head">
+          <span
+            className="swn-drag-grip"
+            draggable
+            onDragStart={dp.grip.onDragStart}
+            onDragEnd={dp.grip.onDragEnd}
+            title={sort === 'manual' ? 'Drag to reorder' : 'Set Sort to Manual to reorder by hand'}
+          >⠿</span>
+          <input
+            className="swn-card-title"
+            value={note.title || ''}
+            placeholder="Note"
+            onChange={(e) => updateNote(note.id, { title: e.target.value })}
+          />
+          <span className="swn-card-actions">
+            <ColorDots
+              card={{ id: note.id, type: 'comment', color: shelfHexForNote(note.color) } as ShelfCard}
+              onUpdate={(patch) => {
+                // handleColorChange, not updateNote: it also recolours the note's
+                // highlight in the script.
+                if (patch.color) handleColorChange(note.id, noteColorForShelfHex(patch.color));
+              }}
+            />
+            <button className="swn-x" title="Delete" onClick={() => handleDeleteRequest(note.id)}>✕</button>
+          </span>
+        </h5>
+
+        <div className="note-edit-area">
+          <textarea
+            ref={(el) => { if (el) textareaRefs.current.set(note.id, el); }}
+            className="swn-comment-input"
+            value={note.content}
+            onChange={(e) => handleTextareaChange(note.id, e.target.value)}
+            onKeyDown={(e) => handleTextareaKeyDown(e, note.id)}
+            onFocus={() => setEditingNoteId(note.id)}
+            onBlur={() => {
+              setTimeout(() => {
+                setEditingNoteId((cur) => (cur === note.id ? null : cur));
+                setAssetQuery(null);
+                setAssetSuggestions([]);
+              }, 200);
+            }}
+            placeholder="Research links, themes to keep present, notes to self…"
+          />
+          {isEditing && assetSuggestions.length > 0 && assetQuery !== null && (
+            <div className="note-asset-dropdown">
+              {assetSuggestions.map((a, idx) => (
+                <div
+                  key={a.id}
+                  className={`note-asset-option${idx === assetSugIdx ? ' selected' : ''}`}
+                  onMouseDown={(ev) => { ev.preventDefault(); insertAssetRef(note.id, a); }}
+                >
+                  <span className="note-asset-option-icon">
+                    {a.mime_type.startsWith('image/') ? '🖼' : a.mime_type.startsWith('video/') ? '🎬' : '📎'}
+                  </span>
+                  <span className="note-asset-option-name">{a.original_name}</span>
+                  <span className="note-asset-option-tags">{a.tags.slice(0, 2).join(', ')}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {note.content && hasRichContent(note.content) && (
+          <div className="note-item-media">
+            <NoteContentDisplay content={note.content} assets={assets} projectId={projectId} />
+          </div>
+        )}
+
+        {/* The field at the foot: where this note lives, as a link. */}
+        <button
+          className="fs-script-link"
+          onClick={() => handleNavigateToNote(note.id)}
+          title="Go to this note in the script"
+        >{scene || 'View in script'}</button>
+        {note.createdAt && <div className="swn-card-date">{formatDate(note.createdAt)}</div>}
+      </div>
+    );
+  };
+
+  // ── v1.0: ONE list. Script-anchored notes and general notes live together,
+  // ordered by whatever the Sort says — or by hand when it says Manual. They used
+  // to be rendered in two separate blocks, which made "where is my note" a
+  // question about which BUCKET it was in rather than what it says.
+  const entries: ListEntry[] = [
+    ...notes.map((note) => ({
+      key: `note:${note.id}`,
+      linked: true,
+      pos: notePos(note.id) ?? undefined,
+      createdAt: note.createdAt,
+      render: () => renderScriptNote(note),
+    })),
+    ...shelfCards.filter((c) => c.type === 'comment').map((card) => ({
+      key: `card:${card.id}`,
+      linked: false,
+      createdAt: card.createdAt,
+      render: () => renderGeneralNote(card),
+    })),
+  ];
+  const allKeys = entries.map((e) => e.key);
+  const visible = arrangeEntries(entries, filter, sort, noteOrder);
+
   return (
     <>
-      {/* ── Notes list ── */}
+      <ListToolbar
+        filter={filter} setFilter={setFilter}
+        sort={sort} setSort={setSort}
+        count={visible.length} noun="note"
+      />
       <div className="script-notes-list">
-        {filteredNotes.length === 0 ? (
+        {visible.length === 0 ? (
           <div className="script-notes-empty">
-            No notes yet. Select text in the editor, right-click, and choose "Add Script Note".
+            {entries.length === 0
+              ? 'No notes yet. Add one below, or select text in the script, right-click and choose "Add Script Note".'
+              : 'No notes match this filter.'}
           </div>
         ) : (
-          filteredNotes.map((note) => {
-            const hex = getNoteColorHex(note.color);
-            const sceneName = getSceneName(note.sceneId);
-            const elemLabel = ELEMENT_LABELS[note.elementType as ElementType] || note.elementType;
-            const isEditing = editingNoteId === note.id;
-
-            return (
-              <div
-                key={note.id}
-                ref={(el) => { if (el) cardRefs.current.set(note.id, el); else cardRefs.current.delete(note.id); }}
-                className={`swn-card note-item${flashNoteId === note.id ? ' note-item-flash' : ''}`}
-                style={{ background: NOTE_STICKY_BG[note.color] || NOTE_STICKY_BG.Yellow, borderTopColor: hex }}
-              >
-                {/* v0.96: the SAME header as a note made in the window — link (in
-                    the grip's slot, because a script note follows the script and
-                    can't be dragged into an arbitrary order), editable title,
-                    colour dots, delete. The body keeps the note's own editor,
-                    which does @asset references and media the plain card can't. */}
-                <h5 className="swn-card-head">
-                  <button
-                    className="swn-card-jump"
-                    title={`Go to this note in the script — ${sceneName || note.contextLabel || elemLabel}`}
-                    onClick={() => handleNavigateToNote(note.id)}
-                  >↗</button>
-                  <input
-                    className="swn-card-title"
-                    value={note.title || ''}
-                    placeholder="Note"
-                    onChange={(e) => updateNote(note.id, { title: e.target.value })}
-                  />
-                  <span className="swn-card-actions">
-                    <ColorDots
-                      card={{ id: note.id, type: 'comment', color: shelfHexForNote(note.color) } as ShelfCard}
-                      onUpdate={(patch) => {
-                        // Through handleColorChange, NOT updateNote: it also
-                        // recolours the note's highlight in the SCRIPT. Calling
-                        // updateNote directly (as v0.96 did) would have quietly
-                        // left the highlight on its old colour.
-                        if (patch.color) handleColorChange(note.id, noteColorForShelfHex(patch.color));
-                      }}
-                    />
-                    <button className="swn-x" title="Delete" onClick={() => handleDeleteRequest(note.id)}>✕</button>
-                  </span>
-                </h5>
-
-                {/* v0.98: the SAME body as a note made in the window — one live
-                    textarea, same class, same behaviour. It used to be a
-                    click-to-edit PREVIEW, which is why the two never matched: one
-                    was a text box, the other was a block of text pretending to be
-                    one. Asset autocomplete still hangs off this textarea, and any
-                    media in the note renders underneath rather than replacing it. */}
-                <div className="note-edit-area">
-                  <textarea
-                    ref={(el) => { if (el) textareaRefs.current.set(note.id, el); }}
-                    className="swn-comment-input"
-                    value={note.content}
-                    onChange={(e) => handleTextareaChange(note.id, e.target.value)}
-                    onKeyDown={(e) => handleTextareaKeyDown(e, note.id)}
-                    onFocus={() => setEditingNoteId(note.id)}
-                    onBlur={() => {
-                      // Delay so a click on a suggestion still lands.
-                      setTimeout(() => {
-                        setEditingNoteId((cur) => (cur === note.id ? null : cur));
-                        setAssetQuery(null);
-                        setAssetSuggestions([]);
-                      }, 200);
-                    }}
-                    placeholder="Research links, themes to keep present, notes to self…"
-                  />
-                  {isEditing && assetSuggestions.length > 0 && assetQuery !== null && (
-                    <div className="note-asset-dropdown">
-                      {assetSuggestions.map((a, idx) => (
-                        <div
-                          key={a.id}
-                          className={`note-asset-option${idx === assetSugIdx ? ' selected' : ''}`}
-                          onMouseDown={(e) => { e.preventDefault(); insertAssetRef(note.id, a); }}
-                        >
-                          <span className="note-asset-option-icon">
-                            {a.mime_type.startsWith('image/') ? '🖼' : a.mime_type.startsWith('video/') ? '🎬' : '📎'}
-                          </span>
-                          <span className="note-asset-option-name">{a.original_name}</span>
-                          <span className="note-asset-option-tags">{a.tags.slice(0, 2).join(', ')}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Media and @asset references render BELOW the box, so the note
-                    still shows them without the body changing shape. */}
-                {note.content && hasRichContent(note.content) && (
-                  <div className="note-item-media">
-                    <NoteContentDisplay content={note.content} assets={assets} projectId={projectId} />
-                  </div>
-                )}
-
-              </div>
-            );
-          })
+          visible.map((e) => <React.Fragment key={e.key}>{e.render()}</React.Fragment>)
         )}
       </div>
       {pendingDeleteNoteId && (

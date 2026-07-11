@@ -18,6 +18,14 @@ export const General = Node.create({
    */
   addAttributes() {
     return {
+      /** v1.0: a stable id for the list, so a manual reorder in the To-Do window
+       *  keeps pointing at the same list even when the script above it changes
+       *  (its document position, which we'd otherwise key on, would shift). */
+      todoId: {
+        default: null,
+        parseHTML: (el) => (el as HTMLElement).getAttribute('data-todo-id'),
+        renderHTML: (attrs) => (attrs.todoId ? { 'data-todo-id': attrs.todoId } : {}),
+      },
       todoTitle: {
         default: null,
         parseHTML: (el) => (el as HTMLElement).getAttribute('data-todo-title'),

@@ -128,8 +128,7 @@ import {
   FaToggleOn,
   FaLock,
   FaFileSignature,
-  FaRegClone, FaStream, FaQuestionCircle,
-  FaClipboardList, FaEdit,
+  FaRegClone, FaStream,   FaEdit,
   FaTags,
 } from 'react-icons/fa';
 

@@ -23,6 +23,8 @@ interface ViewState {
   toolbarZonesSet?: boolean;
   contextMenuHidden?: string[];
   contextMenuOrder?: string[];
+  noteOrder?: string[];
+  todoOrder?: string[];
   panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
   chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
@@ -680,6 +682,13 @@ interface EditorState {
   /** Display order of the right-click menu's items (v0.86). */
   contextMenuOrder: string[];
   setContextMenuOrder: (ids: string[]) => void;
+  /** v1.0: manual order of the Notes / To-Do lists, when Sort is left blank.
+   *  Keys are 'note:<id>' | 'card:<id>' | 'todo:<todoId>' so script-anchored and
+   *  window items share ONE order — they live in one list now. */
+  noteOrder: string[];
+  setNoteOrder: (keys: string[]) => void;
+  todoOrder: string[];
+  setTodoOrder: (keys: string[]) => void;
   panelSizeMode: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
   /** Custom sizes in px, used when the matching mode is 'custom' (v0.72). */
   chromeCustomPx: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
@@ -1534,6 +1543,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setContextMenuOrder: (ids) => {
     saveViewState({ contextMenuOrder: ids });
     set({ contextMenuOrder: ids });
+  },
+  noteOrder: _vs.noteOrder ?? [],
+  setNoteOrder: (keys) => {
+    saveViewState({ noteOrder: keys });
+    set({ noteOrder: keys });
+  },
+  todoOrder: _vs.todoOrder ?? [],
+  setTodoOrder: (keys) => {
+    saveViewState({ todoOrder: keys });
+    set({ todoOrder: keys });
   },
   panelSizeMode: _vs.panelSizeMode ?? { left: 'comfortable', right: 'comfortable' },
   chromeCustomPx: _vs.chromeCustomPx ?? { menu: 36, toolbar: 33, panelLeft: 266, panelRight: 266 },

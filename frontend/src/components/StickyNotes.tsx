@@ -20,7 +20,12 @@ import {
   type ShelfCardType,
 } from '../stores/editorStore';
 import { ScriptNotesContent } from './ScriptNotes';
+import React from 'react';
 import { StickyCard } from './StickyCard';
+import {
+  ListToolbar, arrangeEntries, reorderKeys, entryDragProps,
+  type ListEntry, type ListFilter, type ListSort,
+} from './ListControls';
 import { uuid } from '../utils/uuid';
 
 
@@ -34,11 +39,6 @@ const EMPTY_HINTS: Record<ShelfCardType, string> = {
 export function makeSnippetCard(text: string): ShelfCard {
   return { id: uuid(), type: 'snippet', text, color: SHELF_DEFAULT_COLOR, createdAt: new Date().toISOString() };
 }
-
-const cardText = (c: ShelfCard): string => {
-  const body = c.type === 'todo' ? (c.items || []).map((i) => i.text).join('\n') : c.text || '';
-  return c.title ? `${c.title}\n${body}` : body;
-};
 
 /* ═══════════ Shared card list (per card type) with drag reorder ═══════════ */
 
@@ -157,49 +157,17 @@ interface EditorToolProps {
  * note shows nothing there. Blank is the signal.
  */
 export function StickyNotesTool({ editor }: EditorToolProps) {
-  const { shelfCards } = useEditorStore();
   const { add } = useCardOps();
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [query, setQuery] = useState('');
-
-  const q = query.trim().toLowerCase();
-  const searching = searchOpen && q.length > 0;
-  const matches = searching
-    ? shelfCards.filter((c) => c.type === 'comment' && cardText(c).toLowerCase().includes(q))
-    : undefined;
-  const standalone = shelfCards.filter((c) => c.type === 'comment').length;
-
   return (
     <div className="fs-sticky-tool">
-      <div className="fs-sticky-toolbar">
-        <span className="swn-group-label" style={{ padding: 0, flex: 1 }}>
-          {standalone} note{standalone === 1 ? '' : 's'} not linked to the script
-        </span>
-        <button
-          className="swn-search-btn"
-          title={searchOpen ? 'Close search' : 'Search notes'}
-          onClick={() => { if (searchOpen) setQuery(''); setSearchOpen((o) => !o); }}
-        >{searchOpen ? '✕' : '🔍'}</button>
-      </div>
-      {searchOpen && (
-        <div className="swn-search-row">
-          <input autoFocus value={query} placeholder="Search notes…" onChange={(e) => setQuery(e.target.value)} />
-        </div>
-      )}
-
-      {/* Script-linked notes first — each already shows what it's anchored to
-          (the scene or character, plus the quoted text). Then the standalone
-          notes, which have nothing to show there. */}
+      {/* v1.0: ScriptNotesContent now renders BOTH kinds of note in one list,
+          with the Filter / Sort bar at the top. No more separate sections. */}
       <div className="fs-notes-list">
-        {!searching && <ScriptNotesContent editor={editor} />}
-        <CardList type="comment" cards={matches} />
+        <ScriptNotesContent editor={editor} />
       </div>
-
-      {!searching && (
-        <div className="swn-add-row">
-          <button className="swn-add-btn" onClick={() => add('comment')}>+ Add</button>
-        </div>
-      )}
+      <div className="swn-add-row">
+        <button className="swn-add-btn" onClick={() => add('comment')}>+ Add</button>
+      </div>
     </div>
   );
 }
@@ -232,7 +200,11 @@ export function FragmentsTool(_props: EditorToolProps) {
  */
 export function TodoTool({ editor }: EditorToolProps) {
   const { add } = useCardOps();
+  const { shelfCards, setShelfCards, todoOrder, setTodoOrder } = useEditorStore();
   const [docTick, setDocTick] = useState(0);
+  const [filter, setFilter] = useState<ListFilter>('all');
+  const [sort, setSort] = useState<ListSort>('manual');
+  const [dragKey, setDragKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (!editor) return;
@@ -242,20 +214,19 @@ export function TodoTool({ editor }: EditorToolProps) {
   }, [editor]);
 
   /**
-   * To-do lists that live in the script. Consecutive [ ] lines are ONE list —
-   * which is exactly what Enter builds (v0.94) — so they surface as one card,
-   * the same card a list made in this window gets. Title and colour ride on the
-   * first line's attrs, so the card is genuinely the same thing, not a lookalike.
+   * To-do lists living in the script. Consecutive [ ] lines are ONE list (what
+   * Enter builds), so they surface as one card — the same card a list made in
+   * this window gets. Title and colour ride on the first line's attrs.
    */
   const scriptLists = useMemo(() => {
-    type Line = { text: string; done: boolean; pos: number; size: number };
+    type Line = { text: string; done: boolean };
     const out: Array<{
-      start: number; end: number; lines: Line[];
+      id: string; start: number; end: number; lines: Line[];
       title: string; color: string | null; scene: string;
     }> = [];
     if (editor) {
       let scene = '';
-      let run: typeof out[number] | null = null;
+      let run: (typeof out)[number] | null = null;
       editor.state.doc.descendants((node, pos) => {
         if (node.type.name === 'sceneHeading') {
           scene = node.textContent || '(untitled scene)';
@@ -265,17 +236,13 @@ export function TodoTool({ editor }: EditorToolProps) {
         if (node.type.name === 'general') {
           const text = node.textContent || '';
           if (/^\[[ x]\]/.test(text)) {
-            const line: Line = {
-              text: text.slice(3).trim(),
-              done: text[1] === 'x',
-              pos,
-              size: node.nodeSize,
-            };
+            const line: Line = { text: text.slice(3).trim(), done: text[1] === 'x' };
             if (run && run.end === pos) {
               run.lines.push(line);
               run.end = pos + node.nodeSize;
             } else {
               run = {
+                id: (node.attrs.todoId as string) || `at:${pos}`,
                 start: pos, end: pos + node.nodeSize, lines: [line],
                 title: (node.attrs.todoTitle as string) || '',
                 color: (node.attrs.todoColor as string) || null,
@@ -294,9 +261,9 @@ export function TodoTool({ editor }: EditorToolProps) {
     return out;
   }, [editor, docTick]);
 
-  /** Rewrite a whole run from its items — one transaction, so undo is one step. */
+  /** Rewrite a run from its items — one transaction, so undo is one step. */
   const writeLines = (
-    list: { start: number; end: number; title: string; color: string | null },
+    list: { start: number; end: number; id: string; title: string; color: string | null },
     lines: Array<{ text: string; done: boolean }>,
     attrs?: { todoTitle?: string | null; todoColor?: string | null },
   ) => {
@@ -305,14 +272,14 @@ export function TodoTool({ editor }: EditorToolProps) {
     const nodes = lines.map((l, i) => schema.nodes.general.create(
       i === 0
         ? {
+            todoId: list.id.startsWith('at:') ? uuid() : list.id,
             todoTitle: attrs?.todoTitle !== undefined ? attrs.todoTitle : (list.title || null),
             todoColor: attrs?.todoColor !== undefined ? attrs.todoColor : list.color,
           }
         : {},
       schema.text(`[${l.done ? 'x' : ' '}] ${l.text || ''}`),
     ));
-    const tr = editor.state.tr.replaceWith(list.start, list.end, nodes);
-    editor.view.dispatch(tr);
+    editor.view.dispatch(editor.state.tr.replaceWith(list.start, list.end, nodes));
   };
 
   const removeList = (list: { start: number; end: number }) => {
@@ -325,46 +292,85 @@ export function TodoTool({ editor }: EditorToolProps) {
     editor.chain().focus().setTextSelection(pos + 1).run();
   };
 
-  return (
-    <div className="fs-sticky-tool">
-      <div className="fs-todo-list">
-        {scriptLists.map((list) => {
-          const card: ShelfCard = {
-            id: `doc:${list.start}`,
-            type: 'todo',
-            color: list.color || SHELF_DEFAULT_COLOR,
-            title: list.title,
-            items: list.lines.map((l) => ({ text: l.text, done: l.done })),
-          };
-          return (
+  const entries: ListEntry[] = [
+    ...scriptLists.map((list) => ({
+      key: `todo:${list.id}`,
+      linked: true,
+      pos: list.start,
+      render: () => {
+        const card: ShelfCard = {
+          id: `todo:${list.id}`,
+          type: 'todo',
+          color: list.color || SHELF_DEFAULT_COLOR,
+          title: list.title,
+          items: list.lines.map((l) => ({ text: l.text, done: l.done })),
+        };
+        const dp = entryDragProps(`todo:${list.id}`, sort === 'manual', dragKey, setDragKey, onDropKey);
+        return (
+          <div {...dp.card}>
             <StickyCard
-              key={card.id}
               card={card}
-              dragging={false}
-              onDragStart={() => {}}
-              onDragEnd={() => {}}
+              dragging={dragKey === `todo:${list.id}`}
+              onDragStart={dp.grip.onDragStart}
+              onDragEnd={dp.grip.onDragEnd}
               onDropHere={() => {}}
-              link={{ label: list.scene || 'View in script', onClick: () => jumpTo(list.start) }}
-              onUpdate={(patch) => {
-                const lines = patch.items ?? card.items ?? [];
-                writeLines(list, lines, {
-                  ...(patch.title !== undefined ? { todoTitle: patch.title || null } : {}),
-                  ...(patch.color !== undefined ? { todoColor: patch.color || null } : {}),
-                });
-              }}
+              anchor={{ label: list.scene || 'View in script', onClick: () => jumpTo(list.start) }}
+              onUpdate={(patch) => writeLines(list, patch.items ?? card.items ?? [], {
+                ...(patch.title !== undefined ? { todoTitle: patch.title || null } : {}),
+                ...(patch.color !== undefined ? { todoColor: patch.color || null } : {}),
+              })}
               onRemove={() => removeList(list)}
             />
-          );
-        })}
-
-        {/* Lists made here. Same card — they just have nothing to link to. */}
-        <CardList type="todo" />
-
-        {scriptLists.length === 0 && (
-          <div className="fs-nav-empty fs-todo-hint">
-            Add a to-do below, or use <strong>Insert → To-Do List</strong> to add one
-            in the script.
           </div>
+        );
+      },
+    })),
+    ...shelfCards.filter((c) => c.type === 'todo').map((card) => ({
+      key: `card:${card.id}`,
+      linked: false,
+      createdAt: card.createdAt,
+      render: () => {
+        const dp = entryDragProps(`card:${card.id}`, sort === 'manual', dragKey, setDragKey, onDropKey);
+        return (
+          <div {...dp.card}>
+            <StickyCard
+              card={card}
+              dragging={dragKey === `card:${card.id}`}
+              onDragStart={dp.grip.onDragStart}
+              onDragEnd={dp.grip.onDragEnd}
+              onDropHere={() => {}}
+              anchor={{ label: 'General To-Do' }}
+              onUpdate={(patch) => setShelfCards(shelfCards.map((c) => (c.id === card.id ? { ...c, ...patch } : c)))}
+              onRemove={() => setShelfCards(shelfCards.filter((c) => c.id !== card.id))}
+            />
+          </div>
+        );
+      },
+    })),
+  ];
+  const allKeys = entries.map((e) => e.key);
+  function onDropKey(from: string, to: string) {
+    setSort('manual');
+    setTodoOrder(reorderKeys(todoOrder, allKeys, from, to));
+  }
+  const visible = arrangeEntries(entries, filter, sort, todoOrder);
+
+  return (
+    <div className="fs-sticky-tool">
+      <ListToolbar
+        filter={filter} setFilter={setFilter}
+        sort={sort} setSort={setSort}
+        count={visible.length} noun="to-do"
+      />
+      <div className="fs-todo-list">
+        {visible.length === 0 ? (
+          <div className="fs-nav-empty fs-todo-hint">
+            {entries.length === 0
+              ? <>Add a to-do below, or use <strong>Insert → To-Do List</strong> to add one in the script.</>
+              : 'No to-dos match this filter.'}
+          </div>
+        ) : (
+          visible.map((e) => <React.Fragment key={e.key}>{e.render()}</React.Fragment>)
         )}
       </div>
       <div className="swn-add-row">
@@ -373,3 +379,4 @@ export function TodoTool({ editor }: EditorToolProps) {
     </div>
   );
 }
+

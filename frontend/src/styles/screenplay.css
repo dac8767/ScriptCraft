@@ -13232,6 +13232,39 @@ html.android .version-history-panel {
 }
 .fs-script-link:hover { filter: brightness(1.2); }
 
+/* v1.0: the field at the foot of every card. A card in the script links to it;
+   one that isn't says so plainly and does nothing when clicked — the ABSENCE of
+   a link is the information. */
+.fs-general-tag {
+  display: block;
+  margin: 6px 0 2px;
+  font-size: 11px;
+  color: #8a8a7a;
+  font-style: italic;
+}
+
+/* Filter / Sort bar shared by Notes and To-Do. */
+.fs-list-toolbar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--fd-border);
+  flex-shrink: 0;
+}
+.fs-list-count {
+  font-size: 10.5px; font-weight: 600; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--fd-text-muted);
+  white-space: nowrap; margin-right: auto;
+}
+.fs-list-toolbar .fs-addmenu { flex: 0 1 auto; }
+.fs-list-toolbar .fs-addmenu-trigger {
+  padding: 3px 8px; font-size: 11px; white-space: nowrap;
+}
+.fs-list-toolbar .fs-addmenu-pop { bottom: auto; top: calc(100% + 4px); min-width: 170px; }
+
+/* Both note kinds are the SAME card — no bespoke width or padding on either. */
+.note-item.swn-card { border-top: none; width: auto; }
+.swn-card.dragging { opacity: .45; }
+
 /* Help > Keyboard Shortcuts (v0.97): grouped, and rendered from the LIVE
    bindings, so a rebound key shows here and is marked as customized. */
 .fs-help-group + .fs-help-group { margin-top: 14px; }

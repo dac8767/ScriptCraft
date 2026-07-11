@@ -71,31 +71,26 @@ export function ColorDots({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: P
 interface StickyCardProps {
   card: ShelfCard;
   dragging: boolean;
-  onDragStart: () => void;
+  onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   onDropHere: () => void;
   onUpdate: (p: Partial<ShelfCard>) => void;
   onRemove: () => void;
   /**
-   * v0.96: a card anchored in the script. EXACTLY the same card — same title,
-   * same colours, same items, same delete — with one honest difference: it can't
-   * be dragged into an arbitrary order (it follows the script), so the grip's
-   * slot holds a link to it instead.
+   * v1.0: the field at the foot of every card. A card anchored in the script
+   * shows the scene it sits under, as a link. One that isn't shows "General
+   * Note" / "General To-Do" — inert, and the ABSENCE of a link is the signal.
    */
-  link?: { label: string; onClick: () => void };
+  anchor?: { label: string; onClick?: () => void };
+  /** Replace the card's body while keeping the identical shell (used by script
+   *  notes, whose editor does @asset references the plain body can't). */
+  children?: React.ReactNode;
 }
 
-export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere, onUpdate, onRemove, link }: StickyCardProps) {
+export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere, onUpdate, onRemove, anchor, children }: StickyCardProps) {
   // Header: ⠿ grip drags; the type name is placeholder text in an editable title
   const head = (extra?: React.ReactNode) => (
     <h5 className="swn-card-head">
-      {link ? (
-        <button
-          className="swn-card-jump"
-          title={`Go to this in the script — ${link.label}`}
-          onClick={link.onClick}
-        >↗</button>
-      ) : (
       <span
         className="swn-drag-grip"
         draggable
@@ -103,7 +98,6 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
         onDragEnd={onDragEnd}
         title="Drag to reorder"
       >⠿</span>
-      )}
       <input
         className="swn-card-title"
         value={card.title || ''}
@@ -118,20 +112,33 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
     </h5>
   );
 
-  const wrap = (children: React.ReactNode) => (
+  const wrap = (inner: React.ReactNode) => (
     <div
       className={'swn-card' + (dragging ? ' dragging' : '')}
       style={{ background: card.color || SHELF_DEFAULT_COLOR }}
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDropHere}
     >
-      {children}
-      {link && (
-        <button className="fs-script-link" onClick={link.onClick}>{link.label}</button>
+      {inner}
+      {anchor && (
+        anchor.onClick ? (
+          <button
+            className="fs-script-link"
+            onClick={anchor.onClick}
+            title="Go to this in the script"
+          >{anchor.label}</button>
+        ) : (
+          <span className="fs-general-tag">{anchor.label}</span>
+        )
       )}
       {card.createdAt && <div className="swn-card-date">{formatDate(card.createdAt)}</div>}
     </div>
   );
+
+  // A caller can supply the body while keeping the identical shell — this is how
+  // a script note gets the same card as a window note without losing its own
+  // editor (asset autocomplete, media).
+  if (children) return wrap(<>{head()}{children}</>);
 
   if (card.type === 'comment') {
     return wrap(<>
