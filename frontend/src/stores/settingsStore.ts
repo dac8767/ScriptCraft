@@ -190,8 +190,12 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     set({ autoSnapshotMinutes: m });
   },
   autoSnapshotKeep: (() => {
-    const raw = parseInt(localStorage.getItem(STORAGE_KEY_AUTOSNAP_KEEP) || '0', 10);
-    return Number.isFinite(raw) && raw > 0 ? raw : 0;
+    // Default 12 (v0.71). Only an ABSENT setting takes the default — a stored
+    // 0 is the user explicitly choosing "keep every version" and is honored.
+    const stored = localStorage.getItem(STORAGE_KEY_AUTOSNAP_KEEP);
+    if (stored === null) return 12;
+    const raw = parseInt(stored, 10);
+    return Number.isFinite(raw) && raw >= 0 ? raw : 12;
   })(),
   setAutoSnapshotKeep: (n) => {
     try { localStorage.setItem(STORAGE_KEY_AUTOSNAP_KEEP, String(n)); } catch { /* ignore */ }

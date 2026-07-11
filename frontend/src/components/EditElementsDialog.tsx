@@ -1,21 +1,19 @@
 /**
- * EditElementsDialog (v0.63) — show/hide and reorder screenplay elements.
+ * EditElementsDialog — show/hide and reorder screenplay elements.
  *
- * Same interaction model as Customize: one row per element, drag to reorder,
- * Show/Hide per row, plus Show All / Hide All / Reset to Default. Reachable
- * from Insert → Edit Elements… and embedded in Settings → Elements.
- *
- * Element order lives in the active template's `rules` object (its key order);
- * visibility is each rule's `enabled` flag. Both are persisted through
- * updateTemplate, so the Element dropdown, the Insert menu, and the editor's
- * element cycling all follow automatically.
+ * v0.71: rewritten to write PERSISTED OVERRIDES instead of mutating the active
+ * template. The active template is usually a SYSTEM template (Industry
+ * Standard, Multicam, One-Hour Drama) — an immutable constant, not a row in
+ * `templates[]` — so updateTemplate() on it silently did nothing and Show/Hide
+ * and reordering had no effect. Overrides (elementHidden / elementOrder) are
+ * applied over whatever template is active, and every consumer reads them via
+ * getEffectiveRules().
  *
  * Core elements can be reordered but not hidden — hiding Scene Heading or
  * Action would leave a screenplay with no way to type its own body.
  */
 import React from 'react';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
-import type { FormattingElementRule } from '../stores/formattingTypes';
 
 /** Elements a screenplay can't function without — reorderable, never hidable. */
 const REQUIRED_IDS = ['sceneHeading', 'action', 'character', 'dialogue'];
@@ -30,58 +28,38 @@ interface Props {
 }
 
 export default function EditElementsDialog({ open = true, onClose, embedded = false }: Props) {
-  const template = useFormattingTemplateStore((s) => s.getActiveTemplate());
-  const updateTemplate = useFormattingTemplateStore((s) => s.updateTemplate);
+  const getEffectiveRules = useFormattingTemplateStore((s) => s.getEffectiveRules);
+  const elementHidden = useFormattingTemplateStore((s) => s.elementHidden);
+  const elementOrder = useFormattingTemplateStore((s) => s.elementOrder);
+  const setElementHidden = useFormattingTemplateStore((s) => s.setElementHidden);
+  const setElementOrder = useFormattingTemplateStore((s) => s.setElementOrder);
+  const resetElementOverrides = useFormattingTemplateStore((s) => s.resetElementOverrides);
   const [dragIdx, setDragIdx] = React.useState<number | null>(null);
 
-  const ids = Object.keys(template.rules).filter((id) => !EXCLUDED_IDS.includes(id));
-
-  const commit = (nextIds: string[], overrides?: Record<string, Partial<FormattingElementRule>>) => {
-    // Rebuild `rules` in the new key order — Object.values() order is what the
-    // Element dropdown and Insert menu iterate, so key order IS display order.
-    const rules: Record<string, FormattingElementRule> = {};
-    for (const id of nextIds) {
-      rules[id] = { ...template.rules[id], ...(overrides?.[id] ?? {}) };
-    }
-    // Preserve excluded rules (not shown here, but must survive the rewrite).
-    for (const id of Object.keys(template.rules)) {
-      if (!(id in rules)) rules[id] = template.rules[id];
-    }
-    void updateTemplate(template.id, { rules });
-  };
+  // Re-derived whenever overrides change, so the list reflects every edit.
+  void elementOrder; void elementHidden;
+  const rules = getEffectiveRules();
+  const ids = Object.keys(rules).filter((id) => !EXCLUDED_IDS.includes(id));
 
   const moveTo = (from: number, to: number) => {
     const next = [...ids];
     const [m] = next.splice(from, 1);
     next.splice(to, 0, m);
-    commit(next);
+    setElementOrder(next);
   };
 
   const setEnabled = (id: string, enabled: boolean) => {
     if (!enabled && REQUIRED_IDS.includes(id)) return;
-    commit(ids, { [id]: { enabled } });
-  };
-
-  const showAll = () =>
-    commit(ids, Object.fromEntries(ids.map((id) => [id, { enabled: true }])));
-
-  const hideAll = () =>
-    commit(
-      ids,
-      Object.fromEntries(
-        ids.map((id) => [id, { enabled: REQUIRED_IDS.includes(id) }]),
-      ),
-    );
-
-  const resetDefault = () => {
-    // Default: every element visible, in the template's canonical rule order.
-    commit(
-      Object.keys(template.rules).filter((id) => !EXCLUDED_IDS.includes(id)).sort(
-        (a, b) => Object.keys(template.rules).indexOf(a) - Object.keys(template.rules).indexOf(b),
-      ),
-      Object.fromEntries(ids.map((id) => [id, { enabled: true }])),
+    setElementHidden(
+      enabled
+        ? elementHidden.filter((x) => x !== id)
+        : [...elementHidden.filter((x) => x !== id), id],
     );
   };
+
+  const showAll = () => setElementHidden([]);
+  const hideAll = () => setElementHidden(ids.filter((id) => !REQUIRED_IDS.includes(id)));
+  const resetDefault = () => resetElementOverrides();
 
   const body = (
     <div className="fs-customize-body">
@@ -94,7 +72,7 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
         </p>
         <div className="fs-customize-grid">
           {ids.map((id, idx) => {
-            const rule = template.rules[id];
+            const rule = rules[id];
             const required = REQUIRED_IDS.includes(id);
             return (
               <div
@@ -122,7 +100,7 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
                   <button
                     className={!rule.enabled ? 'active' : ''}
                     disabled={required}
-                    title={required ? 'Core elements can\u2019t be hidden' : 'Hide this element'}
+                    title={required ? 'Core elements can’t be hidden' : 'Hide this element'}
                     onClick={() => setEnabled(id, false)}
                   >Hide</button>
                 </span>

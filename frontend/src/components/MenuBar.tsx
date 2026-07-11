@@ -381,6 +381,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
   // ── Per-attribute locking from active template ──
   const activeTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate());
+  // v0.71: element visibility/order come from the user's persisted overrides
+  // applied over the active template (system templates are immutable).
+  const effectiveRules = useFormattingTemplateStore((st) => st.getEffectiveRules)();
+  useFormattingTemplateStore((st) => st.elementHidden);   // re-render on change
+  useFormattingTemplateStore((st) => st.elementOrder);
   const isEnforceMode = activeTemplate.mode === 'enforce';
   const editorRule = editor ? getCurrentElementRule(editor, activeTemplate) : null;
   const locked = getLockedFormatting(editorRule, isEnforceMode);
@@ -1199,7 +1204,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           children: [
             // Dual Dialogue lives inside the Element list, immediately after
             // Dialogue (v0.62) — it's an element choice, not a separate insert.
-            ...Object.values(activeTemplate.rules)
+            ...Object.values(effectiveRules)
               .filter((r) => r.enabled && !['newAct', 'endOfAct', 'castList'].includes(r.id))
               .flatMap((r) => {
                 const shortcuts: Record<string, string> = {
@@ -1219,14 +1224,14 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               }),
           ],
         },
+        { icon: <FaSlidersH />, label: 'Edit Elements…', action: () => setEditElementsOpen(true) },
+        { separator: true, label: '' },
         { icon: <FaImage />, label: 'Insert Image...', action: () => useEditorStore.getState().imageInsertHandler?.() },
         { separator: true, label: '' },
         { icon: <FaListOl />, label: 'Section', action: () => insertOutlineLine('# ') },
         { icon: <FaListOl />, label: 'Marker', action: () => insertOutlineLine('⚑ ') },
         { icon: <FaRegStickyNote />, label: 'Script Note', action: () => useEditorStore.getState().openShelfTab('script') },
         { icon: <FaCheckSquare />, label: 'Checklist Item', action: () => insertOutlineLine('[ ] ') },
-        { separator: true, label: '' },
-        { icon: <FaSlidersH />, label: 'Edit Elements…', action: () => setEditElementsOpen(true) },
       ],
     },
     {

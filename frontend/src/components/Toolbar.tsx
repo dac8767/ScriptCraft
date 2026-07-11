@@ -86,6 +86,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   } = useEditorStore();
 
   const activeTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate());
+
+  // v0.71: element visibility/order come from the user's persisted overrides
+
+  // applied over the active template (system templates are immutable).
+
+  const effectiveRules = useFormattingTemplateStore((st) => st.getEffectiveRules)();
+
+  useFormattingTemplateStore((st) => st.elementHidden);   // re-render on change
+
+  useFormattingTemplateStore((st) => st.elementOrder);
   const isEnforceMode = activeTemplate.mode === 'enforce';
   const isOverrideMode = activeTemplate.mode === 'override';
 
@@ -584,7 +594,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           onChange={handleElementChange}
           title="Element"
         >
-          {Object.values(activeTemplate.rules)
+          {Object.values(effectiveRules)
             .filter((r) => r.enabled && !['newAct', 'endOfAct', 'castList'].includes(r.id))
             // When inside an AV cell, only cell-valid types make sense — selecting
             // sceneHeading/action/etc. silently fails the schema check anyway.

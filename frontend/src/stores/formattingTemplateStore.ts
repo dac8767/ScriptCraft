@@ -6,6 +6,26 @@
  */
 
 import { create } from 'zustand';
+
+/** Element visibility/order overrides — persisted separately from templates,
+ *  which may be immutable system constants. */
+const ELEMENT_OVERRIDES_KEY = 'opendraft:elementOverrides';
+function loadElementOverrides(): { hidden: string[]; order: string[] } {
+  try {
+    const raw = localStorage.getItem(ELEMENT_OVERRIDES_KEY);
+    if (raw) {
+      const p = JSON.parse(raw);
+      return {
+        hidden: Array.isArray(p?.hidden) ? p.hidden.filter((x: unknown) => typeof x === 'string') : [],
+        order: Array.isArray(p?.order) ? p.order.filter((x: unknown) => typeof x === 'string') : [],
+      };
+    }
+  } catch { /* ignore */ }
+  return { hidden: [], order: [] };
+}
+function saveElementOverrides(v: { hidden: string[]; order: string[] }) {
+  try { localStorage.setItem(ELEMENT_OVERRIDES_KEY, JSON.stringify(v)); } catch { /* ignore */ }
+}
 import type { FormattingTemplate } from './formattingTypes';
 import { INDUSTRY_STANDARD_ID } from './formattingTypes';
 import { INDUSTRY_STANDARD_TEMPLATE } from './industryStandardTemplate';
@@ -49,6 +69,20 @@ interface FormattingTemplateState {
   getActiveTemplate: () => FormattingTemplate;
   /** Returns list of enabled element ids in the active template. */
   getEnabledElements: () => string[];
+  /** Per-user element visibility + order, applied OVER the active template.
+   *  System templates (Industry Standard, Multicam, One-Hour Drama) are
+   *  immutable constants, NOT rows in `templates[]` — so updateTemplate() on
+   *  one is a silent no-op, which is why Edit Elements' Show/Hide/reorder did
+   *  nothing (v0.63–v0.70 bug). Overrides live here instead. */
+  elementHidden: string[];
+  elementOrder: string[];
+  setElementHidden: (ids: string[]) => void;
+  setElementOrder: (ids: string[]) => void;
+  resetElementOverrides: () => void;
+  /** The active template's rules with the user's overrides applied: hidden
+   *  elements disabled, and rule key order following elementOrder. Every
+   *  consumer (Element dropdown, Insert menu, getEnabledElements) reads this. */
+  getEffectiveRules: () => FormattingTemplate['rules'];
   /** Returns whether the active template is in enforce mode. */
   isEnforceMode: () => boolean;
 
@@ -93,9 +127,39 @@ export const useFormattingTemplateStore = create<FormattingTemplateState>((set, 
     return INDUSTRY_STANDARD_TEMPLATE;
   },
 
+  elementHidden: loadElementOverrides().hidden,
+  elementOrder: loadElementOverrides().order,
+  setElementHidden: (ids) => {
+    saveElementOverrides({ hidden: ids, order: get().elementOrder });
+    set({ elementHidden: ids });
+  },
+  setElementOrder: (ids) => {
+    saveElementOverrides({ hidden: get().elementHidden, order: ids });
+    set({ elementOrder: ids });
+  },
+  resetElementOverrides: () => {
+    saveElementOverrides({ hidden: [], order: [] });
+    set({ elementHidden: [], elementOrder: [] });
+  },
+
+  getEffectiveRules: () => {
+    const { rules } = get().getActiveTemplate();
+    const { elementHidden, elementOrder } = get();
+    const ids = Object.keys(rules);
+    const ordered = elementOrder.length
+      ? [...elementOrder.filter((id) => ids.includes(id)),
+         ...ids.filter((id) => !elementOrder.includes(id))]
+      : ids;
+    const out: FormattingTemplate['rules'] = {};
+    for (const id of ordered) {
+      const r = rules[id];
+      out[id] = elementHidden.includes(id) ? { ...r, enabled: false } : r;
+    }
+    return out;
+  },
+
   getEnabledElements: () => {
-    const template = get().getActiveTemplate();
-    return Object.values(template.rules)
+    return Object.values(get().getEffectiveRules())
       .filter((r) => r.enabled)
       .map((r) => r.id);
   },

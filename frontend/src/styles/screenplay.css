@@ -12192,7 +12192,17 @@ html.android .version-history-panel {
 .fs-analytics-gender-assign .fs-gender { padding: 0; }
 
 /* Customize dialog */
-.fs-customize-dialog { max-width: 560px; width: 92vw; }
+/* Resizable (v0.71). CSS resize needs a non-visible overflow and an explicit
+   size to grow from; the body scrolls inside so the frame can be dragged
+   smaller without clipping the controls. */
+.fs-customize-dialog {
+  max-width: none; width: min(560px, 92vw); height: min(680px, 86vh);
+  resize: both; overflow: auto;
+  min-width: 380px; min-height: 320px;
+  max-height: 92vh;
+  display: flex; flex-direction: column;
+}
+.fs-customize-dialog .fs-customize-body { flex: 1; min-height: 0; overflow-y: auto; }
 .fs-customize-body { max-height: 70vh; overflow-y: auto; }
 .fs-customize-body h3 { font-size: 13px; margin: 14px 0 4px; color: var(--fd-text); }
 .fs-customize-hint { font-size: 11.5px; color: var(--fd-text-muted); margin: 0 0 8px; }
