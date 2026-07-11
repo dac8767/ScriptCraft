@@ -21,7 +21,8 @@ interface ViewState {
   toolbarLeft?: string[];
   toolbarRight?: string[];
   toolbarZonesSet?: boolean;
-  panelSizeMode?: { left: 'compact' | 'comfortable'; right: 'compact' | 'comfortable' };
+  panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
+  chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[];
   workspaces?: Record<string, WorkspaceSnapshot>;
   workspaceOrder?: string[];
@@ -39,8 +40,8 @@ interface ViewState {
   notesVisible?: boolean;
   tagsVisible?: boolean;
   zoomLevel?: number;
-  toolbarMode?: 'compact' | 'comfortable' | 'hidden';
-  menuMode?: 'compact' | 'comfortable' | 'hidden';
+  toolbarMode?: 'compact' | 'comfortable' | 'custom' | 'hidden';
+  menuMode?: 'compact' | 'comfortable' | 'custom' | 'hidden';
   characterSortBy?: 'name' | 'importance' | 'scenes' | 'dialogues' | 'appearance';
   grammarRulesEnabled?: Record<string, boolean>;
   spellingSettings?: SpellingSettings;
@@ -396,7 +397,7 @@ export interface WorkspaceSnapshot {
   /** v0.12: full-layout capture so Reset to Saved Layout rolls back EVERYTHING.
    *  Optional for back-compat — workspaces saved before v0.12 simply leave
    *  these aspects untouched when applied. */
-  toolbarMode?: 'compact' | 'comfortable' | 'hidden';
+  toolbarMode?: 'compact' | 'comfortable' | 'custom' | 'hidden';
   activeTool?: ToolId | null;
   /** v0.44: capture the Customize state too — toolbar zones, menu bar, and
    *  panel dividers — so Reset to Saved Layout actually rolls those back.
@@ -405,8 +406,9 @@ export interface WorkspaceSnapshot {
   toolbarRight?: string[];
   menuBarOrder?: string[];
   menuBarHidden?: string[];
-  menuMode?: 'compact' | 'comfortable' | 'hidden';
-  panelSizeMode?: { left: 'compact' | 'comfortable'; right: 'compact' | 'comfortable' };
+  menuMode?: 'compact' | 'comfortable' | 'custom' | 'hidden';
+  panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
+  chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[];
   activeToolRight?: ToolId | null;
 }
@@ -634,8 +636,11 @@ interface EditorState {
    *  div:<id> tokens. */
   /** Side-panel width (v0.70). 'hidden' is expressed by the existing
    *  navigatorOpen / shelfOpen flags, so this only carries the width. */
-  panelSizeMode: { left: 'compact' | 'comfortable'; right: 'compact' | 'comfortable' };
-  setPanelSizeMode: (side: 'left' | 'right', mode: 'compact' | 'comfortable') => void;
+  panelSizeMode: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
+  /** Custom sizes in px, used when the matching mode is 'custom' (v0.72). */
+  chromeCustomPx: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
+  setChromeCustomPx: (surface: 'menu' | 'toolbar' | 'panelLeft' | 'panelRight', px: number) => void;
+  setPanelSizeMode: (side: 'left' | 'right', mode: 'compact' | 'comfortable' | 'custom') => void;
   panelDividers: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[];
   setPanelDividers: (d: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[]) => void;
 
@@ -883,11 +888,11 @@ interface EditorState {
   setTheme: (t: ThemeId) => void;
 
   // Toolbar display mode
-  toolbarMode: 'compact' | 'comfortable' | 'hidden';
+  toolbarMode: 'compact' | 'comfortable' | 'custom' | 'hidden';
   /** Menu bar mode, split from toolbarMode (v0.39); migrates from it. */
-  menuMode: 'compact' | 'comfortable' | 'hidden';
-  setMenuMode: (m: 'compact' | 'comfortable' | 'hidden') => void;
-  setToolbarMode: (mode: 'compact' | 'comfortable' | 'hidden') => void;
+  menuMode: 'compact' | 'comfortable' | 'custom' | 'hidden';
+  setMenuMode: (m: 'compact' | 'comfortable' | 'custom' | 'hidden') => void;
+  setToolbarMode: (mode: 'compact' | 'comfortable' | 'custom' | 'hidden') => void;
 
   // Character sort preference
   characterSortBy: 'name' | 'importance' | 'scenes' | 'dialogues' | 'appearance';
@@ -1475,6 +1480,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   panelDividers: Array.isArray(_vs.panelDividers) ? _vs.panelDividers as { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[] : [],
   panelSizeMode: _vs.panelSizeMode ?? { left: 'comfortable', right: 'comfortable' },
+  chromeCustomPx: _vs.chromeCustomPx ?? { menu: 36, toolbar: 33, panelLeft: 266, panelRight: 266 },
+  setChromeCustomPx: (surface, px) => set((st) => {
+    const next = { ...st.chromeCustomPx, [surface]: px };
+    saveViewState({ chromeCustomPx: next });
+    return { chromeCustomPx: next };
+  }),
   setPanelSizeMode: (side, mode) => set((st) => {
     const next = { ...st.panelSizeMode, [side]: mode };
     saveViewState({ panelSizeMode: next });

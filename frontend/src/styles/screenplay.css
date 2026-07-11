@@ -757,11 +757,56 @@ body {
   flex: 1 1 0; min-width: 0; width: auto; box-sizing: border-box;
 }
 
+/* ── Custom chrome sizing (v0.72) ──────────────────────────────────────────
+   In 'custom' mode the element's height/width is set inline from the user's
+   slider, and --chrome-scale (px ÷ compact px) scales the CONTENTS with it —
+   otherwise a taller bar would just be empty space around compact-sized text.
+   Clamped so a huge bar doesn't produce absurd type. */
+.menu-bar.chrome-custom {
+  gap: calc(4px * var(--chrome-scale, 1));
+  padding: 0 calc(6px * var(--chrome-scale, 1));
+}
+.menu-bar.chrome-custom .menu-item {
+  padding: clamp(3px, calc(5px * var(--chrome-scale, 1)), 14px)
+           clamp(8px, calc(11px * var(--chrome-scale, 1)), 22px);
+  min-height: 0;
+  border-radius: clamp(4px, calc(5px * var(--chrome-scale, 1)), 10px);
+}
+.menu-bar.chrome-custom .menu-label,
+.menu-bar.chrome-custom .menu-icon {
+  font-size: clamp(11px, calc(12px * var(--chrome-scale, 1)), 18px);
+}
+
+.toolbar.toolbar-custom { padding: 0 calc(8px * var(--chrome-scale, 1)); }
+.toolbar.toolbar-custom .toolbar-btn {
+  width: clamp(22px, calc(24px * var(--chrome-scale, 1)), 44px);
+  height: clamp(20px, calc(22px * var(--chrome-scale, 1)), 40px);
+  font-size: clamp(11px, calc(12px * var(--chrome-scale, 1)), 20px);
+}
+.toolbar.toolbar-custom .toolbar-separator {
+  height: clamp(14px, calc(16px * var(--chrome-scale, 1)), 30px);
+}
+.toolbar.toolbar-custom .element-selector,
+.toolbar.toolbar-custom .font-selector,
+.toolbar.toolbar-custom .font-size-selector {
+  height: clamp(20px, calc(22px * var(--chrome-scale, 1)), 38px);
+  font-size: clamp(11px, calc(11.5px * var(--chrome-scale, 1)), 16px);
+}
+
+/* Customize: the size slider shown when a surface is set to Custom. */
+.fs-chrome-slider-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 2px 0 8px; margin-top: -2px;
+}
+.fs-chrome-slider-row input[type="range"] { flex: 1; accent-color: var(--fd-accent); cursor: pointer; }
+.fs-chrome-slider-val {
+  min-width: 52px; text-align: right;
+  font-size: 12px; color: var(--fd-text-muted); font-variant-numeric: tabular-nums;
+}
+
 /* Side-panel width modes (v0.70). Must stay in sync with DOCK_W /
    DOCK_W_COMPACT in ToolDock.tsx — inline tool windows are sized against those
    constants, so a mismatch would let a docked window overflow its panel. */
-.tool-dock-wrap.tool-dock-compact .tool-dock { width: 232px; }
-.tool-dock-wrap.tool-dock-comfortable .tool-dock { width: 300px; }
 .tool-dock-wrap.tool-dock-compact .tool-dock-item { padding-top: 7px; padding-bottom: 7px; }
 .tool-dock-wrap.tool-dock-compact .tool-dock-label { font-size: 12px; }
 

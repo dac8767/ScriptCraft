@@ -14,6 +14,7 @@
  */
 import React, { useEffect, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
+import { CHROME_SCALES, chromePx } from './chromeSizes';
 import AssetManager from './AssetManager';
 import TitlePagePanel from './TitlePagePanel';
 import SpellCheckPanel from './SpellCheckPanel';
@@ -75,12 +76,17 @@ export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 const MIN_W = 240;
 const MIN_H = 260;
 /** Dock column width; tools whose remembered width fits open inline. */
-export const DOCK_W = 300;                       // comfortable (default)
-export const DOCK_W_COMPACT = 232;              // compact
-/** Dock column width for a panel's width mode. Inline tool windows are sized
- *  and gated against THIS, so a compact panel keeps its windows inside it. */
-export const dockWidthFor = (mode: 'compact' | 'comfortable') =>
-  mode === 'compact' ? DOCK_W_COMPACT : DOCK_W;
+export const DOCK_W = CHROME_SCALES.panelLeft.comfortable;   // 300 (default)
+export const DOCK_W_COMPACT = CHROME_SCALES.panelLeft.compact; // 232
+/** Dock column width for a panel's size mode — including 'custom', where the
+ *  user's slider value (half-compact … double-comfortable) applies. Inline
+ *  tool windows are sized and GATED against this, so a window docked in a
+ *  narrowed panel still fits inside it. */
+export const dockWidthFor = (
+  side: 'left' | 'right',
+  mode: 'compact' | 'comfortable' | 'custom',
+  customPx?: number,
+) => chromePx(side === 'left' ? 'panelLeft' : 'panelRight', mode, customPx);
 
 /** Shared tool-content renderer (docked and temporary windows). */
 export function ToolContent({ id, editor, scrollContainer }: {
@@ -130,7 +136,7 @@ export function ToolContent({ id, editor, scrollContainer }: {
 export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
   tool: ToolDef; onClose: () => void; temporary?: boolean; side?: ToolSide; children: React.ReactNode;
 }) {
-  const { toolSizes, setToolSize, panelSizeMode } = useEditorStore();
+  const { toolSizes, setToolSize, panelSizeMode, chromeCustomPx } = useEditorStore();
   const windowRef = useRef<HTMLDivElement>(null);
   // Docked windows default to inline (see ToolDock below), so this frame only
   // renders windows the user has explicitly sized/popped out, plus temporary
@@ -138,7 +144,7 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
   const size = toolSizes[tool.id] || tool.defaultSize;
   // Pop-back-in must target the width of the panel it's returning to, or a
   // compact panel would reject the window as too wide and it would keep floating.
-  const popInW = side ? dockWidthFor(panelSizeMode[side]) : DOCK_W;
+  const popInW = side ? dockWidthFor(side, panelSizeMode[side], chromeCustomPx[side === 'left' ? 'panelLeft' : 'panelRight']) : DOCK_W;
 
   const startResize = (e: React.PointerEvent) => {
     if (!windowRef.current) return;
@@ -239,8 +245,8 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   const activeId = side === 'left' ? activeTool : activeToolRight;
   const setActive = side === 'left' ? setActiveTool : setActiveToolRight;
   const active = tools.find((t) => t.id === activeId) || null;
-  const { toolSizes, setToolSize, panelSizeMode } = useEditorStore();
-  const dockW = dockWidthFor(panelSizeMode[side]);
+  const { toolSizes, setToolSize, panelSizeMode, chromeCustomPx } = useEditorStore();
+  const dockW = dockWidthFor(side, panelSizeMode[side], chromeCustomPx[side === 'left' ? 'panelLeft' : 'panelRight']);
   // v0.66: by DEFAULT every window opens INSIDE its side panel (inline),
   // pushing the dock's remaining items down — so nothing floats over the
   // editor unasked. `inline` is decided by width <= DOCK_W, and most tools'
@@ -289,7 +295,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
 
   return (
     <div className={`tool-dock-wrap tool-dock-${side} tool-dock-${panelSizeMode[side]}`}>
-      <div className="tool-dock">
+      <div className="tool-dock" style={{ width: dockW }}>
         {entries.map((entry) => entry.kind === 'spacer' ? (
           <div key={`sp-${entry.id}`} className="tool-dock-spacer" />
         ) : entry.kind === 'divider' ? (

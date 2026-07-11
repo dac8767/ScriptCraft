@@ -25,6 +25,7 @@ import {
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt, FaSlidersH,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
+import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { commandDef } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones } from './toolbarBuiltins';
 import { useEditorStore, NOTE_COLORS } from '../stores/editorStore';
@@ -82,7 +83,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     toggleTagsPanel,
     setPendingTagSelection,
     setEditingTagId,
-    toolbarMode,
+    toolbarMode, chromeCustomPx,
   } = useEditorStore();
 
   const activeTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate());
@@ -1070,8 +1071,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     return null;
   };
 
+  const tbCustomH = chromePx('toolbar', 'custom', chromeCustomPx.toolbar);
+
   return (
-    <div className={`toolbar${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}`} ref={toolbarRef}>
+    <div
+      className={`toolbar${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}${toolbarMode === 'custom' ? ' toolbar-custom' : ''}`}
+      style={toolbarMode === 'custom' ? ({
+        height: tbCustomH,
+        ['--chrome-scale' as string]: String(chromeScaleFactor('toolbar', tbCustomH)),
+      } as React.CSSProperties) : undefined}
+      ref={toolbarRef}
+    >
       {leftTokens.map(renderToken)}
 
       {/* Spacer */}

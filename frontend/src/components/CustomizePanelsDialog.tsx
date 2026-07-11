@@ -17,6 +17,7 @@ import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from './toolbarBuiltins';
+import { CHROME_SCALES, chromeMin, chromeMax, chromePx, type ChromeSurface } from './chromeSizes';
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
@@ -37,6 +38,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     toolOrder, setToolOrder,
     toolbarMode, setToolbarMode,
     panelSizeMode, setPanelSizeMode,
+    chromeCustomPx, setChromeCustomPx,
     menuMode, setMenuMode,
   } = useEditorStore();
 
@@ -360,6 +362,29 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       ],
     },
   ];
+  /** Size slider shown when a surface is in Custom mode (v0.72). Runs from
+   *  half of Compact to double of Comfortable. */
+  const ChromeSlider = ({ surface }: { surface: ChromeSurface }) => {
+    const min = chromeMin(surface);
+    const max = chromeMax(surface);
+    const value = chromePx(surface, 'custom', chromeCustomPx[surface]);
+    const axis = CHROME_SCALES[surface].axis;
+    return (
+      <div className="fs-chrome-slider-row">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={1}
+          value={value}
+          aria-label={`Custom ${axis}`}
+          onChange={(e) => setChromeCustomPx(surface, parseInt(e.target.value, 10))}
+        />
+        <span className="fs-chrome-slider-val">{value}px</span>
+      </div>
+    );
+  };
+
   const tokenLabel = (tok: string): string => {
     if (tok.startsWith('b:')) return BUILTIN_BY_KEY[tok.slice(2)]?.label || tok;
     if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.label || tok;
@@ -385,7 +410,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             <div className="fs-customize-row">
               <span className="fs-customize-tool">Menu bar mode</span>
               <span className="fs-customize-seg">
-                {(['compact', 'comfortable', 'hidden'] as const).map((m) => (
+                {(['compact', 'comfortable', 'custom', 'hidden'] as const).map((m) => (
                   <button
                     key={m}
                     className={menuMode === m ? 'active' : ''}
@@ -399,6 +424,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 ))}
               </span>
             </div>
+            {menuMode === 'custom' && <ChromeSlider surface="menu" />}
             {(menuMode === 'hidden' || menuBarHidden.includes('View')) && (
               <p className="fs-customize-hint fs-customize-stuck-hint">
                 You can still customize the menu bar, toolbar, and side panels by going to Settings {'>'} Layout.
@@ -477,13 +503,14 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             <div className="fs-customize-row">
               <span className="fs-customize-tool">Toolbar mode</span>
               <span className="fs-customize-seg">
-                {(['compact', 'comfortable', 'hidden'] as const).map((m) => (
+                {(['compact', 'comfortable', 'custom', 'hidden'] as const).map((m) => (
                   <button key={m} className={toolbarMode === m ? 'active' : ''} onClick={() => setToolbarMode(m)}>
                     {m === 'hidden' ? 'Hide' : m[0].toUpperCase() + m.slice(1)}
                   </button>
                 ))}
               </span>
             </div>
+            {toolbarMode === 'custom' && <ChromeSlider surface="toolbar" />}
 
             {(['left', 'right'] as const).map((zone) => {
               const tokens = zone === 'left' ? tbLeft : tbRight;
@@ -584,25 +611,30 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               ['left', 'Left Panel', navigatorOpen, toggleNavigator] as const,
               ['right', 'Right Panel', shelfOpen, toggleShelf] as const,
             ]).map(([side, label, isOpen, toggle]) => (
-              <div className="fs-customize-row" key={side}>
-                <span className="fs-customize-tool">{label}</span>
-                <span className="fs-customize-seg">
-                  {(['compact', 'comfortable'] as const).map((m) => (
+              <React.Fragment key={side}>
+                <div className="fs-customize-row">
+                  <span className="fs-customize-tool">{label}</span>
+                  <span className="fs-customize-seg">
+                    {(['compact', 'comfortable', 'custom'] as const).map((m) => (
+                      <button
+                        key={m}
+                        className={isOpen && panelSizeMode[side] === m ? 'active' : ''}
+                        onClick={() => {
+                          setPanelSizeMode(side, m);
+                          if (!isOpen) toggle();     // choosing a width also reveals it
+                        }}
+                      >{m[0].toUpperCase() + m.slice(1)}</button>
+                    ))}
                     <button
-                      key={m}
-                      className={isOpen && panelSizeMode[side] === m ? 'active' : ''}
-                      onClick={() => {
-                        setPanelSizeMode(side, m);
-                        if (!isOpen) toggle();     // choosing a width also reveals it
-                      }}
-                    >{m[0].toUpperCase() + m.slice(1)}</button>
-                  ))}
-                  <button
-                    className={!isOpen ? 'active' : ''}
-                    onClick={() => { if (isOpen) toggle(); }}
-                  >Hide</button>
-                </span>
-              </div>
+                      className={!isOpen ? 'active' : ''}
+                      onClick={() => { if (isOpen) toggle(); }}
+                    >Hide</button>
+                  </span>
+                </div>
+                {isOpen && panelSizeMode[side] === 'custom' && (
+                  <ChromeSlider surface={side === 'left' ? 'panelLeft' : 'panelRight'} />
+                )}
+              </React.Fragment>
             ))}
           </section>
           {renderPanelsTab()}

@@ -53,6 +53,7 @@ import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
 import { getCurrentElementRule, getLockedFormatting } from '../utils/effectiveFormatting';
 import { pluginRegistry } from '../plugins/registry';
 import AuthIndicator from './AuthIndicator';
+import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { useNavigate } from 'react-router-dom';
 import { scriptApi } from '../services/scriptApi';
 import { mirrorSave, mirrorSnapshot } from '../services/saveLocations';
@@ -206,6 +207,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     saveWorkspace,
     applyWorkspace,
     menuMode,
+    chromeCustomPx,
     zoomLevel,
     setZoomLevel,
     navPanelWidth,
@@ -1662,7 +1664,20 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     return () => document.removeEventListener('mousedown', handler);
   }, [floatingMenuOpen]);
 
-  const menuBarClass = menuMode === 'comfortable' ? 'menu-bar chrome-comfortable' : 'menu-bar';
+  // v0.72: 'custom' sizes the bar from the user's slider (half-compact …
+  // double-comfortable). Contents scale with it via --chrome-scale so a taller
+  // bar isn't just empty space around tiny text.
+  const menuBarClass =
+    menuMode === 'comfortable' ? 'menu-bar chrome-comfortable'
+    : menuMode === 'custom' ? 'menu-bar chrome-custom'
+    : 'menu-bar';
+  const menuCustomH = chromePx('menu', 'custom', chromeCustomPx.menu);
+  const menuBarStyle: React.CSSProperties | undefined = menuMode === 'custom'
+    ? ({
+        height: menuCustomH,
+        ['--chrome-scale' as string]: String(chromeScaleFactor('menu', menuCustomH)),
+      } as React.CSSProperties)
+    : undefined;
 
   const renderMenuItems = () => (
     <>
@@ -1728,7 +1743,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         document.body,
       )
     ) : (
-      <div className={menuBarClass} ref={menuRef}>
+      <div className={menuBarClass} style={menuBarStyle} ref={menuRef}>
         {renderMenuItems()}
       </div>
     )}
