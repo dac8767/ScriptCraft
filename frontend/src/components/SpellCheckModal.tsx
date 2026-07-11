@@ -16,9 +16,12 @@ interface SpellError {
 interface SpellCheckModalProps {
   editor: Editor;
   onClose: () => void;
+  /** Render as docked-panel content: no floating/draggable shell, no absolute
+   *  positioning, fills its container, and no Close button (the dock closes it). */
+  embedded?: boolean;
 }
 
-const SpellCheckModal: React.FC<SpellCheckModalProps> = ({ editor, onClose }) => {
+const SpellCheckModal: React.FC<SpellCheckModalProps> = ({ editor, onClose, embedded = false }) => {
   const [errors, setErrors] = useState<SpellError[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -250,16 +253,20 @@ const SpellCheckModal: React.FC<SpellCheckModalProps> = ({ editor, onClose }) =>
     setReplacementText(suggestions[idx]);
   }, [suggestions]);
 
-  if (!positioned) return null;
+  if (!embedded && !positioned) return null;
 
   if (dictError) {
     return (
       <div
         ref={modalRef}
-        className="spell-modal spell-modal-floating"
-        style={{ left: position.x, top: position.y }}
+        className={embedded ? 'spell-modal spell-modal-embedded' : 'spell-modal spell-modal-floating'}
+        style={embedded ? undefined : { left: position.x, top: position.y }}
       >
-        <div className="spell-modal-header" onMouseDown={handlePointerDown} onTouchStart={handlePointerDown}>
+        <div
+          className="spell-modal-header"
+          onMouseDown={embedded ? undefined : handlePointerDown}
+          onTouchStart={embedded ? undefined : handlePointerDown}
+        >
           <span>Spelling</span>
         </div>
         <div style={{ textAlign: 'center', padding: '32px 24px' }}>
@@ -272,7 +279,7 @@ const SpellCheckModal: React.FC<SpellCheckModalProps> = ({ editor, onClose }) =>
         <div className="spell-modal-actions">
           <div className="spell-modal-actions-col" />
           <div className="spell-modal-actions-col">
-            <button className="dialog-primary" onClick={onClose}>Close</button>
+            {!embedded && <button className="dialog-primary" onClick={onClose}>Close</button>}
           </div>
         </div>
       </div>
@@ -283,10 +290,14 @@ const SpellCheckModal: React.FC<SpellCheckModalProps> = ({ editor, onClose }) =>
     return (
       <div
         ref={modalRef}
-        className="spell-modal spell-modal-floating"
-        style={{ left: position.x, top: position.y }}
+        className={embedded ? 'spell-modal spell-modal-embedded' : 'spell-modal spell-modal-floating'}
+        style={embedded ? undefined : { left: position.x, top: position.y }}
       >
-        <div className="spell-modal-header" onMouseDown={handlePointerDown} onTouchStart={handlePointerDown}>
+        <div
+          className="spell-modal-header"
+          onMouseDown={embedded ? undefined : handlePointerDown}
+          onTouchStart={embedded ? undefined : handlePointerDown}
+        >
           <span>Spelling</span>
         </div>
         <div style={{ textAlign: 'center', padding: '32px 24px' }}>
@@ -298,7 +309,7 @@ const SpellCheckModal: React.FC<SpellCheckModalProps> = ({ editor, onClose }) =>
             <button onClick={handleRecheck}>Recheck</button>
           </div>
           <div className="spell-modal-actions-col">
-            <button className="dialog-primary" onClick={onClose}>Close</button>
+            {!embedded && <button className="dialog-primary" onClick={onClose}>Close</button>}
           </div>
         </div>
       </div>
@@ -309,10 +320,14 @@ const SpellCheckModal: React.FC<SpellCheckModalProps> = ({ editor, onClose }) =>
     <div
       ref={modalRef}
       tabIndex={-1}
-      className="spell-modal spell-modal-floating"
-      style={{ left: position.x, top: position.y }}
+      className={embedded ? 'spell-modal spell-modal-embedded' : 'spell-modal spell-modal-floating'}
+      style={embedded ? undefined : { left: position.x, top: position.y }}
     >
-      <div className="spell-modal-header" onMouseDown={handlePointerDown} onTouchStart={handlePointerDown}>
+      <div
+        className="spell-modal-header"
+        onMouseDown={embedded ? undefined : handlePointerDown}
+        onTouchStart={embedded ? undefined : handlePointerDown}
+      >
         <span>Spelling: {errors.length} issue{errors.length !== 1 ? 's' : ''}</span>
         <span style={{ fontSize: 11, color: 'var(--fd-text-muted)' }}>{currentIndex + 1} / {errors.length}</span>
       </div>
@@ -402,7 +417,7 @@ const SpellCheckModal: React.FC<SpellCheckModalProps> = ({ editor, onClose }) =>
           <button className="dialog-primary" onClick={handleChange}>Change</button>
           <button onClick={handleChangeAll}>Change All</button>
           <button onClick={handleRecheck}>Recheck</button>
-          <button onClick={onClose}>Close</button>
+          {!embedded && <button onClick={onClose}>Close</button>}
         </div>
       </div>
     </div>

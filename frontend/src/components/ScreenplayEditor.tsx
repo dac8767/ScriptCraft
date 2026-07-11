@@ -287,7 +287,7 @@ const ScreenplayEditor: React.FC = () => {
     beatBoardOpen, statisticsOpen,
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
     characterProfilesOpen, tagsPanelOpen, locationDatabaseOpen,
-    spellCheckEnabled, spellModalOpen, setSpellModalOpen,
+    spellCheckEnabled, spellModalOpen, setSpellModalOpen, spellPanelMounted,
     grammarCheckEnabled, grammarModalOpen, setGrammarModalOpen,
     grammarRulesPanelOpen, setGrammarRulesPanelOpen,
     setDocumentTitle,
@@ -4003,7 +4003,9 @@ const ScreenplayEditor: React.FC = () => {
       {!isHistoryMode && formatPanelOpen && editor && (
         <FormatPanel editor={editor} onClose={() => setFormatPanelOpen(false)} />
       )}
-      {!isHistoryMode && spellModalOpen && editor && (
+      {/* Suppressed while the docked Spelling & Grammar panel is mounted — it
+          owns the checker; rendering both produced two windows (v0.63 bug). */}
+      {!isHistoryMode && spellModalOpen && !spellPanelMounted && editor && (
         <SpellCheckModal
           editor={editor}
           onClose={() => setSpellModalOpen(false)}

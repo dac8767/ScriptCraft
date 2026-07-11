@@ -16,7 +16,7 @@ const PROJECT_MENU_GROUPS: string[][] = [
   // v0.62: Asset Manager is a Project window again (rolled back from File);
   // Spelling & Grammar and Script History joined it as dockable windows.
   // 'projects' stays out — the Project Manager lives under File.
-  ['titlepage', 'assets', 'spelling', 'history'],
+  ['titlepage', 'assets', 'spelling'],
 ];
 /** Tools menu: story planning / writing aids / production & analysis. */
 const TOOL_MENU_GROUPS: string[][] = [
@@ -964,6 +964,48 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     }
   }, [editor, documentTitle]);
 
+  /** Import workspaces from another project's exported .odraft file (or a
+   *  workspaces JSON). Workspaces live in view state, not in the script, so an
+   *  .odraft carries them only if it was exported with them; we accept either
+   *  shape and merge without overwriting existing names. */
+  const handleImportWorkspaces = useCallback(async () => {
+    try {
+      const result = await openTextFile([
+        { name: 'FreeDraft Project or Workspaces', extensions: ['odraft', 'json'] },
+      ]);
+      if (!result) return;
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(result.content);
+      } catch {
+        showToast('That file isn\u2019t valid JSON.', 'error');
+        return;
+      }
+      const obj = parsed as Record<string, unknown>;
+      // Accept: { workspaces: {...} } (view-state / .odraft export) or a bare
+      // { name: snapshot } map.
+      const candidate = (obj?.workspaces ?? obj?._workspaces ?? obj) as Record<string, unknown>;
+      const entries = Object.entries(candidate ?? {}).filter(
+        ([, v]) => v && typeof v === 'object' && ('toolConfig' in (v as object) || 'toolbarMode' in (v as object)),
+      );
+      if (entries.length === 0) {
+        showToast('No workspaces found in that file.', 'error');
+        return;
+      }
+      const added = useEditorStore.getState().importWorkspaces(
+        Object.fromEntries(entries) as Record<string, import('../stores/editorStore').WorkspaceSnapshot>,
+      );
+      showToast(
+        added.length === 1
+          ? `Imported workspace \u201c${added[0]}\u201d`
+          : `Imported ${added.length} workspaces`,
+        'success',
+      );
+    } catch (err) {
+      showToast(`Import failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
+    }
+  }, []);
+
   const handleMenuClick = (label: string) => {
     setActiveMenu((prev) => (prev === label ? null : label));
     setOpenSubmenu(null);
@@ -1102,6 +1144,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               if (activeWorkspace) applyWorkspace(activeWorkspace);
             }, disabled: !activeWorkspace },
             { icon: <FaColumns />, label: 'Edit Workspaces…', action: () => setEditWorkspacesOpen(true) },
+            { separator: true, label: '' },
+            { icon: <FaFileImport />, label: 'Import Workspaces from a Project…', action: handleImportWorkspaces },
           ],
         },
         { separator: true, label: '' },

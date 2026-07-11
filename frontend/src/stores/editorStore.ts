@@ -438,7 +438,6 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   // so the two views can never disagree again.
   assets: { side: 'left', enabled: true },
   spelling: { side: 'right', enabled: true },
-  history: { side: 'right', enabled: true },
   titlepage: { side: 'left', enabled: true },
 };
 
@@ -695,6 +694,9 @@ interface EditorState {
   saveWorkspace: (name: string) => void;
   applyWorkspace: (name: string) => void;
   deleteWorkspace: (name: string) => void;
+  /** Merge workspaces exported from another project/machine. Returns the names
+   *  actually added (duplicates get a numeric suffix rather than overwriting). */
+  importWorkspaces: (incoming: Record<string, WorkspaceSnapshot>) => string[];
   renameWorkspace: (oldName: string, newName: string) => void;
   /** Tool open with no dock home: temporary floating window */
   tempTool: ToolId | null;
@@ -887,6 +889,10 @@ interface EditorState {
   toggleSpellCheck: () => void;
   setSpellCheckEnabled: (v: boolean) => void;
   spellModalOpen: boolean;
+  /** True while the docked Spelling & Grammar panel is mounted — suppresses the
+   *  global floating SpellCheckModal so only one instance ever renders. */
+  spellPanelMounted: boolean;
+  setSpellPanelMounted: (v: boolean) => void;
   setSpellModalOpen: (open: boolean) => void;
 
   // Grammar / writing suggestions
@@ -1099,6 +1105,26 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ workspaceOrder: order });
   },
   activeWorkspace: _vs.activeWorkspace ?? null,
+  importWorkspaces: (incoming) => {
+    const added: string[] = [];
+    const s = get();
+    const workspaces = { ...s.workspaces };
+    const order = [...s.workspaceOrder];
+    for (const [rawName, snap] of Object.entries(incoming)) {
+      if (!snap || typeof snap !== 'object') continue;
+      // Never overwrite an existing workspace — suffix instead.
+      let name = rawName;
+      let n = 2;
+      while (workspaces[name]) name = `${rawName} (${n++})`;
+      workspaces[name] = snap;
+      order.push(name);
+      added.push(name);
+    }
+    if (added.length === 0) return [];
+    saveViewState({ workspaces, workspaceOrder: order });
+    set({ workspaces, workspaceOrder: order });
+    return added;
+  },
   saveWorkspace: (name) => set((s) => {
     const snap: WorkspaceSnapshot = {
       toolConfig: s.toolConfig, toolOrder: s.toolOrder,
@@ -1634,6 +1660,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setSpellCheckEnabled: (v) => set({ spellCheckEnabled: v }),
   spellModalOpen: false,
   setSpellModalOpen: (open) => set({ spellModalOpen: open }),
+  spellPanelMounted: false,
+  setSpellPanelMounted: (v) => set({ spellPanelMounted: v }),
 
   grammarCheckEnabled: false,
   toggleGrammarCheck: () => set((s) => ({ grammarCheckEnabled: !s.grammarCheckEnabled })),

@@ -12,16 +12,15 @@
  * stays). Tools disabled in both panels open as a temporary centered window
  * via the Tools menu (TempToolWindow, mounted once in ScreenplayEditor).
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import AssetManager from './AssetManager';
 import TitlePagePanel from './TitlePagePanel';
 import SpellCheckPanel from './SpellCheckPanel';
-import VersionHistory from './VersionHistory';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
-  FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaHistory, FaFileAlt,
+  FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -65,13 +64,12 @@ export const ALL_TOOLS: ToolDef[] = [
   { id: 'titlepage', label: 'Title Page', icon: <FaFileAlt />, defaultSize: { w: 520, h: 560 }, group: 3 },
   { id: 'assets', label: 'Asset Manager', icon: <FaBoxes />, defaultSize: { w: 620, h: 372 }, group: 3 },
   { id: 'spelling', label: 'Spelling & Grammar', icon: <FaSpellCheck />, defaultSize: { w: 420, h: 440 }, group: 3 },
-  { id: 'history', label: 'Script History', icon: <FaHistory />, defaultSize: { w: 420, h: 440 }, group: 3 },
 ];
 
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
-export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'history', 'titlepage'];
+export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'titlepage'];
 export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 
 const MIN_W = 240;
@@ -100,8 +98,6 @@ export function ToolContent({ id, editor, scrollContainer }: {
       return <AssetManager projectId={currentProject?.id || ''} embedded />;
     case 'spelling':
       return <SpellCheckPanel editor={editor} />;
-    case 'history':
-      return <VersionHistory embedded />;
     case 'analytics':
       return <AnalyticsTool editor={editor} />;
     case 'goals':
@@ -130,8 +126,33 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
   tool: ToolDef; onClose: () => void; temporary?: boolean; side?: ToolSide; children: React.ReactNode;
 }) {
   const { toolSizes, setToolSize } = useEditorStore();
-  const size = toolSizes[tool.id] || tool.defaultSize;
   const windowRef = useRef<HTMLDivElement>(null);
+
+  // v0.64: DEFAULT window size fits within its side panel so the dock's items
+  // are pushed down rather than overlapped/clipped. A size the user has set
+  // (drag-resize, pop-out) is stored in toolSizes and ALWAYS wins — this only
+  // constrains the untouched default. Measured from the panel column so it
+  // adapts to a resized panel.
+  const [panelW, setPanelW] = useState<number | null>(null);
+  useEffect(() => {
+    if (temporary) return;                   // floating temp windows: no clamp
+    const el = windowRef.current?.closest('.tool-dock-wrap') as HTMLElement | null;
+    if (!el) return;
+    const measure = () => setPanelW(el.getBoundingClientRect().width || null);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [temporary]);
+
+  const userSize = toolSizes[tool.id];
+  const fittedDefault = panelW && !temporary
+    ? {
+        w: Math.min(tool.defaultSize.w, Math.max(220, panelW - 8)),
+        h: tool.defaultSize.h,
+      }
+    : tool.defaultSize;
+  const size = userSize || fittedDefault;
 
   const startResize = (e: React.PointerEvent) => {
     if (!windowRef.current) return;
