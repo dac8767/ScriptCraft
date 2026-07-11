@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
 import ProjectManagerTool from './ProjectManagerTool';
-import AssetManager from './AssetManager';
 import { SaveWorkspaceDialog, EditWorkspacesDialog } from './WorkspaceDialogs';
 import PreferencesDialog from './PreferencesDialog';
 import SetDraftDialog from './SetDraftDialog';
@@ -13,8 +12,10 @@ import { ALL_TOOLS } from './ToolDock';
 const PROJECT_MENU_GROUPS: string[][] = [
   ['navigator', 'pages', 'scenes'],
   ['locations', 'characters'],
-  // 'projects' and 'assets' intentionally absent (v0.54): the Project
-  // Manager and Asset Manager live under File as full windows, not Tools.
+  // v0.62: Asset Manager is a Project window again (rolled back from File);
+  // Spelling & Grammar and Script History joined it as dockable windows.
+  // 'projects' stays out — the Project Manager lives under File.
+  ['assets', 'spelling', 'history'],
 ];
 /** Tools menu: story planning / writing aids / production & analysis. */
 const TOOL_MENU_GROUPS: string[][] = [
@@ -111,7 +112,6 @@ import {
   FaUserFriends,
   FaSignInAlt,
   FaProjectDiagram,
-  FaBoxes,
   FaBars,
   FaInfoCircle,
   FaKeyboard,
@@ -412,7 +412,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
   // ── Check in (git commit) ──
   const [projectManagerOpen, setProjectManagerOpen] = useState(false);
-  const [assetManagerOpen, setAssetManagerOpen] = useState(false);
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [checkinMessage, setCheckinMessage] = useState('');
   const [checkinSaving, setCheckinSaving] = useState(false);
@@ -1041,7 +1040,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         },
         { separator: true, label: '' },
         { icon: <FaProjectDiagram />, label: 'Manage Projects…', action: () => setProjectManagerOpen(true) },
-        { icon: <FaBoxes />, label: 'Asset Manager…', action: () => setAssetManagerOpen(true) },
         { separator: true, label: '' },
         { icon: <FaSave />, label: 'Save', shortcut: `${mod}S`, action: handleSave, disabled: isCollabGuest },
         { icon: <FaSave />, label: 'Save As…', shortcut: `⇧${mod}S`, action: handleExportOdraft, disabled: isCollabGuest },
@@ -1157,23 +1155,34 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {
           icon: <FaListOl />, label: 'Element',
           children: [
-            ...Object.values(activeTemplate.rules).filter((r) => r.enabled && !['newAct', 'endOfAct', 'castList'].includes(r.id)).map((r) => {
-              const shortcuts: Record<string, string> = {
-                sceneHeading: `${mod}1`, action: `${mod}2`, character: `${mod}3`, dialogue: `${mod}4`,
-                parenthetical: `${mod}5`, transition: `${mod}6`, general: `${mod}7`, shot: `${mod}8`,
-              };
-              return { label: r.label, shortcut: shortcuts[r.id], action: () => setElement(r.id as any) };
-            }),
+            // Dual Dialogue lives inside the Element list, immediately after
+            // Dialogue (v0.62) — it's an element choice, not a separate insert.
+            ...Object.values(activeTemplate.rules)
+              .filter((r) => r.enabled && !['newAct', 'endOfAct', 'castList'].includes(r.id))
+              .flatMap((r) => {
+                const shortcuts: Record<string, string> = {
+                  sceneHeading: `${mod}1`, action: `${mod}2`, character: `${mod}3`, dialogue: `${mod}4`,
+                  parenthetical: `${mod}5`, transition: `${mod}6`, general: `${mod}7`, shot: `${mod}8`,
+                };
+                const entry = { label: r.label, shortcut: shortcuts[r.id], action: () => setElement(r.id as any) };
+                if (r.id !== 'dialogue') return [entry];
+                return [
+                  entry,
+                  {
+                    label: 'Dual Dialogue',
+                    shortcut: `${mod}D`,
+                    action: () => (editor as any)?.commands?.toggleDualDialogue(),
+                  },
+                ];
+              }),
           ],
         },
-        { icon: <FaColumns />, label: 'Dual Dialogue', shortcut: `${mod}D`, action: () => (editor as any)?.commands?.toggleDualDialogue() },
         { icon: <FaImage />, label: 'Insert Image...', action: () => useEditorStore.getState().imageInsertHandler?.() },
         { separator: true, label: '' },
-        { separator: true, label: '' },
         { icon: <FaListOl />, label: 'Section', action: () => insertOutlineLine('# ') },
+        { icon: <FaListOl />, label: 'Marker', action: () => insertOutlineLine('⚑ ') },
         { icon: <FaRegStickyNote />, label: 'Script Note', action: () => useEditorStore.getState().openShelfTab('script') },
         { icon: <FaCheckSquare />, label: 'Checklist Item', action: () => insertOutlineLine('[ ] ') },
-        { icon: <FaListOl />, label: 'Marker', action: () => insertOutlineLine('⚑ ') },
       ],
     },
     {
@@ -1615,8 +1624,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           <span className="menu-label">{menu.label}</span>
         </div>
       ))}
-      <div className="menu-spacer" />
+      {/* v0.62: sits immediately right of the last menu (Help), not flushed to
+          the far edge — the toolbar's right zone now hosts the Editor View
+          picker. Always rendered: it can't be hidden or disabled. */}
       <AuthIndicator />
+      <div className="menu-spacer" />
     </>
   );
 
@@ -1866,19 +1878,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           </div>
           <div className="fs-manager-dialog-body">
             <ProjectManagerTool />
-          </div>
-        </div>
-      </div>
-    )}
-    {assetManagerOpen && (
-      <div className="dialog-overlay" onClick={() => setAssetManagerOpen(false)}>
-        <div className="dialog-box fs-manager-dialog" onClick={(e) => e.stopPropagation()}>
-          <div className="dialog-header">
-            Asset Manager
-            <button className="fs-dialog-x" onClick={() => setAssetManagerOpen(false)} title="Close">&times;</button>
-          </div>
-          <div className="fs-manager-dialog-body">
-            <AssetManager projectId={currentProject?.id || ''} embedded />
           </div>
         </div>
       </div>

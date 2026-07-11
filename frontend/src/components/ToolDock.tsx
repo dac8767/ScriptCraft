@@ -14,10 +14,13 @@
  */
 import React, { useEffect, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
+import AssetManager from './AssetManager';
+import SpellCheckPanel from './SpellCheckPanel';
+import VersionHistory from './VersionHistory';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
-  FaTh, FaStream, FaTags, FaHighlighter,
+  FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaHistory,
 } from 'react-icons/fa';
 import { useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -58,12 +61,15 @@ export const ALL_TOOLS: ToolDef[] = [
   { id: 'tags', label: 'Production Tags', icon: <FaTags />, defaultSize: { w: 340, h: 336 }, group: 2 },
   { id: 'analytics', label: 'Analytics', icon: <FaChartBar />, defaultSize: { w: 620, h: 384 }, group: 3 },
   { id: 'goals', label: 'Goals', icon: <FaBullseye />, defaultSize: { w: 340, h: 264 }, group: 3 },
+  { id: 'assets', label: 'Asset Manager', icon: <FaBoxes />, defaultSize: { w: 620, h: 372 }, group: 3 },
+  { id: 'spelling', label: 'Spelling & Grammar', icon: <FaSpellCheck />, defaultSize: { w: 420, h: 440 }, group: 3 },
+  { id: 'history', label: 'Script History', icon: <FaHistory />, defaultSize: { w: 420, h: 440 }, group: 3 },
 ];
 
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
-export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters'];
+export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'history'];
 export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 
 const MIN_W = 240;
@@ -86,6 +92,12 @@ export function ToolContent({ id, editor, scrollContainer }: {
       return <SceneNavigator editor={editor} scrollContainer={scrollContainer} view={id as NavTab} />;
     case 'characters':
       return <CharacterProfiles editor={editor} projectId={currentProject?.id || ''} embedded />;
+    case 'assets':
+      return <AssetManager projectId={currentProject?.id || ''} embedded />;
+    case 'spelling':
+      return <SpellCheckPanel editor={editor} />;
+    case 'history':
+      return <VersionHistory embedded />;
     case 'analytics':
       return <AnalyticsTool editor={editor} />;
     case 'goals':

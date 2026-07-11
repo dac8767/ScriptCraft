@@ -375,6 +375,7 @@ export type ToolId =
   | 'navigator' | 'scenes' | 'pages' | 'structure' | 'locations' | 'characters'
   | 'indexcards' | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
+  | 'spelling' | 'history'
   /** legacy — Script Notes merged back into 'sticky' (Notes > Script tab); kept
    *  in the type so persisted configs still typecheck, remapped on use. */
   | 'scriptnotes';

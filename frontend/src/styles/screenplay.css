@@ -655,9 +655,24 @@ body {
 .about-credit a:hover { text-decoration: underline; }
 .about-oss { line-height: 1.6; }
 
-/* ── File > Manage Projects / Asset Manager windows (v0.54) ── */
+/* ── Spelling & Grammar as a docked panel (v0.62) ── */
+.fs-spellcheck-panel { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.fs-spellcheck-panel .dialog-overlay {
+  position: static; inset: auto; background: transparent; display: block;
+  z-index: auto; height: 100%; padding: 0;
+}
+.fs-spellcheck-panel .dialog-box {
+  width: 100%; max-width: none; height: 100%; box-shadow: none;
+  border: none; border-radius: 0; background: transparent; display: flex;
+  flex-direction: column; min-height: 0;
+}
+.fs-panel-empty {
+  padding: 16px; font-size: 12.5px; color: var(--fd-text-muted); text-align: center;
+}
+
+/* ── File > Manage Projects window (v0.54) ── */
 .fs-manager-dialog {
-  width: min(880px, 92vw); height: min(620px, 86vh);
+  width: min(1180px, 94vw); height: min(820px, 90vh);
   max-width: none; display: flex; flex-direction: column;
 }
 .fs-manager-dialog-body { flex: 1; min-height: 0; display: flex; overflow: hidden; }
@@ -747,10 +762,18 @@ body {
 .fs-delete-confirm-input:focus { border-color: var(--fd-accent); }
 .fs-customize-stuck-hint { color: var(--fd-accent); }
 
-.view-style-label {
-  color: var(--fd-text-muted); font-size: 11px; margin-right: 4px;
-  white-space: nowrap; user-select: none;
+/* Editor View: label stacked above its dropdown (v0.62). The toolbar row
+   grows to fit; Local Only moved into the menu bar to make room. */
+.view-style-stack {
+  display: inline-flex; flex-direction: column; align-items: flex-start;
+  gap: 1px; line-height: 1;
 }
+.view-style-label {
+  color: var(--fd-text-muted); font-size: 10px;
+  white-space: nowrap; user-select: none; letter-spacing: .02em;
+}
+.toolbar:has(.view-style-stack) { height: auto; min-height: 30px; padding-top: 2px; padding-bottom: 2px; }
+.toolbar.chrome-comfortable:has(.view-style-stack) { min-height: 44px; }
 
 /* ── Editable zoom input (desktop toolbar) ── */
 .zoom-input {

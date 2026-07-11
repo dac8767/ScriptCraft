@@ -24,7 +24,12 @@ function relativeTime(dateStr: string): string {
   return date.toLocaleDateString();
 }
 
-const VersionHistory: React.FC = () => {
+interface VersionHistoryProps {
+  /** Render as a dockable panel: always visible, no close button. */
+  embedded?: boolean;
+}
+
+const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => {
   const navigate = useNavigate();
   const { currentProject, currentScriptId, versions, setVersions, versionHistoryOpen, setVersionHistoryOpen, triggerScriptReload } =
     useProjectStore();
@@ -138,10 +143,10 @@ const VersionHistory: React.FC = () => {
   }, [currentProject, currentScriptId, setVersions]);
 
   useEffect(() => {
-    if (versionHistoryOpen && currentProject) {
+    if ((embedded || versionHistoryOpen) && currentProject) {
       loadVersions();
     }
-  }, [versionHistoryOpen, currentProject, loadVersions]);
+  }, [embedded, versionHistoryOpen, currentProject, loadVersions]);
 
   const handleViewDiff = useCallback(
     async (version: VersionInfo, index: number) => {
@@ -209,22 +214,24 @@ const VersionHistory: React.FC = () => {
     [currentProject, currentScriptId, restoreConfirm, loadVersions, navigate, setVersionHistoryOpen, triggerScriptReload]
   );
 
-  if (!versionHistoryOpen) return null;
+  if (!embedded && !versionHistoryOpen) return null;
 
   return (
     <div className="version-history-panel">
       <div className="version-history-header">
-        <span className="version-history-title">Version History</span>
-        <button
-          className="version-history-close"
-          onClick={() => {
-            setVersionHistoryOpen(false);
-            setSelectedVersion(null);
-            setDiffText(null);
-          }}
-        >
-          x
-        </button>
+        <span className="version-history-title">{embedded ? 'Script History' : 'Version History'}</span>
+        {!embedded && (
+          <button
+            className="version-history-close"
+            onClick={() => {
+              setVersionHistoryOpen(false);
+              setSelectedVersion(null);
+              setDiffText(null);
+            }}
+          >
+            x
+          </button>
+        )}
       </div>
 
       {!currentProject && (

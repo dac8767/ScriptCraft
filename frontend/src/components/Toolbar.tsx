@@ -22,7 +22,7 @@ import {
   FaHighlighter,
   FaEllipsisV,
   FaHashtag,
-  FaListOl, FaRegStickyNote, FaCheckSquare,
+  FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
 import { commandDef } from './toolbarCommands';
@@ -623,6 +623,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           <FaCheckSquare />
         </button>
       );
+      case 'titlePage': return (
+        <button
+          className="toolbar-btn"
+          title="Title Page"
+          onClick={() => { useEditorStore.getState().setTitlePageEditorOpen(true); if (inOverflow) setOverflowOpen(false); }}
+        >
+          <FaFileAlt />
+        </button>
+      );
       case 'fontFamily': return (
         <div className="toolbar-group" style={locked.fontFamily ? { opacity: 0.5, pointerEvents: 'none' } : undefined}>
           <FontPicker
@@ -934,7 +943,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         </>
       );
       case 'view': return (
-        <>
+        <div className="view-style-stack">
           <span className="view-style-label">Editor View</span>
           <select
             className="view-style-selector"
@@ -951,7 +960,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             <option value="continuous">Continuous</option>
             <option value="preview">Preview</option>
           </select>
-        </>
+        </div>
       );
       default: return null;
     }
