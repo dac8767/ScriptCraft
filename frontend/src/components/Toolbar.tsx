@@ -22,7 +22,7 @@ import {
   FaHighlighter,
   FaEllipsisV,
   FaHashtag,
-  FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
+  FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt, FaSlidersH,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
 import { commandDef } from './toolbarCommands';
@@ -941,6 +941,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             <FaSearchPlus />
           </button>
         </>
+      );
+      case 'customize': return (
+        <button
+          className="toolbar-btn"
+          title="Customize Toolbar"
+          onClick={() => {
+            window.dispatchEvent(new CustomEvent('freedraft:command', { detail: 'customize' }));
+            if (inOverflow) setOverflowOpen(false);
+          }}
+        >
+          <FaSlidersH />
+        </button>
       );
       case 'view': return (
         <>

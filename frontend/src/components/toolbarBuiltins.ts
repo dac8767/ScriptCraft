@@ -62,6 +62,7 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'zoomOut', label: 'Zoom Out', priority: '1', zoom: true },
   { key: 'zoomIn', label: 'Zoom In', priority: '2b', zoom: true },
   { key: 'view', label: 'Editor View', desktopOnly: true },
+  { key: 'customize', label: 'Customize Toolbar' },
 ];
 
 export const BUILTIN_BY_KEY: Record<string, ToolbarBuiltin> = Object.fromEntries(
