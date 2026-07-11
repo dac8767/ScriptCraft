@@ -359,26 +359,39 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     const scroller = document.querySelector('.editor-main') as HTMLElement | null;
     if (!page || !scroller) return;
 
-    // Zoom is a transform: scale() on .page-container, so EVERYTHING inside it
-    // (including the page's own margins) scales together. The unscaled block
-    // height is therefore the rendered height ÷ the zoom currently applied —
-    // margins must NOT be added back on top, or the result overshoots by the
-    // margin and the page ends up a few px too tall to fit.
+    // v0.85 — ROOT CAUSE of "Fit Page shows two pages": there is only ONE .page
+    // element; it holds the WHOLE script and simply grows as you write (page
+    // breaks are decorations, not separate elements). Measuring its height was
+    // therefore measuring the entire document, so "fit" shrank the script until
+    // every page fitted — two pages, three, however many.
+    //
+    // A single page is a fixed, known quantity: --page-min-height (11in), which
+    // is what min-height on .page already declares. Fit to THAT, and to the
+    // page's width, taking whichever is the tighter constraint — the page ends
+    // up as large as possible while still wholly visible.
     const scale = (zoomLevel || 100) / 100;
     const pc = getComputedStyle(page);
-    const margins = (parseFloat(pc.marginTop) || 0) + (parseFloat(pc.marginBottom) || 0);
-    const blockH = (page.getBoundingClientRect().height + margins * scale) / scale;
-    if (!blockH) return;
 
-    // .editor-main scrolls and carries vertical padding (30 top / 60 bottom).
-    // That padding sits inside clientHeight, so subtract it — otherwise the
-    // page is scaled to overlap the padding and still doesn't fit.
+    // Unscaled page geometry. min-height is the height of exactly one page.
+    const onePageH = parseFloat(pc.minHeight) || (page.getBoundingClientRect().height / scale);
+    const pageW = page.getBoundingClientRect().width / scale;
+    const marginsY = (parseFloat(pc.marginTop) || 0) + (parseFloat(pc.marginBottom) || 0);
+    const blockH = onePageH + marginsY;
+    if (!blockH || !pageW) return;
+
+    // .editor-main scrolls and carries padding, which sits inside clientHeight —
+    // subtract it, or the page is scaled to overlap the padding and still
+    // doesn't quite fit.
     const sc = getComputedStyle(scroller);
-    const pad = (parseFloat(sc.paddingTop) || 0) + (parseFloat(sc.paddingBottom) || 0);
-    const avail = scroller.clientHeight - pad;
-    if (avail <= 0) return;
+    const padY = (parseFloat(sc.paddingTop) || 0) + (parseFloat(sc.paddingBottom) || 0);
+    const padX = (parseFloat(sc.paddingLeft) || 0) + (parseFloat(sc.paddingRight) || 0);
+    const availH = scroller.clientHeight - padY;
+    const availW = scroller.clientWidth - padX;
+    if (availH <= 0 || availW <= 0) return;
 
-    const pct = Math.floor((avail / blockH) * 100);
+    // Whichever axis runs out first decides the zoom — fitting height alone
+    // would clip the sides on a narrow window.
+    const pct = Math.floor(Math.min(availH / blockH, availW / pageW) * 100);
     setZoomLevel(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pct)));
   };
 

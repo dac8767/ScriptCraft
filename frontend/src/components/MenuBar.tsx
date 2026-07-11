@@ -571,6 +571,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       switch (id) {
         case 'customize': openCustomize('menu'); break;
         case 'customizeContextMenu': openCustomize('context'); break;
+        case 'customizeShortcuts': openCustomize('keys'); break;
         case 'setDraft': setDraftDialogOpen(true); break;
         case 'rename': setRenameOpen(true); break;
         case 'takeSnapshot': handleCheckinOpen(); break;

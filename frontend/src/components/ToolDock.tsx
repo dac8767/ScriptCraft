@@ -179,6 +179,30 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
       h = Math.max(MIN_H, startH + (ev.clientY - startY));
       el.style.width = `${w}px`;
       el.style.height = `${h}px`;
+
+      // v0.85: stop growing once the content no longer fills the window.
+      // Rather than hardcode a max size per tool, measure it: the gap between
+      // the body's clientHeight (space given) and scrollHeight (space the
+      // content actually wants) IS the dead space. Give that slack back.
+      //
+      // This self-selects correctly. A panel whose content stretches (Scenes,
+      // Notes…) always has scrollHeight === clientHeight, so slack is 0 and it
+      // resizes freely. A fixed-layout window like Title Page has a box of a
+      // set size, so past that point slack appears and the window stops — no
+      // more dragging out a window that's mostly empty grey.
+      const body = el.querySelector('.tool-window-body') as HTMLElement | null;
+      if (body) {
+        const slackH = body.clientHeight - body.scrollHeight;
+        const slackW = body.clientWidth - body.scrollWidth;
+        if (slackH > 1) {
+          h = Math.max(MIN_H, h - slackH);
+          el.style.height = `${h}px`;
+        }
+        if (slackW > 1) {
+          w = Math.max(MIN_W, w - slackW);
+          el.style.width = `${w}px`;
+        }
+      }
     };
     const onUp = () => {
       document.removeEventListener('pointermove', onMove);

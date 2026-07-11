@@ -420,6 +420,32 @@ export interface WorkspaceSnapshot {
 /** Canonical menu-bar labels in default order (File islocked visible). */
 export const MENU_BAR_LABELS = ['File', 'Edit', 'View', 'Insert', 'Format', 'Project', 'Tools', 'Production', 'Help'];
 
+/**
+ * v0.85: Navigator belongs INSIDE the left panel by default. It already does on
+ * a fresh install (its default width equals the dock, so it docks inline), but
+ * a width stored by an older build — when windows popped out by default — wins
+ * over the default forever and kept it floating.
+ *
+ * This drops that one stored width, once, so it returns to the panel. It runs a
+ * single time (flagged), so if you deliberately pop it out afterwards, it stays
+ * out. Nothing else is touched.
+ */
+function migrateNavigatorInline(
+  sizes: Record<string, { w: number; h: number }>,
+): Record<string, { w: number; h: number }> {
+  const FLAG = 'opendraft:navInlineMigrated';
+  try {
+    if (localStorage.getItem(FLAG)) return sizes;
+    localStorage.setItem(FLAG, '1');
+    if (sizes.navigator) {
+      const { navigator: _dropped, ...rest } = sizes;
+      saveViewState({ toolSizes: rest });
+      return rest;
+    }
+  } catch { /* storage unavailable — keep what we have */ }
+  return sizes;
+}
+
 export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   // v0.68: the default panel layout. LEFT = script-structure windows;
   // RIGHT = writing tools. Production Tags is hidden by default (it opens from
@@ -1107,7 +1133,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ activeTool: tool });
     set({ activeTool: tool });
   },
-  toolSizes: _vs.toolSizes ?? {},
+  toolSizes: migrateNavigatorInline(_vs.toolSizes ?? {}),
   setToolSize: (tool, w, h) => set((s) => {
     const toolSizes = { ...s.toolSizes, [tool]: { w, h } };
     saveViewState({ toolSizes });

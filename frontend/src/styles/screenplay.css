@@ -61,9 +61,9 @@
 
   /* v0.83: toolbar button surface. Every theme sets its own so a button looks
      native to the theme instead of a fixed blue chip on all of them. */
-  --fd-btn-bg: #3d4450;
-  --fd-btn-text: #e8ecf2;
-  --fd-btn-hover: #4a5260;
+  --fd-btn-bg: #4a9eff;
+  --fd-btn-text: #0b1a2b;
+  --fd-btn-hover: #66b0ff;
 
   /* Final Draft exact page dimensions */
   --page-width: 8.5in;
@@ -100,7 +100,7 @@
   --fd-shadow: #c0c0c0;
   --fd-dialog-bg: #f5f5f5;
   --fd-input-bg: #ffffff;
-  --fd-btn-bg: #e2e6ec; --fd-btn-text: #1f2937; --fd-btn-hover: #d3d9e2;
+  --fd-btn-bg: #1565c0; --fd-btn-text: #ffffff; --fd-btn-hover: #1976d2;
 }
 /* Light theme: page keeps white bg, editor area uses a warm gray */
 [data-theme="light"] .editor-main {
@@ -690,9 +690,17 @@ body {
   z-index: auto; height: 100%; padding: 0;
 }
 .fs-modal-as-panel .dialog-box {
-  width: 100%; max-width: none; height: 100%; box-shadow: none;
+  /* v0.85: shrink-wrap instead of stretching to 100%. Stretching meant the
+     hosted modal always "filled" its window, so the dead space sat INSIDE it
+     and the window's content-slack measurement couldn't see it — you could drag
+     Title Page out to any size and just get more grey. Sizing to the content
+     makes that slack visible, so the window stops growing once the box is fully
+     shown. max-* keeps it scrollable when the window is smaller than the box. */
+  width: max-content; max-width: 100%;
+  height: auto; max-height: 100%;
+  box-shadow: none;
   border: none; border-radius: 0; background: transparent; display: flex;
-  flex-direction: column; min-height: 0; overflow-y: auto;
+  flex-direction: column; min-height: 0; overflow: auto;
 }
 
 /* ── Spelling & Grammar as a docked panel (v0.62) ── */
@@ -883,11 +891,15 @@ body {
 .toolbar-btn.toolbar-customize-btn {
   width: auto; padding: 0 12px; gap: 0;
   margin: 0 6px;                       /* a little air on each side */
+  /* v0.85: built from the theme's ACCENT, the one color in every palette meant
+     to stand out. The v0.83 greys were drawn from the chrome itself, which is
+     why the button vanished into the toolbar. */
   background: var(--fd-btn-bg);
   color: var(--fd-btn-text);
-  border: 1px solid var(--fd-border);
+  border: 1px solid transparent;
   border-radius: 5px;
-  font-size: 12px; font-weight: 600; letter-spacing: .02em;
+  font-size: 12px; font-weight: 700; letter-spacing: .02em;
+  box-shadow: 0 1px 2px rgba(0,0,0,.25);
   white-space: nowrap;
 }
 .toolbar-btn.toolbar-customize-btn:hover { background: var(--fd-btn-hover); }
@@ -12649,28 +12661,28 @@ html.android .version-history-panel {
   --fd-overlay-subtle: rgba(0,0,0,.03); --fd-overlay-light: rgba(0,0,0,.06);
   --fd-overlay-medium: rgba(0,0,0,.12); --fd-shadow: rgba(90,70,40,.25);
   --fd-chrome-separator: rgba(0,0,0,0.08);
-  --fd-btn-bg: #ddd0b8; --fd-btn-text: #4a3f2f; --fd-btn-hover: #d2c2a4;
+  --fd-btn-bg: #a5673f; --fd-btn-text: #fdf6e8; --fd-btn-hover: #b8764a;
 }
 [data-theme="nord"] {
   --fd-bg: #2e3440; --fd-toolbar-bg: #3b4252; --fd-menu-bg: #3b4252;
   --fd-menu-hover: #434c5e; --fd-accent: #88c0d0; --fd-border: #434c5e;
   --fd-text: #eceff4; --fd-text-muted: #9aa5b8; --fd-navigator-bg: #272c36;
   --fd-status-bg: #232830; --fd-dropdown-bg: #3b4252; --fd-dialog-bg: #3b4252;
-  --fd-btn-bg: #434c5e; --fd-btn-text: #eceff4; --fd-btn-hover: #4c566a;
+  --fd-btn-bg: #88c0d0; --fd-btn-text: #2e3440; --fd-btn-hover: #9ad0de;
 }
 [data-theme="dracula"] {
   --fd-bg: #282a36; --fd-toolbar-bg: #21222c; --fd-menu-bg: #21222c;
   --fd-menu-hover: #44475a; --fd-accent: #bd93f9; --fd-border: #44475a;
   --fd-text: #f8f8f2; --fd-text-muted: #8a8fa8; --fd-navigator-bg: #21222c;
   --fd-status-bg: #191a21; --fd-dropdown-bg: #282a36; --fd-dialog-bg: #282a36;
-  --fd-btn-bg: #44475a; --fd-btn-text: #f8f8f2; --fd-btn-hover: #525569;
+  --fd-btn-bg: #bd93f9; --fd-btn-text: #282a36; --fd-btn-hover: #caa6fa;
 }
 [data-theme="solarized-dark"] {
   --fd-bg: #002b36; --fd-toolbar-bg: #073642; --fd-menu-bg: #073642;
   --fd-menu-hover: #0d4a5a; --fd-accent: #268bd2; --fd-border: #0d4a5a;
   --fd-text: #eee8d5; --fd-text-muted: #93a1a1; --fd-navigator-bg: #00252e;
   --fd-status-bg: #00212b; --fd-dropdown-bg: #073642; --fd-dialog-bg: #073642;
-  --fd-btn-bg: #0d4a5a; --fd-btn-text: #eee8d5; --fd-btn-hover: #125a6d;
+  --fd-btn-bg: #268bd2; --fd-btn-text: #002b36; --fd-btn-hover: #3a9bdc;
 }
 [data-theme="solarized-light"] {
   --fd-bg: #fdf6e3; --fd-toolbar-bg: #eee8d5; --fd-menu-bg: #fdf6e3;
@@ -12681,14 +12693,14 @@ html.android .version-history-panel {
   --fd-overlay-subtle: rgba(0,0,0,.03); --fd-overlay-light: rgba(0,0,0,.06);
   --fd-overlay-medium: rgba(0,0,0,.12); --fd-shadow: rgba(88,110,117,.25);
   --fd-chrome-separator: rgba(0,0,0,0.08);
-  --fd-btn-bg: #e4ddc8; --fd-btn-text: #586e75; --fd-btn-hover: #d8d0b8;
+  --fd-btn-bg: #268bd2; --fd-btn-text: #fdf6e3; --fd-btn-hover: #3a9bdc;
 }
 [data-theme="midnight"] {
   --fd-bg: #0d1117; --fd-toolbar-bg: #161b22; --fd-menu-bg: #161b22;
   --fd-menu-hover: #21262d; --fd-accent: #58a6ff; --fd-border: #30363d;
   --fd-text: #e6edf3; --fd-text-muted: #8b949e; --fd-navigator-bg: #0a0e14;
   --fd-status-bg: #010409; --fd-dropdown-bg: #161b22; --fd-dialog-bg: #161b22;
-  --fd-btn-bg: #21262d; --fd-btn-text: #e6edf3; --fd-btn-hover: #2c333b;
+  --fd-btn-bg: #58a6ff; --fd-btn-text: #0d1117; --fd-btn-hover: #79b8ff;
 }
 /* Light-family themes keep the light editor chrome behaviors */
 [data-theme="sepia"] .menu-dropdown,
