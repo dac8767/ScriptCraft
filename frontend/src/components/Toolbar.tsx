@@ -44,6 +44,11 @@ import FontPicker from './FontPicker';
 import ColorPicker from './ColorPicker';
 import { FONT_REGISTRY, loadFont } from '../utils/fonts';
 
+/** Zoom bounds. The editable input previously advertised max 200 while the
+ *  buttons allowed 300 — unified here (v0.75). */
+const ZOOM_MIN = 50;
+const ZOOM_MAX = 300;
+
 interface ToolbarProps {
   editor: Editor | null;
 }
@@ -296,16 +301,65 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     return editor.isActive(format);
   };
 
-  // Editable zoom input
+  // ── Zoom dropdown (v0.75) ──
   const [zoomInput, setZoomInput] = useState(String(zoomLevel));
   const [zoomEditing, setZoomEditing] = useState(false);
+  const [zoomMenuOpen, setZoomMenuOpen] = useState(false);
   const zoomInputRef = useRef<HTMLInputElement>(null);
+  const zoomMenuRef = useRef<HTMLDivElement>(null);
   useEffect(() => { if (!zoomEditing) setZoomInput(String(zoomLevel)); }, [zoomLevel, zoomEditing]);
+
   const commitZoom = () => {
     const val = parseInt(zoomInput, 10);
-    if (!isNaN(val) && val >= 50 && val <= 300) setZoomLevel(val);
+    if (!isNaN(val) && val >= ZOOM_MIN && val <= ZOOM_MAX) setZoomLevel(val);
     else setZoomInput(String(zoomLevel));
     setZoomEditing(false);
+  };
+
+  // Close the zoom menu on an outside click.
+  useEffect(() => {
+    if (!zoomMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!zoomMenuRef.current?.contains(e.target as Node)) {
+        setZoomMenuOpen(false);
+        setZoomEditing(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [zoomMenuOpen]);
+
+  /** Scale so one whole page fits the visible editor area.
+   *  Measured from the DOM: the page's UNSCALED height (its rendered height
+   *  divided by the zoom currently applied) against the scroll container's
+   *  height, minus the page's vertical margins. Deriving it from real geometry
+   *  keeps it correct for any paper size or margin setting. */
+  const fitPageToScreen = () => {
+    const page = document.querySelector('.page') as HTMLElement | null;
+    const scroller = document.querySelector('.editor-main') as HTMLElement | null;
+    if (!page || !scroller) return;
+
+    // Zoom is a transform: scale() on .page-container, so EVERYTHING inside it
+    // (including the page's own margins) scales together. The unscaled block
+    // height is therefore the rendered height ÷ the zoom currently applied —
+    // margins must NOT be added back on top, or the result overshoots by the
+    // margin and the page ends up a few px too tall to fit.
+    const scale = (zoomLevel || 100) / 100;
+    const pc = getComputedStyle(page);
+    const margins = (parseFloat(pc.marginTop) || 0) + (parseFloat(pc.marginBottom) || 0);
+    const blockH = (page.getBoundingClientRect().height + margins * scale) / scale;
+    if (!blockH) return;
+
+    // .editor-main scrolls and carries vertical padding (30 top / 60 bottom).
+    // That padding sits inside clientHeight, so subtract it — otherwise the
+    // page is scaled to overlap the padding and still doesn't fit.
+    const sc = getComputedStyle(scroller);
+    const pad = (parseFloat(sc.paddingTop) || 0) + (parseFloat(sc.paddingBottom) || 0);
+    const avail = scroller.clientHeight - pad;
+    if (avail <= 0) return;
+
+    const pct = Math.floor((avail / blockH) * 100);
+    setZoomLevel(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pct)));
   };
 
   // ── Responsive overflow ──────────────────────────────────────────────
@@ -908,50 +962,69 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           <FaTags />
         </button>
       );
-      case 'zoomOut': return (
-        <button
-          className="toolbar-btn"
-          title="Zoom Out"
-          onClick={() => setZoomLevel(zoomLevel - 10)}
-          disabled={zoomLevel <= 50}
-        >
-          <FaSearchMinus />
-        </button>
-      );
-      case 'zoomIn': return (
-        <>
-          {zoomEditing ? (
-            <input
-              ref={zoomInputRef}
-              className="zoom-input"
-              type="number"
-              min={50}
-              max={200}
-              step={10}
-              value={zoomInput}
-              onChange={(e) => setZoomInput(e.target.value)}
-              onBlur={commitZoom}
-              onKeyDown={(e) => { if (e.key === 'Enter') commitZoom(); if (e.key === 'Escape') { setZoomInput(String(zoomLevel)); setZoomEditing(false); } }}
-              autoFocus
-            />
-          ) : (
-            <span
-              className="zoom-label"
-              onClick={() => { setZoomEditing(true); setTimeout(() => zoomInputRef.current?.select(), 0); }}
-              title="Click to edit zoom"
-            >
-              {zoomLevel}%
-            </span>
-          )}
+      case 'zoom': return (
+        <div className="zoom-menu-wrap" ref={zoomMenuRef}>
           <button
-            className="toolbar-btn"
-            title="Zoom In"
-            onClick={() => setZoomLevel(zoomLevel + 10)}
-            disabled={zoomLevel >= 300}
+            className="toolbar-btn toolbar-btn-labeled"
+            title="Zoom"
+            onClick={() => setZoomMenuOpen((o) => !o)}
           >
             <FaSearchPlus />
+            <span className="toolbar-btn-text">{zoomLevel}%</span>
           </button>
-        </>
+          {zoomMenuOpen && (
+            <div className="zoom-menu">
+              {/* First item: the current percentage, click to type an exact value. */}
+              <div className="zoom-menu-value">
+                {zoomEditing ? (
+                  <input
+                    ref={zoomInputRef}
+                    className="zoom-input"
+                    type="number"
+                    min={ZOOM_MIN}
+                    max={ZOOM_MAX}
+                    step={10}
+                    value={zoomInput}
+                    onChange={(e) => setZoomInput(e.target.value)}
+                    onBlur={commitZoom}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { commitZoom(); setZoomMenuOpen(false); }
+                      if (e.key === 'Escape') { setZoomInput(String(zoomLevel)); setZoomEditing(false); }
+                    }}
+                    autoFocus
+                  />
+                ) : (
+                  <span
+                    className="zoom-label"
+                    onClick={() => { setZoomEditing(true); setTimeout(() => zoomInputRef.current?.select(), 0); }}
+                    title="Click to type an exact zoom"
+                  >
+                    {zoomLevel}%
+                  </span>
+                )}
+              </div>
+              <div className="zoom-menu-sep" />
+              <button
+                className="zoom-menu-item"
+                disabled={zoomLevel >= ZOOM_MAX}
+                onClick={() => setZoomLevel(Math.min(ZOOM_MAX, zoomLevel + 10))}
+              ><FaSearchPlus /> Zoom In</button>
+              <button
+                className="zoom-menu-item"
+                disabled={zoomLevel <= ZOOM_MIN}
+                onClick={() => setZoomLevel(Math.max(ZOOM_MIN, zoomLevel - 10))}
+              ><FaSearchMinus /> Zoom Out</button>
+              <button
+                className="zoom-menu-item"
+                onClick={() => { setZoomLevel(100); setZoomMenuOpen(false); }}
+              >Actual Size</button>
+              <button
+                className="zoom-menu-item"
+                onClick={() => { fitPageToScreen(); setZoomMenuOpen(false); }}
+              >Fit Page to Screen</button>
+            </div>
+          )}
+        </div>
       );
       case 'customize': return (
         <button

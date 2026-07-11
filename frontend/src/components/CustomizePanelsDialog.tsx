@@ -29,6 +29,38 @@ interface Props {
   embedded?: boolean;
 }
 
+/** Size slider shown when a surface is in Custom mode (v0.72).
+ *  Runs from half of Compact to double of Comfortable.
+ *
+ *  MUST live at module scope: when this was declared inside
+ *  CustomizePanelsDialog, every parent render produced a new component type,
+ *  so React unmounted and remounted the <input> on each change. A click still
+ *  worked (single event), but dragging died the moment the first onChange
+ *  fired — the element under the pointer was destroyed mid-gesture (v0.75 fix).
+ */
+function ChromeSlider({
+  surface, value, onChange,
+}: {
+  surface: ChromeSurface;
+  value: number;
+  onChange: (px: number) => void;
+}) {
+  return (
+    <div className="fs-chrome-slider-row">
+      <input
+        type="range"
+        min={chromeMin(surface)}
+        max={chromeMax(surface)}
+        step={1}
+        value={value}
+        aria-label={`Custom ${CHROME_SCALES[surface].axis}`}
+        onChange={(e) => onChange(parseInt(e.target.value, 10))}
+      />
+      <span className="fs-chrome-slider-val">{value}px</span>
+    </div>
+  );
+}
+
 export default function CustomizePanelsDialog({ open, onClose, embedded = false, category }: Props) {
   const {
     toolConfig, setToolConfig,
@@ -363,29 +395,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       ],
     },
   ];
-  /** Size slider shown when a surface is in Custom mode (v0.72). Runs from
-   *  half of Compact to double of Comfortable. */
-  const ChromeSlider = ({ surface }: { surface: ChromeSurface }) => {
-    const min = chromeMin(surface);
-    const max = chromeMax(surface);
-    const value = chromePx(surface, 'custom', chromeCustomPx[surface]);
-    const axis = CHROME_SCALES[surface].axis;
-    return (
-      <div className="fs-chrome-slider-row">
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={1}
-          value={value}
-          aria-label={`Custom ${axis}`}
-          onChange={(e) => setChromeCustomPx(surface, parseInt(e.target.value, 10))}
-        />
-        <span className="fs-chrome-slider-val">{value}px</span>
-      </div>
-    );
-  };
-
   const tokenLabel = (tok: string): string => {
     if (tok.startsWith('b:')) return BUILTIN_BY_KEY[tok.slice(2)]?.label || tok;
     if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.label || tok;
@@ -425,7 +434,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 ))}
               </span>
             </div>
-            {menuMode === 'custom' && <ChromeSlider surface="menu" />}
+            {menuMode === 'custom' && (
+              <ChromeSlider
+                surface="menu"
+                value={chromePx('menu', 'custom', chromeCustomPx.menu)}
+                onChange={(px) => setChromeCustomPx('menu', px)}
+              />
+            )}
             {(menuMode === 'hidden' || menuBarHidden.includes('View')) && (
               <p className="fs-customize-hint fs-customize-stuck-hint">
                 You can still customize the menu bar, toolbar, and side panels by going to Settings {'>'} Layout.
@@ -511,7 +526,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 ))}
               </span>
             </div>
-            {toolbarMode === 'custom' && <ChromeSlider surface="toolbar" />}
+            {toolbarMode === 'custom' && (
+              <ChromeSlider
+                surface="toolbar"
+                value={chromePx('toolbar', 'custom', chromeCustomPx.toolbar)}
+                onChange={(px) => setChromeCustomPx('toolbar', px)}
+              />
+            )}
 
             {(['left', 'right'] as const).map((zone) => {
               const tokens = zone === 'left' ? tbLeft : tbRight;
@@ -647,9 +668,16 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                     >Hide</button>
                   </span>
                 </div>
-                {isOpen && panelSizeMode[side] === 'custom' && (
-                  <ChromeSlider surface={side === 'left' ? 'panelLeft' : 'panelRight'} />
-                )}
+                {isOpen && panelSizeMode[side] === 'custom' && (() => {
+                  const sf = side === 'left' ? 'panelLeft' : 'panelRight';
+                  return (
+                    <ChromeSlider
+                      surface={sf}
+                      value={chromePx(sf, 'custom', chromeCustomPx[sf])}
+                      onChange={(px) => setChromeCustomPx(sf, px)}
+                    />
+                  );
+                })()}
               </React.Fragment>
             ))}
           </section>

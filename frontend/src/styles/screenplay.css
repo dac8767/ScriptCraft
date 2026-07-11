@@ -656,7 +656,12 @@ body {
 .about-oss { line-height: 1.6; }
 
 /* ── Changelog dialog (Help > Changelog, v0.63) ── */
-.fs-changelog-dialog.fs-changelog-dialog { width: min(720px, 92vw); height: min(720px, 86vh); max-width: 92vw; display: flex; flex-direction: column; }
+.fs-changelog-dialog.fs-changelog-dialog {
+  width: min(720px, 92vw); height: min(720px, 86vh);
+  max-width: 96vw; max-height: 92vh; min-width: 380px; min-height: 300px;
+  display: flex; flex-direction: column;
+  resize: both; overflow: hidden;
+}
 .fs-changelog-body { flex: 1; min-height: 0; overflow-y: auto; }
 
 /* ── Modal components hosted as docked panels (v0.64) ── */
@@ -704,8 +709,10 @@ body {
    window actually gets its intended size. */
 .fs-manager-dialog.fs-manager-dialog {
   width: min(1180px, 94vw); height: min(820px, 90vh);
-  max-width: 94vw; max-height: 90vh;
+  max-width: 96vw; max-height: 92vh;
+  min-width: 420px; min-height: 300px;
   display: flex; flex-direction: column;
+  resize: both; overflow: hidden;      /* v0.75: resizable like every dialog */
 }
 .fs-manager-dialog-body { flex: 1; min-height: 0; display: flex; overflow: hidden; }
 .fs-manager-dialog-body > * { flex: 1; min-height: 0; }
@@ -796,7 +803,8 @@ body {
 /* Customize: the size slider shown when a surface is set to Custom. */
 .fs-chrome-slider-row {
   display: flex; align-items: center; gap: 10px;
-  padding: 2px 0 8px; margin-top: -2px;
+  padding: 0 0 10px;
+  margin-top: 12px;                    /* v0.75: space above the slider */
 }
 .fs-chrome-slider-row input[type="range"] { flex: 1; accent-color: var(--fd-accent); cursor: pointer; }
 .fs-chrome-slider-val {
@@ -809,6 +817,32 @@ body {
    constants, so a mismatch would let a docked window overflow its panel. */
 .tool-dock-wrap.tool-dock-compact .tool-dock-item { padding-top: 7px; padding-bottom: 7px; }
 .tool-dock-wrap.tool-dock-compact .tool-dock-label { font-size: 12px; }
+
+/* Zoom dropdown (v0.75) */
+.zoom-menu-wrap { position: relative; display: inline-flex; }
+.zoom-menu {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 300;
+  min-width: 190px; padding: 5px;
+  background: var(--fd-dropdown-bg); border: 1px solid var(--fd-border);
+  border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+  display: flex; flex-direction: column; gap: 1px;
+}
+.zoom-menu-value { padding: 5px 8px 6px; }
+.zoom-menu-value .zoom-label {
+  cursor: text; font-size: 14px; font-weight: 600; color: var(--fd-text);
+  padding: 3px 6px; border-radius: 4px; display: inline-block; min-width: 62px;
+}
+.zoom-menu-value .zoom-label:hover { background: var(--fd-hover-bg); }
+.zoom-menu-value .zoom-input { width: 82px; }
+.zoom-menu-sep { height: 1px; background: var(--fd-border); margin: 3px 0; }
+.zoom-menu-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 9px; border: none; border-radius: 5px;
+  background: none; color: var(--fd-text); font-size: 13px;
+  text-align: left; cursor: pointer; width: 100%;
+}
+.zoom-menu-item:hover:not(:disabled) { background: var(--fd-hover-bg); }
+.zoom-menu-item:disabled { opacity: .45; cursor: default; }
 
 /* Labeled toolbar button (v0.74) — icon + text, e.g. Customize. Wider than an
    icon-only button, so it sizes to content rather than the fixed .toolbar-btn box. */
@@ -2846,10 +2880,11 @@ div[data-type="cast-list"].is-empty::before { content: 'Cast...'; color: #ccc; p
   padding: 5vh 16px 16px;
   overflow-y: auto;
 }
-/* Every dialog is resizable (v0.73): drag the bottom-right corner. `resize`
-   only works with a non-visible overflow and needs room to grow, so max-width
-   is raised to the viewport — the default WIDTH is still ~400px, so untouched
-   dialogs look exactly as before. */
+/* Every dialog is resizable (v0.73): drag the bottom-right corner.
+   v0.75: overflow is HIDDEN, not auto. `resize` needs a non-visible overflow,
+   but `auto` gave the dialog its own scrollbar whose corner sits exactly where
+   the resize grip is — so dragging the corner scrolled instead of resizing.
+   With hidden, the grip is unobstructed and .dialog-body owns the scrolling. */
 .dialog-box {
   background: var(--fd-dropdown-bg); border: 1px solid var(--fd-border);
   border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,.6);
@@ -2860,7 +2895,7 @@ div[data-type="cast-list"].is-empty::before { content: 'Cast...'; color: #ccc; p
   display: flex;
   flex-direction: column;
   resize: both;
-  overflow: auto;
+  overflow: hidden;
 }
 .dialog-header { padding: 14px 20px; border-bottom: 1px solid var(--fd-border); font-weight: 600; font-size: 16px; flex-shrink: 0; }
 /* min-height:0 lets the body actually shrink inside the flex column, so the
@@ -12269,6 +12304,7 @@ html.android .version-history-panel {
   width: min(560px, 92vw); height: min(680px, 86vh);
   max-width: 96vw; max-height: 92vh;
   min-width: 380px; min-height: 320px;
+  resize: both; overflow: hidden;      /* grip clear of any scrollbar */
 }
 .fs-customize-dialog .fs-customize-body { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
 /* NOTE: no max-height here. It used to be 70vh — a VIEWPORT cap that ignored

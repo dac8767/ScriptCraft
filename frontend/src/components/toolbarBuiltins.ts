@@ -63,8 +63,7 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'goto', label: 'Go to Page', priority: '2', sepAfter: true },
   { key: 'scriptNotes', label: 'Script Notes' },
   { key: 'tags', label: 'Production Tags' },
-  { key: 'zoomOut', label: 'Zoom Out', priority: '1', zoom: true },
-  { key: 'zoomIn', label: 'Zoom In', priority: '2b', zoom: true },
+  { key: 'zoom', label: 'Zoom', priority: '1', zoom: true },
   { key: 'view', label: 'Editor View', desktopOnly: true },
   { key: 'customize', label: 'Customize', permanent: true },
 ];
@@ -84,7 +83,7 @@ export const DEFAULT_TOOLBAR_LEFT: string[] = [
   'find', 'goto', 'customize',
 ].map((k) => `b:${k}`);
 
-export const DEFAULT_TOOLBAR_RIGHT: string[] = ['zoomOut', 'zoomIn', 'view'].map((k) => `b:${k}`);
+export const DEFAULT_TOOLBAR_RIGHT: string[] = ['zoom', 'view'].map((k) => `b:${k}`);
 
 /** Legacy `g:` group → item keys, in group order. */
 const LEGACY_GROUP_ITEMS: Record<string, string[]> = {
@@ -96,7 +95,7 @@ const LEGACY_GROUP_ITEMS: Record<string, string[]> = {
   align: ['alignLeft', 'alignCenter', 'alignRight', 'alignJustify'],
   nav: ['find', 'goto'],
   notes: ['scriptNotes', 'tags'],
-  zoom: ['zoomOut', 'zoomIn'],
+  zoom: ['zoom'],
   view: ['view'],
 };
 
@@ -125,10 +124,12 @@ export function normalizeToolbarZones(
           out.push(`b:${key}`);
         }
       } else if (tok.startsWith('b:')) {
-        const key = tok.slice(2);
+        // v0.75: the separate Zoom In / Zoom Out buttons became one Zoom
+        // dropdown. Fold both legacy tokens into it (deduped by `seen`).
+        const key = (tok === 'b:zoomIn' || tok === 'b:zoomOut') ? 'zoom' : tok.slice(2);
         if (!BUILTIN_BY_KEY[key] || seen.has(key)) continue;
         seen.add(key);
-        out.push(tok);
+        out.push(`b:${key}`);
       } else {
         out.push(tok); // t: / c: / d:
       }
