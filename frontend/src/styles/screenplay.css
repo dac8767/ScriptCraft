@@ -14033,3 +14033,48 @@ body.dev-inspecting [data-dev-panel] * { cursor: auto !important; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Dev Picker — Claude Code bridge (DEV ONLY). */
+.dev-picker-send { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.dev-picker-toggle {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10.5px; color: var(--fd-text-muted);
+  white-space: nowrap; cursor: pointer;
+}
+.dev-picker-log {
+  flex: 2;
+  min-height: 100px;
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+.dev-log-text { color: var(--fd-text); white-space: pre-wrap; margin-bottom: 6px; }
+.dev-log-result {
+  color: var(--fd-text);
+  white-space: pre-wrap;
+  margin: 6px 0;
+  padding-top: 6px;
+  border-top: 1px solid var(--fd-border);
+}
+.dev-log-tool {
+  color: var(--fd-text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dev-log-tool b { color: var(--fd-accent); font-weight: 600; }
+.dev-log-error { color: #e06060; white-space: pre-wrap; }
+.dev-log-cost { color: var(--fd-text-muted); }
+.dev-log-diff {
+  margin: 6px 0 0;
+  padding: 6px;
+  background: var(--fd-overlay-subtle);
+  border-radius: 4px;
+  font-size: 10.5px;
+  white-space: pre-wrap;
+  color: var(--fd-text-muted);
+}
