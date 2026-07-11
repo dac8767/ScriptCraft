@@ -819,6 +819,43 @@ body {
 .tool-dock-wrap.tool-dock-compact .tool-dock-item { padding-top: 7px; padding-bottom: 7px; }
 .tool-dock-wrap.tool-dock-compact .tool-dock-label { font-size: 12px; }
 
+/* Keyboard Shortcuts tab (v0.77) */
+.fs-shortcut-group { margin-bottom: 14px; }
+.fs-shortcut-group-title {
+  font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--fd-text-muted);
+  padding: 8px 0 4px; border-bottom: 1px solid var(--fd-border); margin-bottom: 4px;
+}
+.fs-shortcut-row { gap: 12px; }
+.fs-shortcut-controls { display: flex; align-items: center; gap: 6px; flex: none; }
+.fs-shortcut-key {
+  min-width: 104px; padding: 4px 10px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  border: 1px solid var(--fd-border); border-radius: 5px;
+  color: var(--fd-text); font-size: 12px; font-family: inherit;
+  cursor: pointer; text-align: center; white-space: nowrap;
+}
+.fs-shortcut-key:hover:not(:disabled) { border-color: var(--fd-accent); }
+.fs-shortcut-key.unset { color: var(--fd-text-muted); font-style: italic; }
+.fs-shortcut-key.recording {
+  border-color: var(--fd-accent); color: var(--fd-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--fd-accent) 25%, transparent);
+}
+.fs-shortcut-key:disabled { opacity: .55; cursor: default; }
+.fs-shortcut-clear {
+  padding: 4px 8px; font-size: 11px;
+  background: none; border: 1px solid transparent; border-radius: 5px;
+  color: var(--fd-text-muted); cursor: pointer;
+}
+.fs-shortcut-clear:hover:not(:disabled) { border-color: var(--fd-border); color: var(--fd-text); }
+.fs-shortcut-clear:disabled { opacity: .35; cursor: default; }
+.fs-shortcut-note {
+  margin: 0 0 10px; padding: 7px 10px;
+  background: color-mix(in srgb, var(--fd-accent) 12%, transparent);
+  border-left: 2px solid var(--fd-accent); border-radius: 4px;
+  font-size: 12px; color: var(--fd-text);
+}
+
 /* Zoom dropdown (v0.76) — styled to match .menu-dropdown / .menu-dropdown-item
    so it reads as the same kind of menu as the Element dropdown. The v0.75
    version used 14px+ type (words got clipped) and z-index: 300, which lost to

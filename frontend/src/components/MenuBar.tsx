@@ -54,6 +54,8 @@ import { getCurrentElementRule, getLockedFormatting } from '../utils/effectiveFo
 import { pluginRegistry } from '../plugins/registry';
 import AuthIndicator from './AuthIndicator';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
+import { eventToCombo, COMMAND_BY_ID, formatCombo } from './shortcuts';
+import { useShortcutStore } from '../stores/shortcutStore';
 import { useNavigate } from 'react-router-dom';
 import { scriptApi } from '../services/scriptApi';
 import { mirrorSave, mirrorSnapshot } from '../services/saveLocations';
@@ -857,53 +859,82 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     promptForNewScreenplayFormat('apply-only');
   }, [pendingFormatPromptInProject, editor, promptForNewScreenplayFormat]);
 
-  // ── Global keyboard shortcuts ──
+  // ── Global keyboard shortcuts (registry-driven, v0.77) ──
+  // What each command DOES. The registry (shortcuts.ts) owns the key bindings;
+  // this owns the behavior. Held in a ref so the capture-phase listener below
+  // can be registered once and still call the current closures.
+  const shortcutActions: Record<string, () => void> = {
+    newScreenplay: () => { if (!isCollabGuest) handleNewScreenplay(); },
+    openFile: () => { if (!isCollabGuest) confirmOrRun(() => setOpenFileOpen(true)); },
+    importLocal: () => { if (!isCollabGuest) confirmOrRun(handleImport); },
+    save: () => { if (!isCollabGuest) handleSave(); },
+    saveAs: () => { if (!isCollabGuest) handleSaveAs(); },
+    print: () => window.print(),
+    preview: () => useEditorStore.getState().setPreviewMode(true),
+    exportPDF: () => { void handleExportPDF(); },
+    exportFDX: () => { void handleExportFDX(); },
+    exportFountain: () => { void handleExportFountain(); },
+    exportDocx: () => { void handleExportDocx(); },
+    rename: () => setRenameOpen(true),
+    settings: () => setPrefsOpen(true),
+    manageProjects: () => setProjectManagerOpen(true),
+
+    find: () => setSearchOpen(true),
+    goToPage: () => setGoToPageOpen(true),
+
+    zoomIn: () => setZoomLevel(Math.min(300, useEditorStore.getState().zoomLevel + 10)),
+    zoomOut: () => setZoomLevel(Math.max(50, useEditorStore.getState().zoomLevel - 10)),
+    actualSize: () => setZoomLevel(100),
+    fitPage: () => window.dispatchEvent(new CustomEvent('freedraft:command', { detail: 'fitPage' })),
+    customize: () => setCustomizeOpen(true),
+
+    bold: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(),
+    italic: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(),
+    underline: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleUnderline().run(),
+    dualDialogue: () => (editor as unknown as { commands?: { toggleDualDialogue?: () => void } })?.commands?.toggleDualDialogue?.(),
+
+    spellCheck: () => setSpellModalOpen(true),
+    writingSuggestions: () => setGrammarModalOpen(true),
+    takeSnapshot: () => handleCheckinOpen(),
+    scriptHistory: () => setVersionHistoryOpen(true),
+    trackChanges: () => { void handleTrackChangesToggle(); },
+  };
+  const shortcutActionsRef = useRef(shortcutActions);
+  // Menu items display the EFFECTIVE binding, so a rebound (or cleared)
+  // shortcut is reflected in the menus instead of showing a stale default.
+  const keyBindings = useShortcutStore((st) => st.bindings);
+  const sc = (id: string) => formatCombo(keyBindings[id] ?? null) || undefined;
+  shortcutActionsRef.current = shortcutActions;
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'F7' && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        e.preventDefault();
-        if (e.shiftKey) setGrammarModalOpen(true);
-        else setSpellModalOpen(true);
-        return;
-      }
-      const m = e.metaKey || e.ctrlKey;
-      if (!m) return;
-      switch (e.key) {
-        case 'n':
-          e.preventDefault();
-          if (!isCollabGuest) handleNewScreenplay();
-          break;
-        case 's':
-        case 'S':
-          e.preventDefault();
-          if (!isCollabGuest) (e.shiftKey ? handleSaveAs() : handleSave());
-          break;
-        case 'p':
-          e.preventDefault();
-          window.print();
-          break;
-        case 'f':
-          e.preventDefault();
-          setSearchOpen(true);
-          break;
-        case 'g':
-          e.preventDefault();
-          setGoToPageOpen(true);
-          break;
-        case '=': // Cmd+= is Cmd++ on most keyboards
-        case '+':
-          e.preventDefault();
-          setZoomLevel(Math.min(300, useEditorStore.getState().zoomLevel + 10));
-          break;
-        case '-':
-          e.preventDefault();
-          setZoomLevel(Math.max(50, useEditorStore.getState().zoomLevel - 10));
-          break;
-      }
+      const combo = eventToCombo(e);
+      if (!combo) return;
+
+      // Which command owns this combo right now (default or user-rebound)?
+      const bindings = useShortcutStore.getState().bindings;
+      const id = Object.keys(bindings).find((k) => bindings[k] === combo);
+      if (!id) return;
+
+      const cmd = COMMAND_BY_ID[id];
+      // Cut/Copy/Paste/Undo/Redo/Select All belong to the OS and the browser's
+      // native edit pipeline — let them through untouched.
+      if (!cmd || cmd.owner === 'system') return;
+
+      const run = shortcutActionsRef.current[id];
+      if (!run) return;
+
+      // Editor-owned commands (Bold, etc.) also live in TipTap's keymap. We run
+      // in the CAPTURE phase and stop propagation so exactly one handler fires:
+      // without this, a rebound Bold would still respond to the old Mod+B (via
+      // TipTap) *and* the new combo, and on the default key both would run.
+      e.preventDefault();
+      e.stopPropagation();
+      run();
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [handleSave, handleSaveAs, handleNewScreenplay, isCollabGuest, setSearchOpen, setGoToPageOpen, setZoomLevel, setSpellModalOpen, setGrammarModalOpen]);
+    window.addEventListener('keydown', handler, true);   // capture: beat TipTap
+    return () => window.removeEventListener('keydown', handler, true);
+  }, []);
 
   const handleExportFDX = useCallback(async () => {
     if (!editor) return;
@@ -1060,7 +1091,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {
           icon: <FaPlus />,
           label: 'New Screenplay',
-          shortcut: `${mod}N`,
+          shortcut: sc('newScreenplay'),
           disabled: isCollabGuest,
           action: handleNewScreenplay,
         },
@@ -1092,8 +1123,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           ],
         },
         { separator: true, label: '' },
-        { icon: <FaSave />, label: 'Save', shortcut: `${mod}S`, action: handleSave, disabled: isCollabGuest },
-        { icon: <FaSave />, label: 'Save As…', shortcut: `⇧${mod}S`, action: handleExportOdraft, disabled: isCollabGuest },
+        { icon: <FaSave />, label: 'Save', shortcut: sc('save'), action: handleSave, disabled: isCollabGuest },
+        { icon: <FaSave />, label: 'Save As…', shortcut: sc('saveAs'), action: handleExportOdraft, disabled: isCollabGuest },
         { separator: true, label: '' },
         { icon: <FaEye />, label: 'Preview', action: () => useEditorStore.getState().setPreviewMode(true) },
         {
@@ -1106,7 +1137,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaFile />, label: 'FreeDraft (.odraft)', action: handleExportOdraft, disabled: isCollabGuest },
           ],
         },
-        { icon: <FaPrint />, label: 'Print...', shortcut: `${mod}P`, action: () => setTimeout(() => window.print(), 60) },
+        { icon: <FaPrint />, label: 'Print...', shortcut: sc('print'), action: () => setTimeout(() => window.print(), 60) },
         { separator: true, label: '' },
         { icon: <FaEdit />, label: 'Rename...', action: () => setRenameOpen(true) },
         { separator: true, label: '' },
@@ -1118,16 +1149,16 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {
       label: 'Edit',
       items: [
-        { icon: <FaUndo />, label: 'Undo', shortcut: `${mod}Z`, action: () => { try { editor?.chain().focus().undo().run(); } catch {} } },
-        { icon: <FaRedo />, label: 'Redo', shortcut: `⇧${mod}Z`, action: () => { try { editor?.chain().focus().redo().run(); } catch {} } },
+        { icon: <FaUndo />, label: 'Undo', shortcut: sc('undo'), action: () => { try { editor?.chain().focus().undo().run(); } catch {} } },
+        { icon: <FaRedo />, label: 'Redo', shortcut: sc('redo'), action: () => { try { editor?.chain().focus().redo().run(); } catch {} } },
         { separator: true, label: '' },
-        { icon: <FaCut />, label: 'Cut', shortcut: `${mod}X`, action: () => document.execCommand('cut') },
-        { icon: <FaCopy />, label: 'Copy', shortcut: `${mod}C`, action: () => document.execCommand('copy') },
-        { icon: <FaPaste />, label: 'Paste', shortcut: `${mod}V`, action: () => document.execCommand('paste') },
-        { icon: <FaMousePointer />, label: 'Select All', shortcut: `${mod}A`, action: () => editor?.chain().focus().selectAll().run() },
+        { icon: <FaCut />, label: 'Cut', shortcut: sc('cut'), action: () => document.execCommand('cut') },
+        { icon: <FaCopy />, label: 'Copy', shortcut: sc('copy'), action: () => document.execCommand('copy') },
+        { icon: <FaPaste />, label: 'Paste', shortcut: sc('paste'), action: () => document.execCommand('paste') },
+        { icon: <FaMousePointer />, label: 'Select All', shortcut: sc('selectAll'), action: () => editor?.chain().focus().selectAll().run() },
         { separator: true, label: '' },
-        { icon: <FaSearch />, label: 'Find & Replace...', shortcut: `${mod}F`, action: () => setSearchOpen(true) },
-        { icon: <FaHashtag />, label: 'Go to Page...', shortcut: `${mod}G`, action: () => setGoToPageOpen(true) },
+        { icon: <FaSearch />, label: 'Find & Replace...', shortcut: sc('find'), action: () => setSearchOpen(true) },
+        { icon: <FaHashtag />, label: 'Go to Page...', shortcut: sc('goToPage'), action: () => setGoToPageOpen(true) },
       ],
     },
     {
@@ -1182,8 +1213,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {
           icon: <FaSearchPlus />, label: `Zoom (${zoomLevel}%)`,
           children: [
-            { icon: <FaSearchPlus />, label: 'Zoom In', shortcut: `${mod}+`, action: () => setZoomLevel(Math.min(300, zoomLevel + 10)) },
-            { icon: <FaSearchMinus />, label: 'Zoom Out', shortcut: `${mod}−`, action: () => setZoomLevel(Math.max(50, zoomLevel - 10)) },
+            { icon: <FaSearchPlus />, label: 'Zoom In', shortcut: sc('zoomIn'), action: () => setZoomLevel(Math.min(300, zoomLevel + 10)) },
+            { icon: <FaSearchMinus />, label: 'Zoom Out', shortcut: sc('zoomOut'), action: () => setZoomLevel(Math.max(50, zoomLevel - 10)) },
             { separator: true, label: '' },
             { label: zoomLevel === 50 ? '\u2713 50%' : '50%', action: () => setZoomLevel(50) },
             { label: zoomLevel === 75 ? '\u2713 75%' : '75%', action: () => setZoomLevel(75) },
@@ -1217,7 +1248,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                   entry,
                   {
                     label: 'Dual Dialogue',
-                    shortcut: `${mod}D`,
+                    shortcut: sc('dualDialogue'),
                     action: () => (editor as any)?.commands?.toggleDualDialogue(),
                   },
                 ];
@@ -1238,9 +1269,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {
           icon: <FaBold />, label: 'Style',
           children: [
-            { icon: <FaBold />, label: 'Bold', shortcut: `${mod}B`, action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(), disabled: locked.bold },
-            { icon: <FaItalic />, label: 'Italic', shortcut: `${mod}I`, action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(), disabled: locked.italic },
-            { icon: <FaUnderline />, label: 'Underline', shortcut: `${mod}U`, action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleUnderline().run(), disabled: locked.underline },
+            { icon: <FaBold />, label: 'Bold', shortcut: sc('bold'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(), disabled: locked.bold },
+            { icon: <FaItalic />, label: 'Italic', shortcut: sc('italic'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(), disabled: locked.italic },
+            { icon: <FaUnderline />, label: 'Underline', shortcut: sc('underline'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleUnderline().run(), disabled: locked.underline },
             { icon: <FaStrikethrough />, label: 'Strikethrough', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleStrike().run(), disabled: locked.strikethrough },
             { separator: true, label: '' },
             { icon: <FaSubscript />, label: 'Subscript', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleSubscript().run(), disabled: locked.subscript },

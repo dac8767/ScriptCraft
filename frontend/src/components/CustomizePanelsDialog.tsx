@@ -19,10 +19,11 @@ import { TOOLBAR_COMMANDS } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from './toolbarBuiltins';
 import { CHROME_SCALES, chromeMin, chromeMax, chromePx, type ChromeSurface } from './chromeSizes';
 import EditElementsDialog from './EditElementsDialog';
+import KeyboardShortcutsTab from './KeyboardShortcutsTab';
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
-  category?: 'menu' | 'toolbar' | 'panels' | 'elements';
+  category?: 'menu' | 'toolbar' | 'panels' | 'elements' | 'keys';
   open: boolean;
   onClose: () => void;
   /** Render only the content (no overlay/box) — used inside Preferences. */
@@ -291,7 +292,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // React ('Rendered more hooks than during the previous render').
   const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones, toolbarZonesSet } = useEditorStore();
   const { panelDividers, setPanelDividers } = useEditorStore();
-  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'panels' | 'elements'>(category ?? 'menu');
+  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'panels' | 'elements' | 'keys'>(category ?? 'menu');
   // Drag-and-drop reordering (v0.45): one shared source marker; drops are
   // only accepted within the same list.
   const [dragInfo, setDragInfo] = React.useState<{ list: string; idx: number } | null>(null);
@@ -409,7 +410,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const body = (
         <div className="dialog-body fs-customize-body">
           <div className="prefs-subtabs">
-            {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['elements', 'Elements']] as const).map(([id, label]) => (
+            {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['elements', 'Elements'], ['keys', 'Keyboard Shortcuts']] as const).map(([id, label]) => (
               <button key={id} className={activeCat === id ? 'active' : ''} onClick={() => setActiveCat(id)}>{label}</button>
             ))}
           </div>
@@ -628,6 +629,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           </section>
           </>)}
           {activeCat === 'elements' && <EditElementsDialog embedded />}
+          {activeCat === 'keys' && <KeyboardShortcutsTab />}
           {activeCat === 'panels' && (<>
           <section>
             <h3>Panels</h3>

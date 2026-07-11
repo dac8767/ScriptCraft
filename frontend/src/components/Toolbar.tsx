@@ -316,6 +316,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     setZoomEditing(false);
   };
 
+  // Fit Page to Screen is also a rebindable shortcut (v0.77); the MenuBar's key
+  // handler dispatches it here because the measurement lives in this component.
+  useEffect(() => {
+    const onCmd = (e: Event) => {
+      if ((e as CustomEvent).detail === 'fitPage') fitPageToScreen();
+    };
+    window.addEventListener('freedraft:command', onCmd);
+    return () => window.removeEventListener('freedraft:command', onCmd);
+  });
+
   // Close the zoom menu on an outside click.
   useEffect(() => {
     if (!zoomMenuOpen) return;
