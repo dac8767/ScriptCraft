@@ -385,7 +385,7 @@ export type ToolId =
   | 'indexcards' | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
   | 'spelling' | 'history' | 'titlepage' | 'customize'
-  /** legacy — Script Notes merged back into 'sticky' (Notes > Script tab); kept
+  /** legacy — Notes merged back into 'sticky' (Notes > Script tab); kept
    *  in the type so persisted configs still typecheck, remapped on use. */
   | 'scriptnotes';
 
@@ -451,6 +451,9 @@ function migrateNavigatorInline(
   } catch { /* storage unavailable — keep what we have */ }
   return sizes;
 }
+
+/** Tools that never dock — they always open as a floating window. */
+export const ALWAYS_FLOAT: ToolId[] = ['analytics'];
 
 export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   // v0.68: the default panel layout. LEFT = script-structure windows;
@@ -1276,8 +1279,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   tempTool: null,
   setTempTool: (tool) => set({ tempTool: tool }),
   openTool: (tool) => set((s) => {
+    // v1.2: Analytics always opens as its own window. It's far taller than a
+    // panel, so docking it just meant a cramped column you had to scroll — the
+    // window is the only shape it actually works in.
+    if (ALWAYS_FLOAT.includes(tool)) return { tempTool: tool };
     if (tool === 'scriptnotes') {
-      // Legacy id — Script Notes lives inside Notes again (v0.15).
+      // Legacy id — Notes lives inside Notes again (v0.15).
       saveViewState({ notesSubTab: 'script' });
       setTimeout(() => set({ notesSubTab: 'script' }), 0);
       tool = 'sticky';

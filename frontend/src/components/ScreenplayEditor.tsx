@@ -1453,14 +1453,17 @@ const ScreenplayEditor: React.FC = () => {
           };
           return m[node.type.name] || '';
         },
-        // v0.81: Placeholder defaults to includeChildren: false, so it only
-        // marks TOP-LEVEL nodes as empty. Inside a dual dialogue the character
-        // and dialogue live under dualDialogueColumn — nested — so they never
-        // got the empty class and showed no hint text. includeChildren fixes
-        // both columns; showOnlyCurrent: false means both sides show their
-        // hints at once, rather than only whichever field has the caret.
+        // includeChildren: nested nodes (the character/dialogue inside a dual
+        // dialogue column) are counted as empty too, so they get a hint at all.
+        //
+        // v1.2 — showOnlyCurrent is back to TRUE. Setting it false in v0.81 (to
+        // light up both dual-dialogue columns at once) meant EVERY empty element
+        // in the whole script showed its hint, so an action you'd left blank and
+        // walked away from kept saying "Describe the action..." forever, stacked
+        // three deep. Only the element with the caret prompts now; the rest are
+        // just empty lines, which is what they are.
         includeChildren: true,
-        showOnlyCurrent: false,
+        showOnlyCurrent: true,
       }),
       SceneHeading, Action, Character, Dialogue, Parenthetical,
       Transition, General, Shot, NewAct, EndOfAct, Lyrics,
@@ -2227,7 +2230,10 @@ const ScreenplayEditor: React.FC = () => {
     const hideSections = previewMode ? !previewOpts.sections : !sectionsVisible;
     const hideTodos = previewMode ? !previewOpts.todos : !scriptTodosVisible;
     const doubleSpaceHeaders = previewMode && previewOpts.doubleSpaceHeaders;
-    setPaginationVisibility({ hideSections, hideTodos, doubleSpaceHeaders });
+    // The title page shows in Preview (and in print/PDF, which build from it) —
+    // never in the Page or Continuous views you actually write in.
+    const hideTitlePage = !previewMode;
+    setPaginationVisibility({ hideSections, hideTodos, doubleSpaceHeaders, hideTitlePage });
     if (editor) {
       // Recompute breaks + decorations, which also re-runs overlay measurement.
       requestAnimationFrame(() => {
@@ -3862,7 +3868,7 @@ const ScreenplayEditor: React.FC = () => {
         </button>
       </div>
       )}
-      <div className={`editor-layout${previewMode ? " preview-mode" : ""}`}>
+      <div className={`editor-layout${previewMode ? " preview-mode" : " hide-title-page"}`}>
       {previewMode && <PreviewSidebar editor={editor} />}
         {!isHistoryMode && navigatorOpen && <ToolDock side="left" editor={editor} scrollContainer={editorMainRef.current} />}
         <div className="editor-center">

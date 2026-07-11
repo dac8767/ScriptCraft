@@ -339,7 +339,7 @@ export function TodoTool({ editor }: EditorToolProps) {
               onDragStart={dp.grip.onDragStart}
               onDragEnd={dp.grip.onDragEnd}
               onDropHere={() => {}}
-              anchor={{ label: 'General To-Do' }}
+              anchor={{ label: 'General' }}
               onUpdate={(patch) => setShelfCards(shelfCards.map((c) => (c.id === card.id ? { ...c, ...patch } : c)))}
               onRemove={() => setShelfCards(shelfCards.filter((c) => c.id !== card.id))}
             />

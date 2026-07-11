@@ -33,7 +33,7 @@ export function isPaginationContinuous(): boolean {
  * as ZERO lines — otherwise every page break lands lower than the visible
  * content and the white sheets drift out of alignment. Double-spaced scene
  * headers (a Preview template option) add one extra line per heading. */
-const visibilityOpts = { hideSections: false, hideTodos: false, doubleSpaceHeaders: false };
+const visibilityOpts = { hideSections: false, hideTodos: false, doubleSpaceHeaders: false, hideTitlePage: false };
 export function setPaginationVisibility(opts: Partial<typeof visibilityOpts>): void {
   Object.assign(visibilityOpts, opts);
 }
@@ -225,6 +225,14 @@ function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = E
         const size = Number((node.attrs as { tpTitleFontSize?: number })?.tpTitleFontSize) || 12;
         if (size > 12) fixedLines = titlePageBlockLines(node.textContent || '', size);
       }
+    }
+    // v1.2: the title page belongs to the finished script, not to the draft you're
+    // typing in — so it only appears in Preview. Hidden here it renders
+    // display:none, and must take up NO lines, or every page number after it
+    // would be off by a page while the page itself wasn't there to see.
+    if (typeName === 'titlePage' && visibilityOpts.hideTitlePage) {
+      fixedLines = 0;
+      sb = 0;
     }
     // Outline lines hidden by the Preview options render display:none — they
     // occupy zero lines and contribute no leading space.

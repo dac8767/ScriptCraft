@@ -714,7 +714,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       case 'insertNote': return (
         <button
           className="toolbar-btn"
-          title="Insert Script Note"
+          title="Insert Note"
           onClick={() => useEditorStore.getState().openShelfTab('script')}
         >
           <FaRegStickyNote />
@@ -988,7 +988,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       case 'scriptNotes': return (
         <button
           className={`toolbar-btn${activeToolRight === 'scriptnotes' ? ' active' : ''}`}
-          title="Script Notes"
+          title="Notes"
           onPointerDown={handleNotesClick}
         >
           <FaStickyNote />

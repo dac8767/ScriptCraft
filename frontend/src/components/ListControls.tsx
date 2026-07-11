@@ -28,8 +28,8 @@ export interface ListEntry {
 
 const FILTER_LABEL: Record<ListFilter, string> = {
   all: 'All',
-  script: 'In the Script',
   general: 'General',
+  script: 'Linked to Script',
 };
 const SORT_LABEL: Record<ListSort, string> = {
   manual: 'Manual',
@@ -51,7 +51,7 @@ export function ListToolbar({ filter, setFilter, sort, setSort, count, noun }: {
         onPick={(v) => setFilter(v as ListFilter)}
         groups={[{
           label: 'Show',
-          options: (['all', 'script', 'general'] as ListFilter[])
+          options: (['all', 'general', 'script'] as ListFilter[])
             .map((f) => ({ value: f, label: FILTER_LABEL[f] })),
         }]}
       />

@@ -530,7 +530,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const tbRight = tbReady ? tbRightRaw : DEFAULT_TOOLBAR_RIGHT;
 
   // ── Add-dropdown categories (v0.44): Toolbar / Production / Tools / Project,
-  //    mirroring the menu bar taxonomy. Script Notes and Production Tags live
+  //    mirroring the menu bar taxonomy. Notes and Production Tags live
   //    under Tools and Production (not Toolbar); c:productionTags is excluded
   //    as a duplicate of the smarter b:tags button. Only absent items listed.
   const tbPlaced = (v: string) => tbLeft.includes(v) || tbRight.includes(v);
@@ -563,7 +563,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       id: 'tools', label: 'Tools',
       options: [
         ...ALL_TOOLS.filter((t) => !WINDOW_IDS.includes(t.id) && t.id !== 'tags').flatMap((t) => toolOpt(t.id)),
-        { value: 'b:scriptNotes', label: 'Script Notes' },
+        { value: 'b:scriptNotes', label: 'Notes' },
         ...TOOLS_CMDS.flatMap(cmdOpt),
       ],
     },

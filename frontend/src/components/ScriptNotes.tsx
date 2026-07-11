@@ -503,7 +503,7 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
           onDragStart={dp.grip.onDragStart}
           onDragEnd={dp.grip.onDragEnd}
           onDropHere={() => {}}
-          anchor={{ label: 'General Note' }}
+          anchor={{ label: 'General' }}
           onUpdate={(patch) => setShelfCards(shelfCards.map((c) => (c.id === card.id ? { ...c, ...patch } : c)))}
           onRemove={() => setShelfCards(shelfCards.filter((c) => c.id !== card.id))}
         />
@@ -535,7 +535,7 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
           <input
             className="swn-card-title"
             value={note.title || ''}
-            placeholder="Note"
+            placeholder="Note Title..."
             onChange={(e) => updateNote(note.id, { title: e.target.value })}
           />
           <span className="swn-card-actions">
@@ -593,13 +593,15 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
           </div>
         )}
 
-        {/* The field at the foot: where this note lives, as a link. */}
-        <button
-          className="fs-script-link"
-          onClick={() => handleNavigateToNote(note.id)}
-          title="Go to this note in the script"
-        >{scene || 'View in script'}</button>
-        {note.createdAt && <div className="swn-card-date">{formatDate(note.createdAt)}</div>}
+        {/* The foot: link on the left, date on the right, one row. */}
+        <div className="swn-card-foot">
+          <button
+            className="fs-script-link"
+            onClick={() => handleNavigateToNote(note.id)}
+            title="Go to this note in the script"
+          >Link: {scene || 'View in script'}</button>
+          {note.createdAt && <span className="swn-card-date">{formatDate(note.createdAt)}</span>}
+        </div>
       </div>
     );
   };
@@ -637,7 +639,7 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
         {visible.length === 0 ? (
           <div className="script-notes-empty">
             {entries.length === 0
-              ? 'No notes yet. Add one below, or select text in the script, right-click and choose "Add Script Note".'
+              ? 'No notes yet. Add one below, or select text in the script, right-click and choose "Add Note".'
               : 'No notes match this filter.'}
           </div>
         ) : (

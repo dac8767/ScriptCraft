@@ -25,9 +25,11 @@ export const formatDate = (iso: string) => {
   });
 };
 
+// v1.2: the title is an editable field, and "Note" / "To-Do" read like a label
+// for the card rather than an invitation to type. The ellipsis says "your turn".
 export const CARD_PLACEHOLDERS: Record<ShelfCardType, string> = {
-  comment: '💬 Note',
-  todo: '✓ To-Do',
+  comment: '💬 Note Title...',
+  todo: '✓ List Title...',
   snippet: '📄 Snippet',
 };
 
@@ -120,18 +122,23 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
       onDrop={onDropHere}
     >
       {inner}
-      {anchor && (
-        anchor.onClick ? (
-          <button
-            className="fs-script-link"
-            onClick={anchor.onClick}
-            title="Go to this in the script"
-          >{anchor.label}</button>
-        ) : (
-          <span className="fs-general-tag">{anchor.label}</span>
-        )
-      )}
-      {card.createdAt && <div className="swn-card-date">{formatDate(card.createdAt)}</div>}
+      {/* v1.2: the foot of the card is ONE row — the link on the left, the date
+          on the right, sharing a baseline. They were stacked, which left the link
+          floating in the middle of nowhere. */}
+      <div className="swn-card-foot">
+        {anchor ? (
+          anchor.onClick ? (
+            <button
+              className="fs-script-link"
+              onClick={anchor.onClick}
+              title="Go to this in the script"
+            >Link: {anchor.label}</button>
+          ) : (
+            <span className="fs-general-tag">{anchor.label}</span>
+          )
+        ) : <span />}
+        {card.createdAt && <span className="swn-card-date">{formatDate(card.createdAt)}</span>}
+      </div>
     </div>
   );
 

@@ -2822,6 +2822,11 @@ body {
    unchanged, so line wrapping and the paginator's line estimates are
    unaffected. Left-anchored (draft) and right-anchored (contact/copyright)
    fields keep the body anchors below, again matching the PDF exporter. */
+/* v1.2: the title page is part of the finished script, not the draft — it shows
+   in Preview (and print, which builds from it) and nowhere else. */
+.hide-title-page .title-page,
+.hide-title-page .screenplay-element.title-page { display: none; }
+
 .title-page {
   text-align: center;
   margin-top: 0;
@@ -13270,12 +13275,22 @@ html.android .version-history-panel {
    one that isn't says so plainly and does nothing when clicked — the ABSENCE of
    a link is the information. */
 .fs-general-tag {
-  display: block;
-  margin: 6px 0 2px;
   font-size: 11px;
   color: #8a8a7a;
   font-style: italic;
 }
+
+/* v1.2: the foot of a card is one row — link bottom-LEFT, date bottom-right,
+   sharing a baseline. */
+.swn-card-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+.swn-card-foot .fs-script-link { margin: 0; text-align: left; }
+.swn-card-foot .swn-card-date { margin: 0; white-space: nowrap; }
 
 /* Filter / Sort bar shared by Notes and To-Do. */
 .fs-list-toolbar {

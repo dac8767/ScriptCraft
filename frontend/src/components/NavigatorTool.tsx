@@ -3,7 +3,7 @@
  * Navigator. Lists every jumpable landmark in the script:
  *   - Scenes:       scene headings (click to jump)
  *   - Acts:         new act / end of act markers (click to jump)
- *   - Script Notes: anchored notes (click opens Notes → Script focused on it)
+ *   - Notes: anchored notes (click opens Notes → Script focused on it)
  *   - To-Dos:       sticky To-Do items (tick here; click opens the To-Do tab)
  * Show/hide per kind via the dropdown; the filter box narrows by text.
  */
@@ -15,7 +15,7 @@ const KINDS = ['scene', 'act', 'section', 'marker', 'note', 'todo'] as const;
 type Kind = typeof KINDS[number];
 const LABEL: Record<Kind, string> = {
   scene: 'Scene Headers', act: 'Acts', section: 'Sections', marker: 'Markers',
-  note: 'Script Notes', todo: 'To-Dos',
+  note: 'Notes', todo: 'To-Dos',
 };
 
 interface Item {

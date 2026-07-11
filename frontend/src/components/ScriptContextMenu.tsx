@@ -39,7 +39,7 @@ export const CONTEXT_MENU_SECTIONS: { id: string; label: string; group: ContextM
   { id: 'characterProfile', label: 'Character Profile…', group: 'Context Menu' },
   { id: 'revisionMode', label: 'Revision Mode', group: 'Production' },
   { id: 'revisionColor', label: 'Revision Color', group: 'Production' },
-  { id: 'addScriptNote', label: 'Add Script Note', group: 'Context Menu' },
+  { id: 'addScriptNote', label: 'Add Note', group: 'Context Menu' },
   { id: 'copyToSnippets', label: 'Copy to Snippets', group: 'Tools' },
   { id: 'insertSection', label: 'Insert Section', group: 'Insert' },
   { id: 'insertMarker', label: 'Insert Marker', group: 'Insert' },
@@ -770,15 +770,15 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       {existingNoteId ? (
         <>
           <div className="ctx-item" onClick={handleEditScriptNote}>
-            <span>Edit Script Note</span>
+            <span>Edit Note</span>
           </div>
           <div className="ctx-item" onClick={handleDeleteScriptNote}>
-            <span>Delete Script Note</span>
+            <span>Delete Note</span>
           </div>
         </>
       ) : (
         <div className="ctx-item" onClick={handleAddScriptNote}>
-          <span>Add Script Note</span>
+          <span>Add Note</span>
           <span className="ctx-shortcut">{shift}{mod}N</span>
         </div>
       )}
