@@ -44,6 +44,18 @@ export default defineConfig({
   // Tauri expects a fixed output directory
   build: {
     outDir: 'dist',
+    rollupOptions: {
+      /**
+       * html2canvas is used ONLY by the Dev Picker's screenshot button, which is
+       * dev-only and correctly absent from dist. Rollup still emitted the library
+       * as its own chunk, because it treats a dynamic import as an entry point
+       * even when the code that would call it has been eliminated — ~200KB of a
+       * screenshot library shipping inside the .dmg for no reason. Marking it
+       * external means the build never pulls it in; the only import() that
+       * referenced it lives in code that production doesn't contain.
+       */
+      external: ['html2canvas'],
+    },
     // build.target is kept for CSS transpilation (cssTarget inherits from it)
     ...(process.env.BUILD_TARGET ? { target: process.env.BUILD_TARGET } : {}),
   },

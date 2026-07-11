@@ -19,6 +19,9 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { describeElement, type Capture } from './devInspect';
+import {
+  captureApp, copyImage, buildBundle, downloadText, downloadShot, type Shot,
+} from './devCapture';
 
 const DRAFT_KEY = 'freescript:devpicker:draft';
 
@@ -33,6 +36,53 @@ export default function DevPickerTool(_props: Props) {
   const [copied, setCopied] = React.useState(false);
   const [lastKind, setLastKind] = React.useState<string | null>(null);
   const areaRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const [shots, setShots] = React.useState<Shot[]>([]);
+  const [shooting, setShooting] = React.useState(false);
+  const [countdown, setCountdown] = React.useState(0);
+  const [flash, setFlash] = React.useState<string | null>(null);
+
+  const say = (msg: string) => { setFlash(msg); setTimeout(() => setFlash(null), 1600); };
+
+  /**
+   * Take a shot. The delay exists because a dropdown closes the moment you click
+   * anything else — so to photograph an OPEN menu you need to press the button,
+   * then go and open it.
+   */
+  const shoot = async (delayMs = 0) => {
+    if (shooting) return;
+    setShooting(true);
+    try {
+      if (delayMs) {
+        for (let left = Math.ceil(delayMs / 1000); left > 0; left--) {
+          setCountdown(left);
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+        setCountdown(0);
+      }
+      const label = `Screenshot ${shots.length + 1}`;
+      const shot = await captureApp(label);
+      setShots((cur) => [...cur, shot]);
+      // Reference it in the note, so the text and the picture stay tied together.
+      insert(`[${label}]`);
+      say('Captured');
+    } catch (err) {
+      say(`Capture failed: ${(err as Error).message}`);
+    } finally {
+      setShooting(false);
+      setCountdown(0);
+    }
+  };
+
+  const exportBundle = () => {
+    const context = [
+      `Screenshots: ${shots.length}`,
+      `Theme: ${document.documentElement.getAttribute('data-theme') ?? 'unknown'}`,
+      `Viewport: ${window.innerWidth}×${window.innerHeight}`,
+    ];
+    const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+    downloadText(`freedraft-devnote-${stamp}.md`, buildBundle(draft, shots, context));
+    say('Bundle saved — upload it in the chat');
+  };
 
 
   // The draft outlives the panel being closed — losing a half-written note
@@ -142,10 +192,55 @@ export default function DevPickerTool(_props: Props) {
         </button>
         <button
           className="dev-picker-btn"
-          onClick={() => { setDraft(''); setLastKind(null); }}
-          disabled={!draft}
+          onClick={() => { setDraft(''); setShots([]); setLastKind(null); }}
+          disabled={!draft && shots.length === 0}
         >Clear</button>
       </div>
+
+      <div className="dev-picker-bar">
+        <button
+          className="dev-picker-btn dev-picker-shoot"
+          onClick={() => void shoot(0)}
+          disabled={shooting}
+          title="Snapshot the app (the Dev Picker itself is left out)"
+        >{shooting && !countdown ? 'Capturing…' : '⛶ Screenshot'}</button>
+        <button
+          className="dev-picker-btn"
+          onClick={() => void shoot(3000)}
+          disabled={shooting}
+          title="Three seconds, then capture — long enough to open a menu first"
+        >{countdown ? `${countdown}…` : '3s'}</button>
+        <button
+          className="dev-picker-btn"
+          onClick={exportBundle}
+          disabled={!draft.trim() && shots.length === 0}
+          title="One .md file with the note AND the screenshots inside it — upload that in the chat"
+        >Export .md</button>
+      </div>
+
+      {shots.length > 0 && (
+        <div className="dev-picker-shots">
+          {shots.map((s) => (
+            <div className="dev-shot" key={s.id}>
+              <img src={s.dataUrl} alt={s.label} />
+              <div className="dev-shot-bar">
+                <span className="dev-shot-label">{s.label}</span>
+                <button
+                  title="Copy the image — paste it straight into the chat"
+                  onClick={async () => say(await copyImage(s)
+                    ? 'Image copied — ⌘V in the chat'
+                    : 'Clipboard blocked; use Save instead')}
+                >Copy img</button>
+                <button title="Save the PNG to disk" onClick={() => downloadShot(s)}>Save</button>
+                <button
+                  title="Remove"
+                  onClick={() => setShots((cur) => cur.filter((x) => x.id !== s.id))}
+                >✕</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <textarea
         ref={areaRef}
@@ -156,7 +251,9 @@ export default function DevPickerTool(_props: Props) {
       />
 
       <div className="dev-picker-hint">
-        {inspecting
+        {flash
+          ? flash
+          : inspecting
           ? 'Clicks are being captured, not passed through. Shift-click to pick several.'
           : lastKind
             ? `Last capture — ${lastKind}`

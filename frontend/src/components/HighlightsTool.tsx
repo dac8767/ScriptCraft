@@ -7,7 +7,7 @@
  * The old View-menu visibility toggles for note/tag highlights live at the
  * bottom so nothing was lost in the move.
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 

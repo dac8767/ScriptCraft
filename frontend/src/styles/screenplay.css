@@ -14078,3 +14078,51 @@ body.dev-inspecting [data-dev-panel] * { cursor: auto !important; }
   white-space: pre-wrap;
   color: var(--fd-text-muted);
 }
+
+/* Dev Picker — screenshots (DEV ONLY). */
+.dev-picker-shoot { flex: 1; }
+.dev-picker-shots {
+  flex-shrink: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dev-shot {
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--fd-overlay-subtle);
+}
+.dev-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 130px;
+  object-fit: cover;
+  object-position: top left;
+}
+.dev-shot-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-top: 1px solid var(--fd-border);
+}
+.dev-shot-label {
+  flex: 1;
+  font-size: 10.5px;
+  color: var(--fd-text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dev-shot-bar button {
+  padding: 2px 6px;
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text-muted);
+  font-size: 10px;
+  cursor: pointer;
+}
+.dev-shot-bar button:hover { color: var(--fd-text); border-color: var(--fd-accent); }

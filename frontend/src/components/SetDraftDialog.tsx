@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { showToast } from './Toast';
@@ -58,7 +58,7 @@ export function applyDraftNumber(editor: Editor | null, finalLabel: string): voi
 export default function SetDraftDialog({ open, onClose, editor }: {
   open: boolean; onClose: () => void; editor: Editor | null;
 }) {
-  const { draftLabel, setDraftLabel } = useEditorStore();
+  const { draftLabel } = useEditorStore();
   const [choice, setChoice] = useState(draftLabel);
   const [customValue, setCustomValue] = useState('');
   const customRef = useRef<HTMLInputElement>(null);

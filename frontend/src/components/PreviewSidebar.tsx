@@ -5,7 +5,7 @@
  *   INCLUDE…         — which working annotations show in the preview
  *   EXPORT           — Save As PDF / .fountain / Final Draft / Plain text
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { downloadFDX } from '../utils/fdxExporter';

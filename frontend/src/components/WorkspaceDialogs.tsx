@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FaColumns, FaPencilAlt, FaTrash, FaCheck, FaTimes, FaChevronUp, FaChevronDown } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 

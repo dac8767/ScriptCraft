@@ -5,7 +5,7 @@
  * script renames go through scriptApi so "mode follows the file" routing
  * applies. The status bar and window title pick the new names up immediately.
  */
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { cloudApi } from '../services/cloudApi';
 import { scriptApi } from '../services/scriptApi';

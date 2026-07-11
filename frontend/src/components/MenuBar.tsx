@@ -31,7 +31,6 @@ import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import { useEditorStore, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_CATEGORIES } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
-import { useAssetStore } from '../stores/assetStore';
 import { api } from '../services/api';
 import { showToast } from './Toast';
 import { parseFountain } from '../utils/fountainParser';
@@ -60,7 +59,6 @@ import { useShortcutStore } from '../stores/shortcutStore';
 import { CHANGELOG, APP_VERSION } from '../data/changelog';
 import { useThemeStore } from '../stores/themeStore';
 import { BUILTIN_THEMES } from './themes';
-import { useNavigate } from 'react-router-dom';
 import { scriptApi } from '../services/scriptApi';
 import { mirrorSave, mirrorSnapshot } from '../services/saveLocations';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -174,7 +172,6 @@ const DiagRow: React.FC<{ label: string; value: string; mono?: boolean }> = ({ l
 );
 
 const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, isCollabActive, isCollabGuest }) => {
-  const navigate = useNavigate();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
