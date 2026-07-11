@@ -853,7 +853,7 @@ interface EditorState {
   setPreviewOpt: (key: keyof EditorState['previewOpts'], value: boolean) => void;
   setPreviewMode: (v: boolean) => void;
 
-  /** View > Preview: hide outline sections / doc checklist lines in the script */
+  /** View > Preview: hide outline sections / script to-do lines in the script */
   sectionsVisible: boolean;
   setSectionsVisible: (v: boolean) => void;
   scriptTodosVisible: boolean;

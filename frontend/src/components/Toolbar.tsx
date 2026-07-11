@@ -723,7 +723,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       case 'insertChecklist': return (
         <button
           className="toolbar-btn"
-          title="Insert Checklist Item"
+          title="Add To-Do List"
           onClick={() => editor?.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '[ ] ' }] }).run()}
         >
           <FaCheckSquare />

@@ -13122,8 +13122,26 @@ html.android .version-history-panel {
   color: var(--fd-text);
 }
 .fs-doc-todo-row:hover { background: var(--fd-overlay-subtle); }
-.fs-doc-todo-row span { cursor: pointer; flex: 1; line-height: 1.4; }
 .fs-doc-todo-row input { margin-top: 2px; cursor: pointer; }
+
+/* v0.92: one To-Do list, no sub-tabs. Each row shows WHERE the to-do lives —
+   the scene, for one added to the script; nothing at all for a standalone one,
+   which is the whole signal. */
+.fs-todo-list { flex: 1; overflow-y: auto; padding: 8px; min-height: 0; }
+.fs-todo-text { cursor: pointer; flex: 1; line-height: 1.4; min-width: 0; }
+.fs-todo-loc {
+  flex: 0 1 auto;
+  max-width: 45%;
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  background: var(--fd-overlay-subtle);
+  border: 1px solid var(--fd-border);
+  border-radius: 10px;
+  padding: 1px 8px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  align-self: center;
+}
+.fs-todo-hint { padding: 10px 4px; }
 
 /* Highlights window */
 .fs-highlights-tool { display: flex; flex-direction: column; height: 100%; }

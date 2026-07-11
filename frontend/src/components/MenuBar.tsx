@@ -1105,7 +1105,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   };
 
   /** Insert an outline-style General line at the caret (Section '# ',
-   *  Marker '⚑ ', Checklist '[ ] ') — the Navigator recognizes these. */
+   *  Marker '⚑ ', To-Do '[ ] ') — the Navigator recognizes these. */
   const insertOutlineLine = (prefix: string) => {
     if (!editor) return;
     editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: prefix }] }).run();
@@ -1283,7 +1283,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { icon: <FaListOl />, label: 'Section', action: () => insertOutlineLine('# ') },
         { icon: <FaListOl />, label: 'Marker', action: () => insertOutlineLine('⚑ ') },
         { icon: <FaRegStickyNote />, label: 'Script Note', action: () => useEditorStore.getState().openShelfTab('script') },
-        { icon: <FaCheckSquare />, label: 'Checklist Item', action: () => insertOutlineLine('[ ] ') },
+        { icon: <FaCheckSquare />, label: 'To-Do List', action: () => insertOutlineLine('[ ] ') },
       ],
     },
     {

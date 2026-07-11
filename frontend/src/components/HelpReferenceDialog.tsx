@@ -73,7 +73,7 @@ function Knowledge() {
       <H>Sticky Notes, Snippets, To-Do</H>
       <P><b>Sticky Notes</b> holds General cards plus Script notes anchored to text (select text,
       right-click, Add Script Note; ⌥-click a highlight to jump to its card). <b>Snippets</b>
-      receives text cut (⌥⌘X) or copied (⌥⌘C) from the editor. <b>To-Do</b> is checklist cards.
+      receives text cut (⌥⌘X) or copied (⌥⌘C) from the editor. <b>To-Do</b> holds to-do lists; ones added to the script show the scene they’re in.
       All cards take sticky colors, drag to reorder, have editable title headers, and show their
       creation date.</P>
 

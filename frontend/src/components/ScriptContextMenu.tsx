@@ -44,10 +44,11 @@ export const CONTEXT_MENU_SECTIONS: { id: string; label: string; group: ContextM
   { id: 'copyToSnippets', label: 'Copy to Snippets', group: 'Tools' },
   { id: 'insertSection', label: 'Insert Section', group: 'Insert' },
   { id: 'insertMarker', label: 'Insert Marker', group: 'Insert' },
-  // v0.90: 'Add as To-Do Item' removed — it duplicated this. A GENERAL to-do
-  // doesn't live in the script, so it has no business in a script context menu;
-  // a Script Checklist item does, and that's exactly what this inserts.
-  { id: 'insertChecklist', label: 'Insert Checklist Item', group: 'Insert' },
+  // v0.90/v0.92: 'Add as To-Do Item' removed — it duplicated this. A standalone
+  // to-do doesn't live in the script, so it has no business in a script context
+  // menu; a script to-do does, and that's what this inserts. The internal id
+  // stays 'insertChecklist' so saved menu orders keep working.
+  { id: 'insertChecklist', label: 'Add To-Do List', group: 'Insert' },
   { id: 'tagAs', label: 'Tag as…', group: 'Context Menu' },
   { id: 'spelling', label: 'Spelling Tools', group: 'Context Menu' },
 ];
@@ -818,7 +819,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
         editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '[ ] ' }] }).run();
         onClose();
       }}>
-        <span>Insert Checklist Item</span>
+        <span>Add To-Do List</span>
       </div></>),
     tagAs: (<><>
       {existingTagInfo ? (

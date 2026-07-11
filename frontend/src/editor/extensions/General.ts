@@ -11,7 +11,7 @@ export const General = Node.create({
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    // Outline-line classification (Insert > Section / Marker / Checklist Item)
+    // Outline-line classification (Insert > Section / Marker / To-Do List)
     // so View > Preview can hide each kind, and themes can style them.
     const text = node.textContent || '';
     let olClass = '';

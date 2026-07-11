@@ -61,7 +61,7 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
         } else if (node.type.name === 'newAct' || node.type.name === 'endOfAct') {
           out.push({ kind: 'act', text: node.textContent || '(act)', pos });
         } else if (node.type.name === 'general') {
-          // Outline lines from Insert → Section / Marker / Checklist Item
+          // Outline lines from Insert → Section / Marker / To-Do List
           const text = node.textContent || '';
           if (/^#+\s/.test(text)) {
             out.push({ kind: 'section', text: text.replace(/^#+\s*/, '') || '(section)', pos });
@@ -78,8 +78,8 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
       out.push({ kind: 'note', text: n.content || n.anchorText || '(empty note)', noteId: n.id });
     }
     // v0.15: General To-Do cards intentionally do NOT appear here — the
-    // Navigator maps the SCRIPT, and only doc checklist lines have a location
-    // in it. General to-dos live solely in the To-Do window's General tab.
+    // Navigator maps the SCRIPT, and only script to-dos have a location
+    // in it. Standalone to-dos live solely in the To-Do window (blank Location).
     return out;
     // docTick forces re-scan of editor content
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,7 +111,7 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
 
   const toggleTodo = (it: Item) => {
     if (it.pos !== undefined && editor) {
-      // Doc checklist line: flip the [ ] / [x] prefix in place
+      // Script to-do line: flip the [ ] / [x] prefix in place
       const tr = editor.state.tr.replaceWith(
         it.pos + 1, it.pos + 4, editor.state.schema.text(it.done ? '[ ]' : '[x]'),
       );

@@ -6,7 +6,7 @@
  *     search spans both sub-views.
  *   - FragmentsTool ("Snippets"): text sent from the
  *     editor via ⌥⌘X (cut) / ⌥⌘C (copy) — bound in ScreenplayEditor.
- *   - TodoTool ("To-Do"): checklist cards.
+ *   - TodoTool ("To-Do"): to-do lists, each showing where in the script it lives.
  * Cards keep sticky colors, drag-reorder, editable title headers (type name
  * as placeholder), and creation dates. Data persists per script as the
  * `_shelf` key of the saved content JSON and syncs in collab via collabSync.
@@ -31,7 +31,7 @@ const CARD_PLACEHOLDERS: Record<ShelfCardType, string> = {
 
 const EMPTY_HINTS: Record<ShelfCardType, string> = {
   comment: 'Notes to self, research links, themes to keep present. Hit + Add below.',
-  todo: 'Running checklists that stay out of the Navigator. Hit + Add below.',
+  todo: 'To-do lists. Ones added to the script show the scene they’re in. Hit + Add below.',
   snippet: 'Select text in the Editor and press ⌥⌘X to cut it here, or ⌥⌘C to copy it over.',
 };
 
@@ -218,28 +218,52 @@ export function FragmentsTool(_props: EditorToolProps) {
 
 /* ═══════════ Tool: To-Do ═══════════ */
 
+/**
+ * v0.92 — ONE list, no sub-types.
+ *
+ * There used to be two kinds of to-do (General cards vs Script checklist lines)
+ * split across sub-tabs, which forced you to know which bucket a thing was in
+ * before you could find it. The distinction that actually matters isn't a type —
+ * it's WHERE the to-do lives. So there's now a single list, and each row carries
+ * a Location: the scene it sits in for a to-do added to the script, blank for one
+ * that only exists in this window.
+ *
+ * Both are still real things (a script to-do is a [ ] line in the document, so it
+ * travels with the script; a standalone one doesn't) — that difference is now
+ * shown rather than filed away in tabs.
+ */
 export function TodoTool({ editor }: EditorToolProps) {
   const { add } = useCardOps();
-  const [subTab, setSubTab] = useState<'general' | 'script'>('general');
   const [docTick, setDocTick] = useState(0);
 
   useEffect(() => {
-    if (!editor || subTab !== 'script') return;
+    if (!editor) return;
     const onUpdate = () => setDocTick((t) => t + 1);
     editor.on('update', onUpdate);
     return () => { editor.off('update', onUpdate); };
-  }, [editor, subTab]);
+  }, [editor]);
 
-  // Script sub-tab: checklist lines living in the document itself
-  // (Insert > Checklist Item), the same items the Navigator shows.
-  const docItems = useMemo(() => {
-    const out: Array<{ text: string; pos: number; done: boolean }> = [];
-    if (editor && subTab === 'script') {
+  // To-dos that live in the script: [ ] lines in the document. Each one records
+  // the scene it falls under — that's the Location shown on its row.
+  const docTodos = useMemo(() => {
+    const out: Array<{ text: string; pos: number; done: boolean; location: string }> = [];
+    if (editor) {
+      let scene = '';
       editor.state.doc.descendants((node, pos) => {
-        if (node.type.name === 'general') {
+        if (node.type.name === 'sceneHeading') {
+          scene = node.textContent || '(untitled scene)';
+        } else if (node.type.name === 'general') {
           const text = node.textContent || '';
           if (/^\[[ x]\]/.test(text)) {
-            out.push({ text: text.slice(3).trim() || '(empty item)', pos, done: text[1] === 'x' });
+            out.push({
+              text: text.slice(3).trim() || '(empty to-do)',
+              pos,
+              done: text[1] === 'x',
+              // Before the first scene heading there's no scene to name — the
+              // to-do is still in the script, so say so rather than leave it
+              // blank, which would read as "not in the script at all".
+              location: scene || 'Top of script',
+            });
           }
         }
         return true;
@@ -247,9 +271,9 @@ export function TodoTool({ editor }: EditorToolProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     return out;
-  }, [editor, subTab, docTick]);
+  }, [editor, docTick]);
 
-  const toggleDocItem = (it: { pos: number; done: boolean }) => {
+  const toggleDocTodo = (it: { pos: number; done: boolean }) => {
     if (!editor) return;
     const tr = editor.state.tr.replaceWith(
       it.pos + 1, it.pos + 4, editor.state.schema.text(it.done ? '[ ]' : '[x]'),
@@ -264,44 +288,32 @@ export function TodoTool({ editor }: EditorToolProps) {
 
   return (
     <div className="fs-sticky-tool">
-      <div className="fs-subtab-row">
-        <button
-          className={`fs-subtab${subTab === 'general' ? ' active' : ''}`}
-          onClick={() => setSubTab('general')}
-        >General To-Do</button>
-        <button
-          className={`fs-subtab${subTab === 'script' ? ' active' : ''}`}
-          onClick={() => setSubTab('script')}
-        >Script Checklist</button>
-      </div>
-      {subTab === 'general' ? (
-        <>
-          <CardList type="todo" />
-          <div className="swn-add-row">
-            <button className="swn-add-btn" onClick={() => add('todo')}>+ Add</button>
+      <div className="fs-todo-list">
+        {docTodos.map((it, i) => (
+          <div key={`${it.pos}-${i}`} className="fs-doc-todo-row">
+            <input type="checkbox" checked={it.done} onChange={() => toggleDocTodo(it)} />
+            <span
+              className={`fs-todo-text${it.done ? ' fs-nav-done' : ''}`}
+              onClick={() => jumpTo(it.pos)}
+              title="Click to jump to this to-do in the script"
+            >{it.text}</span>
+            <span className="fs-todo-loc" title={`In the script: ${it.location}`}>{it.location}</span>
           </div>
-        </>
-      ) : (
-        <div className="fs-doc-todo-list">
-          {docItems.length === 0 && (
-            <div className="fs-nav-empty">
-              No checklist items in the script yet.
-              <br />
-              Use <strong>Insert → Checklist Item</strong> to add one at the cursor.
-            </div>
-          )}
-          {docItems.map((it, i) => (
-            <div key={`${it.pos}-${i}`} className="fs-doc-todo-row">
-              <input type="checkbox" checked={it.done} onChange={() => toggleDocItem(it)} />
-              <span
-                className={it.done ? 'fs-nav-done' : ''}
-                onClick={() => jumpTo(it.pos)}
-                title="Click to jump to this item in the script"
-              >{it.text}</span>
-            </div>
-          ))}
-        </div>
-      )}
+        ))}
+
+        {/* Standalone to-do lists — no script location, so the field stays empty. */}
+        <CardList type="todo" />
+
+        {docTodos.length === 0 && (
+          <div className="fs-nav-empty fs-todo-hint">
+            Add a to-do below, or use <strong>Insert → To-Do List</strong> to add one
+            in the script — those show the scene they’re in.
+          </div>
+        )}
+      </div>
+      <div className="swn-add-row">
+        <button className="swn-add-btn" onClick={() => add('todo')}>+ Add</button>
+      </div>
     </div>
   );
 }

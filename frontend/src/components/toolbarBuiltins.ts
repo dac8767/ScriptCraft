@@ -43,7 +43,7 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'element', label: 'Element' },
   { key: 'insertSection', label: 'Insert Section' },
   { key: 'insertNote', label: 'Insert Script Note' },
-  { key: 'insertChecklist', label: 'Insert Checklist Item' },
+  { key: 'insertChecklist', label: 'Add To-Do List' },
   { key: 'titlePage', label: 'Title Page', sepAfter: true },
   { key: 'fontFamily', label: 'Font Family', priority: '5', desktopOnly: true },
   { key: 'fontSize', label: 'Font Size', priority: '5', desktopOnly: true, sepAfter: true },
