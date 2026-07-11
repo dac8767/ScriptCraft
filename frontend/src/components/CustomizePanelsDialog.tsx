@@ -21,10 +21,11 @@ import { CHROME_SCALES, chromeMin, chromeMax, chromePx, type ChromeSurface } fro
 import EditElementsDialog from './EditElementsDialog';
 import KeyboardShortcutsTab from './KeyboardShortcutsTab';
 import ThemesTab from './ThemesTab';
+import ContextMenuTab from './ContextMenuTab';
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
-  category?: 'menu' | 'toolbar' | 'panels' | 'elements' | 'keys' | 'themes';
+  category?: 'menu' | 'toolbar' | 'panels' | 'elements' | 'keys' | 'themes' | 'context';
   open: boolean;
   onClose: () => void;
   /** Render only the content (no overlay/box) — used inside Preferences. */
@@ -293,7 +294,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // React ('Rendered more hooks than during the previous render').
   const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones, toolbarZonesSet } = useEditorStore();
   const { panelDividers, setPanelDividers } = useEditorStore();
-  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'panels' | 'elements' | 'keys' | 'themes'>(category ?? 'menu');
+  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'panels' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'menu');
 
   // `category` seeds useState only on first mount, but this dialog stays mounted
   // and merely toggles `open` — so without this, opening it from "Customize
@@ -418,7 +419,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const body = (
         <div className="dialog-body fs-customize-body">
           <div className="prefs-subtabs">
-            {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['elements', 'Elements'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const).map(([id, label]) => (
+            {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['context', 'Context Menu'], ['elements', 'Elements'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const).map(([id, label]) => (
               <button key={id} className={activeCat === id ? 'active' : ''} onClick={() => setActiveCat(id)}>{label}</button>
             ))}
           </div>
@@ -639,6 +640,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           {activeCat === 'elements' && <EditElementsDialog embedded />}
           {activeCat === 'keys' && <KeyboardShortcutsTab />}
           {activeCat === 'themes' && <ThemesTab />}
+          {activeCat === 'context' && <ContextMenuTab />}
           {activeCat === 'panels' && (<>
           <section>
             <h3>Panels</h3>

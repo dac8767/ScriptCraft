@@ -21,6 +21,7 @@ interface ViewState {
   toolbarLeft?: string[];
   toolbarRight?: string[];
   toolbarZonesSet?: boolean;
+  contextMenuHidden?: string[];
   panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
   chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[];
@@ -641,6 +642,11 @@ interface EditorState {
    *  div:<id> tokens. */
   /** Side-panel width (v0.70). 'hidden' is expressed by the existing
    *  navigatorOpen / shelfOpen flags, so this only carries the width. */
+  /** Hidden top-level sections of the right-click menu (v0.81). Only top-level
+   *  items — an entry's CONTENTS (e.g. which elements Element offers) are
+   *  governed by their own tab, so every instance stays in sync. */
+  contextMenuHidden: string[];
+  setContextMenuHidden: (ids: string[]) => void;
   panelSizeMode: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
   /** Custom sizes in px, used when the matching mode is 'custom' (v0.72). */
   chromeCustomPx: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
@@ -1486,6 +1492,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set(patch);
   },
   panelDividers: Array.isArray(_vs.panelDividers) ? _vs.panelDividers as { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[] : [],
+  contextMenuHidden: _vs.contextMenuHidden ?? [],
+  setContextMenuHidden: (ids) => {
+    saveViewState({ contextMenuHidden: ids });
+    set({ contextMenuHidden: ids });
+  },
   panelSizeMode: _vs.panelSizeMode ?? { left: 'comfortable', right: 'comfortable' },
   chromeCustomPx: _vs.chromeCustomPx ?? { menu: 36, toolbar: 33, panelLeft: 266, panelRight: 266 },
   setChromeCustomPx: (surface, px) => set((st) => {

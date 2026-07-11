@@ -37,24 +37,36 @@ const ElementPicker: React.FC<ElementPickerProps> = ({
   position, defaultType, availableTypes, onSelect, onDismiss,
 }) => {
   const activeTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate());
+  // v0.81: read the EFFECTIVE rules (template + the user's Customize > Elements
+  // overrides), not the raw template — otherwise the Enter-key picker would
+  // keep offering elements the user hid, and ignore their ordering. Same source
+  // as the Element dropdown, the Insert menu, and the context menu.
+  const effectiveRules = useFormattingTemplateStore((s) => s.getEffectiveRules)();
+  useFormattingTemplateStore((s) => s.elementHidden);   // re-render on change
+  useFormattingTemplateStore((s) => s.elementOrder);
+
   const orderedTypes = useMemo<ElementType[]>(
     () => {
       // Caller-supplied list (e.g. AV cell context) wins outright.
       if (availableTypes && availableTypes.length > 0) return availableTypes;
-      const enabled = new Set(
-        Object.values(activeTemplate.rules).filter((r) => r.enabled).map((r) => r.id),
-      );
-      return (ELEMENT_ORDER[defaultType] || DEFAULT_ORDER)
-        .filter((t) => enabled.has(t));
+      const enabled = Object.values(effectiveRules)
+        .filter((r) => r.enabled)
+        .map((r) => r.id as ElementType);
+      const enabledSet = new Set<string>(enabled);
+      // Honor the user's element ORDER; fall back to the contextual default
+      // order for anything they haven't explicitly arranged.
+      const contextual = (ELEMENT_ORDER[defaultType] || DEFAULT_ORDER).filter((t) => enabledSet.has(t));
+      const rest = enabled.filter((t) => !contextual.includes(t));
+      return [...contextual, ...rest];
     },
-    [defaultType, activeTemplate, availableTypes],
+    [defaultType, effectiveRules, availableTypes],
   );
 
   // Resolve a display label: built-in label first, then template-rule label,
   // finally the raw id. Custom-element ids (avShot, sceneCharacters, etc.) only
   // have labels in the template rules.
   const labelFor = (type: ElementType): string =>
-    ELEMENT_LABELS[type] || activeTemplate.rules[type]?.label || String(type);
+    ELEMENT_LABELS[type] || effectiveRules[type]?.label || activeTemplate.rules[type]?.label || String(type);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);

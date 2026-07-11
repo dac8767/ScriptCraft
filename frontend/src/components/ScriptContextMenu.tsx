@@ -16,6 +16,27 @@ const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform)
 const mod = isMac ? '⌘' : 'Ctrl+';
 const shift = isMac ? '⇧' : 'Shift+';
 
+/**
+ * Top-level sections of the right-click menu (v0.81), in display order.
+ * Customize > Context Menu shows/hides these — and ONLY these. What's inside a
+ * section (e.g. which elements Element offers) is governed by that feature's own
+ * tab, so a change there updates every instance at once.
+ */
+export const CONTEXT_MENU_SECTIONS: { id: string; label: string }[] = [
+  { id: 'undoRedo', label: 'Undo / Redo' },
+  { id: 'clipboard', label: 'Cut / Copy / Paste' },
+  { id: 'selection', label: 'Select All / Delete' },
+  { id: 'element', label: 'Element' },
+  { id: 'style', label: 'Style' },
+  { id: 'font', label: 'Font & Formatting' },
+  { id: 'revision', label: 'Revision' },
+  { id: 'scriptNotes', label: 'Script Notes' },
+  { id: 'sendTo', label: 'Send to Snippets / To-Do' },
+  { id: 'outline', label: 'Outline Inserts' },
+  { id: 'tags', label: 'Production Tags' },
+  { id: 'spelling', label: 'Spelling Tools' },
+];
+
 // Element types shown in the submenu, with their shortcuts
 const ELEMENT_MENU_ITEMS: { type: ElementType; shortcut: string }[] = [
   { type: 'sceneHeading', shortcut: `${mod}1` },
@@ -92,7 +113,20 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
   } = useEditorStore();
 
   // Per-attribute locking for the current element
+  const contextMenuHidden = useEditorStore((st) => st.contextMenuHidden);
+  const ctxShown = (id: string) => !contextMenuHidden.includes(id);
+
   const activeTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate());
+  const effectiveRules = useFormattingTemplateStore((s) => s.getEffectiveRules)();
+  useFormattingTemplateStore((s) => s.elementHidden);   // re-render on change
+  useFormattingTemplateStore((s) => s.elementOrder);
+
+  // Elements in the user's order, hidden ones removed. Shortcuts come from the
+  // existing table; anything without one simply shows no shortcut.
+  const shortcutFor = new Map(ELEMENT_MENU_ITEMS.map((i) => [i.type as string, i.shortcut]));
+  const orderedElementItems = Object.values(effectiveRules)
+    .filter((r) => r.enabled && !['newAct', 'endOfAct', 'castList'].includes(r.id))
+    .map((r) => ({ type: r.id as ElementType, shortcut: shortcutFor.get(r.id) ?? '' }));
   const isEnforceMode = activeTemplate.mode === 'enforce';
   const rule = getCurrentElementRule(editor, activeTemplate);
   const locked = getLockedFormatting(rule, isEnforceMode);
@@ -256,6 +290,27 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
   };
 
   const handleSelectAll = () => { editor.chain().focus().selectAll().run(); onClose(); };
+  /** Delete the element the cursor sits in — the whole block, not a selection.
+   *  Inside a dual dialogue this removes the entire dual dialogue, which is the
+   *  element the user is looking at. An empty Action is left behind so there's
+   *  somewhere to type. */
+  const handleDeleteElement = () => {
+    const { state } = editor;
+    const { $from } = state.selection;
+    for (let d = $from.depth; d >= 0; d--) {
+      if ($from.node(d).type.name === 'dualDialogue') {
+        (editor as unknown as { commands: { deleteDualDialogue: () => boolean } })
+          .commands.deleteDualDialogue();
+        onClose();
+        return;
+      }
+    }
+    const start = $from.before($from.depth);
+    const end = $from.after($from.depth);
+    editor.chain().focus().deleteRange({ from: start, to: end }).run();
+    onClose();
+  };
+
   const handleDelete = () => {
     if (hasSelection) {
       editor.chain().focus().deleteSelection().run();
@@ -604,6 +659,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       )}
 
       {/* Undo / Redo */}
+      {ctxShown('undoRedo') && (<>
       <div className="ctx-item" onClick={handleUndo}>
         <span>Undo</span>
         <span className="ctx-shortcut">{mod}Z</span>
@@ -614,7 +670,10 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       </div>
       <div className="ctx-separator" />
 
+      </>)}
+
       {/* Clipboard */}
+      {ctxShown('clipboard') && (<>
       <div className={`ctx-item${!hasSelection ? ' ctx-disabled' : ''}`} onClick={handleCut}>
         <span>Cut</span>
         <span className="ctx-shortcut">{mod}X</span>
@@ -633,17 +692,26 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       </div>
       <div className="ctx-separator" />
 
+      </>)}
+
       {/* Selection */}
+      {ctxShown('selection') && (<>
       <div className="ctx-item" onClick={handleSelectAll}>
         <span>Select All</span>
         <span className="ctx-shortcut">{mod}A</span>
+      </div>
+      <div className="ctx-item" onClick={handleDeleteElement}>
+        <span>Delete Element</span>
       </div>
       <div className={`ctx-item${!hasSelection ? ' ctx-disabled' : ''}`} onClick={handleDelete}>
         <span>Delete</span>
       </div>
       <div className="ctx-separator" />
 
+      </>)}
+
       {/* Element submenu */}
+      {ctxShown('element') && (<>
       <div
         className="ctx-has-sub-wrap"
         onPointerEnter={(e) => { if (e.pointerType === 'mouse') { setElementSubOpen(true); setStyleSubOpen(false); setRevisionSubOpen(false); } }}
@@ -655,11 +723,11 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
         </div>
         {elementSubOpen && (
           <div className="ctx-submenu">
-            {ELEMENT_MENU_ITEMS
-              .filter(({ type }) => {
-                const rule = activeTemplate.rules[type];
-                return !rule || rule.enabled;
-              })
+            {/* v0.81: driven by the EFFECTIVE rules so hiding or reordering an
+                element in Customize > Elements updates this menu too — it used
+                to walk its own hardcoded ELEMENT_MENU_ITEMS order and only
+                checked the raw template's `enabled`. */}
+            {orderedElementItems
               .map(({ type, shortcut }) => (
               <div
                 key={type}
@@ -674,7 +742,10 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
         )}
       </div>
 
+      </>)}
+
       {/* Style submenu */}
+      {ctxShown('style') && (<>
       <div
         className="ctx-has-sub-wrap"
         onPointerEnter={(e) => { if (e.pointerType === 'mouse') { setStyleSubOpen(true); setElementSubOpen(false); setRevisionSubOpen(false); } }}
@@ -716,7 +787,10 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
         )}
       </div>
 
+      </>)}
+
       {/* Font & Formatting */}
+      {ctxShown('font') && (<>
       <div className={`ctx-item${locked.fontFamily ? ' ctx-disabled' : ''}`} onClick={() => { if (!locked.fontFamily) { onOpenFormatPanel(); onClose(); } }}>
         <span>Font...</span>
       </div>
@@ -744,7 +818,10 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       )}
       {(showSceneProps || showDualDialogue || showCharProfile) && <div className="ctx-separator" />}
 
+      </>)}
+
       {/* Revision */}
+      {ctxShown('revision') && (<>
       <div className="ctx-item" onClick={() => { setRevisionMode(!revisionMode); onClose(); }}>
         <span>{revisionMode ? '\u2713 ' : ''}Revision Mode</span>
       </div>
@@ -774,7 +851,10 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       </div>
       <div className="ctx-separator" />
 
+      </>)}
+
       {/* Script Notes — context-sensitive */}
+      {ctxShown('scriptNotes') && (<>
       {existingNoteId ? (
         <>
           <div className="ctx-item" onClick={handleEditScriptNote}>
@@ -792,7 +872,10 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       )}
       <div className="ctx-separator" />
 
+      </>)}
+
       {/* Send selection to the Fragments / To-Do panels (v0.13) */}
+      {ctxShown('sendTo') && (<>
       {hasSelection && (
         <>
           <div className="ctx-item" onClick={() => {
@@ -823,7 +906,10 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
         </>
       )}
 
+      </>)}
+
       {/* Outline inserts (Section / Marker / Checklist) at the caret */}
+      {ctxShown('outline') && (<>
       <div className="ctx-item" onClick={() => {
         editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '# ' }] }).run();
         onClose();
@@ -844,7 +930,10 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       </div>
       <div className="ctx-separator" />
 
+      </>)}
+
       {/* Production Tags */}
+      {ctxShown('tags') && (<>
       {existingTagInfo ? (
         <>
           <div className="ctx-item" onClick={() => {
@@ -867,7 +956,10 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       )}
       <div className="ctx-separator" />
 
+      </>)}
+
       {/* Spelling tools */}
+      {ctxShown('spelling') && (<>
       {spellInfo && (() => {
         const activeAddTargets = spellChecker.getActiveAddTargets();
         const multipleTargets = activeAddTargets.length > 1;
@@ -910,6 +1002,19 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
           </>
         );
       })()}
+      </>)}
+      {/* Permanent — never hidden, so the menu can always be customized back. */}
+      <div className="ctx-separator" />
+      <div
+        className="ctx-item"
+        onClick={() => {
+          window.dispatchEvent(new CustomEvent('freedraft:command', { detail: 'customizeContextMenu' }));
+          onClose();
+        }}
+      >
+        <span>Customize Context Menu</span>
+      </div>
+
     </div>
   );
 };

@@ -1422,6 +1422,14 @@ const ScreenplayEditor: React.FC = () => {
           };
           return m[node.type.name] || '';
         },
+        // v0.81: Placeholder defaults to includeChildren: false, so it only
+        // marks TOP-LEVEL nodes as empty. Inside a dual dialogue the character
+        // and dialogue live under dualDialogueColumn — nested — so they never
+        // got the empty class and showed no hint text. includeChildren fixes
+        // both columns; showOnlyCurrent: false means both sides show their
+        // hints at once, rather than only whichever field has the caret.
+        includeChildren: true,
+        showOnlyCurrent: false,
       }),
       SceneHeading, Action, Character, Dialogue, Parenthetical,
       Transition, General, Shot, NewAct, EndOfAct, Lyrics,

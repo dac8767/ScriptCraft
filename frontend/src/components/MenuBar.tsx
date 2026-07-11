@@ -369,7 +369,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const [pageSetupOpen, setPageSetupOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [customizeTab, setCustomizeTab] =
-    useState<'menu' | 'toolbar' | 'panels' | 'elements' | 'keys' | 'themes'>('menu');
+    useState<'menu' | 'toolbar' | 'panels' | 'elements' | 'keys' | 'themes' | 'context'>('menu');
   const openCustomize = (tab: typeof customizeTab) => {
     setCustomizeTab(tab);
     setCustomizeOpen(true);
@@ -569,6 +569,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       const id = (e as CustomEvent).detail as string;
       switch (id) {
         case 'customize': openCustomize('menu'); break;
+        case 'customizeContextMenu': openCustomize('context'); break;
         case 'setDraft': setDraftDialogOpen(true); break;
         case 'rename': setRenameOpen(true); break;
         case 'takeSnapshot': handleCheckinOpen(); break;

@@ -6,6 +6,7 @@ declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     dualDialogue: {
       toggleDualDialogue: () => ReturnType;
+      deleteDualDialogue: () => ReturnType;
     };
   }
 }
@@ -94,6 +95,32 @@ export const DualDialogue = Node.create({
 
   addCommands() {
     return {
+      /**
+       * Delete the dual dialogue the cursor is in (v0.81). Used by Backspace in
+       * an empty field and by the context menu's Delete Element.
+       */
+      deleteDualDialogue: () => ({ editor, tr, dispatch }) => {
+        const { $from } = editor.state.selection;
+        for (let d = $from.depth; d >= 0; d--) {
+          if ($from.node(d).type.name === 'dualDialogue') {
+            if (!dispatch) return true;
+            const start = $from.before(d);
+            const end = $from.after(d);
+            // Leave an empty Action block behind and put the caret in it —
+            // deleting to nothing would collapse the surrounding structure and
+            // leave the writer with no obvious place to type.
+            const action = editor.state.schema.nodes.action.create(null);
+            tr.replaceWith(start, end, action);
+            try {
+              tr.setSelection(TextSelection.near(tr.doc.resolve(start + 1)));
+            } catch { /* caret stays put */ }
+            dispatch(tr);
+            return true;
+          }
+        }
+        return false;
+      },
+
       toggleDualDialogue: () => ({ editor, tr, dispatch }) => {
         const { state } = editor;
         const { $from } = state.selection;
@@ -295,6 +322,40 @@ export const DualDialogue = Node.create({
     return {
       'Mod-d': () => {
         return this.editor.commands.toggleDualDialogue();
+      },
+
+      // v0.81: there was no way to get rid of a dual dialogue from the page.
+      // Backspace in an EMPTY field now removes it — but only when the whole
+      // dual dialogue is empty. If any other field still has text, we delete
+      // just this empty field (or fall through to normal Backspace), because
+      // wiping out the other character's dialogue would be destructive.
+      Backspace: () => {
+        const { state } = this.editor;
+        const { $from, empty } = state.selection;
+        if (!empty || $from.parentOffset !== 0) return false;      // not at the start
+        if ($from.parent.content.size !== 0) return false;         // field isn't empty
+
+        let dualDepth = -1;
+        for (let d = $from.depth; d >= 0; d--) {
+          if ($from.node(d).type.name === 'dualDialogue') { dualDepth = d; break; }
+        }
+        if (dualDepth < 0) return false;                           // not in a dual dialogue
+
+        const dual = $from.node(dualDepth);
+        if (dual.textContent.trim().length === 0) {
+          // Nothing written anywhere in it — remove the whole thing.
+          return this.editor.commands.deleteDualDialogue();
+        }
+
+        // Something else in the dual dialogue has text: only drop this empty
+        // field, and only if its column would still have content left.
+        const colDepth = dualDepth + 1;
+        const column = $from.node(colDepth);
+        if (column.childCount <= 1) return false;                  // last field — let Backspace do its thing
+
+        const fieldStart = $from.before($from.depth);
+        const fieldEnd = $from.after($from.depth);
+        return this.editor.chain().deleteRange({ from: fieldStart, to: fieldEnd }).run();
       },
     };
   },
