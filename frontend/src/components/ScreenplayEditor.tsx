@@ -3521,6 +3521,26 @@ const ScreenplayEditor: React.FC = () => {
   // so the browser's drop event may not include the actual files. We listen for
   // Tauri's onDragDropEvent which provides file paths directly.
   const pendingDropPathRef = useRef<string | null>(null);
+
+  // True while an HTML5 drag that STARTED INSIDE the app is in flight
+  // (Customize row reorder, index cards, project cards...). Tauri's native
+  // onDragDropEvent fires enter/over for these too — it sees any drag over
+  // the webview and carries no dataTransfer to inspect — so without this the
+  // "Drop screenplay file to open" overlay appeared on internal drags.
+  const internalDragRef = useRef(false);
+  useEffect(() => {
+    const onStart = () => { internalDragRef.current = true; };
+    const onEnd = () => { internalDragRef.current = false; };
+    document.addEventListener('dragstart', onStart, true);
+    document.addEventListener('dragend', onEnd, true);
+    document.addEventListener('drop', onEnd, true);
+    return () => {
+      document.removeEventListener('dragstart', onStart, true);
+      document.removeEventListener('dragend', onEnd, true);
+      document.removeEventListener('drop', onEnd, true);
+    };
+  }, []);
+
   useEffect(() => {
     if (!editor) return;
     let cancelled = false;
@@ -3540,11 +3560,17 @@ const ScreenplayEditor: React.FC = () => {
           const payload = event.payload;
 
           if (payload.type === 'enter' || payload.type === 'over') {
+            // Internal drag (reordering rows, cards): not a file drop.
+            if (internalDragRef.current) return;
+            // Belt and braces: a real OS file drag always carries paths.
+            const p = (payload as { paths?: string[] }).paths;
+            if (payload.type === 'enter' && p && p.length === 0) return;
             setDragOverEditor(true);
           } else if (payload.type === 'leave') {
             setDragOverEditor(false);
           } else if (payload.type === 'drop') {
             setDragOverEditor(false);
+            if (internalDragRef.current) return;
             // If drop is over the asset manager, forward file paths for upload
             const pos = payload.position;
             if (pos) {
