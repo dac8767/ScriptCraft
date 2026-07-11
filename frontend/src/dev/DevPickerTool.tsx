@@ -24,12 +24,22 @@ import {
 } from './devCapture';
 
 const DRAFT_KEY = 'freescript:devpicker:draft';
+const PHRASES_KEY = 'freescript:devpicker:phrases';
 
 interface Props { onClose?: () => void }
 
 export default function DevPickerTool(_props: Props) {
   const [draft, setDraft] = React.useState(() => {
     try { return localStorage.getItem(DRAFT_KEY) || ''; } catch { return ''; }
+  });
+  // Commonly used phrases — click to paste into the draft, save the current
+  // draft as a new one. Kept in localStorage so they survive across sessions.
+  const [phrases, setPhrases] = React.useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(PHRASES_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : [];
+    } catch { return []; }
   });
   const [inspecting, setInspecting] = React.useState(false);
   const [hover, setHover] = React.useState<{ rect: DOMRect; cap: Capture } | null>(null);
@@ -90,6 +100,18 @@ export default function DevPickerTool(_props: Props) {
   React.useEffect(() => {
     try { localStorage.setItem(DRAFT_KEY, draft); } catch { /* not fatal */ }
   }, [draft]);
+
+  React.useEffect(() => {
+    try { localStorage.setItem(PHRASES_KEY, JSON.stringify(phrases)); } catch { /* not fatal */ }
+  }, [phrases]);
+
+  const savePhrase = () => {
+    const p = draft.trim();
+    if (!p) return;
+    // Don't stack duplicates; move an existing match to the front instead.
+    setPhrases((cur) => [p, ...cur.filter((x) => x !== p)]);
+  };
+  const removePhrase = (p: string) => setPhrases((cur) => cur.filter((x) => x !== p));
 
   /** Insert at the caret, not at the end — you're mid-sentence when you click. */
   const insert = React.useCallback((token: string) => {
@@ -192,10 +214,35 @@ export default function DevPickerTool(_props: Props) {
         </button>
         <button
           className="dev-picker-btn"
+          onClick={savePhrase}
+          disabled={!draft.trim()}
+          title="Save the current draft as a reusable phrase"
+        >＋ Phrase</button>
+        <button
+          className="dev-picker-btn"
           onClick={() => { setDraft(''); setShots([]); setLastKind(null); }}
           disabled={!draft && shots.length === 0}
         >Clear</button>
       </div>
+
+      {phrases.length > 0 && (
+        <div className="dev-picker-phrases">
+          {phrases.map((p) => (
+            <span key={p} className="dev-picker-phrase">
+              <button
+                className="dev-picker-phrase-paste"
+                onClick={() => insert(p)}
+                title={`Paste: ${p}`}
+              >{p}</button>
+              <button
+                className="dev-picker-phrase-del"
+                onClick={() => removePhrase(p)}
+                title="Remove phrase"
+              >×</button>
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="dev-picker-bar">
         <button

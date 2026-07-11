@@ -13982,6 +13982,48 @@ html.android .version-history-panel {
 .dev-picker-btn:hover:not(:disabled) { border-color: var(--fd-accent); }
 .dev-picker-btn:disabled { opacity: .4; cursor: default; }
 
+/* Saved phrases — a wrapping row of chips; click to paste, × to remove. */
+.dev-picker-phrases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex-shrink: 0;
+  max-height: 96px;
+  overflow-y: auto;
+}
+.dev-picker-phrase {
+  display: inline-flex;
+  align-items: stretch;
+  max-width: 100%;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.dev-picker-phrase:hover { border-color: var(--fd-accent); }
+.dev-picker-phrase-paste {
+  max-width: 220px;
+  padding: 3px 7px;
+  background: var(--fd-btn-bg, var(--fd-overlay-subtle));
+  color: var(--fd-text);
+  border: none;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dev-picker-phrase-del {
+  padding: 3px 6px;
+  background: var(--fd-btn-bg, var(--fd-overlay-subtle));
+  color: var(--fd-text-muted);
+  border: none;
+  border-left: 1px solid var(--fd-border);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+.dev-picker-phrase-del:hover { color: #e06060; }
+
 .dev-picker-draft {
   flex: 1;
   min-height: 140px;
