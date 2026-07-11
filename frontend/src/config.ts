@@ -50,13 +50,25 @@ function computeApiBase(): string {
   // builds. None of these point at a real backend, so always fall through to
   // the hosted default. Users can override in Settings → Cloud API URL.
   const isTauri = !!(window as any).__TAURI_INTERNALS__;
-  if (isTauri) return 'https://open-draft.com/api';
+  // Desktop/mobile cloud endpoint. Set VITE_CLOUD_API_BASE at build time to
+  // FreeDraft's own backend (e.g. https://api.freedraft.com). Until that
+  // backend is deployed this is intentionally empty — cloudApi surfaces a
+  // clean "cloud not configured" state and the app runs fully offline on
+  // local SQLite. Users can also point it at their own server in
+  // Settings → Cloud API URL.
+  if (isTauri) return normalizeCloudDefault(import.meta.env.VITE_CLOUD_API_BASE);
   const origin = window.location.origin;
   const validOrigin = origin && origin !== 'null';
   const isDev = window.location.port === '5173';
   if (isDev) return `http://${window.location.hostname}:8008/api`;
   if (validOrigin) return `${origin}/api`;
-  return 'https://open-draft.com/api';
+  return normalizeCloudDefault(import.meta.env.VITE_CLOUD_API_BASE);
+}
+
+/** Empty (cloud disabled) unless a FreeDraft cloud base is configured. */
+function normalizeCloudDefault(v: unknown): string {
+  const raw = (v ? String(v) : '').trim();
+  return raw ? normalizeApiBase(raw) : '';
 }
 
 /**
@@ -79,15 +91,16 @@ export const SERVER_BASE: string = API_BASE.replace(/\/api$/, '');
  *  Reads from localStorage (settings store) first, then falls back
  *  to the VITE env var, then to the default.
  */
-const DEFAULT_COLLAB_WS = 'wss://collab.open-draft.com';
+// Empty until FreeDraft's own collab server is deployed (set
+// VITE_COLLAB_WS_URL at build time, e.g. wss://collab.freedraft.com).
+const DEFAULT_COLLAB_WS = import.meta.env.VITE_COLLAB_WS_URL || '';
 export function getCollabWsUrl(): string {
   const stored = localStorage.getItem('opendraft:collabServerUrl');
   if (stored) return stored;
-  return import.meta.env.VITE_COLLAB_WS_URL || DEFAULT_COLLAB_WS;
+  return DEFAULT_COLLAB_WS;
 }
 // Static alias kept for backward-compatible imports
-export const COLLAB_WS_URL: string =
-  import.meta.env.VITE_COLLAB_WS_URL || DEFAULT_COLLAB_WS;
+export const COLLAB_WS_URL: string = DEFAULT_COLLAB_WS;
 
 /**
  * Get the URL for an asset.
