@@ -1,6 +1,5 @@
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
-import { claudeBridge } from './dev-server/claudeBridge'
 
 // Vite 8 uses Rolldown which does NOT transpile JS syntax via build.target.
 // For legacy macOS builds (Catalina / older WKWebView) we run each output
@@ -34,8 +33,7 @@ function legacyTranspile(): Plugin | null {
 
 // https://vite.dev/config/
 export default defineConfig({
-  // claudeBridge is apply:'serve' — it exists only under `vite dev`, never in a build.
-  plugins: [react(), claudeBridge(), legacyTranspile()].filter(Boolean),
+  plugins: [react(), legacyTranspile()].filter(Boolean),
 
   // Allow Tauri dev server to connect
   server: {

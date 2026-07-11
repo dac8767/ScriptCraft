@@ -3,7 +3,11 @@
  *
  * Turn Inspect on, type "the link isn't working in the", click the Notes tab, and
  * it writes "Notes — Right Panel" into the draft instead of opening the panel.
- * Copy, paste to me. The names come from the real registries (see devInspect), so
+ * Copy, paste into chat.
+ *
+ * v1.7: the Claude Code bridge that used to live here is GONE — no dev server
+ * endpoint, no spawned process, nothing that reaches off this machine. This panel
+ * is now pure local DOM inspection and a text box. The names come from the real registries (see devInspect), so
  * they're the names the code uses — which is the actual value here: it removes the
  * round trip where I have to ask which thing you meant.
  *
@@ -15,9 +19,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { describeElement, type Capture } from './devInspect';
-import {
-  runClaude, checkBridge, gitDiffStat, type PanelEvent,
-} from './claudeClient';
 
 const DRAFT_KEY = 'freescript:devpicker:draft';
 
@@ -33,49 +34,6 @@ export default function DevPickerTool(_props: Props) {
   const [lastKind, setLastKind] = React.useState<string | null>(null);
   const areaRef = React.useRef<HTMLTextAreaElement | null>(null);
 
-  // ── Claude Code, running in the repo on this machine (see dev-server/) ──
-  const [bridge, setBridge] = React.useState<{
-    available: boolean; disabled?: boolean; version?: string; hint?: string; bin?: string; cwd?: string;
-  } | null>(null);
-  const [log, setLog] = React.useState<PanelEvent[]>([]);
-  const [busy, setBusy] = React.useState(false);
-  const [allowEdits, setAllowEdits] = React.useState(false);
-  const [sessionId, setSessionId] = React.useState<string | undefined>();
-  const [diff, setDiff] = React.useState('');
-  const abortRef = React.useRef<AbortController | null>(null);
-  const logRef = React.useRef<HTMLDivElement | null>(null);
-
-  React.useEffect(() => { void checkBridge().then(setBridge); }, []);
-  React.useEffect(() => {
-    logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
-  }, [log]);
-
-  const send = async () => {
-    const prompt = draft.trim();
-    if (!prompt || busy) return;
-    setBusy(true);
-    setLog((l) => [...l, { kind: 'text', text: `▸ ${prompt}` }]);
-    setDraft('');
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-    try {
-      await runClaude({ prompt, sessionId, allowEdits, signal: ctrl.signal }, (e) => {
-        if (e.kind === 'session') { setSessionId(e.sessionId); return; }
-        if (e.kind === 'result' && e.sessionId) setSessionId(e.sessionId);
-        setLog((l) => [...l, e]);
-      });
-      setDiff(await gitDiffStat());
-    } catch (err) {
-      if ((err as Error).name !== 'AbortError') {
-        setLog((l) => [...l, { kind: 'error', message: String(err) }]);
-      }
-    } finally {
-      setBusy(false);
-      abortRef.current = null;
-    }
-  };
-
-  const stop = () => { abortRef.current?.abort(); setBusy(false); };
 
   // The draft outlives the panel being closed — losing a half-written note
   // because you docked something would defeat the purpose.
@@ -197,57 +155,12 @@ export default function DevPickerTool(_props: Props) {
         placeholder={'Type your note, then hit Inspect and click the thing you mean.\n\ne.g. "the link isn\'t working in the " → click the Notes tab →\n"the link isn\'t working in the Notes — Right Panel"'}
       />
 
-      <div className="dev-picker-send">
-        <button
-          className="dev-picker-inspect"
-          onClick={() => void send()}
-          disabled={!draft.trim() || busy || !bridge?.available}
-          title={bridge?.available
-            ? 'Run this in the repo with Claude Code'
-            : bridge?.hint ?? 'Checking for the Claude Code CLI…'}
-        >{busy ? 'Working…' : 'Send to Claude Code'}</button>
-        {busy && <button className="dev-picker-btn" onClick={stop}>Stop</button>}
-        <label className="dev-picker-toggle" title="Off: Claude can read the repo but not change it. On: it can edit files and run the tests.">
-          <input
-            type="checkbox"
-            checked={allowEdits}
-            onChange={(e) => setAllowEdits(e.target.checked)}
-            disabled={busy}
-          />
-          Allow edits
-        </label>
-      </div>
-
-      {(log.length > 0 || diff) && (
-        <div className="dev-picker-log" ref={logRef}>
-          {log.map((e, i) => (
-            <div key={i} className={`dev-log-${e.kind}`}>
-              {e.kind === 'tool' ? <><b>{e.name}</b> {e.detail}</>
-                : e.kind === 'error' ? e.message
-                : e.kind === 'result' ? <>{e.text}{e.cost != null && <span className="dev-log-cost"> (${e.cost.toFixed(3)})</span>}</>
-                : e.kind === 'done' ? null
-                : e.kind === 'text' ? e.text
-                : null}
-            </div>
-          ))}
-          {diff && (
-            <pre className="dev-log-diff" title="git diff --stat">{diff}</pre>
-          )}
-        </div>
-      )}
-
       <div className="dev-picker-hint">
         {inspecting
           ? 'Clicks are being captured, not passed through. Shift-click to pick several.'
-          : bridge && !bridge.available
-            ? bridge.hint
-            : lastKind
-              ? `Last capture — ${lastKind}`
-              : sessionId
-                ? `Session live${allowEdits ? ' — edits allowed' : ' — read-only'}. Claude can see the repo.`
-                : bridge?.available
-                  ? `Claude Code ${bridge.version ?? ''} ready — read-only until you allow edits.`
-                  : 'Inspect: click any menu, button, panel, card or script element.'}
+          : lastKind
+            ? `Last capture — ${lastKind}`
+            : 'Inspect: click any menu, button, panel, card or script element. Copy, and paste into chat.'}
       </div>
 
       {/* The hover outline lives on the body so no panel can clip it. */}
