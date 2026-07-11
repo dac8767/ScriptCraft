@@ -42,9 +42,11 @@ export const CONTEXT_MENU_SECTIONS: { id: string; label: string; group: ContextM
   { id: 'revisionColor', label: 'Revision Color', group: 'Production' },
   { id: 'addScriptNote', label: 'Add Script Note', group: 'Context Menu' },
   { id: 'copyToSnippets', label: 'Copy to Snippets', group: 'Tools' },
-  { id: 'addToDo', label: 'Add as To-Do Item', group: 'Tools' },
   { id: 'insertSection', label: 'Insert Section', group: 'Insert' },
   { id: 'insertMarker', label: 'Insert Marker', group: 'Insert' },
+  // v0.90: 'Add as To-Do Item' removed — it duplicated this. A GENERAL to-do
+  // doesn't live in the script, so it has no business in a script context menu;
+  // a Script Checklist item does, and that's exactly what this inserts.
   { id: 'insertChecklist', label: 'Insert Checklist Item', group: 'Insert' },
   { id: 'tagAs', label: 'Tag as…', group: 'Context Menu' },
   { id: 'spelling', label: 'Spelling Tools', group: 'Context Menu' },
@@ -799,18 +801,6 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
             onClose();
           }}>
             <span>Copy to Snippets</span>
-          </div></>) : null,
-    addToDo: hasSelection ? (<><div className="ctx-item" onClick={() => {
-            const { from, to } = savedSelection.current;
-            const text = editor.state.doc.textBetween(from, to, ' ');
-            if (text.trim()) {
-              addShelfCard({ id: uuid(), type: 'todo', color: '#f4d35e', items: [{ text: text.trim(), done: false }], createdAt: new Date().toISOString() });
-              useEditorStore.getState().openTool('todo');
-              showToast('Added to To-Do', 'success');
-            }
-            onClose();
-          }}>
-            <span>Add as To-Do Item</span>
           </div></>) : null,
     insertSection: (<><div className="ctx-item" onClick={() => {
         editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '# ' }] }).run();

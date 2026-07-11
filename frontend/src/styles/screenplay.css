@@ -12889,6 +12889,38 @@ html.android .version-history-panel {
 }
 .tool-inline-popout:hover::after { opacity: 1; }
 
+/* ── Pop-out / pop-in buttons must not sit on top of the panel's own controls
+   (v0.90). Both are absolutely positioned in a corner, so anything full-width at
+   the bottom of a panel — the Add button in Notes, Snippets and To-Do — ran
+   straight under them.
+
+   Fixed by reserving a gutter in the bottom row rather than by shrinking each
+   button by hand: the row keeps its layout, the control just stops short of the
+   corner. Applied to every bottom row, so any tool that grows one is covered,
+   and to both corners, since the two buttons live on opposite sides:
+     • inline panel  → pop-OUT, bottom-RIGHT
+     • floating window → pop-IN, bottom-LEFT                                   */
+.tool-inline .swn-add-row,
+.tool-inline .fs-tbzone-adders {
+  padding-right: 30px;          /* clears .tool-inline-popout (18px @ right:4px) */
+}
+.tool-window .swn-add-row,
+.tool-window .fs-tbzone-adders {
+  padding-left: 32px;           /* clears .tool-window-popin (20px @ left:6px) */
+}
+/* A right-docked window anchors its pop-in on the RIGHT instead
+   (.tool-window-popin-right), so the gutter has to move with it. */
+.tool-window .tool-window-body-right .swn-add-row,
+.tool-window .tool-window-body-right .fs-tbzone-adders {
+  padding-left: 12px;
+  padding-right: 32px;
+}
+/* A fixed window has no pop-in handle in the corner, so it needs no gutter. */
+.tool-window.tool-window-fixed .swn-add-row,
+.tool-window.tool-window-fixed .fs-tbzone-adders {
+  padding-left: 12px;
+}
+
 /* Outline (Beat Board) helper note */
 .beat-board-hint {
   font-size: 12px;

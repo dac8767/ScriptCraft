@@ -234,7 +234,7 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
         <span className="tool-window-title">{tool.label}</span>
         <button className="tool-window-close" onClick={onClose} title="Close">×</button>
       </div>
-      <div className="tool-window-body">{children}</div>
+      <div className={`tool-window-body${side === 'right' ? ' tool-window-body-right' : ''}`}>{children}</div>
       {!temporary && (
         <button
           className={`tool-window-popin${side === 'right' ? ' tool-window-popin-right' : ''}`}

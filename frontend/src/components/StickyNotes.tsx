@@ -268,11 +268,11 @@ export function TodoTool({ editor }: EditorToolProps) {
         <button
           className={`fs-subtab${subTab === 'general' ? ' active' : ''}`}
           onClick={() => setSubTab('general')}
-        >General</button>
+        >General To-Do</button>
         <button
           className={`fs-subtab${subTab === 'script' ? ' active' : ''}`}
           onClick={() => setSubTab('script')}
-        >Script</button>
+        >Script Checklist</button>
       </div>
       {subTab === 'general' ? (
         <>
