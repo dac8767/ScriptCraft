@@ -396,6 +396,7 @@ body {
 /* Auth indicator — sits at the right end of the menu bar. */
 .auth-indicator {
   display: inline-flex; align-items: center; gap: 6px;
+  margin-left: 18px;             /* v0.93: air between Help and the chip */
   background: transparent;
   border: 1px solid var(--fd-border, rgba(255,255,255,0.12));
   color: var(--fd-text-muted, #aaa);
@@ -925,18 +926,20 @@ body {
                                     button off the edge */
 }
 .chrome-customize-btn {
-  /* ~50% larger than the old toolbar button: 12px/600 -> 15px/700, roomier. */
+  /* v0.93: halfway between the original toolbar button and the v0.91 size —
+     12px/600 -> 15px/700 became 13.5px/700, padding 12 -> 18 became 15. Still
+     spans both bars and stays vertically centred; just less shouty. */
   flex: 0 0 auto;
   align-self: center;            /* vertically centred across both bars */
   margin: 0 6px;                 /* right edge aligns with the bars' 6px padding */
-  padding: 0 18px;
-  height: calc(100% - 10px);     /* spans both bars, with a little breathing room */
-  min-height: 38px;
+  padding: 0 15px;
+  height: calc(100% - 16px);     /* spans both bars, with breathing room */
+  min-height: 31px;
   background: var(--fd-btn-bg);
   color: var(--fd-btn-text);
   border: 1px solid transparent;
   border-radius: 6px;
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 700;
   letter-spacing: .02em;
   white-space: nowrap;
@@ -12944,6 +12947,16 @@ html.android .version-history-panel {
 .tool-inline .fs-tbzone-adders {
   padding-right: 30px;          /* clears .tool-inline-popout (18px @ right:4px) */
 }
+/* v0.93 — why v0.90 didn't fix Notes and To-Do: a RIGHT-docked panel mirrors its
+   pop-out to the LEFT (.tool-inline-popout-left), and Notes and To-Do both dock
+   right by default. The gutter was on the wrong side for exactly the two tools
+   that were reported. CSS can't pick a parent by its child's class, so the panel
+   now says which side it's on and the gutter follows the button. */
+.tool-inline-right .swn-add-row,
+.tool-inline-right .fs-tbzone-adders {
+  padding-left: 30px;
+  padding-right: 12px;
+}
 .tool-window .swn-add-row,
 .tool-window .fs-tbzone-adders {
   padding-left: 32px;           /* clears .tool-window-popin (20px @ left:6px) */
@@ -13128,6 +13141,15 @@ html.android .version-history-panel {
    the scene, for one added to the script; nothing at all for a standalone one,
    which is the whole signal. */
 .fs-todo-list { flex: 1; overflow-y: auto; padding: 8px; min-height: 0; }
+
+/* v0.93: Notes is one list too. Script-linked notes and standalone ones share a
+   single scroll area, so the inner list stops being its own scroller — otherwise
+   you'd get two scrollbars stacked inside one panel. */
+.fs-notes-list { flex: 1; overflow-y: auto; min-height: 0; }
+.fs-notes-list .script-notes-list {
+  flex: none;
+  overflow: visible;
+}
 .fs-todo-text { cursor: pointer; flex: 1; line-height: 1.4; min-width: 0; }
 .fs-todo-loc {
   flex: 0 1 auto;

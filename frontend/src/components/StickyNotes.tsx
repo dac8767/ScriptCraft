@@ -145,14 +145,24 @@ function CardList({ type, cards }: CardListProps) {
   );
 }
 
-/* ═══════════ Tool: Sticky Notes (General / Script sub-tabs) ═══════════ */
+/* ═══════════ Tool: Notes ═══════════ */
 
 interface EditorToolProps {
   editor: Editor | null;
 }
 
+/**
+ * v0.93 — ONE list, no sub-types (same move as To-Do in v0.92).
+ *
+ * General vs Script was a filing system you had to understand before you could
+ * find a note. What actually distinguishes them isn't a type, it's whether the
+ * note is LINKED to something in the script — so both now sit in one list, and
+ * the link is shown on the note itself: a script note carries the scene or
+ * character it's anchored to (and the text it's attached to), while a standalone
+ * note shows nothing there. Blank is the signal.
+ */
 export function StickyNotesTool({ editor }: EditorToolProps) {
-  const { shelfCards, notesSubTab, setNotesSubTab } = useEditorStore();
+  const { shelfCards } = useEditorStore();
   const { add } = useCardOps();
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -162,26 +172,13 @@ export function StickyNotesTool({ editor }: EditorToolProps) {
   const matches = searching
     ? shelfCards.filter((c) => c.type === 'comment' && cardText(c).toLowerCase().includes(q))
     : undefined;
+  const standalone = shelfCards.filter((c) => c.type === 'comment').length;
 
   return (
     <div className="fs-sticky-tool">
-      <div className="fs-subtab-row">
-        <button
-          className={`fs-subtab${notesSubTab === 'general' ? ' active' : ''}`}
-          onClick={() => setNotesSubTab('general')}
-        >General</button>
-        <button
-          className={`fs-subtab${notesSubTab === 'script' ? ' active' : ''}`}
-          onClick={() => setNotesSubTab('script')}
-        >Script</button>
-      </div>
-      {notesSubTab === 'script' ? (
-        <ScriptNotesContent editor={editor} />
-      ) : (
-      <>
       <div className="fs-sticky-toolbar">
         <span className="swn-group-label" style={{ padding: 0, flex: 1 }}>
-          {shelfCards.filter((c) => c.type === 'comment').length} note{shelfCards.filter((c) => c.type === 'comment').length === 1 ? '' : 's'}
+          {standalone} note{standalone === 1 ? '' : 's'} not linked to the script
         </span>
         <button
           className="swn-search-btn"
@@ -194,13 +191,19 @@ export function StickyNotesTool({ editor }: EditorToolProps) {
           <input autoFocus value={query} placeholder="Search notes…" onChange={(e) => setQuery(e.target.value)} />
         </div>
       )}
-      <CardList type="comment" cards={matches} />
+
+      {/* Script-linked notes first — each already shows what it's anchored to
+          (the scene or character, plus the quoted text). Then the standalone
+          notes, which have nothing to show there. */}
+      <div className="fs-notes-list">
+        {!searching && <ScriptNotesContent editor={editor} />}
+        <CardList type="comment" cards={matches} />
+      </div>
+
       {!searching && (
         <div className="swn-add-row">
           <button className="swn-add-btn" onClick={() => add('comment')}>+ Add</button>
         </div>
-      )}
-      </>
       )}
     </div>
   );

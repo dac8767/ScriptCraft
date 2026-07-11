@@ -373,7 +373,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               <span className="tool-dock-label">{t.label}</span>
             </button>
             {inline && active && active.id === t.id && (
-              <div className="tool-inline">
+              <div className={`tool-inline${side === 'right' ? ' tool-inline-right' : ''}`}>
                 <button
                   className={`tool-inline-popout${side === 'right' ? ' tool-inline-popout-left' : ''}`}
                   title="Pop out into a floating window for resizing"
