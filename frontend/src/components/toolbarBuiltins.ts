@@ -65,7 +65,7 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'tags', label: 'Production Tags' },
   { key: 'zoom', label: 'Zoom', priority: '1', zoom: true },
   { key: 'view', label: 'Editor View', desktopOnly: true },
-  { key: 'customize', label: 'Customize', permanent: true },
+  { key: 'customize', label: 'Customize Everything', permanent: true },
 ];
 
 export const BUILTIN_BY_KEY: Record<string, ToolbarBuiltin> = Object.fromEntries(

@@ -7,6 +7,7 @@
  * stays legible instead of looking broken).
  */
 import React from 'react';
+import ColorPicker from './ColorPicker';
 import { useEditorStore } from '../stores/editorStore';
 import { useThemeStore } from '../stores/themeStore';
 import {
@@ -29,6 +30,8 @@ export default function ThemesTab() {
   const [editing, setEditing] = React.useState<CustomTheme | null>(null);
   const [dragIdx, setDragIdx] = React.useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = React.useState<string | null>(null);
+  const [pickerKey, setPickerKey] = React.useState<string | null>(null);
+  const [importNote, setImportNote] = React.useState('');
 
   const ids = allThemeIds();
   const labelOf = (id: string) =>
@@ -93,14 +96,15 @@ export default function ThemesTab() {
               <div className="fs-customize-row" key={v.key}>
                 <span className="fs-customize-tool">{v.label}</span>
                 <span className="fs-theme-color-controls">
-                  <input
-                    type="color"
+                  {/* The swatch opens our OWN picker, anchored here. A native
+                      <input type="color"> would summon the OS color panel,
+                      which the app can't position — that's how it ended up on
+                      another monitor. */}
+                  <button
                     className="fs-theme-color"
-                    value={toHex(editing.vars[v.key])}
-                    onChange={(e) => setEditing({
-                      ...editing,
-                      vars: { ...editing.vars, [v.key]: e.target.value },
-                    })}
+                    style={{ background: toHex(editing.vars[v.key]) }}
+                    title="Choose a color"
+                    onClick={() => setPickerKey(pickerKey === v.key ? null : v.key)}
                   />
                   <input
                     className="fs-theme-hex"
@@ -110,6 +114,18 @@ export default function ThemesTab() {
                       vars: { ...editing.vars, [v.key]: e.target.value },
                     })}
                   />
+                  {pickerKey === v.key && (
+                    <span className="fs-theme-picker-anchor">
+                      <ColorPicker
+                        value={toHex(editing.vars[v.key])}
+                        onChange={(color) => {
+                          if (!color) return;      // 'Reset to Default' -> ignore
+                          setEditing({ ...editing, vars: { ...editing.vars, [v.key]: color } });
+                        }}
+                        onClose={() => setPickerKey(null)}
+                      />
+                    </span>
+                  )}
                 </span>
               </div>
             ))}
@@ -225,11 +241,113 @@ export default function ThemesTab() {
         </p>
       )}
 
+      {importNote && <p className="fs-shortcut-note">{importNote}</p>}
+
       <div className="fs-tbzone-adders fs-adders-equal">
         <button className="swn-add-btn" onClick={newTheme}>+ New Theme</button>
+        <button
+          className="swn-add-btn"
+          title="Save your custom themes to a file you can share or move to another project"
+          onClick={exportThemes}
+        >Export Themes…</button>
+        <button
+          className="swn-add-btn"
+          title="Load themes from an exported theme file, or from another FreeDraft project"
+          onClick={importThemes}
+        >Import Themes…</button>
       </div>
     </section>
   );
+
+  // ── Export / Import ──────────────────────────────────────────────────────
+  // A theme file is plain-text JSON: readable, diffable, and easy to hand to
+  // someone else. It carries a `kind` marker and a version so an import can
+  // tell a real theme file from any other JSON that happens to be lying around.
+  function exportThemes() {
+    if (customThemes.length === 0) {
+      setImportNote('You have no custom themes to export yet. Create one first.');
+      return;
+    }
+    const payload = {
+      kind: 'freedraft-themes',
+      version: 1,
+      themes: customThemes,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = customThemes.length === 1
+      ? `${safeName(customThemes[0].label)}.freedraft-theme.json`
+      : 'freedraft-themes.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    setImportNote(`Exported ${customThemes.length} theme${customThemes.length === 1 ? '' : 's'}.`);
+  }
+
+  function importThemes() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,.txt,.odraft,application/json,text/plain';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const found = extractThemes(JSON.parse(await file.text()));
+        if (found.length === 0) {
+          setImportNote('No themes found in that file.');
+          return;
+        }
+        // Never overwrite an existing theme: imported themes get a fresh id, and
+        // a duplicate name is suffixed. Re-importing the same file twice is
+        // harmless rather than destructive.
+        const existing = new Set(customThemes.map((c) => c.label));
+        let added = 0;
+        for (const t of found) {
+          let label = t.label || 'Imported Theme';
+          let n = 2;
+          while (existing.has(label)) label = `${t.label} (${n++})`;
+          existing.add(label);
+          saveCustomTheme({
+            id: `custom:${Date.now()}-${added}`,
+            label,
+            base: t.base === 'light' ? 'light' : 'dark',
+            vars: t.vars && typeof t.vars === 'object' ? t.vars : {},
+          });
+          added++;
+        }
+        setImportNote(`Imported ${added} theme${added === 1 ? '' : 's'}.`);
+      } catch {
+        setImportNote('That file couldn’t be read as a theme file.');
+      }
+    };
+    input.click();
+  }
+}
+
+const safeName = (s: string) => s.replace(/[^\w-]+/g, '_').slice(0, 40) || 'theme';
+
+/**
+ * Pull custom themes out of a parsed file. Accepts an exported theme file, a
+ * single bare theme object, or another project's export that happens to carry a
+ * themes array — so "import from another project" and "import a theme file" are
+ * the same action for the user.
+ */
+function extractThemes(data: unknown): CustomTheme[] {
+  const looksLikeTheme = (v: unknown): v is CustomTheme =>
+    !!v && typeof v === 'object'
+    && typeof (v as CustomTheme).label === 'string'
+    && typeof (v as CustomTheme).vars === 'object';
+
+  if (Array.isArray(data)) return data.filter(looksLikeTheme);
+  if (!data || typeof data !== 'object') return [];
+
+  const o = data as Record<string, unknown>;
+  for (const key of ['themes', 'customThemes', '_themes']) {
+    const v = o[key];
+    if (Array.isArray(v)) return v.filter(looksLikeTheme);
+  }
+  return looksLikeTheme(o) ? [o] : [];
 }
 
 /** <input type="color"> only accepts #rrggbb — coerce anything else. */

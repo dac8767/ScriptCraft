@@ -819,6 +819,44 @@ body {
 .tool-dock-wrap.tool-dock-compact .tool-dock-item { padding-top: 7px; padding-bottom: 7px; }
 .tool-dock-wrap.tool-dock-compact .tool-dock-label { font-size: 12px; }
 
+/* In-app color picker surface (v0.80) — replaces <input type="color">, which
+   opened the OS color panel on whatever monitor the OS chose. */
+.cp-sv {
+  position: relative; width: 100%; height: 110px;
+  border-radius: 6px; margin-bottom: 8px; cursor: crosshair;
+  touch-action: none; overflow: hidden;
+}
+.cp-sv-white, .cp-sv-black { position: absolute; inset: 0; border-radius: 6px; }
+.cp-sv-white { background: linear-gradient(to right, #fff, rgba(255,255,255,0)); }
+.cp-sv-black { background: linear-gradient(to top, #000, rgba(0,0,0,0)); }
+.cp-thumb {
+  position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px;
+  border: 2px solid #fff; border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.5); pointer-events: none;
+}
+.cp-hue {
+  width: 100%; margin: 0 0 8px; cursor: pointer; accent-color: var(--fd-accent);
+  background: linear-gradient(to right,
+    #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
+  border-radius: 4px; height: 10px; -webkit-appearance: none; appearance: none;
+}
+.cp-hue::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px; height: 16px;
+  background: #fff; border: 1px solid rgba(0,0,0,.4); border-radius: 3px; cursor: pointer;
+}
+.cp-preview {
+  width: 24px; height: 24px; border-radius: 4px;
+  border: 1px solid var(--fd-border); flex: none;
+}
+
+/* The picker is anchored to the swatch INSIDE the dialog, so it can never land
+   on another screen. */
+.fs-theme-picker-anchor { position: relative; }
+.fs-theme-picker-anchor .color-picker-popup {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 2147483647;
+  width: 232px;
+}
+
 /* Themes tab (v0.78) */
 .fs-theme-row-controls { display: flex; align-items: center; gap: 6px; flex: none; }
 .fs-theme-badge {
@@ -836,9 +874,10 @@ body {
 .fs-theme-color-controls { display: flex; align-items: center; gap: 8px; flex: none; }
 .fs-theme-color {
   width: 34px; height: 26px; padding: 0;
-  background: none; border: 1px solid var(--fd-border);
-  border-radius: 5px; cursor: pointer;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px; cursor: pointer; flex: none;
 }
+.fs-theme-color:hover { border-color: var(--fd-accent); }
 .fs-theme-hex {
   width: 96px; padding: 4px 8px;
   background: var(--fd-input-bg, var(--fd-dropdown-bg));
@@ -3109,6 +3148,15 @@ div[data-type="cast-list"].is-empty::before { content: 'Cast...'; color: #ccc; p
   overflow-y: auto;
   padding-right: 4px;
 }
+/* v0.80: inside the Changelog WINDOW that 320px cap is a fixed frame that can't
+   grow — same trap as the Customize list. The dialog is a flex column, so the
+   body scrolls and this inner block just flows. (The cap still applies in the
+   About dialog, where the changelog is one section among others.) */
+.fs-changelog-body .about-changelog {
+  max-height: none;
+  overflow-y: visible;
+}
+.fs-changelog-body .about-whats-new { margin: 0; }
 .about-subsection-title {
   font-size: 12px;
   font-weight: 600;

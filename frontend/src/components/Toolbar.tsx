@@ -1039,14 +1039,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       case 'customize': return (
         <button
           className="toolbar-btn toolbar-btn-labeled"
-          title="Customize"
+          title="Customize Everything"
           onClick={() => {
             window.dispatchEvent(new CustomEvent('freedraft:command', { detail: 'customize' }));
             if (inOverflow) setOverflowOpen(false);
           }}
         >
           <FaSlidersH />
-          <span className="toolbar-btn-text">Customize</span>
+          <span className="toolbar-btn-text">Customize Everything</span>
         </button>
       );
       case 'view': return (

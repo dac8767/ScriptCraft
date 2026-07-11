@@ -1419,7 +1419,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const helpMenu: MenuSection = {
     label: 'Help',
     items: [
-      { icon: <FaHistory />, label: 'Changelog', action: () => setChangelogOpen(true) },
       {
         icon: <FaInfoCircle />,
         label: 'About FreeDraft',
@@ -1435,6 +1434,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         label: 'Knowledge Base',
         action: () => setKnowledgeBaseOpen(true),
       },
+      { icon: <FaHistory />, label: 'Changelog', action: () => setChangelogOpen(true) },
       { separator: true, label: '' },
       {
         icon: <FaExternalLinkAlt />,

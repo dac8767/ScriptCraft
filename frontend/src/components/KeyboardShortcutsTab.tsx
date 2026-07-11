@@ -18,7 +18,6 @@ import {
 
 export default function KeyboardShortcutsTab() {
   const bindings = useShortcutStore((s) => s.bindings);
-  const overrides = useShortcutStore((s) => s.overrides);
   const setBinding = useShortcutStore((s) => s.setBinding);
   const resetBinding = useShortcutStore((s) => s.resetBinding);
   const resetAll = useShortcutStore((s) => s.resetAll);
@@ -78,7 +77,12 @@ export default function KeyboardShortcutsTab() {
               const combo = bindings[c.id];
               const isRec = recording === c.id;
               const locked = c.owner === 'system';
-              const customized = Object.prototype.hasOwnProperty.call(overrides, c.id);
+              // Clear = remove the shortcut entirely (no key runs the command).
+              // Reset = restore the DEFAULT. Enablement follows the actual
+              // state, not merely "an override exists": Clear is available
+              // whenever a key is bound, Reset whenever the binding differs
+              // from the default (including after a Clear).
+              const atDefault = combo === c.defaultCombo;
               return (
                 <div className="fs-customize-row fs-shortcut-row" key={c.id}>
                   <span className="fs-customize-tool">{c.label}</span>
@@ -102,7 +106,7 @@ export default function KeyboardShortcutsTab() {
                     >Clear</button>
                     <button
                       className="fs-shortcut-clear"
-                      disabled={locked || !customized}
+                      disabled={locked || atDefault}
                       title="Restore the default shortcut"
                       onClick={() => { setNote(''); resetBinding(c.id); }}
                     >Reset</button>
