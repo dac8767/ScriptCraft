@@ -17,7 +17,7 @@ tauri-build = { version = "=2.5.6", features = [] }
 [dependencies]
 # Pinned: see comment on tauri-build above. wry 0.54 (transitive via
 # tauri 2.10.3) works on Android; wry 0.55 (tauri 2.11) does not.
-tauri = { version = "=2.10.3", features = [] }
+tauri = { version = "=2.10.3", features = ["macos-private-api"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-sql = { version = "=2.4.0", features = ["sqlite"] }
