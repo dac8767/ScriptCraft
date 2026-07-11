@@ -522,6 +522,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   };
   const orderedMenuLabels = [...MENU_BAR_LABELS].sort((a, b) => menuIdx(a) - menuIdx(b));
 
+  /** Menus still ON the bar. Hidden ones leave the list and live in + Add Item. */
+  const visibleMenuLabels = orderedMenuLabels.filter((l) => !menuBarHidden.includes(l));
+
   const tbReady = toolbarZonesSet;
   const tbLeft = tbReady ? tbLeftRaw : [...DEFAULT_TOOLBAR_LEFT, ...toolbarPinnedTools.map((id) => `t:${id}`)];
   const tbRight = tbReady ? tbRightRaw : DEFAULT_TOOLBAR_RIGHT;
@@ -670,14 +673,20 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 onChange={(px) => setChromeCustomPx('menu', px)}
               />
             )}
+            {/* v1.1: ONE Hide model everywhere. Hide REMOVES the row and stashes
+                the item in + Add Item, exactly as the Toolbar, Side Panels and
+                Context Menu tabs already did. A greyed-out row that stays put and
+                a row that disappears are two different mental models, and the same
+                word was on both buttons. */}
             <div className="fs-customize-grid">
-              {orderedMenuLabels.map((label, idx) => {
-                const hidden = menuBarHidden.includes(label);
+              {visibleMenuLabels.map((label, idx) => {
                 const moveMenuTo = (from: number, to: number) => {
-                  const next = [...orderedMenuLabels];
+                  const next = [...visibleMenuLabels];
                   const [m] = next.splice(from, 1);
                   next.splice(to, 0, m);
-                  setMenuBarOrder(next);
+                  // Keep hidden menus in the stored order so re-adding one puts it
+                  // back near where it was rather than at the end.
+                  setMenuBarOrder([...next, ...orderedMenuLabels.filter((l) => menuBarHidden.includes(l))]);
                 };
                 return (
                   <div
@@ -692,14 +701,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                     </span>
                     <span className="fs-customize-seg">
                       <button
-                        className={!hidden ? 'active' : ''}
-                        onClick={() => setMenuBarHidden(menuBarHidden.filter((l: string) => l !== label))}
-                      >Show</button>
-                      <button
-                        className={hidden ? 'active' : ''}
+                        className="fs-customize-hide"
                         disabled={label === 'File'}
+                        title={label === 'File'
+                          ? 'File always stays on screen'
+                          : 'Remove from the menu bar (re-add it from + Add Item)'}
                         onClick={() => {
-                          if (label === 'File' || hidden) return;
+                          if (label === 'File') return;
                           setMenuBarHidden([...menuBarHidden, label]);
                         }}
                       >Hide</button>
@@ -709,14 +717,29 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               })}
             </div>
             <div className="fs-tbzone-adders fs-adders-equal">
+              <AddMenu
+                onPick={(v) => {
+                  if (v === 'all') { setMenuBarHidden([]); return; }
+                  setMenuBarHidden(menuBarHidden.filter((l: string) => l !== v));
+                }}
+                groups={[
+                  {
+                    label: 'Show All',
+                    options: menuBarHidden.length > 0
+                      ? [{ value: 'all', label: 'Show All - Menus' }]
+                      : [],
+                  },
+                  {
+                    label: 'Menus',
+                    options: orderedMenuLabels
+                      .filter((l) => menuBarHidden.includes(l))
+                      .map((l) => ({ value: l, label: l, icon: MENU_ICONS[l] ?? null })),
+                  },
+                ]}
+              />
               <button
                 className="swn-add-btn"
-                title="Show every menu"
-                onClick={() => setMenuBarHidden([])}
-              >Show All</button>
-              <button
-                className="swn-add-btn"
-                title="Hide every menu except File"
+                title="Remove every menu except File"
                 onClick={() => setMenuBarHidden(MENU_BAR_LABELS.filter((l) => l !== 'File'))}
               >Hide All</button>
               <button

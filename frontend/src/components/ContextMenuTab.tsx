@@ -102,8 +102,13 @@ export default function ContextMenuTab() {
               {labelOf(id)}
             </span>
             <span className="fs-customize-seg">
-              <button className="active" onClick={() => show(id)}>Show</button>
-              <button onClick={() => hide(id)}>Hide</button>
+              {/* v1.1: no Show button — this row IS shown. Hide removes it and
+                  stashes it in + Add Item, the one model used everywhere now. */}
+              <button
+                className="fs-customize-hide"
+                title="Remove from the context menu (re-add it from + Add Item)"
+                onClick={() => hide(id)}
+              >Hide</button>
             </span>
           </div>
         ))}

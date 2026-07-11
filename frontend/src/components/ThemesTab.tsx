@@ -7,6 +7,7 @@
  * stays legible instead of looking broken).
  */
 import React from 'react';
+import AddMenu from './AddMenu';
 import ColorPicker from './ColorPicker';
 import { useEditorStore } from '../stores/editorStore';
 import { useThemeStore } from '../stores/themeStore';
@@ -289,16 +290,24 @@ export default function ThemesTab() {
           title="Choose which themes to save, and where to save them"
           onClick={() => { setImportNote(''); setExporting(customThemes.map((c) => c.id)); }}
         >Export Themes...</button>
-        <button
-          className="swn-add-btn"
-          title="Load themes from a theme file on your computer or cloud storage"
-          onClick={importThemes}
-        >Import Themes...</button>
-        <button
-          className="swn-add-btn"
-          title="Copy the custom themes out of another FreeDraft project file"
-          onClick={importFromProject}
-        >Import Themes From a Project...</button>
+        {/* v1.1: one Import button. Two buttons sitting side by side, differing
+            only in where the themes come FROM, made the choice look bigger than
+            it is — it's one action with two sources. */}
+        <AddMenu
+          label="Import Themes"
+          title="Load themes from a theme file, or copy them out of another project"
+          onPick={(v) => {
+            if (v === 'file') void importThemes();
+            else void importFromProject();
+          }}
+          groups={[{
+            label: 'Import from',
+            options: [
+              { value: 'file', label: 'Import from File' },
+              { value: 'project', label: 'Import from Project' },
+            ],
+          }]}
+        />
       </div>
     </section>
   );

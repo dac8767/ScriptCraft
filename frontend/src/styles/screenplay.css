@@ -12112,6 +12112,40 @@ html.android .version-history-panel {
   flex-shrink: 0;
   z-index: 30;
 }
+
+/* v1.1: grab the panel's outer edge and drag it to the width you want. Sits on
+   the edge that faces the editor, so it never covers panel content. */
+.tool-dock-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  z-index: 31;
+  cursor: col-resize;
+  background: transparent;
+}
+.tool-dock-edge-left  { right: -3px; }   /* left panel grows rightwards */
+.tool-dock-edge-right { left: -3px; }    /* right panel grows leftwards */
+.tool-dock-edge:hover { background: var(--fd-accent); opacity: .35; }
+.tool-dock-edge:active { background: var(--fd-accent); opacity: .6; }
+
+/* v1.1: ONE Hide button in every Customize tab — it removes the row and stashes
+   the item in + Add Item. It's an action, not half of a toggle pair, so it isn't
+   drawn as a segmented control any more. */
+.fs-customize-hide {
+  padding: 3px 10px;
+  background: var(--fd-btn-bg, var(--fd-overlay-subtle));
+  color: var(--fd-text-muted);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.fs-customize-hide:hover:not(:disabled) {
+  color: var(--fd-text);
+  border-color: var(--fd-accent);
+}
+.fs-customize-hide:disabled { opacity: .4; cursor: not-allowed; }
 .tool-dock {
   width: 300px; /* same footprint as the original right panel */
   flex-shrink: 0;

@@ -97,6 +97,10 @@ const MIN_H = 260;
 /** Dock column width; tools whose remembered width fits open inline. */
 export const DOCK_W = CHROME_SCALES.panelLeft.comfortable;   // 300 (default)
 export const DOCK_W_COMPACT = CHROME_SCALES.panelLeft.compact; // 232
+
+/** Limits for the drag-to-resize edge (v1.1). */
+export const PANEL_MIN_W = 180;
+export const PANEL_MAX_W = 640;
 /** Dock column width for a panel's size mode — including 'custom', where the
  *  user's slider value (half-compact … double-comfortable) applies. Inline
  *  tool windows are sized and GATED against this, so a window docked in a
@@ -297,7 +301,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   const activeId = side === 'left' ? activeTool : activeToolRight;
   const setActive = side === 'left' ? setActiveTool : setActiveToolRight;
   const active = tools.find((t) => t.id === activeId) || null;
-  const { toolSizes, setToolSize, panelSizeMode, chromeCustomPx } = useEditorStore();
+  const { toolSizes, setToolSize, panelSizeMode, chromeCustomPx, setChromeCustomPx, setPanelSizeMode } = useEditorStore();
   const dockW = dockWidthFor(side, panelSizeMode[side], chromeCustomPx[side === 'left' ? 'panelLeft' : 'panelRight']);
   // v0.66: by DEFAULT every window opens INSIDE its side panel (inline),
   // pushing the dock's remaining items down — so nothing floats over the
@@ -348,8 +352,51 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
 
   if (tools.length === 0) return null;
 
+  /**
+   * v1.1 — drag the panel's OUTER edge to size it. Setting a width by opening
+   * Customize and picking Compact/Comfortable/Custom was a long way round for
+   * something you can see: grab the edge and pull.
+   *
+   * A drag switches the panel to 'custom' and writes the px, which is the same
+   * state Customize edits — so the two agree rather than being rival settings.
+   * The left panel grows rightwards and the right panel leftwards, so the delta
+   * is inverted for the right.
+   */
+  const startEdgeResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = dockW;
+    const surface = side === 'left' ? 'panelLeft' : 'panelRight';
+    let w = startW;
+    const onMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - startX;
+      w = Math.round(Math.max(PANEL_MIN_W, Math.min(PANEL_MAX_W,
+        startW + (side === 'left' ? dx : -dx))));
+      setChromeCustomPx(surface, w);
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      setChromeCustomPx(surface, w);
+    };
+    // Switch to custom on the FIRST move, not on mousedown — a stray click on the
+    // edge shouldn't silently change the mode.
+    const onFirstMove = () => {
+      setPanelSizeMode(side, 'custom');
+      document.removeEventListener('pointermove', onFirstMove);
+    };
+    document.addEventListener('pointermove', onFirstMove);
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  };
+
   return (
     <div className={`tool-dock-wrap tool-dock-${side} tool-dock-${panelSizeMode[side]}`}>
+      <div
+        className={`tool-dock-edge tool-dock-edge-${side}`}
+        onPointerDown={startEdgeResize}
+        title="Drag to resize the panel"
+      />
       <div className="tool-dock" style={{ width: dockW }}>
         {entries.map((entry) => entry.kind === 'spacer' ? (
           // v0.82: sizeable. Older spacers have no size and keep the default.

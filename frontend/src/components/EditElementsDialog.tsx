@@ -13,6 +13,7 @@
  * Action would leave a screenplay with no way to type its own body.
  */
 import React from 'react';
+import AddMenu from './AddMenu';
 import { useFormattingTemplateStore, DUAL_DIALOGUE_ID } from '../stores/formattingTemplateStore';
 
 /** Elements a screenplay can't function without — reorderable, never hidable. */
@@ -59,11 +60,21 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
   }
   const labelOf = (id: string) => (id === DUAL_DIALOGUE_ID ? 'Dual Dialogue' : rules[id]?.label ?? id);
 
+  /** Elements still IN the list. Hidden ones leave it and live in + Add Item. */
+  const visibleIds = ids.filter((id) => {
+    const rule = rules[id];
+    return rule ? rule.enabled : !elementHidden.includes(id);
+  });
+
+  const hiddenIds = ids.filter((id) => !visibleIds.includes(id));
+
   const moveTo = (from: number, to: number) => {
-    const next = [...ids];
+    const next = [...visibleIds];
     const [m] = next.splice(from, 1);
     next.splice(to, 0, m);
-    setElementOrder(next);
+    // Hidden elements keep their stored place, so re-adding one puts it back
+    // roughly where it was rather than at the end.
+    setElementOrder([...next, ...ids.filter((id) => !visibleIds.includes(id))]);
   };
 
   const setEnabled = (id: string, enabled: boolean) => {
@@ -89,12 +100,7 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
           Dialogue) can be reordered but not hidden.
         </p>
         <div className="fs-customize-grid">
-          {ids.map((id, idx) => {
-            // Dual Dialogue has no template rule (structure, not paragraph
-            // type), so its enabled state comes straight from the hidden list —
-            // guarding here rather than assuming every row has a rule.
-            const rule = rules[id];
-            const enabled = rule ? rule.enabled : !elementHidden.includes(id);
+          {visibleIds.map((id, idx) => {
             const required = REQUIRED_IDS.includes(id);
             return (
               <div
@@ -115,14 +121,14 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
                   {labelOf(id)}
                 </span>
                 <span className="fs-customize-seg">
+                  {/* v1.1: Hide REMOVES the row and stashes the element in
+                      + Add Item — the same model as every other tab. */}
                   <button
-                    className={enabled ? 'active' : ''}
-                    onClick={() => setEnabled(id, true)}
-                  >Show</button>
-                  <button
-                    className={!enabled ? 'active' : ''}
+                    className="fs-customize-hide"
                     disabled={required}
-                    title={required ? 'Core elements can’t be hidden' : 'Hide this element'}
+                    title={required
+                      ? 'Core elements can’t be hidden'
+                      : 'Remove from the Element list (re-add it from + Add Item)'}
                     onClick={() => setEnabled(id, false)}
                   >Hide</button>
                 </span>
@@ -131,7 +137,22 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
           })}
         </div>
         <div className="fs-tbzone-adders fs-adders-equal">
-          <button className="swn-add-btn" onClick={showAll}>Show All</button>
+          {/* Hidden elements come back from here — same as every other tab. */}
+          <AddMenu
+            onPick={(v) => { if (v === 'all') showAll(); else setEnabled(v, true); }}
+            groups={[
+              {
+                label: 'Show All',
+                options: hiddenIds.length > 0
+                  ? [{ value: 'all', label: 'Show All - Elements' }]
+                  : [],
+              },
+              {
+                label: 'Elements',
+                options: hiddenIds.map((id) => ({ value: id, label: labelOf(id) })),
+              },
+            ]}
+          />
           <button className="swn-add-btn" onClick={hideAll}>Hide All</button>
           <button className="swn-add-btn" onClick={resetDefault}>Reset to Default</button>
         </div>
