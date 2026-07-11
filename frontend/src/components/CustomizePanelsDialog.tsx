@@ -457,12 +457,21 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // scrolls like the modal does, and keeps side padding so the drag handles
   // aren't clipped.
   const body = (
+      // v0.83: tabs live in a LEFT SIDEBAR, the same shape as Settings
+      // (.prefs-layout + .prefs-tabs). Across the top, seven tabs couldn't fit
+      // the default width and forced a horizontal scrollbar; down the side they
+      // simply stack, and adding an eighth costs no width at all.
+      <div className="prefs-layout fs-customize-layout">
+        <div className="prefs-tabs fs-customize-tabs">
+          {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['context', 'Context Menu'], ['elements', 'Elements'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const).map(([id, label]) => (
+            <button
+              key={id}
+              className={`prefs-tab${activeCat === id ? ' active' : ''}`}
+              onClick={() => setActiveCat(id)}
+            >{label}</button>
+          ))}
+        </div>
         <div className="dialog-body fs-customize-body">
-          <div className="prefs-subtabs">
-            {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['context', 'Context Menu'], ['elements', 'Elements'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const).map(([id, label]) => (
-              <button key={id} className={activeCat === id ? 'active' : ''} onClick={() => setActiveCat(id)}>{label}</button>
-            ))}
-          </div>
           {activeCat === 'menu' && (<>
           <section>
             <h3>Menus</h3>
@@ -743,6 +752,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           {renderPanelsTab()}
           </>)}
         </div>
+      </div>
   );
 
   if (embedded) return body;

@@ -23,17 +23,26 @@ const shift = isMac ? '⇧' : 'Shift+';
  * tab, so a change there updates every instance at once.
  */
 export const CONTEXT_MENU_SECTIONS: { id: string; label: string }[] = [
-  { id: 'undoRedo', label: 'Undo / Redo' },
-  { id: 'clipboard', label: 'Cut / Copy / Paste' },
-  { id: 'selection', label: 'Select All / Delete' },
+  // Labels are copied verbatim from the menu itself — if they drift apart, the
+  // Customize list is lying about what it controls. Undo/Redo, Cut/Copy/Paste,
+  // Select All/Delete, Delete Element and Customize Context Menu are PERMANENT
+  // and deliberately absent: they always appear, so listing them would offer a
+  // switch that does nothing.
   { id: 'element', label: 'Element' },
   { id: 'style', label: 'Style' },
-  { id: 'font', label: 'Font & Formatting' },
-  { id: 'revision', label: 'Revision' },
-  { id: 'scriptNotes', label: 'Script Notes' },
-  { id: 'sendTo', label: 'Send to Snippets / To-Do' },
-  { id: 'outline', label: 'Outline Inserts' },
-  { id: 'tags', label: 'Production Tags' },
+  { id: 'font', label: 'Font…' },
+  { id: 'sceneProperties', label: 'Scene Properties…' },
+  { id: 'characterProfile', label: 'Character Profile…' },
+  { id: 'dualDialogue', label: 'Dual Dialogue' },
+  { id: 'revisionMode', label: 'Revision Mode' },
+  { id: 'revisionColor', label: 'Revision Color' },
+  { id: 'addScriptNote', label: 'Add Script Note' },
+  { id: 'copyToSnippets', label: 'Copy to Snippets' },
+  { id: 'addToDo', label: 'Add as To-Do Item' },
+  { id: 'insertSection', label: 'Insert Section' },
+  { id: 'insertMarker', label: 'Insert Marker' },
+  { id: 'insertChecklist', label: 'Insert Checklist Item' },
+  { id: 'tagAs', label: 'Tag as…' },
   { id: 'spelling', label: 'Spelling Tools' },
 ];
 
@@ -659,7 +668,6 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       )}
 
       {/* Undo / Redo */}
-      {ctxShown('undoRedo') && (<>
       <div className="ctx-item" onClick={handleUndo}>
         <span>Undo</span>
         <span className="ctx-shortcut">{mod}Z</span>
@@ -670,10 +678,8 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       </div>
       <div className="ctx-separator" />
 
-      </>)}
-
+      
       {/* Clipboard */}
-      {ctxShown('clipboard') && (<>
       <div className={`ctx-item${!hasSelection ? ' ctx-disabled' : ''}`} onClick={handleCut}>
         <span>Cut</span>
         <span className="ctx-shortcut">{mod}X</span>
@@ -692,10 +698,8 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       </div>
       <div className="ctx-separator" />
 
-      </>)}
-
+      
       {/* Selection */}
-      {ctxShown('selection') && (<>
       <div className="ctx-item" onClick={handleSelectAll}>
         <span>Select All</span>
         <span className="ctx-shortcut">{mod}A</span>
@@ -708,8 +712,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       </div>
       <div className="ctx-separator" />
 
-      </>)}
-
+      
       {/* Element submenu */}
       {ctxShown('element') && (<>
       <div
@@ -790,41 +793,44 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       </>)}
 
       {/* Font & Formatting */}
-      {ctxShown('font') && (<>
-      <div className={`ctx-item${locked.fontFamily ? ' ctx-disabled' : ''}`} onClick={() => { if (!locked.fontFamily) { onOpenFormatPanel(); onClose(); } }}>
-        <span>Font...</span>
-      </div>
+      {ctxShown('font') && (
+        <div className={`ctx-item${locked.fontFamily ? ' ctx-disabled' : ''}`} onClick={() => { if (!locked.fontFamily) { onOpenFormatPanel(); onClose(); } }}>
+          <span>Font...</span>
+        </div>
+      )}
       <div className="ctx-separator" />
 
       {/* Context-sensitive items */}
-      {showSceneProps && (
-        <div className="ctx-item ctx-disabled">
+      {showSceneProps && ctxShown('sceneProperties') && (
+          <div className="ctx-item ctx-disabled">
           <span>Scene Properties...</span>
         </div>
       )}
-      {showCharProfile && (
-        <div className="ctx-item" onClick={() => {
+      {showCharProfile && ctxShown('characterProfile') && (
+          <div className="ctx-item" onClick={() => {
           if (!characterProfilesOpen) toggleCharacterProfiles();
           onClose();
         }}>
           <span>Character Profile...</span>
         </div>
       )}
-      {showDualDialogue && (
-        <div className="ctx-item" onClick={() => { console.log('[CtxMenu] Dual Dialogue clicked, commands:', Object.keys(editor.commands).filter(k => k.includes('dual') || k.includes('Dual'))); const result = (editor as any).commands.toggleDualDialogue(); console.log('[CtxMenu] result:', result); onClose(); }}>
+      {showDualDialogue && ctxShown('dualDialogue') && (
+          <div className="ctx-item" onClick={() => { console.log('[CtxMenu] Dual Dialogue clicked, commands:', Object.keys(editor.commands).filter(k => k.includes('dual') || k.includes('Dual'))); const result = (editor as any).commands.toggleDualDialogue(); console.log('[CtxMenu] result:', result); onClose(); }}>
           <span>Dual Dialogue</span>
           <span className="ctx-shortcut">{mod}D</span>
         </div>
       )}
       {(showSceneProps || showDualDialogue || showCharProfile) && <div className="ctx-separator" />}
 
-      </>)}
+      
 
       {/* Revision */}
-      {ctxShown('revision') && (<>
+      {ctxShown('revisionMode') && (
       <div className="ctx-item" onClick={() => { setRevisionMode(!revisionMode); onClose(); }}>
         <span>{revisionMode ? '\u2713 ' : ''}Revision Mode</span>
       </div>
+      )}
+      {ctxShown('revisionColor') && (
       <div
         className="ctx-has-sub-wrap"
         onPointerEnter={(e) => { if (e.pointerType === 'mouse') { setRevisionSubOpen(true); setElementSubOpen(false); setStyleSubOpen(false); } }}
@@ -849,12 +855,11 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
           </div>
         )}
       </div>
-      <div className="ctx-separator" />
-
-      </>)}
+      )}
+      {(ctxShown('revisionMode') || ctxShown('revisionColor')) && <div className="ctx-separator" />}
 
       {/* Script Notes — context-sensitive */}
-      {ctxShown('scriptNotes') && (<>
+      {ctxShown('addScriptNote') && (<>
       {existingNoteId ? (
         <>
           <div className="ctx-item" onClick={handleEditScriptNote}>
@@ -875,9 +880,9 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       </>)}
 
       {/* Send selection to the Fragments / To-Do panels (v0.13) */}
-      {ctxShown('sendTo') && (<>
       {hasSelection && (
         <>
+          {ctxShown('copyToSnippets') && (
           <div className="ctx-item" onClick={() => {
             const { from, to } = savedSelection.current;
             const text = editor.state.doc.textBetween(from, to, '\n');
@@ -890,6 +895,8 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
           }}>
             <span>Copy to Snippets</span>
           </div>
+          )}
+          {ctxShown('addToDo') && (
           <div className="ctx-item" onClick={() => {
             const { from, to } = savedSelection.current;
             const text = editor.state.doc.textBetween(from, to, ' ');
@@ -902,38 +909,43 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
           }}>
             <span>Add as To-Do Item</span>
           </div>
-          <div className="ctx-separator" />
+          )}
+          {(ctxShown('copyToSnippets') || ctxShown('addToDo')) && <div className="ctx-separator" />}
         </>
       )}
 
-      </>)}
-
       {/* Outline inserts (Section / Marker / Checklist) at the caret */}
-      {ctxShown('outline') && (<>
-      <div className="ctx-item" onClick={() => {
+      <>
+      {ctxShown('insertSection') && (
+        <div className="ctx-item" onClick={() => {
         editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '# ' }] }).run();
         onClose();
       }}>
         <span>Insert Section</span>
       </div>
-      <div className="ctx-item" onClick={() => {
+      )}
+      {ctxShown('insertMarker') && (
+        <div className="ctx-item" onClick={() => {
         editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '\u2691 ' }] }).run();
         onClose();
       }}>
         <span>Insert Marker</span>
       </div>
-      <div className="ctx-item" onClick={() => {
+      )}
+      {ctxShown('insertChecklist') && (
+        <div className="ctx-item" onClick={() => {
         editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '[ ] ' }] }).run();
         onClose();
       }}>
         <span>Insert Checklist Item</span>
       </div>
-      <div className="ctx-separator" />
-
-      </>)}
+      )}
+      {(ctxShown('insertSection') || ctxShown('insertMarker') || ctxShown('insertChecklist'))
+        && <div className="ctx-separator" />}
+      </>
 
       {/* Production Tags */}
-      {ctxShown('tags') && (<>
+      {ctxShown('tagAs') && (<>
       {existingTagInfo ? (
         <>
           <div className="ctx-item" onClick={() => {

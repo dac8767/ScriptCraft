@@ -22,7 +22,7 @@ import {
   FaHighlighter,
   FaEllipsisV,
   FaHashtag,
-  FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt, FaSlidersH,
+  FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
@@ -1038,15 +1038,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       );
       case 'customize': return (
         <button
-          className="toolbar-btn toolbar-btn-labeled"
+          className="toolbar-btn toolbar-btn-labeled toolbar-customize-btn"
           title="Customize"
           onClick={() => {
             window.dispatchEvent(new CustomEvent('freedraft:command', { detail: 'customize' }));
             if (inOverflow) setOverflowOpen(false);
           }}
         >
-          <FaSlidersH />
-          <span className="toolbar-btn-text">CUSTOMIZE</span>
+          {/* v0.83: text only, on a themed button surface — no icon. */}
+          <span className="toolbar-btn-text">Customize</span>
         </button>
       );
       case 'view': return (

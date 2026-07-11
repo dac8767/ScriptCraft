@@ -42,6 +42,9 @@ export const THEME_VARS: { key: string; label: string; group: string }[] = [
   { key: '--fd-dropdown-bg', label: 'Menus & dialogs', group: 'Application' },
   { key: '--fd-border', label: 'Borders', group: 'Application' },
   { key: '--fd-accent', label: 'Accent / highlight', group: 'Application' },
+  { key: '--fd-btn-bg', label: 'Button', group: 'Application' },
+  { key: '--fd-btn-text', label: 'Button text', group: 'Application' },
+  { key: '--fd-btn-hover', label: 'Button hover', group: 'Application' },
 
   { key: '--fd-text', label: 'Text', group: 'Text' },
   { key: '--fd-text-muted', label: 'Muted text', group: 'Text' },

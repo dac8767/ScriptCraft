@@ -30,10 +30,12 @@ export default function ContextMenuTab() {
     <section>
       <h3>Context Menu</h3>
       <p className="fs-customize-hint">
-        Choose which sections appear when you right-click in the script. What’s
-        <em> inside</em> a section is set by its own tab — the elements listed
-        under Element come from the Elements tab, and changing them there updates
-        every menu at once.
+        Choose which items appear when you right-click in the script. Names match
+        the menu exactly. Undo, Redo, Cut, Copy, Paste, Select All, Delete,
+        Delete Element and Customize Context Menu are permanent, so they aren’t
+        listed. What’s <em>inside</em> an item is set by its own tab — the
+        elements under Element come from the Elements tab, and changing them
+        there updates every menu at once.
       </p>
 
       <div className="fs-customize-grid">
