@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback, useRef, useState, useMemo } from 'react';
+import { INTERNAL_DRAG_TYPE } from '../constants/drag';
 import { useEditor, EditorContent } from '@tiptap/react';
 import Document from '@tiptap/extension-document';
 import Text from '@tiptap/extension-text';
@@ -3442,6 +3443,10 @@ const ScreenplayEditor: React.FC = () => {
   }, [editor, setDocumentTitle, setCurrentProject, setCurrentScriptId]);
 
   const handleEditorDragOver = useCallback((e: React.DragEvent) => {
+    // Ignore drags that started inside the app (Customize row reordering, etc).
+    // The Tauri webview doesn't report internal drags the way a browser does,
+    // so the Files check alone let them raise the file-drop overlay.
+    if (e.dataTransfer.types.includes(INTERNAL_DRAG_TYPE)) return;
     if (!e.dataTransfer.types.includes('Files')) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
@@ -3455,6 +3460,7 @@ const ScreenplayEditor: React.FC = () => {
   }, []);
 
   const handleEditorDrop = useCallback((e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes(INTERNAL_DRAG_TYPE)) return;
     e.preventDefault();
     setDragOverEditor(false);
 

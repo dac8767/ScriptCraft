@@ -17,6 +17,7 @@ import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from './toolbarBuiltins';
+import { INTERNAL_DRAG_TYPE } from '../constants/drag';
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
@@ -218,7 +219,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const [stuckWarnOpen, setStuckWarnOpen] = React.useState(false);
   const dragProps = (list: string, idx: number, moveTo: (from: number, to: number) => void) => ({
     draggable: true,
-    onDragStart: (e: React.DragEvent) => { setDragInfo({ list, idx }); e.dataTransfer.effectAllowed = 'move'; },
+    onDragStart: (e: React.DragEvent) => {
+      setDragInfo({ list, idx });
+      e.dataTransfer.effectAllowed = 'move';
+      // Mark this as an internal reorder so the editor's file-drop overlay
+      // ignores it (see ScreenplayEditor.handleEditorDragOver).
+      try { e.dataTransfer.setData(INTERNAL_DRAG_TYPE, '1'); } catch { /* ignore */ }
+    },
     onDragOver: (e: React.DragEvent) => { if (dragInfo && dragInfo.list === list) e.preventDefault(); },
     onDrop: (e: React.DragEvent) => {
       e.preventDefault();
