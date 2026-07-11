@@ -12,7 +12,7 @@
  * stays). Tools disabled in both panels open as a temporary centered window
  * via the Tools menu (TempToolWindow, mounted once in ScreenplayEditor).
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
 import AssetManager from './AssetManager';
 import TitlePagePanel from './TitlePagePanel';
@@ -127,32 +127,10 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
 }) {
   const { toolSizes, setToolSize } = useEditorStore();
   const windowRef = useRef<HTMLDivElement>(null);
-
-  // v0.64: DEFAULT window size fits within its side panel so the dock's items
-  // are pushed down rather than overlapped/clipped. A size the user has set
-  // (drag-resize, pop-out) is stored in toolSizes and ALWAYS wins — this only
-  // constrains the untouched default. Measured from the panel column so it
-  // adapts to a resized panel.
-  const [panelW, setPanelW] = useState<number | null>(null);
-  useEffect(() => {
-    if (temporary) return;                   // floating temp windows: no clamp
-    const el = windowRef.current?.closest('.tool-dock-wrap') as HTMLElement | null;
-    if (!el) return;
-    const measure = () => setPanelW(el.getBoundingClientRect().width || null);
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [temporary]);
-
-  const userSize = toolSizes[tool.id];
-  const fittedDefault = panelW && !temporary
-    ? {
-        w: Math.min(tool.defaultSize.w, Math.max(220, panelW - 8)),
-        h: tool.defaultSize.h,
-      }
-    : tool.defaultSize;
-  const size = userSize || fittedDefault;
+  // Docked windows default to inline (see ToolDock below), so this frame only
+  // renders windows the user has explicitly sized/popped out, plus temporary
+  // Tools-menu windows — both of which should keep their own size.
+  const size = toolSizes[tool.id] || tool.defaultSize;
 
   const startResize = (e: React.PointerEvent) => {
     if (!windowRef.current) return;
@@ -245,8 +223,17 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   const setActive = side === 'left' ? setActiveTool : setActiveToolRight;
   const active = tools.find((t) => t.id === activeId) || null;
   const { toolSizes, setToolSize } = useEditorStore();
-  const activeSize = active ? (toolSizes[active.id] || active.defaultSize) : null;
-  // Small-enough windows open inline, pushing the buttons below them down.
+  // v0.66: by DEFAULT every window opens INSIDE its side panel (inline),
+  // pushing the dock's remaining items down — so nothing floats over the
+  // editor unasked. `inline` is decided by width <= DOCK_W, and most tools'
+  // defaultSize.w exceeded it (Goals 340, Analytics 620, Index Cards 680...),
+  // which is why they floated. Clamping the default HERE is what matters: the
+  // v0.64 clamp lived in the floating frame and never reached this decision.
+  // A size the user has chosen (drag-resize or pop-out) is stored in toolSizes
+  // and still wins — pop-out sets w = DOCK_W + 140, which floats as before.
+  const activeSize = active
+    ? (toolSizes[active.id] || { w: Math.min(active.defaultSize.w, DOCK_W), h: active.defaultSize.h })
+    : null;
   const inline = !!(active && activeSize && activeSize.w <= DOCK_W);
 
   const startInlineResize = (e: React.PointerEvent) => {
