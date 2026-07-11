@@ -35,7 +35,7 @@ export default function DevPickerTool(_props: Props) {
 
   // ── Claude Code, running in the repo on this machine (see dev-server/) ──
   const [bridge, setBridge] = React.useState<{
-    available: boolean; version?: string; hint?: string; bin?: string; cwd?: string;
+    available: boolean; disabled?: boolean; version?: string; hint?: string; bin?: string; cwd?: string;
   } | null>(null);
   const [log, setLog] = React.useState<PanelEvent[]>([]);
   const [busy, setBusy] = React.useState(false);

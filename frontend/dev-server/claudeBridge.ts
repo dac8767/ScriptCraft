@@ -89,11 +89,39 @@ export function claudeBridge(): Plugin {
   const repoRoot = path.resolve(process.cwd(), '..');
   const running = new Set<ChildProcess>();
 
+  /**
+   * OFF BY DEFAULT (v1.6.3).
+   *
+   * This spawns an AI agent with shell access against your repo. On a managed or
+   * work machine that is a decision for you and your IT policy to make, not a
+   * thing that should quietly switch itself on because you pulled a branch. So it
+   * does nothing at all unless you explicitly opt in:
+   *
+   *   FREEDRAFT_CLAUDE_BRIDGE=1 ./frontend/node_modules/.bin/tauri dev ...
+   *
+   * Without it, the endpoints aren't even registered — no process is ever spawned,
+   * and the Dev Picker's Inspect half (which needs no Claude and never leaves your
+   * machine) carries on working as normal.
+   */
+  const enabled = process.env.FREEDRAFT_CLAUDE_BRIDGE === '1';
+
   return {
     name: 'dev-claude-bridge',
     apply: 'serve',            // dev server only — never in a build
 
     configureServer(server) {
+      if (!enabled) {
+        server.middlewares.use('/__dev/claude/status', (_req, res) => {
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({
+            available: false,
+            disabled: true,
+            hint: 'Claude bridge is off. It runs an agent with shell access on this machine — turn it on deliberately with FREEDRAFT_CLAUDE_BRIDGE=1 if your policy allows.',
+          }));
+        });
+        return;   // no /run endpoint exists at all
+      }
+
       // Is the CLI even installed and authed?
       server.middlewares.use('/__dev/claude/status', (_req, res) => {
         const bin = resolveClaude();
@@ -163,6 +191,9 @@ export function claudeBridge(): Plugin {
           // your terminal.
           const child = spawn(bin, args, {
             cwd: repoRoot,
+            // stdin ignored: the CLI waits for piped input and warns after 3s if
+            // it never arrives. There is no stdin here — the prompt is an argument.
+            stdio: ['ignore', 'pipe', 'pipe'],
             env: {
               ...process.env,
               PATH: [

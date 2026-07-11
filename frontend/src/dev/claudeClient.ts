@@ -72,7 +72,7 @@ export function feed(buffer: string, chunk: string): { lines: string[]; rest: st
 }
 
 export async function checkBridge(): Promise<{
-  available: boolean; version?: string; hint?: string; bin?: string; cwd?: string;
+  available: boolean; disabled?: boolean; version?: string; hint?: string; bin?: string; cwd?: string;
 }> {
   try {
     const r = await fetch('/__dev/claude/status');
