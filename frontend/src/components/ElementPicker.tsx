@@ -55,12 +55,21 @@ const ElementPicker: React.FC<ElementPickerProps> = ({
       // Caller-supplied list (e.g. AV cell context) wins outright.
       if (availableTypes && availableTypes.length > 0) return availableTypes;
       const enabled = pickable.map((r) => r.id as ElementType);
-      const enabledSet = new Set<string>(enabled);
-      // Honor the user's element ORDER; fall back to the contextual default
-      // order for anything they haven't explicitly arranged.
-      const contextual = (ELEMENT_ORDER[defaultType] || DEFAULT_ORDER).filter((t) => enabledSet.has(t));
-      const rest = enabled.filter((t) => !contextual.includes(t));
-      return [...contextual, ...rest];
+
+      // v0.88 — the picker's whole order used to come from ELEMENT_ORDER, a
+      // context-aware table (after a Character, Dialogue leads; after a
+      // Transition, Scene Heading leads). Useful, but it meant this list was
+      // ordered differently from every other element list, and it ignored the
+      // order the user set in Customize > Elements entirely.
+      //
+      // Split the difference: the list is now the USER'S order, with just the
+      // single likeliest element for the current line lifted to the top — where
+      // the caret already is, so Enter-Enter still lands on the obvious choice.
+      // Everything below it reads exactly like the other menus.
+      const suggestion = (ELEMENT_ORDER[defaultType] || DEFAULT_ORDER)
+        .find((t) => enabled.includes(t));
+      if (!suggestion) return enabled;
+      return [suggestion, ...enabled.filter((t) => t !== suggestion)];
     },
     [defaultType, pickable, availableTypes],
   );

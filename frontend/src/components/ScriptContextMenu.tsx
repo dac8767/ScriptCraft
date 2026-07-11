@@ -22,29 +22,38 @@ const shift = isMac ? '⇧' : 'Shift+';
  * section (e.g. which elements Element offers) is governed by that feature's own
  * tab, so a change there updates every instance at once.
  */
-export const CONTEXT_MENU_SECTIONS: { id: string; label: string }[] = [
+export const CONTEXT_MENU_SECTIONS: { id: string; label: string; group: ContextMenuGroup }[] = [
   // Labels are copied verbatim from the menu itself — if they drift apart, the
   // Customize list is lying about what it controls. Undo/Redo, Cut/Copy/Paste,
   // Select All/Delete, Delete Element and Customize Context Menu are PERMANENT
   // and deliberately absent: they always appear, so listing them would offer a
   // switch that does nothing.
-  { id: 'element', label: 'Element' },
-  { id: 'style', label: 'Style' },
-  { id: 'font', label: 'Font…' },
-  { id: 'sceneProperties', label: 'Scene Properties…' },
-  { id: 'characterProfile', label: 'Character Profile…' },
-  { id: 'dualDialogue', label: 'Dual Dialogue' },
-  { id: 'revisionMode', label: 'Revision Mode' },
-  { id: 'revisionColor', label: 'Revision Color' },
-  { id: 'addScriptNote', label: 'Add Script Note' },
-  { id: 'copyToSnippets', label: 'Copy to Snippets' },
-  { id: 'addToDo', label: 'Add as To-Do Item' },
-  { id: 'insertSection', label: 'Insert Section' },
-  { id: 'insertMarker', label: 'Insert Marker' },
-  { id: 'insertChecklist', label: 'Insert Checklist Item' },
-  { id: 'tagAs', label: 'Tag as…' },
-  { id: 'spelling', label: 'Spelling Tools' },
+  //
+  // `group` mirrors the categories the other Customize tabs use. Items that also
+  // exist elsewhere in the app sit under their usual heading; the ones that only
+  // ever appear on a right-click live under "Context Menu" (v0.88).
+  { id: 'element', label: 'Element', group: 'Format' },
+  { id: 'style', label: 'Style', group: 'Format' },
+  { id: 'font', label: 'Font…', group: 'Context Menu' },
+  { id: 'sceneProperties', label: 'Scene Properties…', group: 'Context Menu' },
+  { id: 'characterProfile', label: 'Character Profile…', group: 'Context Menu' },
+  { id: 'dualDialogue', label: 'Dual Dialogue', group: 'Format' },
+  { id: 'revisionMode', label: 'Revision Mode', group: 'Production' },
+  { id: 'revisionColor', label: 'Revision Color', group: 'Production' },
+  { id: 'addScriptNote', label: 'Add Script Note', group: 'Context Menu' },
+  { id: 'copyToSnippets', label: 'Copy to Snippets', group: 'Tools' },
+  { id: 'addToDo', label: 'Add as To-Do Item', group: 'Tools' },
+  { id: 'insertSection', label: 'Insert Section', group: 'Insert' },
+  { id: 'insertMarker', label: 'Insert Marker', group: 'Insert' },
+  { id: 'insertChecklist', label: 'Insert Checklist Item', group: 'Insert' },
+  { id: 'tagAs', label: 'Tag as…', group: 'Context Menu' },
+  { id: 'spelling', label: 'Spelling Tools', group: 'Context Menu' },
 ];
+
+/** Categories in the Add Item dropdown, in display order. */
+export type ContextMenuGroup = 'Format' | 'Insert' | 'Tools' | 'Production' | 'Context Menu';
+export const CONTEXT_MENU_GROUPS: ContextMenuGroup[] =
+  ['Format', 'Insert', 'Tools', 'Production', 'Context Menu'];
 
 // Element types shown in the submenu, with their shortcuts
 const ELEMENT_MENU_ITEMS: { type: ElementType; shortcut: string }[] = [
