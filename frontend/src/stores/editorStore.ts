@@ -425,6 +425,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   // RIGHT = writing tools. Production Tags is hidden by default (it opens from
   // the Production menu). EVERY tool in ALL_TOOLS must have an entry here —
   // see toolConfigFor() below and the v0.63 bug it prevents.
+  history: { side: 'right', enabled: false },   // v0.84: available, off by default
   navigator: { side: 'left', enabled: true },
   scenes: { side: 'left', enabled: true },
   pages: { side: 'left', enabled: true },

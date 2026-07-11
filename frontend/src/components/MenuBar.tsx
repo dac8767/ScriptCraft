@@ -396,7 +396,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const activeTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate());
   // v0.71: element visibility/order come from the user's persisted overrides
   // applied over the active template (system templates are immutable).
-  const effectiveRules = useFormattingTemplateStore((st) => st.getEffectiveRules)();
+  const pickableElements = useFormattingTemplateStore((st) => st.getPickableElements)();
   useFormattingTemplateStore((st) => st.elementHidden);   // re-render on change
   useFormattingTemplateStore((st) => st.elementOrder);
   const isEnforceMode = activeTemplate.mode === 'enforce';
@@ -1168,6 +1168,14 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { separator: true, label: '' },
         { icon: <FaEdit />, label: 'Rename...', action: () => setRenameOpen(true) },
         { separator: true, label: '' },
+        {
+          icon: <FaUserFriends />, label: 'Collaboration',
+          children: [
+            { icon: <FaUserFriends />, label: isCollabActive ? '\u2713 Collaborate...' : 'Collaborate...', action: onCollaborate, disabled: isCollabGuest },
+            { icon: <FaSignInAlt />, label: 'Join Collaboration...', action: onJoinCollab, disabled: isCollabGuest },
+          ],
+        },
+        { separator: true, label: '' },
         { icon: <FaCog />, label: 'Settings...', action: () => setPrefsOpen(true) },
         { separator: true, label: '' },
         { icon: <FaProjectDiagram />, label: 'Manage Projects…', action: () => setProjectManagerOpen(true) },
@@ -1233,7 +1241,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               action: () => setTheme(id),
             })),
             { separator: true, label: '' },
-            { icon: <FaSlidersH />, label: 'Customize Themes', action: () => openCustomize('themes') },
+            { icon: <FaSlidersH />, label: 'Customize Themes...', action: () => openCustomize('themes') },
           ],
         },
         { separator: true, label: '' },
@@ -1262,8 +1270,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           children: [
             // Dual Dialogue lives inside the Element list, immediately after
             // Dialogue (v0.62) — it's an element choice, not a separate insert.
-            ...Object.values(effectiveRules)
-              .filter((r) => r.enabled && !['newAct', 'endOfAct', 'castList'].includes(r.id))
+            ...pickableElements
               .flatMap((r) => {
                 const shortcuts: Record<string, string> = {
                   sceneHeading: `${mod}1`, action: `${mod}2`, character: `${mod}3`, dialogue: `${mod}4`,
@@ -1281,7 +1288,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                 ];
               }),
             { separator: true, label: '' },
-            { icon: <FaSlidersH />, label: 'Customize Elements', action: () => openCustomize('elements') },
+            { icon: <FaSlidersH />, label: 'Customize Elements...', action: () => openCustomize('elements') },
           ],
         },
         { icon: <FaImage />, label: 'Insert Image...', action: () => useEditorStore.getState().imageInsertHandler?.() },
@@ -1338,13 +1345,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {
       label: 'Tools',
       items: [
-        {
-          icon: <FaUserFriends />, label: 'Collaboration',
-          children: [
-            { icon: <FaUserFriends />, label: isCollabActive ? '\u2713 Collaborate...' : 'Collaborate...', action: onCollaborate, disabled: isCollabGuest },
-            { icon: <FaSignInAlt />, label: 'Join Collaboration...', action: onJoinCollab, disabled: isCollabGuest },
-          ],
-        },
         ...TOOL_MENU_GROUPS.flatMap((group, gi) => [
           ...(gi > 0 ? [{ separator: true, label: '' }] : []),
           ...group

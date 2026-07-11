@@ -66,6 +66,23 @@ function ChromeSlider({
 
 /** Default spacer sizes — match the CSS so an unsized spacer doesn't jump when
  *  the slider is first touched. */
+/** Title Case for every user-visible label (v0.84). Small words stay lowercase
+ *  unless they lead — standard title case, not naive capitalization. */
+const SMALL_WORDS = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'in',
+  'of', 'on', 'or', 'the', 'to', 'up', 'via', 'with']);
+export function titleCase(s: string): string {
+  return s.split(/(\s+|\/)/).map((w, i) => {
+    if (/^\s+$/.test(w) || w === '/') return w;
+    const lower = w.toLowerCase();
+    if (i > 0 && SMALL_WORDS.has(lower)) return lower;
+    // Leave words that are already deliberately cased (To-Do, PDF, FDX).
+    if (/[A-Z]/.test(w.slice(1))) return w;
+    return w.charAt(0).toUpperCase() + w.slice(1);
+  }).join('');
+}
+
+const CUSTOMIZE_SIZE_KEY = 'opendraft:customizeSize';
+
 const DEFAULT_TOOLBAR_SPACER = 28;
 const DEFAULT_PANEL_SPACER = 22;   // matches .tool-dock-spacer in CSS
 
@@ -289,12 +306,12 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         })}
         <div className="fs-tbzone-adders fs-adders-equal">
           <select value="" onChange={(e) => { if (e.target.value) { onAdd(e.target.value); e.target.value = ''; } }}>
-            <option value="">+ Add item to Panels…</option>
+            <option value="">+ Add Item</option>
             {(['Project Windows', 'Tools', 'Production'] as const).some((g) => addOptions.some((o) => o.group === g)) && (
               <optgroup label="Show All">
                 {(['Project Windows', 'Tools', 'Production'] as const)
                   .filter((g) => addOptions.some((o) => o.group === g))
-                  .map((g) => <option key={`all-${g}`} value={`all:${g}`}>Show all {g}</option>)}
+                  .map((g) => <option key={`all-${g}`} value={`all:${g}`}>Show All {titleCase(g)}</option>)}
               </optgroup>
             )}
             {(['Project Windows', 'Tools', 'Production'] as const).map((group) => {
@@ -307,7 +324,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               );
             })}
             <optgroup label="Utility">
-              <option value="divider">Add divider</option>
+              <option value="divider">Add Divider</option>
               <option value="spacer">Spacer</option>
             </optgroup>
           </select>
@@ -331,6 +348,44 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones, toolbarZonesSet } = useEditorStore();
   const { panelDividers, setPanelDividers } = useEditorStore();
   const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'panels' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'menu');
+
+  // v0.84: the window forgot any size you gave it and snapped back to the
+  // default on reopen. CSS `resize` writes inline width/height on the element,
+  // so a ResizeObserver captures the size the user drags to; we persist it and
+  // restore it on open. (Modal only — a docked panel is sized by its dock, and a
+  // stored width would fight it.)
+  const dialogRef = React.useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    if (embedded || !open) return;
+    const el = dialogRef.current;
+    if (!el) return;
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(CUSTOMIZE_SIZE_KEY) || 'null');
+      if (saved && saved.w > 0 && saved.h > 0) {
+        // Never restore a size bigger than the current screen — a window sized
+        // on a large monitor would otherwise open off-screen on a laptop.
+        el.style.width = `${Math.min(saved.w, window.innerWidth - 40)}px`;
+        el.style.height = `${Math.min(saved.h, window.innerHeight - 40)}px`;
+      }
+    } catch { /* corrupt entry — keep the default */ }
+
+    let t: number | undefined;
+    const ro = new ResizeObserver(() => {
+      window.clearTimeout(t);
+      t = window.setTimeout(() => {          // a drag fires this continuously
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          try {
+            localStorage.setItem(CUSTOMIZE_SIZE_KEY,
+              JSON.stringify({ w: Math.round(r.width), h: Math.round(r.height) }));
+          } catch { /* quota */ }
+        }
+      }, 250);
+    });
+    ro.observe(el);
+    return () => { window.clearTimeout(t); ro.disconnect(); };
+  }, [open, embedded]);
 
   // `category` seeds useState only on first mount, but this dialog stays mounted
   // and merely toggles `open` — so without this, opening it from "Customize
@@ -435,7 +490,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       label: 'Utility',
       utility: true,
       options: [
-        { value: 'divider', label: 'Add divider' },
+        { value: 'divider', label: 'Add Divider' },
         { value: 'spacer', label: 'Spacer' },
       ],
     },
@@ -480,7 +535,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               always stays visible.
             </p>
             <div className="fs-customize-row">
-              <span className="fs-customize-tool">Menu bar mode</span>
+              <span className="fs-customize-tool">Menu Bar Mode</span>
               <span className="fs-customize-seg">
                 {(['compact', 'comfortable', 'custom', 'hidden'] as const).map((m) => (
                   <button
@@ -567,7 +622,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               Hide removes an item (re-add it from the dropdown below).
             </p>
             <div className="fs-customize-row">
-              <span className="fs-customize-tool">Toolbar mode</span>
+              <span className="fs-customize-tool">Toolbar Mode</span>
               <span className="fs-customize-seg">
                 {(['compact', 'comfortable', 'custom', 'hidden'] as const).map((m) => (
                   <button key={m} className={toolbarMode === m ? 'active' : ''} onClick={() => setToolbarMode(m)}>
@@ -671,11 +726,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   setToolbarZones([...tbLeft, v], tbRight);
                 }}
               >
-                <option value="">+ Add item to toolbar…</option>
+                <option value="">+ Add Item</option>
                 {tbAddCategoriesAll.some((cat) => !cat.utility && cat.options.length > 0) && (
                   <optgroup label="Show All">
                     {tbAddCategoriesAll.filter((cat) => !cat.utility && cat.options.length > 0).map((cat) => (
-                      <option key={`all-${cat.id}`} value={`all:${cat.id}`}>Show all {cat.label}</option>
+                      <option key={`all-${cat.id}`} value={`all:${cat.id}`}>Show All {titleCase(cat.label)}</option>
                     ))}
                   </optgroup>
                 )}

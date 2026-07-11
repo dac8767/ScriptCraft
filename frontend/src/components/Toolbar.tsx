@@ -97,7 +97,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
   // applied over the active template (system templates are immutable).
 
-  const effectiveRules = useFormattingTemplateStore((st) => st.getEffectiveRules)();
+  const pickableElements = useFormattingTemplateStore((st) => st.getPickableElements)();
+  useFormattingTemplateStore((st) => st.elementHidden);
+  useFormattingTemplateStore((st) => st.elementOrder);
 
   useFormattingTemplateStore((st) => st.elementHidden);   // re-render on change
 
@@ -256,6 +258,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   const handleElementChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const type = e.target.value;
     if (!editor) return;
+
+    // Dual Dialogue is a structure, not a paragraph type — it runs its command
+    // rather than setting a node type (v0.84).
+    if (type === 'dualDialogue') {
+      (editor as unknown as { commands: { toggleDualDialogue: () => boolean } })
+        .commands.toggleDualDialogue();
+      return;
+    }
 
     setActiveElement(type as ElementType);
     // Three cases:
@@ -659,16 +669,19 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           onChange={handleElementChange}
           title="Element"
         >
-          {Object.values(effectiveRules)
-            .filter((r) => r.enabled && !['newAct', 'endOfAct', 'castList'].includes(r.id))
+          {/* v0.84: one canonical list (getPickableElements) shared with the
+              Insert menu, the Enter-key picker and the right-click menu. */}
+          {pickableElements
             // When inside an AV cell, only cell-valid types make sense — selecting
             // sceneHeading/action/etc. silently fails the schema check anyway.
             .filter((r) => isInsideAvCell ? AV_CELL_ELEMENT_IDS.includes(r.id) : !AV_CELL_ELEMENT_IDS.includes(r.id))
-            .map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.label}
-              </option>
-            ))}
+            .flatMap((r) => {
+              const opt = <option key={r.id} value={r.id}>{r.label}</option>;
+              // Dual Dialogue sits with Dialogue in every list, not just Insert.
+              return r.id === 'dialogue' && !isInsideAvCell
+                ? [opt, <option key="dualDialogue" value="dualDialogue">Dual Dialogue</option>]
+                : [opt];
+            })}
         </select>
       );
       case 'insertSection': return (

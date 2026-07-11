@@ -2871,6 +2871,14 @@ const ScreenplayEditor: React.FC = () => {
 
   const handlePickerSelect = useCallback((type: ElementType) => {
     if (!editor) return;
+    // Dual Dialogue is a structure, not a paragraph type — run its command
+    // instead of trying to setNode a type that doesn't exist as a block (v0.84).
+    if ((type as string) === 'dualDialogue') {
+      (editor as unknown as { commands: { toggleDualDialogue: () => boolean } })
+        .commands.toggleDualDialogue();
+      setPickerState((st) => ({ ...st, visible: false }));
+      return;
+    }
     // setNode works for any real schema node (built-in screenplay elements as
     // well as the AV inner types avPara/avShot/avDirection). Custom-id elements
     // declared only in template rules go through the customElement wrapper.

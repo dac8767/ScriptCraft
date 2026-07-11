@@ -83,6 +83,8 @@ interface FormattingTemplateState {
    *  elements disabled, and rule key order following elementOrder. Every
    *  consumer (Element dropdown, Insert menu, getEnabledElements) reads this. */
   getEffectiveRules: () => FormattingTemplate['rules'];
+  /** Elements a writer can pick, in the user's order (v0.84). */
+  getPickableElements: () => FormattingTemplate['rules'][string][];
   /** Returns whether the active template is in enforce mode. */
   isEnforceMode: () => boolean;
 
@@ -94,6 +96,13 @@ interface FormattingTemplateState {
   duplicateTemplate: (id: string) => Promise<FormattingTemplate>;
   setActiveTemplateId: (id: string | null) => void;
 }
+
+/**
+ * Elements that never appear in an element PICKER. They're structural and are
+ * inserted from their own menu commands, not chosen as a paragraph type.
+ * Exported so every list — including Customize > Elements — filters identically.
+ */
+export const NON_PICKABLE = ['newAct', 'endOfAct', 'castList'];
 
 function uuid(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -156,6 +165,23 @@ export const useFormattingTemplateStore = create<FormattingTemplateState>((set, 
       out[id] = elementHidden.includes(id) ? { ...r, enabled: false } : r;
     }
     return out;
+  },
+
+  /**
+   * The canonical list of elements a writer can CHOOSE — the one list behind the
+   * Element dropdown, the Insert menu, the Enter-key picker and the right-click
+   * menu (v0.84).
+   *
+   * Previously each of those four re-derived it, and three of them carried their
+   * own copy of this exclusion while the Enter-key picker did not — which is why
+   * New Act / End of Act / Cast List still turned up there. One list, one place.
+   *
+   * NON_PICKABLE are structural elements that aren't chosen from an element
+   * list (they're inserted deliberately from elsewhere).
+   */
+  getPickableElements: () => {
+    return Object.values(get().getEffectiveRules())
+      .filter((r) => r.enabled && !NON_PICKABLE.includes(r.id));
   },
 
   getEnabledElements: () => {

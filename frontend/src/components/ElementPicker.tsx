@@ -41,7 +41,12 @@ const ElementPicker: React.FC<ElementPickerProps> = ({
   // overrides), not the raw template — otherwise the Enter-key picker would
   // keep offering elements the user hid, and ignore their ordering. Same source
   // as the Element dropdown, the Insert menu, and the context menu.
+  // v0.84: the SAME canonical list as the Element dropdown, the Insert menu and
+  // the right-click menu. It previously filtered effective rules itself, without
+  // the non-pickable exclusion the other three carried — which is why New Act,
+  // End of Act and Cast List still showed up here.
   const effectiveRules = useFormattingTemplateStore((s) => s.getEffectiveRules)();
+  const pickable = useFormattingTemplateStore((s) => s.getPickableElements)();
   useFormattingTemplateStore((s) => s.elementHidden);   // re-render on change
   useFormattingTemplateStore((s) => s.elementOrder);
 
@@ -49,24 +54,27 @@ const ElementPicker: React.FC<ElementPickerProps> = ({
     () => {
       // Caller-supplied list (e.g. AV cell context) wins outright.
       if (availableTypes && availableTypes.length > 0) return availableTypes;
-      const enabled = Object.values(effectiveRules)
-        .filter((r) => r.enabled)
-        .map((r) => r.id as ElementType);
+      const enabled = pickable.map((r) => r.id as ElementType);
       const enabledSet = new Set<string>(enabled);
       // Honor the user's element ORDER; fall back to the contextual default
       // order for anything they haven't explicitly arranged.
       const contextual = (ELEMENT_ORDER[defaultType] || DEFAULT_ORDER).filter((t) => enabledSet.has(t));
       const rest = enabled.filter((t) => !contextual.includes(t));
-      return [...contextual, ...rest];
+      const list = [...contextual, ...rest];
+      // Dual Dialogue is offered wherever elements are, right after Dialogue.
+      const di = list.indexOf('dialogue' as ElementType);
+      if (di >= 0) list.splice(di + 1, 0, 'dualDialogue' as ElementType);
+      return list;
     },
-    [defaultType, effectiveRules, availableTypes],
+    [defaultType, pickable, availableTypes],
   );
 
   // Resolve a display label: built-in label first, then template-rule label,
   // finally the raw id. Custom-element ids (avShot, sceneCharacters, etc.) only
   // have labels in the template rules.
   const labelFor = (type: ElementType): string =>
-    ELEMENT_LABELS[type] || effectiveRules[type]?.label || activeTemplate.rules[type]?.label || String(type);
+    type === ('dualDialogue' as ElementType) ? 'Dual Dialogue'
+      : ELEMENT_LABELS[type] || effectiveRules[type]?.label || activeTemplate.rules[type]?.label || String(type);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);

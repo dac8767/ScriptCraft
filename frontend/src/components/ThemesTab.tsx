@@ -274,7 +274,7 @@ export default function ThemesTab() {
               className="swn-add-btn"
               disabled={exporting.length === 0}
               onClick={() => { void exportSelected(); }}
-            >Choose Location & Save…</button>
+            >Choose Location & Save...</button>
             <button className="swn-add-btn" onClick={() => setExporting(null)}>Cancel</button>
           </div>
         </div>
@@ -288,17 +288,17 @@ export default function ThemesTab() {
           className="swn-add-btn"
           title="Choose which themes to save, and where to save them"
           onClick={() => { setImportNote(''); setExporting(customThemes.map((c) => c.id)); }}
-        >Export Themes…</button>
+        >Export Themes...</button>
         <button
           className="swn-add-btn"
           title="Load themes from a theme file on your computer or cloud storage"
           onClick={importThemes}
-        >Import Themes…</button>
+        >Import Themes...</button>
         <button
           className="swn-add-btn"
           title="Copy the custom themes out of another FreeDraft project file"
           onClick={importFromProject}
-        >Import Themes from a Project…</button>
+        >Import Themes From a Project...</button>
       </div>
     </section>
   );

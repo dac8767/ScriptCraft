@@ -876,9 +876,13 @@ body {
   max-width: 720px;
 }
 
-/* Customize toolbar button (v0.83): text on a themed button surface, no icon. */
+/* Customize toolbar button (v0.84): text on a themed button surface, no icon.
+   It carries .toolbar-btn-labeled — the SAME class as the Zoom control — and
+   deliberately does NOT set its own height, so the two always match, including
+   in Compact/Comfortable/Custom toolbar modes where that height changes. */
 .toolbar-btn.toolbar-customize-btn {
   width: auto; padding: 0 12px; gap: 0;
+  margin: 0 6px;                       /* a little air on each side */
   background: var(--fd-btn-bg);
   color: var(--fd-btn-text);
   border: 1px solid var(--fd-border);
@@ -893,6 +897,7 @@ body {
 .fs-customize-layout { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 .fs-customize-tabs { width: 172px; }
 .fs-customize-layout .fs-customize-body { flex: 1; min-width: 0; overflow-x: hidden; }
+.fs-customize-body > section { min-width: 0; }
 
 /* Theme export picker (v0.82) */
 .fs-theme-export-panel {
@@ -12480,9 +12485,11 @@ html.android .version-history-panel {
    size to grow from; the body scrolls inside so the frame can be dragged
    smaller without clipping the controls. */
 .fs-customize-dialog {
-  /* Wide enough for the sidebar (172px) plus a full row without a horizontal
-     scrollbar at the default size (v0.83). */
-  width: min(940px, 94vw); height: min(700px, 88vh);
+  /* v0.84: sized so nothing overflows horizontally at the DEFAULT size —
+     sidebar (172) + row cap (720) + body padding (36) + borders ≈ 936. Anything
+     narrower and the widest row (a spacer slider) forces a horizontal
+     scrollbar. Users can still resize, and that size is now remembered. */
+  width: min(950px, 94vw); height: min(700px, 88vh);
   max-width: 96vw; max-height: 92vh;
   min-width: 380px; min-height: 320px;
   resize: both; overflow: hidden;      /* grip clear of any scrollbar */

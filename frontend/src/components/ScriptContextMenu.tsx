@@ -126,15 +126,14 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
   const ctxShown = (id: string) => !contextMenuHidden.includes(id);
 
   const activeTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate());
-  const effectiveRules = useFormattingTemplateStore((s) => s.getEffectiveRules)();
   useFormattingTemplateStore((s) => s.elementHidden);   // re-render on change
   useFormattingTemplateStore((s) => s.elementOrder);
 
   // Elements in the user's order, hidden ones removed. Shortcuts come from the
   // existing table; anything without one simply shows no shortcut.
   const shortcutFor = new Map(ELEMENT_MENU_ITEMS.map((i) => [i.type as string, i.shortcut]));
-  const orderedElementItems = Object.values(effectiveRules)
-    .filter((r) => r.enabled && !['newAct', 'endOfAct', 'castList'].includes(r.id))
+  const pickableElements = useFormattingTemplateStore((s) => s.getPickableElements)();
+  const orderedElementItems = pickableElements
     .map((r) => ({ type: r.id as ElementType, shortcut: shortcutFor.get(r.id) ?? '' }));
   const isEnforceMode = activeTemplate.mode === 'enforce';
   const rule = getCurrentElementRule(editor, activeTemplate);
@@ -1024,7 +1023,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
           onClose();
         }}
       >
-        <span>Customize Context Menu</span>
+        <span>Customize Context Menu...</span>
       </div>
 
     </div>

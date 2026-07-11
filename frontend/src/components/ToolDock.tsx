@@ -17,13 +17,13 @@ import type { Editor } from '@tiptap/react';
 import { CHROME_SCALES, chromePx } from './chromeSizes';
 import AssetManager from './AssetManager';
 import TitlePagePanel from './TitlePagePanel';
+import VersionHistory from './VersionHistory';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
 import SpellCheckPanel from './SpellCheckPanel';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
-  FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaSlidersH,
-} from 'react-icons/fa';
+  FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaSlidersH, FaHistory,} from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { type NavTab } from './SceneNavigator';
@@ -72,12 +72,15 @@ export const ALL_TOOLS: ToolDef[] = [
   { id: 'customize', label: 'Customize', icon: <FaSlidersH />, defaultSize: { w: 560, h: 680 }, group: 3, noPanelFit: true },
   { id: 'assets', label: 'Asset Manager', icon: <FaBoxes />, defaultSize: { w: 620, h: 372 }, group: 3 },
   { id: 'spelling', label: 'Spelling & Grammar', icon: <FaSpellCheck />, defaultSize: { w: 420, h: 440 }, group: 3 },
+  // v0.84: Script History is dockable again — VersionHistory already had an
+  // `embedded` mode, it just wasn't registered as a tool.
+  { id: 'history', label: 'Script History', icon: <FaHistory />, defaultSize: { w: 420, h: 480 }, group: 3 },
 ];
 
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
-export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'titlepage', 'customize'];
+export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'titlepage', 'customize', 'history'];
 export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 
 const MIN_W = 240;
@@ -118,6 +121,8 @@ export function ToolContent({ id, editor, scrollContainer }: {
       return <AssetManager projectId={currentProject?.id || ''} embedded />;
     case 'spelling':
       return <SpellCheckPanel editor={editor} />;
+    case 'history':
+      return <VersionHistory embedded />;
     case 'analytics':
       return <AnalyticsTool editor={editor} />;
     case 'goals':
