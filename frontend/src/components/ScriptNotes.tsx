@@ -102,6 +102,12 @@ const toEmbedUrl = (url: string): string | null => {
  * - URLs that look like videos render as <video> or iframe embed
  * - @AssetName references render as clickable asset links
  */
+/** Does the note contain anything the plain text box can't show — a media URL,
+ *  a link, or an @asset reference? Only then is the rendered block worth adding
+ *  below it. */
+const hasRichContent = (text: string) =>
+  /@\S+/.test(text) || /https?:\/\//i.test(text);
+
 const NoteContentDisplay: React.FC<{
   content: string;
   assets: Asset[];
@@ -507,97 +513,68 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
                     <ColorDots
                       card={{ id: note.id, type: 'comment', color: shelfHexForNote(note.color) } as ShelfCard}
                       onUpdate={(patch) => {
-                        if (patch.color) updateNote(note.id, { color: noteColorForShelfHex(patch.color) });
+                        // Through handleColorChange, NOT updateNote: it also
+                        // recolours the note's highlight in the SCRIPT. Calling
+                        // updateNote directly (as v0.96 did) would have quietly
+                        // left the highlight on its old colour.
+                        if (patch.color) handleColorChange(note.id, noteColorForShelfHex(patch.color));
                       }}
                     />
                     <button className="swn-x" title="Delete" onClick={() => handleDeleteRequest(note.id)}>✕</button>
                   </span>
                 </h5>
 
-                {/* Note content: edit mode or rendered preview */}
-                {isEditing ? (
-                  <div className="note-edit-area">
-                    <textarea
-                      ref={(el) => {
-                        if (el) textareaRefs.current.set(note.id, el);
-                      }}
-                      className="note-item-content"
-                      value={note.content}
-                      onChange={(e) => handleTextareaChange(note.id, e.target.value)}
-                      onKeyDown={(e) => handleTextareaKeyDown(e, note.id)}
-                      onBlur={() => {
-                        // Delay to allow suggestion click
-                        setTimeout(() => {
-                          setEditingNoteId(null);
-                          setAssetQuery(null);
-                          setAssetSuggestions([]);
-                        }, 200);
-                      }}
-                      placeholder="Write your note... (use @filename to reference assets, paste media URLs on their own line)"
-                      rows={3}
-                      autoFocus
-                    />
-                    {assetSuggestions.length > 0 && assetQuery !== null && (
-                      <div className="note-asset-dropdown">
-                        {assetSuggestions.map((a, idx) => (
-                          <div
-                            key={a.id}
-                            className={`note-asset-option${idx === assetSugIdx ? ' selected' : ''}`}
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              insertAssetRef(note.id, a);
-                            }}
-                          >
-                            <span className="note-asset-option-icon">
-                              {a.mime_type.startsWith('image/') ? '🖼' : a.mime_type.startsWith('video/') ? '🎬' : '📎'}
-                            </span>
-                            <span className="note-asset-option-name">{a.original_name}</span>
-                            <span className="note-asset-option-tags">
-                              {a.tags.slice(0, 2).join(', ')}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div
-                    className="note-item-preview"
-                    onClick={() => setEditingNoteId(note.id)}
-                    title="Click to edit"
-                  >
-                    {note.content ? (
-                      <NoteContentDisplay
-                        content={note.content}
-                        assets={assets}
-                        projectId={projectId}
-                      />
-                    ) : (
-                      <span className="note-item-placeholder">Click to add note...</span>
-                    )}
+                {/* v0.98: the SAME body as a note made in the window — one live
+                    textarea, same class, same behaviour. It used to be a
+                    click-to-edit PREVIEW, which is why the two never matched: one
+                    was a text box, the other was a block of text pretending to be
+                    one. Asset autocomplete still hangs off this textarea, and any
+                    media in the note renders underneath rather than replacing it. */}
+                <div className="note-edit-area">
+                  <textarea
+                    ref={(el) => { if (el) textareaRefs.current.set(note.id, el); }}
+                    className="swn-comment-input"
+                    value={note.content}
+                    onChange={(e) => handleTextareaChange(note.id, e.target.value)}
+                    onKeyDown={(e) => handleTextareaKeyDown(e, note.id)}
+                    onFocus={() => setEditingNoteId(note.id)}
+                    onBlur={() => {
+                      // Delay so a click on a suggestion still lands.
+                      setTimeout(() => {
+                        setEditingNoteId((cur) => (cur === note.id ? null : cur));
+                        setAssetQuery(null);
+                        setAssetSuggestions([]);
+                      }, 200);
+                    }}
+                    placeholder="Research links, themes to keep present, notes to self…"
+                  />
+                  {isEditing && assetSuggestions.length > 0 && assetQuery !== null && (
+                    <div className="note-asset-dropdown">
+                      {assetSuggestions.map((a, idx) => (
+                        <div
+                          key={a.id}
+                          className={`note-asset-option${idx === assetSugIdx ? ' selected' : ''}`}
+                          onMouseDown={(e) => { e.preventDefault(); insertAssetRef(note.id, a); }}
+                        >
+                          <span className="note-asset-option-icon">
+                            {a.mime_type.startsWith('image/') ? '🖼' : a.mime_type.startsWith('video/') ? '🎬' : '📎'}
+                          </span>
+                          <span className="note-asset-option-name">{a.original_name}</span>
+                          <span className="note-asset-option-tags">{a.tags.slice(0, 2).join(', ')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Media and @asset references render BELOW the box, so the note
+                    still shows them without the body changing shape. */}
+                {note.content && hasRichContent(note.content) && (
+                  <div className="note-item-media">
+                    <NoteContentDisplay content={note.content} assets={assets} projectId={projectId} />
                   </div>
                 )}
 
-                <div className="note-item-actions">
-                  <div className="note-item-colors">
-                    {NOTE_COLORS.map((c) => (
-                      <button
-                        key={c.name}
-                        className={`note-color-dot${note.color === c.name ? ' active' : ''}`}
-                        style={{ background: c.hex }}
-                        onClick={() => handleColorChange(note.id, c.name)}
-                        title={c.name}
-                      />
-                    ))}
-                  </div>
-                  <button
-                    className="note-item-delete"
-                    onClick={() => handleDeleteRequest(note.id)}
-                    title="Delete note"
-                  >
-                    Delete
-                  </button>
-                </div>
               </div>
             );
           })

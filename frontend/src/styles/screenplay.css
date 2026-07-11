@@ -13253,6 +13253,20 @@ html.android .version-history-panel {
   opacity: .6;
 }
 .swn-card-jump:hover { opacity: 1; }
+
+/* v0.98: a script note is now the SAME card as a window note — same header, same
+   live textarea body. Media and @asset references render in a block BELOW the
+   box instead of replacing it with a click-to-edit preview, which was the last
+   thing making the two look like different objects. */
+.note-item-media {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(0,0,0,.15);
+}
+.note-item.swn-card .note-edit-area { position: relative; }
+/* The old bespoke note chrome is gone — the card provides all of it now. */
+.note-item-preview, .note-item-placeholder, .note-item-actions,
+.note-item-colors, .note-item-delete, .note-item-content { display: none; }
 /* A script note IS a card now — drop the old bespoke note styling that fought it. */
 .note-item.swn-card { border-top: none; }
 .note-item.swn-card .fs-script-link { color: #2c5e98; }
