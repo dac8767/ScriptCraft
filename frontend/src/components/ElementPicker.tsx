@@ -60,11 +60,7 @@ const ElementPicker: React.FC<ElementPickerProps> = ({
       // order for anything they haven't explicitly arranged.
       const contextual = (ELEMENT_ORDER[defaultType] || DEFAULT_ORDER).filter((t) => enabledSet.has(t));
       const rest = enabled.filter((t) => !contextual.includes(t));
-      const list = [...contextual, ...rest];
-      // Dual Dialogue is offered wherever elements are, right after Dialogue.
-      const di = list.indexOf('dialogue' as ElementType);
-      if (di >= 0) list.splice(di + 1, 0, 'dualDialogue' as ElementType);
-      return list;
+      return [...contextual, ...rest];
     },
     [defaultType, pickable, availableTypes],
   );

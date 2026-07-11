@@ -83,26 +83,42 @@ export function titleCase(s: string): string {
 
 const CUSTOMIZE_SIZE_KEY = 'opendraft:customizeSize';
 
-const DEFAULT_TOOLBAR_SPACER = 28;
-const DEFAULT_PANEL_SPACER = 22;   // matches .tool-dock-spacer in CSS
+const DEFAULT_TOOLBAR_SPACER = 50;   // v0.86
+const DEFAULT_PANEL_SPACER = 50;   // v0.86
 
-/** Declared at MODULE scope on purpose: a component defined inside another is a
- *  new type on every render, so it remounts and a drag dies on the first move
- *  (this bit us in v0.75). */
-function SpacerSlider({ value, min, max, onChange }: {
+/**
+ * v0.86: was a slider, which couldn't be dragged — the whole ROW is draggable
+ * (HTML5 drag-and-drop, for reordering), and that swallows the pointer before
+ * the slider ever sees it. A number field has no drag gesture to steal, so it
+ * just works. Declared at module scope (a component defined inside another
+ * remounts on every render).
+ */
+function SpacerSize({ value, min, max, onChange }: {
   value: number; min: number; max: number; onChange: (px: number) => void;
 }) {
   return (
-    <span className="fs-spacer-slider">
+    <span
+      className="fs-spacer-size"
+      // Typing inside a draggable row: stop the row's drag from hijacking the
+      // caret/selection while the field has focus.
+      draggable={false}
+      onDragStart={(e) => e.preventDefault()}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <label className="fs-spacer-label">Size:</label>
       <input
-        type="range"
+        type="number"
+        className="fs-spacer-input"
         min={min}
         max={max}
         value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        title="Spacer size"
+        onChange={(e) => {
+          const n = Number(e.target.value);
+          if (Number.isFinite(n)) onChange(Math.max(min, Math.min(max, n)));
+        }}
+        title="Spacer size in pixels"
       />
-      <span className="fs-spacer-px">{value}px</span>
+      <span className="fs-spacer-px">px</span>
     </span>
   );
 }
@@ -276,7 +292,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                     {r.kind === 'divider' && r.spacer ? (
                       <>
                         <span className="fs-spacer-row-label">— Spacer —</span>
-                        <SpacerSlider
+                        <SpacerSize
                           value={r.size ?? DEFAULT_PANEL_SPACER}
                           min={8}
                           max={240}
@@ -681,7 +697,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                       <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
                       {tokenLabel(tok)}
                       {tok.startsWith('s:') && (
-                        <SpacerSlider
+                        <SpacerSize
                           value={spacerPx(tok)}
                           min={8}
                           max={240}

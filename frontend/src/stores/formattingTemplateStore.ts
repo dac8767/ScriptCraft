@@ -104,6 +104,10 @@ interface FormattingTemplateState {
  */
 export const NON_PICKABLE = ['newAct', 'endOfAct', 'castList'];
 
+/** Dual Dialogue is a structure rather than a paragraph type, so it has no
+ *  template rule — but it IS offered in every element list. */
+export const DUAL_DIALOGUE_ID = 'dualDialogue';
+
 function uuid(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     try { return crypto.randomUUID(); } catch { /* fallback */ }
@@ -180,8 +184,38 @@ export const useFormattingTemplateStore = create<FormattingTemplateState>((set, 
    * list (they're inserted deliberately from elsewhere).
    */
   getPickableElements: () => {
-    return Object.values(get().getEffectiveRules())
+    const { elementHidden, elementOrder } = get();
+    const list = Object.values(get().getEffectiveRules())
       .filter((r) => r.enabled && !NON_PICKABLE.includes(r.id));
+
+    // v0.86: Dual Dialogue is a real choice in every element list, so it belongs
+    // in THE list — not bolted on at each call site (which is how it ended up
+    // present in some menus and missing from others). It isn't a template rule
+    // (it's a structure, not a paragraph type), so it's synthesized here. That
+    // means it can be hidden and reordered in Customize > Elements like anything
+    // else, and every surface picks that up for free.
+    if (!elementHidden.includes(DUAL_DIALOGUE_ID)) {
+      const dual = {
+        id: DUAL_DIALOGUE_ID,
+        label: 'Dual Dialogue',
+        isBuiltIn: true,
+        enabled: true,
+      } as FormattingTemplate['rules'][string];
+
+      const ordered = elementOrder.indexOf(DUAL_DIALOGUE_ID);
+      if (ordered >= 0) {
+        // The user has placed it explicitly: honour their position among the
+        // elements they've ordered.
+        const before = elementOrder.slice(0, ordered);
+        const at = list.findIndex((r) => !before.includes(r.id));
+        list.splice(at < 0 ? list.length : at, 0, dual);
+      } else {
+        // Default home: immediately after Dialogue.
+        const di = list.findIndex((r) => r.id === 'dialogue');
+        list.splice(di < 0 ? list.length : di + 1, 0, dual);
+      }
+    }
+    return list;
   },
 
   getEnabledElements: () => {

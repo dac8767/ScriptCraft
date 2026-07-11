@@ -123,7 +123,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
 
   // Per-attribute locking for the current element
   const contextMenuHidden = useEditorStore((st) => st.contextMenuHidden);
-  const ctxShown = (id: string) => !contextMenuHidden.includes(id);
+  const contextMenuOrder = useEditorStore((st) => st.contextMenuOrder);
 
   const activeTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate());
   useFormattingTemplateStore((s) => s.elementHidden);   // re-render on change
@@ -134,7 +134,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
   const shortcutFor = new Map(ELEMENT_MENU_ITEMS.map((i) => [i.type as string, i.shortcut]));
   const pickableElements = useFormattingTemplateStore((s) => s.getPickableElements)();
   const orderedElementItems = pickableElements
-    .map((r) => ({ type: r.id as ElementType, shortcut: shortcutFor.get(r.id) ?? '' }));
+    .map((r) => ({ type: r.id as ElementType, label: r.label, shortcut: shortcutFor.get(r.id) ?? '' }));
   const isEnforceMode = activeTemplate.mode === 'enforce';
   const rule = getCurrentElementRule(editor, activeTemplate);
   const locked = getLockedFormatting(rule, isEnforceMode);
@@ -175,6 +175,21 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
   const showDualDialogue = ['character', 'dialogue', 'parenthetical'].includes(currentNodeType);
   // Context-sensitive: show scene properties for scene headings
   const showSceneProps = currentNodeType === 'sceneHeading';
+
+  // v0.86: Delete Element only makes sense when the caret is actually IN an
+  // element. Anywhere else there's nothing for it to delete, so offering it is
+  // just a dead entry.
+  const onAnElement = (() => {
+    if (!ELEMENT_LABELS[currentNodeType] && currentNodeType !== 'customElement') {
+      // Not a known element type — unless we're inside a dual dialogue, which
+      // IS the element the user is looking at.
+      for (let d = $from.depth; d >= 0; d--) {
+        if ($from.node(d).type.name === 'dualDialogue') return true;
+      }
+      return false;
+    }
+    return true;
+  })();
   // Context-sensitive: show character profile for character/dialogue/parenthetical
   const showCharProfile = ['character', 'dialogue', 'parenthetical'].includes(currentNodeType);
 
@@ -327,6 +342,13 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
   };
 
   const handleSetElement = (type: ElementType) => {
+    // Dual Dialogue is a structure, not a paragraph type — run its command.
+    if ((type as string) === 'dualDialogue') {
+      (editor as unknown as { commands: { toggleDualDialogue: () => boolean } })
+        .commands.toggleDualDialogue();
+      onClose();
+      return;
+    }
     editor.chain().focus().setNode(type).run();
     onClose();
   };
@@ -614,6 +636,270 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
     onClose();
   };
 
+  // v0.86: the right-click menu is rendered from an ORDERED map rather than a
+  // fixed run of JSX. Customize > Context Menu can now reorder and add/remove
+  // items, and that ordering has to reach the actual menu — which is impossible
+  // while each section is hardcoded in place. Contextual conditions (only show
+  // Scene Properties on a scene heading, etc.) still apply on top.
+  const ctxSections: Record<string, React.ReactNode> = {
+    element: (<><>
+      <div
+        className="ctx-has-sub-wrap"
+        onPointerEnter={(e) => { if (e.pointerType === 'mouse') { setElementSubOpen(true); setStyleSubOpen(false); setRevisionSubOpen(false); } }}
+        onPointerLeave={(e) => { if (e.pointerType === 'mouse') setElementSubOpen(false); }}
+      >
+        <div className="ctx-item ctx-has-sub" onClick={() => { setElementSubOpen(true); setStyleSubOpen(false); setRevisionSubOpen(false); }}>
+          <span>Element</span>
+          <span className="ctx-arrow">&#9656;</span>
+        </div>
+        {elementSubOpen && (
+          <div className="ctx-submenu">
+            {/* v0.81: driven by the EFFECTIVE rules so hiding or reordering an
+                element in Customize > Elements updates this menu too — it used
+                to walk its own hardcoded ELEMENT_MENU_ITEMS order and only
+                checked the raw template's `enabled`. */}
+            {orderedElementItems
+              .map(({ type, label, shortcut }) => (
+              <div
+                key={type}
+                className={`ctx-item${currentNodeType === type ? ' ctx-active' : ''}`}
+                onClick={() => handleSetElement(type)}
+              >
+                <span>{ELEMENT_LABELS[type] || label}</span>
+                {shortcut && <span className="ctx-shortcut">{shortcut}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      </></>),
+    style: (<><>
+      <div
+        className="ctx-has-sub-wrap"
+        onPointerEnter={(e) => { if (e.pointerType === 'mouse') { setStyleSubOpen(true); setElementSubOpen(false); setRevisionSubOpen(false); } }}
+        onPointerLeave={(e) => { if (e.pointerType === 'mouse') setStyleSubOpen(false); }}
+      >
+        <div className="ctx-item ctx-has-sub" onClick={() => { setStyleSubOpen(true); setElementSubOpen(false); setRevisionSubOpen(false); }}>
+          <span>Style</span>
+          <span className="ctx-arrow">&#9656;</span>
+        </div>
+        {styleSubOpen && (
+          <div className="ctx-submenu">
+            <div className={`ctx-item${locked.bold ? ' ctx-disabled' : ''}${editor.isActive('bold') ? ' ctx-active' : ''}`} onClick={() => { if (!locked.bold) handleBold(); }}>
+              <span>Bold</span>
+              <span className="ctx-shortcut">{mod}B</span>
+            </div>
+            <div className={`ctx-item${locked.italic ? ' ctx-disabled' : ''}${editor.isActive('italic') ? ' ctx-active' : ''}`} onClick={() => { if (!locked.italic) handleItalic(); }}>
+              <span>Italic</span>
+              <span className="ctx-shortcut">{mod}I</span>
+            </div>
+            <div className={`ctx-item${locked.underline ? ' ctx-disabled' : ''}${editor.isActive('underline') ? ' ctx-active' : ''}`} onClick={() => { if (!locked.underline) handleUnderline(); }}>
+              <span>Underline</span>
+              <span className="ctx-shortcut">{mod}U</span>
+            </div>
+            <div className={`ctx-item${locked.strikethrough ? ' ctx-disabled' : ''}${editor.isActive('strike') ? ' ctx-active' : ''}`} onClick={() => { if (!locked.strikethrough) handleStrike(); }}>
+              <span>Strikethrough</span>
+            </div>
+            <div className="ctx-separator" />
+            <div className={`ctx-item${locked.subscript ? ' ctx-disabled' : ''}${editor.isActive('subscript') ? ' ctx-active' : ''}`} onClick={() => { if (!locked.subscript) handleSubscript(); }}>
+              <span>Subscript</span>
+            </div>
+            <div className={`ctx-item${locked.superscript ? ' ctx-disabled' : ''}${editor.isActive('superscript') ? ' ctx-active' : ''}`} onClick={() => { if (!locked.superscript) handleSuperscript(); }}>
+              <span>Superscript</span>
+            </div>
+            <div className="ctx-separator" />
+            <div className={`ctx-item${locked.textTransform ? ' ctx-disabled' : ''}`} onClick={() => { if (!locked.textTransform) handleAllCaps(); }}>
+              <span>ALL CAPS</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      </></>),
+    font: (<><div className={`ctx-item${locked.fontFamily ? ' ctx-disabled' : ''}`} onClick={() => { if (!locked.fontFamily) { onOpenFormatPanel(); onClose(); } }}>
+          <span>Font...</span>
+        </div></>),
+    sceneProperties: showSceneProps ? (<><div className="ctx-item ctx-disabled">
+          <span>Scene Properties...</span>
+        </div></>) : null,
+    characterProfile: showCharProfile ? (<><div className="ctx-item" onClick={() => {
+          if (!characterProfilesOpen) toggleCharacterProfiles();
+          onClose();
+        }}>
+          <span>Character Profile...</span>
+        </div></>) : null,
+    dualDialogue: showDualDialogue ? (<><div className="ctx-item" onClick={() => { console.log('[CtxMenu] Dual Dialogue clicked, commands:', Object.keys(editor.commands).filter(k => k.includes('dual') || k.includes('Dual'))); const result = (editor as any).commands.toggleDualDialogue(); console.log('[CtxMenu] result:', result); onClose(); }}>
+          <span>Dual Dialogue</span>
+          <span className="ctx-shortcut">{mod}D</span>
+        </div></>) : null,
+    revisionMode: (<><div className="ctx-item" onClick={() => { setRevisionMode(!revisionMode); onClose(); }}>
+        <span>{revisionMode ? '\u2713 ' : ''}Revision Mode</span>
+      </div></>),
+    revisionColor: (<><div
+        className="ctx-has-sub-wrap"
+        onPointerEnter={(e) => { if (e.pointerType === 'mouse') { setRevisionSubOpen(true); setElementSubOpen(false); setStyleSubOpen(false); } }}
+        onPointerLeave={(e) => { if (e.pointerType === 'mouse') setRevisionSubOpen(false); }}
+      >
+        <div className="ctx-item ctx-has-sub" onClick={() => { setRevisionSubOpen(true); setElementSubOpen(false); setStyleSubOpen(false); }}>
+          <span>Revision Color</span>
+          <span className="ctx-arrow">&#9656;</span>
+        </div>
+        {revisionSubOpen && (
+          <div className="ctx-submenu ctx-submenu-colors">
+            {REVISION_COLORS.map((color) => (
+              <div
+                key={color}
+                className={`ctx-item${revisionColor === color ? ' ctx-active' : ''}`}
+                onClick={() => handleRevisionColor(color)}
+              >
+                <span className="ctx-color-swatch" data-color={color.toLowerCase().replace(/\s/g, '-')} />
+                <span>{color}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div></>),
+    addScriptNote: (<><>
+      {existingNoteId ? (
+        <>
+          <div className="ctx-item" onClick={handleEditScriptNote}>
+            <span>Edit Script Note</span>
+          </div>
+          <div className="ctx-item" onClick={handleDeleteScriptNote}>
+            <span>Delete Script Note</span>
+          </div>
+        </>
+      ) : (
+        <div className="ctx-item" onClick={handleAddScriptNote}>
+          <span>Add Script Note</span>
+          <span className="ctx-shortcut">{shift}{mod}N</span>
+        </div>
+      )}
+      <div className="ctx-separator" />
+
+      </></>),
+    copyToSnippets: hasSelection ? (<><div className="ctx-item" onClick={() => {
+            const { from, to } = savedSelection.current;
+            const text = editor.state.doc.textBetween(from, to, '\n');
+            if (text.trim()) {
+              addShelfCard({ id: uuid(), type: 'snippet', color: '#f4d35e', text: text.trim(), createdAt: new Date().toISOString() });
+              useEditorStore.getState().openTool('fragments');
+              showToast('Copied to Snippets', 'success');
+            }
+            onClose();
+          }}>
+            <span>Copy to Snippets</span>
+          </div></>) : null,
+    addToDo: hasSelection ? (<><div className="ctx-item" onClick={() => {
+            const { from, to } = savedSelection.current;
+            const text = editor.state.doc.textBetween(from, to, ' ');
+            if (text.trim()) {
+              addShelfCard({ id: uuid(), type: 'todo', color: '#f4d35e', items: [{ text: text.trim(), done: false }], createdAt: new Date().toISOString() });
+              useEditorStore.getState().openTool('todo');
+              showToast('Added to To-Do', 'success');
+            }
+            onClose();
+          }}>
+            <span>Add as To-Do Item</span>
+          </div></>) : null,
+    insertSection: (<><div className="ctx-item" onClick={() => {
+        editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '# ' }] }).run();
+        onClose();
+      }}>
+        <span>Insert Section</span>
+      </div></>),
+    insertMarker: (<><div className="ctx-item" onClick={() => {
+        editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '\u2691 ' }] }).run();
+        onClose();
+      }}>
+        <span>Insert Marker</span>
+      </div></>),
+    insertChecklist: (<><div className="ctx-item" onClick={() => {
+        editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '[ ] ' }] }).run();
+        onClose();
+      }}>
+        <span>Insert Checklist Item</span>
+      </div></>),
+    tagAs: (<><>
+      {existingTagInfo ? (
+        <>
+          <div className="ctx-item" onClick={() => {
+            if (existingTagInfo) {
+              setEditingTagId(existingTagInfo.tagId);
+            }
+            useEditorStore.getState().openTool('tags');
+            onClose();
+          }}>
+            <span>Edit Tag...</span>
+          </div>
+          <div className="ctx-item" onClick={handleRemoveTag}>
+            <span>Remove Tag</span>
+          </div>
+        </>
+      ) : (
+        <div className="ctx-item" onClick={handleTagAs}>
+          <span>Tag as...</span>
+        </div>
+      )}
+      <div className="ctx-separator" />
+
+      </></>),
+    spelling: (<><>
+      {spellInfo && (() => {
+        const activeAddTargets = spellChecker.getActiveAddTargets();
+        const multipleTargets = activeAddTargets.length > 1;
+        return (
+          <>
+            <div className="ctx-item" onClick={handleSpellIgnore}>
+              <span>Ignore Spelling</span>
+            </div>
+            <div
+              className="ctx-item"
+              onMouseEnter={() => multipleTargets && setAddDictSubOpen(true)}
+              onMouseLeave={() => multipleTargets && setAddDictSubOpen(false)}
+              onClick={handleSpellAddDict}
+              style={multipleTargets ? { position: 'relative' } : undefined}
+            >
+              <span>Add to Dictionary{multipleTargets ? '…' : ''}</span>
+              {multipleTargets && (
+                <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--fd-text-muted)' }}>▸</span>
+              )}
+              {multipleTargets && addDictSubOpen && (
+                <div className="ctx-submenu" style={{ left: '100%', top: 0 }}>
+                  {activeAddTargets.map((t) => {
+                    const label = t === PROJECT_DICT_TARGET ? 'Project dictionary' : t;
+                    return (
+                      <div
+                        key={t}
+                        className="ctx-item"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSpellAddDictTo(t);
+                        }}
+                      >
+                        <span>{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        );
+      })()}
+      </></>),
+  };
+
+  // The user's order, hidden items removed. Anything not yet in their saved
+  // order (e.g. a section added in a later version) keeps its default place.
+  const orderedCtxIds = (() => {
+    const known = CONTEXT_MENU_SECTIONS.map((x) => x.id);
+    const ordered = contextMenuOrder.filter((id) => known.includes(id));
+    const rest = known.filter((id) => !ordered.includes(id));
+    return [...ordered, ...rest].filter((id: string) => !contextMenuHidden.includes(id));
+  })();
+
   return (
     <div
       ref={menuRef}
@@ -703,9 +989,11 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
         <span>Select All</span>
         <span className="ctx-shortcut">{mod}A</span>
       </div>
-      <div className="ctx-item" onClick={handleDeleteElement}>
-        <span>Delete Element</span>
-      </div>
+      {onAnElement && (
+        <div className="ctx-item" onClick={handleDeleteElement}>
+          <span>Delete Element</span>
+        </div>
+      )}
       <div className={`ctx-item${!hasSelection ? ' ctx-disabled' : ''}`} onClick={handleDelete}>
         <span>Delete</span>
       </div>
@@ -713,307 +1001,10 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
 
       
       {/* Element submenu */}
-      {ctxShown('element') && (<>
-      <div
-        className="ctx-has-sub-wrap"
-        onPointerEnter={(e) => { if (e.pointerType === 'mouse') { setElementSubOpen(true); setStyleSubOpen(false); setRevisionSubOpen(false); } }}
-        onPointerLeave={(e) => { if (e.pointerType === 'mouse') setElementSubOpen(false); }}
-      >
-        <div className="ctx-item ctx-has-sub" onClick={() => { setElementSubOpen(true); setStyleSubOpen(false); setRevisionSubOpen(false); }}>
-          <span>Element</span>
-          <span className="ctx-arrow">&#9656;</span>
-        </div>
-        {elementSubOpen && (
-          <div className="ctx-submenu">
-            {/* v0.81: driven by the EFFECTIVE rules so hiding or reordering an
-                element in Customize > Elements updates this menu too — it used
-                to walk its own hardcoded ELEMENT_MENU_ITEMS order and only
-                checked the raw template's `enabled`. */}
-            {orderedElementItems
-              .map(({ type, shortcut }) => (
-              <div
-                key={type}
-                className={`ctx-item${currentNodeType === type ? ' ctx-active' : ''}`}
-                onClick={() => handleSetElement(type)}
-              >
-                <span>{ELEMENT_LABELS[type]}</span>
-                {shortcut && <span className="ctx-shortcut">{shortcut}</span>}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {orderedCtxIds.map((id) => (
+        <React.Fragment key={id}>{ctxSections[id]}</React.Fragment>
+      ))}
 
-      </>)}
-
-      {/* Style submenu */}
-      {ctxShown('style') && (<>
-      <div
-        className="ctx-has-sub-wrap"
-        onPointerEnter={(e) => { if (e.pointerType === 'mouse') { setStyleSubOpen(true); setElementSubOpen(false); setRevisionSubOpen(false); } }}
-        onPointerLeave={(e) => { if (e.pointerType === 'mouse') setStyleSubOpen(false); }}
-      >
-        <div className="ctx-item ctx-has-sub" onClick={() => { setStyleSubOpen(true); setElementSubOpen(false); setRevisionSubOpen(false); }}>
-          <span>Style</span>
-          <span className="ctx-arrow">&#9656;</span>
-        </div>
-        {styleSubOpen && (
-          <div className="ctx-submenu">
-            <div className={`ctx-item${locked.bold ? ' ctx-disabled' : ''}${editor.isActive('bold') ? ' ctx-active' : ''}`} onClick={() => { if (!locked.bold) handleBold(); }}>
-              <span>Bold</span>
-              <span className="ctx-shortcut">{mod}B</span>
-            </div>
-            <div className={`ctx-item${locked.italic ? ' ctx-disabled' : ''}${editor.isActive('italic') ? ' ctx-active' : ''}`} onClick={() => { if (!locked.italic) handleItalic(); }}>
-              <span>Italic</span>
-              <span className="ctx-shortcut">{mod}I</span>
-            </div>
-            <div className={`ctx-item${locked.underline ? ' ctx-disabled' : ''}${editor.isActive('underline') ? ' ctx-active' : ''}`} onClick={() => { if (!locked.underline) handleUnderline(); }}>
-              <span>Underline</span>
-              <span className="ctx-shortcut">{mod}U</span>
-            </div>
-            <div className={`ctx-item${locked.strikethrough ? ' ctx-disabled' : ''}${editor.isActive('strike') ? ' ctx-active' : ''}`} onClick={() => { if (!locked.strikethrough) handleStrike(); }}>
-              <span>Strikethrough</span>
-            </div>
-            <div className="ctx-separator" />
-            <div className={`ctx-item${locked.subscript ? ' ctx-disabled' : ''}${editor.isActive('subscript') ? ' ctx-active' : ''}`} onClick={() => { if (!locked.subscript) handleSubscript(); }}>
-              <span>Subscript</span>
-            </div>
-            <div className={`ctx-item${locked.superscript ? ' ctx-disabled' : ''}${editor.isActive('superscript') ? ' ctx-active' : ''}`} onClick={() => { if (!locked.superscript) handleSuperscript(); }}>
-              <span>Superscript</span>
-            </div>
-            <div className="ctx-separator" />
-            <div className={`ctx-item${locked.textTransform ? ' ctx-disabled' : ''}`} onClick={() => { if (!locked.textTransform) handleAllCaps(); }}>
-              <span>ALL CAPS</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      </>)}
-
-      {/* Font & Formatting */}
-      {ctxShown('font') && (
-        <div className={`ctx-item${locked.fontFamily ? ' ctx-disabled' : ''}`} onClick={() => { if (!locked.fontFamily) { onOpenFormatPanel(); onClose(); } }}>
-          <span>Font...</span>
-        </div>
-      )}
-      <div className="ctx-separator" />
-
-      {/* Context-sensitive items */}
-      {showSceneProps && ctxShown('sceneProperties') && (
-          <div className="ctx-item ctx-disabled">
-          <span>Scene Properties...</span>
-        </div>
-      )}
-      {showCharProfile && ctxShown('characterProfile') && (
-          <div className="ctx-item" onClick={() => {
-          if (!characterProfilesOpen) toggleCharacterProfiles();
-          onClose();
-        }}>
-          <span>Character Profile...</span>
-        </div>
-      )}
-      {showDualDialogue && ctxShown('dualDialogue') && (
-          <div className="ctx-item" onClick={() => { console.log('[CtxMenu] Dual Dialogue clicked, commands:', Object.keys(editor.commands).filter(k => k.includes('dual') || k.includes('Dual'))); const result = (editor as any).commands.toggleDualDialogue(); console.log('[CtxMenu] result:', result); onClose(); }}>
-          <span>Dual Dialogue</span>
-          <span className="ctx-shortcut">{mod}D</span>
-        </div>
-      )}
-      {(showSceneProps || showDualDialogue || showCharProfile) && <div className="ctx-separator" />}
-
-      
-
-      {/* Revision */}
-      {ctxShown('revisionMode') && (
-      <div className="ctx-item" onClick={() => { setRevisionMode(!revisionMode); onClose(); }}>
-        <span>{revisionMode ? '\u2713 ' : ''}Revision Mode</span>
-      </div>
-      )}
-      {ctxShown('revisionColor') && (
-      <div
-        className="ctx-has-sub-wrap"
-        onPointerEnter={(e) => { if (e.pointerType === 'mouse') { setRevisionSubOpen(true); setElementSubOpen(false); setStyleSubOpen(false); } }}
-        onPointerLeave={(e) => { if (e.pointerType === 'mouse') setRevisionSubOpen(false); }}
-      >
-        <div className="ctx-item ctx-has-sub" onClick={() => { setRevisionSubOpen(true); setElementSubOpen(false); setStyleSubOpen(false); }}>
-          <span>Revision Color</span>
-          <span className="ctx-arrow">&#9656;</span>
-        </div>
-        {revisionSubOpen && (
-          <div className="ctx-submenu ctx-submenu-colors">
-            {REVISION_COLORS.map((color) => (
-              <div
-                key={color}
-                className={`ctx-item${revisionColor === color ? ' ctx-active' : ''}`}
-                onClick={() => handleRevisionColor(color)}
-              >
-                <span className="ctx-color-swatch" data-color={color.toLowerCase().replace(/\s/g, '-')} />
-                <span>{color}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      )}
-      {(ctxShown('revisionMode') || ctxShown('revisionColor')) && <div className="ctx-separator" />}
-
-      {/* Script Notes — context-sensitive */}
-      {ctxShown('addScriptNote') && (<>
-      {existingNoteId ? (
-        <>
-          <div className="ctx-item" onClick={handleEditScriptNote}>
-            <span>Edit Script Note</span>
-          </div>
-          <div className="ctx-item" onClick={handleDeleteScriptNote}>
-            <span>Delete Script Note</span>
-          </div>
-        </>
-      ) : (
-        <div className="ctx-item" onClick={handleAddScriptNote}>
-          <span>Add Script Note</span>
-          <span className="ctx-shortcut">{shift}{mod}N</span>
-        </div>
-      )}
-      <div className="ctx-separator" />
-
-      </>)}
-
-      {/* Send selection to the Fragments / To-Do panels (v0.13) */}
-      {hasSelection && (
-        <>
-          {ctxShown('copyToSnippets') && (
-          <div className="ctx-item" onClick={() => {
-            const { from, to } = savedSelection.current;
-            const text = editor.state.doc.textBetween(from, to, '\n');
-            if (text.trim()) {
-              addShelfCard({ id: uuid(), type: 'snippet', color: '#f4d35e', text: text.trim(), createdAt: new Date().toISOString() });
-              useEditorStore.getState().openTool('fragments');
-              showToast('Copied to Snippets', 'success');
-            }
-            onClose();
-          }}>
-            <span>Copy to Snippets</span>
-          </div>
-          )}
-          {ctxShown('addToDo') && (
-          <div className="ctx-item" onClick={() => {
-            const { from, to } = savedSelection.current;
-            const text = editor.state.doc.textBetween(from, to, ' ');
-            if (text.trim()) {
-              addShelfCard({ id: uuid(), type: 'todo', color: '#f4d35e', items: [{ text: text.trim(), done: false }], createdAt: new Date().toISOString() });
-              useEditorStore.getState().openTool('todo');
-              showToast('Added to To-Do', 'success');
-            }
-            onClose();
-          }}>
-            <span>Add as To-Do Item</span>
-          </div>
-          )}
-          {(ctxShown('copyToSnippets') || ctxShown('addToDo')) && <div className="ctx-separator" />}
-        </>
-      )}
-
-      {/* Outline inserts (Section / Marker / Checklist) at the caret */}
-      <>
-      {ctxShown('insertSection') && (
-        <div className="ctx-item" onClick={() => {
-        editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '# ' }] }).run();
-        onClose();
-      }}>
-        <span>Insert Section</span>
-      </div>
-      )}
-      {ctxShown('insertMarker') && (
-        <div className="ctx-item" onClick={() => {
-        editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '\u2691 ' }] }).run();
-        onClose();
-      }}>
-        <span>Insert Marker</span>
-      </div>
-      )}
-      {ctxShown('insertChecklist') && (
-        <div className="ctx-item" onClick={() => {
-        editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '[ ] ' }] }).run();
-        onClose();
-      }}>
-        <span>Insert Checklist Item</span>
-      </div>
-      )}
-      {(ctxShown('insertSection') || ctxShown('insertMarker') || ctxShown('insertChecklist'))
-        && <div className="ctx-separator" />}
-      </>
-
-      {/* Production Tags */}
-      {ctxShown('tagAs') && (<>
-      {existingTagInfo ? (
-        <>
-          <div className="ctx-item" onClick={() => {
-            if (existingTagInfo) {
-              setEditingTagId(existingTagInfo.tagId);
-            }
-            useEditorStore.getState().openTool('tags');
-            onClose();
-          }}>
-            <span>Edit Tag...</span>
-          </div>
-          <div className="ctx-item" onClick={handleRemoveTag}>
-            <span>Remove Tag</span>
-          </div>
-        </>
-      ) : (
-        <div className="ctx-item" onClick={handleTagAs}>
-          <span>Tag as...</span>
-        </div>
-      )}
-      <div className="ctx-separator" />
-
-      </>)}
-
-      {/* Spelling tools */}
-      {ctxShown('spelling') && (<>
-      {spellInfo && (() => {
-        const activeAddTargets = spellChecker.getActiveAddTargets();
-        const multipleTargets = activeAddTargets.length > 1;
-        return (
-          <>
-            <div className="ctx-item" onClick={handleSpellIgnore}>
-              <span>Ignore Spelling</span>
-            </div>
-            <div
-              className="ctx-item"
-              onMouseEnter={() => multipleTargets && setAddDictSubOpen(true)}
-              onMouseLeave={() => multipleTargets && setAddDictSubOpen(false)}
-              onClick={handleSpellAddDict}
-              style={multipleTargets ? { position: 'relative' } : undefined}
-            >
-              <span>Add to Dictionary{multipleTargets ? '…' : ''}</span>
-              {multipleTargets && (
-                <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--fd-text-muted)' }}>▸</span>
-              )}
-              {multipleTargets && addDictSubOpen && (
-                <div className="ctx-submenu" style={{ left: '100%', top: 0 }}>
-                  {activeAddTargets.map((t) => {
-                    const label = t === PROJECT_DICT_TARGET ? 'Project dictionary' : t;
-                    return (
-                      <div
-                        key={t}
-                        className="ctx-item"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSpellAddDictTo(t);
-                        }}
-                      >
-                        <span>{label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </>
-        );
-      })()}
-      </>)}
       {/* Permanent — never hidden, so the menu can always be customized back. */}
       <div className="ctx-separator" />
       <div

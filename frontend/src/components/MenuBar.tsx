@@ -1177,9 +1177,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           ],
         },
         { separator: true, label: '' },
-        { icon: <FaCog />, label: 'Settings...', action: () => setPrefsOpen(true) },
-        { separator: true, label: '' },
         { icon: <FaProjectDiagram />, label: 'Manage Projects…', action: () => setProjectManagerOpen(true) },
+        { separator: true, label: '' },
+        { icon: <FaCog />, label: 'Settings...', action: () => setPrefsOpen(true) },
       ],
     },
     {
@@ -1277,16 +1277,16 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                   sceneHeading: `${mod}1`, action: `${mod}2`, character: `${mod}3`, dialogue: `${mod}4`,
                   parenthetical: `${mod}5`, transition: `${mod}6`, general: `${mod}7`, shot: `${mod}8`,
                 };
-                const entry = { label: r.label, shortcut: shortcuts[r.id], action: () => setElement(r.id as any) };
-                if (r.id !== 'dialogue') return [entry];
-                return [
-                  entry,
-                  {
-                    label: 'Dual Dialogue',
+                // Dual Dialogue arrives from the canonical list like any other
+                // element; it just runs a command instead of setting a node.
+                if (r.id === 'dualDialogue') {
+                  return [{
+                    label: r.label,
                     shortcut: sc('dualDialogue'),
                     action: () => (editor as any)?.commands?.toggleDualDialogue(),
-                  },
-                ];
+                  }];
+                }
+                return [{ label: r.label, shortcut: shortcuts[r.id], action: () => setElement(r.id as any) }];
               }),
             { separator: true, label: '' },
             { icon: <FaSlidersH />, label: 'Customize Elements...', action: () => openCustomize('elements') },

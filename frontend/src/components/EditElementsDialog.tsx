@@ -13,7 +13,7 @@
  * Action would leave a screenplay with no way to type its own body.
  */
 import React from 'react';
-import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
+import { useFormattingTemplateStore, DUAL_DIALOGUE_ID } from '../stores/formattingTemplateStore';
 
 /** Elements a screenplay can't function without — reorderable, never hidable. */
 const REQUIRED_IDS = ['sceneHeading', 'action', 'character', 'dialogue'];
@@ -40,6 +40,24 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
   void elementOrder; void elementHidden;
   const rules = getEffectiveRules();
   const ids = Object.keys(rules).filter((id) => !EXCLUDED_IDS.includes(id));
+
+  // v0.86: Dual Dialogue is offered in every element list, so it must be
+  // manageable here too — otherwise it's the one element you can't hide or
+  // reorder. It has no template rule (it's a structure, not a paragraph type),
+  // so it's inserted with the SAME placement rule the store uses: the user's
+  // position if they've dragged it, otherwise straight after Dialogue.
+  if (!ids.includes(DUAL_DIALOGUE_ID)) {
+    const placed = elementOrder.indexOf(DUAL_DIALOGUE_ID);
+    if (placed >= 0) {
+      const before = elementOrder.slice(0, placed);
+      const at = ids.findIndex((id) => !before.includes(id));
+      ids.splice(at < 0 ? ids.length : at, 0, DUAL_DIALOGUE_ID);
+    } else {
+      const di = ids.indexOf('dialogue');
+      ids.splice(di < 0 ? ids.length : di + 1, 0, DUAL_DIALOGUE_ID);
+    }
+  }
+  const labelOf = (id: string) => (id === DUAL_DIALOGUE_ID ? 'Dual Dialogue' : rules[id]?.label ?? id);
 
   const moveTo = (from: number, to: number) => {
     const next = [...ids];
@@ -72,7 +90,11 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
         </p>
         <div className="fs-customize-grid">
           {ids.map((id, idx) => {
+            // Dual Dialogue has no template rule (structure, not paragraph
+            // type), so its enabled state comes straight from the hidden list —
+            // guarding here rather than assuming every row has a rule.
             const rule = rules[id];
+            const enabled = rule ? rule.enabled : !elementHidden.includes(id);
             const required = REQUIRED_IDS.includes(id);
             return (
               <div
@@ -90,15 +112,15 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
               >
                 <span className="fs-customize-tool">
                   <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
-                  {rule.label}
+                  {labelOf(id)}
                 </span>
                 <span className="fs-customize-seg">
                   <button
-                    className={rule.enabled ? 'active' : ''}
+                    className={enabled ? 'active' : ''}
                     onClick={() => setEnabled(id, true)}
                   >Show</button>
                   <button
-                    className={!rule.enabled ? 'active' : ''}
+                    className={!enabled ? 'active' : ''}
                     disabled={required}
                     title={required ? 'Core elements can’t be hidden' : 'Hide this element'}
                     onClick={() => setEnabled(id, false)}

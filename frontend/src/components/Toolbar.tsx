@@ -688,13 +688,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             // When inside an AV cell, only cell-valid types make sense — selecting
             // sceneHeading/action/etc. silently fails the schema check anyway.
             .filter((r) => isInsideAvCell ? AV_CELL_ELEMENT_IDS.includes(r.id) : !AV_CELL_ELEMENT_IDS.includes(r.id))
-            .flatMap((r) => {
-              const opt = <option key={r.id} value={r.id}>{r.label}</option>;
-              // Dual Dialogue sits with Dialogue in every list, not just Insert.
-              return r.id === 'dialogue' && !isInsideAvCell
-                ? [opt, <option key="dualDialogue" value="dualDialogue">Dual Dialogue</option>]
-                : [opt];
-            })}
+            .map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
         </select>
       );
       case 'insertSection': return (

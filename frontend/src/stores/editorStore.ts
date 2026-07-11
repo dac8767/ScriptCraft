@@ -22,6 +22,7 @@ interface ViewState {
   toolbarRight?: string[];
   toolbarZonesSet?: boolean;
   contextMenuHidden?: string[];
+  contextMenuOrder?: string[];
   panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
   chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
@@ -674,6 +675,9 @@ interface EditorState {
    *  governed by their own tab, so every instance stays in sync. */
   contextMenuHidden: string[];
   setContextMenuHidden: (ids: string[]) => void;
+  /** Display order of the right-click menu's items (v0.86). */
+  contextMenuOrder: string[];
+  setContextMenuOrder: (ids: string[]) => void;
   panelSizeMode: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
   /** Custom sizes in px, used when the matching mode is 'custom' (v0.72). */
   chromeCustomPx: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
@@ -1523,6 +1527,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setContextMenuHidden: (ids) => {
     saveViewState({ contextMenuHidden: ids });
     set({ contextMenuHidden: ids });
+  },
+  contextMenuOrder: _vs.contextMenuOrder ?? [],
+  setContextMenuOrder: (ids) => {
+    saveViewState({ contextMenuOrder: ids });
+    set({ contextMenuOrder: ids });
   },
   panelSizeMode: _vs.panelSizeMode ?? { left: 'comfortable', right: 'comfortable' },
   chromeCustomPx: _vs.chromeCustomPx ?? { menu: 36, toolbar: 33, panelLeft: 266, panelRight: 266 },
