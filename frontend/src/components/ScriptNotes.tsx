@@ -15,7 +15,7 @@ import {
   type ShelfCard,
   SHELF_COLORS,
 } from '../stores/editorStore';
-import { ColorDots, StickyCard, formatDate } from './StickyCard';
+import { ColorDots, StickyCard, formatDate, CARD_PLACEHOLDERS } from './StickyCard';
 export { formatDate };
 import {
   ListToolbar, arrangeEntries, reorderKeys, entryDragProps,
@@ -474,18 +474,28 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
     return found;
   }, [editor]);
 
-  /** The scene a note falls under — the text of its link. */
-  const sceneFor = useCallback((noteId: string): string | null => {
-    if (!editor) return null;
+  /**
+   * v1.3.1 — the link names the SCENE the note sits in: "Linked to Scene 14".
+   * A locked production number on the heading wins if it has one; otherwise it's
+   * the scene's position in the script. A note above the first scene heading
+   * belongs to no scene, and says so rather than inventing a number for it.
+   */
+  const sceneFor = useCallback((noteId: string): string => {
+    if (!editor) return 'Linked to Script';
     const at = notePos(noteId);
-    if (at == null) return null;
-    let scene: string | null = null;
+    if (at == null) return 'Linked to Script';
+    let ordinal = 0;
+    let label: string | null = null;
     editor.state.doc.descendants((node, pos) => {
       if (pos > at) return false;
-      if (node.type.name === 'sceneHeading') scene = node.textContent || '(untitled scene)';
+      if (node.type.name === 'sceneHeading') {
+        ordinal += 1;
+        const num = node.attrs?.sceneNumber;
+        label = `Linked to Scene ${num ?? ordinal}`;
+      }
       return true;
     });
-    return scene;
+    return label ?? 'Linked to Script';
   }, [editor, notePos]);
 
   const onDropKey = (from: string, to: string) => {
@@ -535,7 +545,7 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
           <input
             className="swn-card-title"
             value={note.title || ''}
-            placeholder="Note Title..."
+            placeholder={CARD_PLACEHOLDERS.comment}
             onChange={(e) => updateNote(note.id, { title: e.target.value })}
           />
           <span className="swn-card-actions">
@@ -599,7 +609,7 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
             className="fs-script-link"
             onClick={() => handleNavigateToNote(note.id)}
             title="Go to this note in the script"
-          >Link: {scene || 'View in script'}</button>
+          >{scene}</button>
           {note.createdAt && <span className="swn-card-date">{formatDate(note.createdAt)}</span>}
         </div>
       </div>

@@ -132,7 +132,7 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
               className="fs-script-link"
               onClick={anchor.onClick}
               title="Go to this in the script"
-            >Link: {anchor.label}</button>
+            >{anchor.label}</button>
           ) : (
             <span className="fs-general-tag">{anchor.label}</span>
           )

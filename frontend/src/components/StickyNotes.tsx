@@ -225,11 +225,16 @@ export function TodoTool({ editor }: EditorToolProps) {
       title: string; color: string | null; scene: string;
     }> = [];
     if (editor) {
-      let scene = '';
+      // v1.3.1: the link names the scene NUMBER — a locked production number if
+      // the heading carries one, otherwise its position in the script.
+      let scene = 'Linked to Script';
+      let ordinal = 0;
       let run: (typeof out)[number] | null = null;
       editor.state.doc.descendants((node, pos) => {
         if (node.type.name === 'sceneHeading') {
-          scene = node.textContent || '(untitled scene)';
+          ordinal += 1;
+          const num = (node.attrs as { sceneNumber?: number | string | null })?.sceneNumber;
+          scene = `Linked to Scene ${num ?? ordinal}`;
           run = null;
           return true;
         }
@@ -314,7 +319,7 @@ export function TodoTool({ editor }: EditorToolProps) {
               onDragStart={dp.grip.onDragStart}
               onDragEnd={dp.grip.onDragEnd}
               onDropHere={() => {}}
-              anchor={{ label: list.scene || 'View in script', onClick: () => jumpTo(list.start) }}
+              anchor={{ label: list.scene, onClick: () => jumpTo(list.start) }}
               onUpdate={(patch) => writeLines(list, patch.items ?? card.items ?? [], {
                 ...(patch.title !== undefined ? { todoTitle: patch.title || null } : {}),
                 ...(patch.color !== undefined ? { todoColor: patch.color || null } : {}),

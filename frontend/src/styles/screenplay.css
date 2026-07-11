@@ -414,9 +414,11 @@ body {
    should look like one of them. */
 .fs-addmenu-center { text-align: center; }
 .fs-addmenu-pop {
-  position: absolute;
-  bottom: calc(100% + 4px);      /* opens UPWARD: it sits at the foot of the tab */
-  left: 0;
+  /* v1.3.1: NO position, top, left or bottom here. The menu is portalled to the
+     body and positioned inline (fixed, measured from its button). A leftover
+     `bottom: calc(100% + 4px)` resolves against the VIEWPORT once the element is
+     fixed, so the box got squeezed between the inline top and a bottom a whole
+     screen away — which is why it opened as a sliver. Styling only, below. */
   min-width: 240px;
   max-width: 320px;
   max-height: 320px;
@@ -13311,7 +13313,7 @@ html.android .version-history-panel {
 .fs-list-toolbar .fs-addmenu-trigger {
   padding: 3px 8px; font-size: 11px; white-space: nowrap;
 }
-.fs-list-toolbar .fs-addmenu-pop { bottom: auto; top: calc(100% + 4px); min-width: 170px; }
+.fs-list-toolbar .fs-addmenu-pop { min-width: 170px; }   /* placement is inline */
 
 /* Both note kinds are the SAME card — no bespoke width or padding on either. */
 .note-item.swn-card { border-top: none; width: auto; }
