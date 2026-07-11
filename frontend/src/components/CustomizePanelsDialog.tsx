@@ -297,7 +297,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const [dragInfo, setDragInfo] = React.useState<{ list: string; idx: number } | null>(null);
   // Warning window shown whenever the View menu (or the whole menu bar)
   // gets hidden — the user must acknowledge where customization lives.
-  const [stuckWarnOpen, setStuckWarnOpen] = React.useState(false);
   const dragProps = (list: string, idx: number, moveTo: (from: number, to: number) => void) => ({
     draggable: true,
     onDragStart: (e: React.DragEvent) => {
@@ -403,8 +402,12 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     return '— Divider —';
   };
 
+  // v0.76: embedded (docked / Settings) previously forced overflowY: 'visible',
+  // so a list longer than the window just ran off with no scrollbar. It now
+  // scrolls like the modal does, and keeps side padding so the drag handles
+  // aren't clipped.
   const body = (
-        <div className="dialog-body fs-customize-body" style={embedded ? { padding: '4px 0 0', maxHeight: 'none', overflowY: 'visible' } : undefined}>
+        <div className="dialog-body fs-customize-body">
           <div className="prefs-subtabs">
             {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['elements', 'Elements']] as const).map(([id, label]) => (
               <button key={id} className={activeCat === id ? 'active' : ''} onClick={() => setActiveCat(id)}>{label}</button>
@@ -426,7 +429,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                     className={menuMode === m ? 'active' : ''}
                     onClick={() => {
                       setMenuMode(m);
-                      if (m === 'hidden' && menuMode !== 'hidden') setStuckWarnOpen(true);
                     }}
                   >
                     {m === 'hidden' ? 'Hide' : m[0].toUpperCase() + m.slice(1)}
@@ -440,11 +442,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 value={chromePx('menu', 'custom', chromeCustomPx.menu)}
                 onChange={(px) => setChromeCustomPx('menu', px)}
               />
-            )}
-            {(menuMode === 'hidden' || menuBarHidden.includes('View')) && (
-              <p className="fs-customize-hint fs-customize-stuck-hint">
-                You can still customize the menu bar, toolbar, and side panels by going to Settings {'>'} Layout.
-              </p>
             )}
             <div className="fs-customize-grid">
               {orderedMenuLabels.map((label, idx) => {
@@ -476,9 +473,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                         onClick={() => {
                           if (label === 'File' || hidden) return;
                           setMenuBarHidden([...menuBarHidden, label]);
-                          // View hosts this Customize dialog — tell the user
-                          // where the other way in lives so they aren't stuck.
-                          if (label === 'View') setStuckWarnOpen(true);
                         }}
                       >Hide</button>
                     </span>
@@ -495,10 +489,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               <button
                 className="swn-add-btn"
                 title="Hide every menu except File"
-                onClick={() => {
-                  setMenuBarHidden(MENU_BAR_LABELS.filter((l) => l !== 'File'));
-                  setStuckWarnOpen(true);
-                }}
+                onClick={() => setMenuBarHidden(MENU_BAR_LABELS.filter((l) => l !== 'File'))}
               >Hide All</button>
               <button
                 className="swn-add-btn"
@@ -683,22 +674,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           </section>
           {renderPanelsTab()}
           </>)}
-          {stuckWarnOpen && (
-            <div className="dialog-overlay fs-stuck-warn-overlay" onClick={() => setStuckWarnOpen(false)}>
-              <div className="dialog-box fs-stuck-warn-dialog" onClick={(e) => e.stopPropagation()}>
-                <div className="dialog-header">Heads Up</div>
-                <div className="dialog-body">
-                  <p>
-                    You can still customize the menu bar, toolbar, and side panels
-                    by going to Settings {'>'} Layout.
-                  </p>
-                </div>
-                <div className="dialog-footer">
-                  <button className="dialog-btn-primary" autoFocus onClick={() => setStuckWarnOpen(false)}>OK</button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
   );
 

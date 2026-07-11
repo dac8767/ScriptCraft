@@ -39,7 +39,7 @@ const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   // App-wide first, then writing setup, then data, then system.
   { id: 'general', label: 'General', icon: <FaSlidersH /> },
   { id: 'saveloc', label: 'Save Options', icon: <FaCloudUploadAlt /> },
-  { id: 'layout', label: 'Layout', icon: <FaColumns /> },
+  { id: 'layout', label: 'Customize', icon: <FaColumns /> },
   { id: 'formats', label: 'Templates', icon: <FaFileAlt /> },
   { id: 'page', label: 'Page Setup', icon: <FaRulerCombined /> },
   { id: 'mores', label: 'Mores & Continueds', icon: <FaCommentDots /> },

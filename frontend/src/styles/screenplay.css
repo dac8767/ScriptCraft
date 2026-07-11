@@ -712,7 +712,8 @@ body {
   max-width: 96vw; max-height: 92vh;
   min-width: 420px; min-height: 300px;
   display: flex; flex-direction: column;
-  resize: both; overflow: hidden;      /* v0.75: resizable like every dialog */
+  resize: both; overflow: hidden;
+  padding-bottom: 14px;                /* keep the resize grip reachable */
 }
 .fs-manager-dialog-body { flex: 1; min-height: 0; display: flex; overflow: hidden; }
 .fs-manager-dialog-body > * { flex: 1; min-height: 0; }
@@ -818,31 +819,37 @@ body {
 .tool-dock-wrap.tool-dock-compact .tool-dock-item { padding-top: 7px; padding-bottom: 7px; }
 .tool-dock-wrap.tool-dock-compact .tool-dock-label { font-size: 12px; }
 
-/* Zoom dropdown (v0.75) */
+/* Zoom dropdown (v0.76) — styled to match .menu-dropdown / .menu-dropdown-item
+   so it reads as the same kind of menu as the Element dropdown. The v0.75
+   version used 14px+ type (words got clipped) and z-index: 300, which lost to
+   the side panels and drew UNDERNEATH them — .menu-dropdown's z-index is what
+   keeps a menu on top. */
 .zoom-menu-wrap { position: relative; display: inline-flex; }
 .zoom-menu {
-  position: absolute; top: calc(100% + 4px); right: 0; z-index: 300;
-  min-width: 190px; padding: 5px;
+  position: absolute; top: calc(100% + 4px); right: 0;
+  z-index: 2147483647;                 /* same as .menu-dropdown */
+  min-width: 200px; padding: 4px 0;
   background: var(--fd-dropdown-bg); border: 1px solid var(--fd-border);
-  border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
-  display: flex; flex-direction: column; gap: 1px;
+  border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.4);
+  display: flex; flex-direction: column;
 }
-.zoom-menu-value { padding: 5px 8px 6px; }
+.zoom-menu-value { padding: 4px 16px 6px; }
 .zoom-menu-value .zoom-label {
-  cursor: text; font-size: 14px; font-weight: 600; color: var(--fd-text);
-  padding: 3px 6px; border-radius: 4px; display: inline-block; min-width: 62px;
+  cursor: text; font-size: 13px; font-weight: 600; color: var(--fd-text);
+  padding: 2px 6px; border-radius: 3px; display: inline-block; min-width: 54px;
 }
 .zoom-menu-value .zoom-label:hover { background: var(--fd-hover-bg); }
-.zoom-menu-value .zoom-input { width: 82px; }
-.zoom-menu-sep { height: 1px; background: var(--fd-border); margin: 3px 0; }
+.zoom-menu-value .zoom-input { width: 76px; font-size: 13px; }
+.zoom-menu-sep { height: 1px; background: var(--fd-border); margin: 4px 0; }
 .zoom-menu-item {
-  display: flex; align-items: center; gap: 9px;
-  padding: 7px 9px; border: none; border-radius: 5px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 16px; border: none;
   background: none; color: var(--fd-text); font-size: 13px;
-  text-align: left; cursor: pointer; width: 100%;
+  text-align: left; cursor: default; width: 100%;
+  white-space: nowrap;                 /* 'Fit Page to Screen' must not clip */
 }
 .zoom-menu-item:hover:not(:disabled) { background: var(--fd-hover-bg); }
-.zoom-menu-item:disabled { opacity: .45; cursor: default; }
+.zoom-menu-item:disabled { opacity: .45; }
 
 /* Labeled toolbar button (v0.74) — icon + text, e.g. Customize. Wider than an
    icon-only button, so it sizes to content rather than the fixed .toolbar-btn box. */
@@ -2896,6 +2903,12 @@ div[data-type="cast-list"].is-empty::before { content: 'Cast...'; color: #ccc; p
   flex-direction: column;
   resize: both;
   overflow: hidden;
+  /* v0.76: the native resize grip is drawn in the element's bottom-right
+     corner, but flex children are laid out in the CONTENT box and painted on
+     top of it — so a full-bleed body (Project Manager) swallowed every pointer
+     event and the window couldn't be dragged. This padding strip keeps the
+     corner clear of children so the grip is actually reachable. */
+  padding-bottom: 14px;
 }
 .dialog-header { padding: 14px 20px; border-bottom: 1px solid var(--fd-border); font-weight: 600; font-size: 16px; flex-shrink: 0; }
 /* min-height:0 lets the body actually shrink inside the flex column, so the
@@ -12307,11 +12320,20 @@ html.android .version-history-panel {
   resize: both; overflow: hidden;      /* grip clear of any scrollbar */
 }
 .fs-customize-dialog .fs-customize-body { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
+/* Docked in a side panel / embedded in Settings: fill the host and scroll. */
+.tool-inline-body .fs-customize-body,
+.tool-window-body .fs-customize-body { height: 100%; max-height: none; overflow-y: auto; }
 /* NOTE: no max-height here. It used to be 70vh — a VIEWPORT cap that ignored
    the dialog's own height, so enlarging the resizable window never revealed
    more rows (v0.73 fix). The dialog is a flex column; the body flexes to fill
    whatever height the window has and scrolls only when it must. */
-.fs-customize-body { overflow-y: auto; min-height: 0; }
+/* Scrolls whenever the list outgrows the window (in the modal, docked in a
+   panel, or in Settings), and keeps side padding so the ⠿ drag handles at the
+   row's left edge aren't clipped (v0.76). */
+.fs-customize-body {
+  overflow-y: auto; min-height: 0;
+  padding: 10px 18px 12px;
+}
 .fs-customize-body h3 { font-size: 13px; margin: 14px 0 4px; color: var(--fd-text); }
 .fs-customize-hint { font-size: 11.5px; color: var(--fd-text-muted); margin: 0 0 8px; }
 .fs-customize-row {
