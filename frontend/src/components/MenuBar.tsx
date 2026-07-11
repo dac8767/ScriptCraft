@@ -94,7 +94,6 @@ import {
   FaSearch,
   FaHashtag,
   FaSpellCheck,
-  FaSlidersH,
   FaListOl,
   FaBold,
   FaItalic,
@@ -1134,7 +1133,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {
       label: 'View',
       items: [
-        { icon: <FaColumns />, label: 'Customize…', action: () => setCustomizeOpen(true) },
         {
           icon: <FaColumns />, label: 'Workspaces',
           children: [
@@ -1226,8 +1224,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               }),
           ],
         },
-        { icon: <FaSlidersH />, label: 'Edit Elements…', action: () => setEditElementsOpen(true) },
-        { separator: true, label: '' },
         { icon: <FaImage />, label: 'Insert Image...', action: () => useEditorStore.getState().imageInsertHandler?.() },
         { separator: true, label: '' },
         { icon: <FaListOl />, label: 'Section', action: () => insertOutlineLine('# ') },

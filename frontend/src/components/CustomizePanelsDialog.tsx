@@ -18,10 +18,11 @@ import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from './toolbarBuiltins';
 import { CHROME_SCALES, chromeMin, chromeMax, chromePx, type ChromeSurface } from './chromeSizes';
+import EditElementsDialog from './EditElementsDialog';
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
-  category?: 'menu' | 'toolbar' | 'panels';
+  category?: 'menu' | 'toolbar' | 'panels' | 'elements';
   open: boolean;
   onClose: () => void;
   /** Render only the content (no overlay/box) — used inside Preferences. */
@@ -258,7 +259,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // React ('Rendered more hooks than during the previous render').
   const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones, toolbarZonesSet } = useEditorStore();
   const { panelDividers, setPanelDividers } = useEditorStore();
-  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'panels'>(category ?? 'menu');
+  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'panels' | 'elements'>(category ?? 'menu');
   // Drag-and-drop reordering (v0.45): one shared source marker; drops are
   // only accepted within the same list.
   const [dragInfo, setDragInfo] = React.useState<{ list: string; idx: number } | null>(null);
@@ -320,7 +321,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     {
       id: 'toolbar', label: 'Toolbar',
       options: TOOLBAR_BUILTINS
-        .filter((b) => b.key !== 'tags' && b.key !== 'scriptNotes')
+        .filter((b) => b.key !== 'tags' && b.key !== 'scriptNotes' && !b.permanent)
         .map((b) => ({ value: `b:${b.key}`, label: b.label })),
     },
     {
@@ -396,7 +397,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const body = (
         <div className="dialog-body fs-customize-body" style={embedded ? { padding: '4px 0 0', maxHeight: 'none', overflowY: 'visible' } : undefined}>
           <div className="prefs-subtabs">
-            {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels']] as const).map(([id, label]) => (
+            {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['elements', 'Elements']] as const).map(([id, label]) => (
               <button key={id} className={activeCat === id ? 'active' : ''} onClick={() => setActiveCat(id)}>{label}</button>
             ))}
           </div>
@@ -536,7 +537,14 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   if (target === zone) return;
                   update(tokens.filter((_, i) => i !== idx), [...other, tok]);
                 };
-                const hideTok = () => update(tokens.filter((_, i) => i !== idx));
+                // Permanent items (Customize) reorder and switch zones freely,
+                // but can't be removed from the toolbar.
+                const isPermanent = tok.startsWith('b:')
+                  && !!BUILTIN_BY_KEY[tok.slice(2)]?.permanent;
+                const hideTok = () => {
+                  if (isPermanent) return;
+                  update(tokens.filter((_, i) => i !== idx));
+                };
                 return (
                   <div
                     className={`fs-customize-row${dragClass(`tb-${zone}`, idx)}`}
@@ -550,7 +558,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                     <span className="fs-customize-seg">
                       <button className={zone === 'left' ? 'active' : ''} onClick={() => toZone('left')}>Left</button>
                       <button className={zone === 'right' ? 'active' : ''} onClick={() => toZone('right')}>Right</button>
-                      <button title="Remove from the toolbar" onClick={hideTok}>Hide</button>
+                      <button
+                        title={isPermanent ? 'Customize can’t be hidden' : 'Remove from the toolbar'}
+                        disabled={isPermanent}
+                        onClick={hideTok}
+                      >Hide</button>
                     </span>
                   </div>
                 );
@@ -590,7 +602,10 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               <button
                 className="swn-add-btn"
                 title="Hide every toolbar item (re-add items from the dropdown)"
-                onClick={() => setToolbarZones([], [])}
+                onClick={() => setToolbarZones(
+                  TOOLBAR_BUILTINS.filter((b) => b.permanent).map((b) => `b:${b.key}`),
+                  [],
+                )}
               >Hide All</button>
               <button
                 className="swn-add-btn"
@@ -600,6 +615,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             </div>
           </section>
           </>)}
+          {activeCat === 'elements' && <EditElementsDialog embedded />}
           {activeCat === 'panels' && (<>
           <section>
             <h3>Panels</h3>

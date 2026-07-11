@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
-import { FaSlidersH, FaColumns, FaFileAlt, FaRulerCombined, FaCommentDots, FaCog, FaCloudUploadAlt , FaListOl } from 'react-icons/fa';
+import { FaSlidersH, FaColumns, FaFileAlt, FaRulerCombined, FaCommentDots, FaCog, FaCloudUploadAlt  } from 'react-icons/fa';
 import { applyDraftNumber } from './SetDraftDialog';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -8,7 +8,6 @@ import MoresContdsDialog from './MoresContdsDialog';
 import PageSetupDialog from './PageSetupDialog';
 import ScriptFormatPreferencesDialog from './ScriptFormatPreferencesDialog';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
-import EditElementsDialog from './EditElementsDialog';
 import SettingsPage from './SettingsPage';
 import { showToast } from './Toast';
 import { spellChecker, BUILTIN_LANGUAGE } from '../editor/spellchecker';
@@ -34,14 +33,13 @@ import { redirectUri } from '../services/oauthPkce';
    points (where they still exist) edit exactly the same state.
    ───────────────────────────────────────────────────────────────────────── */
 
-type PrefTab = 'general' | 'layout' | 'elements' | 'formats' | 'page' | 'mores' | 'saveloc' | 'system';
+type PrefTab = 'general' | 'layout' | 'formats' | 'page' | 'mores' | 'saveloc' | 'system';
 
 const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   // App-wide first, then writing setup, then data, then system.
   { id: 'general', label: 'General', icon: <FaSlidersH /> },
   { id: 'saveloc', label: 'Save Options', icon: <FaCloudUploadAlt /> },
   { id: 'layout', label: 'Layout', icon: <FaColumns /> },
-  { id: 'elements', label: 'Elements', icon: <FaListOl /> },
   { id: 'formats', label: 'Templates', icon: <FaFileAlt /> },
   { id: 'page', label: 'Page Setup', icon: <FaRulerCombined /> },
   { id: 'mores', label: 'Mores & Continueds', icon: <FaCommentDots /> },
@@ -419,9 +417,6 @@ export default function PreferencesDialog({ open, onClose, editor }: { open: boo
             {tab === 'general' && <GeneralTab />}
             {tab === 'layout' && (
               <LayoutTab />
-            )}
-            {tab === 'elements' && (
-              <EditElementsDialog embedded />
             )}
             {tab === 'formats' && (
               <ScriptFormatPreferencesDialog

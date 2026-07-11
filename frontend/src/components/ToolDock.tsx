@@ -17,11 +17,12 @@ import type { Editor } from '@tiptap/react';
 import { CHROME_SCALES, chromePx } from './chromeSizes';
 import AssetManager from './AssetManager';
 import TitlePagePanel from './TitlePagePanel';
+import CustomizePanelsDialog from './CustomizePanelsDialog';
 import SpellCheckPanel from './SpellCheckPanel';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
-  FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt,
+  FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaSlidersH,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -41,6 +42,10 @@ export interface ToolDef {
   label: string;
   icon: React.ReactNode;
   defaultSize: { w: number; h: number };
+  /** v0.74: never shrink this window to fit the panel. Most tools clamp their
+   *  default width to the dock so they dock inline (v0.66); Customize keeps
+   *  its full size and opens as a floating window instead. */
+  noPanelFit?: boolean;
   /** dock group separators, Photoshop-style (per side, in order) */
   group: number;
 }
@@ -63,6 +68,8 @@ export const ALL_TOOLS: ToolDef[] = [
   { id: 'analytics', label: 'Analytics', icon: <FaChartBar />, defaultSize: { w: 620, h: 384 }, group: 3 },
   { id: 'goals', label: 'Goals', icon: <FaBullseye />, defaultSize: { w: 340, h: 264 }, group: 3 },
   { id: 'titlepage', label: 'Title Page', icon: <FaFileAlt />, defaultSize: { w: 520, h: 560 }, group: 3 },
+  // Same size as the Customize dialog; noPanelFit keeps it that size in a panel.
+  { id: 'customize', label: 'Customize', icon: <FaSlidersH />, defaultSize: { w: 560, h: 680 }, group: 3, noPanelFit: true },
   { id: 'assets', label: 'Asset Manager', icon: <FaBoxes />, defaultSize: { w: 620, h: 372 }, group: 3 },
   { id: 'spelling', label: 'Spelling & Grammar', icon: <FaSpellCheck />, defaultSize: { w: 420, h: 440 }, group: 3 },
 ];
@@ -70,7 +77,7 @@ export const ALL_TOOLS: ToolDef[] = [
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
-export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'titlepage'];
+export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'titlepage', 'customize'];
 export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 
 const MIN_W = 240;
@@ -105,6 +112,8 @@ export function ToolContent({ id, editor, scrollContainer }: {
       return <CharacterProfiles editor={editor} projectId={currentProject?.id || ''} embedded />;
     case 'titlepage':
       return <TitlePagePanel editor={editor} />;
+    case 'customize':
+      return <CustomizePanelsDialog open embedded onClose={() => {}} />;
     case 'assets':
       return <AssetManager projectId={currentProject?.id || ''} embedded />;
     case 'spelling':
@@ -256,7 +265,10 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   // A size the user has chosen (drag-resize or pop-out) is stored in toolSizes
   // and still wins — pop-out sets w = DOCK_W + 140, which floats as before.
   const activeSize = active
-    ? (toolSizes[active.id] || { w: Math.min(active.defaultSize.w, dockW), h: active.defaultSize.h })
+    ? (toolSizes[active.id] || (active.noPanelFit
+        // Not shrunk to the panel — opens floating at its natural size.
+        ? { w: active.defaultSize.w, h: active.defaultSize.h }
+        : { w: Math.min(active.defaultSize.w, dockW), h: active.defaultSize.h }))
     : null;
   const inline = !!(active && activeSize && activeSize.w <= dockW);
 

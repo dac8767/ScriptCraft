@@ -31,6 +31,10 @@ export interface ToolbarBuiltin {
   /** Render a trailing separator inside the item's own block (it hides and
    *  moves with the item). Reproduces the old group boundaries by default. */
   sepAfter?: boolean;
+  /** Permanent (v0.74): can be REORDERED and moved between zones, but never
+   *  hidden or removed. normalizeToolbarZones re-inserts it if a persisted
+   *  layout is missing it, so it can't be lost. */
+  permanent?: boolean;
 }
 
 export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
@@ -62,7 +66,7 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'zoomOut', label: 'Zoom Out', priority: '1', zoom: true },
   { key: 'zoomIn', label: 'Zoom In', priority: '2b', zoom: true },
   { key: 'view', label: 'Editor View', desktopOnly: true },
-  { key: 'customize', label: 'Customize Toolbar' },
+  { key: 'customize', label: 'Customize', permanent: true },
 ];
 
 export const BUILTIN_BY_KEY: Record<string, ToolbarBuiltin> = Object.fromEntries(
@@ -77,7 +81,7 @@ export const DEFAULT_TOOLBAR_LEFT: string[] = [
   'fontFamily', 'fontSize', 'bold', 'italic', 'underline', 'strike',
   'subscript', 'superscript', 'textColor', 'highlightColor',
   'alignLeft', 'alignCenter', 'alignRight', 'alignJustify',
-  'find', 'goto',
+  'find', 'goto', 'customize',
 ].map((k) => `b:${k}`);
 
 export const DEFAULT_TOOLBAR_RIGHT: string[] = ['zoomOut', 'zoomIn', 'view'].map((k) => `b:${k}`);
@@ -133,5 +137,13 @@ export function normalizeToolbarZones(
   };
   const l = expand(left);
   const r = expand(right);
+  // Permanent items can be reordered or moved between zones, but never lost.
+  // A layout saved before this item existed (or one that somehow dropped it)
+  // gets it appended to the left zone rather than silently missing the button.
+  for (const b of TOOLBAR_BUILTINS) {
+    if (!b.permanent) continue;
+    const tok = `b:${b.key}`;
+    if (!l.includes(tok) && !r.includes(tok)) l.push(tok);
+  }
   return { left: l, right: r };
 }

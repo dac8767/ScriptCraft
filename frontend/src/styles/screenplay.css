@@ -810,6 +810,20 @@ body {
 .tool-dock-wrap.tool-dock-compact .tool-dock-item { padding-top: 7px; padding-bottom: 7px; }
 .tool-dock-wrap.tool-dock-compact .tool-dock-label { font-size: 12px; }
 
+/* Labeled toolbar button (v0.74) — icon + text, e.g. Customize. Wider than an
+   icon-only button, so it sizes to content rather than the fixed .toolbar-btn box. */
+.toolbar-btn.toolbar-btn-labeled {
+  width: auto; padding: 0 8px; gap: 5px;
+  display: inline-flex; align-items: center;
+}
+.toolbar-btn-text { font-size: 12px; white-space: nowrap; }
+.toolbar.toolbar-comfortable .toolbar-btn.toolbar-btn-labeled { padding: 0 10px; }
+.toolbar.toolbar-comfortable .toolbar-btn-text { font-size: 13px; }
+.toolbar.toolbar-custom .toolbar-btn.toolbar-btn-labeled { padding: 0 calc(8px * var(--chrome-scale, 1)); }
+.toolbar.toolbar-custom .toolbar-btn-text {
+  font-size: clamp(11px, calc(12px * var(--chrome-scale, 1)), 18px);
+}
+
 /* Spacer (v0.69) — a blank gap that pushes neighbouring items apart. In the
    toolbar it takes horizontal space; in a side panel, vertical. */
 .toolbar-spacer { width: 28px; flex: none; }

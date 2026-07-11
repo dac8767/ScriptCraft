@@ -377,7 +377,7 @@ export type ToolId =
   | 'navigator' | 'scenes' | 'pages' | 'structure' | 'locations' | 'characters'
   | 'indexcards' | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
-  | 'spelling' | 'history' | 'titlepage'
+  | 'spelling' | 'history' | 'titlepage' | 'customize'
   /** legacy — Script Notes merged back into 'sticky' (Notes > Script tab); kept
    *  in the type so persisted configs still typecheck, remapped on use. */
   | 'scriptnotes';
@@ -441,6 +441,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   analytics: { side: 'right', enabled: true },
 
   tags: { side: 'right', enabled: false },
+  customize: { side: 'right', enabled: false },
 };
 
 /** Default row order for the panels, matching DEFAULT_TOOL_CONFIG's grouping.
@@ -449,7 +450,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
 export const DEFAULT_TOOL_ORDER: string[] = [
   'navigator', 'scenes', 'pages', 'titlepage', 'characters', 'locations', 'spelling', 'assets',
   'sticky', 'todo', 'fragments', 'beatboard', 'indexcards', 'highlights', 'goals', 'analytics',
-  'tags',
+  'tags', 'customize',
 ];
 
 /** Single source of truth for a tool's effective config. Used by ToolDock and
