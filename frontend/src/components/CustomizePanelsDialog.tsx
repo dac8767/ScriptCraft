@@ -52,13 +52,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     };
     type Row =
       | { kind: 'tool'; id: ToolId; label: string; side: 'left' | 'right' }
-      | { kind: 'divider'; id: string; label: string; side: 'left' | 'right' };
+      | { kind: 'divider'; id: string; label: string; side: 'left' | 'right'; spacer?: boolean };
     const rows: Row[] = [
       ...ALL_TOOLS.filter((t) => cfgOf(t.id).enabled).map((t) => ({
         kind: 'tool' as const, id: t.id, label: t.label, side: cfgOf(t.id).side, ord: oIdx(t.id),
       })),
       ...panelDividers.map((d) => ({
-        kind: 'divider' as const, id: d.id, label: d.label, side: d.side, ord: oIdx(`div:${d.id}`),
+        kind: 'divider' as const, id: d.id, label: d.label, side: d.side, spacer: d.spacer, ord: oIdx(`div:${d.id}`),
       })),
     ].sort((a, b) => a.ord - b.ord).map(({ ord: _o, ...r }) => r as Row);
 
@@ -122,9 +122,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       ...ALL_TOOLS.filter((t) => PANEL_PRODUCTION_IDS.includes(t.id) && !cfgOf(t.id).enabled).map((t) => ({ group: 'Production', value: `t:${t.id}`, label: t.label })),
     ];
     const onAdd = (value: string) => {
-      if (value === 'divider') {
+      if (value === 'divider' || value === 'spacer') {
+        // Spacers share the dividers list — a divider with spacer: true (v0.69).
         const id = String(Date.now());
-        setPanelDividers([...panelDividers, { id, label: '', side: 'left' }]);
+        setPanelDividers([
+          ...panelDividers,
+          { id, label: '', side: 'left', ...(value === 'spacer' ? { spacer: true } : {}) },
+        ]);
         setToolOrder([...order, `div:${id}`]);
       } else if (value.startsWith('all:')) {
         const group = value.slice(4);
@@ -187,7 +191,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 >
                   <span className="fs-customize-tool">
                     <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
-                    {r.kind === 'divider' ? (
+                    {r.kind === 'divider' && r.spacer ? (
+                      <span className="fs-spacer-row-label">— Spacer —</span>
+                    ) : r.kind === 'divider' ? (
                       <input
                         className="fs-divider-label-input"
                         value={r.label}
@@ -225,7 +231,10 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 </optgroup>
               );
             })}
-            <option value="divider">Add divider</option>
+            <optgroup label="Utility">
+              <option value="divider">Add divider</option>
+              <option value="spacer">Spacer</option>
+            </optgroup>
           </select>
           <button
             className="swn-add-btn"
@@ -304,7 +313,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     const t = ALL_TOOLS.find((x) => x.id === id);
     return t ? [{ value: `t:${t.id}`, label: t.label }] : [];
   };
-  const tbAddCategories: Array<{ id: string; label: string; options: Array<{ value: string; label: string }> }> = [
+  const tbAddCategories: Array<{ id: string; label: string; options: Array<{ value: string; label: string }>; utility?: boolean }> = [
     {
       id: 'toolbar', label: 'Toolbar',
       options: TOOLBAR_BUILTINS
@@ -334,10 +343,27 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       ],
     },
   ].map((cat) => ({ ...cat, options: cat.options.filter((o) => !tbPlaced(o.value)) }));
+
+  // Utility (v0.69): structural items, added AFTER the "already placed" filter
+  // above — Divider and Spacer are repeatable, so they must never be filtered
+  // out as already present. `utility` marks them so "Show all …" skips them.
+  const tbAddCategoriesAll: typeof tbAddCategories = [
+    ...tbAddCategories,
+    {
+      id: 'utility',
+      label: 'Utility',
+      utility: true,
+      options: [
+        { value: 'divider', label: 'Add divider' },
+        { value: 'spacer', label: 'Spacer' },
+      ],
+    },
+  ];
   const tokenLabel = (tok: string): string => {
     if (tok.startsWith('b:')) return BUILTIN_BY_KEY[tok.slice(2)]?.label || tok;
     if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.label || tok;
     if (tok.startsWith('c:')) return TOOLBAR_COMMANDS.find((c) => c.id === tok.slice(2))?.label || tok;
+    if (tok.startsWith('s:')) return '— Spacer —';
     return '— Divider —';
   };
 
@@ -510,8 +536,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   if (!v) return;
                   e.target.value = '';
                   if (v === 'divider') { setToolbarZones([...tbLeft, `d:${Date.now()}`], tbRight); return; }
+                  if (v === 'spacer') { setToolbarZones([...tbLeft, `s:${Date.now()}`], tbRight); return; }
                   if (v.startsWith('all:')) {
-                    const cat = tbAddCategories.find((c) => c.id === v.slice(4));
+                    const cat = tbAddCategoriesAll.find((c) => c.id === v.slice(4) && !c.utility);
                     if (cat) setToolbarZones([...tbLeft, ...cat.options.map((o) => o.value)], tbRight);
                     return;
                   }
@@ -519,19 +546,18 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 }}
               >
                 <option value="">+ Add item to toolbar…</option>
-                {tbAddCategories.some((cat) => cat.options.length > 0) && (
+                {tbAddCategoriesAll.some((cat) => !cat.utility && cat.options.length > 0) && (
                   <optgroup label="Show All">
-                    {tbAddCategories.filter((cat) => cat.options.length > 0).map((cat) => (
+                    {tbAddCategoriesAll.filter((cat) => !cat.utility && cat.options.length > 0).map((cat) => (
                       <option key={`all-${cat.id}`} value={`all:${cat.id}`}>Show all {cat.label}</option>
                     ))}
                   </optgroup>
                 )}
-                {tbAddCategories.map((cat) => (
+                {tbAddCategoriesAll.filter((cat) => cat.options.length > 0).map((cat) => (
                   <optgroup key={cat.id} label={cat.label}>
                     {cat.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </optgroup>
                 ))}
-                <option value="divider">Add divider</option>
               </select>
               <button
                 className="swn-add-btn"

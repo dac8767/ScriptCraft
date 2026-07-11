@@ -21,7 +21,7 @@ interface ViewState {
   toolbarLeft?: string[];
   toolbarRight?: string[];
   toolbarZonesSet?: boolean;
-  panelDividers?: { id: string; label: string; side: 'left' | 'right' }[];
+  panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[];
   workspaces?: Record<string, WorkspaceSnapshot>;
   workspaceOrder?: string[];
   activeWorkspace?: string | null;
@@ -405,7 +405,7 @@ export interface WorkspaceSnapshot {
   menuBarOrder?: string[];
   menuBarHidden?: string[];
   menuMode?: 'compact' | 'comfortable' | 'hidden';
-  panelDividers?: { id: string; label: string; side: 'left' | 'right' }[];
+  panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[];
   activeToolRight?: ToolId | null;
 }
 
@@ -630,8 +630,8 @@ interface EditorState {
 
   /** Labeled divider lines for the side panels, ordered via toolOrder using
    *  div:<id> tokens. */
-  panelDividers: { id: string; label: string; side: 'left' | 'right' }[];
-  setPanelDividers: (d: { id: string; label: string; side: 'left' | 'right' }[]) => void;
+  panelDividers: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[];
+  setPanelDividers: (d: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[]) => void;
 
   /** Menu bar customization: display order + hidden menus (File cannot hide). */
   menuBarOrder: string[];
@@ -1467,7 +1467,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     });
     set(patch);
   },
-  panelDividers: Array.isArray(_vs.panelDividers) ? _vs.panelDividers as { id: string; label: string; side: 'left' | 'right' }[] : [],
+  panelDividers: Array.isArray(_vs.panelDividers) ? _vs.panelDividers as { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[] : [],
   setPanelDividers: (panelDividers) => {
     saveViewState({ panelDividers });
     set({ panelDividers });

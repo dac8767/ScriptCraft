@@ -213,10 +213,19 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   // Labeled divider lines (Customize > Dividers), ordered among the tools via
   // div:<id> tokens in toolOrder. Rendered as entries interleaved by order.
   const { panelDividers } = useEditorStore();
-  type DockEntry = { kind: 'tool'; tool: typeof ALL_TOOLS[number] } | { kind: 'divider'; id: string; label: string };
+  type DockEntry =
+    | { kind: 'tool'; tool: typeof ALL_TOOLS[number] }
+    | { kind: 'divider'; id: string; label: string }
+    | { kind: 'spacer'; id: string };
   const entries: DockEntry[] = [
     ...tools.map((t) => ({ kind: 'tool' as const, tool: t, ord: orderIdx(t.id) })),
-    ...panelDividers.filter((d) => d.side === side).map((d) => ({ kind: 'divider' as const, id: d.id, label: d.label, ord: orderIdx(`div:${d.id}`) })),
+    // Spacers (v0.69) share the panelDividers list — a divider with spacer:true.
+    // Persisted entries from before v0.69 have no flag, so they stay dividers.
+    ...panelDividers.filter((d) => d.side === side).map((d) => (
+      d.spacer
+        ? { kind: 'spacer' as const, id: d.id, ord: orderIdx(`div:${d.id}`) }
+        : { kind: 'divider' as const, id: d.id, label: d.label, ord: orderIdx(`div:${d.id}`) }
+    )),
   ].sort((a, b) => a.ord - b.ord).map(({ ord: _o, ...rest }) => rest as DockEntry);
 
   const activeId = side === 'left' ? activeTool : activeToolRight;
@@ -272,7 +281,9 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   return (
     <div className={`tool-dock-wrap tool-dock-${side}`}>
       <div className="tool-dock">
-        {entries.map((entry) => entry.kind === 'divider' ? (
+        {entries.map((entry) => entry.kind === 'spacer' ? (
+          <div key={`sp-${entry.id}`} className="tool-dock-spacer" />
+        ) : entry.kind === 'divider' ? (
           <div key={`div-${entry.id}`} className="tool-dock-divider">
             <span className="tool-dock-divider-line" />
             {entry.label && <span className="tool-dock-divider-label">{entry.label}</span>}

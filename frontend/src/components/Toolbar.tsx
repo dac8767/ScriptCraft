@@ -1034,6 +1034,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     if (tok.startsWith('d:')) {
       return <div key={tok} className="toolbar-separator toolbar-user-divider" />;
     }
+    // s:<n> — blank space to push neighbouring buttons apart (v0.69).
+    if (tok.startsWith('s:')) {
+      return <div key={tok} className="toolbar-spacer" />;
+    }
     if (tok.startsWith('t:')) {
       const t = ALL_TOOLS.find((x) => x.id === tok.slice(2));
       if (!t) return null;
