@@ -97,6 +97,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
   // applied over the active template (system templates are immutable).
 
+  const pageLayout = useEditorStore((st) => st.pageLayout);
   const pickableElements = useFormattingTemplateStore((st) => st.getPickableElements)();
   useFormattingTemplateStore((st) => st.elementHidden);
   useFormattingTemplateStore((st) => st.elementOrder);
@@ -359,22 +360,26 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     const scroller = document.querySelector('.editor-main') as HTMLElement | null;
     if (!page || !scroller) return;
 
-    // v0.85 — ROOT CAUSE of "Fit Page shows two pages": there is only ONE .page
-    // element; it holds the WHOLE script and simply grows as you write (page
-    // breaks are decorations, not separate elements). Measuring its height was
-    // therefore measuring the entire document, so "fit" shrank the script until
-    // every page fitted — two pages, three, however many.
+    // ROOT CAUSE, take two (v0.87). There is only ONE .page element and it holds
+    // the WHOLE script — page breaks are decorations, not separate elements. So
+    // measuring the element measured the entire document, and "fit" shrank the
+    // script until EVERY page fitted.
     //
-    // A single page is a fixed, known quantity: --page-min-height (11in), which
-    // is what min-height on .page already declares. Fit to THAT, and to the
-    // page's width, taking whichever is the tighter constraint — the page ends
-    // up as large as possible while still wholly visible.
-    const scale = (zoomLevel || 100) / 100;
+    // v0.85 tried to fix that by reading min-height, on the reasoning that the
+    // stylesheet sets it to one page (11in). It doesn't, at runtime: the element
+    // carries an INLINE min-height of `lastPageEnd + bottomMargin` — the end of
+    // the LAST page — which overrides the stylesheet. So it was still measuring
+    // the whole document, just via a different property. That's why it still
+    // showed two pages.
+    //
+    // The page height is not something to infer from the DOM at all: pageLayout
+    // states it (US Letter = 11in). Take it from there. CSS treats 1in as 96px
+    // regardless of the actual display, so this is exact.
+    const CSS_PX_PER_IN = 96;
     const pc = getComputedStyle(page);
 
-    // Unscaled page geometry. min-height is the height of exactly one page.
-    const onePageH = parseFloat(pc.minHeight) || (page.getBoundingClientRect().height / scale);
-    const pageW = page.getBoundingClientRect().width / scale;
+    const onePageH = pageLayout.pageHeight * CSS_PX_PER_IN;
+    const pageW = pageLayout.pageWidth * CSS_PX_PER_IN;
     const marginsY = (parseFloat(pc.marginTop) || 0) + (parseFloat(pc.marginBottom) || 0);
     const blockH = onePageH + marginsY;
     if (!blockH || !pageW) return;

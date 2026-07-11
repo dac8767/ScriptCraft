@@ -66,7 +66,6 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { clearEditorHistory } from '../editor/clearHistory';
 import { spellChecker } from '../editor/spellchecker';
 import { openTextFile, openBinaryFile } from '../utils/fileOps';
-import { isDesktopTauri } from '../services/platform';
 import { getCompatEntries } from '../services/compat';
 import { reportSaveError } from '../stores/saveErrorStore';
 import type { MenuSection as PluginMenuSection } from '../plugins/registry';
@@ -1123,18 +1122,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           disabled: isCollabGuest,
           action: handleNewScreenplay,
         },
-        ...(isDesktopTauri() ? [{
-          icon: <FaFile />,
-          label: 'New Window',
-          action: async () => {
-            try {
-              const { invoke } = await import('@tauri-apps/api/core');
-              await invoke('open_new_window');
-            } catch (err) {
-              showToast(`Failed to open new window: ${err instanceof Error ? err.message : String(err)}`, 'error');
-            }
-          },
-        }] : []),
         { separator: true, label: '' },
         {
           icon: <FaFileImport />, label: 'Import',
@@ -1153,6 +1140,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { separator: true, label: '' },
         { icon: <FaSave />, label: 'Save', shortcut: sc('save'), action: handleSave, disabled: isCollabGuest },
         { icon: <FaSave />, label: 'Save As…', shortcut: sc('saveAs'), action: handleExportOdraft, disabled: isCollabGuest },
+        { icon: <FaEdit />, label: 'Rename...', action: () => setRenameOpen(true) },
         { separator: true, label: '' },
         { icon: <FaEye />, label: 'Preview', action: () => useEditorStore.getState().setPreviewMode(true) },
         {
@@ -1166,8 +1154,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           ],
         },
         { icon: <FaPrint />, label: 'Print...', shortcut: sc('print'), action: () => setTimeout(() => window.print(), 60) },
-        { separator: true, label: '' },
-        { icon: <FaEdit />, label: 'Rename...', action: () => setRenameOpen(true) },
         { separator: true, label: '' },
         {
           icon: <FaUserFriends />, label: 'Collaboration',
@@ -1303,27 +1289,20 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {
       label: 'Format',
       items: [
-        {
-          icon: <FaBold />, label: 'Style',
-          children: [
-            { icon: <FaBold />, label: 'Bold', shortcut: sc('bold'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(), disabled: locked.bold },
-            { icon: <FaItalic />, label: 'Italic', shortcut: sc('italic'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(), disabled: locked.italic },
-            { icon: <FaUnderline />, label: 'Underline', shortcut: sc('underline'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleUnderline().run(), disabled: locked.underline },
-            { icon: <FaStrikethrough />, label: 'Strikethrough', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleStrike().run(), disabled: locked.strikethrough },
-            { separator: true, label: '' },
-            { icon: <FaSubscript />, label: 'Subscript', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleSubscript().run(), disabled: locked.subscript },
-            { icon: <FaSuperscript />, label: 'Superscript', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleSuperscript().run(), disabled: locked.superscript },
-          ],
-        },
-        {
-          icon: <FaAlignLeft />, label: 'Alignment',
-          children: [
-            { icon: <FaAlignLeft />, label: 'Align Left', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('left').run(), disabled: locked.textAlign },
-            { icon: <FaAlignCenter />, label: 'Align Center', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('center').run(), disabled: locked.textAlign },
-            { icon: <FaAlignRight />, label: 'Align Right', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('right').run(), disabled: locked.textAlign },
-            { icon: <FaAlignJustify />, label: 'Justify', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('justify').run(), disabled: locked.textAlign },
-          ],
-        },
+        // v0.87: Style and Alignment were submenus in a menu with barely anything
+        // else in it — two clicks to reach Bold. Their contents are promoted to
+        // the top of Format and the wrapper submenus are gone.
+        { icon: <FaBold />, label: 'Bold', shortcut: sc('bold'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(), disabled: locked.bold },
+        { icon: <FaItalic />, label: 'Italic', shortcut: sc('italic'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(), disabled: locked.italic },
+        { icon: <FaUnderline />, label: 'Underline', shortcut: sc('underline'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleUnderline().run(), disabled: locked.underline },
+        { icon: <FaStrikethrough />, label: 'Strikethrough', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleStrike().run(), disabled: locked.strikethrough },
+        { icon: <FaSubscript />, label: 'Subscript', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleSubscript().run(), disabled: locked.subscript },
+        { icon: <FaSuperscript />, label: 'Superscript', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleSuperscript().run(), disabled: locked.superscript },
+        { separator: true, label: '' },
+        { icon: <FaAlignLeft />, label: 'Align Left', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('left').run(), disabled: locked.textAlign },
+        { icon: <FaAlignCenter />, label: 'Align Center', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('center').run(), disabled: locked.textAlign },
+        { icon: <FaAlignRight />, label: 'Align Right', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('right').run(), disabled: locked.textAlign },
+        { icon: <FaAlignJustify />, label: 'Justify', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('justify').run(), disabled: locked.textAlign },
         { separator: true, label: '' },
         { icon: <FaFileAlt />, label: `Formatting Template (${activeTemplate.name})...`, action: () => setTemplateSelectOpen(true) },
         { icon: <FaFileAlt />, label: 'Script Format Preferences...', action: () => setFormatPrefsOpen({ firstRun: false, afterSave: null }) },

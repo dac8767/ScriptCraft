@@ -61,9 +61,9 @@
 
   /* v0.83: toolbar button surface. Every theme sets its own so a button looks
      native to the theme instead of a fixed blue chip on all of them. */
-  --fd-btn-bg: #4a9eff;
-  --fd-btn-text: #0b1a2b;
-  --fd-btn-hover: #66b0ff;
+  --fd-btn-bg: #2c5e98;
+  --fd-btn-text: #e0e0e0;
+  --fd-btn-hover: #4974a6;
 
   /* Final Draft exact page dimensions */
   --page-width: 8.5in;
@@ -100,7 +100,7 @@
   --fd-shadow: #c0c0c0;
   --fd-dialog-bg: #f5f5f5;
   --fd-input-bg: #ffffff;
-  --fd-btn-bg: #1565c0; --fd-btn-text: #ffffff; --fd-btn-hover: #1976d2;
+  --fd-btn-bg: #1565c0; --fd-btn-text: #ffffff; --fd-btn-hover: #357ac8;
 }
 /* Light theme: page keeps white bg, editor area uses a warm gray */
 [data-theme="light"] .editor-main {
@@ -574,7 +574,9 @@ body {
 .toolbar {
   display: flex; align-items: center; height: 30px;
   background: var(--fd-toolbar-bg); border-bottom: none;
-  padding: 0 8px; gap: 2px; flex-shrink: 0;
+  /* v0.87: right padding matched to the menu bar's (6px) so the toolbar's
+     right-most control lines up with the Local Only chip above it. */
+  padding: 0 6px 0 8px; gap: 2px; flex-shrink: 0;
   position: relative; z-index: 1;
 }
 .toolbar.toolbar-comfortable { height: 36px; }
@@ -903,6 +905,9 @@ body {
   white-space: nowrap;
 }
 .toolbar-btn.toolbar-customize-btn:hover { background: var(--fd-btn-hover); }
+/* When it's the right-most control, drop the right margin so its edge sits flush
+   with the Local Only chip in the menu bar rather than 6px inside it. */
+.toolbar-btn.toolbar-customize-btn:last-child { margin-right: 0; }
 .toolbar-customize-btn .toolbar-btn-text { color: inherit; }
 
 /* Customize: tabs in a left sidebar, like Settings (v0.83) */
@@ -12666,28 +12671,28 @@ html.android .version-history-panel {
   --fd-overlay-subtle: rgba(0,0,0,.03); --fd-overlay-light: rgba(0,0,0,.06);
   --fd-overlay-medium: rgba(0,0,0,.12); --fd-shadow: rgba(90,70,40,.25);
   --fd-chrome-separator: rgba(0,0,0,0.08);
-  --fd-btn-bg: #a5673f; --fd-btn-text: #fdf6e8; --fd-btn-hover: #b8764a;
+  --fd-btn-bg: #975e39; --fd-btn-text: #fdf6e8; --fd-btn-hover: #a57454;
 }
 [data-theme="nord"] {
   --fd-bg: #2e3440; --fd-toolbar-bg: #3b4252; --fd-menu-bg: #3b4252;
   --fd-menu-hover: #434c5e; --fd-accent: #88c0d0; --fd-border: #434c5e;
   --fd-text: #eceff4; --fd-text-muted: #9aa5b8; --fd-navigator-bg: #272c36;
   --fd-status-bg: #232830; --fd-dropdown-bg: #3b4252; --fd-dialog-bg: #3b4252;
-  --fd-btn-bg: #88c0d0; --fd-btn-text: #2e3440; --fd-btn-hover: #9ad0de;
+  --fd-btn-bg: #4c6b74; --fd-btn-text: #eceff4; --fd-btn-hover: #657f87;
 }
 [data-theme="dracula"] {
   --fd-bg: #282a36; --fd-toolbar-bg: #21222c; --fd-menu-bg: #21222c;
   --fd-menu-hover: #44475a; --fd-accent: #bd93f9; --fd-border: #44475a;
   --fd-text: #f8f8f2; --fd-text-muted: #8a8fa8; --fd-navigator-bg: #21222c;
   --fd-status-bg: #191a21; --fd-dropdown-bg: #282a36; --fd-dialog-bg: #282a36;
-  --fd-btn-bg: #bd93f9; --fd-btn-text: #282a36; --fd-btn-hover: #caa6fa;
+  --fd-btn-bg: #8063a9; --fd-btn-text: #f8f8f2; --fd-btn-hover: #9178b5;
 }
 [data-theme="solarized-dark"] {
   --fd-bg: #002b36; --fd-toolbar-bg: #073642; --fd-menu-bg: #073642;
   --fd-menu-hover: #0d4a5a; --fd-accent: #268bd2; --fd-border: #0d4a5a;
   --fd-text: #eee8d5; --fd-text-muted: #93a1a1; --fd-navigator-bg: #00252e;
   --fd-status-bg: #00212b; --fd-dropdown-bg: #073642; --fd-dialog-bg: #073642;
-  --fd-btn-bg: #268bd2; --fd-btn-text: #002b36; --fd-btn-hover: #3a9bdc;
+  --fd-btn-bg: #1c699f; --fd-btn-text: #eee8d5; --fd-btn-hover: #3b7eac;
 }
 [data-theme="solarized-light"] {
   --fd-bg: #fdf6e3; --fd-toolbar-bg: #eee8d5; --fd-menu-bg: #fdf6e3;
@@ -12698,14 +12703,14 @@ html.android .version-history-panel {
   --fd-overlay-subtle: rgba(0,0,0,.03); --fd-overlay-light: rgba(0,0,0,.06);
   --fd-overlay-medium: rgba(0,0,0,.12); --fd-shadow: rgba(88,110,117,.25);
   --fd-chrome-separator: rgba(0,0,0,0.08);
-  --fd-btn-bg: #268bd2; --fd-btn-text: #fdf6e3; --fd-btn-hover: #3a9bdc;
+  --fd-btn-bg: #1f74b0; --fd-btn-text: #fdf6e3; --fd-btn-hover: #3e87bb;
 }
 [data-theme="midnight"] {
   --fd-bg: #0d1117; --fd-toolbar-bg: #161b22; --fd-menu-bg: #161b22;
   --fd-menu-hover: #21262d; --fd-accent: #58a6ff; --fd-border: #30363d;
   --fd-text: #e6edf3; --fd-text-muted: #8b949e; --fd-navigator-bg: #0a0e14;
   --fd-status-bg: #010409; --fd-dropdown-bg: #161b22; --fd-dialog-bg: #161b22;
-  --fd-btn-bg: #58a6ff; --fd-btn-text: #0d1117; --fd-btn-hover: #79b8ff;
+  --fd-btn-bg: #386aa3; --fd-btn-text: #e6edf3; --fd-btn-hover: #537eaf;
 }
 /* Light-family themes keep the light editor chrome behaviors */
 [data-theme="sepia"] .menu-dropdown,
