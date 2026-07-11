@@ -857,6 +857,35 @@ body {
   width: 232px;
 }
 
+/* v0.82: rows used to justify to the far edges, so widening the window pushed
+   the label left and the controls right with a lake of dead space between them
+   (worse the wider you made it). Capping the row width keeps the label and its
+   controls a normal distance apart; the row simply stops growing instead of
+   stretching. The list still fills the window vertically and scrolls. */
+.fs-customize-grid,
+.fs-customize-row,
+.fs-tbzone-adders,
+.fs-shortcut-group {
+  max-width: 720px;
+}
+
+/* Theme export picker (v0.82) */
+.fs-theme-export-panel {
+  margin: 8px 0 12px; padding: 10px 12px;
+  border: 1px solid var(--fd-border); border-radius: 6px;
+  background: var(--fd-overlay-subtle);
+}
+.fs-theme-export-row { cursor: pointer; }
+.fs-theme-export-row input[type="checkbox"] { margin-right: 8px; accent-color: var(--fd-accent); }
+
+/* Spacer size slider (v0.82) */
+.fs-spacer-slider { display: inline-flex; align-items: center; gap: 8px; margin-left: 12px; }
+.fs-spacer-slider input[type="range"] { width: 120px; accent-color: var(--fd-accent); cursor: pointer; }
+.fs-spacer-px {
+  font-size: 11px; color: var(--fd-text-muted);
+  font-variant-numeric: tabular-nums; min-width: 38px;
+}
+
 /* Themes tab (v0.78) */
 .fs-theme-row-controls { display: flex; align-items: center; gap: 6px; flex: none; }
 .fs-theme-badge {

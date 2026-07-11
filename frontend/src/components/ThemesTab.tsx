@@ -32,6 +32,7 @@ export default function ThemesTab() {
   const [confirmDelete, setConfirmDelete] = React.useState<string | null>(null);
   const [pickerKey, setPickerKey] = React.useState<string | null>(null);
   const [importNote, setImportNote] = React.useState('');
+  const [exporting, setExporting] = React.useState<string[] | null>(null);
 
   const ids = allThemeIds();
   const labelOf = (id: string) =>
@@ -241,20 +242,63 @@ export default function ThemesTab() {
         </p>
       )}
 
+      {exporting && (
+        <div className="fs-theme-export-panel">
+          <div className="fs-shortcut-group-title">Export which themes?</div>
+          {customThemes.length === 0 && (
+            <p className="fs-customize-hint">You have no custom themes yet.</p>
+          )}
+          {customThemes.map((t) => (
+            <label className="fs-customize-row fs-theme-export-row" key={t.id}>
+              <span className="fs-customize-tool">
+                <input
+                  type="checkbox"
+                  checked={exporting.includes(t.id)}
+                  onChange={(e) => setExporting(
+                    e.target.checked
+                      ? [...exporting, t.id]
+                      : exporting.filter((x) => x !== t.id),
+                  )}
+                />
+                {t.label}
+              </span>
+            </label>
+          ))}
+          <div className="fs-tbzone-adders fs-adders-equal">
+            <button
+              className="swn-add-btn"
+              onClick={() => setExporting(customThemes.map((c) => c.id))}
+            >Select All</button>
+            <button className="swn-add-btn" onClick={() => setExporting([])}>Select None</button>
+            <button
+              className="swn-add-btn"
+              disabled={exporting.length === 0}
+              onClick={() => { void exportSelected(); }}
+            >Choose Location & Save…</button>
+            <button className="swn-add-btn" onClick={() => setExporting(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
       {importNote && <p className="fs-shortcut-note">{importNote}</p>}
 
       <div className="fs-tbzone-adders fs-adders-equal">
         <button className="swn-add-btn" onClick={newTheme}>+ New Theme</button>
         <button
           className="swn-add-btn"
-          title="Save your custom themes to a file you can share or move to another project"
-          onClick={exportThemes}
+          title="Choose which themes to save, and where to save them"
+          onClick={() => { setImportNote(''); setExporting(customThemes.map((c) => c.id)); }}
         >Export Themes…</button>
         <button
           className="swn-add-btn"
-          title="Load themes from an exported theme file, or from another FreeDraft project"
+          title="Load themes from a theme file on your computer or cloud storage"
           onClick={importThemes}
         >Import Themes…</button>
+        <button
+          className="swn-add-btn"
+          title="Copy the custom themes out of another FreeDraft project file"
+          onClick={importFromProject}
+        >Import Themes from a Project…</button>
       </div>
     </section>
   );
@@ -263,26 +307,42 @@ export default function ThemesTab() {
   // A theme file is plain-text JSON: readable, diffable, and easy to hand to
   // someone else. It carries a `kind` marker and a version so an import can
   // tell a real theme file from any other JSON that happens to be lying around.
-  function exportThemes() {
-    if (customThemes.length === 0) {
-      setImportNote('You have no custom themes to export yet. Create one first.');
-      return;
-    }
-    const payload = {
-      kind: 'freedraft-themes',
-      version: 1,
-      themes: customThemes,
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = customThemes.length === 1
-      ? `${safeName(customThemes[0].label)}.freedraft-theme.json`
+  async function exportSelected() {
+    const chosen = customThemes.filter((t) => exporting?.includes(t.id));
+    if (chosen.length === 0) return;
+    const payload = { kind: 'freedraft-themes', version: 1, themes: chosen };
+    const name = chosen.length === 1
+      ? `${safeName(chosen[0].label)}.freedraft-theme.json`
       : 'freedraft-themes.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    setImportNote(`Exported ${customThemes.length} theme${customThemes.length === 1 ? '' : 's'}.`);
+    // saveFile opens the real save dialog on desktop, so the user picks WHERE
+    // it goes rather than it landing silently in Downloads.
+    const { saveFile } = await import('../utils/fileOps');
+    const ok = await saveFile(JSON.stringify(payload, null, 2), name, [
+      { name: 'FreeDraft Themes', extensions: ['json'] },
+    ]);
+    setExporting(null);
+    if (ok) setImportNote(`Exported ${chosen.length} theme${chosen.length === 1 ? '' : 's'}.`);
+  }
+
+  /** Import from another FreeDraft PROJECT (.odraft) — themes now travel inside
+   *  project files, so this copies the look across. Projects exported before
+   *  v0.82 carry no themes, and we say so plainly rather than failing silently. */
+  async function importFromProject() {
+    const { openTextFile } = await import('../utils/fileOps');
+    const result = await openTextFile([
+      { name: 'FreeDraft Project', extensions: ['odraft', 'json'] },
+    ]);
+    if (!result) return;
+    try {
+      const found = extractThemes(JSON.parse(result.content));
+      if (found.length === 0) {
+        setImportNote('That project has no custom themes. (Projects exported before v0.82 don’t carry themes — re-export it from the newer version.)');
+        return;
+      }
+      addThemes(found);
+    } catch {
+      setImportNote('That file couldn’t be read as a FreeDraft project.');
+    }
   }
 
   function importThemes() {
@@ -298,30 +358,34 @@ export default function ThemesTab() {
           setImportNote('No themes found in that file.');
           return;
         }
-        // Never overwrite an existing theme: imported themes get a fresh id, and
-        // a duplicate name is suffixed. Re-importing the same file twice is
-        // harmless rather than destructive.
-        const existing = new Set(customThemes.map((c) => c.label));
-        let added = 0;
-        for (const t of found) {
-          let label = t.label || 'Imported Theme';
-          let n = 2;
-          while (existing.has(label)) label = `${t.label} (${n++})`;
-          existing.add(label);
-          saveCustomTheme({
-            id: `custom:${Date.now()}-${added}`,
-            label,
-            base: t.base === 'light' ? 'light' : 'dark',
-            vars: t.vars && typeof t.vars === 'object' ? t.vars : {},
-          });
-          added++;
-        }
-        setImportNote(`Imported ${added} theme${added === 1 ? '' : 's'}.`);
+        addThemes(found);
       } catch {
         setImportNote('That file couldn’t be read as a theme file.');
       }
     };
     input.click();
+  }
+
+  /** Never overwrite an existing theme: imported themes get a fresh id, and a
+   *  duplicate name is suffixed. Re-importing the same file twice is harmless
+   *  rather than destructive. */
+  function addThemes(found: CustomTheme[]) {
+    const existing = new Set(customThemes.map((c) => c.label));
+    let added = 0;
+    for (const t of found) {
+      let label = t.label || 'Imported Theme';
+      let n = 2;
+      while (existing.has(label)) label = `${t.label} (${n++})`;
+      existing.add(label);
+      saveCustomTheme({
+        id: `custom:${Date.now()}-${added}`,
+        label,
+        base: t.base === 'light' ? 'light' : 'dark',
+        vars: t.vars && typeof t.vars === 'object' ? t.vars : {},
+      });
+      added++;
+    }
+    setImportNote(`Imported ${added} theme${added === 1 ? '' : 's'}.`);
   }
 }
 

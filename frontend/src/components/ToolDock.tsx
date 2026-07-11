@@ -239,14 +239,14 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   type DockEntry =
     | { kind: 'tool'; tool: typeof ALL_TOOLS[number] }
     | { kind: 'divider'; id: string; label: string }
-    | { kind: 'spacer'; id: string };
+    | { kind: 'spacer'; id: string; size?: number };
   const entries: DockEntry[] = [
     ...tools.map((t) => ({ kind: 'tool' as const, tool: t, ord: orderIdx(t.id) })),
     // Spacers (v0.69) share the panelDividers list — a divider with spacer:true.
     // Persisted entries from before v0.69 have no flag, so they stay dividers.
     ...panelDividers.filter((d) => d.side === side).map((d) => (
       d.spacer
-        ? { kind: 'spacer' as const, id: d.id, ord: orderIdx(`div:${d.id}`) }
+        ? { kind: 'spacer' as const, id: d.id, size: d.size, ord: orderIdx(`div:${d.id}`) }
         : { kind: 'divider' as const, id: d.id, label: d.label, ord: orderIdx(`div:${d.id}`) }
     )),
   ].sort((a, b) => a.ord - b.ord).map(({ ord: _o, ...rest }) => rest as DockEntry);
@@ -309,7 +309,12 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     <div className={`tool-dock-wrap tool-dock-${side} tool-dock-${panelSizeMode[side]}`}>
       <div className="tool-dock" style={{ width: dockW }}>
         {entries.map((entry) => entry.kind === 'spacer' ? (
-          <div key={`sp-${entry.id}`} className="tool-dock-spacer" />
+          // v0.82: sizeable. Older spacers have no size and keep the default.
+          <div
+            key={`sp-${entry.id}`}
+            className="tool-dock-spacer"
+            style={entry.size ? { height: entry.size } : undefined}
+          />
         ) : entry.kind === 'divider' ? (
           <div key={`div-${entry.id}`} className="tool-dock-divider">
             <span className="tool-dock-divider-line" />

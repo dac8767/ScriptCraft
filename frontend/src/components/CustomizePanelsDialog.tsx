@@ -64,6 +64,32 @@ function ChromeSlider({
   );
 }
 
+/** Default spacer sizes — match the CSS so an unsized spacer doesn't jump when
+ *  the slider is first touched. */
+const DEFAULT_TOOLBAR_SPACER = 28;
+const DEFAULT_PANEL_SPACER = 22;   // matches .tool-dock-spacer in CSS
+
+/** Declared at MODULE scope on purpose: a component defined inside another is a
+ *  new type on every render, so it remounts and a drag dies on the first move
+ *  (this bit us in v0.75). */
+function SpacerSlider({ value, min, max, onChange }: {
+  value: number; min: number; max: number; onChange: (px: number) => void;
+}) {
+  return (
+    <span className="fs-spacer-slider">
+      <input
+        type="range"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        title="Spacer size"
+      />
+      <span className="fs-spacer-px">{value}px</span>
+    </span>
+  );
+}
+
 export default function CustomizePanelsDialog({ open, onClose, embedded = false, category }: Props) {
   const {
     toolConfig, setToolConfig,
@@ -91,13 +117,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     };
     type Row =
       | { kind: 'tool'; id: ToolId; label: string; side: 'left' | 'right' }
-      | { kind: 'divider'; id: string; label: string; side: 'left' | 'right'; spacer?: boolean };
+      | { kind: 'divider'; id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number };
     const rows: Row[] = [
       ...ALL_TOOLS.filter((t) => cfgOf(t.id).enabled).map((t) => ({
         kind: 'tool' as const, id: t.id, label: t.label, side: cfgOf(t.id).side, ord: oIdx(t.id),
       })),
       ...panelDividers.map((d) => ({
-        kind: 'divider' as const, id: d.id, label: d.label, side: d.side, spacer: d.spacer, ord: oIdx(`div:${d.id}`),
+        kind: 'divider' as const, id: d.id, label: d.label, side: d.side, spacer: d.spacer, size: d.size, ord: oIdx(`div:${d.id}`),
       })),
     ].sort((a, b) => a.ord - b.ord).map(({ ord: _o, ...r }) => r as Row);
 
@@ -231,7 +257,17 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   <span className="fs-customize-tool">
                     <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
                     {r.kind === 'divider' && r.spacer ? (
-                      <span className="fs-spacer-row-label">— Spacer —</span>
+                      <>
+                        <span className="fs-spacer-row-label">— Spacer —</span>
+                        <SpacerSlider
+                          value={r.size ?? DEFAULT_PANEL_SPACER}
+                          min={8}
+                          max={240}
+                          onChange={(px) => setPanelDividers(
+                            panelDividers.map((x) => (x.id === r.id ? { ...x, size: px } : x)),
+                          )}
+                        />
+                      </>
                     ) : r.kind === 'divider' ? (
                       <input
                         className="fs-divider-label-input"
@@ -404,6 +440,10 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       ],
     },
   ];
+  const spacerPx = (tok: string) => {
+    const n = Number(tok.split(':')[2]);
+    return Number.isFinite(n) && n > 0 ? n : DEFAULT_TOOLBAR_SPACER;
+  };
   const tokenLabel = (tok: string): string => {
     if (tok.startsWith('b:')) return BUILTIN_BY_KEY[tok.slice(2)]?.label || tok;
     if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.label || tok;
@@ -576,6 +616,21 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                     <span className="fs-customize-tool">
                       <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
                       {tokenLabel(tok)}
+                      {tok.startsWith('s:') && (
+                        <SpacerSlider
+                          value={spacerPx(tok)}
+                          min={8}
+                          max={240}
+                          onChange={(px) => {
+                            // The size rides in the token itself (s:<id>:<px>),
+                            // so it persists with the layout it belongs to.
+                            const [, id] = tok.split(':');
+                            const next = `s:${id}:${px}`;
+                            const swap = (arr: string[]) => arr.map((t) => (t === tok ? next : t));
+                            setToolbarZones(swap(tbLeft), swap(tbRight));
+                          }}
+                        />
+                      )}
                     </span>
                     <span className="fs-customize-seg">
                       <button className={zone === 'left' ? 'active' : ''} onClick={() => toZone('left')}>Left</button>

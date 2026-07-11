@@ -18,12 +18,17 @@ interface OdraftFile {
     page_count: number;
   };
   content: Record<string, unknown>;
+  /** v0.82: the project's custom themes travel with it, so another FreeDraft
+   *  can import them ("Import Themes from a Project"). Optional — files written
+   *  before this simply have no themes to offer. */
+  themes?: unknown[];
 }
 
 /** Build an .odraft JSON blob from script metadata and content. */
 export function exportOdraft(
   meta: ScriptMeta,
   content: Record<string, unknown>,
+  themes?: unknown[],
 ): Blob {
   const data: OdraftFile = {
     odraft_version: 1,
@@ -36,6 +41,7 @@ export function exportOdraft(
       page_count: meta.page_count,
     },
     content,
+    ...(themes && themes.length ? { themes } : {}),
   };
   return new Blob([JSON.stringify(data, null, 2)], {
     type: 'application/json',
@@ -46,8 +52,9 @@ export function exportOdraft(
 export async function downloadOdraft(
   meta: ScriptMeta,
   content: Record<string, unknown>,
+  themes?: unknown[],
 ): Promise<void> {
-  const blob = exportOdraft(meta, content);
+  const blob = exportOdraft(meta, content, themes);
   const text = await blob.text();
   const filename = `${meta.title || 'Untitled'}.odraft`;
   const { saveFile } = await import('./fileOps');

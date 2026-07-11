@@ -24,7 +24,7 @@ interface ViewState {
   contextMenuHidden?: string[];
   panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
   chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
-  panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[];
+  panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
   workspaces?: Record<string, WorkspaceSnapshot>;
   workspaceOrder?: string[];
   activeWorkspace?: string | null;
@@ -410,7 +410,7 @@ export interface WorkspaceSnapshot {
   menuMode?: 'compact' | 'comfortable' | 'custom' | 'hidden';
   panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
   chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
-  panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[];
+  panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
   /** v0.78: the active theme is part of a workspace. */
   theme?: ThemeId;
   activeToolRight?: ToolId | null;
@@ -652,8 +652,8 @@ interface EditorState {
   chromeCustomPx: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   setChromeCustomPx: (surface: 'menu' | 'toolbar' | 'panelLeft' | 'panelRight', px: number) => void;
   setPanelSizeMode: (side: 'left' | 'right', mode: 'compact' | 'comfortable' | 'custom') => void;
-  panelDividers: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[];
-  setPanelDividers: (d: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[]) => void;
+  panelDividers: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
+  setPanelDividers: (d: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[]) => void;
 
   /** Menu bar customization: display order + hidden menus (File cannot hide). */
   menuBarOrder: string[];

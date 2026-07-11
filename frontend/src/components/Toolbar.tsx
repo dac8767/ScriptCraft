@@ -1039,14 +1039,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       case 'customize': return (
         <button
           className="toolbar-btn toolbar-btn-labeled"
-          title="Customize Everything"
+          title="Customize"
           onClick={() => {
             window.dispatchEvent(new CustomEvent('freedraft:command', { detail: 'customize' }));
             if (inOverflow) setOverflowOpen(false);
           }}
         >
           <FaSlidersH />
-          <span className="toolbar-btn-text">Customize Everything</span>
+          <span className="toolbar-btn-text">CUSTOMIZE</span>
         </button>
       );
       case 'view': return (
@@ -1129,9 +1129,19 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     if (tok.startsWith('d:')) {
       return <div key={tok} className="toolbar-separator toolbar-user-divider" />;
     }
-    // s:<n> — blank space to push neighbouring buttons apart (v0.69).
+    // s:<id> — blank space to push neighbouring buttons apart (v0.69).
+    // v0.82: an optional width rides along as s:<id>:<px>. Tokens saved before
+    // that have no width and fall back to the CSS default, so old layouts load
+    // unchanged.
     if (tok.startsWith('s:')) {
-      return <div key={tok} className="toolbar-spacer" />;
+      const px = Number(tok.split(':')[2]);
+      return (
+        <div
+          key={tok}
+          className="toolbar-spacer"
+          style={Number.isFinite(px) && px > 0 ? { width: px } : undefined}
+        />
+      );
     }
     if (tok.startsWith('t:')) {
       const t = ALL_TOOLS.find((x) => x.id === tok.slice(2));
