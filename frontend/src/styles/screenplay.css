@@ -886,6 +886,25 @@ body {
   max-width: 720px;
 }
 
+/* Fixed-size tool window (v0.89) — Title Page. The window is exactly the size of
+   the form inside it: no imposed width/height, no resize grip, no dead grey. */
+.tool-window.tool-window-fixed {
+  width: max-content;
+  height: auto;
+  max-width: 96vw;
+  max-height: 92vh;
+  resize: none;
+}
+.tool-window.tool-window-fixed .tool-window-body {
+  flex: 0 0 auto;
+  overflow: auto;        /* only scrolls if the screen is smaller than the form */
+}
+.fs-modal-as-panel-fixed { height: auto; }
+.fs-modal-as-panel-fixed .dialog-box {
+  width: max-content; max-width: none;
+  height: auto; max-height: none;
+}
+
 /* Customize toolbar button (v0.84): text on a themed button surface, no icon.
    It carries .toolbar-btn-labeled — the SAME class as the Zoom control — and
    deliberately does NOT set its own height, so the two always match, including

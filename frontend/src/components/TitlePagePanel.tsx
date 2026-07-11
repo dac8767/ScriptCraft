@@ -10,15 +10,19 @@ import TitlePageEditor from './TitlePageEditor';
 
 interface TitlePagePanelProps {
   editor: Editor | null;
+  /** v0.89: closes the window this panel lives in. TitlePageEditor's Cancel and
+   *  Apply both call onClose — it was wired to a no-op here, which is why they
+   *  appeared to do nothing. */
+  onClose?: () => void;
 }
 
-export default function TitlePagePanel({ editor }: TitlePagePanelProps) {
+export default function TitlePagePanel({ editor, onClose }: TitlePagePanelProps) {
   if (!editor) {
     return <div className="fs-panel-empty">Open a script to edit its title page.</div>;
   }
   return (
-    <div className="fs-modal-as-panel">
-      <TitlePageEditor editor={editor} onClose={() => {}} />
+    <div className="fs-modal-as-panel fs-modal-as-panel-fixed">
+      <TitlePageEditor editor={editor} onClose={() => onClose?.()} />
     </div>
   );
 }

@@ -380,17 +380,23 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
     const onePageH = pageLayout.pageHeight * CSS_PX_PER_IN;
     const pageW = pageLayout.pageWidth * CSS_PX_PER_IN;
-    const marginsY = (parseFloat(pc.marginTop) || 0) + (parseFloat(pc.marginBottom) || 0);
-    const blockH = onePageH + marginsY;
+
+    // v0.89: only the page's TOP margin sits between the top of the view and the
+    // first page. Its bottom margin falls BELOW page one — counting it shrank
+    // the page by that much and let the next page peek in.
+    const marginTop = parseFloat(pc.marginTop) || 0;
+    const blockH = onePageH + marginTop;
     if (!blockH || !pageW) return;
 
-    // .editor-main scrolls and carries padding, which sits inside clientHeight —
-    // subtract it, or the page is scaled to overlap the padding and still
-    // doesn't quite fit.
+    // .editor-main pads 30px top / 60px bottom. Only the TOP padding pushes page
+    // one down the screen; the bottom padding sits after the WHOLE document, not
+    // after page one. Subtracting both (as v0.87 did) made the page ~60px
+    // shorter than the space available — and that leftover strip is exactly the
+    // sliver of page two Derek could see.
     const sc = getComputedStyle(scroller);
-    const padY = (parseFloat(sc.paddingTop) || 0) + (parseFloat(sc.paddingBottom) || 0);
+    const padTop = parseFloat(sc.paddingTop) || 0;
     const padX = (parseFloat(sc.paddingLeft) || 0) + (parseFloat(sc.paddingRight) || 0);
-    const availH = scroller.clientHeight - padY;
+    const availH = scroller.clientHeight - padTop;
     const availW = scroller.clientWidth - padX;
     if (availH <= 0 || availW <= 0) return;
 

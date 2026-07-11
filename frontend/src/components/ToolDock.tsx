@@ -46,6 +46,8 @@ export interface ToolDef {
    *  default width to the dock so they dock inline (v0.66); Customize keeps
    *  its full size and opens as a floating window instead. */
   noPanelFit?: boolean;
+  /** v0.89: the window hugs its content and offers no resize handle. */
+  fixedSize?: boolean;
   /** dock group separators, Photoshop-style (per side, in order) */
   group: number;
 }
@@ -67,7 +69,10 @@ export const ALL_TOOLS: ToolDef[] = [
   { id: 'tags', label: 'Production Tags', icon: <FaTags />, defaultSize: { w: 340, h: 336 }, group: 2 },
   { id: 'analytics', label: 'Analytics', icon: <FaChartBar />, defaultSize: { w: 620, h: 384 }, group: 3 },
   { id: 'goals', label: 'Goals', icon: <FaBullseye />, defaultSize: { w: 340, h: 264 }, group: 3 },
-  { id: 'titlepage', label: 'Title Page', icon: <FaFileAlt />, defaultSize: { w: 520, h: 560 }, group: 3 },
+  // v0.89: fixed — the Title Page form is a set-size box, so the window is sized
+  // to it exactly and can't be resized. Nothing else is fixed; every other tool
+  // genuinely uses the space it's given.
+  { id: 'titlepage', label: 'Title Page', icon: <FaFileAlt />, defaultSize: { w: 520, h: 560 }, group: 3, noPanelFit: true, fixedSize: true },
   // Same size as the Customize dialog; noPanelFit keeps it that size in a panel.
   { id: 'customize', label: 'Customize', icon: <FaSlidersH />, defaultSize: { w: 560, h: 680 }, group: 3, noPanelFit: true },
   { id: 'assets', label: 'Asset Manager', icon: <FaBoxes />, defaultSize: { w: 620, h: 372 }, group: 3 },
@@ -99,8 +104,11 @@ export const dockWidthFor = (
 ) => chromePx(side === 'left' ? 'panelLeft' : 'panelRight', mode, customPx);
 
 /** Shared tool-content renderer (docked and temporary windows). */
-export function ToolContent({ id, editor, scrollContainer }: {
+export function ToolContent({ id, editor, scrollContainer, onClose }: {
   id: ToolId; editor: Editor | null; scrollContainer?: HTMLDivElement | null;
+  /** v0.89: lets a hosted modal (Title Page) close the window it lives in —
+   *  its Cancel/Apply buttons call onClose, which used to be a no-op. */
+  onClose?: () => void;
 }) {
   const { currentProject } = useProjectStore();
   switch (id) {
@@ -114,7 +122,7 @@ export function ToolContent({ id, editor, scrollContainer }: {
     case 'characters':
       return <CharacterProfiles editor={editor} projectId={currentProject?.id || ''} embedded />;
     case 'titlepage':
-      return <TitlePagePanel editor={editor} />;
+      return <TitlePagePanel editor={editor} onClose={onClose} />;
     case 'customize':
       return <CustomizePanelsDialog open embedded onClose={() => {}} />;
     case 'assets':
@@ -217,8 +225,10 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
   return (
     <div
       ref={windowRef}
-      className={`tool-window${temporary ? ' tool-window-temp' : ''}`}
-      style={{ width: size.w, height: size.h }}
+      className={`tool-window${temporary ? ' tool-window-temp' : ''}${tool.fixedSize ? ' tool-window-fixed' : ''}`}
+      // A fixed window takes its size from its content (CSS max-content), so no
+      // width/height is imposed here and there's nothing to drag.
+      style={tool.fixedSize ? undefined : { width: size.w, height: size.h }}
     >
       <div className="tool-window-header">
         <span className="tool-window-title">{tool.label}</span>
@@ -232,11 +242,13 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
           onClick={() => setToolSize(tool.id, popInW, size.h)}
         >{side === 'right' ? '\u2922' : '\u2921'}</button>
       )}
-      <div
-        className={`tool-window-resize${side === 'right' ? ' tool-window-resize-left' : ''}`}
-        onPointerDown={startResize}
-        title="Drag to resize — the new size becomes this tool's default"
-      />
+      {!tool.fixedSize && (
+        <div
+          className={`tool-window-resize${side === 'right' ? ' tool-window-resize-left' : ''}`}
+          onPointerDown={startResize}
+          title="Drag to resize — the new size becomes this tool's default"
+        />
+      )}
     </div>
   );
 }
@@ -368,7 +380,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                   onClick={() => setToolSize(active.id, dockW + 140, activeSize!.h)}
                 >{side === 'right' ? '\u2921' : '\u2922'}</button>
                 <div className="tool-inline-body" style={{ height: activeSize!.h }}>
-                  <ToolContent id={active.id} editor={editor} scrollContainer={scrollContainer} />
+                  <ToolContent id={active.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />
                 </div>
                 <div
                   className="tool-inline-resize"
@@ -383,7 +395,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
 
       {active && !inline && (
         <ToolWindowFrame tool={active} side={side} onClose={() => setActive(null)}>
-          <ToolContent id={active.id} editor={editor} scrollContainer={scrollContainer} />
+          <ToolContent id={active.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />
         </ToolWindowFrame>
       )}
     </div>
@@ -412,7 +424,7 @@ export function TempToolWindow({ editor, scrollContainer }: {
   return (
     <div className="tool-temp-anchor">
       <ToolWindowFrame tool={tool} onClose={() => setTempTool(null)} temporary>
-        <ToolContent id={tool.id} editor={editor} scrollContainer={scrollContainer} />
+        <ToolContent id={tool.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setTempTool(null)} />
       </ToolWindowFrame>
     </div>
   );
