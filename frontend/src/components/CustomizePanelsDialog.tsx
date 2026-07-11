@@ -63,16 +63,32 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     ].sort((a, b) => a.ord - b.ord).map(({ ord: _o, ...r }) => r as Row);
 
     const orderTokenOf = (r: Row) => r.kind === 'tool' ? r.id : `div:${r.id}`;
-    const moveRowTo = (from: number, to: number) => {
+
+    // v0.65: rows are grouped by side — all Left items, a separator, then all
+    // Right items. Because the grouping is a STABLE partition of the flat
+    // toolOrder, "last in toolOrder" is also "last within its side's group",
+    // which is what lets a side switch land at the bottom of the target list.
+    const leftRows = rows.filter((r) => r.side === 'left');
+    const rightRows = rows.filter((r) => r.side === 'right');
+
+    /** Full token order, materialized (toolOrder may be empty = defaults). */
+    const fullOrder = () => {
       const toks = rows.map(orderTokenOf);
       const full = [...order];
       for (const t of toks) if (!full.includes(t)) full.push(t);
-      const newToks = [...toks];
-      const [m] = newToks.splice(from, 1);
-      newToks.splice(to, 0, m);
-      const inRows = new Set(toks);
+      return full;
+    };
+
+    /** Reorder within ONE side; the other side is untouched. */
+    const moveWithinSide = (side: 'left' | 'right') => (from: number, to: number) => {
+      const sideRows = side === 'left' ? leftRows : rightRows;
+      const sideToks = sideRows.map(orderTokenOf);
+      const next = [...sideToks];
+      const [m] = next.splice(from, 1);
+      next.splice(to, 0, m);
+      const inSide = new Set(sideToks);
       let k = 0;
-      setToolOrder(full.map((x) => (inRows.has(x) ? newToks[k++] : x)));
+      setToolOrder(fullOrder().map((x) => (inSide.has(x) ? next[k++] : x)));
     };
     const setRowSide = (r: Row, target: 'left' | 'right' | 'hidden') => {
       if (r.kind === 'divider') {
@@ -80,12 +96,22 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           setPanelDividers(panelDividers.filter((x) => x.id !== r.id));
           setToolOrder(order.filter((t) => t !== `div:${r.id}`));
         } else {
+          const changed = r.side !== target;
           setPanelDividers(panelDividers.map((x) => x.id === r.id ? { ...x, side: target } : x));
+          if (changed) sendToBottom(`div:${r.id}`);
         }
         return;
       }
-      if (target === 'hidden') setTool(r.id, { enabled: false });
-      else setTool(r.id, { enabled: true, side: target });
+      if (target === 'hidden') { setTool(r.id, { enabled: false }); return; }
+      if (cfgOf(r.id).side === target && cfgOf(r.id).enabled) return;   // no-op
+      setTool(r.id, { enabled: true, side: target });
+      sendToBottom(r.id);
+    };
+
+    /** Move a token to the end of the flat order = bottom of its side's group. */
+    const sendToBottom = (token: string) => {
+      const full = fullOrder().filter((t) => t !== token);
+      setToolOrder([...full, token]);
     };
     /** Default side for a tool coming back from hidden. */
     const homeSide = (id: ToolId): 'left' | 'right' =>
@@ -141,34 +167,44 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       <section>
         <h3>Panel Items</h3>
         <p className="fs-customize-hint">
-          Everything in both panels, in order. Left/Right chooses an item's
-          panel; Hide removes it (re-add it from the dropdown below). Divider
-          labels are edited here only.
+          Left items first, then Right. Left/Right moves an item to the bottom of
+          that panel's list; Hide removes it (re-add it from the dropdown below).
+          Drag to reorder within a panel. Divider labels are edited here only.
         </p>
-        {rows.map((r, idx) => (
-          <div
-            key={`${r.kind}-${r.id}`}
-            className={`fs-customize-row${dragClass('panels', idx)}`}
-            {...dragProps('panels', idx, moveRowTo)}
-          >
-            <span className="fs-customize-tool">
-              <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
-              {r.kind === 'divider' ? (
-                <input
-                  className="fs-divider-label-input"
-                  value={r.label}
-                  placeholder="Divider label (optional)"
-                  onChange={(e) => setPanelDividers(panelDividers.map((x) => x.id === r.id ? { ...x, label: e.target.value } : x))}
-                />
-              ) : r.label}
-            </span>
-            <span className="fs-customize-seg">
-              <button className={r.side === 'left' ? 'active' : ''} onClick={() => setRowSide(r, 'left')}>Left</button>
-              <button className={r.side === 'right' ? 'active' : ''} onClick={() => setRowSide(r, 'right')}>Right</button>
-              <button onClick={() => setRowSide(r, 'hidden')}>Hide</button>
-            </span>
-          </div>
-        ))}
+        {(['left', 'right'] as const).map((side) => {
+          const sideRows = side === 'left' ? leftRows : rightRows;
+          return (
+            <React.Fragment key={side}>
+              {side === 'right' && leftRows.length > 0 && rightRows.length > 0 && (
+                <div className="fs-customize-side-sep" />
+              )}
+              {sideRows.map((r, idx) => (
+                <div
+                  key={`${r.kind}-${r.id}`}
+                  className={`fs-customize-row${dragClass(`panels-${side}`, idx)}`}
+                  {...dragProps(`panels-${side}`, idx, moveWithinSide(side))}
+                >
+                  <span className="fs-customize-tool">
+                    <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
+                    {r.kind === 'divider' ? (
+                      <input
+                        className="fs-divider-label-input"
+                        value={r.label}
+                        placeholder="Divider label (optional)"
+                        onChange={(e) => setPanelDividers(panelDividers.map((x) => x.id === r.id ? { ...x, label: e.target.value } : x))}
+                      />
+                    ) : r.label}
+                  </span>
+                  <span className="fs-customize-seg">
+                    <button className={r.side === 'left' ? 'active' : ''} onClick={() => setRowSide(r, 'left')}>Left</button>
+                    <button className={r.side === 'right' ? 'active' : ''} onClick={() => setRowSide(r, 'right')}>Right</button>
+                    <button onClick={() => setRowSide(r, 'hidden')}>Hide</button>
+                  </span>
+                </div>
+              ))}
+            </React.Fragment>
+          );
+        })}
         <div className="fs-tbzone-adders fs-adders-equal">
           <select value="" onChange={(e) => { if (e.target.value) { onAdd(e.target.value); e.target.value = ''; } }}>
             <option value="">+ Add item to Panels…</option>
@@ -428,7 +464,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 zone === 'left'
                   ? setToolbarZones(nextSelf, nextOther ?? other)
                   : setToolbarZones(nextOther ?? other, nextSelf);
-              return tokens.map((tok, idx) => {
+              // Zones are already separate arrays, so Left/Right items are
+              // grouped by construction and a side switch appends to the
+              // target zone's end (bottom). Only the divider line was missing.
+              const sep = zone === 'right' && tbLeft.length > 0 && tbRight.length > 0
+                ? [<div className="fs-customize-side-sep" key="tb-side-sep" />]
+                : [];
+              return [...sep, ...tokens.map((tok, idx) => {
                 const moveTokTo = (from: number, to: number) => {
                   const next = [...tokens];
                   const [m] = next.splice(from, 1);
@@ -457,7 +499,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                     </span>
                   </div>
                 );
-              });
+              })];
             })}
             <div className="fs-tbzone-adders fs-adders-equal">
               <select

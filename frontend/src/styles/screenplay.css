@@ -753,6 +753,13 @@ body {
   flex: 1 1 0; min-width: 0; width: auto; box-sizing: border-box;
 }
 
+/* Divider between the grouped Left and Right item lists (v0.65). No label —
+   the Left/Right buttons on each row already say which side it is. */
+.fs-customize-side-sep {
+  height: 1px; background: var(--fd-border);
+  margin: 7px 0; opacity: 0.85;
+}
+
 /* ── Customize: drag-and-drop reordering (v0.45) ── */
 .fs-customize-row[draggable="true"] { cursor: grab; }
 .fs-customize-row.dragging { opacity: 0.45; }
