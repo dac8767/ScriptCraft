@@ -249,7 +249,7 @@ export function TodoTool({ editor }: EditorToolProps) {
   // To-dos that live in the script: [ ] lines in the document. Each one records
   // the scene it falls under — that's the Location shown on its row.
   const docTodos = useMemo(() => {
-    const out: Array<{ text: string; pos: number; done: boolean; location: string }> = [];
+    const out: Array<{ text: string; pos: number; done: boolean; linkLabel: string }> = [];
     if (editor) {
       let scene = '';
       editor.state.doc.descendants((node, pos) => {
@@ -262,10 +262,10 @@ export function TodoTool({ editor }: EditorToolProps) {
               text: text.slice(3).trim() || '(empty to-do)',
               pos,
               done: text[1] === 'x',
-              // Before the first scene heading there's no scene to name — the
-              // to-do is still in the script, so say so rather than leave it
-              // blank, which would read as "not in the script at all".
-              location: scene || 'Top of script',
+              // The label is just what you click — the scene it's in when there
+              // is one, otherwise a plain "View in script". Not a description of
+              // where it lives; a way to get there.
+              linkLabel: scene || 'View in script',
             });
           }
         }
@@ -292,25 +292,33 @@ export function TodoTool({ editor }: EditorToolProps) {
   return (
     <div className="fs-sticky-tool">
       <div className="fs-todo-list">
+        {/* v0.94: a to-do added in the script uses the SAME card format as one
+            added here — the only difference is the link at the bottom, which
+            takes you to it in the editor. It doesn't describe where it is; you
+            just click through. */}
         {docTodos.map((it, i) => (
-          <div key={`${it.pos}-${i}`} className="fs-doc-todo-row">
-            <input type="checkbox" checked={it.done} onChange={() => toggleDocTodo(it)} />
-            <span
-              className={`fs-todo-text${it.done ? ' fs-nav-done' : ''}`}
+          <div key={`${it.pos}-${i}`} className="swn-card swn-card-script">
+            <label className="swn-todo-item">
+              <input type="checkbox" checked={it.done} onChange={() => toggleDocTodo(it)} />
+              <span style={{ textDecoration: it.done ? 'line-through' : 'none', color: it.done ? '#8a8a7a' : '#333' }}>
+                {it.text}
+              </span>
+            </label>
+            <button
+              className="fs-script-link"
               onClick={() => jumpTo(it.pos)}
-              title="Click to jump to this to-do in the script"
-            >{it.text}</span>
-            <span className="fs-todo-loc" title={`In the script: ${it.location}`}>{it.location}</span>
+              title="Go to this to-do in the script"
+            >{it.linkLabel}</button>
           </div>
         ))}
 
-        {/* Standalone to-do lists — no script location, so the field stays empty. */}
+        {/* Standalone to-do lists — nothing to link to, so no link. */}
         <CardList type="todo" />
 
         {docTodos.length === 0 && (
           <div className="fs-nav-empty fs-todo-hint">
             Add a to-do below, or use <strong>Insert → To-Do List</strong> to add one
-            in the script — those show the scene they’re in.
+            in the script.
           </div>
         )}
       </div>

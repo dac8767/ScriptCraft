@@ -67,7 +67,10 @@ export const ALL_TOOLS: ToolDef[] = [
   { id: 'todo', label: 'To-Do', icon: <FaCheckSquare />, defaultSize: { w: 300, h: 288 }, group: 2 },
   { id: 'highlights', label: 'Highlights', icon: <FaHighlighter />, defaultSize: { w: 300, h: 312 }, group: 2 },
   { id: 'tags', label: 'Production Tags', icon: <FaTags />, defaultSize: { w: 340, h: 336 }, group: 2 },
-  { id: 'analytics', label: 'Analytics', icon: <FaChartBar />, defaultSize: { w: 620, h: 384 }, group: 3 },
+  // v0.94: Analytics opens FLOATING at its natural size — squeezed into a 300px
+  // panel there's nothing to read. noPanelFit only changes the DEFAULT: the
+  // pop-in button still docks it, and that choice is remembered.
+  { id: 'analytics', label: 'Analytics', icon: <FaChartBar />, defaultSize: { w: 620, h: 384 }, group: 3, noPanelFit: true },
   { id: 'goals', label: 'Goals', icon: <FaBullseye />, defaultSize: { w: 340, h: 264 }, group: 3 },
   // v0.89: fixed — the Title Page form is a set-size box, so the window is sized
   // to it exactly and can't be resized. Nothing else is fixed; every other tool

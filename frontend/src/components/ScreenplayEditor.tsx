@@ -1174,6 +1174,37 @@ const ScreenplayEditor: React.FC = () => {
             // "no position before the top-level node" for a top-level NodeSelection.
             if (!$from.parent.isTextblock) return false;
 
+            // ── To-Do lists continue on Enter (v0.94) ──
+            // A to-do line is a `general` node starting with [ ] or [x]. Enter on
+            // one starts the next to-do in the list; Enter on an EMPTY to-do ends
+            // the list, clearing the marker so you're back to a normal line —
+            // the same rhythm as a bullet list anywhere else.
+            if (currentType === 'general') {
+              const line = currentNode.textContent;
+              const m = /^\[[ x]\]\s?(.*)$/.exec(line);
+              if (m) {
+                const rest = m[1].trim();
+                const start = $from.before($from.depth);
+                if (rest === '') {
+                  // Empty to-do: strip the marker and end the list.
+                  const tr = editor.state.tr.delete(start + 1, start + 1 + line.length);
+                  editor.view.dispatch(tr);
+                  return true;
+                }
+                // Otherwise: a fresh to-do line, ready to type into.
+                editor.chain().focus()
+                  .insertContentAt($from.after($from.depth), {
+                    type: 'general',
+                    content: [{ type: 'text', text: '[ ] ' }],
+                  })
+                  .run();
+                // Park the caret AFTER the "[ ] " marker of the new line.
+                const after = editor.state.selection.$from;
+                editor.commands.setTextSelection(after.pos);
+                return true;
+              }
+            }
+
             // Title-page lines must STAY in the title page: Enter adds another
             // (blank) title-page line instead of a body element, so the content
             // shifts down one line rather than breaking to the next page.

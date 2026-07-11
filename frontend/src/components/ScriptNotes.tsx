@@ -468,28 +468,19 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
                 className={`note-item${flashNoteId === note.id ? ' note-item-flash' : ''}`}
                 style={{ background: NOTE_STICKY_BG[note.color] || NOTE_STICKY_BG.Yellow, borderTopColor: hex }}
               >
+                {/* v0.94: a script-linked note now looks like any other note. The
+                    context used to be spelled out here in three passive labels;
+                    it's one LINK at the foot of the note instead — click it and
+                    you land on the note in the editor. Same treatment as To-Do. */}
                 <div className="note-item-header">
-                  <div className="note-item-context">
-                    <span className="note-item-element">{elemLabel}</span>
-                    {note.contextLabel && (
-                      <span className="note-item-ctx-label">{note.contextLabel}</span>
-                    )}
-                    {sceneName && (
-                      <span className="note-item-scene">{sceneName}</span>
-                    )}
-                  </div>
                   <span className="note-item-date">{formatDate(note.createdAt)}</span>
                 </div>
 
-                {note.anchorText && (
-                  <div
-                    className="note-item-anchor"
-                    onClick={() => handleNavigateToNote(note.id)}
-                    title="Click to navigate to this text"
-                  >
-                    &ldquo;{note.anchorText}&rdquo;
-                  </div>
-                )}
+                <button
+                  className="fs-script-link"
+                  onClick={() => handleNavigateToNote(note.id)}
+                  title="Go to this note in the script"
+                >{sceneName || note.contextLabel || elemLabel || 'View in script'}</button>
 
                 {/* Note content: edit mode or rendered preview */}
                 {isEditing ? (
