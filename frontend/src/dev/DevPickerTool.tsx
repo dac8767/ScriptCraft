@@ -34,7 +34,9 @@ export default function DevPickerTool(_props: Props) {
   const areaRef = React.useRef<HTMLTextAreaElement | null>(null);
 
   // ── Claude Code, running in the repo on this machine (see dev-server/) ──
-  const [bridge, setBridge] = React.useState<{ available: boolean; version?: string; hint?: string } | null>(null);
+  const [bridge, setBridge] = React.useState<{
+    available: boolean; version?: string; hint?: string; bin?: string; cwd?: string;
+  } | null>(null);
   const [log, setLog] = React.useState<PanelEvent[]>([]);
   const [busy, setBusy] = React.useState(false);
   const [allowEdits, setAllowEdits] = React.useState(false);
@@ -243,7 +245,9 @@ export default function DevPickerTool(_props: Props) {
               ? `Last capture — ${lastKind}`
               : sessionId
                 ? `Session live${allowEdits ? ' — edits allowed' : ' — read-only'}. Claude can see the repo.`
-                : 'Inspect: click any menu, button, panel, card or script element.'}
+                : bridge?.available
+                  ? `Claude Code ${bridge.version ?? ''} ready — read-only until you allow edits.`
+                  : 'Inspect: click any menu, button, panel, card or script element.'}
       </div>
 
       {/* The hover outline lives on the body so no panel can clip it. */}

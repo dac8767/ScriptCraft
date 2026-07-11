@@ -20,8 +20,48 @@
  *   - The child is killed if you hit Stop or close the panel.
  */
 import type { Plugin } from 'vite';
-import { spawn, execFile, type ChildProcess } from 'node:child_process';
+import { spawn, execFile, execFileSync, type ChildProcess } from 'node:child_process';
 import path from 'node:path';
+import fs from 'node:fs';
+import os from 'node:os';
+
+/**
+ * Find the claude binary WITHOUT trusting the inherited PATH.
+ *
+ * The first version just ran `claude` and let PATH resolve it. That works in your
+ * terminal and fails here: Tauri spawns the dev server through a NON-INTERACTIVE
+ * shell, which never sources ~/.zshrc — so the `export PATH=$HOME/.local/bin` the
+ * installer added is simply not in this process's environment. The CLI was
+ * installed and working, and the bridge still reported it missing.
+ *
+ * So: look where the installers actually put it, then, failing that, ask a LOGIN
+ * shell (which does read your rc files) where it lives.
+ */
+export function resolveClaude(
+  exists: (p: string) => boolean = fs.existsSync,
+): string | null {
+  const home = os.homedir();
+  const candidates = [
+    process.env.CLAUDE_BIN,                        // explicit override wins
+    path.join(home, '.local/bin/claude'),          // native installer
+    '/opt/homebrew/bin/claude',                    // homebrew, Apple silicon
+    '/usr/local/bin/claude',                       // homebrew, Intel / npm
+    path.join(home, '.npm-global/bin/claude'),     // user-prefixed npm
+  ].filter(Boolean) as string[];
+
+  for (const c of candidates) if (exists(c)) return c;
+
+  // Last resort: a login shell knows what your terminal knows.
+  try {
+    const shell = process.env.SHELL || '/bin/zsh';
+    const found = execFileSync(shell, ['-lic', 'command -v claude'], {
+      encoding: 'utf8', timeout: 5000, stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim().split('\n').pop()?.trim();
+    if (found && exists(found)) return found;
+  } catch { /* not there */ }
+
+  return null;
+}
 
 /** Look but don't touch: enough to diagnose, not enough to change anything. */
 const READ_ONLY_TOOLS = [
@@ -56,11 +96,19 @@ export function claudeBridge(): Plugin {
     configureServer(server) {
       // Is the CLI even installed and authed?
       server.middlewares.use('/__dev/claude/status', (_req, res) => {
-        execFile('claude', ['--version'], { timeout: 5000 }, (err, stdout) => {
-          res.setHeader('Content-Type', 'application/json');
+        const bin = resolveClaude();
+        res.setHeader('Content-Type', 'application/json');
+        if (!bin) {
+          res.end(JSON.stringify({
+            available: false,
+            hint: 'Claude Code CLI not found. Install: curl -fsSL https://claude.ai/install.sh | bash — then restart tauri dev.',
+          }));
+          return;
+        }
+        execFile(bin, ['--version'], { timeout: 8000 }, (err, stdout) => {
           res.end(JSON.stringify(err
-            ? { available: false, hint: 'Claude Code CLI not found on PATH. Install: npm i -g @anthropic-ai/claude-code' }
-            : { available: true, version: String(stdout).trim(), cwd: repoRoot }));
+            ? { available: false, hint: `Found ${bin} but it failed to run: ${err.message}` }
+            : { available: true, version: String(stdout).trim(), bin, cwd: repoRoot }));
         });
       });
 
@@ -99,7 +147,33 @@ export function claudeBridge(): Plugin {
           if (allowEdits) args.push('--permission-mode', 'acceptEdits');
           if (sessionId) args.push('--resume', sessionId);
 
-          const child = spawn('claude', args, { cwd: repoRoot });
+          const bin = resolveClaude();
+          if (!bin) {
+            res.setHeader('Content-Type', 'application/x-ndjson');
+            res.write(JSON.stringify({
+              type: 'bridge_error',
+              message: 'Claude Code CLI not found. Install: curl -fsSL https://claude.ai/install.sh | bash — then restart tauri dev.',
+            }) + '\n');
+            res.end();
+            return;
+          }
+
+          // The child gets a PATH containing the CLI's own directory, so any tool
+          // it shells out to (git, node, npx) resolves the same way it would in
+          // your terminal.
+          const child = spawn(bin, args, {
+            cwd: repoRoot,
+            env: {
+              ...process.env,
+              PATH: [
+                path.dirname(bin),
+                path.join(os.homedir(), '.local/bin'),
+                '/opt/homebrew/bin',
+                '/usr/local/bin',
+                process.env.PATH ?? '',
+              ].join(':'),
+            },
+          });
           running.add(child);
 
           res.setHeader('Content-Type', 'application/x-ndjson');

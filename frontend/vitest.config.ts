@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'dev-server/**/*.test.ts'],
     environmentMatchGlobs: [['src/**/*.test.tsx', 'jsdom']],
   },
 })
