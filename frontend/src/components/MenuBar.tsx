@@ -131,6 +131,7 @@ import {
   FaRegClone, FaStream,   FaEdit,
   FaTags,
   FaFlag, FaEyeSlash,
+  FaBug,
 } from 'react-icons/fa';
 
 interface MenuBarProps {
@@ -1273,6 +1274,20 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             },
           ],
         },
+        // DEV ONLY — absent from production builds, along with the tool itself.
+        ...(import.meta.env.DEV ? [
+          { separator: true, label: '' },
+          {
+            icon: <FaBug />, label: 'Developer',
+            children: [
+              {
+                icon: <FaBug />,
+                label: 'Dev Picker',
+                action: () => useEditorStore.getState().openTool('devpicker'),
+              },
+            ],
+          },
+        ] : []),
         { separator: true, label: '' },
         {
           icon: <FaAdjust />, label: 'Theme',

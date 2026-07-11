@@ -22,7 +22,8 @@ import SpellCheckPanel from './SpellCheckPanel';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
-  FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,} from 'react-icons/fa';
+  FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,  FaBug,
+} from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { type NavTab } from './SceneNavigator';
@@ -89,6 +90,29 @@ export const ALL_TOOLS: ToolDef[] = [
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
+// DEV ONLY: the Dev Picker is appended to the registry in development builds and
+// simply isn't there in production — so it can't be docked, customized or shipped
+// by accident. Deleting src/dev/ and this block removes the feature entirely.
+/**
+ * Lazily imported behind the DEV flag. A STATIC import would keep the module
+ * referenced from the production bundle even though the tool is unreachable —
+ * the code would ship. Folded against `import.meta.env.DEV === false` at build
+ * time, this whole branch is dead and the module is never pulled in.
+ */
+const DevPickerTool = import.meta.env.DEV
+  ? React.lazy(() => import('../dev/DevPickerTool'))
+  : null;
+
+if (import.meta.env.DEV) {
+  ALL_TOOLS.push({
+    id: 'devpicker',
+    label: 'Dev Picker',
+    icon: <FaBug />,
+    defaultSize: { w: 340, h: 420 },
+    group: 3,
+  });
+}
+
 export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'titlepage', 'history'];
 export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 
@@ -135,6 +159,12 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
       return <AssetManager projectId={currentProject?.id || ''} embedded />;
     case 'spelling':
       return <SpellCheckPanel editor={editor} />;
+    case 'devpicker':
+      return DevPickerTool ? (
+        <React.Suspense fallback={null}>
+          <DevPickerTool onClose={onClose} />
+        </React.Suspense>
+      ) : null;
     case 'history':
       return <VersionHistory embedded />;
     case 'analytics':

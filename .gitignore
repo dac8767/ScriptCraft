@@ -76,3 +76,7 @@ fastlane/keys/
 
 # Videos
 Videos/
+
+# Tauri regenerates these on every build, so they showed up as "modified" after
+# each `tauri dev` run and made `git status` noisy enough to hide real changes.
+src-tauri/gen/schemas/

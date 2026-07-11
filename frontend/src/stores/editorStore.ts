@@ -386,6 +386,7 @@ export type ToolId =
   | 'indexcards' | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
   | 'spelling' | 'history' | 'titlepage' | 'customize'
+  | 'devpicker'   // DEV ONLY (see src/dev/) — absent from production builds
   /** legacy — Notes merged back into 'sticky' (Notes > Script tab); kept
    *  in the type so persisted configs still typecheck, remapped on use. */
   | 'scriptnotes';
@@ -455,6 +456,9 @@ function migrateNavigatorInline(
 
 /** Tools that never dock — they always open as a floating window. */
 export const ALWAYS_FLOAT: ToolId[] = ['analytics'];
+
+/** DEV ONLY. The Dev Picker is a build-time tool; it never ships. */
+export const DEV_TOOLS: ToolId[] = ['devpicker'];
 
 export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   // v0.68: the default panel layout. LEFT = script-structure windows;

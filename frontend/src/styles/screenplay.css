@@ -13938,3 +13938,98 @@ html.android .version-history-panel {
 .prefs-subtabs button.active { color: var(--fd-accent); border-color: var(--fd-accent); }
 .fs-tb-subitems { margin: 0 0 8px 44px; }
 .fs-customize-seg button:disabled { opacity: .35; cursor: default; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Dev Picker (DEV ONLY — see src/dev/). Styles are namespaced under .dev-picker
+   and .dev-inspecting, so deleting this block removes every trace.
+   ════════════════════════════════════════════════════════════════════════════ */
+.dev-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+  padding: 8px;
+  box-sizing: border-box;
+}
+.dev-picker-bar { display: flex; gap: 6px; flex-shrink: 0; }
+.dev-picker-inspect {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--fd-btn-bg, var(--fd-overlay-subtle));
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dev-picker-inspect:hover { border-color: var(--fd-accent); }
+.dev-picker-inspect.active {
+  background: var(--fd-accent);
+  border-color: var(--fd-accent);
+  color: #fff;
+}
+.dev-picker-btn {
+  padding: 6px 10px;
+  background: var(--fd-btn-bg, var(--fd-overlay-subtle));
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.dev-picker-btn:hover:not(:disabled) { border-color: var(--fd-accent); }
+.dev-picker-btn:disabled { opacity: .4; cursor: default; }
+
+.dev-picker-draft {
+  flex: 1;
+  min-height: 140px;
+  padding: 8px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: none;
+}
+.dev-picker-draft:focus { outline: none; border-color: var(--fd-accent); }
+.dev-picker-hint {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--fd-text-muted);
+}
+
+/* While picking, the pointer says so everywhere — you're not going to click
+   something by accident and wonder why nothing happened. */
+body.dev-inspecting,
+body.dev-inspecting * { cursor: crosshair !important; }
+body.dev-inspecting [data-dev-panel],
+body.dev-inspecting [data-dev-panel] * { cursor: auto !important; }
+
+.dev-picker-outline {
+  position: fixed;
+  pointer-events: none;
+  z-index: 2147483646;
+  border: 2px solid var(--fd-accent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--fd-accent) 12%, transparent);
+}
+.dev-picker-tip {
+  position: fixed;
+  pointer-events: none;
+  z-index: 2147483647;
+  max-width: 320px;
+  padding: 2px 7px;
+  background: var(--fd-accent);
+  color: #fff;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
