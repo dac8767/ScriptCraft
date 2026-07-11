@@ -1047,12 +1047,6 @@ body {
 .fs-customize-body > section { min-width: 0; }
 
 /* Theme export picker (v0.82) */
-.fs-theme-export-panel {
-  margin: 8px 0 12px; padding: 10px 12px;
-  border: 1px solid var(--fd-border); border-radius: 6px;
-  background: var(--fd-overlay-subtle);
-}
-.fs-theme-export-row { cursor: pointer; }
 .fs-theme-export-row input[type="checkbox"] { margin-right: 8px; accent-color: var(--fd-accent); }
 
 /* Spacer size (v0.86): an editable number, not a slider — the row's drag

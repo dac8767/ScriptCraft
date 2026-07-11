@@ -33,7 +33,6 @@ export default function ThemesTab() {
   const [confirmDelete, setConfirmDelete] = React.useState<string | null>(null);
   const [pickerKey, setPickerKey] = React.useState<string | null>(null);
   const [importNote, setImportNote] = React.useState('');
-  const [exporting, setExporting] = React.useState<string[] | null>(null);
 
   const ids = allThemeIds();
   const labelOf = (id: string) =>
@@ -251,44 +250,6 @@ export default function ThemesTab() {
         </p>
       )}
 
-      {exporting && (
-        <div className="fs-theme-export-panel">
-          <div className="fs-shortcut-group-title">Export which themes?</div>
-          {customThemes.length === 0 && (
-            <p className="fs-customize-hint">You have no custom themes yet.</p>
-          )}
-          {customThemes.map((t) => (
-            <label className="fs-customize-row fs-theme-export-row" key={t.id}>
-              <span className="fs-customize-tool">
-                <input
-                  type="checkbox"
-                  checked={exporting.includes(t.id)}
-                  onChange={(e) => setExporting(
-                    e.target.checked
-                      ? [...exporting, t.id]
-                      : exporting.filter((x) => x !== t.id),
-                  )}
-                />
-                {t.label}
-              </span>
-            </label>
-          ))}
-          <div className="fs-tbzone-adders fs-adders-equal">
-            <button
-              className="swn-add-btn"
-              onClick={() => setExporting(customThemes.map((c) => c.id))}
-            >Select All</button>
-            <button className="swn-add-btn" onClick={() => setExporting([])}>Select None</button>
-            <button
-              className="swn-add-btn"
-              disabled={exporting.length === 0}
-              onClick={() => { void exportSelected(); }}
-            >Choose Location & Save...</button>
-            <button className="swn-add-btn" onClick={() => setExporting(null)}>Cancel</button>
-          </div>
-        </div>
-      )}
-
       {importNote && <p className="fs-shortcut-note">{importNote}</p>}
 
       <div className="fs-tbzone-adders fs-adders-equal">
@@ -312,11 +273,29 @@ export default function ThemesTab() {
           ]}
         />
         <button className="swn-add-btn" onClick={newTheme}>+ New Theme</button>
-        <button
-          className="swn-add-btn"
-          title="Choose which themes to save, and where to save them"
-          onClick={() => { setImportNote(''); setExporting(customThemes.map((c) => c.id)); }}
-        >Export Themes...</button>
+        {/* v1.4.1: Export is a menu now, matching Import — a panel that opened
+            over the button to ask "which themes?" was a whole extra screen for a
+            question with two real answers: all of them, or that one. */}
+        <AddMenu
+          label="Export Themes..."
+          center
+          title="Save your custom themes to a file"
+          onPick={(v) => {
+            setImportNote('');
+            void exportThemes(v === 'all' ? customThemes.map((c) => c.id) : [v]);
+          }}
+          groups={[{
+            label: '',
+            options: customThemes.length === 0
+              ? []
+              : [
+                  ...(customThemes.length > 1
+                    ? [{ value: 'all', label: `Export All Themes (${customThemes.length})` }]
+                    : []),
+                  ...customThemes.map((t) => ({ value: t.id, label: `Export “${t.label}”` })),
+                ],
+          }]}
+        />
         {/* v1.1: one Import button. Two buttons sitting side by side, differing
             only in where the themes come FROM, made the choice look bigger than
             it is — it's one action with two sources. */}
@@ -346,8 +325,8 @@ export default function ThemesTab() {
   // A theme file is plain-text JSON: readable, diffable, and easy to hand to
   // someone else. It carries a `kind` marker and a version so an import can
   // tell a real theme file from any other JSON that happens to be lying around.
-  async function exportSelected() {
-    const chosen = customThemes.filter((t) => exporting?.includes(t.id));
+  async function exportThemes(ids: string[]) {
+    const chosen = customThemes.filter((t) => ids.includes(t.id));
     if (chosen.length === 0) return;
     const payload = { kind: 'freedraft-themes', version: 1, themes: chosen };
     const name = chosen.length === 1
@@ -359,7 +338,6 @@ export default function ThemesTab() {
     const ok = await saveFile(JSON.stringify(payload, null, 2), name, [
       { name: 'FreeDraft Themes', extensions: ['json'] },
     ]);
-    setExporting(null);
     if (ok) setImportNote(`Exported ${chosen.length} theme${chosen.length === 1 ? '' : 's'}.`);
   }
 
