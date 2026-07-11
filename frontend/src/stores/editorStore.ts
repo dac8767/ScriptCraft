@@ -410,6 +410,8 @@ export interface WorkspaceSnapshot {
   panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
   chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[];
+  /** v0.78: the active theme is part of a workspace. */
+  theme?: ThemeId;
   activeToolRight?: ToolId | null;
 }
 
@@ -473,9 +475,11 @@ export interface WritingGoal {
   done?: boolean;
 }
 
-export type ThemeId =
+export type BuiltInThemeId =
   | 'dark' | 'light' | 'sepia' | 'nord' | 'dracula'
   | 'solarized-dark' | 'solarized-light' | 'midnight';
+/** Built-in id, or 'custom:<n>' for a user-created theme (v0.78). */
+export type ThemeId = BuiltInThemeId | (string & {});
 
 export type ShelfTopTab = 'notes' | 'todo' | 'snippet';
 export type NotesSubTab = 'general' | 'script';
@@ -1153,6 +1157,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       toolbarLeft: s.toolbarLeft, toolbarRight: s.toolbarRight,
       menuBarOrder: s.menuBarOrder, menuBarHidden: s.menuBarHidden, menuMode: s.menuMode,
       panelDividers: s.panelDividers,
+      panelSizeMode: s.panelSizeMode, chromeCustomPx: s.chromeCustomPx,
+      theme: s.theme,                       // v0.78: the theme is part of a workspace
     };
     const workspaces = { ...s.workspaces, [name]: snap };
     const workspaceOrder = s.workspaceOrder.includes(name)
@@ -1664,7 +1670,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   theme: (localStorage.getItem('opendraft:theme') as ThemeId) || 'dark',
   setTheme: (t) => {
     localStorage.setItem('opendraft:theme', t);
-    document.documentElement.setAttribute('data-theme', t);
+    // Custom themes are a base + inline variable overrides, so applying one is
+    // more than setting data-theme — applyThemeToDom also clears any previous
+    // custom overrides, which is what lets you switch back to a built-in.
+    void import('../components/themes').then(async (m) => {
+      const { useThemeStore } = await import('./themeStore');
+      m.applyThemeToDom(t, useThemeStore.getState().customThemes);
+    });
     set({ theme: t });
   },
 

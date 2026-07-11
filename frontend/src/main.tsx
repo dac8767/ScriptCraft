@@ -6,9 +6,17 @@ import { initStorage } from './services/api';
 import { initDemoInfo } from './services/demoInfo';
 
 async function init() {
-  // Apply saved theme before first render to avoid flash
+  // Apply saved theme before first render to avoid flash. A CUSTOM theme is a
+  // base + variable overrides, so setting data-theme alone wouldn't restore it
+  // — applyThemeToDom re-injects the variables (v0.78).
   const savedTheme = localStorage.getItem('opendraft:theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', savedTheme);
+  if (savedTheme.startsWith('custom:')) {
+    const { applyThemeToDom } = await import('./components/themes');
+    const { useThemeStore } = await import('./stores/themeStore');
+    applyThemeToDom(savedTheme, useThemeStore.getState().customThemes);
+  } else {
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }
 
   // Android needs viewport-fit=cover and explicit safe-area padding
   if (/android/i.test(navigator.userAgent)) {

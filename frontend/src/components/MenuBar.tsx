@@ -56,6 +56,8 @@ import AuthIndicator from './AuthIndicator';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { eventToCombo, COMMAND_BY_ID, formatCombo } from './shortcuts';
 import { useShortcutStore } from '../stores/shortcutStore';
+import { useThemeStore } from '../stores/themeStore';
+import { BUILTIN_THEMES } from './themes';
 import { useNavigate } from 'react-router-dom';
 import { scriptApi } from '../services/scriptApi';
 import { mirrorSave, mirrorSnapshot } from '../services/saveLocations';
@@ -96,6 +98,7 @@ import {
   FaSearch,
   FaHashtag,
   FaSpellCheck,
+  FaSlidersH,
   FaListOl,
   FaBold,
   FaItalic,
@@ -365,6 +368,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // ── Page Setup ──
   const [pageSetupOpen, setPageSetupOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [customizeTab, setCustomizeTab] =
+    useState<'menu' | 'toolbar' | 'panels' | 'elements' | 'keys' | 'themes'>('menu');
+  const openCustomize = (tab: typeof customizeTab) => {
+    setCustomizeTab(tab);
+    setCustomizeOpen(true);
+  };
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [helpForm, setHelpForm] = useState<{ title: string; url: string } | null>(null);
   const [draftDialogOpen, setDraftDialogOpen] = useState(false);
@@ -559,7 +568,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     const onCmd = (e: Event) => {
       const id = (e as CustomEvent).detail as string;
       switch (id) {
-        case 'customize': setCustomizeOpen(true); break;
+        case 'customize': openCustomize('menu'); break;
         case 'setDraft': setDraftDialogOpen(true); break;
         case 'rename': setRenameOpen(true); break;
         case 'takeSnapshot': handleCheckinOpen(); break;
@@ -886,7 +895,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     zoomOut: () => setZoomLevel(Math.max(50, useEditorStore.getState().zoomLevel - 10)),
     actualSize: () => setZoomLevel(100),
     fitPage: () => window.dispatchEvent(new CustomEvent('freedraft:command', { detail: 'fitPage' })),
-    customize: () => setCustomizeOpen(true),
+    customize: () => openCustomize('menu'),
 
     bold: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(),
     italic: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(),
@@ -903,6 +912,20 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // Menu items display the EFFECTIVE binding, so a rebound (or cleared)
   // shortcut is reflected in the menus instead of showing a stale default.
   const keyBindings = useShortcutStore((st) => st.bindings);
+
+  // View > Theme is driven by the theme store: user order, hidden themes
+  // removed, custom themes included alongside the built-ins.
+  const customThemes = useThemeStore((st) => st.customThemes);
+  const hiddenThemes = useThemeStore((st) => st.hiddenThemes);
+  const allThemeIds = useThemeStore((st) => st.allThemeIds);
+  const visibleThemes = allThemeIds()
+    .filter((id) => !hiddenThemes.includes(id))
+    .map((id) => ({
+      id,
+      label: BUILTIN_THEMES.find((b) => b.id === id)?.label
+        ?? customThemes.find((c) => c.id === id)?.label
+        ?? id,
+    }));
   const sc = (id: string) => formatCombo(keyBindings[id] ?? null) || undefined;
   shortcutActionsRef.current = shortcutActions;
 
@@ -1198,16 +1221,16 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { separator: true, label: '' },
         {
           icon: <FaAdjust />, label: 'Theme',
-          children: ([
-            ['dark', 'Dark'], ['light', 'Light'], ['sepia', 'Sepia'],
-            ['nord', 'Nord'], ['dracula', 'Dracula'],
-            ['solarized-dark', 'Solarized Dark'], ['solarized-light', 'Solarized Light'],
-            ['midnight', 'Midnight'],
-          ] as const).map(([id, label]) => ({
-            icon: <FaAdjust />,
-            label: theme === id ? `\u2713 ${label}` : label,
-            action: () => setTheme(id),
-          })),
+          children: [
+            // Built-ins and custom themes, in the user's order, minus hidden ones.
+            ...visibleThemes.map(({ id, label }) => ({
+              icon: <FaAdjust />,
+              label: theme === id ? `\u2713 ${label}` : label,
+              action: () => setTheme(id),
+            })),
+            { separator: true, label: '' },
+            { icon: <FaSlidersH />, label: 'Customize Themes', action: () => openCustomize('themes') },
+          ],
         },
         { separator: true, label: '' },
         {
@@ -1253,6 +1276,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                   },
                 ];
               }),
+            { separator: true, label: '' },
+            { icon: <FaSlidersH />, label: 'Customize Elements', action: () => openCustomize('elements') },
           ],
         },
         { icon: <FaImage />, label: 'Insert Image...', action: () => useEditorStore.getState().imageInsertHandler?.() },
@@ -1913,7 +1938,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         </div>
       </div>
     )}
-    <CustomizePanelsDialog open={customizeOpen} onClose={() => setCustomizeOpen(false)} />
+    <CustomizePanelsDialog open={customizeOpen} category={customizeTab} onClose={() => setCustomizeOpen(false)} />
     <SaveWorkspaceDialog open={saveWorkspaceOpen} onClose={() => setSaveWorkspaceOpen(false)} />
     <EditWorkspacesDialog open={editWorkspacesOpen} onClose={() => setEditWorkspacesOpen(false)} />
     <PreferencesDialog open={prefsOpen} onClose={() => setPrefsOpen(false)} editor={editor} />

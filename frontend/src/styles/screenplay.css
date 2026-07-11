@@ -819,6 +819,33 @@ body {
 .tool-dock-wrap.tool-dock-compact .tool-dock-item { padding-top: 7px; padding-bottom: 7px; }
 .tool-dock-wrap.tool-dock-compact .tool-dock-label { font-size: 12px; }
 
+/* Themes tab (v0.78) */
+.fs-theme-row-controls { display: flex; align-items: center; gap: 6px; flex: none; }
+.fs-theme-badge {
+  margin-left: 8px; padding: 1px 6px; border-radius: 9px;
+  background: var(--fd-overlay-light); color: var(--fd-text-muted);
+  font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
+}
+.fs-theme-active-dot { color: var(--fd-accent); }
+.fs-theme-name-input {
+  flex: 1; max-width: 240px; padding: 5px 8px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  border: 1px solid var(--fd-border); border-radius: 5px;
+  color: var(--fd-text); font-size: 13px;
+}
+.fs-theme-color-controls { display: flex; align-items: center; gap: 8px; flex: none; }
+.fs-theme-color {
+  width: 34px; height: 26px; padding: 0;
+  background: none; border: 1px solid var(--fd-border);
+  border-radius: 5px; cursor: pointer;
+}
+.fs-theme-hex {
+  width: 96px; padding: 4px 8px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  border: 1px solid var(--fd-border); border-radius: 5px;
+  color: var(--fd-text); font-size: 12px; font-family: ui-monospace, monospace;
+}
+
 /* Keyboard Shortcuts tab (v0.77) */
 .fs-shortcut-group { margin-bottom: 14px; }
 .fs-shortcut-group-title {
