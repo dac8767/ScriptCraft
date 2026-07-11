@@ -42,6 +42,7 @@ interface ViewState {
   tagsPanelOpen?: boolean;
   locationDatabaseOpen?: boolean;
   notesVisible?: boolean;
+  markersVisible?: boolean;
   tagsVisible?: boolean;
   zoomLevel?: number;
   toolbarMode?: 'compact' | 'comfortable' | 'custom' | 'hidden';
@@ -872,6 +873,10 @@ interface EditorState {
   setSectionsVisible: (v: boolean) => void;
   scriptTodosVisible: boolean;
   setScriptTodosVisible: (v: boolean) => void;
+  /** v1.4: markers had no switch of their own — they were hidden with sections,
+   *  which meant you couldn't keep your act breaks and drop the flags. */
+  markersVisible: boolean;
+  setMarkersVisible: (v: boolean) => void;
   sceneNumbersVisible: boolean;
   setSceneNumbersVisible: (v: boolean) => void;
   sceneNumbersLocked: boolean;
@@ -1329,7 +1334,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ goalsCompleted });
     return { goalsCompleted };
   }),
-  notesVisible: _vs.notesVisible ?? false,
+  notesVisible: _vs.notesVisible ?? true,
   setNotesVisible: (v) => {
     saveViewState({ notesVisible: v });
     set({ notesVisible: v });
@@ -1600,6 +1605,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     doubleSpaceHeaders: false, boldHeaders: true, underlineHeaders: false,
   },
   setPreviewOpt: (key, value) => set((s) => ({ previewOpts: { ...s.previewOpts, [key]: value } })),
+  markersVisible: _vs.markersVisible ?? true,
+  setMarkersVisible: (v) => {
+    saveViewState({ markersVisible: v });
+    set({ markersVisible: v });
+  },
   sectionsVisible: true,
   setSectionsVisible: (v) => set({ sectionsVisible: v }),
   scriptTodosVisible: true,

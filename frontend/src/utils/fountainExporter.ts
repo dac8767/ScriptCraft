@@ -66,9 +66,18 @@ export function exportFountain(doc: JSONContent): string {
         lines.push(text);
         lines.push('');
         break;
-      case 'general':
+      case 'general': {
+        // v1.4: WORKING NOTES DON'T EXPORT. Outline sections (# ...), markers
+        // (⚑ ...) and script to-do lines ([ ] ...) are scaffolding for the
+        // writer, not part of the screenplay — they were being written into the
+        // exported file verbatim, so a draft you sent out carried your to-do
+        // list with it. Ordinary general text still exports.
+        const t = text.trim();
+        const isWorkingNote = /^#+\s/.test(t) || t.startsWith('\u2691') || /^\[[ x]\]/.test(t);
+        if (isWorkingNote) break;
         lines.push(text);
         break;
+      }
       case 'character':
         lines.push('');
         lines.push(text.toUpperCase());

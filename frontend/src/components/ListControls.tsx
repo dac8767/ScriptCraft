@@ -29,12 +29,12 @@ export interface ListEntry {
 const FILTER_LABEL: Record<ListFilter, string> = {
   all: 'All',
   general: 'General',
-  script: 'Linked to Script',
+  script: 'In Script',
 };
 const SORT_LABEL: Record<ListSort, string> = {
   manual: 'Manual',
   created: 'Date Created',
-  script: 'Script Page',
+  script: 'Scene #',
 };
 
 export function ListToolbar({ filter, setFilter, sort, setSort, count, noun }: {

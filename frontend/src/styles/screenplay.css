@@ -10119,6 +10119,22 @@ html.android .version-history-panel {
   .format-panel, .zoom-panel, .goto-page-panel,
   .version-history-panel { display: none !important; }
 
+  /* v1.4: WORKING NOTES NEVER PRINT. Sections, markers, script to-do lines and
+     note highlights are scaffolding for the writer — they are not part of the
+     script. They're hidden here unconditionally, whatever the on-screen toggles
+     say, so a printout can't leak them just because you left them showing while
+     you worked. (Preview hides them too; this covers Print / Save as PDF.) */
+  .page .ol-section, .page .ol-marker, .page .ol-todo { display: none !important; }
+  .page .script-note-highlight {
+    background: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+  }
+  .page .production-tag-highlight {
+    background: none !important;
+    border-bottom: none !important;
+  }
+
   /* Unclip the full document chain so all pages flow */
   html, body, #root { height: auto !important; overflow: visible !important; }
   .app-container { display: block; height: auto !important; overflow: visible !important; }
@@ -13431,8 +13447,9 @@ html.android .version-history-panel {
 }
 
 /* View > Preview: hide outline kinds in the script */
-.page.hide-sections .ol-section,
-.page.hide-sections .ol-marker { display: none !important; }
+.page.hide-sections .ol-section { display: none !important; }
+/* v1.4: markers have their own switch — they used to vanish with sections. */
+.page.hide-markers .ol-marker { display: none !important; }
 .page.hide-script-todos .ol-todo { display: none !important; }
 
 /* Navigator: make structural rows stand out (item 16) */

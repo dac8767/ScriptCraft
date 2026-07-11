@@ -130,6 +130,7 @@ import {
   FaFileSignature,
   FaRegClone, FaStream,   FaEdit,
   FaTags,
+  FaFlag, FaEyeSlash,
 } from 'react-icons/fa';
 
 interface MenuBarProps {
@@ -181,6 +182,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const {
     menuBarOrder, menuBarHidden,
     previewMode,
+    notesVisible, setNotesVisible,
+    scriptTodosVisible, setScriptTodosVisible,
+    markersVisible, setMarkersVisible,
+    sectionsVisible, setSectionsVisible,
+    tagsVisible, setTagsVisible,
     viewStyle, setViewStyle,
     revisionMode,
     setRevisionMode,
@@ -1210,6 +1216,61 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaRegClone />, label: !previewMode && viewStyle === 'page' ? '\u2713 Page' : 'Page', action: () => { useEditorStore.getState().setPreviewMode(false); setViewStyle('page'); } },
             { icon: <FaStream />, label: !previewMode && viewStyle === 'continuous' ? '\u2713 Continuous' : 'Continuous', action: () => { useEditorStore.getState().setPreviewMode(false); setViewStyle('continuous'); } },
             { icon: <FaEye />, label: previewMode ? '\u2713 Preview' : 'Preview', action: () => useEditorStore.getState().setPreviewMode(true) },
+          ],
+        },
+        { separator: true, label: '' },
+        {
+          /**
+           * v1.4 — everything you can put IN the script that isn't part of the
+           * script. Each says what clicking it will DO, not what state it's in:
+           * "Hide Notes in Script" when they're showing, "Show Notes in Script"
+           * when they're not. None of these ever reach Preview, print or export,
+           * whatever they're set to here.
+           */
+          icon: <FaEye />, label: 'Working Notes',
+          children: [
+            {
+              icon: <FaRegStickyNote />,
+              label: notesVisible ? 'Hide Notes in Script' : 'Show Notes in Script',
+              action: () => setNotesVisible(!notesVisible),
+            },
+            {
+              icon: <FaCheckSquare />,
+              label: scriptTodosVisible ? 'Hide To-Do Lists in Script' : 'Show To-Do Lists in Script',
+              action: () => setScriptTodosVisible(!scriptTodosVisible),
+            },
+            {
+              icon: <FaFlag />,
+              label: markersVisible ? 'Hide Markers in Script' : 'Show Markers in Script',
+              action: () => setMarkersVisible(!markersVisible),
+            },
+            {
+              icon: <FaListOl />,
+              label: sectionsVisible ? 'Hide Sections in Script' : 'Show Sections in Script',
+              action: () => setSectionsVisible(!sectionsVisible),
+            },
+            {
+              icon: <FaTags />,
+              label: tagsVisible ? 'Hide Tags in Script' : 'Show Tags in Script',
+              action: () => setTagsVisible(!tagsVisible),
+            },
+            { separator: true, label: '' },
+            {
+              icon: <FaEye />,
+              label: 'Show All in Script',
+              action: () => {
+                setNotesVisible(true); setScriptTodosVisible(true);
+                setMarkersVisible(true); setSectionsVisible(true); setTagsVisible(true);
+              },
+            },
+            {
+              icon: <FaEyeSlash />,
+              label: 'Hide All in Script',
+              action: () => {
+                setNotesVisible(false); setScriptTodosVisible(false);
+                setMarkersVisible(false); setSectionsVisible(false); setTagsVisible(false);
+              },
+            },
           ],
         },
         { separator: true, label: '' },

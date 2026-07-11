@@ -283,7 +283,7 @@ const ScreenplayEditor: React.FC = () => {
   const {
     setActiveElement, setScenes, setPageCount, setCurrentPage,
     zoomLevel, setZoomLevel, fontFamily, fontSize, pageLayout, tagsVisible, notesVisible,
-    sectionsVisible, scriptTodosVisible, viewStyle, previewMode, previewOpts,
+    sectionsVisible, scriptTodosVisible, markersVisible, viewStyle, previewMode, previewOpts,
     beatBoardOpen, statisticsOpen,
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
     characterProfilesOpen, tagsPanelOpen, locationDatabaseOpen,
@@ -3897,7 +3897,7 @@ const ScreenplayEditor: React.FC = () => {
                 }}
               >
                 <div
-                  className={`page${!tagsVisible || previewMode ? ' tags-hidden' : ''}${previewMode ? (previewOpts.notes ? '' : ' notes-hidden') : (!notesVisible ? ' notes-hidden' : '')}${isHistoryMode ? ' history-readonly' : ''}${previewMode ? (previewOpts.sceneNumbers ? ' show-scene-numbers' : '') : (sceneNumbersVisible ? ' show-scene-numbers' : '')}${previewMode ? (previewOpts.sections ? '' : ' hide-sections') : (!sectionsVisible ? ' hide-sections' : '')}${previewMode ? (previewOpts.todos ? '' : ' hide-script-todos') : (!scriptTodosVisible ? ' hide-script-todos' : '')}${previewMode && previewOpts.doubleSpaceHeaders ? ' pv-hdr-double' : ''}${previewMode && !previewOpts.boldHeaders ? ' pv-hdr-plain' : ''}${previewMode && previewOpts.underlineHeaders ? ' pv-hdr-underline' : ''}`}
+                  className={`page${!tagsVisible || previewMode ? ' tags-hidden' : ''}${previewMode ? (previewOpts.notes ? '' : ' notes-hidden') : (!notesVisible ? ' notes-hidden' : '')}${isHistoryMode ? ' history-readonly' : ''}${previewMode ? (previewOpts.sceneNumbers ? ' show-scene-numbers' : '') : (sceneNumbersVisible ? ' show-scene-numbers' : '')}${previewMode ? (previewOpts.sections ? '' : ' hide-sections') : (!sectionsVisible ? ' hide-sections' : '')}${previewMode ? (previewOpts.sections ? '' : ' hide-markers') : (!markersVisible ? ' hide-markers' : '')}${previewMode ? (previewOpts.todos ? '' : ' hide-script-todos') : (!scriptTodosVisible ? ' hide-script-todos' : '')}${previewMode && previewOpts.doubleSpaceHeaders ? ' pv-hdr-double' : ''}${previewMode && !previewOpts.boldHeaders ? ' pv-hdr-plain' : ''}${previewMode && previewOpts.underlineHeaders ? ' pv-hdr-underline' : ''}`}
                   ref={pageRef}
                   style={{
                     fontFamily: `'${fontFamily}', 'Courier New', Courier, monospace`,
