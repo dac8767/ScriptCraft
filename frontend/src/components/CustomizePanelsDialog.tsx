@@ -36,6 +36,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
     toolOrder, setToolOrder,
     toolbarMode, setToolbarMode,
+    panelSizeMode, setPanelSizeMode,
     menuMode, setMenuMode,
   } = useEditorStore();
 
@@ -393,7 +394,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                       if (m === 'hidden' && menuMode !== 'hidden') setStuckWarnOpen(true);
                     }}
                   >
-                    {m[0].toUpperCase() + m.slice(1)}
+                    {m === 'hidden' ? 'Hide' : m[0].toUpperCase() + m.slice(1)}
                   </button>
                 ))}
               </span>
@@ -478,7 +479,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               <span className="fs-customize-seg">
                 {(['compact', 'comfortable', 'hidden'] as const).map((m) => (
                   <button key={m} className={toolbarMode === m ? 'active' : ''} onClick={() => setToolbarMode(m)}>
-                    {m[0].toUpperCase() + m.slice(1)}
+                    {m === 'hidden' ? 'Hide' : m[0].toUpperCase() + m.slice(1)}
                   </button>
                 ))}
               </span>
@@ -575,20 +576,34 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           {activeCat === 'panels' && (<>
           <section>
             <h3>Panels</h3>
-            <div className="fs-customize-row">
-              <span className="fs-customize-tool">Left Panel</span>
-              <span className="fs-customize-seg">
-                <button className={navigatorOpen ? 'active' : ''} onClick={() => { if (!navigatorOpen) toggleNavigator(); }}>Show</button>
-                <button className={!navigatorOpen ? 'active' : ''} onClick={() => { if (navigatorOpen) toggleNavigator(); }}>Hide</button>
-              </span>
-            </div>
-            <div className="fs-customize-row">
-              <span className="fs-customize-tool">Right Panel</span>
-              <span className="fs-customize-seg">
-                <button className={shelfOpen ? 'active' : ''} onClick={() => { if (!shelfOpen) toggleShelf(); }}>Show</button>
-                <button className={!shelfOpen ? 'active' : ''} onClick={() => { if (shelfOpen) toggleShelf(); }}>Hide</button>
-              </span>
-            </div>
+            <p className="fs-customize-hint">
+              Compact and Comfortable set the panel's width; Hide closes it.
+              Windows docked inside a panel resize to fit it.
+            </p>
+            {([
+              ['left', 'Left Panel', navigatorOpen, toggleNavigator] as const,
+              ['right', 'Right Panel', shelfOpen, toggleShelf] as const,
+            ]).map(([side, label, isOpen, toggle]) => (
+              <div className="fs-customize-row" key={side}>
+                <span className="fs-customize-tool">{label}</span>
+                <span className="fs-customize-seg">
+                  {(['compact', 'comfortable'] as const).map((m) => (
+                    <button
+                      key={m}
+                      className={isOpen && panelSizeMode[side] === m ? 'active' : ''}
+                      onClick={() => {
+                        setPanelSizeMode(side, m);
+                        if (!isOpen) toggle();     // choosing a width also reveals it
+                      }}
+                    >{m[0].toUpperCase() + m.slice(1)}</button>
+                  ))}
+                  <button
+                    className={!isOpen ? 'active' : ''}
+                    onClick={() => { if (isOpen) toggle(); }}
+                  >Hide</button>
+                </span>
+              </div>
+            ))}
           </section>
           {renderPanelsTab()}
           </>)}

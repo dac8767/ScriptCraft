@@ -21,6 +21,7 @@ interface ViewState {
   toolbarLeft?: string[];
   toolbarRight?: string[];
   toolbarZonesSet?: boolean;
+  panelSizeMode?: { left: 'compact' | 'comfortable'; right: 'compact' | 'comfortable' };
   panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[];
   workspaces?: Record<string, WorkspaceSnapshot>;
   workspaceOrder?: string[];
@@ -405,6 +406,7 @@ export interface WorkspaceSnapshot {
   menuBarOrder?: string[];
   menuBarHidden?: string[];
   menuMode?: 'compact' | 'comfortable' | 'hidden';
+  panelSizeMode?: { left: 'compact' | 'comfortable'; right: 'compact' | 'comfortable' };
   panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[];
   activeToolRight?: ToolId | null;
 }
@@ -630,6 +632,10 @@ interface EditorState {
 
   /** Labeled divider lines for the side panels, ordered via toolOrder using
    *  div:<id> tokens. */
+  /** Side-panel width (v0.70). 'hidden' is expressed by the existing
+   *  navigatorOpen / shelfOpen flags, so this only carries the width. */
+  panelSizeMode: { left: 'compact' | 'comfortable'; right: 'compact' | 'comfortable' };
+  setPanelSizeMode: (side: 'left' | 'right', mode: 'compact' | 'comfortable') => void;
   panelDividers: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[];
   setPanelDividers: (d: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[]) => void;
 
@@ -1468,6 +1474,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set(patch);
   },
   panelDividers: Array.isArray(_vs.panelDividers) ? _vs.panelDividers as { id: string; label: string; side: 'left' | 'right'; spacer?: boolean }[] : [],
+  panelSizeMode: _vs.panelSizeMode ?? { left: 'comfortable', right: 'comfortable' },
+  setPanelSizeMode: (side, mode) => set((st) => {
+    const next = { ...st.panelSizeMode, [side]: mode };
+    saveViewState({ panelSizeMode: next });
+    return { panelSizeMode: next };
+  }),
   setPanelDividers: (panelDividers) => {
     saveViewState({ panelDividers });
     set({ panelDividers });

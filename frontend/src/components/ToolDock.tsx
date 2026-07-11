@@ -75,7 +75,12 @@ export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 const MIN_W = 240;
 const MIN_H = 260;
 /** Dock column width; tools whose remembered width fits open inline. */
-export const DOCK_W = 300;
+export const DOCK_W = 300;                       // comfortable (default)
+export const DOCK_W_COMPACT = 232;              // compact
+/** Dock column width for a panel's width mode. Inline tool windows are sized
+ *  and gated against THIS, so a compact panel keeps its windows inside it. */
+export const dockWidthFor = (mode: 'compact' | 'comfortable') =>
+  mode === 'compact' ? DOCK_W_COMPACT : DOCK_W;
 
 /** Shared tool-content renderer (docked and temporary windows). */
 export function ToolContent({ id, editor, scrollContainer }: {
@@ -125,12 +130,15 @@ export function ToolContent({ id, editor, scrollContainer }: {
 export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
   tool: ToolDef; onClose: () => void; temporary?: boolean; side?: ToolSide; children: React.ReactNode;
 }) {
-  const { toolSizes, setToolSize } = useEditorStore();
+  const { toolSizes, setToolSize, panelSizeMode } = useEditorStore();
   const windowRef = useRef<HTMLDivElement>(null);
   // Docked windows default to inline (see ToolDock below), so this frame only
   // renders windows the user has explicitly sized/popped out, plus temporary
   // Tools-menu windows — both of which should keep their own size.
   const size = toolSizes[tool.id] || tool.defaultSize;
+  // Pop-back-in must target the width of the panel it's returning to, or a
+  // compact panel would reject the window as too wide and it would keep floating.
+  const popInW = side ? dockWidthFor(panelSizeMode[side]) : DOCK_W;
 
   const startResize = (e: React.PointerEvent) => {
     if (!windowRef.current) return;
@@ -177,7 +185,7 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
         <button
           className={`tool-window-popin${side === 'right' ? ' tool-window-popin-right' : ''}`}
           title="Pop back into the side panel"
-          onClick={() => setToolSize(tool.id, DOCK_W, size.h)}
+          onClick={() => setToolSize(tool.id, popInW, size.h)}
         >{side === 'right' ? '\u2922' : '\u2921'}</button>
       )}
       <div
@@ -231,7 +239,8 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   const activeId = side === 'left' ? activeTool : activeToolRight;
   const setActive = side === 'left' ? setActiveTool : setActiveToolRight;
   const active = tools.find((t) => t.id === activeId) || null;
-  const { toolSizes, setToolSize } = useEditorStore();
+  const { toolSizes, setToolSize, panelSizeMode } = useEditorStore();
+  const dockW = dockWidthFor(panelSizeMode[side]);
   // v0.66: by DEFAULT every window opens INSIDE its side panel (inline),
   // pushing the dock's remaining items down — so nothing floats over the
   // editor unasked. `inline` is decided by width <= DOCK_W, and most tools'
@@ -241,9 +250,9 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   // A size the user has chosen (drag-resize or pop-out) is stored in toolSizes
   // and still wins — pop-out sets w = DOCK_W + 140, which floats as before.
   const activeSize = active
-    ? (toolSizes[active.id] || { w: Math.min(active.defaultSize.w, DOCK_W), h: active.defaultSize.h })
+    ? (toolSizes[active.id] || { w: Math.min(active.defaultSize.w, dockW), h: active.defaultSize.h })
     : null;
-  const inline = !!(active && activeSize && activeSize.w <= DOCK_W);
+  const inline = !!(active && activeSize && activeSize.w <= dockW);
 
   const startInlineResize = (e: React.PointerEvent) => {
     if (!active || !activeSize) return;
@@ -279,7 +288,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   if (tools.length === 0) return null;
 
   return (
-    <div className={`tool-dock-wrap tool-dock-${side}`}>
+    <div className={`tool-dock-wrap tool-dock-${side} tool-dock-${panelSizeMode[side]}`}>
       <div className="tool-dock">
         {entries.map((entry) => entry.kind === 'spacer' ? (
           <div key={`sp-${entry.id}`} className="tool-dock-spacer" />
@@ -304,7 +313,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                 <button
                   className={`tool-inline-popout${side === 'right' ? ' tool-inline-popout-left' : ''}`}
                   title="Pop out into a floating window for resizing"
-                  onClick={() => setToolSize(active.id, DOCK_W + 140, activeSize!.h)}
+                  onClick={() => setToolSize(active.id, dockW + 140, activeSize!.h)}
                 >{side === 'right' ? '\u2921' : '\u2922'}</button>
                 <div className="tool-inline-body" style={{ height: activeSize!.h }}>
                   <ToolContent id={active.id} editor={editor} scrollContainer={scrollContainer} />
