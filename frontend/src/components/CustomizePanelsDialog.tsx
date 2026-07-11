@@ -1,4 +1,5 @@
 import React from 'react';
+import AddMenu from './AddMenu';
 /**
  * CustomizePanelsDialog — View → Customize Layout.
  *
@@ -96,11 +97,26 @@ const DEFAULT_PANEL_SPACER = 50;   // v0.86
 function SpacerSize({ value, min, max, onChange }: {
   value: number; min: number; max: number; onChange: (px: number) => void;
 }) {
+  // v0.95: the minimum was enforced on EVERY keystroke, so typing "10" clamped
+  // the "1" to 8 the instant it was typed and you could never get below 80. The
+  // field now holds what you type as text and only commits — and clamps — when
+  // you're done: Enter, or clicking away. Escape puts it back.
+  const [draft, setDraft] = React.useState<string | null>(null);
+  const shown = draft ?? String(value);
+
+  const commit = () => {
+    if (draft === null) return;
+    const n = Number(draft);
+    setDraft(null);
+    if (!Number.isFinite(n) || draft.trim() === '') return;      // junk: keep the old size
+    onChange(Math.max(min, Math.min(max, Math.round(n))));
+  };
+
   return (
     <span
       className="fs-spacer-size"
-      // Typing inside a draggable row: stop the row's drag from hijacking the
-      // caret/selection while the field has focus.
+      // Typing inside a draggable row: stop the row's drag from stealing the
+      // caret while the field has focus.
       draggable={false}
       onDragStart={(e) => e.preventDefault()}
       onPointerDown={(e) => e.stopPropagation()}
@@ -111,17 +127,20 @@ function SpacerSize({ value, min, max, onChange }: {
         className="fs-spacer-input"
         min={min}
         max={max}
-        value={value}
-        onChange={(e) => {
-          const n = Number(e.target.value);
-          if (Number.isFinite(n)) onChange(Math.max(min, Math.min(max, n)));
+        value={shown}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(); (e.target as HTMLInputElement).blur(); }
+          else if (e.key === 'Escape') { setDraft(null); (e.target as HTMLInputElement).blur(); }
         }}
-        title="Spacer size in pixels"
+        title={`Spacer size in pixels (${min}–${max})`}
       />
       <span className="fs-spacer-px">px</span>
     </span>
   );
 }
+
 
 export default function CustomizePanelsDialog({ open, onClose, embedded = false, category }: Props) {
   const {
@@ -178,16 +197,32 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     };
 
     /** Reorder within ONE side; the other side is untouched. */
-    const moveWithinSide = (side: 'left' | 'right') => (from: number, to: number) => {
-      const sideRows = side === 'left' ? leftRows : rightRows;
-      const sideToks = sideRows.map(orderTokenOf);
-      const next = [...sideToks];
-      const [m] = next.splice(from, 1);
-      next.splice(to, 0, m);
-      const inSide = new Set(sideToks);
-      let k = 0;
-      setToolOrder(fullOrder().map((x) => (inSide.has(x) ? next[k++] : x)));
+    /**
+     * Drop a panel row: reorder within a side, or move it to the OTHER side at
+     * the exact position it was dropped — its side switches to match, because
+     * the side is just which list it sits in. Dividers and spacers move too.
+     */
+    const dropRow = (
+      srcSide: 'left' | 'right', srcIdx: number,
+      dstSide: 'left' | 'right', dstIdx: number,
+    ) => {
+      const row = (srcSide === 'left' ? leftRows : rightRows)[srcIdx];
+      if (!row) return;
+      const tok = orderTokenOf(row);
+
+      let left = leftRows.map(orderTokenOf).filter((t) => t !== tok);
+      let right = rightRows.map(orderTokenOf).filter((t) => t !== tok);
+      const dst = dstSide === 'left' ? left : right;
+      dst.splice(Math.min(dstIdx, dst.length), 0, tok);
+      if (dstSide === 'left') left = dst; else right = dst;
+      setToolOrder([...left, ...right]);
+
+      if (srcSide !== dstSide) {
+        if (row.kind === 'tool') setTool(row.id as ToolId, { side: dstSide });
+        else setPanelDividers(panelDividers.map((d) => (d.id === row.id ? { ...d, side: dstSide } : d)));
+      }
     };
+
     const setRowSide = (r: Row, target: 'left' | 'right' | 'hidden') => {
       if (r.kind === 'divider') {
         if (target === 'hidden') {
@@ -285,7 +320,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 <div
                   key={`${r.kind}-${r.id}`}
                   className={`fs-customize-row${dragClass(`panels-${side}`, idx)}`}
-                  {...dragProps(`panels-${side}`, idx, moveWithinSide(side))}
+                  {...zoneDragProps('panels', side, idx, dropRow)}
                 >
                   <span className="fs-customize-tool">
                     <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
@@ -321,29 +356,29 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           );
         })}
         <div className="fs-tbzone-adders fs-adders-equal">
-          <select value="" onChange={(e) => { if (e.target.value) { onAdd(e.target.value); e.target.value = ''; } }}>
-            <option value="">+ Add Item</option>
-            {(['Project Windows', 'Tools', 'Production'] as const).some((g) => addOptions.some((o) => o.group === g)) && (
-              <optgroup label="Show All">
-                {(['Project Windows', 'Tools', 'Production'] as const)
+          <AddMenu
+            onPick={onAdd}
+            groups={[
+              {
+                label: 'Show All',
+                options: (['Project Windows', 'Tools', 'Production'] as const)
                   .filter((g) => addOptions.some((o) => o.group === g))
-                  .map((g) => <option key={`all-${g}`} value={`all:${g}`}>Show All {titleCase(g)}</option>)}
-              </optgroup>
-            )}
-            {(['Project Windows', 'Tools', 'Production'] as const).map((group) => {
-              const opts = addOptions.filter((o) => o.group === group);
-              if (opts.length === 0) return null;
-              return (
-                <optgroup key={group} label={group}>
-                  {opts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </optgroup>
-              );
-            })}
-            <optgroup label="Utility">
-              <option value="divider">Add Divider</option>
-              <option value="spacer">Spacer</option>
-            </optgroup>
-          </select>
+                  .map((g) => ({ value: `all:${g}`, label: `Show All ${titleCase(g)}` })),
+              },
+              ...(['Project Windows', 'Tools', 'Production'] as const).map((group) => ({
+                label: group,
+                options: addOptions.filter((o) => o.group === group)
+                  .map((o) => ({ value: o.value, label: o.label })),
+              })),
+              {
+                label: 'Utility',
+                options: [
+                  { value: 'divider', label: 'Add Divider' },
+                  { value: 'spacer', label: 'Spacer' },
+                ],
+              },
+            ]}
+          />
           <button
             className="swn-add-btn"
             title="Hide everything in both panels (re-add items from the dropdown)"
@@ -430,6 +465,44 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   });
   const dragClass = (list: string, idx: number) =>
     dragInfo && dragInfo.list === list && dragInfo.idx === idx ? ' dragging' : '';
+
+  /**
+   * v0.95 — drag ACROSS zones. Left and Right are separate lists, and dragProps
+   * only accepted a drop when the source and target lists matched, so an item
+   * could never be dragged from one side to the other; you had to use the toggle,
+   * which dumps it at the bottom.
+   *
+   * Now a row accepts a drop from either zone of the same GROUP (the toolbar's
+   * two zones, or the panels' two sides). Where you drop it decides both the
+   * position AND the side — the toggle follows the drag, because the zone the
+   * item lands in IS its side. `group` keeps the toolbar and panels apart, so a
+   * toolbar item can't be dropped into a panel.
+   */
+  const zoneDragProps = (
+    group: string,
+    zone: 'left' | 'right',
+    idx: number,
+    onDrop: (srcZone: 'left' | 'right', srcIdx: number, dstZone: 'left' | 'right', dstIdx: number) => void,
+  ) => ({
+    draggable: true,
+    onDragStart: (e: React.DragEvent) => {
+      setDragInfo({ list: `${group}-${zone}`, idx });
+      e.dataTransfer.effectAllowed = 'move';
+    },
+    onDragOver: (e: React.DragEvent) => {
+      if (dragInfo?.list.startsWith(`${group}-`)) e.preventDefault();
+    },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      if (!dragInfo?.list.startsWith(`${group}-`)) return;
+      const srcZone = dragInfo.list.slice(group.length + 1) as 'left' | 'right';
+      if (!(srcZone === zone && dragInfo.idx === idx)) {
+        onDrop(srcZone, dragInfo.idx, zone, idx);
+      }
+      setDragInfo(null);
+    },
+    onDragEnd: () => setDragInfo(null),
+  });
 
   if (!open) return null;
 
@@ -669,11 +742,22 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 ? [<div className="fs-customize-side-sep" key="tb-side-sep" />]
                 : [];
               return [...sep, ...tokens.map((tok, idx) => {
-                const moveTokTo = (from: number, to: number) => {
-                  const next = [...tokens];
-                  const [m] = next.splice(from, 1);
-                  next.splice(to, 0, m);
-                  update(next);
+                // Drop handler covering BOTH cases: reorder inside a zone, or
+                // move to the other zone at exactly the row you dropped on — the
+                // Left/Right toggle simply follows, since the zone IS the side.
+                const dropTok = (
+                  srcZone: 'left' | 'right', srcIdx: number,
+                  dstZone: 'left' | 'right', dstIdx: number,
+                ) => {
+                  let nextLeft = [...tbLeft];
+                  let nextRight = [...tbRight];
+                  const src = srcZone === 'left' ? nextLeft : nextRight;
+                  const [moved] = src.splice(srcIdx, 1);
+                  if (moved === undefined) return;
+                  const dst = dstZone === 'left' ? nextLeft : nextRight;
+                  dst.splice(Math.min(dstIdx, dst.length), 0, moved);
+                  if (dstZone === 'left') nextLeft = dst; else nextRight = dst;
+                  setToolbarZones(nextLeft, nextRight);
                 };
                 const toZone = (target: 'left' | 'right') => {
                   if (target === zone) return;
@@ -692,7 +776,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   <div
                     className={`fs-customize-row${dragClass(`tb-${zone}`, idx)}`}
                     key={`${tok}-${zone}-${idx}`}
-                    {...dragProps(`tb-${zone}`, idx, moveTokTo)}
+                    {...zoneDragProps('tb', zone, idx, dropTok)}
                   >
                     <span className="fs-customize-tool">
                       <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
@@ -727,12 +811,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               })];
             })}
             <div className="fs-tbzone-adders fs-adders-equal">
-              <select
-                value=""
-                onChange={(e) => {
-                  const v = e.target.value;
-                  if (!v) return;
-                  e.target.value = '';
+              <AddMenu
+                onPick={(v) => {
                   if (v === 'divider') { setToolbarZones([...tbLeft, `d:${Date.now()}`], tbRight); return; }
                   if (v === 'spacer') { setToolbarZones([...tbLeft, `s:${Date.now()}`], tbRight); return; }
                   if (v.startsWith('all:')) {
@@ -742,21 +822,19 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   }
                   setToolbarZones([...tbLeft, v], tbRight);
                 }}
-              >
-                <option value="">+ Add Item</option>
-                {tbAddCategoriesAll.some((cat) => !cat.utility && cat.options.length > 0) && (
-                  <optgroup label="Show All">
-                    {tbAddCategoriesAll.filter((cat) => !cat.utility && cat.options.length > 0).map((cat) => (
-                      <option key={`all-${cat.id}`} value={`all:${cat.id}`}>Show All {titleCase(cat.label)}</option>
-                    ))}
-                  </optgroup>
-                )}
-                {tbAddCategoriesAll.filter((cat) => cat.options.length > 0).map((cat) => (
-                  <optgroup key={cat.id} label={cat.label}>
-                    {cat.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </optgroup>
-                ))}
-              </select>
+                groups={[
+                  {
+                    label: 'Show All',
+                    options: tbAddCategoriesAll
+                      .filter((cat) => !cat.utility && cat.options.length > 0)
+                      .map((cat) => ({ value: `all:${cat.id}`, label: `Show All ${titleCase(cat.label)}` })),
+                  },
+                  ...tbAddCategoriesAll.map((cat) => ({
+                    label: cat.label,
+                    options: cat.options.map((o) => ({ value: o.value, label: o.label })),
+                  })),
+                ]}
+              />
               <button
                 className="swn-add-btn"
                 title="Hide every toolbar item (re-add items from the dropdown)"

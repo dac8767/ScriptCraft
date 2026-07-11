@@ -17,6 +17,7 @@ import {
   CONTEXT_MENU_SECTIONS, CONTEXT_MENU_GROUPS, type ContextMenuGroup,
 } from './ScriptContextMenu';
 import { titleCase } from './CustomizePanelsDialog';
+import AddMenu from './AddMenu';
 
 export default function ContextMenuTab() {
   const contextMenuHidden = useEditorStore((s) => s.contextMenuHidden);
@@ -112,32 +113,21 @@ export default function ContextMenuTab() {
       </div>
 
       <div className="fs-tbzone-adders fs-adders-equal">
-        <select
-          value=""
-          onChange={(e) => { if (e.target.value) { onAdd(e.target.value); e.target.value = ''; } }}
-        >
-          <option value="">+ Add Item</option>
-          {CONTEXT_MENU_GROUPS.some((g) => hiddenIn(g).length > 0) && (
-            <optgroup label="Show All">
-              {CONTEXT_MENU_GROUPS
+        <AddMenu
+          onPick={onAdd}
+          groups={[
+            {
+              label: 'Show All',
+              options: CONTEXT_MENU_GROUPS
                 .filter((g) => hiddenIn(g).length > 0)
-                .map((g) => (
-                  <option key={`all-${g}`} value={`all:${g}`}>Show All {titleCase(g)}</option>
-                ))}
-            </optgroup>
-          )}
-          {CONTEXT_MENU_GROUPS.map((g) => {
-            const opts = hiddenIn(g);
-            if (opts.length === 0) return null;
-            return (
-              <optgroup key={g} label={g}>
-                {opts.map((id) => (
-                  <option key={id} value={id}>{labelOf(id)}</option>
-                ))}
-              </optgroup>
-            );
-          })}
-        </select>
+                .map((g) => ({ value: `all:${g}`, label: `Show All ${titleCase(g)}` })),
+            },
+            ...CONTEXT_MENU_GROUPS.map((g) => ({
+              label: g,
+              options: hiddenIn(g).map((id) => ({ value: id, label: labelOf(id) })),
+            })),
+          ]}
+        />
         <button
           className="swn-add-btn"
           title="Hide every item"

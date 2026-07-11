@@ -1721,6 +1721,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
   const renderMenuItems = () => (
     <>
+      {/* v0.95: Local Only sits at the FAR LEFT, before File, with a gap.
+          Always rendered; cannot be hidden or disabled. */}
+      <AuthIndicator />
+      <div className="menu-auth-gap" />
       {orderedMenus.map((menu) => (
         <div
           key={menu.label}
@@ -1735,10 +1739,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           <span className="menu-label">{menu.label}</span>
         </div>
       ))}
-      {/* v0.91: sits immediately to the right of Help rather than pushed to the
-          far edge — the far edge now belongs to the Customize button.
-          Always rendered; cannot be hidden or disabled. */}
-      <AuthIndicator />
       <div className="menu-spacer" />
     </>
   );
