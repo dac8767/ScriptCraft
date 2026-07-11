@@ -700,8 +700,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                       {label}
                     </span>
                     <span className="fs-customize-seg">
+                      {/* v1.3: Show is kept for consistency across the tabs, even
+                          though a row you can see is by definition shown — it's
+                          the active state, and Hide is the move. */}
+                      <button className="active" title="This menu is on the menu bar">Show</button>
                       <button
-                        className="fs-customize-hide"
                         disabled={label === 'File'}
                         title={label === 'File'
                           ? 'File always stays on screen'

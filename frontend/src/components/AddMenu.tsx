@@ -20,11 +20,13 @@ export interface AddMenuGroup {
   options: { value: string; label: string; icon?: React.ReactNode }[];
 }
 
-export default function AddMenu({ groups, onPick, label = '+ Add Item', title }: {
+export default function AddMenu({ groups, onPick, label = '+ Add Item', title, center }: {
   groups: AddMenuGroup[];
   onPick: (value: string) => void;
   label?: string;
   title?: string;
+  /** Centre the trigger's text, for when it sits in a row of ordinary buttons. */
+  center?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef<HTMLDivElement | null>(null);
@@ -71,7 +73,7 @@ export default function AddMenu({ groups, onPick, label = '+ Add Item', title }:
     <div className="fs-addmenu" ref={ref}>
       <button
         ref={btnRef}
-        className="fs-addmenu-trigger"
+        className={`fs-addmenu-trigger${center ? ' fs-addmenu-center' : ''}`}
         title={title}
         onClick={() => setOpen((o) => !o)}
       >{label}</button>

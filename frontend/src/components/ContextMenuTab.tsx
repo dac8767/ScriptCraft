@@ -102,10 +102,10 @@ export default function ContextMenuTab() {
               {labelOf(id)}
             </span>
             <span className="fs-customize-seg">
-              {/* v1.1: no Show button — this row IS shown. Hide removes it and
-                  stashes it in + Add Item, the one model used everywhere now. */}
+              {/* Show is the active state — this row is on the menu. Hide removes
+                  it and stashes it in + Add Item. */}
+              <button className="active" title="This item is on the context menu">Show</button>
               <button
-                className="fs-customize-hide"
                 title="Remove from the context menu (re-add it from + Add Item)"
                 onClick={() => hide(id)}
               >Hide</button>

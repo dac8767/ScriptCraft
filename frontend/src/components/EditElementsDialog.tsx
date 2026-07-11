@@ -121,10 +121,8 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
                   {labelOf(id)}
                 </span>
                 <span className="fs-customize-seg">
-                  {/* v1.1: Hide REMOVES the row and stashes the element in
-                      + Add Item — the same model as every other tab. */}
+                  <button className="active" title="This element is in the list">Show</button>
                   <button
-                    className="fs-customize-hide"
                     disabled={required}
                     title={required
                       ? 'Core elements can’t be hidden'

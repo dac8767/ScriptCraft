@@ -410,6 +410,9 @@ body {
   cursor: pointer;
 }
 .fs-addmenu-trigger:hover { border-color: var(--fd-accent); }
+/* v1.3: centred trigger, for when the menu sits in a row of ordinary buttons and
+   should look like one of them. */
+.fs-addmenu-center { text-align: center; }
 .fs-addmenu-pop {
   position: absolute;
   bottom: calc(100% + 4px);      /* opens UPWARD: it sits at the foot of the tab */

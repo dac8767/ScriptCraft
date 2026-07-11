@@ -41,11 +41,18 @@ export default function ThemesTab() {
     ?? customThemes.find((c) => c.id === id)?.label
     ?? id;
 
+  /** v1.3: Themes now behaves like every other tab — a hidden theme LEAVES the
+   *  list and lives in + Add Item until you put it back. */
+  const visibleIds = ids.filter((id) => !hiddenThemes.includes(id));
+  const hiddenIds = ids.filter((id) => hiddenThemes.includes(id));
+
   const move = (from: number, to: number) => {
-    const next = [...ids];
+    const next = [...visibleIds];
     const [m] = next.splice(from, 1);
     next.splice(to, 0, m);
-    setThemeOrder(next);
+    // Hidden themes keep their stored place, so re-adding one puts it back near
+    // where it was rather than at the end.
+    setThemeOrder([...next, ...hiddenIds]);
   };
 
   const newTheme = () => setEditing({
@@ -171,9 +178,8 @@ export default function ThemesTab() {
       </p>
 
       <div className="fs-customize-grid">
-        {ids.map((id, idx) => {
+        {visibleIds.map((id, idx) => {
           const custom = isCustomTheme(id);
-          const hidden = hiddenThemes.includes(id);
           return (
             <div
               key={id}
@@ -196,13 +202,15 @@ export default function ThemesTab() {
               </span>
               <span className="fs-theme-row-controls">
                 <span className="fs-customize-seg">
+                  {/* Show is the active state; Hide removes the theme from the
+                      list and stashes it in + Add Item, as everywhere else. */}
+                  <button className="active" title="This theme is in the list">Show</button>
                   <button
-                    className={!hidden ? 'active' : ''}
-                    onClick={() => setThemeHidden(id, false)}
-                  >Show</button>
-                  <button
-                    className={hidden ? 'active' : ''}
-                    onClick={() => setThemeHidden(id, true)}
+                    disabled={theme === id}
+                    title={theme === id
+                      ? 'This is the theme you’re using — switch to another first'
+                      : 'Remove from the theme list (re-add it from + Add Item)'}
+                    onClick={() => { if (theme !== id) setThemeHidden(id, true); }}
                   >Hide</button>
                 </span>
                 <button
@@ -284,6 +292,25 @@ export default function ThemesTab() {
       {importNote && <p className="fs-shortcut-note">{importNote}</p>}
 
       <div className="fs-tbzone-adders fs-adders-equal">
+        <AddMenu
+          center
+          onPick={(v) => {
+            if (v === 'all') hiddenIds.forEach((id) => setThemeHidden(id, false));
+            else setThemeHidden(v, false);
+          }}
+          groups={[
+            {
+              label: 'Show All',
+              options: hiddenIds.length > 1
+                ? [{ value: 'all', label: 'Show All - Themes' }]
+                : [],
+            },
+            {
+              label: 'Themes',
+              options: hiddenIds.map((id) => ({ value: id, label: labelOf(id) })),
+            },
+          ]}
+        />
         <button className="swn-add-btn" onClick={newTheme}>+ New Theme</button>
         <button
           className="swn-add-btn"
@@ -294,14 +321,17 @@ export default function ThemesTab() {
             only in where the themes come FROM, made the choice look bigger than
             it is — it's one action with two sources. */}
         <AddMenu
-          label="Import Themes"
+          label="Import Themes..."
+          center
           title="Load themes from a theme file, or copy them out of another project"
           onPick={(v) => {
             if (v === 'file') void importThemes();
             else void importFromProject();
           }}
           groups={[{
-            label: 'Import from',
+            // No heading: two items that are plainly both imports don't need a
+            // category telling you so.
+            label: '',
             options: [
               { value: 'file', label: 'Import from File' },
               { value: 'project', label: 'Import from Project' },
