@@ -1370,6 +1370,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {
       label: 'Production',
       items: [
+        // v0.91: Title Page heads the Production list — it's the first page of
+        // any production draft.
+        { icon: <FaFileAlt />, label: 'Title Page', action: () => useEditorStore.getState().openTool('titlepage') },
+        { separator: true, label: '' },
         { icon: <FaFileSignature />, label: 'Set Draft Number...', action: () => setDraftDialogOpen(true) },
         { separator: true, label: '' },
         {
@@ -1731,9 +1735,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           <span className="menu-label">{menu.label}</span>
         </div>
       ))}
-      <div className="menu-spacer" />
-      {/* Always rendered — cannot be hidden or disabled. */}
+      {/* v0.91: sits immediately to the right of Help rather than pushed to the
+          far edge — the far edge now belongs to the Customize button.
+          Always rendered; cannot be hidden or disabled. */}
       <AuthIndicator />
+      <div className="menu-spacer" />
     </>
   );
 

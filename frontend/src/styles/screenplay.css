@@ -905,6 +905,46 @@ body {
   height: auto; max-height: none;
 }
 
+/* ── Permanent Customize button (v0.91) ────────────────────────────────────
+   The menu bar and toolbar now sit in a column, and this button sits to their
+   right spanning BOTH — so the two bars give up a little width at the far right
+   and this occupies it. It's chrome, not a toolbar item: it can't be reordered,
+   hidden, or dragged into a zone, which is why it no longer appears in
+   Customize > Toolbar.                                                        */
+.chrome-stack {
+  display: flex;
+  align-items: stretch;          /* the button matches the bars' combined height */
+  background: var(--fd-toolbar-bg);
+  flex-shrink: 0;
+}
+.chrome-bars {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;                  /* lets the bars shrink instead of shoving the
+                                    button off the edge */
+}
+.chrome-customize-btn {
+  /* ~50% larger than the old toolbar button: 12px/600 -> 15px/700, roomier. */
+  flex: 0 0 auto;
+  align-self: center;            /* vertically centred across both bars */
+  margin: 0 6px;                 /* right edge aligns with the bars' 6px padding */
+  padding: 0 18px;
+  height: calc(100% - 10px);     /* spans both bars, with a little breathing room */
+  min-height: 38px;
+  background: var(--fd-btn-bg);
+  color: var(--fd-btn-text);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,.25);
+}
+.chrome-customize-btn:hover { background: var(--fd-btn-hover); }
+
 /* Customize toolbar button (v0.84): text on a themed button surface, no icon.
    It carries .toolbar-btn-labeled — the SAME class as the Zoom control — and
    deliberately does NOT set its own height, so the two always match, including

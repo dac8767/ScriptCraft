@@ -3800,7 +3800,14 @@ const ScreenplayEditor: React.FC = () => {
           </button>
         </div>
       )}
-      {!isHistoryMode && <MenuBar editor={editor} onCollaborate={() => {
+      {/* v0.91: the two bars and the permanent Customize button share one row.
+          The bars stack in a column that takes the remaining width; the button
+          sits to their right and spans the full height of both. It's chrome, not
+          a toolbar item — which is why it can't be reordered or hidden. */}
+      {!isHistoryMode && (
+      <div className="chrome-stack">
+        <div className="chrome-bars">
+      {<MenuBar editor={editor} onCollaborate={() => {
         if (!currentProject || !currentScriptId) {
           showToast('Save your screenplay to a project first — opening Save As...', 'info');
           useEditorStore.getState().setSaveAsOpen(true);
@@ -3813,7 +3820,17 @@ const ScreenplayEditor: React.FC = () => {
         }
         setShareDialogOpen(true);
       }} onJoinCollab={() => setJoinCollabOpen(true)} isCollabActive={collabMode} isCollabGuest={collabMode && !isCollabHost} />}
-      {!isHistoryMode && <Toolbar editor={editor} />}
+      {<Toolbar editor={editor} />}
+        </div>
+        <button
+          className="chrome-customize-btn"
+          title="Customize FreeDraft"
+          onClick={() => window.dispatchEvent(new CustomEvent('freedraft:command', { detail: 'customize' }))}
+        >
+          Customize
+        </button>
+      </div>
+      )}
       <div className={`editor-layout${previewMode ? " preview-mode" : ""}`}>
       {previewMode && <PreviewSidebar editor={editor} />}
         {!isHistoryMode && navigatorOpen && <ToolDock side="left" editor={editor} scrollContainer={editorMainRef.current} />}

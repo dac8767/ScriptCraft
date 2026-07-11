@@ -679,8 +679,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   if (target === zone) return;
                   update(tokens.filter((_, i) => i !== idx), [...other, tok]);
                 };
-                // Permanent items (Customize) reorder and switch zones freely,
-                // but can't be removed from the toolbar.
+                // v0.91: nothing is permanent in the toolbar any more — Customize
+                // moved out to the chrome. The mechanism stays for any future item
+                // that needs it; today it simply never fires.
                 const isPermanent = tok.startsWith('b:')
                   && !!BUILTIN_BY_KEY[tok.slice(2)]?.permanent;
                 const hideTok = () => {

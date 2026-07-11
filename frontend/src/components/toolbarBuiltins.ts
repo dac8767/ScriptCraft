@@ -65,7 +65,6 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'tags', label: 'Production Tags' },
   { key: 'zoom', label: 'Zoom', priority: '1', zoom: true },
   { key: 'view', label: 'Editor View', desktopOnly: true },
-  { key: 'customize', label: 'Customize', permanent: true },
 ];
 
 export const BUILTIN_BY_KEY: Record<string, ToolbarBuiltin> = Object.fromEntries(
@@ -75,12 +74,16 @@ export const BUILTIN_BY_KEY: Record<string, ToolbarBuiltin> = Object.fromEntries
 // scriptNotes and tags are NOT in the default — they add from the dropdown's
 // Tools and Production groups (legacy g:notes migration still preserves them
 // in layouts that already had them).
+// v0.91: 'customize' is gone from here. It's now permanent chrome to the right of
+// BOTH bars, not a toolbar button — so it can't be reordered, hidden, or moved
+// into a zone. normalizeToolbarZones drops unknown `b:` keys, which means a saved
+// layout still holding `b:customize` cleans itself up on load; no migration needed.
 export const DEFAULT_TOOLBAR_LEFT: string[] = [
   'undo', 'redo', 'element', 'insertSection', 'insertNote', 'insertChecklist',
   'fontFamily', 'fontSize', 'bold', 'italic', 'underline', 'strike',
   'subscript', 'superscript', 'textColor', 'highlightColor',
   'alignLeft', 'alignCenter', 'alignRight', 'alignJustify',
-  'find', 'goto', 'customize',
+  'find', 'goto',
 ].map((k) => `b:${k}`);
 
 export const DEFAULT_TOOLBAR_RIGHT: string[] = ['zoom', 'view'].map((k) => `b:${k}`);

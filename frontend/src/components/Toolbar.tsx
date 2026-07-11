@@ -1067,19 +1067,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           )}
         </div>
       );
-      case 'customize': return (
-        <button
-          className="toolbar-btn toolbar-btn-labeled toolbar-customize-btn"
-          title="Customize"
-          onClick={() => {
-            window.dispatchEvent(new CustomEvent('freedraft:command', { detail: 'customize' }));
-            if (inOverflow) setOverflowOpen(false);
-          }}
-        >
-          {/* v0.83: text only, on a themed button surface — no icon. */}
-          <span className="toolbar-btn-text">Customize</span>
-        </button>
-      );
       case 'view': return (
         <>
           <span className="view-style-label">Editor View:</span>
