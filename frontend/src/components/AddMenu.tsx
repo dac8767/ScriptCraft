@@ -51,22 +51,57 @@ export default function AddMenu({ groups, onPick, label = '+ Add Item', title, c
   const usable = groups.filter((g) => g.options.length > 0);
 
   /**
-   * v1.2 — the menu is rendered into the BODY, not inside the panel.
+   * Placement (v1.3.2).
    *
-   * The Sort menu in a side panel was appearing BEHIND the panel: an absolutely
-   * positioned child is still trapped by its ancestors' stacking context and
-   * their overflow, and no z-index on the menu itself can climb out of that. A
-   * portal with fixed coordinates escapes both. Position is measured from the
-   * trigger, and the menu flips above it when there isn't room below.
+   * The menu is portalled to the BODY: inside a side panel it was painted behind
+   * the neighbouring panel, and an absolutely positioned child can't climb out of
+   * its ancestors' stacking context or overflow no matter what z-index it carries.
+   *
+   * It is positioned with TOP and LEFT only — never `bottom`. Anchoring an
+   * auto-height, max-height, overflow:auto box by its bottom edge is exactly the
+   * combination that collapsed the "+ Add Item" menus in Customize: they sit at
+   * the foot of the dialog, so they were the ones that took the flip-upward path,
+   * while the Filter/Sort menus near the top of a panel opened downward and worked.
+   * So: measure the menu, decide up or down, and give it a real top.
    */
-  const [pos, setPos] = React.useState<{ left: number; top?: number; bottom?: number } | null>(null);
+  const [pos, setPos] = React.useState<{ top: number; left: number; maxH: number } | null>(null);
+
   React.useLayoutEffect(() => {
-    if (!open || !btnRef.current) { setPos(null); return; }
-    const r = btnRef.current.getBoundingClientRect();
-    const below = window.innerHeight - r.bottom;
-    setPos(below < 260 && r.top > below
-      ? { left: r.left, bottom: window.innerHeight - r.top + 4 }
-      : { left: r.left, top: r.bottom + 4 });
+    if (!open) { setPos(null); return; }
+    const btn = btnRef.current;
+    const pop = popRef.current;
+    if (!btn || !pop) return;
+
+    const GAP = 4;
+    const EDGE = 8;
+    const r = btn.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const vw = window.innerWidth;
+
+    const spaceBelow = vh - r.bottom - GAP - EDGE;
+    const spaceAbove = r.top - GAP - EDGE;
+    const wanted = pop.scrollHeight;               // the menu's natural height
+
+    const down = wanted <= spaceBelow || spaceBelow >= spaceAbove;
+    const maxH = Math.max(120, Math.min(320, down ? spaceBelow : spaceAbove));
+    const height = Math.min(wanted, maxH);
+    const top = down ? r.bottom + GAP : Math.max(EDGE, r.top - GAP - height);
+
+    const left = Math.max(EDGE, Math.min(r.left, vw - pop.offsetWidth - EDGE));
+    setPos({ top, left, maxH });
+  }, [open, groups]);
+
+  // A menu pinned to the viewport can't follow its button, so close rather than
+  // leave it stranded somewhere the button no longer is.
+  React.useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener('resize', close);
+    window.addEventListener('scroll', close, true);
+    return () => {
+      window.removeEventListener('resize', close);
+      window.removeEventListener('scroll', close, true);
+    };
   }, [open]);
 
   return (
@@ -77,11 +112,20 @@ export default function AddMenu({ groups, onPick, label = '+ Add Item', title, c
         title={title}
         onClick={() => setOpen((o) => !o)}
       >{label}</button>
-      {open && pos && createPortal(
+      {open && createPortal(
         <div
           className="fs-addmenu-pop"
           ref={popRef}
-          style={{ position: 'fixed', left: pos.left, top: pos.top, bottom: pos.bottom }}
+          style={{
+            position: 'fixed',
+            top: pos?.top ?? 0,
+            left: pos?.left ?? 0,
+            maxHeight: pos?.maxH ?? 320,
+            // Mounted but invisible for one frame so it can be measured; showing
+            // it at 0,0 first would make it jump across the screen.
+            visibility: pos ? 'visible' : 'hidden',
+            zIndex: 2147483647,
+          }}
         >
           {usable.length === 0 && (
             <div className="fs-addmenu-empty">Nothing left to add</div>
