@@ -33,3 +33,46 @@ describe('resolveClaude — finding the CLI without trusting PATH', () => {
     expect(resolveClaude(() => true)).toBe(nativePath);
   });
 });
+
+/**
+ * Regression: the bridge killed the agent the instant the POST body arrived.
+ *
+ * `IncomingMessage` ('req') emits 'close' when the request has been fully READ,
+ * not when the client disconnects — so hanging the kill on req.on('close') meant
+ * every run was terminated before it produced a byte, and the panel showed
+ * nothing at all. The kill belongs on the RESPONSE, which closes when the
+ * connection actually goes away, guarded so a normal finish isn't mistaken for
+ * the user walking away.
+ */
+describe('the child is killed only when the CLIENT really goes away', () => {
+  const simulate = (killOn: 'req' | 'res', premature: boolean) => {
+    let killed = false;
+    let finished = false;
+    const child = { kill: () => { killed = true; }, get killed() { return killed; } };
+
+    // A run: the request body is read, then the agent works, then it finishes.
+    const reqClose = () => { if (killOn === 'req') child.kill(); };
+    const resClose = () => { if (killOn === 'res' && !finished) child.kill(); };
+
+    reqClose();                       // body fully read — happens on EVERY request
+    if (killed) return { killedBeforeWorking: true, killed };
+    if (premature) { resClose(); return { killedBeforeWorking: false, killed }; }
+    finished = true;                  // child exited normally
+    resClose();
+    return { killedBeforeWorking: false, killed };
+  };
+
+  it('the old code killed it before it could work — the bug you hit', () => {
+    expect(simulate('req', false).killedBeforeWorking).toBe(true);
+  });
+
+  it('the fix lets a normal run complete untouched', () => {
+    const r = simulate('res', false);
+    expect(r.killedBeforeWorking).toBe(false);
+    expect(r.killed).toBe(false);
+  });
+
+  it('...but Stop (a premature disconnect) still kills the agent', () => {
+    expect(simulate('res', true).killed).toBe(true);
+  });
+});

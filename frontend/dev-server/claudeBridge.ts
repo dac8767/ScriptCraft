@@ -196,17 +196,30 @@ export function claudeBridge(): Plugin {
               message: `Could not start the claude CLI: ${err.message}`,
             }) + '\n');
           });
+          let finished = false;
           child.on('close', (code) => {
+            finished = true;
             clearTimeout(timeout);
             running.delete(child);
             res.write(JSON.stringify({ type: 'bridge_done', code }) + '\n');
             res.end();
           });
 
-          // Hitting Stop (or closing the panel) aborts the request: kill the child
-          // rather than leave an orphaned agent running against your repo.
-          req.on('close', () => {
-            if (!child.killed) child.kill('SIGTERM');
+          /**
+           * Kill the agent if the CLIENT goes away — Stop, or closing the panel.
+           *
+           * This was on req.on('close'), which is wrong and was THE bug: in modern
+           * Node, IncomingMessage emits 'close' as soon as the request body has
+           * been fully read, not when the client disconnects. So the instant the
+           * POST body arrived, the agent was killed — before it produced a single
+           * byte. That's why sending a message did nothing at all.
+           *
+           * res.on('close') fires when the connection actually closes. It also
+           * fires on a NORMAL finish, hence the `finished` guard: only a premature
+           * close means the user walked away.
+           */
+          res.on('close', () => {
+            if (!finished && !child.killed) child.kill('SIGTERM');
             clearTimeout(timeout);
           });
         });
