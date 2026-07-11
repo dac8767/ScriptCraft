@@ -15,14 +15,15 @@
 import React, { useEffect, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
 import AssetManager from './AssetManager';
+import TitlePagePanel from './TitlePagePanel';
 import SpellCheckPanel from './SpellCheckPanel';
 import VersionHistory from './VersionHistory';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
-  FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaHistory,
+  FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaHistory, FaFileAlt,
 } from 'react-icons/fa';
-import { useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolSide } from '../stores/editorStore';
+import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { type NavTab } from './SceneNavigator';
 import NavigatorTool from './NavigatorTool';
@@ -61,6 +62,7 @@ export const ALL_TOOLS: ToolDef[] = [
   { id: 'tags', label: 'Production Tags', icon: <FaTags />, defaultSize: { w: 340, h: 336 }, group: 2 },
   { id: 'analytics', label: 'Analytics', icon: <FaChartBar />, defaultSize: { w: 620, h: 384 }, group: 3 },
   { id: 'goals', label: 'Goals', icon: <FaBullseye />, defaultSize: { w: 340, h: 264 }, group: 3 },
+  { id: 'titlepage', label: 'Title Page', icon: <FaFileAlt />, defaultSize: { w: 520, h: 560 }, group: 3 },
   { id: 'assets', label: 'Asset Manager', icon: <FaBoxes />, defaultSize: { w: 620, h: 372 }, group: 3 },
   { id: 'spelling', label: 'Spelling & Grammar', icon: <FaSpellCheck />, defaultSize: { w: 420, h: 440 }, group: 3 },
   { id: 'history', label: 'Script History', icon: <FaHistory />, defaultSize: { w: 420, h: 440 }, group: 3 },
@@ -69,7 +71,7 @@ export const ALL_TOOLS: ToolDef[] = [
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
-export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'history'];
+export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'history', 'titlepage'];
 export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 
 const MIN_W = 240;
@@ -92,6 +94,8 @@ export function ToolContent({ id, editor, scrollContainer }: {
       return <SceneNavigator editor={editor} scrollContainer={scrollContainer} view={id as NavTab} />;
     case 'characters':
       return <CharacterProfiles editor={editor} projectId={currentProject?.id || ''} embedded />;
+    case 'titlepage':
+      return <TitlePagePanel editor={editor} />;
     case 'assets':
       return <AssetManager projectId={currentProject?.id || ''} embedded />;
     case 'spelling':
@@ -203,8 +207,8 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     return i === -1 ? 1000 + ALL_TOOLS.findIndex((t) => t.id === id) : i;
   };
   const tools = ALL_TOOLS.filter((t) => {
-    const cfg = toolConfig[t.id] ?? DEFAULT_TOOL_CONFIG[t.id];
-    return cfg && cfg.enabled && cfg.side === side;
+    const cfg = toolConfigFor(toolConfig, t.id);
+    return cfg.enabled && cfg.side === side;
   }).sort((a, b) => orderIdx(a.id) - orderIdx(b.id));
 
   // Labeled divider lines (Customize > Dividers), ordered among the tools via

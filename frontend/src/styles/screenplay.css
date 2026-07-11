@@ -655,6 +655,22 @@ body {
 .about-credit a:hover { text-decoration: underline; }
 .about-oss { line-height: 1.6; }
 
+/* ── Changelog dialog (Help > Changelog, v0.63) ── */
+.fs-changelog-dialog { width: min(720px, 92vw); height: min(720px, 86vh); max-width: none; display: flex; flex-direction: column; }
+.fs-changelog-body { flex: 1; min-height: 0; overflow-y: auto; }
+
+/* ── Modal components hosted as docked panels (v0.62/63) ── */
+.fs-spellcheck-panel, .fs-modal-as-panel { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.fs-spellcheck-panel .dialog-overlay, .fs-modal-as-panel .dialog-overlay {
+  position: static; inset: auto; background: transparent; display: block;
+  z-index: auto; height: 100%; padding: 0;
+}
+.fs-spellcheck-panel .dialog-box, .fs-modal-as-panel .dialog-box {
+  width: 100%; max-width: none; height: 100%; box-shadow: none;
+  border: none; border-radius: 0; background: transparent; display: flex;
+  flex-direction: column; min-height: 0; overflow-y: auto;
+}
+
 /* ── Spelling & Grammar as a docked panel (v0.62) ── */
 .fs-spellcheck-panel { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .fs-spellcheck-panel .dialog-overlay {
@@ -762,18 +778,13 @@ body {
 .fs-delete-confirm-input:focus { border-color: var(--fd-accent); }
 .fs-customize-stuck-hint { color: var(--fd-accent); }
 
-/* Editor View: label stacked above its dropdown (v0.62). The toolbar row
-   grows to fit; Local Only moved into the menu bar to make room. */
-.view-style-stack {
-  display: inline-flex; flex-direction: column; align-items: flex-start;
-  gap: 1px; line-height: 1;
-}
+/* Editor View: label to the LEFT of its dropdown (v0.63), with extra leading
+   space so it reads as its own control rather than trailing the zoom buttons. */
 .view-style-label {
-  color: var(--fd-text-muted); font-size: 10px;
-  white-space: nowrap; user-select: none; letter-spacing: .02em;
+  color: var(--fd-text-muted); font-size: 11px;
+  margin-left: 14px; margin-right: 5px;
+  white-space: nowrap; user-select: none;
 }
-.toolbar:has(.view-style-stack) { height: auto; min-height: 30px; padding-top: 2px; padding-bottom: 2px; }
-.toolbar.chrome-comfortable:has(.view-style-stack) { min-height: 44px; }
 
 /* ── Editable zoom input (desktop toolbar) ── */
 .zoom-input {

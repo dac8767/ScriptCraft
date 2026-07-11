@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
+import EditElementsDialog from './EditElementsDialog';
 import ProjectManagerTool from './ProjectManagerTool';
 import { SaveWorkspaceDialog, EditWorkspacesDialog } from './WorkspaceDialogs';
 import PreferencesDialog from './PreferencesDialog';
@@ -15,7 +16,7 @@ const PROJECT_MENU_GROUPS: string[][] = [
   // v0.62: Asset Manager is a Project window again (rolled back from File);
   // Spelling & Grammar and Script History joined it as dockable windows.
   // 'projects' stays out — the Project Manager lives under File.
-  ['assets', 'spelling', 'history'],
+  ['titlepage', 'assets', 'spelling', 'history'],
 ];
 /** Tools menu: story planning / writing aids / production & analysis. */
 const TOOL_MENU_GROUPS: string[][] = [
@@ -92,6 +93,7 @@ import {
   FaSearch,
   FaHashtag,
   FaSpellCheck,
+  FaSlidersH,
   FaListOl,
   FaBold,
   FaItalic,
@@ -411,6 +413,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   }, [diagnosticsReport]);
 
   // ── Check in (git commit) ──
+  const [changelogOpen, setChangelogOpen] = useState(false);
+  const [editElementsOpen, setEditElementsOpen] = useState(false);
   const [projectManagerOpen, setProjectManagerOpen] = useState(false);
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [checkinMessage, setCheckinMessage] = useState('');
@@ -1043,13 +1047,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { separator: true, label: '' },
         { icon: <FaSave />, label: 'Save', shortcut: `${mod}S`, action: handleSave, disabled: isCollabGuest },
         { icon: <FaSave />, label: 'Save As…', shortcut: `⇧${mod}S`, action: handleExportOdraft, disabled: isCollabGuest },
-        {
-          icon: <FaUserFriends />, label: 'Collaboration',
-          children: [
-            { icon: <FaUserFriends />, label: isCollabActive ? '\u2713 Collaborate...' : 'Collaborate...', action: onCollaborate, disabled: isCollabGuest },
-            { icon: <FaSignInAlt />, label: 'Join Collaboration...', action: onJoinCollab, disabled: isCollabGuest },
-          ],
-        },
         { separator: true, label: '' },
         { icon: <FaEye />, label: 'Preview', action: () => useEditorStore.getState().setPreviewMode(true) },
         {
@@ -1183,6 +1180,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { icon: <FaListOl />, label: 'Marker', action: () => insertOutlineLine('⚑ ') },
         { icon: <FaRegStickyNote />, label: 'Script Note', action: () => useEditorStore.getState().openShelfTab('script') },
         { icon: <FaCheckSquare />, label: 'Checklist Item', action: () => insertOutlineLine('[ ] ') },
+        { separator: true, label: '' },
+        { icon: <FaSlidersH />, label: 'Edit Elements…', action: () => setEditElementsOpen(true) },
       ],
     },
     {
@@ -1231,6 +1230,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {
       label: 'Tools',
       items: [
+        {
+          icon: <FaUserFriends />, label: 'Collaboration',
+          children: [
+            { icon: <FaUserFriends />, label: isCollabActive ? '\u2713 Collaborate...' : 'Collaborate...', action: onCollaborate, disabled: isCollabGuest },
+            { icon: <FaSignInAlt />, label: 'Join Collaboration...', action: onJoinCollab, disabled: isCollabGuest },
+          ],
+        },
         ...TOOL_MENU_GROUPS.flatMap((group, gi) => [
           ...(gi > 0 ? [{ separator: true, label: '' }] : []),
           ...group
@@ -1276,7 +1282,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {
       label: 'Production',
       items: [
-        { icon: <FaFileAlt />, label: 'Title Page...', action: () => useEditorStore.getState().setTitlePageEditorOpen(true) },
         { icon: <FaFileSignature />, label: 'Set Draft Number...', action: () => setDraftDialogOpen(true) },
         { separator: true, label: '' },
         {
@@ -1310,6 +1315,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const helpMenu: MenuSection = {
     label: 'Help',
     items: [
+      { icon: <FaHistory />, label: 'Changelog', action: () => setChangelogOpen(true) },
       {
         icon: <FaInfoCircle />,
         label: 'About FreeDraft',
@@ -1624,11 +1630,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           <span className="menu-label">{menu.label}</span>
         </div>
       ))}
-      {/* v0.62: sits immediately right of the last menu (Help), not flushed to
-          the far edge — the toolbar's right zone now hosts the Editor View
-          picker. Always rendered: it can't be hidden or disabled. */}
-      <AuthIndicator />
       <div className="menu-spacer" />
+      {/* Always rendered — cannot be hidden or disabled. */}
+      <AuthIndicator />
     </>
   );
 
@@ -1869,6 +1873,101 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         onCancel={() => setFormatPickerOpen(false)}
       />
     )}
+    {changelogOpen && (
+      <div className="dialog-overlay" onClick={() => setChangelogOpen(false)}>
+        <div className="dialog-box fs-changelog-dialog" onClick={(e) => e.stopPropagation()}>
+          <div className="dialog-header">
+            Changelog
+            <button className="fs-dialog-x" onClick={() => setChangelogOpen(false)} title="Close">&times;</button>
+          </div>
+          <div className="dialog-body fs-changelog-body">
+                  <div className="about-section-title">What's New in 0.19</div>
+                  <div className="about-changelog">
+                  <div className="about-subsection-title">v0.19.0</div>
+                  <ul className="about-list">
+                    <li><strong>Mobile-Friendly Title Page</strong> — The Title Page editor now adapts to small screens: the form and live preview stack vertically and the dialog fits the viewport, so there's no more horizontal scrolling on phones.</li>
+                  </ul>
+
+                  <div className="about-subsection-title">v0.18.0</div>
+                  <ul className="about-list">
+                    <li><strong>Insert Images</strong> — Add images anywhere in the script and on the title page via Format → Insert Image, paste from the clipboard, or drag &amp; drop. Resize with the corner handle, set alignment, and they export to PDF and Word.</li>
+                    <li><strong>Redesigned Title Page</strong> — Manage title-page images (add, place top/bottom, align, remove), choose a larger title font size, and preview the page live. The editor, preview, and PDF/DOCX exports all match.</li>
+                    <li><strong>Mores &amp; Continueds</strong> — A new Format dialog to control automatic character (CONT'D) and the (MORE)/(CONT'D) at dialogue page breaks, with customizable marker text.</li>
+                    <li><strong>Smarter (CONT'D)</strong> — (CONT'D) no longer carries across a new scene, and deleting it at a specific cue is remembered. Manually typed (CONT'D) is never removed.</li>
+                    <li><strong>Larger Font Sizes</strong> — The font-size menus now go up to 96pt.</li>
+                    <li><strong>Data-Loss Protection</strong> — A safeguard prevents a blank/just-loaded editor from ever overwriting a saved script with an empty document.</li>
+                  </ul>
+
+                  <div className="about-subsection-title">v0.17.7</div>
+                  <ul className="about-list">
+                    <li><strong>Edge-to-Edge Display on Android</strong> — Updated how the editor handles modern Android screens so content reaches the screen edges without sitting under the status bar or gesture pill, addressing Play Console pre-launch warnings.</li>
+                    <li><strong>Floating Menu Accessibility</strong> — The hidden-menu icon now stays clear of the status bar so it's tappable on every device.</li>
+                    <li><strong>Curved-Edge Layouts</strong> — Spelling, grammar, search, and dialog panels now respect the safe area on devices with curved displays so the panel never disappears under the curve.</li>
+                    <li><strong>Reliable Spell-Check Markers</strong> — Replaced the wavy underline on misspelled and grammar-flagged words with a version that renders consistently across Android WebView builds, including older OEM variants where the native style was silently skipped.</li>
+                  </ul>
+
+                  <div className="about-subsection-title">v0.17.6</div>
+                  <ul className="about-list">
+                    <li><strong>Improved Stability</strong> — Resolves a startup crash that affected the app on certain devices.</li>
+                    <li><strong>Per-Document Language &amp; Dictionary</strong> — Choose a spellcheck language per script (English, Hindi, Odia, and others) with a global custom-word library that follows you across projects.</li>
+                  </ul>
+
+                  <div className="about-subsection-title">v0.17.5</div>
+                  <ul className="about-list">
+                    <li><strong>Stable Caret on Format Changes</strong> — Toggling bold, italic, underline, font, or size across a multi-block selection no longer scrolls the viewport to one end of the selection. The page stays put so you can keep editing where you were.</li>
+                  </ul>
+
+                  <div className="about-subsection-title">v0.17.4</div>
+                  <ul className="about-list">
+                    <li><strong>Resend Verification Code</strong> — When signing in on a new device with two-factor verification, you can now request a fresh 6-digit code if the original email didn't arrive.</li>
+                    <li><strong>Smarter Two-Factor Toggle</strong> — The Settings two-factor switch is automatically disabled when the collaboration server can't send email, so accounts can't be accidentally locked out of new devices.</li>
+                  </ul>
+
+                  <div className="about-subsection-title">v0.17.3</div>
+                  <ul className="about-list">
+                    <li><strong>Save Prompt Before New / Open / Import</strong> — The unsaved-changes dialog now also fires when auto-save hasn't caught up yet. Edits made just before resetting the editor are no longer silently discarded.</li>
+                    <li><strong>Faster Panel &amp; Search Navigation</strong> — Clicking a character, scene, note, tag, or search match now jumps the editor instantly instead of animating, removing a noticeable lag on long paginated documents.</li>
+                  </ul>
+
+                  <div className="about-subsection-title">v0.17.2</div>
+                  <ul className="about-list">
+                    <li><strong>Save Reliability on Windows</strong> — Switched the local SQLite database to WAL journal mode and added a post-write byte-count verification step. Fixes silent save failures on large files (issue #39). Any remaining write corruption now produces a visible error instead of failing silently.</li>
+                    <li><strong>OneDrive Detection</strong> — Warns you at startup if FreeDraft's data folder is inside a OneDrive-synced location (a known cause of silent SQLite corruption on Windows) and shows how to fix it.</li>
+                    <li><strong>Diagnostics Dialog</strong> — New <em>Help → Diagnostics</em> with a Copy Report button. Captures storage backend, DB path, OS, and last storage error so it can be pasted into bug reports.</li>
+                  </ul>
+
+                  <div className="about-subsection-title">v0.17.1</div>
+                  <ul className="about-list">
+                    <li><strong>Storage Fallback Recovery</strong> — If the app falls back to in-memory storage after a SQLite failure, it now recovers cleanly the next time SQLite becomes available, and surfaces fallback errors instead of swallowing them.</li>
+                    <li><strong>No More Lost Edits on Close</strong> — Pending edits are flushed before the window closes, even on unclean exits.</li>
+                    <li><strong>Mobile Stability</strong> — Dialogs survive the soft keyboard on Android &amp; iOS; fixed an Android cold-start crash.</li>
+                  </ul>
+
+                  <div className="about-subsection-title">v0.17.0</div>
+                  <ul className="about-list">
+                    <li><strong>Treatment Documents</strong> — Write a 20–25 page prose treatment alongside your screenplay. Use "+ New Document" in a project to open the manuscript-format editor.</li>
+                    <li><strong>Location Database</strong> — Sidebar panel for managing screenplay locations: list / detail / edit, auto-discovery from scene headings, aliases, and rename-in-scene-headings.</li>
+                    <li><strong>Act &amp; Sequence Structure</strong> — Tag scenes into acts and sequences, browse them in a new Structure tab in the Scene Navigator, with "A1"/"A2" badges on each scene.</li>
+                    <li><strong>Version Diff View</strong> — Compare any two checked-in versions side-by-side, unified, or changes-only, with a summary of scenes changed and per-character dialogue delta.</li>
+                    <li><strong>Multi-Format Templates</strong> — AV (two-column), multicam sitcom, one-hour drama, radio play, and stage play templates with a format picker for new screenplays.</li>
+                    <li><strong>DOCX Import / Export</strong> — Round-trip your screenplay through Microsoft Word.</li>
+                    <li><strong>Title Page Editor</strong> — Structured editor with live preview (Format &gt; Title Page); data flows into PDF, FDX, and Fountain exports.</li>
+                    <li><strong>Script Statistics &amp; Timing</strong> — Tools &gt; Analytics opens dialogue distribution, gender analysis, pacing chart, and character presence map. Per-scene timing in the Navigator and a runtime estimate in the status bar.</li>
+                    <li><strong>WGA &amp; Registration Fields</strong> — Project Properties gains WGA registration, copyright, agent/manager fields, and a submission log.</li>
+                    <li><strong>Scene Navigator: Search &amp; Synopsis</strong> — Search scene headings and synopses with highlighting; inline synopsis preview on each collapsed scene.</li>
+                    <li><strong>Character Relationships</strong> — Inline relationship editor, relationship map tab, and profile-completeness indicator on the Characters panel.</li>
+                    <li><strong>Cloud Projects &amp; Per-User Files</strong> — Configurable cloud server URL, per-user file isolation, free 5-file quota, Local/Cloud project tabs, and mobile-friendly tap targets.</li>
+                    <li><strong>Save As Replaces Save to Cloud</strong> — Shift+Cmd+S now offers an explicit Local/Cloud destination tab.</li>
+                    <li><strong>Self-Hosted Docker Image</strong> — Single <code>ghcr.io/&hellip;/opendraft-combined</code> image bundling backend + collab server for one-image deployment targets.</li>
+                  </ul>
+                  </div>
+          </div>
+        </div>
+      </div>
+    )}
+    {editElementsOpen && (
+      <EditElementsDialog open onClose={() => setEditElementsOpen(false)} />
+    )}
     {projectManagerOpen && (
       <div className="dialog-overlay" onClick={() => setProjectManagerOpen(false)}>
         <div className="dialog-box fs-manager-dialog" onClick={(e) => e.stopPropagation()}>
@@ -1925,88 +2024,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               <a href="https://alembic.sqlalchemy.org" target="_blank" rel="noopener noreferrer">Alembic</a>.
             </div>
 
-            <div className="about-whats-new">
-              <div className="about-section-title">What's New in 0.19</div>
-              <div className="about-changelog">
-              <div className="about-subsection-title">v0.19.0</div>
-              <ul className="about-list">
-                <li><strong>Mobile-Friendly Title Page</strong> — The Title Page editor now adapts to small screens: the form and live preview stack vertically and the dialog fits the viewport, so there's no more horizontal scrolling on phones.</li>
-              </ul>
-
-              <div className="about-subsection-title">v0.18.0</div>
-              <ul className="about-list">
-                <li><strong>Insert Images</strong> — Add images anywhere in the script and on the title page via Format → Insert Image, paste from the clipboard, or drag &amp; drop. Resize with the corner handle, set alignment, and they export to PDF and Word.</li>
-                <li><strong>Redesigned Title Page</strong> — Manage title-page images (add, place top/bottom, align, remove), choose a larger title font size, and preview the page live. The editor, preview, and PDF/DOCX exports all match.</li>
-                <li><strong>Mores &amp; Continueds</strong> — A new Format dialog to control automatic character (CONT'D) and the (MORE)/(CONT'D) at dialogue page breaks, with customizable marker text.</li>
-                <li><strong>Smarter (CONT'D)</strong> — (CONT'D) no longer carries across a new scene, and deleting it at a specific cue is remembered. Manually typed (CONT'D) is never removed.</li>
-                <li><strong>Larger Font Sizes</strong> — The font-size menus now go up to 96pt.</li>
-                <li><strong>Data-Loss Protection</strong> — A safeguard prevents a blank/just-loaded editor from ever overwriting a saved script with an empty document.</li>
-              </ul>
-
-              <div className="about-subsection-title">v0.17.7</div>
-              <ul className="about-list">
-                <li><strong>Edge-to-Edge Display on Android</strong> — Updated how the editor handles modern Android screens so content reaches the screen edges without sitting under the status bar or gesture pill, addressing Play Console pre-launch warnings.</li>
-                <li><strong>Floating Menu Accessibility</strong> — The hidden-menu icon now stays clear of the status bar so it's tappable on every device.</li>
-                <li><strong>Curved-Edge Layouts</strong> — Spelling, grammar, search, and dialog panels now respect the safe area on devices with curved displays so the panel never disappears under the curve.</li>
-                <li><strong>Reliable Spell-Check Markers</strong> — Replaced the wavy underline on misspelled and grammar-flagged words with a version that renders consistently across Android WebView builds, including older OEM variants where the native style was silently skipped.</li>
-              </ul>
-
-              <div className="about-subsection-title">v0.17.6</div>
-              <ul className="about-list">
-                <li><strong>Improved Stability</strong> — Resolves a startup crash that affected the app on certain devices.</li>
-                <li><strong>Per-Document Language &amp; Dictionary</strong> — Choose a spellcheck language per script (English, Hindi, Odia, and others) with a global custom-word library that follows you across projects.</li>
-              </ul>
-
-              <div className="about-subsection-title">v0.17.5</div>
-              <ul className="about-list">
-                <li><strong>Stable Caret on Format Changes</strong> — Toggling bold, italic, underline, font, or size across a multi-block selection no longer scrolls the viewport to one end of the selection. The page stays put so you can keep editing where you were.</li>
-              </ul>
-
-              <div className="about-subsection-title">v0.17.4</div>
-              <ul className="about-list">
-                <li><strong>Resend Verification Code</strong> — When signing in on a new device with two-factor verification, you can now request a fresh 6-digit code if the original email didn't arrive.</li>
-                <li><strong>Smarter Two-Factor Toggle</strong> — The Settings two-factor switch is automatically disabled when the collaboration server can't send email, so accounts can't be accidentally locked out of new devices.</li>
-              </ul>
-
-              <div className="about-subsection-title">v0.17.3</div>
-              <ul className="about-list">
-                <li><strong>Save Prompt Before New / Open / Import</strong> — The unsaved-changes dialog now also fires when auto-save hasn't caught up yet. Edits made just before resetting the editor are no longer silently discarded.</li>
-                <li><strong>Faster Panel &amp; Search Navigation</strong> — Clicking a character, scene, note, tag, or search match now jumps the editor instantly instead of animating, removing a noticeable lag on long paginated documents.</li>
-              </ul>
-
-              <div className="about-subsection-title">v0.17.2</div>
-              <ul className="about-list">
-                <li><strong>Save Reliability on Windows</strong> — Switched the local SQLite database to WAL journal mode and added a post-write byte-count verification step. Fixes silent save failures on large files (issue #39). Any remaining write corruption now produces a visible error instead of failing silently.</li>
-                <li><strong>OneDrive Detection</strong> — Warns you at startup if FreeDraft's data folder is inside a OneDrive-synced location (a known cause of silent SQLite corruption on Windows) and shows how to fix it.</li>
-                <li><strong>Diagnostics Dialog</strong> — New <em>Help → Diagnostics</em> with a Copy Report button. Captures storage backend, DB path, OS, and last storage error so it can be pasted into bug reports.</li>
-              </ul>
-
-              <div className="about-subsection-title">v0.17.1</div>
-              <ul className="about-list">
-                <li><strong>Storage Fallback Recovery</strong> — If the app falls back to in-memory storage after a SQLite failure, it now recovers cleanly the next time SQLite becomes available, and surfaces fallback errors instead of swallowing them.</li>
-                <li><strong>No More Lost Edits on Close</strong> — Pending edits are flushed before the window closes, even on unclean exits.</li>
-                <li><strong>Mobile Stability</strong> — Dialogs survive the soft keyboard on Android &amp; iOS; fixed an Android cold-start crash.</li>
-              </ul>
-
-              <div className="about-subsection-title">v0.17.0</div>
-              <ul className="about-list">
-                <li><strong>Treatment Documents</strong> — Write a 20–25 page prose treatment alongside your screenplay. Use "+ New Document" in a project to open the manuscript-format editor.</li>
-                <li><strong>Location Database</strong> — Sidebar panel for managing screenplay locations: list / detail / edit, auto-discovery from scene headings, aliases, and rename-in-scene-headings.</li>
-                <li><strong>Act &amp; Sequence Structure</strong> — Tag scenes into acts and sequences, browse them in a new Structure tab in the Scene Navigator, with "A1"/"A2" badges on each scene.</li>
-                <li><strong>Version Diff View</strong> — Compare any two checked-in versions side-by-side, unified, or changes-only, with a summary of scenes changed and per-character dialogue delta.</li>
-                <li><strong>Multi-Format Templates</strong> — AV (two-column), multicam sitcom, one-hour drama, radio play, and stage play templates with a format picker for new screenplays.</li>
-                <li><strong>DOCX Import / Export</strong> — Round-trip your screenplay through Microsoft Word.</li>
-                <li><strong>Title Page Editor</strong> — Structured editor with live preview (Format &gt; Title Page); data flows into PDF, FDX, and Fountain exports.</li>
-                <li><strong>Script Statistics &amp; Timing</strong> — Tools &gt; Analytics opens dialogue distribution, gender analysis, pacing chart, and character presence map. Per-scene timing in the Navigator and a runtime estimate in the status bar.</li>
-                <li><strong>WGA &amp; Registration Fields</strong> — Project Properties gains WGA registration, copyright, agent/manager fields, and a submission log.</li>
-                <li><strong>Scene Navigator: Search &amp; Synopsis</strong> — Search scene headings and synopses with highlighting; inline synopsis preview on each collapsed scene.</li>
-                <li><strong>Character Relationships</strong> — Inline relationship editor, relationship map tab, and profile-completeness indicator on the Characters panel.</li>
-                <li><strong>Cloud Projects &amp; Per-User Files</strong> — Configurable cloud server URL, per-user file isolation, free 5-file quota, Local/Cloud project tabs, and mobile-friendly tap targets.</li>
-                <li><strong>Save As Replaces Save to Cloud</strong> — Shift+Cmd+S now offers an explicit Local/Cloud destination tab.</li>
-                <li><strong>Self-Hosted Docker Image</strong> — Single <code>ghcr.io/&hellip;/opendraft-combined</code> image bundling backend + collab server for one-image deployment targets.</li>
-              </ul>
-              </div>
-            </div>
 
             <div className="about-whats-new">
               <div className="about-section-title">Compatibility</div>

@@ -943,8 +943,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         </>
       );
       case 'view': return (
-        <div className="view-style-stack">
-          <span className="view-style-label">Editor View</span>
+        <>
+          <span className="view-style-label">Editor View:</span>
           <select
             className="view-style-selector"
             value={previewMode ? 'preview' : viewStyle}
@@ -960,7 +960,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             <option value="continuous">Continuous</option>
             <option value="preview">Preview</option>
           </select>
-        </div>
+        </>
       );
       default: return null;
     }

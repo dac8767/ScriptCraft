@@ -375,7 +375,7 @@ export type ToolId =
   | 'navigator' | 'scenes' | 'pages' | 'structure' | 'locations' | 'characters'
   | 'indexcards' | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
-  | 'spelling' | 'history'
+  | 'spelling' | 'history' | 'titlepage'
   /** legacy — Script Notes merged back into 'sticky' (Notes > Script tab); kept
    *  in the type so persisted configs still typecheck, remapped on use. */
   | 'scriptnotes';
@@ -430,7 +430,27 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   sticky: { side: 'right', enabled: true },
   fragments: { side: 'right', enabled: true },
   todo: { side: 'right', enabled: true },
+  // v0.63: these were missing, so ToolDock (toolConfig[id] ?? DEFAULT[id])
+  // resolved undefined and never rendered them, while Customize's own
+  // fallback showed them as enabled/right — a tool appeared "in the right
+  // panel" that wasn't there until you toggled it. EVERY entry in ALL_TOOLS
+  // must have a default here; toolConfigFor() below is the shared resolver
+  // so the two views can never disagree again.
+  assets: { side: 'left', enabled: true },
+  spelling: { side: 'right', enabled: true },
+  history: { side: 'right', enabled: true },
+  titlepage: { side: 'left', enabled: true },
 };
+
+/** Single source of truth for a tool's effective config. Used by ToolDock and
+ *  the Customize dialog so a tool can never display in one place and be
+ *  missing from the other. */
+export function toolConfigFor(
+  cfg: Record<string, ToolConfig>,
+  id: string,
+): ToolConfig {
+  return cfg[id] ?? DEFAULT_TOOL_CONFIG[id] ?? { side: 'right', enabled: true };
+}
 
 /** A writing goal: word count, page count, or timed session. */
 export interface WritingGoal {
