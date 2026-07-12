@@ -506,6 +506,15 @@ export function toolConfigFor(
   return cfg[id] ?? DEFAULT_TOOL_CONFIG[id] ?? { side: 'right', enabled: true };
 }
 
+/**
+ * The Dev Picker lives in the right panel by default, like any other tool. It was
+ * relying on toolConfigFor()'s catch-all fallback to appear there, which worked by
+ * accident and read as an oversight. Hide it in Customize and it behaves like every
+ * other hidden tool: the menu item floats it as a window.
+ * (DEV-only tool; in production it isn't in ALL_TOOLS, so this entry is inert.)
+ */
+DEFAULT_TOOL_CONFIG.devpicker = { side: 'right', enabled: true };
+
 /** A writing goal: word count, page count, or timed session. */
 export interface WritingGoal {
   kind: 'words' | 'pages' | 'time';
@@ -1298,7 +1307,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       setTimeout(() => set({ notesSubTab: 'script' }), 0);
       tool = 'sticky';
     }
-    const cfg = s.toolConfig[tool] ?? DEFAULT_TOOL_CONFIG[tool];
+    /**
+     * v1.10 — ask the SAME question the dock asks.
+     *
+     * This used to do its own lookup: `s.toolConfig[tool] ?? DEFAULT_TOOL_CONFIG[tool]`.
+     * ToolDock, meanwhile, calls toolConfigFor(), which falls back to
+     * {side:'right', enabled:true} for anything it doesn't recognise. So a tool with
+     * no DEFAULT_TOOL_CONFIG entry (the Dev Picker) was RENDERED IN THE DOCK by one
+     * function and treated as undocked by the other — click its tab and it opened in
+     * the panel; pick it from the menu and it floated a window in the middle of the
+     * screen. Two sources of truth for one question, which is the bug this codebase
+     * keeps re-learning.
+     *
+     * Now the menu opens a tool wherever it actually lives: docked if it's in a
+     * panel, floating only if it isn't.
+     */
+    const cfg = toolConfigFor(s.toolConfig, tool);
     if (cfg && cfg.enabled) {
       if (cfg.side === 'left') {
         saveViewState({ activeTool: tool });
