@@ -107,3 +107,67 @@ describe('devInspect — what does a click resolve to?', () => {
     expect(hit('.dev-picker-btn')).toBeNull();
   });
 });
+
+/**
+ * v1.9 — the things you could never reach before, because Inspect swallowed the
+ * click that would have opened them.
+ */
+describe('devInspect — things buried inside menus', () => {
+  it('a context-menu item (right-click menu)', () => {
+    mount(`
+      <div class="script-context-menu">
+        <div class="ctx-item" title="Add Note">Add Note<span class="ctx-shortcut">⌘⇧N</span></div>
+      </div>`);
+    const cap = hit('.ctx-item')!;
+    console.log('  ⌥-click Add Note in the right-click menu ->', cap.name);
+    expect(cap.name).toBe('Add Note — Context Menu');
+    expect(cap.kind).toBe('context menu item');
+  });
+
+  it('an item inside a context-menu SUBMENU names its parent', () => {
+    mount(`
+      <div class="script-context-menu">
+        <div class="ctx-has-sub-wrap">
+          <div class="ctx-item" title="Element">Element</div>
+          <div class="ctx-submenu">
+            <div class="ctx-item" title="Scene Heading">Scene Heading</div>
+          </div>
+        </div>
+      </div>`);
+    const cap = describeElement(document.querySelectorAll('.ctx-item')[1]);
+    console.log('  ⌥-click Element > Scene Heading           ->', cap!.name);
+    expect(cap!.name).toBe('Element > Scene Heading — Context Menu');
+  });
+
+  it('an item inside a menu-bar SUBMENU names the whole trail', () => {
+    mount(`
+      <div class="menu-bar">
+        <div class="menu-item active"><span class="menu-label">Format</span></div>
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item"><span class="menu-label">Style</span>
+            <div class="menu-submenu">
+              <div class="menu-dropdown-item"><span class="menu-label">Bold</span></div>
+            </div>
+          </div>
+        </div>
+      </div>`);
+    const rows = document.querySelectorAll('.menu-dropdown-item');
+    const cap = describeElement(rows[rows.length - 1].querySelector('.menu-label'));
+    console.log('  ⌥-click Format > Style > Bold             ->', cap!.name);
+    expect(cap!.name).toContain('Bold');
+    expect(cap!.name).toContain('Format');
+  });
+
+  it('a control inside a panel that had to be EXPANDED first', () => {
+    mount(`
+      <div class="tool-dock-wrap tool-dock-left">
+        <div class="tool-dock">
+          <button class="tool-dock-item active" title="Navigator"><span class="tool-dock-label">Navigator</span></button>
+          <div class="tool-inline"><button title="Add Scene">＋</button></div>
+        </div>
+      </div>`);
+    const cap = hit('.tool-inline button')!;
+    console.log('  ⌥-click Add Scene inside Navigator        ->', cap.name);
+    expect(cap.name).toBe('Add Scene — Navigator (Left Panel)');
+  });
+});

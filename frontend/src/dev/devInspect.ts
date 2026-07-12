@@ -101,9 +101,24 @@ export function describeElement(target: EventTarget | null): Capture | null {
   if (menuRow) {
     const menu = openMenuName();
     const label = labelOf(menuRow).replace(/^✓\s*/, '');
+    // v1.9: a row inside a SUBMENU names its parent item too, so you get
+    // "Format > Style > Bold" rather than a bare "Bold" that could be anything.
+    const parent = submenuParent(menuRow);
+    const trail = [menu, parent, label].filter(Boolean).join(' > ');
+    return { name: trail || `${label} — Menu Item`, kind: 'menu item' };
+  }
+
+  // ── Right-click (context) menu ──
+  const ctxItem = el.closest('.ctx-item') as HTMLElement | null;
+  if (ctxItem) {
+    const label = labelOf(ctxItem);
+    const sub = ctxItem.closest('.ctx-has-sub-wrap');
+    const parent = sub ? labelOf(sub.querySelector('.ctx-item') as HTMLElement) : null;
     return {
-      name: menu ? `${menu} > ${label}` : `${label} — Menu Item`,
-      kind: 'menu item',
+      name: parent && parent !== label
+        ? `${parent} > ${label} — Context Menu`
+        : `${label} — Context Menu`,
+      kind: 'context menu item',
     };
   }
 
@@ -171,6 +186,24 @@ function innerControl(el: HTMLElement): string | null {
   if (!label || label === '(unlabelled)') return null;
   // Long labels are usually body text, not a control name.
   return label.length > 40 ? null : label;
+}
+
+/**
+ * The item that OWNS an open submenu — the row you hovered to reveal this one.
+ * Without it a submenu row is ambiguous: "Bold" could be in Format > Style, or
+ * anywhere else.
+ */
+function submenuParent(row: HTMLElement): string | null {
+  const submenu = row.closest('.menu-submenu');
+  if (!submenu) return null;
+  // The owning row is the dropdown item the submenu hangs off.
+  const owner = submenu.parentElement?.closest('.menu-dropdown-item') as HTMLElement | null;
+  if (owner && owner !== row) {
+    const label = text(owner.querySelector('.menu-label')) || text(owner);
+    // The owner's text contains its children's, so take the first line only.
+    return label.split(/\s{2,}/)[0].trim() || null;
+  }
+  return null;
 }
 
 /** Which menu is currently open, so a dropdown row reads "File > Preferences…". */

@@ -135,10 +135,31 @@ export default function DevPickerTool(_props: Props) {
   }, []);
 
   /**
-   * While inspecting, the whole app is a picker: clicks are swallowed in the
-   * CAPTURE phase so a click on File doesn't also open the File menu, and mousedown
-   * / pointerdown too, since plenty of this app acts on those rather than click.
+   * v1.9 — Inspect no longer swallows every click, because that made it useless for
+   * anything you have to NAVIGATE to. Swallowing clicks meant a menu could never be
+   * opened while inspecting, so only surface-level items could ever be captured —
+   * the things buried inside menus, submenus, context menus and collapsed panels
+   * (i.e. most of the app) were unreachable.
+   *
+   * Now the app stays fully usable while Inspect is on:
+   *   - Plain click       → works normally. Open the menu, expand the panel.
+   *   - ⌥-click (Option)  → CAPTURES the thing, and is swallowed, so the menu item
+   *                         doesn't fire and the menu stays open for the next one.
+   *   - ⌥C or F8          → captures whatever is under the pointer with NO click at
+   *                         all, for anything that closes on mousedown.
+   *   - Esc               → stop.
    */
+  const ptr = React.useRef({ x: 0, y: 0 });
+
+  const captureAt = React.useCallback((x: number, y: number) => {
+    const el = document.elementFromPoint(x, y);
+    if (!el || (el as HTMLElement).closest?.('[data-dev-panel]')) return;
+    const cap = describeElement(el);
+    if (!cap) return;
+    insert(cap.name);
+    setLastKind(cap.kind);
+  }, [insert]);
+
   React.useEffect(() => {
     if (!inspecting) { setHover(null); return; }
 
@@ -146,6 +167,7 @@ export default function DevPickerTool(_props: Props) {
       (e.target as HTMLElement | null)?.closest?.('[data-dev-panel]') != null;
 
     const onMove = (e: MouseEvent) => {
+      ptr.current = { x: e.clientX, y: e.clientY };
       if (ours(e)) { setHover(null); return; }
       const cap = describeElement(e.target);
       const el = e.target as HTMLElement;
@@ -153,45 +175,47 @@ export default function DevPickerTool(_props: Props) {
       setHover({ rect: el.getBoundingClientRect(), cap });
     };
 
-    const swallow = (e: Event) => {
-      if (ours(e)) return;
+    // Only ⌥ is intercepted. Everything else reaches the app, so you can drive it.
+    const swallowIfAlt = (e: MouseEvent) => {
+      if (ours(e) || !e.altKey) return;
       e.preventDefault();
       e.stopPropagation();
     };
 
     const onClick = (e: MouseEvent) => {
-      if (ours(e)) return;
+      if (ours(e) || !e.altKey) return;      // plain clicks pass straight through
       e.preventDefault();
       e.stopPropagation();
-      const cap = describeElement(e.target);
-      if (!cap) return;
-      insert(cap.name);
-      setLastKind(cap.kind);
-      // Shift-click keeps inspecting, for grabbing several names in a row.
-      if (!e.shiftKey) setInspecting(false);
+      captureAt(e.clientX, e.clientY);
     };
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); setInspecting(false); }
+      if (e.key === 'Escape') { e.preventDefault(); setInspecting(false); return; }
+      // No click at all — for menus that close the moment you press a button.
+      if (e.key === 'F8' || (e.altKey && e.key.toLowerCase() === 'c')) {
+        e.preventDefault();
+        e.stopPropagation();
+        captureAt(ptr.current.x, ptr.current.y);
+      }
     };
 
     document.addEventListener('mousemove', onMove, true);
-    document.addEventListener('pointerdown', swallow, true);
-    document.addEventListener('mousedown', swallow, true);
-    document.addEventListener('mouseup', swallow, true);
+    document.addEventListener('pointerdown', swallowIfAlt, true);
+    document.addEventListener('mousedown', swallowIfAlt, true);
+    document.addEventListener('mouseup', swallowIfAlt, true);
     document.addEventListener('click', onClick, true);
     document.addEventListener('keydown', onKey, true);
     document.body.classList.add('dev-inspecting');
     return () => {
       document.removeEventListener('mousemove', onMove, true);
-      document.removeEventListener('pointerdown', swallow, true);
-      document.removeEventListener('mousedown', swallow, true);
-      document.removeEventListener('mouseup', swallow, true);
+      document.removeEventListener('pointerdown', swallowIfAlt, true);
+      document.removeEventListener('mousedown', swallowIfAlt, true);
+      document.removeEventListener('mouseup', swallowIfAlt, true);
       document.removeEventListener('click', onClick, true);
       document.removeEventListener('keydown', onKey, true);
       document.body.classList.remove('dev-inspecting');
     };
-  }, [inspecting, insert]);
+  }, [inspecting, captureAt]);
 
   const copy = async () => {
     try {
@@ -207,8 +231,8 @@ export default function DevPickerTool(_props: Props) {
         <button
           className={`dev-picker-inspect${inspecting ? ' active' : ''}`}
           onClick={() => setInspecting((v) => !v)}
-          title="Click things in the app to write their names into the draft. Shift-click to keep picking. Esc to stop."
-        >{inspecting ? '◉ Picking — Esc to stop' : '◎ Inspect'}</button>
+          title="The app keeps working: click to open menus and panels as normal. ⌥-click (or hover + ⌥C / F8) captures a name. Esc to stop."
+        >{inspecting ? '◉ Inspecting — Esc to stop' : '◎ Inspect'}</button>
         <button className="dev-picker-btn" onClick={copy} disabled={!draft}>
           {copied ? 'Copied' : 'Copy'}
         </button>
@@ -301,7 +325,7 @@ export default function DevPickerTool(_props: Props) {
         {flash
           ? flash
           : inspecting
-          ? 'Clicks are being captured, not passed through. Shift-click to pick several.'
+          ? '⌥-click to capture · hover + ⌥C or F8 for menus · plain clicks still work · Esc to stop'
           : lastKind
             ? `Last capture — ${lastKind}`
             : 'Inspect: click any menu, button, panel, card or script element. Copy, and paste into chat.'}
@@ -323,7 +347,10 @@ export default function DevPickerTool(_props: Props) {
               top: Math.max(4, hover.rect.top - 24),
               left: Math.max(4, hover.rect.left),
             }}
-          >{hover.cap.name}</div>
+          >
+            {hover.cap.name}
+            <span className="dev-picker-tip-key">⌥-click</span>
+          </div>
         </>,
         document.body,
       )}

@@ -14047,10 +14047,9 @@ html.android .version-history-panel {
 
 /* While picking, the pointer says so everywhere — you're not going to click
    something by accident and wonder why nothing happened. */
-body.dev-inspecting,
-body.dev-inspecting * { cursor: crosshair !important; }
-body.dev-inspecting [data-dev-panel],
-body.dev-inspecting [data-dev-panel] * { cursor: auto !important; }
+/* v1.9: no crosshair. The app is still fully clickable while inspecting — a
+   crosshair over a working menu would claim otherwise. The outline and the
+   ⌥-click badge carry the message instead. */
 
 .dev-picker-outline {
   position: fixed;
@@ -14059,6 +14058,17 @@ body.dev-inspecting [data-dev-panel] * { cursor: auto !important; }
   border: 2px solid var(--fd-accent);
   border-radius: 3px;
   background: color-mix(in srgb, var(--fd-accent) 12%, transparent);
+}
+/* v1.9: the badge that teaches the gesture — a plain click no longer captures,
+   because the app stays usable while inspecting so you can open the menu you
+   actually want to name. */
+.dev-picker-tip-key {
+  margin-left: 8px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: rgba(255,255,255,.25);
+  font-size: 10px;
+  font-weight: 500;
 }
 .dev-picker-tip {
   position: fixed;
