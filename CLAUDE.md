@@ -101,10 +101,13 @@ it actually produced — not by staring at the source and reasoning.
 End any message that delivers a change with:
 
 ```
-cd /Users/dcarl/FreeScript
-git pull
-./frontend/node_modules/.bin/tauri dev --config src-tauri/tauri.conf.json
+cd /Users/dcarl/FreeScript && npm run desktop
 ```
+
+`npm run desktop` = `git pull` → `npm install` (a no-op unless deps changed — this is
+what stops the baffling "Cannot find package" after a pull) → launch the Tauri app.
+It's `&&`-chained, so a failed pull stops rather than launching a half-merged tree.
+`npm run app` launches without pulling.
 
 (If you edited his working copy directly he may not need `git pull` — but he does need
 to restart the app.)
