@@ -1,3 +1,21 @@
+> **ARCHIVED — inherited from upstream Proteus OpenDraft, last touched at v0.6.**
+>
+> This was the repo's `CLAUDE.md`. It is kept because the CI signing and
+> notarization steps are still a useful reference, but **large parts of it do not
+> describe FreeDraft** and following it will send you wrong:
+>
+> - The **open-core / OpenDraft-Pro split does not exist here.** There is no Pro
+>   repo, no plugin licensing split. FreeDraft is Derek's fork.
+> - The **Mac App Store path is ruled out.** `macos-private-api` is enabled in
+>   `src-tauri/Cargo.toml`, and Apple rejects private API use. The plan is a signed
+>   `.dmg`.
+> - The **signing identity is still Proteus's** and must be swapped before release.
+> - The Android and iOS pipelines are untested in this fork.
+>
+> For how to actually work in this repo, read **`/CLAUDE.md`** at the repo root.
+
+---
+
 # OpenDraft — Claude Instructions
 
 ## Open-Core Architecture
