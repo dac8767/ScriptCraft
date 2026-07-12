@@ -152,7 +152,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
     toolOrder, setToolOrder,
     toolbarMode, setToolbarMode,
-    panelSizeMode, setPanelSizeMode,
     chromeCustomPx, setChromeCustomPx,
     menuMode, setMenuMode,
   } = useEditorStore();
@@ -911,44 +910,33 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           <section>
             <h3>Panels</h3>
             <p className="fs-customize-hint">
-              Compact and Comfortable set the panel's width; Hide closes it.
-              Windows docked inside a panel resize to fit it.
+              Drag a panel's inner edge to resize it. These just show and hide them.
             </p>
+            {/*
+              v1.11: the width controls (Compact / Comfortable / Custom + a slider)
+              are gone. You size a panel by dragging its edge now — a control that
+              shows you the result as you do it. Keeping a second way to set the same
+              number, in a dialog, three clicks away and blind, meant two sources of
+              truth for one width and no reason to prefer either. So this row does the
+              one thing the drag can't: show and hide.
+            */}
             {([
-              ['left', 'Left Panel Size', navigatorOpen, toggleNavigator] as const,
-              ['right', 'Right Panel Size', shelfOpen, toggleShelf] as const,
+              ['left', 'Left Panel', navigatorOpen, toggleNavigator] as const,
+              ['right', 'Right Panel', shelfOpen, toggleShelf] as const,
             ]).map(([side, label, isOpen, toggle]) => (
-              <React.Fragment key={side}>
-                <div className="fs-customize-row">
-                  <span className="fs-customize-tool">{label}</span>
-                  <span className="fs-customize-seg">
-                    {(['compact', 'comfortable', 'custom'] as const).map((m) => (
-                      <button
-                        key={m}
-                        className={isOpen && panelSizeMode[side] === m ? 'active' : ''}
-                        onClick={() => {
-                          setPanelSizeMode(side, m);
-                          if (!isOpen) toggle();     // choosing a width also reveals it
-                        }}
-                      >{m[0].toUpperCase() + m.slice(1)}</button>
-                    ))}
-                    <button
-                      className={!isOpen ? 'active' : ''}
-                      onClick={() => { if (isOpen) toggle(); }}
-                    >Hide</button>
-                  </span>
-                </div>
-                {isOpen && panelSizeMode[side] === 'custom' && (() => {
-                  const sf = side === 'left' ? 'panelLeft' : 'panelRight';
-                  return (
-                    <ChromeSlider
-                      surface={sf}
-                      value={chromePx(sf, 'custom', chromeCustomPx[sf])}
-                      onChange={(px) => setChromeCustomPx(sf, px)}
-                    />
-                  );
-                })()}
-              </React.Fragment>
+              <div className="fs-customize-row" key={side}>
+                <span className="fs-customize-tool">{label}</span>
+                <span className="fs-customize-seg">
+                  <button
+                    className={isOpen ? 'active' : ''}
+                    onClick={() => { if (!isOpen) toggle(); }}
+                  >Show</button>
+                  <button
+                    className={!isOpen ? 'active' : ''}
+                    onClick={() => { if (isOpen) toggle(); }}
+                  >Hide</button>
+                </span>
+              </div>
             ))}
           </section>
           {renderPanelsTab()}
