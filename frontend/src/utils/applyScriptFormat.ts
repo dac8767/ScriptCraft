@@ -10,9 +10,11 @@ import type { Editor } from '@tiptap/react';
 import { SYSTEM_TEMPLATES, useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
 
+/* v1.54: an empty script starts as one empty ACTION element (hint:
+   "Action...") with the caret inside it — not a scene heading. */
 const DEFAULT_DOC = {
   type: 'doc',
-  content: [{ type: 'sceneHeading', content: [] as unknown[] }],
+  content: [{ type: 'action', content: [] as unknown[] }],
 };
 
 export function applyScriptFormat(editor: Editor | null, templateId: string): void {
@@ -32,10 +34,12 @@ export function applyScriptFormat(editor: Editor | null, templateId: string): vo
         { type: 'doc', content: tpl.starterDocument } as unknown as Parameters<Editor['commands']['setContent']>[0],
         true,
       );
+      editor.commands.focus('start');
       return;
     } catch (err) {
       console.warn('[applyScriptFormat] failed to seed starter document', err);
     }
   }
   editor.commands.setContent(DEFAULT_DOC as unknown as Parameters<Editor['commands']['setContent']>[0], true);
+  editor.commands.focus('start');
 }

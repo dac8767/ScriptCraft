@@ -16,10 +16,13 @@ export interface NewScriptMeta {
   version: string;
 }
 
-export default function NewScriptDialog({ open, onClose, onCreate }: {
+export default function NewScriptDialog({ open, onClose, onCreate, onOpenScript, onImport }: {
   open: boolean;
   onClose: () => void;
   onCreate: (meta: NewScriptMeta) => void;
+  /** v1.54: escape hatches — the user came here but wants an existing script. */
+  onOpenScript?: () => void;
+  onImport?: () => void;
 }) {
   const today = new Date();
   const todayVersion = [
@@ -99,6 +102,13 @@ export default function NewScriptDialog({ open, onClose, onCreate }: {
         </div>
 
         <div className="fs-newscript-actions">
+          {onOpenScript && (
+            <button className="fs-newscript-alt" onClick={onOpenScript}>Open Script…</button>
+          )}
+          {onImport && (
+            <button className="fs-newscript-alt" onClick={onImport}>Import File…</button>
+          )}
+          <span className="fs-newscript-actions-gap" aria-hidden="true" />
           <button onClick={onClose}>Cancel</button>
           <button className="dialog-primary" onClick={create}>Create</button>
         </div>

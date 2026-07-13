@@ -14582,6 +14582,15 @@ html.android .version-history-panel {
   cursor: pointer;
 }
 .fs-newscript-actions button:hover { background: var(--fd-menu-hover); }
+/* v1.54: Open/Import sit left; the gap pushes Cancel/Create right. */
+.fs-newscript-actions-gap { flex: 1 1 auto; }
+.fs-newscript-actions .fs-newscript-alt {
+  background: none;
+  border-color: transparent;
+  color: var(--fd-accent);
+  padding: 0 6px;
+}
+.fs-newscript-actions .fs-newscript-alt:hover { background: none; text-decoration: underline; }
 
 /* v1.35: each location is a chip; colors cycle so neighbours never match. */
 .fs-saveas-loc-chip {

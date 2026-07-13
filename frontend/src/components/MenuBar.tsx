@@ -2057,6 +2057,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         setNewScriptOpen(false);
         promptForNewScreenplayFormat('reset');
       }}
+      /* v1.54: the unsaved-work guard already ran on the way in. */
+      onOpenScript={() => { setNewScriptOpen(false); useEditorStore.getState().setOpenFileOpen(true); }}
+      onImport={() => { setNewScriptOpen(false); handleImport(); }}
     />
     <RenameDialog open={renameOpen} onClose={() => setRenameOpen(false)} />
     {helpForm && (

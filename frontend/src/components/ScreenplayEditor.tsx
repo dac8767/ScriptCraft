@@ -1484,6 +1484,9 @@ const ScreenplayEditor: React.FC = () => {
     content: collabMode
       ? (collabInitialContent.current || { type: 'doc', content: [{ type: 'action', content: [] }] })
       : (urlScriptId || urlCommitHash) ? undefined : { type: 'doc', content: [{ type: 'action', content: [] }] },
+    // v1.54: the caret is visible from the first frame, sitting in the
+    // starting action element — like any word processor.
+    autofocus: (urlScriptId || urlCommitHash) ? false : 'start',
     editable: !isHistoryMode && !(collabMode && collabRole === 'viewer'),
     editorProps: {
       attributes: { class: `screenplay-content${isHistoryMode ? ' history-readonly' : ''}`, spellcheck: 'false' },
