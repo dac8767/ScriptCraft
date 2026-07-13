@@ -14551,6 +14551,9 @@ html.android .version-history-panel {
 .fs-saveas-folderbtn:hover { filter: brightness(1.15); }
 .fs-saveas-folderbtn svg { display: block; width: 24px; height: 24px; } /* v1.49: 20% bigger per Derek */
 
+/* v1.55: release date beside each changelog version. */
+.fs-changelog-date { color: var(--fd-text-muted); font-weight: 400; font-size: 12px; }
+
 /* v1.50: New Script… — the welcome card around the Save dialog's field grid. */
 .fs-newscript-card { width: min(560px, 92vw); }
 /* v1.51: the welcome card has no body padding of its own (only the hero pads

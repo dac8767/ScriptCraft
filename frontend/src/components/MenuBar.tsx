@@ -1147,15 +1147,15 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {
           icon: <FaFileImport />, label: 'Import',
           children: [
-            { icon: <FaFileCode />, label: 'Final Draft / Fountain / ScriptCraft...', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
-            { icon: <FaFileWord />, label: 'Microsoft Word (.docx)...', action: handleImportDocx, disabled: isCollabGuest },
+            { icon: <FaFileCode />, label: 'Final Draft / Fountain / ScriptCraft…', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
+            { icon: <FaFileWord />, label: 'Microsoft Word (.docx)…', action: handleImportDocx, disabled: isCollabGuest },
           ],
         },
         {
           icon: <FaFolderOpen />, label: 'Open',
           children: [
-            { icon: <FaFolderOpen />, label: 'From Library / Cloud...', action: () => confirmOrRun(() => setOpenFileOpen(true)), disabled: isCollabGuest },
-            { icon: <FaFileImport />, label: 'Local File...', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
+            { icon: <FaFolderOpen />, label: 'From Library / Cloud…', action: () => confirmOrRun(() => setOpenFileOpen(true)), disabled: isCollabGuest },
+            { icon: <FaFileImport />, label: 'Local File…', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
           ],
         },
         { separator: true, label: '' },
@@ -1173,20 +1173,20 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           icon: <FaSave />, label: 'Save As…', shortcut: sc('saveAs'),
           action: () => setSaveAsOpen(true), disabled: isCollabGuest,
         },
-        { icon: <FaEdit />, label: 'Rename...', action: () => setRenameOpen(true) },
+        { icon: <FaEdit />, label: 'Rename…', action: () => setRenameOpen(true) },
         { separator: true, label: '' },
         { icon: <FaEye />, label: 'Preview', action: () => useEditorStore.getState().setPreviewMode(true) },
         {
           icon: <FaFileExport />, label: 'Export',
           children: [
-            { icon: <FaFileCode />, label: 'Final Draft (.fdx)', action: handleExportFDX, disabled: isCollabGuest },
-            { icon: <FaFileAlt />, label: 'Fountain (.fountain)', action: handleExportFountain, disabled: isCollabGuest },
-            { icon: <FaFilePdf />, label: 'PDF', action: handleExportPDF },
-            { icon: <FaFileWord />, label: 'Microsoft Word (.docx)', action: handleExportDocx },
-            { icon: <FaFile />, label: 'ScriptCraft (.odraft)', action: handleExportOdraft, disabled: isCollabGuest },
+            { icon: <FaFileCode />, label: 'Final Draft (.fdx)…', action: handleExportFDX, disabled: isCollabGuest },
+            { icon: <FaFileAlt />, label: 'Fountain (.fountain)…', action: handleExportFountain, disabled: isCollabGuest },
+            { icon: <FaFilePdf />, label: 'PDF…', action: handleExportPDF },
+            { icon: <FaFileWord />, label: 'Microsoft Word (.docx)…', action: handleExportDocx },
+            { icon: <FaFile />, label: 'ScriptCraft (.odraft)…', action: handleExportOdraft, disabled: isCollabGuest },
           ],
         },
-        { icon: <FaPrint />, label: 'Print...', shortcut: sc('print'), action: () => setTimeout(() => window.print(), 60) },
+        { icon: <FaPrint />, label: 'Print…', shortcut: sc('print'), action: () => setTimeout(() => window.print(), 60) },
         // v1.34: Collaboration is UNRELEASED — hidden unless the Developer
         // toggle (Help > Developer > Show Unreleased Tools) is on.
         ...(showUnreleasedTools ? [
@@ -1194,14 +1194,14 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           {
             icon: <FaUserFriends />, label: 'Collaboration',
             children: [
-              { icon: <FaUserFriends />, label: isCollabActive ? '\u2713 Collaborate...' : 'Collaborate...', action: onCollaborate, disabled: isCollabGuest },
-              { icon: <FaSignInAlt />, label: 'Join Collaboration...', action: onJoinCollab, disabled: isCollabGuest },
+              { icon: <FaUserFriends />, label: isCollabActive ? '\u2713 Collaborate…' : 'Collaborate…', action: onCollaborate, disabled: isCollabGuest },
+              { icon: <FaSignInAlt />, label: 'Join Collaboration…', action: onJoinCollab, disabled: isCollabGuest },
             ],
           },
         ] : []),
         { separator: true, label: '' },
         { separator: true, label: '' },
-        { icon: <FaCog />, label: 'Settings...', action: () => setPrefsOpen(true) },
+        { icon: <FaCog />, label: 'Settings…', action: () => setPrefsOpen(true) },
       ],
     },
     {
@@ -1215,8 +1215,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { icon: <FaPaste />, label: 'Paste', shortcut: sc('paste'), action: () => document.execCommand('paste') },
         { icon: <FaMousePointer />, label: 'Select All', shortcut: sc('selectAll'), action: () => editor?.chain().focus().selectAll().run() },
         { separator: true, label: '' },
-        { icon: <FaSearch />, label: 'Find & Replace...', shortcut: sc('find'), action: () => setSearchOpen(true) },
-        { icon: <FaHashtag />, label: 'Go to Page...', shortcut: sc('goToPage'), action: () => setGoToPageOpen(true) },
+        { icon: <FaSearch />, label: 'Find & Replace…', shortcut: sc('find'), action: () => setSearchOpen(true) },
+        { icon: <FaHashtag />, label: 'Go to Page…', shortcut: sc('goToPage'), action: () => setGoToPageOpen(true) },
       ],
     },
     {
@@ -1319,7 +1319,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               action: () => setTheme(id),
             })),
             { separator: true, label: '' },
-            { icon: <FaSlidersH />, label: 'Customize Themes...', action: () => openCustomize('themes') },
+            { icon: <FaSlidersH />, label: 'Customize Themes…', action: () => openCustomize('themes') },
           ],
         },
         { separator: true, label: '' },
@@ -1366,10 +1366,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                 return [{ label: r.label, shortcut: shortcuts[r.id], action: () => setElement(r.id as any) }];
               }),
             { separator: true, label: '' },
-            { icon: <FaSlidersH />, label: 'Customize Elements...', action: () => openCustomize('elements') },
+            { icon: <FaSlidersH />, label: 'Customize Elements…', action: () => openCustomize('elements') },
           ],
         },
-        { icon: <FaImage />, label: 'Insert Image...', action: () => useEditorStore.getState().imageInsertHandler?.() },
+        { icon: <FaImage />, label: 'Insert Image…', action: () => useEditorStore.getState().imageInsertHandler?.() },
         { separator: true, label: '' },
         { icon: <FaListOl />, label: 'Section', action: () => insertOutlineLine('# ') },
         { icon: <FaListOl />, label: 'Marker', action: () => insertOutlineLine('⚑ ') },
@@ -1396,7 +1396,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { icon: <FaAlignJustify />, label: 'Justify', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('justify').run(), disabled: locked.textAlign },
         { separator: true, label: '' },
         { icon: <FaFileAlt />, label: `Formatting Template (${activeTemplate.name})...`, action: () => setTemplateSelectOpen(true) },
-        { icon: <FaFileAlt />, label: 'Script Format Preferences...', action: () => setFormatPrefsOpen({ firstRun: false, afterSave: null }) },
+        { icon: <FaFileAlt />, label: 'Script Format Preferences…', action: () => setFormatPrefsOpen({ firstRun: false, afterSave: null }) },
       ],
     },
     {
@@ -1443,7 +1443,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           icon: <FaCodeBranch />, label: 'Script History',
           disabled: isCollabGuest,
           children: [
-            { icon: <FaUpload />, label: 'Take Auto Save...', action: handleCheckinOpen, disabled: isCollabGuest },
+            { icon: <FaUpload />, label: 'Take Auto Save…', action: handleCheckinOpen, disabled: isCollabGuest },
             { icon: <FaHistory />, label: 'Auto Saves', action: () => setVersionHistoryOpen(true), disabled: isCollabGuest },
             { separator: true, label: '' },
             {
@@ -1465,7 +1465,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         // any production draft.
         { icon: <FaFileAlt />, label: 'Title Page', action: () => useEditorStore.getState().openTool('titlepage') },
         { separator: true, label: '' },
-        { icon: <FaFileSignature />, label: 'Set Draft Number...', action: () => setDraftDialogOpen(true) },
+        { icon: <FaFileSignature />, label: 'Set Draft Number…', action: () => setDraftDialogOpen(true) },
         { separator: true, label: '' },
         {
           icon: <FaListUl />,
@@ -1518,12 +1518,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       { separator: true, label: '' },
       {
         icon: <FaExternalLinkAlt />,
-        label: 'Feature Request',
+        label: 'Feature Request…',
         action: () => setHelpForm({ title: 'Feature Request', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagqeHW8Hd0qZZxD5/form' }),
       },
       {
         icon: <FaExternalLinkAlt />,
-        label: 'Report a Bug',
+        label: 'Report a Bug…',
         action: () => setHelpForm({ title: 'Report a Bug', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagykyhflKTRjphGr/form' }),
       },
       { separator: true, label: '' },
@@ -2120,10 +2120,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             <div className="about-changelog">
               {CHANGELOG.map((entry) => (
                 <React.Fragment key={entry.version}>
-                  <div className="about-subsection-title">v{entry.version}</div>
+                  <div className="about-subsection-title">
+                    v{entry.version}
+                    {entry.date && <span className="fs-changelog-date"> — {entry.date}</span>}
+                  </div>
                   <ul className="about-list">
                     {entry.items.map((it, i) => (
-                      <li key={i}><strong>{it.title}</strong> — {it.detail}</li>
+                      <li key={i}><strong>{it.title}</strong>{it.detail ? <> — {it.detail}</> : null}</li>
                     ))}
                   </ul>
                 </React.Fragment>
