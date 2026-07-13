@@ -12,7 +12,7 @@ export interface FormattingElementRule {
   id: string;
   /** Display name shown in pickers and template editor */
   label: string;
-  /** True for the 13 standard screenplay element types */
+  /** True for the 13 standard script element types */
   isBuiltIn: boolean;
   /** Whether this element is available in the template */
   enabled: boolean;
@@ -80,7 +80,7 @@ export interface FormattingTemplate {
   pageLayout?: Partial<PageLayout>;
   /** Initial document content seeded when a new script is created with this template. */
   starterDocument?: StarterNode[];
-  /** Pages-per-runtime metric for stats (60 = 1 min/page screenplay; 30 = 30 sec/page sitcom). */
+  /** Pages-per-runtime metric for stats (60 = 1 min/page script; 30 = 30 sec/page sitcom). */
   pageTimeSeconds?: number;
   /** Subset of title-page fields to display, in order. If unset, shows all default fields. */
   titlePageFields?: string[];

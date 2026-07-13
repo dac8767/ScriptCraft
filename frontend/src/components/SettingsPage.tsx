@@ -89,7 +89,7 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleting, setDeleting] = useState(false);
-  // Cloud screenplay inventory — populated when the delete dialog opens so we
+  // Cloud script inventory — populated when the delete dialog opens so we
   // can warn the user about exactly what they'll lose. Empty array = none on
   // file; null = not loaded yet (or load failed and we proceed with the
   // generic warning).
@@ -437,7 +437,7 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
     return base.replace(/\/api\/?$/, '');
   })();
 
-  // Load the user's cloud screenplay count when the user opens the delete
+  // Load the user's cloud script count when the user opens the delete
   // dialog so the warning can name the actual amount they're about to lose.
   // Best-effort: if the cloud is unreachable or returns 401 we leave the
   // generic warning in place — better to under-warn than block the deletion
@@ -452,7 +452,7 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
       // The list endpoint already returns project metadata; counting scripts
       // is a per-project API hop. Limit it to the first 25 projects so we
       // don't make a long sequence of requests in the worst case — anything
-      // past that is good enough as an "X+ screenplays" warning.
+      // past that is good enough as an "X+ scripts" warning.
       const sample = projects.slice(0, 25);
       for (const p of sample) {
         try {
@@ -1024,7 +1024,7 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
                   <div className="settings-account-title">Delete account</div>
                   <div className="settings-account-hint">
                     Permanently deletes your account, password, devices, and any cloud
-                    screenplays stored under your account. This cannot be undone.
+                    scripts stored under your account. This cannot be undone.
                   </div>
                   {!deleteOpen ? (
                     <button
@@ -1038,7 +1038,7 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
                       <div className="settings-delete-warning">
                         <strong>Before you continue:</strong>{' '}
                         {inventoryLoading ? (
-                          <>checking your ScriptCraft Cloud account for screenplays…</>
+                          <>checking your ScriptCraft Cloud account for scripts…</>
                         ) : cloudInventory && (cloudInventory.projects > 0 || cloudInventory.scripts > 0) ? (
                           <>
                             you have <strong>{cloudInventory.projects}</strong>{' '}
@@ -1046,7 +1046,7 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
                             {cloudInventory.scripts > 0 && (
                               <>
                                 {' '}with at least <strong>{cloudInventory.scripts}</strong>{' '}
-                                screenplay{cloudInventory.scripts === 1 ? '' : 's'}
+                                script{cloudInventory.scripts === 1 ? '' : 's'}
                               </>
                             )}{' '}
                             stored in ScriptCraft Cloud. They will be permanently deleted along
@@ -1056,7 +1056,7 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
                           </>
                         ) : (
                           <>
-                            any screenplays stored in ScriptCraft Cloud under this account will be
+                            any scripts stored in ScriptCraft Cloud under this account will be
                             deleted along with the account and cannot be recovered. Please make
                             sure you have downloaded them first.
                           </>

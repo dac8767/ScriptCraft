@@ -19,7 +19,7 @@ interface SaveAsDialogProps {
   /** Pre-select the destination tab. Pass 'cloud' when the user came from a
    *  cloud project — otherwise the dialog defaults to 'local' and the
    *  cloud-only project name will not match anything in the local list,
-   *  silently filing the new screenplay under a random local project. */
+   *  silently filing the new script under a random local project. */
   defaultDestination?: SaveDestination;
   onSaved: (
     projectId: string,
@@ -123,11 +123,11 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
    * v1.15 — THE SCRIPT HAS A NAME AGAIN, and it is the script's own.
    *
    * v1.14 got the model wrong. In the old world the PROJECT carried the name of the
-   * screenplay and a "script" was one draft inside it, titled "Draft - Date". So when
+   * script and a "script" was one draft inside it, titled "Draft - Date". So when
    * I removed the project field I removed the only place you could name your work:
    * Save As asked for a draft and a date, filed the script in whatever container was
    * lying around, and the status bar showed that container's name — which is why a
-   * brand-new screenplay came back called "Test".
+   * brand-new script came back called "Test".
    *
    * Now a ScriptCraft file is one script, so the NAME belongs to the script. Draft and
    * version are what they always should have been: metadata about which draft this
@@ -363,7 +363,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
        * so it goes in the one library. This used to create a project from a typed
        * name, handle the 409 when it already existed, refetch, and then surface
        * "Could not create project" to someone who had merely tried to save their
-       * screenplay.
+       * script.
        */
       const project = { id: await getLibraryId(client), name: LIBRARY_NAME } as ProjectInfo;
 

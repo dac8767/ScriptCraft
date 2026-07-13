@@ -236,7 +236,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
 
       {!currentProject && (
         <div className="version-history-empty">
-          No project selected. Import or create a screenplay first.
+          No project selected. Import or create a script first.
         </div>
       )}
 

@@ -1,13 +1,13 @@
 /**
  * Multi-select dialog: the user checks which script formats they ever write in.
  * The set is persisted in settingsStore. Used both for first-run setup (auto-shown
- * the first time the user creates a new screenplay) and for later management
+ * the first time the user creates a new script) and for later management
  * via Format > Script Format Preferences...
  *
  * On confirm:
  *  - Saves the selection
  *  - Marks formatPreferencesInitialized = true
- *  - Calls onConfirm(ids) so the caller (e.g. New Screenplay flow) can proceed
+ *  - Calls onConfirm(ids) so the caller (e.g. New Script flow) can proceed
  */
 
 import React, { useState, useEffect } from 'react';
@@ -29,7 +29,7 @@ const ScriptFormatPreferencesDialog: React.FC<Props> = ({ firstRun = false, onCo
   const setEnabledScriptFormats = useSettingsStore((s) => s.setEnabledScriptFormats);
   const setFormatPreferencesInitialized = useSettingsStore((s) => s.setFormatPreferencesInitialized);
 
-  // Default selection on first run: just Film Screenplay. Otherwise hydrate from saved.
+  // Default selection on first run: just Film Script. Otherwise hydrate from saved.
   const [selected, setSelected] = useState<Set<string>>(() => {
     if (enabledScriptFormats.length > 0) return new Set(enabledScriptFormats);
     return new Set([INDUSTRY_STANDARD_ID]);
@@ -53,7 +53,7 @@ const ScriptFormatPreferencesDialog: React.FC<Props> = ({ firstRun = false, onCo
 
   const handleConfirm = () => {
     const ids = SYSTEM_TEMPLATE_LIST.map((t) => t.id).filter((id) => selected.has(id));
-    // Guarantee at least one selection so New Screenplay can always proceed.
+    // Guarantee at least one selection so New Script can always proceed.
     const finalIds = ids.length > 0 ? ids : [INDUSTRY_STANDARD_ID];
     setEnabledScriptFormats(finalIds);
     setFormatPreferencesInitialized(true);
@@ -66,7 +66,7 @@ const ScriptFormatPreferencesDialog: React.FC<Props> = ({ firstRun = false, onCo
           <p className="fmt-dialog-hint">
             {firstRun
               ? 'Pick the formats you commonly write in. When you create a new script, ScriptCraft will offer just these options. You can change this later from the Format menu.'
-              : 'Choose which formats appear in the New Screenplay picker. If only one is selected, new scripts use it directly without prompting.'}
+              : 'Choose which formats appear in the New Script picker. If only one is selected, new scripts use it directly without prompting.'}
           </p>
           <div className="fmt-card-list">
             {SYSTEM_TEMPLATE_LIST.map((tpl) => {

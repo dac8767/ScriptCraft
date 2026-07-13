@@ -236,7 +236,7 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
                 ? `No files match “${query}”.`
                 : source === 'cloud'
                   ? 'No cloud files yet. Use File › Save As… and pick ScriptCraft Cloud to upload.'
-                  : 'No scripts yet. Use File › New Screenplay, or File › Open › Local File to import one.'}
+                  : 'No scripts yet. Use File › New Script, or File › Open › Local File to import one.'}
             </div>
           ) : (
             visibleScripts.map(({ script, project }) => (

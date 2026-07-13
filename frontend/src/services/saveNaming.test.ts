@@ -7,13 +7,13 @@ const proj = (id: string, name: string) => ({ id, name, updated_at: '', created_
 /**
  * Derek's bug, reproduced as a test.
  *
- * He saved a script as "Test". Then File > New Screenplay, then Save — and the new,
- * unrelated screenplay came back named "Test". Two causes, both mine:
+ * He saved a script as "Test". Then File > New Script, then Save — and the new,
+ * unrelated script came back named "Test". Two causes, both mine:
  *   1. getLibraryId ADOPTED the first container it found (the one called "Test"), so
  *      the new script was filed inside it.
  *   2. The status bar printed the CONTAINER's name, not the script's.
  */
-describe('a new screenplay does not inherit the last one\'s name', () => {
+describe('a new script does not inherit the last one\'s name', () => {
   it('the library never adopts an old container — not even one called "Test"', async () => {
     const createProject = vi.fn(async (name: string) => proj('lib-1', name));
     const id = await getLibraryId({
@@ -48,7 +48,7 @@ describe('what the user sees is the SCRIPT\'s name', () => {
       .toBe('Blackwater - Second Draft - 07/12/26');
   });
 
-  it('a new unsaved screenplay is Untitled, not the last script\'s name', () => {
+  it('a new unsaved script is Untitled, not the last script\'s name', () => {
     expect(statusBar('')).toBe('Untitled');
   });
 });

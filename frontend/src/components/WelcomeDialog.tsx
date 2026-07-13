@@ -45,7 +45,7 @@ const WelcomeDialog: React.FC<WelcomeDialogProps> = ({ onChoice }) => {
             <span className="welcome-choice-icon">&#127916;</span>
             <span className="welcome-choice-text">
               <strong>Sample Script</strong>
-              <small>Explore with a demo screenplay</small>
+              <small>Explore with a demo script</small>
             </span>
           </button>
           <button className="welcome-choice-btn welcome-choice-import" onClick={() => onChoice('import')}>

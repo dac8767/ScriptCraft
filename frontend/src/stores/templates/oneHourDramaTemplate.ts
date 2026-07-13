@@ -1,7 +1,7 @@
 /**
  * Single-camera 1-hour TV drama (Breaking Bad, Stranger Things).
  *
- * Very close to feature screenplay; main differences:
+ * Very close to feature script; main differences:
  *  - Acts I–V structure (Teaser optional)
  *  - 1 page = ~60 sec
  */
@@ -28,7 +28,7 @@ const STARTER: StarterNode[] = [
 export const ONE_HOUR_DRAMA_TEMPLATE: FormattingTemplate = {
   id: ONE_HOUR_DRAMA_ID,
   name: '1-Hour TV Drama',
-  description: 'Single-camera teleplay for hour-long dramas. Same look as a feature screenplay with TV act structure (Teaser, Acts I–V).',
+  description: 'Single-camera teleplay for hour-long dramas. Same look as a feature script with TV act structure (Teaser, Acts I–V).',
   mode: 'override',
   category: 'system',
   createdAt: '',

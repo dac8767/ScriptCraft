@@ -1,4 +1,4 @@
-// PDF exporter using jsPDF — renders screenplay with Final Draft formatting
+// PDF exporter using jsPDF — renders script with Final Draft formatting
 // All constants match pagination.ts and screenplay.css for exact visual parity
 import jsPDF from 'jspdf';
 import type { JSONContent } from '@tiptap/react';
@@ -382,7 +382,7 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
       }
     }
 
-    // Start page 2 for the screenplay
+    // Start page 2 for the script
     pdf.addPage([pageWidthPt, pageHeightPt]);
     pageNumber = 2;
     currentY = topMarginPt;

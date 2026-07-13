@@ -25,7 +25,7 @@ describe('the script library — the container the user never sees', () => {
   it('never adopts an old container — that is what named a new script after an old one', async () => {
     // v1.14 adopted the first container it found, to avoid "stranding" old scripts.
     // They were never stranded: the Open dialog lists scripts from every container.
-    // What adoption actually did was file every new screenplay inside whatever
+    // What adoption actually did was file every new script inside whatever
     // container existed first — so a brand-new script came back called "Test".
     const createProject = vi.fn(async (name: string) => proj('lib-1', name));
     const id = await getLibraryId({

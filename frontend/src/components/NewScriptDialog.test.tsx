@@ -53,12 +53,12 @@ describe('New Script dialog', () => {
     act(() => root.unmount());
   });
 
-  it('an empty name falls back to Untitled Screenplay', () => {
+  it('an empty name falls back to Untitled Script', () => {
     const { container, root, onCreate } = renderOpen();
     act(() => {
       (Array.from(container.querySelectorAll('button')).find((b) => b.textContent === 'Create') as HTMLButtonElement).click();
     });
-    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ name: 'Untitled Screenplay', draft: '1st Draft' }));
+    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ name: 'Untitled Script', draft: '1st Draft' }));
     act(() => root.unmount());
   });
 

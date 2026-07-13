@@ -6,7 +6,7 @@
  * local-storage.ts SQLite implementation but uses browser localStorage.
  *
  * Limitations:
- * - 5 MB total storage limit (enough for several screenplays)
+ * - 5 MB total storage limit (enough for several scripts)
  * - No asset storage (images/files)
  * - No versioning (check-in/restore)
  * - Data is stored per-origin in the browser/WebView
@@ -72,7 +72,7 @@ function saveData(data: FallbackData): void {
 
 const EMPTY_PROPS: ProjectProperties = {
   genre: '', logline: '', synopsis: '', author: '', contact: '',
-  copyright: '', draft: '', language: 'en', format: 'screenplay',
+  copyright: '', draft: '', language: 'en', format: 'script',
   production_company: '', director: '', producer: '', status: '',
   target_length: '', notes: '',
   wga_registration: '', wga_registration_date: '',
@@ -174,7 +174,7 @@ export function createFallbackStorage() {
       const content = scriptData.content || null;
       const contentStr = content ? JSON.stringify(content) : '';
       const meta: ScriptMeta = {
-        id, title: scriptData.title, author: '', format: 'screenplay',
+        id, title: scriptData.title, author: '', format: 'script',
         created_at: ts, updated_at: ts, page_count: 0,
         size_bytes: contentStr.length, color: '', pinned: false, sort_order: 0, preview: '',
       };

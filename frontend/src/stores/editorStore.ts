@@ -166,7 +166,7 @@ function saveInstalledLanguages(codes: string[]) {
   try { localStorage.setItem(INSTALLED_LANGS_KEY, JSON.stringify(codes)); } catch { /* noop */ }
 }
 
-/** Built-in screenplay element types — fixed set, hardcoded as Tiptap extensions. */
+/** Built-in script element types — fixed set, hardcoded as Tiptap extensions. */
 export type BuiltInElementType =
   | 'sceneHeading'
   | 'action'
@@ -357,7 +357,7 @@ export interface NoteFilter {
   noteId: string | null;
 }
 
-/** A general note attached to the screenplay file (not anchored to any text) */
+/** A general note attached to the script file (not anchored to any text) */
 export interface GeneralNote {
   id: string;
   title: string;
@@ -1117,7 +1117,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activeElement: 'action',
   setActiveElement: (el) => set({ activeElement: el }),
 
-  documentTitle: 'Untitled Screenplay',
+  documentTitle: 'Untitled Script',
   setDocumentTitle: (title) => {
     set({ documentTitle: title });
     // Update native window title on desktop so macOS Window menu shows file names

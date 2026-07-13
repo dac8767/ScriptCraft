@@ -87,7 +87,7 @@ function now(): string {
 
 const EMPTY_PROPS: ProjectProperties = {
   genre: '', logline: '', synopsis: '', author: '', contact: '',
-  copyright: '', draft: '', language: 'en', format: 'screenplay',
+  copyright: '', draft: '', language: 'en', format: 'script',
   production_company: '', director: '', producer: '', status: '',
   target_length: '', notes: '',
   wga_registration: '', wga_registration_date: '',
@@ -385,7 +385,7 @@ export async function createFileFallbackStorage() {
       const content = scriptData.content ?? null;
       const sizeBytes = content == null ? 0 : await writeScriptContent(id, content);
       const meta: ScriptMeta = {
-        id, title: scriptData.title, author: '', format: 'screenplay',
+        id, title: scriptData.title, author: '', format: 'script',
         created_at: ts, updated_at: ts, page_count: 0,
         size_bytes: sizeBytes, color: '', pinned: false, sort_order: 0, preview: '',
       };

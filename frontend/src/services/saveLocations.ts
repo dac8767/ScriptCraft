@@ -165,7 +165,7 @@ async function saveToGDrive(args: SavePayload): Promise<void> {
   const token = await getAccessToken(gdriveConfig());
   const root = await driveEnsureFolder(token, 'ScriptCraft');
   // v1.15: the file is named after the SCRIPT. It used to be
-  // "<container> — <draft>.odraft.json", from when a project was the screenplay —
+  // "<container> — <draft>.odraft.json", from when a project was the script —
   // which produced files called "Test — Draft 1 - 07-12-26.odraft.json" and, worse,
   // named a brand-new script after whatever container it landed in.
   const fileName = `${safeName(args.title)}.odraft.json`;

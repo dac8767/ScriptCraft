@@ -1,6 +1,6 @@
 /**
  * Industry Standard formatting template — codifies the hardcoded CSS rules
- * and Enter/Tab transitions from the original screenplay editor.
+ * and Enter/Tab transitions from the original script editor.
  *
  * This is a readonly constant, never stored in the database.
  */
@@ -41,8 +41,8 @@ function rule(
 
 export const INDUSTRY_STANDARD_TEMPLATE: FormattingTemplate = {
   id: INDUSTRY_STANDARD_ID,
-  name: 'Film Screenplay',
-  description: 'Industry-standard feature-film screenplay formatting (Final Draft compatible).',
+  name: 'Film Script',
+  description: 'Industry-standard feature-film script formatting (Final Draft compatible).',
   mode: 'enforce',
   category: 'system',
   createdAt: '',

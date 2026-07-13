@@ -596,7 +596,7 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer, embedd
               <button
                 className={`ic-action-btn ic-apply-btn${hasChanges ? ' active' : ''}`}
                 onClick={applyReorder}
-                title={hasChanges ? 'Apply scene reorder to screenplay' : 'No changes to apply'}
+                title={hasChanges ? 'Apply scene reorder to script' : 'No changes to apply'}
                 disabled={!hasChanges}
               >
                 Apply

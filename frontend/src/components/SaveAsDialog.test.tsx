@@ -37,7 +37,7 @@ const renderDialog = (props: { onClose?: () => void; onOpenSaveLocations?: () =>
   act(() => {
     root.render(
       <SaveAsDialog
-        defaultFileName="Untitled Screenplay"
+        defaultFileName="Untitled Script"
         onSaved={() => {}}
         onClose={props.onClose ?? (() => {})}
         onOpenSaveLocations={props.onOpenSaveLocations ?? (() => {})}
@@ -97,7 +97,7 @@ afterEach(() => {
 });
 
 describe('Save Script dialog layout (v1.22)', () => {
-  it('is titled "Save Script", not "Save Screenplay"', () => {
+  it('is titled "Save Script", not "Save Script"', () => {
     expect(text('.dialog-header')).toBe('Save Script');
   });
 
@@ -190,24 +190,24 @@ describe('Include in Name toggles', () => {
 
   it('both on by default: full "Name · Draft - Version" preview', () => {
     expect(text('.fs-saveas-rowlabel')).toBe('Saves as:');
-    expect(text('.save-as-preview')).toBe(`Untitled Screenplay - First Draft - ${todayVersion}`);
+    expect(text('.save-as-preview')).toBe(`Untitled Script - First Draft - ${todayVersion}`);
   });
 
   it('Version off → "Name · Draft"', () => {
     clickSwitch('Include Version in name');
-    expect(text('.save-as-preview')).toBe('Untitled Screenplay - First Draft');
+    expect(text('.save-as-preview')).toBe('Untitled Script - First Draft');
   });
 
   it('both off → the name stands alone', () => {
     clickSwitch('Include Draft in name');
     clickSwitch('Include Version in name');
-    expect(text('.save-as-preview')).toBe('Untitled Screenplay');
+    expect(text('.save-as-preview')).toBe('Untitled Script');
   });
 
   it('toggling back on restores the piece — the field value was never lost', () => {
     clickSwitch('Include Version in name');
     clickSwitch('Include Version in name');
-    expect(text('.save-as-preview')).toBe(`Untitled Screenplay - First Draft - ${todayVersion}`);
+    expect(text('.save-as-preview')).toBe(`Untitled Script - First Draft - ${todayVersion}`);
   });
 });
 

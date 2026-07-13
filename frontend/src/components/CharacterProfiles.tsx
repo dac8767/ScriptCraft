@@ -169,7 +169,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   }, [characters, characterProfiles, upsertCharacterProfile]);
 
   /**
-   * "Build from Script" — scan the screenplay to extract character info:
+   * "Build from Script" — scan the script to extract character info:
    * 1. Collect all character names from Character elements
    * 2. For each character, scan Action lines for their ALL-CAPS name to find
    *    introductory descriptions (e.g. "SARAH (30s, sharp eyes, worn jacket) enters")
@@ -937,7 +937,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         <button
           className="char-profiles-build-btn"
           onClick={handleBuildFromScript}
-          title="Scan the screenplay for characters and extract descriptions from action lines"
+          title="Scan the script for characters and extract descriptions from action lines"
         >
           Build from Script
         </button>
@@ -964,7 +964,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           <div className="char-profiles-empty">
             {searchQuery
               ? 'No characters match your search.'
-              : 'No characters detected. Add character elements to your screenplay.'}
+              : 'No characters detected. Add character elements to your script.'}
           </div>
         ) : (
           allCharacters.map((name) => {

@@ -54,7 +54,7 @@ async function init() {
   import('./services/platform').then(({ isDesktopTauri }) => {
     if (!isDesktopTauri()) return;
     import('@tauri-apps/api/core').then(({ invoke }) => {
-      invoke('set_window_title', { title: 'Untitled Screenplay' }).catch(() => {});
+      invoke('set_window_title', { title: 'Untitled Script' }).catch(() => {});
     });
   });
 

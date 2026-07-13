@@ -162,7 +162,7 @@ export function parseFDXFull(xmlString: string): FDXParseResult {
     let leftIndent = 1.50;  // Final Draft default
     let rightIndent = 7.50; // Final Draft default
 
-    // Primary: read from ElementSettings for Action (the base screenplay element)
+    // Primary: read from ElementSettings for Action (the base script element)
     const actionSettings = xmlDoc.querySelector('ElementSettings[Type="Action"] > ParagraphSpec');
     if (actionSettings) {
       leftIndent = parseFloat(actionSettings.getAttribute('LeftIndent') || '1.50');

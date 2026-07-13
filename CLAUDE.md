@@ -163,7 +163,7 @@ Every one of these shipped as a real bug. Each cost hours.
 
 ### Working notes must never leave the app
 Sections (`# ...`), markers (`⚑ ...`), script to-do lines (`[ ] ...`) and note highlights are
-scaffolding for the writer, not part of the screenplay. They are **hidden in Preview,
+scaffolding for the writer, not part of the script. They are **hidden in Preview,
 suppressed unconditionally in print, and filtered out of the Fountain exporter.** The
 exporter used to write them into the file verbatim — drafts went to collaborators carrying
 Derek's private to-do list. If you add a new kind of working note, it must be excluded from

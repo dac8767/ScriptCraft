@@ -1,7 +1,7 @@
 /**
  * Screenplay-aware diff between two TipTap documents. Operates at node level
  * (scene heading, action, dialogue, etc.) rather than line/character level, so
- * changes are shown in terms of screenplay elements.
+ * changes are shown in terms of script elements.
  */
 import type { JSONContent } from '@tiptap/react';
 

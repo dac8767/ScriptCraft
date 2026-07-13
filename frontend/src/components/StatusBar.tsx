@@ -90,9 +90,9 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
           * v1.15: show the script's name, and the draft if there is one.
           *
           * This used to render the CONTAINER's name followed by the script title —
-          * which made sense when a project was the screenplay and a script was one
+          * which made sense when a project was the script and a script was one
           * draft of it. It isn't any more, and the container is invisible plumbing
-          * now, so printing its name meant a brand-new screenplay announced itself
+          * now, so printing its name meant a brand-new script announced itself
           * as "Test" because that was the container it had been filed in.
           */}
         <span className="status-item status-project">

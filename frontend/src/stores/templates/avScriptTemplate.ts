@@ -51,7 +51,7 @@ export const AV_SCRIPT_TEMPLATE: FormattingTemplate = {
   pageTimeSeconds: 30,
   starterDocument: STARTER,
   rules: {
-    // Most screenplay elements are still available outside the AV body
+    // Most script elements are still available outside the AV body
     // (e.g. for a title page or intro paragraphs above the AV section).
     sceneHeading: rule('sceneHeading', 'Scene Heading', true, {
       bold: true,

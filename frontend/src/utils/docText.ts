@@ -4,7 +4,7 @@
  * Returns true when a ProseMirror doc/JSON contains any non-whitespace text
  * anywhere in its body. An editor that was reset to its empty default (e.g. on
  * a re-mount before content reloads) serializes to a textless body, and we must
- * never let that overwrite a saved screenplay.
+ * never let that overwrite a saved script.
  *
  * Only `content` arrays are walked, so app-metadata keys carried alongside the
  * doc (e.g. `_notes`, `_tagCategories`) do NOT count as body text.
@@ -28,7 +28,7 @@ export function docHasAnyText(doc: unknown): boolean {
  * has no text but the already-stored body does. Returns false (allowed) when no
  * content is being written, when the caller explicitly opts in via
  * `allowEmptyBody`, or when the existing script was already empty (e.g. a brand
- * new screenplay). This is the core blank-document data-loss guard.
+ * new script). This is the core blank-document data-loss guard.
  */
 export function isDestructiveEmptyOverwrite(
   incoming: unknown,

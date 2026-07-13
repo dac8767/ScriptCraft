@@ -270,7 +270,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
     setActiveElement(type as ElementType);
     // Three cases:
-    //   1. Built-in screenplay element (sceneHeading, action, etc.) — direct setNode
+    //   1. Built-in script element (sceneHeading, action, etc.) — direct setNode
     //   2. Real schema node not in BUILT_IN list (avPara, avShot, avDirection) — also direct setNode
     //   3. Template-declared custom id (sceneCharacters, soundEffect, etc.) — wrap as customElement
     if (BUILT_IN_ELEMENT_IDS.includes(type)) {

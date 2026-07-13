@@ -62,7 +62,7 @@ function shortHash(id: string): string {
 
 const EMPTY_PROPS: ProjectProperties = {
   genre: '', logline: '', synopsis: '', author: '', contact: '',
-  copyright: '', draft: '', language: 'en', format: 'screenplay',
+  copyright: '', draft: '', language: 'en', format: 'script',
   production_company: '', director: '', producer: '', status: '',
   target_length: '', notes: '',
   wga_registration: '', wga_registration_date: '',
@@ -252,7 +252,7 @@ export async function createLocalStorage() {
       await db.execute('UPDATE projects SET updated_at = $1 WHERE id = $2', [ts, projectId]);
       return {
         meta: {
-          id, title: data.title, author: '', format: 'screenplay',
+          id, title: data.title, author: '', format: 'script',
           created_at: ts, updated_at: ts, page_count: 0, size_bytes: sizeBytes,
           color: '', pinned: false, sort_order: 0, preview: '',
         },
@@ -288,7 +288,7 @@ export async function createLocalStorage() {
       // Data-loss guard: refuse to overwrite a script that has real (textful)
       // content with an empty/textless body. This is the last line of defence
       // against the blank-document bug, where a reset editor auto-saves an empty
-      // doc over a full screenplay. Callers that intentionally clear a document
+      // doc over a full script. Callers that intentionally clear a document
       // must pass `allowEmptyBody: true`.
       if (isDestructiveEmptyOverwrite(data.content, existing.content, data.allowEmptyBody)) {
         throw new Error(
@@ -402,7 +402,7 @@ export async function createLocalStorage() {
 
       return {
         meta: {
-          id, title, author: '', format: 'screenplay',
+          id, title, author: '', format: 'script',
           created_at: ts, updated_at: ts, page_count: 0, size_bytes: sizeBytes,
           color: '', pinned: false, sort_order: 0, preview: '',
         },
@@ -555,7 +555,7 @@ export async function createLocalStorage() {
 
       return {
         meta: {
-          id: found.script_id, title: found.title, author: '', format: 'screenplay',
+          id: found.script_id, title: found.title, author: '', format: 'script',
           created_at: '', updated_at: '', page_count: 0, size_bytes: 0,
           color: '', pinned: false, sort_order: 0, preview: '',
         },
@@ -928,7 +928,7 @@ function rowToScriptMeta(r: any): ScriptMeta {
     id: r.id,
     title: r.title,
     author: '',
-    format: 'screenplay',
+    format: 'script',
     created_at: r.created_at,
     updated_at: r.updated_at,
     page_count: r.page_count ?? 0,

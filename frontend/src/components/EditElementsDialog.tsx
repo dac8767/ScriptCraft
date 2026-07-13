@@ -1,5 +1,5 @@
 /**
- * EditElementsDialog — show/hide and reorder screenplay elements.
+ * EditElementsDialog — show/hide and reorder script elements.
  *
  * v0.71: rewritten to write PERSISTED OVERRIDES instead of mutating the active
  * template. The active template is usually a SYSTEM template (Industry
@@ -10,13 +10,13 @@
  * getEffectiveRules().
  *
  * Core elements can be reordered but not hidden — hiding Scene Heading or
- * Action would leave a screenplay with no way to type its own body.
+ * Action would leave a script with no way to type its own body.
  */
 import React from 'react';
 import AddMenu from './AddMenu';
 import { useFormattingTemplateStore, DUAL_DIALOGUE_ID } from '../stores/formattingTemplateStore';
 
-/** Elements a screenplay can't function without — reorderable, never hidable. */
+/** Elements a script can't function without — reorderable, never hidable. */
 const REQUIRED_IDS = ['sceneHeading', 'action', 'character', 'dialogue'];
 /** Not user-facing elements (handled elsewhere in the UI). */
 const EXCLUDED_IDS = ['newAct', 'endOfAct', 'castList'];

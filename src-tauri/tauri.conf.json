@@ -71,21 +71,21 @@
           "fdx"
         ],
         "mimeType": "application/xml",
-        "description": "Final Draft Screenplay"
+        "description": "Final Draft Script"
       },
       {
         "ext": [
           "fountain"
         ],
         "mimeType": "text/plain",
-        "description": "Fountain Screenplay"
+        "description": "Fountain Script"
       },
       {
         "ext": [
           "odraft"
         ],
         "mimeType": "application/json",
-        "description": "ScriptCraft Screenplay"
+        "description": "ScriptCraft Script"
       },
       {
         "ext": [

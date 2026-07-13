@@ -46,7 +46,7 @@ interface SettingsState {
   setEnabledScriptFormats: (ids: string[]) => void;
 
   // True once the user has seen and confirmed the first-run format-preferences dialog.
-  // Until then, the New Screenplay action opens the prefs dialog instead of going straight in.
+  // Until then, the New Script action opens the prefs dialog instead of going straight in.
   formatPreferencesInitialized: boolean;
   setFormatPreferencesInitialized: (v: boolean) => void;
 

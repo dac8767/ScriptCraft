@@ -647,7 +647,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     if (!editor) return;
     try {
       const result = await openTextFile([
-        { name: 'Screenplay', extensions: ['fountain', 'fdx', 'odraft', 'txt'] },
+        { name: 'Script', extensions: ['fountain', 'fdx', 'odraft', 'txt'] },
       ]);
       if (!result) return;
 
@@ -815,7 +815,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     const store = useEditorStore.getState();
     const meta = pendingNewScriptMeta.current;
     pendingNewScriptMeta.current = null;
-    store.setDocumentTitle(meta?.name || 'Untitled Screenplay');
+    store.setDocumentTitle(meta?.name || 'Untitled Script');
     store.setDraftLabel(meta?.draft || '1st Draft');
     store.setVersionLabel(meta?.version || '');
     store.setBeats([]);
@@ -832,7 +832,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     }
   }, [editor, clearTrackChanges, setCurrentProject, setCurrentScriptId, setScripts]);
 
-  /** Picker mode: 'reset' clears project context (top-level New Screenplay);
+  /** Picker mode: 'reset' clears project context (top-level New Script);
    *  'apply-only' just applies the template, leaving the current project intact
    *  (used by ProjectView so the new script stays in the current project). */
   const [formatPickerMode, setFormatPickerMode] = useState<'reset' | 'apply-only'>('reset');
@@ -843,7 +843,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     applyScriptFormat(editor, templateId);
   }, [editor, resetForNewScreenplay]);
 
-  /** Run the format-selection flow. Mode 'reset' is the global New Screenplay
+  /** Run the format-selection flow. Mode 'reset' is the global New Script
    *  action; 'apply-only' is invoked from in-project script creation, where the
    *  caller has already wired up project context. */
   const promptForNewScreenplayFormat = useCallback((mode: 'reset' | 'apply-only') => {
@@ -2326,7 +2326,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           <div className="dialog-header">Import from Word — Best-Effort Formatting</div>
           <div className="dialog-body">
             <p style={{ margin: '0 0 8px 0', fontSize: 14, color: 'var(--fd-text)' }}>
-              ScriptCraft will detect screenplay element types (scene heading, action,
+              ScriptCraft will detect script element types (scene heading, action,
               character, dialogue, parenthetical, transition, etc.) from the
               Word document&apos;s formatting.
             </p>

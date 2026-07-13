@@ -7,7 +7,7 @@ import React, { useEffect, useRef, useState } from 'react';
  * around the Save dialog's field grid: Script Name, Draft, Version — the same
  * classes, so the fields are formatted by the same CSS the Save window uses.
  * Draft defaults to "1st Draft" (editable); Version autofills today's date.
- * What's entered here seeds the new document via the New Screenplay flow.
+ * What's entered here seeds the new document via the New Script flow.
  */
 
 export interface NewScriptMeta {
@@ -48,7 +48,7 @@ export default function NewScriptDialog({ open, onClose, onCreate }: {
 
   const create = () => {
     onCreate({
-      name: name.trim() || 'Untitled Screenplay',
+      name: name.trim() || 'Untitled Script',
       draft: draft.trim() || '1st Draft',
       version: version.trim(),
     });
@@ -78,7 +78,7 @@ export default function NewScriptDialog({ open, onClose, onCreate }: {
             ref={nameRef}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Untitled Screenplay"
+            placeholder="Untitled Script"
           />
 
           <label htmlFor="newscript-draft">Draft:</label>

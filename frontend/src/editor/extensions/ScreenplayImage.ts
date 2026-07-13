@@ -22,7 +22,7 @@ export interface ScreenplayImageAttrs {
   src: string | null;       // data-URL fallback when no asset (e.g. unsaved local doc)
   width: number | null;     // px
   align: 'left' | 'center' | 'right';
-  heightLines: number;      // estimated height in screenplay lines (for pagination)
+  heightLines: number;      // estimated height in script lines (for pagination)
 }
 
 declare module '@tiptap/core' {
@@ -34,7 +34,7 @@ declare module '@tiptap/core' {
 }
 
 /**
- * Block image node for screenplays. Stores an ASSET REFERENCE (not base64) to
+ * Block image node for scripts. Stores an ASSET REFERENCE (not base64) to
  * keep the document JSON small; a data-URL `src` is only used as a fallback when
  * there is no project to upload to. Rendered via a React NodeView with resize.
  */

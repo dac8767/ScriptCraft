@@ -61,7 +61,7 @@ describe('isDestructiveEmptyOverwrite (blank-document guard)', () => {
     expect(isDestructiveEmptyOverwrite(FULL_SAVE_PAYLOAD, FULL_SAVE_PAYLOAD)).toBe(false);
   });
 
-  it('ALLOWS saving an empty body when the script was already empty (new screenplay)', () => {
+  it('ALLOWS saving an empty body when the script was already empty (new script)', () => {
     expect(isDestructiveEmptyOverwrite(BLANK_BODY, BLANK_BODY)).toBe(false);
   });
 

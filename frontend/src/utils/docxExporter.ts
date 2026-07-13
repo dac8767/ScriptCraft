@@ -1,5 +1,5 @@
 // Word (.docx) exporter — produces a Microsoft Word document that mirrors the
-// on-screen screenplay layout (Final Draft style: Courier 12pt, exact element
+// on-screen script layout (Final Draft style: Courier 12pt, exact element
 // indents, single line spacing, type-level bold/italic/underline/uppercase).
 //
 // Layout strategy:
@@ -428,9 +428,9 @@ export async function exportDocx(
 
   const bodyParagraphs: Paragraph[] = [];
   for (let i = 0; i < bodyNodes.length; i++) {
-    // When a title page precedes the body, force the screenplay's first
+    // When a title page precedes the body, force the script's first
     // paragraph to start on a new page.  This is belt-and-suspenders on top
-    // of the section break and prevents Word from rendering the screenplay
+    // of the section break and prevents Word from rendering the script
     // partway down page 2 if the title page didn't fully consume page 1.
     const forcePageBreak = i === 0 && hasTitlePage;
     const img = imageMap.get(i);
@@ -484,8 +484,8 @@ export async function exportDocx(
   if (hasTitlePage) {
     // Single section with `titlePage: true` so Word uses the empty first-page
     // header/footer for page 1 (the title page) and the real header/footer
-    // for page 2+ (the screenplay).  The body's first paragraph carries
-    // `pageBreakBefore: true` to start the screenplay on page 2.  Using ONE
+    // for page 2+ (the script).  The body's first paragraph carries
+    // `pageBreakBefore: true` to start the script on page 2.  Using ONE
     // section avoids the double-page-break that happens when you combine a
     // section break (NEXT_PAGE) with a paragraph-level page break.
     const headers: { default?: Header; first?: Header } = {};

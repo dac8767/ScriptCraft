@@ -397,7 +397,7 @@ const ScreenplayEditor: React.FC = () => {
     // Clear project context so sample content can't overwrite the real file on save
     setCurrentProject(null);
     setCurrentScriptId(null);
-    setDocumentTitle('Untitled Screenplay');
+    setDocumentTitle('Untitled Script');
     setEditorKey((k) => k + 1);
     navigate('/');
   }, [destroyCollab, navigate, setCurrentProject, setCurrentScriptId, setDocumentTitle]);
@@ -509,7 +509,7 @@ const ScreenplayEditor: React.FC = () => {
             // Clear project context so sample content can't overwrite the real file
             setCurrentProject(null);
             setCurrentScriptId(null);
-            setDocumentTitle('Untitled Screenplay');
+            setDocumentTitle('Untitled Script');
           }
           setEditorKey((k) => k + 1);
           if (!isHost) navigate('/');
@@ -846,7 +846,7 @@ const ScreenplayEditor: React.FC = () => {
       // Clear project context so sample content can't overwrite the real file
       setCurrentProject(null);
       setCurrentScriptId(null);
-      setDocumentTitle('Untitled Screenplay');
+      setDocumentTitle('Untitled Script');
       setEditorKey((k) => k + 1);
       navigate('/');
     }
@@ -2040,7 +2040,7 @@ const ScreenplayEditor: React.FC = () => {
 
   // Register an editor-reset hook so performLogout can flush any pending
   // save for a cloud file and then drop the editor back to a blank, local
-  // "Untitled Screenplay". Runs while the access token is still valid so the
+  // "Untitled Script". Runs while the access token is still valid so the
   // final PUT is authenticated; without this the auto-save loop keeps firing
   // after signout and every save returns 401.
   useEffect(() => {
@@ -2075,7 +2075,7 @@ const ScreenplayEditor: React.FC = () => {
         setCurrentProject(null);
         setCurrentScriptId(null);
         const store = useEditorStore.getState();
-        store.setDocumentTitle('Untitled Screenplay');
+        store.setDocumentTitle('Untitled Script');
         store.setBeats([]);
         store.setBeatColumns([]);
         store.setBeatArrangeMode('auto');
@@ -2553,7 +2553,7 @@ const ScreenplayEditor: React.FC = () => {
         // metadata (character profiles, relationships, etc.) is not lost.
         // Only do this if we actually loaded a prior script in this mount —
         // otherwise the "pending" content is just the editor's default empty
-        // state and would clobber a stored screenplay.
+        // state and would clobber a stored script.
         if (prevLoadKey && currentProject && currentScriptId) {
           const pendingContent = buildSaveContent();
           if (pendingContent) {
@@ -2610,7 +2610,7 @@ const ScreenplayEditor: React.FC = () => {
         // Restore metadata from top-level content keys (skip in history mode)
         if (!isHistoryMode) {
           const store = useEditorStore.getState();
-          // Clear per-screenplay metadata so we don't carry over from a previously opened screenplay
+          // Clear per-screenplay metadata so we don't carry over from a previously opened script
           store.setCharacterProfiles([]);
           store.setCharacterRelationships([]);
           store.setNotes([]);
@@ -2853,7 +2853,7 @@ const ScreenplayEditor: React.FC = () => {
   }, [handleScroll]);
 
   // --- Go to page ---
-  // Jump instantly: smooth-scrolling thousands of pixels on a long screenplay
+  // Jump instantly: smooth-scrolling thousands of pixels on a long script
   // takes seconds. ov.top is unscaled, so multiply by zoom scale to land on
   // the correct page when zoom != 100%. ov.top sits at the top of the page
   // separator block (previous page's bottom margin + gap + new page's top
@@ -2916,7 +2916,7 @@ const ScreenplayEditor: React.FC = () => {
       setPickerState((st) => ({ ...st, visible: false }));
       return;
     }
-    // setNode works for any real schema node (built-in screenplay elements as
+    // setNode works for any real schema node (built-in script elements as
     // well as the AV inner types avPara/avShot/avDirection). Custom-id elements
     // declared only in template rules go through the customElement wrapper.
     if (editor.schema.nodes[type]) {
@@ -3145,7 +3145,7 @@ const ScreenplayEditor: React.FC = () => {
       if (!editor) return;
       const { openTextFile } = await import('../utils/fileOps');
       const result = await openTextFile([
-        { name: 'Screenplay', extensions: ['fountain', 'fdx', 'txt'] },
+        { name: 'Script', extensions: ['fountain', 'fdx', 'txt'] },
       ]);
       if (!result) return;
 
@@ -3423,7 +3423,7 @@ const ScreenplayEditor: React.FC = () => {
       // the script's identity. Apply it, or the fields would look like they did
       // something and quietly do nothing.
       if (draftLabel) useEditorStore.getState().setDraftLabel(draftLabel);
-      // Check if there's a deferred action (e.g. "New Screenplay") waiting
+      // Check if there's a deferred action (e.g. "New Script") waiting
       const store = useEditorStore.getState();
       const hasDeferredAction = !!store.postSaveAction;
 
@@ -3452,7 +3452,7 @@ const ScreenplayEditor: React.FC = () => {
         const scripts = await client.listScripts(projectId);
         useProjectStore.getState().setScripts(scripts);
         // Only navigate to the project route if there's no deferred action
-        // that will reset the editor state (e.g. New Screenplay)
+        // that will reset the editor state (e.g. New Script)
         if (!hasDeferredAction) {
           navigate(`/project/${projectId}/edit/${scriptId}`, { replace: true });
         }
@@ -3460,7 +3460,7 @@ const ScreenplayEditor: React.FC = () => {
       } catch (err) {
         console.error('Failed to finalize save:', err);
       }
-      // Run deferred action (e.g. New Screenplay, Import) that was waiting for save-as
+      // Run deferred action (e.g. New Script, Import) that was waiting for save-as
       if (hasDeferredAction) {
         const action = store.postSaveAction;
         store.setPostSaveAction(null);
@@ -3851,7 +3851,7 @@ const ScreenplayEditor: React.FC = () => {
         <div className="chrome-bars">
       {<MenuBar editor={editor} onCollaborate={() => {
         if (!currentProject || !currentScriptId) {
-          showToast('Save your screenplay to a project first — opening Save As...', 'info');
+          showToast('Save your script to a project first — opening Save As...', 'info');
           useEditorStore.getState().setSaveAsOpen(true);
           return;
         }

@@ -200,7 +200,7 @@ const TemplateSelectDialog: React.FC<TemplateSelectDialogProps> = ({ editor, onC
       <div className="template-select-dialog template-select-dialog-wide" onClick={(e) => e.stopPropagation()}>
         <h3>Script Format / Template</h3>
         <p className="template-select-hint">
-          Choose a script format (screenplay, sitcom, drama, stage play, radio) or a custom formatting template.
+          Choose a script format (script, sitcom, drama, stage play, radio) or a custom formatting template.
           The template controls element-level formatting rules; for an empty document, choosing a script type also seeds starter content.
         </p>
 

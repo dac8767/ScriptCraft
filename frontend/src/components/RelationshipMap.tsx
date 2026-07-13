@@ -547,9 +547,9 @@ export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter }
   if (nodes.length === 0) {
     return (
       <div className="rel-map-empty">
-        <p>No characters in the screenplay yet.</p>
+        <p>No characters in the script yet.</p>
         <p style={{ fontSize: 11, color: 'var(--fd-text-muted)' }}>
-          Add character elements to your screenplay to see them here.
+          Add character elements to your script to see them here.
         </p>
       </div>
     );

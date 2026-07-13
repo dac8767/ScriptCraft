@@ -50,7 +50,7 @@ export async function getLibraryId(client: LibraryClient): Promise<string> {
    * v1.14 adopted the first one it found, reasoning that it would otherwise strand
    * old scripts. It wouldn't — the Open dialog lists scripts from every container,
    * so nothing was ever stranded. What adoption actually did was file every new
-   * screenplay inside whatever container happened to exist first, which is how a new
+   * script inside whatever container happened to exist first, which is how a new
    * script ended up living in one called "Test".
    *
    * New scripts go in the library. Old ones stay where they are and still open.

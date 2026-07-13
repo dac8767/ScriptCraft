@@ -3,7 +3,7 @@
  * formatting template (so CSS, toolbar elements, and pagination hints update)
  * and seeds the document with the template's starter content.
  *
- * Used by the New Screenplay flow after the user picks a format.
+ * Used by the New Script flow after the user picks a format.
  */
 
 import type { Editor } from '@tiptap/react';

@@ -8,7 +8,7 @@ export interface FontEntry {
 }
 
 export const FONT_CATEGORIES = [
-  'Screenplay Standard',
+  'Script Standard',
   'Latin Extended',
   'Indian / Indic',
   'Arabic & Hebrew',
@@ -17,10 +17,10 @@ export const FONT_CATEGORIES = [
 ] as const;
 
 export const FONT_REGISTRY: FontEntry[] = [
-  // Screenplay Standard
-  { name: 'Courier Prime', category: 'Screenplay Standard', scripts: ['latin'], source: 'local', direction: 'ltr' },
-  { name: 'Courier New', category: 'Screenplay Standard', scripts: ['latin'], source: 'system', direction: 'ltr' },
-  { name: 'Arial', category: 'Screenplay Standard', scripts: ['latin'], source: 'system', direction: 'ltr' },
+  // Script Standard
+  { name: 'Courier Prime', category: 'Script Standard', scripts: ['latin'], source: 'local', direction: 'ltr' },
+  { name: 'Courier New', category: 'Script Standard', scripts: ['latin'], source: 'system', direction: 'ltr' },
+  { name: 'Arial', category: 'Script Standard', scripts: ['latin'], source: 'system', direction: 'ltr' },
 
   // Latin Extended
   { name: 'Noto Sans', category: 'Latin Extended', scripts: ['latin', 'cyrillic', 'greek'], source: 'google', direction: 'ltr' },

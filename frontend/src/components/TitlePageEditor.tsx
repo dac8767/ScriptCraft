@@ -393,7 +393,7 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
                 className="props-input"
                 value={data.tpTitle}
                 onChange={(e) => setField('tpTitle', e.target.value)}
-                placeholder="SCREENPLAY TITLE"
+                placeholder="SCRIPT TITLE"
                 autoFocus
               />
             </div>

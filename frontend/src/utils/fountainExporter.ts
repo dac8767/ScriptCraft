@@ -69,7 +69,7 @@ export function exportFountain(doc: JSONContent): string {
       case 'general': {
         // v1.4: WORKING NOTES DON'T EXPORT. Outline sections (# ...), markers
         // (⚑ ...) and script to-do lines ([ ] ...) are scaffolding for the
-        // writer, not part of the screenplay — they were being written into the
+        // writer, not part of the script — they were being written into the
         // exported file verbatim, so a draft you sent out carried your to-do
         // list with it. Ordinary general text still exports.
         const t = text.trim();

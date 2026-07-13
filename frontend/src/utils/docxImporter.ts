@@ -365,7 +365,7 @@ function flattenBody(body: Element, styleMap: StyleMap, warnings: string[]): {
         if (leftEnd >= leftStart && rightEnd >= rightStart) {
           dualBlocks.push({ leftStart, leftEnd, rightStart, rightEnd });
         }
-        // Also include any subsequent rows as plain paragraphs (rare in screenplays)
+        // Also include any subsequent rows as plain paragraphs (rare in scripts)
         for (let r = 1; r < rows.length; r++) {
           for (const tc of childrenNS(rows[r], 'tc')) {
             for (const tp of childrenNS(tc, 'p')) {

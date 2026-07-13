@@ -583,7 +583,7 @@ fn ios_save_and_share_binary(filename: String, contents: Vec<u8>) -> Result<(), 
 }
 
 // ── Pending file state ────────────────────────────────────────────────────
-// Stores the file path when the OS opens a screenplay file with ScriptCraft.
+// Stores the file path when the OS opens a script file with ScriptCraft.
 // The frontend retrieves it on startup via the get_opened_file command.
 struct PendingFile(Mutex<Option<String>>);
 

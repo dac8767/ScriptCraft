@@ -1,5 +1,5 @@
 /**
- * Quick single-select picker shown when the user invokes New Screenplay and
+ * Quick single-select picker shown when the user invokes New Script and
  * has 2+ formats enabled in their preferences. The list contains only the
  * enabled formats. Picking one calls onPick(templateId).
  *

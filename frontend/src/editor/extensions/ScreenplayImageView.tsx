@@ -9,7 +9,7 @@ const LINE_HEIGHT_PX = 16; // 12pt — matches pagination LINE_HEIGHT_PT
 /**
  * React NodeView for the screenplayImage node. Resolves the asset URL (or falls
  * back to an inline data URL), renders the image at its stored width with simple
- * corner resizing, and records an estimated height (in screenplay lines) so the
+ * corner resizing, and records an estimated height (in script lines) so the
  * paginator can roughly account for the image.
  */
 export const ScreenplayImageView: React.FC<NodeViewProps> = ({ node, updateAttributes, selected, editor }) => {

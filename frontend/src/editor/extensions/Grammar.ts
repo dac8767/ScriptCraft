@@ -70,7 +70,7 @@ function makeDecoration(issue: GrammarIssue, isActive: boolean): Decoration {
 }
 
 /**
- * Walk textblock nodes (each screenplay element — scene heading, action,
+ * Walk textblock nodes (each script element — scene heading, action,
  * character, dialogue, etc. — is its own textblock) overlapping [from, to]
  * and return their inline content as a single string per block.
  *

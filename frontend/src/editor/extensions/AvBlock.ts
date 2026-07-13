@@ -131,7 +131,7 @@ export const AvBlock = Node.create({
   // schema registration, and a high-priority avBlock would become the schema's
   // `defaultType` for top-level `block+` content (it has no required attrs),
   // which crashes clearNodes with "Invalid content for node type avBlock" on any
-  // toolbar element change in a normal screenplay. Keymap precedence for Enter
+  // toolbar element change in a normal script. Keymap precedence for Enter
   // is handled by a separate non-schema Extension (AvKeymap, exported below).
   parseHTML() { return [{ tag: 'div[data-type="av-block"]' }]; },
   renderHTML({ HTMLAttributes }) {

@@ -44,7 +44,7 @@ function shouldSkipWord(word: string): boolean {
 
 // A word that the dictionary doesn't recognize but starts with an uppercase
 // letter is almost always a proper noun (person, place, brand) rather than a
-// misspelling — flagging them all is noisy in a screenplay full of names.
+// misspelling — flagging them all is noisy in a script full of names.
 function looksLikeProperNoun(word: string): boolean {
   return /^\p{Lu}/u.test(word);
 }

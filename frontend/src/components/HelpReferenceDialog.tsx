@@ -78,7 +78,7 @@ function Knowledge() {
   const P = ({ children }: { children: React.ReactNode }) => <p className="fs-kb-p">{children}</p>;
   return (
     <div>
-      <P>ScriptCraft is a screenplay editor. You write in formatted elements (scene headings,
+      <P>ScriptCraft is a script editor. You write in formatted elements (scene headings,
       action, dialogue, transitions) positioned at spec print columns — Courier, standard
       margins, about 55 lines per page. Everything below is reachable from the menus, the
       toolbar, or the Tool Panels on either side of the page.</P>
