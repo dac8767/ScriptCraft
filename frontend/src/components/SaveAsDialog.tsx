@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { FaRegFolderOpen } from 'react-icons/fa';
 import { api } from '../services/api';
 import { cloudApi } from '../services/cloudApi';
 import { getLibraryId, LIBRARY_NAME } from '../services/scriptLibrary';
@@ -446,6 +447,14 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
                     {localSaveFolder ? displayPath : 'Choose a folder…'}
                   </button>
                 </div>
+                {/* v1.42: same action as the path text, in the toggle column. */}
+                <button
+                  type="button"
+                  className="fs-saveas-folderbtn"
+                  title="Choose a folder"
+                  aria-label="Choose a folder"
+                  onClick={chooseFolder}
+                ><FaRegFolderOpen /></button>
               </>
             )}
 

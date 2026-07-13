@@ -13622,7 +13622,6 @@ html.android .version-history-panel {
   /* v1.40: light grey won (after accent-blue and a gold trial) — the theme's
      muted text color, so every theme keeps an appropriate grey. v1.41: italic. */
   color: var(--fd-text-muted);
-  font-style: italic;
   white-space: nowrap;
 }
 
@@ -14308,10 +14307,24 @@ html.android .version-history-panel {
 }
 .fs-saveas-dialog > .dialog-actions {
   border-top: none;
-  padding-top: 17px;
+  /* v1.42: same surface and cell padding as the header. */
+  background: var(--fd-toolbar-bg);
+  padding: 14px 20px;
   /* v1.30: "Saves as:" sits down here, left of the buttons. */
   justify-content: flex-start;
   align-items: center;
+}
+/* The 14px strip under the footer is the dialog-box's own padding (the v0.76
+   resize-grip clearance) — painted to match the footer, pointer-events: none
+   so the native grip stays reachable. */
+.fs-saveas-dialog { position: relative; }
+.fs-saveas-dialog::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 14px;
+  background: var(--fd-toolbar-bg);
+  pointer-events: none;
 }
 /* Flexible spacer between the composed name and Cancel — the name may grow,
    but never into the buttons. */
@@ -14348,7 +14361,7 @@ html.android .version-history-panel {
    from the theme's text color so it stays light-on-dark and dark-on-light. */
 .fs-saveas-divider {
   grid-column: 1 / -1;
-  height: 2px;
+  height: 1px; /* v1.42 */
   background: color-mix(in srgb, var(--fd-text) 30%, transparent);
   margin: 12px 0;
 }
@@ -14499,6 +14512,26 @@ html.android .version-history-panel {
 }
 .fs-panel-table-title { font-weight: 600; font-size: 13px; color: var(--fd-text); }
 .fs-panel-table .fs-customize-row { margin: 0; padding-left: 10px; padding-right: 10px; }
+
+/* v1.42: the browse button beside the filepath — sits in the toggle column,
+   toggle-sized, and does exactly what clicking the path does. */
+.fs-saveas-folderbtn {
+  grid-column: 3;
+  justify-self: center;
+  width: 34px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--fd-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+.fs-saveas-folderbtn:hover { color: var(--fd-accent); }
+.fs-saveas-folderbtn svg { display: block; }
 
 /* v1.35: each location is a chip; colors cycle so neighbours never match. */
 .fs-saveas-loc-chip {
