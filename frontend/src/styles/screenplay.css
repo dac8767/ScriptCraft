@@ -14204,6 +14204,12 @@ html.android .version-history-panel {
 /* v1.23: 720px default (v1.22's 600 + another 20%) — the path and the composed
    name both need the room. Still resizable; this is only the default. */
 .dialog-box.fs-saveas-dialog { width: min(720px, 92vw); }
+/* v1.27: dividers you can actually see — --fd-border reads as nothing here.
+   Derived from the theme's text color so every theme keeps a visible line. */
+.fs-saveas-dialog > .dialog-header { border-bottom-color: color-mix(in srgb, var(--fd-text) 30%, transparent); }
+.fs-saveas-dialog > .dialog-actions { border-top-color: color-mix(in srgb, var(--fd-text) 30%, transparent); }
+/* v1.27: less dead air between the last row and the buttons. */
+.fs-saveas-dialog .dialog-body { padding-bottom: 6px; }
 
 .fs-saveas-grid {
   display: grid;
@@ -14219,10 +14225,14 @@ html.android .version-history-panel {
    * = 26px between any two rows' text, fields included.
    */
   gap: 8px 28px;
-  padding: 4px 0 8px;
+  padding: 4px 0 0;
 }
 /* Rows with no toggle run their control under the toggle column too. */
 .fs-saveas-grid > .fs-saveas-span { grid-column: 2 / -1; }
+/* v1.27: a breath (5px) between the fields group and the Saves as row —
+   margin on BOTH cells so the row shifts as one. */
+.fs-saveas-rowlabel,
+.fs-saveas-grid > .save-as-preview { margin-top: 5px; }
 /* Text-only rows (Saves as, Location, Additional locations): 10px left inset
    so their text sits under the text INSIDE the fields, and the fields' 9px
    vertical chrome so text-to-text spacing stays uniform (see gap above). */
@@ -14236,7 +14246,9 @@ html.android .version-history-panel {
   white-space: nowrap;
 }
 .fs-saveas-grid > input {
-  width: 100%;
+  /* v1.27: two thirds of the column — a title is short, and the gap before
+     the toggles gives the row air. All three fields stay identical. */
+  width: 66.67%;
   padding: 8px 10px;
   background: var(--fd-input-bg, var(--fd-dropdown-bg));
   color: var(--fd-text);
