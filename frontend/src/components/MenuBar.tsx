@@ -1488,31 +1488,34 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         label: 'Report a Bug',
         action: () => setHelpForm({ title: 'Report a Bug', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagykyhflKTRjphGr/form' }),
       },
+      { separator: true, label: '' },
       {
-        icon: <FaStethoscope />,
-        label: 'Diagnostics',
-        action: () => { void handleOpenDiagnostics(); },
-      },
-      /*
-       * v1.12: Developer moved here from View. View is about what you can see in
-       * the script; Developer is a tool for reporting problems with the app — which
-       * is what Help is for, and it sits next to Diagnostics, Report a Bug and
-       * Feature Request, the things it feeds.
-       * DEV ONLY: absent from production builds, along with the tool itself.
-       */
-      ...(import.meta.env.DEV ? [
-        { separator: true, label: '' },
-        {
-          icon: <FaBug />, label: 'Developer',
-          children: [
+        /*
+         * v1.13: Developer collects the app's own diagnostic tools.
+         *
+         * NOTE THE ONE THING THAT IS *NOT* DEV-ONLY HERE. Diagnostics ships. It's
+         * what a user runs when something breaks and what support would ask them
+         * for, so burying it behind import.meta.env.DEV would delete it from every
+         * release build — a real loss dressed up as tidying. So the Developer group
+         * itself always exists, and only the Dev Picker inside it is DEV-only. In
+         * production this menu holds Diagnostics alone.
+         */
+        icon: <FaBug />, label: 'Developer',
+        children: [
+          {
+            icon: <FaStethoscope />,
+            label: 'Diagnostics',
+            action: () => { void handleOpenDiagnostics(); },
+          },
+          ...(import.meta.env.DEV ? [
             {
               icon: <FaBug />,
               label: 'Dev Picker',
               action: () => useEditorStore.getState().openTool('devpicker'),
             },
-          ],
-        },
-      ] : []),
+          ] : []),
+        ],
+      },
     ],
   };
 
