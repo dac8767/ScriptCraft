@@ -13620,8 +13620,9 @@ html.android .version-history-panel {
 .save-as-preview {
   font-size: 15px; /* matches its "Saves as:" label (v1.34) */
   /* v1.40: light grey won (after accent-blue and a gold trial) — the theme's
-     muted text color, so every theme keeps an appropriate grey. */
+     muted text color, so every theme keeps an appropriate grey. v1.41: italic. */
   color: var(--fd-text-muted);
+  font-style: italic;
   white-space: nowrap;
 }
 
@@ -14342,13 +14343,14 @@ html.android .version-history-panel {
 }
 /* Rows with no toggle run their control under the toggle column too. */
 .fs-saveas-grid > .fs-saveas-span { grid-column: 2 / -1; }
-/* v1.39: rule between the name fields and the location rows — same weight and
-   field-fill color as the dialog's header/footer lines, with extra air. */
+/* v1.41: a LIGHT rule between the name fields and the location rows (the
+   field-fill color read too dark), with generous air on both sides. Derived
+   from the theme's text color so it stays light-on-dark and dark-on-light. */
 .fs-saveas-divider {
   grid-column: 1 / -1;
   height: 2px;
-  background: var(--fd-input-bg, var(--fd-dropdown-bg));
-  margin: 5px 0;
+  background: color-mix(in srgb, var(--fd-text) 30%, transparent);
+  margin: 12px 0;
 }
 /* v1.35: the folder row holds a field-styled box now — align the BOX with the
    fields, not its text. The locations row keeps the vertical rhythm; chips
@@ -14362,12 +14364,11 @@ html.android .version-history-panel {
   color: var(--fd-text);
   white-space: nowrap;
 }
-/* "Saves as:" lives in the footer now. v1.34: it and the filename are the
-   dialog's payoff line — a step larger, with the name in the theme's accent
-   (the one emphasis color every theme defines). */
+/* "Saves as:" lives in the footer now — a step larger, in the same muted
+   grey as the filename it labels (v1.41). */
 .fs-saveas-rowlabel {
   font-size: 15px;
-  color: var(--fd-text);
+  color: var(--fd-text-muted);
   white-space: nowrap;
 }
 .fs-saveas-grid > input {
