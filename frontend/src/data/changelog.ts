@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.58';
+export const APP_VERSION = '1.59';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.59',
+    date: '2026-07-13',
+    items: [
+      { title: 'The thin caret is rolled back', detail: 'v1.58\'s custom caret produced a double cursor and broke Enter. The native caret is back while a safer approach is found — typing comes first.', tags: ['Fix', 'Editor'] },
+      { title: 'Choose your date format', detail: 'Settings > General > Date format: Short (07/13/26, the default), Local, Friendly, US, European, or ISO. The Version autofill and the changelog follow it.', tags: ['New Feature'] },
+      { title: 'Changelog version rows carry the tags', detail: 'Each version\'s tags sit right-aligned on its version-and-date row instead of a per-item column.', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.58',
     date: '2026-07-13',

@@ -50,6 +50,10 @@ interface SettingsState {
   formatPreferencesInitialized: boolean;
   setFormatPreferencesInitialized: (v: boolean) => void;
 
+  // Preferences > General: how dates are shown everywhere (v1.59).
+  dateFormat: import('../utils/dateFormat').DateFormatId;
+  setDateFormat: (id: import('../utils/dateFormat').DateFormatId) => void;
+
   // Preferences > General: reopen the last edited script on app start.
   autoLoadLastScript: boolean;
   setAutoLoadLastScript: (v: boolean) => void;
@@ -93,6 +97,7 @@ const STORAGE_KEY_EXPIRY = 'opendraft:defaultInviteExpiry';
 const STORAGE_KEY_FORMATS = 'opendraft:enabledScriptFormats';
 const STORAGE_KEY_FORMATS_INIT = 'opendraft:formatPreferencesInitialized';
 const STORAGE_KEY_AUTOLOAD = 'opendraft:autoLoadLastScript';
+const STORAGE_KEY_DATEFMT = 'opendraft:dateFormat';
 const STORAGE_KEY_AUTOSNAP = 'opendraft:autoSnapshotMinutes';
 const STORAGE_KEY_AUTOSNAP_KEEP = 'opendraft:autoSnapshotKeep';
 const SL_KEYS = {
@@ -179,6 +184,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setFormatPreferencesInitialized: (v) => {
     try { localStorage.setItem(STORAGE_KEY_FORMATS_INIT, v ? '1' : '0'); } catch { /* ignore */ }
     set({ formatPreferencesInitialized: v });
+  },
+  dateFormat: (localStorage.getItem(STORAGE_KEY_DATEFMT) as import('../utils/dateFormat').DateFormatId) || 'short',
+  setDateFormat: (id) => {
+    try { localStorage.setItem(STORAGE_KEY_DATEFMT, id); } catch { /* ignore */ }
+    set({ dateFormat: id });
   },
   // v1.53: ON by default — absent key means enabled; '0' is an explicit opt-out.
   autoLoadLastScript: localStorage.getItem(STORAGE_KEY_AUTOLOAD) !== '0',

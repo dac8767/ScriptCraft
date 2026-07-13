@@ -9,7 +9,6 @@ import History from '@tiptap/extension-history';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import Dropcursor from '@tiptap/extension-dropcursor';
-import ThinCaret from '../editor/extensions/ThinCaret';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -1476,7 +1475,6 @@ const ScreenplayEditor: React.FC = () => {
       SearchExtension,
       TrackChangesExtension,
       ...(isHistoryMode ? [] : [EnforceGuardExtension, EnterHandlerExtension, TabHandlerExtension, ElementShortcutExtension]),
-      ThinCaret,
       SpellCheck,
       Grammar,
       ...pluginRegistry.getEditorExtensions(),
@@ -3910,9 +3908,6 @@ const ScreenplayEditor: React.FC = () => {
                 style={{
                   transform: `scale(${zoomScale})`,
                   transformOrigin: 'top left',
-                  // v1.58: ThinCaret divides its width by this so the caret
-                  // stays ~1px on screen at any zoom.
-                  ['--zoom-scale' as string]: zoomScale,
                   width: `${pageLayout.pageWidth}in`,
                   minWidth: `${pageLayout.pageWidth}in`,
                   maxWidth: `${pageLayout.pageWidth}in`,

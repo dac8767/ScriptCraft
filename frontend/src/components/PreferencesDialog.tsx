@@ -4,6 +4,7 @@ import { FaSlidersH, FaColumns, FaFileAlt, FaRulerCombined, FaCommentDots, FaCog
 import { applyDraftNumber } from './SetDraftDialog';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { DATE_FORMATS, type DateFormatId } from '../utils/dateFormat';
 import MoresContdsDialog from './MoresContdsDialog';
 import PageSetupDialog from './PageSetupDialog';
 import ScriptFormatPreferencesDialog from './ScriptFormatPreferencesDialog';
@@ -362,6 +363,7 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
 function GeneralTab() {
   const {
     autoLoadLastScript, setAutoLoadLastScript,
+    dateFormat, setDateFormat,
   } = useSettingsStore();
 
   return (
@@ -382,6 +384,24 @@ function GeneralTab() {
         </p>
       </section>
 
+      <section>
+        <h3>Dates</h3>
+        <label className="prefs-check-row">
+          <span>Date format</span>
+          <select
+            value={dateFormat}
+            onChange={(e) => setDateFormat(e.target.value as DateFormatId)}
+          >
+            {DATE_FORMATS.map((f) => (
+              <option key={f.id} value={f.id}>{f.name} ({f.format(new Date())})</option>
+            ))}
+          </select>
+        </label>
+        <p className="prefs-hint">
+          Used wherever ScriptCraft shows a date — the Version autofill, the
+          changelog, and friends.
+        </p>
+      </section>
 
       <LanguageSection />
     </div>

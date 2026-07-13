@@ -5,6 +5,7 @@ import { cloudApi } from '../services/cloudApi';
 import { getLibraryId, LIBRARY_NAME } from '../services/scriptLibrary';
 import { errText } from '../utils/errText';
 import { shortenPathToFit } from '../utils/pathDisplay';
+import { formatAppDate } from '../utils/dateFormat';
 import { isWeb } from '../services/platform';
 import type { ProjectInfo } from '../services/api';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -106,13 +107,11 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   // the document's draft label (Edit > Set Draft Number), Version from
   // today's date in MM/DD/YY — both editable.
   const initialDraft = useEditorStore.getState().draftLabel || 'First Draft';
-  const today = new Date();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  const yy = String(today.getFullYear()).slice(-2);
+  // v1.59: today's date rendered per Settings > General > Date format.
+  const todayStr = formatAppDate(new Date(), useSettingsStore.getState().dateFormat);
   const [draft, setDraft] = useState(initialDraft);
   // v1.50: New Script's Version carries through; today's date is the fallback.
-  const [version, setVersion] = useState(useEditorStore.getState().versionLabel || `${mm}/${dd}/${yy}`);
+  const [version, setVersion] = useState(useEditorStore.getState().versionLabel || todayStr);
   // v1.22: Draft and Version are optional PARTS OF THE NAME, and the toggles
   // say so. Off means "keep the field's value, just don't write it into the
   // name". Script Name has no toggle — it is the name.
@@ -453,7 +452,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
               value={version}
               onChange={(e) => setVersion(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={`${mm}/${dd}/${yy}`}
+              placeholder={todayStr}
             />
             <IncludeToggle what="Version" on={includeVersion} onToggle={() => setIncludeVersion(!includeVersion)} />
 

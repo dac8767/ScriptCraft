@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useSettingsStore } from '../stores/settingsStore';
+import { formatAppDate } from '../utils/dateFormat';
 
 /*
  * NewScriptDialog (v1.50) — File > New Script…
@@ -24,12 +26,9 @@ export default function NewScriptDialog({ open, onClose, onCreate, onOpenScript,
   onOpenScript?: () => void;
   onImport?: () => void;
 }) {
-  const today = new Date();
-  const todayVersion = [
-    String(today.getMonth() + 1).padStart(2, '0'),
-    String(today.getDate()).padStart(2, '0'),
-    String(today.getFullYear()).slice(-2),
-  ].join('/');
+  // v1.59: the Version autofill follows Settings > General > Date format
+  // (default Short = MM/DD/YY, the historical behavior).
+  const todayVersion = formatAppDate(new Date(), useSettingsStore.getState().dateFormat);
 
   const [name, setName] = useState('');
   const [draft, setDraft] = useState('1st Draft');

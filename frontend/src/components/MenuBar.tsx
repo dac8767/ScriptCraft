@@ -57,6 +57,7 @@ import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { eventToCombo, COMMAND_BY_ID, formatCombo } from './shortcuts';
 import { useShortcutStore } from '../stores/shortcutStore';
 import { CHANGELOG, APP_VERSION, ALL_TAGS, TAG_META, tagsFor, type ChangeTag } from '../data/changelog';
+import { formatAppDate, parseISODate } from '../utils/dateFormat';
 import { useThemeStore } from '../stores/themeStore';
 import { BUILTIN_THEMES } from './themes';
 import { scriptApi } from '../services/scriptApi';
@@ -444,6 +445,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // v1.56: changelog filters — keyword, tags (any-match), and a date range.
   const [clKeyword, setClKeyword] = useState('');
   const [clTag, setClTag] = useState<'' | ChangeTag>('');
+  const dateFormatSetting = useSettingsStore((s) => s.dateFormat);
   const [clFrom, setClFrom] = useState('');
   const [clTo, setClTo] = useState('');
   const [editElementsOpen, setEditElementsOpen] = useState(false);
@@ -2171,28 +2173,34 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                 if (!shown.length) {
                   return <div className="fs-changelog-empty">Nothing matches these filters.</div>;
                 }
-                return shown.map((entry) => (
-                  <React.Fragment key={entry.version}>
-                    <div className="about-subsection-title">
-                      v{entry.version}
-                      {entry.date && <span className="fs-changelog-date"> — {entry.date}</span>}
-                    </div>
-                    <ul className="about-list fs-cl-list">
-                      {entry.items.map((it, i) => (
-                        <li key={i} className="fs-cl-row">
-                          <span className="fs-cl-text">
+                return shown.map((entry) => {
+                  // v1.59: the entry's tags (union across items) ride the
+                  // version row, right-aligned; the date follows Settings.
+                  const entryTags = Array.from(new Set(entry.items.flatMap((it) => tagsFor(it))));
+                  const parsed = entry.date ? parseISODate(entry.date) : null;
+                  return (
+                    <React.Fragment key={entry.version}>
+                      <div className="about-subsection-title fs-cl-versionrow">
+                        <span>
+                          v{entry.version}
+                          {parsed && <span className="fs-changelog-date"> — {formatAppDate(parsed, dateFormatSetting)}</span>}
+                        </span>
+                        <span className="fs-cl-tagcol">
+                          {entryTags.map((t) => (
+                            <span key={t} className="fs-cl-tag fs-cl-tag-mini" style={{ ['--tag-color' as string]: TAG_META[t].color }}>{t}</span>
+                          ))}
+                        </span>
+                      </div>
+                      <ul className="about-list fs-cl-list">
+                        {entry.items.map((it, i) => (
+                          <li key={i}>
                             <strong>{it.title}</strong>{it.detail ? <> — {it.detail}</> : null}
-                          </span>
-                          <span className="fs-cl-tagcol">
-                            {tagsFor(it).map((t) => (
-                              <span key={t} className="fs-cl-tag fs-cl-tag-mini" style={{ ['--tag-color' as string]: TAG_META[t].color }}>{t}</span>
-                            ))}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </React.Fragment>
-                ));
+                          </li>
+                        ))}
+                      </ul>
+                    </React.Fragment>
+                  );
+                });
               })()}
             </div>
           </div>
