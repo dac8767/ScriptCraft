@@ -14551,6 +14551,65 @@ html.android .version-history-panel {
 .fs-saveas-folderbtn:hover { filter: brightness(1.15); }
 .fs-saveas-folderbtn svg { display: block; width: 24px; height: 24px; } /* v1.49: 20% bigger per Derek */
 
+/* v1.56: changelog tags + filter bar. Tag colors come from --tag-color set
+   inline per tag from TAG_META — one registry, chips just render it. */
+.fs-changelog-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 14px;
+}
+.fs-changelog-search {
+  flex: 1 1 180px;
+  min-width: 0;
+  padding: 6px 10px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  font-size: 12.5px;
+}
+.fs-changelog-datelabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--fd-text-muted);
+}
+.fs-changelog-datelabel input {
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  padding: 4px 6px;
+  font-size: 12px;
+}
+.fs-changelog-tagrow { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+.fs-cl-tag {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.6;
+  cursor: pointer;
+  border: 1px solid var(--tag-color);
+  color: var(--tag-color);
+  background: transparent;
+}
+.fs-cl-tag-active {
+  background: var(--tag-color);
+  color: #1c1c1c;
+  font-weight: 600;
+}
+.fs-cl-tag-mini {
+  cursor: default;
+  font-size: 10px;
+  padding: 1px 7px;
+  margin-right: 4px;
+  background: color-mix(in srgb, var(--tag-color) 18%, transparent);
+}
+.fs-changelog-empty { color: var(--fd-text-muted); font-size: 12.5px; padding: 12px 0; }
+
 /* v1.55: release date beside each changelog version. */
 .fs-changelog-date { color: var(--fd-text-muted); font-weight: 400; font-size: 12px; }
 

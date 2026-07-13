@@ -56,7 +56,7 @@ import { MENU_ICONS } from './uiIcons';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { eventToCombo, COMMAND_BY_ID, formatCombo } from './shortcuts';
 import { useShortcutStore } from '../stores/shortcutStore';
-import { CHANGELOG, APP_VERSION } from '../data/changelog';
+import { CHANGELOG, APP_VERSION, ALL_TAGS, TAG_META, tagsFor, type ChangeTag } from '../data/changelog';
 import { useThemeStore } from '../stores/themeStore';
 import { BUILTIN_THEMES } from './themes';
 import { scriptApi } from '../services/scriptApi';
@@ -441,6 +441,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
   // ── Check in (git commit) ──
   const [changelogOpen, setChangelogOpen] = useState(false);
+  // v1.56: changelog filters — keyword, tags (any-match), and a date range.
+  const [clKeyword, setClKeyword] = useState('');
+  const [clTags, setClTags] = useState<ChangeTag[]>([]);
+  const [clFrom, setClFrom] = useState('');
+  const [clTo, setClTo] = useState('');
   const [editElementsOpen, setEditElementsOpen] = useState(false);
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [checkinMessage, setCheckinMessage] = useState('');
@@ -2117,20 +2122,69 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           </div>
           <div className="dialog-body fs-changelog-body">
             <div className="about-section-title">What's New in {APP_VERSION}</div>
+            {/* v1.56: filter bar — keyword, date range, and tag toggles. */}
+            <div className="fs-changelog-filters">
+              <input
+                className="fs-changelog-search"
+                placeholder="Filter by keyword…"
+                value={clKeyword}
+                onChange={(e) => setClKeyword(e.target.value)}
+              />
+              <label className="fs-changelog-datelabel">From
+                <input type="date" value={clFrom} onChange={(e) => setClFrom(e.target.value)} />
+              </label>
+              <label className="fs-changelog-datelabel">To
+                <input type="date" value={clTo} onChange={(e) => setClTo(e.target.value)} />
+              </label>
+              <div className="fs-changelog-tagrow">
+                {ALL_TAGS.map((tag) => {
+                  const active = clTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      className={'fs-cl-tag' + (active ? ' fs-cl-tag-active' : '')}
+                      style={{ ['--tag-color' as string]: TAG_META[tag].color }}
+                      onClick={() => setClTags(active ? clTags.filter((t) => t !== tag) : [...clTags, tag])}
+                    >{tag}</button>
+                  );
+                })}
+              </div>
+            </div>
             <div className="about-changelog">
-              {CHANGELOG.map((entry) => (
-                <React.Fragment key={entry.version}>
-                  <div className="about-subsection-title">
-                    v{entry.version}
-                    {entry.date && <span className="fs-changelog-date"> — {entry.date}</span>}
-                  </div>
-                  <ul className="about-list">
-                    {entry.items.map((it, i) => (
-                      <li key={i}><strong>{it.title}</strong>{it.detail ? <> — {it.detail}</> : null}</li>
-                    ))}
-                  </ul>
-                </React.Fragment>
-              ))}
+              {(() => {
+                const kw = clKeyword.trim().toLowerCase();
+                const shown = CHANGELOG.map((entry) => {
+                  if (clFrom && (!entry.date || entry.date < clFrom)) return null;
+                  if (clTo && (!entry.date || entry.date > clTo)) return null;
+                  const items = entry.items.filter((it) => {
+                    if (kw && !(`${it.title} ${it.detail}`.toLowerCase().includes(kw))) return false;
+                    if (clTags.length && !tagsFor(it).some((t) => clTags.includes(t))) return false;
+                    return true;
+                  });
+                  return items.length ? { ...entry, items } : null;
+                }).filter((e): e is NonNullable<typeof e> => e !== null);
+                if (!shown.length) {
+                  return <div className="fs-changelog-empty">Nothing matches these filters.</div>;
+                }
+                return shown.map((entry) => (
+                  <React.Fragment key={entry.version}>
+                    <div className="about-subsection-title">
+                      v{entry.version}
+                      {entry.date && <span className="fs-changelog-date"> — {entry.date}</span>}
+                    </div>
+                    <ul className="about-list">
+                      {entry.items.map((it, i) => (
+                        <li key={i}>
+                          {tagsFor(it).map((t) => (
+                            <span key={t} className="fs-cl-tag fs-cl-tag-mini" style={{ ['--tag-color' as string]: TAG_META[t].color }}>{t}</span>
+                          ))}
+                          {' '}<strong>{it.title}</strong>{it.detail ? <> — {it.detail}</> : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </React.Fragment>
+                ));
+              })()}
             </div>
           </div>
         </div>

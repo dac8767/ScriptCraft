@@ -7,22 +7,80 @@
  * makes them true. Newest first.
  */
 
+/* ── Tags (v1.56) ──────────────────────────────────────────────────────────
+   Every changelog item wears one or two colored tags so the list can be
+   scanned. Curated entries set `tags` explicitly; anything without them is
+   classified by inferTags() below — ONE classifier, so the backfilled
+   history and future omissions are tagged by the same rules. */
+export type ChangeTag =
+  | 'New Feature' | 'Fix' | 'UI' | 'Editor' | 'Saving' | 'Tools' | 'Branding' | 'Polish';
+
+export const TAG_META: Record<ChangeTag, { color: string }> = {
+  'New Feature': { color: '#6abf69' },
+  'Fix':         { color: '#e06060' },
+  'UI':          { color: '#6fa8dc' },
+  'Editor':      { color: '#b58ee0' },
+  'Saving':      { color: '#e89b4f' },
+  'Tools':       { color: '#4cbfbf' },
+  'Branding':    { color: '#d377b0' },
+  'Polish':      { color: '#9a9a9a' },
+};
+
+export const ALL_TAGS = Object.keys(TAG_META) as ChangeTag[];
+
+const TAG_RULES: [RegExp, ChangeTag][] = [
+  [/\bfix|bug|broke|regress|crash|wrong|dead|clip|misalign|stale|orphan|actually|no longer|stops?\b/i, 'Fix'],
+  [/save|export|import|\bfile\b|folder|location|draft|version|autosave|\.odraft|snapshot/i, 'Saving'],
+  [/scriptcraft|freedraft|opendraft|brand|renam/i, 'Branding'],
+  [/notes?\b|to-?do|snippet|outline|analytic|character|location tool|spell|navigator|title page|index cards|goals|tags panel|dev picker|workspace/i, 'Tools'],
+  [/placeholder|element|action|scene|dialogue|pagination|\bpage\b|cursor|caret|dual/i, 'Editor'],
+  [/\bnew\b|adds?\b|introduc/i, 'New Feature'],
+  [/menu|dialog|toolbar|icon|chevron|spacing|padding|align|colou?r|theme|font|divider|bubble|chip|header|footer|window|panel|zoom|layout|customize|button|resiz/i, 'UI'],
+];
+
+export function inferTags(text: string): ChangeTag[] {
+  const out: ChangeTag[] = [];
+  for (const [re, tag] of TAG_RULES) {
+    if (out.length >= 2) break;
+    if (re.test(text) && !out.includes(tag)) out.push(tag);
+  }
+  return out.length ? out : ['Polish'];
+}
+
+export interface ChangelogItem {
+  title: string;
+  detail: string;
+  /** Explicit tags win; absent means inferTags(title + detail) applies. */
+  tags?: ChangeTag[];
+}
+
+export function tagsFor(item: ChangelogItem): ChangeTag[] {
+  return item.tags && item.tags.length ? item.tags : inferTags(`${item.title} ${item.detail}`);
+}
+
 export interface ChangelogEntry {
   version: string;
   /** v1.55: release date (YYYY-MM-DD). Older entries predate the field. */
   date?: string;
-  items: { title: string; detail: string }[];
+  items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.55';
+export const APP_VERSION = '1.56';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.56',
+    date: '2026-07-13',
+    items: [
+      { title: 'Changelog tags and filters', detail: 'Every change wears colored tags (UI, Fix, Saving, …) so the list scans at a glance, and the changelog window gained a filter bar: keywords, tags, and a date range.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '1.55',
     date: '2026-07-13',
     items: [
-      { title: 'Menus say when there\'s a next step', detail: 'Every menu item that opens a dialog, picker, or prompt before acting now ends with an ellipsis (…) — and only those. Exports, Feature Request, and Report a Bug gained theirs; the mixed three-dot spellings were unified.' },
-      { title: 'The changelog is complete again', detail: 'It had frozen at 0.82 — the exact failure its own header warns about. Every version since is backfilled from the release record with its date, and updating this file is now part of shipping a version.' },
+      { tags: ['UI' as const], title: 'Menus say when there\'s a next step', detail: 'Every menu item that opens a dialog, picker, or prompt before acting now ends with an ellipsis (…) — and only those. Exports, Feature Request, and Report a Bug gained theirs; the mixed three-dot spellings were unified.' },
+      { tags: ['Fix' as const], title: 'The changelog is complete again', detail: 'It had frozen at 0.82 — the exact failure its own header warns about. Every version since is backfilled from the release record with its date, and updating this file is now part of shipping a version.' },
     ],
   },
   {
