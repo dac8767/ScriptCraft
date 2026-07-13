@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
 import EditElementsDialog from './EditElementsDialog';
-import ProjectManagerTool from './ProjectManagerTool';
 import { SaveWorkspaceDialog, EditWorkspacesDialog } from './WorkspaceDialogs';
 import PreferencesDialog from './PreferencesDialog';
 import SetDraftDialog from './SetDraftDialog';
@@ -112,7 +111,6 @@ import {
   FaAdjust,
   FaUserFriends,
   FaSignInAlt,
-  FaProjectDiagram,
   FaBars,
   FaInfoCircle,
   FaKeyboard,
@@ -431,7 +429,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // ── Check in (git commit) ──
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [editElementsOpen, setEditElementsOpen] = useState(false);
-  const [projectManagerOpen, setProjectManagerOpen] = useState(false);
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [checkinMessage, setCheckinMessage] = useState('');
   const [checkinSaving, setCheckinSaving] = useState(false);
@@ -439,7 +436,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
   const handleCheckinOpen = useCallback(() => {
     if (!currentProject) {
-      showToast('No project active. Save your file first.', 'error');
+      showToast('This script hasn\'t been saved yet. Save it first.', 'error');
       return;
     }
     setCheckinMessage('');
@@ -887,7 +884,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     exportDocx: () => { void handleExportDocx(); },
     rename: () => setRenameOpen(true),
     settings: () => setPrefsOpen(true),
-    manageProjects: () => setProjectManagerOpen(true),
 
     find: () => setSearchOpen(true),
     goToPage: () => setGoToPageOpen(true),
@@ -1162,7 +1158,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           ],
         },
         { separator: true, label: '' },
-        { icon: <FaProjectDiagram />, label: 'Manage Projects…', action: () => setProjectManagerOpen(true) },
         { separator: true, label: '' },
         { icon: <FaCog />, label: 'Settings...', action: () => setPrefsOpen(true) },
       ],
@@ -2072,19 +2067,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     )}
     {editElementsOpen && (
       <EditElementsDialog open onClose={() => setEditElementsOpen(false)} />
-    )}
-    {projectManagerOpen && (
-      <div className="dialog-overlay" onClick={() => setProjectManagerOpen(false)}>
-        <div className="dialog-box fs-manager-dialog" onClick={(e) => e.stopPropagation()}>
-          <div className="dialog-header">
-            Project Manager
-            <button className="fs-dialog-x" onClick={() => setProjectManagerOpen(false)} title="Close">&times;</button>
-          </div>
-          <div className="fs-manager-dialog-body">
-            <ProjectManagerTool />
-          </div>
-        </div>
-      </div>
     )}
     {aboutOpen && (
       <div className="dialog-overlay" onClick={() => setAboutOpen(false)}>

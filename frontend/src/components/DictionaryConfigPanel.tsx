@@ -436,13 +436,13 @@ const ProjectDictionarySection: React.FC = () => {
             onChange={(e) => toggleEnabled(e.target.checked)}
           />
           <div style={{ flex: 1 }}>
-            <div style={sectionTitleStyle}>Project dictionary</div>
+            <div style={sectionTitleStyle}>Script dictionary</div>
             <div style={helpTextStyle}>
               {projectEnabled
                 ? projectWords.length === 0
                   ? 'No words yet — anything you "Add to Dictionary" goes here by default.'
                   : `${projectWords.length} word${projectWords.length === 1 ? '' : 's'}. Saved with this script.`
-                : 'Disabled for this project — checks skip these words and "Add to Dictionary" routes to globals only.'}
+                : 'Disabled for this script — checks skip these words and "Add to Dictionary" routes to globals only.'}
             </div>
           </div>
         </label>

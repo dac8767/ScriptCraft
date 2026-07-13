@@ -11,7 +11,7 @@
  *     `cloudApi` since that's the only real source.
  *
  * Also adds:
- *   - Search box that filters both project and script titles.
+ *   - Search box that filters script titles.
  *   - Sort options: name A-Z / Z-A, updated recent first / oldest first,
  *     created recent first.
  */
@@ -138,19 +138,21 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
     return () => { cancelled = true; };
   }, [source, signedIn]);
 
-  const visibleGroups = useMemo(() => {
+  /**
+   * v1.14: one flat list of scripts.
+   *
+   * This used to render a header per project with its scripts nested beneath. There
+   * are no projects any more — a FreeDraft file is one script — so the grouping was
+   * a filing cabinet with one drawer. Scripts saved by older versions may still sit
+   * in different containers underneath; they all appear here together, as scripts,
+   * which is the only thing they ever were to you.
+   */
+  const visibleScripts = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const filtered = groups
-      .map((g) => {
-        const projectMatch = q && g.project.name.toLowerCase().includes(q);
-        const scripts = g.scripts
-          .filter((s) => !q || projectMatch || s.title.toLowerCase().includes(q))
-          .slice()
-          .sort((a, b) => compareScripts(a, b, sort));
-        return { project: g.project, scripts };
-      })
-      .filter((g) => g.scripts.length > 0);
-    return filtered;
+    return groups
+      .flatMap((g) => g.scripts.map((s) => ({ script: s, project: g.project })))
+      .filter(({ script }) => !q || script.title.toLowerCase().includes(q))
+      .sort((a, b) => compareScripts(a.script, b.script, sort));
   }, [groups, query, sort]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -197,7 +199,7 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search projects and scripts…"
+                placeholder="Search scripts…"
                 autoFocus
               />
             </div>
@@ -227,30 +229,25 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
             <div className="open-file-empty">Loading…</div>
           ) : error ? (
             <div className="open-file-error">{error}</div>
-          ) : visibleGroups.length === 0 ? (
+          ) : visibleScripts.length === 0 ? (
             <div className="open-file-empty">
               {query
                 ? `No files match “${query}”.`
                 : source === 'cloud'
                   ? 'No cloud files yet. Use File › Save As… and pick FreeDraft Cloud to upload.'
-                  : 'No files yet. Use File › Import to create a project.'}
+                  : 'No scripts yet. Use File › New Screenplay, or File › Open › Local File to import one.'}
             </div>
           ) : (
-            visibleGroups.map((g) => (
-              <div key={g.project.id} style={{ marginBottom: 12 }}>
-                <div className="open-project-group-header">{g.project.name}</div>
-                {g.scripts.map((s) => (
-                  <div
-                    key={s.id}
-                    className="open-project-item"
-                    onClick={() => onOpen(g.project.id, g.project, s.id, s.title, source)}
-                  >
-                    <span className="open-project-name">{s.title}</span>
-                    <span className="open-project-date">
-                      {new Date(s.updated_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                ))}
+            visibleScripts.map(({ script, project }) => (
+              <div
+                key={script.id}
+                className="open-project-item"
+                onClick={() => onOpen(project.id, project, script.id, script.title, source)}
+              >
+                <span className="open-project-name">{script.title}</span>
+                <span className="open-project-date">
+                  {new Date(script.updated_at).toLocaleDateString()}
+                </span>
               </div>
             ))
           )}

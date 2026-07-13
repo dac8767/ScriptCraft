@@ -1,0 +1,62 @@
+/**
+ * scriptLibrary — the container every script lives in, now that there is no such
+ * thing as a project.
+ *
+ * WHY THIS EXISTS AT ALL. A FreeDraft file is one script. But underneath, the
+ * storage layer keys everything on a container id: scripts are stored as
+ * (containerId, scriptId), assets live in assets/{containerId}, and version
+ * history, characters and locations are all scoped by it. That's ~1,300
+ * references across 29 files, including the save path — the one place where a bug
+ * costs you writing.
+ *
+ * So the CONCEPT is gone from the product — no Project Manager, no grouping, no
+ * dialog ever asks you which project a script belongs to — while the storage keeps
+ * the id it has always used, as an invisible implementation detail. Nothing about
+ * your existing scripts moves, and no migration runs over work you've already
+ * saved.
+ *
+ * New scripts all land in one container, so there is exactly one library. Scripts
+ * you saved earlier keep whatever container they were filed under, and the Open
+ * dialog lists everything flat, so they're all just... scripts.
+ */
+import type { ProjectInfo } from './api';
+
+/** The one container. Named for what it is, not for a concept we removed. */
+export const LIBRARY_NAME = 'My Scripts';
+
+interface LibraryClient {
+  listProjects: () => Promise<ProjectInfo[]>;
+  createProject: (name: string) => Promise<ProjectInfo>;
+}
+
+/**
+ * The container new scripts are saved into. Reuses the existing one if it's
+ * there (including one from an earlier version of the app), and only creates a
+ * container when the library is genuinely empty.
+ *
+ * Note it does NOT fail if creation races — two windows saving at once would both
+ * try to create, and the loser refetches instead of erroring at the user, who did
+ * nothing wrong and cannot act on the message anyway.
+ */
+export async function getLibraryId(client: LibraryClient): Promise<string> {
+  const existing = await client.listProjects().catch(() => [] as ProjectInfo[]);
+
+  const named = existing.find((p) => p.name === LIBRARY_NAME);
+  if (named) return named.id;
+
+  // An older install will have real, user-named projects. Don't strand those
+  // scripts behind a new empty container — adopt the first one as the library.
+  if (existing.length > 0) return existing[0].id;
+
+  try {
+    const created = await client.createProject(LIBRARY_NAME);
+    return created.id;
+  } catch {
+    // Lost a race (409) or hit a transient failure — refetch and use whatever
+    // exists now rather than surfacing a container error for a script save.
+    const fresh = await client.listProjects().catch(() => [] as ProjectInfo[]);
+    const found = fresh.find((p) => p.name === LIBRARY_NAME) ?? fresh[0];
+    if (!found) throw new Error('Could not open the script library.');
+    return found.id;
+  }
+}

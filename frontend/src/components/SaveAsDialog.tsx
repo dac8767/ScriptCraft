@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaCloud, FaDesktop } from 'react-icons/fa';
 import { api } from '../services/api';
 import { cloudApi } from '../services/cloudApi';
+import { getLibraryId, LIBRARY_NAME } from '../services/scriptLibrary';
 import { isWeb } from '../services/platform';
 import type { ProjectInfo } from '../services/api';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -10,17 +11,8 @@ import { mirrorSave } from '../services/saveLocations';
 
 export type SaveDestination = 'local' | 'cloud';
 
-const LAST_PROJECT_KEY = 'opendraft:lastProject';
-
-function getLastProjectName(): string {
-  try { return localStorage.getItem(LAST_PROJECT_KEY) || ''; } catch { return ''; }
-}
-function saveLastProjectName(name: string) {
-  try { localStorage.setItem(LAST_PROJECT_KEY, name); } catch { /* noop */ }
-}
 
 interface SaveAsDialogProps {
-  defaultProjectName: string;
   defaultFileName: string;
   /** Pre-select the destination tab. Pass 'cloud' when the user came from a
    *  cloud project — otherwise the dialog defaults to 'local' and the
@@ -69,15 +61,12 @@ const ImportedSourceNotice: React.FC = () => {
 };
 
 const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
-  defaultProjectName,
   defaultFileName,
   defaultDestination,
   onSaved,
   onClose,
   buildContent,
 }) => {
-  const [projects, setProjects] = useState<ProjectInfo[]>([]);
-  const [projectName, setProjectName] = useState('');
   // v0.16: File Name is composed from Draft + Version. Draft autofills from
   // the document's draft label (Edit > Set Draft Number), Version from
   // today's date in MM/DD/YY — both editable.
@@ -92,14 +81,10 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   const fileName = draft.trim() && version.trim() ? `${draft.trim()} - ${version.trim()}` : (draft.trim() || version.trim());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);  // true when user is actively typing to filter
   const [destination, setDestination] = useState<SaveDestination>(
     WEB_ONLY_CLOUD ? 'cloud' : (defaultDestination ?? 'local'),
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const comboRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // Re-fetch projects when the signed-in user changes. The dialog can open
   // while the user is anonymous (we got a 401 on the initial listProjects),
@@ -110,50 +95,6 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   const authVerified = useSettingsStore((s) => s.authVerified);
   const signedIn = Boolean(accessToken && authVerified);
 
-  // Load projects and pick the best default project name. Re-runs when the
-  // destination tab flips so cloud projects appear when the user switches to
-  // the Cloud tab and vice versa.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        // Cloud listing requires a verified login. Without one, just leave the
-        // projects list empty and let the user sign in via the warning banner;
-        // a fallback to local would silently mis-route a "Save to Cloud".
-        if (destination === 'cloud' && !signedIn) {
-          if (!cancelled) setProjects([]);
-          return;
-        }
-        const client = destination === 'cloud' ? cloudApi : api;
-        const list = await client.listProjects();
-        if (cancelled) return;
-        setProjects(list);
-
-        // Only overwrite the project-name field the first time it is populated;
-        // preserve what the user is typing on subsequent refetches.
-        setProjectName((current) => {
-          if (current) return current;
-          const lastUsed = getLastProjectName();
-          if (defaultProjectName && list.some((p) => p.name.toLowerCase() === defaultProjectName.toLowerCase())) {
-            return defaultProjectName;
-          }
-          if (lastUsed && list.some((p) => p.name.toLowerCase() === lastUsed.toLowerCase())) {
-            return lastUsed;
-          }
-          if (list.length > 0) {
-            const sorted = [...list].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
-            return sorted[0].name;
-          }
-          return defaultProjectName || 'My Project';
-        });
-      } catch {
-        if (!cancelled) {
-          setProjectName((current) => current || defaultProjectName || 'My Project');
-        }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [defaultProjectName, accessToken, destination, signedIn]);
 
   // Focus the file name input once the project name has been auto-populated
   // by the projects-list load. Two guards:
@@ -165,7 +106,6 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   const didInitialFocusRef = useRef(false);
   useEffect(() => {
     if (didInitialFocusRef.current) return;
-    if (!projectName) return;
     didInitialFocusRef.current = true;
     // Small delay to let React render the field
     const t = setTimeout(() => {
@@ -186,38 +126,12 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
       }, 350);
     }, 50);
     return () => clearTimeout(t);
-  }, [projectName]);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (comboRef.current && !comboRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const filteredProjects = isTyping && projectName.trim()
-    ? projects.filter((p) => p.name.toLowerCase().includes(projectName.toLowerCase()))
-    : projects;
-
-  const handleSelectProject = useCallback((name: string) => {
-    setProjectName(name);
-    setIsTyping(false);
-    setDropdownOpen(false);
-    // Focus filename after selection
-    setTimeout(() => {
-      fileInputRef.current?.focus();
-      fileInputRef.current?.select();
-    }, 30);
-  }, []);
 
   const handleSave = async () => {
-    const trimmedProject = projectName.trim();
     const trimmedFile = fileName.trim();
-    if (!trimmedProject || !trimmedFile) return;
+    if (!trimmedFile) return;   // a title is the only thing a save needs now
 
     if (destination === 'cloud' && !signedIn) {
       // AuthGate handles dispatching the login dialog. The user can re-click
@@ -233,37 +147,14 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
     const client = destination === 'cloud' ? cloudApi : api;
 
     try {
-      // Create or find existing project. The cached `projects` list can be
-      // stale (e.g. empty because an earlier listProjects returned 401 before
-      // sign-in), so if create fails with 409 we refetch and look up the
-      // conflicting project instead of giving up.
-      let project: ProjectInfo | undefined;
-      const cached = projects.find(
-        (p) => p.name.toLowerCase() === trimmedProject.toLowerCase()
-      );
-      if (cached) {
-        project = cached;
-      } else {
-        try {
-          project = await client.createProject(trimmedProject);
-        } catch (err: any) {
-          if (err?.status === 409) {
-            const fresh = await client.listProjects().catch(() => [] as ProjectInfo[]);
-            setProjects(fresh);
-            project = fresh.find(
-              (p) => p.name.toLowerCase() === trimmedProject.toLowerCase(),
-            );
-          }
-          if (!project) {
-            if (!(err as any)?.handled) {
-              const msg = err instanceof Error ? err.message : String(err);
-              setError(`Could not create project: ${msg}`);
-            }
-            setSaving(false);
-            return;
-          }
-        }
-      }
+      /*
+       * v1.14: nothing to pick, create or reconcile. A FreeDraft file is one script,
+       * so it goes in the one library. This used to create a project from a typed
+       * name, handle the 409 when it already existed, refetch, and then surface
+       * "Could not create project" to someone who had merely tried to save their
+       * screenplay.
+       */
+      const project = { id: await getLibraryId(client), name: LIBRARY_NAME } as ProjectInfo;
 
       // Create script in the project
       const content = buildContent();
@@ -272,18 +163,17 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
         content: content || undefined,
       });
 
-      saveLastProjectName(trimmedProject);
       // Fan out to enabled secondary save locations (Settings > Save Locations)
       if (content) {
         void mirrorSave({
           projectId: project.id,
           scriptId: scriptResp.meta.id,
-          projectName: trimmedProject,
+          projectName: LIBRARY_NAME,
           title: trimmedFile,
           content,
         });
       }
-      onSaved(project.id, trimmedProject, scriptResp.meta.id, trimmedFile, destination);
+      onSaved(project.id, LIBRARY_NAME, scriptResp.meta.id, trimmedFile, destination);
     } catch (err) {
       // AuthGate / QuotaExceededDialog already showed a dialog for these —
       // don't duplicate the raw message inline.
@@ -295,15 +185,10 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && projectName.trim() && fileName.trim()) {
-      setDropdownOpen(false);
+    if (e.key === 'Enter' && fileName.trim()) {
       handleSave();
     } else if (e.key === 'Escape') {
-      if (dropdownOpen) {
-        setDropdownOpen(false);
-      } else {
-        onClose();
-      }
+      onClose();
     }
   };
 
@@ -344,90 +229,6 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
               )}
             </div>
           )}
-          <div className="dialog-row">
-            <label>Project</label>
-            <div ref={comboRef} style={{ position: 'relative' }}>
-              <div style={{ display: 'flex', gap: 0 }}>
-                <input
-                  ref={inputRef}
-                  value={projectName}
-                  onChange={(e) => {
-                    setProjectName(e.target.value);
-                    setIsTyping(true);
-                    setDropdownOpen(true);
-                  }}
-                  onFocus={() => { setIsTyping(false); setDropdownOpen(true); }}
-                  placeholder="Project name"
-                  style={{ flex: 1, borderRadius: '4px 0 0 4px' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => { setIsTyping(false); setDropdownOpen((v) => !v); }}
-                  style={{
-                    width: 32,
-                    border: '1px solid var(--fd-border)',
-                    borderLeft: 'none',
-                    borderRadius: '0 4px 4px 0',
-                    background: 'var(--fd-bg)',
-                    color: 'var(--fd-text)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 12,
-                    padding: 0,
-                  }}
-                  tabIndex={-1}
-                >
-                  &#9662;
-                </button>
-              </div>
-              {dropdownOpen && filteredProjects.length > 0 && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    maxHeight: 160,
-                    overflowY: 'auto',
-                    background: 'var(--fd-menu-bg, var(--fd-bg))',
-                    border: '1px solid var(--fd-border)',
-                    borderRadius: 4,
-                    marginTop: 2,
-                    zIndex: 10,
-                    boxShadow: '0 4px 12px rgba(0,0,0,.3)',
-                  }}
-                >
-                  {filteredProjects.map((p) => (
-                    <div
-                      key={p.id}
-                      onClick={() => handleSelectProject(p.name)}
-                      style={{
-                        padding: '8px 12px',
-                        cursor: 'pointer',
-                        fontSize: 13,
-                        color: 'var(--fd-text)',
-                        background:
-                          p.name.toLowerCase() === projectName.toLowerCase()
-                            ? 'var(--fd-menu-hover)'
-                            : 'transparent',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--fd-menu-hover)')}
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background =
-                          p.name.toLowerCase() === projectName.toLowerCase()
-                            ? 'var(--fd-menu-hover)'
-                            : 'transparent')
-                      }
-                    >
-                      {p.name}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
           <div className="dialog-row" style={{ marginTop: 12 }}>
             <label>Draft</label>
             <input
@@ -446,7 +247,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
             />
           </div>
           <div className="save-as-preview">
-            Saves as: <strong>{[projectName.trim(), fileName].filter(Boolean).join(' - ') || '—'}</strong>
+            Saves as: <strong>{fileName || '—'}</strong>
           </div>
           {error && (
             <div style={{ color: '#ff6b6b', fontSize: 12, marginTop: 8 }}>{error}</div>
@@ -457,7 +258,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
           <button
             className="dialog-primary"
             onClick={handleSave}
-            disabled={saving || !projectName.trim() || !fileName.trim()}
+            disabled={saving || !fileName.trim()}
           >
             {saving
               ? 'Saving...'

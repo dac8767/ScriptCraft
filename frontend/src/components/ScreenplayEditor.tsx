@@ -4101,7 +4101,6 @@ const ScreenplayEditor: React.FC = () => {
       {!isHistoryMode && showWelcome && <WelcomeDialog onChoice={handleWelcomeChoice} />}
       {!isHistoryMode && saveAsOpen && (
         <SaveAsDialog
-          defaultProjectName={currentProject?.name || 'My Project'}
           defaultFileName={useEditorStore.getState().documentTitle || 'First Draft'}
           defaultDestination={
             currentProject && useProjectStore.getState().isCloudProject(currentProject.id)

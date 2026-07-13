@@ -686,7 +686,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             <button
               className="char-profile-img-btn"
               onClick={() => { setImagePickerFor(charName); setImagePickerFilter(''); }}
-              title="Associate an existing project asset"
+              title="Associate an existing asset"
             >
               From Assets
             </button>
@@ -1190,7 +1190,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                             <button
                               className="char-profile-img-btn"
                               onClick={() => { setImagePickerFor(name); setImagePickerFilter(''); }}
-                              title="Associate an existing project asset"
+                              title="Associate an existing asset"
                             >
                               From Assets
                             </button>
