@@ -1271,20 +1271,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             },
           ],
         },
-        // DEV ONLY — absent from production builds, along with the tool itself.
-        ...(import.meta.env.DEV ? [
-          { separator: true, label: '' },
-          {
-            icon: <FaBug />, label: 'Developer',
-            children: [
-              {
-                icon: <FaBug />,
-                label: 'Dev Picker',
-                action: () => useEditorStore.getState().openTool('devpicker'),
-              },
-            ],
-          },
-        ] : []),
         { separator: true, label: '' },
         {
           icon: <FaAdjust />, label: 'Theme',
@@ -1507,6 +1493,26 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         label: 'Diagnostics',
         action: () => { void handleOpenDiagnostics(); },
       },
+      /*
+       * v1.12: Developer moved here from View. View is about what you can see in
+       * the script; Developer is a tool for reporting problems with the app — which
+       * is what Help is for, and it sits next to Diagnostics, Report a Bug and
+       * Feature Request, the things it feeds.
+       * DEV ONLY: absent from production builds, along with the tool itself.
+       */
+      ...(import.meta.env.DEV ? [
+        { separator: true, label: '' },
+        {
+          icon: <FaBug />, label: 'Developer',
+          children: [
+            {
+              icon: <FaBug />,
+              label: 'Dev Picker',
+              action: () => useEditorStore.getState().openTool('devpicker'),
+            },
+          ],
+        },
+      ] : []),
     ],
   };
 
