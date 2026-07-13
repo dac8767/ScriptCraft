@@ -13619,9 +13619,12 @@ html.android .version-history-panel {
    the dialog's min-width: fit-content to widen the window for a long name. */
 .save-as-preview {
   font-size: 15px; /* matches its "Saves as:" label (v1.34) */
-  /* v1.40: light grey won (after accent-blue and a gold trial) — the theme's
-     muted text color, so every theme keeps an appropriate grey. v1.41: italic. */
+  /* v1.40: light grey (after accent-blue and a gold trial) — the theme's
+     muted text color, so every theme keeps an appropriate grey. v1.48:
+     underlined. */
   color: var(--fd-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
   white-space: nowrap;
 }
 
@@ -14546,7 +14549,7 @@ html.android .version-history-panel {
   cursor: pointer;
 }
 .fs-saveas-folderbtn:hover { filter: brightness(1.15); }
-.fs-saveas-folderbtn svg { display: block; }
+.fs-saveas-folderbtn svg { display: block; width: 20px; height: 20px; } /* v1.48: same height as the Include toggles */
 
 /* v1.35: each location is a chip; colors cycle so neighbours never match. */
 .fs-saveas-loc-chip {

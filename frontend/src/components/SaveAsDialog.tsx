@@ -456,8 +456,9 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
             />
             <IncludeToggle what="Version" on={includeVersion} onToggle={() => setIncludeVersion(!includeVersion)} />
 
-            {/* v1.39: the name-composition fields end here; locations below. */}
-            <div className="fs-saveas-divider" aria-hidden="true" />
+            {/* v1.48: the name-composition fields end here; locations below.
+              * No line any more — just a wider-than-usual breath. */}
+            <div className="fs-saveas-sectiongap" aria-hidden="true" />
 
             {!WEB_ONLY_CLOUD && (
               <>
