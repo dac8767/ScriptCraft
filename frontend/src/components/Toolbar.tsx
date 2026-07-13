@@ -1016,7 +1016,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           </button>
           {zoomMenuOpen && (
             <div className="zoom-menu">
-              {/* v1.34: one stepper row — minus | amount | plus. The amount is
+              {/* v1.36: the menu's HEADER is a three-cell grid — minus | amount
+                * | plus — full-bleed, icons filling their cells. The amount is
                 * still click-to-type. */}
               <div className="zoom-menu-stepper">
                 <button
@@ -1060,7 +1061,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                   onClick={() => setZoomLevel(Math.min(ZOOM_MAX, zoomLevel + 10))}
                 ><FaPlus /></button>
               </div>
-              <div className="zoom-menu-sep" />
               <button
                 className="zoom-menu-item"
                 onClick={() => { setZoomLevel(100); setZoomMenuOpen(false); }}
