@@ -14487,8 +14487,13 @@ html.android .version-history-panel {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
+  /* v1.45: bubbles flow one after another and WRAP when a name won't fully
+     fit. contain: inline-size keeps the row's content out of the dialog's
+     intrinsic width, so wrapping never widens the window (unlike the
+     filename, which is meant to). */
+  flex-wrap: wrap;
   gap: 6px;
+  contain: inline-size;
 }
 .fs-saveas-locations-list span {
   min-width: 0;

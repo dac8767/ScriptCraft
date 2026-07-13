@@ -136,7 +136,7 @@ describe('Save Script dialog layout (v1.22)', () => {
     }
   });
 
-  it('additional save locations stack one per line', () => {
+  it('additional save locations flow as wrapping bubbles (v1.45: was one per line)', () => {
     act(() => { useSettingsStore.setState({ saveToCloud: true, saveToGDrive: true }); });
     const items = Array.from(container.querySelectorAll('.fs-saveas-locations-list span'));
     expect(items.map((el) => el.textContent)).toEqual(['ScriptCraft Cloud', 'Google Drive']);
