@@ -14553,12 +14553,16 @@ html.android .version-history-panel {
 
 /* v1.50: New Script… — the welcome card around the Save dialog's field grid. */
 .fs-newscript-card { width: min(560px, 92vw); }
-.fs-newscript-grid { text-align: left; margin-top: 8px; }
+/* v1.51: the welcome card has no body padding of its own (only the hero pads
+   itself), so the grid and the buttons carry the 24px inset — the fields were
+   running flush to the card's edges. */
+.fs-newscript-grid { text-align: left; margin-top: 16px; padding: 0 24px; }
 .fs-newscript-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 18px;
+  padding: 0 24px 20px;
 }
 .fs-newscript-actions button {
   height: 32px;
