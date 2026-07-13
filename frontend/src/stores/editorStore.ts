@@ -794,9 +794,15 @@ interface EditorState {
    * dock if hidden), or a temporary window if it's disabled in both panels.
    */
   openTool: (tool: ToolId) => void;
-  /** v1.16: request Preferences, optionally scrolled to a section. */
-  preferencesRequest: { open: boolean; section?: 'saveLocations' };
-  openPreferences: (section?: 'saveLocations') => void;
+  /**
+   * v1.21: request Preferences, opened on a specific TAB.
+   *
+   * v1.16 asked it to "scroll to a section", which only worked if you happened to
+   * already be on the tab that contained it. Settings has tabs — Save Options is one
+   * of them — so the request names the tab.
+   */
+  preferencesRequest: { open: boolean; tab?: 'saveloc' };
+  openPreferences: (tab?: 'saveloc') => void;
   closePreferences: () => void;
   /** Toolbar customization: hidden built-in buttons + pinned tool shortcuts */
   toolbarHiddenItems: string[];
@@ -1301,7 +1307,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   tempTool: null,
   setTempTool: (tool) => set({ tempTool: tool }),
   preferencesRequest: { open: false },
-  openPreferences: (section) => set({ preferencesRequest: { open: true, section } }),
+  openPreferences: (tab) => set({ preferencesRequest: { open: true, tab } }),
   closePreferences: () => set({ preferencesRequest: { open: false } }),
   openTool: (tool) => set((s) => {
     // v1.2: Analytics always opens as its own window. It's far taller than a

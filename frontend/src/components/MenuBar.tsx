@@ -2013,7 +2013,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     <EditWorkspacesDialog open={editWorkspacesOpen} onClose={() => setEditWorkspacesOpen(false)} />
     <PreferencesDialog
       open={prefsOpen || preferencesRequest.open}
-      scrollTo={preferencesRequest.section}
+      openTab={preferencesRequest.tab}
       onClose={() => { setPrefsOpen(false); closePreferences(); }}
       editor={editor}
     />

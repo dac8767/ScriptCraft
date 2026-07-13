@@ -284,68 +284,80 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
           <ImportedSourceNotice />
 
           {/*
-            * v1.16: the This device / FreeDraft Cloud toggle is gone. Where copies of
-            * a script go is configured once, in Settings > Save Locations, and asking
-            * again on every single save was a second source of truth for the same
-            * decision — and one that could silently contradict the settings.
+            * v1.21 — laid out like an export panel: one column of labels, one column
+            * of controls, and the destination shown as a path you can click rather
+            * than a text box you can't type into anyway.
             *
-            * What you get instead: the folder on this device the file is written to
-            * (pick it here, it sticks), and a read-only summary of the other locations
-            * currently switched on, with a way through to change them.
+            * Order matters here: what the script is CALLED comes first, because that's
+            * what you came to this dialog to decide. Where copies of it go is settled
+            * once and rarely revisited, so it sits at the bottom.
             */}
-          {!WEB_ONLY_CLOUD && (
-            <div className="dialog-row" style={{ marginBottom: 12 }}>
-              <label>Folder on this device</label>
-              <div className="fs-saveas-folder">
-                <span className="fs-saveas-folder-path" title={localSaveFolder || undefined}>
-                  {localSaveFolder || 'Not set — the script is kept in the app only'}
-                </span>
-                <button type="button" onClick={chooseFolder}>Choose…</button>
-                {localSaveFolder && (
-                  <button type="button" onClick={() => setLocalSaveFolder('')} title="Stop writing a file copy">Clear</button>
-                )}
-              </div>
-            </div>
-          )}
+          <div className="fs-saveas-grid">
 
-          <div className="dialog-row" style={{ marginBottom: 12 }}>
-            <label>Also saving to</label>
-            <div className="fs-saveas-locations">
-              <span>{otherLocations.length ? otherLocations.join(', ') : 'Nowhere else'}</span>
-              <button
-                type="button"
-                className="fs-saveas-change"
-                onClick={() => { onOpenSaveLocations(); onClose(); }}
-              >Change save locations…</button>
-            </div>
-          </div>
-
-          <div className="dialog-row">
-            <label>Name</label>
+            <label htmlFor="saveas-name">Script Name</label>
             <input
+              id="saveas-name"
               ref={fileInputRef}
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Script name"
             />
-          </div>
-          <div className="dialog-row" style={{ marginTop: 12 }}>
-            <label>Draft</label>
-            <input
-              ref={fileInputRef}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="First Draft"
-            />
-          </div>
-          <div className="dialog-row" style={{ marginTop: 12 }}>
-            <label>Version</label>
-            <input
-              value={version}
-              onChange={(e) => setVersion(e.target.value)}
-              placeholder={`${mm}/${dd}/${yy}`}
-            />
+
+            {/* Draft and Version share a row — they're two halves of one answer. */}
+            <label htmlFor="saveas-draft">Draft</label>
+            <div className="fs-saveas-inline">
+              <input
+                id="saveas-draft"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="First Draft"
+              />
+              <label htmlFor="saveas-version" className="fs-saveas-inline-label">Version</label>
+              <input
+                id="saveas-version"
+                value={version}
+                onChange={(e) => setVersion(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={`${mm}/${dd}/${yy}`}
+              />
+            </div>
+
+            {!WEB_ONLY_CLOUD && (
+              <>
+                <label>Folder on this device</label>
+                <div className="fs-saveas-folder">
+                  <button
+                    type="button"
+                    className="fs-saveas-path"
+                    onClick={chooseFolder}
+                    title={localSaveFolder ? `${localSaveFolder} — click to change` : 'Click to choose a folder'}
+                  >
+                    {localSaveFolder || 'Choose a folder…'}
+                  </button>
+                  {localSaveFolder && (
+                    <button
+                      type="button"
+                      className="fs-saveas-clear"
+                      onClick={() => setLocalSaveFolder('')}
+                      title="Stop keeping a file copy on this device"
+                    >Clear</button>
+                  )}
+                </div>
+              </>
+            )}
+
+            <label>Additional save locations:</label>
+            <div className="fs-saveas-locations">
+              <span>{otherLocations.length ? otherLocations.join(', ') : 'None'}</span>
+              <button
+                type="button"
+                className="fs-saveas-change"
+                onClick={() => { onOpenSaveLocations(); onClose(); }}
+              >Change save locations…</button>
+            </div>
+
           </div>
           <div className="save-as-preview">
             Saves as: <strong>{fileName || '—'}</strong>

@@ -14179,49 +14179,6 @@ html.android .version-history-panel {
 }
 .dev-shot-bar button:hover { color: var(--fd-text); border-color: var(--fd-accent); }
 
-/* Save As — folder picker + save-location summary (v1.16) */
-.fs-saveas-folder,
-.fs-saveas-locations {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-.fs-saveas-folder-path {
-  flex: 1;
-  min-width: 0;
-  padding: 6px 8px;
-  background: var(--fd-input-bg, var(--fd-dropdown-bg));
-  border: 1px solid var(--fd-border);
-  border-radius: 5px;
-  font-size: 12px;
-  color: var(--fd-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  direction: rtl;          /* a long path should show the END — the folder you picked */
-  text-align: left;
-}
-.fs-saveas-locations span {
-  flex: 1;
-  font-size: 12px;
-  color: var(--fd-text-muted);
-}
-.fs-saveas-folder button,
-.fs-saveas-change {
-  padding: 6px 10px;
-  background: var(--fd-btn-bg, var(--fd-overlay-subtle));
-  color: var(--fd-text);
-  border: 1px solid var(--fd-border);
-  border-radius: 5px;
-  font-size: 12px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.fs-saveas-folder button:hover,
-.fs-saveas-change:hover { border-color: var(--fd-accent); }
-.fs-saveas-draft { color: var(--fd-text-muted); }
-
 /* The section you were sent to should announce itself. */
 .prefs-section-flash {
   animation: prefs-flash 1.2s ease-out;
@@ -14231,3 +14188,97 @@ html.android .version-history-panel {
   0%, 100% { background: transparent; }
   20%      { background: color-mix(in srgb, var(--fd-accent) 18%, transparent); }
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Save As — laid out like an export panel (v1.21).
+
+   One column of labels, one of controls, so the eye runs straight down both.
+   The destination is a clickable path rather than a text box you can't type into
+   anyway — the same move Premiere makes, and for the same reason: a path is
+   something you *pick*, not something you *write*.
+   ════════════════════════════════════════════════════════════════════════════ */
+.fs-saveas-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  align-items: center;
+  gap: 14px 16px;
+  padding: 4px 0 8px;
+}
+.fs-saveas-grid > label {
+  font-size: 13px;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
+}
+.fs-saveas-grid > input,
+.fs-saveas-inline > input {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+.fs-saveas-grid > input:focus,
+.fs-saveas-inline > input:focus { outline: none; border-color: var(--fd-accent); }
+
+/* Draft and Version: two halves of one answer, on one row. */
+.fs-saveas-inline {
+  display: grid;
+  grid-template-columns: 1fr max-content 1fr;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.fs-saveas-inline-label {
+  font-size: 13px;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
+}
+
+/* The destination: a path you click, not a field you type into. */
+.fs-saveas-folder { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.fs-saveas-path {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 0;
+  background: none;
+  border: none;
+  color: var(--fd-accent);
+  font-size: 13px;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;         /* a long path should show the END — the folder you picked */
+}
+.fs-saveas-path:hover { filter: brightness(1.25); }
+.fs-saveas-clear,
+.fs-saveas-change {
+  padding: 5px 10px;
+  background: var(--fd-btn-bg, var(--fd-overlay-subtle));
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fs-saveas-clear:hover,
+.fs-saveas-change:hover { border-color: var(--fd-accent); }
+
+.fs-saveas-locations { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.fs-saveas-locations span {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fs-saveas-draft { color: var(--fd-text-muted); }

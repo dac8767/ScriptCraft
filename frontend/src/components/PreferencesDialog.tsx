@@ -388,29 +388,20 @@ function GeneralTab() {
   );
 }
 
-export default function PreferencesDialog({ open, onClose, editor, scrollTo }: {
+export default function PreferencesDialog({ open, onClose, editor, openTab }: {
   open: boolean;
   onClose: () => void;
   editor?: Editor | null;
-  /** v1.16: open straight at a section — Save As sends you here to change locations. */
-  scrollTo?: 'saveLocations';
+  /** v1.21: open straight ON a tab — Save As sends you to Save Options. */
+  openTab?: PrefTab;
 }) {
   const [tab, setTab] = useState<PrefTab>('general');
 
-  // v1.16: land on the section you were sent to. A "Change save locations…" button
-  // that opened the dialog at the top and left you to find it would be half a promise.
+  // v1.21: land ON the tab you were sent to. Scrolling alone was useless if Settings
+  // happened to be sitting on a different tab — the section wasn't even rendered.
   React.useEffect(() => {
-    if (!open || !scrollTo) return;
-    const id = scrollTo === 'saveLocations' ? 'prefs-save-locations' : '';
-    if (!id) return;
-    const t = setTimeout(() => {
-      const el = document.getElementById(id);
-      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      el?.classList.add('prefs-section-flash');
-      setTimeout(() => el?.classList.remove('prefs-section-flash'), 1200);
-    }, 60);   // let the dialog render first
-    return () => clearTimeout(t);
-  }, [open, scrollTo]);
+    if (open && openTab) setTab(openTab);
+  }, [open, openTab]);
 
   if (!open) return null;
 
