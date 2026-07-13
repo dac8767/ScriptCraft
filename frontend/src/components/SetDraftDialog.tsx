@@ -13,13 +13,6 @@ import { showToast } from './Toast';
    The label is saved inside the document (_draftLabel).
    ───────────────────────────────────────────────────────────────────────── */
 
-const ORDINALS = [
-  'First Draft', 'Second Draft', 'Third Draft', 'Fourth Draft', 'Fifth Draft',
-  'Sixth Draft', 'Seventh Draft', 'Eighth Draft', 'Ninth Draft', 'Tenth Draft',
-];
-const CUSTOM = '__custom__';
-
-
 /**
  * Set the draft label everywhere it lives: the editor store (persisted as
  * _draftLabel on save) and the Title Page draft line in place, preserving
@@ -65,29 +58,22 @@ export default function SetDraftDialog({ open, onClose, editor }: {
   open: boolean; onClose: () => void; editor: Editor | null;
 }) {
   const { draftLabel } = useEditorStore();
-  const [choice, setChoice] = useState(draftLabel);
-  const [customValue, setCustomValue] = useState('');
-  const customRef = useRef<HTMLInputElement>(null);
+  /* v1.39: one plain text field, matching the Draft field's other two homes
+     (Title Page, Save Script). The ordinal dropdown + "Custom…" pairing was a
+     second input model for the same value. */
+  const [value, setValue] = useState(draftLabel);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
-      if (ORDINALS.includes(draftLabel)) {
-        setChoice(draftLabel);
-        setCustomValue('');
-      } else {
-        setChoice(CUSTOM);
-        setCustomValue(draftLabel);
-      }
+      setValue(draftLabel);
+      setTimeout(() => { inputRef.current?.focus(); inputRef.current?.select(); }, 0);
     }
   }, [open, draftLabel]);
 
-  useEffect(() => {
-    if (choice === CUSTOM) setTimeout(() => customRef.current?.focus(), 0);
-  }, [choice]);
-
   if (!open) return null;
 
-  const finalLabel = (choice === CUSTOM ? customValue : choice).trim();
+  const finalLabel = value.trim();
 
   const apply = () => {
     if (!finalLabel) return;
@@ -108,32 +94,22 @@ export default function SetDraftDialog({ open, onClose, editor }: {
         <div className="dialog-header">Set Draft Number</div>
         <div className="dialog-body">
           <div className="dialog-row">
-            <label htmlFor="draft-select">
+            <label htmlFor="draft-input">
               Used to autofill the Draft field when saving, and the draft line
               on the title page.
             </label>
-            <select
-              id="draft-select"
-              value={choice}
-              onChange={(e) => setChoice(e.target.value)}
-            >
-              {ORDINALS.map((o) => <option key={o} value={o}>{o}</option>)}
-              <option value={CUSTOM}>Custom…</option>
-            </select>
-            {choice === CUSTOM && (
-              <input
-                ref={customRef}
-                style={{ marginTop: 8 }}
-                value={customValue}
-                placeholder="e.g. Shooting Draft"
-                maxLength={60}
-                onChange={(e) => setCustomValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') { e.preventDefault(); apply(); }
-                  if (e.key === 'Escape') { e.preventDefault(); onClose(); }
-                }}
-              />
-            )}
+            <input
+              id="draft-input"
+              ref={inputRef}
+              value={value}
+              placeholder="e.g. First Draft, Shooting Draft"
+              maxLength={60}
+              onChange={(e) => setValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); apply(); }
+                if (e.key === 'Escape') { e.preventDefault(); onClose(); }
+              }}
+            />
           </div>
         </div>
         <div className="dialog-actions">
