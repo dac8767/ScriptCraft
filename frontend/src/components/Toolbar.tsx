@@ -14,8 +14,6 @@ import {
   FaUndo,
   FaRedo,
   FaSearchPlus,
-  FaMinus,
-  FaPlus,
   FaSearch,
   FaStickyNote,
   FaTags,
@@ -26,6 +24,7 @@ import {
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
+import { CircleMinusIcon, CirclePlusIcon } from './uiIcons';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { commandDef } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones } from './toolbarBuiltins';
@@ -1025,7 +1024,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                   title="Zoom out"
                   disabled={zoomLevel <= ZOOM_MIN}
                   onClick={() => setZoomLevel(Math.max(ZOOM_MIN, zoomLevel - 10))}
-                ><FaMinus /></button>
+                ><CircleMinusIcon /></button>
                 <div className="zoom-menu-value">
                   {zoomEditing ? (
                     <input
@@ -1059,7 +1058,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                   title="Zoom in"
                   disabled={zoomLevel >= ZOOM_MAX}
                   onClick={() => setZoomLevel(Math.min(ZOOM_MAX, zoomLevel + 10))}
-                ><FaPlus /></button>
+                ><CirclePlusIcon /></button>
               </div>
               <button
                 className="zoom-menu-item"

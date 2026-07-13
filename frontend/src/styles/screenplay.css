@@ -1177,7 +1177,7 @@ body {
   cursor: pointer;
   padding: 0;
 }
-.zoom-step svg { width: 100%; height: 100%; padding: 10px; box-sizing: border-box; }
+.zoom-step svg { width: 13px; height: 13px; } /* v1.38: same height as the zoom text */
 .zoom-step:first-child { border-right: 1px solid var(--fd-border); }
 .zoom-step:last-child { border-left: 1px solid var(--fd-border); }
 .zoom-step:hover:not(:disabled) { background: var(--fd-hover-bg); }

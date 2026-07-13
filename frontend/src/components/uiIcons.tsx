@@ -57,6 +57,25 @@ export const DoubleChevronIcon: React.FC<{
   </svg>
 );
 
+/** v1.38: circled minus / plus for the zoom stepper — Derek's artwork as
+ *  currentColor vectors, so they tint with every theme like the chevrons. */
+const CircleIconBase: React.FC<{ size: number; children: React.ReactNode }> = ({ size, children }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+    <circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    {children}
+  </svg>
+);
+export const CircleMinusIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
+  <CircleIconBase size={size}>
+    <path d="M4.9 8 H11.1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </CircleIconBase>
+);
+export const CirclePlusIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
+  <CircleIconBase size={size}>
+    <path d="M4.9 8 H11.1 M8 4.9 V11.1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </CircleIconBase>
+);
+
 /** Which way the double chevron points: pop-out sends the window AWAY from its
  *  panel; pop-in sends it back TOWARD the panel. */
 export const chevronTowards = (button: 'popout' | 'popin', side: 'left' | 'right'): 'left' | 'right' =>
