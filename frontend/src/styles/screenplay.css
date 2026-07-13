@@ -3004,20 +3004,35 @@ body {
   border-color: var(--fd-accent);
 }
 
-/* ============ PLACEHOLDER TEXT ============ */
-div[data-type="scene-heading"].is-empty::before { content: 'INT./EXT. LOCATION - TIME'; color: #ccc; pointer-events: none; float: left; height: 0; text-transform: uppercase; }
-div[data-type="action"].is-empty::before { content: 'Describe the action...'; color: #ccc; pointer-events: none; float: left; height: 0; font-style: italic; }
-div[data-type="character"].is-empty::before { content: 'CHARACTER NAME'; color: #ccc; pointer-events: none; float: left; height: 0; text-transform: uppercase; }
-div[data-type="dialogue"].is-empty::before { content: 'Dialogue...'; color: #ccc; pointer-events: none; float: left; height: 0; font-style: italic; }
-div[data-type="parenthetical"].is-empty::before { content: '(direction)'; color: #ccc; pointer-events: none; float: left; height: 0; font-style: italic; }
-div[data-type="transition"].is-empty::before { content: 'TRANSITION:'; color: #ccc; pointer-events: none; float: left; height: 0; text-transform: uppercase; }
-div[data-type="general"].is-empty::before { content: 'Text...'; color: #ccc; pointer-events: none; float: left; height: 0; }
-div[data-type="shot"].is-empty::before { content: 'SHOT DESCRIPTION'; color: #ccc; pointer-events: none; float: left; height: 0; text-transform: uppercase; }
-div[data-type="new-act"].is-empty::before { content: 'ACT ONE'; color: #ccc; pointer-events: none; float: left; height: 0; text-transform: uppercase; }
-div[data-type="end-of-act"].is-empty::before { content: 'END OF ACT'; color: #ccc; pointer-events: none; float: left; height: 0; text-transform: uppercase; }
-div[data-type="lyrics"].is-empty::before { content: 'Lyrics...'; color: #ccc; pointer-events: none; float: left; height: 0; font-style: italic; }
-div[data-type="show-episode"].is-empty::before { content: 'SHOW TITLE'; color: #ccc; pointer-events: none; float: left; height: 0; text-transform: uppercase; }
-div[data-type="cast-list"].is-empty::before { content: 'Cast...'; color: #ccc; pointer-events: none; float: left; height: 0; }
+/* ============ PLACEHOLDER TEXT ============
+   v1.37 — THE TEXT COMES FROM THE EDITOR, NOT FROM HERE.
+
+   These rules used to hardcode every hint ("Describe the action..." et al),
+   which silently outranked the Placeholder extension's template-driven text:
+   the extension computed the right hint from the active template on every
+   render, and this block painted its own literal over it. Renaming the
+   template defaults (v1.32) and migrating stored templates (v1.34) changed
+   nothing on screen because the screen was never reading them. One source
+   now: the extension writes data-placeholder, CSS only renders and styles it. */
+div[data-type].is-empty::before {
+  content: attr(data-placeholder);
+  color: #ccc;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+/* Per-element presentation only — never content. */
+div[data-type="scene-heading"].is-empty::before,
+div[data-type="character"].is-empty::before,
+div[data-type="transition"].is-empty::before,
+div[data-type="shot"].is-empty::before,
+div[data-type="new-act"].is-empty::before,
+div[data-type="end-of-act"].is-empty::before,
+div[data-type="show-episode"].is-empty::before { text-transform: uppercase; }
+div[data-type="action"].is-empty::before,
+div[data-type="dialogue"].is-empty::before,
+div[data-type="parenthetical"].is-empty::before,
+div[data-type="lyrics"].is-empty::before { font-style: italic; }
 
 
 /* ====================================================================
@@ -13604,10 +13619,11 @@ html.android .version-history-panel {
    the dialog's min-width: fit-content to widen the window for a long name. */
 .save-as-preview {
   font-size: 15px; /* matches its "Saves as:" label (v1.34) */
-  color: var(--fd-accent);
+  /* v1.37 trial: warm gold instead of the accent blue (Derek wasn't sold on
+     blue), name no longer bold. Swap this one value to try other colors. */
+  color: #e0b45c;
   white-space: nowrap;
 }
-.save-as-preview strong { color: var(--fd-accent); font-weight: 700; }
 
 
 /* ═══ v0.17 ═══ */
@@ -14456,6 +14472,25 @@ html.android .version-history-panel {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* v1.37: Customize > Side Panels — each panel is a distinct table with the
+   panel's name and its whole-panel Show/Hide in the header. */
+.fs-panel-table {
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 0 0 16px;
+}
+.fs-panel-table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--fd-toolbar-bg);
+  border-bottom: 1px solid var(--fd-border);
+}
+.fs-panel-table-title { font-weight: 600; font-size: 13px; color: var(--fd-text); }
+.fs-panel-table .fs-customize-row { margin: 0; padding-left: 10px; padding-right: 10px; }
+
 /* v1.35: each location is a chip; colors cycle so neighbours never match. */
 .fs-saveas-loc-chip {
   align-self: flex-start;

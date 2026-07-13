@@ -305,17 +305,34 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       <section>
         <h3>Panel Items</h3>
         <p className="fs-customize-hint">
-          Left items first, then Right. Left/Right moves an item to the bottom of
-          that panel's list; Hide removes it (re-add it from the dropdown below).
-          Drag to reorder within a panel. Divider labels are edited here only.
+          Each panel is its own table; the Show/Hide in its header controls the
+          whole panel (drag a panel's inner edge to resize it). On an item,
+          Left/Right moves it to the bottom of the other panel's list; Hide
+          removes it (re-add it from the dropdown below). Drag to reorder
+          within a panel. Divider labels are edited here only.
         </p>
         {(['left', 'right'] as const).map((side) => {
           const sideRows = side === 'left' ? leftRows : rightRows;
+          /* v1.37: the whole-panel Show/Hide lives in the table's header — the
+             old standalone "Panels" section said the same thing further away. */
+          const [panelLabel, panelOpen, panelToggle] = side === 'left'
+            ? ['Left Panel', navigatorOpen, toggleNavigator] as const
+            : ['Right Panel', shelfOpen, toggleShelf] as const;
           return (
-            <React.Fragment key={side}>
-              {side === 'right' && leftRows.length > 0 && rightRows.length > 0 && (
-                <div className="fs-customize-side-sep" />
-              )}
+            <div className="fs-panel-table" key={side}>
+              <div className="fs-panel-table-head">
+                <span className="fs-panel-table-title">{panelLabel}</span>
+                <span className="fs-customize-seg">
+                  <button
+                    className={panelOpen ? 'active' : ''}
+                    onClick={() => { if (!panelOpen) panelToggle(); }}
+                  >Show</button>
+                  <button
+                    className={!panelOpen ? 'active' : ''}
+                    onClick={() => { if (panelOpen) panelToggle(); }}
+                  >Hide</button>
+                </span>
+              </div>
               {sideRows.map((r, idx) => (
                 <div
                   key={`${r.kind}-${r.id}`}
@@ -355,7 +372,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   </span>
                 </div>
               ))}
-            </React.Fragment>
+            </div>
           );
         })}
         <div className="fs-tbzone-adders fs-adders-equal">
@@ -906,41 +923,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           {activeCat === 'keys' && <KeyboardShortcutsTab />}
           {activeCat === 'themes' && <ThemesTab />}
           {activeCat === 'context' && <ContextMenuTab />}
-          {activeCat === 'panels' && (<>
-          <section>
-            <h3>Panels</h3>
-            <p className="fs-customize-hint">
-              Drag a panel's inner edge to resize it. These just show and hide them.
-            </p>
-            {/*
-              v1.11: the width controls (Compact / Comfortable / Custom + a slider)
-              are gone. You size a panel by dragging its edge now — a control that
-              shows you the result as you do it. Keeping a second way to set the same
-              number, in a dialog, three clicks away and blind, meant two sources of
-              truth for one width and no reason to prefer either. So this row does the
-              one thing the drag can't: show and hide.
-            */}
-            {([
-              ['left', 'Left Panel', navigatorOpen, toggleNavigator] as const,
-              ['right', 'Right Panel', shelfOpen, toggleShelf] as const,
-            ]).map(([side, label, isOpen, toggle]) => (
-              <div className="fs-customize-row" key={side}>
-                <span className="fs-customize-tool">{label}</span>
-                <span className="fs-customize-seg">
-                  <button
-                    className={isOpen ? 'active' : ''}
-                    onClick={() => { if (!isOpen) toggle(); }}
-                  >Show</button>
-                  <button
-                    className={!isOpen ? 'active' : ''}
-                    onClick={() => { if (isOpen) toggle(); }}
-                  >Hide</button>
-                </span>
-              </div>
-            ))}
-          </section>
-          {renderPanelsTab()}
-          </>)}
+          {activeCat === 'panels' && renderPanelsTab()}
         </div>
       </div>
   );

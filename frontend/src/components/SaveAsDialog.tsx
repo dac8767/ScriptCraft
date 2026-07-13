@@ -430,7 +430,9 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
             {!WEB_ONLY_CLOUD && (
               <>
                 <label>Location on this device:</label>
-                <div className="fs-saveas-folder fs-saveas-span">
+                {/* v1.37: sits in the field column only, so the path box is
+                  * exactly as long as the three fields above it. */}
+                <div className="fs-saveas-folder">
                   <button
                     type="button"
                     ref={pathBtnRef}
@@ -472,7 +474,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
             * clipping a long filename. */}
           <span className="fs-saveas-rowlabel">Saves as:</span>
           <div className="save-as-preview">
-            <strong>{fileName || '—'}</strong>
+            {fileName || '—'}
             {draftLabel && <span className="fs-saveas-draft"> - {draftLabel}</span>}
           </div>
           <span className="fs-saveas-actions-gap" aria-hidden="true" />
