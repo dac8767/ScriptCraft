@@ -753,7 +753,19 @@ body {
   display: flex; flex-direction: column; resize: none;
 }
 .spell-modal-embedded .spell-modal-header { cursor: default; }
-.spell-modal-embedded .spell-modal-body { flex: 1; min-height: 0; overflow-y: auto; }
+.spell-modal-embedded .spell-modal-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
+/* v1.35: in a panel the two action columns must FLOW with the width instead
+   of assuming 490px — they wrap, split the row evenly, and their buttons
+   fill their column. Everything tracks the window as it's resized. */
+.spell-modal-embedded .spell-modal-actions { flex-wrap: wrap; padding: 10px 12px; }
+.spell-modal-embedded .spell-modal-actions-col { flex: 1 1 130px; min-width: 0; }
+.spell-modal-embedded .spell-modal-actions button {
+  width: 100%;
+  padding: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* Title Page: still a dialog internally — neutralize its overlay. */
 .fs-modal-as-panel { display: flex; flex-direction: column; height: 100%; min-height: 0; }
@@ -6507,12 +6519,15 @@ html.android .grammar-issue.grammar-grammar {
   border: 1px solid var(--fd-border);
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0,0,0,.6);
-  width: 490px;
   font-size: 13px;
 }
 .spell-modal-floating {
   position: fixed;
   z-index: 2000;
+  /* v1.35: the fixed width belongs to the FLOATING dialog only. It used to sit
+     on .spell-modal, declared AFTER the embedded variant's width:100% — so the
+     490px silently won and the docked panel clipped a third of the UI. */
+  width: 490px;
 }
 .spell-modal-header {
   display: flex;
@@ -14300,11 +14315,11 @@ html.android .version-history-panel {
 }
 /* Rows with no toggle run their control under the toggle column too. */
 .fs-saveas-grid > .fs-saveas-span { grid-column: 2 / -1; }
-/* Text-only rows (Location, Additional locations): 10px left inset so their
-   text sits under the text INSIDE the fields, and the fields' 9px vertical
-   chrome so text-to-text spacing stays uniform (see gap above). */
-.fs-saveas-folder,
-.fs-saveas-locations { padding: 9px 0 9px 10px; box-sizing: border-box; }
+/* v1.35: the folder row holds a field-styled box now — align the BOX with the
+   fields, not its text. The locations row keeps the vertical rhythm; chips
+   align at the box edge, plain "None" keeps the 10px text inset. */
+.fs-saveas-folder { padding: 0; box-sizing: border-box; }
+.fs-saveas-locations { padding: 9px 0; box-sizing: border-box; }
 .fs-saveas-grid > label {
   /* Pinned to column 1 so auto-placement can never drift a label. */
   grid-column: 1;
@@ -14383,14 +14398,15 @@ html.android .version-history-panel {
 .fs-saveas-path {
   flex: 1;
   min-width: 0;
-  padding: 0; /* the row container owns the 9px text-rhythm inset */
-  background: none;
-  border: none;
+  /* v1.35: dressed like the three fields above — the bare link didn't read
+     as clickable. Font color stays the accent. */
+  padding: 8px 10px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
   color: var(--fd-accent);
   font-size: 13px;
   text-align: left;
-  text-decoration: underline;
-  text-underline-offset: 3px;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
@@ -14429,4 +14445,16 @@ html.android .version-history-panel {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* v1.35: each location is a chip; colors cycle so neighbours never match. */
+.fs-saveas-loc-chip {
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--fd-border);
+}
+.fs-saveas-locations-list .fs-saveas-loc-chip:nth-child(3n + 1) { background: rgba(111, 168, 220, .22); }
+.fs-saveas-locations-list .fs-saveas-loc-chip:nth-child(3n + 2) { background: rgba(106, 191, 105, .22); }
+.fs-saveas-locations-list .fs-saveas-loc-chip:nth-child(3n)     { background: rgba(232, 155, 79, .22); }
+.fs-saveas-loc-none { padding-left: 10px; }
 .fs-saveas-draft { color: inherit; }
