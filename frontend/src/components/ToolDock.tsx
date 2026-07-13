@@ -49,6 +49,10 @@ export interface ToolDef {
   noPanelFit?: boolean;
   /** v0.89: the window hugs its content and offers no resize handle. */
   fixedSize?: boolean;
+  /** v1.33: this window can NEVER dock into a side panel — it always floats
+   *  and shows no pop-in button. For tools whose layout simply doesn't fit a
+   *  panel column (Title Page). Beats a stale small toolSize too. */
+  neverDock?: boolean;
   /** dock group separators, Photoshop-style (per side, in order) */
   group: number;
 }
@@ -76,7 +80,7 @@ export const ALL_TOOLS: ToolDef[] = [
   // v0.89: fixed — the Title Page form is a set-size box, so the window is sized
   // to it exactly and can't be resized. Nothing else is fixed; every other tool
   // genuinely uses the space it's given.
-  { id: 'titlepage', label: 'Title Page', icon: <FaFileAlt />, defaultSize: { w: 520, h: 560 }, group: 3, noPanelFit: true, fixedSize: true },
+  { id: 'titlepage', label: 'Title Page', icon: <FaFileAlt />, defaultSize: { w: 520, h: 560 }, group: 3, noPanelFit: true, fixedSize: true, neverDock: true },
   // v0.96: Customize is NOT a tool. It's the permanent button in the chrome, so
   // it can't be docked, hidden, or added to a panel/toolbar — removing it from
   // ALL_TOOLS is what takes it out of both Customize tabs, since those lists are
@@ -259,6 +263,35 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
     document.addEventListener('pointerup', onUp);
   };
 
+  /*
+   * v1.33: grab the header, move the window. The window is absolutely
+   * positioned (left/right + top in CSS); on the first drag we measure where
+   * it actually is, switch to explicit left/top, and follow the pointer.
+   * Buttons in the header are exempt so Close and pop-in still just click.
+   */
+  const startDrag = (e: React.PointerEvent) => {
+    const el = windowRef.current;
+    if (!el || (e.target as HTMLElement).closest('button')) return;
+    e.preventDefault();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const rect = el.getBoundingClientRect();
+    const parent = el.offsetParent?.getBoundingClientRect() ?? ({ left: 0, top: 0 } as DOMRect);
+    const baseLeft = rect.left - parent.left;
+    const baseTop = rect.top - parent.top;
+    const onMove = (ev: PointerEvent) => {
+      el.style.left = `${baseLeft + (ev.clientX - startX)}px`;
+      el.style.right = 'auto'; // right-docked windows are right-anchored until dragged
+      el.style.top = `${Math.max(0, baseTop + (ev.clientY - startY))}px`;
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  };
+
   return (
     <div
       ref={windowRef}
@@ -267,18 +300,22 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
       // width/height is imposed here and there's nothing to drag.
       style={tool.fixedSize ? undefined : { width: size.w, height: size.h }}
     >
-      <div className="tool-window-header">
+      {/* v1.33: the header is the window's top toolbar — title on the left,
+        * pop-in and Close on the right, and the whole strip drags the window. */}
+      <div className="tool-window-header" onPointerDown={startDrag}>
         <span className="tool-window-title">{tool.label}</span>
-        <button className="tool-window-close" onClick={onClose} title="Close">×</button>
+        <span className="tool-window-header-actions">
+          {!temporary && !tool.neverDock && (
+            <button
+              className="tool-window-popin"
+              title="Pop back into the side panel"
+              onClick={() => setToolSize(tool.id, popInW, size.h)}
+            ><DoubleChevronIcon towards={chevronTowards('popin', side === 'right' ? 'right' : 'left')} /></button>
+          )}
+          <button className="tool-window-close" onClick={onClose} title="Close">×</button>
+        </span>
       </div>
       <div className={`tool-window-body${side === 'right' ? ' tool-window-body-right' : ''}`}>{children}</div>
-      {!temporary && (
-        <button
-          className={`tool-window-popin${side === 'right' ? ' tool-window-popin-right' : ''}`}
-          title="Pop back into the side panel"
-          onClick={() => setToolSize(tool.id, popInW, size.h)}
-        ><DoubleChevronIcon towards={chevronTowards('popin', side === 'right' ? 'right' : 'left')} /></button>
-      )}
       {!tool.fixedSize && (
         <div
           className={`tool-window-resize${side === 'right' ? ' tool-window-resize-left' : ''}`}
@@ -348,7 +385,9 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
         ? { w: active.defaultSize.w, h: active.defaultSize.h }
         : { w: Math.min(active.defaultSize.w, dockW), h: active.defaultSize.h }))
     : null;
-  const inline = !!(active && activeSize && activeSize.w <= dockW);
+  // neverDock tools float regardless — even a stale small toolSize from before
+  // the flag existed must not pull them inline.
+  const inline = !!(active && activeSize && activeSize.w <= dockW && !active.neverDock);
 
   const startInlineResize = (e: React.PointerEvent) => {
     if (!active || !activeSize) return;
@@ -449,6 +488,10 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               onClick={() => setActive(activeId === t.id ? null : t.id)}
               title={t.label}
             >
+              {/* v1.33: Premiere-style caret — down when closed, up when open. */}
+              <span className="tool-dock-caret">
+                <DoubleChevronIcon towards={activeId === t.id ? 'up' : 'down'} size={9} />
+              </span>
               <span className="tool-dock-icon">{t.icon}</span>
               <span className="tool-dock-label">{t.label}</span>
             </button>

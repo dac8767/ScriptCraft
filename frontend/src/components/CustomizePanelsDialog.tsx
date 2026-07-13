@@ -1,6 +1,6 @@
 import React from 'react';
 import AddMenu from './AddMenu';
-import { MENU_ICONS, TOOLBAR_ICONS } from './uiIcons';
+import { MENU_ICONS, TOOLBAR_ICONS, UTILITY_ICONS } from './uiIcons';
 /**
  * CustomizePanelsDialog — View → Customize Layout.
  *
@@ -326,7 +326,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                     <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
                     {iconSlot(r.kind === 'tool'
                       ? (ALL_TOOLS.find((t) => t.id === r.id)?.icon ?? null)
-                      : null)}
+                      : UTILITY_ICONS[r.spacer ? 'spacer' : 'divider'])}
                     {r.kind === 'divider' && r.spacer ? (
                       <>
                         <span className="fs-spacer-row-label">— Spacer —</span>
@@ -605,7 +605,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     if (tok.startsWith('b:')) return TOOLBAR_ICONS[tok.slice(2)] ?? null;
     if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.icon ?? null;
     if (tok.startsWith('c:')) return TOOLBAR_ICONS[tok.slice(2)] ?? null;
-    return null;   // spacer / divider
+    return UTILITY_ICONS[tok.startsWith('s:') ? 'spacer' : 'divider'];
   };
 
   /** Icon slot: fixed width whether or not there's an icon, so labels align. */

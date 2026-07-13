@@ -17,8 +17,15 @@ import {
   FaBold, FaItalic, FaUnderline, FaStrikethrough, FaSubscript, FaSuperscript,
   FaPaintBrush, FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
   FaAlignJustify, FaSearch, FaHashtag, FaStickyNote, FaTags, FaSearchPlus,
-  FaFont, FaTextHeight, FaDesktop,
+  FaFont, FaTextHeight, FaDesktop, FaMinus, FaArrowsAltV,
 } from 'react-icons/fa';
+
+/** Customize's utility rows (v1.33) — one icon per concept, read by BOTH the
+ *  Panels tab and the Toolbar tab so the two lists can't drift. */
+export const UTILITY_ICONS: Record<'divider' | 'spacer', React.ReactNode> = {
+  divider: <FaMinus />,
+  spacer: <FaArrowsAltV />,
+};
 
 /**
  * v1.32: the double-chevron (») for the side-panel pop-out / pop-in buttons.
@@ -26,17 +33,24 @@ import {
  * takes every theme's text color (white on dark) and points either way without
  * needing an icon file per color or direction.
  */
-export const DoubleChevronIcon: React.FC<{ towards: 'left' | 'right'; size?: number }> = ({
-  towards,
-  size = 13,
-}) => (
+const CHEVRON_TRANSFORM: Record<string, string | undefined> = {
+  right: undefined,
+  left: 'scaleX(-1)',
+  down: 'rotate(90deg)',
+  up: 'rotate(-90deg)',
+};
+
+export const DoubleChevronIcon: React.FC<{
+  towards: 'left' | 'right' | 'up' | 'down';
+  size?: number;
+}> = ({ towards, size = 13 }) => (
   <svg
     width={size}
     height={size}
     viewBox="0 0 16 16"
     aria-hidden="true"
     focusable="false"
-    style={towards === 'left' ? { transform: 'scaleX(-1)' } : undefined}
+    style={CHEVRON_TRANSFORM[towards] ? { transform: CHEVRON_TRANSFORM[towards] } : undefined}
   >
     <path d="M2.5 2.5 L8 8 L2.5 13.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M8.5 2.5 L14 8 L8.5 13.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />

@@ -59,12 +59,6 @@
   --fd-dialog-bg: #333;
   --fd-input-bg: rgba(0,0,0,.2);
 
-  /* v1.31: the Save dialog's header/footer band. COMPUTED from the theme's
-     own window color, so every theme (including future ones) gets its
-     equivalent automatically instead of maintaining a hand-picked copy per
-     theme; a theme can still override --fd-dialog-band to hand-tune.
-     (v1.32: darker — 20% toward black, replacing the field-color halfway mix.) */
-  --fd-dialog-band: color-mix(in srgb, var(--fd-dropdown-bg) 80%, black);
 
   /* v0.83: toolbar button surface. Every theme sets its own so a button looks
      native to the theme instead of a fixed blue chip on all of them. */
@@ -12247,7 +12241,10 @@ html.android .version-history-panel {
   border-bottom: 1px solid var(--fd-border);
   flex-shrink: 0;
   user-select: none;
+  cursor: grab; /* v1.33: grab the header to move the window */
 }
+.tool-window-header:active { cursor: grabbing; }
+.tool-window-header-actions { display: flex; align-items: center; gap: 6px; }
 .tool-window-title {
   font-size: 12px;
   font-weight: 700;
@@ -13694,25 +13691,32 @@ html.android .version-history-panel {
 .page.pv-hdr-underline .scene-heading { text-decoration: underline; }
 
 /* Floating windows: pop-in button (returns the tool to the side panel) */
+/* v1.33: pop-in lives in the window header (its top toolbar), not a floating
+   corner button. */
 .tool-window-popin {
-  position: absolute;
-  bottom: 4px;
-  left: 6px;
   width: 20px;
   height: 20px;
   background: none;
   border: none;
   color: var(--fd-text-muted);
-  font-size: 13px;
   line-height: 1;
   cursor: pointer;
   padding: 0;
 }
 .tool-window-popin:hover { color: var(--fd-text); }
-.tool-window-popin-right { left: auto; right: 6px; }
 /* v1.32: the pop buttons carry an SVG chevron now, not a text glyph. */
 .tool-window-popin svg,
 .tool-inline-popout svg { display: block; margin: auto; }
+
+/* v1.33: Premiere-style open/closed caret at the left of every dock item. */
+.tool-dock-caret {
+  display: inline-flex;
+  width: 10px;
+  justify-content: center;
+  color: var(--fd-text-muted);
+  flex-shrink: 0;
+}
+.tool-dock-caret svg { display: block; }
 
 /* Customize: toolbar item sub-groups */
 .fs-customize-subgroup {
@@ -14218,31 +14222,18 @@ html.android .version-history-panel {
      the name either. */
   min-width: fit-content;
 }
-/* v1.31: header and footer sit on the band color. v1.32: the band alone does
-   the separating — the divider lines are gone. */
-.fs-saveas-dialog { position: relative; }
+/* v1.33: the header wears the theme's normal chrome color (--fd-toolbar-bg,
+   the same surface the app toolbar uses); the footer matches the window. */
 .fs-saveas-dialog > .dialog-header {
   border-bottom: none;
-  background: var(--fd-dialog-band);
+  background: var(--fd-toolbar-bg);
 }
 .fs-saveas-dialog > .dialog-actions {
   border-top: none;
-  background: var(--fd-dialog-band);
   padding-top: 17px;
   /* v1.30: "Saves as:" sits down here, left of the buttons. */
   justify-content: flex-start;
   align-items: center;
-}
-/* The 14px strip under the footer is the dialog-box's own padding — the v0.76
-   resize-grip clearance — so paint it to match the band. pointer-events: none
-   keeps the native grip reachable (the exact footgun that padding exists for). */
-.fs-saveas-dialog::after {
-  content: '';
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 14px;
-  background: var(--fd-dialog-band);
-  pointer-events: none;
 }
 /* Flexible spacer between the composed name and Cancel — the name may grow,
    but never into the buttons. */
