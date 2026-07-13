@@ -14310,9 +14310,12 @@ html.android .version-history-panel {
 .fs-saveas-dialog > .dialog-header:active { cursor: grabbing; }
 .fs-saveas-dialog > .dialog-actions {
   border-top: none;
-  /* v1.42: same surface and cell padding as the header. */
+  /* v1.42: same surface as the header. v1.46: bottom padding is ZERO — the
+     painted 14px grip strip below (::after) provides it, so the text sits
+     14px from both edges, exactly like the header. Before this the strip
+     STACKED under the footer's own 14px and the bottom read twice as fat. */
   background: var(--fd-toolbar-bg);
-  padding: 14px 20px;
+  padding: 14px 20px 0;
   /* v1.30: "Saves as:" sits down here, left of the buttons. */
   justify-content: flex-start;
   align-items: center;
@@ -14334,7 +14337,7 @@ html.android .version-history-panel {
 .fs-saveas-actions-gap { flex: 1 1 auto; min-width: 24px; }
 /* v1.27: less dead air between the last row and the buttons.
    v1.28: and less between the title's divider and the Include header. */
-.fs-saveas-dialog .dialog-body { padding-top: 10px; padding-bottom: 6px; }
+.fs-saveas-dialog .dialog-body { padding-top: 10px; padding-bottom: 16px; } /* v1.46: more air under the locations row */
 
 .fs-saveas-grid {
   display: grid;
@@ -14539,7 +14542,7 @@ html.android .version-history-panel {
   font-size: 14px;
   cursor: pointer;
 }
-.fs-saveas-folderbtn:hover { color: var(--fd-accent); }
+.fs-saveas-folderbtn:hover { filter: brightness(1.15); }
 .fs-saveas-folderbtn svg { display: block; }
 
 /* v1.35: each location is a chip; colors cycle so neighbours never match. */

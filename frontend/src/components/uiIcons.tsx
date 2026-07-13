@@ -76,6 +76,17 @@ export const CirclePlusIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
   </CircleIconBase>
 );
 
+/** v1.46: the Save dialog's folder-browse icon — Derek's flat-blue folder
+ *  artwork (back folder, tucked paper, front flap). Fixed colors on purpose:
+ *  it's artwork, not a glyph, so it doesn't take the theme's text color. */
+export const FolderIcon: React.FC<{ size?: number }> = ({ size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+    <path d="M1 3.4c0-.9.7-1.6 1.6-1.6h3c.5 0 .9.2 1.2.5l.9 1h5.7c.9 0 1.6.7 1.6 1.6v7.5c0 .9-.7 1.6-1.6 1.6H2.6c-.9 0-1.6-.7-1.6-1.6z" fill="#63a3f5" />
+    <rect x="2.7" y="4.7" width="10.6" height="8" rx="1" fill="#e9e9ee" />
+    <path d="M1 7.6c0-.9.7-1.6 1.6-1.6h5.8c.5 0 1-.2 1.3-.6l.3-.3c.3-.4.8-.6 1.3-.6h2.1c.9 0 1.6.7 1.6 1.6v5.7c0 .9-.7 1.6-1.6 1.6H2.6c-.9 0-1.6-.7-1.6-1.6z" fill="#8ecdfb" />
+  </svg>
+);
+
 /** Which way the double chevron points: pop-out sends the window AWAY from its
  *  panel; pop-in sends it back TOWARD the panel. */
 export const chevronTowards = (button: 'popout' | 'popin', side: 'left' | 'right'): 'left' | 'right' =>

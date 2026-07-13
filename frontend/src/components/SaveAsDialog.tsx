@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { FaRegFolderOpen } from 'react-icons/fa';
+import { FolderIcon } from './uiIcons';
 import { api } from '../services/api';
 import { cloudApi } from '../services/cloudApi';
 import { getLibraryId, LIBRARY_NAME } from '../services/scriptLibrary';
@@ -482,7 +482,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
                   title="Choose a folder"
                   aria-label="Choose a folder"
                   onClick={chooseFolder}
-                ><FaRegFolderOpen /></button>
+                ><FolderIcon /></button>
               </>
             )}
 
