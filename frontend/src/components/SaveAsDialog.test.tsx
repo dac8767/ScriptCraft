@@ -104,11 +104,11 @@ describe('Save Script dialog layout (v1.22)', () => {
       (l) => l.textContent,
     );
     expect(labels).toEqual([
-      'Script Name',
-      'Draft',
-      'Version',
+      'Script Name:',
+      'Draft:',
+      'Version:',
       'Location on this device:',
-      'Additional locations:',
+      'Additional save locations:',
     ]);
     // Version is a direct grid child now, not tucked inside an inline sub-row.
     expect(container.querySelector('.fs-saveas-inline')).toBeNull();
@@ -154,12 +154,12 @@ describe('Include in Name toggles', () => {
 
   it('both on by default: full "Name · Draft - Version" preview', () => {
     expect(text('.fs-saveas-rowlabel')).toBe('Saves as:');
-    expect(text('.save-as-preview')).toBe(`Untitled Screenplay · First Draft - ${todayVersion}`);
+    expect(text('.save-as-preview')).toBe(`Untitled Screenplay - First Draft - ${todayVersion}`);
   });
 
   it('Version off → "Name · Draft"', () => {
     clickSwitch('Include Version in name');
-    expect(text('.save-as-preview')).toBe('Untitled Screenplay · First Draft');
+    expect(text('.save-as-preview')).toBe('Untitled Screenplay - First Draft');
   });
 
   it('both off → the name stands alone', () => {
@@ -171,7 +171,7 @@ describe('Include in Name toggles', () => {
   it('toggling back on restores the piece — the field value was never lost', () => {
     clickSwitch('Include Version in name');
     clickSwitch('Include Version in name');
-    expect(text('.save-as-preview')).toBe(`Untitled Screenplay · First Draft - ${todayVersion}`);
+    expect(text('.save-as-preview')).toBe(`Untitled Screenplay - First Draft - ${todayVersion}`);
   });
 });
 
@@ -184,7 +184,7 @@ describe('the Settings round-trip keeps your entries (v1.23)', () => {
     // Fill the form in, the way a user would before noticing the locations row.
     typeInto(container.querySelector('#saveas-name') as HTMLInputElement, 'Blackwater');
     clickSwitch('Include Version in name');
-    expect(text('.save-as-preview')).toBe('Blackwater · First Draft');
+    expect(text('.save-as-preview')).toBe('Blackwater - First Draft');
 
     act(() => { (container.querySelector('.fs-saveas-change') as HTMLButtonElement).click(); });
 
@@ -198,6 +198,6 @@ describe('the Settings round-trip keeps your entries (v1.23)', () => {
     act(() => { useEditorStore.getState().closePreferences(); });
     expect(overlay.style.display).not.toBe('none');
     expect((container.querySelector('#saveas-name') as HTMLInputElement).value).toBe('Blackwater');
-    expect(text('.save-as-preview')).toBe('Blackwater · First Draft');
+    expect(text('.save-as-preview')).toBe('Blackwater - First Draft');
   });
 });

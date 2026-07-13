@@ -373,7 +373,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
             */}
           <div className="fs-saveas-grid">
 
-            <label htmlFor="saveas-name">Script Name</label>
+            <label htmlFor="saveas-name">Script Name:</label>
             <input
               id="saveas-name"
               ref={fileInputRef}
@@ -388,7 +388,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
               * required. */}
             <span className="fs-saveas-colhead">Include</span>
 
-            <label htmlFor="saveas-draft">Draft</label>
+            <label htmlFor="saveas-draft">Draft:</label>
             <input
               id="saveas-draft"
               value={draft}
@@ -398,7 +398,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
             />
             <IncludeToggle what="Draft" on={includeDraft} onToggle={() => setIncludeDraft(!includeDraft)} />
 
-            <label htmlFor="saveas-version">Version</label>
+            <label htmlFor="saveas-version">Version:</label>
             <input
               id="saveas-version"
               value={version}
@@ -413,7 +413,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
             <span className="fs-saveas-rowlabel">Saves as:</span>
             <div className="save-as-preview fs-saveas-span">
               <strong>{fileName || '—'}</strong>
-              {draftLabel && <span className="fs-saveas-draft"> · {draftLabel}</span>}
+              {draftLabel && <span className="fs-saveas-draft"> - {draftLabel}</span>}
             </div>
 
             {!WEB_ONLY_CLOUD && (
@@ -433,7 +433,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
               </>
             )}
 
-            <label>Additional locations:</label>
+            <label>Additional save locations:</label>
             <div className="fs-saveas-locations fs-saveas-span">
               <span>{otherLocations.length ? otherLocations.join(', ') : 'None'}</span>
               <button

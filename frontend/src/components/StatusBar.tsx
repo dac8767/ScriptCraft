@@ -97,7 +97,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
           */}
         <span className="status-item status-project">
           {documentTitle || 'Untitled'}
-          {draftLabel && <span className="status-draft"> · {draftLabel}</span>}
+          {draftLabel && <span className="status-draft"> - {draftLabel}</span>}
         </span>
         {saveDisplay.label && (
           <>

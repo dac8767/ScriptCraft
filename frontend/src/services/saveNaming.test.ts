@@ -38,12 +38,14 @@ describe('a new screenplay does not inherit the last one\'s name', () => {
 describe('what the user sees is the SCRIPT\'s name', () => {
   // The status bar renders `documentTitle`, which is the script title the Save As
   // dialog set from the Name field — never the container.
+  // v1.24: a dash, not a middle dot — the same separator the Save dialog's
+  // "Saves as:" preview uses, so the name reads identically everywhere.
   const statusBar = (documentTitle: string, draftLabel?: string) =>
-    [documentTitle || 'Untitled', draftLabel].filter(Boolean).join(' · ');
+    [documentTitle || 'Untitled', draftLabel].filter(Boolean).join(' - ');
 
   it('shows the name you typed, with the draft beside it', () => {
     expect(statusBar('Blackwater', 'Second Draft - 07/12/26'))
-      .toBe('Blackwater · Second Draft - 07/12/26');
+      .toBe('Blackwater - Second Draft - 07/12/26');
   });
 
   it('a new unsaved screenplay is Untitled, not the last script\'s name', () => {
