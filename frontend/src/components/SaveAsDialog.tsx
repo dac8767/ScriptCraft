@@ -126,7 +126,17 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
        * out when you pick the folder, not when you're trying to save your work.
        */
       const { writeTextFile, remove } = await import('@tauri-apps/plugin-fs');
-      const probe = `${picked}${picked.endsWith('/') ? '' : '/'}.freedraft-write-test`;
+      /*
+       * v1.20: NOT a dotfile.
+       *
+       * The probe was ".freedraft-write-test", and Tauri's scope check is glob-based:
+       * glob patterns do not match leading-dot files unless told to. So "$DOWNLOAD/**"
+       * matched Blackwater.odraft.json perfectly well and refused the probe — my
+       * WRITABILITY CHECK was the only thing that couldn't be written, and it reported
+       * that as the folder being unwritable. The check invented the failure it was
+       * looking for.
+       */
+      const probe = `${picked}${picked.endsWith('/') ? '' : '/'}freedraft-write-test.tmp`;
       try {
         await writeTextFile(probe, '');
         await remove(probe).catch(() => { /* the write is what mattered */ });
