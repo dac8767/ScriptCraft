@@ -81,7 +81,12 @@ beforeEach(() => {
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
-  useSettingsStore.setState({ localSaveFolder: '/Users/dcarl/Downloads/' });
+  useSettingsStore.setState({
+    localSaveFolder: '/Users/dcarl/Downloads/',
+    saveToCloud: false,
+    saveToGDrive: false,
+    saveToOneDrive: false,
+  });
   useEditorStore.setState({ preferencesRequest: { open: false } });
   renderDialog();
 });
@@ -130,6 +135,14 @@ describe('Save Script dialog layout (v1.22)', () => {
     }
   });
 
+  it('additional save locations stack one per line', () => {
+    act(() => { useSettingsStore.setState({ saveToCloud: true, saveToGDrive: true }); });
+    const items = Array.from(container.querySelectorAll('.fs-saveas-locations-list span'));
+    expect(items.map((el) => el.textContent)).toEqual(['FreeDraft Cloud', 'Google Drive']);
+    act(() => { useSettingsStore.setState({ saveToCloud: false, saveToGDrive: false }); });
+    expect(text('.fs-saveas-locations-list')).toBe('None');
+  });
+
   it('the "Saves as:" row lives in the grid directly under Version', () => {
     const gridChildren = Array.from(container.querySelector('.fs-saveas-grid')!.children);
     const versionIdx = gridChildren.findIndex((el) => el.id === 'saveas-version');
@@ -143,13 +156,25 @@ describe('Save Script dialog layout (v1.22)', () => {
 });
 
 describe('Include in Name toggles', () => {
-  it('exactly two switches — Draft and Version. Script Name has none, ever.', () => {
+  it('three switches — Script Name locked, Draft and Version live', () => {
     const switches = Array.from(container.querySelectorAll('[role="switch"]'));
     expect(switches.map((s) => s.getAttribute('aria-label'))).toEqual([
+      'Script Name is always included in the name',
       'Include Draft in name',
       'Include Version in name',
     ]);
     expect(text('.fs-saveas-colhead')).toBe('Include');
+    // The header sits on its own row ABOVE the toggles: first grid child.
+    expect(container.querySelector('.fs-saveas-grid')!.children[0].className).toContain('fs-saveas-colhead');
+  });
+
+  it("Script Name's switch is on, disabled, and clicking it changes nothing", () => {
+    const lock = container.querySelector('.fs-toggle-locked') as HTMLButtonElement;
+    expect(lock.disabled).toBe(true);
+    expect(lock.getAttribute('aria-checked')).toBe('true');
+    const before = text('.save-as-preview');
+    act(() => { lock.click(); });
+    expect(text('.save-as-preview')).toBe(before);
   });
 
   it('both on by default: full "Name · Draft - Version" preview', () => {

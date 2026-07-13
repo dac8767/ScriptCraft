@@ -14204,29 +14204,31 @@ html.android .version-history-panel {
 /* v1.23: 720px default (v1.22's 600 + another 20%) — the path and the composed
    name both need the room. Still resizable; this is only the default. */
 .dialog-box.fs-saveas-dialog { width: min(720px, 92vw); }
-/* v1.25, per Derek's mockup: one flat surface — no rule under the title, none
-   above the buttons. This dialog only. */
-.fs-saveas-dialog > .dialog-header { border-bottom: none; }
-.fs-saveas-dialog > .dialog-actions { border-top: none; }
 
 .fs-saveas-grid {
   display: grid;
   /* labels | controls | Include toggles */
   grid-template-columns: max-content 1fr max-content;
   align-items: center;
-  /* One uniform row gap — the grid keeps the rhythm even; don't space rows
-     individually. */
-  gap: 18px 28px;
+  /*
+   * v1.26: spacing is measured TEXT TO TEXT, not box to box. Field text sits
+   * 9px inside its box (8px padding + 1px border), so with a box-uniform gap
+   * the field rows looked twice as far apart as the text rows. The text-only
+   * rows below get the same 9px vertical inset, making every row metrically
+   * identical — then this one gap IS the text rhythm. 8px gap + 2×9px inset
+   * = 26px between any two rows' text, fields included.
+   */
+  gap: 8px 28px;
   padding: 4px 0 8px;
 }
 /* Rows with no toggle run their control under the toggle column too. */
 .fs-saveas-grid > .fs-saveas-span { grid-column: 2 / -1; }
-/* Text-only rows (Saves as, Location, Additional locations) start 10px in —
-   the inputs' horizontal padding — so their text sits exactly under the text
-   INSIDE the fields, not under the fields' border. */
+/* Text-only rows (Saves as, Location, Additional locations): 10px left inset
+   so their text sits under the text INSIDE the fields, and the fields' 9px
+   vertical chrome so text-to-text spacing stays uniform (see gap above). */
 .save-as-preview,
 .fs-saveas-folder,
-.fs-saveas-locations { padding-left: 10px; box-sizing: border-box; }
+.fs-saveas-locations { padding: 9px 0 9px 10px; box-sizing: border-box; }
 .fs-saveas-grid > label,
 .fs-saveas-rowlabel {
   font-size: 13px;
@@ -14280,13 +14282,23 @@ html.android .version-history-panel {
 }
 .fs-toggle-on { background: var(--fd-accent); border-color: var(--fd-accent); }
 .fs-toggle-on .fs-toggle-knob { left: 16px; background: #fff; }
+/* Script Name's toggle: permanently on, never usable — gray, not blue, so it
+   reads as locked rather than merely switched on. */
+.fs-toggle-locked,
+.fs-toggle-locked:disabled {
+  background: var(--fd-overlay-subtle, rgba(255,255,255,.12));
+  border-color: var(--fd-border);
+  opacity: .55;
+  cursor: default;
+}
+.fs-toggle-locked .fs-toggle-knob { background: var(--fd-text-muted); }
 
 /* The destination: a path you click, not a field you type into. */
 .fs-saveas-folder { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .fs-saveas-path {
   flex: 1;
   min-width: 0;
-  padding: 2px 0;
+  padding: 0; /* the row container owns the 9px text-rhythm inset */
   background: none;
   border: none;
   color: var(--fd-accent);
@@ -14314,9 +14326,17 @@ html.android .version-history-panel {
 }
 .fs-saveas-change:hover { border-color: var(--fd-accent); }
 
-.fs-saveas-locations { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.fs-saveas-locations span {
+/* flex-start, not center: with several locations stacked, the button belongs
+   beside the FIRST line, not floating mid-list. */
+.fs-saveas-locations { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.fs-saveas-locations-list {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fs-saveas-locations-list span {
   min-width: 0;
   font-size: 13px;
   color: var(--fd-text);
@@ -14324,4 +14344,7 @@ html.android .version-history-panel {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Pull the button up so its centerline matches the first location line
+   (the list text is 18px tall vs the button's ~28px). */
+.fs-saveas-locations .fs-saveas-change { margin-top: -5px; }
 .fs-saveas-draft { color: var(--fd-text); }

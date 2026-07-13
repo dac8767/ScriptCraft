@@ -64,20 +64,25 @@ const ImportedSourceNotice: React.FC = () => {
   );
 };
 
-/** The switch beside Draft and Version: whether that piece joins the composed
- *  name. Script Name has no switch — a save always needs a name. */
-const IncludeToggle: React.FC<{ what: string; on: boolean; onToggle: () => void }> = ({
-  what,
-  on,
-  onToggle,
-}) => (
+/** The switch beside each field: whether that piece joins the composed name.
+ *  Script Name's is `locked` — permanently on and disabled, shown at all so
+ *  the row doesn't look like the odd one out (v1.26: an empty cell there read
+ *  as confusing, not as "always required"). */
+const IncludeToggle: React.FC<{
+  what: string;
+  on: boolean;
+  onToggle?: () => void;
+  locked?: boolean;
+}> = ({ what, on, onToggle, locked }) => (
   <button
     type="button"
     role="switch"
     aria-checked={on}
-    aria-label={`Include ${what} in name`}
-    className={'fs-toggle' + (on ? ' fs-toggle-on' : '')}
-    onClick={onToggle}
+    disabled={locked}
+    aria-label={locked ? `${what} is always included in the name` : `Include ${what} in name`}
+    title={locked ? `${what} is always part of the saved name` : undefined}
+    className={'fs-toggle' + (on ? ' fs-toggle-on' : '') + (locked ? ' fs-toggle-locked' : '')}
+    onClick={locked ? undefined : onToggle}
   >
     <span className="fs-toggle-knob" />
   </button>
@@ -373,6 +378,10 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
             */}
           <div className="fs-saveas-grid">
 
+            {/* First grid child: takes the toggle column of an otherwise empty
+              * row, so the header sits above the switches it labels. */}
+            <span className="fs-saveas-colhead">Include</span>
+
             <label htmlFor="saveas-name">Script Name:</label>
             <input
               id="saveas-name"
@@ -382,11 +391,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
               onKeyDown={handleKeyDown}
               placeholder="Script name"
             />
-
-            {/* Heads the toggle column below; flows into the Script Name row's
-              * third cell, which has no toggle on purpose — the name is always
-              * required. */}
-            <span className="fs-saveas-colhead">Include</span>
+            <IncludeToggle what="Script Name" on locked />
 
             <label htmlFor="saveas-draft">Draft:</label>
             <input
@@ -435,7 +440,13 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
 
             <label>Additional save locations:</label>
             <div className="fs-saveas-locations fs-saveas-span">
-              <span>{otherLocations.length ? otherLocations.join(', ') : 'None'}</span>
+              {/* v1.26: one location per line, not a comma run — the list is
+                * short and each entry is a place, not a word. */}
+              <div className="fs-saveas-locations-list">
+                {otherLocations.length
+                  ? otherLocations.map((loc) => <span key={loc}>{loc}</span>)
+                  : <span>None</span>}
+              </div>
               <button
                 type="button"
                 className="fs-saveas-change"
