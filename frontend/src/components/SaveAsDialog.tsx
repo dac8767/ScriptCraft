@@ -217,6 +217,34 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /*
+   * v1.43: grab the header, move the dialog — same gesture as the tool
+   * windows. The box is flex-centered by its overlay until the first drag,
+   * which measures where it actually is, pins it fixed, and follows the
+   * pointer from there.
+   */
+  const boxRef = useRef<HTMLDivElement>(null);
+  const startDialogDrag = (e: React.PointerEvent) => {
+    const el = boxRef.current;
+    if (!el || (e.target as HTMLElement).closest('button, input')) return;
+    e.preventDefault();
+    const rect = el.getBoundingClientRect();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const onMove = (ev: PointerEvent) => {
+      el.style.position = 'fixed';
+      el.style.margin = '0';
+      el.style.left = `${rect.left + (ev.clientX - startX)}px`;
+      el.style.top = `${Math.max(0, rect.top + (ev.clientY - startY))}px`;
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  };
+
+  /*
    * v1.23: "Update save locations…" must ROUND-TRIP.
    *
    * It used to close this dialog on the way to Settings, unmounting it — so the
@@ -376,8 +404,8 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
 
   return (
     <div className="dialog-overlay" style={prefsOpen ? { display: 'none' } : undefined} onClick={onClose}>
-      <div className="dialog-box fs-saveas-dialog" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
-        <div className="dialog-header">Save Script</div>
+      <div ref={boxRef} className="dialog-box fs-saveas-dialog" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
+        <div className="dialog-header" onPointerDown={startDialogDrag}>Save Script</div>
         <div className="dialog-body">
           <ImportedSourceNotice />
 

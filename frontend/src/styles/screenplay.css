@@ -14304,7 +14304,10 @@ html.android .version-history-panel {
 .fs-saveas-dialog > .dialog-header {
   border-bottom: none;
   background: var(--fd-toolbar-bg);
+  cursor: grab; /* v1.43: grab the header to move the dialog, like tool windows */
+  user-select: none;
 }
+.fs-saveas-dialog > .dialog-header:active { cursor: grabbing; }
 .fs-saveas-dialog > .dialog-actions {
   border-top: none;
   /* v1.42: same surface and cell padding as the header. */
@@ -14348,10 +14351,10 @@ html.android .version-history-panel {
    * 9px inside its box (8px padding + 1px border), so with a box-uniform gap
    * the field rows looked twice as far apart as the text rows. The text-only
    * rows below get the same 9px vertical inset, making every row metrically
-   * identical — then this one gap IS the text rhythm. 8px gap + 2×9px inset
-   * = 26px between any two rows' text, fields included.
+   * identical — then this one gap IS the text rhythm. 6px gap + 2×9px inset
+   * = 24px between any two rows' text, fields included (v1.43: was 8px gap).
    */
-  gap: 8px 28px;
+  gap: 6px 28px;
   padding: 4px 0 0;
 }
 /* Rows with no toggle run their control under the toggle column too. */
@@ -14383,6 +14386,7 @@ html.android .version-history-panel {
   font-size: 15px;
   color: var(--fd-text-muted);
   white-space: nowrap;
+  margin-right: 10px; /* v1.43: extra breath before the filename */
 }
 .fs-saveas-grid > input {
   width: 100%;
