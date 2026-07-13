@@ -199,6 +199,18 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /*
+   * v1.23: "Update save locations…" must ROUND-TRIP.
+   *
+   * It used to close this dialog on the way to Settings, unmounting it — so the
+   * name, draft and toggles you'd already filled in were gone when you came
+   * back. The dialog now stays mounted and merely hides while Settings is on
+   * top; when Settings closes, it reappears exactly as you left it. (The
+   * "Additional locations:" line updates by itself — it reads the settings
+   * store live.)
+   */
+  const prefsOpen = useEditorStore((s) => s.preferencesRequest.open);
+
+  /*
    * v1.22: shorten the path at "/" boundaries, not wherever the pixels run out.
    * The old CSS clip (direction: rtl + ellipsis) produced "…s/dcarl/Downloads/",
    * which reads as a folder that doesn't exist. We measure the button's actual
@@ -344,7 +356,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   };
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
+    <div className="dialog-overlay" style={prefsOpen ? { display: 'none' } : undefined} onClick={onClose}>
       <div className="dialog-box fs-saveas-dialog" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
         <div className="dialog-header">Save Script</div>
         <div className="dialog-body">
@@ -364,7 +376,6 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
             <label htmlFor="saveas-name">Script Name</label>
             <input
               id="saveas-name"
-              className="fs-saveas-span"
               ref={fileInputRef}
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -372,9 +383,10 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
               placeholder="Script name"
             />
 
-            {/* Heads the toggle column below. Script Name sits above it,
-              * untoggleable on purpose — the name is always required. */}
-            <span className="fs-saveas-colhead">Include in Name</span>
+            {/* Heads the toggle column below; flows into the Script Name row's
+              * third cell, which has no toggle on purpose — the name is always
+              * required. */}
+            <span className="fs-saveas-colhead">Include</span>
 
             <label htmlFor="saveas-draft">Draft</label>
             <input
@@ -395,6 +407,14 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
               placeholder={`${mm}/${dd}/${yy}`}
             />
             <IncludeToggle what="Version" on={includeVersion} onToggle={() => setIncludeVersion(!includeVersion)} />
+
+            {/* v1.23: lives in the grid, right under Version, so the composed
+              * name lines up with the fields that compose it. */}
+            <span className="fs-saveas-rowlabel">Saves as:</span>
+            <div className="save-as-preview fs-saveas-span">
+              <strong>{fileName || '—'}</strong>
+              {draftLabel && <span className="fs-saveas-draft"> · {draftLabel}</span>}
+            </div>
 
             {!WEB_ONLY_CLOUD && (
               <>
@@ -419,14 +439,10 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
               <button
                 type="button"
                 className="fs-saveas-change"
-                onClick={() => { onOpenSaveLocations(); onClose(); }}
-              >Update locations…</button>
+                onClick={onOpenSaveLocations}
+              >Update save locations…</button>
             </div>
 
-          </div>
-          <div className="save-as-preview">
-            Saves as: <strong>{fileName || '—'}</strong>
-            {draftLabel && <span className="fs-saveas-draft"> · {draftLabel}</span>}
           </div>
           {error && (
             <div style={{ color: '#ff6b6b', fontSize: 12, marginTop: 8 }}>{error}</div>

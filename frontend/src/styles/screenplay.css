@@ -13538,11 +13538,15 @@ html.android .version-history-panel {
   white-space: nowrap;
 }
 
-/* Save As: composed file-name preview */
+/* Save As: composed file-name preview — a grid row under Version, so the
+   name lines up with the fields that compose it (v1.23). */
 .save-as-preview {
-  margin-top: 12px;
-  font-size: 12.5px;
-  color: var(--fd-text-muted);
+  font-size: 13px;
+  color: var(--fd-text);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .save-as-preview strong { color: var(--fd-text); font-weight: 600; }
 
@@ -14197,23 +14201,24 @@ html.android .version-history-panel {
    anyway — the same move Premiere makes, and for the same reason: a path is
    something you *pick*, not something you *write*.
    ════════════════════════════════════════════════════════════════════════════ */
-/* v1.22: half again as wide as a stock dialog — the path and the composed
+/* v1.23: 720px default (v1.22's 600 + another 20%) — the path and the composed
    name both need the room. Still resizable; this is only the default. */
-.dialog-box.fs-saveas-dialog { width: min(600px, 92vw); }
+.dialog-box.fs-saveas-dialog { width: min(720px, 92vw); }
 
 .fs-saveas-grid {
   display: grid;
-  /* labels | controls | Include-in-Name toggles */
+  /* labels | controls | Include toggles */
   grid-template-columns: max-content 1fr max-content;
   align-items: center;
-  gap: 14px 16px;
+  gap: 14px 28px;
   padding: 4px 0 8px;
 }
 /* Rows with no toggle run their control under the toggle column too. */
 .fs-saveas-grid > .fs-saveas-span { grid-column: 2 / -1; }
-.fs-saveas-grid > label {
+.fs-saveas-grid > label,
+.fs-saveas-rowlabel {
   font-size: 13px;
-  color: var(--fd-text-muted);
+  color: var(--fd-text);
   white-space: nowrap;
 }
 .fs-saveas-grid > input {
@@ -14229,15 +14234,14 @@ html.android .version-history-panel {
 .fs-saveas-grid > input:focus { outline: none; border-color: var(--fd-accent); }
 
 /* The toggle column: Draft and Version are optional parts of the name.
-   The header hugs the switches it labels; the row gap already separates it
-   from the Script Name row above. */
+   The header flows into the Script Name row's empty third cell, directly
+   above the switches it labels. */
 .fs-saveas-colhead {
   grid-column: 3;
   justify-self: center;
   font-size: 11px;
-  color: var(--fd-text-muted);
+  color: var(--fd-text);
   white-space: nowrap;
-  margin-bottom: -8px;
 }
 .fs-toggle {
   grid-column: 3;
@@ -14303,9 +14307,9 @@ html.android .version-history-panel {
   flex: 1;
   min-width: 0;
   font-size: 13px;
-  color: var(--fd-text-muted);
+  color: var(--fd-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.fs-saveas-draft { color: var(--fd-text-muted); }
+.fs-saveas-draft { color: var(--fd-text); }
