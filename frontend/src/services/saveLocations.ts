@@ -19,6 +19,7 @@ import { useProjectStore } from '../stores/projectStore';
 import { useEditorStore } from '../stores/editorStore';
 import { cloudApi } from './cloudApi';
 import { reportSaveError } from '../stores/saveErrorStore';
+import { errText } from '../utils/errText';
 import {
   connect, getAccessToken, loadTokens, clearTokens, type ProviderConfig,
 } from './oauthPkce';
@@ -264,8 +265,7 @@ export async function mirrorSave(payload: SavePayload): Promise<void> {
     } catch (err) {
       setMirrorStatus(j.name, 'error');
       console.error(`Save Locations: ${j.name} failed`, err);
-      const msg = err instanceof Error ? err.message : String(err);
-      failures.push(`${j.name}: ${msg}`);
+      failures.push(`${j.name}: ${errText(err)}`);
     }
   }));
   if (failures.length > 0) {
@@ -316,7 +316,7 @@ export async function mirrorSnapshot(args: {
     } catch (err) {
       console.error(`Snapshot copy to ${loc} failed:`, err);
       const name = loc === 'gdrive' ? 'Google Drive' : loc === 'onedrive' ? 'OneDrive' : 'Cloud';
-      failures.push(`${name}: ${err instanceof Error ? err.message : String(err)}`);
+      failures.push(`${name}: ${errText(err)}`);
     }
   }));
 

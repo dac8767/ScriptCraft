@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
 import { cloudApi } from '../services/cloudApi';
 import { getLibraryId, LIBRARY_NAME } from '../services/scriptLibrary';
+import { errText } from '../utils/errText';
 import { isWeb } from '../services/platform';
 import type { ProjectInfo } from '../services/api';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -130,9 +131,12 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
         await writeTextFile(probe, '');
         await remove(probe).catch(() => { /* the write is what mattered */ });
       } catch (err) {
+        // Tauri rejects with a STRING, so (err as Error).message was undefined and the
+        // real reason — which permission, which path — was lost. errText keeps it.
+        console.error('[FreeDraft] folder write test failed:', err);
         setError(
           `FreeDraft can't write to that folder — nothing has been changed. ` +
-          `Pick another, or check the folder's permissions. (${(err as Error).message})`,
+          `Pick another, or check the folder's permissions. (${errText(err)})`,
         );
         return;
       }
@@ -140,7 +144,8 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
       setLocalSaveFolder(picked);
       setError('');
     } catch (err) {
-      setError(`Could not open the folder picker: ${(err as Error).message}`);
+      console.error('[FreeDraft] folder picker failed:', err);
+      setError(`Could not open the folder picker: ${errText(err)}`);
     }
   };
   const fileName = name.trim();
