@@ -59,6 +59,13 @@
   --fd-dialog-bg: #333;
   --fd-input-bg: rgba(0,0,0,.2);
 
+  /* v1.31: the Save dialog's header/footer band — halfway between the window
+     background and the field background. COMPUTED from those two variables,
+     so every theme (including future ones) gets its equivalent automatically
+     instead of maintaining a hand-picked copy per theme; a theme can still
+     override --fd-dialog-band directly to hand-tune. */
+  --fd-dialog-band: color-mix(in srgb, var(--fd-dropdown-bg) 50%, var(--fd-input-bg));
+
   /* v0.83: toolbar button surface. Every theme sets its own so a button looks
      native to the theme instead of a fixed blue chip on all of them. */
   --fd-btn-bg: #2c5e98;
@@ -13542,7 +13549,7 @@ html.android .version-history-panel {
    act on it (v1.30). No min-width:0: its full nowrap width is what forces
    the dialog's min-width: fit-content to widen the window for a long name. */
 .save-as-preview {
-  font-size: 13px;
+  font-size: 14px; /* one step up, with its "Saves as:" label (v1.31) */
   color: var(--fd-text);
   white-space: nowrap;
 }
@@ -14209,16 +14216,31 @@ html.android .version-history-panel {
   min-width: fit-content;
 }
 /* v1.29: the divider lines match the fields' fill color — same surface family
-   as the input boxes, per Derek's drawing. v1.30: twice as thick. */
+   as the input boxes, per Derek's drawing. v1.30: twice as thick.
+   v1.31: header and footer sit on the band color (window/field halfway). */
+.fs-saveas-dialog { position: relative; }
 .fs-saveas-dialog > .dialog-header {
   border-bottom: 2px solid var(--fd-input-bg, var(--fd-dropdown-bg));
+  background: var(--fd-dialog-band);
 }
 .fs-saveas-dialog > .dialog-actions {
   border-top: 2px solid var(--fd-input-bg, var(--fd-dropdown-bg));
+  background: var(--fd-dialog-band);
   padding-top: 17px; /* v1.28: +3px of air under the line */
   /* v1.30: "Saves as:" sits down here, left of the buttons. */
   justify-content: flex-start;
   align-items: center;
+}
+/* The 14px strip under the footer is the dialog-box's own padding — the v0.76
+   resize-grip clearance — so paint it to match the band. pointer-events: none
+   keeps the native grip reachable (the exact footgun that padding exists for). */
+.fs-saveas-dialog::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 14px;
+  background: var(--fd-dialog-band);
+  pointer-events: none;
 }
 /* Flexible spacer between the composed name and Cancel — the name may grow,
    but never into the buttons. */
@@ -14255,11 +14277,16 @@ html.android .version-history-panel {
    chrome so text-to-text spacing stays uniform (see gap above). */
 .fs-saveas-folder,
 .fs-saveas-locations { padding: 9px 0 9px 10px; box-sizing: border-box; }
-.fs-saveas-grid > label,
-.fs-saveas-rowlabel {
+.fs-saveas-grid > label {
   /* Pinned to column 1 so auto-placement can never drift a label. */
   grid-column: 1;
   font-size: 13px;
+  color: var(--fd-text);
+  white-space: nowrap;
+}
+/* "Saves as:" lives in the footer now — one step up from the grid text. */
+.fs-saveas-rowlabel {
+  font-size: 14px;
   color: var(--fd-text);
   white-space: nowrap;
 }
