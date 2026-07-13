@@ -22,16 +22,18 @@ describe('the script library — the container the user never sees', () => {
     expect(createProject).not.toHaveBeenCalled();
   });
 
-  it('ADOPTS an old install\'s project rather than stranding the scripts in it', async () => {
-    // Scripts saved before v1.14 live in containers the user named themselves.
-    // Creating a fresh empty library would leave them behind.
-    const createProject = vi.fn();
+  it('never adopts an old container — that is what named a new script after an old one', async () => {
+    // v1.14 adopted the first container it found, to avoid "stranding" old scripts.
+    // They were never stranded: the Open dialog lists scripts from every container.
+    // What adoption actually did was file every new screenplay inside whatever
+    // container existed first — so a brand-new script came back called "Test".
+    const createProject = vi.fn(async (name: string) => proj('lib-1', name));
     const id = await getLibraryId({
       listProjects: async () => [proj('old-1', 'Untitled Feature')],
       createProject,
     });
-    expect(id).toBe('old-1');
-    expect(createProject).not.toHaveBeenCalled();
+    expect(id).toBe('lib-1');
+    expect(createProject).toHaveBeenCalledWith(LIBRARY_NAME);
   });
 
   it('survives a race — two saves at once must not error at the user', async () => {

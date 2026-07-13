@@ -3416,8 +3416,13 @@ const ScreenplayEditor: React.FC = () => {
       scriptId: string,
       scriptTitle: string,
       destination: 'local' | 'cloud',
+      draftLabel?: string,
     ) => {
       setSaveAsOpen(false);
+      // v1.15: the Draft/Version you typed into Save As is the DRAFT LABEL now, not
+      // the script's identity. Apply it, or the fields would look like they did
+      // something and quietly do nothing.
+      if (draftLabel) useEditorStore.getState().setDraftLabel(draftLabel);
       // Check if there's a deferred action (e.g. "New Screenplay") waiting
       const store = useEditorStore.getState();
       const hasDeferredAction = !!store.postSaveAction;

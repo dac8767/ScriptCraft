@@ -23,6 +23,7 @@ import { cloudApi } from '../services/cloudApi';
 import { isWeb } from '../services/platform';
 import { useSettingsStore } from '../stores/settingsStore';
 import type { ProjectInfo, ScriptMeta } from '../services/api';
+import { LIBRARY_NAME } from '../services/scriptLibrary';
 
 export type OpenSource = 'local' | 'cloud';
 
@@ -244,7 +245,18 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
                 className="open-project-item"
                 onClick={() => onOpen(project.id, project, script.id, script.title, source)}
               >
-                <span className="open-project-name">{script.title}</span>
+                {/*
+                  * v1.15: scripts saved by older versions are titled "Draft - Date",
+                  * because back then the PROJECT carried the name. On its own that
+                  * row reads "First Draft - 07/12/26", which identifies nothing. So
+                  * for anything still sitting in an old container, show the container
+                  * name too — that's the name of the work. New scripts carry their own.
+                  */}
+                <span className="open-project-name">
+                  {project.name === LIBRARY_NAME
+                    ? script.title
+                    : `${project.name} — ${script.title}`}
+                </span>
                 <span className="open-project-date">
                   {new Date(script.updated_at).toLocaleDateString()}
                 </span>

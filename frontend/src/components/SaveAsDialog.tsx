@@ -25,6 +25,7 @@ interface SaveAsDialogProps {
     scriptId: string,
     scriptTitle: string,
     destination: SaveDestination,
+    draftLabel?: string,
   ) => void;
   onClose: () => void;
   buildContent: () => Record<string, unknown> | undefined;
@@ -70,7 +71,6 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   // v0.16: File Name is composed from Draft + Version. Draft autofills from
   // the document's draft label (Edit > Set Draft Number), Version from
   // today's date in MM/DD/YY — both editable.
-  void defaultFileName; // superseded by Draft + Version autofill (v0.16)
   const initialDraft = useEditorStore.getState().draftLabel || 'First Draft';
   const today = new Date();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -78,7 +78,24 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   const yy = String(today.getFullYear()).slice(-2);
   const [draft, setDraft] = useState(initialDraft);
   const [version, setVersion] = useState(`${mm}/${dd}/${yy}`);
-  const fileName = draft.trim() && version.trim() ? `${draft.trim()} - ${version.trim()}` : (draft.trim() || version.trim());
+
+  /*
+   * v1.15 — THE SCRIPT HAS A NAME AGAIN, and it is the script's own.
+   *
+   * v1.14 got the model wrong. In the old world the PROJECT carried the name of the
+   * screenplay and a "script" was one draft inside it, titled "Draft - Date". So when
+   * I removed the project field I removed the only place you could name your work:
+   * Save As asked for a draft and a date, filed the script in whatever container was
+   * lying around, and the status bar showed that container's name — which is why a
+   * brand-new screenplay came back called "Test".
+   *
+   * Now a FreeDraft file is one script, so the NAME belongs to the script. Draft and
+   * version are what they always should have been: metadata about which draft this
+   * is, not the identity of the work.
+   */
+  const [name, setName] = useState(defaultFileName || 'Untitled');
+  const fileName = name.trim();
+  const draftLabel = [draft.trim(), version.trim()].filter(Boolean).join(' - ');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [destination, setDestination] = useState<SaveDestination>(
@@ -173,7 +190,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
           content,
         });
       }
-      onSaved(project.id, LIBRARY_NAME, scriptResp.meta.id, trimmedFile, destination);
+      onSaved(project.id, LIBRARY_NAME, scriptResp.meta.id, trimmedFile, destination, draftLabel);
     } catch (err) {
       // AuthGate / QuotaExceededDialog already showed a dialog for these —
       // don't duplicate the raw message inline.
@@ -229,6 +246,16 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
               )}
             </div>
           )}
+          <div className="dialog-row">
+            <label>Name</label>
+            <input
+              ref={fileInputRef}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Script name"
+            />
+          </div>
           <div className="dialog-row" style={{ marginTop: 12 }}>
             <label>Draft</label>
             <input
@@ -248,6 +275,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
           </div>
           <div className="save-as-preview">
             Saves as: <strong>{fileName || '—'}</strong>
+            {draftLabel && <span className="fs-saveas-draft"> · {draftLabel}</span>}
           </div>
           {error && (
             <div style={{ color: '#ff6b6b', fontSize: 12, marginTop: 8 }}>{error}</div>

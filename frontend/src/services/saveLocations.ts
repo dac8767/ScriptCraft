@@ -163,7 +163,11 @@ async function driveUpload(token: string, fileName: string, json: string, folder
 async function saveToGDrive(args: SavePayload): Promise<void> {
   const token = await getAccessToken(gdriveConfig());
   const root = await driveEnsureFolder(token, 'FreeDraft');
-  const fileName = `${safeName(args.projectName)} — ${safeName(args.title)}.odraft.json`;
+  // v1.15: the file is named after the SCRIPT. It used to be
+  // "<container> — <draft>.odraft.json", from when a project was the screenplay —
+  // which produced files called "Test — Draft 1 - 07-12-26.odraft.json" and, worse,
+  // named a brand-new script after whatever container it landed in.
+  const fileName = `${safeName(args.title)}.odraft.json`;
   const map = mapGet(GDRIVE_MAP);
   const key = `${args.projectId}/${args.scriptId}`;
   let fileId = map[key];
@@ -204,7 +208,7 @@ async function onedrivePut(token: string, path: string, json: string): Promise<v
 
 async function saveToOneDrive(args: SavePayload): Promise<void> {
   const token = await getAccessToken(onedriveConfig());
-  const path = `FreeDraft/${safeName(args.projectName)} — ${safeName(args.title)}.odraft.json`;
+  const path = `FreeDraft/${safeName(args.title)}.odraft.json`;
   await onedrivePut(token, path, JSON.stringify(args.content));
 }
 

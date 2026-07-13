@@ -44,9 +44,17 @@ export async function getLibraryId(client: LibraryClient): Promise<string> {
   const named = existing.find((p) => p.name === LIBRARY_NAME);
   if (named) return named.id;
 
-  // An older install will have real, user-named projects. Don't strand those
-  // scripts behind a new empty container — adopt the first one as the library.
-  if (existing.length > 0) return existing[0].id;
+  /*
+   * v1.15: DO NOT adopt an existing container.
+   *
+   * v1.14 adopted the first one it found, reasoning that it would otherwise strand
+   * old scripts. It wouldn't — the Open dialog lists scripts from every container,
+   * so nothing was ever stranded. What adoption actually did was file every new
+   * screenplay inside whatever container happened to exist first, which is how a new
+   * script ended up living in one called "Test".
+   *
+   * New scripts go in the library. Old ones stay where they are and still open.
+   */
 
   try {
     const created = await client.createProject(LIBRARY_NAME);
@@ -55,7 +63,7 @@ export async function getLibraryId(client: LibraryClient): Promise<string> {
     // Lost a race (409) or hit a transient failure — refetch and use whatever
     // exists now rather than surfacing a container error for a script save.
     const fresh = await client.listProjects().catch(() => [] as ProjectInfo[]);
-    const found = fresh.find((p) => p.name === LIBRARY_NAME) ?? fresh[0];
+    const found = fresh.find((p) => p.name === LIBRARY_NAME);
     if (!found) throw new Error('Could not open the script library.');
     return found.id;
   }
