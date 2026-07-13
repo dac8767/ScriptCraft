@@ -20,7 +20,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     items: [
       { title: 'Changelog is real again', detail: 'The changelog was hardcoded and stuck at v0.19, so none of the recent work showed up. It now lives in one list that gets an entry with every release — starting with a full backfill of everything below.' },
       { title: 'Export Themes, your way', detail: 'Choose exactly which themes to export and where the file goes, via a proper save dialog.' },
-      { title: 'Import Themes from a Project', detail: 'Copy custom themes out of another FreeDraft project file. Custom themes now travel inside .odraft exports, so a project carries its look with it.' },
+      { title: 'Import Themes from a Project', detail: 'Copy custom themes out of another ScriptCraft project file. Custom themes now travel inside .odraft exports, so a project carries its look with it.' },
       { title: 'Resizable spacers', detail: 'Spacers added to the toolbar or a side panel can be sized with a slider instead of being a fixed gap.' },
       { title: 'Roomier dialogs', detail: 'Widening a window no longer strands controls at the far edges with a lake of empty space in the middle.' },
     ],

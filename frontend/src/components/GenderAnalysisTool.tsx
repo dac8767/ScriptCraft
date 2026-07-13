@@ -1,5 +1,5 @@
 /**
- * GenderAnalysisTool — ported from FreeDraft v5.5's Gender Analysis.
+ * GenderAnalysisTool — ported from ScriptCraft v5.5's Gender Analysis.
  * Assign a gender to each speaking role to review parity by character count,
  * lines, and spoken words — plus the count of scenes where two or more female
  * characters speak.

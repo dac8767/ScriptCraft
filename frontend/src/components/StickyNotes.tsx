@@ -1,5 +1,5 @@
 /**
- * StickyNotes — the FreeDraft sticky-card system, now split into three
+ * StickyNotes — the ScriptCraft sticky-card system, now split into three
  * right-dock tools:
  *   - StickyNotesTool ("Sticky Notes"): General / Script sub-tabs — General is
  *     free-form sticky cards, Script is OpenDraft's anchored notes. The 🔍

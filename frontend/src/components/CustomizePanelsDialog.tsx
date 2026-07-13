@@ -12,7 +12,7 @@ import { MENU_ICONS, TOOLBAR_ICONS, UTILITY_ICONS } from './uiIcons';
  * Toolbar: a single flat list of items (v0.42) — every built-in control,
  * pinned tool/window, pinned command, and divider is individually placeable
  * with Left / Right / Hide. The old fixed groups and per-item deactivation
- * checkboxes (a FreeDraft v5.5 holdover) are gone; hidden items are re-added
+ * checkboxes (a ScriptCraft v5.5 holdover) are gone; hidden items are re-added
  * from the Add dropdown. Item registry: toolbarBuiltins.ts.
  */
 import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';

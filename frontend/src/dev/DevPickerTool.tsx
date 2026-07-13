@@ -90,7 +90,7 @@ export default function DevPickerTool(_props: Props) {
       `Viewport: ${window.innerWidth}×${window.innerHeight}`,
     ];
     const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
-    downloadText(`freedraft-devnote-${stamp}.md`, buildBundle(draft, shots, context));
+    downloadText(`scriptcraft-devnote-${stamp}.md`, buildBundle(draft, shots, context));
     say('Bundle saved — upload it in the chat');
   };
 

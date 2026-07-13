@@ -65,7 +65,7 @@ const ScriptFormatPreferencesDialog: React.FC<Props> = ({ firstRun = false, onCo
         <div className="fmt-dialog-body" style={embedded ? { padding: '4px 0 0' } : undefined}>
           <p className="fmt-dialog-hint">
             {firstRun
-              ? 'Pick the formats you commonly write in. When you create a new script, FreeDraft will offer just these options. You can change this later from the Format menu.'
+              ? 'Pick the formats you commonly write in. When you create a new script, ScriptCraft will offer just these options. You can change this later from the Format menu.'
               : 'Choose which formats appear in the New Screenplay picker. If only one is selected, new scripts use it directly without prompting.'}
           </p>
           <div className="fmt-card-list">

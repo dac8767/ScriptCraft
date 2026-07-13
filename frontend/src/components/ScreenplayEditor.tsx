@@ -1444,7 +1444,7 @@ const ScreenplayEditor: React.FC = () => {
           }
           // Fallback defaults
           const m: Record<string, string> = {
-            sceneHeading: 'INT./EXT. LOCATION - TIME', action: 'Describe what happens...',
+            sceneHeading: 'INT./EXT. LOCATION - TIME', action: 'Action...',
             character: 'CHARACTER NAME', dialogue: 'Dialogue...',
             parenthetical: '(direction)', transition: 'CUT TO:',
             general: 'Text...', shot: 'SHOT DESCRIPTION',
@@ -3291,10 +3291,10 @@ const ScreenplayEditor: React.FC = () => {
       // Clear project context — this is a standalone opened file
       setCurrentProject(null);
       setCurrentScriptId(null);
-      // Mark as imported so Save As shows the "saved to FreeDraft library" notice.
+      // Mark as imported so Save As shows the "saved to ScriptCraft library" notice.
       const fmtLabel = ext === 'fdx' ? 'Final Draft (.fdx)'
         : ext === 'fountain' ? 'Fountain (.fountain)'
-        : ext === 'odraft' ? 'FreeDraft (.odraft)'
+        : ext === 'odraft' ? 'ScriptCraft (.odraft)'
         : ext ? `.${ext}` : 'imported file';
       useEditorStore.getState().setImportedSource({ name: filename, format: fmtLabel });
     } catch (err) {
@@ -3866,8 +3866,8 @@ const ScreenplayEditor: React.FC = () => {
         </div>
         <button
           className="chrome-customize-btn"
-          title="Customize FreeDraft"
-          onClick={() => window.dispatchEvent(new CustomEvent('freedraft:command', { detail: 'customize' }))}
+          title="Customize ScriptCraft"
+          onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))}
         >
           Customize
         </button>
@@ -4118,6 +4118,13 @@ const ScreenplayEditor: React.FC = () => {
           onOpenSaveLocations={() => useEditorStore.getState().openPreferences('saveloc')}
           onClose={() => setSaveAsOpen(false)}
           buildContent={buildSaveContent}
+          /* v1.34: Draft is one value everywhere — an edit committed in the
+             Save dialog updates the store AND the title page draft line,
+             silently (no toast mid-save). */
+          onDraftCommitted={async (label) => {
+            const { applyDraftNumber } = await import('./SetDraftDialog');
+            applyDraftNumber(editor, label, { toast: false });
+          }}
         />
       )}
       {!isHistoryMode && compareVersionOpen && (

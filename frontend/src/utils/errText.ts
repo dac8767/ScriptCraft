@@ -4,7 +4,7 @@
  * WHY THIS EXISTS. Tauri's plugin commands reject with a plain STRING, not an Error.
  * So `(err as Error).message` is `undefined`, and the code that did that produced:
  *
- *     FreeDraft can't write to that folder … (undefined)
+ *     ScriptCraft can't write to that folder … (undefined)
  *
  * The real reason — the thing that would have told us exactly which permission or
  * path was refused — was thrown away by the code trying to report it. An error

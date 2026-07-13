@@ -4,7 +4,7 @@
  * Overview: totals cards. Scenes: scene breakdown + pacing chart.
  * Dialogue: dialogue distribution. Scenes also hosts the character
  * presence-by-scene map and the timing report. Gender: OpenDraft's gender breakdown
- * plus the FreeDraft assignment table (parity bars, two-plus-female-speakers
+ * plus the ScriptCraft assignment table (parity bars, two-plus-female-speakers
  * count; assignments write to Character Profiles).
  *
  * Tab filtering works via the data-sec attribute each statistics section

@@ -8,6 +8,7 @@ import { findLanguage, urlsFor } from '../editor/languageCatalog';
 const VIEW_STATE_KEY = 'opendraft:viewState';
 interface ViewState {
   navigatorOpen?: boolean;
+  showUnreleasedTools?: boolean;
   indexCardsOpen?: boolean;
   beatBoardOpen?: boolean;
   shelfOpen?: boolean;
@@ -542,7 +543,7 @@ export interface ShelfTodoItem {
 }
 
 /**
- * One sticky card. Data shape matches FreeDraft v5.5's shelf exactly
+ * One sticky card. Data shape matches ScriptCraft v5.5's shelf exactly
  * (cards from the old app's export can be imported verbatim).
  */
 export interface ShelfCard {
@@ -619,11 +620,11 @@ export interface CharacterProfile {
   age: string;
   /** Role in the story: Lead, Supporting, Featured, Background, Day Player */
   role: string;
-  /** Rich text backstory / character history (HTML string; FreeDraft-only, not in FDX) */
+  /** Rich text backstory / character history (HTML string; ScriptCraft-only, not in FDX) */
   backstory: string;
-  /** Character arc — how the character changes through the story (HTML string; FreeDraft-only) */
+  /** Character arc — how the character changes through the story (HTML string; ScriptCraft-only) */
   arc: string;
-  /** Dialogue voice profile (FreeDraft-only) */
+  /** Dialogue voice profile (ScriptCraft-only) */
   speechPattern: string;
   vocabulary: string;
   verbalTics: string;
@@ -801,6 +802,10 @@ interface EditorState {
    * already be on the tab that contained it. Settings has tabs — Save Options is one
    * of them — so the request names the tab.
    */
+  /** v1.34: show menu items for features that aren't finished (Collaboration,
+   *  Lock Pages). Off by default; flipped from Help > Developer. */
+  showUnreleasedTools: boolean;
+  setShowUnreleasedTools: (v: boolean) => void;
   preferencesRequest: { open: boolean; tab?: 'saveloc' };
   openPreferences: (tab?: 'saveloc') => void;
   closePreferences: () => void;
@@ -1081,7 +1086,7 @@ interface EditorState {
   setPostSaveAction: (action: (() => void) | null) => void;
   /** If the current unsaved document was imported from an external file
    *  (.fdx, .fountain, .docx, etc.), tracks the source filename. Used by
-   *  SaveAsDialog to clarify that saves go to FreeDraft's library rather than
+   *  SaveAsDialog to clarify that saves go to ScriptCraft's library rather than
    *  writing back to the source file. Cleared on successful save. */
   importedSource: { name: string; format: string } | null;
   setImportedSource: (src: { name: string; format: string } | null) => void;
@@ -1306,6 +1311,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   }),
   tempTool: null,
   setTempTool: (tool) => set({ tempTool: tool }),
+  showUnreleasedTools: (_vs.showUnreleasedTools as boolean) ?? false,
+  setShowUnreleasedTools: (v) => {
+    saveViewState({ showUnreleasedTools: v });
+    set({ showUnreleasedTools: v });
+  },
   preferencesRequest: { open: false },
   openPreferences: (tab) => set({ preferencesRequest: { open: true, tab } }),
   closePreferences: () => set({ preferencesRequest: { open: false } }),

@@ -32,6 +32,10 @@ interface SaveAsDialogProps {
   /** Takes you to Settings > Save Locations — the one place copies are configured. */
   onOpenSaveLocations: () => void;
   buildContent: () => Record<string, unknown> | undefined;
+  /** v1.34: Draft is ONE value across this dialog, the Title Page, and
+   *  Production > Set Draft Number. Called when the user commits an edit to
+   *  the Draft field here (blur or Save), so the other two surfaces follow. */
+  onDraftCommitted?: (label: string) => void;
 }
 
 /** Web is always cloud-backed; the device/cloud toggle would be misleading. */
@@ -39,7 +43,7 @@ const WEB_ONLY_CLOUD = isWeb();
 
 /** Banner shown when the user is saving a document that came from an external
  *  file (FDX, Fountain, DOCX, etc.). Clarifies that the save goes into
- *  FreeDraft's library — it does *not* write back to the source file. */
+ *  ScriptCraft's library — it does *not* write back to the source file. */
 const ImportedSourceNotice: React.FC = () => {
   const importedSource = useEditorStore((s) => s.importedSource);
   if (!importedSource) return null;
@@ -57,7 +61,7 @@ const ImportedSourceNotice: React.FC = () => {
       }}
     >
       <strong>Note:</strong> This document was imported from <strong>{importedSource.name}</strong>{' '}
-      ({importedSource.format}). Saving creates a new file inside FreeDraft's library —
+      ({importedSource.format}). Saving creates a new file inside ScriptCraft's library —
       it does <strong>not</strong> overwrite the original source file. To write back to
       the original format, use <em>File → Export</em> after saving.
     </div>
@@ -95,6 +99,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   onClose,
   onOpenSaveLocations,
   buildContent,
+  onDraftCommitted,
 }) => {
   // v0.16: File Name is composed from Draft + Version. Draft autofills from
   // the document's draft label (Edit > Set Draft Number), Version from
@@ -122,7 +127,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
    * lying around, and the status bar showed that container's name — which is why a
    * brand-new screenplay came back called "Test".
    *
-   * Now a FreeDraft file is one script, so the NAME belongs to the script. Draft and
+   * Now a ScriptCraft file is one script, so the NAME belongs to the script. Draft and
    * version are what they always should have been: metadata about which draft this
    * is, not the identity of the work.
    */
@@ -136,7 +141,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   const saveToGDrive = useSettingsStore((st) => st.saveToGDrive);
   const saveToOneDrive = useSettingsStore((st) => st.saveToOneDrive);
   const otherLocations = [
-    saveToCloud && 'FreeDraft Cloud',
+    saveToCloud && 'ScriptCraft Cloud',
     saveToGDrive && 'Google Drive',
     saveToOneDrive && 'OneDrive',
   ].filter(Boolean) as string[];
@@ -144,7 +149,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   const chooseFolder = async () => {
     try {
       const { open } = await import('@tauri-apps/plugin-dialog');
-      const picked = await open({ directory: true, multiple: false, title: 'Where should FreeDraft keep this script?' });
+      const picked = await open({ directory: true, multiple: false, title: 'Where should ScriptCraft keep this script?' });
       if (typeof picked !== 'string') return;
 
       /*
@@ -159,23 +164,23 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
       /*
        * v1.20: NOT a dotfile.
        *
-       * The probe was ".freedraft-write-test", and Tauri's scope check is glob-based:
+       * The probe was ".scriptcraft-write-test", and Tauri's scope check is glob-based:
        * glob patterns do not match leading-dot files unless told to. So "$DOWNLOAD/**"
        * matched Blackwater.odraft.json perfectly well and refused the probe — my
        * WRITABILITY CHECK was the only thing that couldn't be written, and it reported
        * that as the folder being unwritable. The check invented the failure it was
        * looking for.
        */
-      const probe = `${picked}${picked.endsWith('/') ? '' : '/'}freedraft-write-test.tmp`;
+      const probe = `${picked}${picked.endsWith('/') ? '' : '/'}scriptcraft-write-test.tmp`;
       try {
         await writeTextFile(probe, '');
         await remove(probe).catch(() => { /* the write is what mattered */ });
       } catch (err) {
         // Tauri rejects with a STRING, so (err as Error).message was undefined and the
         // real reason — which permission, which path — was lost. errText keeps it.
-        console.error('[FreeDraft] folder write test failed:', err);
+        console.error('[ScriptCraft] folder write test failed:', err);
         setError(
-          `FreeDraft can't write to that folder — nothing has been changed. ` +
+          `ScriptCraft can't write to that folder — nothing has been changed. ` +
           `Pick another, or check the folder's permissions. (${errText(err)})`,
         );
         return;
@@ -184,11 +189,18 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
       setLocalSaveFolder(picked);
       setError('');
     } catch (err) {
-      console.error('[FreeDraft] folder picker failed:', err);
+      console.error('[ScriptCraft] folder picker failed:', err);
       setError(`Could not open the folder picker: ${errText(err)}`);
     }
   };
   const fileName = name.trim();
+  /** v1.34: push an edited Draft back to the shared value (store + title
+   *  page) the moment it's committed — the field stays editable here, but
+   *  all three Draft surfaces show the same thing. */
+  const commitDraft = () => {
+    const d = draft.trim();
+    if (d && d !== useEditorStore.getState().draftLabel) onDraftCommitted?.(d);
+  };
   const draftLabel = [
     includeDraft ? draft.trim() : '',
     includeVersion ? version.trim() : '',
@@ -309,6 +321,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
       return;
     }
 
+    commitDraft();
     setSaving(true);
     setError('');
 
@@ -316,7 +329,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
 
     try {
       /*
-       * v1.14: nothing to pick, create or reconcile. A FreeDraft file is one script,
+       * v1.14: nothing to pick, create or reconcile. A ScriptCraft file is one script,
        * so it goes in the one library. This used to create a project from a typed
        * name, handle the 409 when it already existed, refetch, and then surface
        * "Could not create project" to someone who had merely tried to save their
@@ -399,6 +412,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={handleKeyDown}
+              onBlur={commitDraft}
               placeholder="First Draft"
             />
             <IncludeToggle what="Draft" on={includeDraft} onToggle={() => setIncludeDraft(!includeDraft)} />

@@ -5,7 +5,7 @@
  * lives under, its default binding (or none), and who owns the key.
  *
  * `owner` matters:
- *   'app'    — handled by FreeDraft's global keydown handler. Fully rebindable.
+ *   'app'    — handled by ScriptCraft's global keydown handler. Fully rebindable.
  *   'editor' — TipTap also has a keymap for it (Bold = Mod+B, etc). Our handler
  *              runs these in the CAPTURE phase and stops propagation, so exactly
  *              one handler fires and rebinding actually takes effect (otherwise

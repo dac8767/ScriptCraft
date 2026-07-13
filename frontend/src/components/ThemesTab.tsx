@@ -328,26 +328,26 @@ export default function ThemesTab() {
   async function exportThemes(ids: string[]) {
     const chosen = customThemes.filter((t) => ids.includes(t.id));
     if (chosen.length === 0) return;
-    const payload = { kind: 'freedraft-themes', version: 1, themes: chosen };
+    const payload = { kind: 'scriptcraft-themes', version: 1, themes: chosen };
     const name = chosen.length === 1
-      ? `${safeName(chosen[0].label)}.freedraft-theme.json`
-      : 'freedraft-themes.json';
+      ? `${safeName(chosen[0].label)}.scriptcraft-theme.json`
+      : 'scriptcraft-themes.json';
     // saveFile opens the real save dialog on desktop, so the user picks WHERE
     // it goes rather than it landing silently in Downloads.
     const { saveFile } = await import('../utils/fileOps');
     const ok = await saveFile(JSON.stringify(payload, null, 2), name, [
-      { name: 'FreeDraft Themes', extensions: ['json'] },
+      { name: 'ScriptCraft Themes', extensions: ['json'] },
     ]);
     if (ok) setImportNote(`Exported ${chosen.length} theme${chosen.length === 1 ? '' : 's'}.`);
   }
 
-  /** Import from another FreeDraft PROJECT (.odraft) — themes now travel inside
+  /** Import from another ScriptCraft PROJECT (.odraft) — themes now travel inside
    *  project files, so this copies the look across. Projects exported before
    *  v0.82 carry no themes, and we say so plainly rather than failing silently. */
   async function importFromProject() {
     const { openTextFile } = await import('../utils/fileOps');
     const result = await openTextFile([
-      { name: 'FreeDraft Project', extensions: ['odraft', 'json'] },
+      { name: 'ScriptCraft Project', extensions: ['odraft', 'json'] },
     ]);
     if (!result) return;
     try {
@@ -358,7 +358,7 @@ export default function ThemesTab() {
       }
       addThemes(found);
     } catch {
-      setImportNote('That file couldn’t be read as a FreeDraft project.');
+      setImportNote('That file couldn’t be read as a ScriptCraft project.');
     }
   }
 

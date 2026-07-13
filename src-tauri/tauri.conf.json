@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-config-schema/schema.json",
-  "productName": "FreeDraft",
+  "productName": "ScriptCraft",
   "version": "0.19.0",
   "identifier": "com.freedraft.app",
   "build": {
@@ -14,7 +14,7 @@
       {
         "label": "splashscreen",
         "url": "splash.html",
-        "title": "FreeDraft",
+        "title": "ScriptCraft",
         "width": 480,
         "height": 420,
         "resizable": false,
@@ -25,7 +25,7 @@
       {
         "label": "main",
         "url": "index.html",
-        "title": "FreeDraft",
+        "title": "ScriptCraft",
         "width": 1280,
         "height": 800,
         "minWidth": 800,
@@ -84,7 +84,7 @@
           "odraft"
         ],
         "mimeType": "application/json",
-        "description": "FreeDraft Screenplay"
+        "description": "ScriptCraft Screenplay"
       },
       {
         "ext": [

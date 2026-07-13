@@ -3,7 +3,7 @@
  *
  * Every built-in toolbar control is an individually placeable item — the old
  * fixed groups (`g:` tokens) and the per-item deactivation checkboxes
- * (`toolbarHiddenItems`, a FreeDraft v5.5 holdover) are gone. Zones hold flat
+ * (`toolbarHiddenItems`, a ScriptCraft v5.5 holdover) are gone. Zones hold flat
  * token lists:
  *   b:<key>       built-in item (this registry)
  *   t:<toolId>    pinned tool/window button

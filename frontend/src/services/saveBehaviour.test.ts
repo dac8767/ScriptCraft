@@ -66,14 +66,14 @@ describe('the chosen folder receives a real file', () => {
  * v1.20 — the probe file must not be hidden.
  *
  * Tauri's scope check is glob-based, and a glob wildcard does not match a leading-dot
- * file. The writability probe was called ".freedraft-write-test", so the ONE file the
+ * file. The writability probe was called ".scriptcraft-write-test", so the ONE file the
  * check tried to write was the one file the scope would always refuse — and the app
  * reported that as "can't write to that folder". The check manufactured the failure it
  * was testing for, while real scripts would have saved perfectly.
  */
 describe('the folder writability probe', () => {
   const probeFor = (folder: string) =>
-    `${folder}${folder.endsWith('/') ? '' : '/'}freedraft-write-test.tmp`;
+    `${folder}${folder.endsWith('/') ? '' : '/'}scriptcraft-write-test.tmp`;
 
   const scopeAllows = (path: string) => !path.split('/').pop()!.startsWith('.');
 
@@ -84,7 +84,7 @@ describe('the folder writability probe', () => {
   });
 
   it('the old probe would have been refused — the bug, pinned', () => {
-    expect(scopeAllows('/Users/dcarl/Downloads/.freedraft-write-test')).toBe(false);
+    expect(scopeAllows('/Users/dcarl/Downloads/.scriptcraft-write-test')).toBe(false);
   });
 
   it('a real script in the same folder was always allowed', () => {

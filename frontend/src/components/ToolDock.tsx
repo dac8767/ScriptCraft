@@ -23,6 +23,7 @@ import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
   FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,  FaBug,
+  FaChevronRight, FaChevronDown,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { DoubleChevronIcon, chevronTowards } from './uiIcons';
@@ -488,9 +489,10 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               onClick={() => setActive(activeId === t.id ? null : t.id)}
               title={t.label}
             >
-              {/* v1.33: Premiere-style caret — down when closed, up when open. */}
+              {/* v1.34: Premiere-style caret — a SINGLE chevron (the double one
+                * means pop-in/out): right when closed, down when open. */}
               <span className="tool-dock-caret">
-                <DoubleChevronIcon towards={activeId === t.id ? 'up' : 'down'} size={9} />
+                {activeId === t.id ? <FaChevronDown /> : <FaChevronRight />}
               </span>
               <span className="tool-dock-icon">{t.icon}</span>
               <span className="tool-dock-label">{t.label}</span>
@@ -498,7 +500,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
             {inline && active && active.id === t.id && (
               <div className={`tool-inline${side === 'right' ? ' tool-inline-right' : ''}`}>
                 <button
-                  className={`tool-inline-popout${side === 'right' ? ' tool-inline-popout-left' : ''}`}
+                  className="tool-inline-popout"
                   title="Pop out into a floating window for resizing"
                   onClick={() => setToolSize(active.id, dockW + 140, activeSize!.h)}
                 ><DoubleChevronIcon towards={chevronTowards('popout', side === 'right' ? 'right' : 'left')} /></button>

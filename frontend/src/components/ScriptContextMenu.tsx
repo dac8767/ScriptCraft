@@ -1004,7 +1004,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       <div
         className="ctx-item"
         onClick={() => {
-          window.dispatchEvent(new CustomEvent('freedraft:command', { detail: 'customizeContextMenu' }));
+          window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customizeContextMenu' }));
           onClose();
         }}
       >

@@ -31,7 +31,7 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
   const [urlInput, setUrlInput] = useState(collabServerUrl);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
 
-  // FreeDraft Cloud (HTTP backend) URL — distinct from the collab WebSocket
+  // ScriptCraft Cloud (HTTP backend) URL — distinct from the collab WebSocket
   // server. On Tauri custom schemes the same-origin default doesn't work, so
   // the user must point at a real backend (e.g. https://opendraft.duckdns.org/api).
   const CLOUD_API_KEY = 'opendraft:cloudApiUrl';
@@ -135,7 +135,7 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
     try {
       if (trimmed) localStorage.setItem(CLOUD_API_KEY, trimmed);
       else localStorage.removeItem(CLOUD_API_KEY);
-      showToast('FreeDraft Cloud URL saved', 'success');
+      showToast('ScriptCraft Cloud URL saved', 'success');
     } catch {
       showToast('Could not save URL', 'error');
     }
@@ -572,14 +572,14 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
           </div>
         </section>
 
-        {/* ── FreeDraft Cloud API URL ── */}
+        {/* ── ScriptCraft Cloud API URL ── */}
         <section className="settings-section">
-          <h2 className="settings-section-title">FreeDraft Cloud Server</h2>
+          <h2 className="settings-section-title">ScriptCraft Cloud Server</h2>
           <p className="settings-section-desc">
             HTTP backend used for sign-in, projects, and cloud saves. Leave blank
             in the browser to use this site's <code>/api</code>. On the desktop and
             mobile apps this is empty by default — the app runs fully offline on its
-            local database. Point it at a FreeDraft cloud backend or your own
+            local database. Point it at a ScriptCraft cloud backend or your own
             self-hosted server like
             <code> https://your-host.example.com</code> (the <code>/api</code> suffix
             is added automatically if missing).
@@ -1038,7 +1038,7 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
                       <div className="settings-delete-warning">
                         <strong>Before you continue:</strong>{' '}
                         {inventoryLoading ? (
-                          <>checking your FreeDraft Cloud account for screenplays…</>
+                          <>checking your ScriptCraft Cloud account for screenplays…</>
                         ) : cloudInventory && (cloudInventory.projects > 0 || cloudInventory.scripts > 0) ? (
                           <>
                             you have <strong>{cloudInventory.projects}</strong>{' '}
@@ -1049,14 +1049,14 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
                                 screenplay{cloudInventory.scripts === 1 ? '' : 's'}
                               </>
                             )}{' '}
-                            stored in FreeDraft Cloud. They will be permanently deleted along
+                            stored in ScriptCraft Cloud. They will be permanently deleted along
                             with this account and cannot be recovered. Please open each one in
-                            FreeDraft and use <em>File → Save As / Export</em> to download a
+                            ScriptCraft and use <em>File → Save As / Export</em> to download a
                             local copy before continuing.
                           </>
                         ) : (
                           <>
-                            any screenplays stored in FreeDraft Cloud under this account will be
+                            any screenplays stored in ScriptCraft Cloud under this account will be
                             deleted along with the account and cannot be recovered. Please make
                             sure you have downloaded them first.
                           </>

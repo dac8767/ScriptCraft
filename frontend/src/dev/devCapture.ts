@@ -70,7 +70,7 @@ export async function copyImage(shot: Shot): Promise<boolean> {
  */
 export function buildBundle(note: string, shots: Shot[], context: string[]): string {
   const lines: string[] = [
-    '# FreeDraft — dev note',
+    '# ScriptCraft — dev note',
     '',
     `_${new Date().toLocaleString()}_`,
     '',

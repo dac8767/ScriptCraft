@@ -1,5 +1,5 @@
 /**
- * ScriptNotes — ScriptNotesContent: FreeDraft's notes anchored to script text
+ * ScriptNotes — ScriptNotesContent: ScriptCraft's notes anchored to script text
  * (filters, click-to-navigate, color sync), rendered as the Notes → Script
  * sub-view of the unified Sticky Notes pane (StickyNotes.tsx).
  * The standalone Notes panel this file used to render was merged into the

@@ -552,7 +552,7 @@ export async function exportDocx(
   }
 
   const document = new Document({
-    creator: 'FreeDraft',
+    creator: 'ScriptCraft',
     title: docTitle,
     styles: {
       default: {

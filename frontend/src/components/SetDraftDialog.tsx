@@ -26,7 +26,11 @@ const CUSTOM = '__custom__';
  * its date suffix ("First Draft - 2026-07-10" → "Second Draft - 2026-07-10").
  * Shared by the Production dialog and the Settings mirror.
  */
-export function applyDraftNumber(editor: Editor | null, finalLabel: string): void {
+export function applyDraftNumber(
+  editor: Editor | null,
+  finalLabel: string,
+  opts?: { toast?: boolean },   // v1.34: silent for background syncs (Save dialog)
+): void {
   useEditorStore.getState().setDraftLabel(finalLabel);
   if (editor) {
     let updated = false;
@@ -49,9 +53,11 @@ export function applyDraftNumber(editor: Editor | null, finalLabel: string): voi
       }
       return true;
     });
-    showToast(updated
-      ? `Draft set to "${finalLabel}" — title page updated`
-      : `Draft set to "${finalLabel}"`, 'success');
+    if (opts?.toast !== false) {
+      showToast(updated
+        ? `Draft set to "${finalLabel}" — title page updated`
+        : `Draft set to "${finalLabel}"`, 'success');
+    }
   }
 }
 

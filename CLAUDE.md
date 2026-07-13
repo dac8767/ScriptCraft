@@ -1,4 +1,10 @@
-# FreeDraft — working notes for Claude
+# ScriptCraft — working notes for Claude
+
+> **Naming history:** OpenDraft (upstream) → FreeScript (repo name) → FreeDraft
+> (v0.5–v1.33) → **ScriptCraft** (v1.34, Derek's rename). The repo, the
+> `.odraft` format, the `com.freedraft.app` bundle id and the `opendraft:*`
+> storage keys keep their old names on purpose — renaming identifiers that
+> persist data or define the app's identity orphans user data.
 
 Read this before touching anything. It is the residue of 100 shipped versions, and
 most of it is the kind of thing you only learn by getting it wrong first.
@@ -196,7 +202,7 @@ a `.md` bundle with them embedded.
   blocker.
 - Apple Developer Program membership; swap the Proteus signing identity in `build-desktop.sh`.
 - `languageCatalog.ts` fetches dictionaries from Proteus's CDN — rehost before release.
-- Dictionary + Courier Prime license files; trademark clearance on "FreeDraft".
+- Dictionary + Courier Prime license files; trademark clearance on "ScriptCraft".
 - `macos-private-api` is enabled in `src-tauri/Cargo.toml` — this **rules out the Mac App
   Store**. Fine for the `.dmg` plan, but know it.
 

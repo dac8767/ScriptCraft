@@ -6,7 +6,7 @@
  * enabled destination:
  *   - Cloud       — a mirrored project/script pair on the collab account,
  *                   mapped persistently (separate ID spaces).
- *   - Google Drive— the document JSON written to a FreeDraft folder
+ *   - Google Drive— the document JSON written to a ScriptCraft folder
  *                   (drive.file scope: the app only ever sees its own files).
  *   - OneDrive    — same, via Microsoft Graph path addressing.
  *
@@ -163,7 +163,7 @@ async function driveUpload(token: string, fileName: string, json: string, folder
 
 async function saveToGDrive(args: SavePayload): Promise<void> {
   const token = await getAccessToken(gdriveConfig());
-  const root = await driveEnsureFolder(token, 'FreeDraft');
+  const root = await driveEnsureFolder(token, 'ScriptCraft');
   // v1.15: the file is named after the SCRIPT. It used to be
   // "<container> — <draft>.odraft.json", from when a project was the screenplay —
   // which produced files called "Test — Draft 1 - 07-12-26.odraft.json" and, worse,
@@ -187,7 +187,7 @@ async function saveToGDrive(args: SavePayload): Promise<void> {
 
 async function snapshotToGDrive(projectName: string, label: string, json: string): Promise<void> {
   const token = await getAccessToken(gdriveConfig());
-  const root = await driveEnsureFolder(token, 'FreeDraft');
+  const root = await driveEnsureFolder(token, 'ScriptCraft');
   const snaps = await driveEnsureFolder(token, 'Snapshots', root);
   await driveUpload(token, `${safeName(projectName)} — ${safeName(label)}.json`, json, snaps);
 }
@@ -209,13 +209,13 @@ async function onedrivePut(token: string, path: string, json: string): Promise<v
 
 async function saveToOneDrive(args: SavePayload): Promise<void> {
   const token = await getAccessToken(onedriveConfig());
-  const path = `FreeDraft/${safeName(args.title)}.odraft.json`;
+  const path = `ScriptCraft/${safeName(args.title)}.odraft.json`;
   await onedrivePut(token, path, JSON.stringify(args.content));
 }
 
 async function snapshotToOneDrive(projectName: string, label: string, json: string): Promise<void> {
   const token = await getAccessToken(onedriveConfig());
-  await onedrivePut(token, `FreeDraft/Snapshots/${safeName(projectName)} — ${safeName(label)}.json`, json);
+  await onedrivePut(token, `ScriptCraft/Snapshots/${safeName(projectName)} — ${safeName(label)}.json`, json);
 }
 
 /* ── Orchestration ─────────────────────────────────────────────────────── */

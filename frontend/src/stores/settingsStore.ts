@@ -119,8 +119,8 @@ function loadEnabledScriptFormats(): string[] {
   return [];
 }
 
-// Empty until FreeDraft's own collab server is deployed. Set
-// VITE_COLLAB_WS_URL at build time (e.g. wss://collab.freedraft.com), or
+// Empty until ScriptCraft's own collab server is deployed. Set
+// VITE_COLLAB_WS_URL at build time (e.g. wss://collab.scriptcraft.com), or
 // point at a self-hosted server in Settings. Never default to a third
 // party's infrastructure — the desktop app must not phone home.
 const DEFAULT_COLLAB_URL = (import.meta.env.VITE_COLLAB_WS_URL as string | undefined) || '';

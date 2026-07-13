@@ -1,5 +1,5 @@
 /**
- * FreeDraft native format (.odraft) — import/export utilities.
+ * ScriptCraft native format (.odraft) — import/export utilities.
  *
  * An .odraft file is a JSON document containing the script metadata and
  * TipTap content, designed for lossless round-tripping.
@@ -18,7 +18,7 @@ interface OdraftFile {
     page_count: number;
   };
   content: Record<string, unknown>;
-  /** v0.82: the project's custom themes travel with it, so another FreeDraft
+  /** v0.82: the project's custom themes travel with it, so another ScriptCraft
    *  can import them ("Import Themes from a Project"). Optional — files written
    *  before this simply have no themes to offer. */
   themes?: unknown[];
@@ -58,7 +58,7 @@ export async function downloadOdraft(
   const text = await blob.text();
   const filename = `${meta.title || 'Untitled'}.odraft`;
   const { saveFile } = await import('./fileOps');
-  await saveFile(text, filename, [{ name: 'FreeDraft', extensions: ['odraft'] }]);
+  await saveFile(text, filename, [{ name: 'ScriptCraft', extensions: ['odraft'] }]);
 }
 
 /** Parse an .odraft JSON string back into meta + content. */

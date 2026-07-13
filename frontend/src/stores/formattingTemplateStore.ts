@@ -124,6 +124,33 @@ function now(): string {
   return new Date().toISOString();
 }
 
+/**
+ * v1.34 — placeholders that shipped as DEFAULTS and later changed.
+ *
+ * Stored templates (backend-saved user templates) cloned the default rules at
+ * creation, so when a default placeholder changes in the system templates the
+ * stored copies keep serving the old text — which is why "Describe the
+ * action..." survived the v1.32 rename for any script using a saved template.
+ * A stored placeholder that EQUALS an old default was never user-authored;
+ * it follows the new default. Anything else the user typed is untouched.
+ */
+const MIGRATED_PLACEHOLDERS: Record<string, string> = {
+  'Describe the action...': 'Action...',
+};
+
+export function migrateTemplatePlaceholders(t: FormattingTemplate): FormattingTemplate {
+  let changed = false;
+  const rules: FormattingTemplate['rules'] = { ...t.rules };
+  for (const id of Object.keys(rules)) {
+    const ph = rules[id]?.placeholder;
+    if (ph && MIGRATED_PLACEHOLDERS[ph]) {
+      rules[id] = { ...rules[id], placeholder: MIGRATED_PLACEHOLDERS[ph] };
+      changed = true;
+    }
+  }
+  return changed ? { ...t, rules } : t;
+}
+
 export const useFormattingTemplateStore = create<FormattingTemplateState>((set, get) => ({
   templates: [],
   activeTemplateId: null,
@@ -231,7 +258,8 @@ export const useFormattingTemplateStore = create<FormattingTemplateState>((set, 
   loadTemplates: async () => {
     try {
       const templates = await (api as any).listFormattingTemplates();
-      set({ templates, loaded: true });
+      // Stale default placeholders in stored templates follow the new defaults.
+      set({ templates: templates.map(migrateTemplatePlaceholders), loaded: true });
     } catch {
       // Storage not available yet or no templates
       set({ loaded: true });

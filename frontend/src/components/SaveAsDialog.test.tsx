@@ -33,7 +33,7 @@ HTMLCanvasElement.prototype.getContext = (() => null) as typeof HTMLCanvasElemen
 let container: HTMLDivElement;
 let root: Root;
 
-const renderDialog = (props: { onClose?: () => void; onOpenSaveLocations?: () => void } = {}) => {
+const renderDialog = (props: { onClose?: () => void; onOpenSaveLocations?: () => void; onDraftCommitted?: (label: string) => void } = {}) => {
   act(() => {
     root.render(
       <SaveAsDialog
@@ -41,6 +41,7 @@ const renderDialog = (props: { onClose?: () => void; onOpenSaveLocations?: () =>
         onSaved={() => {}}
         onClose={props.onClose ?? (() => {})}
         onOpenSaveLocations={props.onOpenSaveLocations ?? (() => {})}
+        onDraftCommitted={props.onDraftCommitted}
         buildContent={() => undefined}
       />,
     );
@@ -138,7 +139,7 @@ describe('Save Script dialog layout (v1.22)', () => {
   it('additional save locations stack one per line', () => {
     act(() => { useSettingsStore.setState({ saveToCloud: true, saveToGDrive: true }); });
     const items = Array.from(container.querySelectorAll('.fs-saveas-locations-list span'));
-    expect(items.map((el) => el.textContent)).toEqual(['FreeDraft Cloud', 'Google Drive']);
+    expect(items.map((el) => el.textContent)).toEqual(['ScriptCraft Cloud', 'Google Drive']);
     act(() => { useSettingsStore.setState({ saveToCloud: false, saveToGDrive: false }); });
     expect(text('.fs-saveas-locations-list')).toBe('None');
   });
@@ -207,6 +208,25 @@ describe('Include in Name toggles', () => {
     clickSwitch('Include Version in name');
     clickSwitch('Include Version in name');
     expect(text('.save-as-preview')).toBe(`Untitled Screenplay - First Draft - ${todayVersion}`);
+  });
+});
+
+describe('Draft is one shared value (v1.34)', () => {
+  it('editing Draft here and leaving the field commits it to the shared value', () => {
+    const onDraftCommitted = vi.fn();
+    renderDialog({ onDraftCommitted });
+    const input = container.querySelector('#saveas-draft') as HTMLInputElement;
+    typeInto(input, 'Second Draft');
+    act(() => { input.dispatchEvent(new FocusEvent('focusout', { bubbles: true })); });
+    expect(onDraftCommitted).toHaveBeenCalledWith('Second Draft');
+  });
+
+  it('an unchanged Draft commits nothing — no gratuitous writes', () => {
+    const onDraftCommitted = vi.fn();
+    renderDialog({ onDraftCommitted });
+    const input = container.querySelector('#saveas-draft') as HTMLInputElement;
+    act(() => { input.dispatchEvent(new FocusEvent('focusout', { bubbles: true })); });
+    expect(onDraftCommitted).not.toHaveBeenCalled();
   });
 });
 

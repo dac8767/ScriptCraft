@@ -25,7 +25,7 @@
 }
 
 /* ============================================
-   FreeDraft — Final Draft Exact Layout
+   ScriptCraft — Final Draft Exact Layout
    ============================================
    All measurements match Final Draft defaults:
    - Page: 8.5" x 11" US Letter
@@ -1142,7 +1142,30 @@ body {
   border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.4);
   display: flex; flex-direction: column;
 }
-.zoom-menu-value { padding: 4px 16px 6px; }
+/* v1.34: the stepper row — minus | amount | plus. */
+.zoom-menu-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 8px;
+}
+.zoom-step {
+  width: 26px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text);
+  font-size: 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.zoom-step:hover:not(:disabled) { background: var(--fd-hover-bg); border-color: var(--fd-accent); }
+.zoom-step:disabled { opacity: .4; cursor: default; }
+.zoom-menu-value { flex: 1; text-align: center; }
 .zoom-menu-value .zoom-label {
   cursor: text; font-size: 13px; font-weight: 600; color: var(--fd-text);
   padding: 2px 6px; border-radius: 3px; display: inline-block; min-width: 54px;
@@ -13045,13 +13068,14 @@ html.android .version-history-panel {
 
 /* ═══ v0.12 ═══ */
 
-/* Inline pop-out button: bottom-right corner, same diagonal-grip icon as the
-   floating panel's resize handle (smaller). Sits just above the height-drag
-   strip so both remain reachable. */
+/* Inline pop-out button. v1.34: upper-RIGHT for every window — matching the
+   floating windows' header pop-in — instead of the old bottom corner. The
+   inline body reserves a top strip for it (see the v0.94 rule), so no tool's
+   own top controls can ever run underneath it. */
 .tool-inline-popout {
-  top: auto;
-  bottom: 12px;
-  right: 4px;
+  top: 4px;
+  bottom: auto;
+  right: 6px;
   width: 18px;
   height: 18px;
   padding: 0;
@@ -13091,13 +13115,22 @@ html.android .version-history-panel {
    stop content from occupying that strip AT ALL rather than to shrink each
    control that wanders into it.
 
-   The strip is the height of the button plus its offset. Content ends above it;
-   the button sits in the clear space below. Applies to every tool, so no future
-   one has to remember this. */
-.tool-inline-body,
-.tool-window-body {
+   The strip is the height of the button plus its offset. Content stays clear
+   of it; the button sits in the reserved space. Applies to every tool, so no
+   future one has to remember this.
+
+   v1.34: the inline pop-out moved to the TOP-right, so the inline reserve is
+   now a top strip; the bottom keeps a sliver for the height-drag handle. The
+   floating window's buttons all live in its header now, so its body only
+   clears the corner resize grip. */
+.tool-inline-body {
   box-sizing: border-box;       /* the height is set inline — keep padding INSIDE it */
-  padding-bottom: 26px;
+  padding-top: 26px;
+  padding-bottom: 10px;
+}
+.tool-window-body {
+  box-sizing: border-box;
+  padding-bottom: 18px;
 }
 /* A fixed window (Title Page) has no handle in the corner and hugs its content,
    so reserving a strip there would just add dead space. */
@@ -13474,8 +13507,6 @@ html.android .version-history-panel {
 }
 .tool-inline-popout::after { content: none; }
 .tool-inline-popout:hover { color: var(--fd-text); }
-/* Right-pane panels: pop-out sits bottom-LEFT, expanding away from the panel */
-.tool-inline-popout-left { right: auto; left: 4px; }
 
 /* Right-docked floating windows: resize handle bottom-LEFT, mirrored grip */
 .tool-window-resize-left {
@@ -13546,11 +13577,11 @@ html.android .version-history-panel {
    act on it (v1.30). No min-width:0: its full nowrap width is what forces
    the dialog's min-width: fit-content to widen the window for a long name. */
 .save-as-preview {
-  font-size: 14px; /* one step up, with its "Saves as:" label (v1.31) */
-  color: var(--fd-text);
+  font-size: 15px; /* matches its "Saves as:" label (v1.34) */
+  color: var(--fd-accent);
   white-space: nowrap;
 }
-.save-as-preview strong { color: var(--fd-text); font-weight: 600; }
+.save-as-preview strong { color: var(--fd-accent); font-weight: 700; }
 
 
 /* ═══ v0.17 ═══ */
@@ -13708,13 +13739,17 @@ html.android .version-history-panel {
 .tool-window-popin svg,
 .tool-inline-popout svg { display: block; margin: auto; }
 
-/* v1.33: Premiere-style open/closed caret at the left of every dock item. */
+/* v1.33: Premiere-style open/closed caret at the left of every dock item.
+   v1.34: a single chevron (right = closed, down = open) with extra breathing
+   room before the item's icon. */
 .tool-dock-caret {
   display: inline-flex;
   width: 10px;
   justify-content: center;
   color: var(--fd-text-muted);
   flex-shrink: 0;
+  font-size: 9px;
+  margin-right: 8px;
 }
 .tool-dock-caret svg { display: block; }
 
@@ -14277,9 +14312,11 @@ html.android .version-history-panel {
   color: var(--fd-text);
   white-space: nowrap;
 }
-/* "Saves as:" lives in the footer now — one step up from the grid text. */
+/* "Saves as:" lives in the footer now. v1.34: it and the filename are the
+   dialog's payoff line — a step larger, with the name in the theme's accent
+   (the one emphasis color every theme defines). */
 .fs-saveas-rowlabel {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--fd-text);
   white-space: nowrap;
 }
@@ -14374,9 +14411,9 @@ html.android .version-history-panel {
 }
 .fs-saveas-change:hover { border-color: var(--fd-accent); }
 
-/* flex-start, not center: with several locations stacked, the button belongs
-   beside the FIRST line, not floating mid-list. */
-.fs-saveas-locations { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+/* v1.34: center everything on the row's midline — the flex-start + negative
+   margin pairing left "None" visibly higher than its label. */
+.fs-saveas-locations { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .fs-saveas-locations-list {
   flex: 1;
   min-width: 0;
@@ -14392,7 +14429,4 @@ html.android .version-history-panel {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Pull the button up so its centerline matches the first location line
-   (the list text is 18px tall vs the button's ~28px). */
-.fs-saveas-locations .fs-saveas-change { margin-top: -5px; }
-.fs-saveas-draft { color: var(--fd-text); }
+.fs-saveas-draft { color: inherit; }

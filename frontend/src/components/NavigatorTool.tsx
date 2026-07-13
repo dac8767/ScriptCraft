@@ -1,5 +1,5 @@
 /**
- * NavigatorTool — the outline at a glance, ported from FreeDraft v5.5's
+ * NavigatorTool — the outline at a glance, ported from ScriptCraft v5.5's
  * Navigator. Lists every jumpable landmark in the script:
  *   - Scenes:       scene headings (click to jump)
  *   - Acts:         new act / end of act markers (click to jump)

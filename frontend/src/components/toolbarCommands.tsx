@@ -1,7 +1,7 @@
 /**
  * Toolbar command registry (v0.38) — every Production/Tools menu COMMAND that
  * can be pinned to the toolbar as a button. Commands whose UI lives in
- * MenuBar-mounted dialogs run via a window event ('freedraft:command') that
+ * MenuBar-mounted dialogs run via a window event ('scriptcraft:command') that
  * MenuBar listens for, so no dialog state needs hoisting; commands backed by
  * store setters run directly.
  */
@@ -20,7 +20,7 @@ export interface ToolbarCommand {
 }
 
 const emit = (id: string) =>
-  window.dispatchEvent(new CustomEvent('freedraft:command', { detail: id }));
+  window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: id }));
 
 export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'titlePage', label: 'Title Page', icon: <FaFileAlt />, run: () => useEditorStore.getState().setTitlePageEditorOpen(true) },

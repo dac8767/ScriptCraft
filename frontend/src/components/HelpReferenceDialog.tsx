@@ -3,7 +3,7 @@ import { useShortcutStore } from '../stores/shortcutStore';
 import { SHORTCUT_COMMANDS, formatCombo } from './shortcuts';
 
 /**
- * HelpReferenceDialog — Help menu content, ported from FreeDraft v5.5's
+ * HelpReferenceDialog — Help menu content, ported from ScriptCraft v5.5's
  * HelpModal and KnowledgeBaseModal and updated for this app:
  *   - kind="shortcuts": the keyboard shortcut grid
  *   - kind="knowledge": the in-app Knowledge Base document
@@ -78,14 +78,14 @@ function Knowledge() {
   const P = ({ children }: { children: React.ReactNode }) => <p className="fs-kb-p">{children}</p>;
   return (
     <div>
-      <P>FreeDraft is a screenplay editor. You write in formatted elements (scene headings,
+      <P>ScriptCraft is a screenplay editor. You write in formatted elements (scene headings,
       action, dialogue, transitions) positioned at spec print columns — Courier, standard
       margins, about 55 lines per page. Everything below is reachable from the menus, the
       toolbar, or the Tool Panels on either side of the page.</P>
 
       <H>File</H>
       <P><b>Save</b> writes to the app's library; <b>Save As</b> downloads a local .odraft file;
-      <b> Save to Cloud</b> signs in and stores the script on your FreeDraft Cloud account.
+      <b> Save to Cloud</b> signs in and stores the script on your ScriptCraft Cloud account.
       <b> Auto Saves</b> holds Check In plus every saved version — compare or restore any of them.
       Import and export cover Final Draft (.fdx), Fountain, Word, and PDF.</P>
 
@@ -146,7 +146,7 @@ export default function HelpReferenceDialog({ kind, open, onClose }: Props) {
             <button
               className="dialog-btn-primary"
               onClick={() => {
-                window.dispatchEvent(new CustomEvent('freedraft:command', { detail: 'customizeShortcuts' }));
+                window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customizeShortcuts' }));
                 onClose();
               }}
             >Customize Keyboard Shortcuts...</button>

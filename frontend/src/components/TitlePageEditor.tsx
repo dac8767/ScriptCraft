@@ -228,7 +228,13 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
   const [data, setData] = useState<Omit<TitlePageAttrs, 'field'>>({ ...EMPTY_ATTRS });
 
   useEffect(() => {
-    setData(readTitlePageData(editor));
+    const fromDoc = readTitlePageData(editor);
+    /* v1.34: the Draft is ONE value across the Title Page, Production > Set
+     * Draft Number, and Save Script. If the title page doesn't carry a draft
+     * line yet, prefill from the shared value instead of showing an empty
+     * field that contradicts the other two surfaces. */
+    if (!fromDoc.tpDraft) fromDoc.tpDraft = useEditorStore.getState().draftLabel || '';
+    setData(fromDoc);
   }, [editor]);
 
   const setField = useCallback((key: keyof Omit<TitlePageAttrs, 'field'>, value: string) => {
@@ -244,6 +250,12 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
       if (regionEnd > 0) tr.delete(0, regionEnd);
       for (let i = built.length - 1; i >= 0; i--) tr.insert(0, built[i]);
       editor.view.dispatch(tr);
+      // v1.34: Draft is one shared value — applying a changed draft here
+      // updates the store, which the Save dialog and Set Draft Number read.
+      const appliedDraft = data.tpDraft.trim();
+      if (appliedDraft && appliedDraft !== useEditorStore.getState().draftLabel) {
+        useEditorStore.getState().setDraftLabel(appliedDraft);
+      }
       onClose();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to update title page', 'error');

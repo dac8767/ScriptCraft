@@ -51,7 +51,7 @@ function computeApiBase(): string {
   // the hosted default. Users can override in Settings → Cloud API URL.
   const isTauri = !!(window as any).__TAURI_INTERNALS__;
   // Desktop/mobile cloud endpoint. Set VITE_CLOUD_API_BASE at build time to
-  // FreeDraft's own backend (e.g. https://api.freedraft.com). Until that
+  // ScriptCraft's own backend (e.g. https://api.scriptcraft.com). Until that
   // backend is deployed this is intentionally empty — cloudApi surfaces a
   // clean "cloud not configured" state and the app runs fully offline on
   // local SQLite. Users can also point it at their own server in
@@ -65,7 +65,7 @@ function computeApiBase(): string {
   return normalizeCloudDefault(import.meta.env.VITE_CLOUD_API_BASE);
 }
 
-/** Empty (cloud disabled) unless a FreeDraft cloud base is configured. */
+/** Empty (cloud disabled) unless a ScriptCraft cloud base is configured. */
 function normalizeCloudDefault(v: unknown): string {
   const raw = (v ? String(v) : '').trim();
   return raw ? normalizeApiBase(raw) : '';
@@ -91,8 +91,8 @@ export const SERVER_BASE: string = API_BASE.replace(/\/api$/, '');
  *  Reads from localStorage (settings store) first, then falls back
  *  to the VITE env var, then to the default.
  */
-// Empty until FreeDraft's own collab server is deployed (set
-// VITE_COLLAB_WS_URL at build time, e.g. wss://collab.freedraft.com).
+// Empty until ScriptCraft's own collab server is deployed (set
+// VITE_COLLAB_WS_URL at build time, e.g. wss://collab.scriptcraft.com).
 const DEFAULT_COLLAB_WS = import.meta.env.VITE_COLLAB_WS_URL || '';
 export function getCollabWsUrl(): string {
   const stored = localStorage.getItem('opendraft:collabServerUrl');

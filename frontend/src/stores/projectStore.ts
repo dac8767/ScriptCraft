@@ -6,7 +6,7 @@ import { useSettingsStore } from './settingsStore';
  * Origin of the currently-open script:
  *   'local' — stored on this device (SQLite on desktop/mobile, or the Python
  *             backend when running as a plain web app without sign-in).
- *   'cloud' — stored on the FreeDraft server for the signed-in user. All
+ *   'cloud' — stored on the ScriptCraft server for the signed-in user. All
  *             reads/writes for this script go over HTTP, even on desktop.
  * The editor routes save/load through scriptApi.ts which picks the right
  * implementation based on this value.

@@ -14,7 +14,8 @@ import {
   FaUndo,
   FaRedo,
   FaSearchPlus,
-  FaSearchMinus,
+  FaMinus,
+  FaPlus,
   FaSearch,
   FaStickyNote,
   FaTags,
@@ -333,8 +334,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     const onCmd = (e: Event) => {
       if ((e as CustomEvent).detail === 'fitPage') fitPageToScreen();
     };
-    window.addEventListener('freedraft:command', onCmd);
-    return () => window.removeEventListener('freedraft:command', onCmd);
+    window.addEventListener('scriptcraft:command', onCmd);
+    return () => window.removeEventListener('scriptcraft:command', onCmd);
   });
 
   // Close the zoom menu on an outside click.
@@ -1015,46 +1016,51 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           </button>
           {zoomMenuOpen && (
             <div className="zoom-menu">
-              {/* First item: the current percentage, click to type an exact value. */}
-              <div className="zoom-menu-value">
-                {zoomEditing ? (
-                  <input
-                    ref={zoomInputRef}
-                    className="zoom-input"
-                    type="number"
-                    min={ZOOM_MIN}
-                    max={ZOOM_MAX}
-                    step={10}
-                    value={zoomInput}
-                    onChange={(e) => setZoomInput(e.target.value)}
-                    onBlur={commitZoom}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') { commitZoom(); setZoomMenuOpen(false); }
-                      if (e.key === 'Escape') { setZoomInput(String(zoomLevel)); setZoomEditing(false); }
-                    }}
-                    autoFocus
-                  />
-                ) : (
-                  <span
-                    className="zoom-label"
-                    onClick={() => { setZoomEditing(true); setTimeout(() => zoomInputRef.current?.select(), 0); }}
-                    title="Click to type an exact zoom"
-                  >
-                    {zoomLevel}%
-                  </span>
-                )}
+              {/* v1.34: one stepper row — minus | amount | plus. The amount is
+                * still click-to-type. */}
+              <div className="zoom-menu-stepper">
+                <button
+                  className="zoom-step"
+                  title="Zoom out"
+                  disabled={zoomLevel <= ZOOM_MIN}
+                  onClick={() => setZoomLevel(Math.max(ZOOM_MIN, zoomLevel - 10))}
+                ><FaMinus /></button>
+                <div className="zoom-menu-value">
+                  {zoomEditing ? (
+                    <input
+                      ref={zoomInputRef}
+                      className="zoom-input"
+                      type="number"
+                      min={ZOOM_MIN}
+                      max={ZOOM_MAX}
+                      step={10}
+                      value={zoomInput}
+                      onChange={(e) => setZoomInput(e.target.value)}
+                      onBlur={commitZoom}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { commitZoom(); setZoomMenuOpen(false); }
+                        if (e.key === 'Escape') { setZoomInput(String(zoomLevel)); setZoomEditing(false); }
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <span
+                      className="zoom-label"
+                      onClick={() => { setZoomEditing(true); setTimeout(() => zoomInputRef.current?.select(), 0); }}
+                      title="Click to type an exact zoom"
+                    >
+                      {zoomLevel}%
+                    </span>
+                  )}
+                </div>
+                <button
+                  className="zoom-step"
+                  title="Zoom in"
+                  disabled={zoomLevel >= ZOOM_MAX}
+                  onClick={() => setZoomLevel(Math.min(ZOOM_MAX, zoomLevel + 10))}
+                ><FaPlus /></button>
               </div>
               <div className="zoom-menu-sep" />
-              <button
-                className="zoom-menu-item"
-                disabled={zoomLevel >= ZOOM_MAX}
-                onClick={() => setZoomLevel(Math.min(ZOOM_MAX, zoomLevel + 10))}
-              ><FaSearchPlus /> Zoom In</button>
-              <button
-                className="zoom-menu-item"
-                disabled={zoomLevel <= ZOOM_MIN}
-                onClick={() => setZoomLevel(Math.max(ZOOM_MIN, zoomLevel - 10))}
-              ><FaSearchMinus /> Zoom Out</button>
               <button
                 className="zoom-menu-item"
                 onClick={() => { setZoomLevel(100); setZoomMenuOpen(false); }}

@@ -3,9 +3,9 @@
  * Open-from-Cloud dialogs.
  *
  * On the desktop / mobile app:
- *   - Source toggle at the top (This device / FreeDraft Cloud).
+ *   - Source toggle at the top (This device / ScriptCraft Cloud).
  *   - "This device" reads via `api` which is swapped to local SQLite.
- *   - "FreeDraft Cloud" reads via `cloudApi` (HTTP + auth).
+ *   - "ScriptCraft Cloud" reads via `cloudApi` (HTTP + auth).
  * In the browser:
  *   - No toggle — everything on the web is cloud-backed. We always go through
  *     `cloudApi` since that's the only real source.
@@ -143,7 +143,7 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
    * v1.14: one flat list of scripts.
    *
    * This used to render a header per project with its scripts nested beneath. There
-   * are no projects any more — a FreeDraft file is one script — so the grouping was
+   * are no projects any more — a ScriptCraft file is one script — so the grouping was
    * a filing cabinet with one drawer. Scripts saved by older versions may still sit
    * in different containers underneath; they all appear here together, as scripts,
    * which is the only thing they ever were to you.
@@ -188,7 +188,7 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
                 className={`open-file-source-tab ${source === 'cloud' ? 'active' : ''}`}
                 onClick={() => setSource('cloud')}
               >
-                <FaCloud /> FreeDraft Cloud
+                <FaCloud /> ScriptCraft Cloud
               </button>
             </div>
           )}
@@ -223,7 +223,7 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
         >
           {source === 'cloud' && !signedIn ? (
             <div className="open-file-empty">
-              Sign in to access your FreeDraft Cloud files. Click the indicator in the
+              Sign in to access your ScriptCraft Cloud files. Click the indicator in the
               menu bar to sign in.
             </div>
           ) : loading ? (
@@ -235,7 +235,7 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
               {query
                 ? `No files match “${query}”.`
                 : source === 'cloud'
-                  ? 'No cloud files yet. Use File › Save As… and pick FreeDraft Cloud to upload.'
+                  ? 'No cloud files yet. Use File › Save As… and pick ScriptCraft Cloud to upload.'
                   : 'No scripts yet. Use File › New Screenplay, or File › Open › Local File to import one.'}
             </div>
           ) : (

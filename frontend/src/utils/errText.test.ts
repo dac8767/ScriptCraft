@@ -3,7 +3,7 @@ import { errText } from './errText';
 
 /**
  * The bug this exists to prevent:
- *   "FreeDraft can't write to that folder … (undefined)"
+ *   "ScriptCraft can't write to that folder … (undefined)"
  * Tauri rejects with a plain string, so `(err as Error).message` was undefined and
  * the actual reason — the one thing that would have explained the failure — was
  * discarded by the code reporting it.

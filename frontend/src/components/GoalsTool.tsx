@@ -1,5 +1,5 @@
 /**
- * GoalsTool — ported from FreeDraft v5.5's Goals (which absorbed the old
+ * GoalsTool — ported from ScriptCraft v5.5's Goals (which absorbed the old
  * Write Sprint). Set a target and keep it in view while you write: a word
  * count, a page count, or a timed session. Progress renders here and as a
  * chip in the status bar, and lights up green when you hit it.

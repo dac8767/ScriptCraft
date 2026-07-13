@@ -1,4 +1,4 @@
-# FreeDraft — handoff to Claude Code
+# ScriptCraft — handoff to Claude Code
 
 You are picking up a project with **100 shipped versions**, currently at **v1.21**
 (commit `9091599`, branch `claude/v0_32`). Derek is the product owner and sole
@@ -114,7 +114,7 @@ examples (search "pinned").
 
 ## 4. Where the product is right now (v1.9 → v1.21, the part CLAUDE.md predates)
 
-- **Projects are GONE from the product** (v1.14). A FreeDraft file is one script.
+- **Projects are GONE from the product** (v1.14). A ScriptCraft file is one script.
   No Project Manager, no project screens/routes, Save As asks for a title not a
   project, Open is a flat list. **The storage spine still keys on a container id**
   — `services/scriptLibrary.ts` provides the one invisible container new scripts
@@ -154,7 +154,7 @@ examples (search "pinned").
 - Replace all OpenDraft brand art (`src-tauri/icons/`, splash, favicon) — biggest.
 - Apple Developer Program; swap the Proteus signing identity in `build-desktop.sh`.
 - `languageCatalog.ts` fetches dictionaries from GitHub **at runtime** — rehost.
-- Courier Prime + dictionary licenses; trademark clearance on "FreeDraft".
+- Courier Prime + dictionary licenses; trademark clearance on "ScriptCraft".
 - `macos-private-api` is on → **no Mac App Store**; the plan is a signed `.dmg`.
 - npm audit: 12 known vulnerabilities, pre-existing, untriaged.
 - Deferred by explicit decision (don't start without Derek): Lock Pages; the

@@ -15,7 +15,7 @@ import { handleNonOkResponse } from './api';
 import type { ProjectInfo, ProjectProperties, ScriptMeta, ScriptResponse } from './api';
 
 const NOT_CONFIGURED =
-  'FreeDraft Cloud is not configured for this app. Open Settings → System Settings to set the FreeDraft server URL.';
+  'ScriptCraft Cloud is not configured for this app. Open Settings → System Settings to set the ScriptCraft server URL.';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const base = getApiBase();
@@ -33,13 +33,13 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     // up malformed (e.g. opaque-origin Tauri schemes). Surface a single clean
     // message so the user sees something actionable instead of either raw text.
     const detail = err instanceof Error ? err.message : String(err);
-    throw new Error(`Cannot reach FreeDraft Cloud (${detail}).`);
+    throw new Error(`Cannot reach ScriptCraft Cloud (${detail}).`);
   }
   if (!res.ok) await handleNonOkResponse(res, 'Cloud API');
   try {
     return await res.json();
   } catch {
-    throw new Error('FreeDraft Cloud returned an invalid response. The server may be misconfigured.');
+    throw new Error('ScriptCraft Cloud returned an invalid response. The server may be misconfigured.');
   }
 }
 

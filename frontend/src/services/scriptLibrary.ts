@@ -2,7 +2,7 @@
  * scriptLibrary — the container every script lives in, now that there is no such
  * thing as a project.
  *
- * WHY THIS EXISTS AT ALL. A FreeDraft file is one script. But underneath, the
+ * WHY THIS EXISTS AT ALL. A ScriptCraft file is one script. But underneath, the
  * storage layer keys everything on a container id: scripts are stored as
  * (containerId, scriptId), assets live in assets/{containerId}, and version
  * history, characters and locations are all scoped by it. That's ~1,300

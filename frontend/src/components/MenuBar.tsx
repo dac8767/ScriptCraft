@@ -380,6 +380,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const [prefsOpen, setPrefsOpen] = useState(false);
   const preferencesRequest = useEditorStore((s) => s.preferencesRequest);
   const closePreferences = useEditorStore((s) => s.closePreferences);
+  // v1.34: unfinished features (Collaboration, Lock Pages) hide from the menus
+  // unless the Developer toggle shows them.
+  const showUnreleasedTools = useEditorStore((s) => s.showUnreleasedTools);
+  const setShowUnreleasedTools = useEditorStore((s) => s.setShowUnreleasedTools);
   const [helpForm, setHelpForm] = useState<{ title: string; url: string } | null>(null);
   const [draftDialogOpen, setDraftDialogOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
@@ -567,7 +571,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   ]);
 
   // Pinned toolbar commands (Customize > Toolbar Layout) dispatch
-  // 'freedraft:command'; the dialogs live here, so route them here.
+  // 'scriptcraft:command'; the dialogs live here, so route them here.
   useEffect(() => {
     const onCmd = (e: Event) => {
       const id = (e as CustomEvent).detail as string;
@@ -586,8 +590,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         default: break;
       }
     };
-    window.addEventListener('freedraft:command', onCmd);
-    return () => window.removeEventListener('freedraft:command', onCmd);
+    window.addEventListener('scriptcraft:command', onCmd);
+    return () => window.removeEventListener('scriptcraft:command', onCmd);
   }, [handleCheckinOpen, handleTrackChangesToggle]);
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -719,10 +723,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       setCurrentScriptId(null);
       setScripts([]);
       // Track that this is an imported document so Save As can warn the user
-      // that the save goes to FreeDraft's library, not back to the source file.
+      // that the save goes to ScriptCraft's library, not back to the source file.
       const fmtLabel = ext === 'fdx' ? 'Final Draft (.fdx)'
         : ext === 'fountain' ? 'Fountain (.fountain)'
-        : ext === 'odraft' ? 'FreeDraft (.odraft)'
+        : ext === 'odraft' ? 'ScriptCraft (.odraft)'
         : ext ? `.${ext}` : 'imported file';
       store.setImportedSource({ name, format: fmtLabel });
     } catch (err) {
@@ -899,7 +903,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     zoomIn: () => setZoomLevel(Math.min(300, useEditorStore.getState().zoomLevel + 10)),
     zoomOut: () => setZoomLevel(Math.max(50, useEditorStore.getState().zoomLevel - 10)),
     actualSize: () => setZoomLevel(100),
-    fitPage: () => window.dispatchEvent(new CustomEvent('freedraft:command', { detail: 'fitPage' })),
+    fitPage: () => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'fitPage' })),
     customize: () => openCustomize('menu'),
 
     bold: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(),
@@ -1023,11 +1027,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         created_at: '', updated_at: '', page_count: store.pageCount,
         size_bytes: 0, color: '', pinned: false, sort_order: 0, preview: '',
       };
-      // Ship the custom themes inside the project so another FreeDraft can
+      // Ship the custom themes inside the project so another ScriptCraft can
       // import them (Customize > Themes > Import Themes from a Project).
       await downloadOdraft(meta, editor.getJSON(), useThemeStore.getState().customThemes);
     } catch (err) {
-      console.error('FreeDraft export failed:', err);
+      console.error('ScriptCraft export failed:', err);
       showToast(`Export failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
     }
   }, [editor, documentTitle]);
@@ -1039,7 +1043,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const handleImportWorkspaces = useCallback(async () => {
     try {
       const result = await openTextFile([
-        { name: 'FreeDraft Project or Workspaces', extensions: ['odraft', 'json'] },
+        { name: 'ScriptCraft Project or Workspaces', extensions: ['odraft', 'json'] },
       ]);
       if (!result) return;
       let parsed: unknown;
@@ -1129,7 +1133,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {
           icon: <FaFileImport />, label: 'Import',
           children: [
-            { icon: <FaFileCode />, label: 'Final Draft / Fountain / FreeDraft...', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
+            { icon: <FaFileCode />, label: 'Final Draft / Fountain / ScriptCraft...', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
             { icon: <FaFileWord />, label: 'Microsoft Word (.docx)...', action: handleImportDocx, disabled: isCollabGuest },
           ],
         },
@@ -1147,7 +1151,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
            * v1.17: Save As opens the SAVE AS DIALOG.
            *
            * It was bound to handleExportOdraft — an EXPORT, which writes a .odraft file
-           * and is already sitting in File > Export > FreeDraft (.odraft). So the
+           * and is already sitting in File > Export > ScriptCraft (.odraft). So the
            * Name/Draft/Version window could only ever be reached by saving a file that
            * had never been saved; picking "Save As" on a saved script exported it
            * instead. Same word, two different jobs, and the wrong one wired up.
@@ -1165,18 +1169,22 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaFileAlt />, label: 'Fountain (.fountain)', action: handleExportFountain, disabled: isCollabGuest },
             { icon: <FaFilePdf />, label: 'PDF', action: handleExportPDF },
             { icon: <FaFileWord />, label: 'Microsoft Word (.docx)', action: handleExportDocx },
-            { icon: <FaFile />, label: 'FreeDraft (.odraft)', action: handleExportOdraft, disabled: isCollabGuest },
+            { icon: <FaFile />, label: 'ScriptCraft (.odraft)', action: handleExportOdraft, disabled: isCollabGuest },
           ],
         },
         { icon: <FaPrint />, label: 'Print...', shortcut: sc('print'), action: () => setTimeout(() => window.print(), 60) },
-        { separator: true, label: '' },
-        {
-          icon: <FaUserFriends />, label: 'Collaboration',
-          children: [
-            { icon: <FaUserFriends />, label: isCollabActive ? '\u2713 Collaborate...' : 'Collaborate...', action: onCollaborate, disabled: isCollabGuest },
-            { icon: <FaSignInAlt />, label: 'Join Collaboration...', action: onJoinCollab, disabled: isCollabGuest },
-          ],
-        },
+        // v1.34: Collaboration is UNRELEASED — hidden unless the Developer
+        // toggle (Help > Developer > Show Unreleased Tools) is on.
+        ...(showUnreleasedTools ? [
+          { separator: true, label: '' },
+          {
+            icon: <FaUserFriends />, label: 'Collaboration',
+            children: [
+              { icon: <FaUserFriends />, label: isCollabActive ? '\u2713 Collaborate...' : 'Collaborate...', action: onCollaborate, disabled: isCollabGuest },
+              { icon: <FaSignInAlt />, label: 'Join Collaboration...', action: onJoinCollab, disabled: isCollabGuest },
+            ],
+          },
+        ] : []),
         { separator: true, label: '' },
         { separator: true, label: '' },
         { icon: <FaCog />, label: 'Settings...', action: () => setPrefsOpen(true) },
@@ -1463,7 +1471,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           action: () => setSceneNumbersLocked(!sceneNumbersLocked),
           disabled: !sceneNumbersVisible,
         },
-        { icon: <FaLock />, label: 'Lock Pages', disabled: true },
+        // v1.34: Lock Pages is UNRELEASED — same Developer toggle as above.
+        ...(showUnreleasedTools ? [{ icon: <FaLock />, label: 'Lock Pages', disabled: true }] : []),
         { separator: true, label: '' },
         { icon: <FaToggleOn />, label: revisionMode ? '\u2713 Revision Mode' : 'Revision Mode', action: () => setRevisionMode(!revisionMode) },
         { separator: true, label: '' },
@@ -1478,7 +1487,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     items: [
       {
         icon: <FaInfoCircle />,
-        label: 'About FreeDraft',
+        label: 'About ScriptCraft',
         action: () => setAboutOpen(true),
       },
       {
@@ -1521,6 +1530,14 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             icon: <FaStethoscope />,
             label: 'Diagnostics',
             action: () => { void handleOpenDiagnostics(); },
+          },
+          /* v1.34: the switch for features that exist but aren't finished
+           * (Collaboration, Lock Pages). One flag, read wherever an
+           * unreleased item renders — not a per-feature checkbox list. */
+          {
+            icon: <FaToggleOn />,
+            label: showUnreleasedTools ? 'Hide Unreleased Tools' : 'Show Unreleased Tools',
+            action: () => setShowUnreleasedTools(!showUnreleasedTools),
           },
           ...(import.meta.env.DEV ? [
             {
@@ -2096,9 +2113,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {aboutOpen && (
       <div className="dialog-overlay" onClick={() => setAboutOpen(false)}>
         <div className="dialog-box about-dialog" onClick={(e) => e.stopPropagation()}>
-          <div className="dialog-header">About FreeDraft</div>
+          <div className="dialog-header">About ScriptCraft</div>
           <div className="dialog-body about-body">
-            <div className="about-title">FreeDraft</div>
+            <div className="about-title">ScriptCraft</div>
             <div className="about-version">Version {APP_VERSION}</div>
             <div className="about-tagline">Free, open-source screenwriting software</div>
             <div className="about-credit">
@@ -2225,7 +2242,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                     data folder appears to be inside a OneDrive-synced
                     location. OneDrive can corrupt SQLite WAL files mid-write,
                     causing silent save failures. To fix this, exclude
-                    FreeDraft's data folder from OneDrive backup, or move your
+                    ScriptCraft's data folder from OneDrive backup, or move your
                     Windows AppData folder out of OneDrive sync.
                   </div>
                 )}
@@ -2286,7 +2303,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           <div className="dialog-header">Import from Word — Best-Effort Formatting</div>
           <div className="dialog-body">
             <p style={{ margin: '0 0 8px 0', fontSize: 14, color: 'var(--fd-text)' }}>
-              FreeDraft will detect screenplay element types (scene heading, action,
+              ScriptCraft will detect screenplay element types (scene heading, action,
               character, dialogue, parenthetical, transition, etc.) from the
               Word document&apos;s formatting.
             </p>

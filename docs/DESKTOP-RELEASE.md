@@ -1,4 +1,4 @@
-# FreeDraft — Mac Desktop Release Roadmap
+# ScriptCraft — Mac Desktop Release Roadmap
 
 Target: a signed, notarized `.dmg` users download from your site. Keeps
 login + cloud sync for a future paid tier; ships offline-first now.
@@ -14,7 +14,7 @@ login + cloud sync for a future paid tier; ships offline-first now.
 
 ## The one hard dependency for cloud
 The cloud/login code worked by syncing to **open-draft.com** (Proteus's
-servers) — hardcoded in `frontend/src/config.ts`. You can't ship a FreeDraft
+servers) — hardcoded in `frontend/src/config.ts`. You can't ship a ScriptCraft
 app that depends on a competitor's infrastructure. As of this commit those
 defaults are removed: cloud endpoints now come from build-time env vars
 (`VITE_CLOUD_API_BASE`, `VITE_COLLAB_WS_URL`) and default to **empty =
@@ -31,10 +31,10 @@ set. That is its own infra project — domain, server, database, hosting cost.
 Don't block launch on running servers. Cloud UI can show "coming soon."
 1. **On a real Mac** (Codespaces can't build macOS apps): install Xcode CLT,
    Rust (`rustup`), Node. Then `npm install -g @tauri-apps/cli`,
-   `cd frontend && npm install`, and `npm run tauri dev`. A FreeDraft window
+   `cd frontend && npm install`, and `npm run tauri dev`. A ScriptCraft window
    on local SQLite = milestone zero.
 2. **Rebrand** — DONE in this commit: `tauri.conf.json` productName
-   `FreeDraft`, identifier `com.freedraft.app`, window titles. Still TODO:
+   `ScriptCraft`, identifier `com.freedraft.app`, window titles. Still TODO:
    replace the app icons (`src-tauri/icons/*`, still OpenDraft art) — this is
    also audit item T1. Generate a new set with `npm run tauri icon path/to/
    freedraft-1024.png`.
@@ -65,5 +65,5 @@ Don't block launch on running servers. Cloud UI can show "coming soon."
 - Keep upstream MIT `LICENSE`; add your own copyright line — T2.
 - Dictionary + Courier Prime license files; THIRD-PARTY notices — T5/T6/T7.
 - `npm audit fix` in frontend — S3.
-- Trademark clearance search on "FreeDraft" — T4.
+- Trademark clearance search on "ScriptCraft" — T4.
 - Rotate the GitHub PAT exposed in chat — S7.

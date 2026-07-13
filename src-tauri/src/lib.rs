@@ -583,11 +583,11 @@ fn ios_save_and_share_binary(filename: String, contents: Vec<u8>) -> Result<(), 
 }
 
 // ── Pending file state ────────────────────────────────────────────────────
-// Stores the file path when the OS opens a screenplay file with FreeDraft.
+// Stores the file path when the OS opens a screenplay file with ScriptCraft.
 // The frontend retrieves it on startup via the get_opened_file command.
 struct PendingFile(Mutex<Option<String>>);
 
-/// Extensions that FreeDraft can open via file association.
+/// Extensions that ScriptCraft can open via file association.
 const OPENABLE_EXTENSIONS: &[&str] = &["fdx", "fountain", "odraft", "txt"];
 
 fn is_openable_file(path: &str) -> bool {
@@ -746,7 +746,7 @@ async fn fetch_link_preview(url: String) -> Result<LinkPreview, String> {
 async fn fetch_url_body(url: &str) -> Result<String, Box<dyn std::error::Error>> {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
-        .user_agent("Mozilla/5.0 (compatible; FreeDraft/1.0)")
+        .user_agent("Mozilla/5.0 (compatible; ScriptCraft/1.0)")
         .build()?;
 
     let resp = client.get(url).send().await?;
@@ -871,7 +871,7 @@ static APP_READY: AtomicBool = AtomicBool::new(false);
 async fn set_window_title(window: tauri::WebviewWindow, title: String) -> Result<(), String> {
     #[cfg(desktop)]
     {
-        let display_title = if title.is_empty() { "FreeDraft".to_string() } else { format!("{} — FreeDraft", title) };
+        let display_title = if title.is_empty() { "ScriptCraft".to_string() } else { format!("{} — ScriptCraft", title) };
         window.set_title(&display_title).map_err(|e| format!("{}", e))?;
         // Rebuild the Window menu to reflect current window titles
         let app = window.app_handle();
@@ -985,7 +985,7 @@ async fn open_new_window(app: tauri::AppHandle) -> Result<(), String> {
     #[cfg(desktop)]
     {
         builder = builder
-            .title("FreeDraft")
+            .title("ScriptCraft")
             .inner_size(1280.0, 800.0)
             .min_inner_size(800.0, 600.0)
             .resizable(true);
@@ -1072,10 +1072,10 @@ pub fn run() {
             {
                 let app_submenu = Submenu::with_items(
                     app_handle,
-                    "FreeDraft",
+                    "ScriptCraft",
                     true,
                     &[
-                        &PredefinedMenuItem::about(app_handle, Some("About FreeDraft"), None)?,
+                        &PredefinedMenuItem::about(app_handle, Some("About ScriptCraft"), None)?,
                         &PredefinedMenuItem::separator(app_handle)?,
                         &PredefinedMenuItem::services(app_handle, None)?,
                         &PredefinedMenuItem::separator(app_handle)?,
@@ -1127,7 +1127,7 @@ pub fn run() {
                 .expect("failed to resolve app data directory");
             std::fs::create_dir_all(&app_data_dir).ok();
 
-            eprintln!("FreeDraft starting — local SQLite storage");
+            eprintln!("ScriptCraft starting — local SQLite storage");
             eprintln!("Data dir: {}", app_data_dir.display());
 
             // ── Check for file association launch ──────────────────────────
@@ -1290,7 +1290,7 @@ pub fn run() {
                         let label = format!("main-{}", count);
                         let url = tauri::WebviewUrl::App("/".into());
                         match tauri::WebviewWindowBuilder::new(_app_handle, &label, url)
-                            .title("FreeDraft")
+                            .title("ScriptCraft")
                             .inner_size(1280.0, 800.0)
                             .min_inner_size(800.0, 600.0)
                             .resizable(true)

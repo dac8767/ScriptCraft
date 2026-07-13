@@ -45,8 +45,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="FreeDraft API",
-    description="Backend API for FreeDraft screenwriting application",
+    title="ScriptCraft API",
+    description="Backend API for ScriptCraft screenwriting application",
     version="0.19.0",
     lifespan=lifespan,
 )
@@ -111,12 +111,12 @@ async def demo_info():
     return {
         "demo": DEMO_MODE,
         "message": (
-            "This is a shared demo instance of FreeDraft. "
+            "This is a shared demo instance of ScriptCraft. "
             "All files are public — other users trying the demo can see and edit them. "
             "Do not store any confidential information. "
             "The demo server resets every hour — all data will be lost. "
             "For production use, download the app for your platform and use it on your own machine securely. "
-            "For team use, try the Cloud edition of FreeDraft."
+            "For team use, try the Cloud edition of ScriptCraft."
         ) if DEMO_MODE else None,
     }
 
@@ -144,8 +144,8 @@ if STATIC_DIR.is_dir():
         index = STATIC_DIR / "index.html"
         if index.exists():
             return FileResponse(index)
-        return {"app": "FreeDraft", "version": "0.5.0"}
+        return {"app": "ScriptCraft", "version": "0.5.0"}
 else:
     @app.get("/")
     async def root():
-        return {"app": "FreeDraft", "version": "0.5.0", "note": "Run build.sh to deploy frontend"}
+        return {"app": "ScriptCraft", "version": "0.5.0", "note": "Run build.sh to deploy frontend"}
