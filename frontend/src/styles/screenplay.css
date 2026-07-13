@@ -6867,6 +6867,26 @@ html.android .version-history-panel {
   caret-color: transparent;
 }
 
+/* v1.58: ThinCaret — the native caret scales with the page's transform and
+   there is no caret-width, so it's hidden and this widget draws a caret whose
+   width counter-scales, ~1px on screen at any zoom. Stays visible unfocused. */
+.tiptap .ProseMirror { caret-color: transparent; }
+.fs-thin-caret { display: inline-block; width: 0; position: relative; }
+.fs-thin-caret::after {
+  content: '';
+  position: absolute;
+  top: 0.06em;
+  left: 0;
+  width: max(0.75px, calc(1.1px / var(--zoom-scale, 1)));
+  height: 1.15em;
+  background: currentColor;
+  pointer-events: none;
+  animation: fs-caret-blink 1.1s steps(1) infinite;
+}
+@keyframes fs-caret-blink { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
+/* History mode is read-only — no caret at all (it already hid the native one). */
+.app-container.history-mode .fs-thin-caret::after { display: none; }
+
 /* ============ DIFF VIEWER ============ */
 .version-diff-area {
   border-top: 1px solid var(--fd-border);

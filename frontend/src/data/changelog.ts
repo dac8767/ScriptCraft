@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.57';
+export const APP_VERSION = '1.58';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.58',
+    date: '2026-07-13',
+    items: [
+      { title: 'A thinner, steadier cursor', detail: 'The editor caret used to fatten with zoom (it lived inside the page\'s scale transform). It\'s now drawn by the editor itself at a constant ~1px at any zoom — and it stays visible even when the editor isn\'t focused.', tags: ['Editor', 'UI'] },
+    ],
+  },
   {
     version: '1.57',
     date: '2026-07-13',
