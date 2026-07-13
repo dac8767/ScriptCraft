@@ -20,7 +20,11 @@ const SaveErrorDialog: React.FC = () => {
 
   if (!error) return null;
 
-  const heading = SOURCE_LABELS[error.source] || 'Save failed';
+  // A failed secondary copy is NOT a failed save. Same store, very different news.
+  const isSecondary = error.source === 'save-location';
+  const heading = isSecondary
+    ? 'Saved — but a copy failed'
+    : (SOURCE_LABELS[error.source] || 'Save failed');
   const localTime = new Date(error.at).toLocaleTimeString();
 
   return (
@@ -34,11 +38,29 @@ const SaveErrorDialog: React.FC = () => {
       >
         <div className="dialog-header">{heading}</div>
         <div className="dialog-body">
-          <p style={{ margin: '0 0 12px' }}>
-            FreeDraft could not save your changes. Your work is still in the
-            editor — please copy anything important before closing the app or
-            reloading the window.
-          </p>
+          {/*
+            * v1.18: TELL THE TRUTH ABOUT WHAT FAILED.
+            *
+            * A failed COPY to a secondary location used to raise this same panic —
+            * "FreeDraft could not save your changes… copy anything important before
+            * closing the app." The script had in fact saved perfectly well; only the
+            * extra copy failed. Frightening someone about losing work they have not
+            * lost is its own kind of bug, and it teaches them to distrust the warning
+            * that will one day be real.
+            */}
+          {isSecondary ? (
+            <p style={{ margin: '0 0 12px' }}>
+              <strong>Your script is saved.</strong> FreeDraft could not write the extra
+              copy to one of your other save locations, so that copy is out of date —
+              but the script itself saved normally, and nothing is at risk.
+            </p>
+          ) : (
+            <p style={{ margin: '0 0 12px' }}>
+              FreeDraft could not save your changes. Your work is still in the
+              editor — please copy anything important before closing the app or
+              reloading the window.
+            </p>
+          )}
           <p style={{ margin: '0 0 6px', fontSize: 13, color: 'var(--fd-text-muted)' }}>
             Failure at {localTime}:
           </p>

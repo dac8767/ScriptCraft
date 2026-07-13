@@ -32,6 +32,21 @@
         },
         {
           "path": "$RESOURCE/**"
+        },
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$DOCUMENT/**"
+        },
+        {
+          "path": "$DESKTOP/**"
+        },
+        {
+          "path": "$DOWNLOAD/**"
+        },
+        {
+          "path": "/Volumes/**"
         }
       ]
     },

@@ -114,7 +114,31 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
     try {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const picked = await open({ directory: true, multiple: false, title: 'Where should FreeDraft keep this script?' });
-      if (typeof picked === 'string') setLocalSaveFolder(picked);
+      if (typeof picked !== 'string') return;
+
+      /*
+       * v1.18: PROVE we can write there, now, while you're looking at it.
+       *
+       * The folder was accepted without a check, and the failure surfaced later — at
+       * save time, as a frightening "could not save your changes". Whatever the
+       * reason (permissions, a read-only volume, an unmounted drive), you should find
+       * out when you pick the folder, not when you're trying to save your work.
+       */
+      const { writeTextFile, remove } = await import('@tauri-apps/plugin-fs');
+      const probe = `${picked}${picked.endsWith('/') ? '' : '/'}.freedraft-write-test`;
+      try {
+        await writeTextFile(probe, '');
+        await remove(probe).catch(() => { /* the write is what mattered */ });
+      } catch (err) {
+        setError(
+          `FreeDraft can't write to that folder — nothing has been changed. ` +
+          `Pick another, or check the folder's permissions. (${(err as Error).message})`,
+        );
+        return;
+      }
+
+      setLocalSaveFolder(picked);
+      setError('');
     } catch (err) {
       setError(`Could not open the folder picker: ${(err as Error).message}`);
     }
