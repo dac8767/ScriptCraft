@@ -14205,16 +14205,27 @@ html.android .version-history-panel {
    name both need the room. Still resizable; this is only the default. */
 .dialog-box.fs-saveas-dialog { width: min(720px, 92vw); }
 /* v1.27: dividers you can actually see — --fd-border reads as nothing here.
-   Derived from the theme's text color so every theme keeps a visible line. */
-.fs-saveas-dialog > .dialog-header { border-bottom-color: color-mix(in srgb, var(--fd-text) 30%, transparent); }
-.fs-saveas-dialog > .dialog-actions { border-top-color: color-mix(in srgb, var(--fd-text) 30%, transparent); }
-/* v1.27: less dead air between the last row and the buttons. */
-.fs-saveas-dialog .dialog-body { padding-bottom: 6px; }
+   Derived from the theme's text color so every theme keeps a visible line.
+   (v1.28: 30% was a touch bright; 20%.) */
+.fs-saveas-dialog > .dialog-header { border-bottom-color: color-mix(in srgb, var(--fd-text) 20%, transparent); }
+.fs-saveas-dialog > .dialog-actions {
+  border-top-color: color-mix(in srgb, var(--fd-text) 20%, transparent);
+  padding-top: 17px; /* v1.28: +3px of air under the line */
+}
+/* v1.27: less dead air between the last row and the buttons.
+   v1.28: and less between the title's divider and the Include header. */
+.fs-saveas-dialog .dialog-body { padding-top: 10px; padding-bottom: 6px; }
 
 .fs-saveas-grid {
   display: grid;
-  /* labels | controls | Include toggles */
-  grid-template-columns: max-content 1fr max-content;
+  /*
+   * v1.28: labels | fields (2/3 of the free space) | toggles | leftover.
+   * The toggle column rides right behind the shortened fields instead of
+   * clinging to the dialog's far edge; the trailing 1fr soaks up the rest so
+   * the full-width rows (Saves as, Location, Additional) still span to the
+   * right edge and the Update button stays put.
+   */
+  grid-template-columns: max-content minmax(0, 2fr) max-content minmax(0, 1fr);
   align-items: center;
   /*
    * v1.26: spacing is measured TEXT TO TEXT, not box to box. Field text sits
@@ -14241,14 +14252,16 @@ html.android .version-history-panel {
 .fs-saveas-locations { padding: 9px 0 9px 10px; box-sizing: border-box; }
 .fs-saveas-grid > label,
 .fs-saveas-rowlabel {
+  /* Pinned to column 1: with the trailing leftover column, auto-placement
+     would otherwise drift the next label into an empty fourth cell. */
+  grid-column: 1;
   font-size: 13px;
   color: var(--fd-text);
   white-space: nowrap;
 }
 .fs-saveas-grid > input {
-  /* v1.27: two thirds of the column — a title is short, and the gap before
-     the toggles gives the row air. All three fields stay identical. */
-  width: 66.67%;
+  /* Fills the field column — the column itself is the 2/3 limit (v1.28). */
+  width: 100%;
   padding: 8px 10px;
   background: var(--fd-input-bg, var(--fd-dropdown-bg));
   color: var(--fd-text);
