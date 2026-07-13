@@ -14204,17 +14204,29 @@ html.android .version-history-panel {
 /* v1.23: 720px default (v1.22's 600 + another 20%) — the path and the composed
    name both need the room. Still resizable; this is only the default. */
 .dialog-box.fs-saveas-dialog { width: min(720px, 92vw); }
+/* v1.25, per Derek's mockup: one flat surface — no rule under the title, none
+   above the buttons. This dialog only. */
+.fs-saveas-dialog > .dialog-header { border-bottom: none; }
+.fs-saveas-dialog > .dialog-actions { border-top: none; }
 
 .fs-saveas-grid {
   display: grid;
   /* labels | controls | Include toggles */
   grid-template-columns: max-content 1fr max-content;
   align-items: center;
-  gap: 14px 28px;
+  /* One uniform row gap — the grid keeps the rhythm even; don't space rows
+     individually. */
+  gap: 18px 28px;
   padding: 4px 0 8px;
 }
 /* Rows with no toggle run their control under the toggle column too. */
 .fs-saveas-grid > .fs-saveas-span { grid-column: 2 / -1; }
+/* Text-only rows (Saves as, Location, Additional locations) start 10px in —
+   the inputs' horizontal padding — so their text sits exactly under the text
+   INSIDE the fields, not under the fields' border. */
+.save-as-preview,
+.fs-saveas-folder,
+.fs-saveas-locations { padding-left: 10px; box-sizing: border-box; }
 .fs-saveas-grid > label,
 .fs-saveas-rowlabel {
   font-size: 13px;
