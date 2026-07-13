@@ -263,8 +263,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // ── Save current editor content to backend ──
   const handleSave = useCallback(async () => {
     if (!editor) return;
+    /*
+     * v1.16 — Save behaves the way Save behaves everywhere else.
+     *
+     * Never saved before  -> open Save As, so you can name it.
+     * Saved before        -> just save, and say so briefly. No dialog, no questions.
+     */
     if (!currentProject || !currentScriptId) {
-      // No project yet — prompt user for project & file name
       setSaveAsOpen(true);
       return;
     }
@@ -274,6 +279,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       const content = buildSaveContent();
       await scriptApi.saveScript(currentProject.id, currentScriptId, { content });
       setSaveStatus('saved');
+      showToast('Saved', 'success');   // the brief confirmation a silent save owes you
       if (content) {
         void mirrorSave({
           projectId: currentProject.id,
@@ -372,6 +378,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     setCustomizeOpen(true);
   };
   const [prefsOpen, setPrefsOpen] = useState(false);
+  const preferencesRequest = useEditorStore((s) => s.preferencesRequest);
+  const closePreferences = useEditorStore((s) => s.closePreferences);
   const [helpForm, setHelpForm] = useState<{ title: string; url: string } | null>(null);
   const [draftDialogOpen, setDraftDialogOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
@@ -1991,7 +1999,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     <CustomizePanelsDialog open={customizeOpen} category={customizeTab} onClose={() => setCustomizeOpen(false)} />
     <SaveWorkspaceDialog open={saveWorkspaceOpen} onClose={() => setSaveWorkspaceOpen(false)} />
     <EditWorkspacesDialog open={editWorkspacesOpen} onClose={() => setEditWorkspacesOpen(false)} />
-    <PreferencesDialog open={prefsOpen} onClose={() => setPrefsOpen(false)} editor={editor} />
+    <PreferencesDialog
+      open={prefsOpen || preferencesRequest.open}
+      scrollTo={preferencesRequest.section}
+      onClose={() => { setPrefsOpen(false); closePreferences(); }}
+      editor={editor}
+    />
     <SetDraftDialog open={draftDialogOpen} onClose={() => setDraftDialogOpen(false)} editor={editor} />
     <RenameDialog open={renameOpen} onClose={() => setRenameOpen(false)} />
     {helpForm && (

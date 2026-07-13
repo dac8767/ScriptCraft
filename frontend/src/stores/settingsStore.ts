@@ -65,6 +65,9 @@ interface SettingsState {
   setAutoSnapshotKeep: (n: number) => void;
 
   // Settings > Save Locations
+  /** v1.16: a folder on this device to keep a copy of the script in. Empty = none. */
+  localSaveFolder: string;
+  setLocalSaveFolder: (path: string) => void;
   saveToCloud: boolean;
   setSaveToCloud: (v: boolean) => void;
   saveToGDrive: boolean;
@@ -93,6 +96,7 @@ const STORAGE_KEY_AUTOLOAD = 'opendraft:autoLoadLastScript';
 const STORAGE_KEY_AUTOSNAP = 'opendraft:autoSnapshotMinutes';
 const STORAGE_KEY_AUTOSNAP_KEEP = 'opendraft:autoSnapshotKeep';
 const SL_KEYS = {
+  localFolder: 'opendraft:saveloc:localFolder',
   cloud: 'opendraft:saveloc:cloud',
   gdrive: 'opendraft:saveloc:gdrive',
   onedrive: 'opendraft:saveloc:onedrive',
@@ -200,6 +204,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setAutoSnapshotKeep: (n) => {
     try { localStorage.setItem(STORAGE_KEY_AUTOSNAP_KEEP, String(n)); } catch { /* ignore */ }
     set({ autoSnapshotKeep: n });
+  },
+  localSaveFolder: localStorage.getItem(SL_KEYS.localFolder) || '',
+  setLocalSaveFolder: (path) => {
+    try { localStorage.setItem(SL_KEYS.localFolder, path); } catch { /* ignore */ }
+    set({ localSaveFolder: path });
   },
   saveToCloud: localStorage.getItem(SL_KEYS.cloud) === '1',
   setSaveToCloud: (v) => { try { localStorage.setItem(SL_KEYS.cloud, v ? '1' : '0'); } catch { /* ignore */ } set({ saveToCloud: v }); },

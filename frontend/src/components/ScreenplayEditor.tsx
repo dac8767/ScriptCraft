@@ -4113,6 +4113,7 @@ const ScreenplayEditor: React.FC = () => {
               : 'local'
           }
           onSaved={handleSaveAsComplete}
+          onOpenSaveLocations={() => useEditorStore.getState().openPreferences('saveLocations')}
           onClose={() => setSaveAsOpen(false)}
           buildContent={buildSaveContent}
         />

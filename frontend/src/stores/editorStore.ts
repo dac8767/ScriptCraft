@@ -794,6 +794,10 @@ interface EditorState {
    * dock if hidden), or a temporary window if it's disabled in both panels.
    */
   openTool: (tool: ToolId) => void;
+  /** v1.16: request Preferences, optionally scrolled to a section. */
+  preferencesRequest: { open: boolean; section?: 'saveLocations' };
+  openPreferences: (section?: 'saveLocations') => void;
+  closePreferences: () => void;
   /** Toolbar customization: hidden built-in buttons + pinned tool shortcuts */
   toolbarHiddenItems: string[];
   setToolbarHiddenItems: (ids: string[]) => void;
@@ -1296,6 +1300,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   }),
   tempTool: null,
   setTempTool: (tool) => set({ tempTool: tool }),
+  preferencesRequest: { open: false },
+  openPreferences: (section) => set({ preferencesRequest: { open: true, section } }),
+  closePreferences: () => set({ preferencesRequest: { open: false } }),
   openTool: (tool) => set((s) => {
     // v1.2: Analytics always opens as its own window. It's far taller than a
     // panel, so docking it just meant a cramped column you had to scroll — the

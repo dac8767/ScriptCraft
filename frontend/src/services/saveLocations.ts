@@ -229,9 +229,26 @@ export interface SavePayload {
 
 /** Fan a successful primary save out to every enabled secondary location.
  *  Never throws; each failure raises the blocking acknowledge modal. */
+/**
+ * v1.16 — write a copy into the folder you chose in Save As.
+ *
+ * "Local System (always on)" means the app's own database, which lives inside
+ * Application Support where you will never look for it. If you pick a folder, the
+ * script is also written there as a real file you can find, back up and open.
+ */
+async function saveToLocalFolder(args: SavePayload, folder: string): Promise<void> {
+  const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+  const sep = folder.endsWith('/') ? '' : '/';
+  const path = `${folder}${sep}${safeName(args.title)}.odraft.json`;
+  await writeTextFile(path, JSON.stringify(args.content, null, 2));
+}
+
 export async function mirrorSave(payload: SavePayload): Promise<void> {
   const s = useSettingsStore.getState();
   const jobs: Array<{ name: string; run: () => Promise<void> }> = [];
+  if (s.localSaveFolder) {
+    jobs.push({ name: 'This device', run: () => saveToLocalFolder(payload, s.localSaveFolder) });
+  }
   if (s.saveToCloud) jobs.push({ name: 'Cloud', run: () => saveToCloudMirror(payload) });
   if (s.saveToGDrive) jobs.push({ name: 'Google Drive', run: () => saveToGDrive(payload) });
   if (s.saveToOneDrive) jobs.push({ name: 'OneDrive', run: () => saveToOneDrive(payload) });

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaCloud, FaDesktop } from 'react-icons/fa';
 import { api } from '../services/api';
 import { cloudApi } from '../services/cloudApi';
 import { getLibraryId, LIBRARY_NAME } from '../services/scriptLibrary';
@@ -28,6 +27,8 @@ interface SaveAsDialogProps {
     draftLabel?: string,
   ) => void;
   onClose: () => void;
+  /** Takes you to Settings > Save Locations — the one place copies are configured. */
+  onOpenSaveLocations: () => void;
   buildContent: () => Record<string, unknown> | undefined;
 }
 
@@ -66,6 +67,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   defaultDestination,
   onSaved,
   onClose,
+  onOpenSaveLocations,
   buildContent,
 }) => {
   // v0.16: File Name is composed from Draft + Version. Draft autofills from
@@ -94,13 +96,39 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
    * is, not the identity of the work.
    */
   const [name, setName] = useState(defaultFileName || 'Untitled');
+
+  // Where copies go — read from Settings, changed in Settings. Shown here so you can
+  // see what a save is about to do without having to go and look.
+  const localSaveFolder = useSettingsStore((st) => st.localSaveFolder);
+  const setLocalSaveFolder = useSettingsStore((st) => st.setLocalSaveFolder);
+  const saveToCloud = useSettingsStore((st) => st.saveToCloud);
+  const saveToGDrive = useSettingsStore((st) => st.saveToGDrive);
+  const saveToOneDrive = useSettingsStore((st) => st.saveToOneDrive);
+  const otherLocations = [
+    saveToCloud && 'FreeDraft Cloud',
+    saveToGDrive && 'Google Drive',
+    saveToOneDrive && 'OneDrive',
+  ].filter(Boolean) as string[];
+
+  const chooseFolder = async () => {
+    try {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const picked = await open({ directory: true, multiple: false, title: 'Where should FreeDraft keep this script?' });
+      if (typeof picked === 'string') setLocalSaveFolder(picked);
+    } catch (err) {
+      setError(`Could not open the folder picker: ${(err as Error).message}`);
+    }
+  };
   const fileName = name.trim();
   const draftLabel = [draft.trim(), version.trim()].filter(Boolean).join(' - ');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [destination, setDestination] = useState<SaveDestination>(
-    WEB_ONLY_CLOUD ? 'cloud' : (defaultDestination ?? 'local'),
-  );
+  /*
+   * The script's home: the app's local store on desktop, the cloud on the web where
+   * there is no local store. This is no longer a question the dialog asks — copies
+   * are what Settings > Save Locations is for.
+   */
+  const destination: SaveDestination = WEB_ONLY_CLOUD ? 'cloud' : (defaultDestination ?? 'local');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Re-fetch projects when the signed-in user changes. The dialog can open
@@ -216,36 +244,43 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
         <div className="dialog-body">
           <ImportedSourceNotice />
 
+          {/*
+            * v1.16: the This device / FreeDraft Cloud toggle is gone. Where copies of
+            * a script go is configured once, in Settings > Save Locations, and asking
+            * again on every single save was a second source of truth for the same
+            * decision — and one that could silently contradict the settings.
+            *
+            * What you get instead: the folder on this device the file is written to
+            * (pick it here, it sticks), and a read-only summary of the other locations
+            * currently switched on, with a way through to change them.
+            */}
           {!WEB_ONLY_CLOUD && (
             <div className="dialog-row" style={{ marginBottom: 12 }}>
-              <label>Save to</label>
-              <div className="open-file-source-tabs" role="tablist">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={destination === 'local'}
-                  className={`open-file-source-tab ${destination === 'local' ? 'active' : ''}`}
-                  onClick={() => setDestination('local')}
-                >
-                  <FaDesktop /> This device
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={destination === 'cloud'}
-                  className={`open-file-source-tab ${destination === 'cloud' ? 'active' : ''}`}
-                  onClick={() => setDestination('cloud')}
-                >
-                  <FaCloud /> FreeDraft Cloud
-                </button>
+              <label>Folder on this device</label>
+              <div className="fs-saveas-folder">
+                <span className="fs-saveas-folder-path" title={localSaveFolder || undefined}>
+                  {localSaveFolder || 'Not set — the script is kept in the app only'}
+                </span>
+                <button type="button" onClick={chooseFolder}>Choose…</button>
+                {localSaveFolder && (
+                  <button type="button" onClick={() => setLocalSaveFolder('')} title="Stop writing a file copy">Clear</button>
+                )}
               </div>
-              {destination === 'cloud' && !signedIn && (
-                <div style={{ fontSize: 12, color: '#ff9966', marginTop: 6 }}>
-                  Sign in to save to FreeDraft Cloud — pressing Save will open the login dialog.
-                </div>
-              )}
             </div>
           )}
+
+          <div className="dialog-row" style={{ marginBottom: 12 }}>
+            <label>Also saving to</label>
+            <div className="fs-saveas-locations">
+              <span>{otherLocations.length ? otherLocations.join(', ') : 'Nowhere else'}</span>
+              <button
+                type="button"
+                className="fs-saveas-change"
+                onClick={() => { onOpenSaveLocations(); onClose(); }}
+              >Change save locations…</button>
+            </div>
+          </div>
+
           <div className="dialog-row">
             <label>Name</label>
             <input

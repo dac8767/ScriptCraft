@@ -197,7 +197,7 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
         </p>
       </section>
 
-      <section>
+      <section id="prefs-save-locations">
         <h3>Script Save Locations</h3>
         <p className="prefs-hint" style={{ margin: '0 0 10px' }}>
           Save and Save As always write to the script's home (local or cloud,
@@ -388,8 +388,29 @@ function GeneralTab() {
   );
 }
 
-export default function PreferencesDialog({ open, onClose, editor }: { open: boolean; onClose: () => void; editor?: Editor | null }) {
+export default function PreferencesDialog({ open, onClose, editor, scrollTo }: {
+  open: boolean;
+  onClose: () => void;
+  editor?: Editor | null;
+  /** v1.16: open straight at a section — Save As sends you here to change locations. */
+  scrollTo?: 'saveLocations';
+}) {
   const [tab, setTab] = useState<PrefTab>('general');
+
+  // v1.16: land on the section you were sent to. A "Change save locations…" button
+  // that opened the dialog at the top and left you to find it would be half a promise.
+  React.useEffect(() => {
+    if (!open || !scrollTo) return;
+    const id = scrollTo === 'saveLocations' ? 'prefs-save-locations' : '';
+    if (!id) return;
+    const t = setTimeout(() => {
+      const el = document.getElementById(id);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el?.classList.add('prefs-section-flash');
+      setTimeout(() => el?.classList.remove('prefs-section-flash'), 1200);
+    }, 60);   // let the dialog render first
+    return () => clearTimeout(t);
+  }, [open, scrollTo]);
 
   if (!open) return null;
 
