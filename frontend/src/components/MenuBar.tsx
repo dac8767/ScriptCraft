@@ -4,6 +4,7 @@ import EditElementsDialog from './EditElementsDialog';
 import { SaveWorkspaceDialog, EditWorkspacesDialog } from './WorkspaceDialogs';
 import PreferencesDialog from './PreferencesDialog';
 import SetDraftDialog from './SetDraftDialog';
+import NewScriptDialog, { type NewScriptMeta } from './NewScriptDialog';
 import RenameDialog from './RenameDialog';
 import HelpReferenceDialog from './HelpReferenceDialog';
 import { ALL_TOOLS } from './ToolDock';
@@ -798,6 +799,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
   /** Resets all per-script session state for a fresh new-screenplay,
    *  but does NOT seed editor content — caller picks the format and content. */
+  /* v1.50: what the New Script dialog collected, applied when the reset runs.
+     A ref (not state) because the format-picker flow between the dialog and
+     the reset is asynchronous; every entry to New Script overwrites it. */
+  const pendingNewScriptMeta = useRef<NewScriptMeta | null>(null);
+  const [newScriptOpen, setNewScriptOpen] = useState(false);
+
   const resetForNewScreenplay = useCallback(() => {
     if (!editor) return;
     clearTrackChanges();
@@ -806,7 +813,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     setCurrentScriptId(null);
     setScripts([]);
     const store = useEditorStore.getState();
-    store.setDocumentTitle('Untitled Screenplay');
+    const meta = pendingNewScriptMeta.current;
+    pendingNewScriptMeta.current = null;
+    store.setDocumentTitle(meta?.name || 'Untitled Screenplay');
+    store.setDraftLabel(meta?.draft || '1st Draft');
+    store.setVersionLabel(meta?.version || '');
     store.setBeats([]);
     store.setBeatColumns([]);
     store.setBeatArrangeMode('auto');
@@ -864,8 +875,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   }, [editor, finishNewScreenplayWithFormat]);
 
   const handleNewScreenplay = useCallback(() => {
-    confirmOrRun(() => promptForNewScreenplayFormat('reset'));
-  }, [confirmOrRun, promptForNewScreenplayFormat]);
+    // v1.50: New Script… asks for name/draft/version first; Create hands off
+    // to the existing format flow. confirmOrRun is the existing unsaved-work
+    // guard — it prompts to save before any of this if the doc is dirty.
+    confirmOrRun(() => setNewScriptOpen(true));
+  }, [confirmOrRun]);
 
   // ProjectView sets pendingFormatPromptInProject=true before navigating into
   // the editor for a fresh in-project script. Consume it once on mount (or
@@ -1124,7 +1138,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       items: [
         {
           icon: <FaPlus />,
-          label: 'New Screenplay',
+          label: 'New Script…',
           shortcut: sc('newScreenplay'),
           disabled: isCollabGuest,
           action: handleNewScreenplay,
@@ -2035,6 +2049,15 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       editor={editor}
     />
     <SetDraftDialog open={draftDialogOpen} onClose={() => setDraftDialogOpen(false)} editor={editor} />
+    <NewScriptDialog
+      open={newScriptOpen}
+      onClose={() => setNewScriptOpen(false)}
+      onCreate={(meta) => {
+        pendingNewScriptMeta.current = meta;
+        setNewScriptOpen(false);
+        promptForNewScreenplayFormat('reset');
+      }}
+    />
     <RenameDialog open={renameOpen} onClose={() => setRenameOpen(false)} />
     {helpForm && (
       <div className="dialog-overlay" onClick={() => setHelpForm(null)}>

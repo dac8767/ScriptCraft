@@ -111,7 +111,8 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   const dd = String(today.getDate()).padStart(2, '0');
   const yy = String(today.getFullYear()).slice(-2);
   const [draft, setDraft] = useState(initialDraft);
-  const [version, setVersion] = useState(`${mm}/${dd}/${yy}`);
+  // v1.50: New Script's Version carries through; today's date is the fallback.
+  const [version, setVersion] = useState(useEditorStore.getState().versionLabel || `${mm}/${dd}/${yy}`);
   // v1.22: Draft and Version are optional PARTS OF THE NAME, and the toggles
   // say so. Off means "keep the field's value, just don't write it into the
   // name". Script Name has no toggle — it is the name.

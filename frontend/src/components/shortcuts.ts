@@ -35,7 +35,7 @@ export interface ShortcutCommand {
 
 export const SHORTCUT_COMMANDS: ShortcutCommand[] = [
   // ── File ──
-  { id: 'newScreenplay', label: 'New Screenplay', group: 'File', defaultCombo: 'Mod+N', owner: 'app' },
+  { id: 'newScreenplay', label: 'New Script…', group: 'File', defaultCombo: 'Mod+N', owner: 'app' },
   { id: 'openFile', label: 'Open from Library / Cloud', group: 'File', defaultCombo: null, owner: 'app' },
   { id: 'importLocal', label: 'Open Local File', group: 'File', defaultCombo: null, owner: 'app' },
   { id: 'save', label: 'Save', group: 'File', defaultCombo: 'Mod+S', owner: 'app' },

@@ -14343,7 +14343,7 @@ html.android .version-history-panel {
 /* v1.47: symmetric — the gap under "Additional save locations:" matches the
    gap above "Script Name:" (which includes the Include header row: 10 + 4
    grid padding + ~13 header line + 6 gap ≈ 33px). */
-.fs-saveas-dialog .dialog-body { padding-top: 10px; padding-bottom: 28px; }
+.fs-saveas-dialog .dialog-body { padding-top: 10px; padding-bottom: 23px; } /* v1.50: -5px per Derek */
 
 .fs-saveas-grid {
   display: grid;
@@ -14550,6 +14550,27 @@ html.android .version-history-panel {
 }
 .fs-saveas-folderbtn:hover { filter: brightness(1.15); }
 .fs-saveas-folderbtn svg { display: block; width: 24px; height: 24px; } /* v1.49: 20% bigger per Derek */
+
+/* v1.50: New Script… — the welcome card around the Save dialog's field grid. */
+.fs-newscript-card { width: min(560px, 92vw); }
+.fs-newscript-grid { text-align: left; margin-top: 8px; }
+.fs-newscript-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+.fs-newscript-actions button {
+  height: 32px;
+  padding: 0 18px;
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.fs-newscript-actions button:hover { background: var(--fd-menu-hover); }
 
 /* v1.35: each location is a chip; colors cycle so neighbours never match. */
 .fs-saveas-loc-chip {

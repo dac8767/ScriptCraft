@@ -880,6 +880,10 @@ interface EditorState {
   /** Per-document draft label ("First Draft", "Second Draft", ...) — feeds the
    *  Save As autofill and the Title Page draft line. Persisted in the doc. */
   draftLabel: string;
+  /** v1.50: the Version the user chose at New Script time (MM/DD/YY). Save
+   *  Script prefills from it; empty = Save uses today's date. */
+  versionLabel: string;
+  setVersionLabel: (label: string) => void;
   setDraftLabel: (label: string) => void;
 
   /** View > Editor: paged (simulated pages) vs continuous (thin page lines) */
@@ -1564,6 +1568,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // Scene numbering
   draftLabel: 'First Draft',
   setDraftLabel: (label) => set({ draftLabel: label }),
+  versionLabel: '',
+  setVersionLabel: (label) => set({ versionLabel: label }),
   toolbarLeft: _tbZones.left,
   toolbarRight: _tbZones.right,
   toolbarZonesSet: _vs.toolbarZonesSet === true || _tbZones.left.length > 0 || _tbZones.right.length > 0,
