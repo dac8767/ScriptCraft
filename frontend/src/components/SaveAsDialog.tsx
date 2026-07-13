@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { api } from '../services/api';
 import { cloudApi } from '../services/cloudApi';
 import { getLibraryId, LIBRARY_NAME } from '../services/scriptLibrary';
 import { errText } from '../utils/errText';
+import { shortenPathToFit } from '../utils/pathDisplay';
 import { isWeb } from '../services/platform';
 import type { ProjectInfo } from '../services/api';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -63,6 +64,25 @@ const ImportedSourceNotice: React.FC = () => {
   );
 };
 
+/** The switch beside Draft and Version: whether that piece joins the composed
+ *  name. Script Name has no switch — a save always needs a name. */
+const IncludeToggle: React.FC<{ what: string; on: boolean; onToggle: () => void }> = ({
+  what,
+  on,
+  onToggle,
+}) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={on}
+    aria-label={`Include ${what} in name`}
+    className={'fs-toggle' + (on ? ' fs-toggle-on' : '')}
+    onClick={onToggle}
+  >
+    <span className="fs-toggle-knob" />
+  </button>
+);
+
 const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   defaultFileName,
   defaultDestination,
@@ -81,6 +101,11 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   const yy = String(today.getFullYear()).slice(-2);
   const [draft, setDraft] = useState(initialDraft);
   const [version, setVersion] = useState(`${mm}/${dd}/${yy}`);
+  // v1.22: Draft and Version are optional PARTS OF THE NAME, and the toggles
+  // say so. Off means "keep the field's value, just don't write it into the
+  // name". Script Name has no toggle — it is the name.
+  const [includeDraft, setIncludeDraft] = useState(true);
+  const [includeVersion, setIncludeVersion] = useState(true);
 
   /*
    * v1.15 — THE SCRIPT HAS A NAME AGAIN, and it is the script's own.
@@ -159,7 +184,10 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
     }
   };
   const fileName = name.trim();
-  const draftLabel = [draft.trim(), version.trim()].filter(Boolean).join(' - ');
+  const draftLabel = [
+    includeDraft ? draft.trim() : '',
+    includeVersion ? version.trim() : '',
+  ].filter(Boolean).join(' - ');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   /*
@@ -169,6 +197,45 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
    */
   const destination: SaveDestination = WEB_ONLY_CLOUD ? 'cloud' : (defaultDestination ?? 'local');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /*
+   * v1.22: shorten the path at "/" boundaries, not wherever the pixels run out.
+   * The old CSS clip (direction: rtl + ellipsis) produced "…s/dcarl/Downloads/",
+   * which reads as a folder that doesn't exist. We measure the button's actual
+   * width and drop whole leading segments until the rest fits — and re-measure
+   * when the (resizable) dialog changes size. Where measurement isn't available
+   * (jsdom, a canvas-less WebView), the full path renders and the CSS ellipsis
+   * remains the backstop.
+   */
+  const pathBtnRef = useRef<HTMLButtonElement>(null);
+  const [displayPath, setDisplayPath] = useState(localSaveFolder);
+  useLayoutEffect(() => {
+    const btn = pathBtnRef.current;
+    if (!btn || !localSaveFolder) {
+      setDisplayPath(localSaveFolder);
+      return;
+    }
+    const recompute = () => {
+      const ctx = document.createElement('canvas').getContext('2d');
+      if (!ctx) {
+        setDisplayPath(localSaveFolder);
+        return;
+      }
+      const style = getComputedStyle(btn);
+      ctx.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const max = btn.clientWidth;
+      setDisplayPath(
+        max > 0
+          ? shortenPathToFit(localSaveFolder, (s) => ctx.measureText(s).width <= max)
+          : localSaveFolder,
+      );
+    };
+    recompute();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(recompute);
+    ro.observe(btn);
+    return () => ro.disconnect();
+  }, [localSaveFolder]);
 
   // Re-fetch projects when the signed-in user changes. The dialog can open
   // while the user is anonymous (we got a 401 on the initial listProjects),
@@ -278,8 +345,8 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
 
   return (
     <div className="dialog-overlay" onClick={onClose}>
-      <div className="dialog-box" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
-        <div className="dialog-header">Save Screenplay</div>
+      <div className="dialog-box fs-saveas-dialog" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
+        <div className="dialog-header">Save Script</div>
         <div className="dialog-body">
           <ImportedSourceNotice />
 
@@ -297,6 +364,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
             <label htmlFor="saveas-name">Script Name</label>
             <input
               id="saveas-name"
+              className="fs-saveas-span"
               ref={fileInputRef}
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -304,58 +372,55 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
               placeholder="Script name"
             />
 
-            {/* Draft and Version share a row — they're two halves of one answer. */}
+            {/* Heads the toggle column below. Script Name sits above it,
+              * untoggleable on purpose — the name is always required. */}
+            <span className="fs-saveas-colhead">Include in Name</span>
+
             <label htmlFor="saveas-draft">Draft</label>
-            <div className="fs-saveas-inline">
-              <input
-                id="saveas-draft"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="First Draft"
-              />
-              <label htmlFor="saveas-version" className="fs-saveas-inline-label">Version</label>
-              <input
-                id="saveas-version"
-                value={version}
-                onChange={(e) => setVersion(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={`${mm}/${dd}/${yy}`}
-              />
-            </div>
+            <input
+              id="saveas-draft"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="First Draft"
+            />
+            <IncludeToggle what="Draft" on={includeDraft} onToggle={() => setIncludeDraft(!includeDraft)} />
+
+            <label htmlFor="saveas-version">Version</label>
+            <input
+              id="saveas-version"
+              value={version}
+              onChange={(e) => setVersion(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={`${mm}/${dd}/${yy}`}
+            />
+            <IncludeToggle what="Version" on={includeVersion} onToggle={() => setIncludeVersion(!includeVersion)} />
 
             {!WEB_ONLY_CLOUD && (
               <>
-                <label>Folder on this device</label>
-                <div className="fs-saveas-folder">
+                <label>Location on this device:</label>
+                <div className="fs-saveas-folder fs-saveas-span">
                   <button
                     type="button"
+                    ref={pathBtnRef}
                     className="fs-saveas-path"
                     onClick={chooseFolder}
                     title={localSaveFolder ? `${localSaveFolder} — click to change` : 'Click to choose a folder'}
                   >
-                    {localSaveFolder || 'Choose a folder…'}
+                    {localSaveFolder ? displayPath : 'Choose a folder…'}
                   </button>
-                  {localSaveFolder && (
-                    <button
-                      type="button"
-                      className="fs-saveas-clear"
-                      onClick={() => setLocalSaveFolder('')}
-                      title="Stop keeping a file copy on this device"
-                    >Clear</button>
-                  )}
                 </div>
               </>
             )}
 
-            <label>Additional save locations:</label>
-            <div className="fs-saveas-locations">
+            <label>Additional locations:</label>
+            <div className="fs-saveas-locations fs-saveas-span">
               <span>{otherLocations.length ? otherLocations.join(', ') : 'None'}</span>
               <button
                 type="button"
                 className="fs-saveas-change"
                 onClick={() => { onOpenSaveLocations(); onClose(); }}
-              >Change save locations…</button>
+              >Update locations…</button>
             </div>
 
           </div>

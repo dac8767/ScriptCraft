@@ -14197,20 +14197,26 @@ html.android .version-history-panel {
    anyway — the same move Premiere makes, and for the same reason: a path is
    something you *pick*, not something you *write*.
    ════════════════════════════════════════════════════════════════════════════ */
+/* v1.22: half again as wide as a stock dialog — the path and the composed
+   name both need the room. Still resizable; this is only the default. */
+.dialog-box.fs-saveas-dialog { width: min(600px, 92vw); }
+
 .fs-saveas-grid {
   display: grid;
-  grid-template-columns: max-content 1fr;
+  /* labels | controls | Include-in-Name toggles */
+  grid-template-columns: max-content 1fr max-content;
   align-items: center;
   gap: 14px 16px;
   padding: 4px 0 8px;
 }
+/* Rows with no toggle run their control under the toggle column too. */
+.fs-saveas-grid > .fs-saveas-span { grid-column: 2 / -1; }
 .fs-saveas-grid > label {
   font-size: 13px;
   color: var(--fd-text-muted);
   white-space: nowrap;
 }
-.fs-saveas-grid > input,
-.fs-saveas-inline > input {
+.fs-saveas-grid > input {
   width: 100%;
   padding: 8px 10px;
   background: var(--fd-input-bg, var(--fd-dropdown-bg));
@@ -14220,22 +14226,44 @@ html.android .version-history-panel {
   font-size: 13px;
   box-sizing: border-box;
 }
-.fs-saveas-grid > input:focus,
-.fs-saveas-inline > input:focus { outline: none; border-color: var(--fd-accent); }
+.fs-saveas-grid > input:focus { outline: none; border-color: var(--fd-accent); }
 
-/* Draft and Version: two halves of one answer, on one row. */
-.fs-saveas-inline {
-  display: grid;
-  grid-template-columns: 1fr max-content 1fr;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-.fs-saveas-inline-label {
-  font-size: 13px;
+/* The toggle column: Draft and Version are optional parts of the name.
+   The header hugs the switches it labels; the row gap already separates it
+   from the Script Name row above. */
+.fs-saveas-colhead {
+  grid-column: 3;
+  justify-self: center;
+  font-size: 11px;
   color: var(--fd-text-muted);
   white-space: nowrap;
+  margin-bottom: -8px;
 }
+.fs-toggle {
+  grid-column: 3;
+  justify-self: center;
+  position: relative;
+  width: 34px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--fd-border);
+  border-radius: 10px;
+  background: var(--fd-overlay-subtle, rgba(255,255,255,.12));
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.fs-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--fd-text-muted);
+  transition: left .15s ease, background .15s ease;
+}
+.fs-toggle-on { background: var(--fd-accent); border-color: var(--fd-accent); }
+.fs-toggle-on .fs-toggle-knob { left: 16px; background: #fff; }
 
 /* The destination: a path you click, not a field you type into. */
 .fs-saveas-folder { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -14253,11 +14281,11 @@ html.android .version-history-panel {
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
+  /* Long paths are shortened at "/" boundaries in JS (shortenPathToFit) so the
+     visible segments are always real ones; the ellipsis is only a backstop. */
   text-overflow: ellipsis;
-  direction: rtl;         /* a long path should show the END — the folder you picked */
 }
 .fs-saveas-path:hover { filter: brightness(1.25); }
-.fs-saveas-clear,
 .fs-saveas-change {
   padding: 5px 10px;
   background: var(--fd-btn-bg, var(--fd-overlay-subtle));
@@ -14268,7 +14296,6 @@ html.android .version-history-panel {
   cursor: pointer;
   white-space: nowrap;
 }
-.fs-saveas-clear:hover,
 .fs-saveas-change:hover { border-color: var(--fd-accent); }
 
 .fs-saveas-locations { display: flex; align-items: center; gap: 10px; min-width: 0; }
