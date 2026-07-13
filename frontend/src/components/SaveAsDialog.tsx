@@ -80,7 +80,7 @@ const IncludeToggle: React.FC<{
     aria-checked={on}
     disabled={locked}
     aria-label={locked ? `${what} is always included in the name` : `Include ${what} in name`}
-    title={locked ? `${what} is always part of the saved name` : undefined}
+    title={locked ? `${what} is always part of the saved name` : 'Include in save filename'}
     className={'fs-toggle' + (on ? ' fs-toggle-on' : '') + (locked ? ' fs-toggle-locked' : '')}
     onClick={locked ? undefined : onToggle}
   >
@@ -413,14 +413,6 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
             />
             <IncludeToggle what="Version" on={includeVersion} onToggle={() => setIncludeVersion(!includeVersion)} />
 
-            {/* v1.23: lives in the grid, right under Version, so the composed
-              * name lines up with the fields that compose it. */}
-            <span className="fs-saveas-rowlabel">Saves as:</span>
-            <div className="save-as-preview fs-saveas-span">
-              <strong>{fileName || '—'}</strong>
-              {draftLabel && <span className="fs-saveas-draft"> - {draftLabel}</span>}
-            </div>
-
             {!WEB_ONLY_CLOUD && (
               <>
                 <label>Location on this device:</label>
@@ -460,6 +452,16 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
           )}
         </div>
         <div className="dialog-actions">
+          {/* v1.30: the composed name lives down here with the buttons that
+            * act on it. The flexible gap keeps it clear of Cancel, and the
+            * dialog's min-width: fit-content widens the WINDOW rather than
+            * clipping a long filename. */}
+          <span className="fs-saveas-rowlabel">Saves as:</span>
+          <div className="save-as-preview">
+            <strong>{fileName || '—'}</strong>
+            {draftLabel && <span className="fs-saveas-draft"> - {draftLabel}</span>}
+          </div>
+          <span className="fs-saveas-actions-gap" aria-hidden="true" />
           <button onClick={onClose}>Cancel</button>
           <button
             className="dialog-primary"

@@ -13538,15 +13538,13 @@ html.android .version-history-panel {
   white-space: nowrap;
 }
 
-/* Save As: composed file-name preview — a grid row under Version, so the
-   name lines up with the fields that compose it (v1.23). */
+/* Save As: composed file-name preview — footer row, beside the buttons that
+   act on it (v1.30). No min-width:0: its full nowrap width is what forces
+   the dialog's min-width: fit-content to widen the window for a long name. */
 .save-as-preview {
   font-size: 13px;
   color: var(--fd-text);
-  min-width: 0;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .save-as-preview strong { color: var(--fd-text); font-weight: 600; }
 
@@ -14203,14 +14201,28 @@ html.android .version-history-panel {
    ════════════════════════════════════════════════════════════════════════════ */
 /* v1.23: 720px default (v1.22's 600 + another 20%) — the path and the composed
    name both need the room. Still resizable; this is only the default. */
-.dialog-box.fs-saveas-dialog { width: min(720px, 92vw); }
-/* v1.29: the divider lines match the fields' fill color — same surface family
-   as the input boxes, per Derek's drawing. */
-.fs-saveas-dialog > .dialog-header { border-bottom-color: var(--fd-input-bg, var(--fd-dropdown-bg)); }
-.fs-saveas-dialog > .dialog-actions {
-  border-top-color: var(--fd-input-bg, var(--fd-dropdown-bg));
-  padding-top: 17px; /* v1.28: +3px of air under the line */
+.dialog-box.fs-saveas-dialog {
+  width: min(720px, 92vw);
+  /* v1.30: a long composed filename in the footer WIDENS the window instead
+     of being clipped — and the resize handle can't drag it narrower than
+     the name either. */
+  min-width: fit-content;
 }
+/* v1.29: the divider lines match the fields' fill color — same surface family
+   as the input boxes, per Derek's drawing. v1.30: twice as thick. */
+.fs-saveas-dialog > .dialog-header {
+  border-bottom: 2px solid var(--fd-input-bg, var(--fd-dropdown-bg));
+}
+.fs-saveas-dialog > .dialog-actions {
+  border-top: 2px solid var(--fd-input-bg, var(--fd-dropdown-bg));
+  padding-top: 17px; /* v1.28: +3px of air under the line */
+  /* v1.30: "Saves as:" sits down here, left of the buttons. */
+  justify-content: flex-start;
+  align-items: center;
+}
+/* Flexible spacer between the composed name and Cancel — the name may grow,
+   but never into the buttons. */
+.fs-saveas-actions-gap { flex: 1 1 auto; min-width: 24px; }
 /* v1.27: less dead air between the last row and the buttons.
    v1.28: and less between the title's divider and the Include header. */
 .fs-saveas-dialog .dialog-body { padding-top: 10px; padding-bottom: 6px; }
@@ -14238,14 +14250,9 @@ html.android .version-history-panel {
 }
 /* Rows with no toggle run their control under the toggle column too. */
 .fs-saveas-grid > .fs-saveas-span { grid-column: 2 / -1; }
-/* v1.27: a breath (5px) between the fields group and the Saves as row —
-   margin on BOTH cells so the row shifts as one. */
-.fs-saveas-rowlabel,
-.fs-saveas-grid > .save-as-preview { margin-top: 5px; }
-/* Text-only rows (Saves as, Location, Additional locations): 10px left inset
-   so their text sits under the text INSIDE the fields, and the fields' 9px
-   vertical chrome so text-to-text spacing stays uniform (see gap above). */
-.save-as-preview,
+/* Text-only rows (Location, Additional locations): 10px left inset so their
+   text sits under the text INSIDE the fields, and the fields' 9px vertical
+   chrome so text-to-text spacing stays uniform (see gap above). */
 .fs-saveas-folder,
 .fs-saveas-locations { padding: 9px 0 9px 10px; box-sizing: border-box; }
 .fs-saveas-grid > label,

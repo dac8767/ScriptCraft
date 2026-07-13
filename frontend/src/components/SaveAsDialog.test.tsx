@@ -143,15 +143,25 @@ describe('Save Script dialog layout (v1.22)', () => {
     expect(text('.fs-saveas-locations-list')).toBe('None');
   });
 
-  it('the "Saves as:" row lives in the grid directly under Version', () => {
-    const gridChildren = Array.from(container.querySelector('.fs-saveas-grid')!.children);
-    const versionIdx = gridChildren.findIndex((el) => el.id === 'saveas-version');
-    // version input, its toggle, then the preview row
-    expect((gridChildren[versionIdx + 2] as HTMLElement).className).toContain('fs-saveas-rowlabel');
-    expect((gridChildren[versionIdx + 3] as HTMLElement).className).toContain('save-as-preview');
-    const locationIdx = gridChildren.findIndex((el) => el.textContent === 'Location on this device:');
-    expect(versionIdx).toBeLessThan(locationIdx);
-    expect(gridChildren.indexOf(container.querySelector('.save-as-preview')!)).toBeLessThan(locationIdx);
+  it('the "Saves as:" line lives in the footer, before the buttons, with a spacer between (v1.30)', () => {
+    const actions = container.querySelector('.dialog-actions')!;
+    const kids = Array.from(actions.children).map((el) => el.className || el.tagName);
+    expect(actions.querySelector('.fs-saveas-rowlabel')!.textContent).toBe('Saves as:');
+    expect(actions.querySelector('.save-as-preview')).toBeTruthy();
+    // order: label, preview, flexible gap, then the buttons
+    expect(kids.indexOf('fs-saveas-actions-gap')).toBeGreaterThan(kids.indexOf('save-as-preview'));
+    expect(kids.indexOf('fs-saveas-actions-gap')).toBeLessThan(kids.findIndex((k) => k === 'BUTTON'));
+    // and it is GONE from the grid
+    expect(container.querySelector('.fs-saveas-grid .save-as-preview')).toBeNull();
+  });
+
+  it('the active toggles explain themselves on hover; the locked one explains the lock', () => {
+    const switches = Array.from(container.querySelectorAll('[role="switch"]'));
+    expect(switches.map((el) => el.getAttribute('title'))).toEqual([
+      'Script Name is always part of the saved name',
+      'Include in save filename',
+      'Include in save filename',
+    ]);
   });
 });
 
