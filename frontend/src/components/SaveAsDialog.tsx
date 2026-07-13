@@ -493,7 +493,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
               <div className="fs-saveas-locations-list">
                 {otherLocations.length
                   ? otherLocations.map((loc) => <span key={loc} className="fs-saveas-loc-chip">{loc}</span>)
-                  : <span className="fs-saveas-loc-none">None</span>}
+                  : <span className="fs-saveas-loc-chip fs-saveas-loc-none">None</span>}
               </div>
               <button
                 type="button"

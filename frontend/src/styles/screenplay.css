@@ -14541,12 +14541,17 @@ html.android .version-history-panel {
 .fs-saveas-loc-chip {
   align-self: flex-start;
   max-width: 100%;
-  padding: 4px 10px;
-  border-radius: 5px;
+  padding: 4px 12px;
+  border-radius: 999px; /* v1.44: bubbles */
   border: 1px solid var(--fd-border);
 }
 .fs-saveas-locations-list .fs-saveas-loc-chip:nth-child(3n + 1) { background: rgba(111, 168, 220, .22); }
 .fs-saveas-locations-list .fs-saveas-loc-chip:nth-child(3n + 2) { background: rgba(106, 191, 105, .22); }
 .fs-saveas-locations-list .fs-saveas-loc-chip:nth-child(3n)     { background: rgba(232, 155, 79, .22); }
-.fs-saveas-loc-none { padding-left: 10px; }
+/* v1.44: "None" wears the same chip box, in neutral gray — boxed like a
+   location, colored like an empty state. */
+.fs-saveas-locations-list .fs-saveas-loc-chip.fs-saveas-loc-none {
+  background: var(--fd-overlay-subtle, rgba(255, 255, 255, .06));
+  color: var(--fd-text-muted);
+}
 .fs-saveas-draft { color: inherit; }
