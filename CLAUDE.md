@@ -1,6 +1,6 @@
 # FreeDraft — working notes for Claude
 
-Read this before touching anything. It is the residue of ~90 shipped versions, and
+Read this before touching anything. It is the residue of 100 shipped versions, and
 most of it is the kind of thing you only learn by getting it wrong first.
 
 > The previous `CLAUDE.md` was inherited from upstream Proteus OpenDraft and
@@ -9,6 +9,11 @@ most of it is the kind of thing you only learn by getting it wrong first.
 > `docs/UPSTREAM-OPENDRAFT-NOTES.md` with a warning header. Don't follow it blindly.
 
 ---
+
+> **Also read `docs/HANDOFF.md`** — it covers the working process, the coordination
+> rules between the chat-Claude and Claude Code, and everything that shipped after
+> this file was written (v1.9–v1.21: projects removed, Save/Save As rebuilt, the
+> Tauri fs scope, the Dev Picker's current shape).
 
 ## 0. The thing you are probably confused about
 
@@ -60,7 +65,7 @@ his Mac, and reports back. Claude writes all the code.
 ```bash
 cd frontend
 npx tsc -b     # MUST be 0 errors. Not "baseline", not "pre-existing". Zero.
-npm test       # all tests must pass
+npm test       # currently 61 tests, all must pass
 npm run build  # tsc -b && vite build — must succeed
 ```
 
