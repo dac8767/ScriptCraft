@@ -14337,7 +14337,10 @@ html.android .version-history-panel {
 .fs-saveas-actions-gap { flex: 1 1 auto; min-width: 24px; }
 /* v1.27: less dead air between the last row and the buttons.
    v1.28: and less between the title's divider and the Include header. */
-.fs-saveas-dialog .dialog-body { padding-top: 10px; padding-bottom: 16px; } /* v1.46: more air under the locations row */
+/* v1.47: symmetric — the gap under "Additional save locations:" matches the
+   gap above "Script Name:" (which includes the Include header row: 10 + 4
+   grid padding + ~13 header line + 6 gap ≈ 33px). */
+.fs-saveas-dialog .dialog-body { padding-top: 10px; padding-bottom: 28px; }
 
 .fs-saveas-grid {
   display: grid;
