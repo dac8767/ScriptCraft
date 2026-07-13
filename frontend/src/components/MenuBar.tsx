@@ -443,7 +443,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const [changelogOpen, setChangelogOpen] = useState(false);
   // v1.56: changelog filters — keyword, tags (any-match), and a date range.
   const [clKeyword, setClKeyword] = useState('');
-  const [clTags, setClTags] = useState<ChangeTag[]>([]);
+  const [clTag, setClTag] = useState<'' | ChangeTag>('');
   const [clFrom, setClFrom] = useState('');
   const [clTo, setClTo] = useState('');
   const [editElementsOpen, setEditElementsOpen] = useState(false);
@@ -878,6 +878,15 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     // 2+ enabled — show the quick single-select picker.
     setFormatPickerOpen(true);
   }, [editor, finishNewScreenplayWithFormat]);
+
+  // v1.57: launch found nothing to open — show the New Script prompt.
+  // No unsaved-work guard: this only fires on a fresh, empty session.
+  const newScriptPromptRequest = useEditorStore((s) => s.newScriptPromptRequest);
+  useEffect(() => {
+    if (!newScriptPromptRequest || !editor) return;
+    useEditorStore.getState().setNewScriptPromptRequest(false);
+    setNewScriptOpen(true);
+  }, [newScriptPromptRequest, editor]);
 
   const handleNewScreenplay = useCallback(() => {
     // v1.50: New Script… asks for name/draft/version first; Create hands off
@@ -2136,19 +2145,15 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               <label className="fs-changelog-datelabel">To
                 <input type="date" value={clTo} onChange={(e) => setClTo(e.target.value)} />
               </label>
-              <div className="fs-changelog-tagrow">
-                {ALL_TAGS.map((tag) => {
-                  const active = clTags.includes(tag);
-                  return (
-                    <button
-                      key={tag}
-                      className={'fs-cl-tag' + (active ? ' fs-cl-tag-active' : '')}
-                      style={{ ['--tag-color' as string]: TAG_META[tag].color }}
-                      onClick={() => setClTags(active ? clTags.filter((t) => t !== tag) : [...clTags, tag])}
-                    >{tag}</button>
-                  );
-                })}
-              </div>
+              <select
+                className="fs-changelog-tagselect"
+                value={clTag}
+                onChange={(e) => setClTag(e.target.value as '' | ChangeTag)}
+                title="Filter by tag"
+              >
+                <option value="">All tags</option>
+                {ALL_TAGS.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+              </select>
             </div>
             <div className="about-changelog">
               {(() => {
@@ -2158,7 +2163,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                   if (clTo && (!entry.date || entry.date > clTo)) return null;
                   const items = entry.items.filter((it) => {
                     if (kw && !(`${it.title} ${it.detail}`.toLowerCase().includes(kw))) return false;
-                    if (clTags.length && !tagsFor(it).some((t) => clTags.includes(t))) return false;
+                    if (clTag && !tagsFor(it).includes(clTag)) return false;
                     return true;
                   });
                   return items.length ? { ...entry, items } : null;
@@ -2172,13 +2177,17 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                       v{entry.version}
                       {entry.date && <span className="fs-changelog-date"> — {entry.date}</span>}
                     </div>
-                    <ul className="about-list">
+                    <ul className="about-list fs-cl-list">
                       {entry.items.map((it, i) => (
-                        <li key={i}>
-                          {tagsFor(it).map((t) => (
-                            <span key={t} className="fs-cl-tag fs-cl-tag-mini" style={{ ['--tag-color' as string]: TAG_META[t].color }}>{t}</span>
-                          ))}
-                          {' '}<strong>{it.title}</strong>{it.detail ? <> — {it.detail}</> : null}
+                        <li key={i} className="fs-cl-row">
+                          <span className="fs-cl-text">
+                            <strong>{it.title}</strong>{it.detail ? <> — {it.detail}</> : null}
+                          </span>
+                          <span className="fs-cl-tagcol">
+                            {tagsFor(it).map((t) => (
+                              <span key={t} className="fs-cl-tag fs-cl-tag-mini" style={{ ['--tag-color' as string]: TAG_META[t].color }}>{t}</span>
+                            ))}
+                          </span>
                         </li>
                       ))}
                     </ul>

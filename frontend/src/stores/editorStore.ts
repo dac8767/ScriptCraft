@@ -802,6 +802,10 @@ interface EditorState {
    * already be on the tab that contained it. Settings has tabs — Save Options is one
    * of them — so the request names the tab.
    */
+  /** v1.57: launch found nothing to open (first run, or no last-opened doc)
+   *  — MenuBar consumes this and opens the New Script prompt. */
+  newScriptPromptRequest: boolean;
+  setNewScriptPromptRequest: (v: boolean) => void;
   /** v1.34: show menu items for features that aren't finished (Collaboration,
    *  Lock Pages). Off by default; flipped from Help > Developer. */
   showUnreleasedTools: boolean;
@@ -1315,6 +1319,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   }),
   tempTool: null,
   setTempTool: (tool) => set({ tempTool: tool }),
+  newScriptPromptRequest: false,
+  setNewScriptPromptRequest: (v) => set({ newScriptPromptRequest: v }),
   showUnreleasedTools: (_vs.showUnreleasedTools as boolean) ?? false,
   setShowUnreleasedTools: (v) => {
     saveViewState({ showUnreleasedTools: v });

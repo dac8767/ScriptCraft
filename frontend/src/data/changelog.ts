@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.56';
+export const APP_VERSION = '1.57';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.57',
+    date: '2026-07-13',
+    items: [
+      { title: 'Launching with nothing opens New Script', detail: 'First run, reopen-last turned off, or no remembered document — the app starts at the New Script prompt instead of a bare page, so every script begins properly seeded with an Action element and its hint.', tags: ['New Feature', 'Fix'] },
+      { title: 'Changelog filter polish', detail: 'The tag filter is a dropdown, and each change\'s tags sit in their own column to the right of the description.', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.56',
     date: '2026-07-13',

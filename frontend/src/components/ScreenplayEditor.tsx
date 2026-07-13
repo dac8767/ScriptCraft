@@ -995,10 +995,10 @@ const ScreenplayEditor: React.FC = () => {
     return () => { destroyCollab(); };
   }, [destroyCollab]);
 
-  // Welcome dialog — show on first visit
-  const [showWelcome, setShowWelcome] = useState(() => {
-    return !localStorage.getItem('opendraft:welcomed') && !urlScriptId && !urlCollabToken;
-  });
+  // v1.57: the old welcome card no longer fronts a launch — the New Script
+  // prompt does (see the auto-load effect). The card stays wired for the
+  // welcome-choice handler but never self-opens.
+  const [showWelcome, setShowWelcome] = useState(false);
 
   // ── Drag-and-drop file import state ──
 
@@ -2156,15 +2156,21 @@ const ScreenplayEditor: React.FC = () => {
     // redirect loop if the remembered script was deleted and loading it bounces
     // back to "/").
     if (urlProjectId || urlScriptId || urlCollabToken) return;
-    if (!useSettingsStore.getState().autoLoadLastScript) return;
     try {
       if (sessionStorage.getItem('opendraft:autoLoadAttempted') === '1') return;
       sessionStorage.setItem('opendraft:autoLoadAttempted', '1');
+      // v1.57: a launch with nothing to reopen — first run, reopen-last off,
+      // or no remembered doc — starts at the New Script prompt instead of a
+      // bare editor (whose doc may lack a seeded action element + hint).
+      const askForNewScript = () => useEditorStore.getState().setNewScriptPromptRequest(true);
+      if (!useSettingsStore.getState().autoLoadLastScript) { askForNewScript(); return; }
       const raw = localStorage.getItem('opendraft:lastOpenedScript');
-      if (!raw) return;
+      if (!raw) { askForNewScript(); return; }
       const last = JSON.parse(raw) as { projectId?: string; scriptId?: string };
       if (last.projectId && last.scriptId) {
         navigate(`/project/${last.projectId}/edit/${last.scriptId}`, { replace: true });
+      } else {
+        askForNewScript();
       }
     } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
