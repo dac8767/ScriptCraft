@@ -59,12 +59,12 @@
   --fd-dialog-bg: #333;
   --fd-input-bg: rgba(0,0,0,.2);
 
-  /* v1.31: the Save dialog's header/footer band — halfway between the window
-     background and the field background. COMPUTED from those two variables,
-     so every theme (including future ones) gets its equivalent automatically
-     instead of maintaining a hand-picked copy per theme; a theme can still
-     override --fd-dialog-band directly to hand-tune. */
-  --fd-dialog-band: color-mix(in srgb, var(--fd-dropdown-bg) 50%, var(--fd-input-bg));
+  /* v1.31: the Save dialog's header/footer band. COMPUTED from the theme's
+     own window color, so every theme (including future ones) gets its
+     equivalent automatically instead of maintaining a hand-picked copy per
+     theme; a theme can still override --fd-dialog-band to hand-tune.
+     (v1.32: darker — 20% toward black, replacing the field-color halfway mix.) */
+  --fd-dialog-band: color-mix(in srgb, var(--fd-dropdown-bg) 80%, black);
 
   /* v0.83: toolbar button surface. Every theme sets its own so a button looks
      native to the theme instead of a fixed blue chip on all of them. */
@@ -13710,6 +13710,9 @@ html.android .version-history-panel {
 }
 .tool-window-popin:hover { color: var(--fd-text); }
 .tool-window-popin-right { left: auto; right: 6px; }
+/* v1.32: the pop buttons carry an SVG chevron now, not a text glyph. */
+.tool-window-popin svg,
+.tool-inline-popout svg { display: block; margin: auto; }
 
 /* Customize: toolbar item sub-groups */
 .fs-customize-subgroup {
@@ -14215,18 +14218,17 @@ html.android .version-history-panel {
      the name either. */
   min-width: fit-content;
 }
-/* v1.29: the divider lines match the fields' fill color — same surface family
-   as the input boxes, per Derek's drawing. v1.30: twice as thick.
-   v1.31: header and footer sit on the band color (window/field halfway). */
+/* v1.31: header and footer sit on the band color. v1.32: the band alone does
+   the separating — the divider lines are gone. */
 .fs-saveas-dialog { position: relative; }
 .fs-saveas-dialog > .dialog-header {
-  border-bottom: 2px solid var(--fd-input-bg, var(--fd-dropdown-bg));
+  border-bottom: none;
   background: var(--fd-dialog-band);
 }
 .fs-saveas-dialog > .dialog-actions {
-  border-top: 2px solid var(--fd-input-bg, var(--fd-dropdown-bg));
+  border-top: none;
   background: var(--fd-dialog-band);
-  padding-top: 17px; /* v1.28: +3px of air under the line */
+  padding-top: 17px;
   /* v1.30: "Saves as:" sits down here, left of the buttons. */
   justify-content: flex-start;
   align-items: center;

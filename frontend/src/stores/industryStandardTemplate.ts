@@ -60,7 +60,7 @@ export const INDUSTRY_STANDARD_TEMPLATE: FormattingTemplate = {
       marginTop: 12,
       nextOnEnter: 'action',
       nextOnTab: 'character',
-      placeholder: 'Describe the action...',
+      placeholder: 'Action...',
     }),
     character: rule('character', 'Character', {
       textTransform: 'uppercase',

@@ -25,6 +25,7 @@ import {
   FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,  FaBug,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
+import { DoubleChevronIcon, chevronTowards } from './uiIcons';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { type NavTab } from './SceneNavigator';
 import NavigatorTool from './NavigatorTool';
@@ -276,7 +277,7 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
           className={`tool-window-popin${side === 'right' ? ' tool-window-popin-right' : ''}`}
           title="Pop back into the side panel"
           onClick={() => setToolSize(tool.id, popInW, size.h)}
-        >{side === 'right' ? '\u2922' : '\u2921'}</button>
+        ><DoubleChevronIcon towards={chevronTowards('popin', side === 'right' ? 'right' : 'left')} /></button>
       )}
       {!tool.fixedSize && (
         <div
@@ -457,7 +458,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                   className={`tool-inline-popout${side === 'right' ? ' tool-inline-popout-left' : ''}`}
                   title="Pop out into a floating window for resizing"
                   onClick={() => setToolSize(active.id, dockW + 140, activeSize!.h)}
-                >{side === 'right' ? '\u2921' : '\u2922'}</button>
+                ><DoubleChevronIcon towards={chevronTowards('popout', side === 'right' ? 'right' : 'left')} /></button>
                 <div className="tool-inline-body" style={{ height: activeSize!.h }}>
                   <ToolContent id={active.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />
                 </div>

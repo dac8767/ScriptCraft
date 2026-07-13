@@ -20,6 +20,34 @@ import {
   FaFont, FaTextHeight, FaDesktop,
 } from 'react-icons/fa';
 
+/**
+ * v1.32: the double-chevron (») for the side-panel pop-out / pop-in buttons.
+ * One inline SVG, drawn in currentColor and mirrored with a transform — so it
+ * takes every theme's text color (white on dark) and points either way without
+ * needing an icon file per color or direction.
+ */
+export const DoubleChevronIcon: React.FC<{ towards: 'left' | 'right'; size?: number }> = ({
+  towards,
+  size = 13,
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    aria-hidden="true"
+    focusable="false"
+    style={towards === 'left' ? { transform: 'scaleX(-1)' } : undefined}
+  >
+    <path d="M2.5 2.5 L8 8 L2.5 13.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8.5 2.5 L14 8 L8.5 13.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** Which way the double chevron points: pop-out sends the window AWAY from its
+ *  panel; pop-in sends it back TOWARD the panel. */
+export const chevronTowards = (button: 'popout' | 'popin', side: 'left' | 'right'): 'left' | 'right' =>
+  (button === 'popout') === (side === 'right') ? 'left' : 'right';
+
 /** Menu-bar menus, by label. */
 export const MENU_ICONS: Record<string, React.ReactNode> = {
   File: <FaFile />,

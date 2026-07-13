@@ -50,7 +50,7 @@ export const ONE_HOUR_DRAMA_TEMPLATE: FormattingTemplate = {
       marginTop: 12,
       nextOnEnter: 'action',
       nextOnTab: 'character',
-      placeholder: 'Describe the action...',
+      placeholder: 'Action...',
     }),
     character: rule('character', 'Character', true, {
       textTransform: 'uppercase',
