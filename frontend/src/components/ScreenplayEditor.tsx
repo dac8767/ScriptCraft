@@ -4106,7 +4106,9 @@ const ScreenplayEditor: React.FC = () => {
       {!isHistoryMode && showWelcome && <WelcomeDialog onChoice={handleWelcomeChoice} />}
       {!isHistoryMode && saveAsOpen && (
         <SaveAsDialog
-          defaultFileName={useEditorStore.getState().documentTitle || 'First Draft'}
+          /* v1.17: prefill the script's NAME. 'First Draft' was the old model leaking
+             through — that's a draft label, not what the work is called. */
+          defaultFileName={useEditorStore.getState().documentTitle || 'Untitled'}
           defaultDestination={
             currentProject && useProjectStore.getState().isCloudProject(currentProject.id)
               ? 'cloud'

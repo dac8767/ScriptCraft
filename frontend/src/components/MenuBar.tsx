@@ -1142,7 +1142,19 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         },
         { separator: true, label: '' },
         { icon: <FaSave />, label: 'Save', shortcut: sc('save'), action: handleSave, disabled: isCollabGuest },
-        { icon: <FaSave />, label: 'Save As…', shortcut: sc('saveAs'), action: handleExportOdraft, disabled: isCollabGuest },
+        {
+          /*
+           * v1.17: Save As opens the SAVE AS DIALOG.
+           *
+           * It was bound to handleExportOdraft — an EXPORT, which writes a .odraft file
+           * and is already sitting in File > Export > FreeDraft (.odraft). So the
+           * Name/Draft/Version window could only ever be reached by saving a file that
+           * had never been saved; picking "Save As" on a saved script exported it
+           * instead. Same word, two different jobs, and the wrong one wired up.
+           */
+          icon: <FaSave />, label: 'Save As…', shortcut: sc('saveAs'),
+          action: () => setSaveAsOpen(true), disabled: isCollabGuest,
+        },
         { icon: <FaEdit />, label: 'Rename...', action: () => setRenameOpen(true) },
         { separator: true, label: '' },
         { icon: <FaEye />, label: 'Preview', action: () => useEditorStore.getState().setPreviewMode(true) },
