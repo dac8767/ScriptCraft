@@ -14537,7 +14537,7 @@ html.android .version-history-panel {
   grid-column: 3;
   justify-self: center;
   width: 34px;
-  height: 20px;
+  height: 24px; /* v1.49: holds the bigger icon */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -14549,7 +14549,7 @@ html.android .version-history-panel {
   cursor: pointer;
 }
 .fs-saveas-folderbtn:hover { filter: brightness(1.15); }
-.fs-saveas-folderbtn svg { display: block; width: 20px; height: 20px; } /* v1.48: same height as the Include toggles */
+.fs-saveas-folderbtn svg { display: block; width: 24px; height: 24px; } /* v1.49: 20% bigger per Derek */
 
 /* v1.35: each location is a chip; colors cycle so neighbours never match. */
 .fs-saveas-loc-chip {

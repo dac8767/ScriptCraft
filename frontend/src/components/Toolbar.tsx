@@ -1063,7 +1063,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               <button
                 className="zoom-menu-item"
                 onClick={() => { setZoomLevel(100); setZoomMenuOpen(false); }}
-              >Actual Size</button>
+              >Reset</button>
               <button
                 className="zoom-menu-item"
                 onClick={() => { fitPageToScreen(); setZoomMenuOpen(false); }}
