@@ -427,6 +427,9 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
             />
             <IncludeToggle what="Version" on={includeVersion} onToggle={() => setIncludeVersion(!includeVersion)} />
 
+            {/* v1.39: the name-composition fields end here; locations below. */}
+            <div className="fs-saveas-divider" aria-hidden="true" />
+
             {!WEB_ONLY_CLOUD && (
               <>
                 <label>Location on this device:</label>
