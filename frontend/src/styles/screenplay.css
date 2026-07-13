@@ -14556,7 +14556,14 @@ html.android .version-history-panel {
 /* v1.51: the welcome card has no body padding of its own (only the hero pads
    itself), so the grid and the buttons carry the 24px inset — the fields were
    running flush to the card's edges. */
-.fs-newscript-grid { text-align: left; margin-top: 16px; padding: 0 24px; }
+.fs-newscript-grid {
+  text-align: left;
+  margin-top: 16px;
+  padding: 0 24px;
+  /* v1.53: two columns — without this the Save grid's empty toggle column
+     (plus its 28px gap) left the fields ending short of the buttons below. */
+  grid-template-columns: max-content 1fr;
+}
 .fs-newscript-actions {
   display: flex;
   justify-content: flex-end;

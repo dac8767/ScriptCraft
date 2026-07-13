@@ -3141,6 +3141,9 @@ const ScreenplayEditor: React.FC = () => {
     if (choice === 'sample') {
       editor?.commands.setContent(SAMPLE_CONTENT, true);
       if (editor) clearEditorHistory(editor);
+    } else if (choice === 'open') {
+      // v1.53: straight into the same Open flow File > Open uses.
+      setOpenFileOpen(true);
     } else if (choice === 'import') {
       if (!editor) return;
       const { openTextFile } = await import('../utils/fileOps');

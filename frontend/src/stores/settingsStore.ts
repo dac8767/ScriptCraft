@@ -180,7 +180,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     try { localStorage.setItem(STORAGE_KEY_FORMATS_INIT, v ? '1' : '0'); } catch { /* ignore */ }
     set({ formatPreferencesInitialized: v });
   },
-  autoLoadLastScript: localStorage.getItem(STORAGE_KEY_AUTOLOAD) === '1',
+  // v1.53: ON by default — absent key means enabled; '0' is an explicit opt-out.
+  autoLoadLastScript: localStorage.getItem(STORAGE_KEY_AUTOLOAD) !== '0',
   setAutoLoadLastScript: (v) => {
     try { localStorage.setItem(STORAGE_KEY_AUTOLOAD, v ? '1' : '0'); } catch { /* ignore */ }
     set({ autoLoadLastScript: v });

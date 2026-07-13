@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type WelcomeChoice = 'blank' | 'sample' | 'import';
+export type WelcomeChoice = 'blank' | 'sample' | 'import' | 'open';
 
 interface WelcomeDialogProps {
   onChoice: (choice: WelcomeChoice) => void;
@@ -46,6 +46,13 @@ const WelcomeDialog: React.FC<WelcomeDialogProps> = ({ onChoice }) => {
             <span className="welcome-choice-text">
               <strong>Sample Script</strong>
               <small>Explore with a demo script</small>
+            </span>
+          </button>
+          <button className="welcome-choice-btn welcome-choice-open" onClick={() => onChoice('open')}>
+            <span className="welcome-choice-icon">&#128193;</span>
+            <span className="welcome-choice-text">
+              <strong>Open Script</strong>
+              <small>Continue one of your saved scripts</small>
             </span>
           </button>
           <button className="welcome-choice-btn welcome-choice-import" onClick={() => onChoice('import')}>
