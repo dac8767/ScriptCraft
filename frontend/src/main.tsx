@@ -18,6 +18,13 @@ async function init() {
     document.documentElement.setAttribute('data-theme', savedTheme);
   }
 
+  // v1.60: restore the remembered window bounds (Settings > General) and keep
+  // recording them. No-op outside Tauri.
+  {
+    const { initWindowMemory } = await import('./services/windowMemory');
+    void initWindowMemory();
+  }
+
   // Android needs viewport-fit=cover and explicit safe-area padding
   if (/android/i.test(navigator.userAgent)) {
     document.documentElement.classList.add('android');

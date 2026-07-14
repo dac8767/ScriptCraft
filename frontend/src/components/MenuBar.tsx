@@ -823,7 +823,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     const meta = pendingNewScriptMeta.current;
     pendingNewScriptMeta.current = null;
     store.setDocumentTitle(meta?.name || 'Untitled Script');
-    store.setDraftLabel(meta?.draft || '1st Draft');
+    store.setDraftLabel(meta?.draft || useSettingsStore.getState().defaultDraftLabel);
+    store.setSpellCheckEnabled(useSettingsStore.getState().spellCheckByDefault);   // v1.60
     store.setVersionLabel(meta?.version || '');
     store.setBeats([]);
     store.setBeatColumns([]);

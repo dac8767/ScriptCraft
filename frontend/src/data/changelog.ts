@@ -65,9 +65,19 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.59';
+export const APP_VERSION = '1.60';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.60',
+    date: '2026-07-13',
+    items: [
+      { title: 'Spell check by default', detail: 'Settings > General > Editing: start new scripts with spell-check-as-you-type on. Each script\'s own toggle still wins.', tags: ['New Feature'] },
+      { title: 'Remember the window', detail: 'Settings > General > Startup: launch maximized (the default) or restore your last window size and position.', tags: ['New Feature', 'UI'] },
+      { title: 'Match the system appearance', detail: 'Settings > General > Appearance: the theme follows macOS light/dark when enabled.', tags: ['New Feature', 'UI'] },
+      { title: 'Your default draft label', detail: 'Settings > General > Scripts: choose what the Draft field starts as on a new script (was hardcoded to "1st Draft").', tags: ['New Feature', 'Saving'] },
+    ],
+  },
   {
     version: '1.59',
     date: '2026-07-13',

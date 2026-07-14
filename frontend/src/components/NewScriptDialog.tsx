@@ -30,15 +30,17 @@ export default function NewScriptDialog({ open, onClose, onCreate, onOpenScript,
   // (default Short = MM/DD/YY, the historical behavior).
   const todayVersion = formatAppDate(new Date(), useSettingsStore.getState().dateFormat);
 
+  // v1.60: the Draft default comes from Settings > General.
+  const defaultDraft = useSettingsStore.getState().defaultDraftLabel || '1st Draft';
   const [name, setName] = useState('');
-  const [draft, setDraft] = useState('1st Draft');
+  const [draft, setDraft] = useState(defaultDraft);
   const [version, setVersion] = useState(todayVersion);
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
       setName('');
-      setDraft('1st Draft');
+      setDraft(defaultDraft);
       setVersion(todayVersion);
       setTimeout(() => nameRef.current?.focus(), 0);
     }
@@ -51,7 +53,7 @@ export default function NewScriptDialog({ open, onClose, onCreate, onOpenScript,
   const create = () => {
     onCreate({
       name: name.trim() || 'Untitled Script',
-      draft: draft.trim() || '1st Draft',
+      draft: draft.trim() || defaultDraft,
       version: version.trim(),
     });
   };
@@ -88,7 +90,7 @@ export default function NewScriptDialog({ open, onClose, onCreate, onOpenScript,
             id="newscript-draft"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="1st Draft"
+            placeholder={defaultDraft}
           />
 
           <label htmlFor="newscript-version">Version:</label>

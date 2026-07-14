@@ -2140,6 +2140,17 @@ const ScreenplayEditor: React.FC = () => {
     return () => clearInterval(timer);
   }, [editor, currentProject, currentScriptId, buildSaveContent, isCollabGuest]);
 
+  // v1.60: theme follows the OS appearance while the setting is on.
+  const followSystemTheme = useSettingsStore((st) => st.followSystemTheme);
+  useEffect(() => {
+    if (!followSystemTheme || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = () => useEditorStore.getState().setTheme(mq.matches ? 'dark' : 'light');
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, [followSystemTheme]);
+
   // --- Preferences: remember the last edited script + reopen it on start ---
   // Recorded whenever a real project script is open (not history/collab views);
   // consumed once per app session when the "/" route loads with the preference on.
@@ -2162,6 +2173,9 @@ const ScreenplayEditor: React.FC = () => {
       // v1.57: a launch with nothing to reopen — first run, reopen-last off,
       // or no remembered doc — starts at the New Script prompt instead of a
       // bare editor (whose doc may lack a seeded action element + hint).
+      // v1.60: a fresh session starts with the user's spell-check default;
+      // documents that carry their own _spellCheckEnabled override it on load.
+      useEditorStore.getState().setSpellCheckEnabled(useSettingsStore.getState().spellCheckByDefault);
       const askForNewScript = () => useEditorStore.getState().setNewScriptPromptRequest(true);
       if (!useSettingsStore.getState().autoLoadLastScript) { askForNewScript(); return; }
       const raw = localStorage.getItem('opendraft:lastOpenedScript');
@@ -2748,7 +2762,11 @@ const ScreenplayEditor: React.FC = () => {
             const grammarOnce = parseAttr(c._ignoredGrammarOnce);
             grammarIgnore.setIgnoredOnce(grammarOnce as string[]);
             // Restore per-document spell/grammar check toggles (default off)
-            store.setSpellCheckEnabled(c._spellCheckEnabled === true);
+            store.setSpellCheckEnabled(
+              typeof c._spellCheckEnabled === 'boolean'
+                ? c._spellCheckEnabled
+                : useSettingsStore.getState().spellCheckByDefault,   // v1.60
+            );
             store.setGrammarCheckEnabled(c._grammarCheckEnabled === true);
             // Restore per-document page layout (header/footer, margins)
             if (c._pageLayout && typeof c._pageLayout === 'object') {

@@ -364,6 +364,10 @@ function GeneralTab() {
   const {
     autoLoadLastScript, setAutoLoadLastScript,
     dateFormat, setDateFormat,
+    spellCheckByDefault, setSpellCheckByDefault,
+    windowStartup, setWindowStartup,
+    followSystemTheme, setFollowSystemTheme,
+    defaultDraftLabel, setDefaultDraftLabel,
   } = useSettingsStore();
 
   return (
@@ -379,8 +383,66 @@ function GeneralTab() {
           <span>Open the last edited script when the app starts</span>
         </label>
         <p className="prefs-hint">
-          When off, the app starts on the blank editor and you open scripts
-          from File → Open.
+          When off, the app starts at the New Script prompt and you open
+          scripts from File → Open.
+        </p>
+        <label className="prefs-check-row">
+          <span>Window on launch</span>
+          <select
+            value={windowStartup}
+            onChange={(e) => setWindowStartup(e.target.value as 'maximized' | 'remember')}
+          >
+            <option value="maximized">Open maximized</option>
+            <option value="remember">Remember last size and position</option>
+          </select>
+        </label>
+      </section>
+
+      <section>
+        <h3>Appearance</h3>
+        <label className="prefs-check-row">
+          <input
+            type="checkbox"
+            checked={followSystemTheme}
+            onChange={(e) => setFollowSystemTheme(e.target.checked)}
+          />
+          <span>Match the system's light or dark appearance</span>
+        </label>
+        <p className="prefs-hint">
+          Switches between the Dark and Light themes when macOS does. Picking
+          a theme by hand still works; the next system change follows again.
+        </p>
+      </section>
+
+      <section>
+        <h3>Editing</h3>
+        <label className="prefs-check-row">
+          <input
+            type="checkbox"
+            checked={spellCheckByDefault}
+            onChange={(e) => setSpellCheckByDefault(e.target.checked)}
+          />
+          <span>Check spelling as you type in new scripts</span>
+        </label>
+        <p className="prefs-hint">
+          Each script's own Tools → Spell Check toggle still wins once set.
+        </p>
+      </section>
+
+      <section>
+        <h3>Scripts</h3>
+        <label className="prefs-check-row">
+          <span>Default draft label</span>
+          <input
+            type="text"
+            value={defaultDraftLabel}
+            maxLength={60}
+            onChange={(e) => setDefaultDraftLabel(e.target.value)}
+            onBlur={(e) => { if (!e.target.value.trim()) setDefaultDraftLabel('1st Draft'); }}
+          />
+        </label>
+        <p className="prefs-hint">
+          What the Draft field starts as on a new script.
         </p>
       </section>
 

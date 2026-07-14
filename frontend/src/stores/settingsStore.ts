@@ -54,6 +54,20 @@ interface SettingsState {
   dateFormat: import('../utils/dateFormat').DateFormatId;
   setDateFormat: (id: import('../utils/dateFormat').DateFormatId) => void;
 
+  // v1.60 — the standard-settings round.
+  /** New documents start with spell check on. Per-document toggle still wins. */
+  spellCheckByDefault: boolean;
+  setSpellCheckByDefault: (v: boolean) => void;
+  /** Launch window: maximized (default) or remembered size/position. */
+  windowStartup: 'maximized' | 'remember';
+  setWindowStartup: (v: 'maximized' | 'remember') => void;
+  /** Theme follows the OS light/dark appearance. */
+  followSystemTheme: boolean;
+  setFollowSystemTheme: (v: boolean) => void;
+  /** What the Draft field starts as on a new script. */
+  defaultDraftLabel: string;
+  setDefaultDraftLabel: (v: string) => void;
+
   // Preferences > General: reopen the last edited script on app start.
   autoLoadLastScript: boolean;
   setAutoLoadLastScript: (v: boolean) => void;
@@ -98,6 +112,10 @@ const STORAGE_KEY_FORMATS = 'opendraft:enabledScriptFormats';
 const STORAGE_KEY_FORMATS_INIT = 'opendraft:formatPreferencesInitialized';
 const STORAGE_KEY_AUTOLOAD = 'opendraft:autoLoadLastScript';
 const STORAGE_KEY_DATEFMT = 'opendraft:dateFormat';
+const STORAGE_KEY_SPELLDEF = 'opendraft:spellCheckByDefault';
+const STORAGE_KEY_WINSTART = 'opendraft:windowStartup';
+const STORAGE_KEY_SYSTHEME = 'opendraft:followSystemTheme';
+const STORAGE_KEY_DRAFTDEF = 'opendraft:defaultDraftLabel';
 const STORAGE_KEY_AUTOSNAP = 'opendraft:autoSnapshotMinutes';
 const STORAGE_KEY_AUTOSNAP_KEEP = 'opendraft:autoSnapshotKeep';
 const SL_KEYS = {
@@ -184,6 +202,26 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setFormatPreferencesInitialized: (v) => {
     try { localStorage.setItem(STORAGE_KEY_FORMATS_INIT, v ? '1' : '0'); } catch { /* ignore */ }
     set({ formatPreferencesInitialized: v });
+  },
+  spellCheckByDefault: localStorage.getItem(STORAGE_KEY_SPELLDEF) === '1',
+  setSpellCheckByDefault: (v) => {
+    try { localStorage.setItem(STORAGE_KEY_SPELLDEF, v ? '1' : '0'); } catch { /* ignore */ }
+    set({ spellCheckByDefault: v });
+  },
+  windowStartup: (localStorage.getItem(STORAGE_KEY_WINSTART) === 'remember' ? 'remember' : 'maximized'),
+  setWindowStartup: (v) => {
+    try { localStorage.setItem(STORAGE_KEY_WINSTART, v); } catch { /* ignore */ }
+    set({ windowStartup: v });
+  },
+  followSystemTheme: localStorage.getItem(STORAGE_KEY_SYSTHEME) === '1',
+  setFollowSystemTheme: (v) => {
+    try { localStorage.setItem(STORAGE_KEY_SYSTHEME, v ? '1' : '0'); } catch { /* ignore */ }
+    set({ followSystemTheme: v });
+  },
+  defaultDraftLabel: localStorage.getItem(STORAGE_KEY_DRAFTDEF) || '1st Draft',
+  setDefaultDraftLabel: (v) => {
+    try { localStorage.setItem(STORAGE_KEY_DRAFTDEF, v); } catch { /* ignore */ }
+    set({ defaultDraftLabel: v });
   },
   dateFormat: (localStorage.getItem(STORAGE_KEY_DATEFMT) as import('../utils/dateFormat').DateFormatId) || 'short',
   setDateFormat: (id) => {
