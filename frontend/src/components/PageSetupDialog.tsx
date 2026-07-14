@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useEditorStore, DEFAULT_PAGE_LAYOUT, DEFAULT_HEADER_CONTENT, DEFAULT_FOOTER_CONTENT } from '../stores/editorStore';
 import type { PageLayout, HeaderFooterContent } from '../stores/editorStore';
+import { useSettingsStore } from '../stores/settingsStore';
 
 interface PageSetupDialogProps {
   onClose: () => void;
@@ -8,10 +9,11 @@ interface PageSetupDialogProps {
   embedded?: boolean;
 }
 
-const PAGE_SIZES: Array<{ label: string; width: number; height: number }> = [
-  { label: 'US Letter (8.5" x 11")', width: 8.5, height: 11 },
-  { label: 'A4 (8.27" x 11.69")', width: 8.27, height: 11.69 },
-  { label: 'US Legal (8.5" x 14")', width: 8.5, height: 14 },
+// name is the stable option value; the visible label is built per the units setting.
+const PAGE_SIZES: Array<{ name: string; width: number; height: number }> = [
+  { name: 'US Letter', width: 8.5, height: 11 },
+  { name: 'A4', width: 8.27, height: 11.69 },
+  { name: 'US Legal', width: 8.5, height: 14 },
 ];
 
 function ptToIn(pt: number): number {
@@ -22,8 +24,29 @@ function inToPt(inches: number): number {
   return Math.round(inches * 72);
 }
 
+const CM_PER_IN = 2.54;
+
 const PageSetupDialog: React.FC<PageSetupDialogProps> = ({ onClose, embedded = false }) => {
   const { pageLayout, setPageLayout } = useEditorStore();
+
+  // v1.61: Settings > General > Measurements. The layout is STORED in inches
+  // (and points for the pt-based margins) regardless — only the display converts,
+  // so switching units never drifts the saved values.
+  const units = useSettingsStore((s) => s.units);
+  const cm = units === 'cm';
+  const u = cm ? 'cm' : 'in';
+  const dispIn = (inches: number) => (cm ? +(inches * CM_PER_IN).toFixed(2) : inches);
+  const parseIn = (raw: string, fallbackIn: number) => {
+    const n = parseFloat(raw);
+    if (!Number.isFinite(n)) return fallbackIn;
+    return cm ? +(n / CM_PER_IN).toFixed(4) : n;
+  };
+  const sizeStep = cm ? '0.05' : '0.01';
+  const marginStep = cm ? '0.1' : '0.05';
+  const sizeLabel = (s: { name: string; width: number; height: number }) =>
+    cm
+      ? `${s.name} (${+(s.width * CM_PER_IN).toFixed(2)} x ${+(s.height * CM_PER_IN).toFixed(2)} cm)`
+      : `${s.name} (${s.width}" x ${s.height}")`;
 
   // Backwards-compatible: fill in missing headerContent/footerContent for old layouts
   const [layout, setLayout] = useState<PageLayout>({
@@ -61,16 +84,16 @@ const PageSetupDialog: React.FC<PageSetupDialogProps> = ({ onClose, embedded = f
     [],
   );
 
-  // Detect current page size label
-  const currentSizeLabel = PAGE_SIZES.find(
+  // Detect current page size
+  const currentSizeName = PAGE_SIZES.find(
     (s) =>
       Math.abs(s.width - layout.pageWidth) < 0.05 &&
       Math.abs(s.height - layout.pageHeight) < 0.05,
-  )?.label || 'Custom';
+  )?.name || 'Custom';
 
   const handlePageSizeChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const size = PAGE_SIZES.find((s) => s.label === e.target.value);
+      const size = PAGE_SIZES.find((s) => s.name === e.target.value);
       if (size) {
         setLayout((prev) => ({
           ...prev,
@@ -100,43 +123,43 @@ const PageSetupDialog: React.FC<PageSetupDialogProps> = ({ onClose, embedded = f
             <div className="page-setup-row">
               <label>Size</label>
               <select
-                value={currentSizeLabel}
+                value={currentSizeName}
                 onChange={handlePageSizeChange}
               >
                 {PAGE_SIZES.map((s) => (
-                  <option key={s.label} value={s.label}>
-                    {s.label}
+                  <option key={s.name} value={s.name}>
+                    {sizeLabel(s)}
                   </option>
                 ))}
-                {currentSizeLabel === 'Custom' && (
+                {currentSizeName === 'Custom' && (
                   <option value="Custom">Custom</option>
                 )}
               </select>
             </div>
             <div className="page-setup-row-pair">
               <div className="page-setup-row">
-                <label>Width (in)</label>
+                <label>Width ({u})</label>
                 <input
                   type="number"
-                  step="0.01"
-                  min="4"
-                  max="20"
-                  value={layout.pageWidth}
+                  step={sizeStep}
+                  min={dispIn(4)}
+                  max={dispIn(20)}
+                  value={dispIn(layout.pageWidth)}
                   onChange={(e) =>
-                    setField('pageWidth', parseFloat(e.target.value) || 8.5)
+                    setField('pageWidth', parseIn(e.target.value, 8.5))
                   }
                 />
               </div>
               <div className="page-setup-row">
-                <label>Height (in)</label>
+                <label>Height ({u})</label>
                 <input
                   type="number"
-                  step="0.01"
-                  min="4"
-                  max="30"
-                  value={layout.pageHeight}
+                  step={sizeStep}
+                  min={dispIn(4)}
+                  max={dispIn(30)}
+                  value={dispIn(layout.pageHeight)}
                   onChange={(e) =>
-                    setField('pageHeight', parseFloat(e.target.value) || 11)
+                    setField('pageHeight', parseIn(e.target.value, 11))
                   }
                 />
               </div>
@@ -148,33 +171,33 @@ const PageSetupDialog: React.FC<PageSetupDialogProps> = ({ onClose, embedded = f
             <div className="page-setup-section-title">Margins</div>
             <div className="page-setup-row-pair">
               <div className="page-setup-row">
-                <label>Top (in)</label>
+                <label>Top ({u})</label>
                 <input
                   type="number"
-                  step="0.05"
+                  step={marginStep}
                   min="0"
-                  max="4"
-                  value={ptToIn(layout.topMargin)}
+                  max={dispIn(4)}
+                  value={dispIn(ptToIn(layout.topMargin))}
                   onChange={(e) =>
                     setField(
                       'topMargin',
-                      inToPt(parseFloat(e.target.value) || 0),
+                      inToPt(parseIn(e.target.value, 0)),
                     )
                   }
                 />
               </div>
               <div className="page-setup-row">
-                <label>Bottom (in)</label>
+                <label>Bottom ({u})</label>
                 <input
                   type="number"
-                  step="0.05"
+                  step={marginStep}
                   min="0"
-                  max="4"
-                  value={ptToIn(layout.bottomMargin)}
+                  max={dispIn(4)}
+                  value={dispIn(ptToIn(layout.bottomMargin))}
                   onChange={(e) =>
                     setField(
                       'bottomMargin',
-                      inToPt(parseFloat(e.target.value) || 0),
+                      inToPt(parseIn(e.target.value, 0)),
                     )
                   }
                 />
@@ -182,33 +205,33 @@ const PageSetupDialog: React.FC<PageSetupDialogProps> = ({ onClose, embedded = f
             </div>
             <div className="page-setup-row-pair">
               <div className="page-setup-row">
-                <label>Left (in)</label>
+                <label>Left ({u})</label>
                 <input
                   type="number"
-                  step="0.05"
+                  step={marginStep}
                   min="0"
-                  max="4"
-                  value={layout.leftMargin}
+                  max={dispIn(4)}
+                  value={dispIn(layout.leftMargin)}
                   onChange={(e) =>
                     setField(
                       'leftMargin',
-                      parseFloat(e.target.value) || 0,
+                      parseIn(e.target.value, 0),
                     )
                   }
                 />
               </div>
               <div className="page-setup-row">
-                <label>Right (in)</label>
+                <label>Right ({u})</label>
                 <input
                   type="number"
-                  step="0.05"
+                  step={marginStep}
                   min="0"
-                  max="4"
-                  value={layout.rightMargin}
+                  max={dispIn(4)}
+                  value={dispIn(layout.rightMargin)}
                   onChange={(e) =>
                     setField(
                       'rightMargin',
-                      parseFloat(e.target.value) || 0,
+                      parseIn(e.target.value, 0),
                     )
                   }
                 />
@@ -221,33 +244,33 @@ const PageSetupDialog: React.FC<PageSetupDialogProps> = ({ onClose, embedded = f
             <div className="page-setup-section-title">Header &amp; Footer</div>
             <div className="page-setup-row-pair">
               <div className="page-setup-row">
-                <label>Header margin (in)</label>
+                <label>Header margin ({u})</label>
                 <input
                   type="number"
-                  step="0.05"
+                  step={marginStep}
                   min="0"
-                  max="2"
-                  value={ptToIn(layout.headerMargin)}
+                  max={dispIn(2)}
+                  value={dispIn(ptToIn(layout.headerMargin))}
                   onChange={(e) =>
                     setField(
                       'headerMargin',
-                      inToPt(parseFloat(e.target.value) || 0),
+                      inToPt(parseIn(e.target.value, 0)),
                     )
                   }
                 />
               </div>
               <div className="page-setup-row">
-                <label>Footer margin (in)</label>
+                <label>Footer margin ({u})</label>
                 <input
                   type="number"
-                  step="0.05"
+                  step={marginStep}
                   min="0"
-                  max="2"
-                  value={ptToIn(layout.footerMargin)}
+                  max={dispIn(2)}
+                  value={dispIn(ptToIn(layout.footerMargin))}
                   onChange={(e) =>
                     setField(
                       'footerMargin',
-                      inToPt(parseFloat(e.target.value) || 0),
+                      inToPt(parseIn(e.target.value, 0)),
                     )
                   }
                 />

@@ -9,6 +9,7 @@ import History from '@tiptap/extension-history';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import Dropcursor from '@tiptap/extension-dropcursor';
+import SmartTypography from '../editor/extensions/SmartTypography';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -1475,6 +1476,7 @@ const ScreenplayEditor: React.FC = () => {
       SearchExtension,
       TrackChangesExtension,
       ...(isHistoryMode ? [] : [EnforceGuardExtension, EnterHandlerExtension, TabHandlerExtension, ElementShortcutExtension]),
+      SmartTypography,
       SpellCheck,
       Grammar,
       ...pluginRegistry.getEditorExtensions(),

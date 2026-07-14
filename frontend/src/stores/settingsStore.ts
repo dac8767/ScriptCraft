@@ -67,6 +67,12 @@ interface SettingsState {
   /** What the Draft field starts as on a new script. */
   defaultDraftLabel: string;
   setDefaultDraftLabel: (v: string) => void;
+  /** v1.61: curly quotes and em dashes as you type. */
+  smartTypography: boolean;
+  setSmartTypography: (v: boolean) => void;
+  /** v1.61: how Page Setup shows measurements. */
+  units: 'in' | 'cm';
+  setUnits: (v: 'in' | 'cm') => void;
 
   // Preferences > General: reopen the last edited script on app start.
   autoLoadLastScript: boolean;
@@ -116,6 +122,8 @@ const STORAGE_KEY_SPELLDEF = 'opendraft:spellCheckByDefault';
 const STORAGE_KEY_WINSTART = 'opendraft:windowStartup';
 const STORAGE_KEY_SYSTHEME = 'opendraft:followSystemTheme';
 const STORAGE_KEY_DRAFTDEF = 'opendraft:defaultDraftLabel';
+const STORAGE_KEY_SMARTTYPO = 'opendraft:smartTypography';
+const STORAGE_KEY_UNITS = 'opendraft:units';
 const STORAGE_KEY_AUTOSNAP = 'opendraft:autoSnapshotMinutes';
 const STORAGE_KEY_AUTOSNAP_KEEP = 'opendraft:autoSnapshotKeep';
 const SL_KEYS = {
@@ -217,6 +225,17 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setFollowSystemTheme: (v) => {
     try { localStorage.setItem(STORAGE_KEY_SYSTHEME, v ? '1' : '0'); } catch { /* ignore */ }
     set({ followSystemTheme: v });
+  },
+  // ON unless explicitly turned off — the standard default in writing apps.
+  smartTypography: localStorage.getItem(STORAGE_KEY_SMARTTYPO) !== '0',
+  setSmartTypography: (v) => {
+    try { localStorage.setItem(STORAGE_KEY_SMARTTYPO, v ? '1' : '0'); } catch { /* ignore */ }
+    set({ smartTypography: v });
+  },
+  units: (localStorage.getItem(STORAGE_KEY_UNITS) === 'cm' ? 'cm' : 'in'),
+  setUnits: (v) => {
+    try { localStorage.setItem(STORAGE_KEY_UNITS, v); } catch { /* ignore */ }
+    set({ units: v });
   },
   defaultDraftLabel: localStorage.getItem(STORAGE_KEY_DRAFTDEF) || '1st Draft',
   setDefaultDraftLabel: (v) => {

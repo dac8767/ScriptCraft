@@ -368,6 +368,8 @@ function GeneralTab() {
     windowStartup, setWindowStartup,
     followSystemTheme, setFollowSystemTheme,
     defaultDraftLabel, setDefaultDraftLabel,
+    smartTypography, setSmartTypography,
+    units, setUnits,
   } = useSettingsStore();
 
   return (
@@ -426,6 +428,36 @@ function GeneralTab() {
         </label>
         <p className="prefs-hint">
           Each script's own Tools → Spell Check toggle still wins once set.
+        </p>
+        <label className="prefs-check-row">
+          <input
+            type="checkbox"
+            checked={smartTypography}
+            onChange={(e) => setSmartTypography(e.target.checked)}
+          />
+          <span>Replace straight quotes and dashes as you type</span>
+        </label>
+        <p className="prefs-hint">
+          Turns "quotes" into “curly quotes” and two hyphens into an em
+          dash (—). Applies immediately; text already typed is untouched.
+        </p>
+      </section>
+
+      <section>
+        <h3>Measurements</h3>
+        <label className="prefs-check-row">
+          <span>Units</span>
+          <select
+            value={units}
+            onChange={(e) => setUnits(e.target.value as 'in' | 'cm')}
+          >
+            <option value="in">Inches (in)</option>
+            <option value="cm">Centimeters (cm)</option>
+          </select>
+        </label>
+        <p className="prefs-hint">
+          How Page Setup shows page size and margins. Stored values never
+          change — only the display converts.
         </p>
       </section>
 

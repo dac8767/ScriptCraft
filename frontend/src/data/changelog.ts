@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.60';
+export const APP_VERSION = '1.61';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.61',
+    date: '2026-07-14',
+    items: [
+      { title: 'Smart quotes and dashes', detail: 'Straight "quotes" curl as you type and two hyphens become an em dash (—). Settings > General > Editing toggles it live; text already typed is never altered. Trailing dots are deliberately left alone — dot-dot-dot is a screenwriting idiom.', tags: ['New Feature', 'Editor'] },
+      { title: 'Inches or centimeters', detail: 'Settings > General > Measurements: Page Setup shows page size and margins in your unit of choice. Stored values never change — only the display converts, so switching back and forth never drifts a layout.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '1.60',
     date: '2026-07-13',
