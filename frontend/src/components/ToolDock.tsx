@@ -341,9 +341,9 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
     >
       {/* v1.80: the pop-in button sits on the side of the header CLOSEST to
         * the panel it returns to — far left for the left panel, far right for
-        * the right — pointing at that panel. No Close on popped-out windows
-        * (clicking the tool's name in the dock closes it); temporary windows
-        * keep × since they have no dock row. */}
+        * the right — pointing at that panel.
+        * v1.94: every window keeps × in the upper right (v1.80 dropped it
+        * from popped-out windows; Derek wants it back). */}
       {(() => {
         const HeaderExtra = TOOL_HEADER_EXTRAS[tool.id];
         const popBtn = !temporary && !tool.neverDock ? (
@@ -360,7 +360,7 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
             {HeaderExtra && <span className="tool-window-header-extra"><HeaderExtra /></span>}
             <span className="tool-window-header-actions">
               {side === 'right' && popBtn}
-              {temporary && <button className="tool-window-close" onClick={onClose} title="Close">×</button>}
+              <button className="tool-window-close" onClick={onClose} title="Close">×</button>
             </span>
           </div>
         );

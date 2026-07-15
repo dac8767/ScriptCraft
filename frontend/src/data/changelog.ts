@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.93';
+export const APP_VERSION = '1.94';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.94',
+    date: '2026-07-15',
+    items: [
+      { title: 'Popped-out windows close with × again', detail: 'Every floating side-panel window has the × back in its upper right corner. The pop-in chevron stays where it was — point at the panel to dock, hit × to close.', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.93',
     date: '2026-07-15',
