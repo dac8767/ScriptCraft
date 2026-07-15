@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.63';
+export const APP_VERSION = '1.64';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.64',
+    date: '2026-07-15',
+    items: [
+      { title: 'Title Page shows in one menu, not two', detail: 'It heads the Production menu as before — and appears in the Project menu only when you\'ve hidden Production in Customize > Menu Bar, so it\'s always reachable but never duplicated.', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.63',
     date: '2026-07-15',

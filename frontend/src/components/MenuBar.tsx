@@ -1421,7 +1421,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {
       label: 'Project',
       items: [
-        ...PROJECT_MENU_GROUPS.flatMap((group, gi) => [
+        // v1.64: Title Page lives in exactly ONE menu — Production when that
+        // menu is shown (it heads the list there), Project only when the user
+        // has hidden Production in Customize > Menu Bar.
+        ...PROJECT_MENU_GROUPS.map((group) =>
+          menuBarHidden.includes('Production') ? group : group.filter((id) => id !== 'titlepage'),
+        ).filter((group) => group.length > 0).flatMap((group, gi) => [
           ...(gi > 0 ? [{ separator: true, label: '' }] : []),
           ...group
             .map((id) => ALL_TOOLS.find((t) => t.id === id))
