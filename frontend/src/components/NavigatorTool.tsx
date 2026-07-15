@@ -42,15 +42,18 @@ interface NavigatorToolProps {
  *  and footer slots), outside this component. Missing kind = shown. */
 const kindShown = (show: Record<string, boolean>, k: Kind) => show[k] !== false;
 
-/** The show/hide dropdown — rendered in the window HEADER by the chrome.
- *  v1.90: it wears THE filter icon (uiIcons.FilterIcon, the Scenes/Pages
- *  funnel) instead of a bare select; the real <select> sits invisibly on
- *  top so the native checkmark menu keeps working exactly as before. */
+/** The Navigator's ONE filter control, in the window HEADER (v1.97 — the
+ *  footer field merged into it): the funnel (uiIcons.FilterIcon) fronts the
+ *  show/hide dropdown — the real <select> sits invisibly on top so the
+ *  native checkmark menu keeps working — and the text filter sits beside it. */
 export function NavigatorHeaderExtra() {
   const navShowKinds = useEditorStore((s) => s.navShowKinds);
   const setNavShowKinds = useEditorStore((s) => s.setNavShowKinds);
+  const navFilter = useEditorStore((s) => s.navFilter);
+  const setNavFilter = useEditorStore((s) => s.setNavFilter);
   const anyHidden = KINDS.some((k) => !kindShown(navShowKinds, k));
   return (
+    <span className="fs-nav-filterctl">
     <span className="fs-nav-showhide-wrap" title="Show/hide item types">
     <select
       className="fs-nav-showhide"
@@ -71,25 +74,15 @@ export function NavigatorHeaderExtra() {
         <option key={k} value={k}>{(kindShown(navShowKinds, k) ? '✓ ' : '   ') + LABEL[k]}</option>
       ))}
     </select>
-    <FilterIcon filled={anyHidden} />
+    <FilterIcon filled={anyHidden || !!navFilter} />
     </span>
-  );
-}
-
-/** The filter field — rendered as the window FOOTER by the chrome.
- *  v1.90: wears THE filter icon, like every other filter control. */
-export function NavigatorFooter() {
-  const navFilter = useEditorStore((s) => s.navFilter);
-  const setNavFilter = useEditorStore((s) => s.setNavFilter);
-  return (
-    <span className="fs-nav-filter-wrap">
-      <FilterIcon size={12} filled={!!navFilter} />
-      <input
-        className="fs-nav-filter"
-        placeholder="Filter Navigator"
-        value={navFilter}
-        onChange={(e) => setNavFilter(e.target.value)}
-      />
+    <input
+      className="fs-nav-filter fs-nav-filter-header"
+      placeholder="Filter"
+      value={navFilter}
+      onChange={(e) => setNavFilter(e.target.value)}
+      onPointerDown={(e) => e.stopPropagation()}
+    />
     </span>
   );
 }
@@ -177,8 +170,8 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
 
   return (
     <div className="fs-navigator">
-      {/* v1.80: the body is ONLY the list — the show/hide dropdown lives in
-          the window header and the filter field in the window footer. */}
+      {/* v1.80: the body is ONLY the list — the whole filter control
+          (funnel + field) lives in the window header (v1.97). */}
       <div className="fs-nav-list">
         {visible.length === 0 && (
           <div className="fs-nav-empty">

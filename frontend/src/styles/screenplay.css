@@ -13772,7 +13772,6 @@ body.fs-writing-focus::before {
   padding: 6px 8px;
   display: flex;
 }
-.tool-window-footer .fs-nav-filter { flex: 1; margin: 0; }
 /* v1.91: a toggle switch that is still a checkbox underneath — same input,
    same persistence, only the face changes. First wearer: Enable Typewriter. */
 input.fs-switch {
@@ -13803,15 +13802,21 @@ input.fs-switch::after {
 input.fs-switch:checked { background: var(--fd-accent, #4a90d9); }
 input.fs-switch:checked::after { left: 15px; }
 
-/* v1.90: the footer field wears the funnel at its left edge. */
-.fs-nav-filter-wrap {
+/* v1.97: Navigator's whole filter control (funnel + field) in the header. */
+.fs-nav-filterctl {
   flex: 1;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  color: var(--fd-text-muted);
+  gap: 4px;
 }
-.fs-nav-filter-wrap .fs-nav-filter { flex: 1; margin: 0; }
+.fs-nav-filterctl .fs-nav-filter-header {
+  flex: 1;
+  min-width: 40px;
+  margin: 0;
+  padding: 3px 7px;
+  font-size: 11.5px;
+}
 .tool-window-header-extra {
   display: inline-flex;
   align-items: center;

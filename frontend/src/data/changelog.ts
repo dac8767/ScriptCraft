@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.96';
+export const APP_VERSION = '1.97';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.97',
+    date: '2026-07-15',
+    items: [
+      { title: 'Navigator: one filter control', detail: 'The funnel and the Filter field are a single control in the Navigator\'s header now — funnel opens show/hide, the field beside it narrows by text. The footer bar is gone.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '1.96',
     date: '2026-07-15',

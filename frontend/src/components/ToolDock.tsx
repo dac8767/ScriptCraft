@@ -29,7 +29,7 @@ import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../st
 import { DoubleChevronIcon, chevronTowards } from './uiIcons';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { type NavTab } from './SceneNavigator';
-import NavigatorTool, { NavigatorHeaderExtra, NavigatorFooter } from './NavigatorTool';
+import NavigatorTool, { NavigatorHeaderExtra } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
 import CharacterProfiles from './CharacterProfiles';
@@ -125,9 +125,9 @@ export const TOOL_HEADER_EXTRAS: Partial<Record<ToolId, React.FC>> = {
   navigator: NavigatorHeaderExtra,
   goals: GoalsHeaderExtra,
 };
-export const TOOL_FOOTERS: Partial<Record<ToolId, React.FC>> = {
-  navigator: NavigatorFooter,
-};
+// v1.97: currently empty — Navigator's filter moved into its header. The
+// slot stays: it's the one place a tool can register a true footer bar.
+export const TOOL_FOOTERS: Partial<Record<ToolId, React.FC>> = {};
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
 // DEV ONLY: the Dev Picker is appended to the registry in development builds and
