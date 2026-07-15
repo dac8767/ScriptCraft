@@ -50,6 +50,7 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
       <label className="fs-typewriter-toggle fs-typewriter-master">
         <input
           type="checkbox"
+          className="fs-switch"
           checked={typewriterMasterEnabled}
           onChange={(e) => {
             setTypewriterMasterEnabled(e.target.checked);

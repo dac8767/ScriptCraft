@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.90';
+export const APP_VERSION = '1.91';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.91',
+    date: '2026-07-15',
+    items: [
+      { title: 'Typewriter master control is a switch', detail: '"Enable Typewriter tool" flips like a proper toggle switch now instead of a checkbox. Underneath it\'s the same setting — your sub-options still come back exactly as you left them.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '1.90',
     date: '2026-07-15',
