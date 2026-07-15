@@ -4679,6 +4679,12 @@ div[data-type="lyrics"].is-empty::before { font-style: italic; }
 .beat-column-cards::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
 /* ── Beat Board Mode Toggle ── */
+/* v1.98: names the control (Derek: "Arrangement: Columns | Freeform"). */
+.beat-mode-label {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
+}
 .beat-mode-toggle {
   display: flex;
   border: 1px solid var(--fd-border);

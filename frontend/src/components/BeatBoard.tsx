@@ -783,18 +783,19 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
           {beats.length} beat{beats.length !== 1 ? 's' : ''}
         </span>
 
-        {/* Mode toggle */}
+        {/* Mode toggle (v1.98: Derek's names — Columns / Freeform) */}
+        <span className="beat-mode-label">Arrangement:</span>
         <div className="beat-mode-toggle">
           <button
             className={`beat-mode-btn${beatArrangeMode === 'auto' ? ' active' : ''}`}
             onClick={() => setBeatArrangeMode('auto')}
-            title="Auto Arrange — column-based layout"
-          >Auto Arrange</button>
+            title="Columns — column-based layout"
+          >Columns</button>
           <button
             className={`beat-mode-btn${beatArrangeMode === 'custom' ? ' active' : ''}`}
             onClick={() => setBeatArrangeMode('custom')}
-            title="Custom Arrange — free-form placement"
-          >Custom</button>
+            title="Freeform — place beats anywhere"
+          >Freeform</button>
         </div>
 
         {beatArrangeMode === 'auto' ? (

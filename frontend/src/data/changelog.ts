@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.97';
+export const APP_VERSION = '1.98';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.98',
+    date: '2026-07-15',
+    items: [
+      { title: 'Outline: "Arrangement: Columns | Freeform"', detail: 'The Outline\'s two layouts wear their real names now — Columns (was "Auto Arrange") and Freeform (was "Custom") — with an "Arrangement:" label in front so the toggle explains itself.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '1.97',
     date: '2026-07-15',
