@@ -911,6 +911,13 @@ interface EditorState {
   /** v1.75: the Outline Bar (Final Draft's Outline Editor) under the toolbar. */
   outlineBarOpen: boolean;
   setOutlineBarOpen: (v: boolean) => void;
+  /** v1.80: Navigator filter + kind visibility live in the store so the
+   *  window's header (dropdown) and footer (filter field) — which render in
+   *  the shared window chrome — stay in sync with the list body. */
+  navFilter: string;
+  setNavFilter: (v: string) => void;
+  navShowKinds: Record<string, boolean>;
+  setNavShowKinds: (v: Record<string, boolean>) => void;
   preferencesRequest: { open: boolean; tab?: 'saveloc' };
   openPreferences: (tab?: 'saveloc') => void;
   closePreferences: () => void;
@@ -1486,6 +1493,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ outlineBarOpen: v });
     set({ outlineBarOpen: v });
   },
+  navFilter: '',
+  setNavFilter: (v) => set({ navFilter: v }),
+  navShowKinds: {},
+  setNavShowKinds: (v) => set({ navShowKinds: v }),
   preferencesRequest: { open: false },
   openPreferences: (tab) => set({ preferencesRequest: { open: true, tab } }),
   closePreferences: () => set({ preferencesRequest: { open: false } }),

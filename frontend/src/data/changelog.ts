@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.79';
+export const APP_VERSION = '1.80';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.80',
+    date: '2026-07-15',
+    items: [
+      { title: 'Navigator gets a real header and footer', detail: 'The show/hide dropdown rides in the window\'s header next to the name; the Filter field is a true footer bar. Pop-in/pop-out buttons now always sit on the edge of the header closest to where they send the window — pointing at the editor when docked, at the panel when floating — for every tool, both panels. Popped-out windows lose their X (click the tool\'s name in the panel to close).', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '1.79',
     date: '2026-07-15',

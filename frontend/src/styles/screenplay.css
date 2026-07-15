@@ -12436,13 +12436,7 @@ html.android .version-history-panel {
   flex: 1;
   min-height: 0;
 }
-.fs-nav-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--fd-border);
-  flex-shrink: 0;
-}
+/* (v1.80: .fs-nav-toolbar is gone — the dropdown rides in the window header.) */
 .fs-nav-showhide {
   font-size: 10.5px;
   background: transparent;
@@ -13568,23 +13562,50 @@ body.fs-writing-focus::after {
 }
 .fs-kb-p { font-size: 12.5px; line-height: 1.55; margin: 4px 0; color: var(--fd-text); }
 
-/* Item 6: inline pop-out affordance */
+/* v1.80: the pop-out lives ON the popped-in window's header row now, on the
+   editor-facing side (the old floating .tool-inline-popout corner button is
+   gone). The open row reads as a real header: separator below, no gap jump. */
 .tool-inline { position: relative; }
-.tool-inline-popout {
-  position: absolute;
-  top: 4px;
-  right: 6px;
-  z-index: 2;
-  background: var(--fd-navigator-bg);
-  border: 1px solid var(--fd-border);
-  border-radius: 4px;
+.tool-dock-item-header {
+  border-bottom: 1px solid var(--fd-border);
+  background: rgba(128, 128, 128, 0.22);
+}
+.tool-dock-popout {
+  background: none;
+  border: none;
   color: var(--fd-text-muted);
   font-size: 12px;
   line-height: 1;
-  padding: 2px 5px;
+  padding: 2px 4px;
   cursor: pointer;
+  flex-shrink: 0;
 }
-.tool-inline-popout:hover { color: var(--fd-text); border-color: var(--fd-accent, #4a90d9); }
+.tool-dock-popout:hover { color: var(--fd-text); }
+/* pushes the pop-out to the far edge; the extra sits after the label */
+.tool-dock-header-extra {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+}
+.tool-dock-item-header .tool-dock-header-extra + .tool-dock-popout { margin-left: 6px; }
+.tool-dock-item-header > .tool-dock-popout:last-child { margin-left: auto; }
+
+/* v1.80: true footer bar under a tool window's body (docked and floating). */
+.tool-window-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--fd-border);
+  background: var(--fd-navigator-bg);
+  padding: 6px 8px;
+  display: flex;
+}
+.tool-window-footer .fs-nav-filter { flex: 1; margin: 0; }
+.tool-window-header-extra {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 8px;
+  flex: 1;
+  justify-content: flex-start;
+}
 
 
 /* ═══ v0.9: themes ═══ */

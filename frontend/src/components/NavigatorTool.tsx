@@ -36,12 +36,56 @@ interface NavigatorToolProps {
   scrollContainer?: HTMLDivElement | null;
 }
 
+/** v1.80: header/footer state lives in the store (navFilter / navShowKinds)
+ *  because the dropdown and filter field render in the WINDOW CHROME (header
+ *  and footer slots), outside this component. Missing kind = shown. */
+const kindShown = (show: Record<string, boolean>, k: Kind) => show[k] !== false;
+
+/** The show/hide dropdown — rendered in the window HEADER by the chrome. */
+export function NavigatorHeaderExtra() {
+  const navShowKinds = useEditorStore((s) => s.navShowKinds);
+  const setNavShowKinds = useEditorStore((s) => s.setNavShowKinds);
+  return (
+    <select
+      className="fs-nav-showhide"
+      value=""
+      onPointerDown={(e) => e.stopPropagation()}
+      onChange={(e) => {
+        const k = e.target.value;
+        if (k === '__all') setNavShowKinds({});
+        else if (k === '__none') setNavShowKinds(Object.fromEntries(KINDS.map((x) => [x, false])));
+        else if (k) setNavShowKinds({ ...navShowKinds, [k]: !kindShown(navShowKinds, k as Kind) });
+      }}
+    >
+      <option value="">show/hide…</option>
+      <option value="__all">Show All</option>
+      <option value="__none">Hide All</option>
+      <option value="" disabled>────────</option>
+      {KINDS.map((k) => (
+        <option key={k} value={k}>{(kindShown(navShowKinds, k) ? '✓ ' : '   ') + LABEL[k]}</option>
+      ))}
+    </select>
+  );
+}
+
+/** The filter field — rendered as the window FOOTER by the chrome. */
+export function NavigatorFooter() {
+  const navFilter = useEditorStore((s) => s.navFilter);
+  const setNavFilter = useEditorStore((s) => s.setNavFilter);
+  return (
+    <input
+      className="fs-nav-filter"
+      placeholder="Filter Navigator"
+      value={navFilter}
+      onChange={(e) => setNavFilter(e.target.value)}
+    />
+  );
+}
+
 export default function NavigatorTool({ editor, scrollContainer }: NavigatorToolProps) {
   const { notes, setNoteFilter, openShelfTab } = useEditorStore();
-  const [filter, setFilter] = useState('');
-  const [show, setShow] = useState<Record<Kind, boolean>>(
-    () => Object.fromEntries(KINDS.map((k) => [k, true])) as Record<Kind, boolean>,
-  );
+  const filter = useEditorStore((s) => s.navFilter);
+  const show = useEditorStore((s) => s.navShowKinds);
   const [docTick, setDocTick] = useState(0);
 
   // Re-scan the outline when the document changes (throttled by rAF batching)
@@ -86,7 +130,7 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
   }, [editor, docTick, notes]);
 
   const visible = items.filter(
-    (it) => show[it.kind] && (!filter || it.text.toLowerCase().includes(filter.toLowerCase())),
+    (it) => kindShown(show, it.kind) && (!filter || it.text.toLowerCase().includes(filter.toLowerCase())),
   );
 
   const jumpTo = (pos: number) => {
@@ -121,26 +165,8 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
 
   return (
     <div className="fs-navigator">
-      <div className="fs-nav-toolbar">
-        <select
-          className="fs-nav-showhide"
-          value=""
-          onChange={(e) => {
-            const k = e.target.value;
-            if (k === '__all') setShow(Object.fromEntries(KINDS.map((x) => [x, true])) as Record<Kind, boolean>);
-            else if (k === '__none') setShow(Object.fromEntries(KINDS.map((x) => [x, false])) as Record<Kind, boolean>);
-            else if (k) setShow((s) => ({ ...s, [k as Kind]: !s[k as Kind] }));
-          }}
-        >
-          <option value="">show/hide…</option>
-          <option value="__all">Show All</option>
-          <option value="__none">Hide All</option>
-          <option value="" disabled>────────</option>
-          {KINDS.map((k) => (
-            <option key={k} value={k}>{(show[k] ? '✓ ' : '\u00a0\u00a0\u00a0') + LABEL[k]}</option>
-          ))}
-        </select>
-      </div>
+      {/* v1.80: the body is ONLY the list — the show/hide dropdown lives in
+          the window header and the filter field in the window footer. */}
       <div className="fs-nav-list">
         {visible.length === 0 && (
           <div className="fs-nav-empty">
@@ -168,12 +194,6 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
           </div>
         ))}
       </div>
-      <input
-        className="fs-nav-filter"
-        placeholder="Filter Navigator"
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-      />
     </div>
   );
 }

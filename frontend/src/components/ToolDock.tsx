@@ -29,7 +29,7 @@ import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../st
 import { DoubleChevronIcon, chevronTowards, VomitIcon } from './uiIcons';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { type NavTab } from './SceneNavigator';
-import NavigatorTool from './NavigatorTool';
+import NavigatorTool, { NavigatorHeaderExtra, NavigatorFooter } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
 import GoalsTool from './GoalsTool';
 import CharacterProfiles from './CharacterProfiles';
@@ -110,6 +110,17 @@ export const ALL_TOOLS: ToolDef[] = [
 ];
 
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
+
+/** v1.80 — per-tool window chrome slots. A tool listed here gets its control
+ *  rendered IN the window header (next to the title) and/or a true footer bar
+ *  under the body — docked inline and floating alike. One registry, so both
+ *  chrome paths render the same thing. */
+export const TOOL_HEADER_EXTRAS: Partial<Record<ToolId, React.FC>> = {
+  navigator: NavigatorHeaderExtra,
+};
+export const TOOL_FOOTERS: Partial<Record<ToolId, React.FC>> = {
+  navigator: NavigatorFooter,
+};
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
 // DEV ONLY: the Dev Picker is appended to the registry in development builds and
@@ -294,7 +305,7 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
    */
   const startDrag = (e: React.PointerEvent) => {
     const el = windowRef.current;
-    if (!el || (e.target as HTMLElement).closest('button')) return;
+    if (!el || (e.target as HTMLElement).closest('button, select, input')) return;
     e.preventDefault();
     const startX = e.clientX;
     const startY = e.clientY;
@@ -323,22 +334,37 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
       // width/height is imposed here and there's nothing to drag.
       style={tool.fixedSize ? undefined : { width: size.w, height: size.h }}
     >
-      {/* v1.33: the header is the window's top toolbar — title on the left,
-        * pop-in and Close on the right, and the whole strip drags the window. */}
-      <div className="tool-window-header" onPointerDown={startDrag}>
-        <span className="tool-window-title">{tool.label}</span>
-        <span className="tool-window-header-actions">
-          {!temporary && !tool.neverDock && (
-            <button
-              className="tool-window-popin"
-              title="Pop back into the side panel"
-              onClick={() => setToolSize(tool.id, popInW, size.h)}
-            ><DoubleChevronIcon towards={chevronTowards('popin', side === 'right' ? 'right' : 'left')} /></button>
-          )}
-          <button className="tool-window-close" onClick={onClose} title="Close">×</button>
-        </span>
-      </div>
+      {/* v1.80: the pop-in button sits on the side of the header CLOSEST to
+        * the panel it returns to — far left for the left panel, far right for
+        * the right — pointing at that panel. No Close on popped-out windows
+        * (clicking the tool's name in the dock closes it); temporary windows
+        * keep × since they have no dock row. */}
+      {(() => {
+        const HeaderExtra = TOOL_HEADER_EXTRAS[tool.id];
+        const popBtn = !temporary && !tool.neverDock ? (
+          <button
+            className="tool-window-popin"
+            title="Pop back into the side panel"
+            onClick={() => setToolSize(tool.id, popInW, size.h)}
+          ><DoubleChevronIcon towards={chevronTowards('popin', side === 'right' ? 'right' : 'left')} /></button>
+        ) : null;
+        return (
+          <div className="tool-window-header" onPointerDown={startDrag}>
+            {side !== 'right' && popBtn}
+            <span className="tool-window-title">{tool.label}</span>
+            {HeaderExtra && <span className="tool-window-header-extra"><HeaderExtra /></span>}
+            <span className="tool-window-header-actions">
+              {side === 'right' && popBtn}
+              {temporary && <button className="tool-window-close" onClick={onClose} title="Close">×</button>}
+            </span>
+          </div>
+        );
+      })()}
       <div className={`tool-window-body${side === 'right' ? ' tool-window-body-right' : ''}`}>{children}</div>
+      {(() => {
+        const Footer = TOOL_FOOTERS[tool.id];
+        return Footer ? <div className="tool-window-footer"><Footer /></div> : null;
+      })()}
       {!tool.fixedSize && (
         <div
           className={`tool-window-resize${side === 'right' ? ' tool-window-resize-left' : ''}`}
@@ -507,13 +533,44 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
             {entry.label && <span className="tool-dock-divider-label">{entry.label}</span>}
             {entry.label && <span className="tool-dock-divider-line" />}
           </div>
-        ) : (() => { const t = entry.tool; return (
-          <React.Fragment key={t.id}>
+        ) : (() => {
+          const t = entry.tool;
+          const isOpenInline = inline && active && active.id === t.id;
+          const HeaderExtra = TOOL_HEADER_EXTRAS[t.id];
+          const Footer = TOOL_FOOTERS[t.id];
+          /* v1.80: the popped-in window's pop-out button lives ON its header
+             row, on the side closest to the editor — far right in the left
+             panel, far left in the right panel — pointing at the editor. */
+          const popOutBtn = isOpenInline ? (
             <button
-              className={'tool-dock-item' + (activeId === t.id ? ' active' : '')}
-              onClick={() => setActive(activeId === t.id ? null : t.id)}
+              className="tool-dock-popout"
+              title="Pop out into a floating window for resizing"
+              onClick={(e) => { e.stopPropagation(); setToolSize(t.id, dockW + 140, activeSize!.h); }}
+            ><DoubleChevronIcon towards={chevronTowards('popout', side === 'right' ? 'right' : 'left')} /></button>
+          ) : null;
+          return (
+          <React.Fragment key={t.id}>
+            {/* a div, not a button: the header row can CONTAIN buttons and
+                dropdowns (pop-out, show/hide), and buttons can't nest. */}
+            <div
+              role="button"
+              tabIndex={0}
+              className={'tool-dock-item' + (activeId === t.id ? ' active' : '') + (isOpenInline ? ' tool-dock-item-header' : '')}
+              onClick={(e) => {
+                // Header controls (dropdowns etc.) act, they don't toggle.
+                if ((e.target as HTMLElement).closest('select, input, .tool-dock-popout')) return;
+                setActive(activeId === t.id ? null : t.id);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  if ((e.target as HTMLElement).closest('select, input, .tool-dock-popout')) return;
+                  e.preventDefault();
+                  setActive(activeId === t.id ? null : t.id);
+                }
+              }}
               title={t.label}
             >
+              {side === 'right' && popOutBtn}
               {/* v1.34: Premiere-style caret — a SINGLE chevron (the double one
                 * means pop-in/out): right when closed, down when open. */}
               <span className="tool-dock-caret">
@@ -521,17 +578,17 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               </span>
               <span className="tool-dock-icon">{t.icon}</span>
               <span className="tool-dock-label">{t.label}</span>
-            </button>
-            {inline && active && active.id === t.id && (
+              {isOpenInline && HeaderExtra && (
+                <span className="tool-dock-header-extra"><HeaderExtra /></span>
+              )}
+              {side !== 'right' && popOutBtn}
+            </div>
+            {isOpenInline && (
               <div className={`tool-inline${side === 'right' ? ' tool-inline-right' : ''}`}>
-                <button
-                  className="tool-inline-popout"
-                  title="Pop out into a floating window for resizing"
-                  onClick={() => setToolSize(active.id, dockW + 140, activeSize!.h)}
-                ><DoubleChevronIcon towards={chevronTowards('popout', side === 'right' ? 'right' : 'left')} /></button>
                 <div className="tool-inline-body" style={{ height: activeSize!.h }}>
-                  <ToolContent id={active.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />
+                  <ToolContent id={active!.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />
                 </div>
+                {Footer && <div className="tool-window-footer tool-inline-footer"><Footer /></div>}
                 <div
                   className="tool-inline-resize"
                   onPointerDown={startInlineResize}
@@ -540,7 +597,8 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               </div>
             )}
           </React.Fragment>
-        ); })())}
+          );
+        })())}
       </div>
 
       {active && !inline && (
