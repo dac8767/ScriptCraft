@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.68';
+export const APP_VERSION = '1.69';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.69',
+    date: '2026-07-15',
+    items: [
+      { title: 'New tool: AI Writer', detail: 'Open it and receive the full extent of its assistance. Dockable, like every tool. That\'s it. That\'s the tool.', tags: ['New Feature', 'Tools'] },
+      { title: 'Vomit Draft gets its portrait', detail: 'The icon is now Derek\'s pictogram — person, stream, puddle — drawn as a real icon so it follows every theme\'s colors (the v1.68 emoji didn\'t).', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.68',
     date: '2026-07-15',

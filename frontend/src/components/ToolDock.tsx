@@ -23,10 +23,10 @@ import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
   FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,  FaBug,
-  FaChevronRight, FaChevronDown, FaKeyboard,
+  FaChevronRight, FaChevronDown, FaKeyboard, FaRobot,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
-import { DoubleChevronIcon, chevronTowards } from './uiIcons';
+import { DoubleChevronIcon, chevronTowards, VomitIcon } from './uiIcons';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { type NavTab } from './SceneNavigator';
 import NavigatorTool from './NavigatorTool';
@@ -40,6 +40,7 @@ import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
 import VomitDraftTool from './VomitDraftTool';
 import TypewriterTool from './TypewriterTool';
+import AiWriterTool from './AiWriterTool';
 
 export interface ToolDef {
   id: ToolId;
@@ -80,10 +81,12 @@ export const ALL_TOOLS: ToolDef[] = [
   // pop-in button still docks it, and that choice is remembered.
   { id: 'analytics', label: 'Analytics', icon: <FaChartBar />, defaultSize: { w: 620, h: 384 }, group: 3, noPanelFit: true },
   { id: 'goals', label: 'Goals', icon: <FaBullseye />, defaultSize: { w: 340, h: 264 }, group: 3 },
-  // v1.68: Derek's pick — the emoji IS the icon (ToolDef.icon is any ReactNode,
-  // so it renders in the dock, menus and Customize like the font icons do).
-  { id: 'vomit', label: 'Vomit Draft', icon: <span className="fs-emoji-icon" aria-hidden="true">🤮</span>, defaultSize: { w: 320, h: 320 }, group: 3 },
+  // v1.69: Derek's pictogram artwork (uiIcons.VomitIcon), replacing the
+  // v1.68 emoji — it tracks currentColor so it reads on every theme.
+  { id: 'vomit', label: 'Vomit Draft', icon: <VomitIcon />, defaultSize: { w: 320, h: 320 }, group: 3 },
   { id: 'typewriter', label: 'Typewriter', icon: <FaKeyboard />, defaultSize: { w: 300, h: 190 }, group: 3 },
+  // v1.69: the joke. It ships enabled — that's the joke landing.
+  { id: 'aiwriter', label: 'AI Writer', icon: <FaRobot />, defaultSize: { w: 300, h: 150 }, group: 3 },
   // v0.89: fixed — the Title Page form is a set-size box, so the window is sized
   // to it exactly and can't be resized. Nothing else is fixed; every other tool
   // genuinely uses the space it's given.
@@ -189,6 +192,8 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
       return <VomitDraftTool editor={editor} />;
     case 'typewriter':
       return <TypewriterTool editor={editor} />;
+    case 'aiwriter':
+      return <AiWriterTool />;
     case 'sticky':
       return <StickyNotesTool editor={editor} />;
     case 'fragments':

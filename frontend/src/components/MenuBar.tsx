@@ -27,7 +27,7 @@ const TOOL_MENU_GROUPS: string[][] = [
   // 'tags' is intentionally absent: Production Tags opens from the
   // Production menu (its conceptual home); the window itself remains a
   // dockable Tool in Customize.
-  ['analytics', 'goals', 'vomit', 'typewriter'],
+  ['analytics', 'goals', 'vomit', 'typewriter', 'aiwriter'],
 ];
 import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';

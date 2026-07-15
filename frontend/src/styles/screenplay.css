@@ -12674,8 +12674,23 @@ html.android .version-history-panel {
 .fs-goal-quick button:hover { background: rgba(128, 128, 128, 0.28); }
 .fs-goal-current { font-size: 11px; color: var(--fd-text-muted); }
 
-/* Emoji standing in for a font icon (Vomit Draft) — size like siblings. */
-.fs-emoji-icon { font-size: 1em; line-height: 1; font-style: normal; }
+/* ── AI Writer (v1.69) — the joke ── */
+.fs-aiwriter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 0;
+  padding: 16px;
+}
+.fs-aiwriter p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fd-text);
+  text-align: center;
+  line-height: 1.5;
+}
 
 /* ── Typewriter tool (v1.68) ── */
 .fs-typewriter {
