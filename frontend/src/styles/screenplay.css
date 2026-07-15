@@ -12759,6 +12759,138 @@ html.android .version-history-panel {
   padding: 3px 6px;
 }
 
+/* ── Outline Bar (v1.75, Final Draft's Outline Editor) ── */
+.fs-outline-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--fd-toolbar-bg);
+  border-bottom: 1px solid var(--fd-border);
+  padding: 4px 8px;
+}
+.fs-ob-side {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 10px 2px 2px;
+  border-right: 1px solid var(--fd-chrome-separator);
+  margin-right: 8px;
+  min-width: 108px;
+}
+.fs-ob-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fd-text-muted);
+}
+.fs-ob-side button, .fs-ob-side select {
+  background: rgba(128, 128, 128, 0.15);
+  border: none;
+  color: var(--fd-text);
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 3px 8px;
+  cursor: pointer;
+  text-align: left;
+}
+.fs-ob-side button:hover { background: rgba(128, 128, 128, 0.28); }
+.fs-ob-side button:disabled { opacity: 0.45; cursor: default; }
+.fs-ob-close { position: absolute; }  /* overridden below */
+.fs-ob-side .fs-ob-close {
+  position: static;
+  align-self: flex-start;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+.fs-ob-lanes {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.fs-ob-lane {
+  position: relative;
+  height: 26px;
+  background: var(--fd-overlay-subtle);
+  border-radius: 4px;
+}
+.fs-ob-lane-label {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  pointer-events: none;
+  z-index: 0;
+}
+.fs-ob-beat {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  min-width: 46px;
+  background: var(--fd-accent, #4a90d9);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px 0 8px;
+  cursor: grab;
+  user-select: none;
+  z-index: 1;
+  overflow: hidden;
+}
+.fs-ob-beat:active { cursor: grabbing; }
+.fs-ob-beat-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fs-ob-beat-x {
+  position: absolute;
+  right: 12px;
+  top: 1px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px;
+  display: none;
+}
+.fs-ob-beat:hover .fs-ob-beat-x { display: block; }
+.fs-ob-beat-resize {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: ew-resize;
+  border-right: 3px solid rgba(255, 255, 255, 0.45);
+  border-radius: 0 4px 4px 0;
+}
+.fs-ob-scenes { display: flex; align-items: stretch; padding-left: 48px; }
+.fs-ob-scene {
+  background: var(--fd-overlay-light);
+  border: none;
+  border-right: 1px solid var(--fd-toolbar-bg);
+  color: var(--fd-text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  min-width: 14px;
+  overflow: hidden;
+}
+.fs-ob-scene:hover { background: var(--fd-overlay-medium); color: var(--fd-text); }
+.fs-ob-empty {
+  align-self: center;
+  font-size: 11px;
+  color: var(--fd-text-muted);
+}
+
 /* ── Writing focus (v1.74, ported: their writing-focus + vignette) ──
    All chrome disappears; a soft vignette frames the page. Esc leaves. */
 body.fs-writing-focus .chrome-stack,

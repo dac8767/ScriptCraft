@@ -21,6 +21,7 @@ interface ViewState {
   typewriterLimitLine?: boolean;
   typewriterMaxChars?: number;
   typewriterRestoreCursor?: boolean;
+  outlineBarOpen?: boolean;
   indexCardsOpen?: boolean;
   beatBoardOpen?: boolean;
   shelfOpen?: boolean;
@@ -729,6 +730,14 @@ export interface BeatInfo {
   y: number;           // custom-arrange: absolute Y position on canvas
   imageHeight: number; // pixels, 0 = default (140px)
   linkPreviews?: BeatLinkPreview[]; // cached link preview metadata
+  /** v1.75 Outline Bar (Final Draft's Outline Editor): which lane the beat
+   *  sits on (0 = Outline 1, 1 = Outline 2; unset = board only), the page it
+   *  starts on, and how many pages it spans (default 0.5, min 0.125 — FD's
+   *  eighth-of-a-page). SAME beat objects as the Outline tool, so titles,
+   *  colors and edits stay linked. */
+  outlineLane?: 0 | 1;
+  outlinePage?: number;
+  outlineSpan?: number;
 }
 
 export type BeatArrangeMode = 'auto' | 'custom';
@@ -910,6 +919,9 @@ interface EditorState {
    *  Session-only on purpose: relaunching into fullscreen would be hostile. */
   writingFocus: boolean;
   setWritingFocus: (v: boolean) => void;
+  /** v1.75: the Outline Bar (Final Draft's Outline Editor) under the toolbar. */
+  outlineBarOpen: boolean;
+  setOutlineBarOpen: (v: boolean) => void;
   preferencesRequest: { open: boolean; tab?: 'saveloc' };
   openPreferences: (tab?: 'saveloc') => void;
   closePreferences: () => void;
@@ -967,8 +979,8 @@ interface EditorState {
   deleteBeatColumn: (id: string) => void;
   beats: BeatInfo[];
   setBeats: (beats: BeatInfo[]) => void;
-  addBeat: (title: string, columnId: string) => void;
-  updateBeat: (id: string, updates: Partial<{ title: string; description: string; columnId: string; position: number; color: string; imageUrl: string; cardWidth: number; cardHeight: number; x: number; y: number; imageHeight: number }>) => void;
+  addBeat: (title: string, columnId: string) => string;
+  updateBeat: (id: string, updates: Partial<Omit<BeatInfo, 'id'>>) => void;
   deleteBeat: (id: string) => void;
   // Beat undo/redo
   beatUndo: () => void;
@@ -1496,6 +1508,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   writingFocus: false,
   setWritingFocus: (v) => set({ writingFocus: v }),
+  outlineBarOpen: (_vs.outlineBarOpen as boolean) ?? false,
+  setOutlineBarOpen: (v) => {
+    saveViewState({ outlineBarOpen: v });
+    set({ outlineBarOpen: v });
+  },
   preferencesRequest: { open: false },
   openPreferences: (tab) => set({ preferencesRequest: { open: true, tab } }),
   closePreferences: () => set({ preferencesRequest: { open: false } }),
@@ -1706,6 +1723,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   addBeat: (title, columnId) => {
     _pushBeatSnapshot(get, true);
+    const id = uuid();   // v1.75: returned so the Outline Bar can place it
     set((s) => {
       const colBeats = s.beats.filter((b) => b.columnId === columnId);
       const maxPos = colBeats.length > 0 ? Math.max(...colBeats.map((b) => b.position)) : -1;
@@ -1713,7 +1731,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         beats: [
           ...s.beats,
           {
-            id: uuid(),
+            id,
             title,
             description: '',
             columnId,
@@ -1729,6 +1747,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ],
       };
     });
+    return id;
   },
   updateBeat: (id, updates) => {
     _pushBeatSnapshot(get);

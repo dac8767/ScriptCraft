@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.74';
+export const APP_VERSION = '1.75';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.75',
+    date: '2026-07-15',
+    items: [
+      { title: 'New: the Outline Bar', detail: 'View > Outline Bar opens a Final Draft-style outline strip under the toolbar: two lanes of beat markers placed by page (drag to move, drag between lanes, drag the right edge to resize in eighth-page steps) plus a Scenes lane of the script\'s actual scene headings — click one to jump there. The markers ARE the Outline tool\'s beats: place existing ones, add new ones, and titles/colors stay linked both ways. "Send to Script" writes the outline into the script as section lines (working notes — never printed or exported).', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '1.74',
     date: '2026-07-15',

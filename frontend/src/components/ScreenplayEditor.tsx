@@ -13,6 +13,7 @@ import SmartTypography from '../editor/extensions/SmartTypography';
 import VomitLock from '../editor/extensions/VomitLock';
 import TypewriterScroll from '../editor/extensions/TypewriterScroll';
 import { VomitTimerPill } from './VomitDraftTool';
+import OutlineBar from './OutlineBar';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -2176,6 +2177,9 @@ const ScreenplayEditor: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [writingFocus]);
 
+  // v1.75: Outline Bar visibility (View > Outline Bar).
+  const outlineBarOpen = useEditorStore((st) => st.outlineBarOpen);
+
   // v1.74: on-screen line-length cap (display only; pagination follows what
   // it sees on screen while this is on).
   const typewriterLimitLine = useEditorStore((st) => st.typewriterLimitLine);
@@ -3937,6 +3941,8 @@ const ScreenplayEditor: React.FC = () => {
         </button>
       </div>
       )}
+      {/* v1.75: Outline Bar — FD-style outline lanes directly under the toolbar. */}
+      {!isHistoryMode && outlineBarOpen && <OutlineBar editor={editor} />}
       <div className={`editor-layout${previewMode ? " preview-mode" : " hide-title-page"}`}>
       {previewMode && <PreviewSidebar editor={editor} />}
         {!isHistoryMode && navigatorOpen && <ToolDock side="left" editor={editor} scrollContainer={editorMainRef.current} />}

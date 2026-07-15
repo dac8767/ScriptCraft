@@ -182,6 +182,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const {
     menuBarOrder, menuBarHidden,
     previewMode,
+    outlineBarOpen, setOutlineBarOpen,
     notesVisible, setNotesVisible,
     scriptTodosVisible, setScriptTodosVisible,
     markersVisible, setMarkersVisible,
@@ -1271,6 +1272,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaStream />, label: !previewMode && viewStyle === 'continuous' ? '\u2713 Continuous' : 'Continuous', action: () => { useEditorStore.getState().setPreviewMode(false); setViewStyle('continuous'); } },
             { icon: <FaEye />, label: previewMode ? '\u2713 Preview' : 'Preview', action: () => useEditorStore.getState().setPreviewMode(true) },
           ],
+        },
+        // v1.75: the Outline Bar (Final Draft-style Outline Editor) under the toolbar.
+        {
+          icon: <FaStream />,
+          label: outlineBarOpen ? '\u2713 Outline Bar' : 'Outline Bar',
+          action: () => setOutlineBarOpen(!outlineBarOpen),
         },
         { separator: true, label: '' },
         {
