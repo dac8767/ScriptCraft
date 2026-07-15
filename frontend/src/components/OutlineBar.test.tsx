@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import OutlineBar, { snapPage, markerGeometry } from './OutlineBar';
+import OutlineBar, { snapPage, markerGeometry, columnRanges, DEFAULT_COLUMN_PAGES } from './OutlineBar';
 import { useEditorStore } from '../stores/editorStore';
 
 describe('placement math', () => {
@@ -21,6 +21,24 @@ describe('placement math', () => {
     const g = markerGeometry(6, 0.5, 10);
     expect(g.leftPct).toBe(50);
     expect(g.widthPct).toBe(5);
+  });
+
+  /* v2.11 — the acts row: columns pack from page 1 by their budgets. */
+  it('columnRanges packs sections sequentially by target pages', () => {
+    const ranges = columnRanges([
+      { id: 'a2', title: 'Act II', position: 1, width: 0, targetPages: 45 },
+      { id: 'a1', title: 'Act I', position: 0, width: 0, targetPages: 30 },
+      { id: 'a3', title: 'Act III', position: 2, width: 0, targetPages: 40 },
+    ]);
+    expect(ranges.map((r) => [r.title, r.start, r.pages])).toEqual([
+      ['Act I', 1, 30], ['Act II', 31, 45], ['Act III', 76, 40],
+    ]);
+    expect(ranges.reduce((s, r) => s + r.pages, 0)).toBe(115);   // Derek's example
+  });
+
+  it('a section without a budget gets the default block', () => {
+    const [r] = columnRanges([{ id: 'c', title: 'C', position: 0, width: 0 }]);
+    expect(r.pages).toBe(DEFAULT_COLUMN_PAGES);
   });
 });
 

@@ -1,29 +1,37 @@
 /**
- * OutlineBar (v1.75) — Final Draft's Outline Editor, adapted.
- * (Reference: finaldraft.com/blog/how-to-use-final-draft-the-outline-editor)
+ * OutlineBar (v1.75; rebuilt v2.11) — a PAGE TIMELINE, Premiere-style:
+ * the x-axis is script pages instead of time.
  *
- * A horizontal band directly under the toolbar (View > Outline Bar), made of
- * lanes:
- *   Outline 1 ┐ beat markers placed by PAGE, spanning a page range —
- *   Outline 2 ┘ drag to move, drag up/down to change lanes, drag the right
- *              edge to resize (snap: eighth of a page, FD's granularity)
- *   Scenes    — the script's actual scene headings, in order; click to jump.
+ * Rows, top to bottom:
+ *   Acts   — the Outline tool's COLUMNS as sequential blocks, each spanning
+ *            its page budget (targetPages: 30/45/40 → a 115-page ruler).
+ *            Drag a block's right edge to change the budget; right-click to
+ *            type it (also settable in the Outline window's column header).
+ *   Beats  — the Outline tool's beats, placed at a page + span. Drag to
+ *            move, drag the right edge to resize, right-click to type the
+ *            page target.
+ *   Ruler  — page increments, 1 to the total the acts define.
+ *   Script — what's ACTUALLY written: one block per scene heading, sized by
+ *            its real page length (computeSceneLengths). Click to jump.
  *
- * ONE SOURCE OF TRUTH: the markers ARE the beats of the Outline tool
- * (editorStore.beats — same objects the board renders). Placing a beat here
- * adds outlineLane/outlinePage/outlineSpan to it; its title and color stay
- * linked both ways, and removing it from a lane never deletes it from the
- * board. "Send to Script" emits each beat as a section line (`# ...`) — the
- * app's non-printing outline element, excluded from print/export like all
- * working notes.
+ * The side holds a zoom (pixels per page; Fit stretches the ruler to the
+ * visible width) and the tracks scroll horizontally when they outgrow the
+ * screen. ONE SOURCE OF TRUTH: blocks ARE the Outline tool's columns and
+ * beats — no copies. Closing lives in View > Outline Bar (no × here, v2.11).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
-import { useEditorStore, type BeatInfo } from '../stores/editorStore';
+import { FaFileExport } from 'react-icons/fa';
+import { useEditorStore, type BeatInfo, type BeatColumn } from '../stores/editorStore';
+import { computeSceneLengths } from '../editor/pagination';
+import AddMenu from './AddMenu';
 import { showToast } from './Toast';
 
 const SNAP = 0.125;               // FD: an eighth of a page
 const DEFAULT_SPAN = 0.5;         // FD: beats default to half a page
+/** A section with no page budget yet still needs a visible block. */
+export const DEFAULT_COLUMN_PAGES = 10;
 
 /** Clamp + snap a page position for a beat. Exported for the test. */
 export function snapPage(page: number, span: number, totalPages: number): number {
@@ -40,11 +48,24 @@ export function markerGeometry(page: number, span: number, totalPages: number) {
   };
 }
 
-interface SceneEntry { text: string; pos: number }
+/** v2.11: the acts row — columns in board order, packed from page 1, each
+ *  spanning its budget. Exported for the test. */
+export function columnRanges(cols: BeatColumn[]): Array<{ id: string; title: string; start: number; pages: number }> {
+  const sorted = [...cols].sort((a, b) => a.position - b.position);
+  let start = 1;
+  return sorted.map((c) => {
+    const pages = Math.max(1, Math.round(c.targetPages || DEFAULT_COLUMN_PAGES));
+    const r = { id: c.id, title: c.title, start, pages };
+    start += pages;
+    return r;
+  });
+}
 
-function collectScenes(editor: Editor | null): SceneEntry[] {
+interface SceneEntry { text: string; pos: number; start: number; pages: number }
+
+function collectScenes(editor: Editor | null): Array<{ text: string; pos: number }> {
   if (!editor || editor.isDestroyed) return [];
-  const scenes: SceneEntry[] = [];
+  const scenes: Array<{ text: string; pos: number }> = [];
   editor.state.doc.forEach((node, pos) => {
     if (node.type.name === 'sceneHeading' && node.textContent.trim()) {
       scenes.push({ text: node.textContent.trim(), pos });
@@ -53,98 +74,160 @@ function collectScenes(editor: Editor | null): SceneEntry[] {
   return scenes;
 }
 
+/** The right-click "target pages" popover — portalled to body, positioned
+ *  by top/left only (never bottom). */
+interface PagesPop { kind: 'column' | 'beat'; id: string; x: number; y: number; value: number }
+
 export default function OutlineBar({ editor }: { editor: Editor | null }) {
   const beats = useEditorStore((s) => s.beats);
   const beatColumns = useEditorStore((s) => s.beatColumns);
   const updateBeat = useEditorStore((s) => s.updateBeat);
+  const updateBeatColumn = useEditorStore((s) => s.updateBeatColumn);
+  const addBeatColumn = useEditorStore((s) => s.addBeatColumn);
   const addBeat = useEditorStore((s) => s.addBeat);
   const pageCount = useEditorStore((s) => s.pageCount);
-  const setOutlineBarOpen = useEditorStore((s) => s.setOutlineBarOpen);
-  const totalPages = Math.max(1, pageCount);
+  const pageLayout = useEditorStore((s) => s.pageLayout);
+  const zoom = useEditorStore((s) => s.outlineBarZoom);
+  const setZoom = useEditorStore((s) => s.setOutlineBarZoom);
 
-  const laneRef = useRef<HTMLDivElement>(null);
-  const [scenes, setScenes] = useState<SceneEntry[]>(() => collectScenes(editor));
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [viewW, setViewW] = useState(0);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setViewW(el.clientWidth);
+    if (typeof ResizeObserver === 'undefined') return;   // jsdom
+    const ro = new ResizeObserver(() => setViewW(el.clientWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
-  // Scene lane follows the script (debounced — headings don't change often).
+  /* ── the page domain ── */
+  const acts = useMemo(() => columnRanges(beatColumns), [beatColumns]);
+  const actsTotal = acts.reduce((sum, a) => sum + a.pages, 0);
+  // v2.11: beats on either legacy lane count as placed (lanes merged).
+  const placed = useMemo(() => beats.filter((b) => b.outlineLane !== undefined && b.outlineLane !== null), [beats]);
+  const unplaced = useMemo(() => beats.filter((b) => b.outlineLane === undefined || b.outlineLane === null), [beats]);
+  const beatsEnd = placed.reduce((m, b) => Math.max(m, (b.outlinePage ?? 1) + (b.outlineSpan ?? DEFAULT_SPAN) - 1), 0);
+  // The acts define the plan; the script and beats can outgrow it.
+  const totalPages = Math.max(1, actsTotal, Math.ceil(pageCount), Math.ceil(beatsEnd));
+
+  // px per page: explicit zoom, or fit-to-width when zoom === 0.
+  const ppp = zoom > 0 ? zoom : Math.max(2, (viewW || 800) / totalPages);
+  const trackW = Math.ceil(totalPages * ppp);
+
+  /* ── the script row ── */
+  const [scenes, setScenes] = useState<SceneEntry[]>([]);
   useEffect(() => {
     if (!editor) return;
     let timer: ReturnType<typeof setTimeout>;
-    const refresh = () => { clearTimeout(timer); timer = setTimeout(() => setScenes(collectScenes(editor)), 400); };
+    const refresh = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const heads = collectScenes(editor);
+        let lengths: number[] = [];
+        try { lengths = computeSceneLengths(editor.state.doc, pageLayout); } catch { /* mid-transaction */ }
+        let start = 1;
+        setScenes(heads.map((h, i) => {
+          const pages = Math.max(SNAP, lengths[i] ?? SNAP);
+          const s: SceneEntry = { ...h, start, pages };
+          start += pages;
+          return s;
+        }));
+      }, 400);
+    };
     refresh();
     editor.on('update', refresh);
     return () => { clearTimeout(timer); editor.off('update', refresh); };
-  }, [editor]);
+  }, [editor, pageLayout]);
 
-  const placed = useMemo(
-    () => beats.filter((b) => b.outlineLane === 0 || b.outlineLane === 1),
-    [beats],
-  );
-  const unplaced = useMemo(
-    () => beats.filter((b) => b.outlineLane !== 0 && b.outlineLane !== 1),
-    [beats],
-  );
-
-  /* ── dragging: move (and switch lanes) or resize, plain pointer events ── */
+  /* ── dragging: beats move/resize; act blocks resize (budget) ── */
   const dragRef = useRef<{
-    id: string; mode: 'move' | 'resize';
-    startX: number; startY: number;
-    startPage: number; startSpan: number; startLane: 0 | 1;
+    kind: 'beat-move' | 'beat-resize' | 'act-resize';
+    id: string; startX: number; startPage: number; startSpan: number;
   } | null>(null);
 
-  const pxPerPage = () => {
-    const w = laneRef.current?.clientWidth || 1;
-    return w / totalPages;
-  };
-
-  const onPointerDown = (e: React.PointerEvent, beat: BeatInfo, mode: 'move' | 'resize') => {
-    e.preventDefault();
-    e.stopPropagation();
+  const startBeatDrag = (e: React.PointerEvent, beat: BeatInfo, mode: 'move' | 'resize') => {
+    e.preventDefault(); e.stopPropagation();
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     dragRef.current = {
-      id: beat.id, mode,
-      startX: e.clientX, startY: e.clientY,
+      kind: mode === 'move' ? 'beat-move' : 'beat-resize',
+      id: beat.id, startX: e.clientX,
       startPage: beat.outlinePage ?? 1,
       startSpan: beat.outlineSpan ?? DEFAULT_SPAN,
-      startLane: (beat.outlineLane ?? 0) as 0 | 1,
     };
+  };
+  const startActResize = (e: React.PointerEvent, act: { id: string; pages: number }) => {
+    e.preventDefault(); e.stopPropagation();
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    dragRef.current = { kind: 'act-resize', id: act.id, startX: e.clientX, startPage: 1, startSpan: act.pages };
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
     const d = dragRef.current;
     if (!d) return;
-    const dPages = (e.clientX - d.startX) / pxPerPage();
-    if (d.mode === 'move') {
+    const dPages = (e.clientX - d.startX) / ppp;
+    if (d.kind === 'beat-move') {
       const page = snapPage(d.startPage + dPages, d.startSpan, totalPages);
-      // Crossing more than half a lane's height vertically switches lanes.
-      const laneH = (laneRef.current?.clientHeight || 28);
-      const dLanes = Math.round((e.clientY - d.startY) / laneH);
-      const lane = Math.min(1, Math.max(0, d.startLane + dLanes)) as 0 | 1;
-      updateBeat(d.id, { outlinePage: page, outlineLane: lane });
-    } else {
+      updateBeat(d.id, { outlinePage: page, outlineLane: 0 });
+    } else if (d.kind === 'beat-resize') {
       const span = Math.max(SNAP, Math.round((d.startSpan + dPages) / SNAP) * SNAP);
       updateBeat(d.id, { outlineSpan: Math.min(span, totalPages) });
+    } else {
+      // Acts budget in WHOLE pages — the ruler total follows live.
+      const pages = Math.max(1, Math.round(d.startSpan + dPages));
+      updateBeatColumn(d.id, { targetPages: pages });
     }
   };
-
   const onPointerUp = () => { dragRef.current = null; };
+
+  /* ── right-click: type the page target ── */
+  const [pop, setPop] = useState<PagesPop | null>(null);
+  useEffect(() => {
+    if (!pop) return;
+    const close = (e: PointerEvent) => {
+      if (!(e.target as HTMLElement).closest('.fs-ob-pagespop')) setPop(null);
+    };
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setPop(null); };
+    document.addEventListener('pointerdown', close);
+    document.addEventListener('keydown', key);
+    return () => {
+      document.removeEventListener('pointerdown', close);
+      document.removeEventListener('keydown', key);
+    };
+  }, [pop]);
+
+  const openPop = (e: React.MouseEvent, kind: PagesPop['kind'], id: string, value: number) => {
+    e.preventDefault();
+    setPop({ kind, id, x: Math.min(e.clientX, window.innerWidth - 200), y: e.clientY + 4, value });
+  };
+  const commitPop = () => {
+    if (!pop) return;
+    const v = Math.max(pop.kind === 'column' ? 1 : SNAP, pop.value);
+    if (pop.kind === 'column') updateBeatColumn(pop.id, { targetPages: Math.round(v) });
+    else updateBeat(pop.id, { outlineSpan: v });
+    setPop(null);
+  };
 
   /* ── actions ── */
   const placeAtEnd = useCallback((id: string) => {
-    const lanePages = placed.filter((b) => b.outlineLane === 0).map((b) => (b.outlinePage ?? 1) + (b.outlineSpan ?? DEFAULT_SPAN));
-    const page = snapPage(lanePages.length ? Math.max(...lanePages) : 1, DEFAULT_SPAN, totalPages);
+    const ends = placed.map((b) => (b.outlinePage ?? 1) + (b.outlineSpan ?? DEFAULT_SPAN));
+    const page = snapPage(ends.length ? Math.max(...ends) : 1, DEFAULT_SPAN, totalPages);
     updateBeat(id, { outlineLane: 0, outlinePage: page, outlineSpan: DEFAULT_SPAN });
   }, [placed, totalPages, updateBeat]);
 
-  const newBeat = () => {
-    const col = beatColumns[0]?.id || '';
-    const id = addBeat('New Beat', col);
-    placeAtEnd(id);
+  const addFromMenu = (v: string) => {
+    if (v === 'section') {
+      addBeatColumn('New Section');
+    } else if (v === 'beat') {
+      const col = beatColumns[0]?.id || addBeatColumn('New Section');
+      placeAtEnd(addBeat('New Beat', col));
+    }
   };
 
   const sendToScript = () => {
     if (!editor || editor.isDestroyed || placed.length === 0) return;
-    const ordered = [...placed].sort((a, b) =>
-      (a.outlineLane! - b.outlineLane!) || ((a.outlinePage ?? 0) - (b.outlinePage ?? 0)));
+    const ordered = [...placed].sort((a, b) => (a.outlinePage ?? 0) - (b.outlinePage ?? 0));
     const nodes = ordered.map((b) => ({
       type: 'general',
       content: [{ type: 'text', text: `# ${b.title}${b.description ? ` — ${b.description}` : ''}` }],
@@ -158,46 +241,30 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
     editor.chain().focus().setTextSelection(pos + 1).scrollIntoView().run();
   };
 
-  const renderLane = (lane: 0 | 1) => (
-    <div className="fs-ob-lane" ref={lane === 0 ? laneRef : undefined}>
-      <span className="fs-ob-lane-label">Outline {lane + 1}</span>
-      {placed.filter((b) => b.outlineLane === lane).map((b) => {
-        const { leftPct, widthPct } = markerGeometry(b.outlinePage ?? 1, b.outlineSpan ?? DEFAULT_SPAN, totalPages);
-        return (
-          <div
-            key={b.id}
-            className="fs-ob-beat"
-            style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: b.color || undefined }}
-            title={`${b.title} — page ${b.outlinePage ?? 1}${b.description ? `\n${b.description}` : ''}`}
-            onPointerDown={(e) => onPointerDown(e, b, 'move')}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-          >
-            <span className="fs-ob-beat-title">{b.title}</span>
-            <button
-              className="fs-ob-beat-x"
-              title="Remove from outline (stays on the Outline board)"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => updateBeat(b.id, { outlineLane: undefined, outlinePage: undefined })}
-            >×</button>
-            <span
-              className="fs-ob-beat-resize"
-              title="Drag to change the page span"
-              onPointerDown={(e) => onPointerDown(e, b, 'resize')}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-            />
-          </div>
-        );
-      })}
-    </div>
-  );
+  /* ── ruler ticks: label density follows the zoom ── */
+  const labelEvery = ppp >= 24 ? 1 : ppp >= 10 ? 5 : 10;
+  const pages = useMemo(() => Array.from({ length: totalPages }, (_, i) => i + 1), [totalPages]);
+
+  const pctLeft = (page: number) => `${((page - 1) / totalPages) * 100}%`;
+  const pctWidth = (span: number) => `${(span / totalPages) * 100}%`;
 
   return (
     <div className="fs-outline-bar">
       <div className="fs-ob-side">
         <span className="fs-ob-title">Outline</span>
-        <button onClick={newBeat} title="New beat, placed at the end of Outline 1">+ Beat</button>
+        <AddMenu
+          label="＋"
+          title="Add a section (column) or a beat"
+          center
+          onPick={addFromMenu}
+          groups={[{
+            label: 'Add',
+            options: [
+              { value: 'section', label: 'Section (column)' },
+              { value: 'beat', label: 'Beat' },
+            ],
+          }]}
+        />
         {unplaced.length > 0 && (
           <select
             value=""
@@ -208,31 +275,137 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             {unplaced.map((b) => <option key={b.id} value={b.id}>{b.title || '(untitled)'}</option>)}
           </select>
         )}
-        <button onClick={sendToScript} disabled={placed.length === 0} title="Insert each beat into the script as a section line (# …)">
-          Send to Script
+        {/* v2.11: icon-only, tooltip carries the words. */}
+        <button
+          className="fs-ob-iconbtn"
+          onClick={sendToScript}
+          disabled={placed.length === 0}
+          title="Send to Script — insert each beat as a section line (# …)"
+        >
+          <FaFileExport />
         </button>
-        <button className="fs-ob-close" title="Hide the Outline Bar (View menu brings it back)" onClick={() => setOutlineBarOpen(false)}>×</button>
-      </div>
-      <div className="fs-ob-lanes">
-        {renderLane(0)}
-        {renderLane(1)}
-        <div className="fs-ob-lane fs-ob-scenes">
-          <span className="fs-ob-lane-label">Scenes</span>
-          {scenes.length === 0 ? (
-            <span className="fs-ob-empty">No scene headings yet</span>
-          ) : scenes.map((s, i) => (
-            <button
-              key={`${s.pos}-${i}`}
-              className="fs-ob-scene"
-              style={{ width: `${100 / scenes.length}%` }}
-              title={s.text}
-              onClick={() => jumpToScene(s.pos)}
-            >
-              {i + 1}
-            </button>
-          ))}
+        <div className="fs-ob-zoom" title="Zoom — how many pixels one page takes">
+          <button className={zoom === 0 ? 'active' : ''} onClick={() => setZoom(0)}>Fit</button>
+          <input
+            type="range"
+            min={2}
+            max={64}
+            value={zoom > 0 ? zoom : Math.round(ppp)}
+            onChange={(e) => setZoom(Number(e.target.value))}
+          />
         </div>
       </div>
+
+      {/* Premiere-style: tracks scroll horizontally; labels stay pinned. */}
+      <div className="fs-ob-scroll" ref={scrollRef}>
+        <div className="fs-ob-tracks" style={{ width: trackW }}>
+          {/* Row 1: acts / sections — sequential page budgets */}
+          <div className="fs-ob-lane fs-ob-acts">
+            <span className="fs-ob-lane-label">Acts</span>
+            {acts.map((a, i) => (
+              <div
+                key={a.id}
+                className={`fs-ob-act fs-ob-act-${i % 3}`}
+                style={{ left: pctLeft(a.start), width: pctWidth(a.pages) }}
+                title={`${a.title} — ${a.pages} page${a.pages === 1 ? '' : 's'} (pages ${a.start}–${a.start + a.pages - 1})\nRight-click to set the target page count`}
+                onContextMenu={(e) => openPop(e, 'column', a.id, a.pages)}
+              >
+                <span className="fs-ob-act-title">{a.title}</span>
+                <span className="fs-ob-act-pages">{a.pages}pp</span>
+                <span
+                  className="fs-ob-beat-resize"
+                  title="Drag to change this section's page budget"
+                  onPointerDown={(e) => startActResize(e, a)}
+                  onPointerMove={onPointerMove}
+                  onPointerUp={onPointerUp}
+                />
+              </div>
+            ))}
+            {acts.length === 0 && <span className="fs-ob-empty">No sections yet — ＋ adds one</span>}
+          </div>
+
+          {/* Row 2: beats */}
+          <div className="fs-ob-lane fs-ob-beats">
+            <span className="fs-ob-lane-label">Beats</span>
+            {placed.map((b) => {
+              const { leftPct, widthPct } = markerGeometry(b.outlinePage ?? 1, b.outlineSpan ?? DEFAULT_SPAN, totalPages);
+              return (
+                <div
+                  key={b.id}
+                  className="fs-ob-beat"
+                  style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: b.color || undefined }}
+                  title={`${b.title} — page ${b.outlinePage ?? 1}, ${b.outlineSpan ?? DEFAULT_SPAN} page(s)${b.description ? `\n${b.description}` : ''}\nRight-click to set the page target`}
+                  onPointerDown={(e) => startBeatDrag(e, b, 'move')}
+                  onPointerMove={onPointerMove}
+                  onPointerUp={onPointerUp}
+                  onContextMenu={(e) => openPop(e, 'beat', b.id, b.outlineSpan ?? DEFAULT_SPAN)}
+                >
+                  <span className="fs-ob-beat-title">{b.title}</span>
+                  <button
+                    className="fs-ob-beat-x"
+                    title="Remove from the bar (stays on the Outline board)"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => updateBeat(b.id, { outlineLane: undefined, outlinePage: undefined })}
+                  >×</button>
+                  <span
+                    className="fs-ob-beat-resize"
+                    title="Drag to change the page span"
+                    onPointerDown={(e) => startBeatDrag(e, b, 'resize')}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Ruler: pages 1..total */}
+          <div className="fs-ob-ruler">
+            {pages.map((p) => (
+              <span key={p} className="fs-ob-tick" style={{ left: pctLeft(p), width: pctWidth(1) }}>
+                {(p === 1 || p % labelEvery === 0) && <span className="fs-ob-tick-label">{p}</span>}
+              </span>
+            ))}
+          </div>
+
+          {/* Row 3: the actual script, one block per scene heading */}
+          <div className="fs-ob-lane fs-ob-scenes">
+            <span className="fs-ob-lane-label">Script</span>
+            {scenes.length === 0 ? (
+              <span className="fs-ob-empty">No scene headings yet</span>
+            ) : scenes.map((s, i) => (
+              <button
+                key={`${s.pos}-${i}`}
+                className="fs-ob-scene"
+                style={{ left: pctLeft(s.start), width: pctWidth(s.pages) }}
+                title={`${s.text} — ${s.pages.toFixed(2)} pages`}
+                onClick={() => jumpToScene(s.pos)}
+              >
+                {s.text}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {pop && createPortal(
+        <div className="fs-ob-pagespop" style={{ top: pop.y, left: pop.x }}>
+          <label>
+            Target pages
+            <input
+              autoFocus
+              type="number"
+              min={pop.kind === 'column' ? 1 : SNAP}
+              step={pop.kind === 'column' ? 1 : SNAP}
+              value={pop.value}
+              onChange={(e) => setPop({ ...pop, value: Number(e.target.value) || 0 })}
+              onKeyDown={(e) => { if (e.key === 'Enter') commitPop(); }}
+            />
+          </label>
+          <button onClick={commitPop}>Set</button>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }

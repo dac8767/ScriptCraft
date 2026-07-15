@@ -20,6 +20,7 @@ interface ViewState {
   typewriterDimOpacity?: number;
   typewriterRestoreCursor?: boolean;
   outlineBarOpen?: boolean;
+  outlineBarZoom?: number;
   highlightColor?: string;
   indexCardsOpen?: boolean;
   beatBoardOpen?: boolean;
@@ -736,6 +737,10 @@ export interface BeatColumn {
   title: string;
   position: number;
   width: number; // pixels, 0 = auto/fill
+  /** v2.11: how many script pages this act/section is BUDGETED for — the
+   *  Outline Bar's top row spans blocks by these (30/45/40 → a 115-page
+   *  ruler). Unset = DEFAULT_COLUMN_PAGES. */
+  targetPages?: number;
 }
 
 export interface BeatLinkPreview {
@@ -948,6 +953,10 @@ interface EditorState {
   /** v1.75: the Outline Bar (Final Draft's Outline Editor) under the toolbar. */
   outlineBarOpen: boolean;
   setOutlineBarOpen: (v: boolean) => void;
+  /** v2.11: Outline Bar zoom — pixels per page on the timeline. 0 = fit
+   *  the whole ruler to the visible width. Persisted view state. */
+  outlineBarZoom: number;
+  setOutlineBarZoom: (px: number) => void;
   /** v1.80: Navigator filter + kind visibility live in the store so the
    *  window's header (dropdown) and footer (filter field) — which render in
    *  the shared window chrome — stay in sync with the list body. */
@@ -1016,7 +1025,7 @@ interface EditorState {
   beatColumns: BeatColumn[];
   setBeatColumns: (columns: BeatColumn[]) => void;
   addBeatColumn: (title: string) => string;
-  updateBeatColumn: (id: string, updates: Partial<{ title: string; position: number; width: number }>) => void;
+  updateBeatColumn: (id: string, updates: Partial<{ title: string; position: number; width: number; targetPages: number }>) => void;
   deleteBeatColumn: (id: string) => void;
   beats: BeatInfo[];
   setBeats: (beats: BeatInfo[]) => void;
@@ -1542,6 +1551,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setOutlineBarOpen: (v) => {
     saveViewState({ outlineBarOpen: v });
     set({ outlineBarOpen: v });
+  },
+  outlineBarZoom: (_vs.outlineBarZoom as number) ?? 0,
+  setOutlineBarZoom: (px) => {
+    saveViewState({ outlineBarZoom: px });
+    set({ outlineBarZoom: px });
   },
   navFilter: '',
   setNavFilter: (v) => set({ navFilter: v }),

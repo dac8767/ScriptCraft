@@ -13109,6 +13109,7 @@ html.android .version-history-panel {
   border-right: 1px solid var(--fd-chrome-separator);
   margin-right: 8px;
   min-width: 108px;
+  flex: 0 0 auto;
 }
 .fs-ob-title {
   font-size: 11px;
@@ -13129,19 +13130,29 @@ html.android .version-history-panel {
 }
 .fs-ob-side button:hover { background: rgba(128, 128, 128, 0.28); }
 .fs-ob-side button:disabled { opacity: 0.45; cursor: default; }
-.fs-ob-close { position: absolute; }  /* overridden below */
-.fs-ob-side .fs-ob-close {
-  position: static;
-  align-self: flex-start;
-  padding: 1px 7px;
-  border-radius: 999px;
+.fs-ob-iconbtn { display: inline-flex; align-items: center; justify-content: center; }
+/* v2.11: zoom — Fit + a px-per-page slider (the Premiere pattern). */
+.fs-ob-zoom {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.fs-ob-lanes {
+.fs-ob-zoom button.active { background: color-mix(in srgb, var(--fd-accent, #4a90d9) 30%, transparent); }
+.fs-ob-zoom input[type='range'] { width: 70px; }
+
+/* v2.11: the tracks scroll horizontally; width = pages × zoom. */
+.fs-ob-scroll {
   flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.fs-ob-tracks {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  min-width: 0;
+  min-width: 100%;
 }
 .fs-ob-lane {
   position: relative;
@@ -13150,20 +13161,47 @@ html.android .version-history-panel {
   border-radius: 4px;
 }
 .fs-ob-lane-label {
-  position: absolute;
+  position: sticky;
   left: 6px;
-  top: 50%;
-  transform: translateY(-50%);
+  float: left;
+  margin-top: 7px;
   font-size: 10px;
   color: var(--fd-text-muted);
   pointer-events: none;
-  z-index: 0;
+  z-index: 3;
 }
+/* Row 1: acts — sequential budget blocks, FD-style alternating tints. */
+.fs-ob-act {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border-radius: 4px;
+  color: var(--fd-text);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px 0 8px;
+  user-select: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.fs-ob-act-0 { background: rgba(186, 104, 200, 0.55); }
+.fs-ob-act-1 { background: rgba(79, 195, 247, 0.5); }
+.fs-ob-act-2 { background: rgba(255, 183, 77, 0.55); }
+.fs-ob-act-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+.fs-ob-act-pages { font-size: 9.5px; opacity: 0.75; flex: 0 0 auto; }
 .fs-ob-beat {
   position: absolute;
   top: 2px;
   bottom: 2px;
-  min-width: 46px;
+  min-width: 24px;
   background: var(--fd-accent, #4a90d9);
   border-radius: 4px;
   color: #fff;
@@ -13206,22 +13244,110 @@ html.android .version-history-panel {
   border-right: 3px solid rgba(255, 255, 255, 0.45);
   border-radius: 0 4px 4px 0;
 }
-.fs-ob-scenes { display: flex; align-items: stretch; padding-left: 48px; }
+.fs-ob-act .fs-ob-beat-resize { border-right-color: color-mix(in srgb, var(--fd-text) 45%, transparent); }
+/* v2.11: the page ruler — increments 1..total, like a measuring tape. */
+.fs-ob-ruler {
+  position: relative;
+  height: 16px;
+}
+.fs-ob-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid color-mix(in srgb, var(--fd-text) 25%, transparent);
+}
+.fs-ob-tick-label {
+  position: absolute;
+  left: 2px;
+  top: 1px;
+  font-size: 9px;
+  color: var(--fd-text-muted);
+  user-select: none;
+}
+/* Row 3: the script — one block per scene heading, sized by real pages. */
+.fs-ob-scenes { height: 30px; }
 .fs-ob-scene {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
   background: var(--fd-overlay-light);
   border: none;
   border-right: 1px solid var(--fd-toolbar-bg);
+  border-radius: 3px;
   color: var(--fd-text-muted);
   font-size: 10px;
+  font-family: 'Courier Prime', 'Courier New', monospace;
   cursor: pointer;
-  min-width: 14px;
+  min-width: 6px;
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: left;
+  padding: 0 4px;
+  z-index: 1;
 }
 .fs-ob-scene:hover { background: var(--fd-overlay-medium); color: var(--fd-text); }
 .fs-ob-empty {
-  align-self: center;
+  position: absolute;
+  left: 60px;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 11px;
   color: var(--fd-text-muted);
+}
+/* v2.11: right-click "target pages" popover (body portal, top/left only). */
+.fs-ob-pagespop {
+  position: fixed;
+  z-index: 10060;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .35);
+  padding: 10px;
+  font-size: 11px;
+  color: var(--fd-text);
+}
+.fs-ob-pagespop label { display: flex; flex-direction: column; gap: 4px; }
+.fs-ob-pagespop input {
+  width: 72px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  font-size: 12px;
+  padding: 4px 6px;
+}
+.fs-ob-pagespop button {
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+/* v2.11: the Outline window's per-column page budget. */
+.beat-column-target {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  flex: 0 0 auto;
+}
+.beat-column-target input {
+  width: 44px;
+  background: transparent;
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 2px 4px;
 }
 
 /* ── Writing focus (v1.74, ported: their writing-focus + vignette) ──

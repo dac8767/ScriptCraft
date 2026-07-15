@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.10';
+export const APP_VERSION = '2.11';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.11',
+    date: '2026-07-15',
+    items: [
+      { title: 'The Outline Bar is a page timeline', detail: 'Rebuilt like a Premiere timeline where the x-axis is pages. Top row: your Outline sections (acts) as blocks sized by target page counts — set them by dragging a block\'s edge, right-clicking it, or typing in the Outline window\'s column header (30/45/40 gives a 115-page ruler). Middle row: beats, dragged and resized on the same page scale, right-click for an exact target. A page ruler runs 1 to the total, and the bottom row shows what\'s actually written — one block per scene heading, sized by its real page length, click to jump. Zoom with the Fit/slider control, scroll when it outgrows the screen. The ＋ menu adds a section or a beat; Send to Script is an icon now, and closing lives in View > Outline Bar (no more ×).', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '2.10',
     date: '2026-07-15',

@@ -864,13 +864,13 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
 
 /* ─── Column component with resize handle ─── */
 interface BeatColumnViewProps {
-  col: { id: string; title: string; width: number };
+  col: { id: string; title: string; width: number; targetPages?: number };
   colBeats: BeatInfo[];
   isSingleColumn: boolean;
   isMaximized: boolean;
   onToggleMaximize: () => void;
   showMaximizeBtn: boolean;
-  onUpdateColumn: (id: string, updates: Partial<{ title: string; width: number }>) => void;
+  onUpdateColumn: (id: string, updates: Partial<{ title: string; width: number; targetPages: number }>) => void;
   onDeleteColumn: (id: string) => void;
   onAddBeat: (title: string, columnId: string) => void;
   onUpdateBeat: (id: string, updates: Partial<BeatInfo>) => void;
@@ -901,6 +901,21 @@ const BeatColumnView: React.FC<BeatColumnViewProps> = ({
           onChange={(e) => onUpdateColumn(col.id, { title: e.target.value })}
           placeholder="Column name..."
         />
+        {/* v2.11: the section's page budget — drives its block width on the
+            Outline Bar's top row (also settable by right-click there). */}
+        <label className="beat-column-target" title="Target pages for this section on the Outline Bar">
+          <input
+            type="number"
+            min={1}
+            value={col.targetPages ?? ''}
+            placeholder="pp"
+            onChange={(e) => {
+              const n = Number(e.target.value);
+              onUpdateColumn(col.id, { targetPages: Number.isFinite(n) && n >= 1 ? Math.round(n) : 0 });
+            }}
+          />
+          <span>pp</span>
+        </label>
         {showMaximizeBtn && (
           <button
             className="beat-column-maximize"
