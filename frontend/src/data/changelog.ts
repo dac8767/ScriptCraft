@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.86';
+export const APP_VERSION = '1.87';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.87',
+    date: '2026-07-15',
+    items: [
+      { title: 'The Notebook', detail: 'A Notion/OneNote-style notebook in the Tools menu. Build a sidebar of sections nested as deep as you like and drag pages (or whole sections) anywhere in the tree. Pages come in two kinds: flowing documents with rich text, lists and structured tables, or a free canvas where text boxes, tables and images drop anywhere and drag around like a corkboard. Everything saves automatically.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '1.86',
     date: '2026-07-15',

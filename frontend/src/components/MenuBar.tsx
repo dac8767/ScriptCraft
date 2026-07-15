@@ -27,7 +27,7 @@ const TOOL_MENU_GROUPS: string[][] = [
   // 'tags' is intentionally absent: Production Tags opens from the
   // Production menu (its conceptual home); the window itself remains a
   // dockable Tool in Customize.
-  ['analytics', 'goals', 'typewriter', 'aiwriter'],
+  ['analytics', 'goals', 'typewriter', 'aiwriter', 'notebook'],
 ];
 /** v1.83: Format > Highlighting color list — Final Draft's palette. */
 const HIGHLIGHT_MENU_COLORS: Array<[string, string]> = [
