@@ -87,22 +87,33 @@ export const FolderIcon: React.FC<{ size?: number }> = ({ size = 18 }) => (
   </svg>
 );
 
-/** Vomit Draft (v1.69) — Derek's pictogram, recreated as paths so it follows
- *  currentColor like the font icons (a black bitmap would vanish on dark
- *  themes). Person bent forward, stream, puddle, stray drops. */
+/** Vomit Draft (v1.71) — Derek's line-art face, recreated as strokes so it
+ *  follows currentColor like the font icons (a black bitmap would vanish on
+ *  dark themes). Circle head open at the bottom, > < squeezed-shut eyes, a
+ *  mouth arch with twin streams curling outward, chunk dots inside and out. */
 export const VomitIcon: React.FC<{ size?: number | string }> = ({ size = '1em' }) => (
-  <svg width={size} height={size} viewBox="0 0 512 512" fill="currentColor" aria-hidden="true" focusable="false">
-    <circle cx="196" cy="72" r="66" />
-    <path
-      d="M272,152 C382,152 452,222 456,302 C458,346 441,377 411,401"
-      fill="none" stroke="currentColor" strokeWidth="90" strokeLinecap="round"
-    />
-    <path d="M404,394 L444,468" fill="none" stroke="currentColor" strokeWidth="72" strokeLinecap="round" />
-    <path d="M186,142 C170,240 152,360 150,440 L110,440 C124,330 152,220 172,140 Z" />
-    <ellipse cx="152" cy="462" rx="112" ry="22" />
-    <ellipse cx="88" cy="285" rx="12" ry="26" transform="rotate(-16 88 285)" />
-    <ellipse cx="332" cy="452" rx="26" ry="9" />
-    <ellipse cx="54" cy="500" rx="24" ry="8" />
+  <svg width={size} height={size} viewBox="0 0 512 512" aria-hidden="true" focusable="false">
+    <g fill="none" stroke="currentColor" strokeWidth="30" strokeLinecap="round" strokeLinejoin="round">
+      {/* head — the arc stays open at the bottom where the streams exit */}
+      <path d="M324,428 A200,200 0 1 0 188,428" />
+      {/* eyes: > < */}
+      <path d="M150,163 L217,207 L150,251" />
+      <path d="M362,163 L295,207 L362,251" />
+      {/* mouth arch */}
+      <path d="M162,348 C192,296 224,274 256,274 C288,274 320,296 350,348" />
+      {/* streams with outward curls */}
+      <path d="M196,332 L196,438 C196,468 180,484 152,487" />
+      <path d="M316,332 L316,438 C316,468 332,484 360,487" />
+    </g>
+    <g fill="currentColor">
+      {/* chunks in the stream */}
+      <circle cx="256" cy="352" r="13" />
+      <circle cx="267" cy="416" r="13" />
+      <circle cx="229" cy="462" r="11" />
+      {/* stray chunks outside */}
+      <circle cx="104" cy="406" r="23" />
+      <circle cx="451" cy="446" r="24" />
+    </g>
   </svg>
 );
 

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.70';
+export const APP_VERSION = '1.71';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.71',
+    date: '2026-07-15',
+    items: [
+      { title: 'Vomit Draft icon, take three', detail: 'Now Derek\'s line-art face — squeezed-shut eyes, twin streams, chunks — replacing the v1.69 pictogram. Still a real vector icon, so it follows every theme.', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.70',
     date: '2026-07-15',
