@@ -5,6 +5,7 @@ import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 import { useEditorStore, type CharacterProfile, type CharacterRelationship } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useAssetStore } from '../stores/assetStore';
+import CharacterConnectionsGraph from './CharacterConnectionsGraph';
 import { api } from '../services/api';
 import { showToast } from './Toast';
 import MiniRichText from './MiniRichText';
@@ -110,7 +111,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   const currentScriptId = useProjectStore((s) => s.currentScriptId);
   const { assets, setAssets } = useAssetStore();
 
-  const [activeTab, setActiveTab] = useState<'profiles' | 'map'>('profiles');
+  const [activeTab, setActiveTab] = useState<'profiles' | 'map' | 'connections'>('profiles');
   const [addRelFor, setAddRelFor] = useState<string | null>(null); // character name to add rel for
   const [expandedChar, setExpandedChar] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -906,7 +907,26 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         >
           Relationship Map
         </button>
+        <button
+          className={`char-profiles-tab${activeTab === 'connections' ? ' active' : ''}`}
+          onClick={() => setActiveTab('connections')}
+        >
+          Connections
+        </button>
       </div>
+
+      {/* Connections tab (v1.86): who shares scenes with whom, as a force graph. */}
+      {activeTab === 'connections' && (
+        <CharacterConnectionsGraph
+          editor={editor}
+          onSelectCharacter={(name) => {
+            setActiveTab('profiles');
+            setSelectedCharacter(name);
+            setExpandedChar(name);
+            setModalChar(name);
+          }}
+        />
+      )}
 
       {/* Relationship Map tab */}
       {activeTab === 'map' && (

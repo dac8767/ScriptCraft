@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.85';
+export const APP_VERSION = '1.86';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.86',
+    date: '2026-07-15',
+    items: [
+      { title: 'Characters: the Connections graph', detail: 'A third tab in the Characters window draws the cast as a force-directed network — a line joins two characters for every scene they share, thicker with more scenes, colored by detected communities. Drag nodes, zoom with the wheel, click a character to open their profile.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '1.85',
     date: '2026-07-15',
