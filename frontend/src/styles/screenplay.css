@@ -12669,6 +12669,23 @@ html.android .version-history-panel {
 }
 .fs-goal-quick button:hover { background: rgba(128, 128, 128, 0.28); }
 .fs-goal-current { font-size: 11px; color: var(--fd-text-muted); }
+/* v1.82: Vomit Draft is a Goals mode now. */
+.fs-goal-vomit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--fd-text);
+  cursor: pointer;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--fd-chrome-separator);
+}
+.fs-goal-vomit-note {
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  margin: 6px 0;
+}
 
 /* ── AI Writer (v1.69) — the joke ── */
 .fs-aiwriter {

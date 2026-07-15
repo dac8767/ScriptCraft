@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.81';
+export const APP_VERSION = '1.82';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.82',
+    date: '2026-07-15',
+    items: [
+      { title: 'Goals ate Vomit Draft', detail: 'One tool now: Goals. Pick a goal as always — words, pages, or time (time goals can also run until a clock time) — and check "Vomit Draft Mode" to lock previous text until the goal is done. The lock pill opens Goals; Hemingway mode is gone entirely.', tags: ['Tools', 'New Feature'] },
+    ],
+  },
   {
     version: '1.81',
     date: '2026-07-15',

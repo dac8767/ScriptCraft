@@ -4,13 +4,25 @@
  * count, a page count, or a timed session. Progress renders here and as a
  * chip in the status bar, and lights up green when you hit it.
  *
+ * v1.82: Goals also absorbed VOMIT DRAFT. Any goal can be started with
+ * "Vomit Draft Mode" on — until the goal is reached (or the time is up),
+ * previous text is locked and you can only write forward (the VomitLock
+ * transaction filter, unchanged underneath). Time goals can run for an
+ * amount of minutes OR until a clock time. Hemingway mode is gone.
+ *
  * The active goal persists across reloads (time goals store their wall-clock
- * end, so the countdown survives a refresh).
+ * end, so the countdown survives a refresh). The LOCK does not persist —
+ * an app restart releases it, same as the old Vomit Draft.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore, type WritingGoal } from '../stores/editorStore';
+import { useVomitStore } from '../stores/vomitStore';
+import { vomitFloorFor } from '../editor/extensions/VomitLock';
 import { computeOverviewStats } from '../utils/scriptStatistics';
+import { useSettingsStore } from '../stores/settingsStore';
+import TimeField from './TimeField';
+import { showToast } from './Toast';
 
 function fmtMs(ms: number): string {
   const s = Math.ceil(ms / 1000);
@@ -38,23 +50,43 @@ export function useGoalProgress(words: number, pages: number) {
     return () => clearInterval(t);
   }, [goal, setGoal]);
 
-  if (!goal) return null;
-  if (goal.kind === 'time') {
+  let result: { done: boolean; pct: number; label: string } | null = null;
+  if (goal && goal.kind === 'time') {
     const remaining = Math.max(0, (goal.endsAt || 0) - Date.now());
     const done = !!goal.done || remaining <= 0;
-    return {
+    result = {
       done,
       pct: done ? 100 : 100 - (remaining / ((goal.total || 1) * 1000)) * 100,
       label: done ? `${goal.target} min done` : `${fmtMs(remaining)} left`,
     };
+  } else if (goal) {
+    const current = goal.kind === 'pages' ? pages : words;
+    const done = current >= goal.target;
+    result = {
+      done,
+      pct: Math.min(100, (current / goal.target) * 100),
+      label: `${current.toLocaleString()} / ${goal.target.toLocaleString()} ${goal.kind}`,
+    };
   }
-  const current = goal.kind === 'pages' ? pages : words;
-  const done = current >= goal.target;
-  return {
-    done,
-    pct: Math.min(100, (current / goal.target) * 100),
-    label: `${current.toLocaleString()} / ${goal.target.toLocaleString()} ${goal.kind}`,
-  };
+
+  // v1.82: a completed goal releases Vomit Draft Mode's lock. Lives in this
+  // shared hook so it fires even with the Goals window closed (the StatusBar
+  // chip keeps it mounted). Timed locks also expire on their own clock; this
+  // covers word/page goals, whose lock has no clock (endsAt null).
+  const releasedRef = useRef(false);
+  const done = !!result?.done;
+  useEffect(() => {
+    if (!done) { releasedRef.current = false; return; }
+    if (releasedRef.current) return;
+    releasedRef.current = true;
+    const s = useVomitStore.getState();
+    if (s.session) {
+      s.end();
+      showToast('Goal reached — Vomit Draft Mode off, full editing is back.', 'success');
+    }
+  }, [done]);
+
+  return result;
 }
 
 interface GoalsToolProps {
@@ -63,6 +95,7 @@ interface GoalsToolProps {
 
 export default function GoalsTool({ editor }: GoalsToolProps) {
   const { goal, setGoal, pageCount } = useEditorStore();
+  const vomitSession = useVomitStore((s) => s.session);
   const [docTick, setDocTick] = useState(0);
 
   useEffect(() => {
@@ -89,13 +122,51 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
   const target = targets[kind];
   const setTarget = (v: number) => setTargets((t) => ({ ...t, [kind]: v }));
 
-  const startTime = (m: number) =>
-    setGoal({ kind: 'time', target: m, total: m * 60, endsAt: Date.now() + m * 60000 });
-  const startCount = () =>
+  // v1.82: Vomit Draft Mode — checked when the goal starts, it locks previous
+  // text until the goal is done (any goal kind). Timed goals get a clocked
+  // lock; word/page goals a clockless one released by the progress watcher.
+  const [vomitMode, setVomitMode] = useState(false);
+  const [untilTime, setUntilTime] = useState('');   // canonical "HH:MM"
+
+  const startLock = (endsAt: number | null) => {
+    if (!vomitMode || !editor || editor.isDestroyed) return;
+    useVomitStore.getState().start(endsAt, vomitFloorFor(editor.state.doc));
+    editor.commands.focus('end');
+  };
+
+  const startTime = (m: number) => {
+    const endsAt = Date.now() + m * 60000;
+    setGoal({ kind: 'time', target: m, total: m * 60, endsAt });
+    startLock(endsAt);
+  };
+  const startUntil = () => {
+    const match = /^(\d{2}):(\d{2})$/.exec(untilTime);
+    if (!match) return;
+    const end = new Date();
+    end.setHours(Number(match[1]), Number(match[2]), 0, 0);
+    if (end.getTime() <= Date.now()) end.setDate(end.getDate() + 1); // next occurrence
+    const m = Math.max(1, Math.round((end.getTime() - Date.now()) / 60000));
+    setGoal({ kind: 'time', target: m, total: m * 60, endsAt: end.getTime() });
+    startLock(end.getTime());
+  };
+  const startCount = () => {
     setGoal({ kind, target: Math.max(1, Number(target) || 1) });
+    startLock(null);   // no clock — the progress watcher releases it
+  };
+
+  const stopGoal = () => {
+    if (progress?.done) useEditorStore.getState().incrementGoalsCompleted();
+    setGoal(null);
+    if (useVomitStore.getState().session) {
+      useVomitStore.getState().end();
+      showToast('Vomit Draft Mode off — full editing is back.', 'info');
+    }
+  };
 
   const KINDS: [WritingGoal['kind'], string][] = [['words', 'Words'], ['pages', 'Pages'], ['time', 'Time']];
   const current = kind === 'pages' ? pageCount : words;
+  const timeFormat = useSettingsStore((s) => s.timeFormat);
+  void timeFormat; // TimeField reads the setting itself; subscribing re-renders us on change
 
   return (
     <div className="fs-goals">
@@ -107,19 +178,21 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
           <div className="fs-goal-progress-label">
             {progress.done ? '🎉 ' : ''}{progress.label}
           </div>
-          <button className="fs-goal-stop" onClick={() => {
-            if (progress.done) useEditorStore.getState().incrementGoalsCompleted();
-            setGoal(null);
-          }}>
+          {vomitSession && (
+            <div className="fs-goal-vomit-note">
+              🔒 Vomit Draft Mode — previous text is locked until the goal is done.
+            </div>
+          )}
+          <button className="fs-goal-stop" onClick={stopGoal}>
             {progress.done ? 'Dismiss' : 'Stop current goal'}
           </button>
         </div>
       )}
 
       <p className="fs-tool-intro">
-        Set a target and keep it in view while you write — a word count, a page count,
-        or a timed session. Progress shows here and in the status bar, and lights up
-        when you hit it.
+        Set a target and keep it in view while you write — a word count, a page
+        count, or a timed session. Progress shows here and in the status bar,
+        and lights up when you hit it.
       </p>
 
       <div className="fs-goal-kinds">
@@ -146,6 +219,16 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
             <span>minutes</span>
             <button className="fs-goal-start" onClick={() => startTime(target)}>▶ Start</button>
           </div>
+          {/* v1.82: or run to a clock time instead of a length. */}
+          <div className="fs-goal-row">
+            <span>Write until</span>
+            <TimeField value={untilTime} onChange={setUntilTime} onEnter={startUntil} />
+            <button
+              className="fs-goal-start"
+              disabled={!/^\d{2}:\d{2}$/.test(untilTime)}
+              onClick={startUntil}
+            >▶ Start</button>
+          </div>
           <b className="fs-goal-quick-label">Quick start</b>
           <div className="fs-goal-quick">
             {[5, 15, 30, 120].map((m) => (
@@ -171,6 +254,18 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
           </p>
         </>
       )}
+
+      {/* v1.82: the old Vomit Draft tool lives here now — one checkbox that
+          applies to whatever goal you start next. */}
+      <label className="fs-goal-vomit">
+        <input
+          type="checkbox"
+          disabled={!editor}
+          checked={vomitMode}
+          onChange={(e) => setVomitMode(e.target.checked)}
+        />
+        <span>Vomit Draft Mode — lock previous text until the goal is done</span>
+      </label>
     </div>
   );
 }

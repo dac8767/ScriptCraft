@@ -26,7 +26,7 @@ import {
   FaChevronRight, FaChevronDown, FaKeyboard, FaRobot,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
-import { DoubleChevronIcon, chevronTowards, VomitIcon } from './uiIcons';
+import { DoubleChevronIcon, chevronTowards } from './uiIcons';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { type NavTab } from './SceneNavigator';
 import NavigatorTool, { NavigatorHeaderExtra, NavigatorFooter } from './NavigatorTool';
@@ -38,7 +38,6 @@ import HighlightsTool from './HighlightsTool';
 import TagsPanel from './TagsPanel';
 import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
-import VomitDraftTool from './VomitDraftTool';
 import TypewriterTool from './TypewriterTool';
 import AiWriterTool from './AiWriterTool';
 
@@ -84,9 +83,9 @@ export const ALL_TOOLS: ToolDef[] = [
   // pop-in button still docks it, and that choice is remembered.
   { id: 'analytics', label: 'Analytics', icon: <FaChartBar />, defaultSize: { w: 620, h: 384 }, group: 3, noPanelFit: true },
   { id: 'goals', label: 'Goals', icon: <FaBullseye />, defaultSize: { w: 340, h: 264 }, group: 3 },
-  // v1.69: Derek's pictogram artwork (uiIcons.VomitIcon), replacing the
-  // v1.68 emoji — it tracks currentColor so it reads on every theme.
-  { id: 'vomit', label: 'Vomit Draft', icon: <VomitIcon />, defaultSize: { w: 320, h: 320 }, group: 3 },
+  // v1.82: Vomit Draft is a MODE of Goals now — no separate tool. The 'vomit'
+  // ToolId stays in the type so persisted configs typecheck (scriptnotes
+  // precedent); absence from ALL_TOOLS removes it everywhere it showed.
   // v1.74: grew from one toggle to the full option suite — needs the height.
   // v1.77: stays open on editor clicks — its options are tuned while writing.
   { id: 'typewriter', label: 'Typewriter', icon: <FaKeyboard />, defaultSize: { w: 340, h: 520 }, group: 3, keepOpenOnEditorClick: true },
@@ -204,8 +203,6 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
       return <AnalyticsTool editor={editor} />;
     case 'goals':
       return <GoalsTool editor={editor} />;
-    case 'vomit':
-      return <VomitDraftTool editor={editor} />;
     case 'typewriter':
       return <TypewriterTool editor={editor} />;
     case 'aiwriter':

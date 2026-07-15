@@ -536,7 +536,6 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   indexcards: { side: 'right', enabled: true },
   highlights: { side: 'right', enabled: true },
   goals: { side: 'right', enabled: true },
-  vomit: { side: 'right', enabled: true },
   typewriter: { side: 'right', enabled: true },
   aiwriter: { side: 'right', enabled: true },
   analytics: { side: 'right', enabled: true },
@@ -549,7 +548,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
  *  within each panel. 'Reset to Default' restores exactly this. */
 export const DEFAULT_TOOL_ORDER: string[] = [
   'navigator', 'scenes', 'pages', 'titlepage', 'characters', 'locations', 'spelling', 'assets',
-  'sticky', 'todo', 'fragments', 'beatboard', 'indexcards', 'highlights', 'goals', 'vomit', 'typewriter', 'aiwriter', 'analytics',
+  'sticky', 'todo', 'fragments', 'beatboard', 'indexcards', 'highlights', 'goals', 'typewriter', 'aiwriter', 'analytics',
   'tags',
 ];
 
