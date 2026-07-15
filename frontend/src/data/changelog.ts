@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.91';
+export const APP_VERSION = '1.92';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.92',
+    date: '2026-07-15',
+    items: [
+      { title: 'Vomit Draft takes over the Goals window', detail: 'While the lock is on, Goals shows only what matters: the progress bar, how much of the goal is left, the lock notice (it shakes when a locked edit is rejected), and Stop. The floating pill in the editor\'s upper right is gone — the lock lives in the panel now. End the lock and the full Goals window comes back.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '1.91',
     date: '2026-07-15',

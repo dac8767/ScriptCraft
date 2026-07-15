@@ -99,6 +99,9 @@ export function useGoalProgress(words: number, pages: number) {
 export function GoalsHeaderExtra() {
   const kind = useEditorStore((s) => s.goalKind);
   const setKind = useEditorStore((s) => s.setGoalKind);
+  // v1.92: while Vomit Draft locks the script, the window is JUST the lock
+  // readout — the kind tabs and helper hide with everything else.
+  const locked = useVomitStore((s) => !!s.session);
   const [helpOpen, setHelpOpen] = useState(false);
   const helpBtnRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
@@ -120,6 +123,9 @@ export function GoalsHeaderExtra() {
     }
     setHelpOpen((v) => !v);
   };
+
+  // After every hook — an early return above them is the documented crash.
+  if (locked) return null;
 
   return (
     <span className="fs-goal-headerctl">
@@ -225,26 +231,57 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
   const timeFormat = useSettingsStore((s) => s.timeFormat);
   void timeFormat; // TimeField reads the setting itself; subscribing re-renders us on change
 
-  return (
-    <div className="fs-goals">
-      {goal && progress && (
-        <div className={`fs-goal-progress${progress.done ? ' done' : ''}`}>
-          <div className="fs-goal-progress-bar">
-            <div style={{ width: `${progress.pct}%` }} />
-          </div>
-          <div className="fs-goal-progress-label">
-            {progress.done ? '🎉 ' : ''}{progress.label}
-          </div>
-          {vomitSession && (
-            <div className="fs-goal-vomit-note">
-              🔒 Vomit Draft Mode — previous text is locked until the goal is done.
-            </div>
-          )}
-          <button className="fs-goal-stop" onClick={stopGoal}>
-            {progress.done ? 'Dismiss' : 'Stop current goal'}
-          </button>
+  // v1.92: while the lock runs, the window is ONLY the lock readout (the
+  // upper-right pill is gone — this panel is where the lock lives now).
+  const blockedTick = useVomitStore((s) => s.blockedTick);
+  const [pulse, setPulse] = useState(false);
+  const firstTick = useRef(true);
+  useEffect(() => {
+    if (firstTick.current) { firstTick.current = false; return; }
+    setPulse(true);
+    const t = setTimeout(() => setPulse(false), 600);
+    return () => clearTimeout(t);
+  }, [blockedTick]);
+
+  const progressBlock = goal && progress && (
+    <div className={`fs-goal-progress${progress.done ? ' done' : ''}`}>
+      <div className="fs-goal-progress-bar">
+        <div style={{ width: `${progress.pct}%` }} />
+      </div>
+      <div className="fs-goal-progress-label">
+        {progress.done ? '🎉 ' : ''}{progress.label}
+      </div>
+      {vomitSession && (
+        <div className={`fs-goal-vomit-note${pulse ? ' blocked' : ''}`}>
+          🔒 Vomit Draft Mode — previous text is locked until the goal is done.
         </div>
       )}
+      <button className="fs-goal-stop" onClick={stopGoal}>
+        {progress.done ? 'Dismiss' : 'Stop current goal'}
+      </button>
+    </div>
+  );
+
+  if (vomitSession) {
+    return (
+      <div className="fs-goals fs-goals-locked">
+        {progressBlock || (
+          // Shouldn't happen (locks only start with a goal), but never
+          // trap the user with an empty locked window.
+          <div className="fs-goal-progress">
+            <div className={`fs-goal-vomit-note${pulse ? ' blocked' : ''}`}>
+              🔒 Vomit Draft Mode — previous text is locked.
+            </div>
+            <button className="fs-goal-stop" onClick={stopGoal}>End Vomit Draft Mode</button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="fs-goals">
+      {progressBlock}
 
       {kind === 'time' ? (
         <>

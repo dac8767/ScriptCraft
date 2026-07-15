@@ -12,7 +12,6 @@ import Dropcursor from '@tiptap/extension-dropcursor';
 import SmartTypography from '../editor/extensions/SmartTypography';
 import VomitLock from '../editor/extensions/VomitLock';
 import TypewriterScroll from '../editor/extensions/TypewriterScroll';
-import { VomitTimerPill } from './VomitDraftTool';
 import OutlineBar from './OutlineBar';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import TextAlign from '@tiptap/extension-text-align';
@@ -4086,7 +4085,6 @@ const ScreenplayEditor: React.FC = () => {
           <div className="panel-resize-handle" onPointerDown={(e) => handleResizePointerDown('right', e)} style={{ touchAction: 'none' }} />
         )}
         {!isHistoryMode && <TempToolWindow editor={editor} scrollContainer={editorMainRef.current} />}
-        {!isHistoryMode && <VomitTimerPill />}
         {!isHistoryMode && shelfOpen && <ToolDock side="right" editor={editor} scrollContainer={editorMainRef.current} />}
         {!isHistoryMode && <LocationDatabase editor={editor} style={{ width: rightPanelWidth, minWidth: rightPanelWidth }} />}
         {!isHistoryMode && pluginRegistry.getPanels('right-sidebar').map((p) => (

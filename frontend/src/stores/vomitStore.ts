@@ -6,7 +6,7 @@
  * the sprint.
  *
  * The lock itself is enforced in editor/extensions/VomitLock.ts; the tool UI
- * lives in components/VomitDraftTool.tsx. This store is the single source both
+ * lives in components/GoalsTool.tsx. This store is the single source both
  * read.
  */
 import { create } from 'zustand';
