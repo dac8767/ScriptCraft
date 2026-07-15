@@ -581,40 +581,13 @@ export default function NotebookTool() {
  *  area while the notebook is open. Free canvas only (v1.96). */
 export function NotebookSurface() {
   const page = useNotebookStore((s) => (s.selectedPageId ? s.pages[s.selectedPageId] : null));
-  const focusedBoxId = useNotebookStore((s) => s.focusedBoxId);
   const { renamePage, updatePage } = useNotebookStore.getState();
-  const focusedBox = page?.boxes.find((b) => b.id === focusedBoxId) ?? null;
-
-  // v2.06: formatting for text boxes — execCommand drives the focused
-  // contentEditable's selection; mousedown-preventDefault keeps it focused.
-  const fmt = (cmd: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    document.execCommand(cmd);
-  };
-  // v2.05: table controls act on the focused table box via the pure helpers.
-  const asTable = (b: NbBox): NbTable => ({
-    id: b.id, rows: b.rows || [['', ''], ['', '']],
-    colWidths: b.colWidths || [90, 90], rowHeights: b.rowHeights || [32, 32],
-    align: b.align || 'left',
-  });
-  const mutateTable = (fn: (t: NbTable) => NbTable) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!page || !focusedBox) return;
-    const t = fn(asTable(focusedBox));
-    updatePage(page.id, {
-      boxes: page.boxes.map((b) => (b.id === focusedBox.id
-        ? { ...b, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: t.align }
-        : b)),
-    });
-  };
-  const deleteFocused = () => {
-    if (!page || !focusedBox) return;
-    updatePage(page.id, { boxes: page.boxes.filter((b) => b.id !== focusedBox.id) });
-    useNotebookStore.getState().setFocusedBox(null);
-  };
 
   return (
     <div className="fs-nb-takeover">
+      {/* v2.07: no button row here — the Scrapbook's controls live in the
+          MAIN toolbar (ScrapbookToolbarSection), tagged as tool-specific,
+          and the toolbar's own formatting buttons drive text boxes. */}
       <div className="fs-nb-takeover-head">
         {page ? (
           <input
@@ -627,42 +600,72 @@ export function NotebookSurface() {
         ) : (
           <span className="fs-nb-title fs-nb-title-empty">Scrapbook</span>
         )}
-        {page && (
-          <div className="fs-nb-toolbar">
-            <button onClick={() => window.dispatchEvent(new Event('nb-add-textbox'))}>+ Text box</button>
-            <button onClick={() => window.dispatchEvent(new Event('nb-add-table-canvas'))}>+ Table</button>
-            <button onClick={() => (document.getElementById('fs-nb-filepick') as HTMLInputElement | null)?.click()}>+ Image</button>
-            {/* v2.06: text formatting — always offered; it acts on the
-                selection in whichever text box holds the caret. */}
-            <span className="fs-nb-tb-group">
-              <button title="Bold" onMouseDown={fmt('bold')}><b>B</b></button>
-              <button title="Italic" onMouseDown={fmt('italic')}><i>I</i></button>
-              <button title="Underline" onMouseDown={fmt('underline')}><u>U</u></button>
-              <button title="Strikethrough" onMouseDown={fmt('strikeThrough')}><s>S</s></button>
-            </span>
-            {/* v2.05: the focused TABLE's controls live here now, not on
-                the item. */}
-            {focusedBox?.type === 'table' && (
-              <span className="fs-nb-tb-group">
-                <button onMouseDown={mutateTable(tableAddRow)}>+ Row</button>
-                <button onMouseDown={mutateTable(tableDelRow)}>− Row</button>
-                <button onMouseDown={mutateTable(tableAddCol)}>+ Col</button>
-                <button onMouseDown={mutateTable(tableDelCol)}>− Col</button>
-                {(['left', 'center', 'right'] as const).map((a) => (
-                  <button key={a} className={(focusedBox.align || 'left') === a ? 'active' : ''}
-                    onMouseDown={mutateTable((t) => ({ ...t, align: a }))}>{a[0].toUpperCase()}</button>
-                ))}
-                <button className="fs-nb-danger" onMouseDown={(e) => { e.preventDefault(); deleteFocused(); }}>Delete</button>
-              </span>
-            )}
-          </div>
-        )}
         <button className="fs-nb-return" onClick={closeNotebook}>Return to editor</button>
       </div>
       {page ? (
         <CanvasSurface key={page.id} boxes={page.boxes} onChangeBoxes={(boxes) => updatePage(page.id, { boxes })} />
       ) : (
         <div className="fs-nb-empty">Select or create a page in the Scrapbook panel to start writing.</div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * ScrapbookToolbarSection (v2.07) — the Scrapbook's controls, rendered by
+ * the MAIN toolbar while the Scrapbook is open. A "Scrapbook" tag and a
+ * divider mark them as tool-specific, distinct from the user's own toolbar
+ * items. Inserts always; the focused table's controls appear beside them.
+ * (B/I/U/S live on the toolbar already — its formatting buttons drive
+ * scrapbook text boxes directly, so none are duplicated here.)
+ */
+export function ScrapbookToolbarSection() {
+  const open = useNotebookStore((s) => s.notebookOpen);
+  const page = useNotebookStore((s) => (s.selectedPageId ? s.pages[s.selectedPageId] : null));
+  const focusedBoxId = useNotebookStore((s) => s.focusedBoxId);
+  if (!open || !page) return null;
+  const focusedBox = page.boxes.find((b) => b.id === focusedBoxId) ?? null;
+  const { updatePage } = useNotebookStore.getState();
+
+  const asTable = (b: NbBox): NbTable => ({
+    id: b.id, rows: b.rows || [['', ''], ['', '']],
+    colWidths: b.colWidths || [90, 90], rowHeights: b.rowHeights || [32, 32],
+    align: b.align || 'left',
+  });
+  const mutateTable = (fn: (t: NbTable) => NbTable) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!focusedBox) return;
+    const t = fn(asTable(focusedBox));
+    updatePage(page.id, {
+      boxes: page.boxes.map((b) => (b.id === focusedBox.id
+        ? { ...b, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: t.align }
+        : b)),
+    });
+  };
+  const deleteFocused = () => {
+    if (!focusedBox) return;
+    updatePage(page.id, { boxes: page.boxes.filter((b) => b.id !== focusedBox.id) });
+    useNotebookStore.getState().setFocusedBox(null);
+  };
+
+  return (
+    <div className="toolbar-scrapbook-section">
+      <span className="toolbar-section-tag">Scrapbook</span>
+      <button className="toolbar-btn toolbar-btn-labeled" onClick={() => window.dispatchEvent(new Event('nb-add-textbox'))}>+ Text box</button>
+      <button className="toolbar-btn toolbar-btn-labeled" onClick={() => window.dispatchEvent(new Event('nb-add-table-canvas'))}>+ Table</button>
+      <button className="toolbar-btn toolbar-btn-labeled" onClick={() => (document.getElementById('fs-nb-filepick') as HTMLInputElement | null)?.click()}>+ Image</button>
+      {focusedBox?.type === 'table' && (
+        <span className="fs-nb-tb-group">
+          <button className="toolbar-btn toolbar-btn-labeled" onMouseDown={mutateTable(tableAddRow)}>+ Row</button>
+          <button className="toolbar-btn toolbar-btn-labeled" onMouseDown={mutateTable(tableDelRow)}>− Row</button>
+          <button className="toolbar-btn toolbar-btn-labeled" onMouseDown={mutateTable(tableAddCol)}>+ Col</button>
+          <button className="toolbar-btn toolbar-btn-labeled" onMouseDown={mutateTable(tableDelCol)}>− Col</button>
+          {(['left', 'center', 'right'] as const).map((a) => (
+            <button key={a} className={`toolbar-btn toolbar-btn-labeled${(focusedBox.align || 'left') === a ? ' active' : ''}`}
+              onMouseDown={mutateTable((t) => ({ ...t, align: a }))}>{a[0].toUpperCase()}</button>
+          ))}
+          <button className="toolbar-btn toolbar-btn-labeled fs-nb-danger" onMouseDown={(e) => { e.preventDefault(); deleteFocused(); }}>Delete</button>
+        </span>
       )}
     </div>
   );

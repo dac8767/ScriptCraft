@@ -24,7 +24,9 @@ import {
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
-import { CircleMinusIcon, CirclePlusIcon } from './uiIcons';
+import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
+import { ScrapbookToolbarSection } from './NotebookTool';
+import { useNotebookStore } from '../stores/notebookStore';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { commandDef } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, bigZoneAllowed } from './toolbarBuiltins';
@@ -635,6 +637,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // a hook after an early return crashes React when the toolbar is toggled
   // hidden ('Rendered fewer hooks than during the previous render').
   const { toolbarLeft, toolbarRight, setToolbarZones, toolbarZonesSet } = useEditorStore();
+  // v2.07: while the Scrapbook is open, the toolbar's own formatting buttons
+  // drive the focused text box (execCommand) instead of the script editor —
+  // no duplicate B/I/U/S anywhere.
+  const scrapbookOpen = useNotebookStore((s) => s.notebookOpen);
   // Explicit flag, not length>0 — 'Remove All' legitimately empties the zones
   // and must not re-trigger default seeding.
   const zonesReady = toolbarZonesSet;
@@ -667,6 +673,24 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // inOverflow: overflow-menu copy. showPopups: suppress ColorPicker popups
   // on a collapsed inline copy so only the overflow copy owns popup state.
   const renderBuiltinControl = (key: string, inOverflow = false, showPopups = true): React.ReactNode => {
+    // v2.07: exec-mappable formatting keys act on the Scrapbook's focused
+    // contentEditable while it's open. mousedown-preventDefault keeps the
+    // box's selection alive; same icon, same spot, different target.
+    const SCRAPBOOK_EXEC: Record<string, string> = {
+      bold: 'bold', italic: 'italic', underline: 'underline', strike: 'strikeThrough',
+      alignLeft: 'justifyLeft', alignCenter: 'justifyCenter', alignRight: 'justifyRight', alignJustify: 'justifyFull',
+    };
+    if (scrapbookOpen && SCRAPBOOK_EXEC[key]) {
+      return (
+        <button
+          className="toolbar-btn"
+          title={`${BUILTIN_BY_KEY[key]?.label ?? key} (Scrapbook)`}
+          onMouseDown={(e) => { e.preventDefault(); document.execCommand(SCRAPBOOK_EXEC[key]); }}
+        >
+          {TOOLBAR_ICONS[key]}
+        </button>
+      );
+    }
     switch (key) {
       case 'undo': return (
         <button
@@ -1207,6 +1231,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           the chrome next to the bars. */}
       {leftTokens.map(renderToken)}
       {rightTokens.filter((t) => !bigZoneAllowed(t)).map(renderToken)}
+
+      {/* v2.07: tool-specific controls — tagged so they read as the
+          Scrapbook's, not the user's own toolbar items. */}
+      <ScrapbookToolbarSection />
 
       {/* Spacer */}
       <div style={{ flex: 1 }} />

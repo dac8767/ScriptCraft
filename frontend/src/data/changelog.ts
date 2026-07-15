@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.06';
+export const APP_VERSION = '2.07';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.07',
+    date: '2026-07-15',
+    items: [
+      { title: 'One toolbar, Scrapbook included', detail: 'The Scrapbook window\'s own button row is gone. While the Scrapbook is open, the main toolbar\'s Bold/Italic/Underline/Strikethrough and alignment buttons act on your text boxes directly — no duplicates — and a clearly tagged "Scrapbook" section appears after Editor View with + Text box / + Table / + Image, plus the selected table\'s row, column and alignment controls. The tag and divider mark those as the tool\'s buttons, not part of your customized toolbar.', tags: ['UI', 'Tools'] },
+      { title: 'Panel size rows line up', detail: 'In Customize > Side Panels, the Left and Right Panel Size button groups start at the same edge — the labels share a fixed column.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '2.06',
     date: '2026-07-15',

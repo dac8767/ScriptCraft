@@ -13076,10 +13076,16 @@ html.android .version-history-panel {
   gap: 4px;
 }
 .fs-dnd-rowactions .fs-dnd-rowbtn { margin-left: 0; }
-/* v1.81: size-mode rows sit left-aligned — label, a beat, buttons. */
+/* v1.81: size-mode rows sit left-aligned — label, a beat, buttons.
+   v2.07: the label gets a fixed column so stacked size rows (Left/Right
+   Panel Size) line their button groups up. */
 .fs-customize-row.fs-size-row {
   justify-content: flex-start;
   gap: 28px;
+}
+.fs-customize-row.fs-size-row > .fs-customize-tool {
+  flex: 0 0 auto;
+  min-width: 150px;
 }
 
 /* ── Outline Bar (v1.75, Final Draft's Outline Editor) ── */
@@ -15916,42 +15922,30 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .fs-nb-title::placeholder { color: var(--fd-text-muted); }
 .fs-nb-title-empty { flex: 0 0 auto; }
-.fs-nb-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex: 0 0 auto;
-  flex-wrap: wrap;
-}
-.fs-nb-toolbar button {
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 5px;
-  color: var(--fd-text);
-  font-size: 12px;
-  padding: 3px 8px;
-  cursor: pointer;
-  min-width: 26px;
-}
-.fs-nb-toolbar button:hover { background: var(--fd-menu-hover); }
-
-/* ── structured tables (canvas table boxes) ── */
-.fs-nb-table-wrap { margin: 0; max-width: 100%; overflow-x: auto; }
-/* v2.05/v2.06: toolbar sections — formatting and the focused table's
-   controls. A group is separated by a rule and keeps its buttons tight. */
-.fs-nb-tb-group {
+/* v2.07: the Scrapbook's controls live in the MAIN toolbar, behind a
+   divider and a tag naming the tool — visibly not the user's own items. */
+.toolbar-scrapbook-section {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   margin-left: 10px;
-  padding-left: 10px;
-  border-left: 1px solid var(--fd-border);
+  padding-left: 12px;
+  border-left: 2px solid var(--fd-accent, #4a90d9);
 }
-.fs-nb-toolbar button.active {
+.toolbar-section-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--fd-accent, #4a90d9);
+  margin-right: 4px;
+  user-select: none;
+}
+.toolbar-scrapbook-section .toolbar-btn.active {
   border-color: var(--fd-accent);
   color: var(--fd-accent);
 }
-.fs-nb-toolbar button.fs-nb-danger { color: #e5534b; }
+.toolbar-scrapbook-section .toolbar-btn.fs-nb-danger { color: #e5534b; }
 .fs-nb-table { border-collapse: collapse; }
 .fs-nb-table td {
   position: relative;   /* the resize grips anchor to the cell */
