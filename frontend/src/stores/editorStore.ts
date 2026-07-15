@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { normalizeToolbarZones, migrateToolbarBigZone, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
+import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
 import { uuid } from '../utils/uuid';
 import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { findLanguage, urlsFor } from '../editor/languageCatalog';
@@ -104,6 +104,17 @@ try {
     localStorage.setItem(BIG_FLAG, '1');
     _tbZones = migrateToolbarBigZone(_tbZones.left, _tbZones.right);
     saveViewState({ toolbarLeft: _tbZones.left, toolbarRight: _tbZones.right });
+  }
+} catch { /* storage unavailable — keep what we have */ }
+// v2.14 one-time: the sepAfter ghost separators became real d: tokens —
+// saved layouts get equivalent dividers so the bar looks unchanged, but
+// they're now visible in Customize (movable, removable).
+try {
+  const SEP_FLAG = 'opendraft:toolbarSepDividers214';
+  if (_vs.toolbarZonesSet && !localStorage.getItem(SEP_FLAG)) {
+    localStorage.setItem(SEP_FLAG, '1');
+    _tbZones = { left: migrateSepDividers(_tbZones.left), right: _tbZones.right };
+    saveViewState({ toolbarLeft: _tbZones.left });
   }
 } catch { /* storage unavailable — keep what we have */ }
 

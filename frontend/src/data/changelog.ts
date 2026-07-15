@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.13';
+export const APP_VERSION = '2.14';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.14',
+    date: '2026-07-15',
+    items: [
+      { title: 'Toolbar dividers are yours now', detail: 'The group separators in the toolbar are real divider rows in Customize > Toolbar — drag them anywhere or remove them, exactly like the dividers you add yourself. Your toolbar looks identical; it\'s just all editable now.', tags: ['UI'] },
+    ],
+  },
   {
     version: '2.13',
     date: '2026-07-15',

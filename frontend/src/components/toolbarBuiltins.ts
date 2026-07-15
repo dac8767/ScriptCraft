@@ -28,9 +28,6 @@ export interface ToolbarBuiltin {
   desktopOnly?: boolean;
   /** Hidden on mobile via .zoom-group (mobile shows the single Zoom button). */
   zoom?: boolean;
-  /** Render a trailing separator inside the item's own block (it hides and
-   *  moves with the item). Reproduces the old group boundaries by default. */
-  sepAfter?: boolean;
   /** Permanent (v0.74): can be REORDERED and moved between zones, but never
    *  hidden or removed. normalizeToolbarZones re-inserts it if a persisted
    *  layout is missing it, so it can't be lost. */
@@ -46,28 +43,28 @@ export interface ToolbarBuiltin {
 
 export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'undo', label: 'Undo' },
-  { key: 'redo', label: 'Redo', sepAfter: true },
+  { key: 'redo', label: 'Redo' },
   { key: 'element', label: 'Element' },
   { key: 'insertSection', label: 'Insert Section' },
   { key: 'insertNote', label: 'Insert Note' },
   { key: 'insertChecklist', label: 'Add To-Do List' },
-  { key: 'titlePage', label: 'Title Page', sepAfter: true },
+  { key: 'titlePage', label: 'Title Page' },
   { key: 'fontFamily', label: 'Font Family', priority: '5', desktopOnly: true },
-  { key: 'fontSize', label: 'Font Size', priority: '5', desktopOnly: true, sepAfter: true },
+  { key: 'fontSize', label: 'Font Size', priority: '5', desktopOnly: true },
   { key: 'bold', label: 'Bold', priority: '4', desktopOnly: true },
   { key: 'italic', label: 'Italic', priority: '4', desktopOnly: true },
   { key: 'underline', label: 'Underline', priority: '4', desktopOnly: true },
   { key: 'strike', label: 'Strikethrough', priority: '4', desktopOnly: true },
   { key: 'subscript', label: 'Subscript', priority: '4', desktopOnly: true },
-  { key: 'superscript', label: 'Superscript', priority: '4', desktopOnly: true, sepAfter: true },
+  { key: 'superscript', label: 'Superscript', priority: '4', desktopOnly: true },
   { key: 'textColor', label: 'Text Color', priority: '4', desktopOnly: true },
-  { key: 'highlightColor', label: 'Highlight Color', priority: '4', desktopOnly: true, sepAfter: true },
+  { key: 'highlightColor', label: 'Highlight Color', priority: '4', desktopOnly: true },
   { key: 'alignLeft', label: 'Align Left', priority: '3', desktopOnly: true },
   { key: 'alignCenter', label: 'Align Center', priority: '3', desktopOnly: true },
   { key: 'alignRight', label: 'Align Right', priority: '3', desktopOnly: true },
-  { key: 'alignJustify', label: 'Justify', priority: '3', desktopOnly: true, sepAfter: true },
+  { key: 'alignJustify', label: 'Justify', priority: '3', desktopOnly: true },
   { key: 'find', label: 'Find & Replace', priority: '2' },
-  { key: 'goto', label: 'Go to Page', priority: '2', sepAfter: true },
+  { key: 'goto', label: 'Go to Page', priority: '2' },
   { key: 'scriptNotes', label: 'Notes' },
   { key: 'tags', label: 'Production Tags' },
   { key: 'zoom', label: 'Zoom', priority: '1', zoom: true },
@@ -88,13 +85,20 @@ export const BUILTIN_BY_KEY: Record<string, ToolbarBuiltin> = Object.fromEntries
 // v2.02: the zones are MAIN (left-aligned controls) and BIG BUTTON (large
 // Customize-style launchers). Zoom and Editor View moved into Main — they're
 // controls, not launchers; the default Big Button section is just Customize.
+// v2.14: the group separators are REAL divider tokens now — they show up in
+// Customize > Toolbar like any user divider, movable and removable. (The old
+// sepAfter flags rendered ghosts Customize couldn't see.)
 export const DEFAULT_TOOLBAR_LEFT: string[] = [
-  'undo', 'redo', 'element', 'insertSection', 'insertNote', 'insertChecklist',
-  'fontFamily', 'fontSize', 'bold', 'italic', 'underline', 'strike',
-  'subscript', 'superscript', 'textColor', 'highlightColor',
-  'alignLeft', 'alignCenter', 'alignRight', 'alignJustify',
-  'find', 'goto', 'zoom', 'view',
-].map((k) => `b:${k}`);
+  'b:undo', 'b:redo', 'd:def-history',
+  'b:element', 'b:insertSection', 'b:insertNote', 'b:insertChecklist',
+  'b:fontFamily', 'b:fontSize', 'd:def-font',
+  'b:bold', 'b:italic', 'b:underline', 'b:strike',
+  'b:subscript', 'b:superscript', 'd:def-style',
+  'b:textColor', 'b:highlightColor', 'd:def-color',
+  'b:alignLeft', 'b:alignCenter', 'b:alignRight', 'b:alignJustify', 'd:def-align',
+  'b:find', 'b:goto', 'd:def-nav',
+  'b:zoom', 'b:view',
+];
 
 export const DEFAULT_TOOLBAR_RIGHT: string[] = ['customize'].map((k) => `b:${k}`);
 
@@ -103,6 +107,21 @@ export function bigZoneAllowed(tok: string): boolean {
   if (tok.startsWith('t:') || tok.startsWith('c:')) return true;
   if (tok.startsWith('b:')) return !!BUILTIN_BY_KEY[tok.slice(2)]?.bigOk;
   return false;   // dividers/spacers stay in Main
+}
+
+/** v2.14 one-time: sepAfter separators became real d: tokens. A saved
+ *  layout gets a divider inserted after each item that used to carry one
+ *  (Main zone only — the Big Button section never had separators), so the
+ *  toolbar looks identical before and after, just editable now. */
+const LEGACY_SEP_KEYS = ['redo', 'titlePage', 'fontSize', 'superscript', 'highlightColor', 'alignJustify', 'goto'];
+export function migrateSepDividers(left: string[]): string[] {
+  const out: string[] = [];
+  for (const tok of left) {
+    out.push(tok);
+    const key = tok.startsWith('b:') ? tok.slice(2) : '';
+    if (LEGACY_SEP_KEYS.includes(key)) out.push(`d:sep-${key}`);
+  }
+  return out;
 }
 
 /** v2.02 one-time shape change: the right zone stopped being "more small

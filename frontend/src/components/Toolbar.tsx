@@ -1139,7 +1139,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       <React.Fragment key={tok}>
         <div className={cls} {...(def.priority ? { 'data-priority': def.priority } : {})}>
           {renderBuiltinControl(def.key, false, showPopups)}
-          {def.sepAfter && <div className="toolbar-separator" />}
         </div>
         {def.key === 'zoomIn' && (
           <div className="toolbar-group zoom-mobile-group">
