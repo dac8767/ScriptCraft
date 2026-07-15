@@ -67,7 +67,8 @@ function caretRect(editor: Editor): { top: number; bottom: number } | null {
 }
 
 /** Their setPadding, on our sizer: pad .page-sizer so the doc's first/last
- *  lines can reach the typewriter line. Bottom-only in "once reached" mode. */
+ *  lines can reach the typewriter line. (v1.79: the "only once reached"
+ *  option is gone — the mode always pins, so both ends get padding.) */
 function applySizerPadding(scroller: HTMLElement): void {
   const sizer = scroller.querySelector('.page-sizer') as HTMLElement | null;
   if (!sizer) return;
@@ -78,12 +79,8 @@ function applySizerPadding(scroller: HTMLElement): void {
     return;
   }
   const pad = Math.round(scroller.clientHeight * s.typewriterOffset);
+  sizer.style.paddingTop = `${pad}px`;
   sizer.style.paddingBottom = `${pad}px`;
-  if (s.typewriterOnlyWhenReached) {
-    sizer.style.removeProperty('padding-top');
-  } else {
-    sizer.style.paddingTop = `${pad}px`;
-  }
 }
 
 /** Hex → translucent rgba for the highlight (the bar multiplies over the

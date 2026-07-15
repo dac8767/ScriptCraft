@@ -12,7 +12,6 @@ interface ViewState {
   typewriterEnabled?: boolean;
   typewriterFollowCursor?: boolean;
   typewriterOffset?: number;
-  typewriterOnlyWhenReached?: boolean;
   typewriterHighlightLine?: boolean;
   typewriterHighlightColor?: string;
   typewriterDimOthers?: boolean;
@@ -886,10 +885,6 @@ interface EditorState {
    *  sits, as a fraction of the viewport from the top (0.5 = center). */
   typewriterOffset: number;
   setTypewriterOffset: (v: number) => void;
-  /** v1.72: don't pin until the caret first REACHES the typewriter line —
-   *  the top of the script scrolls naturally (bottom-only sizer padding). */
-  typewriterOnlyWhenReached: boolean;
-  setTypewriterOnlyWhenReached: (v: boolean) => void;
   /** v1.72: highlight bar glued to the caret's line (independent toggle). */
   typewriterHighlightLine: boolean;
   setTypewriterHighlightLine: (v: boolean) => void;
@@ -1452,11 +1447,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const clamped = Math.min(0.8, Math.max(0.2, v));
     saveViewState({ typewriterOffset: clamped });
     set({ typewriterOffset: clamped });
-  },
-  typewriterOnlyWhenReached: (_vs.typewriterOnlyWhenReached as boolean) ?? false,
-  setTypewriterOnlyWhenReached: (v) => {
-    saveViewState({ typewriterOnlyWhenReached: v });
-    set({ typewriterOnlyWhenReached: v });
   },
   typewriterHighlightLine: (_vs.typewriterHighlightLine as boolean) ?? false,
   setTypewriterHighlightLine: (v) => {

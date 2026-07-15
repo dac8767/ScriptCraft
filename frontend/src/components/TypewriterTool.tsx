@@ -21,7 +21,6 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
     typewriterEnabled, setTypewriterEnabled,
     typewriterFollowCursor, setTypewriterFollowCursor,
     typewriterOffset, setTypewriterOffset,
-    typewriterOnlyWhenReached, setTypewriterOnlyWhenReached,
     typewriterHighlightLine, setTypewriterHighlightLine,
     typewriterHighlightColor, setTypewriterHighlightColor,
     typewriterDimOthers, setTypewriterDimOthers,
@@ -70,16 +69,6 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
             }}
           />
           <span>Also center when the cursor moves</span>
-        </label>
-
-        <label className="fs-typewriter-toggle">
-          <input
-            type="checkbox"
-            disabled={!typewriterEnabled}
-            checked={typewriterOnlyWhenReached}
-            onChange={(e) => { setTypewriterOnlyWhenReached(e.target.checked); snapToCenter(); }}
-          />
-          <span>Only pin once the line is first reached</span>
         </label>
 
         <div className="fs-typewriter-offset">

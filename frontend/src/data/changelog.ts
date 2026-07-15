@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.78';
+export const APP_VERSION = '1.79';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.79',
+    date: '2026-07-15',
+    items: [
+      { title: 'One less Typewriter knob', detail: '"Only pin once the line is first reached" is gone — Typewriter scrolling now always pins from the first line (the page gets matching breathing room above and below).', tags: ['Tools'] },
+    ],
+  },
   {
     version: '1.78',
     date: '2026-07-15',
