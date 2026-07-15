@@ -31,7 +31,7 @@ import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { type NavTab } from './SceneNavigator';
 import NavigatorTool, { NavigatorHeaderExtra, NavigatorFooter } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
-import GoalsTool from './GoalsTool';
+import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
 import CharacterProfiles from './CharacterProfiles';
 import { StickyNotesTool, FragmentsTool, TodoTool } from './StickyNotes';
 import HighlightsTool from './HighlightsTool';
@@ -116,6 +116,7 @@ export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id)
  *  chrome paths render the same thing. */
 export const TOOL_HEADER_EXTRAS: Partial<Record<ToolId, React.FC>> = {
   navigator: NavigatorHeaderExtra,
+  goals: GoalsHeaderExtra,
 };
 export const TOOL_FOOTERS: Partial<Record<ToolId, React.FC>> = {
   navigator: NavigatorFooter,

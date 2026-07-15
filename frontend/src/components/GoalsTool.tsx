@@ -15,6 +15,7 @@
  * an app restart releases it, same as the old Vomit Draft.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore, type WritingGoal } from '../stores/editorStore';
 import { useVomitStore } from '../stores/vomitStore';
@@ -89,6 +90,62 @@ export function useGoalProgress(words: number, pages: number) {
   return result;
 }
 
+
+/** v1.85: the window-header controls — the Words/Pages/Time tabs and the ?
+ *  helper. Rendered by the chrome (TOOL_HEADER_EXTRAS), so the state lives
+ *  in the store (goalKind). The helper popover PORTALS to document.body and
+ *  positions from the button — a child of the header row could never escape
+ *  the panel's overflow (the AddMenu lesson). */
+export function GoalsHeaderExtra() {
+  const kind = useEditorStore((s) => s.goalKind);
+  const setKind = useEditorStore((s) => s.setGoalKind);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpBtnRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!helpOpen) return;
+    const close = (e: PointerEvent) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest('.fs-help-pop') && t !== helpBtnRef.current) setHelpOpen(false);
+    };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [helpOpen]);
+
+  const toggleHelp = () => {
+    if (!helpOpen && helpBtnRef.current) {
+      const r = helpBtnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 6, left: Math.max(8, Math.min(r.left - 120, window.innerWidth - 288)) });
+    }
+    setHelpOpen((v) => !v);
+  };
+
+  return (
+    <span className="fs-goal-headerctl">
+      <span className="fs-goal-tabs">
+        {(['words', 'pages', 'time'] as const).map((k) => (
+          <button
+            key={k}
+            className={kind === k ? 'active' : ''}
+            onClick={() => setKind(k)}
+          >{k[0].toUpperCase() + k.slice(1)}</button>
+        ))}
+      </span>
+      <button ref={helpBtnRef} className="fs-help-btn" title="About Goals" onClick={toggleHelp}>?</button>
+      {helpOpen && pos && createPortal(
+        <div className="fs-help-pop" style={{ top: pos.top, left: pos.left }}>
+          Set a target and keep it in view while you write — a word count, a
+          page count, or a timed session. Progress shows here and in the
+          status bar, and lights up when you hit it. Vomit Draft Mode locks
+          previous text until the goal is done.
+        </div>,
+        document.body,
+      )}
+    </span>
+  );
+}
+
 interface GoalsToolProps {
   editor: Editor | null;
 }
@@ -115,7 +172,8 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
   const progress = useGoalProgress(words, pageCount);
 
   const DEFAULT_TARGETS: Record<WritingGoal['kind'], number> = { words: 500, pages: 2, time: 60 };
-  const [kind, setKind] = useState<WritingGoal['kind']>(goal ? goal.kind : 'time');
+  // v1.85: the kind is store state — the header tabs set it.
+  const kind = useEditorStore((s) => s.goalKind);
   const [targets, setTargets] = useState<Record<WritingGoal['kind'], number>>(
     () => ({ ...DEFAULT_TARGETS, ...(goal ? { [goal.kind]: goal.target } : {}) }),
   );
@@ -163,7 +221,6 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
     }
   };
 
-  const KINDS: [WritingGoal['kind'], string][] = [['words', 'Words'], ['pages', 'Pages'], ['time', 'Time']];
   const current = kind === 'pages' ? pageCount : words;
   const timeFormat = useSettingsStore((s) => s.timeFormat);
   void timeFormat; // TimeField reads the setting itself; subscribing re-renders us on change
@@ -189,26 +246,18 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
         </div>
       )}
 
-      <p className="fs-tool-intro">
-        Set a target and keep it in view while you write — a word count, a page
-        count, or a timed session. Progress shows here and in the status bar,
-        and lights up when you hit it.
-      </p>
-
-      <div className="fs-goal-kinds">
-        {KINDS.map(([k, label]) => (
-          <button
-            key={k}
-            className={kind === k ? 'active' : ''}
-            onClick={() => setKind(k)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
       {kind === 'time' ? (
         <>
+          {/* v1.85: Write-until leads (Derek's order), minutes below. */}
+          <div className="fs-goal-row">
+            <span>Write until</span>
+            <TimeField value={untilTime} onChange={setUntilTime} onEnter={startUntil} />
+            <button
+              className="fs-goal-start"
+              disabled={!/^\d{2}:\d{2}$/.test(untilTime)}
+              onClick={startUntil}
+            >▶ Start</button>
+          </div>
           <div className="fs-goal-row">
             <input
               type="number"
@@ -218,16 +267,6 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
             />
             <span>minutes</span>
             <button className="fs-goal-start" onClick={() => startTime(target)}>▶ Start</button>
-          </div>
-          {/* v1.82: or run to a clock time instead of a length. */}
-          <div className="fs-goal-row">
-            <span>Write until</span>
-            <TimeField value={untilTime} onChange={setUntilTime} onEnter={startUntil} />
-            <button
-              className="fs-goal-start"
-              disabled={!/^\d{2}:\d{2}$/.test(untilTime)}
-              onClick={startUntil}
-            >▶ Start</button>
           </div>
           <b className="fs-goal-quick-label">Quick start</b>
           <div className="fs-goal-quick">

@@ -12891,6 +12891,60 @@ html.android .version-history-panel {
   margin: 4px;
 }
 .fs-dnd-hiddencol { background: transparent; }
+/* v1.85: Goals header controls — kind tabs + the ? helper. */
+.fs-goal-headerctl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.fs-goal-tabs {
+  display: inline-flex;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.fs-goal-tabs button {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+.fs-goal-tabs button.active {
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+}
+.fs-help-btn {
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  line-height: 1;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+.fs-help-btn:hover { color: var(--fd-text); border-color: var(--fd-accent, #4a90d9); }
+.fs-help-pop {
+  position: fixed;
+  z-index: 100001;
+  width: 280px;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  box-shadow: 0 6px 24px var(--fd-shadow);
+  color: var(--fd-text);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 10px 12px;
+}
+
 /* v1.83: color chips in Format > Highlighting. */
 .fs-hl-chip {
   display: inline-block;

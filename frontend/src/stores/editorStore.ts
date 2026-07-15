@@ -927,6 +927,10 @@ interface EditorState {
    *  toolbar highlighter button and Format > Highlighting. Persisted. */
   highlightColor: string;
   setHighlightColor: (v: string) => void;
+  /** v1.85: which goal kind the Goals window shows — lives here because the
+   *  Words/Pages/Time tabs render in the window HEADER (chrome slot). */
+  goalKind: 'words' | 'pages' | 'time';
+  setGoalKind: (v: 'words' | 'pages' | 'time') => void;
   preferencesRequest: { open: boolean; tab?: 'saveloc' };
   openPreferences: (tab?: 'saveloc') => void;
   closePreferences: () => void;
@@ -1516,6 +1520,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ highlightColor: v });
     set({ highlightColor: v });
   },
+  goalKind: 'time',
+  setGoalKind: (v) => set({ goalKind: v }),
   preferencesRequest: { open: false },
   openPreferences: (tab) => set({ preferencesRequest: { open: true, tab } }),
   closePreferences: () => set({ preferencesRequest: { open: false } }),

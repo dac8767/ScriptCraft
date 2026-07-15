@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.84';
+export const APP_VERSION = '1.85';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.85',
+    date: '2026-07-15',
+    items: [
+      { title: 'Goals wears its controls in the header', detail: 'Words / Pages / Time are tabs in the window header now, next to a ? that opens the tool\'s explainer as a popover. In the Time tab, "Write until" leads and minutes follow.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '1.84',
     date: '2026-07-15',
