@@ -12,9 +12,8 @@
  * Core elements can be reordered but not hidden — hiding Scene Heading or
  * Action would leave a script with no way to type its own body.
  */
-import React from 'react';
-import AddMenu from './AddMenu';
 import { useFormattingTemplateStore, DUAL_DIALOGUE_ID } from '../stores/formattingTemplateStore';
+import { DndColumns } from './CustomizePanelsDialog';
 
 /** Elements a script can't function without — reorderable, never hidable. */
 const REQUIRED_IDS = ['sceneHeading', 'action', 'character', 'dialogue'];
@@ -35,7 +34,6 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
   const setElementHidden = useFormattingTemplateStore((s) => s.setElementHidden);
   const setElementOrder = useFormattingTemplateStore((s) => s.setElementOrder);
   const resetElementOverrides = useFormattingTemplateStore((s) => s.resetElementOverrides);
-  const [dragIdx, setDragIdx] = React.useState<number | null>(null);
 
   // Re-derived whenever overrides change, so the list reflects every edit.
   void elementOrder; void elementHidden;
@@ -68,15 +66,6 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
 
   const hiddenIds = ids.filter((id) => !visibleIds.includes(id));
 
-  const moveTo = (from: number, to: number) => {
-    const next = [...visibleIds];
-    const [m] = next.splice(from, 1);
-    next.splice(to, 0, m);
-    // Hidden elements keep their stored place, so re-adding one puts it back
-    // roughly where it was rather than at the end.
-    setElementOrder([...next, ...ids.filter((id) => !visibleIds.includes(id))]);
-  };
-
   const setEnabled = (id: string, enabled: boolean) => {
     if (!enabled && REQUIRED_IDS.includes(id)) return;
     setElementHidden(
@@ -86,7 +75,6 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
     );
   };
 
-  const showAll = () => setElementHidden([]);
   const hideAll = () => setElementHidden(ids.filter((id) => !REQUIRED_IDS.includes(id)));
   const resetDefault = () => resetElementOverrides();
 
@@ -95,62 +83,59 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
       <section>
         <h3>Elements</h3>
         <p className="fs-customize-hint">
-          Drag to reorder. Hidden elements disappear from the Element dropdown
-          and the Insert menu. Core elements (Scene Heading, Action, Character,
-          Dialogue) can be reordered but not hidden.
+          Drag elements between Shown and Hidden — where you drop one is its
+          place in the Element dropdown and the Insert menu. Core elements
+          (Scene Heading, Action, Character, Dialogue) can be reordered but
+          not hidden.
         </p>
-        <div className="fs-customize-grid">
-          {visibleIds.map((id, idx) => {
-            const required = REQUIRED_IDS.includes(id);
-            return (
-              <div
-                key={id}
-                className={`fs-customize-row${dragIdx === idx ? ' dragging' : ''}`}
-                draggable
-                onDragStart={(e) => { setDragIdx(idx); e.dataTransfer.effectAllowed = 'move'; }}
-                onDragOver={(e) => { if (dragIdx !== null) e.preventDefault(); }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (dragIdx !== null && dragIdx !== idx) moveTo(dragIdx, idx);
-                  setDragIdx(null);
-                }}
-                onDragEnd={() => setDragIdx(null)}
-              >
-                <span className="fs-customize-tool">
-                  <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
-                  {labelOf(id)}
-                </span>
-                <span className="fs-customize-seg">
-                  <button className="active" title="This element is in the list">Show</button>
-                  <button
-                    disabled={required}
-                    title={required
-                      ? 'Core elements can’t be hidden'
-                      : 'Remove from the Element list (re-add it from + Add Item)'}
-                    onClick={() => setEnabled(id, false)}
-                  >Hide</button>
-                </span>
-              </div>
-            );
-          })}
-        </div>
-        <div className="fs-tbzone-adders fs-adders-equal">
-          {/* Hidden elements come back from here — same as every other tab. */}
-          <AddMenu
-            onPick={(v) => { if (v === 'all') showAll(); else setEnabled(v, true); }}
-            groups={[
-              {
-                label: 'Show All',
-                options: hiddenIds.length > 0
-                  ? [{ value: 'all', label: 'Show All - Elements' }]
-                  : [],
-              },
-              {
+        <DndColumns
+          columns={[
+            {
+              id: 'shown', title: 'Shown',
+              sections: [{
+                rows: visibleIds.map((id) => {
+                  const required = REQUIRED_IDS.includes(id);
+                  return {
+                    key: id,
+                    content: (
+                      <span className="fs-customize-tool">
+                        {labelOf(id)}
+                        {required && <span className="fs-dnd-required">(required)</span>}
+                        {!required && (
+                          <button className="fs-dnd-rowbtn" title="Hide this element" onClick={() => setEnabled(id, false)}>×</button>
+                        )}
+                      </span>
+                    ),
+                  };
+                }),
+              }],
+            },
+            {
+              id: 'hidden', title: 'Hidden', isHidden: true,
+              sections: [{
                 label: 'Elements',
-                options: hiddenIds.map((id) => ({ value: id, label: labelOf(id) })),
-              },
-            ]}
-          />
+                rows: hiddenIds.map((id) => ({
+                  key: id,
+                  content: (
+                    <span className="fs-customize-tool">
+                      {labelOf(id)}
+                      <button className="fs-dnd-rowbtn" title="Show this element" onClick={() => setEnabled(id, true)}>+</button>
+                    </span>
+                  ),
+                })),
+              }],
+            },
+          ]}
+          onDrop={(src2, dst) => {
+            const id = src2.key;
+            if (dst.col === 'hidden') { setEnabled(id, false); return; }
+            const next = visibleIds.filter((x) => x !== id);
+            next.splice(Math.min(dst.idx, next.length), 0, id);
+            setElementOrder([...next, ...ids.filter((x) => !next.includes(x))]);
+            if (hiddenIds.includes(id)) setEnabled(id, true);
+          }}
+        />
+        <div className="fs-tbzone-adders fs-adders-equal">
           <button className="swn-add-btn" onClick={hideAll}>Hide All</button>
           <button className="swn-add-btn" onClick={resetDefault}>Reset to Default</button>
         </div>

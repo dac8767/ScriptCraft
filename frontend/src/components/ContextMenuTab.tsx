@@ -1,31 +1,25 @@
 /**
- * Customize → Context Menu (v0.88).
+ * Customize → Context Menu (v0.88; v1.81 Outlook-style).
  *
- * Deliberately the same shape as the Toolbar and Side Panels tabs: drag to
- * reorder, a Show/Hide pair per row, a categorised "+ Add Item" dropdown, and
- * Hide All / Reset. The Show button is redundant information (a listed row is
- * visible by definition) but it's there because every other tab has it, and an
- * inconsistent control is worse than a redundant one.
+ * Same shape as the other layout tabs since v1.81: a Shown column and a
+ * Hidden column (organized by the menu's categories), drag between them —
+ * drop position is menu position. Rows keep the click fallback (× / +).
  *
  * Only top-level items live here. What's INSIDE an item is owned by that
- * feature's own tab — the elements under Element come from the Elements tab — so
- * one change updates every menu instead of the two drifting apart.
+ * feature's own tab — the elements under Element come from the Elements tab —
+ * so one change updates every menu instead of the two drifting apart.
  */
-import React from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import {
   CONTEXT_MENU_SECTIONS, CONTEXT_MENU_GROUPS, type ContextMenuGroup,
 } from './ScriptContextMenu';
-import { titleCase } from './CustomizePanelsDialog';
-import AddMenu from './AddMenu';
+import { DndColumns } from './CustomizePanelsDialog';
 
 export default function ContextMenuTab() {
   const contextMenuHidden = useEditorStore((s) => s.contextMenuHidden);
   const setContextMenuHidden = useEditorStore((s) => s.setContextMenuHidden);
   const contextMenuOrder = useEditorStore((s) => s.contextMenuOrder);
   const setContextMenuOrder = useEditorStore((s) => s.setContextMenuOrder);
-
-  const [dragIdx, setDragIdx] = React.useState<number | null>(null);
 
   const known = CONTEXT_MENU_SECTIONS.map((x) => x.id);
   const sectionOf = (id: string) => CONTEXT_MENU_SECTIONS.find((x) => x.id === id);
@@ -40,99 +34,71 @@ export default function ContextMenuTab() {
   const shown = fullOrder.filter((id) => !contextMenuHidden.includes(id));
   const hidden = fullOrder.filter((id) => contextMenuHidden.includes(id));
 
-  /** Reorder the visible rows, then write the FULL order back — hidden items
-   *  keep their slots, so un-hiding one restores it where it was rather than
-   *  dumping it at the end. */
-  const move = (from: number, to: number) => {
-    const next = [...shown];
-    const [m] = next.splice(from, 1);
-    next.splice(to, 0, m);
-    let vi = 0;
-    setContextMenuOrder(fullOrder.map((id) =>
-      contextMenuHidden.includes(id) ? id : next[vi++]));
-  };
+  const hiddenIn = (g: ContextMenuGroup) =>
+    hidden.filter((id) => sectionOf(id)?.group === g);
 
   const show = (id: string) =>
     setContextMenuHidden(contextMenuHidden.filter((x) => x !== id));
   const hide = (id: string) =>
     setContextMenuHidden([...contextMenuHidden.filter((x) => x !== id), id]);
 
-  /** Hidden items available to add, by category. */
-  const hiddenIn = (g: ContextMenuGroup) =>
-    hidden.filter((id) => sectionOf(id)?.group === g);
-
-  const onAdd = (value: string) => {
-    if (value.startsWith('all:')) {
-      const g = value.slice(4) as ContextMenuGroup;
-      const ids = hiddenIn(g);
-      setContextMenuHidden(contextMenuHidden.filter((x) => !ids.includes(x)));
-      return;
-    }
-    show(value);
-  };
-
   return (
     <section>
       <h3>Context Menu</h3>
       <p className="fs-customize-hint">
-        Drag to reorder the right-click menu. Hide what you don’t use and add it
-        back with + Add Item. Undo, Redo, Cut, Copy, Paste, Select All, Delete,
-        Delete Element and Customize Context Menu are permanent, so they aren’t
-        listed. What’s <em>inside</em> an item is set by its own tab — the
-        elements under Element come from the Elements tab.
+        Drag items between Shown and Hidden — where you drop one is where it
+        sits on the right-click menu. Undo, Redo, Cut, Copy, Paste, Select
+        All, Delete, Delete Element and Customize Context Menu are permanent,
+        so they aren't listed. What's <em>inside</em> an item is set by its
+        own tab — the elements under Element come from the Elements tab.
       </p>
 
-      <div className="fs-customize-grid">
-        {shown.map((id, idx) => (
-          <div
-            key={id}
-            className={`fs-customize-row${dragIdx === idx ? ' dragging' : ''}`}
-            draggable
-            onDragStart={(e) => { setDragIdx(idx); e.dataTransfer.effectAllowed = 'move'; }}
-            onDragOver={(e) => { if (dragIdx !== null) e.preventDefault(); }}
-            onDrop={(e) => {
-              e.preventDefault();
-              if (dragIdx !== null && dragIdx !== idx) move(dragIdx, idx);
-              setDragIdx(null);
-            }}
-            onDragEnd={() => setDragIdx(null)}
-          >
-            <span className="fs-customize-tool">
-              <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
-              {labelOf(id)}
-            </span>
-            <span className="fs-customize-seg">
-              {/* Show is the active state — this row is on the menu. Hide removes
-                  it and stashes it in + Add Item. */}
-              <button className="active" title="This item is on the context menu">Show</button>
-              <button
-                title="Remove from the context menu (re-add it from + Add Item)"
-                onClick={() => hide(id)}
-              >Hide</button>
-            </span>
-          </div>
-        ))}
-        {shown.length === 0 && (
-          <p className="fs-customize-hint">Every item is hidden. Add one back with + Add Item.</p>
-        )}
-      </div>
+      <DndColumns
+        columns={[
+          {
+            id: 'shown', title: 'Shown',
+            sections: [{
+              rows: shown.map((id) => ({
+                key: id,
+                content: (
+                  <span className="fs-customize-tool">
+                    {labelOf(id)}
+                    <button className="fs-dnd-rowbtn" title="Hide this item" onClick={() => hide(id)}>×</button>
+                  </span>
+                ),
+              })),
+            }],
+          },
+          {
+            id: 'hidden', title: 'Hidden', isHidden: true,
+            sections: CONTEXT_MENU_GROUPS.map((g) => ({
+              label: g,
+              rows: hiddenIn(g).map((id) => ({
+                key: id,
+                content: (
+                  <span className="fs-customize-tool">
+                    {labelOf(id)}
+                    <button className="fs-dnd-rowbtn" title="Show this item" onClick={() => show(id)}>+</button>
+                  </span>
+                ),
+              })),
+            })),
+          },
+        ]}
+        onDrop={(src, dst) => {
+          const id = src.key;
+          if (dst.col === 'hidden') {
+            if (!contextMenuHidden.includes(id)) hide(id);
+            return;
+          }
+          const next = shown.filter((x) => x !== id);
+          next.splice(Math.min(dst.idx, next.length), 0, id);
+          setContextMenuOrder([...next, ...hidden.filter((x) => x !== id)]);
+          if (contextMenuHidden.includes(id)) show(id);
+        }}
+      />
 
       <div className="fs-tbzone-adders fs-adders-equal">
-        <AddMenu
-          onPick={onAdd}
-          groups={[
-            {
-              label: 'Show All',
-              options: CONTEXT_MENU_GROUPS
-                .filter((g) => hiddenIn(g).length > 0)
-                .map((g) => ({ value: `all:${g}`, label: `Show All - ${titleCase(g)}` })),
-            },
-            ...CONTEXT_MENU_GROUPS.map((g) => ({
-              label: g,
-              options: hiddenIn(g).map((id) => ({ value: id, label: labelOf(id) })),
-            })),
-          ]}
-        />
         <button
           className="swn-add-btn"
           title="Hide every item"

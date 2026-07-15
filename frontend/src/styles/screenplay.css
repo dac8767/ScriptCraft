@@ -12874,6 +12874,25 @@ html.android .version-history-panel {
   margin: 4px;
 }
 .fs-dnd-hiddencol { background: transparent; }
+/* v1.81: "(required)" tag on locked rows (File), slightly greyed. */
+.fs-dnd-required {
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  margin-left: 6px;
+}
+.fs-dnd-row.locked .fs-customize-tool { opacity: 0.7; }
+.fs-dnd-rowactions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.fs-dnd-rowactions .fs-dnd-rowbtn { margin-left: 0; }
+/* v1.81: size-mode rows sit left-aligned — label, a beat, buttons. */
+.fs-customize-row.fs-size-row {
+  justify-content: flex-start;
+  gap: 28px;
+}
 
 /* ── Outline Bar (v1.75, Final Draft's Outline Editor) ── */
 .fs-outline-bar {

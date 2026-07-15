@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.80';
+export const APP_VERSION = '1.81';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.81',
+    date: '2026-07-15',
+    items: [
+      { title: 'Customize: every list tab is ribbon-style now', detail: 'Context Menu, Elements and Themes joined the Shown/Hidden drag-and-drop columns. Themes keep their Edit/Delete buttons on the row; core elements read "(required)" and can\'t be hidden — and so does File on the Menu Bar tab, slightly greyed. Size options (Menu Bar, Toolbar) sit left-aligned next to their labels.', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.80',
     date: '2026-07-15',

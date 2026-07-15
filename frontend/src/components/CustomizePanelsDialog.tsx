@@ -704,7 +704,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               Drag menus between Shown and Hidden — where you drop one is
               where it sits on the bar. File always stays visible.
             </p>
-            <div className="fs-customize-row">
+            {/* v1.81: size rows are left-aligned — label, a beat of space,
+                then the buttons, instead of pushing them to the far edge. */}
+            <div className="fs-customize-row fs-size-row">
               <span className="fs-customize-tool">Menu Bar Size</span>
               <span className="fs-customize-seg">
                 {/* v0.97: no Hide. Hiding the menu bar took File off screen with
@@ -742,6 +744,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                         <span className="fs-customize-tool">
                           {iconSlot(MENU_ICONS[label] ?? null)}
                           {label}
+                          {label === 'File' && <span className="fs-dnd-required">(required)</span>}
                           {label !== 'File' && (
                             <button
                               className="fs-dnd-rowbtn"
@@ -811,7 +814,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               an item by category until you drag it back. Drop position is the
               item's position.
             </p>
-            <div className="fs-customize-row">
+            <div className="fs-customize-row fs-size-row">
               <span className="fs-customize-tool">Toolbar Size</span>
               <span className="fs-customize-seg">
                 {(['compact', 'comfortable', 'custom', 'hidden'] as const).map((m) => (

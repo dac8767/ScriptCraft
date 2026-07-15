@@ -9,6 +9,7 @@
 import React from 'react';
 import AddMenu from './AddMenu';
 import ColorPicker from './ColorPicker';
+import { DndColumns } from './CustomizePanelsDialog';
 import { useEditorStore } from '../stores/editorStore';
 import { useThemeStore } from '../stores/themeStore';
 import {
@@ -29,7 +30,6 @@ export default function ThemesTab() {
   const deleteCustomTheme = useThemeStore((s) => s.deleteCustomTheme);
 
   const [editing, setEditing] = React.useState<CustomTheme | null>(null);
-  const [dragIdx, setDragIdx] = React.useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = React.useState<string | null>(null);
   const [pickerKey, setPickerKey] = React.useState<string | null>(null);
   const [importNote, setImportNote] = React.useState('');
@@ -44,15 +44,6 @@ export default function ThemesTab() {
    *  list and lives in + Add Item until you put it back. */
   const visibleIds = ids.filter((id) => !hiddenThemes.includes(id));
   const hiddenIds = ids.filter((id) => hiddenThemes.includes(id));
-
-  const move = (from: number, to: number) => {
-    const next = [...visibleIds];
-    const [m] = next.splice(from, 1);
-    next.splice(to, 0, m);
-    // Hidden themes keep their stored place, so re-adding one puts it back near
-    // where it was rather than at the end.
-    setThemeOrder([...next, ...hiddenIds]);
-  };
 
   const newTheme = () => setEditing({
     id: `custom:${Date.now()}`,
@@ -172,66 +163,87 @@ export default function ThemesTab() {
     <section>
       <h3>Themes</h3>
       <p className="fs-customize-hint">
-        Drag to reorder the View → Theme menu. Hide themes you never use.
-        Built-in themes can be reordered and hidden, but not edited or deleted.
+        Drag themes between Shown and Hidden — where you drop one is its place
+        in the View → Theme menu. Built-in themes can be reordered and hidden,
+        but not edited or deleted; the theme you're using can't be hidden.
       </p>
 
-      <div className="fs-customize-grid">
-        {visibleIds.map((id, idx) => {
-          const custom = isCustomTheme(id);
-          return (
-            <div
-              key={id}
-              className={`fs-customize-row${dragIdx === idx ? ' dragging' : ''}`}
-              draggable
-              onDragStart={(e) => { setDragIdx(idx); e.dataTransfer.effectAllowed = 'move'; }}
-              onDragOver={(e) => { if (dragIdx !== null) e.preventDefault(); }}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (dragIdx !== null && dragIdx !== idx) move(dragIdx, idx);
-                setDragIdx(null);
-              }}
-              onDragEnd={() => setDragIdx(null)}
-            >
-              <span className="fs-customize-tool">
-                <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
-                {labelOf(id)}
-                {theme === id && <span className="fs-theme-active-dot" title="Current theme"> ●</span>}
-                {custom && <span className="fs-theme-badge">Custom</span>}
-              </span>
-              <span className="fs-theme-row-controls">
-                <span className="fs-customize-seg">
-                  {/* Show is the active state; Hide removes the theme from the
-                      list and stashes it in + Add Item, as everywhere else. */}
-                  <button className="active" title="This theme is in the list">Show</button>
-                  <button
-                    disabled={theme === id}
-                    title={theme === id
-                      ? 'This is the theme you’re using — switch to another first'
-                      : 'Remove from the theme list (re-add it from + Add Item)'}
-                    onClick={() => { if (theme !== id) setThemeHidden(id, true); }}
-                  >Hide</button>
-                </span>
-                <button
-                  className="fs-shortcut-clear"
-                  disabled={!custom}
-                  title={custom ? 'Edit this theme' : 'Built-in themes can’t be edited'}
-                  onClick={() => {
-                    const t = customThemes.find((c) => c.id === id);
-                    if (t) setEditing({ ...t, vars: { ...t.vars } });
-                  }}
-                >Edit</button>
-                <button
-                  className="fs-shortcut-clear"
-                  disabled={!custom}
-                  title={custom ? 'Delete this theme' : 'Built-in themes can’t be deleted'}
-                  onClick={() => setConfirmDelete(id)}
-                >Delete</button>
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      {/* v1.81: Outlook-style — Shown | Hidden, drag between them. */}
+      <DndColumns
+        columns={[
+          {
+            id: 'shown', title: 'Shown',
+            sections: [{
+              rows: visibleIds.map((id) => {
+                const custom = isCustomTheme(id);
+                return {
+                  key: id,
+                  content: (
+                    <span className="fs-customize-tool">
+                      {labelOf(id)}
+                      {theme === id && <span className="fs-theme-active-dot" title="Current theme"> ●</span>}
+                      {custom && <span className="fs-theme-badge">Custom</span>}
+                      <span className="fs-dnd-rowactions">
+                        {custom && (
+                          <button
+                            className="fs-shortcut-clear"
+                            title="Edit this theme"
+                            onClick={() => {
+                              const t = customThemes.find((c) => c.id === id);
+                              if (t) setEditing({ ...t, vars: { ...t.vars } });
+                            }}
+                          >Edit</button>
+                        )}
+                        {custom && (
+                          <button
+                            className="fs-shortcut-clear"
+                            title="Delete this theme"
+                            onClick={() => setConfirmDelete(id)}
+                          >Delete</button>
+                        )}
+                        {theme !== id && (
+                          <button
+                            className="fs-dnd-rowbtn"
+                            title="Hide this theme"
+                            onClick={() => setThemeHidden(id, true)}
+                          >×</button>
+                        )}
+                      </span>
+                    </span>
+                  ),
+                };
+              }),
+            }],
+          },
+          {
+            id: 'hidden', title: 'Hidden', isHidden: true,
+            sections: [{
+              label: 'Themes',
+              rows: hiddenIds.map((id) => ({
+                key: id,
+                content: (
+                  <span className="fs-customize-tool">
+                    {labelOf(id)}
+                    {isCustomTheme(id) && <span className="fs-theme-badge">Custom</span>}
+                    <button className="fs-dnd-rowbtn" title="Show this theme" onClick={() => setThemeHidden(id, false)}>+</button>
+                  </span>
+                ),
+              })),
+            }],
+          },
+        ]}
+        onDrop={(src2, dst) => {
+          const id = src2.key;
+          if (dst.col === 'hidden') {
+            if (theme !== id) setThemeHidden(id, true);   // never hide the active theme
+            return;
+          }
+          const next = visibleIds.filter((x) => x !== id);
+          next.splice(Math.min(dst.idx, next.length), 0, id);
+          setThemeOrder([...next, ...hiddenIds.filter((x) => x !== id)]);
+          if (hiddenThemes.includes(id)) setThemeHidden(id, false);
+        }}
+      />
 
       {confirmDelete && (
         <p className="fs-shortcut-note">
@@ -253,25 +265,6 @@ export default function ThemesTab() {
       {importNote && <p className="fs-shortcut-note">{importNote}</p>}
 
       <div className="fs-tbzone-adders fs-adders-equal">
-        <AddMenu
-          center
-          onPick={(v) => {
-            if (v === 'all') hiddenIds.forEach((id) => setThemeHidden(id, false));
-            else setThemeHidden(v, false);
-          }}
-          groups={[
-            {
-              label: 'Show All',
-              options: hiddenIds.length > 1
-                ? [{ value: 'all', label: 'Show All - Themes' }]
-                : [],
-            },
-            {
-              label: 'Themes',
-              options: hiddenIds.map((id) => ({ value: id, label: labelOf(id) })),
-            },
-          ]}
-        />
         <button className="swn-add-btn" onClick={newTheme}>+ New Theme</button>
         {/* v1.4.1: Export is a menu now, matching Import — a panel that opened
             over the button to ask "which themes?" was a whole extra screen for a
