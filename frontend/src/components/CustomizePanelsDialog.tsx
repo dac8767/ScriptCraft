@@ -661,7 +661,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const tokenIcon = (tok: string): React.ReactNode => {
     if (tok.startsWith('b:')) return TOOLBAR_ICONS[tok.slice(2)] ?? null;
     if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.icon ?? null;
-    if (tok.startsWith('c:')) return TOOLBAR_ICONS[tok.slice(2)] ?? null;
+    // v2.04: commands carry their OWN icon (TOOLBAR_COMMANDS) — reading
+    // TOOLBAR_ICONS here was a second list, and every command id missing
+    // from it rendered an iconless row (Derek's "Production items with no
+    // icons"). One source now: the same icon the pinned button shows.
+    if (tok.startsWith('c:')) return TOOLBAR_COMMANDS.find((c) => c.id === tok.slice(2))?.icon ?? null;
     return UTILITY_ICONS[tok.startsWith('s:') ? 'spacer' : 'divider'];
   };
 

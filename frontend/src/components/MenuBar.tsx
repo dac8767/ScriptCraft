@@ -1395,13 +1395,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaSearchPlus />, label: 'Zoom In', shortcut: sc('zoomIn'), action: () => setZoomLevel(Math.min(300, zoomLevel + 10)) },
             { icon: <FaSearchMinus />, label: 'Zoom Out', shortcut: sc('zoomOut'), action: () => setZoomLevel(Math.max(50, zoomLevel - 10)) },
             { separator: true, label: '' },
-            { label: zoomLevel === 50 ? '\u2713 50%' : '50%', action: () => setZoomLevel(50) },
-            { label: zoomLevel === 75 ? '\u2713 75%' : '75%', action: () => setZoomLevel(75) },
-            { label: zoomLevel === 100 ? '\u2713 100%' : '100%', action: () => setZoomLevel(100) },
-            { label: zoomLevel === 125 ? '\u2713 125%' : '125%', action: () => setZoomLevel(125) },
-            { label: zoomLevel === 150 ? '\u2713 150%' : '150%', action: () => setZoomLevel(150) },
-            { label: zoomLevel === 200 ? '\u2713 200%' : '200%', action: () => setZoomLevel(200) },
-            { label: zoomLevel === 300 ? '\u2713 300%' : '300%', action: () => setZoomLevel(300) },
+            { icon: <FaSearch />, label: zoomLevel === 50 ? '\u2713 50%' : '50%', action: () => setZoomLevel(50) },
+            { icon: <FaSearch />, label: zoomLevel === 75 ? '\u2713 75%' : '75%', action: () => setZoomLevel(75) },
+            { icon: <FaSearch />, label: zoomLevel === 100 ? '\u2713 100%' : '100%', action: () => setZoomLevel(100) },
+            { icon: <FaSearch />, label: zoomLevel === 125 ? '\u2713 125%' : '125%', action: () => setZoomLevel(125) },
+            { icon: <FaSearch />, label: zoomLevel === 150 ? '\u2713 150%' : '150%', action: () => setZoomLevel(150) },
+            { icon: <FaSearch />, label: zoomLevel === 200 ? '\u2713 200%' : '200%', action: () => setZoomLevel(200) },
+            { icon: <FaSearch />, label: zoomLevel === 300 ? '\u2713 300%' : '300%', action: () => setZoomLevel(300) },
           ],
         },
       ],
@@ -1424,12 +1424,14 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                 // element; it just runs a command instead of setting a node.
                 if (r.id === 'dualDialogue') {
                   return [{
+                    icon: <FaColumns />,
                     label: r.label,
                     shortcut: sc('dualDialogue'),
                     action: () => (editor as any)?.commands?.toggleDualDialogue(),
                   }];
                 }
-                return [{ label: r.label, shortcut: shortcuts[r.id], action: () => setElement(r.id as any) }];
+                // v2.04: every menu item wears an icon (Derek's audit).
+                return [{ icon: <FaTextHeight />, label: r.label, shortcut: shortcuts[r.id], action: () => setElement(r.id as any) }];
               }),
             { separator: true, label: '' },
             { icon: <FaSlidersH />, label: 'Customize Elements…', action: () => openCustomize('elements') },

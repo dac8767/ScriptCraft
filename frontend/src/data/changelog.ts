@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.03';
+export const APP_VERSION = '2.04';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.04',
+    date: '2026-07-15',
+    items: [
+      { title: 'Every menu item wears an icon', detail: 'The gaps are filled: the Production/Tools/Project command rows in Customize > Toolbar now show the same icon their pinned buttons use (they were reading a second, incomplete icon list — the two-lists bug again), and the last icon-less menu rows (Zoom percentages, the Insert > Element list) got theirs.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '2.03',
     date: '2026-07-15',
