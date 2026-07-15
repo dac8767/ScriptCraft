@@ -1237,6 +1237,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       {leftTokens.map(renderToken)}
       {rightTokens.filter((t) => !bigZoneAllowed(t)).map(renderToken)}
 
+      {/* v2.12: the Scrapbook section sits left-aligned right after the
+          Main items, with a clear gap (Derek's placement). */}
+      <ScrapbookToolbarSection />
+
       {/* Spacer */}
       <div style={{ flex: 1 }} />
 
@@ -1258,12 +1262,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         </div>
       )}
 
-      {/* v2.07: tool-specific controls — tagged so they read as the
-          Scrapbook's, not the user's own toolbar items.
-          v2.10: rendered LAST, after the overflow menu, so every Main item
-          (inline or collapsed into ⋮) comes before the tool section — the
-          same order Customize shows. */}
-      <ScrapbookToolbarSection />
     </div>
   );
 };

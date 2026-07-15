@@ -223,8 +223,10 @@ function TextBox({ box, focused, onChange, onFocusBox, onDelete }: {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
+      {/* v2.12: the head FLOATS above the box — appearing on hover must
+          never push the text down. */}
       {showHead && (
-        <div className="fs-nb-box-head" onMouseDown={(e) => startDrag(e, 'move')}>
+        <div className="fs-nb-box-head fs-nb-box-head-float" onMouseDown={(e) => startDrag(e, 'move')}>
           <span>⋮⋮</span>
           <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}>✕</button>
         </div>
@@ -232,7 +234,7 @@ function TextBox({ box, focused, onChange, onFocusBox, onDelete }: {
       <div
         ref={ref}
         className="fs-nb-box-body"
-        style={{ height: showHead ? box.h - 20 : box.h }}
+        style={{ height: box.h }}
         contentEditable
         suppressContentEditableWarning
         onMouseDown={() => onFocusBox(box.id)}
@@ -287,7 +289,7 @@ function TableBox({ box, focused, onChange, onFocusBox, onDelete }: {
       onMouseLeave={() => setHover(false)}
     >
       {showHead && (
-        <div className="fs-nb-box-head" onMouseDown={(e) => { e.stopPropagation(); startDrag(e, 'move'); }}>
+        <div className="fs-nb-box-head fs-nb-box-head-float" onMouseDown={(e) => { e.stopPropagation(); startDrag(e, 'move'); }}>
           <span>⋮⋮</span>
           <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}>✕</button>
         </div>
@@ -606,7 +608,6 @@ export function NotebookSurface() {
         ) : (
           <span className="fs-nb-title fs-nb-title-empty">Scrapbook</span>
         )}
-        <button className="fs-nb-return" onClick={closeNotebook}>Return to editor</button>
       </div>
       {page ? (
         <CanvasSurface key={page.id} boxes={page.boxes} onChangeBoxes={(boxes) => updatePage(page.id, { boxes })} />
@@ -629,8 +630,8 @@ export function ScrapbookToolbarSection() {
   const open = useNotebookStore((s) => s.notebookOpen);
   const page = useNotebookStore((s) => (s.selectedPageId ? s.pages[s.selectedPageId] : null));
   const focusedBoxId = useNotebookStore((s) => s.focusedBoxId);
-  if (!open || !page) return null;
-  const focusedBox = page.boxes.find((b) => b.id === focusedBoxId) ?? null;
+  if (!open) return null;
+  const focusedBox = page?.boxes.find((b) => b.id === focusedBoxId) ?? null;
   const { updatePage } = useNotebookStore.getState();
 
   const asTable = (b: NbBox): NbTable => ({
@@ -640,7 +641,7 @@ export function ScrapbookToolbarSection() {
   });
   const mutateTable = (fn: (t: NbTable) => NbTable) => (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!focusedBox) return;
+    if (!page || !focusedBox) return;
     const t = fn(asTable(focusedBox));
     updatePage(page.id, {
       boxes: page.boxes.map((b) => (b.id === focusedBox.id
@@ -649,7 +650,7 @@ export function ScrapbookToolbarSection() {
     });
   };
   const deleteFocused = () => {
-    if (!focusedBox) return;
+    if (!page || !focusedBox) return;
     updatePage(page.id, { boxes: page.boxes.filter((b) => b.id !== focusedBox.id) });
     useNotebookStore.getState().setFocusedBox(null);
   };
@@ -657,9 +658,11 @@ export function ScrapbookToolbarSection() {
   return (
     <div className="toolbar-scrapbook-section">
       <span className="toolbar-section-tag">Scrapbook</span>
+      {/* v2.12: the way back lives with the tool's other controls. */}
+      <button className="toolbar-btn toolbar-btn-labeled fs-nb-return-tb" onClick={closeNotebook}>Return to editor</button>
       {/* v2.08: one dropdown instead of three buttons — the toolbar was
           getting crowded (Derek). AddMenu portals to body, per the lesson. */}
-      <AddMenu
+      {page && <AddMenu
         label="+ Add"
         title="Add a text box, table or image to this page"
         center
@@ -676,7 +679,7 @@ export function ScrapbookToolbarSection() {
             { value: 'image', label: 'Image…' },
           ],
         }]}
-      />
+      />}
       {focusedBox?.type === 'table' && (
         <span className="fs-nb-tb-group">
           <button className="toolbar-btn toolbar-btn-labeled" onMouseDown={mutateTable(tableAddRow)}>+ Row</button>

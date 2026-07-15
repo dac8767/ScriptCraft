@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.11';
+export const APP_VERSION = '2.12';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.12',
+    date: '2026-07-15',
+    items: [
+      { title: 'Scrapbook section placement', detail: 'The toolbar\'s Scrapbook section sits left-aligned right after your own toolbar items, with clear air between them — and "Return to editor" moved into the section with the tool\'s other controls, so everything Scrapbook lives in one place.', tags: ['UI'] },
+      { title: 'Hovering a scrap never shifts its text', detail: 'The ⋮⋮/✕ bar that appears when you hover a text box or table now floats just above the item instead of pushing the content down.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '2.11',
     date: '2026-07-15',
