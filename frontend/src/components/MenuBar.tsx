@@ -1453,22 +1453,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaSpellCheck />, label: 'Grammar & Spelling Settings…', action: () => setGrammarRulesPanelOpen(true) },
           ],
         },
-      ],
-    },
-    {
-      label: 'Tools',
-      items: [
-        ...TOOL_MENU_GROUPS.flatMap((group, gi) => [
-          ...(gi > 0 ? [{ separator: true, label: '' }] : []),
-          ...group
-            .map((id) => ALL_TOOLS.find((t) => t.id === id))
-            .filter((t): t is typeof ALL_TOOLS[number] => !!t)
-            .map((t) => ({
-              icon: t.icon,
-              label: t.label,
-              action: () => useEditorStore.getState().openTool(t.id),
-            })),
-        ]),
+        // v1.66: Script History moved here from Tools — it's project/script
+        // management, and its dockable window was already a Project Window.
         { separator: true, label: '' },
         {
           icon: <FaCodeBranch />, label: 'Script History',
@@ -1487,6 +1473,22 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaFileSignature />, label: 'Compare with Auto Save\u2026', action: () => setCompareVersionOpen(true) },
           ],
         },
+      ],
+    },
+    {
+      label: 'Tools',
+      items: [
+        ...TOOL_MENU_GROUPS.flatMap((group, gi) => [
+          ...(gi > 0 ? [{ separator: true, label: '' }] : []),
+          ...group
+            .map((id) => ALL_TOOLS.find((t) => t.id === id))
+            .filter((t): t is typeof ALL_TOOLS[number] => !!t)
+            .map((t) => ({
+              icon: t.icon,
+              label: t.label,
+              action: () => useEditorStore.getState().openTool(t.id),
+            })),
+        ]),
       ],
     },
     {

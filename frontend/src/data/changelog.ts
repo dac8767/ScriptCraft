@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.65';
+export const APP_VERSION = '1.66';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.66',
+    date: '2026-07-15',
+    items: [
+      { title: 'Script History lives in the Project menu', detail: 'The whole submenu — Take Auto Save, Auto Saves, Track Changes, Compare — moved from Tools to Project, next to Spelling & Grammar. It\'s script management, not a writing aid.', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.65',
     date: '2026-07-15',
