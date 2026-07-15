@@ -51,7 +51,7 @@ import type { PageLayout } from '../stores/editorStore';
 import { useEditorStore, migratePageLayout, DEFAULT_HEADER_CONTENT, DEFAULT_FOOTER_CONTENT, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_CATEGORIES, resolveMoresContds } from '../stores/editorStore';
 import type { ElementType } from '../stores/editorStore';
 import MenuBar from './MenuBar';
-import Toolbar from './Toolbar';
+import Toolbar, { BigButtonBar } from './Toolbar';
 import ToolDock, { TempToolWindow } from './ToolDock';
 import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
@@ -3909,10 +3909,11 @@ const ScreenplayEditor: React.FC = () => {
           </button>
         </div>
       )}
-      {/* v0.91: the two bars and the permanent Customize button share one row.
-          The bars stack in a column that takes the remaining width; the button
-          sits to their right and spans the full height of both. It's chrome, not
-          a toolbar item — which is why it can't be reordered or hidden. */}
+      {/* v0.91: the two bars and the big buttons share one row — the bars
+          stack in a column taking the remaining width. v2.02: the standalone
+          Customize button became the Big Button SECTION (BigButtonBar): the
+          toolbar's right zone, rendered here so its buttons span both bars.
+          Customize is its permanent anchor item. */}
       {!isHistoryMode && (
       <div className="chrome-stack">
         <div className="chrome-bars">
@@ -3931,13 +3932,7 @@ const ScreenplayEditor: React.FC = () => {
       }} onJoinCollab={() => setJoinCollabOpen(true)} isCollabActive={collabMode} isCollabGuest={collabMode && !isCollabHost} />}
       {<Toolbar editor={editor} />}
         </div>
-        <button
-          className="chrome-customize-btn"
-          title="Customize ScriptCraft"
-          onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))}
-        >
-          Customize
-        </button>
+        <BigButtonBar />
       </div>
       )}
       {/* v1.75: Outline Bar — FD-style outline lanes directly under the toolbar. */}

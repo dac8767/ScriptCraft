@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { normalizeToolbarZones, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
+import { normalizeToolbarZones, migrateToolbarBigZone, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
 import { uuid } from '../utils/uuid';
 import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { findLanguage, urlsFor } from '../editor/languageCatalog';
@@ -89,11 +89,22 @@ const _vs = loadViewState();
 // v0.42: toolbar zones are flat per-item token lists; expand any persisted
 // legacy g: group tokens (honoring the retired toolbarHiddenItems checkboxes)
 // so pre-0.42 layouts survive unchanged.
-const _tbZones = normalizeToolbarZones(
+let _tbZones = normalizeToolbarZones(
   Array.isArray(_vs.toolbarLeft) ? _vs.toolbarLeft as string[] : [],
   Array.isArray(_vs.toolbarRight) ? _vs.toolbarRight as string[] : [],
   _vs.toolbarHiddenItems ?? [],
 );
+// v2.02 one-time: the right zone became the Big Button section. Saved
+// layouts keep every item — small controls that lived on the right move to
+// the end of Main instead of silently turning into big buttons.
+try {
+  const BIG_FLAG = 'opendraft:toolbarBigZone202';
+  if (_vs.toolbarZonesSet && !localStorage.getItem(BIG_FLAG)) {
+    localStorage.setItem(BIG_FLAG, '1');
+    _tbZones = migrateToolbarBigZone(_tbZones.left, _tbZones.right);
+    saveViewState({ toolbarLeft: _tbZones.left, toolbarRight: _tbZones.right });
+  }
+} catch { /* storage unavailable — keep what we have */ }
 
 // ── Custom dictionary library (named global word lists) ──
 const DICTS_KEY = 'opendraft:dictionaries';

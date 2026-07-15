@@ -155,6 +155,7 @@ export const MENU_ICONS: Record<string, React.ReactNode> = {
 
 /** Toolbar built-ins, by key — the same icon each button shows. */
 export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
+  customize: <FaWrench />,   // v2.02: a Big Button item again
   undo: <FaUndo />,
   redo: <FaRedo />,
   element: <FaTextHeight />,

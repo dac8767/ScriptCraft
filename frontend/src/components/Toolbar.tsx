@@ -27,7 +27,7 @@ import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon } from './uiIcons';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { commandDef } from './toolbarCommands';
-import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones } from './toolbarBuiltins';
+import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, bigZoneAllowed } from './toolbarBuiltins';
 import { useEditorStore, NOTE_COLORS } from '../stores/editorStore';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
@@ -1201,7 +1201,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       } as React.CSSProperties) : undefined}
       ref={toolbarRef}
     >
+      {/* v2.02: the MAIN section — everything aligns left. Any small
+          controls a saved layout had on the right were migrated here; the
+          right zone is the Big Button section, rendered by BigButtonBar in
+          the chrome next to the bars. */}
       {leftTokens.map(renderToken)}
+      {rightTokens.filter((t) => !bigZoneAllowed(t)).map(renderToken)}
 
       {/* Spacer */}
       <div style={{ flex: 1 }} />
@@ -1223,8 +1228,62 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           )}
         </div>
       )}
+    </div>
+  );
+};
 
-      {rightTokens.map(renderToken)}
+/**
+ * BigButtonBar (v2.02) — the toolbar's Big Button section, rendered in the
+ * chrome row beside the bars so its buttons span both (like the old
+ * permanent Customize button, which is now simply this section's anchor
+ * item). Tools and commands render large — icon over label — in a color
+ * distinct from Customize; dividers/spacers and small formatting controls
+ * can't live here (bigZoneAllowed + the Customize tab's drop guard).
+ */
+export const BigButtonBar: React.FC = () => {
+  const { toolbarRight, toolbarZonesSet, openTool } = useEditorStore();
+  const tokens = (toolbarZonesSet
+    ? normalizeToolbarZones([], toolbarRight).right
+    : DEFAULT_TOOLBAR_RIGHT
+  ).filter(bigZoneAllowed);
+
+  return (
+    <div className="chrome-bigbtns">
+      {tokens.map((tok) => {
+        if (tok === 'b:customize') {
+          return (
+            <button
+              key={tok}
+              className="chrome-bigbtn chrome-customize-btn"
+              title="Customize ScriptCraft"
+              onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))}
+            >
+              Customize
+            </button>
+          );
+        }
+        if (tok.startsWith('t:')) {
+          const t = ALL_TOOLS.find((x) => x.id === tok.slice(2));
+          if (!t) return null;
+          return (
+            <button key={tok} className="chrome-bigbtn chrome-bigbtn-alt" title={t.label} onClick={() => openTool(t.id)}>
+              <span className="chrome-bigbtn-icon">{t.icon}</span>
+              {t.label}
+            </button>
+          );
+        }
+        if (tok.startsWith('c:')) {
+          const c = commandDef(tok.slice(2));
+          if (!c) return null;
+          return (
+            <button key={tok} className="chrome-bigbtn chrome-bigbtn-alt" title={c.label} onClick={() => c.run()}>
+              <span className="chrome-bigbtn-icon">{c.icon}</span>
+              {c.label}
+            </button>
+          );
+        }
+        return null;
+      })}
     </div>
   );
 };

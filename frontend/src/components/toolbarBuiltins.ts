@@ -35,6 +35,13 @@ export interface ToolbarBuiltin {
    *  hidden or removed. normalizeToolbarZones re-inserts it if a persisted
    *  layout is missing it, so it can't be lost. */
   permanent?: boolean;
+  /** Which zone a re-inserted permanent item lands in (default 'left').
+   *  v2.02: Customize belongs to the Big Button section (the right zone). */
+  permanentZone?: 'left' | 'right';
+  /** v2.02: this item may live in the Big Button section. Everything else is
+   *  a formatting control that has no big-button shape — Customize's Toolbar
+   *  tab refuses to drop it there. Tools (t:) and commands (c:) always may. */
+  bigOk?: boolean;
 }
 
 export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
@@ -65,6 +72,10 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'tags', label: 'Production Tags' },
   { key: 'zoom', label: 'Zoom', priority: '1', zoom: true },
   { key: 'view', label: 'Editor View', desktopOnly: true },
+  // v2.02: Customize is a toolbar ITEM again — the anchor of the Big Button
+  // section (the old right zone, reborn). Permanent: reorderable within the
+  // section, never hidden or lost.
+  { key: 'customize', label: 'Customize', permanent: true, permanentZone: 'right', bigOk: true },
 ];
 
 export const BUILTIN_BY_KEY: Record<string, ToolbarBuiltin> = Object.fromEntries(
@@ -74,19 +85,37 @@ export const BUILTIN_BY_KEY: Record<string, ToolbarBuiltin> = Object.fromEntries
 // scriptNotes and tags are NOT in the default — they add from the dropdown's
 // Tools and Production groups (legacy g:notes migration still preserves them
 // in layouts that already had them).
-// v0.91: 'customize' is gone from here. It's now permanent chrome to the right of
-// BOTH bars, not a toolbar button — so it can't be reordered, hidden, or moved
-// into a zone. normalizeToolbarZones drops unknown `b:` keys, which means a saved
-// layout still holding `b:customize` cleans itself up on load; no migration needed.
+// v2.02: the zones are MAIN (left-aligned controls) and BIG BUTTON (large
+// Customize-style launchers). Zoom and Editor View moved into Main — they're
+// controls, not launchers; the default Big Button section is just Customize.
 export const DEFAULT_TOOLBAR_LEFT: string[] = [
   'undo', 'redo', 'element', 'insertSection', 'insertNote', 'insertChecklist',
   'fontFamily', 'fontSize', 'bold', 'italic', 'underline', 'strike',
   'subscript', 'superscript', 'textColor', 'highlightColor',
   'alignLeft', 'alignCenter', 'alignRight', 'alignJustify',
-  'find', 'goto',
+  'find', 'goto', 'zoom', 'view',
 ].map((k) => `b:${k}`);
 
-export const DEFAULT_TOOLBAR_RIGHT: string[] = ['zoom', 'view'].map((k) => `b:${k}`);
+export const DEFAULT_TOOLBAR_RIGHT: string[] = ['customize'].map((k) => `b:${k}`);
+
+/** May this token live in the Big Button section? */
+export function bigZoneAllowed(tok: string): boolean {
+  if (tok.startsWith('t:') || tok.startsWith('c:')) return true;
+  if (tok.startsWith('b:')) return !!BUILTIN_BY_KEY[tok.slice(2)]?.bigOk;
+  return false;   // dividers/spacers stay in Main
+}
+
+/** v2.02 one-time shape change: the right zone stopped being "more small
+ *  buttons at the far edge" and became the Big Button section. Whatever a
+ *  saved layout had on the right moves to the end of Main so nothing
+ *  silently changes shape; Customize is (re)seeded into the section. */
+export function migrateToolbarBigZone(
+  left: string[], right: string[],
+): { left: string[]; right: string[] } {
+  const stay = right.filter(bigZoneAllowed);
+  const moved = right.filter((t) => !bigZoneAllowed(t));
+  return { left: [...left, ...moved], right: stay };
+}
 
 /** Legacy `g:` group → item keys, in group order. */
 const LEGACY_GROUP_ITEMS: Record<string, string[]> = {
@@ -143,11 +172,13 @@ export function normalizeToolbarZones(
   const r = expand(right);
   // Permanent items can be reordered or moved between zones, but never lost.
   // A layout saved before this item existed (or one that somehow dropped it)
-  // gets it appended to the left zone rather than silently missing the button.
+  // gets it appended to its home zone rather than silently missing the button.
   for (const b of TOOLBAR_BUILTINS) {
     if (!b.permanent) continue;
     const tok = `b:${b.key}`;
-    if (!l.includes(tok) && !r.includes(tok)) l.push(tok);
+    if (!l.includes(tok) && !r.includes(tok)) {
+      (b.permanentZone === 'right' ? r : l).push(tok);
+    }
   }
   return { left: l, right: r };
 }

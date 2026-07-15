@@ -17,7 +17,8 @@ import { MENU_ICONS, TOOLBAR_ICONS, UTILITY_ICONS } from './uiIcons';
 import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
-import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from './toolbarBuiltins';
+import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, bigZoneAllowed } from './toolbarBuiltins';
+import { showToast } from './Toast';
 import { CHROME_SCALES, chromeMin, chromeMax, chromePx, type ChromeSurface } from './chromeSizes';
 import EditElementsDialog from './EditElementsDialog';
 import KeyboardShortcutsTab from './KeyboardShortcutsTab';
@@ -876,7 +877,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                     {label}
                     <button
                       className="fs-dnd-rowbtn"
-                      title="Add to the end of the toolbar's left zone"
+                      title="Add to the end of the Main section"
                       onClick={() => setToolbarZones([...tbLeft, value], tbRight)}
                     >+</button>
                   </span>
@@ -886,11 +887,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 <DndColumns
                   columns={[
                     {
-                      id: 'left', title: 'Left',
+                      id: 'left', title: 'Main',
                       sections: [{ rows: tbLeft.map((tok) => ({ key: tok, content: tbRowContent(tok) })) }],
                     },
                     {
-                      id: 'right', title: 'Right (Far Edge)',
+                      // v2.02: the right zone is the Big Button section —
+                      // large Customize-style launchers (tools & commands).
+                      id: 'right', title: 'Big Button',
                       sections: [{ rows: tbRight.map((tok) => ({ key: tok, content: tbRowContent(tok) })) }],
                     },
                     {
@@ -903,6 +906,12 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   ]}
                   onDrop={(src, dst) => {
                     const tok = src.key;
+                    const isPermanent = tok.startsWith('b:') && !!BUILTIN_BY_KEY[tok.slice(2)]?.permanent;
+                    if (dst.col === 'hidden' && isPermanent) return;   // Customize can't be hidden
+                    if (dst.col === 'right' && !bigZoneAllowed(tok)) {
+                      showToast('Only tools and commands can be Big Buttons — formatting controls stay in Main.', 'info');
+                      return;
+                    }
                     const nextLeft = tbLeft.filter((t) => t !== tok);
                     const nextRight = tbRight.filter((t) => t !== tok);
                     if (dst.col === 'hidden') {
@@ -919,20 +928,20 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             <div className="fs-tbzone-adders fs-adders-equal">
               <button
                 className="swn-add-btn"
-                title="Add a divider line to the left zone"
+                title="Add a divider line to the Main section"
                 onClick={() => setToolbarZones([...tbLeft, `d:${Date.now()}`], tbRight)}
               >+ Divider</button>
               <button
                 className="swn-add-btn"
-                title="Add a spacer to the left zone"
+                title="Add a spacer to the Main section"
                 onClick={() => setToolbarZones([...tbLeft, `s:${Date.now()}`], tbRight)}
               >+ Spacer</button>
               <button
                 className="swn-add-btn"
                 title="Hide every toolbar item (re-add items from the dropdown)"
                 onClick={() => setToolbarZones(
-                  TOOLBAR_BUILTINS.filter((b) => b.permanent).map((b) => `b:${b.key}`),
-                  [],
+                  TOOLBAR_BUILTINS.filter((b) => b.permanent && b.permanentZone !== 'right').map((b) => `b:${b.key}`),
+                  TOOLBAR_BUILTINS.filter((b) => b.permanent && b.permanentZone === 'right').map((b) => `b:${b.key}`),
                 )}
               >Hide All</button>
               <button

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.01';
+export const APP_VERSION = '2.02';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.02',
+    date: '2026-07-15',
+    items: [
+      { title: 'Toolbar: Main + Big Button', detail: 'The toolbar\'s left/right split is gone. Everything lives in the Main section, aligned left; the far edge is the Big Button section — large Customize-style launchers spanning both bars, in their own color. Customize itself is the section\'s permanent first resident, and tools or commands you drag there (Customize > Toolbar) join it in the large format. Small controls that used to sit on the right (Zoom, Editor View) moved into Main.', tags: ['UI', 'New Feature'] },
+    ],
+  },
   {
     version: '2.01',
     date: '2026-07-15',
