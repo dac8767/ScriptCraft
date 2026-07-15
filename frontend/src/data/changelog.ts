@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.02';
+export const APP_VERSION = '2.03';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.03',
+    date: '2026-07-15',
+    items: [
+      { title: 'Navigator: one filter button, one popover', detail: 'The Navigator\'s header now holds a single funnel at its right edge. Click it for everything: a keyword filter and per-type show/hide checkboxes (with Show All / Hide All). Filter icons sit at the right edge of every window header.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '2.02',
     date: '2026-07-15',

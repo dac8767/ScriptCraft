@@ -13844,21 +13844,75 @@ input.fs-switch::after {
 input.fs-switch:checked { background: var(--fd-accent, #4a90d9); }
 input.fs-switch:checked::after { left: 15px; }
 
-/* v1.97: Navigator's whole filter control (funnel + field) in the header. */
+/* v2.03: Navigator's ONE filter control — a funnel button, right-aligned in
+   the header (filter icons sit at the right edge of every window header);
+   clicking it opens the keyword + element-type popover. */
 .fs-nav-filterctl {
   flex: 1;
   min-width: 0;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: flex-end;
 }
-.fs-nav-filterctl .fs-nav-filter-header {
+.fs-nav-filterbtn {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  padding: 2px 3px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+.fs-nav-filterbtn:hover { color: var(--fd-text); background: var(--fd-menu-hover); }
+.fs-nav-filterpop {
+  position: fixed;   /* portalled to body; top/left measured from the button */
+  z-index: 10050;
+  width: 220px;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .35);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fd-text);
+}
+.fs-nav-filterpop .fs-nav-filter { margin: 0 0 2px; }
+.fs-nav-filterpop-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--fd-text-muted);
+  margin-top: 2px;
+}
+.fs-nav-filterpop-kind {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+.fs-nav-filterpop-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.fs-nav-filterpop-actions button {
   flex: 1;
-  min-width: 40px;
-  margin: 0;
-  padding: 3px 7px;
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  color: var(--fd-text);
   font-size: 11.5px;
+  padding: 4px 0;
+  cursor: pointer;
 }
+.fs-nav-filterpop-actions button:hover { background: var(--fd-menu-hover); }
+/* (Scenes/Pages/Locations' .scene-filter-btn already right-aligns via its
+   own margin-left: auto — every filter icon lives at the right edge.) */
 .tool-window-header-extra {
   display: inline-flex;
   align-items: center;

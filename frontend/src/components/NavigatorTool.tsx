@@ -7,7 +7,8 @@
  *   - To-Dos:       sticky To-Do items (tick here; click opens the To-Do tab)
  * Show/hide per kind via the dropdown; the filter box narrows by text.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { FilterIcon } from './uiIcons';
@@ -42,47 +43,81 @@ interface NavigatorToolProps {
  *  and footer slots), outside this component. Missing kind = shown. */
 const kindShown = (show: Record<string, boolean>, k: Kind) => show[k] !== false;
 
-/** The Navigator's ONE filter control, in the window HEADER (v1.97 — the
- *  footer field merged into it): the funnel (uiIcons.FilterIcon) fronts the
- *  show/hide dropdown — the real <select> sits invisibly on top so the
- *  native checkmark menu keeps working — and the text filter sits beside it. */
+/** The Navigator's ONE filter control (v2.03): a single funnel button,
+ *  right-aligned in the window header. Clicking it opens a portalled
+ *  popover (AddMenu lesson: body portal, top/left only) holding the
+ *  keyword filter AND the element-type show/hide checkboxes. */
 export function NavigatorHeaderExtra() {
   const navShowKinds = useEditorStore((s) => s.navShowKinds);
   const setNavShowKinds = useEditorStore((s) => s.setNavShowKinds);
   const navFilter = useEditorStore((s) => s.navFilter);
   const setNavFilter = useEditorStore((s) => s.setNavFilter);
   const anyHidden = KINDS.some((k) => !kindShown(navShowKinds, k));
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: PointerEvent) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest('.fs-nav-filterpop') && t !== btnRef.current && !btnRef.current?.contains(t)) setOpen(false);
+    };
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('pointerdown', close);
+    document.addEventListener('keydown', key);
+    return () => {
+      document.removeEventListener('pointerdown', close);
+      document.removeEventListener('keydown', key);
+    };
+  }, [open]);
+
+  const toggle = () => {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 6, left: Math.max(8, Math.min(r.right - 220, window.innerWidth - 236)) });
+    }
+    setOpen((v) => !v);
+  };
+
   return (
     <span className="fs-nav-filterctl">
-    <span className="fs-nav-showhide-wrap" title="Show/hide item types">
-    <select
-      className="fs-nav-showhide"
-      value=""
-      onPointerDown={(e) => e.stopPropagation()}
-      onChange={(e) => {
-        const k = e.target.value;
-        if (k === '__all') setNavShowKinds({});
-        else if (k === '__none') setNavShowKinds(Object.fromEntries(KINDS.map((x) => [x, false])));
-        else if (k) setNavShowKinds({ ...navShowKinds, [k]: !kindShown(navShowKinds, k as Kind) });
-      }}
-    >
-      <option value="">show/hide…</option>
-      <option value="__all">Show All</option>
-      <option value="__none">Hide All</option>
-      <option value="" disabled>────────</option>
-      {KINDS.map((k) => (
-        <option key={k} value={k}>{(kindShown(navShowKinds, k) ? '✓ ' : '   ') + LABEL[k]}</option>
-      ))}
-    </select>
-    <FilterIcon filled={anyHidden || !!navFilter} />
-    </span>
-    <input
-      className="fs-nav-filter fs-nav-filter-header"
-      placeholder="Filter"
-      value={navFilter}
-      onChange={(e) => setNavFilter(e.target.value)}
-      onPointerDown={(e) => e.stopPropagation()}
-    />
+      <button
+        ref={btnRef}
+        className="fs-nav-filterbtn"
+        title="Filter by keyword or element type"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={toggle}
+      >
+        <FilterIcon filled={anyHidden || !!navFilter} />
+      </button>
+      {open && pos && createPortal(
+        <div className="fs-nav-filterpop" style={{ top: pos.top, left: pos.left }}>
+          <input
+            autoFocus
+            className="fs-nav-filter"
+            placeholder="Filter by keyword"
+            value={navFilter}
+            onChange={(e) => setNavFilter(e.target.value)}
+          />
+          <div className="fs-nav-filterpop-title">Show element types</div>
+          {KINDS.map((k) => (
+            <label key={k} className="fs-nav-filterpop-kind">
+              <input
+                type="checkbox"
+                checked={kindShown(navShowKinds, k)}
+                onChange={() => setNavShowKinds({ ...navShowKinds, [k]: !kindShown(navShowKinds, k) })}
+              />
+              <span>{LABEL[k]}</span>
+            </label>
+          ))}
+          <div className="fs-nav-filterpop-actions">
+            <button onClick={() => setNavShowKinds({})}>Show All</button>
+            <button onClick={() => setNavShowKinds(Object.fromEntries(KINDS.map((x) => [x, false])))}>Hide All</button>
+          </div>
+        </div>,
+        document.body,
+      )}
     </span>
   );
 }
