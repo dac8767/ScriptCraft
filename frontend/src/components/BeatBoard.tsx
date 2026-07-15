@@ -30,6 +30,26 @@ const BEAT_COLORS = [
   '#eab308', '#f97316', '#ef4444', '#000000', '#ffffff',
 ];
 
+/* ─── Outline presets (v1.89) ───
+   One list drives the Presets dropdown; applying one appends its columns in
+   order. Exported (with the apply helper) so the test exercises the same
+   data the UI reads. */
+export interface OutlinePreset {
+  id: string;
+  name: string;
+  columns: string[];
+}
+export const OUTLINE_PRESETS: OutlinePreset[] = [
+  { id: '3act', name: '3-Act Structure', columns: ['Act I', 'Act II', 'Act III'] },
+];
+
+export function applyOutlinePreset(presetId: string): void {
+  const preset = OUTLINE_PRESETS.find((p) => p.id === presetId);
+  if (!preset) return;
+  const { addBeatColumn } = useEditorStore.getState();
+  for (const title of preset.columns) addBeatColumn(title);
+}
+
 /* ─── URL detection ─── */
 const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/g;
 
@@ -778,7 +798,22 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
         </div>
 
         {beatArrangeMode === 'auto' ? (
-          <button className="beat-board-add-col-btn" onClick={handleAddColumn}>+ Add Column</button>
+          <>
+            {/* v1.89: an action menu, not state — value stays on the
+                placeholder so it reads "Presets" again after applying. */}
+            <select
+              className="beat-board-preset"
+              value=""
+              title="Add a common outline structure"
+              onChange={(e) => { if (e.target.value) applyOutlinePreset(e.target.value); }}
+            >
+              <option value="">Presets…</option>
+              {OUTLINE_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <button className="beat-board-add-col-btn" onClick={handleAddColumn}>+ Add Column</button>
+          </>
         ) : (
           <button className="beat-board-add-col-btn" onClick={handleAddBeatFree}>+ Add Beat</button>
         )}

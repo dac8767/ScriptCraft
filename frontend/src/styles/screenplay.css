@@ -4033,6 +4033,22 @@ div[data-type="lyrics"].is-empty::before { font-style: italic; }
   border-color: var(--fd-accent);
   color: var(--fd-accent);
 }
+/* v1.89: the Presets dropdown wears the add-column button's clothes. */
+.beat-board-preset {
+  background: transparent;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.beat-board-preset:hover {
+  border-color: var(--fd-accent);
+  color: var(--fd-accent);
+}
+.beat-board-preset option { background: var(--fd-dropdown-bg, var(--fd-bg)); color: var(--fd-text); }
 .beat-board-columns {
   display: flex;
   gap: 16px;

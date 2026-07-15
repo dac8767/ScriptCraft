@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.88';
+export const APP_VERSION = '1.89';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.89',
+    date: '2026-07-15',
+    items: [
+      { title: 'Outline presets', detail: 'A Presets dropdown in the Outline window scaffolds common structures — starting with 3-Act Structure, which adds Act I, Act II and Act III columns in one click. It appends to what\'s already on the board, never replaces.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '1.88',
     date: '2026-07-15',
