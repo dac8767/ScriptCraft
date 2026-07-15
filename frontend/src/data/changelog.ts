@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.94';
+export const APP_VERSION = '1.95';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.95',
+    date: '2026-07-15',
+    items: [
+      { title: 'Format > Alignment', detail: 'Align Left / Center / Right and Justify now live together in an Alignment submenu instead of four loose rows in the Format menu.', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.94',
     date: '2026-07-15',

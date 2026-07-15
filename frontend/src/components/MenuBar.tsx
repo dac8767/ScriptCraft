@@ -1456,10 +1456,16 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { icon: <FaSubscript />, label: 'Subscript', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleSubscript().run(), disabled: locked.subscript },
         { icon: <FaSuperscript />, label: 'Superscript', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleSuperscript().run(), disabled: locked.superscript },
         { separator: true, label: '' },
-        { icon: <FaAlignLeft />, label: 'Align Left', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('left').run(), disabled: locked.textAlign },
-        { icon: <FaAlignCenter />, label: 'Align Center', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('center').run(), disabled: locked.textAlign },
-        { icon: <FaAlignRight />, label: 'Align Right', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('right').run(), disabled: locked.textAlign },
-        { icon: <FaAlignJustify />, label: 'Justify', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('justify').run(), disabled: locked.textAlign },
+        // v1.95: the four alignment actions fold into one submenu.
+        {
+          icon: <FaAlignLeft />, label: 'Alignment',
+          children: [
+            { icon: <FaAlignLeft />, label: 'Align Left', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('left').run(), disabled: locked.textAlign },
+            { icon: <FaAlignCenter />, label: 'Align Center', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('center').run(), disabled: locked.textAlign },
+            { icon: <FaAlignRight />, label: 'Align Right', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('right').run(), disabled: locked.textAlign },
+            { icon: <FaAlignJustify />, label: 'Justify', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('justify').run(), disabled: locked.textAlign },
+          ],
+        },
         { separator: true, label: '' },
         // v1.83: Final Draft-style Highlighting submenu. The color list and
         // the toolbar highlighter share ONE store color (highlightColor).
