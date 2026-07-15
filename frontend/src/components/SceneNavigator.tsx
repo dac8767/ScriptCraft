@@ -6,6 +6,7 @@ import { computeSceneLengths, computePageBlocks, type PageContentInfo } from '..
 import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../utils/scriptTiming';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
 import SynopsisModal from './SynopsisModal';
+import { FilterIcon } from './uiIcons';
 
 interface SceneNavigatorProps {
   editor: Editor | null;
@@ -644,9 +645,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               onClick={() => setShowFilters(!showFilters)}
               title="Filter scenes"
             >
-              <svg viewBox="0 0 16 16" width="16" height="16" fill={hasActiveFilter ? 'var(--fd-accent)' : 'none'} stroke="currentColor" strokeWidth="1.2">
-                <path d="M1.5 2h13l-5 5.5v5l-3-1.5V7.5z" />
-              </svg>
+              <FilterIcon filled={hasActiveFilter} />
             </button>
           </div>
 

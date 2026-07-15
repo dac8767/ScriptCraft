@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
+import { FilterIcon } from './uiIcons';
 
 const KINDS = ['scene', 'act', 'section', 'marker', 'note', 'todo'] as const;
 type Kind = typeof KINDS[number];
@@ -41,11 +42,16 @@ interface NavigatorToolProps {
  *  and footer slots), outside this component. Missing kind = shown. */
 const kindShown = (show: Record<string, boolean>, k: Kind) => show[k] !== false;
 
-/** The show/hide dropdown — rendered in the window HEADER by the chrome. */
+/** The show/hide dropdown — rendered in the window HEADER by the chrome.
+ *  v1.90: it wears THE filter icon (uiIcons.FilterIcon, the Scenes/Pages
+ *  funnel) instead of a bare select; the real <select> sits invisibly on
+ *  top so the native checkmark menu keeps working exactly as before. */
 export function NavigatorHeaderExtra() {
   const navShowKinds = useEditorStore((s) => s.navShowKinds);
   const setNavShowKinds = useEditorStore((s) => s.setNavShowKinds);
+  const anyHidden = KINDS.some((k) => !kindShown(navShowKinds, k));
   return (
+    <span className="fs-nav-showhide-wrap" title="Show/hide item types">
     <select
       className="fs-nav-showhide"
       value=""
@@ -65,20 +71,26 @@ export function NavigatorHeaderExtra() {
         <option key={k} value={k}>{(kindShown(navShowKinds, k) ? '✓ ' : '   ') + LABEL[k]}</option>
       ))}
     </select>
+    <FilterIcon filled={anyHidden} />
+    </span>
   );
 }
 
-/** The filter field — rendered as the window FOOTER by the chrome. */
+/** The filter field — rendered as the window FOOTER by the chrome.
+ *  v1.90: wears THE filter icon, like every other filter control. */
 export function NavigatorFooter() {
   const navFilter = useEditorStore((s) => s.navFilter);
   const setNavFilter = useEditorStore((s) => s.setNavFilter);
   return (
-    <input
-      className="fs-nav-filter"
-      placeholder="Filter Navigator"
-      value={navFilter}
-      onChange={(e) => setNavFilter(e.target.value)}
-    />
+    <span className="fs-nav-filter-wrap">
+      <FilterIcon size={12} filled={!!navFilter} />
+      <input
+        className="fs-nav-filter"
+        placeholder="Filter Navigator"
+        value={navFilter}
+        onChange={(e) => setNavFilter(e.target.value)}
+      />
+    </span>
   );
 }
 

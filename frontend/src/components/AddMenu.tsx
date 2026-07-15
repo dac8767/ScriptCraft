@@ -23,7 +23,8 @@ export interface AddMenuGroup {
 export default function AddMenu({ groups, onPick, label = '+ Add Item', title, center }: {
   groups: AddMenuGroup[];
   onPick: (value: string) => void;
-  label?: string;
+  /** v1.90: may carry an icon (ListControls' Filter trigger wears the funnel). */
+  label?: React.ReactNode;
   title?: string;
   /** Centre the trigger's text, for when it sits in a row of ordinary buttons. */
   center?: boolean;

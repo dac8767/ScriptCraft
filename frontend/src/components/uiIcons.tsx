@@ -57,6 +57,24 @@ export const DoubleChevronIcon: React.FC<{
   </svg>
 );
 
+/** v1.90: THE filter icon — the funnel the Scenes/Pages windows always had,
+ *  promoted here so every filter control in the app draws the same one.
+ *  `filled` marks an active filter (tinted with the accent). */
+export const FilterIcon: React.FC<{ size?: number; filled?: boolean }> = ({ size = 16, filled = false }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    aria-hidden="true"
+    focusable="false"
+    fill={filled ? 'var(--fd-accent)' : 'none'}
+    stroke="currentColor"
+    strokeWidth="1.2"
+  >
+    <path d="M1.5 2h13l-5 5.5v5l-3-1.5V7.5z" />
+  </svg>
+);
+
 /** v1.38: circled minus / plus for the zoom stepper — Derek's artwork as
  *  currentColor vectors, so they tint with every theme like the chevrons. */
 const CircleIconBase: React.FC<{ size: number; children: React.ReactNode }> = ({ size, children }) => (

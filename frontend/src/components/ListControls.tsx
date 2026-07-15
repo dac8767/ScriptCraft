@@ -10,6 +10,7 @@
  */
 import React from 'react';
 import AddMenu from './AddMenu';
+import { FilterIcon } from './uiIcons';
 
 export type ListFilter = 'all' | 'script' | 'general';
 export type ListSort = 'manual' | 'created' | 'script';
@@ -46,7 +47,7 @@ export function ListToolbar({ filter, setFilter, sort, setSort, count, noun }: {
     <div className="fs-list-toolbar">
       <span className="fs-list-count">{count} {noun}{count === 1 ? '' : 's'}</span>
       <AddMenu
-        label={`Filter: ${FILTER_LABEL[filter]}`}
+        label={<><FilterIcon size={12} filled={filter !== 'all'} /> {`Filter: ${FILTER_LABEL[filter]}`}</>}
         title="Show only script-linked items, only general ones, or everything"
         onPick={(v) => setFilter(v as ListFilter)}
         groups={[{

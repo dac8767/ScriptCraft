@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.89';
+export const APP_VERSION = '1.90';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.90',
+    date: '2026-07-15',
+    items: [
+      { title: 'One filter icon everywhere', detail: 'The funnel from the Scenes/Pages windows is now THE filter icon, drawn from one shared source. The Navigator\'s show/hide control wears it in the window header (same dropdown underneath), the Filter Navigator footer field and the Notes/To-Do Filter menus carry it too — and it tints with the accent color whenever a filter is actually narrowing something.', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.89',
     date: '2026-07-15',
