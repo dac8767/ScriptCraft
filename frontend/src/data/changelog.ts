@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.75';
+export const APP_VERSION = '1.76';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.76',
+    date: '2026-07-15',
+    items: [
+      { title: 'Customize, ribbon-style', detail: 'The Menu Bar, Toolbar and Side Panels tabs are rebuilt around drag-and-drop columns: Shown and Hidden for menus; Left, Right and Hidden for the toolbar and the panels. Drag an item between lists — where you drop it is where it sits; the Hidden list is organized by the same categories the old dropdown used, and every row keeps a click fallback (× to hide, + to show). Dividers and spacers still add from buttons below and drag like everything else.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '1.75',
     date: '2026-07-15',

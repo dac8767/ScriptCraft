@@ -12759,6 +12759,90 @@ html.android .version-history-panel {
   padding: 3px 6px;
 }
 
+/* ── Customize: Outlook-style DnD columns (v1.76) ── */
+.fs-dnd-cols {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  flex-wrap: wrap;      /* narrow window: Hidden wraps below */
+  margin: 10px 0;
+}
+.fs-dnd-col {
+  flex: 1 1 220px;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: var(--fd-overlay-subtle);
+  min-height: 160px;
+  max-height: 420px;
+}
+.fs-dnd-col.drop-target { border-color: var(--fd-accent, #4a90d9); }
+.fs-dnd-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fd-text);
+  border-bottom: 1px solid var(--fd-chrome-separator);
+}
+.fs-dnd-col-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+  min-height: 0;
+}
+.fs-dnd-cat {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fd-text-muted);
+  padding: 8px 4px 3px;
+}
+.fs-dnd-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--fd-text);
+  cursor: grab;
+}
+.fs-dnd-row:hover { background: var(--fd-overlay-light); }
+.fs-dnd-row.dragging { opacity: 0.45; }
+.fs-dnd-row.locked { cursor: default; padding-left: 20px; }
+.fs-dnd-row .fs-customize-tool { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.fs-dnd-rowbtn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 1px 5px;
+  border-radius: 3px;
+  visibility: hidden;
+}
+.fs-dnd-row:hover .fs-dnd-rowbtn { visibility: visible; }
+.fs-dnd-rowbtn:hover { color: var(--fd-text); background: var(--fd-overlay-medium); }
+.fs-dnd-empty {
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  text-align: center;
+  padding: 22px 8px;
+  border: 1px dashed var(--fd-border);
+  border-radius: 4px;
+  margin: 4px;
+}
+.fs-dnd-hiddencol { background: transparent; }
+
 /* ── Outline Bar (v1.75, Final Draft's Outline Editor) ── */
 .fs-outline-bar {
   display: flex;

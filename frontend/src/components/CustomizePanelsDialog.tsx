@@ -1,5 +1,4 @@
 import React from 'react';
-import AddMenu from './AddMenu';
 import { MENU_ICONS, TOOLBAR_ICONS, UTILITY_ICONS } from './uiIcons';
 /**
  * CustomizePanelsDialog — View → Customize Layout.
@@ -143,6 +142,116 @@ function SpacerSize({ value, min, max, onChange }: {
 }
 
 
+/* ── v1.76: Outlook-ribbon-style columns ─────────────────────────────────
+   Each customization surface renders as side-by-side COLUMNS ("Shown" /
+   "Hidden", or "Left Panel" / "Right Panel" / "Hidden") and items move by
+   drag-and-drop — drop ON a row to take its position, drop on a column's
+   empty space to land at the bottom. The Hidden column is organized into
+   the same categories the old + Add dropdown used, accepts drops anywhere
+   (stashing has no order), and its rows drag back out. Every row also has
+   a click fallback (× to hide, + to show) so nothing REQUIRES a drag.
+
+   Module scope on purpose: a component declared inside the dialog would be
+   a new type every render and remount mid-drag (the v0.75 slider lesson). */
+
+export interface DndRow {
+  key: string;
+  content: React.ReactNode;
+  /** Can't be dragged or hidden (File). */
+  locked?: boolean;
+}
+export interface DndColumnSpec {
+  id: string;
+  title: string;
+  /** Extra header widget (the panel Show/Hide toggle). */
+  headerExtra?: React.ReactNode;
+  /** Rows, in sections. Visible columns use ONE unlabeled section; the
+   *  Hidden column uses one section per category. */
+  sections: Array<{ label?: string; rows: DndRow[] }>;
+  /** Hidden semantics: drops stash (position ignored), no reordering. */
+  isHidden?: boolean;
+}
+
+export function DndColumns({ columns, onDrop }: {
+  columns: DndColumnSpec[];
+  /** src is key-based (rows move between sectioned lists); dst.idx is the
+   *  flat index within the target column (ignored for Hidden). */
+  onDrop: (src: { col: string; key: string }, dst: { col: string; idx: number }) => void;
+}) {
+  const [drag, setDrag] = React.useState<{ col: string; key: string } | null>(null);
+  const [over, setOver] = React.useState<string | null>(null);   // column id under the drag
+
+  const rowProps = (col: DndColumnSpec, row: DndRow, flatIdx: number) => ({
+    draggable: !row.locked,
+    onDragStart: (e: React.DragEvent) => {
+      // WebKit refuses to start a drag without data (the app's oldest footgun).
+      e.dataTransfer.setData('text/plain', row.key);
+      e.dataTransfer.effectAllowed = 'move';
+      setDrag({ col: col.id, key: row.key });
+    },
+    onDragOver: (e: React.DragEvent) => { if (drag) { e.preventDefault(); setOver(col.id); } },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (drag && !(drag.col === col.id && drag.key === row.key)) {
+        onDrop(drag, { col: col.id, idx: flatIdx });
+      }
+      setDrag(null); setOver(null);
+    },
+    onDragEnd: () => { setDrag(null); setOver(null); },
+  });
+
+  return (
+    <div className="fs-dnd-cols">
+      {columns.map((col) => {
+        const flatCount = col.sections.reduce((n, s) => n + s.rows.length, 0);
+        let flatIdx = -1;
+        return (
+          <div
+            key={col.id}
+            className={`fs-dnd-col${over === col.id && drag ? ' drop-target' : ''}${col.isHidden ? ' fs-dnd-hiddencol' : ''}`}
+            onDragOver={(e) => { if (drag) { e.preventDefault(); setOver(col.id); } }}
+            onDragLeave={(e) => { if (e.currentTarget === e.target) setOver(null); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (drag) onDrop(drag, { col: col.id, idx: flatCount });
+              setDrag(null); setOver(null);
+            }}
+          >
+            <div className="fs-dnd-col-head">
+              <span>{col.title}</span>
+              {col.headerExtra}
+            </div>
+            <div className="fs-dnd-col-body">
+              {col.sections.map((sec, si) => (
+                <React.Fragment key={sec.label ?? si}>
+                  {sec.label && sec.rows.length > 0 && (
+                    <div className="fs-dnd-cat">{sec.label}</div>
+                  )}
+                  {sec.rows.map((row) => {
+                    flatIdx += 1;
+                    return (
+                      <div
+                        key={row.key}
+                        className={`fs-dnd-row${drag?.key === row.key && drag.col === col.id ? ' dragging' : ''}${row.locked ? ' locked' : ''}`}
+                        {...rowProps(col, row, flatIdx)}
+                      >
+                        {!row.locked && <span className="fs-customize-drag" title="Drag to move">⠿</span>}
+                        {row.content}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+              {flatCount === 0 && <div className="fs-dnd-empty">Drop items here</div>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function CustomizePanelsDialog({ open, onClose, embedded = false, category }: Props) {
   const {
     toolConfig, setToolConfig,
@@ -194,33 +303,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       const full = [...order];
       for (const t of toks) if (!full.includes(t)) full.push(t);
       return full;
-    };
-
-    /** Reorder within ONE side; the other side is untouched. */
-    /**
-     * Drop a panel row: reorder within a side, or move it to the OTHER side at
-     * the exact position it was dropped — its side switches to match, because
-     * the side is just which list it sits in. Dividers and spacers move too.
-     */
-    const dropRow = (
-      srcSide: 'left' | 'right', srcIdx: number,
-      dstSide: 'left' | 'right', dstIdx: number,
-    ) => {
-      const row = (srcSide === 'left' ? leftRows : rightRows)[srcIdx];
-      if (!row) return;
-      const tok = orderTokenOf(row);
-
-      let left = leftRows.map(orderTokenOf).filter((t) => t !== tok);
-      let right = rightRows.map(orderTokenOf).filter((t) => t !== tok);
-      const dst = dstSide === 'left' ? left : right;
-      dst.splice(Math.min(dstIdx, dst.length), 0, tok);
-      if (dstSide === 'left') left = dst; else right = dst;
-      setToolOrder([...left, ...right]);
-
-      if (srcSide !== dstSide) {
-        if (row.kind === 'tool') setTool(row.id as ToolId, { side: dstSide });
-        else setPanelDividers(panelDividers.map((d) => (d.id === row.id ? { ...d, side: dstSide } : d)));
-      }
     };
 
     const setRowSide = (r: Row, target: 'left' | 'right' | 'hidden') => {
@@ -305,100 +387,129 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       <section>
         <h3>Panel Items</h3>
         <p className="fs-customize-hint">
-          Each panel is its own table; the Show/Hide in its header controls the
-          whole panel (drag a panel's inner edge to resize it). On an item,
-          Left/Right moves it to the bottom of the other panel's list; Hide
-          removes it (re-add it from the dropdown below). Drag to reorder
-          within a panel. Divider labels are edited here only.
+          Drag tools between Left Panel, Right Panel and Hidden — where you
+          drop one is where it sits. The Show/Hide in a list's header controls
+          the whole panel (drag a panel's inner edge in the app to resize it).
+          Divider labels are edited here only.
         </p>
-        {(['left', 'right'] as const).map((side) => {
-          const sideRows = side === 'left' ? leftRows : rightRows;
-          /* v1.37: the whole-panel Show/Hide lives in the table's header — the
-             old standalone "Panels" section said the same thing further away. */
-          const [panelLabel, panelOpen, panelToggle] = side === 'left'
-            ? ['Left Panel', navigatorOpen, toggleNavigator] as const
-            : ['Right Panel', shelfOpen, toggleShelf] as const;
-          return (
-            <div className="fs-panel-table" key={side}>
-              <div className="fs-panel-table-head">
-                <span className="fs-panel-table-title">{panelLabel}</span>
-                <span className="fs-customize-seg">
-                  <button
-                    className={panelOpen ? 'active' : ''}
-                    onClick={() => { if (!panelOpen) panelToggle(); }}
-                  >Show</button>
-                  <button
-                    className={!panelOpen ? 'active' : ''}
-                    onClick={() => { if (panelOpen) panelToggle(); }}
-                  >Hide</button>
-                </span>
-              </div>
-              {sideRows.map((r, idx) => (
-                <div
-                  key={`${r.kind}-${r.id}`}
-                  className={`fs-customize-row${dragClass(`panels-${side}`, idx)}`}
-                  {...zoneDragProps('panels', side, idx, dropRow)}
-                >
-                  <span className="fs-customize-tool">
-                    <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
-                    {iconSlot(r.kind === 'tool'
-                      ? (ALL_TOOLS.find((t) => t.id === r.id)?.icon ?? null)
-                      : UTILITY_ICONS[r.spacer ? 'spacer' : 'divider'])}
-                    {r.kind === 'divider' && r.spacer ? (
-                      <>
-                        <span className="fs-spacer-row-label">— Spacer —</span>
-                        <SpacerSize
-                          value={r.size ?? DEFAULT_PANEL_SPACER}
-                          min={8}
-                          max={240}
-                          onChange={(px) => setPanelDividers(
-                            panelDividers.map((x) => (x.id === r.id ? { ...x, size: px } : x)),
-                          )}
-                        />
-                      </>
-                    ) : r.kind === 'divider' ? (
-                      <input
-                        className="fs-divider-label-input"
-                        value={r.label}
-                        placeholder="Divider label (optional)"
-                        onChange={(e) => setPanelDividers(panelDividers.map((x) => x.id === r.id ? { ...x, label: e.target.value } : x))}
-                      />
-                    ) : r.label}
-                  </span>
-                  <span className="fs-customize-seg">
-                    <button className={r.side === 'left' ? 'active' : ''} onClick={() => setRowSide(r, 'left')}>Left</button>
-                    <button className={r.side === 'right' ? 'active' : ''} onClick={() => setRowSide(r, 'right')}>Right</button>
-                    <button onClick={() => setRowSide(r, 'hidden')}>Hide</button>
-                  </span>
-                </div>
-              ))}
-            </div>
+        {/* v1.76: Outlook-style — Left Panel, Right Panel, Hidden. Drag
+            between the three; the column a tool lands in is its side, and
+            drop position is its position. Dividers and spacers dropped on
+            Hidden are deleted (they're structure, not tools). */}
+        {(() => {
+          const rowContent = (r: Row) => (
+            <span className="fs-customize-tool">
+              {iconSlot(r.kind === 'tool'
+                ? (ALL_TOOLS.find((t) => t.id === r.id)?.icon ?? null)
+                : UTILITY_ICONS[r.spacer ? 'spacer' : 'divider'])}
+              {r.kind === 'divider' && r.spacer ? (
+                <>
+                  <span className="fs-spacer-row-label">— Spacer —</span>
+                  <SpacerSize
+                    value={r.size ?? DEFAULT_PANEL_SPACER}
+                    min={8}
+                    max={240}
+                    onChange={(px) => setPanelDividers(
+                      panelDividers.map((x) => (x.id === r.id ? { ...x, size: px } : x)),
+                    )}
+                  />
+                </>
+              ) : r.kind === 'divider' ? (
+                <input
+                  className="fs-divider-label-input"
+                  value={r.label}
+                  placeholder="Divider label (optional)"
+                  onChange={(e) => setPanelDividers(panelDividers.map((x) => x.id === r.id ? { ...x, label: e.target.value } : x))}
+                />
+              ) : r.label}
+              <button
+                className="fs-dnd-rowbtn"
+                title={r.kind === 'divider' ? 'Delete' : 'Hide (find it again under Hidden)'}
+                onClick={() => setRowSide(r, 'hidden')}
+              >×</button>
+            </span>
           );
-        })}
+          const panelHeaderExtra = (side: 'left' | 'right') => {
+            const [panelOpen, panelToggle] = side === 'left'
+              ? [navigatorOpen, toggleNavigator] as const
+              : [shelfOpen, toggleShelf] as const;
+            return (
+              <span className="fs-customize-seg">
+                <button className={panelOpen ? 'active' : ''} onClick={() => { if (!panelOpen) panelToggle(); }}>Show</button>
+                <button className={!panelOpen ? 'active' : ''} onClick={() => { if (panelOpen) panelToggle(); }}>Hide</button>
+              </span>
+            );
+          };
+          const hiddenRow = (id: ToolId, label: string) => ({
+            key: id,
+            content: (
+              <span className="fs-customize-tool">
+                {iconSlot(ALL_TOOLS.find((t) => t.id === id)?.icon ?? null)}
+                {label}
+                <button
+                  className="fs-dnd-rowbtn"
+                  title="Show in its default panel"
+                  onClick={() => { setTool(id, { enabled: true, side: homeSide(id) }); sendToBottom(id); }}
+                >+</button>
+              </span>
+            ),
+          });
+          const hiddenGroups = (['Project Windows', 'Tools', 'Production'] as const).map((group) => ({
+            label: group,
+            rows: addOptions.filter((o) => o.group === group)
+              .map((o) => hiddenRow(o.value.slice(2) as ToolId, o.label)),
+          }));
+          return (
+            <DndColumns
+              columns={[
+                {
+                  id: 'left', title: 'Left Panel', headerExtra: panelHeaderExtra('left'),
+                  sections: [{ rows: leftRows.map((r) => ({ key: orderTokenOf(r), content: rowContent(r) })) }],
+                },
+                {
+                  id: 'right', title: 'Right Panel', headerExtra: panelHeaderExtra('right'),
+                  sections: [{ rows: rightRows.map((r) => ({ key: orderTokenOf(r), content: rowContent(r) })) }],
+                },
+                { id: 'hidden', title: 'Hidden', isHidden: true, sections: hiddenGroups },
+              ]}
+              onDrop={(src, dst) => {
+                const tok = src.key;   // tool id, or 'div:<id>'
+                const isDiv = tok.startsWith('div:');
+                if (dst.col === 'hidden') {
+                  if (isDiv) {
+                    setPanelDividers(panelDividers.filter((x) => `div:${x.id}` !== tok));
+                    setToolOrder(order.filter((t) => t !== tok));
+                  } else {
+                    setTool(tok as ToolId, { enabled: false });
+                  }
+                  return;
+                }
+                const side = dst.col as 'left' | 'right';
+                const left = leftRows.map(orderTokenOf).filter((t) => t !== tok);
+                const right = rightRows.map(orderTokenOf).filter((t) => t !== tok);
+                const target = side === 'left' ? left : right;
+                target.splice(Math.min(dst.idx, target.length), 0, tok);
+                setToolOrder([...left, ...right]);
+                if (isDiv) {
+                  setPanelDividers(panelDividers.map((d) => (`div:${d.id}` === tok ? { ...d, side } : d)));
+                } else {
+                  setTool(tok as ToolId, { enabled: true, side });
+                }
+              }}
+            />
+          );
+        })()}
         <div className="fs-tbzone-adders fs-adders-equal">
-          <AddMenu
-            onPick={onAdd}
-            groups={[
-              {
-                label: 'Show All',
-                options: (['Project Windows', 'Tools', 'Production'] as const)
-                  .filter((g) => addOptions.some((o) => o.group === g))
-                  .map((g) => ({ value: `all:${g}`, label: `Show All - ${titleCase(g)}` })),
-              },
-              ...(['Project Windows', 'Tools', 'Production'] as const).map((group) => ({
-                label: group,
-                options: addOptions.filter((o) => o.group === group)
-                  .map((o) => ({ value: o.value, label: o.label, icon: tokenIcon(o.value) })),
-              })),
-              {
-                label: 'Utility',
-                options: [
-                  { value: 'divider', label: 'Add Divider' },
-                  { value: 'spacer', label: 'Spacer' },
-                ],
-              },
-            ]}
-          />
+          <button
+            className="swn-add-btn"
+            title="Add a divider line to the left panel"
+            onClick={() => onAdd('divider')}
+          >+ Divider</button>
+          <button
+            className="swn-add-btn"
+            title="Add a spacer to the left panel"
+            onClick={() => onAdd('spacer')}
+          >+ Spacer</button>
           <button
             className="swn-add-btn"
             title="Hide everything in both panels (re-add items from the dropdown)"
@@ -464,65 +575,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   React.useEffect(() => {
     if (open && category) setActiveCat(category);
   }, [open, category]);
-  // Drag-and-drop reordering (v0.45): one shared source marker; drops are
-  // only accepted within the same list.
-  const [dragInfo, setDragInfo] = React.useState<{ list: string; idx: number } | null>(null);
-  // Warning window shown whenever the View menu (or the whole menu bar)
-  // gets hidden — the user must acknowledge where customization lives.
-  const dragProps = (list: string, idx: number, moveTo: (from: number, to: number) => void) => ({
-    draggable: true,
-    onDragStart: (e: React.DragEvent) => {
-      setDragInfo({ list, idx });
-      e.dataTransfer.effectAllowed = 'move';
-    },
-    onDragOver: (e: React.DragEvent) => { if (dragInfo && dragInfo.list === list) e.preventDefault(); },
-    onDrop: (e: React.DragEvent) => {
-      e.preventDefault();
-      if (dragInfo && dragInfo.list === list && dragInfo.idx !== idx) moveTo(dragInfo.idx, idx);
-      setDragInfo(null);
-    },
-    onDragEnd: () => setDragInfo(null),
-  });
-  const dragClass = (list: string, idx: number) =>
-    dragInfo && dragInfo.list === list && dragInfo.idx === idx ? ' dragging' : '';
-
-  /**
-   * v0.95 — drag ACROSS zones. Left and Right are separate lists, and dragProps
-   * only accepted a drop when the source and target lists matched, so an item
-   * could never be dragged from one side to the other; you had to use the toggle,
-   * which dumps it at the bottom.
-   *
-   * Now a row accepts a drop from either zone of the same GROUP (the toolbar's
-   * two zones, or the panels' two sides). Where you drop it decides both the
-   * position AND the side — the toggle follows the drag, because the zone the
-   * item lands in IS its side. `group` keeps the toolbar and panels apart, so a
-   * toolbar item can't be dropped into a panel.
-   */
-  const zoneDragProps = (
-    group: string,
-    zone: 'left' | 'right',
-    idx: number,
-    onDrop: (srcZone: 'left' | 'right', srcIdx: number, dstZone: 'left' | 'right', dstIdx: number) => void,
-  ) => ({
-    draggable: true,
-    onDragStart: (e: React.DragEvent) => {
-      setDragInfo({ list: `${group}-${zone}`, idx });
-      e.dataTransfer.effectAllowed = 'move';
-    },
-    onDragOver: (e: React.DragEvent) => {
-      if (dragInfo?.list.startsWith(`${group}-`)) e.preventDefault();
-    },
-    onDrop: (e: React.DragEvent) => {
-      e.preventDefault();
-      if (!dragInfo?.list.startsWith(`${group}-`)) return;
-      const srcZone = dragInfo.list.slice(group.length + 1) as 'left' | 'right';
-      if (!(srcZone === zone && dragInfo.idx === idx)) {
-        onDrop(srcZone, dragInfo.idx, zone, idx);
-      }
-      setDragInfo(null);
-    },
-    onDragEnd: () => setDragInfo(null),
-  });
+  // v1.76: the old per-list drag plumbing (dragProps/zoneDragProps, v0.45 and
+  // v0.95) is gone — DndColumns owns drag state for every customization list.
 
   if (!open) return null;
 
@@ -592,21 +646,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     },
   ].map((cat) => ({ ...cat, options: cat.options.filter((o) => !tbPlaced(o.value)) }));
 
-  // Utility (v0.69): structural items, added AFTER the "already placed" filter
-  // above — Divider and Spacer are repeatable, so they must never be filtered
-  // out as already present. `utility` marks them so "Show all …" skips them.
-  const tbAddCategoriesAll: typeof tbAddCategories = [
-    ...tbAddCategories,
-    {
-      id: 'utility',
-      label: 'Utility',
-      utility: true,
-      options: [
-        { value: 'divider', label: 'Add Divider' },
-        { value: 'spacer', label: 'Spacer' },
-      ],
-    },
-  ];
   const spacerPx = (tok: string) => {
     const n = Number(tok.split(':')[2]);
     return Number.isFinite(n) && n > 0 ? n : DEFAULT_TOOLBAR_SPACER;
@@ -662,8 +701,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           <section>
             <h3>Menus</h3>
             <p className="fs-customize-hint">
-              Hide menus you never use and put the rest in your order. File
-              always stays visible.
+              Drag menus between Shown and Hidden — where you drop one is
+              where it sits on the bar. File always stays visible.
             </p>
             <div className="fs-customize-row">
               <span className="fs-customize-tool">Menu Bar Size</span>
@@ -689,73 +728,67 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 onChange={(px) => setChromeCustomPx('menu', px)}
               />
             )}
-            {/* v1.1: ONE Hide model everywhere. Hide REMOVES the row and stashes
-                the item in + Add Item, exactly as the Toolbar, Side Panels and
-                Context Menu tabs already did. A greyed-out row that stays put and
-                a row that disappears are two different mental models, and the same
-                word was on both buttons. */}
-            <div className="fs-customize-grid">
-              {visibleMenuLabels.map((label, idx) => {
-                const moveMenuTo = (from: number, to: number) => {
-                  const next = [...visibleMenuLabels];
-                  const [m] = next.splice(from, 1);
-                  next.splice(to, 0, m);
-                  // Keep hidden menus in the stored order so re-adding one puts it
-                  // back near where it was rather than at the end.
-                  setMenuBarOrder([...next, ...orderedMenuLabels.filter((l) => menuBarHidden.includes(l))]);
-                };
-                return (
-                  <div
-                    key={label}
-                    className={`fs-customize-row${dragClass('menu', idx)}`}
-                    {...dragProps('menu', idx, moveMenuTo)}
-                  >
-                    <span className="fs-customize-tool">
-                      <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
-                      {iconSlot(MENU_ICONS[label] ?? null)}
-                      {label}
-                    </span>
-                    <span className="fs-customize-seg">
-                      {/* v1.3: Show is kept for consistency across the tabs, even
-                          though a row you can see is by definition shown — it's
-                          the active state, and Hide is the move. */}
-                      <button className="active" title="This menu is on the menu bar">Show</button>
-                      <button
-                        disabled={label === 'File'}
-                        title={label === 'File'
-                          ? 'File always stays on screen'
-                          : 'Remove from the menu bar (re-add it from + Add Item)'}
-                        onClick={() => {
-                          if (label === 'File') return;
-                          setMenuBarHidden([...menuBarHidden, label]);
-                        }}
-                      >Hide</button>
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="fs-tbzone-adders fs-adders-equal">
-              <AddMenu
-                onPick={(v) => {
-                  if (v === 'all') { setMenuBarHidden([]); return; }
-                  setMenuBarHidden(menuBarHidden.filter((l: string) => l !== v));
-                }}
-                groups={[
-                  {
-                    label: 'Show All',
-                    options: menuBarHidden.length > 0
-                      ? [{ value: 'all', label: 'Show All - Menus' }]
-                      : [],
-                  },
-                  {
+            {/* v1.76: Outlook-style — Shown on the left, Hidden on the right,
+                drag between them; drop position IS the menu's position. */}
+            <DndColumns
+              columns={[
+                {
+                  id: 'shown', title: 'Shown',
+                  sections: [{
+                    rows: visibleMenuLabels.map((label) => ({
+                      key: label,
+                      locked: label === 'File',
+                      content: (
+                        <span className="fs-customize-tool">
+                          {iconSlot(MENU_ICONS[label] ?? null)}
+                          {label}
+                          {label !== 'File' && (
+                            <button
+                              className="fs-dnd-rowbtn"
+                              title="Hide this menu"
+                              onClick={() => setMenuBarHidden([...menuBarHidden, label])}
+                            >×</button>
+                          )}
+                        </span>
+                      ),
+                    })),
+                  }],
+                },
+                {
+                  id: 'hidden', title: 'Hidden', isHidden: true,
+                  sections: [{
                     label: 'Menus',
-                    options: orderedMenuLabels
-                      .filter((l) => menuBarHidden.includes(l))
-                      .map((l) => ({ value: l, label: l, icon: MENU_ICONS[l] ?? null })),
-                  },
-                ]}
-              />
+                    rows: orderedMenuLabels.filter((l) => menuBarHidden.includes(l)).map((label) => ({
+                      key: label,
+                      content: (
+                        <span className="fs-customize-tool">
+                          {iconSlot(MENU_ICONS[label] ?? null)}
+                          {label}
+                          <button
+                            className="fs-dnd-rowbtn"
+                            title="Show this menu"
+                            onClick={() => setMenuBarHidden(menuBarHidden.filter((l) => l !== label))}
+                          >+</button>
+                        </span>
+                      ),
+                    })),
+                  }],
+                },
+              ]}
+              onDrop={(src, dst) => {
+                const label = src.key;
+                if (dst.col === 'hidden') {
+                  if (label === 'File' || menuBarHidden.includes(label)) return;
+                  setMenuBarHidden([...menuBarHidden, label]);
+                  return;
+                }
+                const next = visibleMenuLabels.filter((l) => l !== label);
+                next.splice(Math.min(dst.idx, next.length), 0, label);
+                setMenuBarOrder([...next, ...orderedMenuLabels.filter((l) => menuBarHidden.includes(l) && l !== label)]);
+                if (menuBarHidden.includes(label)) setMenuBarHidden(menuBarHidden.filter((l) => l !== label));
+              }}
+            />
+            <div className="fs-tbzone-adders fs-adders-equal">
               <button
                 className="swn-add-btn"
                 title="Remove every menu except File"
@@ -773,9 +806,10 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           <section>
             <h3>Toolbar Layout</h3>
             <p className="fs-customize-hint">
-              One list for the whole toolbar — every item on its own row.
-              Left flows from the left edge; Right sits at the far right;
-              Hide removes an item (re-add it from the dropdown below).
+              Drag items between the three lists. Left flows from the left
+              edge, Right sits at the far right of the bar, and Hidden stashes
+              an item by category until you drag it back. Drop position is the
+              item's position.
             </p>
             <div className="fs-customize-row">
               <span className="fs-customize-tool">Toolbar Size</span>
@@ -795,114 +829,101 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               />
             )}
 
-            {(['left', 'right'] as const).map((zone) => {
-              const tokens = zone === 'left' ? tbLeft : tbRight;
-              const other = zone === 'left' ? tbRight : tbLeft;
-              const update = (nextSelf: string[], nextOther?: string[]) =>
-                zone === 'left'
-                  ? setToolbarZones(nextSelf, nextOther ?? other)
-                  : setToolbarZones(nextOther ?? other, nextSelf);
-              // Zones are already separate arrays, so Left/Right items are
-              // grouped by construction and a side switch appends to the
-              // target zone's end (bottom). Only the divider line was missing.
-              const sep = zone === 'right' && tbLeft.length > 0 && tbRight.length > 0
-                ? [<div className="fs-customize-side-sep" key="tb-side-sep" />]
-                : [];
-              return [...sep, ...tokens.map((tok, idx) => {
-                // Drop handler covering BOTH cases: reorder inside a zone, or
-                // move to the other zone at exactly the row you dropped on — the
-                // Left/Right toggle simply follows, since the zone IS the side.
-                const dropTok = (
-                  srcZone: 'left' | 'right', srcIdx: number,
-                  dstZone: 'left' | 'right', dstIdx: number,
-                ) => {
-                  let nextLeft = [...tbLeft];
-                  let nextRight = [...tbRight];
-                  const src = srcZone === 'left' ? nextLeft : nextRight;
-                  const [moved] = src.splice(srcIdx, 1);
-                  if (moved === undefined) return;
-                  const dst = dstZone === 'left' ? nextLeft : nextRight;
-                  dst.splice(Math.min(dstIdx, dst.length), 0, moved);
-                  if (dstZone === 'left') nextLeft = dst; else nextRight = dst;
-                  setToolbarZones(nextLeft, nextRight);
-                };
-                const toZone = (target: 'left' | 'right') => {
-                  if (target === zone) return;
-                  update(tokens.filter((_, i) => i !== idx), [...other, tok]);
-                };
-                // v0.91: nothing is permanent in the toolbar any more — Customize
-                // moved out to the chrome. The mechanism stays for any future item
-                // that needs it; today it simply never fires.
-                const isPermanent = tok.startsWith('b:')
-                  && !!BUILTIN_BY_KEY[tok.slice(2)]?.permanent;
-                const hideTok = () => {
-                  if (isPermanent) return;
-                  update(tokens.filter((_, i) => i !== idx));
-                };
+            {/* v1.76: Outlook-style — Left zone, Right zone (far right of the
+                bar), Hidden. Drag anywhere; the zone an item lands in IS its
+                side, and drop position is its position. Dividers and spacers
+                dropped on Hidden are deleted (they're structure, not items). */}
+            {(() => {
+              const tbRowContent = (tok: string) => {
+                const isPermanent = tok.startsWith('b:') && !!BUILTIN_BY_KEY[tok.slice(2)]?.permanent;
                 return (
-                  <div
-                    className={`fs-customize-row${dragClass(`tb-${zone}`, idx)}`}
-                    key={`${tok}-${zone}-${idx}`}
-                    {...zoneDragProps('tb', zone, idx, dropTok)}
-                  >
-                    <span className="fs-customize-tool">
-                      <span className="fs-customize-drag" title="Drag to reorder">⠿</span>
-                      {iconSlot(tokenIcon(tok))}
-                      {tokenLabel(tok)}
-                      {tok.startsWith('s:') && (
-                        <SpacerSize
-                          value={spacerPx(tok)}
-                          min={8}
-                          max={240}
-                          onChange={(px) => {
-                            // The size rides in the token itself (s:<id>:<px>),
-                            // so it persists with the layout it belongs to.
-                            const [, id] = tok.split(':');
-                            const next = `s:${id}:${px}`;
-                            const swap = (arr: string[]) => arr.map((t) => (t === tok ? next : t));
-                            setToolbarZones(swap(tbLeft), swap(tbRight));
-                          }}
-                        />
-                      )}
-                    </span>
-                    <span className="fs-customize-seg">
-                      <button className={zone === 'left' ? 'active' : ''} onClick={() => toZone('left')}>Left</button>
-                      <button className={zone === 'right' ? 'active' : ''} onClick={() => toZone('right')}>Right</button>
+                  <span className="fs-customize-tool">
+                    {iconSlot(tokenIcon(tok))}
+                    {tokenLabel(tok)}
+                    {tok.startsWith('s:') && (
+                      <SpacerSize
+                        value={spacerPx(tok)}
+                        min={8}
+                        max={240}
+                        onChange={(px) => {
+                          // The size rides in the token itself (s:<id>:<px>),
+                          // so it persists with the layout it belongs to.
+                          const [, id] = tok.split(':');
+                          const next = `s:${id}:${px}`;
+                          const swap = (arr: string[]) => arr.map((t) => (t === tok ? next : t));
+                          setToolbarZones(swap(tbLeft), swap(tbRight));
+                        }}
+                      />
+                    )}
+                    {!isPermanent && (
                       <button
-                        title={isPermanent ? 'Customize can’t be hidden' : 'Remove from the toolbar'}
-                        disabled={isPermanent}
-                        onClick={hideTok}
-                      >Hide</button>
-                    </span>
-                  </div>
+                        className="fs-dnd-rowbtn"
+                        title="Remove from the toolbar"
+                        onClick={() => setToolbarZones(tbLeft.filter((t) => t !== tok), tbRight.filter((t) => t !== tok))}
+                      >×</button>
+                    )}
+                  </span>
                 );
-              })];
-            })}
+              };
+              const tbHiddenRow = (value: string, label: string) => ({
+                key: value,
+                content: (
+                  <span className="fs-customize-tool">
+                    {iconSlot(tokenIcon(value))}
+                    {label}
+                    <button
+                      className="fs-dnd-rowbtn"
+                      title="Add to the end of the toolbar's left zone"
+                      onClick={() => setToolbarZones([...tbLeft, value], tbRight)}
+                    >+</button>
+                  </span>
+                ),
+              });
+              return (
+                <DndColumns
+                  columns={[
+                    {
+                      id: 'left', title: 'Left',
+                      sections: [{ rows: tbLeft.map((tok) => ({ key: tok, content: tbRowContent(tok) })) }],
+                    },
+                    {
+                      id: 'right', title: 'Right (Far Edge)',
+                      sections: [{ rows: tbRight.map((tok) => ({ key: tok, content: tbRowContent(tok) })) }],
+                    },
+                    {
+                      id: 'hidden', title: 'Hidden', isHidden: true,
+                      sections: tbAddCategories.map((cat) => ({
+                        label: cat.label,
+                        rows: cat.options.map((o) => tbHiddenRow(o.value, o.label)),
+                      })),
+                    },
+                  ]}
+                  onDrop={(src, dst) => {
+                    const tok = src.key;
+                    const nextLeft = tbLeft.filter((t) => t !== tok);
+                    const nextRight = tbRight.filter((t) => t !== tok);
+                    if (dst.col === 'hidden') {
+                      setToolbarZones(nextLeft, nextRight);   // dividers/spacers simply vanish
+                      return;
+                    }
+                    const arr = dst.col === 'left' ? nextLeft : nextRight;
+                    arr.splice(Math.min(dst.idx, arr.length), 0, tok);
+                    setToolbarZones(nextLeft, nextRight);
+                  }}
+                />
+              );
+            })()}
             <div className="fs-tbzone-adders fs-adders-equal">
-              <AddMenu
-                onPick={(v) => {
-                  if (v === 'divider') { setToolbarZones([...tbLeft, `d:${Date.now()}`], tbRight); return; }
-                  if (v === 'spacer') { setToolbarZones([...tbLeft, `s:${Date.now()}`], tbRight); return; }
-                  if (v.startsWith('all:')) {
-                    const cat = tbAddCategoriesAll.find((c) => c.id === v.slice(4) && !c.utility);
-                    if (cat) setToolbarZones([...tbLeft, ...cat.options.map((o) => o.value)], tbRight);
-                    return;
-                  }
-                  setToolbarZones([...tbLeft, v], tbRight);
-                }}
-                groups={[
-                  {
-                    label: 'Show All',
-                    options: tbAddCategoriesAll
-                      .filter((cat) => !cat.utility && cat.options.length > 0)
-                      .map((cat) => ({ value: `all:${cat.id}`, label: `Show All - ${titleCase(cat.label)}` })),
-                  },
-                  ...tbAddCategoriesAll.map((cat) => ({
-                    label: cat.label,
-                    options: cat.options.map((o) => ({ value: o.value, label: o.label, icon: tokenIcon(o.value) })),
-                  })),
-                ]}
-              />
+              <button
+                className="swn-add-btn"
+                title="Add a divider line to the left zone"
+                onClick={() => setToolbarZones([...tbLeft, `d:${Date.now()}`], tbRight)}
+              >+ Divider</button>
+              <button
+                className="swn-add-btn"
+                title="Add a spacer to the left zone"
+                onClick={() => setToolbarZones([...tbLeft, `s:${Date.now()}`], tbRight)}
+              >+ Spacer</button>
               <button
                 className="swn-add-btn"
                 title="Hide every toolbar item (re-add items from the dropdown)"
