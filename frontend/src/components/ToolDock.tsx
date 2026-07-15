@@ -174,7 +174,7 @@ export const PANEL_MAX_W = 640;
  *  narrowed panel still fits inside it. */
 export const dockWidthFor = (
   side: 'left' | 'right',
-  mode: 'compact' | 'comfortable' | 'custom',
+  mode: 'compact' | 'comfortable' | 'custom' | 'icons',
   customPx?: number,
 ) => chromePx(side === 'left' ? 'panelLeft' : 'panelRight', mode, customPx);
 
@@ -351,7 +351,10 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
         * from popped-out windows; Derek wants it back). */}
       {(() => {
         const HeaderExtra = TOOL_HEADER_EXTRAS[tool.id];
-        const popBtn = !temporary && !tool.neverDock ? (
+        // v2.06: an icon-rail panel has no inline shape to return to — no
+        // pop-in on windows opened from it.
+        const iconsMode = side ? panelSizeMode[side] === 'icons' : false;
+        const popBtn = !temporary && !tool.neverDock && !iconsMode ? (
           <button
             className="tool-window-popin"
             title="Pop back into the side panel"
@@ -444,9 +447,11 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
         ? { w: active.defaultSize.w, h: active.defaultSize.h }
         : { w: Math.min(active.defaultSize.w, dockW), h: active.defaultSize.h }))
     : null;
+  // v2.06: the icon rail never hosts inline windows — everything floats.
+  const iconsMode = panelSizeMode[side] === 'icons';
   // neverDock tools float regardless — even a stale small toolSize from before
   // the flag existed must not pull them inline.
-  const inline = !!(active && activeSize && activeSize.w <= dockW && !active.neverDock);
+  const inline = !iconsMode && !!(active && activeSize && activeSize.w <= dockW && !active.neverDock);
 
   const startInlineResize = (e: React.PointerEvent) => {
     if (!active || !activeSize) return;
@@ -529,8 +534,23 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
         onPointerDown={startEdgeResize}
         title="Drag to resize the panel"
       />
-      <div className="tool-dock" style={{ width: dockW }}>
-        {entries.map((entry) => entry.kind === 'spacer' ? (
+      <div className={`tool-dock${iconsMode ? ' tool-dock-iconrail' : ''}`} style={{ width: dockW }}>
+        {/* v2.06: icon rail — a square per tool (OneNote-style). Clicking
+            opens the tool as a floating window; there is no inline state. */}
+        {iconsMode ? entries.map((entry) => entry.kind === 'tool' ? (
+          <button
+            key={entry.tool.id}
+            className={`tool-dock-iconbtn${activeId === entry.tool.id ? ' active' : ''}`}
+            title={entry.tool.label}
+            onClick={() => setActive(activeId === entry.tool.id ? null : entry.tool.id)}
+          >
+            {entry.tool.icon}
+          </button>
+        ) : entry.kind === 'divider' ? (
+          <div key={`div-${entry.id}`} className="tool-dock-iconrail-divider" />
+        ) : (
+          <div key={`sp-${entry.id}`} className="tool-dock-spacer" style={entry.size ? { height: entry.size } : undefined} />
+        )) : entries.map((entry) => entry.kind === 'spacer' ? (
           // v0.82: sizeable. Older spacers have no size and keep the default.
           <div
             key={`sp-${entry.id}`}

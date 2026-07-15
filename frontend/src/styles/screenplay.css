@@ -13786,6 +13786,41 @@ body.fs-writing-focus::before {
   flex-shrink: 0;
 }
 .tool-dock-popout:hover { color: var(--fd-text); }
+/* v2.06: the Icons Only panel — a rail of square tool buttons (OneNote's
+   left rail). No labels, no inline windows; clicking opens a floating
+   window. */
+.tool-dock-iconrail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 0;
+}
+.tool-dock-iconbtn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--fd-text-muted);
+  font-size: 16px;
+  cursor: pointer;
+}
+.tool-dock-iconbtn:hover { color: var(--fd-text); background: var(--fd-menu-hover); }
+.tool-dock-iconbtn.active {
+  color: var(--fd-accent, #4a90d9);
+  background: color-mix(in srgb, var(--fd-accent, #4a90d9) 14%, transparent);
+}
+.tool-dock-iconrail-divider {
+  width: 24px;
+  height: 1px;
+  background: var(--fd-border);
+  margin: 3px 0;
+}
+
 /* v2.00: the window HEADER — the row inside the window, under the dock
    button. Holds the tool's header controls and the pop-out, with real
    breathing room between the pop button and the nearest text. */

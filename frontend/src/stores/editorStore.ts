@@ -38,7 +38,7 @@ interface ViewState {
   contextMenuOrder?: string[];
   noteOrder?: string[];
   todoOrder?: string[];
-  panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
+  panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom' | 'icons'; right: 'compact' | 'comfortable' | 'custom' | 'icons' };
   chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
   workspaces?: Record<string, WorkspaceSnapshot>;
@@ -441,7 +441,7 @@ export interface WorkspaceSnapshot {
   menuBarOrder?: string[];
   menuBarHidden?: string[];
   menuMode?: 'compact' | 'comfortable' | 'custom' | 'hidden';
-  panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
+  panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom' | 'icons'; right: 'compact' | 'comfortable' | 'custom' | 'icons' };
   chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
   /** v0.78: the active theme is part of a workspace. */
@@ -804,11 +804,11 @@ interface EditorState {
   setNoteOrder: (keys: string[]) => void;
   todoOrder: string[];
   setTodoOrder: (keys: string[]) => void;
-  panelSizeMode: { left: 'compact' | 'comfortable' | 'custom'; right: 'compact' | 'comfortable' | 'custom' };
+  panelSizeMode: { left: 'compact' | 'comfortable' | 'custom' | 'icons'; right: 'compact' | 'comfortable' | 'custom' | 'icons' };
   /** Custom sizes in px, used when the matching mode is 'custom' (v0.72). */
   chromeCustomPx: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   setChromeCustomPx: (surface: 'menu' | 'toolbar' | 'panelLeft' | 'panelRight', px: number) => void;
-  setPanelSizeMode: (side: 'left' | 'right', mode: 'compact' | 'comfortable' | 'custom') => void;
+  setPanelSizeMode: (side: 'left' | 'right', mode: 'compact' | 'comfortable' | 'custom' | 'icons') => void;
   panelDividers: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
   setPanelDividers: (d: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[]) => void;
 

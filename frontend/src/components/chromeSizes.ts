@@ -13,6 +13,13 @@
  */
 export type ChromeSurface = 'menu' | 'toolbar' | 'panelLeft' | 'panelRight';
 
+/** Side-panel size modes. 'icons' (v2.06) collapses the panel to a rail of
+ *  square tool icons — every window opens floating, no pop-in. */
+export type PanelSizeMode = 'compact' | 'comfortable' | 'custom' | 'icons';
+
+/** Width of the v2.06 icon rail. */
+export const ICON_RAIL_W = 48;
+
 export interface ChromeScale {
   /** px at Compact */
   compact: number;
@@ -36,10 +43,11 @@ export const chromeMax = (s: ChromeSurface) => Math.round(CHROME_SCALES[s].comfo
 /** Resolve a surface's size in px for a given mode. */
 export function chromePx(
   s: ChromeSurface,
-  mode: 'compact' | 'comfortable' | 'custom',
+  mode: 'compact' | 'comfortable' | 'custom' | 'icons',
   customPx: number | undefined,
 ): number {
   const sc = CHROME_SCALES[s];
+  if (mode === 'icons') return ICON_RAIL_W;   // panels only
   if (mode === 'compact') return sc.compact;
   if (mode === 'comfortable') return sc.comfortable;
   const fallback = sc.comfortable;

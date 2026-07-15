@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.05';
+export const APP_VERSION = '2.06';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.06',
+    date: '2026-07-15',
+    items: [
+      { title: 'Icons Only side panels', detail: 'Customize > Side Panels now offers a fourth size per panel: Icons Only — the panel collapses to a slim rail of square tool icons, OneNote-style. Clicking an icon opens that tool as a floating window (there\'s no pop-in in this mode; the rail has no inline shape to return to).', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '2.05',
     date: '2026-07-15',

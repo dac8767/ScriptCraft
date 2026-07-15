@@ -264,6 +264,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     toolbarMode, setToolbarMode,
     chromeCustomPx, setChromeCustomPx,
     menuMode, setMenuMode,
+    panelSizeMode, setPanelSizeMode,
   } = useEditorStore();
 
 
@@ -393,6 +394,22 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           the whole panel (drag a panel's inner edge in the app to resize it).
           Divider labels are edited here only.
         </p>
+        {/* v2.06: per-side size modes — Icons Only collapses the panel to a
+            rail of square tool icons; every window then opens floating. */}
+        {(['left', 'right'] as const).map((side) => (
+          <div key={side} className="fs-customize-row fs-size-row">
+            <span className="fs-customize-tool">{side === 'left' ? 'Left' : 'Right'} Panel Size</span>
+            <span className="fs-customize-seg">
+              {([['compact', 'Compact'], ['comfortable', 'Comfortable'], ['custom', 'Custom'], ['icons', 'Icons Only']] as const).map(([m, label]) => (
+                <button
+                  key={m}
+                  className={panelSizeMode[side] === m ? 'active' : ''}
+                  onClick={() => setPanelSizeMode(side, m)}
+                >{label}</button>
+              ))}
+            </span>
+          </div>
+        ))}
         {/* v1.76: Outlook-style — Left Panel, Right Panel, Hidden. Drag
             between the three; the column a tool lands in is its side, and
             drop position is its position. Dividers and spacers dropped on
