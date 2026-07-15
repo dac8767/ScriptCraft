@@ -84,9 +84,9 @@ export function VomitTimerPill() {
     <button
       className={`fs-vomit-pill${pulse ? ' blocked' : ''}`}
       title={hemingway
-        ? 'Hemingway mode — previous text is locked until you turn it off (Typewriter tool).'
+        ? 'Hemingway mode — previous text is locked until you turn it off (Vomit Draft tool).'
         : 'Vomit Draft is running — previous text is locked. Click to open the tool.'}
-      onClick={() => useEditorStore.getState().openTool(hemingway ? 'typewriter' : 'vomit')}
+      onClick={() => useEditorStore.getState().openTool('vomit')}
     >
       <span className="fs-vomit-pill-icon" aria-hidden="true">🔒</span>
       <span className="fs-vomit-pill-time">{hemingway ? 'Hemingway' : fmtRemaining(remaining)}</span>
@@ -139,7 +139,7 @@ export default function VomitDraftTool({ editor }: { editor: Editor | null }) {
           {!hemingway && <div className="fs-vomit-progress"><div style={{ width: `${pct}%` }} /></div>}
           <div className="fs-vomit-until">
             {hemingway
-              ? 'Hemingway mode — no timer; end it here or in the Typewriter tool'
+              ? 'Hemingway mode — no timer; write forwards until you end it'
               : `Editing unlocks at ${fmtClock(session.endsAt!)}`}
           </div>
           <p className="fs-vomit-lockednote">
@@ -181,6 +181,22 @@ export default function VomitDraftTool({ editor }: { editor: Editor | null }) {
           Until a time
         </button>
       </div>
+
+      {/* v1.77: Hemingway mode moved here from Typewriter — it's the same
+          lock as a sprint, just without the clock. */}
+      <label className="fs-vomit-hemingway">
+        <input
+          type="checkbox"
+          disabled={!editor}
+          checked={false}
+          onChange={() => {
+            if (!editor || editor.isDestroyed) return;
+            useVomitStore.getState().start(null, vomitFloorFor(editor.state.doc));
+            editor.commands.focus('end');
+          }}
+        />
+        <span>Hemingway mode — no timer, write forwards until you end it</span>
+      </label>
 
       {mode === 'duration' ? (
         <>

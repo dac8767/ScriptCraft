@@ -373,6 +373,9 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
 }
 
 function GeneralTab() {
+  // v1.77: restore-cursor lives in editorStore (view state) but is SET here.
+  const restoreCursor = useEditorStore((s) => s.typewriterRestoreCursor);
+  const setRestoreCursor = useEditorStore((s) => s.setTypewriterRestoreCursor);
   const {
     autoLoadLastScript, setAutoLoadLastScript,
     dateFormat, setDateFormat,
@@ -409,6 +412,16 @@ function GeneralTab() {
             <option value="maximized">Open maximized</option>
             <option value="remember">Remember last size and position</option>
           </select>
+        </label>
+        {/* v1.77: moved here from the Typewriter tool — it's a startup
+            behavior, not a writing mode. */}
+        <label className="prefs-check-row">
+          <input
+            type="checkbox"
+            checked={restoreCursor}
+            onChange={(e) => setRestoreCursor(e.target.checked)}
+          />
+          <span>Restore the cursor position when opening a script</span>
         </label>
       </section>
 

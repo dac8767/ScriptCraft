@@ -12718,6 +12718,18 @@ html.android .version-history-panel {
   color: var(--fd-text-muted);
   cursor: default;
 }
+/* v1.77: sub-options nest under their parent toggle behind a guide line, so
+   "Keep bright"/"Dimmed to" unmistakably belong to "Dim unfocused text". */
+.fs-typewriter-subgroup {
+  margin: 6px 0 10px 9px;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--fd-chrome-separator);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+.fs-typewriter-subgroup.disabled { color: var(--fd-text-muted); }
 .fs-typewriter-offset {
   display: flex;
   align-items: center;
@@ -12992,13 +13004,7 @@ body.fs-writing-focus::after {
   z-index: 8000;
 }
 
-/* ── Limit line length (v1.74, ported: their max-chars-per-line) ──
-   Screen-only cap on wrapping width; Courier makes 1ch = one character. */
-@media screen {
-  body.fs-limit-lines .editor-main .ProseMirror > * {
-    max-width: calc(var(--fs-max-chars, 64) * 1ch);
-  }
-}
+/* (v1.77: the v1.74 limit-line-length rule is gone — Derek cut the option.) */
 
 /* The typewriter current-line bar (ported: their ptm-current-line). Lives in
    the scroller's content space, so it scrolls with the text. The page is
@@ -13124,6 +13130,17 @@ body.fs-writing-focus::after {
   cursor: pointer;
 }
 .fs-vomit-start:disabled { opacity: 0.45; cursor: default; }
+.fs-vomit-hemingway {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--fd-text);
+  cursor: pointer;
+  margin: 12px 0 2px;
+  padding-top: 10px;
+  border-top: 1px solid var(--fd-chrome-separator);
+}
 
 /* running state */
 .fs-vomit-countdown {

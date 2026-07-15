@@ -2180,14 +2180,11 @@ const ScreenplayEditor: React.FC = () => {
   // v1.75: Outline Bar visibility (View > Outline Bar).
   const outlineBarOpen = useEditorStore((st) => st.outlineBarOpen);
 
-  // v1.74: on-screen line-length cap (display only; pagination follows what
-  // it sees on screen while this is on).
-  const typewriterLimitLine = useEditorStore((st) => st.typewriterLimitLine);
-  const typewriterMaxChars = useEditorStore((st) => st.typewriterMaxChars);
+  // v1.77: how faint "Dim unfocused text" goes — the decorations read the var.
+  const typewriterDimOpacity = useEditorStore((st) => st.typewriterDimOpacity);
   useEffect(() => {
-    document.body.classList.toggle('fs-limit-lines', typewriterLimitLine);
-    document.body.style.setProperty('--fs-max-chars', String(typewriterMaxChars));
-  }, [typewriterLimitLine, typewriterMaxChars]);
+    document.body.style.setProperty('--fs-dimmed-opacity', String(typewriterDimOpacity));
+  }, [typewriterDimOpacity]);
 
   // --- Preferences: remember the last edited script + reopen it on start ---
   // Recorded whenever a real project script is open (not history/collab views);

@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.76';
+export const APP_VERSION = '1.77';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.77',
+    date: '2026-07-15',
+    items: [
+      { title: 'Typewriter window stays open', detail: 'Clicking into the editor no longer minimizes it — its options are meant to be tuned while writing. The panel is also slimmer: line-length limit and keep-lines are gone, the dim sub-options (what stays bright, and a new dimmed-opacity slider) are visibly nested under "Dim unfocused text".', tags: ['Tools', 'UI'] },
+      { title: 'Hemingway mode lives in Vomit Draft', detail: 'It\'s the same forward-only lock, so it starts from the Vomit Draft window now — check the box for no timer.', tags: ['Tools'] },
+      { title: 'Restore-cursor moved to Settings', detail: 'Settings > General > Startup: reopen a script with the cursor where you left it.', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.76',
     date: '2026-07-15',

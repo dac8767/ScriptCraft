@@ -178,26 +178,6 @@ function dimDecorations(state: EditorState): DecorationSet {
   return DecorationSet.create(state.doc, decos);
 }
 
-/** Their keep-lines-above-and-below: a gentler alternative to typewriter
- *  scrolling — only scroll when the caret gets within N lines of the top or
- *  bottom of the viewport, and only far enough to restore the margin. */
-function keepLinesAdjust(editor: Editor): void {
-  if (editor.isDestroyed) return;
-  const coords = caretRect(editor);
-  const scroller = scrollParentOf(editor.view.dom as HTMLElement);
-  if (!coords || !scroller) return;
-  const n = useEditorStore.getState().typewriterKeepLinesCount;
-  const lineH = Math.max(14, coords.bottom - coords.top);
-  const rect = scroller.getBoundingClientRect();
-  const lower = rect.top + lineH * n;
-  const upper = rect.top + rect.height - lineH * (n + 1);
-  if (coords.top < lower && scroller.scrollTop > 0) {
-    scroller.scrollTop -= lower - coords.top;
-  } else if (coords.top > upper) {
-    scroller.scrollTop += coords.top - upper;
-  }
-}
-
 /* ── Restore cursor position (v1.74, their restore-cursor-position) ──
    Saved per script (debounced) and re-applied right after a content load —
    tiptap's setContent stamps 'preventUpdate', the same choke point VomitLock
@@ -296,15 +276,7 @@ export const TypewriterScroll = Extension.create({
       });
     }
 
-    if (!store.typewriterEnabled) {
-      // Keep-lines (v1.74): the gentler mode, only when full typewriter
-      // scrolling is off (scrolling wins when both are on, as in the plugin).
-      if (store.typewriterKeepLinesEnabled
-        && (transaction.docChanged || (transaction.selectionSet && editor.state.selection.empty))) {
-        requestAnimationFrame(() => keepLinesAdjust(editor));
-      }
-      return;
-    }
+    if (!store.typewriterEnabled) return;
     // Typing always recenters. With follow-cursor on (v1.70), so does any
     // caret MOVE (click, arrow keys) — but never while a RANGE is being
     // selected: recentering mid-drag would move the text under the mouse

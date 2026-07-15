@@ -57,6 +57,9 @@ export interface ToolDef {
    *  and shows no pop-in button. For tools whose layout simply doesn't fit a
    *  panel column (Title Page). Beats a stale small toolSize too. */
   neverDock?: boolean;
+  /** v1.77: clicking into the script does NOT minimize this window. For
+   *  tools you adjust WHILE looking at the editor (Typewriter). */
+  keepOpenOnEditorClick?: boolean;
   /** dock group separators, Photoshop-style (per side, in order) */
   group: number;
 }
@@ -85,7 +88,8 @@ export const ALL_TOOLS: ToolDef[] = [
   // v1.68 emoji — it tracks currentColor so it reads on every theme.
   { id: 'vomit', label: 'Vomit Draft', icon: <VomitIcon />, defaultSize: { w: 320, h: 320 }, group: 3 },
   // v1.74: grew from one toggle to the full option suite — needs the height.
-  { id: 'typewriter', label: 'Typewriter', icon: <FaKeyboard />, defaultSize: { w: 340, h: 620 }, group: 3 },
+  // v1.77: stays open on editor clicks — its options are tuned while writing.
+  { id: 'typewriter', label: 'Typewriter', icon: <FaKeyboard />, defaultSize: { w: 340, h: 520 }, group: 3, keepOpenOnEditorClick: true },
   // v1.69: the joke. It ships enabled — that's the joke landing.
   { id: 'aiwriter', label: 'AI Writer', icon: <FaRobot />, defaultSize: { w: 300, h: 150 }, group: 3 },
   // v0.89: fixed — the Title Page form is a set-size box, so the window is sized
@@ -428,9 +432,12 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     document.addEventListener('pointerup', onUp);
   };
 
-  // Clicking back into the script minimizes the open tool window
+  // Clicking back into the script minimizes the open tool window —
+  // except tools flagged keepOpenOnEditorClick (v1.77: Typewriter), whose
+  // whole point is being adjusted while the editor has focus.
   useEffect(() => {
     if (!active) return;
+    if (toolDef(active.id)?.keepOpenOnEditorClick) return;
     const onPointerDown = (e: PointerEvent) => {
       const target = e.target as HTMLElement | null;
       if (target && target.closest('.editor-center')) setActive(null);
@@ -551,9 +558,11 @@ export function TempToolWindow({ editor, scrollContainer }: {
 }) {
   const { tempTool, setTempTool } = useEditorStore();
 
-  // Clicking back into the script closes the temporary window too
+  // Clicking back into the script closes the temporary window too —
+  // same keepOpenOnEditorClick exemption as the docked windows (v1.77).
   useEffect(() => {
     if (!tempTool) return;
+    if (toolDef(tempTool)?.keepOpenOnEditorClick) return;
     const onPointerDown = (e: PointerEvent) => {
       const target = e.target as HTMLElement | null;
       if (target && target.closest('.editor-center')) setTempTool(null);

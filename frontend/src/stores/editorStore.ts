@@ -16,10 +16,7 @@ interface ViewState {
   typewriterHighlightLine?: boolean;
   typewriterDimOthers?: boolean;
   typewriterDimMode?: 'elements' | 'sentences';
-  typewriterKeepLinesEnabled?: boolean;
-  typewriterKeepLinesCount?: number;
-  typewriterLimitLine?: boolean;
-  typewriterMaxChars?: number;
+  typewriterDimOpacity?: number;
   typewriterRestoreCursor?: boolean;
   outlineBarOpen?: boolean;
   indexCardsOpen?: boolean;
@@ -901,18 +898,11 @@ interface EditorState {
   /** v1.74: dim whole elements, or everything but the current SENTENCE. */
   typewriterDimMode: 'elements' | 'sentences';
   setTypewriterDimMode: (v: 'elements' | 'sentences') => void;
-  /** v1.74: keep N lines visible above/below the caret (gentler alternative
-   *  to full typewriter scrolling; scrolling wins when both are on). */
-  typewriterKeepLinesEnabled: boolean;
-  setTypewriterKeepLinesEnabled: (v: boolean) => void;
-  typewriterKeepLinesCount: number;
-  setTypewriterKeepLinesCount: (v: number) => void;
-  /** v1.74: cap on-screen line length in characters (display only). */
-  typewriterLimitLine: boolean;
-  setTypewriterLimitLine: (v: boolean) => void;
-  typewriterMaxChars: number;
-  setTypewriterMaxChars: (v: number) => void;
-  /** v1.74: reopen a script with the cursor where you left it. */
+  /** v1.77: how faint the dimmed text goes (0.05–0.7; 0.25 = plugin default). */
+  typewriterDimOpacity: number;
+  setTypewriterDimOpacity: (v: number) => void;
+  /** v1.74 (control moved to Settings > General in v1.77): reopen a script
+   *  with the cursor where you left it. */
   typewriterRestoreCursor: boolean;
   setTypewriterRestoreCursor: (v: boolean) => void;
   /** v1.74: fullscreen writing focus — hides all chrome, adds a vignette.
@@ -1479,27 +1469,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ typewriterDimMode: v });
     set({ typewriterDimMode: v });
   },
-  typewriterKeepLinesEnabled: (_vs.typewriterKeepLinesEnabled as boolean) ?? false,
-  setTypewriterKeepLinesEnabled: (v) => {
-    saveViewState({ typewriterKeepLinesEnabled: v });
-    set({ typewriterKeepLinesEnabled: v });
-  },
-  typewriterKeepLinesCount: (_vs.typewriterKeepLinesCount as number) ?? 5,
-  setTypewriterKeepLinesCount: (v) => {
-    const clamped = Math.min(15, Math.max(1, Math.round(v) || 5));
-    saveViewState({ typewriterKeepLinesCount: clamped });
-    set({ typewriterKeepLinesCount: clamped });
-  },
-  typewriterLimitLine: (_vs.typewriterLimitLine as boolean) ?? false,
-  setTypewriterLimitLine: (v) => {
-    saveViewState({ typewriterLimitLine: v });
-    set({ typewriterLimitLine: v });
-  },
-  typewriterMaxChars: (_vs.typewriterMaxChars as number) ?? 64,
-  setTypewriterMaxChars: (v) => {
-    const clamped = Math.min(90, Math.max(20, Math.round(v) || 64));
-    saveViewState({ typewriterMaxChars: clamped });
-    set({ typewriterMaxChars: clamped });
+  typewriterDimOpacity: (_vs.typewriterDimOpacity as number) ?? 0.25,
+  setTypewriterDimOpacity: (v) => {
+    const clamped = Math.min(0.7, Math.max(0.05, v));
+    saveViewState({ typewriterDimOpacity: clamped });
+    set({ typewriterDimOpacity: clamped });
   },
   typewriterRestoreCursor: (_vs.typewriterRestoreCursor as boolean) ?? false,
   setTypewriterRestoreCursor: (v) => {
