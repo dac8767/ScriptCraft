@@ -511,6 +511,25 @@ function migrateTypewriterSize(
   return sizes;
 }
 
+/** v1.96: the Notebook window became the inline pages tree (the writing
+ *  surface lives in the editor area now). A remembered v1.87-era 900px
+ *  width would keep it floating forever. Forget the size once. */
+function migrateNotebookInline(
+  sizes: Record<string, { w: number; h: number }>,
+): Record<string, { w: number; h: number }> {
+  const FLAG = 'opendraft:notebookSizeReset196';
+  try {
+    if (localStorage.getItem(FLAG)) return sizes;
+    localStorage.setItem(FLAG, '1');
+    if (sizes.notebook) {
+      const { notebook: _dropped, ...rest } = sizes;
+      saveViewState({ toolSizes: rest });
+      return rest;
+    }
+  } catch { /* storage unavailable — keep what we have */ }
+  return sizes;
+}
+
 /** Tools that never dock — they always open as a floating window. */
 export const ALWAYS_FLOAT: ToolId[] = ['analytics'];
 
@@ -1320,7 +1339,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ activeTool: tool });
     set({ activeTool: tool });
   },
-  toolSizes: migrateTypewriterSize(migrateSpellingSize(migrateNavigatorInline(_vs.toolSizes ?? {}))),
+  toolSizes: migrateNotebookInline(migrateTypewriterSize(migrateSpellingSize(migrateNavigatorInline(_vs.toolSizes ?? {})))),
   setToolSize: (tool, w, h) => set((s) => {
     const toolSizes = { ...s.toolSizes, [tool]: { w, h } };
     saveViewState({ toolSizes });

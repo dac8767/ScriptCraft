@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.95';
+export const APP_VERSION = '1.96';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.96',
+    date: '2026-07-15',
+    items: [
+      { title: 'The Notebook takes over the editor', detail: 'Opening the Notebook now works differently from other windows: the side-panel window holds just your pages and sections (always inline, like Navigator), and the writing surface fills the entire editor area. A "Return to editor" button in the notebook\'s header brings the script back. Pages are all free canvases now — the flowing-document type is gone, and any existing flow pages convert to text/table boxes automatically. The "drop here" zone in the tree only appears while you\'re actually dragging something.', tags: ['Tools', 'UI'] },
+    ],
+  },
   {
     version: '1.95',
     date: '2026-07-15',

@@ -13,6 +13,8 @@ import SmartTypography from '../editor/extensions/SmartTypography';
 import VomitLock from '../editor/extensions/VomitLock';
 import TypewriterScroll from '../editor/extensions/TypewriterScroll';
 import OutlineBar from './OutlineBar';
+import { NotebookSurface } from './NotebookTool';
+import { useNotebookStore } from '../stores/notebookStore';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -2178,6 +2180,7 @@ const ScreenplayEditor: React.FC = () => {
 
   // v1.75: Outline Bar visibility (View > Outline Bar).
   const outlineBarOpen = useEditorStore((st) => st.outlineBarOpen);
+  const notebookOpen = useNotebookStore((st) => st.notebookOpen);
 
   // v1.77: how faint "Dim unfocused text" goes — the decorations read the var.
   const typewriterDimOpacity = useEditorStore((st) => st.typewriterDimOpacity);
@@ -3944,7 +3947,11 @@ const ScreenplayEditor: React.FC = () => {
         {!isHistoryMode && navigatorOpen && <ToolDock side="left" editor={editor} scrollContainer={editorMainRef.current} />}
         <div className="editor-center">
           {!isHistoryMode && <IndexCards editor={editor} scrollContainer={editorMainRef.current} />}
-          {!isHistoryMode && statisticsOpen && editor ? (
+          {/* v1.96: the Notebook writing surface takes over the editor area
+              while its panel window is open ("Return to editor" ends it). */}
+          {!isHistoryMode && notebookOpen ? (
+            <NotebookSurface />
+          ) : !isHistoryMode && statisticsOpen && editor ? (
             <ScriptStatistics editor={editor} />
           ) : !isHistoryMode && beatBoardOpen ? (
             <BeatBoard />

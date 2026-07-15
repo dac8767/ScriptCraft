@@ -92,10 +92,12 @@ export const ALL_TOOLS: ToolDef[] = [
   { id: 'typewriter', label: 'Typewriter', icon: <FaKeyboard />, defaultSize: { w: 340, h: 520 }, group: 3, keepOpenOnEditorClick: true },
   // v1.69: the joke. It ships enabled — that's the joke landing.
   { id: 'aiwriter', label: 'AI Writer', icon: <FaRobot />, defaultSize: { w: 300, h: 150 }, group: 3 },
-  // v1.87: Notion/OneNote-style notebook — sidebar tree + document surface
-  // needs real width, so it opens floating by default (noPanelFit, like
-  // Analytics); the pop-in button still docks it if wanted.
-  { id: 'notebook', label: 'Notebook', icon: <FaBook />, defaultSize: { w: 900, h: 620 }, group: 3, noPanelFit: true },
+  // v1.96: the Notebook window is ONLY the pages tree — it sits inline in
+  // the panel like Navigator, while the writing surface takes over the
+  // editor area (NotebookSurface in ScreenplayEditor). keepOpenOnEditorClick
+  // because the surface LIVES in the editor area: clicking into it must not
+  // close the panel window (which would close the notebook itself).
+  { id: 'notebook', label: 'Notebook', icon: <FaBook />, defaultSize: { w: 300, h: 420 }, group: 3, keepOpenOnEditorClick: true },
   // v0.89: fixed — the Title Page form is a set-size box, so the window is sized
   // to it exactly and can't be resized. Nothing else is fixed; every other tool
   // genuinely uses the space it's given.

@@ -31,10 +31,12 @@ export interface NbBox {
 export interface NotebookPage {
   id: string;
   title: string;
+  /** v1.96: every page is a canvas — 'flow' survives only as stored data
+   *  and is migrated to boxes on load (see migrateFlowPage). */
   mode: 'flow' | 'canvas';
-  html: string;               // flow: tiptap document HTML
-  tables: NbTable[];          // flow: tables stacked below the text
-  boxes: NbBox[];             // canvas: free-floating boxes
+  html: string;               // legacy flow pages only
+  tables: NbTable[];          // legacy flow pages only
+  boxes: NbBox[];             // the page content: free-floating boxes
 }
 
 export type NbNode =
@@ -146,11 +148,36 @@ export function isAncestor(nodes: NbNode[], maybeAncestorId: string, id: string)
 
 /* ── store ── */
 
+/** v1.96: the flowing-document page type is gone. A stored flow page keeps
+ *  its content: the document HTML becomes a text box and each stacked table
+ *  becomes a table box, laid out down the canvas. */
+export function migrateFlowPage(p: NotebookPage): NotebookPage {
+  if (p.mode !== 'flow') return p;
+  const boxes: NbBox[] = [...(p.boxes ?? [])];
+  let y = 24;
+  if (p.html && p.html.replace(/<[^>]*>/g, '').trim() !== '') {
+    boxes.push({ id: nbUid(), type: 'text', x: 24, y, w: 460, h: 280, html: p.html });
+    y += 300;
+  }
+  for (const t of p.tables ?? []) {
+    boxes.push({
+      id: t.id, type: 'table', x: 24, y, w: 0, h: 0,
+      rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: t.align,
+    });
+    y += (t.rowHeights?.reduce((a, b) => a + b, 0) ?? 64) + 40;
+  }
+  return { ...p, mode: 'canvas', html: '', tables: [], boxes };
+}
+
 interface NotebookState {
   pages: Record<string, NotebookPage>;
   tree: NbNode[];
   selectedPageId: string | null;
-  addPage: (mode: 'flow' | 'canvas') => string;
+  /** v1.96: the notebook surface is showing in the editor area. Session
+   *  state — never persisted; the app always starts on the script. */
+  notebookOpen: boolean;
+  setNotebookOpen: (open: boolean) => void;
+  addPage: () => string;
   deletePage: (id: string) => void;
   renamePage: (id: string, title: string) => void;
   updatePage: (id: string, patch: Partial<Omit<NotebookPage, 'id'>>) => void;
@@ -167,7 +194,10 @@ function load(): Pick<NotebookState, 'pages' | 'tree' | 'selectedPageId'> {
   try {
     const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
     if (raw && typeof raw === 'object') {
-      const pages: Record<string, NotebookPage> = raw.pages && typeof raw.pages === 'object' ? raw.pages : {};
+      const rawPages: Record<string, NotebookPage> = raw.pages && typeof raw.pages === 'object' ? raw.pages : {};
+      const pages = Object.fromEntries(
+        Object.entries(rawPages).map(([id, p]) => [id, migrateFlowPage(p)]),
+      );
       const tree = reconcileTree(Array.isArray(raw.tree) ? raw.tree : [], Object.keys(pages));
       const selectedPageId = typeof raw.selectedPageId === 'string' && pages[raw.selectedPageId]
         ? raw.selectedPageId : (Object.keys(pages)[0] ?? null);
@@ -191,9 +221,12 @@ function persist(get: () => NotebookState) {
 export const useNotebookStore = create<NotebookState>((set, get) => ({
   ...load(),
 
-  addPage: (mode) => {
+  notebookOpen: false,
+  setNotebookOpen: (open) => set({ notebookOpen: open }),
+
+  addPage: () => {
     const id = nbUid();
-    const page: NotebookPage = { id, title: 'Untitled', mode, html: '', tables: [], boxes: [] };
+    const page: NotebookPage = { id, title: 'Untitled', mode: 'canvas', html: '', tables: [], boxes: [] };
     set((s) => ({
       pages: { ...s.pages, [id]: page },
       tree: [...s.tree, { type: 'page', id }],

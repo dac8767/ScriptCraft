@@ -1,36 +1,28 @@
 /**
- * NotebookTool (v1.87) — a Notion / OneNote / Obsidian-style notebook.
+ * NotebookTool (v1.87; reshaped in v1.96) — a Notion / OneNote-style notebook.
  *
  * Adapted from Derek's Airtable Notebook extension. What survived: the
  * sidebar tree (sections with unlimited nesting, drag pages/sections
- * anywhere, drop into/before/after/top), the two page modes (flowing
- * document / free canvas), the structured editable tables (uncontrolled
- * cells — his "first character disappears" fix), the draggable/resizable
- * canvas boxes (text, table, image with aspect-locked resize), and image
- * compression. What changed: Airtable records → notebookStore
- * (localStorage), and the flow document runs on tiptap/ProseMirror — the
- * same engine as the script editor — instead of raw contentEditable.
+ * anywhere, drop into/before/after/top), the structured editable tables
+ * (uncontrolled cells — his "first character disappears" fix), the
+ * draggable/resizable canvas boxes (text, table, image with aspect-locked
+ * resize), and image compression.
+ *
+ * v1.96, per Derek: the Notebook is NOT a normal tool window. The panel
+ * window holds ONLY the tree (sections/pages) and always sits inline in
+ * the dock; opening it puts the notebook's writing surface — a free canvas,
+ * the flowing-document type is gone — over the entire editor area
+ * (NotebookSurface, rendered by ScreenplayEditor like Statistics/Outline).
+ * "Return to editor" in the surface header closes both.
  *
  * Tags that link notebook items to other tools come later, per Derek.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { EditorContent, useEditor, type Editor } from '@tiptap/react';
-import Document from '@tiptap/extension-document';
-import Paragraph from '@tiptap/extension-paragraph';
-import Text from '@tiptap/extension-text';
-import BoldExt from '@tiptap/extension-bold';
-import ItalicExt from '@tiptap/extension-italic';
-import UnderlineExt from '@tiptap/extension-underline';
-import StrikeExt from '@tiptap/extension-strike';
-import BulletList from '@tiptap/extension-bullet-list';
-import OrderedList from '@tiptap/extension-ordered-list';
-import ListItem from '@tiptap/extension-list-item';
-import History from '@tiptap/extension-history';
-import Placeholder from '@tiptap/extension-placeholder';
 import {
   useNotebookStore, newTable, nbUid,
   type NbNode, type NbTable, type NbBox,
 } from '../stores/notebookStore';
+import { useEditorStore } from '../stores/editorStore';
 import { showToast } from './Toast';
 
 const IMAGE_BUDGET = 300_000;   // dataURL chars — localStorage is the store
@@ -381,43 +373,6 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
   );
 }
 
-/* ── flow surface: tiptap/ProseMirror document + stacked tables ── */
-function FlowSurface({ pageId, html, tables }: { pageId: string; html: string; tables: NbTable[] }) {
-  const updatePage = useNotebookStore((s) => s.updatePage);
-  const editor = useEditor({
-    extensions: [
-      Document, Paragraph, Text,
-      BoldExt, ItalicExt, UnderlineExt, StrikeExt,
-      BulletList, OrderedList, ListItem,
-      History,
-      Placeholder.configure({ placeholder: 'Write anything…' }),
-    ],
-    content: html || '',
-    onUpdate: ({ editor: ed }) => updatePage(pageId, { html: ed.getHTML() }),
-  }, [pageId]);
-
-  // the toolbar reaches this page's editor through the store-scoped registry
-  useEffect(() => {
-    nbEditorRef.current = editor ?? null;
-    return () => { if (nbEditorRef.current === editor) nbEditorRef.current = null; };
-  }, [editor]);
-
-  const updateTable = (t: NbTable) => updatePage(pageId, { tables: tables.map((x) => (x.id === t.id ? t : x)) });
-  const deleteTable = (id: string) => updatePage(pageId, { tables: tables.filter((x) => x.id !== id) });
-
-  return (
-    <div className="fs-nb-flow">
-      <EditorContent editor={editor} className="fs-nb-prose" />
-      {tables.map((t) => (
-        <EditableTable key={t.id} data={t} onChange={updateTable} onDelete={() => deleteTable(t.id)} selected />
-      ))}
-    </div>
-  );
-}
-
-/** The flow editor currently on screen — the toolbar's target. */
-const nbEditorRef: { current: Editor | null } = { current: null };
-
 /* ── sidebar tree (his TreeView, typed) ── */
 function dragStartData(e: React.DragEvent, id: string) {
   e.dataTransfer.setData('text/plain', id);   // WebKit: no data, no drag
@@ -520,38 +475,56 @@ function SectionRow({ node, depth }: { node: Extract<NbNode, { type: 'section' }
   );
 }
 
-/* ── the tool ── */
+/* ── the tool: the PANEL is the tree; the SURFACE takes over the editor ── */
+
+/** Closes the notebook everywhere: the editor surface and whichever slot the
+ *  tool window occupies (left dock, right dock, or a temporary window). */
+export function closeNotebook() {
+  useNotebookStore.getState().setNotebookOpen(false);
+  const s = useEditorStore.getState();
+  if (s.activeTool === 'notebook') s.setActiveTool(null);
+  if (s.activeToolRight === 'notebook') s.setActiveToolRight(null);
+  if (s.tempTool === 'notebook') s.setTempTool(null);
+}
+
+/** The tool-window content: ONLY the sections/pages tree. Mounting it (the
+ *  window opening) is what raises the notebook surface over the editor. */
 export default function NotebookTool() {
   const tree = useNotebookStore((s) => s.tree);
-  const selectedPageId = useNotebookStore((s) => s.selectedPageId);
-  const page = useNotebookStore((s) => (s.selectedPageId ? s.pages[s.selectedPageId] : null));
-  const { addPage, addSection, renamePage, updatePage, moveNode } = useNotebookStore.getState();
-  const [showModePicker, setShowModePicker] = useState(false);
+  const { addPage, addSection, moveNode } = useNotebookStore.getState();
+  // The "Drop here for top level" zone only appears mid-drag — it's the
+  // target for pulling a page/section out of every section, and it read as
+  // mystery chrome when it sat there permanently (Derek asked what it did).
+  const [dragging, setDragging] = useState(false);
 
-  const run = (fn: (e: Editor) => void) => {
-    const ed = nbEditorRef.current;
-    if (ed && !ed.isDestroyed) fn(ed);
-  };
+  useEffect(() => {
+    useNotebookStore.getState().setNotebookOpen(true);
+    return () => { useNotebookStore.getState().setNotebookOpen(false); };
+  }, []);
 
   return (
-    <div className="fs-notebook">
-      <aside className="fs-nb-side">
-        <div className="fs-nb-side-head">
-          <span>Pages</span>
-          <span className="fs-nb-side-btns">
-            <button title="New section" onClick={addSection}>🗂</button>
-            <button title="New page" onClick={() => setShowModePicker((v) => !v)}>＋</button>
-          </span>
-        </div>
-        {showModePicker && (
-          <div className="fs-nb-modepicker">
-            <button onClick={() => { addPage('flow'); setShowModePicker(false); }}>📄 Flowing document</button>
-            <button onClick={() => { addPage('canvas'); setShowModePicker(false); }}>🧩 Free canvas</button>
+    <div
+      className="fs-notebook fs-nb-panel"
+      onDragStartCapture={() => setDragging(true)}
+      onDragEndCapture={() => setDragging(false)}
+      onDropCapture={() => setDragging(false)}
+    >
+      <div className="fs-nb-side-head">
+        <span>Pages</span>
+        <span className="fs-nb-side-btns">
+          <button title="New section" onClick={addSection}>🗂</button>
+          <button title="New page" onClick={() => addPage()}>＋</button>
+        </span>
+      </div>
+      <div className="fs-nb-tree">
+        <TreeNodes nodes={tree} depth={0} />
+        {tree.length === 0 && (
+          <div className="fs-nb-empty">
+            No pages yet — ＋ adds a page, 🗂 adds a section.
           </div>
         )}
-        <div className="fs-nb-tree">
-          <TreeNodes nodes={tree} depth={0} />
-        </div>
+      </div>
+      {dragging && (
         <div
           className="fs-nb-toplevel-drop"
           onDragOver={(e) => e.preventDefault()}
@@ -559,52 +532,50 @@ export default function NotebookTool() {
             e.preventDefault();
             const dragged = e.dataTransfer.getData('text/plain');
             if (dragged) moveNode(dragged, { kind: 'top' });
+            setDragging(false);
           }}
         >
-          Drop here for top level
+          Drop here to move out of all sections
         </div>
-      </aside>
+      )}
+    </div>
+  );
+}
 
-      <main className="fs-nb-main">
-        {!page ? (
-          <div className="fs-nb-empty">Select or create a page to start writing.</div>
+/** The writing surface — rendered by ScreenplayEditor over the whole editor
+ *  area while the notebook is open. Free canvas only (v1.96). */
+export function NotebookSurface() {
+  const page = useNotebookStore((s) => (s.selectedPageId ? s.pages[s.selectedPageId] : null));
+  const { renamePage, updatePage } = useNotebookStore.getState();
+
+  return (
+    <div className="fs-nb-takeover">
+      <div className="fs-nb-takeover-head">
+        {page ? (
+          <input
+            key={page.id}
+            className="fs-nb-title"
+            defaultValue={page.title}
+            placeholder="Untitled"
+            onBlur={(e) => renamePage(page.id, e.target.value || 'Untitled')}
+          />
         ) : (
-          <>
-            <input
-              key={page.id}
-              className="fs-nb-title"
-              defaultValue={page.title}
-              placeholder="Untitled"
-              onBlur={(e) => renamePage(page.id, e.target.value || 'Untitled')}
-            />
-            <div className="fs-nb-toolbar">
-              {page.mode === 'flow' && (<>
-                <button title="Bold" onMouseDown={(e) => { e.preventDefault(); run((ed) => ed.chain().focus().toggleBold().run()); }}><b>B</b></button>
-                <button title="Italic" onMouseDown={(e) => { e.preventDefault(); run((ed) => ed.chain().focus().toggleItalic().run()); }}><i>I</i></button>
-                <button title="Underline" onMouseDown={(e) => { e.preventDefault(); run((ed) => ed.chain().focus().toggleUnderline().run()); }}><u>U</u></button>
-                <button title="Strikethrough" onMouseDown={(e) => { e.preventDefault(); run((ed) => ed.chain().focus().toggleStrike().run()); }}><s>S</s></button>
-                <span className="fs-nb-tb-sep" />
-                <button title="Bulleted list" onMouseDown={(e) => { e.preventDefault(); run((ed) => ed.chain().focus().toggleBulletList().run()); }}>• List</button>
-                <button title="Numbered list" onMouseDown={(e) => { e.preventDefault(); run((ed) => ed.chain().focus().toggleOrderedList().run()); }}>1. List</button>
-                <span className="fs-nb-tb-sep" />
-                <button onClick={() => updatePage(page.id, { tables: [...page.tables, newTable()] })}>+ Table</button>
-              </>)}
-              {page.mode === 'canvas' && (<>
-                <button onClick={() => window.dispatchEvent(new Event('nb-add-textbox'))}>+ Text box</button>
-                <button onClick={() => window.dispatchEvent(new Event('nb-add-table-canvas'))}>+ Table</button>
-                <button onClick={() => (document.getElementById('fs-nb-filepick') as HTMLInputElement | null)?.click()}>+ Image</button>
-              </>)}
-            </div>
-            {page.mode === 'flow' ? (
-              <FlowSurface key={page.id} pageId={page.id} html={page.html} tables={page.tables} />
-            ) : (
-              <CanvasSurface key={page.id} boxes={page.boxes} onChangeBoxes={(boxes) => updatePage(page.id, { boxes })} />
-            )}
-          </>
+          <span className="fs-nb-title fs-nb-title-empty">Notebook</span>
         )}
-      </main>
-      {/* selectedPageId keeps the subscription hot for tree highlighting */}
-      <span style={{ display: 'none' }}>{selectedPageId}</span>
+        {page && (
+          <div className="fs-nb-toolbar">
+            <button onClick={() => window.dispatchEvent(new Event('nb-add-textbox'))}>+ Text box</button>
+            <button onClick={() => window.dispatchEvent(new Event('nb-add-table-canvas'))}>+ Table</button>
+            <button onClick={() => (document.getElementById('fs-nb-filepick') as HTMLInputElement | null)?.click()}>+ Image</button>
+          </div>
+        )}
+        <button className="fs-nb-return" onClick={closeNotebook}>Return to editor</button>
+      </div>
+      {page ? (
+        <CanvasSurface key={page.id} boxes={page.boxes} onChangeBoxes={(boxes) => updatePage(page.id, { boxes })} />
+      ) : (
+        <div className="fs-nb-empty">Select or create a page in the Notebook panel to start writing.</div>
+      )}
     </div>
   );
 }

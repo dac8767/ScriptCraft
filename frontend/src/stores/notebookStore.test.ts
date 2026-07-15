@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   reconcileTree, removeNode, insertNode, isAncestor, pageIdsInTree,
-  useNotebookStore, type NbNode,
+  migrateFlowPage, useNotebookStore, type NbNode, type NotebookPage,
 } from './notebookStore';
 
 const sec = (id: string, children: NbNode[] = [], name = id): NbNode =>
@@ -58,13 +58,33 @@ describe('notebookStore actions', () => {
 
   it('addPage selects it; deletePage falls back to another page', () => {
     const s = useNotebookStore.getState();
-    const p1 = s.addPage('flow');
-    const p2 = s.addPage('canvas');
+    const p1 = s.addPage();
+    const p2 = s.addPage();
     expect(useNotebookStore.getState().selectedPageId).toBe(p2);
     useNotebookStore.getState().deletePage(p2);
     const after = useNotebookStore.getState();
     expect(after.selectedPageId).toBe(p1);
     expect(pageIdsInTree(after.tree).has(p2)).toBe(false);
+  });
+
+  it('migrateFlowPage turns a stored flow page into canvas boxes, losing nothing', () => {
+    const flow: NotebookPage = {
+      id: 'p1', title: 'Old flow', mode: 'flow',
+      html: '<p>hello</p>',
+      tables: [{ id: 't1', rows: [['a', 'b']], colWidths: [90, 90], rowHeights: [32], align: 'left' }],
+      boxes: [],
+    };
+    const out = migrateFlowPage(flow);
+    expect(out.mode).toBe('canvas');
+    expect(out.html).toBe('');
+    expect(out.tables).toEqual([]);
+    const text = out.boxes.find((b) => b.type === 'text');
+    expect(text?.html).toBe('<p>hello</p>');
+    const table = out.boxes.find((b) => b.type === 'table');
+    expect(table?.rows).toEqual([['a', 'b']]);
+    // an already-canvas page passes through untouched
+    const canvas: NotebookPage = { id: 'p2', title: 'c', mode: 'canvas', html: '', tables: [], boxes: [] };
+    expect(migrateFlowPage(canvas)).toBe(canvas);
   });
 
   it('moveNode refuses to drop a section into its own descendant', () => {
@@ -77,7 +97,7 @@ describe('notebookStore actions', () => {
 
   it('deleteSection frees descendant pages back to the top level', () => {
     const s = useNotebookStore.getState();
-    const p1 = s.addPage('flow');
+    const p1 = s.addPage();
     useNotebookStore.setState({ tree: [sec('s1', [sec('s2', [pg(p1)])])] });
     useNotebookStore.getState().deleteSection('s1');
     const t = useNotebookStore.getState().tree;
