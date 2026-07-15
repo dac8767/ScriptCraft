@@ -381,6 +381,7 @@ function GeneralTab() {
     followSystemTheme, setFollowSystemTheme,
     smartTypography, setSmartTypography,
     units, setUnits,
+    timeFormat, setTimeFormat,
   } = useSettingsStore();
 
   return (
@@ -477,7 +478,7 @@ function GeneralTab() {
           the default for new scripts. One field, one home. */}
 
       <section>
-        <h3>Dates</h3>
+        <h3>Dates &amp; Times</h3>
         <label className="prefs-check-row">
           <span>Date format</span>
           <select
@@ -492,6 +493,20 @@ function GeneralTab() {
         <p className="prefs-hint">
           Used wherever ScriptCraft shows a date — the Version autofill, the
           changelog, and friends.
+        </p>
+        <label className="prefs-check-row">
+          <span>Time format</span>
+          <select
+            value={timeFormat}
+            onChange={(e) => setTimeFormat(e.target.value as '12h' | '24h')}
+          >
+            <option value="12h">12-hour (11:30 PM)</option>
+            <option value="24h">24-hour (23:30)</option>
+          </select>
+        </label>
+        <p className="prefs-hint">
+          How times are typed and shown — for example Vomit Draft's
+          &ldquo;Write until&rdquo; field and its unlock time.
         </p>
       </section>
 

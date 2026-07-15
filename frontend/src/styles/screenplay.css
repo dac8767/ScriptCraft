@@ -12814,7 +12814,41 @@ html.android .version-history-panel {
   font-size: 12px;
   padding: 5px 6px;
 }
-.fs-vomit-custom input[type="time"] { width: auto; }
+/* Segmented time field (v1.73) — reads as one input, types like a clock. */
+.fs-timefield {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.fs-timefield-seg {
+  width: 26px;
+  background: none;
+  border: none;
+  color: var(--fd-text);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  padding: 3px 0;
+  outline: none;
+}
+.fs-timefield-seg:focus { background: var(--fd-overlay-light); border-radius: 3px; }
+.fs-timefield-colon { color: var(--fd-text-muted); }
+.fs-timefield-half {
+  background: none;
+  border: none;
+  color: var(--fd-text);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 4px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.fs-timefield-half:focus { background: var(--fd-overlay-light); outline: none; }
+.fs-timefield-half.empty { color: var(--fd-text-muted); }
 .fs-vomit-start {
   background: var(--fd-accent, #4a90d9);
   border: none;

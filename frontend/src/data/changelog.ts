@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.72';
+export const APP_VERSION = '1.73';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.73',
+    date: '2026-07-15',
+    items: [
+      { title: 'The "Write until" field types like a clock', detail: 'Vomit Draft\'s end-time field kept every keystroke stuck in the hours slot (a quirk of the built-in time control). It\'s now a segmented field: two digits of hour jump to minutes, two of minutes jump to AM/PM — and a lone 9 knows it means 09. Backspace hops back a segment.', tags: ['Fix', 'Tools'] },
+      { title: '12-hour or 24-hour time', detail: 'Settings > General > Dates & Times: choose 11:30 PM or 23:30. Applies to time entry and displayed times like Vomit Draft\'s unlock clock.', tags: ['New Feature'] },
+    ],
+  },
   {
     version: '1.72',
     date: '2026-07-15',

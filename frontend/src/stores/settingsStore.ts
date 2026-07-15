@@ -73,6 +73,9 @@ interface SettingsState {
   /** v1.61: how Page Setup shows measurements. */
   units: 'in' | 'cm';
   setUnits: (v: 'in' | 'cm') => void;
+  /** v1.73: 12-hour (11:30 PM) or 24-hour (23:30) time display and entry. */
+  timeFormat: '12h' | '24h';
+  setTimeFormat: (v: '12h' | '24h') => void;
 
   // Preferences > General: reopen the last edited script on app start.
   autoLoadLastScript: boolean;
@@ -124,6 +127,7 @@ const STORAGE_KEY_SYSTHEME = 'opendraft:followSystemTheme';
 const STORAGE_KEY_DRAFTDEF = 'opendraft:defaultDraftLabel';
 const STORAGE_KEY_SMARTTYPO = 'opendraft:smartTypography';
 const STORAGE_KEY_UNITS = 'opendraft:units';
+const STORAGE_KEY_TIMEFMT = 'opendraft:timeFormat';
 const STORAGE_KEY_AUTOSNAP = 'opendraft:autoSnapshotMinutes';
 const STORAGE_KEY_AUTOSNAP_KEEP = 'opendraft:autoSnapshotKeep';
 const SL_KEYS = {
@@ -236,6 +240,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setUnits: (v) => {
     try { localStorage.setItem(STORAGE_KEY_UNITS, v); } catch { /* ignore */ }
     set({ units: v });
+  },
+  timeFormat: (localStorage.getItem(STORAGE_KEY_TIMEFMT) === '24h' ? '24h' : '12h'),
+  setTimeFormat: (v) => {
+    try { localStorage.setItem(STORAGE_KEY_TIMEFMT, v); } catch { /* ignore */ }
+    set({ timeFormat: v });
   },
   defaultDraftLabel: localStorage.getItem(STORAGE_KEY_DRAFTDEF) || '1st Draft',
   setDefaultDraftLabel: (v) => {

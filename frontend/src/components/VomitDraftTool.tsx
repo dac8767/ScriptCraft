@@ -17,6 +17,8 @@ import type { Editor } from '@tiptap/react';
 import { useVomitStore } from '../stores/vomitStore';
 import { vomitFloorFor } from '../editor/extensions/VomitLock';
 import { useEditorStore } from '../stores/editorStore';
+import { useSettingsStore } from '../stores/settingsStore';
+import TimeField from './TimeField';
 import { showToast } from './Toast';
 
 function fmtRemaining(ms: number): string {
@@ -30,7 +32,9 @@ function fmtRemaining(ms: number): string {
 }
 
 function fmtClock(ms: number): string {
-  return new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  // v1.73: follows Settings > General > Time format.
+  const hour12 = useSettingsStore.getState().timeFormat === '12h';
+  return new Date(ms).toLocaleTimeString([], { hour: hour12 ? 'numeric' : '2-digit', minute: '2-digit', hour12 });
 }
 
 /** Ticks once a second while a sprint runs; ends the session when time is up. */
@@ -197,13 +201,11 @@ export default function VomitDraftTool({ editor }: { editor: Editor | null }) {
       ) : (
         <div className="fs-vomit-custom">
           <span>Write until</span>
-          <input
-            type="time"
-            value={untilTime}
-            onChange={(e) => setUntilTime(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') startUntil(); }}
-          />
-          <button className="fs-vomit-start" disabled={!editor || !/^\d{1,2}:\d{2}$/.test(untilTime)} onClick={startUntil}>
+          {/* v1.73: segmented field — two digits of hour jump to minutes,
+              two of minutes jump to AM/PM. WebKit's native time input kept
+              every keystroke stuck in the hour segment. */}
+          <TimeField value={untilTime} onChange={setUntilTime} onEnter={startUntil} />
+          <button className="fs-vomit-start" disabled={!editor || !/^\d{2}:\d{2}$/.test(untilTime)} onClick={startUntil}>
             ▶ Start
           </button>
         </div>
