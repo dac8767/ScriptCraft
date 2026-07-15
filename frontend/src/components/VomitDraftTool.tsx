@@ -174,7 +174,7 @@ export default function VomitDraftTool({ editor }: { editor: Editor | null }) {
           <div className="fs-vomit-presets">
             {PRESETS.map((m) => (
               <button key={m} onClick={() => startMinutes(m)} disabled={!editor}>
-                {m >= 60 ? `${m / 60}${m % 60 ? '½' : ''} hr` : `${m} min`}
+                {m >= 60 ? `${m / 60} hr` : `${m} min`}
               </button>
             ))}
           </div>

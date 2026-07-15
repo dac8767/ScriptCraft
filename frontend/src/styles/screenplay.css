@@ -767,6 +767,70 @@ body {
   text-overflow: ellipsis;
 }
 
+/* ── Spelling & Grammar combined panel (v1.63) ──
+   Tabs + auto-check toggles above the embedded checker. The embedded modal
+   stops sizing itself (height:100%) and flexes under the header rows. */
+.fs-spellgram {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.fs-spellgram .spell-modal-embedded { height: auto; flex: 1; min-height: 0; }
+.fs-spellgram-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 0;
+}
+.fs-spellgram-tabs {
+  display: inline-flex;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.fs-spellgram-tabs button {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.fs-spellgram-tabs button.active {
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+}
+.fs-spellgram-settings {
+  background: none;
+  border: 1px solid var(--fd-border);
+  color: var(--fd-text-muted);
+  border-radius: 5px;
+  font-size: 11px;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fs-spellgram-settings:hover { color: var(--fd-text); }
+.fs-spellgram-autos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--fd-chrome-separator);
+}
+.fs-spellgram-autos label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fd-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 /* Title Page: still a dialog internally — neutralize its overlay. */
 .fs-modal-as-panel { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .fs-modal-as-panel .dialog-overlay {

@@ -1,37 +1,92 @@
 /**
- * SpellCheckPanel (v0.64) — Spelling & Grammar as a dockable Project window.
+ * SpellCheckPanel — Spelling & Grammar as a dockable window.
  *
- * SpellCheckModal now has a real `embedded` mode (no floating shell, no
- * absolute positioning, no Close button), so the panel simply renders it.
- * Opening the panel also sets spellModalOpen so the checker actually runs;
- * ScreenplayEditor's global floating instance is suppressed while the panel
- * is mounted, so only ONE instance exists at a time (v0.63 rendered both,
- * producing the empty window + cut-off duplicate).
+ * v1.63: the docked panel now carries the FULL feature set the Tools-menu
+ * submenu had, instead of just the spell checker: a Spelling tab and a
+ * Suggestions (grammar/style) tab, the two auto-check toggles, and the
+ * rules Settings. One Spelling & Grammar, one home (the Project menu), and
+ * it docks into either sidebar or the toolbar like any tool.
+ *
+ * One-instance rule (the v0.63 lesson): whichever tab is showing sets the
+ * corresponding modal-open flag so the checker runs, and sets its
+ * *PanelMounted flag so ScreenplayEditor suppresses the global floating
+ * instance — the panel owns the checker while it's mounted.
  */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import SpellCheckModal from './SpellCheckModal';
+import WritingSuggestionsModal from './WritingSuggestionsModal';
 
 interface SpellCheckPanelProps {
   editor: Editor | null;
 }
 
 export default function SpellCheckPanel({ editor }: SpellCheckPanelProps) {
-  const setSpellModalOpen = useEditorStore((s) => s.setSpellModalOpen);
-  const setSpellPanelMounted = useEditorStore((s) => s.setSpellPanelMounted);
+  const {
+    spellCheckEnabled, toggleSpellCheck,
+    grammarCheckEnabled, toggleGrammarCheck,
+    setSpellModalOpen, setSpellPanelMounted,
+    setGrammarModalOpen, setGrammarPanelMounted,
+    setGrammarRulesPanelOpen,
+  } = useEditorStore();
 
+  const [tab, setTab] = useState<'spelling' | 'suggestions'>('spelling');
+
+  // The active tab owns its checker: open flag makes it run, mounted flag
+  // suppresses the floating twin. The inactive tab's flags are off.
   useEffect(() => {
-    setSpellPanelMounted(true);
-    setSpellModalOpen(true);      // run the check while the panel is open
+    const spelling = tab === 'spelling';
+    setSpellPanelMounted(spelling);
+    setSpellModalOpen(spelling);
+    setGrammarPanelMounted(!spelling);
+    setGrammarModalOpen(!spelling);
     return () => {
       setSpellPanelMounted(false);
       setSpellModalOpen(false);
+      setGrammarPanelMounted(false);
+      setGrammarModalOpen(false);
     };
-  }, [setSpellModalOpen, setSpellPanelMounted]);
+  }, [tab, setSpellModalOpen, setSpellPanelMounted, setGrammarModalOpen, setGrammarPanelMounted]);
 
   if (!editor) {
     return <div className="fs-panel-empty">Open a script to run spelling &amp; grammar.</div>;
   }
-  return <SpellCheckModal editor={editor} embedded onClose={() => {}} />;
+
+  return (
+    <div className="fs-spellgram">
+      <div className="fs-spellgram-top">
+        <div className="fs-spellgram-tabs">
+          <button className={tab === 'spelling' ? 'active' : ''} onClick={() => setTab('spelling')}>
+            Spelling
+          </button>
+          <button className={tab === 'suggestions' ? 'active' : ''} onClick={() => setTab('suggestions')}>
+            Suggestions
+          </button>
+        </div>
+        <button
+          className="fs-spellgram-settings"
+          title="Grammar & Spelling Settings"
+          onClick={() => setGrammarRulesPanelOpen(true)}
+        >
+          Settings…
+        </button>
+      </div>
+
+      <div className="fs-spellgram-autos">
+        <label>
+          <input type="checkbox" checked={spellCheckEnabled} onChange={toggleSpellCheck} />
+          <span>Auto Spell Check</span>
+        </label>
+        <label>
+          <input type="checkbox" checked={grammarCheckEnabled} onChange={toggleGrammarCheck} />
+          <span>Auto Writing Suggestions</span>
+        </label>
+      </div>
+
+      {tab === 'spelling'
+        ? <SpellCheckModal editor={editor} embedded onClose={() => {}} />
+        : <WritingSuggestionsModal editor={editor} embedded onClose={() => {}} />}
+    </div>
+  );
 }

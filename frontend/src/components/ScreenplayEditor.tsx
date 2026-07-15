@@ -291,7 +291,7 @@ const ScreenplayEditor: React.FC = () => {
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
     characterProfilesOpen, tagsPanelOpen, locationDatabaseOpen,
     spellCheckEnabled, spellModalOpen, setSpellModalOpen, spellPanelMounted,
-    grammarCheckEnabled, grammarModalOpen, setGrammarModalOpen,
+    grammarCheckEnabled, grammarModalOpen, setGrammarModalOpen, grammarPanelMounted,
     grammarRulesPanelOpen, setGrammarRulesPanelOpen,
     setDocumentTitle,
     sceneNumbersVisible, sceneNumbersLocked,
@@ -4122,7 +4122,9 @@ const ScreenplayEditor: React.FC = () => {
           onClose={() => setSpellModalOpen(false)}
         />
       )}
-      {!isHistoryMode && grammarModalOpen && editor && (
+      {/* Same suppression as the spell modal above: the docked panel's
+          Suggestions tab owns the checker while mounted (v1.63). */}
+      {!isHistoryMode && grammarModalOpen && !grammarPanelMounted && editor && (
         <WritingSuggestionsModal
           editor={editor}
           onClose={() => setGrammarModalOpen(false)}

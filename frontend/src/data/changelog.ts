@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.62';
+export const APP_VERSION = '1.63';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.63',
+    date: '2026-07-15',
+    items: [
+      { title: 'One Spelling & Grammar, with everything in it', detail: 'It was in two places — a dockable panel under Project (spelling only) and a fuller submenu under Tools. Now there\'s one: the extensive version lives in the Project menu, and the dockable panel carries the full set — Spelling and Suggestions tabs, both auto-check toggles, and Settings — so it can sit in a sidebar or the toolbar without losing features.', tags: ['Tools', 'UI'] },
+      { title: 'Vomit Draft preset label fixed', detail: 'The 90-minute preset read "1.5½ hr". It\'s "1.5 hr".', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '1.62',
     date: '2026-07-15',

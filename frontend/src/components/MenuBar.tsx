@@ -14,9 +14,11 @@ const PROJECT_MENU_GROUPS: string[][] = [
   ['navigator', 'pages', 'scenes'],
   ['locations', 'characters'],
   // v0.62: Asset Manager is a Project window again (rolled back from File);
-  // Spelling & Grammar and Script History joined it as dockable windows.
   // 'projects' stays out — the Project Manager lives under File.
-  ['titlepage', 'assets', 'spelling'],
+  // v1.63: 'spelling' is NOT a plain item here anymore — Spelling & Grammar
+  // is the extensive submenu appended to the Project menu below (one version,
+  // one home; the docked panel now carries the full feature set).
+  ['titlepage', 'assets'],
 ];
 /** Tools menu: story planning / writing aids / production & analysis. */
 const TOOL_MENU_GROUPS: string[][] = [
@@ -1418,17 +1420,35 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     },
     {
       label: 'Project',
-      items: PROJECT_MENU_GROUPS.flatMap((group, gi) => [
-        ...(gi > 0 ? [{ separator: true, label: '' }] : []),
-        ...group
-          .map((id) => ALL_TOOLS.find((t) => t.id === id))
-          .filter((t): t is typeof ALL_TOOLS[number] => !!t)
-          .map((t) => ({
-            icon: t.icon,
-            label: t.label,
-            action: () => useEditorStore.getState().openTool(t.id),
-          })),
-      ]),
+      items: [
+        ...PROJECT_MENU_GROUPS.flatMap((group, gi) => [
+          ...(gi > 0 ? [{ separator: true, label: '' }] : []),
+          ...group
+            .map((id) => ALL_TOOLS.find((t) => t.id === id))
+            .filter((t): t is typeof ALL_TOOLS[number] => !!t)
+            .map((t) => ({
+              icon: t.icon,
+              label: t.label,
+              action: () => useEditorStore.getState().openTool(t.id),
+            })),
+        ]),
+        // v1.63: the one Spelling & Grammar, moved here from Tools. The panel
+        // item opens the dockable window (which now has the full feature set);
+        // the rest is the extensive submenu it always had.
+        {
+          icon: <FaSpellCheck />, label: 'Spelling & Grammar',
+          children: [
+            { icon: <FaSpellCheck />, label: 'Spelling & Grammar Panel', action: () => useEditorStore.getState().openTool('spelling') },
+            { separator: true, label: '' },
+            { icon: <FaSpellCheck />, label: spellCheckEnabled ? '✓ Auto Spell Check' : 'Auto Spell Check', action: toggleSpellCheck },
+            { icon: <FaSpellCheck />, label: 'Spell Check…', shortcut: 'F7', action: () => setSpellModalOpen(true) },
+            { separator: true, label: '' },
+            { icon: <FaSpellCheck />, label: grammarCheckEnabled ? '✓ Auto Writing Suggestions' : 'Auto Writing Suggestions', action: toggleGrammarCheck },
+            { icon: <FaSpellCheck />, label: 'Writing Suggestions…', shortcut: '⇧F7', action: () => setGrammarModalOpen(true) },
+            { icon: <FaSpellCheck />, label: 'Grammar & Spelling Settings…', action: () => setGrammarRulesPanelOpen(true) },
+          ],
+        },
+      ],
     },
     {
       label: 'Tools',
@@ -1445,17 +1465,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             })),
         ]),
         { separator: true, label: '' },
-        {
-          icon: <FaSpellCheck />, label: 'Spelling & Grammar',
-          children: [
-            { icon: <FaSpellCheck />, label: spellCheckEnabled ? '\u2713 Auto Spell Check' : 'Auto Spell Check', action: toggleSpellCheck },
-            { icon: <FaSpellCheck />, label: 'Spell Check\u2026', shortcut: 'F7', action: () => setSpellModalOpen(true) },
-            { separator: true, label: '' },
-            { icon: <FaSpellCheck />, label: grammarCheckEnabled ? '\u2713 Auto Writing Suggestions' : 'Auto Writing Suggestions', action: toggleGrammarCheck },
-            { icon: <FaSpellCheck />, label: 'Writing Suggestions\u2026', shortcut: '\u21e7F7', action: () => setGrammarModalOpen(true) },
-            { icon: <FaSpellCheck />, label: 'Grammar & Spelling Settings\u2026', action: () => setGrammarRulesPanelOpen(true) },
-          ],
-        },
         {
           icon: <FaCodeBranch />, label: 'Script History',
           disabled: isCollabGuest,

@@ -1017,6 +1017,11 @@ interface EditorState {
   setGrammarCheckEnabled: (v: boolean) => void;
   grammarModalOpen: boolean;
   setGrammarModalOpen: (open: boolean) => void;
+  /** True while the docked panel shows the Suggestions tab — suppresses the
+   *  global floating WritingSuggestionsModal (same one-instance rule as
+   *  spellPanelMounted). */
+  grammarPanelMounted: boolean;
+  setGrammarPanelMounted: (v: boolean) => void;
   grammarRulesPanelOpen: boolean;
   setGrammarRulesPanelOpen: (open: boolean) => void;
   /** Per-rule on/off switch. Missing key = enabled by default. */
@@ -1861,6 +1866,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   grammarCheckEnabled: false,
   toggleGrammarCheck: () => set((s) => ({ grammarCheckEnabled: !s.grammarCheckEnabled })),
   setGrammarCheckEnabled: (v) => set({ grammarCheckEnabled: v }),
+  grammarPanelMounted: false,
+  setGrammarPanelMounted: (v) => set({ grammarPanelMounted: v }),
   grammarModalOpen: false,
   setGrammarModalOpen: (open) => set({ grammarModalOpen: open }),
   grammarRulesPanelOpen: false,
