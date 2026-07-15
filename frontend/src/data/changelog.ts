@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.71';
+export const APP_VERSION = '1.72';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.72',
+    date: '2026-07-15',
+    items: [
+      { title: 'Typewriter grows up', detail: 'Ported the option set of the Obsidian Typewriter Mode plugin: a movable typewriter line (20–80% of the screen), "only pin once the line is first reached", a current-line highlight bar, and dimming of everything but the element you\'re editing. The page also gains breathing room while the mode is on, so the first and last lines can actually reach the typewriter line.', tags: ['New Feature', 'Tools'] },
+      { title: 'AI Writer, softened', detail: 'Its complete works now read: "Write your own damn script."', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.71',
     date: '2026-07-15',

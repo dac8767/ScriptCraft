@@ -2739,6 +2739,8 @@ body {
   flex: 1; overflow-y: auto; overflow-x: auto;
   background: var(--fd-bg); display: flex; justify-content: center;
   padding: 30px 0 60px;
+  /* v1.72: anchors the Typewriter current-line bar in scroll-content space */
+  position: relative;
 }
 
 .page-sizer {
@@ -12707,6 +12709,7 @@ html.android .version-history-panel {
   color: var(--fd-text);
   cursor: pointer;
 }
+.fs-typewriter-toggle + .fs-typewriter-toggle { margin-top: 8px; }
 .fs-typewriter-sub {
   margin: 8px 0 0 22px;
   font-size: 12px;
@@ -12714,6 +12717,42 @@ html.android .version-history-panel {
 .fs-typewriter-sub.disabled {
   color: var(--fd-text-muted);
   cursor: default;
+}
+.fs-typewriter-offset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fd-text);
+}
+.fs-typewriter-offset input[type="range"] { flex: 1; min-width: 60px; }
+.fs-typewriter-offset-val {
+  font-variant-numeric: tabular-nums;
+  color: var(--fd-text-muted);
+  min-width: 34px;
+  text-align: right;
+}
+.fs-typewriter-divider {
+  border-top: 1px solid var(--fd-chrome-separator);
+  margin: 12px 0;
+}
+
+/* The typewriter current-line bar (ported: their ptm-current-line). Lives in
+   the scroller's content space, so it scrolls with the text. The page is
+   white in every theme, so a light tint + multiply reads everywhere. */
+.fs-typewriter-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(74, 158, 255, 0.20);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Dim-others (ported: their dim-unfocused "paragraphs" mode, opacity 0.25). */
+.ProseMirror .fs-dimmed {
+  opacity: var(--fs-dimmed-opacity, 0.25);
+  transition: opacity 0.2s ease;
 }
 
 /* ── Vomit Draft tool (v1.62) ── */

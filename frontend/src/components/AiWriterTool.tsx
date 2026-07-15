@@ -5,7 +5,7 @@
 export default function AiWriterTool() {
   return (
     <div className="fs-aiwriter">
-      <p>Fuck you. Write your own script.</p>
+      <p>Write your own damn script.</p>
     </div>
   );
 }

@@ -11,6 +11,10 @@ interface ViewState {
   showUnreleasedTools?: boolean;
   typewriterEnabled?: boolean;
   typewriterFollowCursor?: boolean;
+  typewriterOffset?: number;
+  typewriterOnlyWhenReached?: boolean;
+  typewriterHighlightLine?: boolean;
+  typewriterDimOthers?: boolean;
   indexCardsOpen?: boolean;
   beatBoardOpen?: boolean;
   shelfOpen?: boolean;
@@ -846,6 +850,20 @@ interface EditorState {
    *  just when typing. Sub-option — only applies while typewriterEnabled. */
   typewriterFollowCursor: boolean;
   setTypewriterFollowCursor: (v: boolean) => void;
+  /** v1.72 (ported from obsidian-typewriter-mode): where the typewriter line
+   *  sits, as a fraction of the viewport from the top (0.5 = center). */
+  typewriterOffset: number;
+  setTypewriterOffset: (v: number) => void;
+  /** v1.72: don't pin until the caret first REACHES the typewriter line —
+   *  the top of the script scrolls naturally (bottom-only sizer padding). */
+  typewriterOnlyWhenReached: boolean;
+  setTypewriterOnlyWhenReached: (v: boolean) => void;
+  /** v1.72: highlight bar glued to the caret's line (independent toggle). */
+  typewriterHighlightLine: boolean;
+  setTypewriterHighlightLine: (v: boolean) => void;
+  /** v1.72: dim every element except the one being edited (independent). */
+  typewriterDimOthers: boolean;
+  setTypewriterDimOthers: (v: boolean) => void;
   preferencesRequest: { open: boolean; tab?: 'saveloc' };
   openPreferences: (tab?: 'saveloc') => void;
   closePreferences: () => void;
@@ -1376,6 +1394,27 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setTypewriterFollowCursor: (v) => {
     saveViewState({ typewriterFollowCursor: v });
     set({ typewriterFollowCursor: v });
+  },
+  typewriterOffset: (_vs.typewriterOffset as number) ?? 0.5,
+  setTypewriterOffset: (v) => {
+    const clamped = Math.min(0.8, Math.max(0.2, v));
+    saveViewState({ typewriterOffset: clamped });
+    set({ typewriterOffset: clamped });
+  },
+  typewriterOnlyWhenReached: (_vs.typewriterOnlyWhenReached as boolean) ?? false,
+  setTypewriterOnlyWhenReached: (v) => {
+    saveViewState({ typewriterOnlyWhenReached: v });
+    set({ typewriterOnlyWhenReached: v });
+  },
+  typewriterHighlightLine: (_vs.typewriterHighlightLine as boolean) ?? false,
+  setTypewriterHighlightLine: (v) => {
+    saveViewState({ typewriterHighlightLine: v });
+    set({ typewriterHighlightLine: v });
+  },
+  typewriterDimOthers: (_vs.typewriterDimOthers as boolean) ?? false,
+  setTypewriterDimOthers: (v) => {
+    saveViewState({ typewriterDimOthers: v });
+    set({ typewriterDimOthers: v });
   },
   preferencesRequest: { open: false },
   openPreferences: (tab) => set({ preferencesRequest: { open: true, tab } }),
