@@ -15707,13 +15707,15 @@ input.fs-switch:checked::after { left: 15px; }
   flex-direction: column;
   height: 100%;
 }
+/* v2.05: lives in the window HEADER (TOOL_HEADER_EXTRAS), not the panel. */
 .fs-nb-side-head {
-  display: flex;
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 10px 6px;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: .04em;
   color: var(--fd-text-muted);
@@ -15899,28 +15901,22 @@ input.fs-switch:checked::after { left: 15px; }
 .fs-nb-toolbar button:hover { background: var(--fd-menu-hover); }
 
 /* ── structured tables (canvas table boxes) ── */
-.fs-nb-table-wrap { margin: 10px 0; max-width: 100%; overflow-x: auto; }
-.fs-nb-table-bar {
-  display: flex;
+.fs-nb-table-wrap { margin: 0; max-width: 100%; overflow-x: auto; }
+/* v2.05/v2.06: toolbar sections — formatting and the focused table's
+   controls. A group is separated by a rule and keeps its buttons tight. */
+.fs-nb-tb-group {
+  display: inline-flex;
+  align-items: center;
   gap: 3px;
-  margin-bottom: 4px;
-  flex-wrap: wrap;
+  margin-left: 10px;
+  padding-left: 10px;
+  border-left: 1px solid var(--fd-border);
 }
-.fs-nb-table-bar button {
-  background: var(--fd-input-bg);
-  border: 1px solid var(--fd-border);
-  border-radius: 4px;
-  color: var(--fd-text);
-  font-size: 11px;
-  padding: 2px 7px;
-  cursor: pointer;
-}
-.fs-nb-table-bar button:hover { background: var(--fd-menu-hover); }
-.fs-nb-table-bar button.active {
+.fs-nb-toolbar button.active {
   border-color: var(--fd-accent);
   color: var(--fd-accent);
 }
-.fs-nb-table-bar button.fs-nb-danger { color: #e5534b; margin-left: auto; }
+.fs-nb-toolbar button.fs-nb-danger { color: #e5534b; }
 .fs-nb-table { border-collapse: collapse; }
 .fs-nb-table td {
   position: relative;   /* the resize grips anchor to the cell */
@@ -15981,14 +15977,22 @@ input.fs-switch:checked::after { left: 15px; }
 .fs-nb-box, .fs-nb-imgbox, .fs-nb-tablebox { position: absolute; }
 .fs-nb-box {
   background: var(--fd-bg);
-  border: 1px solid var(--fd-border);
+  /* v2.05: a filled item is chromeless until you hover or click into it —
+     its contents carry the visibility (Derek's rules). */
+  border: 1px solid transparent;
   border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
-.fs-nb-box.focused { border-color: var(--fd-accent); }
+.fs-nb-box:hover {
+  border-color: var(--fd-border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
+}
+.fs-nb-box.focused {
+  border-color: var(--fd-accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
+}
 /* v1.99: an EMPTY item must announce itself since it has no contents to make
    it visible. Filled items keep the faint line.
    v2.01: solid thin line (Derek: not dashed), in the theme's text color. */
@@ -16048,23 +16052,25 @@ input.fs-switch:checked::after { left: 15px; }
   cursor: grab;
   display: block;
 }
-.fs-nb-img-x {
+/* v2.05: images and tables wear the SAME slim head bar as text boxes. On an
+   image it overlays the top edge; on a table it sits above the grid. */
+.fs-nb-box-head-overlay {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
   background: rgba(0, 0, 0, .55);
-  border: none;
-  border-radius: 4px;
   color: #fff;
-  font-size: 10px;
-  padding: 1px 5px;
-  cursor: pointer;
 }
-.fs-nb-tablebox { background: var(--fd-bg); border-radius: 6px; padding: 2px; }
-.fs-nb-box-movegrip {
-  font-size: 10px;
-  color: var(--fd-text-muted);
-  cursor: grab;
-  user-select: none;
-  padding: 1px 4px;
+.fs-nb-tablebox {
+  background: var(--fd-bg);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 2px;
 }
+.fs-nb-tablebox:hover { border-color: var(--fd-border); }
+.fs-nb-tablebox.focused { border-color: var(--fd-accent); }
+.fs-nb-tablebox .fs-nb-box-head { border-radius: 4px 4px 0 0; }

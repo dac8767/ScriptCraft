@@ -85,17 +85,29 @@ function Cell({ value, onCommit, align }: {
   );
 }
 
-function EditableTable({ data, onChange, onDelete, selected }: {
-  data: NbTable; onChange: (t: NbTable) => void; onDelete?: () => void; selected: boolean;
+/* v2.05: the table mutations are PURE helpers — the surface toolbar's Table
+   section is their only caller (the buttons that sat on the item are gone).
+   Exported for the test. */
+export const tableAddRow = (t: NbTable): NbTable =>
+  ({ ...t, rows: [...t.rows, Array(t.rows[0]?.length || 2).fill('')], rowHeights: [...t.rowHeights, 32] });
+export const tableDelRow = (t: NbTable): NbTable =>
+  t.rows.length > 1 ? { ...t, rows: t.rows.slice(0, -1), rowHeights: t.rowHeights.slice(0, -1) } : t;
+export const tableAddCol = (t: NbTable): NbTable =>
+  ({ ...t, rows: t.rows.map((r) => [...r, '']), colWidths: [...t.colWidths, 90] });
+export const tableDelCol = (t: NbTable): NbTable =>
+  (t.rows[0]?.length || 0) > 1
+    ? { ...t, rows: t.rows.map((r) => r.slice(0, -1)), colWidths: t.colWidths.slice(0, -1) }
+    : t;
+export const tableIsEmpty = (rows: string[][]): boolean =>
+  rows.every((r) => r.every((c) => !c || !c.trim()));
+
+function EditableTable({ data, onChange }: {
+  data: NbTable; onChange: (t: NbTable) => void;
 }) {
   const colWidths = data.colWidths;
   const rowHeights = data.rowHeights;
   const setCell = (ri: number, ci: number, value: string) =>
     onChange({ ...data, rows: data.rows.map((r, i) => (i === ri ? r.map((c, j) => (j === ci ? value : c)) : r)) });
-  const addRow = () => onChange({ ...data, rows: [...data.rows, Array(data.rows[0]?.length || 2).fill('')], rowHeights: [...rowHeights, 32] });
-  const delRow = () => { if (data.rows.length > 1) onChange({ ...data, rows: data.rows.slice(0, -1), rowHeights: rowHeights.slice(0, -1) }); };
-  const addCol = () => onChange({ ...data, rows: data.rows.map((r) => [...r, '']), colWidths: [...colWidths, 90] });
-  const delCol = () => { if ((data.rows[0]?.length || 0) > 1) onChange({ ...data, rows: data.rows.map((r) => r.slice(0, -1)), colWidths: colWidths.slice(0, -1) }); };
 
   const startColResize = (ci: number) => (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
@@ -124,25 +136,12 @@ function EditableTable({ data, onChange, onDelete, selected }: {
 
   // v1.99: an all-empty table is invisible on the canvas without help —
   // it gets the defined "I'm empty" border (same rule as empty text boxes).
-  const isEmpty = data.rows.every((r) => r.every((c) => !c || !c.trim()));
+  // v2.05: the row/col/align buttons moved to the surface toolbar's Table
+  // section — nothing is attached to the item anymore.
+  const isEmpty = tableIsEmpty(data.rows);
 
   return (
     <div className={`fs-nb-table-wrap${isEmpty ? ' fs-nb-table-empty' : ''}`}>
-      {/* v2.01: an empty table keeps its menu bar visible, not just when
-          selected — same reason as the empty border. */}
-      {(selected || isEmpty) && (
-        <div className="fs-nb-table-bar">
-          <button onMouseDown={(e) => { e.preventDefault(); addRow(); }}>+ Row</button>
-          <button onMouseDown={(e) => { e.preventDefault(); delRow(); }}>− Row</button>
-          <button onMouseDown={(e) => { e.preventDefault(); addCol(); }}>+ Col</button>
-          <button onMouseDown={(e) => { e.preventDefault(); delCol(); }}>− Col</button>
-          {(['left', 'center', 'right'] as const).map((a) => (
-            <button key={a} className={data.align === a ? 'active' : ''}
-              onMouseDown={(e) => { e.preventDefault(); onChange({ ...data, align: a }); }}>{a[0].toUpperCase()}</button>
-          ))}
-          {onDelete && <button className="fs-nb-danger" onMouseDown={(e) => { e.preventDefault(); onDelete(); }}>Delete</button>}
-        </div>
-      )}
       <table className="fs-nb-table" style={{ tableLayout: 'fixed' }}>
         <colgroup>{colWidths.map((w, ci) => <col key={ci} style={{ width: w }} />)}</colgroup>
         <tbody>
@@ -207,14 +206,17 @@ function TextBox({ box, focused, onChange, onFocusBox, onDelete }: {
     }
   }, [box.html]);
   const isEmpty = !box.html || box.html.replace(/<[^>]*>/g, '').trim() === '';
-  // v2.01: while empty, the box keeps its head bar visible (not just when
-  // focused) — an empty scrap needs its handles showing.
-  const showHead = focused || isEmpty;
+  const [hover, setHover] = useState(false);
+  // v2.05, Derek's rules: EMPTY items always show head bar + border;
+  // non-empty ones show them on hover or when clicked into.
+  const showHead = focused || isEmpty || hover;
   return (
     <div
       className={`fs-nb-box${focused ? ' focused' : ''}${isEmpty && !focused ? ' empty' : ''}`}
       style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
       onMouseDown={(e) => e.stopPropagation()}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
     >
       {showHead && (
         <div className="fs-nb-box-head" onMouseDown={(e) => startDrag(e, 'move')}>
@@ -251,11 +253,15 @@ function ImageBox({ box, focused, onChange, onFocusBox, onDelete }: {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
+      {/* v2.05: same slim head bar as text boxes, overlaid on the image */}
+      {show && (
+        <div className="fs-nb-box-head fs-nb-box-head-overlay" onMouseDown={(e) => { e.stopPropagation(); startDrag(e, 'move'); }}>
+          <span>⋮⋮</span>
+          <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}>✕</button>
+        </div>
+      )}
       <img src={box.src} alt="" draggable={false} onMouseDown={(e) => startDrag(e, 'move')} />
-      {show && (<>
-        <button className="fs-nb-img-x" onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}>✕</button>
-        <div className="fs-nb-box-grip" onMouseDown={(e) => startDrag(e, 'resize')} />
-      </>)}
+      {show && <div className="fs-nb-box-grip" onMouseDown={(e) => startDrag(e, 'resize')} />}
     </div>
   );
 }
@@ -264,17 +270,26 @@ function TableBox({ box, focused, onChange, onFocusBox, onDelete }: {
   box: NbBox; focused: boolean; onChange: (b: NbBox) => void; onFocusBox: (id: string) => void; onDelete: (id: string) => void;
 }) {
   const startDrag = useBoxDrag(box, onChange);
+  const [hover, setHover] = useState(false);
+  const isEmpty = tableIsEmpty(box.rows || []);
+  // v2.05: same slim head bar as text boxes; visible per Derek's empty/
+  // hover/focus rules so the move grip can never just vanish.
+  const showHead = focused || isEmpty || hover;
   return (
-    <div className="fs-nb-tablebox" style={{ left: box.x, top: box.y }}
-      onMouseDown={(e) => { e.stopPropagation(); onFocusBox(box.id); }}>
-      {focused && (
-        <div className="fs-nb-box-movegrip" onMouseDown={(e) => startDrag(e, 'move')}>⋮⋮ move</div>
+    <div className={`fs-nb-tablebox${focused ? ' focused' : ''}`} style={{ left: box.x, top: box.y }}
+      onMouseDown={(e) => { e.stopPropagation(); onFocusBox(box.id); }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      {showHead && (
+        <div className="fs-nb-box-head" onMouseDown={(e) => { e.stopPropagation(); startDrag(e, 'move'); }}>
+          <span>⋮⋮</span>
+          <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}>✕</button>
+        </div>
       )}
       <EditableTable
         data={{ id: box.id, rows: box.rows || [['', ''], ['', '']], colWidths: box.colWidths || [90, 90], rowHeights: box.rowHeights || [32, 32], align: box.align || 'left' }}
         onChange={(t) => onChange({ ...box, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: t.align })}
-        onDelete={() => onDelete(box.id)}
-        selected={focused}
       />
     </div>
   );
@@ -283,7 +298,10 @@ function TableBox({ box, focused, onChange, onFocusBox, onDelete }: {
 function CanvasSurface({ boxes, onChangeBoxes }: {
   boxes: NbBox[]; onChangeBoxes: (b: NbBox[]) => void;
 }) {
-  const [focusedId, setFocusedId] = useState<string | null>(null);
+  // v2.05: focus lives in the store so the surface toolbar can show the
+  // focused item's controls (text formatting / table section).
+  const focusedId = useNotebookStore((s) => s.focusedBoxId);
+  const setFocusedId = useNotebookStore((s) => s.setFocusedBox);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const addTextBoxAt = (e: React.MouseEvent) => {
@@ -496,11 +514,26 @@ export function closeNotebook() {
   if (s.tempTool === 'notebook') s.setTempTool(null);
 }
 
+/** v2.05: "Pages" + the create buttons live in the window's HEADER (the
+ *  chrome's TOOL_HEADER_EXTRAS slot), not in the panel body. */
+export function NotebookHeaderExtra() {
+  const { addPage, addSection } = useNotebookStore.getState();
+  return (
+    <span className="fs-nb-side-head">
+      <span>Pages</span>
+      <span className="fs-nb-side-btns">
+        <button title="New section" onClick={addSection}>🗂</button>
+        <button title="New page" onClick={() => addPage()}>＋</button>
+      </span>
+    </span>
+  );
+}
+
 /** The tool-window content: ONLY the sections/pages tree. Mounting it (the
  *  window opening) is what raises the notebook surface over the editor. */
 export default function NotebookTool() {
   const tree = useNotebookStore((s) => s.tree);
-  const { addPage, addSection, moveNode } = useNotebookStore.getState();
+  const { moveNode } = useNotebookStore.getState();
   // The "Drop here for top level" zone only appears mid-drag — it's the
   // target for pulling a page/section out of every section, and it read as
   // mystery chrome when it sat there permanently (Derek asked what it did).
@@ -518,13 +551,6 @@ export default function NotebookTool() {
       onDragEndCapture={() => setDragging(false)}
       onDropCapture={() => setDragging(false)}
     >
-      <div className="fs-nb-side-head">
-        <span>Pages</span>
-        <span className="fs-nb-side-btns">
-          <button title="New section" onClick={addSection}>🗂</button>
-          <button title="New page" onClick={() => addPage()}>＋</button>
-        </span>
-      </div>
       <div className="fs-nb-tree">
         <TreeNodes nodes={tree} depth={0} />
         {tree.length === 0 && (
@@ -555,7 +581,37 @@ export default function NotebookTool() {
  *  area while the notebook is open. Free canvas only (v1.96). */
 export function NotebookSurface() {
   const page = useNotebookStore((s) => (s.selectedPageId ? s.pages[s.selectedPageId] : null));
+  const focusedBoxId = useNotebookStore((s) => s.focusedBoxId);
   const { renamePage, updatePage } = useNotebookStore.getState();
+  const focusedBox = page?.boxes.find((b) => b.id === focusedBoxId) ?? null;
+
+  // v2.06: formatting for text boxes — execCommand drives the focused
+  // contentEditable's selection; mousedown-preventDefault keeps it focused.
+  const fmt = (cmd: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    document.execCommand(cmd);
+  };
+  // v2.05: table controls act on the focused table box via the pure helpers.
+  const asTable = (b: NbBox): NbTable => ({
+    id: b.id, rows: b.rows || [['', ''], ['', '']],
+    colWidths: b.colWidths || [90, 90], rowHeights: b.rowHeights || [32, 32],
+    align: b.align || 'left',
+  });
+  const mutateTable = (fn: (t: NbTable) => NbTable) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!page || !focusedBox) return;
+    const t = fn(asTable(focusedBox));
+    updatePage(page.id, {
+      boxes: page.boxes.map((b) => (b.id === focusedBox.id
+        ? { ...b, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: t.align }
+        : b)),
+    });
+  };
+  const deleteFocused = () => {
+    if (!page || !focusedBox) return;
+    updatePage(page.id, { boxes: page.boxes.filter((b) => b.id !== focusedBox.id) });
+    useNotebookStore.getState().setFocusedBox(null);
+  };
 
   return (
     <div className="fs-nb-takeover">
@@ -576,6 +632,29 @@ export function NotebookSurface() {
             <button onClick={() => window.dispatchEvent(new Event('nb-add-textbox'))}>+ Text box</button>
             <button onClick={() => window.dispatchEvent(new Event('nb-add-table-canvas'))}>+ Table</button>
             <button onClick={() => (document.getElementById('fs-nb-filepick') as HTMLInputElement | null)?.click()}>+ Image</button>
+            {/* v2.06: text formatting — always offered; it acts on the
+                selection in whichever text box holds the caret. */}
+            <span className="fs-nb-tb-group">
+              <button title="Bold" onMouseDown={fmt('bold')}><b>B</b></button>
+              <button title="Italic" onMouseDown={fmt('italic')}><i>I</i></button>
+              <button title="Underline" onMouseDown={fmt('underline')}><u>U</u></button>
+              <button title="Strikethrough" onMouseDown={fmt('strikeThrough')}><s>S</s></button>
+            </span>
+            {/* v2.05: the focused TABLE's controls live here now, not on
+                the item. */}
+            {focusedBox?.type === 'table' && (
+              <span className="fs-nb-tb-group">
+                <button onMouseDown={mutateTable(tableAddRow)}>+ Row</button>
+                <button onMouseDown={mutateTable(tableDelRow)}>− Row</button>
+                <button onMouseDown={mutateTable(tableAddCol)}>+ Col</button>
+                <button onMouseDown={mutateTable(tableDelCol)}>− Col</button>
+                {(['left', 'center', 'right'] as const).map((a) => (
+                  <button key={a} className={(focusedBox.align || 'left') === a ? 'active' : ''}
+                    onMouseDown={mutateTable((t) => ({ ...t, align: a }))}>{a[0].toUpperCase()}</button>
+                ))}
+                <button className="fs-nb-danger" onMouseDown={(e) => { e.preventDefault(); deleteFocused(); }}>Delete</button>
+              </span>
+            )}
           </div>
         )}
         <button className="fs-nb-return" onClick={closeNotebook}>Return to editor</button>

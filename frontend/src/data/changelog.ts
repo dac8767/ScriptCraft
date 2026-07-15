@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.04';
+export const APP_VERSION = '2.05';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.05',
+    date: '2026-07-15',
+    items: [
+      { title: 'Scrapbook items share one chrome', detail: 'Text boxes, tables and images all wear the same slim head bar (⋮⋮ to move, ✕ to delete). Empty items keep their border and head bar visible at all times — the move grip can\'t vanish anymore; filled items show theirs when you hover or click in. The table\'s attached button row is gone: while you\'re in the Scrapbook, the toolbar grows a Table section (rows, columns, alignment, delete) for whichever table is selected, and the "Pages" title with its create buttons moved into the panel window\'s header.', tags: ['Tools', 'UI'] },
+      { title: 'Scrapbook text formatting works', detail: 'Bold, italic, underline and strikethrough now work in text boxes — from the new formatting buttons in the Scrapbook toolbar or the usual ⌘B/⌘I/⌘U shortcuts.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '2.04',
     date: '2026-07-15',

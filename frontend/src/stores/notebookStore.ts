@@ -177,6 +177,10 @@ interface NotebookState {
    *  state — never persisted; the app always starts on the script. */
   notebookOpen: boolean;
   setNotebookOpen: (open: boolean) => void;
+  /** v2.05: the canvas box with focus — the surface toolbar reads it to
+   *  show the right section (text formatting / table controls). Session. */
+  focusedBoxId: string | null;
+  setFocusedBox: (id: string | null) => void;
   addPage: () => string;
   deletePage: (id: string) => void;
   renamePage: (id: string, title: string) => void;
@@ -223,6 +227,8 @@ export const useNotebookStore = create<NotebookState>((set, get) => ({
 
   notebookOpen: false,
   setNotebookOpen: (open) => set({ notebookOpen: open }),
+  focusedBoxId: null,
+  setFocusedBox: (id) => set({ focusedBoxId: id }),
 
   addPage: () => {
     const id = nbUid();

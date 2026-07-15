@@ -40,7 +40,7 @@ import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
 import TypewriterTool from './TypewriterTool';
 import AiWriterTool from './AiWriterTool';
-import NotebookTool from './NotebookTool';
+import NotebookTool, { NotebookHeaderExtra } from './NotebookTool';
 
 export interface ToolDef {
   id: ToolId;
@@ -126,6 +126,7 @@ export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id)
 export const TOOL_HEADER_EXTRAS: Partial<Record<ToolId, React.FC>> = {
   navigator: NavigatorHeaderExtra,
   goals: GoalsHeaderExtra,
+  notebook: NotebookHeaderExtra,   // v2.05: Pages + create buttons
 };
 // v1.97: currently empty — Navigator's filter moved into its header. The
 // slot stays: it's the one place a tool can register a true footer bar.
