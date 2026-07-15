@@ -73,7 +73,7 @@ function applySizerPadding(scroller: HTMLElement): void {
   const sizer = scroller.querySelector('.page-sizer') as HTMLElement | null;
   if (!sizer) return;
   const s = useEditorStore.getState();
-  if (!s.typewriterEnabled) {
+  if (!s.typewriterEnabled || !s.typewriterMasterEnabled) {
     sizer.style.removeProperty('padding-top');
     sizer.style.removeProperty('padding-bottom');
     return;
@@ -104,7 +104,7 @@ function updateHighlightBar(editor: Editor): void {
   if (!scroller) return;
   const store = useEditorStore.getState();
   let bar = scroller.querySelector(`.${HIGHLIGHT_CLASS}`) as HTMLElement | null;
-  if (!store.typewriterHighlightLine) {
+  if (!store.typewriterHighlightLine || !store.typewriterMasterEnabled) {
     bar?.remove();
     return;
   }
@@ -256,7 +256,8 @@ export const TypewriterScroll = Extension.create({
         state: {
           init: () => DecorationSet.empty,
           apply(tr, old, _oldState, newState) {
-            if (!useEditorStore.getState().typewriterDimOthers) return DecorationSet.empty;
+            const s = useEditorStore.getState();
+            if (!s.typewriterDimOthers || !s.typewriterMasterEnabled) return DecorationSet.empty;
             if (!tr.docChanged && !tr.selectionSet && old !== DecorationSet.empty) {
               return old;
             }
@@ -274,6 +275,9 @@ export const TypewriterScroll = Extension.create({
 
   onTransaction({ editor, transaction }) {
     const store = useEditorStore.getState();
+    // v1.84: the master switch silences everything except restore-cursor,
+    // which lives in Settings (it's a startup behavior, not a mode).
+    const master = store.typewriterMasterEnabled;
 
     // Restore-cursor (v1.74): a content load (setContent stamps
     // 'preventUpdate') re-applies the saved position; ordinary caret
@@ -290,13 +294,13 @@ export const TypewriterScroll = Extension.create({
 
     // The highlight bar tracks the caret on ANY caret move (their
     // "disallowed user event" path moves the line without recentering).
-    if (store.typewriterHighlightLine && (transaction.selectionSet || transaction.docChanged)) {
+    if (master && store.typewriterHighlightLine && (transaction.selectionSet || transaction.docChanged)) {
       requestAnimationFrame(() => {
         if (!editor.isDestroyed) updateHighlightBar(editor);
       });
     }
 
-    if (!store.typewriterEnabled) return;
+    if (!store.typewriterEnabled || !master) return;
     // Typing always recenters. With follow-cursor on (v1.70), so does any
     // caret MOVE (click, arrow keys) — but never while a RANGE is being
     // selected: recentering mid-drag would move the text under the mouse

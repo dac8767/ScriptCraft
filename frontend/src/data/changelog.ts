@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.83';
+export const APP_VERSION = '1.84';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.84',
+    date: '2026-07-15',
+    items: [
+      { title: 'Typewriter master switch', detail: 'One checkbox at the top of the Typewriter window turns every feature off at once — and every sub-option remembers its state, so switching back on restores exactly the setup you had.', tags: ['Tools', 'New Feature'] },
+      { title: '"Writing focus" is now "Extreme focus"', detail: 'Same fullscreen, everything-hidden mode — and while it\'s on, a quiet "esc to leave" sits in the upper right so the exit is never a mystery.', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.83',
     date: '2026-07-15',

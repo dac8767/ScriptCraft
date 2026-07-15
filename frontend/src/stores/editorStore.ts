@@ -9,6 +9,7 @@ const VIEW_STATE_KEY = 'opendraft:viewState';
 interface ViewState {
   navigatorOpen?: boolean;
   showUnreleasedTools?: boolean;
+  typewriterMasterEnabled?: boolean;
   typewriterEnabled?: boolean;
   typewriterFollowCursor?: boolean;
   typewriterOffset?: number;
@@ -874,6 +875,10 @@ interface EditorState {
    *  Lock Pages). Off by default; flipped from Help > Developer. */
   showUnreleasedTools: boolean;
   setShowUnreleasedTools: (v: boolean) => void;
+  /** v1.84: the tool's master switch — off silences EVERY Typewriter feature
+   *  while each sub-option keeps its own checked state for next time. */
+  typewriterMasterEnabled: boolean;
+  setTypewriterMasterEnabled: (v: boolean) => void;
   /** v1.68: Typewriter mode — auto-scroll keeps the active line centered. */
   typewriterEnabled: boolean;
   setTypewriterEnabled: (v: boolean) => void;
@@ -1442,6 +1447,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setShowUnreleasedTools: (v) => {
     saveViewState({ showUnreleasedTools: v });
     set({ showUnreleasedTools: v });
+  },
+  typewriterMasterEnabled: (_vs.typewriterMasterEnabled as boolean) ?? true,
+  setTypewriterMasterEnabled: (v) => {
+    saveViewState({ typewriterMasterEnabled: v });
+    set({ typewriterMasterEnabled: v });
   },
   typewriterEnabled: (_vs.typewriterEnabled as boolean) ?? false,
   setTypewriterEnabled: (v) => {

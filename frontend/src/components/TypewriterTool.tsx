@@ -27,7 +27,9 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
     typewriterDimMode, setTypewriterDimMode,
     typewriterDimOpacity, setTypewriterDimOpacity,
     writingFocus, setWritingFocus,
+    typewriterMasterEnabled, setTypewriterMasterEnabled,
   } = useEditorStore();
+  const off = !typewriterMasterEnabled;
 
   const live = editor && !editor.isDestroyed ? editor : null;
   const snapToCenter = () => { if (live) centerCaretLine(live); };
@@ -43,11 +45,29 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
         page scrolls, your eyes don't. This window stays open while you write.
       </p>
 
+      {/* v1.84: the master switch. Sub-options keep their checked state, so
+          flipping this back on restores exactly the setup you had. */}
+      <label className="fs-typewriter-toggle fs-typewriter-master">
+        <input
+          type="checkbox"
+          checked={typewriterMasterEnabled}
+          onChange={(e) => {
+            setTypewriterMasterEnabled(e.target.checked);
+            if (!e.target.checked) setWritingFocus(false);
+            refreshChrome();
+            nudge();
+            if (e.target.checked && typewriterEnabled) snapToCenter();
+          }}
+        />
+        <span>Enable Typewriter tool</span>
+      </label>
+
       <div className="fs-typewriter-section">Scrolling</div>
 
       <label className="fs-typewriter-toggle">
         <input
           type="checkbox"
+          disabled={off}
           checked={typewriterEnabled}
           onChange={(e) => {
             setTypewriterEnabled(e.target.checked);
@@ -57,11 +77,11 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
         <span>Typewriter scrolling</span>
       </label>
 
-      <div className={`fs-typewriter-subgroup${typewriterEnabled ? '' : ' disabled'}`}>
+      <div className={`fs-typewriter-subgroup${typewriterEnabled && !off ? '' : ' disabled'}`}>
         <label className="fs-typewriter-toggle">
           <input
             type="checkbox"
-            disabled={!typewriterEnabled}
+            disabled={off || !typewriterEnabled}
             checked={typewriterFollowCursor}
             onChange={(e) => {
               setTypewriterFollowCursor(e.target.checked);
@@ -78,7 +98,7 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
             min={20}
             max={80}
             step={5}
-            disabled={!typewriterEnabled}
+            disabled={off || !typewriterEnabled}
             value={Math.round(typewriterOffset * 100)}
             onChange={(e) => { setTypewriterOffset(Number(e.target.value) / 100); snapToCenter(); }}
           />
@@ -91,12 +111,13 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
       <label className="fs-typewriter-toggle">
         <input
           type="checkbox"
+          disabled={off}
           checked={typewriterHighlightLine}
           onChange={(e) => { setTypewriterHighlightLine(e.target.checked); refreshChrome(); }}
         />
         <span>Highlight the current line</span>
       </label>
-      <div className={`fs-typewriter-subgroup${typewriterHighlightLine ? '' : ' disabled'}`}>
+      <div className={`fs-typewriter-subgroup${typewriterHighlightLine && !off ? '' : ' disabled'}`}>
         <div className="fs-typewriter-offset">
           <span>Color</span>
           <span className="fs-typewriter-swatches">
@@ -105,7 +126,7 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
                 key={c}
                 className={`fs-typewriter-swatch${typewriterHighlightColor.toLowerCase() === c ? ' active' : ''}`}
                 style={{ background: c }}
-                disabled={!typewriterHighlightLine}
+                disabled={off || !typewriterHighlightLine}
                 title={c}
                 onClick={() => { setTypewriterHighlightColor(c); refreshChrome(); }}
               />
@@ -113,7 +134,7 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
             <input
               type="color"
               className="fs-typewriter-swatch-custom"
-              disabled={!typewriterHighlightLine}
+              disabled={off || !typewriterHighlightLine}
               value={typewriterHighlightColor}
               title="Custom color"
               onChange={(e) => { setTypewriterHighlightColor(e.target.value); refreshChrome(); }}
@@ -125,16 +146,17 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
       <label className="fs-typewriter-toggle">
         <input
           type="checkbox"
+          disabled={off}
           checked={typewriterDimOthers}
           onChange={(e) => { setTypewriterDimOthers(e.target.checked); nudge(); }}
         />
         <span>Dim unfocused text</span>
       </label>
-      <div className={`fs-typewriter-subgroup${typewriterDimOthers ? '' : ' disabled'}`}>
+      <div className={`fs-typewriter-subgroup${typewriterDimOthers && !off ? '' : ' disabled'}`}>
         <div className="fs-typewriter-offset">
           <span>Keep bright</span>
           <select
-            disabled={!typewriterDimOthers}
+            disabled={off || !typewriterDimOthers}
             value={typewriterDimMode}
             onChange={(e) => { setTypewriterDimMode(e.target.value as 'elements' | 'sentences'); nudge(); }}
           >
@@ -149,7 +171,7 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
             min={5}
             max={70}
             step={5}
-            disabled={!typewriterDimOthers}
+            disabled={off || !typewriterDimOthers}
             value={Math.round(typewriterDimOpacity * 100)}
             onChange={(e) => setTypewriterDimOpacity(Number(e.target.value) / 100)}
           />
@@ -160,10 +182,11 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
       <label className="fs-typewriter-toggle">
         <input
           type="checkbox"
+          disabled={off}
           checked={writingFocus}
           onChange={(e) => setWritingFocus(e.target.checked)}
         />
-        <span>Writing focus (fullscreen, chrome hidden — Esc leaves)</span>
+        <span>Extreme focus (fullscreen, everything hidden)</span>
       </label>
     </div>
   );

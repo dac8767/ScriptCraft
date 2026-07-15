@@ -13068,6 +13068,27 @@ body.fs-writing-focus::after {
   box-shadow: inset 0 0 12vw 3vw rgba(0, 0, 0, 0.45);
   z-index: 8000;
 }
+/* v1.84: Extreme focus wears its exit sign — upper right, always visible. */
+body.fs-writing-focus::before {
+  content: 'esc to leave';
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  pointer-events: none;
+  z-index: 8001;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  color: rgba(255, 255, 255, 0.65);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* v1.84: the tool's master switch reads heavier than the options below it. */
+.fs-typewriter-master {
+  font-weight: 700;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--fd-chrome-separator);
+  margin-bottom: 4px;
+}
 
 /* (v1.77: the v1.74 limit-line-length rule is gone — Derek cut the option.) */
 
