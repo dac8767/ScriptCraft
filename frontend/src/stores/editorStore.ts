@@ -14,6 +14,7 @@ interface ViewState {
   typewriterOffset?: number;
   typewriterOnlyWhenReached?: boolean;
   typewriterHighlightLine?: boolean;
+  typewriterHighlightColor?: string;
   typewriterDimOthers?: boolean;
   typewriterDimMode?: 'elements' | 'sentences';
   typewriterDimOpacity?: number;
@@ -892,6 +893,9 @@ interface EditorState {
   /** v1.72: highlight bar glued to the caret's line (independent toggle). */
   typewriterHighlightLine: boolean;
   setTypewriterHighlightLine: (v: boolean) => void;
+  /** v1.78: the bar's color (hex; rendered translucent over the page). */
+  typewriterHighlightColor: string;
+  setTypewriterHighlightColor: (v: string) => void;
   /** v1.72: dim every element except the one being edited (independent). */
   typewriterDimOthers: boolean;
   setTypewriterDimOthers: (v: boolean) => void;
@@ -1458,6 +1462,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setTypewriterHighlightLine: (v) => {
     saveViewState({ typewriterHighlightLine: v });
     set({ typewriterHighlightLine: v });
+  },
+  typewriterHighlightColor: (_vs.typewriterHighlightColor as string) ?? '#4a9eff',
+  setTypewriterHighlightColor: (v) => {
+    saveViewState({ typewriterHighlightColor: v });
+    set({ typewriterHighlightColor: v });
   },
   typewriterDimOthers: (_vs.typewriterDimOthers as boolean) ?? false,
   setTypewriterDimOthers: (v) => {

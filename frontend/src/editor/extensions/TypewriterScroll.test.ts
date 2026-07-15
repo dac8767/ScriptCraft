@@ -9,7 +9,7 @@ import { Editor } from '@tiptap/core';
 import Document from '@tiptap/extension-document';
 import Paragraph from '@tiptap/extension-paragraph';
 import Text from '@tiptap/extension-text';
-import { TypewriterScroll, typewriterScrollDelta, sentenceRanges } from './TypewriterScroll';
+import { TypewriterScroll, typewriterScrollDelta, sentenceRanges, highlightRgba } from './TypewriterScroll';
 import { useEditorStore } from '../../stores/editorStore';
 
 describe('typewriterScrollDelta', () => {
@@ -31,6 +31,17 @@ describe('typewriterScrollDelta', () => {
     expect(typewriterScrollDelta(400, 100, 600, 0.25)).toBe(150);
     // line at 75% = 550; caret at 400 → scroll up 150
     expect(typewriterScrollDelta(400, 100, 600, 0.75)).toBe(-150);
+  });
+});
+
+describe('highlightRgba (v1.78)', () => {
+  it('converts hex to translucent rgba', () => {
+    expect(highlightRgba('#f5d90a')).toBe('rgba(245, 217, 10, 0.3)');
+    expect(highlightRgba('34c759')).toBe('rgba(52, 199, 89, 0.3)');
+  });
+
+  it('falls back to the default blue on junk', () => {
+    expect(highlightRgba('not-a-color')).toBe('rgba(74, 158, 255, 0.3)');
   });
 });
 

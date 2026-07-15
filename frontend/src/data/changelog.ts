@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.77';
+export const APP_VERSION = '1.78';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.78',
+    date: '2026-07-15',
+    items: [
+      { title: 'Current-line highlight respects the page', detail: 'The Typewriter highlight bar stops at the page edges instead of running across the whole editor background — at any zoom level. And it\'s tintable: pick from six swatches or any custom color, right under the toggle.', tags: ['Tools', 'UI'] },
+    ],
+  },
   {
     version: '1.77',
     date: '2026-07-15',

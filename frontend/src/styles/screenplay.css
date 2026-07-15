@@ -12730,6 +12730,32 @@ html.android .version-history-panel {
   font-size: 12px;
 }
 .fs-typewriter-subgroup.disabled { color: var(--fd-text-muted); }
+.fs-typewriter-swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.fs-typewriter-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.fs-typewriter-swatch.active { border-color: var(--fd-text); }
+.fs-typewriter-swatch:disabled { opacity: 0.4; cursor: default; }
+.fs-typewriter-swatch-custom {
+  width: 24px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+.fs-typewriter-swatch-custom:disabled { opacity: 0.4; cursor: default; }
 .fs-typewriter-offset {
   display: flex;
   align-items: center;
@@ -13007,13 +13033,11 @@ body.fs-writing-focus::after {
 /* (v1.77: the v1.74 limit-line-length rule is gone — Derek cut the option.) */
 
 /* The typewriter current-line bar (ported: their ptm-current-line). Lives in
-   the scroller's content space, so it scrolls with the text. The page is
-   white in every theme, so a light tint + multiply reads everywhere. */
+   the scroller's content space, so it scrolls with the text. Left/width are
+   set inline to the PAGE's bounds (v1.78), and the color comes from the tool
+   window; multiply keeps any tint readable over the white page. */
 .fs-typewriter-line {
   position: absolute;
-  left: 0;
-  right: 0;
-  background: rgba(74, 158, 255, 0.20);
   mix-blend-mode: multiply;
   pointer-events: none;
   z-index: 5;

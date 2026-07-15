@@ -86,15 +86,28 @@ function applySizerPadding(scroller: HTMLElement): void {
   }
 }
 
+/** Hex → translucent rgba for the highlight (the bar multiplies over the
+ *  white page, so ~30% alpha reads as a tint at any hue). Exported for the
+ *  test. */
+export function highlightRgba(hex: string, alpha = 0.3): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return `rgba(74, 158, 255, ${alpha})`;   // junk — the default blue
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
 /** Their moveCurrentLine: keep a highlight bar glued to the caret's line.
  *  The bar lives INSIDE the scroller's content space, so it scrolls with the
- *  text for free — no wheel listeners or pause-while-scrolling workarounds. */
+ *  text for free — no wheel listeners or pause-while-scrolling workarounds.
+ *  v1.78: clamped to the PAGE's horizontal bounds (post-zoom, so any zoom
+ *  level holds) instead of spanning the whole editor background, and tinted
+ *  with the color chosen in the tool window. */
 function updateHighlightBar(editor: Editor): void {
   const scroller = scrollParentOf(editor.view.dom as HTMLElement);
   if (!scroller) return;
-  const wanted = useEditorStore.getState().typewriterHighlightLine;
+  const store = useEditorStore.getState();
   let bar = scroller.querySelector(`.${HIGHLIGHT_CLASS}`) as HTMLElement | null;
-  if (!wanted) {
+  if (!store.typewriterHighlightLine) {
     bar?.remove();
     return;
   }
@@ -108,6 +121,16 @@ function updateHighlightBar(editor: Editor): void {
   const rect = scroller.getBoundingClientRect();
   bar.style.top = `${coords.top - rect.top + scroller.scrollTop}px`;
   bar.style.height = `${Math.max(4, coords.bottom - coords.top)}px`;
+  bar.style.backgroundColor = highlightRgba(store.typewriterHighlightColor);
+  const page = scroller.querySelector('.page-container');
+  if (page) {
+    const pageRect = page.getBoundingClientRect();
+    bar.style.left = `${pageRect.left - rect.left + scroller.scrollLeft}px`;
+    bar.style.width = `${pageRect.width}px`;
+  } else {
+    bar.style.left = '0';
+    bar.style.width = '100%';
+  }
 }
 
 /** Center the caret's line at the typewriter offset (used on typing and by

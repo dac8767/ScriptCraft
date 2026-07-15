@@ -12,6 +12,10 @@ import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { centerCaretLine, refreshTypewriterChrome } from '../editor/extensions/TypewriterScroll';
 
+/** Highlight tints — rendered ~30% over the white page, so mid-brightness
+ *  hues read best. The color input at the end covers everything else. */
+const HIGHLIGHT_COLORS = ['#4a9eff', '#f5d90a', '#34c759', '#ff9f0a', '#ff6ba9', '#9a9a9a'];
+
 export default function TypewriterTool({ editor }: { editor: Editor | null }) {
   const {
     typewriterEnabled, setTypewriterEnabled,
@@ -19,6 +23,7 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
     typewriterOffset, setTypewriterOffset,
     typewriterOnlyWhenReached, setTypewriterOnlyWhenReached,
     typewriterHighlightLine, setTypewriterHighlightLine,
+    typewriterHighlightColor, setTypewriterHighlightColor,
     typewriterDimOthers, setTypewriterDimOthers,
     typewriterDimMode, setTypewriterDimMode,
     typewriterDimOpacity, setTypewriterDimOpacity,
@@ -102,6 +107,31 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
         />
         <span>Highlight the current line</span>
       </label>
+      <div className={`fs-typewriter-subgroup${typewriterHighlightLine ? '' : ' disabled'}`}>
+        <div className="fs-typewriter-offset">
+          <span>Color</span>
+          <span className="fs-typewriter-swatches">
+            {HIGHLIGHT_COLORS.map((c) => (
+              <button
+                key={c}
+                className={`fs-typewriter-swatch${typewriterHighlightColor.toLowerCase() === c ? ' active' : ''}`}
+                style={{ background: c }}
+                disabled={!typewriterHighlightLine}
+                title={c}
+                onClick={() => { setTypewriterHighlightColor(c); refreshChrome(); }}
+              />
+            ))}
+            <input
+              type="color"
+              className="fs-typewriter-swatch-custom"
+              disabled={!typewriterHighlightLine}
+              value={typewriterHighlightColor}
+              title="Custom color"
+              onChange={(e) => { setTypewriterHighlightColor(e.target.value); refreshChrome(); }}
+            />
+          </span>
+        </div>
+      </div>
 
       <label className="fs-typewriter-toggle">
         <input
