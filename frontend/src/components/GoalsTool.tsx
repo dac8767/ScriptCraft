@@ -191,6 +191,9 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
   // lock; word/page goals a clockless one released by the progress watcher.
   const [vomitMode, setVomitMode] = useState(false);
   const [untilTime, setUntilTime] = useState('');   // canonical "HH:MM"
+  // v1.93: the Time tab is an either/or — write FOR an amount, or UNTIL a
+  // clock time — with ONE Start button (two competing Starts read as noise).
+  const [timeMode, setTimeMode] = useState<'for' | 'until'>('for');
 
   const startLock = (endsAt: number | null) => {
     if (!vomitMode || !editor || editor.isDestroyed) return;
@@ -285,25 +288,43 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
 
       {kind === 'time' ? (
         <>
-          {/* v1.85: Write-until leads (Derek's order), minutes below. */}
-          <div className="fs-goal-row">
-            <span>Write until</span>
-            <TimeField value={untilTime} onChange={setUntilTime} onEnter={startUntil} />
-            <button
-              className="fs-goal-start"
-              disabled={!/^\d{2}:\d{2}$/.test(untilTime)}
-              onClick={startUntil}
-            >▶ Start</button>
-          </div>
-          <div className="fs-goal-row">
+          {/* v1.93: pick ONE of the two timed shapes, then one Start.
+              (v1.85 kept Write-until first; that order survives.) */}
+          <label className={`fs-goal-timemode${timeMode === 'until' ? ' active' : ''}`}>
+            <input
+              type="radio"
+              name="fs-goal-timemode"
+              checked={timeMode === 'until'}
+              onChange={() => setTimeMode('until')}
+            />
+            <span className="fs-goal-timemode-label">Write until</span>
+            <span onPointerDown={() => setTimeMode('until')}>
+              <TimeField value={untilTime} onChange={setUntilTime} onEnter={startUntil} />
+            </span>
+          </label>
+          <label className={`fs-goal-timemode${timeMode === 'for' ? ' active' : ''}`}>
+            <input
+              type="radio"
+              name="fs-goal-timemode"
+              checked={timeMode === 'for'}
+              onChange={() => setTimeMode('for')}
+            />
+            <span className="fs-goal-timemode-label">Write for</span>
             <input
               type="number"
               min={1}
               value={target}
+              onFocus={() => setTimeMode('for')}
               onChange={(e) => setTarget(Math.max(1, Number(e.target.value) || 1))}
             />
             <span>minutes</span>
-            <button className="fs-goal-start" onClick={() => startTime(target)}>▶ Start</button>
+          </label>
+          <div className="fs-goal-row fs-goal-startrow">
+            <button
+              className="fs-goal-start"
+              disabled={timeMode === 'until' && !/^\d{2}:\d{2}$/.test(untilTime)}
+              onClick={() => (timeMode === 'until' ? startUntil() : startTime(target))}
+            >▶ Start</button>
           </div>
           <b className="fs-goal-quick-label">Quick start</b>
           <div className="fs-goal-quick">

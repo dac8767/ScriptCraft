@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.92';
+export const APP_VERSION = '1.93';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.93',
+    date: '2026-07-15',
+    items: [
+      { title: 'A tidier Time tab in Goals', detail: 'Two clear choices — "Write until" a clock time or "Write for" a number of minutes — as radio rows with a single Start button, instead of two competing Starts. The unchosen row dims so there\'s no guessing which one will run. Quick start chips still fire instantly.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '1.92',
     date: '2026-07-15',
