@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.82';
+export const APP_VERSION = '1.83';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.83',
+    date: '2026-07-15',
+    items: [
+      { title: 'Format > Highlighting', detail: 'A Final Draft-style submenu: Highlight the selection, Find Next / Find Previous to hop between highlights (wrapping at the ends), eight named colors with chips and a checkmark on the current one, and Custom… for anything else. The color is the same pen the toolbar highlighter uses — pick it in either place.', tags: ['New Feature', 'Editor'] },
+    ],
+  },
   {
     version: '1.82',
     date: '2026-07-15',

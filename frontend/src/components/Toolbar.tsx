@@ -119,7 +119,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   const [textColorOpen, setTextColorOpen] = useState(false);
   const [bgColorOpen, setBgColorOpen] = useState(false);
   const [currentTextColor, setCurrentTextColor] = useState<string>('#000000');
-  const [currentBgColor, setCurrentBgColor] = useState<string>('#ffff00');
+  // v1.83: the highlighter color is store state — Format > Highlighting shares it.
+  const currentBgColor = useEditorStore((s) => s.highlightColor);
+  const setCurrentBgColor = useEditorStore((s) => s.setHighlightColor);
 
   // Track the font/size of the text at current cursor position. Empty string
   // / null indicates the selection spans more than one value ("mixed").

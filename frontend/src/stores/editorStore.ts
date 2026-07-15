@@ -19,6 +19,7 @@ interface ViewState {
   typewriterDimOpacity?: number;
   typewriterRestoreCursor?: boolean;
   outlineBarOpen?: boolean;
+  highlightColor?: string;
   indexCardsOpen?: boolean;
   beatBoardOpen?: boolean;
   shelfOpen?: boolean;
@@ -917,6 +918,10 @@ interface EditorState {
   setNavFilter: (v: string) => void;
   navShowKinds: Record<string, boolean>;
   setNavShowKinds: (v: Record<string, boolean>) => void;
+  /** v1.83: the CURRENT text-highlighter color — one source shared by the
+   *  toolbar highlighter button and Format > Highlighting. Persisted. */
+  highlightColor: string;
+  setHighlightColor: (v: string) => void;
   preferencesRequest: { open: boolean; tab?: 'saveloc' };
   openPreferences: (tab?: 'saveloc') => void;
   closePreferences: () => void;
@@ -1496,6 +1501,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setNavFilter: (v) => set({ navFilter: v }),
   navShowKinds: {},
   setNavShowKinds: (v) => set({ navShowKinds: v }),
+  highlightColor: (_vs.highlightColor as string) ?? '#ffff00',
+  setHighlightColor: (v) => {
+    saveViewState({ highlightColor: v });
+    set({ highlightColor: v });
+  },
   preferencesRequest: { open: false },
   openPreferences: (tab) => set({ preferencesRequest: { open: true, tab } }),
   closePreferences: () => set({ preferencesRequest: { open: false } }),

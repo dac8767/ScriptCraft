@@ -29,6 +29,12 @@ const TOOL_MENU_GROUPS: string[][] = [
   // dockable Tool in Customize.
   ['analytics', 'goals', 'typewriter', 'aiwriter'],
 ];
+/** v1.83: Format > Highlighting color list — Final Draft's palette. */
+const HIGHLIGHT_MENU_COLORS: Array<[string, string]> = [
+  ['Yellow', '#ffff00'], ['Green', '#00f900'], ['Cyan', '#00fdff'],
+  ['Blue', '#3e9bff'], ['Purple', '#9d9bff'], ['Magenta', '#ff85ff'],
+  ['Red', '#ff5257'], ['Tangerine', '#ff9300'],
+];
 import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import { useEditorStore, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_CATEGORIES } from '../stores/editorStore';
@@ -108,7 +114,7 @@ import {
   FaAlignLeft,
   FaAlignCenter,
   FaAlignRight,
-  FaAlignJustify,
+  FaAlignJustify, FaHighlighter,
   FaColumns,
   FaFileAlt,
   FaImage,
@@ -183,6 +189,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     menuBarOrder, menuBarHidden,
     previewMode,
     outlineBarOpen, setOutlineBarOpen,
+    highlightColor, setHighlightColor,
     notesVisible, setNotesVisible,
     scriptTodosVisible, setScriptTodosVisible,
     markersVisible, setMarkersVisible,
@@ -970,6 +977,39 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         ?? id,
     }));
   const sc = (id: string) => formatCombo(keyBindings[id] ?? null) || undefined;
+
+  // ── v1.83: Format > Highlighting (Final Draft-style) ──
+  const customHighlightRef = React.useRef<HTMLInputElement>(null);
+  /** Picking a color sets the shared highlighter pen; with text selected it
+   *  also applies the highlight right away. */
+  const pickHighlightColor = (hex: string) => {
+    setHighlightColor(hex);
+    if (editor && !editor.state.selection.empty) {
+      editor.chain().focus(undefined, { scrollIntoView: false }).setHighlight({ color: hex }).run();
+    }
+  };
+  /** Contiguous highlight-mark ranges, in document order. */
+  const highlightRanges = (): Array<{ from: number; to: number }> => {
+    const ranges: Array<{ from: number; to: number }> = [];
+    editor?.state.doc.descendants((node, pos) => {
+      if (node.isText && node.marks.some((m) => m.type.name === 'highlight')) {
+        const last = ranges[ranges.length - 1];
+        if (last && last.to === pos) last.to = pos + node.nodeSize;
+        else ranges.push({ from: pos, to: pos + node.nodeSize });
+      }
+    });
+    return ranges;
+  };
+  const jumpHighlight = (dir: 1 | -1) => {
+    if (!editor) return;
+    const ranges = highlightRanges();
+    if (ranges.length === 0) { showToast('No highlights in the script.', 'info'); return; }
+    const head = editor.state.selection.head;
+    const target = dir === 1
+      ? (ranges.find((r) => r.from > head) ?? ranges[0])                       // wrap to first
+      : ([...ranges].reverse().find((r) => r.to < head) ?? ranges[ranges.length - 1]); // wrap to last
+    editor.chain().focus().setTextSelection({ from: target.from, to: target.to }).scrollIntoView().run();
+  };
   shortcutActionsRef.current = shortcutActions;
 
   useEffect(() => {
@@ -1420,6 +1460,29 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { icon: <FaAlignCenter />, label: 'Align Center', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('center').run(), disabled: locked.textAlign },
         { icon: <FaAlignRight />, label: 'Align Right', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('right').run(), disabled: locked.textAlign },
         { icon: <FaAlignJustify />, label: 'Justify', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('justify').run(), disabled: locked.textAlign },
+        { separator: true, label: '' },
+        // v1.83: Final Draft-style Highlighting submenu. The color list and
+        // the toolbar highlighter share ONE store color (highlightColor).
+        {
+          icon: <FaHighlighter />, label: 'Highlighting',
+          children: [
+            {
+              icon: <FaHighlighter />, label: 'Highlight', shortcut: '⇧⌘H',
+              action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleHighlight({ color: highlightColor }).run(),
+            },
+            { separator: true, label: '' },
+            { icon: <FaHighlighter />, label: 'Find Next', shortcut: '⇧⌘.', action: () => jumpHighlight(1) },
+            { icon: <FaHighlighter />, label: 'Find Previous', shortcut: '⇧⌘,', action: () => jumpHighlight(-1) },
+            { separator: true, label: '' },
+            ...HIGHLIGHT_MENU_COLORS.map(([name, hex]) => ({
+              icon: <span className="fs-hl-chip" style={{ background: hex }} />,
+              label: highlightColor.toLowerCase() === hex ? `✓ ${name}` : name,
+              action: () => pickHighlightColor(hex),
+            })),
+            { separator: true, label: '' },
+            { icon: <FaHighlighter />, label: 'Custom…', action: () => customHighlightRef.current?.click() },
+          ],
+        },
         { separator: true, label: '' },
         { icon: <FaFileAlt />, label: `Formatting Template (${activeTemplate.name})...`, action: () => setTemplateSelectOpen(true) },
         { icon: <FaFileAlt />, label: 'Script Format Preferences…', action: () => setFormatPrefsOpen({ firstRun: false, afterSave: null }) },
@@ -1896,6 +1959,16 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
   return (
     <>
+    {/* v1.83: hidden picker behind Format > Highlighting > Custom… */}
+    <input
+      ref={customHighlightRef}
+      type="color"
+      value={highlightColor}
+      onChange={(e) => pickHighlightColor(e.target.value)}
+      style={{ position: 'fixed', left: -9999, top: -9999, width: 1, height: 1, opacity: 0 }}
+      aria-hidden="true"
+      tabIndex={-1}
+    />
     {menuMode === 'hidden' ? (
       createPortal(
         <>

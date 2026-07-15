@@ -12891,6 +12891,15 @@ html.android .version-history-panel {
   margin: 4px;
 }
 .fs-dnd-hiddencol { background: transparent; }
+/* v1.83: color chips in Format > Highlighting. */
+.fs-hl-chip {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+}
+
 /* v1.81: "(required)" tag on locked rows (File), slightly greyed. */
 .fs-dnd-required {
   color: var(--fd-text-muted);
