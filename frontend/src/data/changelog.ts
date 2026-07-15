@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.87';
+export const APP_VERSION = '1.88';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.88',
+    date: '2026-07-15',
+    items: [
+      { title: 'Pick the format on the New Script window', detail: 'The script format (Film Script, 1-Hour TV Drama, Multi-Cam Sitcom, Stage Play, Radio Play, AV Script) is a dropdown right on the New Script window now — the separate "Choose script format" window no longer interrupts after Create. The list still follows Format > Script Format Preferences.', tags: ['UI', 'New Feature'] },
+    ],
+  },
   {
     version: '1.87',
     date: '2026-07-15',

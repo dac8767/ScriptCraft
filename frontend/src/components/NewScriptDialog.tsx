@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
+import { SYSTEM_TEMPLATE_LIST } from '../stores/formattingTemplateStore';
 import { formatAppDate } from '../utils/dateFormat';
 
 /*
@@ -10,12 +11,29 @@ import { formatAppDate } from '../utils/dateFormat';
  * classes, so the fields are formatted by the same CSS the Save window uses.
  * Draft defaults to "1st Draft" (editable); Version autofills today's date.
  * What's entered here seeds the new document via the New Script flow.
+ *
+ * v1.88: the script format is a Format dropdown here — the separate
+ * "Choose script format" window no longer appears after Create. The list
+ * follows Format > Script Format Preferences; with nothing initialized (or
+ * everything deselected) it falls back to all built-in formats.
  */
 
 export interface NewScriptMeta {
   name: string;
   draft: string;
   version: string;
+  /** v1.88: the chosen format — applied directly, no follow-up picker. */
+  templateId: string;
+}
+
+/** The dropdown's options: enabled formats in canonical order, or every
+ *  built-in when preferences were never set / were emptied. */
+function formatOptions() {
+  const s = useSettingsStore.getState();
+  const enabled = s.formatPreferencesInitialized
+    ? SYSTEM_TEMPLATE_LIST.filter((t) => s.enabledScriptFormats.includes(t.id))
+    : SYSTEM_TEMPLATE_LIST;
+  return enabled.length > 0 ? enabled : SYSTEM_TEMPLATE_LIST;
 }
 
 export default function NewScriptDialog({ open, onClose, onCreate, onOpenScript, onImport }: {
@@ -35,6 +53,8 @@ export default function NewScriptDialog({ open, onClose, onCreate, onOpenScript,
   const [name, setName] = useState('');
   const [draft, setDraft] = useState(defaultDraft);
   const [version, setVersion] = useState(todayVersion);
+  const options = formatOptions();
+  const [templateId, setTemplateId] = useState(options[0].id);
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -42,6 +62,7 @@ export default function NewScriptDialog({ open, onClose, onCreate, onOpenScript,
       setName('');
       setDraft(defaultDraft);
       setVersion(todayVersion);
+      setTemplateId(formatOptions()[0].id);
       setTimeout(() => nameRef.current?.focus(), 0);
     }
     // todayVersion is derived from the clock; recomputing it on open is the point.
@@ -55,6 +76,7 @@ export default function NewScriptDialog({ open, onClose, onCreate, onOpenScript,
       name: name.trim() || 'Untitled Script',
       draft: draft.trim() || defaultDraft,
       version: version.trim(),
+      templateId,
     });
   };
 
@@ -100,6 +122,18 @@ export default function NewScriptDialog({ open, onClose, onCreate, onOpenScript,
             onChange={(e) => setVersion(e.target.value)}
             placeholder={todayVersion}
           />
+
+          <label htmlFor="newscript-format">Format:</label>
+          <select
+            id="newscript-format"
+            className="fs-newscript-format"
+            value={templateId}
+            onChange={(e) => setTemplateId(e.target.value)}
+          >
+            {options.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
         </div>
 
         <div className="fs-newscript-actions">

@@ -15455,6 +15455,17 @@ body.fs-writing-focus::before {
      (plus its 28px gap) left the fields ending short of the buttons below. */
   grid-template-columns: max-content 1fr;
 }
+/* v1.88: the Format dropdown wears the same box as the text fields. */
+.fs-newscript-grid > select.fs-newscript-format {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
 .fs-newscript-actions {
   display: flex;
   justify-content: flex-end;

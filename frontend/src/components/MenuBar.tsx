@@ -2168,7 +2168,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       onCreate={(meta) => {
         pendingNewScriptMeta.current = meta;
         setNewScriptOpen(false);
-        promptForNewScreenplayFormat('reset');
+        // v1.88: the format is a dropdown ON the dialog now — apply it
+        // directly instead of routing through the "Choose script format"
+        // window. (promptForNewScreenplayFormat still serves in-project
+        // creation, which has no New Script dialog.)
+        finishNewScreenplayWithFormat(meta.templateId, 'reset');
       }}
       /* v1.54: the unsaved-work guard already ran on the way in. */
       onOpenScript={() => { setNewScriptOpen(false); useEditorStore.getState().setOpenFileOpen(true); }}
