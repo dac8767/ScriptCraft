@@ -81,7 +81,9 @@ export const VomitLock = Extension.create({
           const store = useVomitStore.getState();
           const session = store.session;
           if (!session || !tr.docChanged) return true;
-          if (Date.now() >= session.endsAt) return true;  // clock ran out — never outlive the timer
+          // Clock ran out — never outlive the timer. (null = Hemingway
+          // mode, v1.74: no clock, holds until switched off.)
+          if (session.endsAt !== null && Date.now() >= session.endsAt) return true;
 
           // Content load (setContent stamps 'preventUpdate'): end the sprint, let it through.
           if (tr.getMeta('preventUpdate') !== undefined) {

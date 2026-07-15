@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.73';
+export const APP_VERSION = '1.74';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.74',
+    date: '2026-07-15',
+    items: [
+      { title: 'Typewriter: the full kit', detail: 'The panel now carries the complete option set — typewriter scrolling with a movable line, keep-N-lines above/below the cursor (the gentler mode), current-line highlight, dimming by element or by sentence, fullscreen Writing Focus with a vignette (Esc leaves), an on-screen line-length limit, restore-cursor-on-open, and Hemingway mode: the Vomit Draft lock with no timer, on until you turn it off.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '1.73',
     date: '2026-07-15',

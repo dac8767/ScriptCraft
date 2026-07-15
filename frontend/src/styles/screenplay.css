@@ -12731,9 +12731,57 @@ html.android .version-history-panel {
   min-width: 34px;
   text-align: right;
 }
-.fs-typewriter-divider {
+.fs-typewriter-section {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fd-text-muted);
   border-top: 1px solid var(--fd-chrome-separator);
-  margin: 12px 0;
+  padding-top: 10px;
+  margin: 14px 0 8px;
+}
+.fs-typewriter-section:first-of-type { border-top: none; padding-top: 0; margin-top: 4px; }
+.fs-typewriter-offset select {
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text);
+  font-size: 12px;
+  padding: 3px 6px;
+}
+.fs-typewriter-offset input[type="number"] {
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text);
+  font-size: 12px;
+  padding: 3px 6px;
+}
+
+/* ── Writing focus (v1.74, ported: their writing-focus + vignette) ──
+   All chrome disappears; a soft vignette frames the page. Esc leaves. */
+body.fs-writing-focus .chrome-stack,
+body.fs-writing-focus .status-bar,
+body.fs-writing-focus .tool-dock,
+body.fs-writing-focus .panel-resize-handle {
+  display: none !important;
+}
+body.fs-writing-focus::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 12vw 3vw rgba(0, 0, 0, 0.45);
+  z-index: 8000;
+}
+
+/* ── Limit line length (v1.74, ported: their max-chars-per-line) ──
+   Screen-only cap on wrapping width; Courier makes 1ch = one character. */
+@media screen {
+  body.fs-limit-lines .editor-main .ProseMirror > * {
+    max-width: calc(var(--fs-max-chars, 64) * 1ch);
+  }
 }
 
 /* The typewriter current-line bar (ported: their ptm-current-line). Lives in

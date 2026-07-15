@@ -84,7 +84,8 @@ export const ALL_TOOLS: ToolDef[] = [
   // v1.69: Derek's pictogram artwork (uiIcons.VomitIcon), replacing the
   // v1.68 emoji — it tracks currentColor so it reads on every theme.
   { id: 'vomit', label: 'Vomit Draft', icon: <VomitIcon />, defaultSize: { w: 320, h: 320 }, group: 3 },
-  { id: 'typewriter', label: 'Typewriter', icon: <FaKeyboard />, defaultSize: { w: 300, h: 190 }, group: 3 },
+  // v1.74: grew from one toggle to the full option suite — needs the height.
+  { id: 'typewriter', label: 'Typewriter', icon: <FaKeyboard />, defaultSize: { w: 340, h: 620 }, group: 3 },
   // v1.69: the joke. It ships enabled — that's the joke landing.
   { id: 'aiwriter', label: 'AI Writer', icon: <FaRobot />, defaultSize: { w: 300, h: 150 }, group: 3 },
   // v0.89: fixed — the Title Page form is a set-size box, so the window is sized

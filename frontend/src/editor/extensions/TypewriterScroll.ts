@@ -29,10 +29,10 @@
  */
 import { Extension } from '@tiptap/core';
 import type { Editor } from '@tiptap/core';
-import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { Plugin, PluginKey, type EditorState } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import type { Node as PMNode } from '@tiptap/pm/model';
 import { useEditorStore } from '../../stores/editorStore';
+import { useProjectStore } from '../../stores/projectStore';
 
 /** How far scrollTop must move to bring the caret to the typewriter line
  *  (a fraction of the container height from its top). Positive = caret is
@@ -135,19 +135,113 @@ export function refreshTypewriterChrome(editor: Editor): void {
   updateHighlightBar(editor);
 }
 
-/** Their dim-unfocused ("paragraphs" mode): every top-level element not
- *  touched by the selection gets .fs-dimmed. Runs off the CURRENT store
- *  value each state change, so the toggle is live. */
-function dimDecorations(doc: PMNode, from: number, to: number): DecorationSet {
+/** Sentence boundaries in a plain-text block, as [start, end) text offsets.
+ *  Their delimiters: . ! ? plus trailing quotes/brackets. Exported for the
+ *  test. */
+export function sentenceRanges(text: string): Array<[number, number]> {
+  const ranges: Array<[number, number]> = [];
+  const re = /[^.!?]*[.!?]+["”’')\]]*\s*|[^.!?]+$/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m[0].length === 0) { re.lastIndex++; continue; }
+    ranges.push([m.index, m.index + m[0].length]);
+  }
+  return ranges;
+}
+
+/** Their dim-unfocused: every top-level element not touched by the selection
+ *  gets .fs-dimmed. In 'sentences' mode (v1.74), the ACTIVE textblock is also
+ *  dimmed except the sentence under the caret. Runs off the CURRENT store
+ *  values each state change, so the toggles are live. */
+function dimDecorations(state: EditorState): DecorationSet {
+  const { from, to, $head } = state.selection;
+  const mode = useEditorStore.getState().typewriterDimMode;
   const decos: Decoration[] = [];
-  doc.forEach((node, pos) => {
+  state.doc.forEach((node, pos) => {
     const end = pos + node.nodeSize;
     const touchesSelection = from < end && to > pos;
     if (!touchesSelection) {
       decos.push(Decoration.node(pos, end, { class: 'fs-dimmed' }));
     }
   });
-  return DecorationSet.create(doc, decos);
+  if (mode === 'sentences' && $head.parent.isTextblock && state.selection.empty) {
+    const blockStart = $head.start();
+    const text = $head.parent.textContent;
+    const headOffset = $head.pos - blockStart;
+    for (const [s, e] of sentenceRanges(text)) {
+      const active = headOffset >= s && headOffset <= e;
+      if (!active && e > s) {
+        decos.push(Decoration.inline(blockStart + s, blockStart + e, { class: 'fs-dimmed' }));
+      }
+    }
+  }
+  return DecorationSet.create(state.doc, decos);
+}
+
+/** Their keep-lines-above-and-below: a gentler alternative to typewriter
+ *  scrolling — only scroll when the caret gets within N lines of the top or
+ *  bottom of the viewport, and only far enough to restore the margin. */
+function keepLinesAdjust(editor: Editor): void {
+  if (editor.isDestroyed) return;
+  const coords = caretRect(editor);
+  const scroller = scrollParentOf(editor.view.dom as HTMLElement);
+  if (!coords || !scroller) return;
+  const n = useEditorStore.getState().typewriterKeepLinesCount;
+  const lineH = Math.max(14, coords.bottom - coords.top);
+  const rect = scroller.getBoundingClientRect();
+  const lower = rect.top + lineH * n;
+  const upper = rect.top + rect.height - lineH * (n + 1);
+  if (coords.top < lower && scroller.scrollTop > 0) {
+    scroller.scrollTop -= lower - coords.top;
+  } else if (coords.top > upper) {
+    scroller.scrollTop += coords.top - upper;
+  }
+}
+
+/* ── Restore cursor position (v1.74, their restore-cursor-position) ──
+   Saved per script (debounced) and re-applied right after a content load —
+   tiptap's setContent stamps 'preventUpdate', the same choke point VomitLock
+   uses to detect loads. */
+const CURSOR_KEY = 'opendraft:cursorPositions';
+
+function scriptKey(): string | null {
+  const id = useProjectStore.getState().currentScriptId;
+  if (id) return id;
+  const title = useEditorStore.getState().documentTitle;
+  return title ? `title:${title}` : null;
+}
+
+function loadCursorMap(): Record<string, number> {
+  try { return JSON.parse(localStorage.getItem(CURSOR_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+let cursorSaveTimer: ReturnType<typeof setTimeout> | undefined;
+function saveCursorDebounced(pos: number): void {
+  clearTimeout(cursorSaveTimer);
+  cursorSaveTimer = setTimeout(() => {
+    const key = scriptKey();
+    if (!key) return;
+    try {
+      let map = loadCursorMap();
+      const keys = Object.keys(map);
+      if (keys.length > 200) map = {};   // aged junk — start over
+      map[key] = pos;
+      localStorage.setItem(CURSOR_KEY, JSON.stringify(map));
+    } catch { /* storage unavailable */ }
+  }, 500);
+}
+
+function restoreCursor(editor: Editor): void {
+  if (editor.isDestroyed) return;
+  const key = scriptKey();
+  if (!key) return;
+  const saved = loadCursorMap()[key];
+  if (typeof saved !== 'number') return;
+  const pos = Math.max(1, Math.min(saved, editor.state.doc.content.size - 1));
+  try {
+    editor.chain().setTextSelection(pos).scrollIntoView().run();
+  } catch { /* stale position for a reshaped doc — stay at the top */ }
 }
 
 const dimKey = new PluginKey('typewriterDim');
@@ -166,8 +260,7 @@ export const TypewriterScroll = Extension.create({
             if (!tr.docChanged && !tr.selectionSet && old !== DecorationSet.empty) {
               return old;
             }
-            const { from, to } = newState.selection;
-            return dimDecorations(newState.doc, from, to);
+            return dimDecorations(newState);
           },
         },
         props: {
@@ -182,6 +275,19 @@ export const TypewriterScroll = Extension.create({
   onTransaction({ editor, transaction }) {
     const store = useEditorStore.getState();
 
+    // Restore-cursor (v1.74): a content load (setContent stamps
+    // 'preventUpdate') re-applies the saved position; ordinary caret
+    // movement keeps saving it, debounced.
+    if (store.typewriterRestoreCursor) {
+      if (transaction.getMeta('preventUpdate') !== undefined && transaction.docChanged) {
+        requestAnimationFrame(() => restoreCursor(editor));
+        return;   // don't let the load's selection overwrite the saved spot
+      }
+      if (transaction.selectionSet || transaction.docChanged) {
+        saveCursorDebounced(editor.state.selection.head);
+      }
+    }
+
     // The highlight bar tracks the caret on ANY caret move (their
     // "disallowed user event" path moves the line without recentering).
     if (store.typewriterHighlightLine && (transaction.selectionSet || transaction.docChanged)) {
@@ -190,7 +296,15 @@ export const TypewriterScroll = Extension.create({
       });
     }
 
-    if (!store.typewriterEnabled) return;
+    if (!store.typewriterEnabled) {
+      // Keep-lines (v1.74): the gentler mode, only when full typewriter
+      // scrolling is off (scrolling wins when both are on, as in the plugin).
+      if (store.typewriterKeepLinesEnabled
+        && (transaction.docChanged || (transaction.selectionSet && editor.state.selection.empty))) {
+        requestAnimationFrame(() => keepLinesAdjust(editor));
+      }
+      return;
+    }
     // Typing always recenters. With follow-cursor on (v1.70), so does any
     // caret MOVE (click, arrow keys) — but never while a RANGE is being
     // selected: recentering mid-drag would move the text under the mouse

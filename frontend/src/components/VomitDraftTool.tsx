@@ -37,14 +37,15 @@ function fmtClock(ms: number): string {
   return new Date(ms).toLocaleTimeString([], { hour: hour12 ? 'numeric' : '2-digit', minute: '2-digit', hour12 });
 }
 
-/** Ticks once a second while a sprint runs; ends the session when time is up. */
+/** Ticks once a second while a sprint runs; ends the session when time is up.
+ *  Hemingway sessions (endsAt null, v1.74) have no clock and never self-end. */
 function useSprintClock(): number {
   const session = useVomitStore((s) => s.session);
   const [, force] = useState(0);
   useEffect(() => {
-    if (!session) return;
+    if (!session || session.endsAt === null) return;
     const t = setInterval(() => {
-      if (Date.now() >= session.endsAt) {
+      if (Date.now() >= session.endsAt!) {
         useVomitStore.getState().end();
         showToast('Time! Vomit Draft is over — full editing is back.', 'success');
       } else {
@@ -53,7 +54,7 @@ function useSprintClock(): number {
     }, 1000);
     return () => clearInterval(t);
   }, [session]);
-  return session ? Math.max(0, session.endsAt - Date.now()) : 0;
+  return session && session.endsAt !== null ? Math.max(0, session.endsAt - Date.now()) : 0;
 }
 
 /**
@@ -78,14 +79,17 @@ export function VomitTimerPill() {
   }, [blockedTick]);
 
   if (!session) return null;
+  const hemingway = session.endsAt === null;
   return (
     <button
       className={`fs-vomit-pill${pulse ? ' blocked' : ''}`}
-      title="Vomit Draft is running — previous text is locked. Click to open the tool."
-      onClick={() => useEditorStore.getState().openTool('vomit')}
+      title={hemingway
+        ? 'Hemingway mode — previous text is locked until you turn it off (Typewriter tool).'
+        : 'Vomit Draft is running — previous text is locked. Click to open the tool.'}
+      onClick={() => useEditorStore.getState().openTool(hemingway ? 'typewriter' : 'vomit')}
     >
       <span className="fs-vomit-pill-icon" aria-hidden="true">🔒</span>
-      <span className="fs-vomit-pill-time">{fmtRemaining(remaining)}</span>
+      <span className="fs-vomit-pill-time">{hemingway ? 'Hemingway' : fmtRemaining(remaining)}</span>
     </button>
   );
 }
@@ -125,14 +129,19 @@ export default function VomitDraftTool({ editor }: { editor: Editor | null }) {
   };
 
   if (session) {
-    const total = session.endsAt - session.startedAt;
+    const hemingway = session.endsAt === null;
+    const total = hemingway ? 0 : session.endsAt! - session.startedAt;
     const pct = total > 0 ? Math.min(100, 100 - (remaining / total) * 100) : 100;
     return (
       <div className="fs-vomit">
         <div className="fs-vomit-running">
-          <div className="fs-vomit-countdown">{fmtRemaining(remaining)}</div>
-          <div className="fs-vomit-progress"><div style={{ width: `${pct}%` }} /></div>
-          <div className="fs-vomit-until">Editing unlocks at {fmtClock(session.endsAt)}</div>
+          <div className="fs-vomit-countdown">{hemingway ? '∞' : fmtRemaining(remaining)}</div>
+          {!hemingway && <div className="fs-vomit-progress"><div style={{ width: `${pct}%` }} /></div>}
+          <div className="fs-vomit-until">
+            {hemingway
+              ? 'Hemingway mode — no timer; end it here or in the Typewriter tool'
+              : `Editing unlocks at ${fmtClock(session.endsAt!)}`}
+          </div>
           <p className="fs-vomit-lockednote">
             Previous text is locked. Keep writing — you can still fix the line
             you're on, and saving works as normal.

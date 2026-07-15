@@ -9,7 +9,7 @@ import { Editor } from '@tiptap/core';
 import Document from '@tiptap/extension-document';
 import Paragraph from '@tiptap/extension-paragraph';
 import Text from '@tiptap/extension-text';
-import { TypewriterScroll, typewriterScrollDelta } from './TypewriterScroll';
+import { TypewriterScroll, typewriterScrollDelta, sentenceRanges } from './TypewriterScroll';
 import { useEditorStore } from '../../stores/editorStore';
 
 describe('typewriterScrollDelta', () => {
@@ -34,6 +34,24 @@ describe('typewriterScrollDelta', () => {
   });
 });
 
+describe('sentenceRanges (v1.74)', () => {
+  it('splits on . ! ? and keeps trailing quotes with the sentence', () => {
+    const text = 'One. Two! "Three?" Four';
+    const parts = sentenceRanges(text).map(([s, e]) => text.slice(s, e));
+    expect(parts).toEqual(['One. ', 'Two! ', '"Three?" ', 'Four']);
+  });
+
+  it('covers the whole text with no gaps', () => {
+    const text = 'Hello there. General Kenobi!';
+    const ranges = sentenceRanges(text);
+    expect(ranges[0][0]).toBe(0);
+    expect(ranges[ranges.length - 1][1]).toBe(text.length);
+    for (let i = 1; i < ranges.length; i++) {
+      expect(ranges[i][0]).toBe(ranges[i - 1][1]);
+    }
+  });
+});
+
 describe('dim-others decorations (v1.72)', () => {
   let editor: Editor;
   let host: HTMLElement;
@@ -50,6 +68,7 @@ describe('dim-others decorations (v1.72)', () => {
 
   afterEach(() => {
     useEditorStore.getState().setTypewriterDimOthers(false);
+    useEditorStore.getState().setTypewriterDimMode('elements');
     editor.destroy();
     host.remove();
   });
@@ -73,5 +92,19 @@ describe('dim-others decorations (v1.72)', () => {
   it('dims nothing while the option is off', () => {
     editor.commands.setTextSelection(2);
     expect(editor.view.dom.querySelectorAll('.fs-dimmed').length).toBe(0);
+  });
+
+  it('sentence mode also dims the other sentences of the active block (v1.74)', () => {
+    editor.commands.setContent('<p>One. Two! Three?</p><p>other</p>');
+    useEditorStore.getState().setTypewriterDimOthers(true);
+    useEditorStore.getState().setTypewriterDimMode('sentences');
+    editor.commands.setTextSelection(7); // inside "Two!"
+    const dimmedTexts = Array.from(editor.view.dom.querySelectorAll('.fs-dimmed'))
+      .map((el) => el.textContent?.trim());
+    expect(dimmedTexts).toContain('other');    // the other block
+    expect(dimmedTexts).toContain('One.');     // sentence before
+    expect(dimmedTexts).toContain('Three?');   // sentence after
+    // the sentence under the caret stays bright
+    expect(dimmedTexts).not.toContain('Two!');
   });
 });

@@ -12,8 +12,9 @@
 import { create } from 'zustand';
 
 export interface VomitSession {
-  /** Wall-clock ms when editing unlocks. */
-  endsAt: number;
+  /** Wall-clock ms when editing unlocks — or null for Hemingway mode
+   *  (v1.74): no timer, the lock holds until it's switched off. */
+  endsAt: number | null;
   /** Wall-clock ms when the sprint started (for the progress bar). */
   startedAt: number;
   /**
@@ -28,7 +29,7 @@ interface VomitState {
   session: VomitSession | null;
   /** Bumped every time the lock rejects an edit — the timer UI pulses on it. */
   blockedTick: number;
-  start: (endsAt: number, floor: number) => void;
+  start: (endsAt: number | null, floor: number) => void;
   /** Ends the sprint (timer done, ended early, or the script was swapped). */
   end: () => void;
   bumpBlocked: () => void;
@@ -45,5 +46,5 @@ export const useVomitStore = create<VomitState>((set) => ({
 /** True while a sprint is running (and its clock hasn't run out). */
 export function vomitLockActive(): boolean {
   const s = useVomitStore.getState().session;
-  return !!s && Date.now() < s.endsAt;
+  return !!s && (s.endsAt === null || Date.now() < s.endsAt);
 }

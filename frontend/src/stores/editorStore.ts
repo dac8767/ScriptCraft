@@ -15,6 +15,12 @@ interface ViewState {
   typewriterOnlyWhenReached?: boolean;
   typewriterHighlightLine?: boolean;
   typewriterDimOthers?: boolean;
+  typewriterDimMode?: 'elements' | 'sentences';
+  typewriterKeepLinesEnabled?: boolean;
+  typewriterKeepLinesCount?: number;
+  typewriterLimitLine?: boolean;
+  typewriterMaxChars?: number;
+  typewriterRestoreCursor?: boolean;
   indexCardsOpen?: boolean;
   beatBoardOpen?: boolean;
   shelfOpen?: boolean;
@@ -485,6 +491,25 @@ function migrateSpellingSize(
   return sizes;
 }
 
+/** v1.74: same story as migrateSpellingSize — the Typewriter panel grew from
+ *  one toggle to the full option suite; a remembered v1.68-era 190px height
+ *  would crush it. Forget the size once; new drags stick as usual. */
+function migrateTypewriterSize(
+  sizes: Record<string, { w: number; h: number }>,
+): Record<string, { w: number; h: number }> {
+  const FLAG = 'opendraft:typewriterSizeReset174';
+  try {
+    if (localStorage.getItem(FLAG)) return sizes;
+    localStorage.setItem(FLAG, '1');
+    if (sizes.typewriter) {
+      const { typewriter: _dropped, ...rest } = sizes;
+      saveViewState({ toolSizes: rest });
+      return rest;
+    }
+  } catch { /* storage unavailable — keep what we have */ }
+  return sizes;
+}
+
 /** Tools that never dock — they always open as a floating window. */
 export const ALWAYS_FLOAT: ToolId[] = ['analytics'];
 
@@ -864,6 +889,27 @@ interface EditorState {
   /** v1.72: dim every element except the one being edited (independent). */
   typewriterDimOthers: boolean;
   setTypewriterDimOthers: (v: boolean) => void;
+  /** v1.74: dim whole elements, or everything but the current SENTENCE. */
+  typewriterDimMode: 'elements' | 'sentences';
+  setTypewriterDimMode: (v: 'elements' | 'sentences') => void;
+  /** v1.74: keep N lines visible above/below the caret (gentler alternative
+   *  to full typewriter scrolling; scrolling wins when both are on). */
+  typewriterKeepLinesEnabled: boolean;
+  setTypewriterKeepLinesEnabled: (v: boolean) => void;
+  typewriterKeepLinesCount: number;
+  setTypewriterKeepLinesCount: (v: number) => void;
+  /** v1.74: cap on-screen line length in characters (display only). */
+  typewriterLimitLine: boolean;
+  setTypewriterLimitLine: (v: boolean) => void;
+  typewriterMaxChars: number;
+  setTypewriterMaxChars: (v: number) => void;
+  /** v1.74: reopen a script with the cursor where you left it. */
+  typewriterRestoreCursor: boolean;
+  setTypewriterRestoreCursor: (v: boolean) => void;
+  /** v1.74: fullscreen writing focus — hides all chrome, adds a vignette.
+   *  Session-only on purpose: relaunching into fullscreen would be hostile. */
+  writingFocus: boolean;
+  setWritingFocus: (v: boolean) => void;
   preferencesRequest: { open: boolean; tab?: 'saveloc' };
   openPreferences: (tab?: 'saveloc') => void;
   closePreferences: () => void;
@@ -1251,7 +1297,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ activeTool: tool });
     set({ activeTool: tool });
   },
-  toolSizes: migrateSpellingSize(migrateNavigatorInline(_vs.toolSizes ?? {})),
+  toolSizes: migrateTypewriterSize(migrateSpellingSize(migrateNavigatorInline(_vs.toolSizes ?? {}))),
   setToolSize: (tool, w, h) => set((s) => {
     const toolSizes = { ...s.toolSizes, [tool]: { w, h } };
     saveViewState({ toolSizes });
@@ -1416,6 +1462,40 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ typewriterDimOthers: v });
     set({ typewriterDimOthers: v });
   },
+  typewriterDimMode: (_vs.typewriterDimMode as 'elements' | 'sentences') ?? 'elements',
+  setTypewriterDimMode: (v) => {
+    saveViewState({ typewriterDimMode: v });
+    set({ typewriterDimMode: v });
+  },
+  typewriterKeepLinesEnabled: (_vs.typewriterKeepLinesEnabled as boolean) ?? false,
+  setTypewriterKeepLinesEnabled: (v) => {
+    saveViewState({ typewriterKeepLinesEnabled: v });
+    set({ typewriterKeepLinesEnabled: v });
+  },
+  typewriterKeepLinesCount: (_vs.typewriterKeepLinesCount as number) ?? 5,
+  setTypewriterKeepLinesCount: (v) => {
+    const clamped = Math.min(15, Math.max(1, Math.round(v) || 5));
+    saveViewState({ typewriterKeepLinesCount: clamped });
+    set({ typewriterKeepLinesCount: clamped });
+  },
+  typewriterLimitLine: (_vs.typewriterLimitLine as boolean) ?? false,
+  setTypewriterLimitLine: (v) => {
+    saveViewState({ typewriterLimitLine: v });
+    set({ typewriterLimitLine: v });
+  },
+  typewriterMaxChars: (_vs.typewriterMaxChars as number) ?? 64,
+  setTypewriterMaxChars: (v) => {
+    const clamped = Math.min(90, Math.max(20, Math.round(v) || 64));
+    saveViewState({ typewriterMaxChars: clamped });
+    set({ typewriterMaxChars: clamped });
+  },
+  typewriterRestoreCursor: (_vs.typewriterRestoreCursor as boolean) ?? false,
+  setTypewriterRestoreCursor: (v) => {
+    saveViewState({ typewriterRestoreCursor: v });
+    set({ typewriterRestoreCursor: v });
+  },
+  writingFocus: false,
+  setWritingFocus: (v) => set({ writingFocus: v }),
   preferencesRequest: { open: false },
   openPreferences: (tab) => set({ preferencesRequest: { open: true, tab } }),
   closePreferences: () => set({ preferencesRequest: { open: false } }),

@@ -120,4 +120,13 @@ describe('VomitLock — sprint running', () => {
     editor.commands.deleteRange({ from: 1, to: 4 });
     expect(docText()).toBe(' text');
   });
+
+  it('Hemingway mode (endsAt null, v1.74) locks with no clock and ends only on end()', () => {
+    useVomitStore.getState().start(null, vomitFloorFor(editor.state.doc));
+    editor.commands.deleteRange({ from: 1, to: 4 });
+    expect(docText()).toBe('old text');            // locked, no timer to expire
+    useVomitStore.getState().end();
+    editor.commands.deleteRange({ from: 1, to: 4 });
+    expect(docText()).toBe(' text');               // off means off
+  });
 });

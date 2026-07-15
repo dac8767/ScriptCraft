@@ -2158,6 +2158,33 @@ const ScreenplayEditor: React.FC = () => {
     return () => mq.removeEventListener('change', apply);
   }, [followSystemTheme]);
 
+  // v1.74: Writing focus — fullscreen, chrome hidden (CSS via the body
+  // class), vignette. Esc leaves. Session-only by design.
+  const writingFocus = useEditorStore((st) => st.writingFocus);
+  useEffect(() => {
+    document.body.classList.toggle('fs-writing-focus', writingFocus);
+    if (isTauri()) {
+      import('@tauri-apps/api/window')
+        .then(({ getCurrentWindow }) => getCurrentWindow().setFullscreen(writingFocus))
+        .catch(() => { /* window API unavailable — CSS focus still applies */ });
+    }
+    if (!writingFocus) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') useEditorStore.getState().setWritingFocus(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [writingFocus]);
+
+  // v1.74: on-screen line-length cap (display only; pagination follows what
+  // it sees on screen while this is on).
+  const typewriterLimitLine = useEditorStore((st) => st.typewriterLimitLine);
+  const typewriterMaxChars = useEditorStore((st) => st.typewriterMaxChars);
+  useEffect(() => {
+    document.body.classList.toggle('fs-limit-lines', typewriterLimitLine);
+    document.body.style.setProperty('--fs-max-chars', String(typewriterMaxChars));
+  }, [typewriterLimitLine, typewriterMaxChars]);
+
   // --- Preferences: remember the last edited script + reopen it on start ---
   // Recorded whenever a real project script is open (not history/collab views);
   // consumed once per app session when the "/" route loads with the preference on.
