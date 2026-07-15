@@ -13076,6 +13076,10 @@ html.android .version-history-panel {
   gap: 4px;
 }
 .fs-dnd-rowactions .fs-dnd-rowbtn { margin-left: 0; }
+/* v2.09: the Customize window drags by its header, like other windows. */
+.fs-customize-draghandle { cursor: grab; user-select: none; }
+.fs-customize-draghandle:active { cursor: grabbing; }
+
 /* v1.81: size-mode rows sit left-aligned — label, a beat, buttons.
    v2.07: the label gets a fixed column so stacked size rows (Left/Right
    Panel Size) line their button groups up. */

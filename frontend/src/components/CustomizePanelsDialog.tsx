@@ -984,10 +984,40 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
 
   if (embedded) return body;
 
+  /** v2.09: drag the window by its header, like every other window. The
+   *  box switches to fixed and is positioned by measured TOP/LEFT only
+   *  (never bottom — the WebKit collapse footgun). Closing unmounts the
+   *  box, so it reopens centered. */
+  const startHeaderDrag = (e: React.PointerEvent) => {
+    const el = dialogRef.current;
+    if (!el || (e.target as HTMLElement).closest('button')) return;
+    e.preventDefault();
+    const r = el.getBoundingClientRect();
+    const grabX = e.clientX - r.left;
+    const grabY = e.clientY - r.top;
+    const onMove = (ev: PointerEvent) => {
+      // Keep the header reachable: some of it must stay on screen.
+      const left = Math.min(Math.max(80 - r.width, ev.clientX - grabX), window.innerWidth - 80);
+      const top = Math.min(Math.max(0, ev.clientY - grabY), window.innerHeight - 40);
+      el.style.position = 'fixed';
+      el.style.left = `${left}px`;
+      el.style.top = `${top}px`;
+      el.style.margin = '0';
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  };
+
   return (
     <div className="dialog-overlay" onClick={onClose}>
-      <div className="dialog-box fs-customize-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="dialog-header">
+      {/* ref: also what the v0.84 size-persist ResizeObserver watches — it
+          had come detached from the element entirely (dead code until now). */}
+      <div ref={dialogRef} className="dialog-box fs-customize-dialog" onClick={(e) => e.stopPropagation()}>
+        <div className="dialog-header fs-customize-draghandle" onPointerDown={startHeaderDrag}>
           Customize
           <button className="fs-dialog-x" onClick={onClose} title="Close">&times;</button>
         </div>

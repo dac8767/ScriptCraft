@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.08';
+export const APP_VERSION = '2.09';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.09',
+    date: '2026-07-15',
+    items: [
+      { title: 'Customize window is draggable', detail: 'Grab the Customize window by its header and move it anywhere, like every other window. This also quietly revived the window\'s size memory — the code that remembers your drag-resize had come unwired.', tags: ['UI', 'Fix'] },
+    ],
+  },
   {
     version: '2.08',
     date: '2026-07-15',
