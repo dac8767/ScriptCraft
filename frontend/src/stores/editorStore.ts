@@ -9,6 +9,7 @@ const VIEW_STATE_KEY = 'opendraft:viewState';
 interface ViewState {
   navigatorOpen?: boolean;
   showUnreleasedTools?: boolean;
+  typewriterEnabled?: boolean;
   indexCardsOpen?: boolean;
   beatBoardOpen?: boolean;
   shelfOpen?: boolean;
@@ -386,7 +387,7 @@ export type ToolId =
   | 'navigator' | 'scenes' | 'pages' | 'structure' | 'locations' | 'characters'
   | 'indexcards' | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
-  | 'spelling' | 'history' | 'titlepage' | 'customize' | 'vomit'
+  | 'spelling' | 'history' | 'titlepage' | 'customize' | 'vomit' | 'typewriter'
   | 'devpicker'   // DEV ONLY (see src/dev/) — absent from production builds
   /** legacy — Notes merged back into 'sticky' (Notes > Script tab); kept
    *  in the type so persisted configs still typecheck, remapped on use. */
@@ -508,6 +509,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   highlights: { side: 'right', enabled: true },
   goals: { side: 'right', enabled: true },
   vomit: { side: 'right', enabled: true },
+  typewriter: { side: 'right', enabled: true },
   analytics: { side: 'right', enabled: true },
 
   tags: { side: 'right', enabled: false },
@@ -518,7 +520,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
  *  within each panel. 'Reset to Default' restores exactly this. */
 export const DEFAULT_TOOL_ORDER: string[] = [
   'navigator', 'scenes', 'pages', 'titlepage', 'characters', 'locations', 'spelling', 'assets',
-  'sticky', 'todo', 'fragments', 'beatboard', 'indexcards', 'highlights', 'goals', 'vomit', 'analytics',
+  'sticky', 'todo', 'fragments', 'beatboard', 'indexcards', 'highlights', 'goals', 'vomit', 'typewriter', 'analytics',
   'tags',
 ];
 
@@ -835,6 +837,9 @@ interface EditorState {
    *  Lock Pages). Off by default; flipped from Help > Developer. */
   showUnreleasedTools: boolean;
   setShowUnreleasedTools: (v: boolean) => void;
+  /** v1.68: Typewriter mode — auto-scroll keeps the active line centered. */
+  typewriterEnabled: boolean;
+  setTypewriterEnabled: (v: boolean) => void;
   preferencesRequest: { open: boolean; tab?: 'saveloc' };
   openPreferences: (tab?: 'saveloc') => void;
   closePreferences: () => void;
@@ -1355,6 +1360,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setShowUnreleasedTools: (v) => {
     saveViewState({ showUnreleasedTools: v });
     set({ showUnreleasedTools: v });
+  },
+  typewriterEnabled: (_vs.typewriterEnabled as boolean) ?? false,
+  setTypewriterEnabled: (v) => {
+    saveViewState({ typewriterEnabled: v });
+    set({ typewriterEnabled: v });
   },
   preferencesRequest: { open: false },
   openPreferences: (tab) => set({ preferencesRequest: { open: true, tab } }),

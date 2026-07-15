@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.67';
+export const APP_VERSION = '1.68';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.68',
+    date: '2026-07-15',
+    items: [
+      { title: 'New tool: Typewriter', detail: 'Typewriter mode keeps the line you\'re typing on fixed at the vertical center of the screen — the page scrolls under it as you write. One enable switch in the tool window (Tools > Typewriter; dockable and toolbar-able like any tool), and the setting persists. Clicking around the script still navigates normally; only typing recenters.', tags: ['New Feature', 'Tools'] },
+      { title: 'Vomit Draft wears its true face', detail: 'The tool\'s icon is now the vomiting emoji, everywhere the icon shows.', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.67',
     date: '2026-07-15',

@@ -12674,6 +12674,25 @@ html.android .version-history-panel {
 .fs-goal-quick button:hover { background: rgba(128, 128, 128, 0.28); }
 .fs-goal-current { font-size: 11px; color: var(--fd-text-muted); }
 
+/* Emoji standing in for a font icon (Vomit Draft) — size like siblings. */
+.fs-emoji-icon { font-size: 1em; line-height: 1; font-style: normal; }
+
+/* ── Typewriter tool (v1.68) ── */
+.fs-typewriter {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+.fs-typewriter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--fd-text);
+  cursor: pointer;
+}
+
 /* ── Vomit Draft tool (v1.62) ── */
 .fs-vomit {
   padding: 12px;

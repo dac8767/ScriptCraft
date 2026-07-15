@@ -11,6 +11,7 @@ import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import Dropcursor from '@tiptap/extension-dropcursor';
 import SmartTypography from '../editor/extensions/SmartTypography';
 import VomitLock from '../editor/extensions/VomitLock';
+import TypewriterScroll from '../editor/extensions/TypewriterScroll';
 import { VomitTimerPill } from './VomitDraftTool';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import TextAlign from '@tiptap/extension-text-align';
@@ -1480,6 +1481,7 @@ const ScreenplayEditor: React.FC = () => {
       ...(isHistoryMode ? [] : [EnforceGuardExtension, EnterHandlerExtension, TabHandlerExtension, ElementShortcutExtension]),
       SmartTypography,
       VomitLock,
+      TypewriterScroll,
       SpellCheck,
       Grammar,
       ...pluginRegistry.getEditorExtensions(),
