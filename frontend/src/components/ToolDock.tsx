@@ -545,9 +545,10 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
           const isOpenInline = inline && active && active.id === t.id;
           const HeaderExtra = TOOL_HEADER_EXTRAS[t.id];
           const Footer = TOOL_FOOTERS[t.id];
-          /* v1.80: the popped-in window's pop-out button lives ON its header
-             row, on the side closest to the editor — far right in the left
-             panel, far left in the right panel — pointing at the editor. */
+          /* v2.00: the pop-out button lives in the window's HEADER — the row
+             INSIDE the window, below the dock button (Derek's terminology) —
+             on the side closest to the editor: far right in the left panel,
+             far left in the right panel, pointing at the editor. */
           const popOutBtn = isOpenInline ? (
             <button
               className="tool-dock-popout"
@@ -577,7 +578,6 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               }}
               title={t.label}
             >
-              {side === 'right' && popOutBtn}
               {/* v1.34: Premiere-style caret — a SINGLE chevron (the double one
                 * means pop-in/out): right when closed, down when open. */}
               <span className="tool-dock-caret">
@@ -585,13 +585,18 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               </span>
               <span className="tool-dock-icon">{t.icon}</span>
               <span className="tool-dock-label">{t.label}</span>
-              {isOpenInline && HeaderExtra && (
-                <span className="tool-dock-header-extra"><HeaderExtra /></span>
-              )}
-              {side !== 'right' && popOutBtn}
             </div>
             {isOpenInline && (
               <div className={`tool-inline${side === 'right' ? ' tool-inline-right' : ''}`}>
+                {/* v2.00: the window HEADER — controls + pop-out live here,
+                    not on the dock button row. */}
+                <div className="tool-inline-header">
+                  {side === 'right' && popOutBtn}
+                  <span className="tool-inline-header-extra">
+                    {HeaderExtra && <HeaderExtra />}
+                  </span>
+                  {side !== 'right' && popOutBtn}
+                </div>
                 <div className="tool-inline-body" style={{ height: activeSize!.h }}>
                   <ToolContent id={active!.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />
                 </div>

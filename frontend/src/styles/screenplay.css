@@ -12404,6 +12404,9 @@ html.android .version-history-panel {
 }
 .tool-window-header:active { cursor: grabbing; }
 .tool-window-header-actions { display: flex; align-items: center; gap: 6px; }
+/* v2.00: air between the pop in/out button and the nearest header text. */
+.tool-window-header > .tool-window-popin { margin-right: 10px; }
+.tool-window-header-actions .tool-window-popin { margin-left: 10px; }
 .tool-window-title {
   font-size: 12px;
   font-weight: 700;
@@ -13761,14 +13764,25 @@ body.fs-writing-focus::before {
   flex-shrink: 0;
 }
 .tool-dock-popout:hover { color: var(--fd-text); }
-/* pushes the pop-out to the far edge; the extra sits after the label */
-.tool-dock-header-extra {
-  margin-left: auto;
+/* v2.00: the window HEADER — the row inside the window, under the dock
+   button. Holds the tool's header controls and the pop-out, with real
+   breathing room between the pop button and the nearest text. */
+.tool-inline-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--fd-border);
+  background: var(--fd-navigator-bg);
+  flex-shrink: 0;
+}
+.tool-inline-header-extra {
+  flex: 1;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
 }
-.tool-dock-item-header .tool-dock-header-extra + .tool-dock-popout { margin-left: 6px; }
-.tool-dock-item-header > .tool-dock-popout:last-child { margin-left: auto; }
+.tool-inline-header .tool-dock-popout { flex-shrink: 0; }
 
 /* v1.80: true footer bar under a tool window's body (docked and floating). */
 .tool-window-footer {

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.99';
+export const APP_VERSION = '2.00';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.00',
+    date: '2026-07-15',
+    items: [
+      { title: 'Pop in/out lives in the window header', detail: 'The pop-out arrow moved off the panel button row and into the header inside the window, still on the side facing where it sends the window. Pop buttons also get more air between themselves and the nearest text.', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.99',
     date: '2026-07-15',
