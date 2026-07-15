@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.66';
+export const APP_VERSION = '1.67';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.67',
+    date: '2026-07-15',
+    items: [
+      { title: 'Spelling & Grammar always shows the word', detail: 'At its old default (or a size remembered from before the tabs), the window crushed the checker body to nothing — buttons, no misspelled word, no suggestions. The default is taller, a remembered pre-tab size is reset once, and the body now has a hard floor: shrink the window below it and the panel scrolls instead of hiding the word.', tags: ['Fix', 'Tools'] },
+      { title: 'Vomit Draft presets count in hours', detail: 'The first preset now reads 0.5 hr, matching 1 / 1.5 / 2 hr.', tags: ['UI'] },
+    ],
+  },
   {
     version: '1.66',
     date: '2026-07-15',

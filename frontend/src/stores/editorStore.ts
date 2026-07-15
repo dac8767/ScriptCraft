@@ -455,6 +455,30 @@ function migrateNavigatorInline(
   return sizes;
 }
 
+/**
+ * v1.67: forget a remembered Spelling & Grammar window size ONCE. The v1.63
+ * combined panel added a tabs row and a toggles row on top of a checker body
+ * sized for none of that — a pre-v1.63 remembered height crushed the body to
+ * zero (no misspelled word, no suggestions, just buttons). The new default
+ * fits the whole thing; a size the user drags after this migration sticks
+ * again as usual. Same pattern as migrateNavigatorInline above.
+ */
+function migrateSpellingSize(
+  sizes: Record<string, { w: number; h: number }>,
+): Record<string, { w: number; h: number }> {
+  const FLAG = 'opendraft:spellSizeReset167';
+  try {
+    if (localStorage.getItem(FLAG)) return sizes;
+    localStorage.setItem(FLAG, '1');
+    if (sizes.spelling) {
+      const { spelling: _dropped, ...rest } = sizes;
+      saveViewState({ toolSizes: rest });
+      return rest;
+    }
+  } catch { /* storage unavailable — keep what we have */ }
+  return sizes;
+}
+
 /** Tools that never dock — they always open as a floating window. */
 export const ALWAYS_FLOAT: ToolId[] = ['analytics'];
 
@@ -1198,7 +1222,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ activeTool: tool });
     set({ activeTool: tool });
   },
-  toolSizes: migrateNavigatorInline(_vs.toolSizes ?? {}),
+  toolSizes: migrateSpellingSize(migrateNavigatorInline(_vs.toolSizes ?? {})),
   setToolSize: (tool, w, h) => set((s) => {
     const toolSizes = { ...s.toolSizes, [tool]: { w, h } };
     saveViewState({ toolSizes });

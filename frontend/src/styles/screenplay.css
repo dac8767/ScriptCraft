@@ -775,8 +775,15 @@ body {
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  /* v1.67: if the window is shorter than the checker's floor below, the
+     panel scrolls — content is never crushed out of existence. */
+  overflow-y: auto;
 }
-.fs-spellgram .spell-modal-embedded { height: auto; flex: 1; min-height: 0; }
+.fs-spellgram .spell-modal-embedded { height: auto; flex: 1 0 auto; }
+/* v1.67: the checker body may not collapse — the misspelled word, Change To
+   and the suggestions list must always be visible. 355px = context box +
+   Change To + the 130px suggestions list + labels and margins. */
+.fs-spellgram .spell-modal-body { min-height: 355px; }
 .fs-spellgram-top {
   display: flex;
   align-items: center;

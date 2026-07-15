@@ -89,7 +89,9 @@ export const ALL_TOOLS: ToolDef[] = [
   // ALL_TOOLS is what takes it out of both Customize tabs, since those lists are
   // built from this one.
   { id: 'assets', label: 'Asset Manager', icon: <FaBoxes />, defaultSize: { w: 620, h: 372 }, group: 3 },
-  { id: 'spelling', label: 'Spelling & Grammar', icon: <FaSpellCheck />, defaultSize: { w: 420, h: 440 }, group: 3 },
+  // v1.67: tall enough for the full checker — tabs + toggles + the word,
+  // Change To, suggestions AND the action buttons. 440 predates the tabs row.
+  { id: 'spelling', label: 'Spelling & Grammar', icon: <FaSpellCheck />, defaultSize: { w: 420, h: 640 }, group: 3 },
   // v0.84: Script History is dockable again — VersionHistory already had an
   // `embedded` mode, it just wasn't registered as a tool.
   { id: 'history', label: 'Script History', icon: <FaHistory />, defaultSize: { w: 420, h: 480 }, group: 3 },
