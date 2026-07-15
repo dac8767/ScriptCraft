@@ -128,7 +128,9 @@ function EditableTable({ data, onChange, onDelete, selected }: {
 
   return (
     <div className={`fs-nb-table-wrap${isEmpty ? ' fs-nb-table-empty' : ''}`}>
-      {selected && (
+      {/* v2.01: an empty table keeps its menu bar visible, not just when
+          selected — same reason as the empty border. */}
+      {(selected || isEmpty) && (
         <div className="fs-nb-table-bar">
           <button onMouseDown={(e) => { e.preventDefault(); addRow(); }}>+ Row</button>
           <button onMouseDown={(e) => { e.preventDefault(); delRow(); }}>− Row</button>
@@ -205,13 +207,16 @@ function TextBox({ box, focused, onChange, onFocusBox, onDelete }: {
     }
   }, [box.html]);
   const isEmpty = !box.html || box.html.replace(/<[^>]*>/g, '').trim() === '';
+  // v2.01: while empty, the box keeps its head bar visible (not just when
+  // focused) — an empty scrap needs its handles showing.
+  const showHead = focused || isEmpty;
   return (
     <div
       className={`fs-nb-box${focused ? ' focused' : ''}${isEmpty && !focused ? ' empty' : ''}`}
       style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      {focused && (
+      {showHead && (
         <div className="fs-nb-box-head" onMouseDown={(e) => startDrag(e, 'move')}>
           <span>⋮⋮</span>
           <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}>✕</button>
@@ -220,7 +225,7 @@ function TextBox({ box, focused, onChange, onFocusBox, onDelete }: {
       <div
         ref={ref}
         className="fs-nb-box-body"
-        style={{ height: focused ? box.h - 20 : box.h }}
+        style={{ height: showHead ? box.h - 20 : box.h }}
         contentEditable
         suppressContentEditableWarning
         onMouseDown={() => onFocusBox(box.id)}
@@ -564,7 +569,7 @@ export function NotebookSurface() {
             onBlur={(e) => renamePage(page.id, e.target.value || 'Untitled')}
           />
         ) : (
-          <span className="fs-nb-title fs-nb-title-empty">Notebook</span>
+          <span className="fs-nb-title fs-nb-title-empty">Scrapbook</span>
         )}
         {page && (
           <div className="fs-nb-toolbar">
@@ -578,7 +583,7 @@ export function NotebookSurface() {
       {page ? (
         <CanvasSurface key={page.id} boxes={page.boxes} onChangeBoxes={(boxes) => updatePage(page.id, { boxes })} />
       ) : (
-        <div className="fs-nb-empty">Select or create a page in the Notebook panel to start writing.</div>
+        <div className="fs-nb-empty">Select or create a page in the Scrapbook panel to start writing.</div>
       )}
     </div>
   );

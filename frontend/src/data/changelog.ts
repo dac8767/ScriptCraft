@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.00';
+export const APP_VERSION = '2.01';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.01',
+    date: '2026-07-15',
+    items: [
+      { title: 'The Notebook is now the Scrapbook', detail: 'Same tool, truer name — a board of scraps. Empty items also got clearer: the dashed border is now a solid thin line, and an empty item keeps its menu bar (move/delete, table controls) visible instead of hiding it until you click.', tags: ['Tools', 'UI'] },
+    ],
+  },
   {
     version: '2.00',
     date: '2026-07-15',

@@ -97,7 +97,9 @@ export const ALL_TOOLS: ToolDef[] = [
   // editor area (NotebookSurface in ScreenplayEditor). keepOpenOnEditorClick
   // because the surface LIVES in the editor area: clicking into it must not
   // close the panel window (which would close the notebook itself).
-  { id: 'notebook', label: 'Notebook', icon: <FaBook />, defaultSize: { w: 300, h: 420 }, group: 3, keepOpenOnEditorClick: true },
+  // v2.01: renamed Scrapbook (label only — the 'notebook' id and the
+  // opendraft:notebook storage key persist user data and keep their names).
+  { id: 'notebook', label: 'Scrapbook', icon: <FaBook />, defaultSize: { w: 300, h: 420 }, group: 3, keepOpenOnEditorClick: true },
   // v0.89: fixed — the Title Page form is a set-size box, so the window is sized
   // to it exactly and can't be resized. Nothing else is fixed; every other tool
   // genuinely uses the space it's given.

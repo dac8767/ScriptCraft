@@ -15913,13 +15913,14 @@ input.fs-switch:checked::after { left: 15px; }
   overflow: hidden;
 }
 .fs-nb-box.focused { border-color: var(--fd-accent); }
-/* v1.99: an EMPTY item must announce itself — a clear dashed border — since
-   it has no contents to make it visible. Filled items keep the faint line. */
+/* v1.99: an EMPTY item must announce itself since it has no contents to make
+   it visible. Filled items keep the faint line.
+   v2.01: solid thin line (Derek: not dashed), in the theme's text color. */
 .fs-nb-box.empty {
-  border: 1.5px dashed color-mix(in srgb, var(--fd-text) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fd-text) 75%, transparent);
 }
 .fs-nb-table-wrap.fs-nb-table-empty .fs-nb-table td {
-  border: 1.5px dashed color-mix(in srgb, var(--fd-text) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fd-text) 75%, transparent);
 }
 .fs-nb-box-head {
   flex: 0 0 20px;
