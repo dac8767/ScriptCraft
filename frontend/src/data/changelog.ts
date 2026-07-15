@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.64';
+export const APP_VERSION = '1.65';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.65',
+    date: '2026-07-15',
+    items: [
+      { title: 'One Draft label field', detail: 'Settings > General\'s "Default draft label" is gone; the Draft label field in Settings > Save Options does it all now — Apply updates the current script (synced with the Title Page and Production menu, as before), and Set as Default makes the value what new scripts start as.', tags: ['UI', 'Saving'] },
+    ],
+  },
   {
     version: '1.64',
     date: '2026-07-15',

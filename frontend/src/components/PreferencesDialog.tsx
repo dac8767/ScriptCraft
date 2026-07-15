@@ -111,10 +111,15 @@ function LayoutTab() {
 
 function DraftNumberRow({ editor }: { editor: Editor | null }) {
   const draftLabel = useEditorStore((s) => s.draftLabel);
+  // v1.65: this one field also owns the default for NEW scripts (the
+  // "Default draft label" that briefly lived in Settings > General).
+  const defaultDraftLabel = useSettingsStore((s) => s.defaultDraftLabel);
+  const setDefaultDraftLabel = useSettingsStore((s) => s.setDefaultDraftLabel);
   const [value, setValue] = React.useState(draftLabel);
   React.useEffect(() => { setValue(draftLabel); }, [draftLabel]);
   const trimmed = value.trim();
   return (
+    <>
     <div className="prefs-field-row">
       <label htmlFor="prefs-draft-label">Draft label</label>
       <input
@@ -129,7 +134,18 @@ function DraftNumberRow({ editor }: { editor: Editor | null }) {
         disabled={!trimmed || trimmed === draftLabel}
         onClick={() => applyDraftNumber(editor, trimmed)}
       >Apply</button>
+      <button
+        disabled={!trimmed || trimmed === defaultDraftLabel}
+        onClick={() => setDefaultDraftLabel(trimmed)}
+      >Set as Default</button>
     </div>
+    <p className="prefs-hint">
+      Apply mirrors Production → Set Draft Number: updates the saved draft
+      label and the Title Page draft line (keeping its date). Set as Default
+      makes it what new scripts start as — currently
+      &ldquo;{defaultDraftLabel}&rdquo;.
+    </p>
+    </>
   );
 }
 
@@ -192,10 +208,6 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
       <section>
         <h3>Draft Number</h3>
         <DraftNumberRow editor={editor} />
-        <p className="prefs-hint">
-          Mirrors Production → Set Draft Number: updates the saved draft label
-          and the Title Page draft line (keeping its date).
-        </p>
       </section>
 
       <section id="prefs-save-locations">
@@ -367,7 +379,6 @@ function GeneralTab() {
     spellCheckByDefault, setSpellCheckByDefault,
     windowStartup, setWindowStartup,
     followSystemTheme, setFollowSystemTheme,
-    defaultDraftLabel, setDefaultDraftLabel,
     smartTypography, setSmartTypography,
     units, setUnits,
   } = useSettingsStore();
@@ -461,22 +472,9 @@ function GeneralTab() {
         </p>
       </section>
 
-      <section>
-        <h3>Scripts</h3>
-        <label className="prefs-check-row">
-          <span>Default draft label</span>
-          <input
-            type="text"
-            value={defaultDraftLabel}
-            maxLength={60}
-            onChange={(e) => setDefaultDraftLabel(e.target.value)}
-            onBlur={(e) => { if (!e.target.value.trim()) setDefaultDraftLabel('1st Draft'); }}
-          />
-        </label>
-        <p className="prefs-hint">
-          What the Draft field starts as on a new script.
-        </p>
-      </section>
+      {/* v1.65: "Default draft label" moved into Settings > Save Options —
+          the Draft label field there syncs the current script AND can set
+          the default for new scripts. One field, one home. */}
 
       <section>
         <h3>Dates</h3>
