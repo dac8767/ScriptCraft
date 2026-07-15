@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.98';
+export const APP_VERSION = '1.99';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.99',
+    date: '2026-07-15',
+    items: [
+      { title: 'Empty notebook items are visible now', detail: 'A text box or table with nothing in it wears a clear dashed border so it can\'t vanish into the canvas. Once it has content, the border drops back to the faint outline — the contents do the talking.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '1.98',
     date: '2026-07-15',

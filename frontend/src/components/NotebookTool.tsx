@@ -122,8 +122,12 @@ function EditableTable({ data, onChange, onDelete, selected }: {
     window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
   };
 
+  // v1.99: an all-empty table is invisible on the canvas without help —
+  // it gets the defined "I'm empty" border (same rule as empty text boxes).
+  const isEmpty = data.rows.every((r) => r.every((c) => !c || !c.trim()));
+
   return (
-    <div className="fs-nb-table-wrap">
+    <div className={`fs-nb-table-wrap${isEmpty ? ' fs-nb-table-empty' : ''}`}>
       {selected && (
         <div className="fs-nb-table-bar">
           <button onMouseDown={(e) => { e.preventDefault(); addRow(); }}>+ Row</button>
