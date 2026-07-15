@@ -107,6 +107,8 @@ it actually produced — not by staring at the source and reasoning.
   with a reason is respected; quiet failure is not. If you got something wrong, say that
   too — plainly, and then fix it.
 - **He renames things constantly.** When he does, rename everywhere, immediately.
+- **Icons are always monotone** (react-icons line style, currentColor). Never emoji
+  in UI chrome — v2.08 swept the Scrapbook's 📄🗂🗑 for exactly this.
 - **Never comment on the time of day or suggest he sleep.**
 
 End any message that delivers a change with:

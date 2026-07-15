@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.07';
+export const APP_VERSION = '2.08';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.08',
+    date: '2026-07-15',
+    items: [
+      { title: 'Scrapbook icons go monotone', detail: 'The emoji in the Scrapbook tree (page, folder, trash, the create buttons) are replaced with clean line icons that tint with your theme, and sections now use the same collapse caret as the side-panel items. House rule from here on: icons are always monotone.', tags: ['UI', 'Polish'] },
+      { title: 'Scrapbook toolbar slims down', detail: 'The tagged Scrapbook section now holds a single "+ Add" dropdown (Text box / Table / Image) instead of three buttons, so the toolbar stays uncrowded. Table controls still appear beside it when a table is selected.', tags: ['UI'] },
+    ],
+  },
   {
     version: '2.07',
     date: '2026-07-15',

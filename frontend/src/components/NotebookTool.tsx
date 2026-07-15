@@ -23,7 +23,12 @@ import {
   type NbNode, type NbTable, type NbBox,
 } from '../stores/notebookStore';
 import { useEditorStore } from '../stores/editorStore';
+import {
+  FaChevronRight, FaChevronDown, FaRegFileAlt, FaRegFolder, FaRegFolderOpen,
+  FaFolderPlus, FaRegEdit, FaRegTrashAlt,
+} from 'react-icons/fa';
 import { showToast } from './Toast';
+import AddMenu from './AddMenu';
 
 const IMAGE_BUDGET = 300_000;   // dataURL chars — localStorage is the store
 
@@ -442,11 +447,11 @@ function PageRow({ id, depth }: { id: string; depth: number }) {
       }}
     >
       <span className="fs-nb-grabber">⋮⋮</span>
-      <span className="fs-nb-pageicon">📄</span>
+      <span className="fs-nb-pageicon"><FaRegFileAlt /></span>
       <button className="fs-nb-pagename" onClick={() => selectPage(id)}>{page.title || 'Untitled'}</button>
       <button className="fs-nb-rowdel" title="Delete page" onClick={() => {
         if (window.confirm(`Delete “${page.title || 'Untitled'}”? This cannot be undone.`)) deletePage(id);
-      }}>🗑</button>
+      }}><FaRegTrashAlt /></button>
     </div>
   );
 }
@@ -470,11 +475,12 @@ function SectionRow({ node, depth }: { node: Extract<NbNode, { type: 'section' }
           setInto(false);
         }}
       >
+        {/* v2.08: the same caret the side-panel dock items wear. */}
         <button className="fs-nb-collapse" onClick={() => toggleSection(node.id)}>
-          {node.collapsed ? '▸' : '▾'}
+          {node.collapsed ? <FaChevronRight /> : <FaChevronDown />}
         </button>
         <span className="fs-nb-grabber">⋮⋮</span>
-        <span className="fs-nb-pageicon">📁</span>
+        <span className="fs-nb-pageicon">{node.collapsed ? <FaRegFolder /> : <FaRegFolderOpen />}</span>
         {editing ? (
           <input
             autoFocus
@@ -490,7 +496,7 @@ function SectionRow({ node, depth }: { node: Extract<NbNode, { type: 'section' }
         )}
         <button className="fs-nb-rowdel" title="Delete section (pages move to the top level)" onClick={() => {
           if (window.confirm('Delete this section? Pages inside it move back to the top level.')) deleteSection(node.id);
-        }}>🗑</button>
+        }}><FaRegTrashAlt /></button>
       </div>
       {!node.collapsed && (
         <div className="fs-nb-children">
@@ -522,8 +528,8 @@ export function NotebookHeaderExtra() {
     <span className="fs-nb-side-head">
       <span>Pages</span>
       <span className="fs-nb-side-btns">
-        <button title="New section" onClick={addSection}>🗂</button>
-        <button title="New page" onClick={() => addPage()}>＋</button>
+        <button title="New section" onClick={addSection}><FaFolderPlus /></button>
+        <button title="New page" onClick={() => addPage()}><FaRegEdit /></button>
       </span>
     </span>
   );
@@ -555,7 +561,7 @@ export default function NotebookTool() {
         <TreeNodes nodes={tree} depth={0} />
         {tree.length === 0 && (
           <div className="fs-nb-empty">
-            No pages yet — ＋ adds a page, 🗂 adds a section.
+            No pages yet — the header's buttons add a page or a section.
           </div>
         )}
       </div>
@@ -651,9 +657,26 @@ export function ScrapbookToolbarSection() {
   return (
     <div className="toolbar-scrapbook-section">
       <span className="toolbar-section-tag">Scrapbook</span>
-      <button className="toolbar-btn toolbar-btn-labeled" onClick={() => window.dispatchEvent(new Event('nb-add-textbox'))}>+ Text box</button>
-      <button className="toolbar-btn toolbar-btn-labeled" onClick={() => window.dispatchEvent(new Event('nb-add-table-canvas'))}>+ Table</button>
-      <button className="toolbar-btn toolbar-btn-labeled" onClick={() => (document.getElementById('fs-nb-filepick') as HTMLInputElement | null)?.click()}>+ Image</button>
+      {/* v2.08: one dropdown instead of three buttons — the toolbar was
+          getting crowded (Derek). AddMenu portals to body, per the lesson. */}
+      <AddMenu
+        label="+ Add"
+        title="Add a text box, table or image to this page"
+        center
+        onPick={(v) => {
+          if (v === 'text') window.dispatchEvent(new Event('nb-add-textbox'));
+          else if (v === 'table') window.dispatchEvent(new Event('nb-add-table-canvas'));
+          else if (v === 'image') (document.getElementById('fs-nb-filepick') as HTMLInputElement | null)?.click();
+        }}
+        groups={[{
+          label: 'Add to page',
+          options: [
+            { value: 'text', label: 'Text box' },
+            { value: 'table', label: 'Table' },
+            { value: 'image', label: 'Image…' },
+          ],
+        }]}
+      />
       {focusedBox?.type === 'table' && (
         <span className="fs-nb-tb-group">
           <button className="toolbar-btn toolbar-btn-labeled" onMouseDown={mutateTable(tableAddRow)}>+ Row</button>
