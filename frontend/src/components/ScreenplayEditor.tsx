@@ -10,6 +10,8 @@ import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import Dropcursor from '@tiptap/extension-dropcursor';
 import SmartTypography from '../editor/extensions/SmartTypography';
+import VomitLock from '../editor/extensions/VomitLock';
+import { VomitTimerPill } from './VomitDraftTool';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -1477,6 +1479,7 @@ const ScreenplayEditor: React.FC = () => {
       TrackChangesExtension,
       ...(isHistoryMode ? [] : [EnforceGuardExtension, EnterHandlerExtension, TabHandlerExtension, ElementShortcutExtension]),
       SmartTypography,
+      VomitLock,
       SpellCheck,
       Grammar,
       ...pluginRegistry.getEditorExtensions(),
@@ -4051,6 +4054,7 @@ const ScreenplayEditor: React.FC = () => {
           <div className="panel-resize-handle" onPointerDown={(e) => handleResizePointerDown('right', e)} style={{ touchAction: 'none' }} />
         )}
         {!isHistoryMode && <TempToolWindow editor={editor} scrollContainer={editorMainRef.current} />}
+        {!isHistoryMode && <VomitTimerPill />}
         {!isHistoryMode && shelfOpen && <ToolDock side="right" editor={editor} scrollContainer={editorMainRef.current} />}
         {!isHistoryMode && <LocationDatabase editor={editor} style={{ width: rightPanelWidth, minWidth: rightPanelWidth }} />}
         {!isHistoryMode && pluginRegistry.getPanels('right-sidebar').map((p) => (

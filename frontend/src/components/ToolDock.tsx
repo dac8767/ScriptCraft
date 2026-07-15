@@ -23,7 +23,7 @@ import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
   FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,  FaBug,
-  FaChevronRight, FaChevronDown,
+  FaChevronRight, FaChevronDown, FaFire,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { DoubleChevronIcon, chevronTowards } from './uiIcons';
@@ -38,6 +38,7 @@ import HighlightsTool from './HighlightsTool';
 import TagsPanel from './TagsPanel';
 import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
+import VomitDraftTool from './VomitDraftTool';
 
 export interface ToolDef {
   id: ToolId;
@@ -78,6 +79,7 @@ export const ALL_TOOLS: ToolDef[] = [
   // pop-in button still docks it, and that choice is remembered.
   { id: 'analytics', label: 'Analytics', icon: <FaChartBar />, defaultSize: { w: 620, h: 384 }, group: 3, noPanelFit: true },
   { id: 'goals', label: 'Goals', icon: <FaBullseye />, defaultSize: { w: 340, h: 264 }, group: 3 },
+  { id: 'vomit', label: 'Vomit Draft', icon: <FaFire />, defaultSize: { w: 320, h: 320 }, group: 3 },
   // v0.89: fixed — the Title Page form is a set-size box, so the window is sized
   // to it exactly and can't be resized. Nothing else is fixed; every other tool
   // genuinely uses the space it's given.
@@ -177,6 +179,8 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
       return <AnalyticsTool editor={editor} />;
     case 'goals':
       return <GoalsTool editor={editor} />;
+    case 'vomit':
+      return <VomitDraftTool editor={editor} />;
     case 'sticky':
       return <StickyNotesTool editor={editor} />;
     case 'fragments':

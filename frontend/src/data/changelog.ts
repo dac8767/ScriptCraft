@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.61';
+export const APP_VERSION = '1.62';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.62',
+    date: '2026-07-15',
+    items: [
+      { title: 'New tool: Vomit Draft', detail: 'A timed no-editing writing sprint (Tools > Vomit Draft; dockable like any tool). Pick 30/60/90/120 minutes, a custom amount, or an end time — until the timer runs out, previous text is locked and you just keep writing. The line you\'re on stays workable, saving and exporting work as normal, and a floating countdown stays on screen. Blocked edits shake the timer instead of failing silently. When time is up (or the script is switched), full editing returns.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '1.61',
     date: '2026-07-14',

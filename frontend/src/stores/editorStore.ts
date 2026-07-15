@@ -386,7 +386,7 @@ export type ToolId =
   | 'navigator' | 'scenes' | 'pages' | 'structure' | 'locations' | 'characters'
   | 'indexcards' | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
-  | 'spelling' | 'history' | 'titlepage' | 'customize'
+  | 'spelling' | 'history' | 'titlepage' | 'customize' | 'vomit'
   | 'devpicker'   // DEV ONLY (see src/dev/) — absent from production builds
   /** legacy — Notes merged back into 'sticky' (Notes > Script tab); kept
    *  in the type so persisted configs still typecheck, remapped on use. */
@@ -483,6 +483,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   indexcards: { side: 'right', enabled: true },
   highlights: { side: 'right', enabled: true },
   goals: { side: 'right', enabled: true },
+  vomit: { side: 'right', enabled: true },
   analytics: { side: 'right', enabled: true },
 
   tags: { side: 'right', enabled: false },
@@ -493,7 +494,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
  *  within each panel. 'Reset to Default' restores exactly this. */
 export const DEFAULT_TOOL_ORDER: string[] = [
   'navigator', 'scenes', 'pages', 'titlepage', 'characters', 'locations', 'spelling', 'assets',
-  'sticky', 'todo', 'fragments', 'beatboard', 'indexcards', 'highlights', 'goals', 'analytics',
+  'sticky', 'todo', 'fragments', 'beatboard', 'indexcards', 'highlights', 'goals', 'vomit', 'analytics',
   'tags',
 ];
 
