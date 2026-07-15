@@ -93,6 +93,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     toolbarMode, chromeCustomPx,
   } = useEditorStore();
 
+  // v2.07: while the Scrapbook is open, the toolbar's own formatting buttons
+  // drive the focused text box (execCommand) instead of the script editor —
+  // no duplicate B/I/U/S anywhere. Declared up here because the responsive
+  // overflow measurement (below) also re-measures on this flag (v2.10).
+  const scrapbookOpen = useNotebookStore((s) => s.notebookOpen);
+
   const activeTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate());
 
   // v0.71: element visibility/order come from the user's persisted overrides
@@ -500,7 +506,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     ro.observe(toolbar);
     requestAnimationFrame(measure);
     return () => { ro.disconnect(); cancelAnimationFrame(rafId); };
-  }, []);
+    // v2.10: the Scrapbook section appearing/disappearing changes CONTENT
+    // width, which the container-width guard can't see — re-measure on
+    // toggle or the collapse state computed for the other layout sticks.
+  }, [scrapbookOpen]);
 
   const hasOverflow = hiddenPriorities.size > 0;
 
@@ -637,10 +646,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // a hook after an early return crashes React when the toolbar is toggled
   // hidden ('Rendered fewer hooks than during the previous render').
   const { toolbarLeft, toolbarRight, setToolbarZones, toolbarZonesSet } = useEditorStore();
-  // v2.07: while the Scrapbook is open, the toolbar's own formatting buttons
-  // drive the focused text box (execCommand) instead of the script editor —
-  // no duplicate B/I/U/S anywhere.
-  const scrapbookOpen = useNotebookStore((s) => s.notebookOpen);
   // Explicit flag, not length>0 — 'Remove All' legitimately empties the zones
   // and must not re-trigger default seeding.
   const zonesReady = toolbarZonesSet;
@@ -1232,10 +1237,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       {leftTokens.map(renderToken)}
       {rightTokens.filter((t) => !bigZoneAllowed(t)).map(renderToken)}
 
-      {/* v2.07: tool-specific controls — tagged so they read as the
-          Scrapbook's, not the user's own toolbar items. */}
-      <ScrapbookToolbarSection />
-
       {/* Spacer */}
       <div style={{ flex: 1 }} />
 
@@ -1256,6 +1257,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           )}
         </div>
       )}
+
+      {/* v2.07: tool-specific controls — tagged so they read as the
+          Scrapbook's, not the user's own toolbar items.
+          v2.10: rendered LAST, after the overflow menu, so every Main item
+          (inline or collapsed into ⋮) comes before the tool section — the
+          same order Customize shows. */}
+      <ScrapbookToolbarSection />
     </div>
   );
 };

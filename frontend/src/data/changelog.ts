@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.09';
+export const APP_VERSION = '2.10';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.10',
+    date: '2026-07-15',
+    items: [
+      { title: 'Toolbar order matches Customize', detail: 'Opening the Scrapbook was shoving Go to Page and Zoom into the ⋮ overflow — and leaving them there — because the responsive collapse only re-measured when the window resized, not when the Scrapbook section appeared. It re-measures on both now, and the Scrapbook section always renders last, after every Main item, exactly as Customize lists it.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '2.09',
     date: '2026-07-15',
