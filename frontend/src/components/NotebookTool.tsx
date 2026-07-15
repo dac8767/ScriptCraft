@@ -28,7 +28,6 @@ import {
   FaFolderPlus, FaRegEdit, FaRegTrashAlt,
 } from 'react-icons/fa';
 import { showToast } from './Toast';
-import AddMenu from './AddMenu';
 
 const IMAGE_BUDGET = 300_000;   // dataURL chars — localStorage is the store
 
@@ -65,8 +64,8 @@ function compressImage(dataUrl: string, maxDim: number, quality: number): Promis
 }
 
 /* ── structured table (his EditableTable, typed) ── */
-function Cell({ value, onCommit, align }: {
-  value: string; onCommit: (v: string) => void; align: string;
+function Cell({ value, onCommit, onCellFocus, align }: {
+  value: string; onCommit: (v: string) => void; onCellFocus: () => void; align: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
@@ -85,29 +84,55 @@ function Cell({ value, onCommit, align }: {
       contentEditable
       suppressContentEditableWarning
       onMouseDown={(e) => e.stopPropagation()}
+      onFocus={onCellFocus}
       onBlur={() => onCommit(ref.current ? ref.current.textContent || '' : '')}
     />
   );
 }
 
-/* v2.05: the table mutations are PURE helpers — the surface toolbar's Table
-   section is their only caller (the buttons that sat on the item are gone).
-   Exported for the test. */
-export const tableAddRow = (t: NbTable): NbTable =>
-  ({ ...t, rows: [...t.rows, Array(t.rows[0]?.length || 2).fill('')], rowHeights: [...t.rowHeights, 32] });
-export const tableDelRow = (t: NbTable): NbTable =>
-  t.rows.length > 1 ? { ...t, rows: t.rows.slice(0, -1), rowHeights: t.rowHeights.slice(0, -1) } : t;
-export const tableAddCol = (t: NbTable): NbTable =>
-  ({ ...t, rows: t.rows.map((r) => [...r, '']), colWidths: [...t.colWidths, 90] });
-export const tableDelCol = (t: NbTable): NbTable =>
-  (t.rows[0]?.length || 0) > 1
-    ? { ...t, rows: t.rows.map((r) => r.slice(0, -1)), colWidths: t.colWidths.slice(0, -1) }
+/* v2.13: table mutations are PURE, POSITIONAL helpers — the Scrapbook's
+   Table menu (Word's model) acts relative to the focused cell. Exported
+   for the test. */
+const insertAt = <T,>(arr: T[], idx: number, v: T): T[] =>
+  [...arr.slice(0, idx), v, ...arr.slice(idx)];
+const removeAt = <T,>(arr: T[], idx: number): T[] =>
+  arr.filter((_, i) => i !== idx);
+
+export const tableInsertRow = (t: NbTable, idx: number): NbTable => ({
+  ...t,
+  rows: insertAt(t.rows, Math.max(0, Math.min(idx, t.rows.length)), Array(t.rows[0]?.length || 2).fill('')),
+  rowHeights: insertAt(t.rowHeights, Math.max(0, Math.min(idx, t.rowHeights.length)), 32),
+});
+export const tableDeleteRow = (t: NbTable, idx: number): NbTable =>
+  t.rows.length > 1 && idx >= 0 && idx < t.rows.length
+    ? { ...t, rows: removeAt(t.rows, idx), rowHeights: removeAt(t.rowHeights, idx) }
     : t;
+export const tableInsertCol = (t: NbTable, idx: number): NbTable => {
+  const cols = t.rows[0]?.length || 0;
+  const at = Math.max(0, Math.min(idx, cols));
+  return {
+    ...t,
+    rows: t.rows.map((r) => insertAt(r, at, '')),
+    colWidths: insertAt(t.colWidths, at, 90),
+  };
+};
+export const tableDeleteCol = (t: NbTable, idx: number): NbTable =>
+  (t.rows[0]?.length || 0) > 1 && idx >= 0 && idx < (t.rows[0]?.length || 0)
+    ? { ...t, rows: t.rows.map((r) => removeAt(r, idx)), colWidths: removeAt(t.colWidths, idx) }
+    : t;
+/** Sort rows by a column's text. Row heights travel with their rows. */
+export const tableSort = (t: NbTable, ci: number, dir: 'asc' | 'desc'): NbTable => {
+  const paired = t.rows.map((r, i) => ({ r, h: t.rowHeights[i] ?? 32 }));
+  paired.sort((a, b) => (a.r[ci] || '').localeCompare(b.r[ci] || '') * (dir === 'asc' ? 1 : -1));
+  return { ...t, rows: paired.map((p) => p.r), rowHeights: paired.map((p) => p.h) };
+};
 export const tableIsEmpty = (rows: string[][]): boolean =>
   rows.every((r) => r.every((c) => !c || !c.trim()));
 
-function EditableTable({ data, onChange }: {
+function EditableTable({ data, onChange, onCellFocus }: {
   data: NbTable; onChange: (t: NbTable) => void;
+  /** v2.13: the Table menu acts relative to the last-focused cell. */
+  onCellFocus?: (ri: number, ci: number) => void;
 }) {
   const colWidths = data.colWidths;
   const rowHeights = data.rowHeights;
@@ -146,15 +171,23 @@ function EditableTable({ data, onChange }: {
   const isEmpty = tableIsEmpty(data.rows);
 
   return (
-    <div className={`fs-nb-table-wrap${isEmpty ? ' fs-nb-table-empty' : ''}`}>
-      <table className="fs-nb-table" style={{ tableLayout: 'fixed' }}>
+    <div className={`fs-nb-table-wrap${isEmpty ? ' fs-nb-table-empty' : ''}${data.borderless ? ' fs-nb-table-borderless' : ''}`}>
+      <table
+        className="fs-nb-table"
+        style={{ tableLayout: 'fixed', background: data.shading || undefined }}
+      >
         <colgroup>{colWidths.map((w, ci) => <col key={ci} style={{ width: w }} />)}</colgroup>
         <tbody>
           {data.rows.map((row, ri) => (
             <tr key={ri} style={{ height: rowHeights[ri] || 32 }}>
               {row.map((cell, ci) => (
                 <td key={ci} style={{ height: rowHeights[ri] || 32 }}>
-                  <Cell value={cell} onCommit={(v) => setCell(ri, ci, v)} align={data.align} />
+                  <Cell
+                    value={cell}
+                    onCommit={(v) => setCell(ri, ci, v)}
+                    onCellFocus={() => onCellFocus?.(ri, ci)}
+                    align={data.align}
+                  />
                   {ri === 0 && <div className="fs-nb-colgrip" onMouseDown={startColResize(ci)} />}
                   {ci === 0 && <div className="fs-nb-rowgrip" onMouseDown={startRowResize(ri)} />}
                 </td>
@@ -198,6 +231,10 @@ function useBoxDrag(box: NbBox, onChange: (b: NbBox) => void) {
   return startDrag;
 }
 
+/** v2.13: id of a box created by click-to-type — it must take the keyboard
+ *  the moment it mounts, caret at the end, so typing never skips a beat. */
+let pendingTextFocus: string | null = null;
+
 function TextBox({ box, focused, onChange, onFocusBox, onDelete }: {
   box: NbBox; focused: boolean; onChange: (b: NbBox) => void; onFocusBox: (id: string) => void; onDelete: (id: string) => void;
 }) {
@@ -210,6 +247,20 @@ function TextBox({ box, focused, onChange, onFocusBox, onDelete }: {
       loaded.current = true;
     }
   }, [box.html]);
+  useEffect(() => {
+    if (pendingTextFocus !== box.id || !ref.current) return;
+    pendingTextFocus = null;
+    ref.current.focus();
+    const sel = window.getSelection();
+    if (sel) {
+      const range = document.createRange();
+      range.selectNodeContents(ref.current);
+      range.collapse(false);   // caret to the end of what was typed
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const isEmpty = !box.html || box.html.replace(/<[^>]*>/g, '').trim() === '';
   const [hover, setHover] = useState(false);
   // v2.05, Derek's rules: EMPTY items always show head bar + border;
@@ -267,11 +318,27 @@ function ImageBox({ box, focused, onChange, onFocusBox, onDelete }: {
           <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}>✕</button>
         </div>
       )}
-      <img src={box.src} alt="" draggable={false} onMouseDown={(e) => startDrag(e, 'move')} />
+      <img
+        src={box.src}
+        alt=""
+        draggable={false}
+        onMouseDown={(e) => startDrag(e, 'move')}
+        style={{
+          transform: box.rotate ? `rotate(${box.rotate}deg)` : undefined,
+          border: box.borderW ? `${box.borderW}px solid ${box.borderColor || 'currentColor'}` : undefined,
+        }}
+      />
       {show && <div className="fs-nb-box-grip" onMouseDown={(e) => startDrag(e, 'resize')} />}
     </div>
   );
 }
+
+/** A table box's grid, as the NbTable shape the helpers understand. */
+export const boxAsTable = (b: NbBox): NbTable => ({
+  id: b.id, rows: b.rows || [['', ''], ['', '']],
+  colWidths: b.colWidths || [90, 90], rowHeights: b.rowHeights || [32, 32],
+  align: b.align || 'left', borderless: b.borderless, shading: b.shading,
+});
 
 function TableBox({ box, focused, onChange, onFocusBox, onDelete }: {
   box: NbBox; focused: boolean; onChange: (b: NbBox) => void; onFocusBox: (id: string) => void; onDelete: (id: string) => void;
@@ -295,8 +362,9 @@ function TableBox({ box, focused, onChange, onFocusBox, onDelete }: {
         </div>
       )}
       <EditableTable
-        data={{ id: box.id, rows: box.rows || [['', ''], ['', '']], colWidths: box.colWidths || [90, 90], rowHeights: box.rowHeights || [32, 32], align: box.align || 'left' }}
-        onChange={(t) => onChange({ ...box, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: t.align })}
+        data={boxAsTable(box)}
+        onChange={(t) => onChange({ ...box, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: t.align, borderless: t.borderless, shading: t.shading })}
+        onCellFocus={(ri, ci) => useNotebookStore.getState().setFocusedCell({ boxId: box.id, ri, ci })}
       />
     </div>
   );
@@ -311,17 +379,26 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
   const setFocusedId = useNotebookStore((s) => s.setFocusedBox);
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  const addTextBoxAt = (e: React.MouseEvent) => {
-    if (e.target !== canvasRef.current || !canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
+  // v2.13: click-to-type. Clicking BLANK canvas parks a caret there; the
+  // first keystroke turns it into a real text box seeded with what was
+  // typed. No "+ Text box" button anywhere.
+  const [caret, setCaret] = useState<{ x: number; y: number } | null>(null);
+  const protoRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (caret) protoRef.current?.focus(); }, [caret]);
+
+  const protoTyped = () => {
+    if (!caret || !protoRef.current) return;
+    const html = protoRef.current.innerHTML;
+    if (!html || html.replace(/<[^>]*>/g, '') === '') return;
     const nb: NbBox = {
       id: nbUid(), type: 'text',
-      x: Math.max(0, e.clientX - rect.left + canvasRef.current.scrollLeft - 10),
-      y: Math.max(0, e.clientY - rect.top + canvasRef.current.scrollTop - 10),
-      w: 220, h: 120, html: '',
+      x: Math.max(0, caret.x - 8), y: Math.max(0, caret.y - 8),
+      w: 220, h: 120, html,
     };
     onChangeBoxes([...boxes, nb]);
+    setCaret(null);
     setFocusedId(nb.id);
+    pendingTextFocus = nb.id;   // the new box grabs the keyboard (caret at end)
   };
 
   const addImageFromFile = useCallback(async (file: File, atX: number | null, atY: number | null) => {
@@ -352,23 +429,15 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
     } catch { showToast('Failed to process image.', 'error'); }
   }, [boxes, onChangeBoxes]);
 
-  // toolbar buttons reach the canvas via events, like his version
+  // menu actions reach the canvas via events, like his version
   useEffect(() => {
-    const txtH = () => {
-      const nb: NbBox = { id: nbUid(), type: 'text', x: 24, y: 24, w: 220, h: 120, html: '' };
-      onChangeBoxes([...boxes, nb]); setFocusedId(nb.id);
-    };
     const tblH = () => {
       const t = newTable();
       const nb: NbBox = { id: nbUid(), type: 'table', x: 24, y: 24, w: 0, h: 0, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: 'left' };
       onChangeBoxes([...boxes, nb]); setFocusedId(nb.id);
     };
-    window.addEventListener('nb-add-textbox', txtH);
     window.addEventListener('nb-add-table-canvas', tblH);
-    return () => {
-      window.removeEventListener('nb-add-textbox', txtH);
-      window.removeEventListener('nb-add-table-canvas', tblH);
-    };
+    return () => window.removeEventListener('nb-add-table-canvas', tblH);
   }, [boxes, onChangeBoxes]);
 
   const updateBox = (b: NbBox) => onChangeBoxes(boxes.map((x) => (x.id === b.id ? b : x)));
@@ -378,8 +447,15 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
     <div
       ref={canvasRef}
       className="fs-nb-canvas"
-      onDoubleClick={addTextBoxAt}
-      onMouseDown={(e) => { if (e.target === canvasRef.current) setFocusedId(null); }}
+      onMouseDown={(e) => {
+        if (e.target !== canvasRef.current || !canvasRef.current) return;
+        setFocusedId(null);
+        const rect = canvasRef.current.getBoundingClientRect();
+        setCaret({
+          x: e.clientX - rect.left + canvasRef.current.scrollLeft,
+          y: e.clientY - rect.top + canvasRef.current.scrollTop,
+        });
+      }}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault();
@@ -396,8 +472,20 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
         id="fs-nb-filepick"
         onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void addImageFromFile(f, null, null); }}
       />
-      {boxes.length === 0 && (
-        <div className="fs-nb-canvas-hint">Double-click to add a text box · drag an image in · or use the toolbar.</div>
+      {boxes.length === 0 && !caret && (
+        <div className="fs-nb-canvas-hint">Click anywhere and start typing · drag an image in · or use the Scrapbook menus.</div>
+      )}
+      {caret && (
+        <div
+          ref={protoRef}
+          className="fs-nb-protocaret"
+          contentEditable
+          suppressContentEditableWarning
+          style={{ left: caret.x, top: caret.y }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onInput={protoTyped}
+          onBlur={() => setCaret(null)}
+        />
       )}
       {boxes.map((b) =>
         b.type === 'image' ? <ImageBox key={b.id} box={b} focused={focusedId === b.id} onChange={updateBox} onDelete={deleteBox} onFocusBox={setFocusedId} />
@@ -619,80 +707,146 @@ export function NotebookSurface() {
 }
 
 /**
- * ScrapbookToolbarSection (v2.07) — the Scrapbook's controls, rendered by
- * the MAIN toolbar while the Scrapbook is open. A "Scrapbook" tag and a
- * divider mark them as tool-specific, distinct from the user's own toolbar
- * items. Inserts always; the focused table's controls appear beside them.
- * (B/I/U/S live on the toolbar already — its formatting buttons drive
- * scrapbook text boxes directly, so none are duplicated here.)
+ * useScrapbookMenus (v2.13) — the Scrapbook's contextual MENU BAR menus,
+ * shown to the right of a divider + "Scrapbook" tag only while the tool is
+ * open (Word's Table tab was the model). Returns [] when closed. Rendered
+ * by MenuBar; the shapes match its MenuSection/MenuItem.
+ *
+ * Table: insert/delete rows and columns relative to the LAST-FOCUSED CELL
+ * (focusedCell — kept across blur, since opening the menu is a blur),
+ * borders, shading, sort, alignment. Merge/Split Cells are absent on
+ * purpose: the grid has no cell-span model yet.
+ * Picture: border toggle/size/color, rotation. Cropping needs an
+ * interactive crop UI — deferred, not faked.
  */
-export function ScrapbookToolbarSection() {
+const SHADING_COLORS: Array<[string, string]> = [
+  ['Yellow', '#fff9c4'], ['Green', '#c8e6c9'], ['Blue', '#bbdefb'],
+  ['Purple', '#e1bee7'], ['Gray', '#e0e0e0'],
+];
+const BORDER_COLORS: Array<[string, string]> = [
+  ['Black', '#000000'], ['White', '#ffffff'], ['Gray', '#9e9e9e'],
+  ['Blue', '#3e9bff'], ['Red', '#ff5257'],
+];
+
+export function useScrapbookMenus(): Array<{
+  label: string;
+  items: Array<{
+    icon?: React.ReactNode; label: string; action?: () => void;
+    disabled?: boolean; separator?: boolean;
+    children?: Array<{ icon?: React.ReactNode; label: string; action?: () => void; disabled?: boolean; separator?: boolean }>;
+  }>;
+}> {
   const open = useNotebookStore((s) => s.notebookOpen);
   const page = useNotebookStore((s) => (s.selectedPageId ? s.pages[s.selectedPageId] : null));
   const focusedBoxId = useNotebookStore((s) => s.focusedBoxId);
-  if (!open) return null;
-  const focusedBox = page?.boxes.find((b) => b.id === focusedBoxId) ?? null;
-  const { updatePage } = useNotebookStore.getState();
+  const focusedCell = useNotebookStore((s) => s.focusedCell);
+  if (!open) return [];
 
-  const asTable = (b: NbBox): NbTable => ({
-    id: b.id, rows: b.rows || [['', ''], ['', '']],
-    colWidths: b.colWidths || [90, 90], rowHeights: b.rowHeights || [32, 32],
-    align: b.align || 'left',
-  });
-  const mutateTable = (fn: (t: NbTable) => NbTable) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!page || !focusedBox) return;
-    const t = fn(asTable(focusedBox));
+  const { updatePage, setFocusedBox, setFocusedCell } = useNotebookStore.getState();
+  const boxes = page?.boxes ?? [];
+  // The Table menu's target: the focused table box, or the box owning the
+  // last-focused cell.
+  const tableBox = boxes.find((b) => b.type === 'table' && (b.id === focusedBoxId || b.id === focusedCell?.boxId)) ?? null;
+  const cell = tableBox && focusedCell?.boxId === tableBox.id ? focusedCell : null;
+  const imageBox = boxes.find((b) => b.type === 'image' && b.id === focusedBoxId) ?? null;
+
+  const writeTable = (t: NbTable) => {
+    if (!page || !tableBox) return;
     updatePage(page.id, {
-      boxes: page.boxes.map((b) => (b.id === focusedBox.id
-        ? { ...b, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: t.align }
+      boxes: page.boxes.map((b) => (b.id === tableBox.id
+        ? { ...b, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: t.align, borderless: t.borderless, shading: t.shading }
         : b)),
     });
   };
-  const deleteFocused = () => {
-    if (!page || !focusedBox) return;
-    updatePage(page.id, { boxes: page.boxes.filter((b) => b.id !== focusedBox.id) });
-    useNotebookStore.getState().setFocusedBox(null);
+  const mutate = (fn: (t: NbTable) => NbTable) => () => { if (tableBox) writeTable(fn(boxAsTable(tableBox))); };
+  const writeImage = (patch: Partial<NbBox>) => {
+    if (!page || !imageBox) return;
+    updatePage(page.id, { boxes: page.boxes.map((b) => (b.id === imageBox.id ? { ...b, ...patch } : b)) });
+  };
+  const deleteBox = (id: string) => {
+    if (!page) return;
+    updatePage(page.id, { boxes: page.boxes.filter((b) => b.id !== id) });
+    setFocusedBox(null);
+    setFocusedCell(null);
   };
 
-  return (
-    <div className="toolbar-scrapbook-section">
-      <span className="toolbar-section-tag">Scrapbook</span>
-      {/* v2.12: the way back lives with the tool's other controls. */}
-      <button className="toolbar-btn toolbar-btn-labeled fs-nb-return-tb" onClick={closeNotebook}>Return to editor</button>
-      {/* v2.08: one dropdown instead of three buttons — the toolbar was
-          getting crowded (Derek). AddMenu portals to body, per the lesson. */}
-      {page && <AddMenu
-        label="+ Add"
-        title="Add a text box, table or image to this page"
-        center
-        onPick={(v) => {
-          if (v === 'text') window.dispatchEvent(new Event('nb-add-textbox'));
-          else if (v === 'table') window.dispatchEvent(new Event('nb-add-table-canvas'));
-          else if (v === 'image') (document.getElementById('fs-nb-filepick') as HTMLInputElement | null)?.click();
-        }}
-        groups={[{
-          label: 'Add to page',
-          options: [
-            { value: 'text', label: 'Text box' },
-            { value: 'table', label: 'Table' },
-            { value: 'image', label: 'Image…' },
-          ],
-        }]}
-      />}
-      {focusedBox?.type === 'table' && (
-        <span className="fs-nb-tb-group">
-          <button className="toolbar-btn toolbar-btn-labeled" onMouseDown={mutateTable(tableAddRow)}>+ Row</button>
-          <button className="toolbar-btn toolbar-btn-labeled" onMouseDown={mutateTable(tableDelRow)}>− Row</button>
-          <button className="toolbar-btn toolbar-btn-labeled" onMouseDown={mutateTable(tableAddCol)}>+ Col</button>
-          <button className="toolbar-btn toolbar-btn-labeled" onMouseDown={mutateTable(tableDelCol)}>− Col</button>
-          {(['left', 'center', 'right'] as const).map((a) => (
-            <button key={a} className={`toolbar-btn toolbar-btn-labeled${(focusedBox.align || 'left') === a ? ' active' : ''}`}
-              onMouseDown={mutateTable((t) => ({ ...t, align: a }))}>{a[0].toUpperCase()}</button>
-          ))}
-          <button className="toolbar-btn toolbar-btn-labeled fs-nb-danger" onMouseDown={(e) => { e.preventDefault(); deleteFocused(); }}>Delete</button>
-        </span>
-      )}
-    </div>
-  );
+  const noTable = !tableBox;
+  const noCell = !cell;
+  const t = tableBox ? boxAsTable(tableBox) : null;
+
+  const tableMenu = {
+    label: 'Table',
+    items: [
+      { label: 'Insert Table', action: () => window.dispatchEvent(new Event('nb-add-table-canvas')), disabled: !page },
+      { separator: true, label: '' },
+      { label: 'Insert Row Above', disabled: noCell, action: mutate((x) => tableInsertRow(x, cell!.ri)) },
+      { label: 'Insert Row Below', disabled: noCell, action: mutate((x) => tableInsertRow(x, cell!.ri + 1)) },
+      { label: 'Insert Column Left', disabled: noCell, action: mutate((x) => tableInsertCol(x, cell!.ci)) },
+      { label: 'Insert Column Right', disabled: noCell, action: mutate((x) => tableInsertCol(x, cell!.ci + 1)) },
+      { separator: true, label: '' },
+      { label: 'Delete Row', disabled: noCell, action: mutate((x) => tableDeleteRow(x, cell!.ri)) },
+      { label: 'Delete Column', disabled: noCell, action: mutate((x) => tableDeleteCol(x, cell!.ci)) },
+      { label: 'Delete Table', disabled: noTable, action: () => { if (tableBox) deleteBox(tableBox.id); } },
+      { separator: true, label: '' },
+      { label: t?.borderless ? '\u2713 Hide Borders' : 'Hide Borders', disabled: noTable, action: mutate((x) => ({ ...x, borderless: !x.borderless })) },
+      {
+        label: 'Shading', disabled: noTable,
+        children: [
+          ...SHADING_COLORS.map(([name, hex]) => ({
+            icon: <span className="fs-hl-chip" style={{ background: hex }} />,
+            label: t?.shading === hex ? `\u2713 ${name}` : name,
+            action: mutate((x) => ({ ...x, shading: hex })),
+          })),
+          { label: 'None', action: mutate((x) => ({ ...x, shading: undefined })) },
+        ],
+      },
+      {
+        label: 'Sort', disabled: noCell,
+        children: [
+          { label: 'A \u2192 Z (this column)', action: mutate((x) => tableSort(x, cell!.ci, 'asc')) },
+          { label: 'Z \u2192 A (this column)', action: mutate((x) => tableSort(x, cell!.ci, 'desc')) },
+        ],
+      },
+      {
+        label: 'Align Text', disabled: noTable,
+        children: (['left', 'center', 'right'] as const).map((a) => ({
+          label: (t?.align || 'left') === a ? `\u2713 ${a[0].toUpperCase()}${a.slice(1)}` : a[0].toUpperCase() + a.slice(1),
+          action: mutate((x) => ({ ...x, align: a })),
+        })),
+      },
+    ],
+  };
+
+  const noImg = !imageBox;
+  const pictureMenu = {
+    label: 'Picture',
+    items: [
+      { label: 'Insert Picture\u2026', disabled: !page, action: () => (document.getElementById('fs-nb-filepick') as HTMLInputElement | null)?.click() },
+      { separator: true, label: '' },
+      { label: imageBox?.borderW ? '\u2713 Picture Border' : 'Picture Border', disabled: noImg, action: () => writeImage({ borderW: imageBox?.borderW ? 0 : 2 }) },
+      {
+        label: 'Border Size', disabled: noImg,
+        children: [1, 2, 3, 4, 6].map((w) => ({
+          label: imageBox?.borderW === w ? `\u2713 ${w}px` : `${w}px`,
+          action: () => writeImage({ borderW: w }),
+        })),
+      },
+      {
+        label: 'Border Color', disabled: noImg,
+        children: BORDER_COLORS.map(([name, hex]) => ({
+          icon: <span className="fs-hl-chip" style={{ background: hex }} />,
+          label: (imageBox?.borderColor || '#000000') === hex ? `\u2713 ${name}` : name,
+          action: () => writeImage({ borderColor: hex, borderW: imageBox?.borderW || 2 }),
+        })),
+      },
+      { separator: true, label: '' },
+      { label: 'Rotate Right 90\u00B0', disabled: noImg, action: () => writeImage({ rotate: ((imageBox?.rotate || 0) + 90) % 360 }) },
+      { label: 'Rotate Left 90\u00B0', disabled: noImg, action: () => writeImage({ rotate: ((imageBox?.rotate || 0) + 270) % 360 }) },
+      { label: 'Reset Rotation', disabled: noImg || !imageBox?.rotate, action: () => writeImage({ rotate: 0 }) },
+      { separator: true, label: '' },
+      { label: 'Delete Picture', disabled: noImg, action: () => { if (imageBox) deleteBox(imageBox.id); } },
+    ],
+  };
+
+  return [tableMenu, pictureMenu];
 }

@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.12';
+export const APP_VERSION = '2.13';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.13',
+    date: '2026-07-15',
+    items: [
+      { title: 'Scrapbook menus in the menu bar', detail: 'The Scrapbook\'s controls moved from the toolbar to the menu bar: a divider and Scrapbook tag, then Table and Picture menus that only exist while the tool is open, plus Return to Editor. Table works like Word\'s — insert rows/columns above, below, left or right of the cell you\'re in, delete row/column/table, hide borders, shading, sort by column, alignment. Picture covers borders (on/off, size, color), rotation, and delete. Merge/Split Cells and cropping aren\'t faked — they need real cell-span and crop models and will come as their own features.', tags: ['New Feature', 'Tools'] },
+      { title: 'Click anywhere and just type', detail: 'No more "+ Text box" button: click any blank spot on a Scrapbook page and a caret appears there — your first keystroke creates the text box around it, and typing never skips a beat.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '2.12',
     date: '2026-07-15',

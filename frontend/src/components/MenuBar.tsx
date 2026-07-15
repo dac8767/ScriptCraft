@@ -61,6 +61,8 @@ import { getCurrentElementRule, getLockedFormatting } from '../utils/effectiveFo
 import { pluginRegistry } from '../plugins/registry';
 import AuthIndicator from './AuthIndicator';
 import { MENU_ICONS } from './uiIcons';
+import { useScrapbookMenus, closeNotebook } from './NotebookTool';
+import { FaTable, FaImage as FaImageIcon } from 'react-icons/fa';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { eventToCombo, COMMAND_BY_ID, formatCombo } from './shortcuts';
 import { useShortcutStore } from '../stores/shortcutStore';
@@ -1683,6 +1685,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // menus not in the saved order — e.g. added in later versions — keep their
   // natural position at the end of the ordered ones).
 
+  // v2.13: the Scrapbook's contextual menus (Table / Picture) — [] unless
+  // the Scrapbook is open. They render AFTER a divider + tag, never join
+  // orderedMenus, and can't be customized or hidden.
+  const scrapbookMenus = useScrapbookMenus() as unknown as MenuSection[];
+
   const visibleMenus = menus.filter((m) => m.label === 'File' || !menuBarHidden.includes(m.label));
   const orderIdxOf = (label: string) => {
     const i = menuBarOrder.indexOf(label);
@@ -1910,7 +1917,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
   // Find the active menu's items (search both main menus and help)
   const activeMenuData = activeMenu
-    ? menus.find(m => m.label === activeMenu) || (activeMenu === 'Help' ? helpMenu : null)
+    ? menus.find(m => m.label === activeMenu)
+      || scrapbookMenus.find(m => m.label === activeMenu)
+      || (activeMenu === 'Help' ? helpMenu : null)
     : null;
 
   // Close floating menu when clicking outside (but not on the dropdown portal or FAB)
@@ -1959,6 +1968,29 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           <span className="menu-label">{menu.label}</span>
         </div>
       ))}
+      {/* v2.13: the Scrapbook's contextual menus — divider, tag, then Table /
+          Picture (Word's model) and the way back. Only while it's open. */}
+      {scrapbookMenus.length > 0 && (<>
+        <span className="menu-scrapbook-sep" aria-hidden="true" />
+        <span className="menu-section-tag">Scrapbook</span>
+        {scrapbookMenus.map((menu) => (
+          <div
+            key={menu.label}
+            ref={(el) => { menuItemRefs.current[menu.label] = el; }}
+            className={`menu-item ${activeMenu === menu.label ? 'active' : ''}`}
+            onClick={() => handleMenuClick(menu.label)}
+            onMouseEnter={() => {
+              if (activeMenu && activeMenu !== menu.label) { setActiveMenu(menu.label); setOpenSubmenu(null); }
+            }}
+          >
+            <span className="menu-icon">{menu.label === 'Table' ? <FaTable /> : <FaImageIcon />}</span>
+            <span className="menu-label">{menu.label}</span>
+          </div>
+        ))}
+        <div className="menu-item menu-item-action" onClick={() => closeNotebook()}>
+          <span className="menu-label">Return to Editor</span>
+        </div>
+      </>)}
       {/* v0.97: back to the right of Help (reverted from the far left).
           Always rendered; cannot be hidden or disabled. */}
       <AuthIndicator />

@@ -16052,36 +16052,26 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .fs-nb-title::placeholder { color: var(--fd-text-muted); }
 .fs-nb-title-empty { flex: 0 0 auto; }
-/* v2.07: the Scrapbook's controls live in the MAIN toolbar, behind a
-   divider and a tag naming the tool — visibly not the user's own items. */
-.toolbar-scrapbook-section {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  /* v2.12: left-aligned after the Main items, with several spaces of air. */
-  margin-left: 28px;
-  padding-left: 12px;
-  border-left: 2px solid var(--fd-accent, #4a90d9);
+/* v2.13: the Scrapbook's contextual MENU BAR section — divider + tag, then
+   Table / Picture menus and Return to Editor. Only while the tool is open. */
+.menu-scrapbook-sep {
+  width: 2px;
+  height: 18px;
+  background: var(--fd-accent, #4a90d9);
+  border-radius: 1px;
+  margin: 0 10px 0 18px;
+  align-self: center;
 }
-.fs-nb-return-tb {
-  background: var(--fd-btn-bg) !important;
-  color: var(--fd-btn-text) !important;
-  font-weight: 600;
-}
-.toolbar-section-tag {
+.menu-section-tag {
   font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .06em;
   color: var(--fd-accent, #4a90d9);
-  margin-right: 4px;
+  align-self: center;
+  margin-right: 6px;
   user-select: none;
 }
-.toolbar-scrapbook-section .toolbar-btn.active {
-  border-color: var(--fd-accent);
-  color: var(--fd-accent);
-}
-.toolbar-scrapbook-section .toolbar-btn.fs-nb-danger { color: #e5534b; }
 .fs-nb-table { border-collapse: collapse; }
 .fs-nb-table td {
   position: relative;   /* the resize grips anchor to the cell */
@@ -16219,6 +16209,22 @@ input.fs-switch:checked::after { left: 15px; }
   cursor: grab;
   display: block;
 }
+/* v2.13: click-to-type — the parked caret before a text box exists. */
+.fs-nb-protocaret {
+  position: absolute;
+  min-width: 4px;
+  min-height: 18px;
+  max-width: 220px;
+  outline: none;
+  z-index: 2;
+  font-size: 12.5px;
+  color: var(--fd-text);
+  caret-color: var(--fd-accent, #4a90d9);
+}
+/* v2.13: Table menu > Hide Borders. The empty-table rule still wins so an
+   empty borderless table can't go invisible. */
+.fs-nb-table-borderless:not(.fs-nb-table-empty) .fs-nb-table td { border-color: transparent; }
+
 /* v2.12: on text boxes and tables the head FLOATS above the item — it must
    never push content down when it appears on hover. Solid background so it
    reads over the canvas grid. */

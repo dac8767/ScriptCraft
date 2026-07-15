@@ -25,7 +25,6 @@ import {
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
-import { ScrapbookToolbarSection } from './NotebookTool';
 import { useNotebookStore } from '../stores/notebookStore';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { commandDef } from './toolbarCommands';
@@ -1236,10 +1235,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           the chrome next to the bars. */}
       {leftTokens.map(renderToken)}
       {rightTokens.filter((t) => !bigZoneAllowed(t)).map(renderToken)}
-
-      {/* v2.12: the Scrapbook section sits left-aligned right after the
-          Main items, with a clear gap (Derek's placement). */}
-      <ScrapbookToolbarSection />
 
       {/* Spacer */}
       <div style={{ flex: 1 }} />

@@ -16,6 +16,9 @@ export interface NbTable {
   colWidths: number[];
   rowHeights: number[];
   align: 'left' | 'center' | 'right';
+  /** v2.13 (Table menu): hide the cell borders / fill the table. */
+  borderless?: boolean;
+  shading?: string;
 }
 export interface NbBox {
   id: string;
@@ -27,6 +30,12 @@ export interface NbBox {
   colWidths?: number[];
   rowHeights?: number[];
   align?: 'left' | 'center' | 'right';
+  borderless?: boolean;       // v2.13: table boxes (Table menu)
+  shading?: string;
+  /** v2.13 (Picture menu): image presentation. */
+  rotate?: number;            // degrees, clockwise
+  borderW?: number;           // px; unset/0 = no border
+  borderColor?: string;
 }
 export interface NotebookPage {
   id: string;
@@ -181,6 +190,11 @@ interface NotebookState {
    *  show the right section (text formatting / table controls). Session. */
   focusedBoxId: string | null;
   setFocusedBox: (id: string | null) => void;
+  /** v2.13: the table cell last focused — the Table menu's row/column
+   *  operations act relative to it (Word's model). Session; NOT cleared on
+   *  blur, since clicking the menu is itself a blur. */
+  focusedCell: { boxId: string; ri: number; ci: number } | null;
+  setFocusedCell: (cell: { boxId: string; ri: number; ci: number } | null) => void;
   addPage: () => string;
   deletePage: (id: string) => void;
   renamePage: (id: string, title: string) => void;
@@ -229,6 +243,8 @@ export const useNotebookStore = create<NotebookState>((set, get) => ({
   setNotebookOpen: (open) => set({ notebookOpen: open }),
   focusedBoxId: null,
   setFocusedBox: (id) => set({ focusedBoxId: id }),
+  focusedCell: null,
+  setFocusedCell: (cell) => set({ focusedCell: cell }),
 
   addPage: () => {
     const id = nbUid();
