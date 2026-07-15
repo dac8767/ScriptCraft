@@ -101,6 +101,7 @@ import {
   FaPaste,
   FaMousePointer,
   FaSearch,
+  FaTextHeight,
   FaHashtag,
   FaSpellCheck,
   FaSlidersH,
