@@ -13,19 +13,25 @@ import { centerCaretLine } from '../editor/extensions/TypewriterScroll';
 export default function TypewriterTool({ editor }: { editor: Editor | null }) {
   const typewriterEnabled = useEditorStore((s) => s.typewriterEnabled);
   const setTypewriterEnabled = useEditorStore((s) => s.setTypewriterEnabled);
+  const followCursor = useEditorStore((s) => s.typewriterFollowCursor);
+  const setFollowCursor = useEditorStore((s) => s.setTypewriterFollowCursor);
+
+  const snapToCenter = () => {
+    if (editor && !editor.isDestroyed) centerCaretLine(editor);
+  };
 
   const toggle = (on: boolean) => {
     setTypewriterEnabled(on);
     // Snap to center right away so the mode visibly takes effect.
-    if (on && editor && !editor.isDestroyed) centerCaretLine(editor);
+    if (on) snapToCenter();
   };
 
   return (
     <div className="fs-typewriter">
       <p className="fs-tool-intro">
         Typewriter mode keeps the line you're typing on fixed at the center of
-        the screen — the page scrolls, your eyes don't. Clicking elsewhere
-        still navigates normally; centering happens as you type.
+        the screen — the page scrolls, your eyes don't. Centering happens as
+        you type; clicking elsewhere still navigates normally.
       </p>
       <label className="fs-typewriter-toggle">
         <input
@@ -34,6 +40,19 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
           onChange={(e) => toggle(e.target.checked)}
         />
         <span>Enable Typewriter mode</span>
+      </label>
+      {/* v1.70: sub-option — recenter on any cursor move, not just typing. */}
+      <label className={`fs-typewriter-toggle fs-typewriter-sub${typewriterEnabled ? '' : ' disabled'}`}>
+        <input
+          type="checkbox"
+          disabled={!typewriterEnabled}
+          checked={followCursor}
+          onChange={(e) => {
+            setFollowCursor(e.target.checked);
+            if (e.target.checked) snapToCenter();
+          }}
+        />
+        <span>Also center when the cursor moves (clicks, arrow keys)</span>
       </label>
     </div>
   );

@@ -59,8 +59,16 @@ export const TypewriterScroll = Extension.create({
   name: 'typewriterScroll',
 
   onTransaction({ editor, transaction }) {
-    if (!transaction.docChanged) return;
-    if (!useEditorStore.getState().typewriterEnabled) return;
+    const store = useEditorStore.getState();
+    if (!store.typewriterEnabled) return;
+    // Typing always recenters. With follow-cursor on (v1.70), so does any
+    // caret MOVE (click, arrow keys) — but never while a RANGE is being
+    // selected: recentering mid-drag would move the text under the mouse
+    // and mangle the selection.
+    const follow = store.typewriterFollowCursor
+      && transaction.selectionSet
+      && editor.state.selection.empty;
+    if (!transaction.docChanged && !follow) return;
     // After the DOM has painted the new content, so the caret coords are real.
     requestAnimationFrame(() => centerCaretLine(editor));
   },

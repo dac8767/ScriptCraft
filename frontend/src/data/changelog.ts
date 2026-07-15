@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '1.69';
+export const APP_VERSION = '1.70';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.70',
+    date: '2026-07-15',
+    items: [
+      { title: 'Typewriter can follow the cursor', detail: 'New sub-option in the Typewriter window: recenter whenever the cursor moves — clicks and arrow keys, not just typing. Off by default; selecting a range never recenters (the text would slide out from under the mouse mid-drag).', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '1.69',
     date: '2026-07-15',

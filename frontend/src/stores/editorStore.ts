@@ -10,6 +10,7 @@ interface ViewState {
   navigatorOpen?: boolean;
   showUnreleasedTools?: boolean;
   typewriterEnabled?: boolean;
+  typewriterFollowCursor?: boolean;
   indexCardsOpen?: boolean;
   beatBoardOpen?: boolean;
   shelfOpen?: boolean;
@@ -841,6 +842,10 @@ interface EditorState {
   /** v1.68: Typewriter mode — auto-scroll keeps the active line centered. */
   typewriterEnabled: boolean;
   setTypewriterEnabled: (v: boolean) => void;
+  /** v1.70: also recenter when the cursor MOVES (clicks, arrow keys), not
+   *  just when typing. Sub-option — only applies while typewriterEnabled. */
+  typewriterFollowCursor: boolean;
+  setTypewriterFollowCursor: (v: boolean) => void;
   preferencesRequest: { open: boolean; tab?: 'saveloc' };
   openPreferences: (tab?: 'saveloc') => void;
   closePreferences: () => void;
@@ -1366,6 +1371,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setTypewriterEnabled: (v) => {
     saveViewState({ typewriterEnabled: v });
     set({ typewriterEnabled: v });
+  },
+  typewriterFollowCursor: (_vs.typewriterFollowCursor as boolean) ?? false,
+  setTypewriterFollowCursor: (v) => {
+    saveViewState({ typewriterFollowCursor: v });
+    set({ typewriterFollowCursor: v });
   },
   preferencesRequest: { open: false },
   openPreferences: (tab) => set({ preferencesRequest: { open: true, tab } }),

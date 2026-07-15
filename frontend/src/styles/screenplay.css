@@ -12700,12 +12700,20 @@ html.android .version-history-panel {
   min-height: 0;
 }
 .fs-typewriter-toggle {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
   font-size: 13px;
   color: var(--fd-text);
   cursor: pointer;
+}
+.fs-typewriter-sub {
+  margin: 8px 0 0 22px;
+  font-size: 12px;
+}
+.fs-typewriter-sub.disabled {
+  color: var(--fd-text-muted);
+  cursor: default;
 }
 
 /* ── Vomit Draft tool (v1.62) ── */
