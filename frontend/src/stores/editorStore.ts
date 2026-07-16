@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
+import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
 import { uuid } from '../utils/uuid';
 import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { findLanguage, urlsFor } from '../editor/languageCatalog';
@@ -25,6 +25,7 @@ interface ViewState {
   outlineBarRows?: OutlineBarRow[];
   outlineBarLabels?: boolean;
   beatColorAllTabs?: boolean;
+  uiResizeLocked?: boolean;
   highlightColor?: string;
   indexCardsOpen?: boolean;
   beatBoardOpen?: boolean;
@@ -131,6 +132,15 @@ try {
   if (_vs.toolbarZonesSet && !localStorage.getItem(TOGGLES_FLAG)) {
     localStorage.setItem(TOGGLES_FLAG, '1');
     _tbZones = { left: migratePanelToggles(_tbZones.left), right: _tbZones.right };
+    saveViewState({ toolbarLeft: _tbZones.left });
+  }
+} catch { /* storage unavailable — keep what we have */ }
+// v2.55 one-time: saved layouts get the sizing-lock button appended to Main.
+try {
+  const LOCK_FLAG = 'opendraft:toolbarLockResize255';
+  if (_vs.toolbarZonesSet && !localStorage.getItem(LOCK_FLAG)) {
+    localStorage.setItem(LOCK_FLAG, '1');
+    _tbZones = { left: migrateLockResize(_tbZones.left), right: _tbZones.right };
     saveViewState({ toolbarLeft: _tbZones.left });
   }
 } catch { /* storage unavailable — keep what we have */ }
@@ -1029,6 +1039,13 @@ interface EditorState {
    *  with the beat's color everywhere; OFF falls back to a thin edge stripe. */
   beatColorAllTabs: boolean;
   setBeatColorAllTabs: (v: boolean) => void;
+  /** v2.55, Derek: one lock freezes every chrome resize — panel edges, the
+   *  bar strips, the outline bar edge, the spacing grips. */
+  uiResizeLocked: boolean;
+  setUiResizeLocked: (v: boolean) => void;
+  /** v2.55: View > Reset All Sizes & Spacing — the same defaults the
+   *  per-surface Customize reset buttons apply, all at once. */
+  resetChromeSizes: () => void;
   /** v1.80: Navigator filter + kind visibility live in the store so the
    *  window's header (dropdown) and footer (filter field) — which render in
    *  the shared window chrome — stay in sync with the list body. */
@@ -1690,6 +1707,23 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setBeatColorAllTabs: (v) => {
     saveViewState({ beatColorAllTabs: v });
     set({ beatColorAllTabs: v });
+  },
+  uiResizeLocked: (_vs.uiResizeLocked as boolean) ?? false,
+  setUiResizeLocked: (v) => {
+    saveViewState({ uiResizeLocked: v });
+    set({ uiResizeLocked: v });
+  },
+  resetChromeSizes: () => {
+    const st = get();
+    st.setMenuMode('compact');
+    st.setToolbarMode('compact');
+    st.setChromeGap('menu', 0);
+    st.setChromeGap('toolbar', 2);
+    st.setChromeGap('bigbtn', 0);
+    st.setChromeGap('scrapbook', 12);
+    st.setPanelSizeMode('left', 'comfortable');
+    st.setPanelSizeMode('right', 'comfortable');
+    st.setOutlineBarRowScale(1);
   },
   navFilter: '',
   setNavFilter: (v) => set({ navFilter: v }),

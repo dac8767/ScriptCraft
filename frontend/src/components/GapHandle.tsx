@@ -11,7 +11,11 @@ import { useEditorStore } from '../stores/editorStore';
 
 const GapHandle: React.FC<{ bar: 'menu' | 'toolbar' | 'bigbtn' }> = ({ bar }) => {
   const setChromeGap = useEditorStore((s) => s.setChromeGap);
+  const locked = useEditorStore((s) => s.uiResizeLocked);
   const drag = useRef<{ x: number; gap: number; gaps: number } | null>(null);
+
+  // v2.55: the sizing lock hides every grip — no dead controls.
+  if (locked) return null;
 
   return (
     <span

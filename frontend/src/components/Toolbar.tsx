@@ -92,6 +92,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     setEditingTagId,
     toolbarMode, chromeCustomPx, chromeGapPx,
     navigatorOpen, shelfOpen, outlineBarOpen,
+    uiResizeLocked,
   } = useEditorStore();
 
   // v2.07: while the Scrapbook is open, the toolbar's own formatting buttons
@@ -1136,6 +1137,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           title={outlineBarOpen ? 'Hide the Outline Bar' : 'Show the Outline Bar'}
           onClick={() => useEditorStore.getState().setOutlineBarOpen(!outlineBarOpen)}
         >{TOOLBAR_ICONS.toggleOutlineBar}</button>
+      );
+      /* v2.55, Derek: freeze/unfreeze every chrome resize — panels, bars,
+         outline bar, spacing grips. Lit + closed padlock while locked. */
+      case 'lockResize': return (
+        <button
+          className={`toolbar-btn${uiResizeLocked ? ' active' : ''}`}
+          title={uiResizeLocked ? 'Sizing is locked — click to unlock' : 'Lock all sizing and spacing'}
+          onClick={() => useEditorStore.getState().setUiResizeLocked(!uiResizeLocked)}
+        >{uiResizeLocked ? TOOLBAR_ICONS.lockResize : TOOLBAR_ICONS.lockResizeOpen}</button>
       );
       case 'view': return (
         <>

@@ -229,6 +229,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     toggleNavigator,
     shelfOpen,
     toggleShelf,
+    uiResizeLocked,
     zoomLevel,
     setZoomLevel,
     navPanelWidth,
@@ -1343,6 +1344,19 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           action: () => toggleShelf(),
         },
         { separator: true, label: '' },
+        // v2.55, Derek: freeze every chrome resize; and one way back to the
+        // default sizes \u2014 the same defaults Customize's per-surface resets use.
+        {
+          icon: <FaLock />,
+          label: uiResizeLocked ? '\u2713 Lock All Sizing & Spacing' : 'Lock All Sizing & Spacing',
+          action: () => useEditorStore.getState().setUiResizeLocked(!uiResizeLocked),
+        },
+        {
+          icon: <FaUndo />,
+          label: 'Reset All Sizes & Spacing',
+          action: () => useEditorStore.getState().resetChromeSizes(),
+        },
+        { separator: true, label: '' },
         {
           /**
            * v1.4 — everything you can put IN the script that isn't part of the
@@ -1997,10 +2011,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {/* v2.35, Derek: grab this line to slide the whole Scrapbook menu
             group left or right (the offset persists). */}
         <span
-          className="menu-scrapbook-sep menu-scrapbook-sep-drag"
+          className={`menu-scrapbook-sep${uiResizeLocked ? '' : ' menu-scrapbook-sep-drag'}`}
           style={{ marginLeft: chromeGapPx.scrapbook }}
-          title="Drag to move the Scrapbook menus"
+          title={uiResizeLocked ? undefined : 'Drag to move the Scrapbook menus'}
           onPointerDown={(e) => {
+            // v2.55: the sizing lock freezes this slide too.
+            if (useEditorStore.getState().uiResizeLocked) return;
             e.preventDefault();
             (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
             scrapbookSepDrag.current = { x: e.clientX, offset: chromeGapPx.scrapbook };

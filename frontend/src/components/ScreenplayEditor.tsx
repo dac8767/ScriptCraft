@@ -2253,6 +2253,9 @@ const ScreenplayEditor: React.FC = () => {
   // render-time only, outlineBarOpen itself is never rewritten.
   const scrapbookDeclutter = useSettingsStore((st) => st.scrapbookExclusive);
   const outlineBarShown = outlineBarOpen && !(notebookOpen && scrapbookDeclutter);
+  // v2.55: the sizing lock hides the resize strips. Subscribed HERE, top
+  // level — never inside a short-circuited JSX expression (rules of hooks).
+  const uiResizeLocked = useEditorStore((st) => st.uiResizeLocked);
 
   // v1.77: how faint "Dim unfocused text" goes — the decorations read the var.
   const typewriterDimOpacity = useEditorStore((st) => st.typewriterDimOpacity);
@@ -4038,16 +4041,19 @@ const ScreenplayEditor: React.FC = () => {
         </div>
         <BigButtonBar />
       </div>
-      {/* v2.31: this line scales the menu bar + toolbar together… */}
-      <div
-        className="fs-top-chrome-resize"
-        title="Drag to resize the menu bar and toolbar together"
-        onPointerDown={startBarsResize}
-      />
+      {/* v2.31: this line scales the menu bar + toolbar together…
+          v2.55: the sizing lock removes both strips — no dead controls. */}
+      {!uiResizeLocked && (
+        <div
+          className="fs-top-chrome-resize"
+          title="Drag to resize the menu bar and toolbar together"
+          onPointerDown={startBarsResize}
+        />
+      )}
       {/* v1.75: Outline Bar — FD-style outline lanes directly under the toolbar. */}
       {outlineBarShown && <OutlineBar editor={editor} />}
       {/* …and the bottom-most edge scales the outline bar's rows alone. */}
-      {outlineBarShown && (
+      {outlineBarShown && !uiResizeLocked && (
         <div
           className="fs-top-chrome-resize"
           title="Drag to resize the outline bar"

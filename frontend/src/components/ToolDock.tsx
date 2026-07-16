@@ -442,7 +442,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   const activeId = side === 'left' ? activeTool : activeToolRight;
   const setActive = side === 'left' ? setActiveTool : setActiveToolRight;
   const active = tools.find((t) => t.id === activeId) || null;
-  const { toolSizes, setToolSize, panelSizeMode, chromeCustomPx, setChromeCustomPx, setPanelSizeMode } = useEditorStore();
+  const { toolSizes, setToolSize, panelSizeMode, chromeCustomPx, setChromeCustomPx, setPanelSizeMode, uiResizeLocked } = useEditorStore();
   const dockW = dockWidthFor(side, panelSizeMode[side], chromeCustomPx[side === 'left' ? 'panelLeft' : 'panelRight']);
   // v0.66: by DEFAULT every window opens INSIDE its side panel (inline),
   // pushing the dock's remaining items down — so nothing floats over the
@@ -567,11 +567,14 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
 
   return (
     <div className={`tool-dock-wrap tool-dock-${side} tool-dock-${panelSizeMode[side]}`}>
-      <div
-        className={`tool-dock-edge tool-dock-edge-${side}`}
-        onPointerDown={startEdgeResize}
-        title="Drag to resize the panel"
-      />
+      {/* v2.55: the sizing lock removes the grab edge — no dead controls. */}
+      {!uiResizeLocked && (
+        <div
+          className={`tool-dock-edge tool-dock-edge-${side}`}
+          onPointerDown={startEdgeResize}
+          title="Drag to resize the panel"
+        />
+      )}
       <div className={`tool-dock${iconsMode ? ' tool-dock-iconrail' : ''}${solo ? ' tool-dock-scrapbook-solo' : ''}`} style={{ width: dockW }}>
         {/* v2.06: icon rail — a square per tool (OneNote-style). Clicking
             opens the tool as a floating window; there is no inline state. */}

@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.54';
+export const APP_VERSION = '2.55';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.55',
+    date: '2026-07-16',
+    items: [
+      { title: 'Sizing lock', detail: 'A padlock button on the toolbar (and View > Lock All Sizing & Spacing) freezes every chrome resize: the side panel edges, the menu bar/toolbar strip, the outline bar\'s edge, the spacing grips and the Scrapbook menu slide all disappear until you unlock.', tags: ['New Feature', 'UI'] },
+      { title: 'View > Reset All Sizes & Spacing', detail: 'One click returns the menu bar, toolbar, side panels, outline bar height and every item-spacing gap to their defaults — the same defaults Customize\'s per-surface reset buttons apply.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '2.54',
     date: '2026-07-16',

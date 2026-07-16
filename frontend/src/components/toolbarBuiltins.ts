@@ -73,6 +73,8 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'togglePanelLeft', label: 'Left Panel' },
   { key: 'togglePanelRight', label: 'Right Panel' },
   { key: 'toggleOutlineBar', label: 'Outline Bar' },
+  // v2.55, Derek: freeze every chrome resize (panels, bars, grips).
+  { key: 'lockResize', label: 'Lock Sizing' },
   // v2.02: Customize is a toolbar ITEM again — the anchor of the Big Button
   // section (the old right zone, reborn). Permanent: reorderable within the
   // section, never hidden or lost.
@@ -102,7 +104,7 @@ export const DEFAULT_TOOLBAR_LEFT: string[] = [
   'b:alignLeft', 'b:alignCenter', 'b:alignRight', 'b:alignJustify', 'd:def-align',
   'b:find', 'b:goto', 'd:def-nav',
   'b:zoom', 'b:view', 'd:def-surfaces',
-  'b:togglePanelLeft', 'b:togglePanelRight', 'b:toggleOutlineBar',
+  'b:togglePanelLeft', 'b:togglePanelRight', 'b:toggleOutlineBar', 'b:lockResize',
 ];
 
 /** v2.34 one-time: existing saved layouts get the three surface toggles
@@ -111,6 +113,12 @@ export function migratePanelToggles(left: string[]): string[] {
   const toggles = ['b:togglePanelLeft', 'b:togglePanelRight', 'b:toggleOutlineBar'];
   if (toggles.some((t) => left.includes(t))) return left;
   return [...left, 'd:def-surfaces', ...toggles];
+}
+
+/** v2.55 one-time: existing saved layouts get the sizing lock appended. */
+export function migrateLockResize(left: string[]): string[] {
+  if (left.includes('b:lockResize')) return left;
+  return [...left, 'b:lockResize'];
 }
 
 export const DEFAULT_TOOLBAR_RIGHT: string[] = ['customize'].map((k) => `b:${k}`);
