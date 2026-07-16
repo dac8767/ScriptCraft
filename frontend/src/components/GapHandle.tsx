@@ -11,7 +11,7 @@ import { useEditorStore } from '../stores/editorStore';
 
 const GapHandle: React.FC<{ bar: 'menu' | 'toolbar' | 'bigbtn' }> = ({ bar }) => {
   const setChromeGap = useEditorStore((s) => s.setChromeGap);
-  const drag = useRef<{ x: number; gap: number } | null>(null);
+  const drag = useRef<{ x: number; gap: number; gaps: number } | null>(null);
 
   return (
     <span
@@ -19,14 +19,24 @@ const GapHandle: React.FC<{ bar: 'menu' | 'toolbar' | 'bigbtn' }> = ({ bar }) =>
       title="Drag to adjust the spacing between items"
       onPointerDown={(e) => {
         e.preventDefault(); e.stopPropagation();
-        (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-        drag.current = { x: e.clientX, gap: useEditorStore.getState().chromeGapPx[bar] };
+        const el = e.currentTarget as HTMLElement;
+        el.setPointerCapture?.(e.pointerId);
+        // v2.40, Derek: the grip must track the mouse 1:1. Each pixel of
+        // gap moves the grip by ONE PIXEL PER GAP between it and the bar's
+        // edge, so divide the mouse delta by how many gaps it rides on.
+        let gaps = 1;
+        const parent = el.parentElement;
+        if (parent) {
+          const kids = Array.from(parent.children);
+          const idx = kids.indexOf(el);
+          gaps = Math.max(1, Math.max(idx, kids.length - 1 - idx));
+        }
+        drag.current = { x: e.clientX, gap: useEditorStore.getState().chromeGapPx[bar], gaps };
       }}
       onPointerMove={(e) => {
         const d = drag.current;
         if (!d) return;
-        // 4px of mouse per 1px of gap — fine-grained control.
-        setChromeGap(bar, d.gap + (e.clientX - d.x) / 4);
+        setChromeGap(bar, d.gap + (e.clientX - d.x) / d.gaps);
       }}
       onPointerUp={() => { drag.current = null; }}
     >

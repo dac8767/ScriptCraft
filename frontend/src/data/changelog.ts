@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.39';
+export const APP_VERSION = '2.40';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.40',
+    date: '2026-07-16',
+    items: [
+      { title: 'Spacing grips track the mouse 1:1', detail: 'Dragging a grip stretched the bar faster than the mouse moved — each pixel of spacing multiplies across every item before the grip. The drag now divides by that count, so the grip stays under your cursor.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '2.39',
     date: '2026-07-16',
