@@ -469,6 +469,15 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             ['--ob-ruler-h' as string]: `${Math.round(16 * rowScale)}px`,
           }}
         >
+          {/* v2.32, Derek: the ruler rides on TOP, above the sections. */}
+          <div className="fs-ob-ruler">
+            {pages.map((p) => (
+              <span key={p} className="fs-ob-tick" style={{ left: pctLeft(p), width: pctWidth(1) }}>
+                {(p === 1 || p % labelEvery === 0) && <span className="fs-ob-tick-label">{p}</span>}
+              </span>
+            ))}
+          </div>
+
           {/* Row 1: acts / sections — sequential page budgets */}
           <div className="fs-ob-lane fs-ob-acts">
             <span className="fs-ob-lane-label">Acts</span>
@@ -537,15 +546,6 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
                 </div>
               );
             })}
-          </div>
-
-          {/* Ruler: pages 1..total */}
-          <div className="fs-ob-ruler">
-            {pages.map((p) => (
-              <span key={p} className="fs-ob-tick" style={{ left: pctLeft(p), width: pctWidth(1) }}>
-                {(p === 1 || p % labelEvery === 0) && <span className="fs-ob-tick-label">{p}</span>}
-              </span>
-            ))}
           </div>
 
           {/* Row 3: the actual script, one block per scene heading */}

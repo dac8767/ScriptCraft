@@ -59,9 +59,8 @@ import { applyScriptFormat } from '../utils/applyScriptFormat';
 import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
 import { getCurrentElementRule, getLockedFormatting } from '../utils/effectiveFormatting';
 import { pluginRegistry } from '../plugins/registry';
-import AuthIndicator from './AuthIndicator';
 import { MENU_ICONS } from './uiIcons';
-import { useScrapbookMenus, closeNotebook } from './NotebookTool';
+import { useScrapbookMenus } from './NotebookTool';
 import { FaTable, FaImage as FaImageIcon } from 'react-icons/fa';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import GapHandle from './GapHandle';
@@ -1542,9 +1541,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         // item opens the dockable window (which now has the full feature set);
         // the rest is the extensive submenu it always had.
         {
-          icon: <FaSpellCheck />, label: 'Spelling & Grammar',
+          icon: <FaSpellCheck />, label: 'Spell Check',
           children: [
-            { icon: <FaSpellCheck />, label: 'Spelling & Grammar Panel', action: () => useEditorStore.getState().openTool('spelling') },
+            { icon: <FaSpellCheck />, label: 'Spell Check Panel', action: () => useEditorStore.getState().openTool('spelling') },
             { separator: true, label: '' },
             { icon: <FaSpellCheck />, label: spellCheckEnabled ? '✓ Auto Spell Check' : 'Auto Spell Check', action: toggleSpellCheck },
             { icon: <FaSpellCheck />, label: 'Spell Check…', shortcut: 'F7', action: () => setSpellModalOpen(true) },
@@ -2007,13 +2006,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             <span className="menu-label">{menu.label}</span>
           </div>
         ))}
-        <div className="menu-item menu-item-action" onClick={() => closeNotebook()}>
-          <span className="menu-label">Return to Editor</span>
-        </div>
       </>)}
-      {/* v0.97: back to the right of Help (reverted from the far left).
-          Always rendered; cannot be hidden or disabled. */}
-      <AuthIndicator />
+      {/* v2.32, Derek: the spacing grip sits right after the LAST menu item —
+          Help usually, the Scrapbook menus when they're open. ("Return to
+          Editor" went back to the Scrapbook surface's corner.) */}
+      <GapHandle bar="menu" />
       <div className="menu-spacer" />
     </>
   );
@@ -2076,8 +2073,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         ref={menuRef}
       >
         {renderMenuItems()}
-        {/* v2.29: faint grip at the right end — drag to adjust item spacing */}
-        <GapHandle bar="menu" />
       </div>
     )}
     {activeMenuData && createPortal(

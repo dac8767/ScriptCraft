@@ -6,6 +6,7 @@ import { computeSceneTiming, formatRuntime } from '../utils/scriptTiming';
 import { computeOverviewStats } from '../utils/scriptStatistics';
 import { useGoalProgress } from './GoalsTool';
 import { computeScriptStructure } from '../utils/scriptStructure';
+import AuthIndicator from './AuthIndicator';
 
 const SAVE_STATUS_DISPLAY: Record<string, { label: string; className: string }> = {
   idle: { label: '', className: '' },
@@ -158,6 +159,9 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
         <span className="status-item status-page">
           Page {currentPage} of {pageCount}
         </span>
+        {/* v2.32, Derek: the Local only / account chip lives down here now,
+            not in the menu bar. */}
+        <AuthIndicator />
       </div>
     </div>
   );

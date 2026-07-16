@@ -697,6 +697,11 @@ export function NotebookSurface() {
         ) : (
           <span className="fs-nb-title fs-nb-title-empty">Scrapbook</span>
         )}
+        {/* v2.32, Derek: back in the surface's top-right corner, with its
+            background color (it left for the menu bar in v2.13). */}
+        <button className="fs-nb-return" onClick={() => closeNotebook()}>
+          Return to Editor
+        </button>
       </div>
       {page ? (
         <CanvasSurface key={page.id} boxes={page.boxes} onChangeBoxes={(boxes) => updatePage(page.id, { boxes })} />

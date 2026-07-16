@@ -141,7 +141,9 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
     if (editor) {
       editor.state.doc.descendants((node, pos) => {
         if (node.type.name === 'sceneHeading') {
-          out.push({ kind: 'scene', text: node.textContent || '(untitled scene)', pos });
+          // v2.32: the editor RENDERS headings uppercase via CSS whatever the
+          // typed case — the Navigator must match what the page shows.
+          out.push({ kind: 'scene', text: (node.textContent || '(untitled scene)').toUpperCase(), pos });
         } else if (node.type.name === 'newAct' || node.type.name === 'endOfAct') {
           out.push({ kind: 'act', text: node.textContent || '(act)', pos });
         } else if (node.type.name === 'general') {

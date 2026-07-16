@@ -16639,3 +16639,33 @@ input.fs-switch:checked::after { left: 15px; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ─── v2.32 polish batch ─── */
+/* Derek: the text box must not poke past its head bar — same outer width,
+   square top corners tucked under the bar, rounded ONLY at the bottom
+   (that's what tells it apart from a table). */
+.fs-nb-box { border-radius: 0 0 8px 8px; }
+.fs-nb-box .fs-nb-box-body {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  border-radius: 0 0 8px 8px;
+}
+/* "Return to Editor" back in the surface's top-right corner, with its
+   background color. */
+.fs-nb-takeover-head { display: flex; align-items: center; gap: 10px; }
+.fs-nb-return {
+  margin-left: auto;
+  padding: 5px 14px;
+  border: none;
+  border-radius: 6px;
+  background: var(--fd-accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fs-nb-return:hover { filter: brightness(1.1); }
+/* Freeform beat cards: the pages field must never poke out of the card. */
+.beat-card-top { min-width: 0; flex-wrap: nowrap; overflow: hidden; }
+.beat-card-top .beat-card-pages { flex: 0 0 auto; white-space: nowrap; }

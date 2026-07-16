@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.31';
+export const APP_VERSION = '2.32';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.32',
+    date: '2026-07-16',
+    items: [
+      { title: 'A round of small fixes', detail: 'Scrapbook text boxes line up exactly with their drag bar (bottom corners stay rounded — that\'s how you tell them from tables). "Return to Editor" is back in the Scrapbook\'s top-right corner with its background color. The "Local only" chip moved from the menu bar to the status bar. The menu bar\'s spacing grip sits right after the last menu (after the Scrapbook menus when they\'re open). The outline bar\'s ruler moved to the top, above the sections. Freeform beat cards no longer let the "pages" field poke outside the card. The Navigator shows scene headings in caps, matching the page. "Spelling & Grammar" is now called "Spell Check".', tags: ['Fix', 'Polish'] },
+    ],
+  },
   {
     version: '2.31',
     date: '2026-07-16',
