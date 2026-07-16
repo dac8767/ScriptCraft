@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.81';
+export const APP_VERSION = '2.82';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.82',
+    date: '2026-07-16',
+    items: [
+      { title: 'Customize > Outline Bar: Show/Hide toggle', detail: 'The bar\'s visibility can now be flipped from its own Customize tab — the same switch the View menu and toolbar button drive.', tags: ['UI'] },
+    ],
+  },
   {
     version: '2.81',
     date: '2026-07-16',

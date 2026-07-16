@@ -62,6 +62,10 @@ function OutlineBarTab() {
   const setRows = useEditorStore((s) => s.setOutlineBarRows);
   const labels = useEditorStore((s) => s.outlineBarLabels);
   const setLabels = useEditorStore((s) => s.setOutlineBarLabels);
+  // v2.82, Derek: show/hide the bar from HERE too — the same outlineBarOpen
+  // the View menu and toolbar toggle drive (one setter, no rival state).
+  const barOpen = useEditorStore((s) => s.outlineBarOpen);
+  const setBarOpen = useEditorStore((s) => s.setOutlineBarOpen);
 
   const move = (i: number, d: -1 | 1) => {
     const j = i + d;
@@ -77,6 +81,14 @@ function OutlineBarTab() {
 
   return (
     <section>
+      <h3>Outline Bar</h3>
+      <div className="fs-customize-row fs-size-row">
+        <span className="fs-customize-tool">Outline Bar</span>
+        <span className="fs-customize-seg">
+          <button className={barOpen ? 'active' : ''} onClick={() => setBarOpen(true)}>Show</button>
+          <button className={!barOpen ? 'active' : ''} onClick={() => setBarOpen(false)}>Hide</button>
+        </span>
+      </div>
       <h3>Outline Bar Rows</h3>
       <p className="fs-customize-hint">
         Reorder with the arrows; set a height in pixels (blank = default);
