@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.29';
+export const APP_VERSION = '2.30';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.30',
+    date: '2026-07-16',
+    items: [
+      { title: 'Outline variations — tabs, like a browser', detail: 'The Outline window has tabs. Every tab is its own arrangement of sections, but all tabs share ONE pool of beats: organize the same beats into 3-Act on one tab, Story Circle on another, something custom on a third. The ◉ on a tab picks which variation the Outline Bar shows. New tabs start empty with every beat waiting in Uncategorized; closing a tab never deletes a beat. Tabs save with the script.', tags: ['New Feature', 'Tools'] },
+      { title: 'The Outline Bar shows every beat, automatically', detail: 'No more Place… — if a beat is in the outline, it\'s on the bar, packed under its section in board order, each spanning its page estimate. Drag a beat to move it between sections (the board follows), drag its right edge to change its page span, right-click to type it. Beats not yet in a section line up after the last one.', tags: ['Tools', 'Fix'] },
+    ],
+  },
   {
     version: '2.29',
     date: '2026-07-16',

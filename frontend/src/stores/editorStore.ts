@@ -758,6 +758,13 @@ export interface BeatColumn {
   targetPages?: number;
 }
 
+/** v2.30: a non-viewed outline tab's parked data — its sections plus each
+ *  beat's section/order in that tab. Beats themselves are SHARED. */
+export interface OutlineTabData {
+  columns: BeatColumn[];
+  beatSlots: Record<string, { columnId: string; position: number }>;
+}
+
 export interface BeatLinkPreview {
   url: string;
   title: string;
@@ -1046,6 +1053,31 @@ interface EditorState {
   setBeatArrangeMode: (mode: BeatArrangeMode) => void;
   beatColumns: BeatColumn[];
   setBeatColumns: (columns: BeatColumn[]) => void;
+
+  /* v2.30: OUTLINE VARIATIONS — browser-style tabs on the Outline window.
+     ONE pool of beats is shared by every tab; each tab has its own sections
+     and its own beat→section assignment/order. The VIEWED tab's sections and
+     assignments live in beatColumns / beats.columnId+position (so every
+     existing consumer keeps one source of truth); every other tab's are
+     parked in outlineStash. The bar shows the tab picked as outlineBarTab. */
+  outlineTabs: Array<{ id: string; name: string }>;
+  viewedOutlineTab: string;
+  outlineBarTab: string;
+  outlineStash: Record<string, OutlineTabData>;
+  addOutlineTab: () => string;
+  switchOutlineTab: (id: string) => void;
+  renameOutlineTab: (id: string, name: string) => void;
+  deleteOutlineTab: (id: string) => void;
+  setOutlineBarTab: (id: string) => void;
+  /** Reset to a single empty tab — new script / import. */
+  resetOutlineTabs: () => void;
+  /** Restore persisted tab state on script load. */
+  loadOutlineTabs: (tabs: Array<{ id: string; name: string }>, viewed: string, bar: string, stash: Record<string, OutlineTabData>) => void;
+  /* Bar-routed edits: the bar edits ITS tab, which may not be the viewed one. */
+  barUpdateColumn: (id: string, updates: Partial<{ title: string; targetPages: number }>) => void;
+  barAddColumn: (title: string) => string;
+  /** Move a beat into a section of the bar's tab at the given index. */
+  barAssignBeat: (beatId: string, columnId: string, index: number) => void;
   addBeatColumn: (title: string, targetPages?: number) => string;
   updateBeatColumn: (id: string, updates: Partial<{ title: string; position: number; width: number; targetPages: number }>) => void;
   deleteBeatColumn: (id: string) => void;
@@ -1777,6 +1809,156 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setBeatArrangeMode: (mode) => set({ beatArrangeMode: mode }),
   beatColumns: [],
   setBeatColumns: (columns) => set({ beatColumns: columns }),
+
+  /* v2.30: outline variation tabs. */
+  outlineTabs: [{ id: 'tab-1', name: 'Outline 1' }],
+  viewedOutlineTab: 'tab-1',
+  outlineBarTab: 'tab-1',
+  outlineStash: {},
+  addOutlineTab: () => {
+    const id = uuid();
+    set((s) => {
+      // Park the viewed tab's data, open the new tab EMPTY: every shared
+      // beat lands in Uncategorized until it's dragged into a section.
+      const slots: Record<string, { columnId: string; position: number }> = {};
+      for (const b of s.beats) slots[b.id] = { columnId: b.columnId, position: b.position };
+      return {
+        outlineTabs: [...s.outlineTabs, { id, name: `Outline ${s.outlineTabs.length + 1}` }],
+        outlineStash: { ...s.outlineStash, [s.viewedOutlineTab]: { columns: s.beatColumns, beatSlots: slots } },
+        viewedOutlineTab: id,
+        beatColumns: [],
+      };
+    });
+    return id;
+  },
+  switchOutlineTab: (id) => set((s) => {
+    if (id === s.viewedOutlineTab || !s.outlineTabs.some((t) => t.id === id)) return {};
+    const slots: Record<string, { columnId: string; position: number }> = {};
+    for (const b of s.beats) slots[b.id] = { columnId: b.columnId, position: b.position };
+    const stash = { ...s.outlineStash, [s.viewedOutlineTab]: { columns: s.beatColumns, beatSlots: slots } };
+    const target = stash[id] ?? { columns: [], beatSlots: {} };
+    delete stash[id];
+    // Beats without a slot in the target tab keep their columnId — it won't
+    // match any of the target's sections, so they show as Uncategorized.
+    const beats = s.beats.map((b) => {
+      const slot = target.beatSlots[b.id];
+      return slot ? { ...b, columnId: slot.columnId, position: slot.position } : b;
+    });
+    return { viewedOutlineTab: id, outlineStash: stash, beatColumns: target.columns, beats };
+  }),
+  renameOutlineTab: (id, name) => set((s) => ({
+    outlineTabs: s.outlineTabs.map((t) => (t.id === id ? { ...t, name: name.trim() || t.name } : t)),
+  })),
+  deleteOutlineTab: (id) => set((s) => {
+    if (s.outlineTabs.length <= 1) return {};
+    const remaining = s.outlineTabs.filter((t) => t.id !== id);
+    let { viewedOutlineTab, beatColumns, beats, outlineStash } = s;
+    if (id === s.viewedOutlineTab) {
+      // Load the nearest remaining tab; the deleted tab's data just drops.
+      const next = remaining[Math.max(0, s.outlineTabs.findIndex((t) => t.id === id) - 1)];
+      const stash = { ...outlineStash };
+      const target = stash[next.id] ?? { columns: [], beatSlots: {} };
+      delete stash[next.id];
+      beats = beats.map((b) => {
+        const slot = target.beatSlots[b.id];
+        return slot ? { ...b, columnId: slot.columnId, position: slot.position } : b;
+      });
+      beatColumns = target.columns;
+      viewedOutlineTab = next.id;
+      outlineStash = stash;
+    } else {
+      outlineStash = { ...outlineStash };
+      delete outlineStash[id];
+    }
+    return {
+      outlineTabs: remaining,
+      viewedOutlineTab,
+      beatColumns,
+      beats,
+      outlineStash,
+      outlineBarTab: s.outlineBarTab === id ? viewedOutlineTab : s.outlineBarTab,
+    };
+  }),
+  setOutlineBarTab: (id) => set((s) => (s.outlineTabs.some((t) => t.id === id) ? { outlineBarTab: id } : {})),
+  resetOutlineTabs: () => set({
+    outlineTabs: [{ id: 'tab-1', name: 'Outline 1' }],
+    viewedOutlineTab: 'tab-1',
+    outlineBarTab: 'tab-1',
+    outlineStash: {},
+  }),
+  loadOutlineTabs: (tabs, viewed, bar, stash) => set(() => {
+    const valid = tabs.length > 0 ? tabs : [{ id: 'tab-1', name: 'Outline 1' }];
+    const viewedId = valid.some((t) => t.id === viewed) ? viewed : valid[0].id;
+    return {
+      outlineTabs: valid,
+      viewedOutlineTab: viewedId,
+      outlineBarTab: valid.some((t) => t.id === bar) ? bar : viewedId,
+      outlineStash: stash ?? {},
+    };
+  }),
+  barUpdateColumn: (id, updates) => {
+    const s = get();
+    if (s.outlineBarTab === s.viewedOutlineTab) { s.updateBeatColumn(id, updates); return; }
+    set((st) => {
+      const tab = st.outlineStash[st.outlineBarTab];
+      if (!tab) return {};
+      return {
+        outlineStash: {
+          ...st.outlineStash,
+          [st.outlineBarTab]: { ...tab, columns: tab.columns.map((c) => (c.id === id ? { ...c, ...updates } : c)) },
+        },
+      };
+    });
+  },
+  barAddColumn: (title) => {
+    const s = get();
+    if (s.outlineBarTab === s.viewedOutlineTab) return s.addBeatColumn(title);
+    const id = uuid();
+    set((st) => {
+      const tab = st.outlineStash[st.outlineBarTab];
+      if (!tab) return {};
+      const maxPos = tab.columns.length > 0 ? Math.max(...tab.columns.map((c) => c.position)) : -1;
+      return {
+        outlineStash: {
+          ...st.outlineStash,
+          [st.outlineBarTab]: { ...tab, columns: [...tab.columns, { id, title, position: maxPos + 1, width: 0, targetPages: 1 }] },
+        },
+      };
+    });
+    return id;
+  },
+  barAssignBeat: (beatId, columnId, index) => {
+    const s = get();
+    if (s.outlineBarTab === s.viewedOutlineTab) {
+      _pushBeatSnapshot(get);
+      set((st) => {
+        const siblings = st.beats
+          .filter((b) => b.columnId === columnId && b.id !== beatId)
+          .sort((a, b) => a.position - b.position)
+          .map((b) => b.id);
+        siblings.splice(Math.max(0, Math.min(index, siblings.length)), 0, beatId);
+        const pos = new Map(siblings.map((bid, i) => [bid, i]));
+        return {
+          beats: st.beats.map((b) => (pos.has(b.id)
+            ? { ...b, columnId, position: pos.get(b.id)! }
+            : b)),
+        };
+      });
+      return;
+    }
+    set((st) => {
+      const tab = st.outlineStash[st.outlineBarTab];
+      if (!tab) return {};
+      const slots = { ...tab.beatSlots };
+      const siblings = Object.entries(slots)
+        .filter(([bid, sl]) => sl.columnId === columnId && bid !== beatId)
+        .sort((a, b) => a[1].position - b[1].position)
+        .map(([bid]) => bid);
+      siblings.splice(Math.max(0, Math.min(index, siblings.length)), 0, beatId);
+      siblings.forEach((bid, i) => { slots[bid] = { columnId, position: i }; });
+      return { outlineStash: { ...st.outlineStash, [st.outlineBarTab]: { ...tab, beatSlots: slots } } };
+    });
+  },
   // v2.20: sections always get a page budget (default 1) — a blank budget
   // renders a section you can't grab on the Outline Bar.
   addBeatColumn: (title, targetPages = 1) => {

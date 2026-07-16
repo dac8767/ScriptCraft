@@ -19,7 +19,7 @@
  * screen. ONE SOURCE OF TRUTH: blocks ARE the Outline tool's columns and
  * beats — no copies. Closing lives in View > Outline Bar (no × here, v2.11).
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import { FaFileExport } from 'react-icons/fa';
@@ -77,6 +77,37 @@ export function columnRanges(cols: BeatColumn[]): Array<{ id: string; title: str
   });
 }
 
+/** v2.30, Derek: the bar shows EVERY beat automatically — nothing is
+ *  "placed" by hand. Each section's beats pack from its start page in board
+ *  order, each spanning its page estimate; beats whose section isn't on the
+ *  bar's tab pack after the last section. Exported for the test. */
+export interface BarBeatItem { id: string; columnId: string; position: number; span: number }
+export function layoutBarBeats(
+  ranges: Array<{ id: string; start: number; pages: number }>,
+  items: BarBeatItem[],
+): Map<string, { page: number; span: number }> {
+  const out = new Map<string, { page: number; span: number }>();
+  const byCol = new Map<string, BarBeatItem[]>();
+  for (const it of items) {
+    if (!byCol.has(it.columnId)) byCol.set(it.columnId, []);
+    byCol.get(it.columnId)!.push(it);
+  }
+  for (const r of ranges) {
+    let cursor = r.start;
+    for (const it of (byCol.get(r.id) ?? []).sort((a, b) => a.position - b.position)) {
+      out.set(it.id, { page: cursor, span: it.span });
+      cursor += it.span;
+    }
+  }
+  let orphanCursor = ranges.reduce((m, r) => Math.max(m, r.start + r.pages), 1);
+  for (const it of [...items].sort((a, b) => a.position - b.position)) {
+    if (out.has(it.id)) continue;
+    out.set(it.id, { page: orphanCursor, span: it.span });
+    orphanCursor += it.span;
+  }
+  return out;
+}
+
 interface SceneEntry { text: string; pos: number; start: number; pages: number }
 
 function collectScenes(editor: Editor | null): Array<{ text: string; pos: number }> {
@@ -98,9 +129,16 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
   const beats = useEditorStore((s) => s.beats);
   const beatColumns = useEditorStore((s) => s.beatColumns);
   const updateBeat = useEditorStore((s) => s.updateBeat);
-  const updateBeatColumn = useEditorStore((s) => s.updateBeatColumn);
-  const addBeatColumn = useEditorStore((s) => s.addBeatColumn);
   const addBeat = useEditorStore((s) => s.addBeat);
+  // v2.30: the bar shows the tab picked as "active" on the Outline window —
+  // edits made here route to THAT tab, which may not be the one being viewed.
+  const viewedTab = useEditorStore((s) => s.viewedOutlineTab);
+  const barTab = useEditorStore((s) => s.outlineBarTab);
+  const outlineTabs = useEditorStore((s) => s.outlineTabs);
+  const outlineStash = useEditorStore((s) => s.outlineStash);
+  const barUpdateColumn = useEditorStore((s) => s.barUpdateColumn);
+  const barAddColumn = useEditorStore((s) => s.barAddColumn);
+  const barAssignBeat = useEditorStore((s) => s.barAssignBeat);
   const pageCount = useEditorStore((s) => s.pageCount);
   const pageLayout = useEditorStore((s) => s.pageLayout);
   const zoom = useEditorStore((s) => s.outlineBarZoom);
@@ -122,14 +160,21 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
   }, []);
 
   /* ── the page domain ── */
-  const acts = useMemo(() => columnRanges(beatColumns), [beatColumns]);
+  const barIsViewed = barTab === viewedTab;
+  const barColumns = barIsViewed ? beatColumns : (outlineStash[barTab]?.columns ?? []);
+  const barSlots = barIsViewed ? null : (outlineStash[barTab]?.beatSlots ?? {});
+  const acts = useMemo(() => columnRanges(barColumns), [barColumns]);
   const actsTotal = acts.reduce((sum, a) => sum + a.pages, 0);
-  // v2.11: beats on either legacy lane count as placed (lanes merged).
-  const placed = useMemo(() => beats.filter((b) => b.outlineLane !== undefined && b.outlineLane !== null), [beats]);
-  const unplaced = useMemo(() => beats.filter((b) => b.outlineLane === undefined || b.outlineLane === null), [beats]);
-  const beatsEnd = placed.reduce((m, b) => Math.max(m, (b.outlinePage ?? 1) + (b.outlineSpan ?? DEFAULT_SPAN) - 1), 0);
+  // v2.30: EVERY beat renders, derived from its section + board order + span.
+  const items: BarBeatItem[] = useMemo(() => beats.map((b) => {
+    const slot = barSlots ? (barSlots[b.id] ?? { columnId: '', position: Number.MAX_SAFE_INTEGER }) : { columnId: b.columnId, position: b.position };
+    return { id: b.id, columnId: slot.columnId, position: slot.position, span: Math.max(1, Math.round(b.outlineSpan ?? DEFAULT_SPAN)) };
+  }), [beats, barSlots]);
+  const layout = useMemo(() => layoutBarBeats(acts, items), [acts, items]);
+  let layoutEnd = 0;
+  layout.forEach((v) => { layoutEnd = Math.max(layoutEnd, v.page + v.span - 1); });
   // The acts define the plan; the script and beats can outgrow it.
-  const totalPages = Math.max(1, actsTotal, Math.ceil(pageCount), Math.ceil(beatsEnd));
+  const totalPages = Math.max(1, actsTotal, Math.ceil(pageCount), layoutEnd);
 
   // px per page: explicit zoom, or fit-to-width when zoom === 0. Never below
   // fit width: the CSS gives the track min-width:100%, so when zoom×pages is
@@ -167,18 +212,22 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
 
   /* ── dragging: beats move/resize; act blocks resize (budget) ── */
   const dragRef = useRef<{
-    kind: 'beat-move' | 'beat-resize' | 'beat-resize-l' | 'act-resize';
+    kind: 'beat-move' | 'beat-resize' | 'act-resize';
     id: string; startX: number; startPage: number; startSpan: number;
   } | null>(null);
+  // v2.30: positions are DERIVED, so a move drags a ghost; pointer-up
+  // commits the new section + order and the layout re-derives.
+  const [ghost, setGhost] = useState<{ id: string; page: number } | null>(null);
 
-  const startBeatDrag = (e: React.PointerEvent, beat: BeatInfo, mode: 'move' | 'resize' | 'resize-l') => {
+  const startBeatDrag = (e: React.PointerEvent, beat: BeatInfo, mode: 'move' | 'resize') => {
     e.preventDefault(); e.stopPropagation();
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    const l = layout.get(beat.id);
     dragRef.current = {
-      kind: mode === 'move' ? 'beat-move' : mode === 'resize' ? 'beat-resize' : 'beat-resize-l',
+      kind: mode === 'move' ? 'beat-move' : 'beat-resize',
       id: beat.id, startX: e.clientX,
-      startPage: beat.outlinePage ?? 1,
-      startSpan: beat.outlineSpan ?? DEFAULT_SPAN,
+      startPage: l?.page ?? 1,
+      startSpan: l?.span ?? DEFAULT_SPAN,
     };
   };
   /** v2.15: either edge resizes. An act's LEFT edge is the boundary with the
@@ -195,36 +244,37 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
     if (!d) return;
     const dPages = (e.clientX - d.startX) / ppp;
     if (d.kind === 'beat-move') {
-      const page = snapPage(d.startPage + dPages, d.startSpan, totalPages);
-      updateBeat(d.id, { outlinePage: page, outlineLane: 0 });
+      // Ghost only — the real position derives from section + order on drop.
+      setGhost({ id: d.id, page: snapPage(d.startPage + dPages, d.startSpan, totalPages) });
     } else if (d.kind === 'beat-resize') {
       const span = Math.max(SNAP, Math.round((d.startSpan + dPages) / SNAP) * SNAP);
-      updateBeat(d.id, { outlineSpan: Math.min(span, totalPages) });
-    } else if (d.kind === 'beat-resize-l') {
-      // Left edge moves the START; the END stays pinned.
-      const end = d.startPage + d.startSpan;
-      const page = Math.min(
-        Math.max(1, Math.round((d.startPage + dPages) / SNAP) * SNAP),
-        end - SNAP,
-      );
-      updateBeat(d.id, { outlinePage: page, outlineSpan: end - page, outlineLane: 0 });
+      updateBeat(d.id, { outlineSpan: Math.min(span, totalPages) });   // spans are shared across tabs
     } else {
       // Acts budget in WHOLE pages — the ruler total follows live.
       const pages = Math.max(1, Math.round(d.startSpan + dPages));
-      updateBeatColumn(d.id, { targetPages: pages });
+      barUpdateColumn(d.id, { targetPages: pages });
     }
   };
-  /** v2.16: the bar and the board are ONE model — dropping a beat inside a
-   *  section's page range moves it into that column on the Outline board. */
+  /** v2.16/v2.30: the bar and the board are ONE model — dropping a beat
+   *  commits its new section AND its order within it (on the bar's tab). */
   const onPointerUp = () => {
     const d = dragRef.current;
     dragRef.current = null;
-    if (!d || d.kind !== 'beat-move') return;
-    const b = useEditorStore.getState().beats.find((x) => x.id === d.id);
-    if (!b) return;
-    const mid = (b.outlinePage ?? 1) + (b.outlineSpan ?? DEFAULT_SPAN) / 2;
-    const act = acts.find((a) => mid >= a.start && mid < a.start + a.pages);
-    if (act && b.columnId !== act.id) updateBeat(b.id, { columnId: act.id });
+    if (!d || d.kind !== 'beat-move') { setGhost(null); return; }
+    const g = ghost;
+    setGhost(null);
+    if (!g || acts.length === 0) return;
+    const mid = g.page + d.startSpan / 2;
+    const act = acts.find((a) => mid >= a.start && mid < a.start + a.pages)
+      ?? (mid < acts[0].start ? acts[0] : acts[acts.length - 1]);
+    // Order within the section: count its other beats laid out before the drop.
+    let index = 0;
+    for (const it of items) {
+      if (it.id === d.id || it.columnId !== act.id) continue;
+      const l = layout.get(it.id);
+      if (l && l.page < g.page) index++;
+    }
+    barAssignBeat(d.id, act.id, index);
   };
 
   /* ── double-click: rename in place (v2.16) — the same title the
@@ -234,7 +284,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
     if (!renaming) return;
     const title = value.trim();
     if (title) {
-      if (renaming.kind === 'column') updateBeatColumn(renaming.id, { title });
+      if (renaming.kind === 'column') barUpdateColumn(renaming.id, { title });
       else updateBeat(renaming.id, { title });
     }
     setRenaming(null);
@@ -276,30 +326,26 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
   const commitPop = () => {
     if (!pop) return;
     const v = Math.max(1, Math.round(pop.value));   // whole pages only
-    if (pop.kind === 'column') updateBeatColumn(pop.id, { targetPages: v });
+    if (pop.kind === 'column') barUpdateColumn(pop.id, { targetPages: v });
     else updateBeat(pop.id, { outlineSpan: v });
     setPop(null);
   };
 
   /* ── actions ── */
-  const placeAtEnd = useCallback((id: string) => {
-    const ends = placed.map((b) => (b.outlinePage ?? 1) + (b.outlineSpan ?? DEFAULT_SPAN));
-    const page = snapPage(ends.length ? Math.max(...ends) : 1, DEFAULT_SPAN, totalPages);
-    updateBeat(id, { outlineLane: 0, outlinePage: page, outlineSpan: DEFAULT_SPAN });
-  }, [placed, totalPages, updateBeat]);
-
   const addFromMenu = (v: string) => {
     if (v === 'section') {
-      addBeatColumn('New Section');
+      barAddColumn('New Section');
     } else if (v === 'beat') {
-      const col = beatColumns[0]?.id || addBeatColumn('New Section');
-      placeAtEnd(addBeat('New Beat', col));
+      const col = barColumns[0]?.id || barAddColumn('New Section');
+      const id = addBeat('New Beat', col);
+      // On a non-viewed bar tab the new beat also needs a slot there.
+      if (!barIsViewed) barAssignBeat(id, col, Number.MAX_SAFE_INTEGER);
     }
   };
 
   const sendToScript = () => {
-    if (!editor || editor.isDestroyed || placed.length === 0) return;
-    const ordered = [...placed].sort((a, b) => (a.outlinePage ?? 0) - (b.outlinePage ?? 0));
+    if (!editor || editor.isDestroyed || beats.length === 0) return;
+    const ordered = [...beats].sort((a, b) => (layout.get(a.id)?.page ?? 0) - (layout.get(b.id)?.page ?? 0));
     const nodes = ordered.map((b) => ({
       type: 'general',
       content: [{ type: 'text', text: `# ${b.title}${b.description ? ` — ${b.description}` : ''}` }],
@@ -415,21 +461,17 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
           <button
             className="fs-ob-iconbtn"
             onClick={sendToScript}
-            disabled={placed.length === 0}
+            disabled={beats.length === 0}
             title="Send to Script — insert each beat as a section line (# …)"
           >
             <FaFileExport />
           </button>
         </div>
-        {unplaced.length > 0 && (
-          <select
-            value=""
-            title="Place a beat from the Outline board"
-            onChange={(e) => { if (e.target.value) placeAtEnd(e.target.value); }}
-          >
-            <option value="">Place…</option>
-            {unplaced.map((b) => <option key={b.id} value={b.id}>{b.title || '(untitled)'}</option>)}
-          </select>
+        {/* v2.30: which outline variation the bar is showing. */}
+        {outlineTabs.length > 1 && (
+          <span className="fs-ob-tabname" title="The Outline tab this bar shows — pick it with the ◉ on the tab">
+            {outlineTabs.find((t) => t.id === barTab)?.name}
+          </span>
         )}
         {/* v2.28: the zoom slider is gone — the navigator bar under the
             tracks scrolls AND rescales (Premiere's model). Fit stays. */}
@@ -492,39 +534,30 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             {acts.length === 0 && <span className="fs-ob-empty">No sections yet — ＋ adds one</span>}
           </div>
 
-          {/* Row 2: beats */}
+          {/* Row 2: beats — v2.30: EVERY beat, derived from its section and
+              board order. Drag to re-section/reorder; right edge = span. */}
           <div className="fs-ob-lane fs-ob-beats">
             <span className="fs-ob-lane-label">Beats</span>
-            {placed.map((b) => {
-              const { leftPct, widthPct } = markerGeometry(b.outlinePage ?? 1, b.outlineSpan ?? DEFAULT_SPAN, totalPages);
+            {beats.map((b) => {
+              const l = layout.get(b.id);
+              if (!l) return null;
+              const page = ghost?.id === b.id ? ghost.page : l.page;
+              const { leftPct, widthPct } = markerGeometry(page, l.span, totalPages);
               return (
                 <div
                   key={b.id}
-                  className="fs-ob-beat"
+                  className={`fs-ob-beat${ghost?.id === b.id ? ' fs-ob-beat-dragging' : ''}`}
                   style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: b.color || undefined }}
-                  title={`${b.title} — p${b.outlinePage ?? 1}, ${b.outlineSpan ?? DEFAULT_SPAN}p${b.description ? `\n${b.description}` : ''}\nRight-click to set the page target`}
+                  title={`${b.title} — p${page}, ${l.span}p${b.description ? `\n${b.description}` : ''}\nDrag to move between sections; right-click to set the page target`}
                   onPointerDown={(e) => startBeatDrag(e, b, 'move')}
                   onPointerMove={onPointerMove}
                   onPointerUp={onPointerUp}
-                  onContextMenu={(e) => openPop(e, 'beat', b.id, b.outlineSpan ?? DEFAULT_SPAN)}
+                  onContextMenu={(e) => openPop(e, 'beat', b.id, l.span)}
                   onDoubleClick={() => setRenaming({ kind: 'beat', id: b.id })}
                 >
-                  <span
-                    className="fs-ob-resize-l"
-                    title="Drag to move the start (the end stays put)"
-                    onPointerDown={(e) => startBeatDrag(e, b, 'resize-l')}
-                    onPointerMove={onPointerMove}
-                    onPointerUp={onPointerUp}
-                  />
                   {renaming?.kind === 'beat' && renaming.id === b.id
                     ? renameInput(b.title)
                     : <span className="fs-ob-beat-title">{b.title}</span>}
-                  <button
-                    className="fs-ob-beat-x"
-                    title="Remove from the bar (stays on the Outline board)"
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={() => updateBeat(b.id, { outlineLane: undefined, outlinePage: undefined })}
-                  >×</button>
                   <span
                     className="fs-ob-beat-resize"
                     title="Drag to change the page span"

@@ -22,6 +22,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { FaRegCircle, FaDotCircle } from 'react-icons/fa';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 import { confirmDialog, promptDialog } from './ConfirmDialog';
@@ -816,6 +817,21 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   // v2.26: the user's saved presets share the dropdown with the built-ins.
   const customPresets = useOutlinePresetStore((s) => s.presets);
 
+  // v2.30: outline variation tabs — one beat pool, many arrangements.
+  const outlineTabs = useEditorStore((s) => s.outlineTabs);
+  const viewedTab = useEditorStore((s) => s.viewedOutlineTab);
+  const barTab = useEditorStore((s) => s.outlineBarTab);
+  const { addOutlineTab, switchOutlineTab, renameOutlineTab, deleteOutlineTab, setOutlineBarTab } = useEditorStore.getState();
+  const [renamingTab, setRenamingTab] = useState<string | null>(null);
+
+  const handleCloseTab = useCallback(async (id: string, name: string) => {
+    const ok = await confirmDialog(
+      `Close "${name}"? Your beats are safe — they live in every tab. Only this arrangement of sections is deleted.`,
+      { title: 'Close Outline Tab', confirmLabel: 'Close Tab', danger: true },
+    );
+    if (ok) deleteOutlineTab(id);
+  }, [deleteOutlineTab]);
+
   const handlePresetAction = useCallback(async (value: string) => {
     if (!value) return;
     const store = useOutlinePresetStore.getState();
@@ -935,6 +951,51 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
 
   return (
     <div className="beat-board" ref={boardRef}>
+      {/* v2.30: variation tabs, browser-style. One shared pool of beats;
+          each tab is its own arrangement of sections. The ◉ marks the tab
+          the Outline Bar shows. */}
+      <div className="beat-tabs">
+        {outlineTabs.map((t) => (
+          <div
+            key={t.id}
+            className={`beat-tab${viewedTab === t.id ? ' active' : ''}`}
+            onClick={() => switchOutlineTab(t.id)}
+            onDoubleClick={() => setRenamingTab(t.id)}
+            title={viewedTab === t.id ? t.name : `Switch to ${t.name}`}
+          >
+            <button
+              className={`beat-tab-use${barTab === t.id ? ' on' : ''}`}
+              title={barTab === t.id ? 'Shown in the Outline Bar' : 'Use this outline in the Outline Bar'}
+              onClick={(e) => { e.stopPropagation(); setOutlineBarTab(t.id); }}
+            >
+              {barTab === t.id ? <FaDotCircle /> : <FaRegCircle />}
+            </button>
+            {renamingTab === t.id ? (
+              <input
+                autoFocus
+                className="beat-tab-rename"
+                defaultValue={t.name}
+                onClick={(e) => e.stopPropagation()}
+                onBlur={(e) => { renameOutlineTab(t.id, e.target.value); setRenamingTab(null); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                  if (e.key === 'Escape') setRenamingTab(null);
+                }}
+              />
+            ) : (
+              <span className="beat-tab-name">{t.name}</span>
+            )}
+            {outlineTabs.length > 1 && (
+              <button
+                className="beat-tab-x"
+                title="Close this outline variation (beats are kept)"
+                onClick={(e) => { e.stopPropagation(); void handleCloseTab(t.id, t.name); }}
+              >×</button>
+            )}
+          </div>
+        ))}
+        <button className="beat-tab-add" title="New outline variation" onClick={() => addOutlineTab()}>＋</button>
+      </div>
       <div className="beat-board-header">
         <span className="beat-board-title">Outline</span>
         <span className="beat-board-info">

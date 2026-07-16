@@ -685,6 +685,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       const store = useEditorStore.getState();
       store.setBeats([]);
       store.setBeatColumns([]);
+      store.resetOutlineTabs();   // v2.30: start over on a single tab
       store.setBeatArrangeMode('auto');
       store.setNotes([]);
       store.setTags([]);
@@ -780,6 +781,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       const store = useEditorStore.getState();
       store.setBeats([]);
       store.setBeatColumns([]);
+      store.resetOutlineTabs();   // v2.30: start over on a single tab
       store.setBeatArrangeMode('auto');
       store.setNotes([]);
       store.setTags([]);
@@ -847,6 +849,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     store.setVersionLabel(meta?.version || '');
     store.setBeats([]);
     store.setBeatColumns([]);
+    store.resetOutlineTabs();   // v2.30: start over on a single tab
     store.setBeatArrangeMode('auto');
     store.setNotes([]);
     store.setTags([]);

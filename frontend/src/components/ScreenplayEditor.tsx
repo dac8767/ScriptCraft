@@ -263,6 +263,12 @@ export function composeSaveContent(doc: Record<string, unknown>): Record<string,
     _beats: store.beats,
     _beatColumns: store.beatColumns,
     _beatArrangeMode: store.beatArrangeMode,
+    // v2.30: outline variation tabs. _beats/_beatColumns above are the
+    // VIEWED tab's live data; the other tabs are parked in the stash.
+    _outlineTabs: store.outlineTabs,
+    _outlineViewedTab: store.viewedOutlineTab,
+    _outlineBarTab: store.outlineBarTab,
+    _outlineStash: store.outlineStash,
     _draftLabel: store.draftLabel,
     _templateId: tplStore.activeTemplateId,
     _ignoredWords: spellChecker.getIgnoredWords(),
@@ -1606,7 +1612,7 @@ const ScreenplayEditor: React.FC = () => {
 
     // Save current editor content so it can seed the Yjs doc
     const doc = editor.getJSON();
-    const { _notes, _generalNotes: _gn3, _shelf: _sh3, _tags, _tagCategories, _characterProfiles, _characterRelationships, _beats: _b3, _beatColumns: _bc3, _beatArrangeMode: _bam3, _draftLabel: _dl3, _templateId: _tpl3, _pageLayout: _pl3, ...pmDoc } = doc as Record<string, unknown>;
+    const { _notes, _generalNotes: _gn3, _shelf: _sh3, _tags, _tagCategories, _characterProfiles, _characterRelationships, _beats: _b3, _beatColumns: _bc3, _beatArrangeMode: _bam3, _outlineTabs: _ot3, _outlineViewedTab: _ov3, _outlineBarTab: _ob3, _outlineStash: _os3, _draftLabel: _dl3, _templateId: _tpl3, _pageLayout: _pl3, ...pmDoc } = doc as Record<string, unknown>;
     collabInitialContent.current = pmDoc;
 
     // The guest invite carries a session_nonce that makes the Yjs room unique
@@ -2399,6 +2405,10 @@ const ScreenplayEditor: React.FC = () => {
         state.tags === prev.tags &&
         state.beats === prev.beats &&
         state.beatColumns === prev.beatColumns &&
+        state.outlineTabs === prev.outlineTabs &&
+        state.outlineStash === prev.outlineStash &&
+        state.outlineBarTab === prev.outlineBarTab &&
+        state.viewedOutlineTab === prev.viewedOutlineTab &&
         state.spellCheckEnabled === prev.spellCheckEnabled &&
         state.grammarCheckEnabled === prev.grammarCheckEnabled
       ) return;
@@ -2687,7 +2697,7 @@ const ScreenplayEditor: React.FC = () => {
         // Strip app metadata keys before feeding to ProseMirror
         let pmDoc: Record<string, unknown> | null = null;
         if (content && typeof content === 'object' && 'type' in content && content.type === 'doc') {
-          const { _notes, _generalNotes: _gn, _shelf: _sh, _tags, _tagCategories, _characterProfiles, _characterRelationships, _beats, _beatColumns, _beatArrangeMode, _templateId: _tpl, _ignoredWords: _iw, _ignoredOnce: _io, _customDictWords: _cdw, _enabledGlobalDicts: _egd, _projectDictEnabled: _pde, _enabledLanguages: _elx, _ignoredGrammarRules: _igr, _ignoredGrammarOnce: _igo, _spellCheckEnabled: _sce, _grammarCheckEnabled: _gce, _sceneNumbersVisible: _snv, _sceneNumbersLocked: _snl, _pageLayout: _pl, ...rest } = content as any;
+          const { _notes, _generalNotes: _gn, _shelf: _sh, _tags, _tagCategories, _characterProfiles, _characterRelationships, _beats, _beatColumns, _beatArrangeMode, _outlineTabs: _ot1, _outlineViewedTab: _ov1, _outlineBarTab: _ob1, _outlineStash: _os1, _templateId: _tpl, _ignoredWords: _iw, _ignoredOnce: _io, _customDictWords: _cdw, _enabledGlobalDicts: _egd, _projectDictEnabled: _pde, _enabledLanguages: _elx, _ignoredGrammarRules: _igr, _ignoredGrammarOnce: _igo, _spellCheckEnabled: _sce, _grammarCheckEnabled: _gce, _sceneNumbersVisible: _snv, _sceneNumbersLocked: _snl, _pageLayout: _pl, ...rest } = content as any;
           pmDoc = rest;
         }
 
@@ -2771,6 +2781,17 @@ const ScreenplayEditor: React.FC = () => {
             store.setBeats(beatsArr as import('../stores/editorStore').BeatInfo[]);
             const beatColsArr = parseAttr(c._beatColumns);
             store.setBeatColumns(beatColsArr as import('../stores/editorStore').BeatColumn[]);
+            // v2.30: outline variation tabs — restore, or wrap legacy data in one tab.
+            if (Array.isArray(c._outlineTabs) && (c._outlineTabs as unknown[]).length > 0) {
+              store.loadOutlineTabs(
+                c._outlineTabs as Array<{ id: string; name: string }>,
+                typeof c._outlineViewedTab === 'string' ? c._outlineViewedTab : '',
+                typeof c._outlineBarTab === 'string' ? c._outlineBarTab : '',
+                (c._outlineStash && typeof c._outlineStash === 'object' ? c._outlineStash : {}) as Record<string, import('../stores/editorStore').OutlineTabData>,
+              );
+            } else {
+              store.resetOutlineTabs();
+            }
             if (c._beatArrangeMode === 'auto' || c._beatArrangeMode === 'custom') {
               store.setBeatArrangeMode(c._beatArrangeMode);
             }
@@ -3097,7 +3118,7 @@ const ScreenplayEditor: React.FC = () => {
 
         try {
           if (content && typeof content === 'object' && 'type' in content && content.type === 'doc') {
-            const { _notes, _generalNotes: _gn2, _shelf: _sh2, _tags, _tagCategories, _characterProfiles, _characterRelationships, _beats, _beatColumns, _beatArrangeMode: _bam, _draftLabel: _dl2, _templateId: _tpl2, _ignoredWords: _iw2, _ignoredOnce: _io2, _customDictWords: _cdw2, _enabledGlobalDicts: _egd2, _projectDictEnabled: _pde2, _enabledLanguages: _elx2, _ignoredGrammarRules: _igr2, _ignoredGrammarOnce: _igo2, _spellCheckEnabled: _sce2, _grammarCheckEnabled: _gce2, _sceneNumbersVisible: _snv2, _sceneNumbersLocked: _snl2, _pageLayout: _pl2, ...pmDoc } = content as any;
+            const { _notes, _generalNotes: _gn2, _shelf: _sh2, _tags, _tagCategories, _characterProfiles, _characterRelationships, _beats, _beatColumns, _beatArrangeMode: _bam, _outlineTabs: _ot2, _outlineViewedTab: _ov2, _outlineBarTab: _ob2, _outlineStash: _os2, _draftLabel: _dl2, _templateId: _tpl2, _ignoredWords: _iw2, _ignoredOnce: _io2, _customDictWords: _cdw2, _enabledGlobalDicts: _egd2, _projectDictEnabled: _pde2, _enabledLanguages: _elx2, _ignoredGrammarRules: _igr2, _ignoredGrammarOnce: _igo2, _spellCheckEnabled: _sce2, _grammarCheckEnabled: _gce2, _sceneNumbersVisible: _snv2, _sceneNumbersLocked: _snl2, _pageLayout: _pl2, ...pmDoc } = content as any;
             editor.commands.setContent(pmDoc);
           } else if (content && typeof content === 'object' && Object.keys(content).length > 0) {
             editor.commands.setContent(content);
@@ -3172,6 +3193,17 @@ const ScreenplayEditor: React.FC = () => {
           store.setBeats(beatsArr2 as import('../stores/editorStore').BeatInfo[]);
           const beatCols2 = parseAttr2(c._beatColumns);
           store.setBeatColumns(beatCols2 as import('../stores/editorStore').BeatColumn[]);
+          // v2.30: outline variation tabs — restore, or wrap legacy data in one tab.
+          if (Array.isArray(c._outlineTabs) && (c._outlineTabs as unknown[]).length > 0) {
+            store.loadOutlineTabs(
+              c._outlineTabs as Array<{ id: string; name: string }>,
+              typeof c._outlineViewedTab === 'string' ? c._outlineViewedTab : '',
+              typeof c._outlineBarTab === 'string' ? c._outlineBarTab : '',
+              (c._outlineStash && typeof c._outlineStash === 'object' ? c._outlineStash : {}) as Record<string, import('../stores/editorStore').OutlineTabData>,
+            );
+          } else {
+            store.resetOutlineTabs();
+          }
           // Restore per-document template
           if (c._templateId && typeof c._templateId === 'string') {
             useFormattingTemplateStore.getState().setActiveTemplateId(c._templateId);

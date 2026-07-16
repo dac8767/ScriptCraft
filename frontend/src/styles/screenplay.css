@@ -16544,3 +16544,88 @@ input.fs-switch:checked::after { left: 15px; }
   background: var(--fd-text-muted);
   pointer-events: none;
 }
+
+/* ─── v2.30: outline variation tabs (browser-style) ─── */
+.beat-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 6px 10px 0;
+  border-bottom: 1px solid var(--fd-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.beat-tabs::-webkit-scrollbar { display: none; }
+.beat-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px 5px 6px;
+  border: 1px solid var(--fd-border);
+  border-bottom: none;
+  border-radius: 7px 7px 0 0;
+  background: var(--fd-overlay-subtle);
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+  max-width: 220px;
+  white-space: nowrap;
+}
+.beat-tab.active {
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  position: relative;
+  top: 1px;
+}
+.beat-tab-name { overflow: hidden; text-overflow: ellipsis; }
+.beat-tab-use {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+}
+.beat-tab-use.on { color: var(--fd-accent); }
+.beat-tab-x {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font-size: 13px;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+}
+.beat-tab-x:hover { color: var(--fd-text); background: var(--fd-overlay-subtle); }
+.beat-tab-rename {
+  font-size: 12px;
+  width: 110px;
+  background: transparent;
+  color: var(--fd-text);
+  border: 1px solid var(--fd-accent);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+.beat-tab-add {
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-bottom: none;
+  border-radius: 7px 7px 0 0;
+  color: var(--fd-text-muted);
+  font-size: 13px;
+  padding: 4px 9px;
+  cursor: pointer;
+}
+.beat-tab-add:hover { color: var(--fd-text); background: var(--fd-overlay-subtle); }
+/* v2.30: the bar's side shows which variation it's mirroring. */
+.fs-ob-tabname {
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
