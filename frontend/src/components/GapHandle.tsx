@@ -56,7 +56,10 @@ const GapHandle: React.FC<{ bar: 'menu' | 'toolbar' | 'bigbtn' }> = ({ bar }) =>
     const m = s.toolbarMode ?? 'compact';
     return chromePx('toolbar', m === 'hidden' ? 'compact' : m, s.chromeCustomPx.toolbar);
   });
-  const drag = useRef<{ x: number; y: number; gap: number; gaps: number; v: number; vEngaged: boolean } | null>(null);
+  // v2.88, Derek: one axis at a time. The first direction to travel ≥3px
+  // claims the whole drag — pulling sideways adjusts spacing and leaves the
+  // bar's height untouched, and vice versa.
+  const drag = useRef<{ x: number; y: number; gap: number; gaps: number; v: number; axis: 'h' | 'v' | null } | null>(null);
 
   // v2.55: the sizing lock hides every grip — no dead controls.
   if (locked) return null;
@@ -94,17 +97,19 @@ const GapHandle: React.FC<{ bar: 'menu' | 'toolbar' | 'bigbtn' }> = ({ bar }) =>
           const idx = kids.indexOf(el);
           gaps = Math.max(1, Math.max(idx, kids.length - 1 - idx));
         }
-        drag.current = { x: e.clientX, y: e.clientY, gap: useEditorStore.getState().chromeGapPx[bar], gaps, v: vSize, vEngaged: false };
+        drag.current = { x: e.clientX, y: e.clientY, gap: useEditorStore.getState().chromeGapPx[bar], gaps, v: vSize, axis: null };
       }}
       onPointerMove={(e) => {
         const d = drag.current;
         if (!d) return;
-        setChromeGap(bar, d.gap + (GAP_DRAG_DIR[bar] * (e.clientX - d.x)) / d.gaps);
-        // The vertical axis engages only after real vertical travel, so a
-        // pure spacing drag never flips the bar into custom-height mode.
+        const dx = e.clientX - d.x;
         const dy = e.clientY - d.y;
-        if (!d.vEngaged && Math.abs(dy) >= 3) d.vEngaged = true;
-        if (d.vEngaged) applyVertical(dy, d.v);
+        if (!d.axis) {
+          if (Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+          d.axis = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
+        }
+        if (d.axis === 'h') setChromeGap(bar, d.gap + (GAP_DRAG_DIR[bar] * dx) / d.gaps);
+        else applyVertical(dy, d.v);
       }}
       onPointerUp={() => { drag.current = null; }}
     >

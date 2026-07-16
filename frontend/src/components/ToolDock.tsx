@@ -535,26 +535,24 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     const surface = side === 'left' ? 'panelLeft' : 'panelRight';
     let w = startW;
     let wChanged = false;
-    // v2.77: each axis engages only after real travel — a stray click or a
-    // single-axis drag never disturbs the other axis (or the size mode).
-    let hEngaged = false;
-    let vEngaged = false;
+    // v2.88, Derek: ONE axis per drag — the first direction to travel ≥3px
+    // claims it. Pulling sideways sizes the width and never nudges the item
+    // scale; pulling vertically scales the items and never resizes.
+    let axis: 'h' | 'v' | null = null;
     const onMove = (ev: PointerEvent) => {
-      // v2.77, Derek: the edge is TWO-AXIS, Premiere-style — sideways sizes
-      // the panel's width as before; up/down scales the panel's items
-      // (rows, text, icons together).
-      const dy = ev.clientY - startY;
-      if (!vEngaged && Math.abs(dy) >= 6) vEngaged = true;
-      if (vEngaged) useEditorStore.getState().setPanelItemScale(side, startScale + dy / 220);
-
       const dx = ev.clientX - startX;
-      if (!hEngaged && Math.abs(dx) >= 3) {
-        hEngaged = true;
+      const dy = ev.clientY - startY;
+      if (!axis) {
+        if (Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+        axis = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
         // Switch to custom on the first real horizontal move, not on
         // mousedown — a stray click shouldn't silently change the mode.
-        setPanelSizeMode(side, 'custom');
+        if (axis === 'h') setPanelSizeMode(side, 'custom');
       }
-      if (!hEngaged) return;
+      if (axis === 'v') {
+        useEditorStore.getState().setPanelItemScale(side, startScale + dy / 220);
+        return;
+      }
       const raw = startW + (side === 'left' ? dx : -dx);
       // v2.29, Derek: dragged small enough, the panel clicks into the
       // icon-only rail; dragged back out, it's a normal custom-width panel.

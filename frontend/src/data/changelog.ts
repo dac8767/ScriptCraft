@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.87';
+export const APP_VERSION = '2.88';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.88',
+    date: '2026-07-16',
+    items: [
+      { title: 'Two-axis controls lock to one axis per drag', detail: 'The spacing grips and the side-panel edges adjust either horizontal OR vertical per drag — whichever direction you move first claims it, so pulling sideways can never accidentally change heights or item sizes, and vice versa.', tags: ['UI'] },
+    ],
+  },
   {
     version: '2.87',
     date: '2026-07-16',

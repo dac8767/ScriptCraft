@@ -96,6 +96,33 @@ describe('GapHandle drag direction', () => {
     expect(useEditorStore.getState().bigBtnInsetPx).toBe(6);
   });
 
+  /* v2.88: one axis per drag — the first direction to move claims it. */
+  it('a drag that starts vertical never touches the spacing', () => {
+    useEditorStore.getState().setChromeGap('toolbar', 10);
+    useEditorStore.setState({ toolbarMode: 'compact' });
+    act(() => { root.render(<GapHandle bar="toolbar" />); });
+    const grip = host.querySelector('.fs-gap-handle')!;
+    const fire = (type: string, clientX: number, clientY: number) =>
+      act(() => { grip.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX, clientY })); });
+    fire('pointerdown', 100, 50);
+    fire('pointermove', 100, 60);    // vertical claims the drag
+    fire('pointermove', 140, 60);    // now yanked sideways — must be ignored
+    fire('pointerup', 140, 60);
+    expect(useEditorStore.getState().chromeGapPx.toolbar).toBe(10);   // spacing untouched
+    expect(useEditorStore.getState().toolbarMode).toBe('custom');     // height drag took it
+  });
+
+  it('a drag that starts horizontal never touches the height', () => {
+    useEditorStore.setState({ toolbarMode: 'compact' });
+    useEditorStore.getState().setChromeGap('toolbar', 10);
+    dragXY('toolbar', [100, 50], [120, 50]);
+    act(() => {
+      const grip = host.querySelector('.fs-gap-handle')!;
+      grip.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 120, clientY: 90 }));
+    });
+    expect(useEditorStore.getState().toolbarMode).toBe('compact');    // height untouched
+  });
+
   it('the size indicator maps range ends to 0 and 1', () => {
     expect(sizeIndicatorT('toolbar', chromeMin('toolbar'))).toBe(0);
     expect(sizeIndicatorT('toolbar', chromeMax('toolbar'))).toBe(1);
