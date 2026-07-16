@@ -9,6 +9,7 @@
 import type { Editor } from '@tiptap/react';
 import { SYSTEM_TEMPLATES, useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
+import { clearEditorHistory } from '../editor/clearHistory';
 
 /* v1.54: an empty script starts as one empty ACTION element (hint:
    "Action...") with the caret inside it — not a scene heading. */
@@ -35,6 +36,11 @@ export function applyScriptFormat(editor: Editor | null, templateId: string): vo
         true,
       );
       editor.commands.focus('start');
+      // v2.81, Derek: undo/redo is per DOCUMENT. Seeding is itself a
+      // transaction whose "before" state is the PREVIOUS script — the reset
+      // flow wipes history BEFORE calling here, so without wiping again
+      // after, the first Undo in a brand-new script resurrects the old one.
+      clearEditorHistory(editor);
       return;
     } catch (err) {
       console.warn('[applyScriptFormat] failed to seed starter document', err);
@@ -42,4 +48,5 @@ export function applyScriptFormat(editor: Editor | null, templateId: string): vo
   }
   editor.commands.setContent(DEFAULT_DOC as unknown as Parameters<Editor['commands']['setContent']>[0], true);
   editor.commands.focus('start');
+  clearEditorHistory(editor);   // v2.81: same rule as above
 }

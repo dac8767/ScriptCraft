@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.80';
+export const APP_VERSION = '2.81';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.81',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: Undo can no longer cross into the previous script', detail: 'Creating a new document and hitting Undo restored the old one — the starter-content seed was itself an undoable step whose "before" state was the previous script. Undo history now starts fresh AFTER the new document is seeded, so undo/redo stays inside the document you\'re in.', tags: ['Fix', 'Editor'] },
+    ],
+  },
   {
     version: '2.80',
     date: '2026-07-16',
