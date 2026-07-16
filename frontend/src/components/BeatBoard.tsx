@@ -137,6 +137,16 @@ export function uncategorizedBeats(beats: BeatInfo[], columns: Array<{ id: strin
     .sort((a, b) => a.position - b.position);
 }
 
+/** v2.45: whether the Uncategorized column renders. It must stay MOUNTED for
+ *  the entire drag if it was there when the drag began — dragOver reassigns
+ *  the beat's columnId live, so dragging the last orphan out would otherwise
+ *  unmount the column (an active dnd-kit droppable) mid-drag, and dnd-kit's
+ *  re-measuring then loops setState into React's "Maximum update depth
+ *  exceeded" crash. Exported for the regression test. */
+export function keepUncatMounted(orphanCount: number, dragActive: boolean, hadOrphansAtDragStart: boolean): boolean {
+  return orphanCount > 0 || (dragActive && hadOrphansAtDragStart);
+}
+
 /* ─── URL detection ─── */
 const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/g;
 
@@ -1129,7 +1139,17 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
 
 
 
-  const handleDragStart = useCallback((e: DragStartEvent) => setActiveDragId(String(e.active.id)), []);
+  /* v2.45: remember whether Uncategorized was showing when the drag began —
+     see keepUncatMounted. */
+  const [dragStartedWithOrphans, setDragStartedWithOrphans] = useState(false);
+
+  const handleDragStart = useCallback((e: DragStartEvent) => {
+    setActiveDragId(String(e.active.id));
+    const st = useEditorStore.getState();
+    setDragStartedWithOrphans(uncategorizedBeats(st.beats, st.beatColumns).length > 0);
+  }, []);
+
+  const handleDragCancel = useCallback(() => setActiveDragId(null), []);
 
   const handleDragOver = useCallback(
     (event: DragOverEvent) => {
@@ -1243,13 +1263,13 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
       </div>
 
       {beatArrangeMode === 'auto' ? (
-        <DndContext sensors={sensors} collisionDetection={beatCollisionDetection} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} collisionDetection={beatCollisionDetection} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <div className={`beat-board-columns${maximizedColumnId ? ' beat-board-columns-maximized' : ''}`}>
             {/* v2.23: the temporary holding pen for beats orphaned by a
                 preset override. Looks like a section but isn't one — no
                 title input, no page budget, no delete. It sits before the
                 first section and disappears once it's empty. */}
-            {orphanBeats.length > 0 && !maximizedColumnId && (
+            {keepUncatMounted(orphanBeats.length, activeDragId !== null, dragStartedWithOrphans) && !maximizedColumnId && (
               <div className="beat-column beat-column-uncategorized">
                 <div className="beat-column-header">
                   <span className="beat-column-uncat-title">Uncategorized</span>

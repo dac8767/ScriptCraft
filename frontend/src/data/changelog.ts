@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.44';
+export const APP_VERSION = '2.45';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.45',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: crash dragging the last beat out of Uncategorized', detail: 'Moving a beat from the Uncategorized column into a section could freeze the app with a "Maximum update depth exceeded" error. The column was unmounting mid-drag the moment its last beat was reassigned, which sent the drag system into a re-measuring loop. It now stays until the drag finishes.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '2.44',
     date: '2026-07-16',

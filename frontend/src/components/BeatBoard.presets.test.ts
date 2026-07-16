@@ -89,3 +89,24 @@ describe('outline presets', () => {
     for (const p of OUTLINE_PRESETS) expect(p.columns.length).toBeGreaterThan(0);
   });
 });
+
+/* v2.45 regression: dragging the LAST orphan out of Uncategorized used to
+   unmount the column mid-drag (dragOver reassigns columnId live), and
+   dnd-kit's re-measuring of the vanished droppable looped setState into
+   React's "Maximum update depth exceeded" crash. The column must stay
+   mounted until the drag ends. */
+describe('keepUncatMounted', () => {
+  it('keeps the column through a drag that started with orphans, even at zero', async () => {
+    const { keepUncatMounted } = await import('./BeatBoard');
+    // Mid-drag, last orphan already reassigned by dragOver → stays mounted.
+    expect(keepUncatMounted(0, true, true)).toBe(true);
+    // Drag over: the column finally goes away.
+    expect(keepUncatMounted(0, false, true)).toBe(false);
+    // Orphans present → always mounted, dragging or not.
+    expect(keepUncatMounted(2, false, false)).toBe(true);
+    expect(keepUncatMounted(2, true, false)).toBe(true);
+    // No orphans and none at drag start → never mounted.
+    expect(keepUncatMounted(0, true, false)).toBe(false);
+    expect(keepUncatMounted(0, false, false)).toBe(false);
+  });
+});
