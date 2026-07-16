@@ -451,6 +451,12 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
       className="fs-nb-canvas"
       onMouseDown={(e) => {
         if (e.target !== canvasRef.current || !canvasRef.current) return;
+        // v2.59: WITHOUT preventDefault, WebKit finishes its own mousedown
+        // focus handling AFTER we focus the parked caret — the caret blurs,
+        // onBlur clears it, and "click anywhere and start typing" goes dead.
+        // (Chrome resolves the default focus first, which is why this only
+        // died in the app.) Nothing on blank canvas needs the default.
+        e.preventDefault();
         setFocusedId(null);
         const rect = canvasRef.current.getBoundingClientRect();
         setCaret({

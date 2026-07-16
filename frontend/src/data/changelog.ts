@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.58';
+export const APP_VERSION = '2.59';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.59',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: Scrapbook click-to-type works again', detail: 'Clicking blank Scrapbook canvas parked the caret and then immediately lost it — the app\'s WebKit engine finished its own click focus handling after ours and blurred the caret away. The click now claims the caret outright.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '2.58',
     date: '2026-07-16',
