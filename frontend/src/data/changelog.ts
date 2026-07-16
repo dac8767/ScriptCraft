@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.63';
+export const APP_VERSION = '2.64';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.64',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: rotated Scrapbook pictures fit their window', detail: 'Rotating a picture 90° left the frame at the unrotated size, so the image stuck out top and bottom. A quarter turn now swaps the frame\'s width and height with the image, and Reset Rotation swaps it back.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '2.63',
     date: '2026-07-16',

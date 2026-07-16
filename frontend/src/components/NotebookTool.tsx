@@ -300,12 +300,26 @@ function TextBox({ box, focused, onChange, onFocusBox, onDelete }: {
   );
 }
 
+/** v2.64: a 90°/270° rotation transposes the image's bounds, so the frame
+ *  (box.w/h) must swap with it — otherwise the picture sticks out of its own
+ *  window. Every quarter turn routes through this patch. Exported for the
+ *  test. */
+export function rotatedImagePatch(b: { rotate?: number; w: number; h: number }, delta: number): Partial<NbBox> {
+  const rot = ((((b.rotate || 0) + delta) % 360) + 360) % 360;
+  return { rotate: rot, w: b.h, h: b.w };
+}
+
 function ImageBox({ box, focused, onChange, onFocusBox, onDelete }: {
   box: NbBox; focused: boolean; onChange: (b: NbBox) => void; onFocusBox: (id: string) => void; onDelete: (id: string) => void;
 }) {
   const startDrag = useBoxDrag(box, onChange);
   const [hover, setHover] = useState(false);
   const show = focused || hover;
+  // v2.64: on a quarter turn the FRAME already holds the swapped size; the
+  // img lays out at the unrotated size (frame transposed) and rotates into
+  // the frame around its center, so nothing pokes out.
+  const rot = (((box.rotate || 0) % 360) + 360) % 360;
+  const quarter = rot % 180 !== 0;
   return (
     <div
       className="fs-nb-imgbox"
@@ -327,7 +341,13 @@ function ImageBox({ box, focused, onChange, onFocusBox, onDelete }: {
         draggable={false}
         onMouseDown={(e) => startDrag(e, 'move')}
         style={{
-          transform: box.rotate ? `rotate(${box.rotate}deg)` : undefined,
+          ...(quarter ? {
+            width: box.h, height: box.w,
+            position: 'absolute', left: '50%', top: '50%',
+            transform: `translate(-50%, -50%) rotate(${rot}deg)`,
+          } : {
+            transform: rot ? `rotate(${rot}deg)` : undefined,
+          }),
           border: box.borderW ? `${box.borderW}px solid ${box.borderColor || 'currentColor'}` : undefined,
         }}
       />
@@ -961,9 +981,17 @@ export function useScrapbookMenus(): Array<{
         })),
       },
       { separator: true, label: '' },
-      { label: 'Rotate Right 90\u00B0', disabled: noImg, action: () => writeImage({ rotate: ((imageBox?.rotate || 0) + 90) % 360 }) },
-      { label: 'Rotate Left 90\u00B0', disabled: noImg, action: () => writeImage({ rotate: ((imageBox?.rotate || 0) + 270) % 360 }) },
-      { label: 'Reset Rotation', disabled: noImg || !imageBox?.rotate, action: () => writeImage({ rotate: 0 }) },
+      /* v2.64: quarter turns swap the frame so it hugs the rotated image. */
+      { label: 'Rotate Right 90\u00B0', disabled: noImg, action: () => { if (imageBox) writeImage(rotatedImagePatch(imageBox, 90)); } },
+      { label: 'Rotate Left 90\u00B0', disabled: noImg, action: () => { if (imageBox) writeImage(rotatedImagePatch(imageBox, -90)); } },
+      {
+        label: 'Reset Rotation', disabled: noImg || !imageBox?.rotate,
+        action: () => {
+          if (!imageBox) return;
+          const wasQuarter = ((imageBox.rotate || 0) % 180) !== 0;
+          writeImage({ rotate: 0, ...(wasQuarter ? { w: imageBox.h, h: imageBox.w } : {}) });
+        },
+      },
       { separator: true, label: '' },
       { label: 'Delete Picture', disabled: noImg, action: () => { if (imageBox) deleteBox(imageBox.id); } },
     ],

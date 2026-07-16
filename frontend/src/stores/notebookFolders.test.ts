@@ -26,3 +26,21 @@ describe('folder colors (v2.63)', () => {
     expect(after && after.type === 'section' ? after.color : undefined).toBe('#e06060');
   });
 });
+
+/* v2.64: rotating a picture a quarter turn swaps its frame, so the window
+   hugs the rotated image instead of letting it poke out. */
+import { rotatedImagePatch } from '../components/NotebookTool';
+
+describe('rotated image frame (v2.64)', () => {
+  it('a quarter turn swaps the frame dimensions', () => {
+    expect(rotatedImagePatch({ w: 300, h: 200 }, 90)).toEqual({ rotate: 90, w: 200, h: 300 });
+    expect(rotatedImagePatch({ rotate: 90, w: 200, h: 300 }, 90)).toEqual({ rotate: 180, w: 300, h: 200 });
+    expect(rotatedImagePatch({ w: 300, h: 200 }, -90)).toEqual({ rotate: 270, w: 200, h: 300 });
+  });
+
+  it('four quarter turns come back exactly', () => {
+    let b = { rotate: 0, w: 300, h: 200 };
+    for (let i = 0; i < 4; i++) b = { ...b, ...rotatedImagePatch(b, 90) } as typeof b;
+    expect(b).toEqual({ rotate: 0, w: 300, h: 200 });
+  });
+});
