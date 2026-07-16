@@ -1103,6 +1103,12 @@ interface EditorState {
   // Beat undo/redo
   beatUndo: () => void;
   beatRedo: () => void;
+  /** v2.36: smart undo routing — when the newest change is a beat edit
+   *  (delete a beat, move one…), Undo restores it; otherwise the script's
+   *  own history runs. These stamps are how the router decides. */
+  lastBeatEditAt: number;
+  lastDocEditAt: number;
+  noteDocEdit: () => void;
   canBeatUndo: boolean;
   canBeatRedo: boolean;
   _beatUndoStack: { beats: BeatInfo[]; beatColumns: BeatColumn[] }[];
@@ -1349,7 +1355,7 @@ function _pushBeatSnapshot(get: () => EditorState, force = false) {
   if (!force && now - s._beatSnapshotTime < BEAT_SNAPSHOT_DEBOUNCE) return;
   const stack = [...(s._beatUndoStack as { beats: BeatInfo[]; beatColumns: BeatColumn[] }[]), { beats: s.beats, beatColumns: s.beatColumns }];
   if (stack.length > BEAT_UNDO_MAX) stack.shift();
-  useEditorStore.setState({ _beatUndoStack: stack, _beatRedoStack: [], _beatSnapshotTime: now, canBeatUndo: true, canBeatRedo: false } as any);
+  useEditorStore.setState({ _beatUndoStack: stack, _beatRedoStack: [], _beatSnapshotTime: now, canBeatUndo: true, canBeatRedo: false, lastBeatEditAt: now } as any);
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -1785,6 +1791,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   _beatIsUndoing: false,
   canBeatUndo: false,
   canBeatRedo: false,
+  lastBeatEditAt: 0,
+  lastDocEditAt: 0,
+  noteDocEdit: () => set({ lastDocEditAt: Date.now() }),
   beatUndo: () =>
     set((s) => {
       const stack = s._beatUndoStack as { beats: BeatInfo[]; beatColumns: BeatColumn[] }[];
@@ -1799,6 +1808,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         _beatIsUndoing: true,
         canBeatUndo: stack.length > 1,
         canBeatRedo: true,
+        lastBeatEditAt: Date.now(),
       };
     }),
   beatRedo: () =>
@@ -1815,6 +1825,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         _beatIsUndoing: true,
         canBeatUndo: true,
         canBeatRedo: stack.length > 1,
+        lastBeatEditAt: Date.now(),
       };
     }),
 
@@ -2514,3 +2525,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   importedSource: null,
   setImportedSource: (src) => set({ importedSource: src }),
 }));
+
+/** v2.36: ONE undo for the app — routes to the beat history when the most
+ *  recent change was a beat edit (Derek: closing a beat then hitting Undo
+ *  must bring it back), otherwise to the script editor's own history. */
+export function smartUndo(editor: { chain: () => { focus: () => { undo: () => { run: () => void } } } } | null): void {
+  const s = useEditorStore.getState();
+  if (s.canBeatUndo && s.lastBeatEditAt >= s.lastDocEditAt) { s.beatUndo(); return; }
+  try { editor?.chain().focus().undo().run(); } catch { /* editor gone */ }
+}
+export function smartRedo(editor: { chain: () => { focus: () => { redo: () => { run: () => void } } } } | null): void {
+  const s = useEditorStore.getState();
+  if (s.canBeatRedo && s.lastBeatEditAt >= s.lastDocEditAt) { s.beatRedo(); return; }
+  try { editor?.chain().focus().redo().run(); } catch { /* editor gone */ }
+}

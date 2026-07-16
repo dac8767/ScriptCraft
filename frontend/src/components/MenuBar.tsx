@@ -37,7 +37,7 @@ const HIGHLIGHT_MENU_COLORS: Array<[string, string]> = [
 ];
 import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
-import { useEditorStore, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_CATEGORIES } from '../stores/editorStore';
+import { smartUndo, smartRedo, useEditorStore, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_CATEGORIES } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
 import { api } from '../services/api';
 import { showToast } from './Toast';
@@ -1278,8 +1278,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {
       label: 'Edit',
       items: [
-        { icon: <FaUndo />, label: 'Undo', shortcut: sc('undo'), action: () => { try { editor?.chain().focus().undo().run(); } catch {} } },
-        { icon: <FaRedo />, label: 'Redo', shortcut: sc('redo'), action: () => { try { editor?.chain().focus().redo().run(); } catch {} } },
+        // v2.36: smart routing — a just-edited beat undoes before the script.
+        { icon: <FaUndo />, label: 'Undo', shortcut: sc('undo'), action: () => smartUndo(editor) },
+        { icon: <FaRedo />, label: 'Redo', shortcut: sc('redo'), action: () => smartRedo(editor) },
         { separator: true, label: '' },
         { icon: <FaCut />, label: 'Cut', shortcut: sc('cut'), action: () => document.execCommand('cut') },
         { icon: <FaCopy />, label: 'Copy', shortcut: sc('copy'), action: () => document.execCommand('copy') },

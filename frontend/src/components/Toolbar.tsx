@@ -30,7 +30,7 @@ import { chromePx, chromeScaleFactor } from './chromeSizes';
 import GapHandle from './GapHandle';
 import { commandDef } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, bigZoneAllowed } from './toolbarBuiltins';
-import { useEditorStore, NOTE_COLORS } from '../stores/editorStore';
+import { smartUndo, smartRedo, useEditorStore, NOTE_COLORS } from '../stores/editorStore';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { BUILT_IN_ELEMENT_IDS } from '../stores/formattingTypes';
@@ -698,26 +698,36 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       );
     }
     switch (key) {
-      case 'undo': return (
-        <button
-          className="toolbar-btn"
-          title="Undo (⌘Z)"
-          onClick={() => { try { editor?.chain().focus().undo().run(); } catch {} }}
-          disabled={!editor || typeof (editor.can() as any).undo !== 'function' || !(editor.can() as any).undo()}
-        >
-          <FaUndo />
-        </button>
-      );
-      case 'redo': return (
-        <button
-          className="toolbar-btn"
-          title="Redo (⇧⌘Z)"
-          onClick={() => { try { editor?.chain().focus().redo().run(); } catch {} }}
-          disabled={!editor || typeof (editor.can() as any).redo !== 'function' || !(editor.can() as any).redo()}
-        >
-          <FaRedo />
-        </button>
-      );
+      /* v2.36: smart routing — if the newest change was a beat edit (e.g. a
+         beat was just closed on the Outline), Undo restores IT. */
+      case 'undo': {
+        const st = useEditorStore.getState();
+        const beatWins = st.canBeatUndo && st.lastBeatEditAt >= st.lastDocEditAt;
+        return (
+          <button
+            className="toolbar-btn"
+            title="Undo (⌘Z)"
+            onClick={() => smartUndo(editor)}
+            disabled={!beatWins && (!editor || typeof (editor.can() as any).undo !== 'function' || !(editor.can() as any).undo())}
+          >
+            <FaUndo />
+          </button>
+        );
+      }
+      case 'redo': {
+        const st = useEditorStore.getState();
+        const beatWins = st.canBeatRedo && st.lastBeatEditAt >= st.lastDocEditAt;
+        return (
+          <button
+            className="toolbar-btn"
+            title="Redo (⇧⌘Z)"
+            onClick={() => smartRedo(editor)}
+            disabled={!beatWins && (!editor || typeof (editor.can() as any).redo !== 'function' || !(editor.can() as any).redo())}
+          >
+            <FaRedo />
+          </button>
+        );
+      }
       case 'element': return (
         <select
           className="element-selector"

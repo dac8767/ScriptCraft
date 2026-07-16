@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.35';
+export const APP_VERSION = '2.36';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.36',
+    date: '2026-07-16',
+    items: [
+      { title: 'Undo brings back a closed beat', detail: 'Close a beat in the Outline and hit ⌘Z — or the toolbar/Edit-menu Undo — and it comes back. Undo now routes to whichever change is freshest: outline edits when you just touched the outline, the script\'s own history otherwise. Redo follows the same rule.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '2.35',
     date: '2026-07-16',

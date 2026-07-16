@@ -1823,9 +1823,16 @@ const ScreenplayEditor: React.FC = () => {
     };
     editor.on('selectionUpdate', handleSelectionUpdate);
     editor.on('update', handleUpdate);
+    // v2.36: stamp real document edits so smart undo can tell whether the
+    // freshest change was in the script or on the outline.
+    const stampDocEdit = ({ transaction }: { transaction: { docChanged: boolean } }) => {
+      if (transaction.docChanged) useEditorStore.getState().noteDocEdit();
+    };
+    editor.on('update', stampDocEdit);
     return () => {
       editor.off('selectionUpdate', handleSelectionUpdate);
       editor.off('update', handleUpdate);
+      editor.off('update', stampDocEdit);
     };
   }, [editor, updateCharacters]);
 

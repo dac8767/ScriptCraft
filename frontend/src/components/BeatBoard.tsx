@@ -867,7 +867,8 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
 
   // Undo/redo + Escape keyboard shortcuts — only when focus is inside the beat board
   useEffect(() => {
-    if (!beatBoardOpen) return;
+    // v2.36: the takeover board AND the embedded Outline window both listen.
+    if (!beatBoardOpen && !embedded) return;
     const handler = (e: KeyboardEvent) => {
       // Escape restores maximized column
       if (e.key === 'Escape' && maximizedColumnId) {
@@ -875,7 +876,10 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
         setMaximizedColumnId(null);
         return;
       }
-      if (!boardRef.current?.contains(document.activeElement)) return;
+      // v2.36: after closing a beat the focused button is GONE and focus
+      // falls to <body> — undo must still reach the beat history.
+      const ae = document.activeElement;
+      if (!(boardRef.current?.contains(ae) || ae === document.body || ae === null)) return;
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
@@ -889,7 +893,7 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
     };
     document.addEventListener('keydown', handler, true);
     return () => document.removeEventListener('keydown', handler, true);
-  }, [beatBoardOpen, beatUndo, beatRedo, maximizedColumnId]);
+  }, [beatBoardOpen, embedded, beatUndo, beatRedo, maximizedColumnId]);
 
   const sortedColumns = [...beatColumns].sort((a, b) => a.position - b.position);
   const isSingleColumn = sortedColumns.length === 1;
