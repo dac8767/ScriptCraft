@@ -223,13 +223,13 @@ const BeatPagesField: React.FC<{
       min={1}
       step={1}
       value={beat.outlineSpan ?? ''}
-      placeholder="p"
+      placeholder="#"
       onChange={(e) => {
         const n = Math.round(Number(e.target.value));
         onUpdate(beat.id, { outlineSpan: Number.isFinite(n) && n >= 1 ? n : undefined });
       }}
     />
-    <span>p</span>
+    <span>pages</span>
   </label>
 );
 
@@ -968,13 +968,13 @@ const BeatColumnView: React.FC<BeatColumnViewProps> = ({
             type="number"
             min={1}
             value={col.targetPages ?? ''}
-            placeholder="p"
+            placeholder="#"
             onChange={(e) => {
               const n = Number(e.target.value);
               onUpdateColumn(col.id, { targetPages: Number.isFinite(n) && n >= 1 ? Math.round(n) : 0 });
             }}
           />
-          <span>p</span>
+          <span>pages</span>
         </label>
         {showMaximizeBtn && (
           <button

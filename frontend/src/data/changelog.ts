@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.18';
+export const APP_VERSION = '2.19';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.19',
+    date: '2026-07-16',
+    items: [
+      { title: 'Outline window: "pages", spelled out', detail: 'The page-count fields on sections and beat cards read "pages" after the number, and an empty field shows # instead of p.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '2.18',
     date: '2026-07-16',
