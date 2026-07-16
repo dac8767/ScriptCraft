@@ -1273,6 +1273,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       {leftTokens.map(renderToken)}
       {rightTokens.filter((t) => !bigZoneAllowed(t)).map(renderToken)}
 
+      {/* v2.54, Derek: the spacing grip rides just RIGHT of the last toolbar
+          item (the Big Button section is its own bar with its own grip) —
+          it was stranded at the window's far edge. */}
+      <GapHandle bar="toolbar" />
+
       {/* Spacer */}
       <div style={{ flex: 1 }} />
 
@@ -1294,8 +1299,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         </div>
       )}
 
-      {/* v2.29: faint grip at the right end — drag to adjust item spacing */}
-      <GapHandle bar="toolbar" />
     </div>
   );
 };

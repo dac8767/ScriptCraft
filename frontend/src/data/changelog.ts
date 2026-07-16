@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.53';
+export const APP_VERSION = '2.54';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.54',
+    date: '2026-07-16',
+    items: [
+      { title: 'Toolbar spacing grip sits by the items', detail: 'The grip now rides just to the right of the toolbar\'s last item instead of being stranded at the window\'s far edge. (The Big Button section keeps its own grip.)', tags: ['UI'] },
+    ],
+  },
   {
     version: '2.53',
     date: '2026-07-16',
