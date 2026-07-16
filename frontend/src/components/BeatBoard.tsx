@@ -979,7 +979,7 @@ const beatCollisionDetection: CollisionDetection = (args) => {
 export function OutlineHeaderControls() {
   const beatCount = useEditorStore((s) => s.beats.length);
   const beatArrangeMode = useEditorStore((s) => s.beatArrangeMode);
-  const setBeatArrangeMode = useEditorStore((s) => s.setBeatArrangeMode);
+  const goToArrangement = useEditorStore((s) => s.goToArrangement);
   const beatColorAllTabs = useEditorStore((s) => s.beatColorAllTabs);
   const setBeatColorAllTabs = useEditorStore((s) => s.setBeatColorAllTabs);
   const customPresets = useOutlinePresetStore((s) => s.presets);
@@ -1117,17 +1117,20 @@ export function OutlineHeaderControls() {
         />
         Show beat color on all tabs
       </label>
+      {/* v2.47, Derek: a tab is bound to its arrangement for life, so this
+          toggle NAVIGATES — it jumps to a tab of the asked-for arrangement,
+          creating one if none exists. */}
       <span className="beat-mode-label">Arrangement:</span>
       <div className="beat-mode-toggle">
         <button
           className={`beat-mode-btn${beatArrangeMode === 'auto' ? ' active' : ''}`}
-          onClick={() => setBeatArrangeMode('auto')}
-          title="Sections — beats grouped in side-by-side sections"
+          onClick={() => goToArrangement('auto')}
+          title="Sections — jumps to a Sections tab (or creates one); each tab keeps its arrangement"
         >Sections</button>
         <button
           className={`beat-mode-btn${beatArrangeMode === 'custom' ? ' active' : ''}`}
-          onClick={() => setBeatArrangeMode('custom')}
-          title="Freeform — place beats anywhere"
+          onClick={() => goToArrangement('custom')}
+          title="Freeform — jumps to a Freeform tab (or creates one); each tab keeps its arrangement"
         >Freeform</button>
       </div>
       <button ref={helpBtnRef} className="fs-help-btn" title="How to use the Outline" onClick={toggleHelp}><FaRegQuestionCircle /></button>

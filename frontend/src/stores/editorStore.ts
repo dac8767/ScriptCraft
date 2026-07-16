@@ -1103,19 +1103,26 @@ interface EditorState {
      assignments live in beatColumns / beats.columnId+position (so every
      existing consumer keeps one source of truth); every other tab's are
      parked in outlineStash. The bar shows the tab picked as outlineBarTab. */
-  outlineTabs: Array<{ id: string; name: string }>;
+  /* v2.47, Derek: a tab is BOUND to one arrangement — whichever was active
+     when it was created, forever. Old saves' tabs have no arrangeMode yet;
+     they're stamped lazily with the mode they're next shown in. */
+  outlineTabs: Array<{ id: string; name: string; arrangeMode?: BeatArrangeMode }>;
   viewedOutlineTab: string;
   outlineBarTab: string;
   outlineStash: Record<string, OutlineTabData>;
-  addOutlineTab: () => string;
+  addOutlineTab: (mode?: BeatArrangeMode) => string;
   switchOutlineTab: (id: string) => void;
   renameOutlineTab: (id: string, name: string) => void;
   deleteOutlineTab: (id: string) => void;
   setOutlineBarTab: (id: string) => void;
+  /** v2.47: the Arrangement toggle NAVIGATES — it jumps to a tab of the
+   *  asked-for arrangement (creating one if none exists) instead of
+   *  changing the current tab, which keeps its arrangement for life. */
+  goToArrangement: (mode: BeatArrangeMode) => void;
   /** Reset to a single empty tab — new script / import. */
   resetOutlineTabs: () => void;
   /** Restore persisted tab state on script load. */
-  loadOutlineTabs: (tabs: Array<{ id: string; name: string }>, viewed: string, bar: string, stash: Record<string, OutlineTabData>) => void;
+  loadOutlineTabs: (tabs: Array<{ id: string; name: string; arrangeMode?: BeatArrangeMode }>, viewed: string, bar: string, stash: Record<string, OutlineTabData>) => void;
   /* Bar-routed edits: the bar edits ITS tab, which may not be the viewed one. */
   barUpdateColumn: (id: string, updates: Partial<{ title: string; targetPages: number }>) => void;
   barAddColumn: (title: string) => string;
@@ -1883,22 +1890,26 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setBeatColumns: (columns) => set({ beatColumns: columns }),
 
   /* v2.30: outline variation tabs. */
-  outlineTabs: [{ id: 'tab-1', name: 'Outline 1' }],
+  outlineTabs: [{ id: 'tab-1', name: 'Outline 1', arrangeMode: 'auto' }],
   viewedOutlineTab: 'tab-1',
   outlineBarTab: 'tab-1',
   outlineStash: {},
-  addOutlineTab: () => {
+  addOutlineTab: (mode) => {
     const id = uuid();
     set((s) => {
       // Park the viewed tab's data, open the new tab EMPTY: every shared
       // beat lands in Uncategorized until it's dragged into a section.
       const slots: Record<string, { columnId: string; position: number }> = {};
       for (const b of s.beats) slots[b.id] = { columnId: b.columnId, position: b.position };
+      // v2.47: the new tab is bound, for life, to the arrangement that's
+      // active at creation (or the one explicitly asked for).
+      const arrangeMode = mode ?? s.beatArrangeMode;
       return {
-        outlineTabs: [...s.outlineTabs, { id, name: `Outline ${s.outlineTabs.length + 1}` }],
+        outlineTabs: [...s.outlineTabs, { id, name: `Outline ${s.outlineTabs.length + 1}`, arrangeMode }],
         outlineStash: { ...s.outlineStash, [s.viewedOutlineTab]: { columns: s.beatColumns, beatSlots: slots } },
         viewedOutlineTab: id,
         beatColumns: [],
+        beatArrangeMode: arrangeMode,
       };
     });
     return id;
@@ -1916,7 +1927,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const slot = target.beatSlots[b.id];
       return slot ? { ...b, columnId: slot.columnId, position: slot.position } : b;
     });
-    return { viewedOutlineTab: id, outlineStash: stash, beatColumns: target.columns, beats };
+    // v2.47: the view follows the tab's own arrangement. A tab from an old
+    // save has none yet — it's stamped with the mode it's shown in now.
+    const targetTab = s.outlineTabs.find((t) => t.id === id)!;
+    const arrangeMode = targetTab.arrangeMode ?? s.beatArrangeMode;
+    const outlineTabs = targetTab.arrangeMode === undefined
+      ? s.outlineTabs.map((t) => (t.id === id ? { ...t, arrangeMode } : t))
+      : s.outlineTabs;
+    return { viewedOutlineTab: id, outlineStash: stash, beatColumns: target.columns, beats, beatArrangeMode: arrangeMode, outlineTabs };
   }),
   renameOutlineTab: (id, name) => set((s) => ({
     outlineTabs: s.outlineTabs.map((t) => (t.id === id ? { ...t, name: name.trim() || t.name } : t)),
@@ -1942,6 +1960,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       outlineStash = { ...outlineStash };
       delete outlineStash[id];
     }
+    // v2.47: landing on another tab means adopting ITS arrangement.
+    const landed = remaining.find((t) => t.id === viewedOutlineTab);
     return {
       outlineTabs: remaining,
       viewedOutlineTab,
@@ -1949,11 +1969,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       beats,
       outlineStash,
       outlineBarTab: s.outlineBarTab === id ? viewedOutlineTab : s.outlineBarTab,
+      beatArrangeMode: landed?.arrangeMode ?? s.beatArrangeMode,
     };
   }),
   setOutlineBarTab: (id) => set((s) => (s.outlineTabs.some((t) => t.id === id) ? { outlineBarTab: id } : {})),
+  goToArrangement: (mode) => {
+    const s = get();
+    // Lazy-migrate a legacy active tab: it keeps the mode it's shown in.
+    const active = s.outlineTabs.find((t) => t.id === s.viewedOutlineTab);
+    if (active && active.arrangeMode === undefined) {
+      set({ outlineTabs: s.outlineTabs.map((t) => (t.id === active.id ? { ...t, arrangeMode: s.beatArrangeMode } : t)) });
+    }
+    if (s.beatArrangeMode === mode) return;
+    const target = get().outlineTabs.find((t) => t.arrangeMode === mode);
+    if (target) get().switchOutlineTab(target.id);
+    else get().addOutlineTab(mode);
+  },
   resetOutlineTabs: () => set({
-    outlineTabs: [{ id: 'tab-1', name: 'Outline 1' }],
+    outlineTabs: [{ id: 'tab-1', name: 'Outline 1', arrangeMode: 'auto' }],
     viewedOutlineTab: 'tab-1',
     outlineBarTab: 'tab-1',
     outlineStash: {},

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.46';
+export const APP_VERSION = '2.47';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.47',
+    date: '2026-07-16',
+    items: [
+      { title: 'Outline tabs own their arrangement', detail: 'A tab is bound to whichever arrangement — Sections or Freeform — was active when it was created, and keeps it for life. Switching tabs switches the view to match. The Arrangement toggle now navigates: it jumps to a tab of the asked-for arrangement, and creates one if none exists.', tags: ['Tools', 'UI'] },
+    ],
+  },
   {
     version: '2.46',
     date: '2026-07-16',

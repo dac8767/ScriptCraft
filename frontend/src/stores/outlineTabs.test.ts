@@ -111,3 +111,66 @@ describe('outline tabs', () => {
     expect(S().outlineBarTab).toBe('x');
   });
 });
+
+/* v2.47, Derek: a tab is bound to the arrangement active when it was
+   created, for life. The Arrangement toggle NAVIGATES between tabs
+   (creating one when needed) instead of changing the current tab. */
+describe('per-tab arrangement binding (v2.47)', () => {
+  beforeEach(() => {
+    S().setBeatArrangeMode('auto');
+    S().resetOutlineTabs();
+  });
+
+  it('a new tab captures the active arrangement at creation', () => {
+    S().setBeatArrangeMode('custom');
+    const id = S().addOutlineTab();
+    expect(S().outlineTabs.find((t) => t.id === id)?.arrangeMode).toBe('custom');
+    expect(S().beatArrangeMode).toBe('custom');
+  });
+
+  it('an explicit mode wins over the active one', () => {
+    const id = S().addOutlineTab('custom');
+    expect(S().outlineTabs.find((t) => t.id === id)?.arrangeMode).toBe('custom');
+    expect(S().beatArrangeMode).toBe('custom');
+  });
+
+  it('switching tabs restores each tab\'s own arrangement', () => {
+    const tab1 = S().viewedOutlineTab;                 // auto
+    const tab2 = S().addOutlineTab('custom');
+    S().switchOutlineTab(tab1);
+    expect(S().beatArrangeMode).toBe('auto');
+    S().switchOutlineTab(tab2);
+    expect(S().beatArrangeMode).toBe('custom');
+  });
+
+  it('goToArrangement jumps to an existing tab of that mode', () => {
+    const tab1 = S().viewedOutlineTab;                 // auto
+    S().addOutlineTab('custom');
+    S().switchOutlineTab(tab1);
+    S().goToArrangement('custom');
+    expect(S().viewedOutlineTab).not.toBe(tab1);
+    expect(S().beatArrangeMode).toBe('custom');
+    expect(S().outlineTabs).toHaveLength(2);           // no new tab created
+  });
+
+  it('goToArrangement creates a tab when none has that mode', () => {
+    S().goToArrangement('custom');
+    expect(S().outlineTabs).toHaveLength(2);
+    expect(S().beatArrangeMode).toBe('custom');
+    expect(S().outlineTabs[1].arrangeMode).toBe('custom');
+  });
+
+  it('a legacy tab (no stored mode) is stamped with the mode it is shown in', () => {
+    // Simulate an old save: tabs without arrangeMode.
+    S().loadOutlineTabs([{ id: 'old-1', name: 'A' }, { id: 'old-2', name: 'B' }], 'old-1', 'old-1', {});
+    S().switchOutlineTab('old-2');
+    expect(S().outlineTabs.find((t) => t.id === 'old-2')?.arrangeMode).toBe('auto');
+    expect(S().beatArrangeMode).toBe('auto');
+  });
+
+  it('deleting the viewed tab adopts the arrangement of the tab you land on', () => {
+    const tab2 = S().addOutlineTab('custom');
+    S().deleteOutlineTab(tab2);
+    expect(S().beatArrangeMode).toBe('auto');
+  });
+});
