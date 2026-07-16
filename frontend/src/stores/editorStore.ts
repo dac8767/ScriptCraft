@@ -24,6 +24,7 @@ interface ViewState {
   outlineBarRowScale?: number;
   scrapbookTreeScale?: number;
   bigBtnInsetPx?: number;
+  panelItemScale?: { left: number; right: number };
   outlineBarRows?: OutlineBarRow[];
   outlineBarLabels?: boolean;
   beatColorAllTabs?: boolean;
@@ -893,6 +894,11 @@ interface EditorState {
    *  the Big Button grip's vertical axis. */
   bigBtnInsetPx: number;
   setBigBtnInset: (px: number) => void;
+  /** v2.77: vertical scale of the side panels' dock items (1 = default) —
+   *  row height, text and icons follow. Driven by the panel edge's vertical
+   *  axis, per side. */
+  panelItemScale: { left: number; right: number };
+  setPanelItemScale: (side: 'left' | 'right', scale: number) => void;
   /** v2.29: item spacing (flex gap) per bar — see the GapHandle grips. */
   chromeGapPx: { menu: number; toolbar: number; bigbtn: number; scrapbook: number };
   setChromeGap: (bar: 'menu' | 'toolbar' | 'bigbtn' | 'scrapbook', px: number) => void;
@@ -1756,6 +1762,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     st.setOutlineBarRowScale(1);
     st.setScrapbookTreeScale(1);
     st.setBigBtnInset(16);
+    st.setPanelItemScale('left', 1);
+    st.setPanelItemScale('right', 1);
   },
   navFilter: '',
   setNavFilter: (v) => set({ navFilter: v }),
@@ -2309,6 +2317,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const clamped = Math.min(40, Math.max(0, Math.round(px)));
     saveViewState({ bigBtnInsetPx: clamped });
     return { bigBtnInsetPx: clamped };
+  }),
+  panelItemScale: (_vs.panelItemScale as { left: number; right: number }) ?? { left: 1, right: 1 },
+  setPanelItemScale: (side, scale) => set((st) => {
+    const clamped = Math.min(1.8, Math.max(0.7, scale));
+    const next = { ...st.panelItemScale, [side]: clamped };
+    saveViewState({ panelItemScale: next });
+    return { panelItemScale: next };
   }),
   chromeGapPx: { menu: 0, toolbar: 2, bigbtn: 0, scrapbook: 12, ...((_vs.chromeGapPx as Record<string, number>) ?? {}) },
   setChromeGap: (bar, px) => set((st) => {

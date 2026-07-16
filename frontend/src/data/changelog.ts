@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.76';
+export const APP_VERSION = '2.77';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.77',
+    date: '2026-07-16',
+    items: [
+      { title: 'Side panel edges go two-axis', detail: 'The panel edge still drags sideways to set the panel\'s width — and now dragging it up or down scales the panel\'s items, Premiere-style: row height, text, and icons grow or shrink together. An indicator dot on the edge shows where the size sits; Reset Sizing restores everything.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '2.76',
     date: '2026-07-16',

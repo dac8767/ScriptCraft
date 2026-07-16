@@ -442,7 +442,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   const activeId = side === 'left' ? activeTool : activeToolRight;
   const setActive = side === 'left' ? setActiveTool : setActiveToolRight;
   const active = tools.find((t) => t.id === activeId) || null;
-  const { toolSizes, setToolSize, panelSizeMode, chromeCustomPx, setChromeCustomPx, setPanelSizeMode, uiResizeLocked } = useEditorStore();
+  const { toolSizes, setToolSize, panelSizeMode, chromeCustomPx, setChromeCustomPx, setPanelSizeMode, uiResizeLocked, panelItemScale } = useEditorStore();
   const dockW = dockWidthFor(side, panelSizeMode[side], chromeCustomPx[side === 'left' ? 'panelLeft' : 'panelRight']);
   // v0.66: by DEFAULT every window opens INSIDE its side panel (inline),
   // pushing the dock's remaining items down — so nothing floats over the
@@ -529,11 +529,32 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   const startEdgeResize = (e: React.PointerEvent) => {
     e.preventDefault();
     const startX = e.clientX;
+    const startY = e.clientY;
     const startW = dockW;
+    const startScale = useEditorStore.getState().panelItemScale[side];
     const surface = side === 'left' ? 'panelLeft' : 'panelRight';
     let w = startW;
+    let wChanged = false;
+    // v2.77: each axis engages only after real travel — a stray click or a
+    // single-axis drag never disturbs the other axis (or the size mode).
+    let hEngaged = false;
+    let vEngaged = false;
     const onMove = (ev: PointerEvent) => {
+      // v2.77, Derek: the edge is TWO-AXIS, Premiere-style — sideways sizes
+      // the panel's width as before; up/down scales the panel's items
+      // (rows, text, icons together).
+      const dy = ev.clientY - startY;
+      if (!vEngaged && Math.abs(dy) >= 6) vEngaged = true;
+      if (vEngaged) useEditorStore.getState().setPanelItemScale(side, startScale + dy / 220);
+
       const dx = ev.clientX - startX;
+      if (!hEngaged && Math.abs(dx) >= 3) {
+        hEngaged = true;
+        // Switch to custom on the first real horizontal move, not on
+        // mousedown — a stray click shouldn't silently change the mode.
+        setPanelSizeMode(side, 'custom');
+      }
+      if (!hEngaged) return;
       const raw = startW + (side === 'left' ? dx : -dx);
       // v2.29, Derek: dragged small enough, the panel clicks into the
       // icon-only rail; dragged back out, it's a normal custom-width panel.
@@ -547,33 +568,38 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
       }
       if (st.panelSizeMode[side] === 'icons') st.setPanelSizeMode(side, 'custom');
       w = Math.round(Math.max(PANEL_MIN_W, Math.min(PANEL_MAX_W, raw)));
+      wChanged = true;
       setChromeCustomPx(surface, w);
     };
     const onUp = () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
-      if (useEditorStore.getState().panelSizeMode[side] !== 'icons') setChromeCustomPx(surface, w);
+      if (wChanged && useEditorStore.getState().panelSizeMode[side] !== 'icons') setChromeCustomPx(surface, w);
     };
-    // Switch to custom on the FIRST move, not on mousedown — a stray click on the
-    // edge shouldn't silently change the mode.
-    const onFirstMove = () => {
-      setPanelSizeMode(side, 'custom');
-      document.removeEventListener('pointermove', onFirstMove);
-    };
-    document.addEventListener('pointermove', onFirstMove);
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
   };
 
+  const itemScale = panelItemScale[side];
   return (
-    <div className={`tool-dock-wrap tool-dock-${side} tool-dock-${panelSizeMode[side]}`}>
+    <div
+      className={`tool-dock-wrap tool-dock-${side} tool-dock-${panelSizeMode[side]}`}
+      // v2.77: the edge's vertical axis scales the dock items via this var.
+      style={{ ['--dock-scale' as string]: itemScale }}
+    >
       {/* v2.55: the sizing lock removes the grab edge — no dead controls. */}
       {!uiResizeLocked && (
         <div
           className={`tool-dock-edge tool-dock-edge-${side}`}
           onPointerDown={startEdgeResize}
-          title="Drag to resize the panel"
-        />
+          title="Drag sideways: panel width · drag up/down: item size"
+        >
+          {/* v2.77: Premiere-style indicator — where the item scale sits */}
+          <span
+            className="tool-dock-edge-dot"
+            style={{ top: `${10 + ((itemScale - 0.7) / 1.1) * 80}%` }}
+          />
+        </div>
       )}
       <div className={`tool-dock${iconsMode ? ' tool-dock-iconrail' : ''}${solo ? ' tool-dock-scrapbook-solo' : ''}`} style={{ width: dockW }}>
         {/* v2.06: icon rail — a square per tool (OneNote-style). Clicking
