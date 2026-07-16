@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.20';
+export const APP_VERSION = '2.21';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.21',
+    date: '2026-07-16',
+    items: [
+      { title: 'Outline Bar: dragging no longer flings items', detail: 'When the zoomed track came out narrower than the bar, the CSS quietly stretched it to full width but the drag math still used the un-stretched scale — a small mouse move threw the item across the screen. Drag distance now always uses the scale you actually see.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '2.20',
     date: '2026-07-16',

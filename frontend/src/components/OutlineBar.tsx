@@ -115,8 +115,13 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
   // The acts define the plan; the script and beats can outgrow it.
   const totalPages = Math.max(1, actsTotal, Math.ceil(pageCount), Math.ceil(beatsEnd));
 
-  // px per page: explicit zoom, or fit-to-width when zoom === 0.
-  const ppp = zoom > 0 ? zoom : Math.max(2, (viewW || 800) / totalPages);
+  // px per page: explicit zoom, or fit-to-width when zoom === 0. Never below
+  // fit width: the CSS gives the track min-width:100%, so when zoom×pages is
+  // narrower than the bar the track is silently stretched — v2.21: drag math
+  // divided mouse deltas by the small zoom while the screen showed the
+  // stretched scale, so an inch of mouse flung an item across the bar.
+  const fitPpp = Math.max(2, (viewW || 800) / totalPages);
+  const ppp = zoom > 0 ? Math.max(zoom, fitPpp) : fitPpp;
   const trackW = Math.ceil(totalPages * ppp);
 
   /* ── the script row ── */
