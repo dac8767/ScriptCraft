@@ -4541,12 +4541,11 @@ div[data-type="lyrics"].is-empty::before { font-style: italic; }
 .beat-card-resize-handle::after {
   content: '';
   position: absolute;
-  bottom: 3px;
-  right: 3px;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid var(--fd-text-muted);
-  border-bottom: 2px solid var(--fd-text-muted);
+  bottom: 1px;
+  right: 1px;
+  width: 12px;
+  height: 12px;
+  /* v2.74: pattern comes from the shared corner-grip rule (tool-window-resize) */
 }
 .beat-card:hover .beat-card-resize-handle { opacity: 1; }
 
@@ -12467,6 +12466,17 @@ html.android .version-history-panel {
   flex-direction: column;
   overflow: hidden;
 }
+/* v2.74, Derek: ONE corner-resize indicator everywhere. This selector list
+   is the single source of the pattern — every bottom-right grip in the app
+   (tool windows, Scrapbook boxes, beat cards) paints these same diagonal
+   stripes. Add new grips HERE, don't invent another triangle. */
+.tool-window-resize,
+.fs-nb-box-grip,
+.beat-card-resize-handle::after {
+  background:
+    linear-gradient(135deg, transparent 50%, var(--fd-text-muted) 50%, var(--fd-text-muted) 55%,
+      transparent 55%, transparent 70%, var(--fd-text-muted) 70%, var(--fd-text-muted) 75%, transparent 75%);
+}
 .tool-window-resize {
   position: absolute;
   right: 0;
@@ -12474,9 +12484,6 @@ html.android .version-history-panel {
   width: 16px;
   height: 16px;
   cursor: nwse-resize;
-  background:
-    linear-gradient(135deg, transparent 50%, var(--fd-text-muted) 50%, var(--fd-text-muted) 55%,
-      transparent 55%, transparent 70%, var(--fd-text-muted) 70%, var(--fd-text-muted) 75%, transparent 75%);
   opacity: 0.6;
 }
 .tool-window-resize:hover { opacity: 1; }
@@ -16462,8 +16469,7 @@ input.fs-switch:checked::after { left: 15px; }
   width: 14px;
   height: 14px;
   cursor: nwse-resize;
-  background: linear-gradient(135deg, transparent 50%, var(--fd-text-muted) 50%);
-  border-bottom-right-radius: 6px;
+  /* v2.74: pattern comes from the shared corner-grip rule (tool-window-resize) */
   opacity: .6;
 }
 .fs-nb-imgbox img {

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.73';
+export const APP_VERSION = '2.74';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.74',
+    date: '2026-07-16',
+    items: [
+      { title: 'One resize indicator everywhere', detail: 'Every bottom-right corner grip now paints the same diagonal-stripe indicator — the Scrapbook\'s boxes used a solid triangle and beat cards an L-corner. One CSS rule owns the pattern, so they can\'t drift again.', tags: ['UI', 'Polish'] },
+    ],
+  },
   {
     version: '2.73',
     date: '2026-07-16',
