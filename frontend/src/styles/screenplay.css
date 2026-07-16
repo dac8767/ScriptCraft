@@ -16733,3 +16733,5 @@ input.fs-switch:checked::after { left: 15px; }
 .menu-scrapbook-sep-drag { cursor: ew-resize; touch-action: none; }
 .menu-scrapbook-sep-drag:hover { background: var(--fd-accent); }
 .fs-nb-side-btns button.active { color: var(--fd-accent); }
+/* v2.39, Derek: a wider berth between the last menu item and the grip. */
+.menu-bar .fs-gap-handle { margin-left: 14px; }

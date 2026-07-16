@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.38';
+export const APP_VERSION = '2.39';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.39',
+    date: '2026-07-16',
+    items: [
+      { title: 'Outline Bar: jump to the Outline window', detail: 'A new button at the top of the bar\'s side column opens the Outline window directly.', tags: ['Tools', 'UI'] },
+      { title: 'Menu bar: room before the grip', detail: 'More space between the last menu item and the spacing grip.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '2.38',
     date: '2026-07-16',

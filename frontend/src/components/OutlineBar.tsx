@@ -22,7 +22,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
-import { FaFileExport } from 'react-icons/fa';
+import { FaFileExport, FaStream } from 'react-icons/fa';
 import { useEditorStore, type BeatInfo, type BeatColumn } from '../stores/editorStore';
 import { computeSceneLengths } from '../editor/pagination';
 import AddMenu from './AddMenu';
@@ -420,6 +420,14 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
         className="fs-ob-side"
         title={outlineTabs.length > 1 ? `Showing: ${outlineTabs.find((t) => t.id === barTab)?.name ?? ''}` : undefined}
       >
+        {/* v2.39, Derek: top item — jump to the Outline window itself. */}
+        <button
+          className="fs-ob-iconbtn"
+          title="Open the Outline window"
+          onClick={() => useEditorStore.getState().openTool('beatboard')}
+        >
+          <FaStream />
+        </button>
         <AddMenu
           label="＋"
           title="Add a section or a beat"
