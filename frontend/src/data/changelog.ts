@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.55';
+export const APP_VERSION = '2.56';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.56',
+    date: '2026-07-16',
+    items: [
+      { title: 'Scrapbook stays in the side panel', detail: 'The Scrapbook is panel-bound by design now — it shows no pop-out button in the side panel, so it can\'t wander off into a floating window.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '2.55',
     date: '2026-07-16',

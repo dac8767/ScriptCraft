@@ -612,8 +612,10 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
           /* v2.00: the pop-out button lives in the window's HEADER — the row
              INSIDE the window, below the dock button (Derek's terminology) —
              on the side closest to the editor: far right in the left panel,
-             far left in the right panel, pointing at the editor. */
-          const popOutBtn = isOpenInline ? (
+             far left in the right panel, pointing at the editor.
+             v2.56, Derek: the Scrapbook is panel-bound BY DESIGN — it never
+             pops out, so it gets no pop-out button. */
+          const popOutBtn = isOpenInline && t.id !== 'notebook' ? (
             <button
               className="tool-dock-popout"
               title="Pop out into a floating window for resizing"
