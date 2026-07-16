@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.77';
+export const APP_VERSION = '2.78';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.78',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: the Reset Sizing button actually appears', detail: 'v2.67\'s toolbar migration rode inside the v2.55 one-time block, whose flag existing installs had already set — so the button never landed in saved layouts. It now migrates under its own flag and shows up beside the sizing lock.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '2.77',
     date: '2026-07-16',

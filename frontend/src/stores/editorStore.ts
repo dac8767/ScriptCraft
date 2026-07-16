@@ -144,6 +144,16 @@ try {
   if (_vs.toolbarZonesSet && !localStorage.getItem(LOCK_FLAG)) {
     localStorage.setItem(LOCK_FLAG, '1');
     _tbZones = { left: migrateLockResize(_tbZones.left), right: _tbZones.right };
+    saveViewState({ toolbarLeft: _tbZones.left });
+  }
+} catch { /* storage unavailable — keep what we have */ }
+// v2.67 one-time: saved layouts get the sizing-reset button beside the lock.
+// v2.78: this MUST be its own flag — it first shipped inside the v2.55 block
+// above, whose flag was already set on existing installs, so it never ran.
+try {
+  const RESET_FLAG = 'opendraft:toolbarResetSizes267';
+  if (_vs.toolbarZonesSet && !localStorage.getItem(RESET_FLAG)) {
+    localStorage.setItem(RESET_FLAG, '1');
     _tbZones = { left: migrateResetSizes(_tbZones.left), right: _tbZones.right };
     saveViewState({ toolbarLeft: _tbZones.left });
   }
