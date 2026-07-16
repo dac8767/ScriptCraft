@@ -69,6 +69,10 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'tags', label: 'Production Tags' },
   { key: 'zoom', label: 'Zoom', priority: '1', zoom: true },
   { key: 'view', label: 'Editor View', desktopOnly: true },
+  // v2.34, Derek: one-click surface toggles.
+  { key: 'togglePanelLeft', label: 'Left Panel' },
+  { key: 'togglePanelRight', label: 'Right Panel' },
+  { key: 'toggleOutlineBar', label: 'Outline Bar' },
   // v2.02: Customize is a toolbar ITEM again — the anchor of the Big Button
   // section (the old right zone, reborn). Permanent: reorderable within the
   // section, never hidden or lost.
@@ -97,8 +101,17 @@ export const DEFAULT_TOOLBAR_LEFT: string[] = [
   'b:textColor', 'b:highlightColor', 'd:def-color',
   'b:alignLeft', 'b:alignCenter', 'b:alignRight', 'b:alignJustify', 'd:def-align',
   'b:find', 'b:goto', 'd:def-nav',
-  'b:zoom', 'b:view',
+  'b:zoom', 'b:view', 'd:def-surfaces',
+  'b:togglePanelLeft', 'b:togglePanelRight', 'b:toggleOutlineBar',
 ];
+
+/** v2.34 one-time: existing saved layouts get the three surface toggles
+ *  appended to Main (new installs have them via the default above). */
+export function migratePanelToggles(left: string[]): string[] {
+  const toggles = ['b:togglePanelLeft', 'b:togglePanelRight', 'b:toggleOutlineBar'];
+  if (toggles.some((t) => left.includes(t))) return left;
+  return [...left, 'd:def-surfaces', ...toggles];
+}
 
 export const DEFAULT_TOOLBAR_RIGHT: string[] = ['customize'].map((k) => `b:${k}`);
 

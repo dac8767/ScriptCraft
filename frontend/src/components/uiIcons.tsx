@@ -12,7 +12,7 @@
 import React from 'react';
 import {
   FaFile, FaPencilAlt, FaPalette, FaClipboardList, FaEye, FaWrench, FaPlus,
-  FaColumns, FaQuestionCircle,
+  FaColumns, FaQuestionCircle, FaStream,
   FaUndo, FaRedo, FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
   FaBold, FaItalic, FaUnderline, FaStrikethrough, FaSubscript, FaSuperscript,
   FaPaintBrush, FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
@@ -183,4 +183,9 @@ export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
   tags: <FaTags />,
   zoom: <FaSearchPlus />,
   view: <FaDesktop />,
+  // v2.34: surface toggles. The right panel is the left icon mirrored —
+  // one glyph, two directions.
+  togglePanelLeft: <FaColumns />,
+  togglePanelRight: <FaColumns style={{ transform: 'scaleX(-1)' }} />,
+  toggleOutlineBar: <FaStream />,
 };

@@ -91,6 +91,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     setPendingTagSelection,
     setEditingTagId,
     toolbarMode, chromeCustomPx, chromeGapPx,
+    navigatorOpen, shelfOpen, outlineBarOpen,
   } = useEditorStore();
 
   // v2.07: while the Scrapbook is open, the toolbar's own formatting buttons
@@ -1102,6 +1103,29 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             </div>
           )}
         </div>
+      );
+      /* v2.34, Derek: one-click toggles for the side panels and the
+         Outline Bar — lit while the surface is showing. */
+      case 'togglePanelLeft': return (
+        <button
+          className={`toolbar-btn${navigatorOpen ? ' active' : ''}`}
+          title={navigatorOpen ? 'Hide the left panel' : 'Show the left panel'}
+          onClick={() => useEditorStore.getState().toggleNavigator()}
+        >{TOOLBAR_ICONS.togglePanelLeft}</button>
+      );
+      case 'togglePanelRight': return (
+        <button
+          className={`toolbar-btn${shelfOpen ? ' active' : ''}`}
+          title={shelfOpen ? 'Hide the right panel' : 'Show the right panel'}
+          onClick={() => useEditorStore.getState().toggleShelf()}
+        >{TOOLBAR_ICONS.togglePanelRight}</button>
+      );
+      case 'toggleOutlineBar': return (
+        <button
+          className={`toolbar-btn${outlineBarOpen ? ' active' : ''}`}
+          title={outlineBarOpen ? 'Hide the Outline Bar' : 'Show the Outline Bar'}
+          onClick={() => useEditorStore.getState().setOutlineBarOpen(!outlineBarOpen)}
+        >{TOOLBAR_ICONS.toggleOutlineBar}</button>
       );
       case 'view': return (
         <>

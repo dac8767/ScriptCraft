@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.33';
+export const APP_VERSION = '2.34';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.34',
+    date: '2026-07-16',
+    items: [
+      { title: 'Toolbar toggles for the panels and the bar', detail: 'Three new toolbar buttons — Left Panel, Right Panel, Outline Bar — light up while their surface is showing and toggle it with one click. Existing toolbar layouts get them appended after a divider; move or hide them in Customize like anything else.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '2.33',
     date: '2026-07-16',
