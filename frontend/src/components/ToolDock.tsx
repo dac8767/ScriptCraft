@@ -462,8 +462,12 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   // v2.15 (Settings > Tools): Scrapbook solo mode — while it's open, every
   // other sidebar item hides and its window fills the panel. Render-time
   // only: Return to editor restores the sidebars exactly, nothing rewritten.
-  const scrapbookSolo = useNotebookStore((s) => s.notebookOpen)
-    && useSettingsStore((s) => s.scrapbookExclusive);
+  // v2.27: BOTH hooks must run unconditionally — `open && useSettings(...)`
+  // short-circuited, so opening the Scrapbook changed the hook count and
+  // crashed React ("prevDeps.length") under the failed-to-start overlay.
+  const scrapbookOpenForSolo = useNotebookStore((s) => s.notebookOpen);
+  const scrapbookExclusive = useSettingsStore((s) => s.scrapbookExclusive);
+  const scrapbookSolo = scrapbookOpenForSolo && scrapbookExclusive;
   // neverDock tools float regardless — even a stale small toolSize from before
   // the flag existed must not pull them inline.
   const inline = !iconsMode && !!(active && activeSize && activeSize.w <= dockW && !active.neverDock);

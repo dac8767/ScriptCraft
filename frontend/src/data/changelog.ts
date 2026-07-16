@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.26';
+export const APP_VERSION = '2.27';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.27',
+    date: '2026-07-16',
+    items: [
+      { title: 'Opening the Scrapbook no longer crashes the app', detail: 'A React rule was being broken in the side-panel dock since v2.15: one of its state subscriptions only ran while the Scrapbook was open, so toggling it could crash React ("prevDeps.length") and leave the startup-failure screen over your script. Both subscriptions now always run.', tags: ['Fix'] },
+    ],
+  },
   {
     version: '2.26',
     date: '2026-07-16',
