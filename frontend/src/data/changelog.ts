@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.56';
+export const APP_VERSION = '2.57';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.57',
+    date: '2026-07-16',
+    items: [
+      { title: 'Zoom: Scale to Max Width', detail: 'In the toolbar\'s zoom menu and View > Zoom: the page zooms to fill the editor area\'s full width — as big as it can get with the sidebars you have open. Also rebindable as a keyboard shortcut.', tags: ['New Feature', 'Editor'] },
+    ],
+  },
   {
     version: '2.56',
     date: '2026-07-16',

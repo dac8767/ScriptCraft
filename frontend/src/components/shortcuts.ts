@@ -64,6 +64,7 @@ export const SHORTCUT_COMMANDS: ShortcutCommand[] = [
   { id: 'zoomOut', label: 'Zoom Out', group: 'View', defaultCombo: 'Mod+-', owner: 'app' },
   { id: 'actualSize', label: 'Actual Size', group: 'View', defaultCombo: null, owner: 'app' },
   { id: 'fitPage', label: 'Fit Page to Screen', group: 'View', defaultCombo: null, owner: 'app' },
+  { id: 'fitWidth', label: 'Scale to Max Width', group: 'View', defaultCombo: null, owner: 'app' },
   { id: 'customize', label: 'Customize', group: 'View', defaultCombo: null, owner: 'app' },
 
   // ── Format ──

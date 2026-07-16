@@ -344,6 +344,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   useEffect(() => {
     const onCmd = (e: Event) => {
       if ((e as CustomEvent).detail === 'fitPage') fitPageToScreen();
+      if ((e as CustomEvent).detail === 'fitWidth') fitPageToWidth();
     };
     window.addEventListener('scriptcraft:command', onCmd);
     return () => window.removeEventListener('scriptcraft:command', onCmd);
@@ -415,6 +416,23 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     // Whichever axis runs out first decides the zoom — fitting height alone
     // would clip the sides on a narrow window.
     const pct = Math.floor(Math.min(availH / blockH, availW / pageW) * 100);
+    setZoomLevel(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pct)));
+  };
+
+  /** v2.57, Derek: scale so the page fills the editor's WIDTH — as big as it
+   *  can get in the current window; the height scrolls. How much width there
+   *  is depends on the sidebars, which is the point: same measured-geometry
+   *  approach as fitPageToScreen, width axis only. */
+  const fitPageToWidth = () => {
+    const scroller = document.querySelector('.editor-main') as HTMLElement | null;
+    if (!scroller) return;
+    const CSS_PX_PER_IN = 96;
+    const pageW = pageLayout.pageWidth * CSS_PX_PER_IN;
+    const sc = getComputedStyle(scroller);
+    const padX = (parseFloat(sc.paddingLeft) || 0) + (parseFloat(sc.paddingRight) || 0);
+    const availW = scroller.clientWidth - padX;
+    if (availW <= 0 || !pageW) return;
+    const pct = Math.floor((availW / pageW) * 100);
     setZoomLevel(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pct)));
   };
 
@@ -1111,6 +1129,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 className="zoom-menu-item"
                 onClick={() => { fitPageToScreen(); setZoomMenuOpen(false); }}
               >Fit Page to Screen</button>
+              <button
+                className="zoom-menu-item"
+                onClick={() => { fitPageToWidth(); setZoomMenuOpen(false); }}
+              >Scale to Max Width</button>
             </div>
           )}
         </div>

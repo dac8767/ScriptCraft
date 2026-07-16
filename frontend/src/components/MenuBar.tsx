@@ -957,6 +957,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     zoomOut: () => setZoomLevel(Math.max(50, useEditorStore.getState().zoomLevel - 10)),
     actualSize: () => setZoomLevel(100),
     fitPage: () => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'fitPage' })),
+    fitWidth: () => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'fitWidth' })),
     customize: () => openCustomize('menu'),
 
     bold: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(),
@@ -1431,6 +1432,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           children: [
             { icon: <FaSearchPlus />, label: 'Zoom In', shortcut: sc('zoomIn'), action: () => setZoomLevel(Math.min(300, zoomLevel + 10)) },
             { icon: <FaSearchMinus />, label: 'Zoom Out', shortcut: sc('zoomOut'), action: () => setZoomLevel(Math.max(50, zoomLevel - 10)) },
+            // v2.57, Derek: as big as the page can get in the current editor
+            // width (the sidebars decide how much room there is). The
+            // measurement lives in the Toolbar; the command event reaches it.
+            { icon: <FaSearchPlus />, label: 'Scale to Max Width', shortcut: sc('fitWidth'), action: () => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'fitWidth' })) },
             { separator: true, label: '' },
             { icon: <FaSearch />, label: zoomLevel === 50 ? '\u2713 50%' : '50%', action: () => setZoomLevel(50) },
             { icon: <FaSearch />, label: zoomLevel === 75 ? '\u2713 75%' : '75%', action: () => setZoomLevel(75) },
