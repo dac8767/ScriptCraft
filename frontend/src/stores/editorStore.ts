@@ -2264,7 +2264,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setVersionLabel: (label) => set({ versionLabel: label }),
   toolbarLeft: _tbZones.left,
   toolbarRight: _tbZones.right,
-  toolbarZonesSet: _vs.toolbarZonesSet === true || _tbZones.left.length > 0 || _tbZones.right.length > 0,
+  // v2.86: judged from what was PERSISTED, never from the normalized output —
+  // normalizeToolbarZones re-inserts the permanent Customize anchor into the
+  // right zone, which made a FRESH profile look like a user-authored empty
+  // layout, so the default toolbar never seeded (empty toolbar on install).
+  toolbarZonesSet: _vs.toolbarZonesSet === true
+    || (Array.isArray(_vs.toolbarLeft) && _vs.toolbarLeft.length > 0)
+    || (Array.isArray(_vs.toolbarRight) && _vs.toolbarRight.length > 0),
   setToolbarZones: (left, right) => {
     saveViewState({ toolbarLeft: left, toolbarRight: right, toolbarZonesSet: true });
     set({ toolbarLeft: left, toolbarRight: right, toolbarZonesSet: true });

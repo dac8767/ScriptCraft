@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.85';
+export const APP_VERSION = '2.86';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.86',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: fresh installs get a toolbar', detail: 'On a brand-new profile the toolbar rendered empty — the always-present Customize anchor made the layout look user-authored, so the default buttons never seeded. Found while testing in a clean browser; existing installs were never affected.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '2.85',
     date: '2026-07-16',
