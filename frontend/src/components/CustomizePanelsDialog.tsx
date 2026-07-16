@@ -14,7 +14,7 @@ import { MENU_ICONS, TOOLBAR_ICONS, UTILITY_ICONS } from './uiIcons';
  * checkboxes (a ScriptCraft v5.5 holdover) are gone; hidden items are re-added
  * from the Add dropdown. Item registry: toolbarBuiltins.ts.
  */
-import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
+import { DEFAULT_OUTLINE_BAR_ROWS, MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, bigZoneAllowed } from './toolbarBuiltins';
@@ -48,6 +48,98 @@ export function titleCase(s: string): string {
     if (/[A-Z]/.test(w.slice(1))) return w;
     return w.charAt(0).toUpperCase() + w.slice(1);
   }).join('');
+}
+
+/** v2.42, Derek: Customize > Outline Bar — reorder the bar's rows, add
+ *  extra ones, set each row's height, toggle the row labels. One config
+ *  (outlineBarRows) that the bar renders directly. */
+const OUTLINE_ROW_LABELS: Record<string, string> = {
+  ruler: 'Page Ruler', acts: 'Sections', beats: 'Beats', script: 'Script Scenes',
+};
+const OUTLINE_ROW_DEFAULT_H: Record<string, number> = { ruler: 16, acts: 26, beats: 26, script: 26 };
+function OutlineBarTab() {
+  const rows = useEditorStore((s) => s.outlineBarRows);
+  const setRows = useEditorStore((s) => s.setOutlineBarRows);
+  const labels = useEditorStore((s) => s.outlineBarLabels);
+  const setLabels = useEditorStore((s) => s.setOutlineBarLabels);
+
+  const move = (i: number, d: -1 | 1) => {
+    const j = i + d;
+    if (j < 0 || j >= rows.length) return;
+    const next = [...rows];
+    [next[i], next[j]] = [next[j], next[i]];
+    setRows(next);
+  };
+  const addRow = (kind: 'ruler' | 'acts' | 'beats' | 'script') => {
+    const n = rows.filter((r) => r.kind === kind).length + 1;
+    setRows([...rows, { id: `${kind}-${n}-${Date.now().toString(36)}`, kind }]);
+  };
+
+  return (
+    <section>
+      <h3>Outline Bar Rows</h3>
+      <p className="fs-customize-hint">
+        Reorder with the arrows; set a height in pixels (blank = default);
+        × removes a row. Add Row can also add a second copy — a ruler at the
+        bottom, say. Drag the bar's bottom edge in the app to scale every
+        row at once.
+      </p>
+      {rows.map((r, i) => (
+        <div key={r.id} className="fs-customize-row fs-size-row">
+          <span className="fs-customize-tool">{OUTLINE_ROW_LABELS[r.kind] ?? r.kind}</span>
+          <span className="fs-customize-seg">
+            <button title="Move up" disabled={i === 0} onClick={() => move(i, -1)}>↑</button>
+            <button title="Move down" disabled={i === rows.length - 1} onClick={() => move(i, 1)}>↓</button>
+          </span>
+          <label className="fs-obrow-height">
+            <input
+              type="number"
+              min={10}
+              max={120}
+              placeholder={String(OUTLINE_ROW_DEFAULT_H[r.kind] ?? 26)}
+              value={r.h ?? ''}
+              onChange={(e) => {
+                const n = Math.round(Number(e.target.value));
+                setRows(rows.map((x) => (x.id === r.id
+                  ? { ...x, h: Number.isFinite(n) && n >= 10 ? Math.min(120, n) : undefined }
+                  : x)));
+              }}
+            />
+            <span>px</span>
+          </label>
+          <button
+            className="fs-dnd-rowbtn"
+            title={rows.length <= 1 ? 'The last row cannot be removed' : 'Remove this row'}
+            disabled={rows.length <= 1}
+            onClick={() => setRows(rows.filter((x) => x.id !== r.id))}
+          >×</button>
+        </div>
+      ))}
+      <div className="fs-customize-row fs-size-row">
+        <span className="fs-customize-tool">Add Row</span>
+        <span className="fs-customize-seg">
+          {(['ruler', 'acts', 'beats', 'script'] as const).map((k) => (
+            <button key={k} onClick={() => addRow(k)}>{OUTLINE_ROW_LABELS[k]}</button>
+          ))}
+        </span>
+      </div>
+      <div className="fs-customize-row fs-size-row">
+        <span className="fs-customize-tool">Row Labels</span>
+        <span className="fs-customize-seg">
+          <button className={labels ? 'active' : ''} onClick={() => setLabels(true)}>Show</button>
+          <button className={!labels ? 'active' : ''} onClick={() => setLabels(false)}>Hide</button>
+        </span>
+      </div>
+      <div className="fs-customize-row fs-size-row">
+        <span className="fs-customize-tool">Reset</span>
+        <span className="fs-customize-seg">
+          <button onClick={() => { setRows(DEFAULT_OUTLINE_BAR_ROWS); setLabels(true); }}>
+            Reset Rows to Default
+          </button>
+        </span>
+      </div>
+    </section>
+  );
 }
 
 const CUSTOMIZE_SIZE_KEY = 'opendraft:customizeSize';
@@ -506,7 +598,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // React ('Rendered more hooks than during the previous render').
   const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones, toolbarZonesSet } = useEditorStore();
   const { panelDividers, setPanelDividers } = useEditorStore();
-  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'panels' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'menu');
+  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'panels' | 'outlinebar' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'menu');
 
   // v0.84: the window forgot any size you gave it and snapped back to the
   // default on reopen. CSS `resize` writes inline width/height on the element,
@@ -669,7 +761,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       // simply stack, and adding an eighth costs no width at all.
       <div className="prefs-layout fs-customize-layout">
         <div className="prefs-tabs fs-customize-tabs">
-          {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['context', 'Context Menu'], ['elements', 'Elements'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const).map(([id, label]) => (
+          {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['outlinebar', 'Outline Bar'], ['context', 'Context Menu'], ['elements', 'Elements'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const).map(([id, label]) => (
             <button
               key={id}
               className={`prefs-tab${activeCat === id ? ' active' : ''}`}
@@ -929,6 +1021,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             </div>
           </section>
           </>)}
+          {activeCat === 'outlinebar' && <OutlineBarTab />}
           {activeCat === 'elements' && <EditElementsDialog embedded />}
           {activeCat === 'keys' && <KeyboardShortcutsTab />}
           {activeCat === 'themes' && <ThemesTab />}

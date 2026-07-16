@@ -22,6 +22,8 @@ interface ViewState {
   outlineBarOpen?: boolean;
   outlineBarZoom?: number;
   outlineBarRowScale?: number;
+  outlineBarRows?: OutlineBarRow[];
+  outlineBarLabels?: boolean;
   highlightColor?: string;
   indexCardsOpen?: boolean;
   beatBoardOpen?: boolean;
@@ -768,6 +770,21 @@ export interface BeatColumn {
   targetPages?: number;
 }
 
+/** v2.42: one row of the Outline Bar — Customize > Outline Bar reorders,
+ *  adds, removes and resizes these. `h` (px) overrides the kind's default
+ *  height, before the global row scale. */
+export interface OutlineBarRow {
+  id: string;
+  kind: 'ruler' | 'acts' | 'beats' | 'script';
+  h?: number;
+}
+export const DEFAULT_OUTLINE_BAR_ROWS: OutlineBarRow[] = [
+  { id: 'ruler-1', kind: 'ruler' },
+  { id: 'acts-1', kind: 'acts' },
+  { id: 'beats-1', kind: 'beats' },
+  { id: 'script-1', kind: 'script' },
+];
+
 /** v2.30: a non-viewed outline tab's parked data — its sections plus each
  *  beat's section/order in that tab. Beats themselves are SHARED. */
 export interface OutlineTabData {
@@ -997,9 +1014,15 @@ interface EditorState {
   outlineBarZoom: number;
   setOutlineBarZoom: (px: number) => void;
   /** v2.27: vertical scale of the Outline Bar's rows/ruler (1 = default).
-   *  Driven by the Premiere-style scaler at the bar's right edge. */
+   *  Driven by dragging the bar's bottom edge. */
   outlineBarRowScale: number;
   setOutlineBarRowScale: (s: number) => void;
+  /** v2.42: the bar's rows — kind, order, optional per-row height (px,
+   *  before the global row scale). Customize > Outline Bar edits this. */
+  outlineBarRows: OutlineBarRow[];
+  setOutlineBarRows: (rows: OutlineBarRow[]) => void;
+  outlineBarLabels: boolean;
+  setOutlineBarLabels: (v: boolean) => void;
   /** v1.80: Navigator filter + kind visibility live in the store so the
    *  window's header (dropdown) and footer (filter field) — which render in
    *  the shared window chrome — stay in sync with the list body. */
@@ -1636,6 +1659,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const clamped = Math.min(2.5, Math.max(0.7, s));
     saveViewState({ outlineBarRowScale: clamped });
     set({ outlineBarRowScale: clamped });
+  },
+  outlineBarRows: (Array.isArray(_vs.outlineBarRows) && (_vs.outlineBarRows as OutlineBarRow[]).length > 0)
+    ? (_vs.outlineBarRows as OutlineBarRow[])
+    : DEFAULT_OUTLINE_BAR_ROWS,
+  setOutlineBarRows: (rows) => {
+    const next = rows.length > 0 ? rows : DEFAULT_OUTLINE_BAR_ROWS;
+    saveViewState({ outlineBarRows: next });
+    set({ outlineBarRows: next });
+  },
+  outlineBarLabels: (_vs.outlineBarLabels as boolean) ?? true,
+  setOutlineBarLabels: (v) => {
+    saveViewState({ outlineBarLabels: v });
+    set({ outlineBarLabels: v });
   },
   navFilter: '',
   setNavFilter: (v) => set({ navFilter: v }),

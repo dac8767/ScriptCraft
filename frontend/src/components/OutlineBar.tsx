@@ -148,6 +148,9 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
   // v2.31: row height is set by dragging the bar's bottom edge (the strip
   // lives in ScreenplayEditor's top chrome) — the bar just renders it.
   const rowScale = useEditorStore((s) => s.outlineBarRowScale);
+  // v2.42: row order / extra rows / per-row heights + the labels toggle.
+  const barRows = useEditorStore((s) => s.outlineBarRows);
+  const showLabels = useEditorStore((s) => s.outlineBarLabels);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [viewW, setViewW] = useState(0);
@@ -477,102 +480,114 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             ['--ob-ruler-h' as string]: `${Math.round(16 * rowScale)}px`,
           }}
         >
-          {/* v2.32, Derek: the ruler rides on TOP, above the sections. */}
-          <div className="fs-ob-ruler">
-            {pages.map((p) => (
-              <span key={p} className="fs-ob-tick" style={{ left: pctLeft(p), width: pctWidth(1) }}>
-                {(p === 1 || p % labelEvery === 0) && <span className="fs-ob-tick-label">{p}</span>}
-              </span>
-            ))}
-          </div>
-
-          {/* Row 1: acts / sections — sequential page budgets */}
-          <div className="fs-ob-lane fs-ob-acts">
-            <span className="fs-ob-lane-label">Acts</span>
-            {acts.map((a, i) => (
-              <div
-                key={a.id}
-                className={`fs-ob-act fs-ob-act-${i % 3}`}
-                style={{ left: pctLeft(a.start), width: pctWidth(a.pages) }}
-                title={`${a.title} — ${a.pages}p (${a.start}–${a.start + a.pages - 1})\nDouble-click: jump to this spot in the script. Right-click: rename / set pages`}
-                onContextMenu={(e) => openPop(e, 'column', a.id, a.pages, a.title)}
-                onDoubleClick={() => jumpToPage(a.start)}
-              >
-                {i > 0 && (
-                  <span
-                    className="fs-ob-resize-l"
-                    title="Drag to move this boundary (resizes the previous section)"
-                    onPointerDown={(e) => startActResize(e, acts[i - 1])}
-                    onPointerMove={onPointerMove}
-                    onPointerUp={onPointerUp}
-                  />
-                )}
-                {/* v2.15: no page count on the block — the ruler shows it,
-                    and the hover tooltip spells it out. */}
-                <span className="fs-ob-act-title">{a.title}</span>
-                <span
-                  className="fs-ob-beat-resize"
-                  title="Drag to change this section's page budget"
-                  onPointerDown={(e) => startActResize(e, a)}
-                  onPointerMove={onPointerMove}
-                  onPointerUp={onPointerUp}
-                />
-              </div>
-            ))}
-            {acts.length === 0 && <span className="fs-ob-empty">No sections yet — ＋ adds one</span>}
-          </div>
-
-          {/* Row 2: beats — v2.30: EVERY beat, derived from its section and
-              board order. Drag to re-section/reorder; right edge = span. */}
-          <div className="fs-ob-lane fs-ob-beats">
-            <span className="fs-ob-lane-label">Beats</span>
-            {beats.map((b) => {
-              const l = layout.get(b.id);
-              if (!l) return null;
-              const page = ghost?.id === b.id ? ghost.page : l.page;
-              const { leftPct, widthPct } = markerGeometry(page, l.span, totalPages);
+          {/* v2.42, Derek: rows come from Customize > Outline Bar — order,
+              extra rows, per-row heights. Each renderer below is one kind. */}
+          {barRows.map((row) => {
+            const rowStyle: React.CSSProperties | undefined = row.h
+              ? { height: Math.round(row.h * rowScale) }
+              : undefined;
+            if (row.kind === 'ruler') {
               return (
-                <div
-                  key={b.id}
-                  className={`fs-ob-beat${ghost?.id === b.id ? ' fs-ob-beat-dragging' : ''}`}
-                  style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: b.color || undefined }}
-                  title={`${b.title} — p${page}, ${l.span}p${b.description ? `\n${b.description}` : ''}\nDouble-click: jump to this spot in the script. Right-click: rename / pages / color`}
-                  onPointerDown={(e) => startBeatDrag(e, b, 'move')}
-                  onPointerMove={onPointerMove}
-                  onPointerUp={onPointerUp}
-                  onContextMenu={(e) => openPop(e, 'beat', b.id, l.span, b.title)}
-                  onDoubleClick={() => jumpToPage(page)}
-                >
-                  <span className="fs-ob-beat-title">{b.title}</span>
-                  <span
-                    className="fs-ob-beat-resize"
-                    title="Drag to change the page span"
-                    onPointerDown={(e) => startBeatDrag(e, b, 'resize')}
-                    onPointerMove={onPointerMove}
-                    onPointerUp={onPointerUp}
-                  />
+                <div key={row.id} className="fs-ob-ruler" style={rowStyle}>
+                  {pages.map((p) => (
+                    <span key={p} className="fs-ob-tick" style={{ left: pctLeft(p), width: pctWidth(1) }}>
+                      {(p === 1 || p % labelEvery === 0) && <span className="fs-ob-tick-label">{p}</span>}
+                    </span>
+                  ))}
                 </div>
               );
-            })}
-          </div>
-
-          {/* Row 3: the actual script, one block per scene heading */}
-          <div className="fs-ob-lane fs-ob-scenes">
-            <span className="fs-ob-lane-label">Script</span>
-            {scenes.length === 0 ? (
-              <span className="fs-ob-empty">No scene headings yet</span>
-            ) : scenes.map((s, i) => (
-              <button
-                key={`${s.pos}-${i}`}
-                className="fs-ob-scene"
-                style={{ left: pctLeft(s.start), width: pctWidth(s.pages) }}
-                title={`${s.text} — ${s.pages.toFixed(2)}p`}
-                onClick={() => jumpToScene(s.pos)}
-              >
-                {s.text}
-              </button>
-            ))}
-          </div>
+            }
+            if (row.kind === 'acts') {
+              return (
+                <div key={row.id} className="fs-ob-lane fs-ob-acts" style={rowStyle}>
+                  {showLabels && <span className="fs-ob-lane-label">Acts</span>}
+                  {acts.map((a, i) => (
+                    <div
+                      key={a.id}
+                      className={`fs-ob-act fs-ob-act-${i % 3}`}
+                      style={{ left: pctLeft(a.start), width: pctWidth(a.pages) }}
+                      title={`${a.title} — ${a.pages}p (${a.start}–${a.start + a.pages - 1})\nDouble-click: jump to this spot in the script. Right-click: rename / set pages`}
+                      onContextMenu={(e) => openPop(e, 'column', a.id, a.pages, a.title)}
+                      onDoubleClick={() => jumpToPage(a.start)}
+                    >
+                      {i > 0 && (
+                        <span
+                          className="fs-ob-resize-l"
+                          title="Drag to move this boundary (resizes the previous section)"
+                          onPointerDown={(e) => startActResize(e, acts[i - 1])}
+                          onPointerMove={onPointerMove}
+                          onPointerUp={onPointerUp}
+                        />
+                      )}
+                      <span className="fs-ob-act-title">{a.title}</span>
+                      <span
+                        className="fs-ob-beat-resize"
+                        title="Drag to change this section's page budget"
+                        onPointerDown={(e) => startActResize(e, a)}
+                        onPointerMove={onPointerMove}
+                        onPointerUp={onPointerUp}
+                      />
+                    </div>
+                  ))}
+                  {acts.length === 0 && <span className="fs-ob-empty">No sections yet — ＋ adds one</span>}
+                </div>
+              );
+            }
+            if (row.kind === 'beats') {
+              return (
+                <div key={row.id} className="fs-ob-lane fs-ob-beats" style={rowStyle}>
+                  {showLabels && <span className="fs-ob-lane-label">Beats</span>}
+                  {beats.map((b) => {
+                    const l = layout.get(b.id);
+                    if (!l) return null;
+                    const page = ghost?.id === b.id ? ghost.page : l.page;
+                    const { leftPct, widthPct } = markerGeometry(page, l.span, totalPages);
+                    return (
+                      <div
+                        key={b.id}
+                        className={`fs-ob-beat${ghost?.id === b.id ? ' fs-ob-beat-dragging' : ''}`}
+                        style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: b.color || undefined }}
+                        title={`${b.title} — p${page}, ${l.span}p${b.description ? `\n${b.description}` : ''}\nDouble-click: jump to this spot in the script. Right-click: rename / pages / color`}
+                        onPointerDown={(e) => startBeatDrag(e, b, 'move')}
+                        onPointerMove={onPointerMove}
+                        onPointerUp={onPointerUp}
+                        onContextMenu={(e) => openPop(e, 'beat', b.id, l.span, b.title)}
+                        onDoubleClick={() => jumpToPage(page)}
+                      >
+                        <span className="fs-ob-beat-title">{b.title}</span>
+                        <span
+                          className="fs-ob-beat-resize"
+                          title="Drag to change the page span"
+                          onPointerDown={(e) => startBeatDrag(e, b, 'resize')}
+                          onPointerMove={onPointerMove}
+                          onPointerUp={onPointerUp}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            }
+            // 'script' — one block per scene heading, true fractional lengths.
+            return (
+              <div key={row.id} className="fs-ob-lane fs-ob-scenes" style={rowStyle}>
+                {showLabels && <span className="fs-ob-lane-label">Script</span>}
+                {scenes.length === 0 ? (
+                  <span className="fs-ob-empty">No scene headings yet</span>
+                ) : scenes.map((sc, i) => (
+                  <button
+                    key={`${sc.pos}-${i}`}
+                    className="fs-ob-scene"
+                    style={{ left: pctLeft(sc.start), width: pctWidth(sc.pages) }}
+                    title={`${sc.text} — ${sc.pages.toFixed(2)}p`}
+                    onClick={() => jumpToScene(sc.pos)}
+                  >
+                    {sc.text}
+                  </button>
+                ))}
+              </div>
+            );
+          })}
         </div>
         </div>
 

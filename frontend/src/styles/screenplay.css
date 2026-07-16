@@ -16748,3 +16748,9 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .beat-header-controls .beat-board-preset { max-width: 160px; }
 .beat-header-controls .beat-board-add-col-btn { white-space: nowrap; }
+/* v2.42: Customize > Outline Bar height field */
+.fs-obrow-height { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--fd-text-muted); }
+.fs-obrow-height input {
+  width: 52px; background: transparent; color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: 4px; padding: 2px 4px; font-size: 12px;
+}

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.41';
+export const APP_VERSION = '2.42';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.42',
+    date: '2026-07-16',
+    items: [
+      { title: 'Customize > Outline Bar', detail: 'A new tab controls the bar\'s rows: reorder the Page Ruler / Sections / Beats / Script rows, add extra copies (a second ruler at the bottom, say), give any row its own height in pixels, show or hide the row labels, and reset it all to default.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '2.41',
     date: '2026-07-16',
