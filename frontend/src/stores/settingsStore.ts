@@ -64,6 +64,11 @@ interface SettingsState {
   /** Theme follows the OS light/dark appearance. */
   followSystemTheme: boolean;
   setFollowSystemTheme: (v: boolean) => void;
+  /** v2.15 (Settings > Tools): launching the Scrapbook hides every other
+   *  sidebar item and its panel window fills the sidebar; Return to editor
+   *  restores the sidebars (render-time only — nothing is rewritten). */
+  scrapbookExclusive: boolean;
+  setScrapbookExclusive: (v: boolean) => void;
   /** What the Draft field starts as on a new script. */
   defaultDraftLabel: string;
   setDefaultDraftLabel: (v: string) => void;
@@ -124,6 +129,7 @@ const STORAGE_KEY_DATEFMT = 'opendraft:dateFormat';
 const STORAGE_KEY_SPELLDEF = 'opendraft:spellCheckByDefault';
 const STORAGE_KEY_WINSTART = 'opendraft:windowStartup';
 const STORAGE_KEY_SYSTHEME = 'opendraft:followSystemTheme';
+const STORAGE_KEY_SBEXCL = 'opendraft:scrapbookExclusive';
 const STORAGE_KEY_DRAFTDEF = 'opendraft:defaultDraftLabel';
 const STORAGE_KEY_SMARTTYPO = 'opendraft:smartTypography';
 const STORAGE_KEY_UNITS = 'opendraft:units';
@@ -229,6 +235,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setFollowSystemTheme: (v) => {
     try { localStorage.setItem(STORAGE_KEY_SYSTHEME, v ? '1' : '0'); } catch { /* ignore */ }
     set({ followSystemTheme: v });
+  },
+  scrapbookExclusive: localStorage.getItem(STORAGE_KEY_SBEXCL) === '1',
+  setScrapbookExclusive: (v) => {
+    try { localStorage.setItem(STORAGE_KEY_SBEXCL, v ? '1' : '0'); } catch { /* ignore */ }
+    set({ scrapbookExclusive: v });
   },
   // ON unless explicitly turned off — the standard default in writing apps.
   smartTypography: localStorage.getItem(STORAGE_KEY_SMARTTYPO) !== '0',

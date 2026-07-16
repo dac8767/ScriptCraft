@@ -143,20 +143,23 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
 
   /* ── dragging: beats move/resize; act blocks resize (budget) ── */
   const dragRef = useRef<{
-    kind: 'beat-move' | 'beat-resize' | 'act-resize';
+    kind: 'beat-move' | 'beat-resize' | 'beat-resize-l' | 'act-resize';
     id: string; startX: number; startPage: number; startSpan: number;
   } | null>(null);
 
-  const startBeatDrag = (e: React.PointerEvent, beat: BeatInfo, mode: 'move' | 'resize') => {
+  const startBeatDrag = (e: React.PointerEvent, beat: BeatInfo, mode: 'move' | 'resize' | 'resize-l') => {
     e.preventDefault(); e.stopPropagation();
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     dragRef.current = {
-      kind: mode === 'move' ? 'beat-move' : 'beat-resize',
+      kind: mode === 'move' ? 'beat-move' : mode === 'resize' ? 'beat-resize' : 'beat-resize-l',
       id: beat.id, startX: e.clientX,
       startPage: beat.outlinePage ?? 1,
       startSpan: beat.outlineSpan ?? DEFAULT_SPAN,
     };
   };
+  /** v2.15: either edge resizes. An act's LEFT edge is the boundary with the
+   *  previous section, so it adjusts THAT section's budget — Premiere's
+   *  trim-the-cut model; the first act's left edge is page 1, immovable. */
   const startActResize = (e: React.PointerEvent, act: { id: string; pages: number }) => {
     e.preventDefault(); e.stopPropagation();
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
@@ -173,6 +176,14 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
     } else if (d.kind === 'beat-resize') {
       const span = Math.max(SNAP, Math.round((d.startSpan + dPages) / SNAP) * SNAP);
       updateBeat(d.id, { outlineSpan: Math.min(span, totalPages) });
+    } else if (d.kind === 'beat-resize-l') {
+      // Left edge moves the START; the END stays pinned.
+      const end = d.startPage + d.startSpan;
+      const page = Math.min(
+        Math.max(1, Math.round((d.startPage + dPages) / SNAP) * SNAP),
+        end - SNAP,
+      );
+      updateBeat(d.id, { outlinePage: page, outlineSpan: end - page, outlineLane: 0 });
     } else {
       // Acts budget in WHOLE pages — the ruler total follows live.
       const pages = Math.max(1, Math.round(d.startSpan + dPages));
@@ -310,8 +321,18 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
                 title={`${a.title} — ${a.pages} page${a.pages === 1 ? '' : 's'} (pages ${a.start}–${a.start + a.pages - 1})\nRight-click to set the target page count`}
                 onContextMenu={(e) => openPop(e, 'column', a.id, a.pages)}
               >
+                {i > 0 && (
+                  <span
+                    className="fs-ob-resize-l"
+                    title="Drag to move this boundary (resizes the previous section)"
+                    onPointerDown={(e) => startActResize(e, acts[i - 1])}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                  />
+                )}
+                {/* v2.15: no page count on the block — the ruler shows it,
+                    and the hover tooltip spells it out. */}
                 <span className="fs-ob-act-title">{a.title}</span>
-                <span className="fs-ob-act-pages">{a.pages}pp</span>
                 <span
                   className="fs-ob-beat-resize"
                   title="Drag to change this section's page budget"
@@ -340,6 +361,13 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
                   onPointerUp={onPointerUp}
                   onContextMenu={(e) => openPop(e, 'beat', b.id, b.outlineSpan ?? DEFAULT_SPAN)}
                 >
+                  <span
+                    className="fs-ob-resize-l"
+                    title="Drag to move the start (the end stays put)"
+                    onPointerDown={(e) => startBeatDrag(e, b, 'resize-l')}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                  />
                   <span className="fs-ob-beat-title">{b.title}</span>
                   <button
                     className="fs-ob-beat-x"

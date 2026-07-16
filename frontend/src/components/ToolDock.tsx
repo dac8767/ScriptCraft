@@ -26,6 +26,8 @@ import {
   FaChevronRight, FaChevronDown, FaKeyboard, FaRobot, FaBook,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
+import { useNotebookStore } from '../stores/notebookStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { DoubleChevronIcon, chevronTowards } from './uiIcons';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { type NavTab } from './SceneNavigator';
@@ -342,7 +344,15 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
       className={`tool-window${temporary ? ' tool-window-temp' : ''}${tool.fixedSize ? ' tool-window-fixed' : ''}`}
       // A fixed window takes its size from its content (CSS max-content), so no
       // width/height is imposed here and there's nothing to drag.
-      style={tool.fixedSize ? undefined : { width: size.w, height: size.h }}
+      // v2.15: anchored to the panel's REAL edge — the CSS 308px was the
+      // comfortable width baked in, so compact/custom/icon-rail panels
+      // opened windows floating in space (Derek's screenshot).
+      style={{
+        ...(tool.fixedSize ? {} : { width: size.w, height: size.h }),
+        ...(!temporary && side
+          ? (side === 'right' ? { right: popInW + 8, left: 'auto' } : { left: popInW + 8 })
+          : {}),
+      }}
     >
       {/* v1.80: the pop-in button sits on the side of the header CLOSEST to
         * the panel it returns to — far left for the left panel, far right for
@@ -449,6 +459,11 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     : null;
   // v2.06: the icon rail never hosts inline windows — everything floats.
   const iconsMode = panelSizeMode[side] === 'icons';
+  // v2.15 (Settings > Tools): Scrapbook solo mode — while it's open, every
+  // other sidebar item hides and its window fills the panel. Render-time
+  // only: Return to editor restores the sidebars exactly, nothing rewritten.
+  const scrapbookSolo = useNotebookStore((s) => s.notebookOpen)
+    && useSettingsStore((s) => s.scrapbookExclusive);
   // neverDock tools float regardless — even a stale small toolSize from before
   // the flag existed must not pull them inline.
   const inline = !iconsMode && !!(active && activeSize && activeSize.w <= dockW && !active.neverDock);
@@ -487,7 +502,14 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     return () => document.removeEventListener('pointerdown', onPointerDown);
   }, [active, setActive]);
 
+  const hasNotebook = tools.some((t) => t.id === 'notebook');
+  const shownEntries = scrapbookSolo
+    ? entries.filter((en) => en.kind === 'tool' && en.tool.id === 'notebook')
+    : entries;
+  const solo = scrapbookSolo && hasNotebook;
+
   if (tools.length === 0) return null;
+  if (scrapbookSolo && !hasNotebook) return null;   // the other sidebar hides
 
   /**
    * v1.1 — drag the panel's OUTER edge to size it. Setting a width by opening
@@ -534,10 +556,10 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
         onPointerDown={startEdgeResize}
         title="Drag to resize the panel"
       />
-      <div className={`tool-dock${iconsMode ? ' tool-dock-iconrail' : ''}`} style={{ width: dockW }}>
+      <div className={`tool-dock${iconsMode ? ' tool-dock-iconrail' : ''}${solo ? ' tool-dock-scrapbook-solo' : ''}`} style={{ width: dockW }}>
         {/* v2.06: icon rail — a square per tool (OneNote-style). Clicking
             opens the tool as a floating window; there is no inline state. */}
-        {iconsMode ? entries.map((entry) => entry.kind === 'tool' ? (
+        {iconsMode ? shownEntries.map((entry) => entry.kind === 'tool' ? (
           <button
             key={entry.tool.id}
             className={`tool-dock-iconbtn${activeId === entry.tool.id ? ' active' : ''}`}
@@ -550,7 +572,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
           <div key={`div-${entry.id}`} className="tool-dock-iconrail-divider" />
         ) : (
           <div key={`sp-${entry.id}`} className="tool-dock-spacer" style={entry.size ? { height: entry.size } : undefined} />
-        )) : entries.map((entry) => entry.kind === 'spacer' ? (
+        )) : shownEntries.map((entry) => entry.kind === 'spacer' ? (
           // v0.82: sizeable. Older spacers have no size and keep the default.
           <div
             key={`sp-${entry.id}`}
@@ -610,7 +632,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               <span className="tool-dock-label">{t.label}</span>
             </div>
             {isOpenInline && (
-              <div className={`tool-inline${side === 'right' ? ' tool-inline-right' : ''}`}>
+              <div className={`tool-inline${side === 'right' ? ' tool-inline-right' : ''}${solo ? ' tool-inline-solo' : ''}`}>
                 {/* v2.00: the window HEADER — controls + pop-out live here,
                     not on the dock button row. */}
                 <div className="tool-inline-header">
@@ -620,15 +642,17 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                   </span>
                   {side !== 'right' && popOutBtn}
                 </div>
-                <div className="tool-inline-body" style={{ height: activeSize!.h }}>
+                <div className="tool-inline-body" style={solo ? undefined : { height: activeSize!.h }}>
                   <ToolContent id={active!.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />
                 </div>
                 {Footer && <div className="tool-window-footer tool-inline-footer"><Footer /></div>}
-                <div
-                  className="tool-inline-resize"
-                  onPointerDown={startInlineResize}
-                  title="Drag to resize — the new height becomes this tool's default"
-                />
+                {!solo && (
+                  <div
+                    className="tool-inline-resize"
+                    onPointerDown={startInlineResize}
+                    title="Drag to resize — the new height becomes this tool's default"
+                  />
+                )}
               </div>
             )}
           </React.Fragment>

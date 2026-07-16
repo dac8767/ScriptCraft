@@ -13196,7 +13196,6 @@ html.android .version-history-panel {
   text-overflow: ellipsis;
   font-weight: 600;
 }
-.fs-ob-act-pages { font-size: 9.5px; opacity: 0.75; flex: 0 0 auto; }
 .fs-ob-beat {
   position: absolute;
   top: 2px;
@@ -13245,6 +13244,18 @@ html.android .version-history-panel {
   border-radius: 0 4px 4px 0;
 }
 .fs-ob-act .fs-ob-beat-resize { border-right-color: color-mix(in srgb, var(--fd-text) 45%, transparent); }
+/* v2.15: the mirrored LEFT resize handle — both edges trim. */
+.fs-ob-resize-l {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: ew-resize;
+  border-left: 3px solid rgba(255, 255, 255, 0.45);
+  border-radius: 4px 0 0 4px;
+}
+.fs-ob-act .fs-ob-resize-l { border-left-color: color-mix(in srgb, var(--fd-text) 45%, transparent); }
 /* v2.11: the page ruler — increments 1..total, like a measuring tape. */
 .fs-ob-ruler {
   position: relative;
@@ -13922,6 +13933,25 @@ body.fs-writing-focus::before {
   flex-shrink: 0;
 }
 .tool-dock-popout:hover { color: var(--fd-text); }
+/* v2.15: Scrapbook solo mode (Settings > Tools) — while the Scrapbook is
+   open, its dock is the only row and its window fills the whole sidebar. */
+.tool-dock-scrapbook-solo {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.tool-dock-scrapbook-solo .tool-inline.tool-inline-solo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tool-inline-solo .tool-inline-body {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
 /* v2.06: the Icons Only panel — a rail of square tool buttons (OneNote's
    left rail). No labels, no inline windows; clicking opens a floating
    window. */

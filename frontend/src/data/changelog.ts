@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.14';
+export const APP_VERSION = '2.15';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.15',
+    date: '2026-07-16',
+    items: [
+      { title: 'Settings > Tools', detail: 'A new Settings tab for per-tool options. Scrapbook: "Hide other tools when launched" — opening the Scrapbook hides every other sidebar item and its pages panel fills the sidebar; Return to Editor puts everything back exactly as it was. Typewriter\'s master switch lives here too (same switch as the window), and "Restore the cursor position when opening a script" moved home from General.', tags: ['New Feature', 'Tools'] },
+      { title: 'Icon-rail windows open at the rail', detail: 'With a sidebar set to Icons Only (or Compact/Custom), clicking a tool opened its window out where the full-size panel used to end. Windows now anchor to the panel\'s real edge, whatever its width.', tags: ['Fix', 'UI'] },
+      { title: 'Outline blocks drop the page count', detail: 'Act blocks no longer print "30pp" inside — the ruler shows the size and the hover tooltip spells it out.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '2.14',
     date: '2026-07-15',
