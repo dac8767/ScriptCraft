@@ -62,6 +62,7 @@ import FormatPanel from './FormatPanel';
 import StatusBar from './StatusBar';
 import SearchReplace, { createSearchPlugin } from './SearchReplace';
 import GoToPage from './GoToPage';
+import { chromePx, chromeMin, chromeMax } from './chromeSizes';
 import ElementPicker from './ElementPicker';
 import CharacterAutocomplete from './CharacterAutocomplete';
 import SpellCheckModal from './SpellCheckModal';
@@ -614,6 +615,45 @@ const ScreenplayEditor: React.FC = () => {
   const [editorKey, setEditorKey] = useState(0);
 
   const editorMainRef = useRef<HTMLDivElement>(null);
+
+  /* v2.29: the whole top chrome (menu bar + toolbar + outline bar) resizes
+     as ONE from the strip at its bottom edge. The drag scales each visible
+     part proportionally: the bars via their custom px (mode flips to
+     'custom'), the outline bar via its row scale. */
+  const topChromeRef = useRef<HTMLDivElement>(null);
+  const startTopChromeResize = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    const el = topChromeRef.current;
+    if (!el) return;
+    const h0 = el.offsetHeight;
+    if (h0 <= 0) return;
+    const startY = e.clientY;
+    const s0 = useEditorStore.getState();
+    const menu0 = chromePx('menu', s0.menuMode === 'hidden' ? 'compact' : s0.menuMode, s0.chromeCustomPx.menu);
+    const toolbar0 = chromePx('toolbar', s0.toolbarMode === 'hidden' ? 'compact' : s0.toolbarMode, s0.chromeCustomPx.toolbar);
+    const rowScale0 = s0.outlineBarRowScale;
+    const menuHidden = s0.menuMode === 'hidden';
+    const toolbarHidden = s0.toolbarMode === 'hidden';
+    const onMove = (ev: PointerEvent) => {
+      const f = Math.min(2.5, Math.max(0.5, (h0 + ev.clientY - startY) / h0));
+      const st = useEditorStore.getState();
+      if (!menuHidden) {
+        if (st.menuMode !== 'custom') st.setMenuMode('custom');
+        st.setChromeCustomPx('menu', Math.min(chromeMax('menu'), Math.max(chromeMin('menu'), Math.round(menu0 * f))));
+      }
+      if (!toolbarHidden) {
+        if (st.toolbarMode !== 'custom') st.setToolbarMode('custom');
+        st.setChromeCustomPx('toolbar', Math.min(chromeMax('toolbar'), Math.max(chromeMin('toolbar'), Math.round(toolbar0 * f))));
+      }
+      if (st.outlineBarOpen) st.setOutlineBarRowScale(rowScale0 * f);
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }, []);
   const pageRef = useRef<HTMLDivElement>(null);
   const setPageCountRef = useRef(setPageCount);
   setPageCountRef.current = setPageCount;
@@ -3918,6 +3958,10 @@ const ScreenplayEditor: React.FC = () => {
           toolbar's right zone, rendered here so its buttons span both bars.
           Customize is its permanent anchor item. */}
       {!isHistoryMode && (
+      /* v2.29, Derek: everything above the editor acts as ONE while
+         resizing — drag the strip at the bottom of this block and the menu
+         bar, toolbar and outline bar all scale proportionally. */
+      <div className="fs-top-chrome" ref={topChromeRef}>
       <div className="chrome-stack">
         <div className="chrome-bars">
       {<MenuBar editor={editor} onCollaborate={() => {
@@ -3937,9 +3981,15 @@ const ScreenplayEditor: React.FC = () => {
         </div>
         <BigButtonBar />
       </div>
-      )}
       {/* v1.75: Outline Bar — FD-style outline lanes directly under the toolbar. */}
-      {!isHistoryMode && outlineBarOpen && <OutlineBar editor={editor} />}
+      {outlineBarOpen && <OutlineBar editor={editor} />}
+      <div
+        className="fs-top-chrome-resize"
+        title="Drag to resize the top bars together"
+        onPointerDown={startTopChromeResize}
+      />
+      </div>
+      )}
       <div className={`editor-layout${previewMode ? " preview-mode" : " hide-title-page"}`}>
       {previewMode && <PreviewSidebar editor={editor} />}
         {!isHistoryMode && navigatorOpen && <ToolDock side="left" editor={editor} scrollContainer={editorMainRef.current} />}

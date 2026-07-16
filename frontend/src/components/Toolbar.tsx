@@ -27,6 +27,7 @@ import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import { useNotebookStore } from '../stores/notebookStore';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
+import GapHandle from './GapHandle';
 import { commandDef } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, bigZoneAllowed } from './toolbarBuiltins';
 import { useEditorStore, NOTE_COLORS } from '../stores/editorStore';
@@ -89,7 +90,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     toggleTagsPanel,
     setPendingTagSelection,
     setEditingTagId,
-    toolbarMode, chromeCustomPx,
+    toolbarMode, chromeCustomPx, chromeGapPx,
   } = useEditorStore();
 
   // v2.07: while the Scrapbook is open, the toolbar's own formatting buttons
@@ -1222,10 +1223,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   return (
     <div
       className={`toolbar${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}${toolbarMode === 'custom' ? ' toolbar-custom' : ''}`}
-      style={toolbarMode === 'custom' ? ({
-        height: tbCustomH,
-        ['--chrome-scale' as string]: String(chromeScaleFactor('toolbar', tbCustomH)),
-      } as React.CSSProperties) : undefined}
+      style={{
+        ...(toolbarMode === 'custom' ? ({
+          height: tbCustomH,
+          ['--chrome-scale' as string]: String(chromeScaleFactor('toolbar', tbCustomH)),
+        } as React.CSSProperties) : {}),
+        gap: chromeGapPx.toolbar,   // v2.29: the grip at the right end adjusts this
+      }}
       ref={toolbarRef}
     >
       {/* v2.02: the MAIN section — everything aligns left. Any small
@@ -1256,6 +1260,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         </div>
       )}
 
+      {/* v2.29: faint grip at the right end — drag to adjust item spacing */}
+      <GapHandle bar="toolbar" />
     </div>
   );
 };
@@ -1269,14 +1275,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
  * can't live here (bigZoneAllowed + the Customize tab's drop guard).
  */
 export const BigButtonBar: React.FC = () => {
-  const { toolbarRight, toolbarZonesSet, openTool } = useEditorStore();
+  const { toolbarRight, toolbarZonesSet, openTool, chromeGapPx } = useEditorStore();
   const tokens = (toolbarZonesSet
     ? normalizeToolbarZones([], toolbarRight).right
     : DEFAULT_TOOLBAR_RIGHT
   ).filter(bigZoneAllowed);
 
   return (
-    <div className="chrome-bigbtns">
+    <div className="chrome-bigbtns" style={{ gap: chromeGapPx.bigbtn }}>
+      {/* v2.29: faint grip LEFT of the buttons — drag to adjust their spacing */}
+      <GapHandle bar="bigbtn" />
       {tokens.map((tok) => {
         if (tok === 'b:customize') {
           return (

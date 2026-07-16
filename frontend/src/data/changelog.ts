@@ -65,9 +65,19 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.28';
+export const APP_VERSION = '2.29';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.29',
+    date: '2026-07-16',
+    items: [
+      { title: 'All sizing is manual now', detail: 'The size buttons and sliders left Customize (Menu Bar, Toolbar, Side Panels — the toolbar keeps a Show/Hide). Everything above the editor acts as one: drag the strip under the top bars and the menu bar, toolbar and outline bar scale together proportionally. Side panels resize by their inner edge as before — and dragging one small enough now clicks it into the icon-only rail (drag back out to restore it).', tags: ['UI', 'New Feature'] },
+      { title: 'Spacing grips on the bars', detail: 'Faint grips appear on hover — at the right end of the menu bar, the right end of the toolbar, and to the left of the Big Button section. Drag one sideways to adjust that bar\'s item spacing. Remembered per bar.', tags: ['UI', 'New Feature'] },
+      { title: 'View menu: Left Panel / Right Panel', detail: 'The side panels toggle from View, with checkmarks, exactly like the Outline Bar.', tags: ['UI'] },
+      { title: 'Breathing room under the toolbar', detail: 'A little more space between the toolbar and the outline bar.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '2.28',
     date: '2026-07-16',

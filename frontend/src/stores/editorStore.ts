@@ -42,6 +42,9 @@ interface ViewState {
   todoOrder?: string[];
   panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom' | 'icons'; right: 'compact' | 'comfortable' | 'custom' | 'icons' };
   chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
+  /** v2.29: item spacing (flex gap, px) for the menu bar, toolbar and Big
+   *  Button section — adjusted by the faint drag handles on the bars. */
+  chromeGapPx?: { menu?: number; toolbar?: number; bigbtn?: number };
   panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
   workspaces?: Record<string, WorkspaceSnapshot>;
   workspaceOrder?: string[];
@@ -825,6 +828,9 @@ interface EditorState {
   /** Custom sizes in px, used when the matching mode is 'custom' (v0.72). */
   chromeCustomPx: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   setChromeCustomPx: (surface: 'menu' | 'toolbar' | 'panelLeft' | 'panelRight', px: number) => void;
+  /** v2.29: item spacing (flex gap) per bar — see the GapHandle grips. */
+  chromeGapPx: { menu: number; toolbar: number; bigbtn: number };
+  setChromeGap: (bar: 'menu' | 'toolbar' | 'bigbtn', px: number) => void;
   setPanelSizeMode: (side: 'left' | 'right', mode: 'compact' | 'comfortable' | 'custom' | 'icons') => void;
   panelDividers: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
   setPanelDividers: (d: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[]) => void;
@@ -1904,6 +1910,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const next = { ...st.chromeCustomPx, [surface]: px };
     saveViewState({ chromeCustomPx: next });
     return { chromeCustomPx: next };
+  }),
+  chromeGapPx: { menu: 0, toolbar: 2, bigbtn: 0, ...((_vs.chromeGapPx as Record<string, number>) ?? {}) },
+  setChromeGap: (bar, px) => set((st) => {
+    const next = { ...st.chromeGapPx, [bar]: Math.min(32, Math.max(0, Math.round(px))) };
+    saveViewState({ chromeGapPx: next });
+    return { chromeGapPx: next };
   }),
   setPanelSizeMode: (side, mode) => set((st) => {
     const next = { ...st.panelSizeMode, [side]: mode };

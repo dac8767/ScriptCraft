@@ -19,7 +19,6 @@ import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, bigZoneAllowed } from './toolbarBuiltins';
 import { showToast } from './Toast';
-import { CHROME_SCALES, chromeMin, chromeMax, chromePx, type ChromeSurface } from './chromeSizes';
 import EditElementsDialog from './EditElementsDialog';
 import KeyboardShortcutsTab from './KeyboardShortcutsTab';
 import ThemesTab from './ThemesTab';
@@ -32,38 +31,6 @@ interface Props {
   onClose: () => void;
   /** Render only the content (no overlay/box) — used inside Preferences. */
   embedded?: boolean;
-}
-
-/** Size slider shown when a surface is in Custom mode (v0.72).
- *  Runs from half of Compact to double of Comfortable.
- *
- *  MUST live at module scope: when this was declared inside
- *  CustomizePanelsDialog, every parent render produced a new component type,
- *  so React unmounted and remounted the <input> on each change. A click still
- *  worked (single event), but dragging died the moment the first onChange
- *  fired — the element under the pointer was destroyed mid-gesture (v0.75 fix).
- */
-function ChromeSlider({
-  surface, value, onChange,
-}: {
-  surface: ChromeSurface;
-  value: number;
-  onChange: (px: number) => void;
-}) {
-  return (
-    <div className="fs-chrome-slider-row">
-      <input
-        type="range"
-        min={chromeMin(surface)}
-        max={chromeMax(surface)}
-        step={1}
-        value={value}
-        aria-label={`Custom ${CHROME_SCALES[surface].axis}`}
-        onChange={(e) => onChange(parseInt(e.target.value, 10))}
-      />
-      <span className="fs-chrome-slider-val">{value}px</span>
-    </div>
-  );
 }
 
 /** Default spacer sizes — match the CSS so an unsized spacer doesn't jump when
@@ -262,9 +229,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
     toolOrder, setToolOrder,
     toolbarMode, setToolbarMode,
-    chromeCustomPx, setChromeCustomPx,
-    menuMode, setMenuMode,
-    panelSizeMode, setPanelSizeMode,
+
   } = useEditorStore();
 
 
@@ -394,22 +359,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           the whole panel (drag a panel's inner edge in the app to resize it).
           Divider labels are edited here only.
         </p>
-        {/* v2.06: per-side size modes — Icons Only collapses the panel to a
-            rail of square tool icons; every window then opens floating. */}
-        {(['left', 'right'] as const).map((side) => (
-          <div key={side} className="fs-customize-row fs-size-row">
-            <span className="fs-customize-tool">{side === 'left' ? 'Left' : 'Right'} Panel Size</span>
-            <span className="fs-customize-seg">
-              {([['compact', 'Compact'], ['comfortable', 'Comfortable'], ['custom', 'Custom'], ['icons', 'Icons Only']] as const).map(([m, label]) => (
-                <button
-                  key={m}
-                  className={panelSizeMode[side] === m ? 'active' : ''}
-                  onClick={() => setPanelSizeMode(side, m)}
-                >{label}</button>
-              ))}
-            </span>
-          </div>
-        ))}
+        {/* v2.29, Derek: the per-side size rows are gone — panel width is
+            all manual (drag the panel's inner edge; drag it small enough
+            and it snaps into the icon rail). */}
         {/* v1.76: Outlook-style — Left Panel, Right Panel, Hidden. Drag
             between the three; the column a tool lands in is its side, and
             drop position is its position. Dividers and spacers dropped on
@@ -726,32 +678,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               Drag menus between Shown and Hidden — where you drop one is
               where it sits on the bar. File always stays visible.
             </p>
-            {/* v1.81: size rows are left-aligned — label, a beat of space,
-                then the buttons, instead of pushing them to the far edge. */}
-            <div className="fs-customize-row fs-size-row">
-              <span className="fs-customize-tool">Menu Bar Size</span>
-              <span className="fs-customize-seg">
-                {/* v0.97: no Hide. Hiding the menu bar took File off screen with
-                    it, and File has to stay reachable. Individual menus can still
-                    be hidden below — except File, for the same reason. */}
-                {(['compact', 'comfortable', 'custom'] as const).map((m) => (
-                  <button
-                    key={m}
-                    className={menuMode === m ? 'active' : ''}
-                    onClick={() => setMenuMode(m)}
-                  >
-                    {m[0].toUpperCase() + m.slice(1)}
-                  </button>
-                ))}
-              </span>
-            </div>
-            {menuMode === 'custom' && (
-              <ChromeSlider
-                surface="menu"
-                value={chromePx('menu', 'custom', chromeCustomPx.menu)}
-                onChange={(px) => setChromeCustomPx('menu', px)}
-              />
-            )}
+            {/* v2.29, Derek: NO sizing options in Customize — sizing is all
+                manual on the main screen (drag the strip under the top bars). */}
             {/* v1.76: Outlook-style — Shown on the left, Hidden on the right,
                 drag between them; drop position IS the menu's position. */}
             <DndColumns
@@ -836,23 +764,21 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               an item by category until you drag it back. Drop position is the
               item's position.
             </p>
+            {/* v2.29: sizing left Customize (drag the strip under the top
+                bars on the main screen) — only Show/Hide remains here. */}
             <div className="fs-customize-row fs-size-row">
-              <span className="fs-customize-tool">Toolbar Size</span>
+              <span className="fs-customize-tool">Toolbar</span>
               <span className="fs-customize-seg">
-                {(['compact', 'comfortable', 'custom', 'hidden'] as const).map((m) => (
-                  <button key={m} className={toolbarMode === m ? 'active' : ''} onClick={() => setToolbarMode(m)}>
-                    {m === 'hidden' ? 'Hide' : m[0].toUpperCase() + m.slice(1)}
-                  </button>
-                ))}
+                <button
+                  className={toolbarMode !== 'hidden' ? 'active' : ''}
+                  onClick={() => { if (toolbarMode === 'hidden') setToolbarMode('custom'); }}
+                >Show</button>
+                <button
+                  className={toolbarMode === 'hidden' ? 'active' : ''}
+                  onClick={() => setToolbarMode('hidden')}
+                >Hide</button>
               </span>
             </div>
-            {toolbarMode === 'custom' && (
-              <ChromeSlider
-                surface="toolbar"
-                value={chromePx('toolbar', 'custom', chromeCustomPx.toolbar)}
-                onChange={(px) => setChromeCustomPx('toolbar', px)}
-              />
-            )}
 
             {/* v1.76: Outlook-style — Left zone, Right zone (far right of the
                 bar), Hidden. Drag anywhere; the zone an item lands in IS its

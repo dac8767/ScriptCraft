@@ -16500,3 +16500,47 @@ input.fs-switch:checked::after { left: 15px; }
   font-size: 13px;
 }
 .fs-confirm-input:focus { outline: none; border-color: var(--fd-accent); }
+
+/* ─── v2.29: top chrome acts as one — unified resize + spacing grips ─── */
+.fs-top-chrome {
+  position: relative;
+  flex-shrink: 0;
+}
+.fs-top-chrome-resize {
+  height: 5px;
+  cursor: ns-resize;
+  flex-shrink: 0;
+}
+.fs-top-chrome-resize:hover,
+.fs-top-chrome-resize:active {
+  background: var(--fd-accent);
+  opacity: 0.5;
+}
+/* v2.29, Derek: a breath of space between the toolbar and the outline bar. */
+.fs-top-chrome .fs-outline-bar {
+  margin-top: 6px;
+}
+/* The faint spacing grips — invisible until their bar is hovered. */
+.fs-gap-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  align-self: stretch;
+  flex: 0 0 auto;
+  cursor: ew-resize;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  touch-action: none;
+}
+.menu-bar:hover .fs-gap-handle,
+.toolbar:hover .fs-gap-handle,
+.chrome-bigbtns:hover .fs-gap-handle { opacity: 0.45; }
+.fs-gap-handle:hover, .fs-gap-handle:active { opacity: 1 !important; }
+.fs-gap-handle-bar {
+  width: 4px;
+  height: 60%;
+  border-radius: 2px;
+  background: var(--fd-text-muted);
+  pointer-events: none;
+}

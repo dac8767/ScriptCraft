@@ -14,7 +14,7 @@
  */
 import React, { useEffect, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
-import { CHROME_SCALES, chromePx } from './chromeSizes';
+import { CHROME_SCALES, chromePx, ICON_RAIL_W } from './chromeSizes';
 import AssetManager from './AssetManager';
 import TitlePagePanel from './TitlePagePanel';
 import VersionHistory from './VersionHistory';
@@ -533,14 +533,25 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     let w = startW;
     const onMove = (ev: PointerEvent) => {
       const dx = ev.clientX - startX;
-      w = Math.round(Math.max(PANEL_MIN_W, Math.min(PANEL_MAX_W,
-        startW + (side === 'left' ? dx : -dx))));
+      const raw = startW + (side === 'left' ? dx : -dx);
+      // v2.29, Derek: dragged small enough, the panel clicks into the
+      // icon-only rail; dragged back out, it's a normal custom-width panel.
+      // The threshold sits halfway between the rail and the minimum width so
+      // the snap doesn't flap at the boundary.
+      const iconThreshold = (ICON_RAIL_W + PANEL_MIN_W) / 2;
+      const st = useEditorStore.getState();
+      if (raw < iconThreshold) {
+        if (st.panelSizeMode[side] !== 'icons') st.setPanelSizeMode(side, 'icons');
+        return;
+      }
+      if (st.panelSizeMode[side] === 'icons') st.setPanelSizeMode(side, 'custom');
+      w = Math.round(Math.max(PANEL_MIN_W, Math.min(PANEL_MAX_W, raw)));
       setChromeCustomPx(surface, w);
     };
     const onUp = () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
-      setChromeCustomPx(surface, w);
+      if (useEditorStore.getState().panelSizeMode[side] !== 'icons') setChromeCustomPx(surface, w);
     };
     // Switch to custom on the FIRST move, not on mousedown — a stray click on the
     // edge shouldn't silently change the mode.

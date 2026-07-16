@@ -64,6 +64,7 @@ import { MENU_ICONS } from './uiIcons';
 import { useScrapbookMenus, closeNotebook } from './NotebookTool';
 import { FaTable, FaImage as FaImageIcon } from 'react-icons/fa';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
+import GapHandle from './GapHandle';
 import { eventToCombo, COMMAND_BY_ID, formatCombo } from './shortcuts';
 import { useShortcutStore } from '../stores/shortcutStore';
 import { CHANGELOG, APP_VERSION, ALL_TAGS, TAG_META, tagsFor, type ChangeTag } from '../data/changelog';
@@ -224,6 +225,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     applyWorkspace,
     menuMode,
     chromeCustomPx,
+    chromeGapPx,
+    navigatorOpen,
+    toggleNavigator,
+    shelfOpen,
+    toggleShelf,
     zoomLevel,
     setZoomLevel,
     navPanelWidth,
@@ -1322,6 +1328,17 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           label: outlineBarOpen ? '\u2713 Outline Bar' : 'Outline Bar',
           action: () => setOutlineBarOpen(!outlineBarOpen),
         },
+        // v2.29, Derek: the side panels toggle from here too, like the bar.
+        {
+          icon: <FaColumns />,
+          label: navigatorOpen ? '\u2713 Left Panel' : 'Left Panel',
+          action: () => toggleNavigator(),
+        },
+        {
+          icon: <FaColumns />,
+          label: shelfOpen ? '\u2713 Right Panel' : 'Right Panel',
+          action: () => toggleShelf(),
+        },
         { separator: true, label: '' },
         {
           /**
@@ -2050,8 +2067,14 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         document.body,
       )
     ) : (
-      <div className={menuBarClass} style={menuBarStyle} ref={menuRef}>
+      <div
+        className={menuBarClass}
+        style={{ ...(menuBarStyle ?? {}), gap: chromeGapPx.menu }}
+        ref={menuRef}
+      >
         {renderMenuItems()}
+        {/* v2.29: faint grip at the right end — drag to adjust item spacing */}
+        <GapHandle bar="menu" />
       </div>
     )}
     {activeMenuData && createPortal(
