@@ -822,8 +822,9 @@ export interface BeatInfo {
   outlineLane?: 0 | 1;
   outlinePage?: number;
   outlineSpan?: number;
-  /** v2.33 mind map (Freeform arrangement): the card's shape and the ids of
-   *  beats this one draws connector lines to. */
+  /** v2.33 mind map (Freeform arrangement): ids of beats this one draws
+   *  connector lines to. mindShape is LEGACY — the shape feature was removed
+   *  in v2.44, but the field stays so old saves still load cleanly. */
   mindShape?: 'rect' | 'rounded' | 'ellipse';
   mindLinks?: string[];
 }

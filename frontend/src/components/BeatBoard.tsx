@@ -23,7 +23,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
-import { FaRegCircle, FaDotCircle, FaShapes, FaLink, FaRegQuestionCircle } from 'react-icons/fa';
+import { FaRegCircle, FaDotCircle, FaPaperclip, FaRegQuestionCircle } from 'react-icons/fa';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 import { confirmDialog, promptDialog } from './ConfirmDialog';
@@ -289,6 +289,16 @@ const BeatPagesField: React.FC<{
   </label>
 );
 
+/** v2.44: the color fills the WHOLE card now — pick black or white text
+ *  by the background's luminance so titles stay readable. */
+export function readableTextOn(bg: string): string {
+  const m = /^#([0-9a-f]{6})$/i.exec(bg);
+  if (!m) return '';
+  const n = parseInt(m[1], 16);
+  const lum = 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
+  return lum > 150 ? '#111111' : '#ffffff';
+}
+
 /* ─── Beat Card Resize Handle (pointer events for mouse + touch) ─── */
 const useResizeHandle = (
   onResize: (dw: number, dh: number) => void,
@@ -370,7 +380,6 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [descFocused, setDescFocused] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const descHeightRef = useRef<number | null>(null);
   const descRef = useRef<HTMLTextAreaElement>(null);
   const imgH = beat.imageHeight || 0;
   const isImgFull = imgH === -1; // -1 = full card
@@ -387,8 +396,9 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
     [beat.id, beat.linkPreviews, onUpdate],
   );
 
+  // v2.44, Derek: the color paints the WHOLE block, not just the edge.
   const cardStyle: React.CSSProperties = {
-    ...(beat.color ? { borderLeftColor: beat.color, borderLeftWidth: 4 } : {}),
+    ...(beat.color ? { background: beat.color, color: readableTextOn(beat.color) } : {}),
     ...(beat.cardHeight ? { height: beat.cardHeight, overflow: 'auto' } : {}),
   };
 
@@ -443,7 +453,7 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
       : {};
 
   return (
-    <div className={`beat-card${isImgFull ? ' beat-card-img-full' : ''}`} style={cardStyle}>
+    <div className={`beat-card${isImgFull ? ' beat-card-img-full' : ''}${beat.color ? ' beat-card-colored' : ''}`} style={cardStyle}>
       {/* Floating drag handle over image */}
       {beat.imageUrl && (
         <span className="beat-drag-icon beat-drag-icon-floating" {...(dragHandleProps || {})} style={{ touchAction: 'none' }}>&#x2630;</span>
@@ -508,8 +518,30 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
               onChange={(e) => onUpdate(beat.id, { title: e.target.value })}
               placeholder="Beat title..."
             />
-            <BeatPagesField beat={beat} onUpdate={onUpdate} />
-            <button className="beat-card-delete" onClick={() => onDelete(beat.id)} title="Delete beat">&times;</button>
+            <span className="beat-card-headbtns">
+              <span className="beat-color-picker-wrap">
+                <button
+                  className="beat-toolbar-btn"
+                  onClick={() => setShowColorPicker(!showColorPicker)}
+                  title="Card color"
+                >&#9679;</button>
+                {showColorPicker && (
+                  <div className="beat-color-picker">
+                    {BEAT_COLORS.map((c) => (
+                      <button
+                        key={c || 'none'}
+                        className={`beat-color-swatch${beat.color === c ? ' active' : ''}`}
+                        style={c ? { background: c } : undefined}
+                        onClick={() => { onUpdate(beat.id, { color: c }); setShowColorPicker(false); }}
+                        title={c || 'No color'}
+                      >{!c && <span className="beat-color-none">&times;</span>}</button>
+                    ))}
+                  </div>
+                )}
+              </span>
+              <button className="beat-toolbar-btn" onClick={() => fileInputRef.current?.click()} title="Attach image"><FaPaperclip /></button>
+              <button className="beat-card-delete" onClick={() => onDelete(beat.id)} title="Delete beat">&times;</button>
+            </span>
           </div>
           {descFocused ? (
             <textarea
@@ -517,15 +549,13 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
               className="beat-card-description"
               value={beat.description}
               onChange={(e) => onUpdate(beat.id, { description: e.target.value })}
-              onBlur={() => { if (descRef.current) descHeightRef.current = descRef.current.offsetHeight; setDescFocused(false); }}
+              onBlur={() => setDescFocused(false)}
               placeholder="Describe this beat..."
               rows={2}
-              style={descHeightRef.current ? { height: descHeightRef.current } : undefined}
               autoFocus
             />
           ) : (
-            <div className="beat-card-description-view" onClick={() => setDescFocused(true)}
-              style={descHeightRef.current ? { minHeight: descHeightRef.current } : undefined}>
+            <div className="beat-card-description-view" onClick={() => setDescFocused(true)}>
               {beat.description ? <DescriptionWithLinks text={beat.description} /> : (
                 <span className="beat-card-desc-placeholder">Describe this beat...</span>
               )}
@@ -549,8 +579,30 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
               onChange={(e) => onUpdate(beat.id, { title: e.target.value })}
               placeholder="Beat title..."
             />
-            <BeatPagesField beat={beat} onUpdate={onUpdate} />
-            <button className="beat-card-delete" onClick={() => onDelete(beat.id)} title="Delete beat">&times;</button>
+            <span className="beat-card-headbtns">
+              <span className="beat-color-picker-wrap">
+                <button
+                  className="beat-toolbar-btn"
+                  onClick={() => setShowColorPicker(!showColorPicker)}
+                  title="Card color"
+                >&#9679;</button>
+                {showColorPicker && (
+                  <div className="beat-color-picker">
+                    {BEAT_COLORS.map((c) => (
+                      <button
+                        key={c || 'none'}
+                        className={`beat-color-swatch${beat.color === c ? ' active' : ''}`}
+                        style={c ? { background: c } : undefined}
+                        onClick={() => { onUpdate(beat.id, { color: c }); setShowColorPicker(false); }}
+                        title={c || 'No color'}
+                      >{!c && <span className="beat-color-none">&times;</span>}</button>
+                    ))}
+                  </div>
+                )}
+              </span>
+              <button className="beat-toolbar-btn" onClick={() => fileInputRef.current?.click()} title="Attach image"><FaPaperclip /></button>
+              <button className="beat-card-delete" onClick={() => onDelete(beat.id)} title="Delete beat">&times;</button>
+            </span>
           </div>
           {descFocused ? (
             <textarea
@@ -558,15 +610,13 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
               className="beat-card-description"
               value={beat.description}
               onChange={(e) => onUpdate(beat.id, { description: e.target.value })}
-              onBlur={() => { if (descRef.current) descHeightRef.current = descRef.current.offsetHeight; setDescFocused(false); }}
+              onBlur={() => setDescFocused(false)}
               placeholder="Describe this beat..."
-              rows={3}
-              style={descHeightRef.current ? { height: descHeightRef.current } : undefined}
+              rows={2}
               autoFocus
             />
           ) : (
-            <div className="beat-card-description-view" onClick={() => setDescFocused(true)}
-              style={descHeightRef.current ? { minHeight: descHeightRef.current } : undefined}>
+            <div className="beat-card-description-view" onClick={() => setDescFocused(true)}>
               {beat.description ? <DescriptionWithLinks text={beat.description} /> : (
                 <span className="beat-card-desc-placeholder">Describe this beat...</span>
               )}
@@ -582,38 +632,12 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
         </>
       )}
 
-      <div className="beat-card-toolbar" style={{ marginTop: 'auto' }}>
-        <div className="beat-color-picker-wrap">
-          <button
-            className="beat-toolbar-btn"
-            onClick={() => setShowColorPicker(!showColorPicker)}
-            title="Color"
-            style={beat.color ? { color: beat.color } : undefined}
-          >&#9679;</button>
-          {showColorPicker && (
-            <div className="beat-color-picker">
-              {BEAT_COLORS.map((c) => (
-                <button
-                  key={c || 'none'}
-                  className={`beat-color-swatch${beat.color === c ? ' active' : ''}`}
-                  style={c ? { background: c } : undefined}
-                  onClick={() => { onUpdate(beat.id, { color: c }); setShowColorPicker(false); }}
-                  title={c || 'No color'}
-                >{!c && <span className="beat-color-none">&times;</span>}</button>
-              ))}
-            </div>
-          )}
-        </div>
-        <button className="beat-toolbar-btn" onClick={() => fileInputRef.current?.click()} title="Attach image">&#128247;</button>
-        <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
-        {(beat.cardWidth > 0 || beat.cardHeight > 0) && (
-          <button
-            className="beat-toolbar-btn"
-            onClick={() => onUpdate(beat.id, { cardWidth: 0, cardHeight: 0 })}
-            title="Reset size"
-          >&#8634;</button>
-        )}
+      {/* v2.44: color/attach moved to the header, reset-size is gone —
+          only the page estimate lives down here now. */}
+      <div className="beat-card-foot" style={{ marginTop: 'auto' }}>
+        <BeatPagesField beat={beat} onUpdate={onUpdate} />
       </div>
+      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
 
       {/* Resize handle */}
       <div className="beat-card-resize-handle" onPointerDown={resizePointerDown} style={{ touchAction: 'none' }} />
@@ -674,12 +698,8 @@ interface FreeBeatCardProps {
   onDelete: (id: string) => void;
 }
 
-/* v2.33: mind-map helpers — pure, exported for the test. */
-export const MIND_SHAPES = ['rect', 'rounded', 'ellipse'] as const;
-export function nextMindShape(s: string | undefined): 'rect' | 'rounded' | 'ellipse' {
-  const i = MIND_SHAPES.indexOf((s ?? 'rect') as typeof MIND_SHAPES[number]);
-  return MIND_SHAPES[(i + 1) % MIND_SHAPES.length];
-}
+/* v2.33 mind-map helpers — pure, exported for the test. (v2.44: the shape
+   cycler is gone with the shape feature; connections + emphasis remain.) */
 export function toggleMindLink(links: string[] | undefined, target: string): string[] {
   const cur = links ?? [];
   return cur.includes(target) ? cur.filter((x) => x !== target) : [...cur, target];
@@ -689,10 +709,13 @@ export function mindTitleSize(cardWidth: number): number {
   return Math.max(13, Math.min(24, Math.round((cardWidth || 240) / 15)));
 }
 
+/* v2.44: connections start from a NODE on the card's edge (any side) —
+   grab a node and drag the line onto another card. */
+const MIND_NODE_SIDES = ['top', 'right', 'bottom', 'left'] as const;
+
 const FreeBeatCard: React.FC<FreeBeatCardProps & {
-  linking: string | null;
-  onLinkClick: (id: string) => void;
-}> = ({ beat, onUpdate, onDelete, linking, onLinkClick }) => {
+  onStartLink: (e: React.PointerEvent, fromId: string) => void;
+}> = ({ beat, onUpdate, onDelete, onStartLink }) => {
   const dragRef = useRef<{ startX: number; startY: number; beatX: number; beatY: number } | null>(null);
 
   const handleResize = useCallback(
@@ -738,28 +761,20 @@ const FreeBeatCard: React.FC<FreeBeatCardProps & {
     // v2.33: emphasis — the title scales with the card's size.
     ['--mind-title-size' as string]: `${mindTitleSize(beat.cardWidth)}px`,
   };
-  const shape = beat.mindShape ?? 'rect';
 
   return (
-    <div
-      style={wrapStyle}
-      className={`beat-card-wrap beat-card-wrap-free mind-shape-${shape}${linking === beat.id ? ' mind-linking-from' : ''}${linking && linking !== beat.id ? ' mind-link-target' : ''}`}
-    >
-      {/* v2.33: mind-map controls — cycle the shape, draw a connection. */}
-      <div className="mind-controls">
+    <div style={wrapStyle} className="beat-card-wrap beat-card-wrap-free" data-beat-id={beat.id}>
+      {/* v2.44: connection nodes on every edge — drag one onto another card.
+          data-beat-id on the wrapper is what the drop hit-test looks for. */}
+      {MIND_NODE_SIDES.map((side) => (
         <button
-          className="mind-btn"
-          title={`Shape: ${shape} — click to change`}
-          onClick={(e) => { e.stopPropagation(); onUpdate(beat.id, { mindShape: nextMindShape(shape) }); }}
-        ><FaShapes /></button>
-        <button
-          className={`mind-btn${linking === beat.id ? ' active' : ''}`}
-          title={linking && linking !== beat.id
-            ? 'Connect to this card'
-            : linking === beat.id ? 'Cancel connecting' : 'Draw a connection — then click another card\'s link button'}
-          onClick={(e) => { e.stopPropagation(); onLinkClick(beat.id); }}
-        ><FaLink /></button>
-      </div>
+          key={side}
+          className={`mind-node mind-node-${side}`}
+          title="Drag to connect to another beat"
+          onPointerDown={(e) => onStartLink(e, beat.id)}
+          style={{ touchAction: 'none' }}
+        />
+      ))}
       <BeatCardContent
         beat={beat}
         onUpdate={onUpdate}
@@ -773,7 +788,7 @@ const FreeBeatCard: React.FC<FreeBeatCardProps & {
 
 /* ─── DragOverlay card ─── */
 const BeatCardOverlay: React.FC<{ beat: BeatInfo }> = ({ beat }) => (
-  <div className="beat-card beat-card-overlay" style={beat.color ? { borderLeftColor: beat.color, borderLeftWidth: 4 } : {}}>
+  <div className="beat-card beat-card-overlay" style={beat.color ? { background: beat.color, color: readableTextOn(beat.color) } : {}}>
     <div className="beat-card-top"><span className="beat-drag-icon">&#x2630;</span><input className="beat-card-title" value={beat.title} readOnly /></div>
   </div>
 );
@@ -788,17 +803,42 @@ interface CustomCanvasProps {
 const CustomCanvas: React.FC<CustomCanvasProps> = ({
   beats, onUpdateBeat, onDeleteBeat,
 }) => {
-  /* v2.33: mind map — click one card's link button, then another's, and a
-     line connects them (stored on the first beat's mindLinks; clicking a
-     line removes it). */
-  const [linking, setLinking] = useState<string | null>(null);
-  const handleLinkClick = (id: string) => {
-    if (!linking) { setLinking(id); return; }
-    if (linking === id) { setLinking(null); return; }
-    const from = beats.find((b) => b.id === linking);
-    if (from) onUpdateBeat(from.id, { mindLinks: toggleMindLink(from.mindLinks, id) });
-    setLinking(null);
-  };
+  /* v2.44: mind map connections — grab a node on a card's edge and drag; a
+     live line follows the pointer, and releasing over another card links
+     them (stored on the source beat's mindLinks; clicking a line removes
+     it). Coordinates are canvas-content space: client minus the canvas
+     rect, plus its scroll — the same space the beats' x/y live in. */
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [linkDrag, setLinkDrag] = useState<{ fromId: string; x: number; y: number } | null>(null);
+
+  const handleStartLink = useCallback((e: React.PointerEvent, fromId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const toCanvas = (ev: { clientX: number; clientY: number }) => {
+      const r = canvas.getBoundingClientRect();
+      return { x: ev.clientX - r.left + canvas.scrollLeft, y: ev.clientY - r.top + canvas.scrollTop };
+    };
+    setLinkDrag({ fromId, ...toCanvas(e) });
+    const onMove = (ev: PointerEvent) => setLinkDrag({ fromId, ...toCanvas(ev) });
+    const onUp = (ev: PointerEvent) => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      setLinkDrag(null);
+      const hit = (document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null)
+        ?.closest('[data-beat-id]');
+      const targetId = hit?.getAttribute('data-beat-id');
+      if (!targetId || targetId === fromId) return;
+      // Read the LATEST links from the store — the closure's beats are stale
+      // by the time the pointer comes up.
+      const from = useEditorStore.getState().beats.find((b) => b.id === fromId);
+      if (from) onUpdateBeat(fromId, { mindLinks: toggleMindLink(from.mindLinks, targetId) });
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }, [onUpdateBeat]);
+
   const center = (b: BeatInfo) => ({
     cx: (b.x || 0) + (b.cardWidth || 240) / 2,
     cy: (b.y || 0) + (b.cardHeight || 110) / 2,
@@ -811,8 +851,10 @@ const CustomCanvas: React.FC<CustomCanvasProps> = ({
     }
   }
 
+  const dragFrom = linkDrag ? beats.find((b) => b.id === linkDrag.fromId) : null;
+
   return (
-    <div className="beat-custom-canvas">
+    <div className={`beat-custom-canvas${linkDrag ? ' mind-linking' : ''}`} ref={canvasRef}>
       <svg className="mind-lines" aria-hidden="true">
         {lines.map(({ from, to }) => {
           const a = center(from);
@@ -827,6 +869,14 @@ const CustomCanvas: React.FC<CustomCanvasProps> = ({
             </line>
           );
         })}
+        {/* The live line while dragging from a node. */}
+        {dragFrom && linkDrag && (
+          <line
+            className="mind-line-draft"
+            x1={center(dragFrom).cx} y1={center(dragFrom).cy}
+            x2={linkDrag.x} y2={linkDrag.y}
+          />
+        )}
       </svg>
       {beats.map((beat) => (
         <FreeBeatCard
@@ -834,8 +884,7 @@ const CustomCanvas: React.FC<CustomCanvasProps> = ({
           beat={beat}
           onUpdate={onUpdateBeat}
           onDelete={onDeleteBeat}
-          linking={linking}
-          onLinkClick={handleLinkClick}
+          onStartLink={handleStartLink}
         />
       ))}
     </div>
@@ -1002,8 +1051,8 @@ export function OutlineHeaderControls() {
           Create sections (Act 1, Act 2…) and drop beats into them — or pick
           a Preset. Tabs below are separate arrangements of the SAME beats;
           the ◉ picks which one the Outline Bar shows. Freeform turns the
-          board into a mind map: drag cards anywhere, connect them, change
-          their shape and color.
+          board into a mind map: drag cards anywhere, and drag from a node
+          on a card's edge onto another card to connect them.
         </div>,
         document.body,
       )}

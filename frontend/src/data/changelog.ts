@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.43';
+export const APP_VERSION = '2.44';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.44',
+    date: '2026-07-16',
+    items: [
+      { title: 'Beat cards redesigned', detail: 'Every control lives in the card\'s header now: drag handle and title on the left; color, attach (a proper paperclip) and delete on the right. The color fills the WHOLE card — text flips to black or white to stay readable — and the description grows and shrinks with the card itself, so the shape buttons and the separate reset-size button are gone.', tags: ['UI', 'Tools'] },
+      { title: 'Freeform: drag-to-connect nodes', detail: 'The link button is gone. Hover a card in Freeform and nodes appear on its edges — drag from a node and a line follows the pointer; drop it on another card to connect them. Clicking a line still removes it.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '2.43',
     date: '2026-07-16',
