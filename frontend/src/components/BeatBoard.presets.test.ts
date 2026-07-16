@@ -13,16 +13,20 @@ describe('outline presets', () => {
     useEditorStore.getState().setBeats([]);
   });
 
-  it('3-Act Structure adds Act I / Act II / Act III in order, one blank beat each', () => {
+  it('3-Act Structure adds Act I / Act II / Act III in order, one blank beat each, 40 pages per act', () => {
     applyOutlinePreset('3act');
     const cols = [...useEditorStore.getState().beatColumns].sort((a, b) => a.position - b.position);
     expect(cols.map((c) => c.title)).toEqual(['Act I', 'Act II', 'Act III']);
+    // v2.20, Derek: each act defaults to 40 pages.
+    expect(cols.map((c) => c.targetPages)).toEqual([40, 40, 40]);
     // v2.18: every preset section starts with one blank beat.
     const beats = useEditorStore.getState().beats;
     expect(beats).toHaveLength(3);
     for (const col of cols) {
       expect(beats.filter((b) => b.columnId === col.id)).toHaveLength(1);
     }
+    // v2.20: beats are never born blank — 1 page by default.
+    for (const b of beats) expect(b.outlineSpan).toBe(1);
   });
 
   it('the classic structures ship with their full beat lists', () => {
@@ -36,11 +40,24 @@ describe('outline presets', () => {
     expect(useEditorStore.getState().beats).toHaveLength(15);
   });
 
+  /* v2.20: every preset carries a page budget per section, never blank. */
+  it('every preset has a page budget (≥1) for every section', () => {
+    for (const p of OUTLINE_PRESETS) {
+      expect(p.pages).toHaveLength(p.columns.length);
+      for (const n of p.pages) expect(n).toBeGreaterThanOrEqual(1);
+    }
+    // Save the Cat tiles Snyder's 110-page beat sheet exactly.
+    const stc = OUTLINE_PRESETS.find((p) => p.id === 'savethecat')!;
+    expect(stc.pages.reduce((a, b) => a + b, 0)).toBe(110);
+  });
+
   it('appends after existing columns instead of replacing them', () => {
     useEditorStore.getState().addBeatColumn('Ideas');
     applyOutlinePreset('3act');
     const cols = [...useEditorStore.getState().beatColumns].sort((a, b) => a.position - b.position);
     expect(cols.map((c) => c.title)).toEqual(['Ideas', 'Act I', 'Act II', 'Act III']);
+    // v2.20: a plain new section defaults to a 1-page budget, not blank.
+    expect(cols[0].targetPages).toBe(1);
   });
 
   it('an unknown preset id is a no-op; every preset has columns', () => {

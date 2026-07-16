@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.19';
+export const APP_VERSION = '2.20';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.20',
+    date: '2026-07-16',
+    items: [
+      { title: 'Presets arrive with real page budgets', detail: '3-Act Structure defaults to 40 pages per act. Save the Cat tiles Blake Snyder\'s 110-page beat sheet (Catalyst ending p12, Midpoint p55, All Is Lost p75…), The Hero\'s Journey follows Vogler\'s act mapping across 120 pages, and Story Circle and the Sequence Method split 120 pages into eight 15-page blocks.', tags: ['Tools', 'New Feature'] },
+      { title: 'No more blank page counts', detail: 'New sections and beats are born with a 1-page budget instead of an empty field — a blank item had no width to grab on the Outline Bar. The pages fields can no longer be committed empty, and old sections without a budget now draw as 1 page, matching what their field shows.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '2.19',
     date: '2026-07-16',

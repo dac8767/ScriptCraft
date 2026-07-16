@@ -1035,7 +1035,7 @@ interface EditorState {
   setBeatArrangeMode: (mode: BeatArrangeMode) => void;
   beatColumns: BeatColumn[];
   setBeatColumns: (columns: BeatColumn[]) => void;
-  addBeatColumn: (title: string) => string;
+  addBeatColumn: (title: string, targetPages?: number) => string;
   updateBeatColumn: (id: string, updates: Partial<{ title: string; position: number; width: number; targetPages: number }>) => void;
   deleteBeatColumn: (id: string) => void;
   beats: BeatInfo[];
@@ -1760,12 +1760,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setBeatArrangeMode: (mode) => set({ beatArrangeMode: mode }),
   beatColumns: [],
   setBeatColumns: (columns) => set({ beatColumns: columns }),
-  addBeatColumn: (title) => {
+  // v2.20: sections always get a page budget (default 1) — a blank budget
+  // renders a section you can't grab on the Outline Bar.
+  addBeatColumn: (title, targetPages = 1) => {
     const id = uuid();
     _pushBeatSnapshot(get);
     set((s) => {
       const maxPos = s.beatColumns.length > 0 ? Math.max(...s.beatColumns.map((c) => c.position)) : -1;
-      return { beatColumns: [...s.beatColumns, { id, title, position: maxPos + 1, width: 0 }] };
+      return { beatColumns: [...s.beatColumns, { id, title, position: maxPos + 1, width: 0, targetPages: Math.max(1, Math.round(targetPages)) }] };
     });
     return id;
   },
@@ -1809,6 +1811,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             x: 0,
             y: 0,
             imageHeight: 0,
+            outlineSpan: 1,   // v2.20: never blank — 1 page by default
           },
         ],
       };

@@ -31,8 +31,10 @@ import { showToast } from './Toast';
 const SNAP = 1;                   // v2.16, Derek: whole pages only — no decimals
 const DEFAULT_SPAN = 1;           // beats default to one page
 const SCENE_MIN = 0.125;          // the script row stays TRUE to real lengths
-/** A section with no page budget yet still needs a visible block. */
-export const DEFAULT_COLUMN_PAGES = 10;
+/** A section with no page budget yet still needs a visible block. v2.20:
+ *  1, matching what the Outline window's field shows for it — new sections
+ *  are born with targetPages: 1, so this only covers pre-v2.20 data. */
+export const DEFAULT_COLUMN_PAGES = 1;
 
 /** Clamp + snap a page position for a beat. Exported for the test. */
 export function snapPage(page: number, span: number, totalPages: number): number {

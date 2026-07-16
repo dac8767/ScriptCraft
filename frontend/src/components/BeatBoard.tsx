@@ -38,9 +38,14 @@ export interface OutlinePreset {
   id: string;
   name: string;
   columns: string[];
+  /** v2.20: default page budget per section, parallel to `columns`. Where a
+   *  structure has conventional page counts they're used; every entry is at
+   *  least 1 — a blank budget can't be grabbed on the Outline Bar. */
+  pages: number[];
 }
 export const OUTLINE_PRESETS: OutlinePreset[] = [
-  { id: '3act', name: '3-Act Structure', columns: ['Act I', 'Act II', 'Act III'] },
+  // Derek's spec: 40 pages per act.
+  { id: '3act', name: '3-Act Structure', columns: ['Act I', 'Act II', 'Act III'], pages: [40, 40, 40] },
   {
     id: 'savethecat', name: 'Save the Cat (15 beats)',
     columns: [
@@ -49,6 +54,10 @@ export const OUTLINE_PRESETS: OutlinePreset[] = [
       'Bad Guys Close In', 'All Is Lost', 'Dark Night of the Soul',
       'Break into Three', 'Finale', 'Final Image',
     ],
+    // Snyder's beat sheet is written for a 110-page script; these spans tile
+    // his page numbers (Catalyst p12, Break into Two p25, Midpoint p55,
+    // All Is Lost p75, Break into Three p85, Final Image p110) in order.
+    pages: [1, 1, 8, 2, 13, 1, 4, 25, 1, 19, 1, 9, 1, 23, 1],
   },
   {
     id: 'herojourney', name: "The Hero's Journey (12 stages)",
@@ -58,10 +67,16 @@ export const OUTLINE_PRESETS: OutlinePreset[] = [
       'Approach to the Inmost Cave', 'The Ordeal', 'Reward',
       'The Road Back', 'Resurrection', 'Return with the Elixir',
     ],
+    // Vogler's act mapping on a 120-page feature: stages 1–5 = Act I (30),
+    // 6–9 = Act II (60), 10–12 = Act III (30).
+    pages: [10, 5, 5, 5, 5, 25, 10, 10, 15, 10, 15, 5],
   },
   {
     id: 'storycircle', name: 'Story Circle (8 steps)',
     columns: ['You', 'Need', 'Go', 'Search', 'Find', 'Take', 'Return', 'Change'],
+    // Harmon's circle is eight EQUAL arcs — even eighths of a 120-page
+    // feature. Scale down for a TV episode.
+    pages: [15, 15, 15, 15, 15, 15, 15, 15],
   },
   {
     id: 'sequences', name: 'Sequence Method (8 sequences)',
@@ -70,6 +85,8 @@ export const OUTLINE_PRESETS: OutlinePreset[] = [
       'Seq 4: Midpoint', 'Seq 5: Rising Action', 'Seq 6: Main Culmination',
       'Seq 7: New Tension', 'Seq 8: Resolution',
     ],
+    // The classic reel-length sequence: eight ~15-page sequences ≈ 120.
+    pages: [15, 15, 15, 15, 15, 15, 15, 15],
   },
 ];
 
@@ -77,10 +94,11 @@ export function applyOutlinePreset(presetId: string): void {
   const preset = OUTLINE_PRESETS.find((p) => p.id === presetId);
   if (!preset) return;
   const { addBeatColumn, addBeat } = useEditorStore.getState();
-  for (const title of preset.columns) {
+  preset.columns.forEach((title, i) => {
     // v2.18: every preset section starts with one blank beat, ready to fill.
-    addBeat('', addBeatColumn(title));
-  }
+    // v2.20: each section carries its structure's page budget.
+    addBeat('', addBeatColumn(title, preset.pages[i] ?? 1));
+  });
 }
 
 /* ─── URL detection ─── */
@@ -218,16 +236,18 @@ const BeatPagesField: React.FC<{
     title="Page estimate — how many pages this beat spans on the Outline Bar"
     onClick={(e) => e.stopPropagation()}
   >
+    {/* v2.20: never blank — a beat with no span can't be grabbed on the
+        Outline Bar, so invalid input is ignored and blur restores the value. */}
     <input
       type="number"
       min={1}
       step={1}
-      value={beat.outlineSpan ?? ''}
-      placeholder="#"
+      value={beat.outlineSpan ?? 1}
       onChange={(e) => {
         const n = Math.round(Number(e.target.value));
-        onUpdate(beat.id, { outlineSpan: Number.isFinite(n) && n >= 1 ? n : undefined });
+        if (Number.isFinite(n) && n >= 1) onUpdate(beat.id, { outlineSpan: n });
       }}
+      onBlur={(e) => { if (!e.target.value) e.target.value = String(beat.outlineSpan ?? 1); }}
     />
     <span>pages</span>
   </label>
@@ -964,15 +984,16 @@ const BeatColumnView: React.FC<BeatColumnViewProps> = ({
         {/* v2.11: the section's page budget — drives its block width on the
             Outline Bar's top row (also settable by right-click there). */}
         <label className="beat-column-target" title="Target pages for this section on the Outline Bar">
+          {/* v2.20: never blank (see BeatPagesField). */}
           <input
             type="number"
             min={1}
-            value={col.targetPages ?? ''}
-            placeholder="#"
+            value={col.targetPages ?? 1}
             onChange={(e) => {
               const n = Number(e.target.value);
-              onUpdateColumn(col.id, { targetPages: Number.isFinite(n) && n >= 1 ? Math.round(n) : 0 });
+              if (Number.isFinite(n) && n >= 1) onUpdateColumn(col.id, { targetPages: Math.round(n) });
             }}
+            onBlur={(e) => { if (!e.target.value) e.target.value = String(col.targetPages ?? 1); }}
           />
           <span>pages</span>
         </label>
