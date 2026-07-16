@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.21';
+export const APP_VERSION = '2.22';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.22',
+    date: '2026-07-16',
+    items: [
+      { title: 'Arrangement: Sections', detail: 'The Outline window\'s arrangement toggle caught up with the v2.18 rename — the first option reads "Sections" instead of "Columns".', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '2.21',
     date: '2026-07-16',
