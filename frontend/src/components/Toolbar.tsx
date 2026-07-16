@@ -455,7 +455,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     const bar = toolbarRef.current;
     if (!bar) return;
     const measure = () => {
-      const menuIcon = document.querySelector('.menu-bar .menu-item .menu-icon');
+      // v2.80, Derek: align the actual icon IMAGES, not the boxes around
+      // them — both sides measure the rendered <svg> glyph itself.
+      const menuIcon = document.querySelector('.menu-bar .menu-item .menu-icon svg')
+        ?? document.querySelector('.menu-bar .menu-item .menu-icon');
       const firstIcon = bar.querySelector('.toolbar-btn svg') ?? bar.querySelector('.toolbar-btn');
       if (!menuIcon || !firstIcon) { setAlignPad(null); return; }
       const mi = (menuIcon as HTMLElement).getBoundingClientRect();

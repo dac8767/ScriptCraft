@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.79';
+export const APP_VERSION = '2.80';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.80',
+    date: '2026-07-16',
+    items: [
+      { title: 'Menu/toolbar icons align glyph-to-glyph', detail: 'v2.72 aligned the icon boxes; the undo button now measures against the File menu\'s actual icon image, so the two glyphs sit on the same left edge.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '2.79',
     date: '2026-07-16',
