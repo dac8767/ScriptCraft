@@ -158,6 +158,10 @@ interface MenuItem {
   separator?: boolean;
   disabled?: boolean;
   children?: MenuItem[];
+  /** v2.62: custom submenu content (e.g. the Scrapbook's table-size grid).
+   *  Rendered inside the submenu flyout instead of a children list; `close`
+   *  shuts the whole menu after the content commits its action. */
+  render?: (close: () => void) => React.ReactNode;
   icon?: React.ReactNode;
 }
 
@@ -2130,13 +2134,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {activeMenuData.items.map((item, i) =>
           item.separator ? (
             <div key={i} className="menu-separator" onPointerEnter={handleItemPointerEnter} />
-          ) : item.children ? (
+          ) : item.children || item.render ? (
             <div
               key={`${i}:${item.label}`}
-              className={`menu-dropdown-item has-children ${openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? 'submenu-open' : ''}`}
-              onPointerEnter={(e) => handleSubmenuPointerEnter(submenuKey(activeMenuData.label, item.label!, i), e)}
-              onTouchEnd={(e) => handleSubmenuTouchEnd(submenuKey(activeMenuData.label, item.label!, i), e)}
-              onClick={(e) => { e.stopPropagation(); setOpenSubmenu(submenuKey(activeMenuData.label, item.label!, i)); }}
+              className={`menu-dropdown-item has-children ${item.disabled ? 'disabled ' : ''}${openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? 'submenu-open' : ''}`}
+              onPointerEnter={(e) => { if (!item.disabled) handleSubmenuPointerEnter(submenuKey(activeMenuData.label, item.label!, i), e); }}
+              onTouchEnd={(e) => { if (!item.disabled) handleSubmenuTouchEnd(submenuKey(activeMenuData.label, item.label!, i), e); }}
+              onClick={(e) => { e.stopPropagation(); if (!item.disabled) setOpenSubmenu(submenuKey(activeMenuData.label, item.label!, i)); }}
             >
               {item.icon && <span className="menu-dropdown-icon">{item.icon}</span>}
               <span>{item.label}</span>
@@ -2159,7 +2163,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                   }
                 }}
               >
-                {item.children.map((child, j) =>
+                {item.render ? item.render(() => { setActiveMenu(null); setOpenSubmenu(null); }) : item.children!.map((child, j) =>
                   child.separator ? (
                     <div key={j} className="menu-separator" />
                   ) : (

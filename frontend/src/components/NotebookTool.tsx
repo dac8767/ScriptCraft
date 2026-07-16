@@ -433,8 +433,11 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
 
   // menu actions reach the canvas via events, like his version
   useEffect(() => {
-    const tblH = () => {
-      const t = newTable();
+    // v2.62: the Table menu's grid picker sends the size in event detail;
+    // a bare event (older callers) still gets the 2×2 default.
+    const tblH = (e: Event) => {
+      const d = (e as CustomEvent).detail as { rows?: number; cols?: number } | undefined;
+      const t = newTable(d?.rows, d?.cols);
       const nb: NbBox = { id: nbUid(), type: 'table', x: 24, y: 24, w: 0, h: 0, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: 'left' };
       onChangeBoxes([...boxes, nb]); setFocusedId(nb.id);
     };
@@ -751,11 +754,39 @@ const BORDER_COLORS: Array<[string, string]> = [
   ['Blue', '#3e9bff'], ['Red', '#ff5257'],
 ];
 
+/** v2.62, Derek: OneNote's insert-table grid — sweep to preview a size,
+ *  click to insert exactly that many columns × rows. Lives in the Table
+ *  menu's "Insert Table" submenu. Exported for the test. */
+export const TABLE_GRID_COLS = 10;
+export const TABLE_GRID_ROWS = 8;
+export function TableGridPicker({ onPick }: { onPick: (rows: number, cols: number) => void }) {
+  const [hover, setHover] = useState({ r: 0, c: 0 });
+  return (
+    <div className="fs-nb-tablegrid">
+      <div className="fs-nb-tablegrid-label">
+        {hover.r > 0 ? `${hover.c}×${hover.r} Table` : 'Pick a size'}
+      </div>
+      <div className="fs-nb-tablegrid-cells" onPointerLeave={() => setHover({ r: 0, c: 0 })}>
+        {Array.from({ length: TABLE_GRID_ROWS }, (_, ri) =>
+          Array.from({ length: TABLE_GRID_COLS }, (_, ci) => (
+            <button
+              key={`${ri}-${ci}`}
+              className={`fs-nb-tablegrid-cell${ri < hover.r && ci < hover.c ? ' on' : ''}`}
+              onPointerEnter={() => setHover({ r: ri + 1, c: ci + 1 })}
+              onClick={() => onPick(ri + 1, ci + 1)}
+            />
+          )))}
+      </div>
+    </div>
+  );
+}
+
 export function useScrapbookMenus(): Array<{
   label: string;
   items: Array<{
     icon?: React.ReactNode; label: string; action?: () => void;
     disabled?: boolean; separator?: boolean;
+    render?: (close: () => void) => React.ReactNode;
     children?: Array<{ icon?: React.ReactNode; label: string; action?: () => void; disabled?: boolean; separator?: boolean }>;
   }>;
 }> {
@@ -800,7 +831,19 @@ export function useScrapbookMenus(): Array<{
   const tableMenu = {
     label: 'Table',
     items: [
-      { label: 'Insert Table', action: () => window.dispatchEvent(new Event('nb-add-table-canvas')), disabled: !page },
+      {
+        label: 'Insert Table',
+        disabled: !page,
+        // v2.62: the submenu IS the grid picker — sweep out a size, click.
+        render: (close: () => void) => (
+          <TableGridPicker
+            onPick={(rows, cols) => {
+              window.dispatchEvent(new CustomEvent('nb-add-table-canvas', { detail: { rows, cols } }));
+              close();
+            }}
+          />
+        ),
+      },
       { separator: true, label: '' },
       { label: 'Insert Row Above', disabled: noCell, action: mutate((x) => tableInsertRow(x, cell!.ri)) },
       { label: 'Insert Row Below', disabled: noCell, action: mutate((x) => tableInsertRow(x, cell!.ri + 1)) },

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.61';
+export const APP_VERSION = '2.62';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.62',
+    date: '2026-07-16',
+    items: [
+      { title: 'Scrapbook: pick a table size on a grid', detail: 'Table > Insert Table now opens a OneNote-style grid — sweep across it to preview the size ("7×4 Table"), click to insert exactly that many columns and rows.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '2.61',
     date: '2026-07-16',

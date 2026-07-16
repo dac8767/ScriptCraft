@@ -62,8 +62,15 @@ export function nbUid(): string {
   return 'n' + Math.random().toString(36).slice(2, 9);
 }
 
-export function newTable(): NbTable {
-  return { id: nbUid(), rows: [['', ''], ['', '']], colWidths: [90, 90], rowHeights: [32, 32], align: 'left' };
+/** v2.62: the grid picker chooses the size; bare calls keep the old 2×2. */
+export function newTable(rows = 2, cols = 2): NbTable {
+  return {
+    id: nbUid(),
+    rows: Array.from({ length: Math.max(1, rows) }, () => Array.from({ length: Math.max(1, cols) }, () => '')),
+    colWidths: Array.from({ length: Math.max(1, cols) }, () => 90),
+    rowHeights: Array.from({ length: Math.max(1, rows) }, () => 32),
+    align: 'left',
+  };
 }
 
 /* ── tree helpers (Derek's, typed) ── */
