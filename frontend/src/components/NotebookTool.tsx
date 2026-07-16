@@ -205,7 +205,11 @@ function EditableTable({ data, onChange, onCellFocus }: {
 
 /* ── canvas boxes (his, typed; text boxes stay contentEditable — they're
       scraps pinned to a board, not the document ProseMirror owns) ── */
-function useBoxDrag(box: NbBox, onChange: (b: NbBox) => void) {
+/** v2.65: `onFocus` runs on every drag-start. startDrag stops propagation,
+ *  so the wrapper's focusing mousedown never fires for clicks on the box's
+ *  draggable body (the img, the head bar, the grip) — the Picture/Table
+ *  menus went dead on reselect without this. */
+function useBoxDrag(box: NbBox, onChange: (b: NbBox) => void, onFocus?: () => void) {
   const dragState = useRef<{ type: 'move' | 'resize'; startX: number; startY: number; origX: number; origY: number; origW: number; origH: number } | null>(null);
   const onMove = useCallback((e: MouseEvent) => {
     const ds = dragState.current;
@@ -227,6 +231,7 @@ function useBoxDrag(box: NbBox, onChange: (b: NbBox) => void) {
   }, [onMove]);
   const startDrag = (e: React.MouseEvent, type: 'move' | 'resize') => {
     e.preventDefault(); e.stopPropagation();
+    onFocus?.();
     dragState.current = { type, startX: e.clientX, startY: e.clientY, origX: box.x, origY: box.y, origW: box.w, origH: box.h };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
@@ -243,7 +248,7 @@ function TextBox({ box, focused, onChange, onFocusBox, onDelete }: {
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const loaded = useRef(false);
-  const startDrag = useBoxDrag(box, onChange);
+  const startDrag = useBoxDrag(box, onChange, () => onFocusBox(box.id));
   useEffect(() => {
     if (ref.current && !loaded.current) {
       ref.current.innerHTML = box.html || '';
@@ -312,7 +317,7 @@ export function rotatedImagePatch(b: { rotate?: number; w: number; h: number }, 
 function ImageBox({ box, focused, onChange, onFocusBox, onDelete }: {
   box: NbBox; focused: boolean; onChange: (b: NbBox) => void; onFocusBox: (id: string) => void; onDelete: (id: string) => void;
 }) {
-  const startDrag = useBoxDrag(box, onChange);
+  const startDrag = useBoxDrag(box, onChange, () => onFocusBox(box.id));
   const [hover, setHover] = useState(false);
   const show = focused || hover;
   // v2.64: on a quarter turn the FRAME already holds the swapped size; the
@@ -366,7 +371,7 @@ export const boxAsTable = (b: NbBox): NbTable => ({
 function TableBox({ box, focused, onChange, onFocusBox, onDelete }: {
   box: NbBox; focused: boolean; onChange: (b: NbBox) => void; onFocusBox: (id: string) => void; onDelete: (id: string) => void;
 }) {
-  const startDrag = useBoxDrag(box, onChange);
+  const startDrag = useBoxDrag(box, onChange, () => onFocusBox(box.id));
   const [hover, setHover] = useState(false);
   const isEmpty = tableIsEmpty(box.rows || []);
   // v2.05: same slim head bar as text boxes; visible per Derek's empty/

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.64';
+export const APP_VERSION = '2.65';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.65',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: Picture menu works when you click an existing image', detail: 'Clicking a picture started its drag handler, which swallowed the event before the box could take focus — so the Picture menu only responded right after inserting. Starting a drag on any Scrapbook box (image, table, or text) now focuses it first.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '2.64',
     date: '2026-07-16',
