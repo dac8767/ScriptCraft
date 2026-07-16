@@ -702,7 +702,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
          beat was just closed on the Outline), Undo restores IT. */
       case 'undo': {
         const st = useEditorStore.getState();
-        const beatWins = st.canBeatUndo && st.lastBeatEditAt >= st.lastDocEditAt;
+        const beatWins = st.canBeatUndo && st.lastBeatEditAt > st.lastDocEditAt;
         return (
           <button
             className="toolbar-btn"
@@ -716,7 +716,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       }
       case 'redo': {
         const st = useEditorStore.getState();
-        const beatWins = st.canBeatRedo && st.lastBeatEditAt >= st.lastDocEditAt;
+        const beatWins = st.canBeatRedo && st.lastBeatEditAt > st.lastDocEditAt;
         return (
           <button
             className="toolbar-btn"

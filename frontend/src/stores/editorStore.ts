@@ -2531,11 +2531,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
  *  must bring it back), otherwise to the script editor's own history. */
 export function smartUndo(editor: { chain: () => { focus: () => { undo: () => { run: () => void } } } } | null): void {
   const s = useEditorStore.getState();
-  if (s.canBeatUndo && s.lastBeatEditAt >= s.lastDocEditAt) { s.beatUndo(); return; }
+  if (s.canBeatUndo && s.lastBeatEditAt > s.lastDocEditAt) { s.beatUndo(); return; }
   try { editor?.chain().focus().undo().run(); } catch { /* editor gone */ }
 }
 export function smartRedo(editor: { chain: () => { focus: () => { redo: () => { run: () => void } } } } | null): void {
   const s = useEditorStore.getState();
-  if (s.canBeatRedo && s.lastBeatEditAt >= s.lastDocEditAt) { s.beatRedo(); return; }
+  if (s.canBeatRedo && s.lastBeatEditAt > s.lastDocEditAt) { s.beatRedo(); return; }
   try { editor?.chain().focus().redo().run(); } catch { /* editor gone */ }
 }

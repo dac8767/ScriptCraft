@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.36';
+export const APP_VERSION = '2.37';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.37',
+    date: '2026-07-16',
+    items: [
+      { title: 'Outline window: one toolbar, tabs below', detail: 'The "OUTLINE" title row is gone — beat count, Arrangement, Presets and + Add Section share a single toolbar, and the variation tabs sit under it. The on-screen hint text was replaced by a ? button (helper info lives behind ? buttons from now on).', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '2.36',
     date: '2026-07-16',

@@ -22,6 +22,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { createPortal } from 'react-dom';
 import { FaRegCircle, FaDotCircle, FaShapes, FaLink } from 'react-icons/fa';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
@@ -909,6 +910,28 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { addOutlineTab, switchOutlineTab, renameOutlineTab, deleteOutlineTab, setOutlineBarTab } = useEditorStore.getState();
   const [renamingTab, setRenamingTab] = useState<string | null>(null);
 
+  /* v2.37, Derek's rule: helper info lives behind a ? button, not on
+     screen (same fs-help pattern as Goals). */
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpBtnRef = useRef<HTMLButtonElement>(null);
+  const [helpPos, setHelpPos] = useState<{ top: number; left: number } | null>(null);
+  useEffect(() => {
+    if (!helpOpen) return;
+    const close = (e: PointerEvent) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest('.fs-help-pop') && t !== helpBtnRef.current) setHelpOpen(false);
+    };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [helpOpen]);
+  const toggleHelp = () => {
+    if (!helpOpen && helpBtnRef.current) {
+      const r = helpBtnRef.current.getBoundingClientRect();
+      setHelpPos({ top: r.bottom + 6, left: Math.max(8, Math.min(r.left - 120, window.innerWidth - 288)) });
+    }
+    setHelpOpen((v) => !v);
+  };
+
   const handleCloseTab = useCallback(async (id: string, name: string) => {
     const ok = await confirmDialog(
       `Close "${name}"? Your beats are safe — they live in every tab. Only this arrangement of sections is deleted.`,
@@ -1036,6 +1059,80 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
 
   return (
     <div className="beat-board" ref={boardRef}>
+      <div className="beat-board-header">
+        {/* v2.37, Derek: no "Outline" title — one toolbar row, tabs below. */}
+        <span className="beat-board-info">
+          {beats.length} beat{beats.length !== 1 ? 's' : ''}
+        </span>
+
+        {/* Mode toggle (v1.98; v2.22: "Columns" → "Sections", matching the
+            v2.18 rename everywhere else) */}
+        <span className="beat-mode-label">Arrangement:</span>
+        <div className="beat-mode-toggle">
+          <button
+            className={`beat-mode-btn${beatArrangeMode === 'auto' ? ' active' : ''}`}
+            onClick={() => setBeatArrangeMode('auto')}
+            title="Sections — beats grouped in side-by-side sections"
+          >Sections</button>
+          <button
+            className={`beat-mode-btn${beatArrangeMode === 'custom' ? ' active' : ''}`}
+            onClick={() => setBeatArrangeMode('custom')}
+            title="Freeform — place beats anywhere"
+          >Freeform</button>
+        </div>
+
+        <button ref={helpBtnRef} className="fs-help-btn" title="How to use the Outline" onClick={toggleHelp}>?</button>
+        {helpOpen && helpPos && createPortal(
+          <div className="fs-help-pop" style={{ top: helpPos.top, left: helpPos.left }}>
+            Create sections (Act 1, Act 2…) and drop beats into them — or pick
+            a Preset. Tabs below are separate arrangements of the SAME beats;
+            the ◉ picks which one the Outline Bar shows. Freeform turns the
+            board into a mind map: drag cards anywhere, connect them, change
+            their shape and color.
+          </div>,
+          document.body,
+        )}
+        {beatArrangeMode === 'auto' ? (
+          <>
+            {/* v1.89: an action menu, not state — value stays on the
+                placeholder so it reads "Presets" again after applying.
+                v2.23: with sections already on the board, a preset REPLACES
+                them (after a confirm) instead of piling more on — the beats
+                survive in the Uncategorized column.
+                v2.26: the user's saved presets join the list, plus save /
+                export / import actions. */}
+            <select
+              className="beat-board-preset"
+              value=""
+              title="Apply an outline structure, or save your own"
+              onChange={(e) => { void handlePresetAction(e.target.value); }}
+            >
+              <option value="">Presets…</option>
+              <optgroup label="Built-in">
+                {OUTLINE_PRESETS.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </optgroup>
+              {customPresets.length > 0 && (
+                <optgroup label="My Presets">
+                  {customPresets.map((p) => (
+                    <option key={p.id} value={`custom:${p.id}`}>{p.name}</option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label="Manage">
+                <option value="__save">Save current as preset…</option>
+                {customPresets.length > 0 && <option value="__export">Export my presets…</option>}
+                <option value="__import">Import presets…</option>
+              </optgroup>
+            </select>
+            <button className="beat-board-add-col-btn" onClick={handleAddColumn}>+ Add Section</button>
+          </>
+        ) : (
+          <button className="beat-board-add-col-btn" onClick={handleAddBeatFree}>+ Add Beat</button>
+        )}
+      </div>
+
       {/* v2.30: variation tabs, browser-style. One shared pool of beats;
           each tab is its own arrangement of sections. The ◉ marks the tab
           the Outline Bar shows. */}
@@ -1081,74 +1178,6 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
         ))}
         <button className="beat-tab-add" title="New outline variation" onClick={() => addOutlineTab()}>＋</button>
       </div>
-      <div className="beat-board-header">
-        <span className="beat-board-title">Outline</span>
-        <span className="beat-board-info">
-          {beats.length} beat{beats.length !== 1 ? 's' : ''}
-        </span>
-
-        {/* Mode toggle (v1.98; v2.22: "Columns" → "Sections", matching the
-            v2.18 rename everywhere else) */}
-        <span className="beat-mode-label">Arrangement:</span>
-        <div className="beat-mode-toggle">
-          <button
-            className={`beat-mode-btn${beatArrangeMode === 'auto' ? ' active' : ''}`}
-            onClick={() => setBeatArrangeMode('auto')}
-            title="Sections — beats grouped in side-by-side sections"
-          >Sections</button>
-          <button
-            className={`beat-mode-btn${beatArrangeMode === 'custom' ? ' active' : ''}`}
-            onClick={() => setBeatArrangeMode('custom')}
-            title="Freeform — place beats anywhere"
-          >Freeform</button>
-        </div>
-
-        {beatArrangeMode === 'auto' ? (
-          <>
-            {/* v1.89: an action menu, not state — value stays on the
-                placeholder so it reads "Presets" again after applying.
-                v2.23: with sections already on the board, a preset REPLACES
-                them (after a confirm) instead of piling more on — the beats
-                survive in the Uncategorized column.
-                v2.26: the user's saved presets join the list, plus save /
-                export / import actions. */}
-            <select
-              className="beat-board-preset"
-              value=""
-              title="Apply an outline structure, or save your own"
-              onChange={(e) => { void handlePresetAction(e.target.value); }}
-            >
-              <option value="">Presets…</option>
-              <optgroup label="Built-in">
-                {OUTLINE_PRESETS.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </optgroup>
-              {customPresets.length > 0 && (
-                <optgroup label="My Presets">
-                  {customPresets.map((p) => (
-                    <option key={p.id} value={`custom:${p.id}`}>{p.name}</option>
-                  ))}
-                </optgroup>
-              )}
-              <optgroup label="Manage">
-                <option value="__save">Save current as preset…</option>
-                {customPresets.length > 0 && <option value="__export">Export my presets…</option>}
-                <option value="__import">Import presets…</option>
-              </optgroup>
-            </select>
-            <button className="beat-board-add-col-btn" onClick={handleAddColumn}>+ Add Section</button>
-          </>
-        ) : (
-          <button className="beat-board-add-col-btn" onClick={handleAddBeatFree}>+ Add Beat</button>
-        )}
-      </div>
-
-      {beatArrangeMode === 'auto' && (
-        <div className="beat-board-hint">
-          Create a section to organize scenes/beats. Example: Act 1, Act 2, Act 3.
-        </div>
-      )}
 
       {beatArrangeMode === 'auto' ? (
         <DndContext sensors={sensors} collisionDetection={beatCollisionDetection} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
