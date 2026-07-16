@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.49';
+export const APP_VERSION = '2.50';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.50',
+    date: '2026-07-16',
+    items: [
+      { title: 'Outline Bar resize: every row moves the same amount', detail: 'Dragging the bar\'s bottom edge used to scale rows proportionally, so the short ruler row barely budged while the lanes ballooned. Now every row — ruler included — gains or loses the same number of pixels, and the bar\'s edge tracks the mouse 1:1.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '2.49',
     date: '2026-07-16',

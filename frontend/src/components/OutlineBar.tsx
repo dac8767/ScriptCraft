@@ -492,16 +492,18 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
           className="fs-ob-tracks"
           style={{
             width: trackW,
-            // v2.28: the right-edge scaler drives every row's height.
-            ['--ob-lane-h' as string]: `${Math.round(26 * rowScale)}px`,
-            ['--ob-ruler-h' as string]: `${Math.round(16 * rowScale)}px`,
+            // v2.50, Derek: resizing adds the SAME pixel delta to every row —
+            // the ruler grows exactly as much as the lanes, not
+            // proportionally less. One scale unit = 26px per row.
+            ['--ob-lane-h' as string]: `${Math.max(8, Math.round(26 + (rowScale - 1) * 26))}px`,
+            ['--ob-ruler-h' as string]: `${Math.max(8, Math.round(16 + (rowScale - 1) * 26))}px`,
           }}
         >
           {/* v2.42, Derek: rows come from Customize > Outline Bar — order,
               extra rows, per-row heights. Each renderer below is one kind. */}
           {barRows.map((row) => {
             const rowStyle: React.CSSProperties | undefined = row.h
-              ? { height: Math.round(row.h * rowScale) }
+              ? { height: Math.max(8, Math.round(row.h + (rowScale - 1) * 26)) }
               : undefined;
             if (row.kind === 'ruler') {
               return (

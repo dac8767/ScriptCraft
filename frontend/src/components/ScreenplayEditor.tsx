@@ -661,8 +661,11 @@ const ScreenplayEditor: React.FC = () => {
     const startY = e.clientY;
     const rowScale0 = useEditorStore.getState().outlineBarRowScale;
     const onMove = (ev: PointerEvent) => {
-      // ~90px of mouse spans the whole 0.7–2.5 scale range comfortably.
-      useEditorStore.getState().setOutlineBarRowScale(rowScale0 + (ev.clientY - startY) / 50);
+      // v2.50, Derek: 1:1 — the bar grows exactly as far as the mouse moves.
+      // Every row takes the SAME pixel delta (see OutlineBar's rowDelta,
+      // 26px per scale unit), so dy spreads over rows × 26.
+      const rows = Math.max(1, useEditorStore.getState().outlineBarRows.length);
+      useEditorStore.getState().setOutlineBarRowScale(rowScale0 + (ev.clientY - startY) / (rows * 26));
     };
     const onUp = () => {
       window.removeEventListener('pointermove', onMove);
