@@ -9,6 +9,18 @@
 import React, { useRef } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 
+/** v2.61: which way a mouse move grows the gap depends on which side of the
+ *  items the grip rides. The menu/toolbar grips sit RIGHT of left-anchored
+ *  items — spacing grows to the right, drag right = wider. The Big Button
+ *  grip sits LEFT of a right-anchored section — spacing grows to the LEFT
+ *  (the buttons' right edge stays put), so drag left = wider. Getting this
+ *  wrong makes the grip fight the mouse. Exported for the test. */
+export const GAP_DRAG_DIR: Record<'menu' | 'toolbar' | 'bigbtn', 1 | -1> = {
+  menu: 1,
+  toolbar: 1,
+  bigbtn: -1,
+};
+
 const GapHandle: React.FC<{ bar: 'menu' | 'toolbar' | 'bigbtn' }> = ({ bar }) => {
   const setChromeGap = useEditorStore((s) => s.setChromeGap);
   const locked = useEditorStore((s) => s.uiResizeLocked);
@@ -40,7 +52,7 @@ const GapHandle: React.FC<{ bar: 'menu' | 'toolbar' | 'bigbtn' }> = ({ bar }) =>
       onPointerMove={(e) => {
         const d = drag.current;
         if (!d) return;
-        setChromeGap(bar, d.gap + (e.clientX - d.x) / d.gaps);
+        setChromeGap(bar, d.gap + (GAP_DRAG_DIR[bar] * (e.clientX - d.x)) / d.gaps);
       }}
       onPointerUp={() => { drag.current = null; }}
     >

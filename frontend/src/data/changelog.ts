@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.60';
+export const APP_VERSION = '2.61';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.61',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: Big Button spacing grip dragged in reverse', detail: 'The Big Button section hangs off the toolbar\'s right edge, so its spacing grows to the LEFT — but the grip used the same drag direction as the left-anchored bars, so pulling it away from the buttons squeezed them together. Each grip now follows its own bar\'s geometry.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '2.60',
     date: '2026-07-16',
