@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import OutlineBar, { snapPage, markerGeometry, columnRanges, navThumbGeometry, layoutBarBeats, DEFAULT_COLUMN_PAGES } from './OutlineBar';
+import OutlineBar, { snapPage, markerGeometry, columnRanges, navThumbGeometry, layoutBarBeats, planBeatDrop, DEFAULT_COLUMN_PAGES, type BarBeatItem } from './OutlineBar';
 import { useEditorStore } from '../stores/editorStore';
 
 describe('placement math', () => {
@@ -85,6 +85,74 @@ describe('derived beat layout', () => {
       ],
     );
     expect(layout.get('orphan')).toEqual({ page: 11, span: 3 });
+  });
+});
+
+/* v2.60, Derek: a beat doesn't snap to its section's start — it keeps the
+   page it was dropped on, anywhere inside the section. The board is only
+   written when the drop changes its section or its order among siblings. */
+describe('hand-placed beats (v2.60)', () => {
+  const A = { id: 'A', start: 1, pages: 10 };
+  const B = { id: 'B', start: 11, pages: 10 };
+
+  it('a pinned beat renders at its offset; the pack continues after it', () => {
+    const layout = layoutBarBeats([A], [
+      { id: 'b1', columnId: 'A', position: 0, span: 2 },
+      { id: 'b2', columnId: 'A', position: 1, span: 3, offset: 5 },
+      { id: 'b3', columnId: 'A', position: 2, span: 1 },
+    ]);
+    expect(layout.get('b1')).toEqual({ page: 1, span: 2 });
+    expect(layout.get('b2')).toEqual({ page: 6, span: 3 });    // start + 5
+    expect(layout.get('b3')).toEqual({ page: 9, span: 1 });    // after the pin, not on top of it
+  });
+
+  it('a pin clamps inside its section', () => {
+    const layout = layoutBarBeats([A], [{ id: 'b', columnId: 'A', position: 0, span: 1, offset: 99 }]);
+    expect(layout.get('b')!.page).toBe(10);                    // the section's last page
+  });
+
+  it('pins that contradict board order are stale — the section re-packs', () => {
+    const layout = layoutBarBeats([A], [
+      { id: 'first', columnId: 'A', position: 0, span: 1, offset: 5 },
+      { id: 'second', columnId: 'A', position: 1, span: 1, offset: 2 },
+    ]);
+    expect(layout.get('first')).toEqual({ page: 1, span: 1 });
+    expect(layout.get('second')).toEqual({ page: 2, span: 1 });
+  });
+
+  describe('planBeatDrop', () => {
+    const ranges = [A, B];
+    const items: BarBeatItem[] = [
+      { id: 'b1', columnId: 'A', position: 0, span: 2 },
+      { id: 'b2', columnId: 'A', position: 1, span: 2 },
+      { id: 'b3', columnId: 'B', position: 0, span: 1 },
+    ];
+    const layout = layoutBarBeats(ranges, items);   // b1 p1, b2 p3, b3 p11
+
+    it('a nudge within the section keeps board order — bar-only', () => {
+      const plan = planBeatDrop(ranges, items, layout, 'b2', 7, 2)!;
+      expect(plan.boardChanged).toBe(false);
+      expect(plan.sectionId).toBe('A');
+      expect(plan.offsets.b2).toBe(6);              // pinned at page 7
+      expect(plan.offsets.b1).toBe(0);              // sibling frozen where it renders
+      expect(plan.offsets.b3).toBeUndefined();      // other sections untouched
+    });
+
+    it('crossing a sibling changes the order — board committed', () => {
+      const plan = planBeatDrop(ranges, items, layout, 'b1', 5, 2)!;   // past b2 (p3)
+      expect(plan.boardChanged).toBe(true);
+      expect(plan.index).toBe(1);
+      expect(plan.offsets.b1).toBe(4);
+    });
+
+    it('landing in another section commits and freezes both sections', () => {
+      const plan = planBeatDrop(ranges, items, layout, 'b1', 12, 2)!;
+      expect(plan.boardChanged).toBe(true);
+      expect(plan.sectionId).toBe('B');
+      expect(plan.offsets.b1).toBe(1);              // 12 − section B's start
+      expect(plan.offsets.b2).toBe(2);              // the section it left, frozen
+      expect(plan.offsets.b3).toBe(0);              // the section it joined, frozen
+    });
   });
 });
 

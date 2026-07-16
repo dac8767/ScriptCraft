@@ -797,10 +797,12 @@ export const DEFAULT_OUTLINE_BAR_ROWS: OutlineBarRow[] = [
 ];
 
 /** v2.30: a non-viewed outline tab's parked data — its sections plus each
- *  beat's section/order in that tab. Beats themselves are SHARED. */
+ *  beat's section/order in that tab. Beats themselves are SHARED. v2.60:
+ *  barOffset is the beat's hand-placed page offset within its section on the
+ *  Outline Bar (per tab, since sections differ per tab; unset = packed). */
 export interface OutlineTabData {
   columns: BeatColumn[];
-  beatSlots: Record<string, { columnId: string; position: number }>;
+  beatSlots: Record<string, { columnId: string; position: number; barOffset?: number }>;
 }
 
 export interface BeatLinkPreview {
@@ -833,6 +835,11 @@ export interface BeatInfo {
   outlineLane?: 0 | 1;
   outlinePage?: number;
   outlineSpan?: number;
+  /** v2.60: hand-placed spot on the Outline Bar — whole-page offset from the
+   *  START of the beat's section (0 = the section's first page). Unset means
+   *  the bar packs it after its section siblings in board order, as before.
+   *  Per-tab like columnId/position: parked/restored through outlineStash. */
+  barOffset?: number;
   /** v2.33 mind map (Freeform arrangement): ids of beats this one draws
    *  connector lines to. mindShape is LEGACY — the shape feature was removed
    *  in v2.44, but the field stays so old saves still load cleanly. */
@@ -1145,6 +1152,10 @@ interface EditorState {
   barAddColumn: (title: string) => string;
   /** Move a beat into a section of the bar's tab at the given index. */
   barAssignBeat: (beatId: string, columnId: string, index: number) => void;
+  /** v2.60: pin beats at hand-placed pages on the bar's tab (offset from the
+   *  section's start). Presentation only — never reorders the board, never
+   *  pushes a beat-undo snapshot. undefined un-pins (back to packed). */
+  barSetBeatOffsets: (offsets: Record<string, number | undefined>) => void;
   addBeatColumn: (title: string, targetPages?: number) => string;
   updateBeatColumn: (id: string, updates: Partial<{ title: string; position: number; width: number; targetPages: number }>) => void;
   deleteBeatColumn: (id: string) => void;
@@ -1933,8 +1944,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((s) => {
       // Park the viewed tab's data, open the new tab EMPTY: every shared
       // beat lands in Uncategorized until it's dragged into a section.
-      const slots: Record<string, { columnId: string; position: number }> = {};
-      for (const b of s.beats) slots[b.id] = { columnId: b.columnId, position: b.position };
+      const slots: OutlineTabData['beatSlots'] = {};
+      for (const b of s.beats) slots[b.id] = { columnId: b.columnId, position: b.position, barOffset: b.barOffset };
       // v2.47: the new tab is bound, for life, to the arrangement that's
       // active at creation (or the one explicitly asked for).
       const arrangeMode = mode ?? s.beatArrangeMode;
@@ -1950,8 +1961,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   switchOutlineTab: (id) => set((s) => {
     if (id === s.viewedOutlineTab || !s.outlineTabs.some((t) => t.id === id)) return {};
-    const slots: Record<string, { columnId: string; position: number }> = {};
-    for (const b of s.beats) slots[b.id] = { columnId: b.columnId, position: b.position };
+    const slots: OutlineTabData['beatSlots'] = {};
+    for (const b of s.beats) slots[b.id] = { columnId: b.columnId, position: b.position, barOffset: b.barOffset };
     const stash = { ...s.outlineStash, [s.viewedOutlineTab]: { columns: s.beatColumns, beatSlots: slots } };
     const target = stash[id] ?? { columns: [], beatSlots: {} };
     delete stash[id];
@@ -1959,7 +1970,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     // match any of the target's sections, so they show as Uncategorized.
     const beats = s.beats.map((b) => {
       const slot = target.beatSlots[b.id];
-      return slot ? { ...b, columnId: slot.columnId, position: slot.position } : b;
+      return slot ? { ...b, columnId: slot.columnId, position: slot.position, barOffset: slot.barOffset } : b;
     });
     // v2.47: the view follows the tab's own arrangement. A tab from an old
     // save has none yet — it's stamped with the mode it's shown in now.
@@ -1985,7 +1996,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       delete stash[next.id];
       beats = beats.map((b) => {
         const slot = target.beatSlots[b.id];
-        return slot ? { ...b, columnId: slot.columnId, position: slot.position } : b;
+        return slot ? { ...b, columnId: slot.columnId, position: slot.position, barOffset: slot.barOffset } : b;
       });
       beatColumns = target.columns;
       viewedOutlineTab = next.id;
@@ -2079,7 +2090,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const pos = new Map(siblings.map((bid, i) => [bid, i]));
         return {
           beats: st.beats.map((b) => (pos.has(b.id)
-            ? { ...b, columnId, position: pos.get(b.id)! }
+            // v2.60: entering a different section drops the beat's bar pin.
+            ? { ...b, columnId, position: pos.get(b.id)!, ...(b.id === beatId && b.columnId !== columnId ? { barOffset: undefined } : {}) }
             : b)),
         };
       });
@@ -2094,7 +2106,28 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         .sort((a, b) => a[1].position - b[1].position)
         .map(([bid]) => bid);
       siblings.splice(Math.max(0, Math.min(index, siblings.length)), 0, beatId);
-      siblings.forEach((bid, i) => { slots[bid] = { columnId, position: i }; });
+      const movedAcross = slots[beatId] && slots[beatId].columnId !== columnId;
+      siblings.forEach((bid, i) => { slots[bid] = { ...slots[bid], columnId, position: i }; });
+      // v2.60: entering a different section drops the beat's bar pin.
+      if (movedAcross) slots[beatId] = { ...slots[beatId], barOffset: undefined };
+      return { outlineStash: { ...st.outlineStash, [st.outlineBarTab]: { ...tab, beatSlots: slots } } };
+    });
+  },
+  barSetBeatOffsets: (offsets) => {
+    const s = get();
+    if (s.outlineBarTab === s.viewedOutlineTab) {
+      set((st) => ({
+        beats: st.beats.map((b) => (b.id in offsets ? { ...b, barOffset: offsets[b.id] } : b)),
+      }));
+      return;
+    }
+    set((st) => {
+      const tab = st.outlineStash[st.outlineBarTab];
+      if (!tab) return {};
+      const slots = { ...tab.beatSlots };
+      for (const [bid, off] of Object.entries(offsets)) {
+        if (slots[bid]) slots[bid] = { ...slots[bid], barOffset: off };
+      }
       return { outlineStash: { ...st.outlineStash, [st.outlineBarTab]: { ...tab, beatSlots: slots } } };
     });
   },
@@ -2125,7 +2158,20 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   beats: [],
   setBeats: (beats) => {
     _pushBeatSnapshot(get);
-    set({ beats });
+    // v2.60: a bar pin is an offset within the beat's SECTION — a beat handed
+    // a new section (board drags between columns come through here) starts
+    // un-pinned there, unless the caller set a fresh pin itself.
+    set((s) => {
+      const prev = new Map(s.beats.map((b) => [b.id, b]));
+      return {
+        beats: beats.map((b) => {
+          const p = prev.get(b.id);
+          return p && p.columnId !== b.columnId && b.barOffset === p.barOffset && b.barOffset !== undefined
+            ? { ...b, barOffset: undefined }
+            : b;
+        }),
+      };
+    });
   },
   addBeat: (title, columnId) => {
     _pushBeatSnapshot(get, true);
@@ -2159,7 +2205,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   updateBeat: (id, updates) => {
     _pushBeatSnapshot(get);
     set((s) => ({
-      beats: s.beats.map((b) => (b.id === id ? { ...b, ...updates } : b)),
+      beats: s.beats.map((b) => {
+        if (b.id !== id) return b;
+        // v2.60: same rule as setBeats — leaving the section drops the pin.
+        const dropPin = updates.columnId !== undefined && updates.columnId !== b.columnId && !('barOffset' in updates);
+        return { ...b, ...updates, ...(dropPin ? { barOffset: undefined } : {}) };
+      }),
     }));
   },
   deleteBeat: (id) => {

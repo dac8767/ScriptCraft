@@ -79,11 +79,15 @@ export function columnRanges(cols: BeatColumn[]): Array<{ id: string; title: str
   });
 }
 
-/** v2.30, Derek: the bar shows EVERY beat automatically — nothing is
- *  "placed" by hand. Each section's beats pack from its start page in board
- *  order, each spanning its page estimate; beats whose section isn't on the
- *  bar's tab pack after the last section. Exported for the test. */
-export interface BarBeatItem { id: string; columnId: string; position: number; span: number }
+/** v2.30, Derek: the bar shows EVERY beat automatically. Each section's
+ *  beats pack from its start page in board order, each spanning its page
+ *  estimate; beats whose section isn't on the bar's tab pack after the last
+ *  section. v2.60: a beat CAN be hand-placed — `offset` pins it that many
+ *  whole pages past its section's start (clamped inside the section) instead
+ *  of packing. Board order stays the truth: if the section's pinned pages
+ *  contradict it (a reorder in the Outline window), the pins are ignored and
+ *  the section packs as before. Exported for the test. */
+export interface BarBeatItem { id: string; columnId: string; position: number; span: number; offset?: number }
 export function layoutBarBeats(
   ranges: Array<{ id: string; start: number; pages: number }>,
   items: BarBeatItem[],
@@ -95,10 +99,25 @@ export function layoutBarBeats(
     byCol.get(it.columnId)!.push(it);
   }
   for (const r of ranges) {
-    let cursor = r.start;
-    for (const it of (byCol.get(r.id) ?? []).sort((a, b) => a.position - b.position)) {
-      out.set(it.id, { page: cursor, span: it.span });
-      cursor += it.span;
+    const beats = (byCol.get(r.id) ?? []).sort((a, b) => a.position - b.position);
+    const pinned = (it: BarBeatItem) =>
+      Math.min(r.start + Math.max(0, Math.round(it.offset!)), r.start + Math.max(1, r.pages) - 1);
+    // Pins that run backwards against board order are stale — drop them all.
+    let prev = r.start;
+    let stale = false;
+    for (const it of beats) {
+      if (it.offset == null) continue;
+      const page = pinned(it);
+      if (page < prev) { stale = true; break; }
+      prev = page;
+    }
+    let cursor = r.start;  // pack position: past the end of everything placed
+    let floor = r.start;   // a beat never renders left of the one before it
+    for (const it of beats) {
+      const page = !stale && it.offset != null ? Math.max(floor, pinned(it)) : cursor;
+      out.set(it.id, { page, span: it.span });
+      floor = page;
+      cursor = Math.max(cursor, page + it.span);
     }
   }
   let orphanCursor = ranges.reduce((m, r) => Math.max(m, r.start + r.pages), 1);
@@ -108,6 +127,59 @@ export function layoutBarBeats(
     orphanCursor += it.span;
   }
   return out;
+}
+
+/** v2.60, Derek: a dropped beat KEEPS the page it was dropped on — no snap
+ *  back to the section's start. The Outline window is only touched when the
+ *  drop changes something it shows: the beat's section, or its order among
+ *  that section's beats (spans update live during a resize drag already).
+ *  The plan: which section the drop lands in, the beat's index there,
+ *  whether that differs from today (→ commit to the board), and the pins to
+ *  write — the dragged beat at its dropped page, plus every other beat in
+ *  the affected section(s) frozen where it already renders, so pinning one
+ *  beat never shuffles its neighbors. Exported for the test. */
+export function planBeatDrop(
+  ranges: Array<{ id: string; start: number; pages: number }>,
+  items: BarBeatItem[],
+  layout: Map<string, { page: number; span: number }>,
+  dragId: string,
+  dropPage: number,
+  span: number,
+): { sectionId: string; index: number; boardChanged: boolean; offsets: Record<string, number> } | null {
+  if (ranges.length === 0) return null;
+  const mid = dropPage + span / 2;
+  const act = ranges.find((a) => mid >= a.start && mid < a.start + a.pages)
+    ?? (mid < ranges[0].start ? ranges[0] : ranges[ranges.length - 1]);
+  const dragged = items.find((it) => it.id === dragId);
+  const sameSection = dragged?.columnId === act.id;
+  // New index: the section's other beats laid out left of the drop.
+  // Old index: the same beats that board order puts before the dragged one.
+  let index = 0;
+  let oldIndex = 0;
+  for (const it of items) {
+    if (it.id === dragId || it.columnId !== act.id) continue;
+    const l = layout.get(it.id);
+    if (l && l.page < dropPage) index++;
+    if (sameSection && dragged && it.position < dragged.position) oldIndex++;
+  }
+  const boardChanged = !sameSection || index !== oldIndex;
+  const offsets: Record<string, number> = {};
+  const freeze = (sectionId: string) => {
+    const r = ranges.find((a) => a.id === sectionId);
+    if (!r) return;
+    for (const it of items) {
+      if (it.id === dragId || it.columnId !== sectionId) continue;
+      const l = layout.get(it.id);
+      if (l) offsets[it.id] = Math.max(0, Math.round(l.page - r.start));
+    }
+  };
+  freeze(act.id);
+  if (dragged && !sameSection) freeze(dragged.columnId);
+  offsets[dragId] = Math.min(
+    Math.max(0, Math.round(dropPage - act.start)),
+    Math.max(0, act.pages - 1),
+  );
+  return { sectionId: act.id, index, boardChanged, offsets };
 }
 
 interface SceneEntry { text: string; pos: number; start: number; pages: number }
@@ -141,6 +213,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
   const barUpdateColumn = useEditorStore((s) => s.barUpdateColumn);
   const barAddColumn = useEditorStore((s) => s.barAddColumn);
   const barAssignBeat = useEditorStore((s) => s.barAssignBeat);
+  const barSetBeatOffsets = useEditorStore((s) => s.barSetBeatOffsets);
   const pageCount = useEditorStore((s) => s.pageCount);
   const pageLayout = useEditorStore((s) => s.pageLayout);
   const zoom = useEditorStore((s) => s.outlineBarZoom);
@@ -173,8 +246,10 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
   const actsTotal = acts.reduce((sum, a) => sum + a.pages, 0);
   // v2.30: EVERY beat renders, derived from its section + board order + span.
   const items: BarBeatItem[] = useMemo(() => beats.map((b) => {
-    const slot = barSlots ? (barSlots[b.id] ?? { columnId: '', position: Number.MAX_SAFE_INTEGER }) : { columnId: b.columnId, position: b.position };
-    return { id: b.id, columnId: slot.columnId, position: slot.position, span: Math.max(1, Math.round(b.outlineSpan ?? DEFAULT_SPAN)) };
+    const slot = barSlots
+      ? (barSlots[b.id] ?? { columnId: '', position: Number.MAX_SAFE_INTEGER, barOffset: undefined })
+      : { columnId: b.columnId, position: b.position, barOffset: b.barOffset };
+    return { id: b.id, columnId: slot.columnId, position: slot.position, offset: slot.barOffset, span: Math.max(1, Math.round(b.outlineSpan ?? DEFAULT_SPAN)) };
   }), [beats, barSlots]);
   const layout = useMemo(() => layoutBarBeats(acts, items), [acts, items]);
   let layoutEnd = 0;
@@ -221,8 +296,9 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
     kind: 'beat-move' | 'beat-resize' | 'act-resize';
     id: string; startX: number; startPage: number; startSpan: number;
   } | null>(null);
-  // v2.30: positions are DERIVED, so a move drags a ghost; pointer-up
-  // commits the new section + order and the layout re-derives.
+  // v2.30: a move drags a ghost; pointer-up commits. v2.60: the drop page
+  // is KEPT (pinned as a section offset) — the board is only written when
+  // the drop changed the beat's section or its order among its siblings.
   const [ghost, setGhost] = useState<{ id: string; page: number } | null>(null);
 
   const startBeatDrag = (e: React.PointerEvent, beat: BeatInfo, mode: 'move' | 'resize') => {
@@ -262,25 +338,22 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
     }
   };
   /** v2.16/v2.30: the bar and the board are ONE model — dropping a beat
-   *  commits its new section AND its order within it (on the bar's tab). */
+   *  commits its new section AND its order within it (on the bar's tab).
+   *  v2.60: the beat keeps its exact drop page (pinned as an offset from
+   *  the section start); the board is only written when the section or the
+   *  order actually changed, so a nudge within a section stays bar-local. */
   const onPointerUp = () => {
     const d = dragRef.current;
     dragRef.current = null;
     if (!d || d.kind !== 'beat-move') { setGhost(null); return; }
     const g = ghost;
     setGhost(null);
-    if (!g || acts.length === 0) return;
-    const mid = g.page + d.startSpan / 2;
-    const act = acts.find((a) => mid >= a.start && mid < a.start + a.pages)
-      ?? (mid < acts[0].start ? acts[0] : acts[acts.length - 1]);
-    // Order within the section: count its other beats laid out before the drop.
-    let index = 0;
-    for (const it of items) {
-      if (it.id === d.id || it.columnId !== act.id) continue;
-      const l = layout.get(it.id);
-      if (l && l.page < g.page) index++;
-    }
-    barAssignBeat(d.id, act.id, index);
+    if (!g) return;
+    const plan = planBeatDrop(acts, items, layout, d.id, g.page, d.startSpan);
+    if (!plan) return;
+    // Board first: its undo snapshot then holds the beats' pre-drag pins.
+    if (plan.boardChanged) barAssignBeat(d.id, plan.sectionId, plan.index);
+    barSetBeatOffsets(plan.offsets);
   };
 
   /* ── right-click: name / pages / color (v2.31 — rename moved here from

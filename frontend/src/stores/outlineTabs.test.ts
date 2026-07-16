@@ -112,6 +112,52 @@ describe('outline tabs', () => {
   });
 });
 
+/* v2.60: hand-placed Outline Bar pins — stored per tab, cleared when the
+   beat moves to a different section (a pin is an offset within a section,
+   so it means nothing anywhere else). */
+describe('bar pins (v2.60)', () => {
+  it('barSetBeatOffsets pins beats on the viewed tab, un-pins with undefined', () => {
+    const { b1 } = seedThreeActs();
+    S().barSetBeatOffsets({ [b1]: 4 });
+    expect(S().beats.find((b) => b.id === b1)!.barOffset).toBe(4);
+    S().barSetBeatOffsets({ [b1]: undefined });
+    expect(S().beats.find((b) => b.id === b1)!.barOffset).toBeUndefined();
+  });
+
+  it('a pin set through the bar on a non-viewed tab lands in that tab\'s stash', () => {
+    const { b1 } = seedThreeActs();
+    const tab1 = S().viewedOutlineTab;
+    S().addOutlineTab();
+    S().setOutlineBarTab(tab1);
+    S().barSetBeatOffsets({ [b1]: 3 });
+    expect(S().outlineStash[tab1].beatSlots[b1].barOffset).toBe(3);
+    // Coming back to the tab restores the pin onto the live beat.
+    S().switchOutlineTab(tab1);
+    expect(S().beats.find((b) => b.id === b1)!.barOffset).toBe(3);
+  });
+
+  it('moving a beat to another section drops its pin', () => {
+    const { a2, b1 } = seedThreeActs();
+    S().barSetBeatOffsets({ [b1]: 4 });
+    S().updateBeat(b1, { columnId: a2, position: 5 });
+    expect(S().beats.find((b) => b.id === b1)!.barOffset).toBeUndefined();
+  });
+
+  it('reordering within the same section keeps the pin', () => {
+    const { b1 } = seedThreeActs();
+    S().barSetBeatOffsets({ [b1]: 4 });
+    S().updateBeat(b1, { position: 3 });
+    expect(S().beats.find((b) => b.id === b1)!.barOffset).toBe(4);
+  });
+
+  it('barAssignBeat into a different section drops the pin too', () => {
+    const { a2, b1 } = seedThreeActs();
+    S().barSetBeatOffsets({ [b1]: 4 });
+    S().barAssignBeat(b1, a2, 0);
+    expect(S().beats.find((b) => b.id === b1)!.barOffset).toBeUndefined();
+  });
+});
+
 /* v2.47, Derek: a tab is bound to the arrangement active when it was
    created, for life. The Arrangement toggle NAVIGATES between tabs
    (creating one when needed) instead of changing the current tab. */

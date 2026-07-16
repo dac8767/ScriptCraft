@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.59';
+export const APP_VERSION = '2.60';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.60',
+    date: '2026-07-16',
+    items: [
+      { title: 'Outline Bar: beats keep the page you drop them on', detail: 'Dragging a beat no longer snaps it back to the start of its section — it stays exactly where you put it, anywhere inside the section, and its neighbors stay put too. The Outline window is only touched when the drop actually changes something it shows: the beat\'s section, its order among that section\'s beats, or its page span.', tags: ['Tools', 'UI'] },
+    ],
+  },
   {
     version: '2.59',
     date: '2026-07-16',
