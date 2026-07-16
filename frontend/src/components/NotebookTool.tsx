@@ -28,6 +28,7 @@ import {
   FaFolderPlus, FaRegEdit, FaRegTrashAlt,
 } from 'react-icons/fa';
 import { showToast } from './Toast';
+import { confirmDialog } from './ConfirmDialog';
 
 const IMAGE_BUDGET = 300_000;   // dataURL chars — localStorage is the store
 
@@ -539,8 +540,8 @@ function PageRow({ id, depth }: { id: string; depth: number }) {
       <span className="fs-nb-grabber">⋮⋮</span>
       <span className="fs-nb-pageicon"><FaRegFileAlt /></span>
       <button className="fs-nb-pagename" onClick={() => selectPage(id)}>{page.title || 'Untitled'}</button>
-      <button className="fs-nb-rowdel" title="Delete page" onClick={() => {
-        if (window.confirm(`Delete “${page.title || 'Untitled'}”? This cannot be undone.`)) deletePage(id);
+      <button className="fs-nb-rowdel" title="Delete page" onClick={async () => {
+        if (await confirmDialog(`Delete “${page.title || 'Untitled'}”? This cannot be undone.`, { title: 'Delete Page', confirmLabel: 'Delete', danger: true })) deletePage(id);
       }}><FaRegTrashAlt /></button>
     </div>
   );
@@ -584,8 +585,8 @@ function SectionRow({ node, depth }: { node: Extract<NbNode, { type: 'section' }
             {node.name}
           </button>
         )}
-        <button className="fs-nb-rowdel" title="Delete section (pages move to the top level)" onClick={() => {
-          if (window.confirm('Delete this section? Pages inside it move back to the top level.')) deleteSection(node.id);
+        <button className="fs-nb-rowdel" title="Delete section (pages move to the top level)" onClick={async () => {
+          if (await confirmDialog('Delete this section? Pages inside it move back to the top level.', { title: 'Delete Section', confirmLabel: 'Delete', danger: true })) deleteSection(node.id);
         }}><FaRegTrashAlt /></button>
       </div>
       {!node.collapsed && (

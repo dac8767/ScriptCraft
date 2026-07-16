@@ -11,6 +11,7 @@ import { resolveImageUrl } from '../utils/imageAsset';
 import { authedFetch } from '../services/authedFetch';
 import { isTauri } from '../services/platform';
 import { showToast } from './Toast';
+import { confirmDialog } from './ConfirmDialog';
 
 /** Small auth-aware image thumbnail for the title-page preview/list. Uses the
  *  same blob-fetch path as the editor NodeView so it loads reliably. */
@@ -366,8 +367,10 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
     if (arr[idx]) arr[idx] = { ...arr[idx], align };
   });
 
-  const handleDeleteTitlePage = useCallback(() => {
-    if (!window.confirm('Delete the entire title page (title, credits, and images)?')) return;
+  // v2.24: confirmDialog, never window.confirm — the Tauri shim made this
+  // exact button take down the whole app ("dialog.confirm not allowed").
+  const handleDeleteTitlePage = useCallback(async () => {
+    if (!(await confirmDialog('Delete the entire title page (title, credits, and images)?', { title: 'Delete Title Page', confirmLabel: 'Delete', danger: true }))) return;
     const end = titlePageRegionEnd(editor);
     if (end > 0) {
       const tr = editor.state.tr.delete(0, end);

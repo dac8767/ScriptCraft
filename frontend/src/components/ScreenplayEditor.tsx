@@ -83,6 +83,7 @@ import { projectApi } from '../services/projectApi';
 import { scriptApi } from '../services/scriptApi';
 import { API_BASE, getCollabWsUrl } from '../config';
 import { showToast } from './Toast';
+import { confirmDialog } from './ConfirmDialog';
 import VersionHistory from './VersionHistory';
 import AssetManager from './AssetManager';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -2518,9 +2519,11 @@ const ScreenplayEditor: React.FC = () => {
               await win.destroy();
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
-              const proceed = window.confirm(
-                `Could not save your latest changes:\n\n${msg}\n\n` +
-                  'Close anyway and lose those changes?',
+              // v2.24: window.confirm is an async Tauri shim in the app —
+              // always truthy, so this guard silently never guarded.
+              const proceed = await confirmDialog(
+                `Could not save your latest changes:\n\n${msg}\n\nClose anyway and lose those changes?`,
+                { title: 'Save Failed', confirmLabel: 'Close Anyway', danger: true },
               );
               if (proceed) await win.destroy();
             }

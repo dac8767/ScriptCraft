@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.23';
+export const APP_VERSION = '2.24';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.24',
+    date: '2026-07-16',
+    items: [
+      { title: '"Delete title page" no longer takes down the app', detail: 'Inside the desktop shell, the system confirm box is an async stand-in that could reject and paint the "ScriptCraft failed to start" screen over a running app — and even when it didn\'t, its answer arrived too late to actually stop anything. Every confirm and prompt in the app (delete title page / location / dictionary / Scrapbook pages, the close-with-unsaved-changes warning, dictionary rename) now uses ScriptCraft\'s own dialog.', tags: ['Fix'] },
+      { title: 'Startup diagnostics stay at startup', detail: 'The "failed to start" overlay only appears while the app is actually starting. Errors after that are logged quietly instead of covering your script.', tags: ['Fix'] },
+    ],
+  },
   {
     version: '2.23',
     date: '2026-07-16',

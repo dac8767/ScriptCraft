@@ -11,7 +11,16 @@
     <script>
       // Catch fatal JS errors that prevent React from mounting.
       // Shows a visible error overlay instead of a blank screen.
+      // v2.24: BOOT diagnostics only. Once the app has rendered, a stray
+      // error or unhandled rejection must not paint "failed to start" over
+      // a perfectly healthy app (that's exactly what happened when a Tauri
+      // dialog call rejected) — after boot, log to the console instead.
+      function _booted() {
+        var r = document.getElementById('root');
+        return !!(r && r.children.length);
+      }
       window.addEventListener('error', function(e) {
+        if (_booted()) { console.error('[post-boot error]', e.message || e); return; }
         var d = document.getElementById('_fatal');
         if (!d) {
           d = document.createElement('div');
@@ -23,6 +32,7 @@
         d.innerHTML += '\n[ERROR] ' + (e.message || e) + '\n  at ' + (e.filename || '?') + ':' + (e.lineno || '?') + '\n';
       });
       window.addEventListener('unhandledrejection', function(e) {
+        if (_booted()) { console.error('[post-boot rejection]', e.reason); return; }
         var d = document.getElementById('_fatal');
         if (!d) {
           d = document.createElement('div');

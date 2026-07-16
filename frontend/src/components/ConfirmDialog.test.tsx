@@ -9,7 +9,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import ConfirmDialogHost, { confirmDialog } from './ConfirmDialog';
+import ConfirmDialogHost, { confirmDialog, promptDialog } from './ConfirmDialog';
 
 let host: HTMLElement;
 let root: Root;
@@ -55,6 +55,22 @@ describe('confirmDialog', () => {
 
   it('fails safe when no host is mounted: resolves false, never hangs', async () => {
     await expect(confirmDialog('Anyone there?')).resolves.toBe(false);
+  });
+
+  /* v2.24: promptDialog replaced window.prompt (same Tauri-shim hazard). */
+  it('promptDialog resolves the typed value on OK and null on cancel', async () => {
+    act(() => { root.render(<ConfirmDialogHost />); });
+    let p: Promise<string | null>;
+    act(() => { p = promptDialog('Rename dictionary', 'Old Name'); });
+    const input = document.querySelector('.fs-confirm-input') as HTMLInputElement;
+    expect(input.value).toBe('Old Name');
+    input.value = 'New Name';
+    act(() => { (document.querySelector('.fs-confirm-ok') as HTMLButtonElement).click(); });
+    await expect(p!).resolves.toBe('New Name');
+
+    act(() => { p = promptDialog('Rename dictionary', 'x'); });
+    act(() => { (document.querySelector('.fs-confirm-cancel') as HTMLButtonElement).click(); });
+    await expect(p!).resolves.toBeNull();
   });
 
   it('queues overlapping requests instead of dropping them', async () => {

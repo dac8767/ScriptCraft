@@ -16434,3 +16434,16 @@ input.fs-switch:checked::after { left: 15px; }
   padding: 6px 10px 10px;
   text-align: center;
 }
+/* v2.24: promptDialog's text input */
+.fs-confirm-input {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fd-text);
+  font-size: 13px;
+}
+.fs-confirm-input:focus { outline: none; border-color: var(--fd-accent); }

@@ -4,6 +4,7 @@ import { useEditorStore } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
 import { api, type LocationEntry } from '../services/api';
 import { showToast } from './Toast';
+import { confirmDialog } from './ConfirmDialog';
 import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 
 interface Props {
@@ -124,7 +125,7 @@ const LocationDatabase: React.FC<Props> = ({ editor, style }) => {
 
   const handleDelete = useCallback(async (loc: LocationEntry) => {
     if (!currentProject) return;
-    if (!window.confirm(`Delete location "${loc.name}"? Scene headings will not be changed.`)) return;
+    if (!(await confirmDialog(`Delete location "${loc.name}"? Scene headings will not be changed.`, { title: 'Delete Location', confirmLabel: 'Delete', danger: true }))) return;
     try {
       await api.deleteLocation(currentProject.id, loc.id);
       setLocations((prev) => prev.filter((l) => l.id !== loc.id));

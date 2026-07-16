@@ -1,5 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useEditorStore } from '../stores/editorStore';
+import { confirmDialog, promptDialog } from './ConfirmDialog';
+import { showToast } from './Toast';
 
 interface DictionaryLibraryProps {
   onClose: () => void;
@@ -56,21 +58,21 @@ const DictionaryLibrary: React.FC<DictionaryLibraryProps> = ({ onClose }) => {
     setSelected(name);
   };
 
-  const handleRename = (oldName: string) => {
-    const next = window.prompt('Rename dictionary', oldName);
+  const handleRename = async (oldName: string) => {
+    const next = await promptDialog('Rename dictionary', oldName, { title: 'Rename Dictionary', confirmLabel: 'Rename' });
     if (next === null) return;
     const trimmed = next.trim();
     if (!trimmed || trimmed === oldName) return;
     if (customDictionaries[trimmed]) {
-      window.alert(`A dictionary named "${trimmed}" already exists.`);
+      showToast(`A dictionary named "${trimmed}" already exists.`, 'error');
       return;
     }
     renameGlobalDictionary(oldName, trimmed);
     setSelected(trimmed);
   };
 
-  const handleDelete = (name: string) => {
-    if (!window.confirm(`Delete dictionary "${name}"? This cannot be undone.`)) return;
+  const handleDelete = async (name: string) => {
+    if (!(await confirmDialog(`Delete dictionary "${name}"? This cannot be undone.`, { title: 'Delete Dictionary', confirmLabel: 'Delete', danger: true }))) return;
     deleteGlobalDictionary(name);
   };
 
