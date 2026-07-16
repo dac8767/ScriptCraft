@@ -129,6 +129,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // Color picker state
   const [textColorOpen, setTextColorOpen] = useState(false);
   const [bgColorOpen, setBgColorOpen] = useState(false);
+  // v2.69: the Scrapbook's text-background picker. Its swatch clicks move
+  // focus out of the contentEditable, so the selection is captured on the
+  // button's mousedown and restored before the execCommand runs.
+  const [sbBgOpen, setSbBgOpen] = useState(false);
+  const sbBgRange = useRef<Range | null>(null);
   const [currentTextColor, setCurrentTextColor] = useState<string>('#000000');
   // v1.83: the highlighter color is store state — Format > Highlighting shares it.
   const currentBgColor = useEditorStore((s) => s.highlightColor);
@@ -715,6 +720,42 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         >
           {TOOLBAR_ICONS[key]}
         </button>
+      );
+    }
+    /* v2.69, Derek: pasted text can carry a background color with no way to
+       change or clear it — while the Scrapbook is open, the highlight button
+       becomes a text-BACKGROUND picker for the focused box ("None" clears). */
+    if (scrapbookOpen && key === 'highlightColor') {
+      return (
+        <div className="toolbar-group" style={{ position: 'relative' }}>
+          <button
+            className="toolbar-btn"
+            title="Text Background Color (Scrapbook) — None removes it"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              const sel = document.getSelection();
+              sbBgRange.current = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+              setSbBgOpen(!sbBgOpen);
+            }}
+          >
+            <FaHighlighter />
+          </button>
+          {showPopups && sbBgOpen && (
+            <ColorPicker
+              value=""
+              onChange={(color) => {
+                const sel = document.getSelection();
+                if (sel && sbBgRange.current) { sel.removeAllRanges(); sel.addRange(sbBgRange.current); }
+                document.execCommand('styleWithCSS', false, 'true');
+                // 'transparent' clears — execCommand has no unset, so None
+                // paints the no-color color.
+                document.execCommand('hiliteColor', false, color || 'transparent');
+                setSbBgOpen(false);
+              }}
+              onClose={() => setSbBgOpen(false)}
+            />
+          )}
+        </div>
       );
     }
     switch (key) {

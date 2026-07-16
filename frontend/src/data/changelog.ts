@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.68';
+export const APP_VERSION = '2.69';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.69',
+    date: '2026-07-16',
+    items: [
+      { title: 'Scrapbook: text background color tool', detail: 'While the Scrapbook is open, the toolbar\'s highlight button becomes a text-background picker for the focused box — pick a color, or Reset to Default to strip one that pasted text brought along.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '2.68',
     date: '2026-07-16',
