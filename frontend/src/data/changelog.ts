@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.71';
+export const APP_VERSION = '2.72';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.72',
+    date: '2026-07-16',
+    items: [
+      { title: 'Toolbar aligns with the menu bar', detail: 'The toolbar\'s first icon now sits exactly under the menu bar\'s first icon. The offset is measured from the rendered bars, so it stays true across compact/comfortable/custom sizes.', tags: ['UI'] },
+    ],
+  },
   {
     version: '2.71',
     date: '2026-07-16',

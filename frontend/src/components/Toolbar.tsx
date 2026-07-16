@@ -444,6 +444,31 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
   // ── Responsive overflow ──────────────────────────────────────────────
   const toolbarRef = useRef<HTMLDivElement>(null);
+
+  // v2.72, Derek: the toolbar's first icon lines up under the menu bar's
+  // first icon. The offset depends on both bars' size modes and scales, so
+  // it's MEASURED from the rendered icons (both are inline SVGs — no font
+  // timing) instead of hand-synced constants. Runs after every render; the
+  // <1px guard makes it converge instead of loop.
+  const [alignPad, setAlignPad] = useState<number | null>(null);
+  useEffect(() => {
+    const bar = toolbarRef.current;
+    if (!bar) return;
+    const measure = () => {
+      const menuIcon = document.querySelector('.menu-bar .menu-item .menu-icon');
+      const firstIcon = bar.querySelector('.toolbar-btn svg') ?? bar.querySelector('.toolbar-btn');
+      if (!menuIcon || !firstIcon) { setAlignPad(null); return; }
+      const mi = (menuIcon as HTMLElement).getBoundingClientRect();
+      const ti = (firstIcon as HTMLElement).getBoundingClientRect();
+      if (mi.width === 0 || ti.width === 0) return;   // hidden bar — leave as is
+      const currentPad = parseFloat(getComputedStyle(bar).paddingLeft) || 0;
+      const pad = Math.max(0, Math.round(currentPad + (mi.left - ti.left)));
+      setAlignPad((prev) => (prev !== null && Math.abs(prev - pad) < 1 ? prev : pad));
+    };
+    const raf = requestAnimationFrame(measure);
+    window.addEventListener('resize', measure);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', measure); };
+  });
   const [hiddenPriorities, setHiddenPriorities] = useState<Set<string>>(new Set());
   const [overflowOpen, setOverflowOpen] = useState(false);
   const overflowRef = useRef<HTMLDivElement>(null);
@@ -1363,6 +1388,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           ['--chrome-scale' as string]: String(chromeScaleFactor('toolbar', tbCustomH)),
         } as React.CSSProperties) : {}),
         gap: chromeGapPx.toolbar,   // v2.29: the grip at the right end adjusts this
+        // v2.72: measured so the first icons of the two bars align.
+        ...(alignPad !== null ? { paddingLeft: alignPad } : {}),
       }}
       ref={toolbarRef}
     >
