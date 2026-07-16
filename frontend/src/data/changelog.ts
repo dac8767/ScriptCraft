@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.70';
+export const APP_VERSION = '2.71';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.71',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: overflow menu keeps toolbar order', detail: 'Items collapsed into the toolbar\'s 3-dot menu were listed by collapse priority, shuffling them out of the order they hold on the bar. The menu now reads exactly like the toolbar does.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '2.70',
     date: '2026-07-16',

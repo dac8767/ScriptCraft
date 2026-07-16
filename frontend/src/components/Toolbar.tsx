@@ -30,7 +30,7 @@ import { chromePx, chromeScaleFactor } from './chromeSizes';
 import GapHandle from './GapHandle';
 import { confirmDialog } from './ConfirmDialog';
 import { commandDef } from './toolbarCommands';
-import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, bigZoneAllowed } from './toolbarBuiltins';
+import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, bigZoneAllowed } from './toolbarBuiltins';
 import { smartUndo, smartRedo, useEditorStore, NOTE_COLORS } from '../stores/editorStore';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
@@ -1286,18 +1286,29 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   );
   let overflowContent: React.ReactNode[] | null = null;
   if (hiddenPriorities.size > 0) {
+    // v2.71, Derek: the menu reads in TOOLBAR order. Priority decides only
+    // WHAT collapses first — rendering by priority group re-shuffled the
+    // items relative to how they sit on the bar. Runs of neighbours that
+    // collapsed together stay grouped, separated where the bar had a break.
+    const runs: { pr: string; keys: string[] }[] = [];
+    for (const tok of [...leftTokens, ...rightTokens]) {
+      if (!tok.startsWith('b:')) continue;
+      const key = tok.slice(2);
+      const d = BUILTIN_BY_KEY[key];
+      if (!d?.priority || !hiddenPriorities.has(d.priority) || !presentKeys.has(key)) continue;
+      const last = runs[runs.length - 1];
+      if (last && last.pr === d.priority) last.keys.push(key);
+      else runs.push({ pr: d.priority, keys: [key] });
+    }
     const items: React.ReactNode[] = [];
-    for (const prefix of ['5', '4', '3', '2', '1']) {
-      if (!isHidden(prefix)) continue;
-      const defs = TOOLBAR_BUILTINS.filter((d) => d.priority?.startsWith(prefix) && presentKeys.has(d.key));
-      if (defs.length === 0) continue;
-      if (items.length > 0) items.push(<div className="toolbar-overflow-sep" key={`ovsep-${prefix}`} />);
+    runs.forEach((r, i) => {
+      if (i > 0) items.push(<div className="toolbar-overflow-sep" key={`ovsep-${i}`} />);
       items.push(
-        <div className="toolbar-group" key={`ov-${prefix}`}>
-          {defs.map((d) => <React.Fragment key={d.key}>{renderBuiltinControl(d.key, true, true)}</React.Fragment>)}
+        <div className="toolbar-group" key={`ov-${i}-${r.pr}`}>
+          {r.keys.map((k) => <React.Fragment key={k}>{renderBuiltinControl(k, true, true)}</React.Fragment>)}
         </div>,
       );
-    }
+    });
     overflowContent = items.length ? items : null;
   }
 
