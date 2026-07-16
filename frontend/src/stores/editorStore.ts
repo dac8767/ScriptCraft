@@ -22,6 +22,7 @@ interface ViewState {
   outlineBarOpen?: boolean;
   outlineBarZoom?: number;
   outlineBarRowScale?: number;
+  scrapbookTreeScale?: number;
   outlineBarRows?: OutlineBarRow[];
   outlineBarLabels?: boolean;
   beatColorAllTabs?: boolean;
@@ -1036,6 +1037,11 @@ interface EditorState {
    *  Driven by dragging the bar's bottom edge. */
   outlineBarRowScale: number;
   setOutlineBarRowScale: (s: number) => void;
+  /** v2.66: vertical scale of the Scrapbook tree's rows (1 = default) —
+   *  text and icons follow proportionally. Driven by the panel's bottom
+   *  zoom bar. Persisted view state. */
+  scrapbookTreeScale: number;
+  setScrapbookTreeScale: (s: number) => void;
   /** v2.42: the bar's rows — kind, order, optional per-row height (px,
    *  before the global row scale). Customize > Outline Bar edits this. */
   outlineBarRows: OutlineBarRow[];
@@ -1701,6 +1707,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ outlineBarRowScale: clamped });
     set({ outlineBarRowScale: clamped });
   },
+  scrapbookTreeScale: (_vs.scrapbookTreeScale as number) ?? 1,
+  setScrapbookTreeScale: (s) => {
+    const clamped = Math.min(2, Math.max(0.7, s));
+    saveViewState({ scrapbookTreeScale: clamped });
+    set({ scrapbookTreeScale: clamped });
+  },
   outlineBarRows: (Array.isArray(_vs.outlineBarRows) && (_vs.outlineBarRows as OutlineBarRow[]).length > 0)
     ? (_vs.outlineBarRows as OutlineBarRow[])
     : DEFAULT_OUTLINE_BAR_ROWS,
@@ -1735,6 +1747,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     st.setPanelSizeMode('left', 'comfortable');
     st.setPanelSizeMode('right', 'comfortable');
     st.setOutlineBarRowScale(1);
+    st.setScrapbookTreeScale(1);
   },
   navFilter: '',
   setNavFilter: (v) => set({ navFilter: v }),

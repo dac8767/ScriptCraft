@@ -16071,6 +16071,39 @@ input.fs-switch:checked::after { left: 15px; }
   overflow: auto;
   padding: 2px 6px;
 }
+/* v2.66: the tree panel's Premiere-style zoom bar — stretch the thumb and
+   the rows above grow with it (text + icons proportional). */
+.fs-nb-zoom {
+  flex: 0 0 auto;
+  padding: 3px 8px 6px;
+}
+.fs-nb-zoom-track {
+  position: relative;
+  height: 14px;
+  border-radius: 7px;
+  background: var(--fd-overlay-subtle);
+}
+.fs-nb-zoom-thumb {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 100%;
+  border-radius: 7px;
+  background: var(--fd-border);
+}
+.fs-nb-zoom-handle {
+  position: absolute;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--fd-text-muted);
+  cursor: ew-resize;
+}
+.fs-nb-zoom-handle-l { left: 1px; }
+.fs-nb-zoom-handle-r { right: 1px; }
+
 .fs-nb-toplevel-drop {
   flex: 0 0 auto;
   margin: 6px;
@@ -16087,7 +16120,8 @@ input.fs-switch:checked::after { left: 15px; }
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 4px;
+  /* v2.66: the panel's bottom zoom bar scales the rows vertically... */
+  padding: calc(3px * var(--nb-tree-scale, 1)) 4px;
   border-radius: 5px;
   border-top: 2px solid transparent;    /* drop indicators live in these */
   border-bottom: 2px solid transparent;
@@ -16110,7 +16144,7 @@ input.fs-switch:checked::after { left: 15px; }
   flex: 0 0 auto;
 }
 .fs-nb-pagerow:hover .fs-nb-grabber, .fs-nb-sectionrow:hover .fs-nb-grabber { opacity: .8; }
-.fs-nb-pageicon { flex: 0 0 auto; font-size: 11px; }
+.fs-nb-pageicon { flex: 0 0 auto; font-size: calc(11px * var(--nb-tree-scale, 1)); }  /* ...icons follow... */
 .fs-nb-pagename, .fs-nb-sectionname {
   flex: 1;
   min-width: 0;
@@ -16121,7 +16155,7 @@ input.fs-switch:checked::after { left: 15px; }
   border: none;
   color: var(--fd-text);
   text-align: left;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--nb-tree-scale, 1));   /* ...and so does the text (v2.66) */
   padding: 1px 2px;
   cursor: pointer;
 }
@@ -16140,7 +16174,7 @@ input.fs-switch:checked::after { left: 15px; }
   background: none;
   border: none;
   color: var(--fd-text-muted);
-  font-size: 10px;
+  font-size: calc(10px * var(--nb-tree-scale, 1));   /* v2.66: zoom bar scale */
   padding: 0 1px;
   cursor: pointer;
   flex: 0 0 auto;
@@ -16148,7 +16182,7 @@ input.fs-switch:checked::after { left: 15px; }
 .fs-nb-rowdel {
   background: none;
   border: none;
-  font-size: 11px;
+  font-size: calc(11px * var(--nb-tree-scale, 1));   /* v2.66: zoom bar scale */
   padding: 1px 3px;
   border-radius: 4px;
   cursor: pointer;

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.65';
+export const APP_VERSION = '2.66';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.66',
+    date: '2026-07-16',
+    items: [
+      { title: 'Scrapbook: zoom bar under the pages tree', detail: 'A Premiere-style bar sits at the bottom of the Scrapbook\'s side panel — drag either round end to stretch or shrink it, and the section and page rows grow or contract vertically with text and icons scaling proportionally. Hidden while the sizing lock is on.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '2.65',
     date: '2026-07-16',
