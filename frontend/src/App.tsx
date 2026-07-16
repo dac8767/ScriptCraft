@@ -3,6 +3,7 @@ import ScreenplayEditor from './components/ScreenplayEditor';
 import TreatmentEditor from './components/TreatmentEditor';
 import SettingsPage from './components/SettingsPage';
 import Toast from './components/Toast';
+import ConfirmDialogHost from './components/ConfirmDialog';
 import DemoBanner from './components/DemoBanner';
 import AuthGate from './components/AuthGate';
 import AuthBootstrap from './components/AuthBootstrap';
@@ -37,6 +38,7 @@ function App() {
         ))}
       </Routes>
       <Toast />
+      <ConfirmDialogHost />
       <AuthGate />
       <AuthBootstrap />
       <StorageFallbackDialog />

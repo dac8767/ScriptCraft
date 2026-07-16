@@ -4,7 +4,7 @@
  * columns, titled and ordered, without disturbing existing ones.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { OUTLINE_PRESETS, applyOutlinePreset } from './BeatBoard';
+import { OUTLINE_PRESETS, applyOutlinePreset, uncategorizedBeats } from './BeatBoard';
 import { useEditorStore } from '../stores/editorStore';
 
 describe('outline presets', () => {
@@ -58,6 +58,29 @@ describe('outline presets', () => {
     expect(cols.map((c) => c.title)).toEqual(['Ideas', 'Act I', 'Act II', 'Act III']);
     // v2.20: a plain new section defaults to a 1-page budget, not blank.
     expect(cols[0].targetPages).toBe(1);
+  });
+
+  /* v2.23: choosing a preset over an existing outline REPLACES the sections
+     but never touches the beats — they become "uncategorized" (their section
+     is gone) and wait in the temporary column until dragged into place. */
+  it('override replaces sections but never deletes beats', () => {
+    applyOutlinePreset('3act');
+    const beatIdsBefore = useEditorStore.getState().beats.map((b) => b.id).sort();
+    expect(beatIdsBefore).toHaveLength(3);
+
+    applyOutlinePreset('storycircle', 'override');
+    const s = useEditorStore.getState();
+    expect(s.beatColumns.map((c) => c.title)).toEqual(
+      ['You', 'Need', 'Go', 'Search', 'Find', 'Take', 'Return', 'Change'],
+    );
+    // Same beats — none deleted, and no blank starters piled on top.
+    expect(s.beats.map((b) => b.id).sort()).toEqual(beatIdsBefore);
+    // All of them now live in Uncategorized.
+    expect(uncategorizedBeats(s.beats, s.beatColumns).map((b) => b.id).sort()).toEqual(beatIdsBefore);
+    // Dragging one into a real section takes it out of Uncategorized.
+    useEditorStore.getState().updateBeat(beatIdsBefore[0], { columnId: s.beatColumns[0].id });
+    const after = useEditorStore.getState();
+    expect(uncategorizedBeats(after.beats, after.beatColumns)).toHaveLength(2);
   });
 
   it('an unknown preset id is a no-op; every preset has columns', () => {

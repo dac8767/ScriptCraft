@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.22';
+export const APP_VERSION = '2.23';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.23',
+    date: '2026-07-16',
+    items: [
+      { title: 'Presets replace instead of piling on', detail: 'Choosing a preset when sections already exist now asks before replacing them — and your beats are never deleted. They wait in a temporary "Uncategorized" column on the far left; drag each one into its new section and the column disappears once it\'s empty.', tags: ['Tools', 'New Feature'] },
+      { title: 'A proper in-app confirm dialog', detail: 'Replace-the-outline uses ScriptCraft\'s own confirm dialog instead of the system one, which doesn\'t work reliably inside the desktop shell.', tags: ['UI'] },
+    ],
+  },
   {
     version: '2.22',
     date: '2026-07-16',

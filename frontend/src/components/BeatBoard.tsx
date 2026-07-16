@@ -23,6 +23,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
+import { confirmDialog } from './ConfirmDialog';
 import { api } from '../services/api';
 
 const BEAT_COLORS = [
@@ -90,15 +91,34 @@ export const OUTLINE_PRESETS: OutlinePreset[] = [
   },
 ];
 
-export function applyOutlinePreset(presetId: string): void {
+export function applyOutlinePreset(presetId: string, mode: 'append' | 'override' = 'append'): void {
   const preset = OUTLINE_PRESETS.find((p) => p.id === presetId);
   if (!preset) return;
+  if (mode === 'override') {
+    // v2.23: replace the SECTIONS, never the beats. Clearing the columns
+    // orphans every existing beat; orphans render in the temporary
+    // "Uncategorized" column until they're dragged into a new section.
+    // No blank starter beats here — the user's own beats are waiting.
+    useEditorStore.getState().setBeatColumns([]);
+    const { addBeatColumn } = useEditorStore.getState();
+    preset.columns.forEach((title, i) => addBeatColumn(title, preset.pages[i] ?? 1));
+    return;
+  }
   const { addBeatColumn, addBeat } = useEditorStore.getState();
   preset.columns.forEach((title, i) => {
     // v2.18: every preset section starts with one blank beat, ready to fill.
     // v2.20: each section carries its structure's page budget.
     addBeat('', addBeatColumn(title, preset.pages[i] ?? 1));
   });
+}
+
+/** v2.23: beats whose section no longer exists (a preset override cleared
+ *  the columns). They live in the temporary "Uncategorized" column until
+ *  dragged into a real section. Exported for the test. */
+export function uncategorizedBeats(beats: BeatInfo[], columns: Array<{ id: string }>): BeatInfo[] {
+  return beats
+    .filter((b) => !columns.some((c) => c.id === b.columnId))
+    .sort((a, b) => a.position - b.position);
 }
 
 /* ─── URL detection ─── */
@@ -779,6 +799,8 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
 
   const sortedColumns = [...beatColumns].sort((a, b) => a.position - b.position);
   const isSingleColumn = sortedColumns.length === 1;
+  // v2.23: beats orphaned by a preset override wait in "Uncategorized".
+  const orphanBeats = uncategorizedBeats(beats, beatColumns);
 
   const handleAddColumn = useCallback(() => {
     addBeatColumn(`Section ${beatColumns.length + 1}`);
@@ -882,12 +904,24 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
         {beatArrangeMode === 'auto' ? (
           <>
             {/* v1.89: an action menu, not state — value stays on the
-                placeholder so it reads "Presets" again after applying. */}
+                placeholder so it reads "Presets" again after applying.
+                v2.23: with sections already on the board, a preset REPLACES
+                them (after a confirm) instead of piling more on — the beats
+                survive in the Uncategorized column. */}
             <select
               className="beat-board-preset"
               value=""
-              title="Add a common outline structure"
-              onChange={(e) => { if (e.target.value) applyOutlinePreset(e.target.value); }}
+              title="Apply a common outline structure"
+              onChange={async (e) => {
+                const id = e.target.value;
+                if (!id) return;
+                if (beatColumns.length === 0) { applyOutlinePreset(id); return; }
+                const ok = await confirmDialog(
+                  'This preset will replace your current sections. Your beats are NOT deleted — they move to a temporary "Uncategorized" column on the left, and you drag each one into its new section.',
+                  { title: 'Replace the current outline?', confirmLabel: 'Replace Sections', danger: true },
+                );
+                if (ok) applyOutlinePreset(id, 'override');
+              }}
             >
               <option value="">Presets…</option>
               {OUTLINE_PRESETS.map((p) => (
@@ -910,6 +944,27 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
       {beatArrangeMode === 'auto' ? (
         <DndContext sensors={sensors} collisionDetection={beatCollisionDetection} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
           <div className={`beat-board-columns${maximizedColumnId ? ' beat-board-columns-maximized' : ''}`}>
+            {/* v2.23: the temporary holding pen for beats orphaned by a
+                preset override. Looks like a section but isn't one — no
+                title input, no page budget, no delete. It sits before the
+                first section and disappears once it's empty. */}
+            {orphanBeats.length > 0 && !maximizedColumnId && (
+              <div className="beat-column beat-column-uncategorized">
+                <div className="beat-column-header">
+                  <span className="beat-column-uncat-title">Uncategorized</span>
+                </div>
+                <SortableContext items={orphanBeats.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+                  <div className="beat-column-cards">
+                    {orphanBeats.map((beat) => (
+                      <SortableBeatCard key={beat.id} beat={beat} onUpdate={updateBeat} onDelete={deleteBeat} />
+                    ))}
+                  </div>
+                </SortableContext>
+                <div className="beat-column-uncat-hint">
+                  Drag each beat into a section — this column disappears when it's empty.
+                </div>
+              </div>
+            )}
             {sortedColumns.map((col) => {
               if (maximizedColumnId && maximizedColumnId !== col.id) return null;
               const colBeats = beats.filter((b) => b.columnId === col.id).sort((a, b) => a.position - b.position);

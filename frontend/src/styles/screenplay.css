@@ -16354,3 +16354,83 @@ input.fs-switch:checked::after { left: 15px; }
 .fs-nb-tablebox:hover { border-color: var(--fd-border); }
 .fs-nb-tablebox.focused { border-color: var(--fd-accent); }
 .fs-nb-tablebox .fs-nb-box-head { border-radius: 4px 4px 0 0; }
+
+/* ─── ConfirmDialog (v2.23) — the in-app confirm; window.confirm is a
+       Tauri IPC shim in the desktop app and must never be used ─── */
+.fs-confirm-overlay {
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  z-index: 100001;                 /* above toasts */
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fs-confirm-box {
+  background: var(--fd-panel-bg, var(--fd-toolbar-bg));
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  width: min(440px, calc(100vw - 48px));
+  padding: 18px 20px 16px;
+  color: var(--fd-text);
+}
+.fs-confirm-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.fs-confirm-message {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fd-text-muted);
+  white-space: pre-wrap;
+}
+.fs-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+.fs-confirm-actions button {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid var(--fd-border);
+  background: transparent;
+  color: var(--fd-text);
+}
+.fs-confirm-ok {
+  background: var(--fd-accent);
+  border-color: var(--fd-accent);
+  color: #fff;
+}
+.fs-confirm-danger {
+  background: #c0392b;
+  border-color: #c0392b;
+}
+.fs-confirm-actions button:hover { filter: brightness(1.1); }
+
+/* ─── Uncategorized column (v2.23) — the temporary holding pen after a
+       preset override. Looks like a section but isn't one. ─── */
+.beat-column-uncategorized {
+  border: 1px dashed var(--fd-text-muted);
+  background: var(--fd-overlay-subtle);
+}
+.beat-column-uncategorized .beat-column-header {
+  justify-content: center;
+}
+.beat-column-uncat-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fd-text-muted);
+  font-style: italic;
+  padding: 4px 0;
+}
+.beat-column-uncat-hint {
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  padding: 6px 10px 10px;
+  text-align: center;
+}
