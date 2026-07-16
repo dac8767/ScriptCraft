@@ -22,7 +22,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
-import { FaFileExport, FaStream } from 'react-icons/fa';
+import { FaFileExport, FaStream, FaLayerGroup, FaDotCircle, FaRegCircle } from 'react-icons/fa';
 import { useEditorStore, type BeatInfo, type BeatColumn } from '../stores/editorStore';
 import { computeSceneLengths } from '../editor/pagination';
 import AddMenu from './AddMenu';
@@ -417,8 +417,9 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
 
   return (
     <div className="fs-outline-bar">
-      {/* v2.31, Derek: a slim column of exactly three buttons — add, send
-          to script, Fit. No "Outline" title; the tooltip names the tab. */}
+      {/* v2.49, Derek: a slim column of five evenly spaced buttons — open
+          Outline, add, pick outline, send to script, Fit. No "Outline"
+          title; the tooltip names the tab. */}
       <div
         className="fs-ob-side"
         title={outlineTabs.length > 1 ? `Showing: ${outlineTabs.find((t) => t.id === barTab)?.name ?? ''}` : undefined}
@@ -442,6 +443,22 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
               { value: 'section', label: 'Section' },
               { value: 'beat', label: 'Beat' },
             ],
+          }]}
+        />
+        {/* v2.49, Derek: third item — pick which outline tab the bar mirrors
+            (the same choice as the ◉ on the window's tabs — one setter). */}
+        <AddMenu
+          label={<FaLayerGroup />}
+          title="Choose which outline the bar shows"
+          center
+          onPick={(id) => useEditorStore.getState().setOutlineBarTab(id)}
+          groups={[{
+            label: 'Show in the bar',
+            options: outlineTabs.map((t) => ({
+              value: t.id,
+              label: t.name,
+              icon: barTab === t.id ? <FaDotCircle /> : <FaRegCircle />,
+            })),
           }]}
         />
         <button

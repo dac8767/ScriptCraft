@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.48';
+export const APP_VERSION = '2.49';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.49',
+    date: '2026-07-16',
+    items: [
+      { title: 'Outline Bar: pick the outline from the bar', detail: 'A new third button in the bar\'s side column opens a dropdown of your outline tabs — pick which one the bar shows, without opening the Outline window. The ◉ marks the current one, and the side column\'s five buttons are now spread evenly.', tags: ['Tools', 'UI'] },
+    ],
+  },
   {
     version: '2.48',
     date: '2026-07-16',

@@ -13105,10 +13105,11 @@ html.android .version-history-panel {
   padding: 4px 8px;
 }
 .fs-ob-side {
-  /* v2.31: a slim column of exactly three buttons — add, send, Fit. */
+  /* v2.49: five buttons, spread evenly over the bar's height. */
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  justify-content: space-between;
   gap: 3px;
   width: 34px;
   flex: 0 0 auto;
