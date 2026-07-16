@@ -976,34 +976,11 @@ const beatCollisionDetection: CollisionDetection = (args) => {
    Beat count, Arrangement toggle, ? help, Presets and the add button — ONE
    component, rendered in the tool WINDOW'S chrome header (TOOL_HEADER_EXTRAS)
    and in the takeover view's own row. Everything reads the store directly. */
-export function OutlineHeaderControls() {
-  const beatCount = useEditorStore((s) => s.beats.length);
+/* v2.48, Derek: Presets and the add button live in the TABS row now,
+   right-aligned — this component renders them there, in both arrangements. */
+export function OutlineTabActions() {
   const beatArrangeMode = useEditorStore((s) => s.beatArrangeMode);
-  const goToArrangement = useEditorStore((s) => s.goToArrangement);
-  const beatColorAllTabs = useEditorStore((s) => s.beatColorAllTabs);
-  const setBeatColorAllTabs = useEditorStore((s) => s.setBeatColorAllTabs);
   const customPresets = useOutlinePresetStore((s) => s.presets);
-
-  /* Derek's rule: helper info lives behind a ? button, not on screen. */
-  const [helpOpen, setHelpOpen] = useState(false);
-  const helpBtnRef = useRef<HTMLButtonElement>(null);
-  const [helpPos, setHelpPos] = useState<{ top: number; left: number } | null>(null);
-  useEffect(() => {
-    if (!helpOpen) return;
-    const close = (e: PointerEvent) => {
-      const t = e.target as HTMLElement;
-      if (!t.closest('.fs-help-pop') && t !== helpBtnRef.current) setHelpOpen(false);
-    };
-    document.addEventListener('pointerdown', close);
-    return () => document.removeEventListener('pointerdown', close);
-  }, [helpOpen]);
-  const toggleHelp = () => {
-    if (!helpOpen && helpBtnRef.current) {
-      const r = helpBtnRef.current.getBoundingClientRect();
-      setHelpPos({ top: r.bottom + 6, left: Math.max(8, Math.min(r.left - 120, window.innerWidth - 288)) });
-    }
-    setHelpOpen((v) => !v);
-  };
 
   const handlePresetAction = useCallback(async (value: string) => {
     if (!value) return;
@@ -1067,15 +1044,8 @@ export function OutlineHeaderControls() {
     }, 0);
   }, []);
 
-  /* v2.43, Derek: left to right — Presets, the add button, THEN Arrangement.
-     The Arrangement block anchors to the RIGHT (auto margin), so it sits in
-     exactly the same spot in Sections and Freeform; the ? rides at the very
-     end, just left of the window's carets. */
   return (
-    <span className="beat-header-controls">
-      <span className="beat-board-info">
-        {beatCount} beat{beatCount !== 1 ? 's' : ''}
-      </span>
+    <span className="beat-tabs-actions">
       {beatArrangeMode === 'auto' && (
         <select
           className="beat-board-preset"
@@ -1108,6 +1078,47 @@ export function OutlineHeaderControls() {
       ) : (
         <button className="beat-board-add-col-btn" onClick={handleAddBeatFree}>+ Add Beat</button>
       )}
+    </span>
+  );
+}
+
+export function OutlineHeaderControls() {
+  const beatCount = useEditorStore((s) => s.beats.length);
+  const beatArrangeMode = useEditorStore((s) => s.beatArrangeMode);
+  const goToArrangement = useEditorStore((s) => s.goToArrangement);
+  const beatColorAllTabs = useEditorStore((s) => s.beatColorAllTabs);
+  const setBeatColorAllTabs = useEditorStore((s) => s.setBeatColorAllTabs);
+
+  /* Derek's rule: helper info lives behind a ? button, not on screen. */
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpBtnRef = useRef<HTMLButtonElement>(null);
+  const [helpPos, setHelpPos] = useState<{ top: number; left: number } | null>(null);
+  useEffect(() => {
+    if (!helpOpen) return;
+    const close = (e: PointerEvent) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest('.fs-help-pop') && t !== helpBtnRef.current) setHelpOpen(false);
+    };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [helpOpen]);
+  const toggleHelp = () => {
+    if (!helpOpen && helpBtnRef.current) {
+      const r = helpBtnRef.current.getBoundingClientRect();
+      setHelpPos({ top: r.bottom + 6, left: Math.max(8, Math.min(r.left - 120, window.innerWidth - 288)) });
+    }
+    setHelpOpen((v) => !v);
+  };
+
+  /* v2.48, Derek: the Arrangement block sits DEAD CENTER in the window
+     header (absolute centering, so it never drifts as the side content
+     changes width); Presets and the add button moved down to the tabs row.
+     The ? still rides at the very end, just left of the window's carets. */
+  return (
+    <span className="beat-header-controls">
+      <span className="beat-board-info">
+        {beatCount} beat{beatCount !== 1 ? 's' : ''}
+      </span>
       {/* v2.46, Derek: whole-card color everywhere, or just an edge stripe. */}
       <label className="beat-color-alltabs" title="On: a beat's color fills its whole card, in every outline tab. Off: just a thin stripe on the card's edge.">
         <input
@@ -1120,19 +1131,21 @@ export function OutlineHeaderControls() {
       {/* v2.47, Derek: a tab is bound to its arrangement for life, so this
           toggle NAVIGATES — it jumps to a tab of the asked-for arrangement,
           creating one if none exists. */}
-      <span className="beat-mode-label">Arrangement:</span>
-      <div className="beat-mode-toggle">
-        <button
-          className={`beat-mode-btn${beatArrangeMode === 'auto' ? ' active' : ''}`}
-          onClick={() => goToArrangement('auto')}
-          title="Sections — jumps to a Sections tab (or creates one); each tab keeps its arrangement"
-        >Sections</button>
-        <button
-          className={`beat-mode-btn${beatArrangeMode === 'custom' ? ' active' : ''}`}
-          onClick={() => goToArrangement('custom')}
-          title="Freeform — jumps to a Freeform tab (or creates one); each tab keeps its arrangement"
-        >Freeform</button>
-      </div>
+      <span className="beat-mode-center">
+        <span className="beat-mode-label">Arrangement:</span>
+        <div className="beat-mode-toggle">
+          <button
+            className={`beat-mode-btn${beatArrangeMode === 'auto' ? ' active' : ''}`}
+            onClick={() => goToArrangement('auto')}
+            title="Sections — jumps to a Sections tab (or creates one); each tab keeps its arrangement"
+          >Sections</button>
+          <button
+            className={`beat-mode-btn${beatArrangeMode === 'custom' ? ' active' : ''}`}
+            onClick={() => goToArrangement('custom')}
+            title="Freeform — jumps to a Freeform tab (or creates one); each tab keeps its arrangement"
+          >Freeform</button>
+        </div>
+      </span>
       <button ref={helpBtnRef} className="fs-help-btn" title="How to use the Outline" onClick={toggleHelp}><FaRegQuestionCircle /></button>
       {helpOpen && helpPos && createPortal(
         <div className="fs-help-pop" style={{ top: helpPos.top, left: helpPos.left }}>
@@ -1339,6 +1352,9 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
           </div>
         ))}
         <button className="beat-tab-add" title="New outline variation" onClick={() => addOutlineTab()}>＋</button>
+        {/* v2.48, Derek: Presets + the add button live on this row now,
+            hugging the window's right edge. */}
+        <OutlineTabActions />
       </div>
 
       {beatArrangeMode === 'auto' ? (

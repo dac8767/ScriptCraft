@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.47';
+export const APP_VERSION = '2.48';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.48',
+    date: '2026-07-16',
+    items: [
+      { title: 'Outline header: Arrangement centered, actions on the tab row', detail: 'The Arrangement toggle sits dead center in the Outline window\'s header. Presets and + Add Section (or + Add Beat, in Freeform) moved down a row — they sit on the tabs row, aligned to the window\'s right edge, in both arrangements.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '2.47',
     date: '2026-07-16',

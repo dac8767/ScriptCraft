@@ -16748,9 +16748,30 @@ input.fs-switch:checked::after { left: 15px; }
 /* ─── v2.43 ─── */
 /* Derek: equal-width Arrangement buttons — the toggle never reflows. */
 .beat-mode-btn { width: 82px; text-align: center; }
-/* The Arrangement block anchors RIGHT, same spot in Sections and Freeform;
-   the ? sits at the very end, just left of the window's carets. */
-.beat-header-controls .beat-mode-label { margin-left: auto; }
+/* v2.48, Derek: the Arrangement block sits DEAD CENTER in the header —
+   absolute centering, so it can't drift as the side content changes. The
+   ? keeps the very end, just left of the window's carets. */
+.beat-header-controls { position: relative; }
+.beat-mode-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.beat-header-controls .fs-help-btn { margin-left: auto; }
+/* v2.48: Presets + add button ride the TABS row, hugging the right edge. */
+.beat-tabs-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 4px;
+}
+.beat-tabs-actions .beat-board-preset { max-width: 160px; }
+.beat-tabs-actions .beat-board-add-col-btn { white-space: nowrap; }
 /* The circled-? icon carries its own ring now — the button is bare. */
 .fs-help-btn {
   border: none !important;
