@@ -18,8 +18,9 @@ import {
   FaPaintBrush, FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
   FaAlignJustify, FaSearch, FaHashtag, FaStickyNote, FaTags, FaSearchPlus,
   FaFont, FaTextHeight, FaDesktop, FaMinus, FaArrowsAltV,
-  FaLock, FaUnlock, FaExpandArrowsAlt,
+  FaLock, FaUnlock,
 } from 'react-icons/fa';
+import { FiRefreshCw } from 'react-icons/fi';
 
 /** Customize's utility rows (v1.33) — one icon per concept, read by BOTH the
  *  Panels tab and the Toolbar tab so the two lists can't drift. */
@@ -193,5 +194,6 @@ export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
   lockResize: <FaLock />,
   lockResizeOpen: <FaUnlock />,
   // v2.67: reset every adjustable size/spacing back to defaults.
-  resetSizes: <FaExpandArrowsAlt />,
+  // v2.87, Derek: the circular-arrows reset, per his reference image.
+  resetSizes: <FiRefreshCw />,
 };

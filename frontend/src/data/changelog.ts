@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.86';
+export const APP_VERSION = '2.87';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.87',
+    date: '2026-07-16',
+    items: [
+      { title: 'Reset Sizing wears the circular-arrows icon', detail: 'The toolbar\'s Reset Sizing button now uses the classic reset arrows, per Derek\'s reference.', tags: ['UI', 'Polish'] },
+    ],
+  },
   {
     version: '2.86',
     date: '2026-07-16',
