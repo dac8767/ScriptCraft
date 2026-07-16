@@ -1357,6 +1357,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           label: 'Reset All Sizes & Spacing',
           action: () => useEditorStore.getState().resetChromeSizes(),
         },
+        // v2.58, Derek: the Customize window straight from View.
+        {
+          icon: <FaSlidersH />,
+          label: 'Customize…',
+          action: () => openCustomize('menu'),
+        },
         { separator: true, label: '' },
         {
           /**

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.57';
+export const APP_VERSION = '2.58';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.58',
+    date: '2026-07-16',
+    items: [
+      { title: 'View > Customize…', detail: 'The Customize window opens straight from the View menu now, next to the sizing lock and reset.', tags: ['UI'] },
+    ],
+  },
   {
     version: '2.57',
     date: '2026-07-16',
