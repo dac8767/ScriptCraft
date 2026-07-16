@@ -1229,7 +1229,7 @@ pub fn run() {
         .unwrap_or_else(|e| {
             let msg = format!("FATAL: Failed to build Tauri app: {}", e);
             eprintln!("{}", msg);
-            let _ = std::fs::write("/tmp/freedraft_crash.log", &msg);
+            let _ = std::fs::write("/tmp/scriptcraft_crash.log", &msg);
             panic!("{}", msg);
         });
 

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.84';
+export const APP_VERSION = '2.85';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.85',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: the macOS app menu says ScriptCraft', detail: '"Hide freedraft" / "Quit freedraft" came from the dev binary\'s crate name, which the macOS application menu uses when running via npm run desktop. The crate is now scriptcraft; the com.freedraft.app identifier stays on purpose — identifiers persist your data.', tags: ['Fix', 'Branding'] },
+    ],
+  },
   {
     version: '2.84',
     date: '2026-07-16',

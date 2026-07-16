@@ -1,5 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    freedraft_lib::run()
+    scriptcraft_lib::run()
 }

@@ -1,12 +1,15 @@
 [package]
-name = "freedraft"
+# v2.85: crate renamed — `tauri dev` names the macOS app menu after the DEBUG
+# BINARY, so "Hide freedraft" lingered despite productName being ScriptCraft.
+# The com.freedraft.app identifier stays: identifiers persist user data.
+name = "scriptcraft"
 version = "0.19.0"
 description = "ScriptCraft - Professional Screenwriting Application"
 authors = ["ScriptCraft"]
 edition = "2021"
 
 [lib]
-name = "freedraft_lib"
+name = "scriptcraft_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [build-dependencies]
