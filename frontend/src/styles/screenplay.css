@@ -16526,9 +16526,10 @@ input.fs-switch:checked::after { left: 15px; }
   background: var(--fd-accent);
   opacity: 0.5;
 }
-/* v2.29, Derek: a breath of space between the toolbar and the outline bar. */
+/* v2.29, Derek: a breath of space between the toolbar and the outline bar.
+   v2.38: halved. */
 .fs-top-chrome .fs-outline-bar {
-  margin-top: 6px;
+  margin-top: 3px;
 }
 /* The faint spacing grips — invisible until their bar is hovered. */
 .fs-gap-handle {

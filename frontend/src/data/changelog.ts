@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.37';
+export const APP_VERSION = '2.38';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.38',
+    date: '2026-07-16',
+    items: [
+      { title: 'Tighter gap above the outline bar', detail: 'The space between the toolbar and the outline bar was cut in half (6px → 3px).', tags: ['Polish'] },
+    ],
+  },
   {
     version: '2.37',
     date: '2026-07-16',
