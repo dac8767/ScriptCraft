@@ -1,5 +1,6 @@
 // Final Draft XML (.fdx) parser — full formatting & layout support
 import { uuid } from './uuid';
+import { EMPTY_TITLE_PAGE, titlePageJsonNodes, type TitlePageData } from './titlePageLayout';
 
 interface TipTapMark {
   type: string;
@@ -189,38 +190,42 @@ export function parseFDXFull(xmlString: string): FDXParseResult {
   }
 
   // --- Parse Title Page ---
+  // v2.25: emit the CLASSIC layout (shared with the Title Page editor), not a
+  // single bare node \u2014 a lone node rendered as one small line at the top of
+  // an otherwise blank page.
   const titlePageNodes: TipTapNode[] = [];
+  const tpTexts: string[] = [];
   const titlePageEl = xmlDoc.querySelector('FinalDraft > TitlePage > Content');
   if (titlePageEl) {
     const tpParagraphs = titlePageEl.querySelectorAll('Paragraph');
-    const tpTexts: string[] = [];
     for (const p of Array.from(tpParagraphs)) {
       const textEl = p.querySelector('Text');
-      if (textEl?.textContent) tpTexts.push(textEl.textContent);
+      if (textEl?.textContent?.trim()) tpTexts.push(textEl.textContent.trim());
     }
-    // Heuristic: first line is title, look for "Written by" / "by" pattern for author
-    const tpAttrs: Record<string, string> = { field: 'title', tpTitle: '', tpWrittenBy: '', tpBasedOn: '', tpDraft: '', tpDraftDate: '', tpContact: '', tpCopyright: '', tpWgaRegistration: '', tpNotes: '' };
-    if (tpTexts.length > 0) tpAttrs.tpTitle = tpTexts[0];
+    // Heuristic: first line is title; classify the rest.
+    const tpData: TitlePageData = { ...EMPTY_TITLE_PAGE };
+    if (tpTexts.length > 0) tpData.tpTitle = tpTexts[0];
     for (let i = 1; i < tpTexts.length; i++) {
       const t = tpTexts[i];
+      const inlineBy = t.match(/^written\s+by\s+(.+)$/i);
       if (/^(written\s+by|by)$/i.test(t) && i + 1 < tpTexts.length) {
-        tpAttrs.tpWrittenBy = tpTexts[i + 1];
+        tpData.tpWrittenBy = tpTexts[i + 1];
         i++; // skip next
+      } else if (inlineBy) {
+        // v2.25: "Written by Derek Carl from the novel by\u2026" \u2014 one combined
+        // line used to fall through every branch and vanish.
+        tpData.tpWrittenBy = inlineBy[1];
       } else if (/^(based\s+on|from)/i.test(t)) {
-        tpAttrs.tpBasedOn = t;
+        tpData.tpBasedOn = t;
       } else if (/copyright|\u00a9/i.test(t)) {
-        tpAttrs.tpCopyright = t;
+        tpData.tpCopyright = t;
       } else if (/draft/i.test(t)) {
-        tpAttrs.tpDraft = t;
+        tpData.tpDraft = t;
       } else if (/@|\.com|phone|\d{3}[-.)\s]\d{3}/i.test(t)) {
-        tpAttrs.tpContact = tpAttrs.tpContact ? `${tpAttrs.tpContact}\n${t}` : t;
+        tpData.tpContact = tpData.tpContact ? `${tpData.tpContact}\n${t}` : t;
       }
     }
-    titlePageNodes.push({
-      type: 'titlePage',
-      attrs: tpAttrs,
-      content: tpAttrs.tpTitle ? [{ type: 'text', text: tpAttrs.tpTitle }] : [],
-    });
+    if (tpTexts.length > 0) titlePageNodes.push(...titlePageJsonNodes(tpData));
   }
 
   // --- Parse Content ---
@@ -500,6 +505,25 @@ export function parseFDXFull(xmlString: string): FDXParseResult {
         });
       }
     });
+  }
+
+  // v2.25: converters often duplicate the title page as leading BODY
+  // paragraphs — blank actions positioning a title ~⅓ down, a byline, a
+  // draft line — so the "real" script started with a second title page glued
+  // to page 1. With a TitlePage imported, drop leading body paragraphs that
+  // are blank or exact duplicates of its lines; stop at the first line that
+  // is neither, so genuine opening action is never touched.
+  if (titlePageNodes.length > 0) {
+    const tpLines = new Set(tpTexts);
+    let drop = 0;
+    while (drop < nodes.length) {
+      const n = nodes[drop];
+      if (n.type !== 'action' && n.type !== 'general') break;
+      const txt = (n.content || []).map((c) => c.text || '').join('').trim();
+      if (txt && !tpLines.has(txt)) break;
+      drop++;
+    }
+    nodes.splice(0, drop);
   }
 
   return {

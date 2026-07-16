@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.24';
+export const APP_VERSION = '2.25';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.25',
+    date: '2026-07-16',
+    items: [
+      { title: 'Imported title pages look like title pages', detail: 'Importing a .fdx used to produce a nearly blank first page with one small title line, and often a second copy of the title info glued to the top of page 1. The importer now builds the same classic layout as the Title Page editor (title a third of the way down, credit line, draft info at the bottom), keeps a combined "Written by … from the novel by …" credit intact, and removes leading body lines that just repeat the title page.', tags: ['Fix', 'Saving'] },
+      { title: 'Fountain title pages import too', detail: 'A .fountain file\'s title block (Title:, Credit:, Author:, Source:, Draft date:, Contact:…) becomes a real title page instead of loose lines at the top of the script.', tags: ['New Feature', 'Saving'] },
+    ],
+  },
   {
     version: '2.24',
     date: '2026-07-16',

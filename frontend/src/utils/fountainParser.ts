@@ -1,5 +1,6 @@
 // Fountain markup format parser
 // Spec: https://fountain.io/syntax
+import { EMPTY_TITLE_PAGE, titlePageJsonNodes, type TitlePageData } from './titlePageLayout';
 
 interface TipTapNode {
   type: string;
@@ -8,10 +9,65 @@ interface TipTapNode {
   attrs?: Record<string, unknown>;
 }
 
+/* v2.25: the Fountain title block ("Title: …", "Credit:", "Author:" … at the
+   very top, ended by the first blank line) used to be ignored — every line
+   landed in the script body as action. Parse it into the same structured
+   title page the FDX importer and the Title Page editor build. */
+const TITLE_KEYS: Record<string, keyof TitlePageData | 'credit'> = {
+  'title': 'tpTitle',
+  'credit': 'credit',
+  'author': 'tpWrittenBy',
+  'authors': 'tpWrittenBy',
+  'source': 'tpBasedOn',
+  'draft': 'tpDraft',
+  'draft date': 'tpDraft',
+  'date': 'tpDraftDate',
+  'contact': 'tpContact',
+  'copyright': 'tpCopyright',
+  'notes': 'tpNotes',
+};
+
+/** Parse a leading title block. Returns the data (null if there is none) and
+ *  how many lines it consumed (including the terminating blank line). */
+export function parseFountainTitleBlock(lines: string[]): { data: TitlePageData | null; consumed: number } {
+  const first = lines[0]?.match(/^([A-Za-z][A-Za-z ]*):\s*(.*)$/);
+  if (!first || TITLE_KEYS[first[1].trim().toLowerCase()] === undefined) return { data: null, consumed: 0 };
+
+  const data: TitlePageData = { ...EMPTY_TITLE_PAGE };
+  let sawAny = false;
+  let currentKey: keyof TitlePageData | 'credit' | null = null;
+  let i = 0;
+  const append = (key: keyof TitlePageData | 'credit', value: string) => {
+    const v = value.trim();
+    if (!v) return;
+    if (key === 'credit') return;   // "Written by" — deriveTitleFields adds it
+    const prev = data[key];
+    (data as unknown as Record<string, string>)[key] = typeof prev === 'string' && prev ? `${prev}\n${v}` : v;
+    sawAny = true;
+  };
+  for (; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim() === '') { i++; break; }        // blank line ends the block
+    const kv = line.match(/^([A-Za-z][A-Za-z ]*):\s*(.*)$/);
+    const key = kv ? TITLE_KEYS[kv[1].trim().toLowerCase()] : undefined;
+    if (kv && key !== undefined) {
+      currentKey = key;
+      append(key, kv[2]);
+    } else if (currentKey && /^(\s{3,}|\t)/.test(line)) {
+      append(currentKey, line);                    // indented continuation
+    } else {
+      break;                                       // not a title line — body starts here
+    }
+  }
+  return sawAny ? { data, consumed: i } : { data: null, consumed: 0 };
+}
+
 export function parseFountain(text: string): TipTapNode {
   const lines = text.split('\n');
   const nodes: TipTapNode[] = [];
-  let i = 0;
+  const titleBlock = parseFountainTitleBlock(lines);
+  const titleNodes: TipTapNode[] = titleBlock.data ? titlePageJsonNodes(titleBlock.data) : [];
+  let i = titleBlock.consumed;
 
   while (i < lines.length) {
     const line = lines[i];
@@ -95,9 +151,10 @@ export function parseFountain(text: string): TipTapNode {
   // Post-process: merge dual dialogue pairs
   const merged = mergeDualDialogue(nodes);
 
+  const body = merged.length > 0 ? merged : [makeNode('action', '')];
   return {
     type: 'doc',
-    content: merged.length > 0 ? merged : [makeNode('action', '')],
+    content: [...titleNodes, ...body],
   };
 }
 
