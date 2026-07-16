@@ -852,7 +852,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       ? 'panel-open' : animationState === 'exiting' ? 'panel-closing' : '');
 
   return (
-    <div ref={panelRef} className={`char-profiles-panel${isFullscreen ? ' char-profiles-fullscreen' : ''}${isFullscreen && fsViewMode === 'list' ? ' char-fs-list-mode' : ''} ${panelClass}`} style={isFullscreen ? undefined : style}>
+    <div ref={panelRef} className={`char-profiles-panel${embedded ? ' char-profiles-embedded' : ''}${isFullscreen ? ' char-profiles-fullscreen' : ''}${isFullscreen && fsViewMode === 'list' ? ' char-fs-list-mode' : ''} ${panelClass}`} style={isFullscreen ? undefined : style}>
       {/* Hidden file input for image uploads */}
       <input
         ref={fileInputRef}

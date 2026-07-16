@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.69';
+export const APP_VERSION = '2.70';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.70',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: Characters window content fills the window', detail: 'The Characters panel kept a fixed 300px width from its old slide-in days, so resizing its window just grew empty space. Inside a tool window it now stretches to fill.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '2.69',
     date: '2026-07-16',
