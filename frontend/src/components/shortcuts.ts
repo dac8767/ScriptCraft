@@ -62,7 +62,7 @@ export const SHORTCUT_COMMANDS: ShortcutCommand[] = [
   // ── View ──
   { id: 'zoomIn', label: 'Zoom In', group: 'View', defaultCombo: 'Mod+=', owner: 'app' },
   { id: 'zoomOut', label: 'Zoom Out', group: 'View', defaultCombo: 'Mod+-', owner: 'app' },
-  { id: 'actualSize', label: 'Actual Size', group: 'View', defaultCombo: null, owner: 'app' },
+  { id: 'actualSize', label: 'Actual Size', group: 'View', defaultCombo: 'Mod+0', owner: 'app' },   // v2.84: the standard everywhere
   { id: 'fitPage', label: 'Fit Page to Screen', group: 'View', defaultCombo: null, owner: 'app' },
   { id: 'fitWidth', label: 'Scale to Max Width', group: 'View', defaultCombo: null, owner: 'app' },
   { id: 'customize', label: 'Customize', group: 'View', defaultCombo: null, owner: 'app' },
@@ -107,13 +107,16 @@ export function eventToCombo(e: KeyboardEvent): string | null {
   const parts: string[] = [];
   if (e.metaKey || e.ctrlKey) parts.push('Mod');
   if (e.altKey) parts.push('Alt');
-  if (e.shiftKey) parts.push('Shift');
+  let shift = e.shiftKey;
 
   let key = e.key;
   // Normalize so Cmd+= and Cmd++ (same physical key) are one binding, and
-  // letters are case-insensitive (Shift is already captured above).
-  if (key === '+') key = '=';
-  if (key === '_') key = '-';
+  // letters are case-insensitive. v2.84: the Shift that PRODUCED the '+'
+  // (or '_') must be dropped with it — otherwise pressing the intuitive
+  // Cmd+'+' yields Mod+Shift+= and misses the Mod+= binding entirely.
+  if (key === '+') { key = '='; shift = false; }
+  if (key === '_') { key = '-'; shift = false; }
+  if (shift) parts.push('Shift');
   if (key.length === 1) key = key.toUpperCase();
 
   const isFunctionKey = /^F\d{1,2}$/.test(key);

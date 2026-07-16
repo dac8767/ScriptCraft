@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.83';
+export const APP_VERSION = '2.84';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.84',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: ⌘+ / ⌘− zoom the page; ⌘0 resets', detail: 'Zoom In was bound to ⌘= but the key everyone actually presses — ⌘⇧= for "+" — read as a different combo and missed the binding. The Shift that produces the + is now dropped with it, and Actual Size gains the standard ⌘0.', tags: ['Fix', 'Editor'] },
+    ],
+  },
   {
     version: '2.83',
     date: '2026-07-16',
