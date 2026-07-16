@@ -849,69 +849,17 @@ const beatCollisionDetection: CollisionDetection = (args) => {
   return pointerWithin(args);
 };
 
-/* ─── Main Beat Board ─── */
-const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
-  const {
-    beats, beatBoardOpen, beatColumns, beatArrangeMode,
-    addBeat, updateBeat, deleteBeat, setBeats,
-    addBeatColumn, updateBeatColumn, deleteBeatColumn,
-    setBeatArrangeMode,
-    beatUndo, beatRedo,
-  } = useEditorStore();
-
-  const boardRef = useRef<HTMLDivElement>(null);
-  const [activeDragId, setActiveDragId] = useState<string | null>(null);
-  const [maximizedColumnId, setMaximizedColumnId] = useState<string | null>(null);
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-  );
-
-  // Undo/redo + Escape keyboard shortcuts — only when focus is inside the beat board
-  useEffect(() => {
-    // v2.36: the takeover board AND the embedded Outline window both listen.
-    if (!beatBoardOpen && !embedded) return;
-    const handler = (e: KeyboardEvent) => {
-      // Escape restores maximized column
-      if (e.key === 'Escape' && maximizedColumnId) {
-        e.preventDefault();
-        setMaximizedColumnId(null);
-        return;
-      }
-      // v2.36: after closing a beat the focused button is GONE and focus
-      // falls to <body> — undo must still reach the beat history.
-      const ae = document.activeElement;
-      if (!(boardRef.current?.contains(ae) || ae === document.body || ae === null)) return;
-      const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        e.stopPropagation();
-        beatUndo();
-      } else if (mod && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) {
-        e.preventDefault();
-        e.stopPropagation();
-        beatRedo();
-      }
-    };
-    document.addEventListener('keydown', handler, true);
-    return () => document.removeEventListener('keydown', handler, true);
-  }, [beatBoardOpen, embedded, beatUndo, beatRedo, maximizedColumnId]);
-
-  const sortedColumns = [...beatColumns].sort((a, b) => a.position - b.position);
-  const isSingleColumn = sortedColumns.length === 1;
-  // v2.23: beats orphaned by a preset override wait in "Uncategorized".
-  const orphanBeats = uncategorizedBeats(beats, beatColumns);
-  // v2.26: the user's saved presets share the dropdown with the built-ins.
+/* ─── Outline header controls (v2.41) ───
+   Beat count, Arrangement toggle, ? help, Presets and the add button — ONE
+   component, rendered in the tool WINDOW'S chrome header (TOOL_HEADER_EXTRAS)
+   and in the takeover view's own row. Everything reads the store directly. */
+export function OutlineHeaderControls() {
+  const beatCount = useEditorStore((s) => s.beats.length);
+  const beatArrangeMode = useEditorStore((s) => s.beatArrangeMode);
+  const setBeatArrangeMode = useEditorStore((s) => s.setBeatArrangeMode);
   const customPresets = useOutlinePresetStore((s) => s.presets);
 
-  // v2.30: outline variation tabs — one beat pool, many arrangements.
-  const outlineTabs = useEditorStore((s) => s.outlineTabs);
-  const viewedTab = useEditorStore((s) => s.viewedOutlineTab);
-  const barTab = useEditorStore((s) => s.outlineBarTab);
-  const { addOutlineTab, switchOutlineTab, renameOutlineTab, deleteOutlineTab, setOutlineBarTab } = useEditorStore.getState();
-  const [renamingTab, setRenamingTab] = useState<string | null>(null);
-
-  /* v2.37, Derek's rule: helper info lives behind a ? button, not on
-     screen (same fs-help pattern as Goals). */
+  /* Derek's rule: helper info lives behind a ? button, not on screen. */
   const [helpOpen, setHelpOpen] = useState(false);
   const helpBtnRef = useRef<HTMLButtonElement>(null);
   const [helpPos, setHelpPos] = useState<{ top: number; left: number } | null>(null);
@@ -931,14 +879,6 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
     }
     setHelpOpen((v) => !v);
   };
-
-  const handleCloseTab = useCallback(async (id: string, name: string) => {
-    const ok = await confirmDialog(
-      `Close "${name}"? Your beats are safe — they live in every tab. Only this arrangement of sections is deleted.`,
-      { title: 'Close Outline Tab', confirmLabel: 'Close Tab', danger: true },
-    );
-    if (ok) deleteOutlineTab(id);
-  }, [deleteOutlineTab]);
 
   const handlePresetAction = useCallback(async (value: string) => {
     if (!value) return;
@@ -983,8 +923,158 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   }, []);
 
   const handleAddColumn = useCallback(() => {
-    addBeatColumn(`Section ${beatColumns.length + 1}`);
-  }, [addBeatColumn, beatColumns.length]);
+    const st = useEditorStore.getState();
+    st.addBeatColumn(`Section ${st.beatColumns.length + 1}`);
+  }, []);
+
+  const handleAddBeatFree = useCallback(() => {
+    const st = useEditorStore.getState();
+    const sorted = [...st.beatColumns].sort((a, b) => a.position - b.position);
+    const colId = sorted[0]?.id || st.addBeatColumn('Section 1');
+    const offset = (st.beats.length % 10) * 30;
+    st.addBeat('New Beat', colId);
+    setTimeout(() => {
+      const store = useEditorStore.getState();
+      const latest = store.beats[store.beats.length - 1];
+      if (latest && (latest.x || 0) === 0 && (latest.y || 0) === 0) {
+        store.updateBeat(latest.id, { x: 40 + offset, y: 40 + offset });
+      }
+    }, 0);
+  }, []);
+
+  return (
+    <span className="beat-header-controls">
+      <span className="beat-board-info">
+        {beatCount} beat{beatCount !== 1 ? 's' : ''}
+      </span>
+      <span className="beat-mode-label">Arrangement:</span>
+      <div className="beat-mode-toggle">
+        <button
+          className={`beat-mode-btn${beatArrangeMode === 'auto' ? ' active' : ''}`}
+          onClick={() => setBeatArrangeMode('auto')}
+          title="Sections — beats grouped in side-by-side sections"
+        >Sections</button>
+        <button
+          className={`beat-mode-btn${beatArrangeMode === 'custom' ? ' active' : ''}`}
+          onClick={() => setBeatArrangeMode('custom')}
+          title="Freeform — place beats anywhere"
+        >Freeform</button>
+      </div>
+      <button ref={helpBtnRef} className="fs-help-btn" title="How to use the Outline" onClick={toggleHelp}>?</button>
+      {helpOpen && helpPos && createPortal(
+        <div className="fs-help-pop" style={{ top: helpPos.top, left: helpPos.left }}>
+          Create sections (Act 1, Act 2…) and drop beats into them — or pick
+          a Preset. Tabs below are separate arrangements of the SAME beats;
+          the ◉ picks which one the Outline Bar shows. Freeform turns the
+          board into a mind map: drag cards anywhere, connect them, change
+          their shape and color.
+        </div>,
+        document.body,
+      )}
+      {beatArrangeMode === 'auto' ? (
+        <>
+          <select
+            className="beat-board-preset"
+            value=""
+            title="Apply an outline structure, or save your own"
+            onChange={(e) => { void handlePresetAction(e.target.value); }}
+          >
+            <option value="">Presets…</option>
+            <optgroup label="Built-in">
+              {OUTLINE_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </optgroup>
+            {customPresets.length > 0 && (
+              <optgroup label="My Presets">
+                {customPresets.map((p) => (
+                  <option key={p.id} value={`custom:${p.id}`}>{p.name}</option>
+                ))}
+              </optgroup>
+            )}
+            <optgroup label="Manage">
+              <option value="__save">Save current as preset…</option>
+              {customPresets.length > 0 && <option value="__export">Export my presets…</option>}
+              <option value="__import">Import presets…</option>
+            </optgroup>
+          </select>
+          <button className="beat-board-add-col-btn" onClick={handleAddColumn}>+ Add Section</button>
+        </>
+      ) : (
+        <button className="beat-board-add-col-btn" onClick={handleAddBeatFree}>+ Add Beat</button>
+      )}
+    </span>
+  );
+}
+
+/* ─── Main Beat Board ─── */
+const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
+  const {
+    beats, beatBoardOpen, beatColumns, beatArrangeMode,
+    addBeat, updateBeat, deleteBeat, setBeats,
+    updateBeatColumn, deleteBeatColumn,
+    beatUndo, beatRedo,
+  } = useEditorStore();
+
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [maximizedColumnId, setMaximizedColumnId] = useState<string | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
+
+  // Undo/redo + Escape keyboard shortcuts — only when focus is inside the beat board
+  useEffect(() => {
+    // v2.36: the takeover board AND the embedded Outline window both listen.
+    if (!beatBoardOpen && !embedded) return;
+    const handler = (e: KeyboardEvent) => {
+      // Escape restores maximized column
+      if (e.key === 'Escape' && maximizedColumnId) {
+        e.preventDefault();
+        setMaximizedColumnId(null);
+        return;
+      }
+      // v2.36: after closing a beat the focused button is GONE and focus
+      // falls to <body> — undo must still reach the beat history.
+      const ae = document.activeElement;
+      if (!(boardRef.current?.contains(ae) || ae === document.body || ae === null)) return;
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        beatUndo();
+      } else if (mod && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) {
+        e.preventDefault();
+        e.stopPropagation();
+        beatRedo();
+      }
+    };
+    document.addEventListener('keydown', handler, true);
+    return () => document.removeEventListener('keydown', handler, true);
+  }, [beatBoardOpen, embedded, beatUndo, beatRedo, maximizedColumnId]);
+
+  const sortedColumns = [...beatColumns].sort((a, b) => a.position - b.position);
+  const isSingleColumn = sortedColumns.length === 1;
+  // v2.23: beats orphaned by a preset override wait in "Uncategorized".
+  const orphanBeats = uncategorizedBeats(beats, beatColumns);
+
+  // v2.30: outline variation tabs — one beat pool, many arrangements.
+  const outlineTabs = useEditorStore((s) => s.outlineTabs);
+  const viewedTab = useEditorStore((s) => s.viewedOutlineTab);
+  const barTab = useEditorStore((s) => s.outlineBarTab);
+  const { addOutlineTab, switchOutlineTab, renameOutlineTab, deleteOutlineTab, setOutlineBarTab } = useEditorStore.getState();
+  const [renamingTab, setRenamingTab] = useState<string | null>(null);
+
+
+  const handleCloseTab = useCallback(async (id: string, name: string) => {
+    const ok = await confirmDialog(
+      `Close "${name}"? Your beats are safe — they live in every tab. Only this arrangement of sections is deleted.`,
+      { title: 'Close Outline Tab', confirmLabel: 'Close Tab', danger: true },
+    );
+    if (ok) deleteOutlineTab(id);
+  }, [deleteOutlineTab]);
+
+
 
   const handleDragStart = useCallback((e: DragStartEvent) => setActiveDragId(String(e.active.id)), []);
 
@@ -1039,100 +1129,20 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
 
   const activeBeat = activeDragId ? beats.find((b) => b.id === activeDragId) : null;
 
-  // Ensure at least one column exists for adding beats in custom mode
-  const defaultColumnId = sortedColumns.length > 0 ? sortedColumns[0].id : '';
-
-  const handleAddBeatFree = useCallback(() => {
-    const colId = defaultColumnId || addBeatColumn('Section 1');
-    const offset = (beats.length % 10) * 30;
-    addBeat('New Beat', colId);
-    setTimeout(() => {
-      const store = useEditorStore.getState();
-      const latest = store.beats[store.beats.length - 1];
-      if (latest && (latest.x || 0) === 0 && (latest.y || 0) === 0) {
-        updateBeat(latest.id, { x: 40 + offset, y: 40 + offset });
-      }
-    }, 0);
-  }, [defaultColumnId, beats.length, addBeat, addBeatColumn, updateBeat]);
 
   if (!beatBoardOpen && !embedded) return null;
 
   return (
     <div className="beat-board" ref={boardRef}>
-      <div className="beat-board-header">
-        {/* v2.37, Derek: no "Outline" title — one toolbar row, tabs below. */}
-        <span className="beat-board-info">
-          {beats.length} beat{beats.length !== 1 ? 's' : ''}
-        </span>
-
-        {/* Mode toggle (v1.98; v2.22: "Columns" → "Sections", matching the
-            v2.18 rename everywhere else) */}
-        <span className="beat-mode-label">Arrangement:</span>
-        <div className="beat-mode-toggle">
-          <button
-            className={`beat-mode-btn${beatArrangeMode === 'auto' ? ' active' : ''}`}
-            onClick={() => setBeatArrangeMode('auto')}
-            title="Sections — beats grouped in side-by-side sections"
-          >Sections</button>
-          <button
-            className={`beat-mode-btn${beatArrangeMode === 'custom' ? ' active' : ''}`}
-            onClick={() => setBeatArrangeMode('custom')}
-            title="Freeform — place beats anywhere"
-          >Freeform</button>
+      {/* v2.41, Derek: the controls live in the WINDOW HEADER (chrome) when
+          this board is the docked/popped Outline window — TOOL_HEADER_EXTRAS
+          hosts OutlineHeaderControls there. The takeover view has no chrome,
+          so it keeps its own row, same component. */}
+      {!embedded && (
+        <div className="beat-board-header">
+          <OutlineHeaderControls />
         </div>
-
-        <button ref={helpBtnRef} className="fs-help-btn" title="How to use the Outline" onClick={toggleHelp}>?</button>
-        {helpOpen && helpPos && createPortal(
-          <div className="fs-help-pop" style={{ top: helpPos.top, left: helpPos.left }}>
-            Create sections (Act 1, Act 2…) and drop beats into them — or pick
-            a Preset. Tabs below are separate arrangements of the SAME beats;
-            the ◉ picks which one the Outline Bar shows. Freeform turns the
-            board into a mind map: drag cards anywhere, connect them, change
-            their shape and color.
-          </div>,
-          document.body,
-        )}
-        {beatArrangeMode === 'auto' ? (
-          <>
-            {/* v1.89: an action menu, not state — value stays on the
-                placeholder so it reads "Presets" again after applying.
-                v2.23: with sections already on the board, a preset REPLACES
-                them (after a confirm) instead of piling more on — the beats
-                survive in the Uncategorized column.
-                v2.26: the user's saved presets join the list, plus save /
-                export / import actions. */}
-            <select
-              className="beat-board-preset"
-              value=""
-              title="Apply an outline structure, or save your own"
-              onChange={(e) => { void handlePresetAction(e.target.value); }}
-            >
-              <option value="">Presets…</option>
-              <optgroup label="Built-in">
-                {OUTLINE_PRESETS.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </optgroup>
-              {customPresets.length > 0 && (
-                <optgroup label="My Presets">
-                  {customPresets.map((p) => (
-                    <option key={p.id} value={`custom:${p.id}`}>{p.name}</option>
-                  ))}
-                </optgroup>
-              )}
-              <optgroup label="Manage">
-                <option value="__save">Save current as preset…</option>
-                {customPresets.length > 0 && <option value="__export">Export my presets…</option>}
-                <option value="__import">Import presets…</option>
-              </optgroup>
-            </select>
-            <button className="beat-board-add-col-btn" onClick={handleAddColumn}>+ Add Section</button>
-          </>
-        ) : (
-          <button className="beat-board-add-col-btn" onClick={handleAddBeatFree}>+ Add Beat</button>
-        )}
-      </div>
-
+      )}
       {/* v2.30: variation tabs, browser-style. One shared pool of beats;
           each tab is its own arrangement of sections. The ◉ marks the tab
           the Outline Bar shows. */}

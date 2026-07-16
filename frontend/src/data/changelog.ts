@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.40';
+export const APP_VERSION = '2.41';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.41',
+    date: '2026-07-16',
+    items: [
+      { title: 'Outline window: controls in the real header', detail: 'The beat count, Arrangement toggle, ?, Presets and + Add Section moved into the window\'s own header row — the one with the title and the pop-out/close buttons — instead of a second row inside the window. The variation tabs sit directly under it.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '2.40',
     date: '2026-07-16',

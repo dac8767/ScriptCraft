@@ -39,7 +39,7 @@ import { StickyNotesTool, FragmentsTool, TodoTool } from './StickyNotes';
 import HighlightsTool from './HighlightsTool';
 import TagsPanel from './TagsPanel';
 import IndexCards from './IndexCards';
-import BeatBoard from './BeatBoard';
+import BeatBoard, { OutlineHeaderControls } from './BeatBoard';
 import TypewriterTool from './TypewriterTool';
 import AiWriterTool from './AiWriterTool';
 import NotebookTool, { NotebookHeaderExtra } from './NotebookTool';
@@ -129,6 +129,7 @@ export const TOOL_HEADER_EXTRAS: Partial<Record<ToolId, React.FC>> = {
   navigator: NavigatorHeaderExtra,
   goals: GoalsHeaderExtra,
   notebook: NotebookHeaderExtra,   // v2.05: Pages + create buttons
+  beatboard: OutlineHeaderControls, // v2.41: count/Arrangement/Presets/add in the chrome
 };
 // v1.97: currently empty — Navigator's filter moved into its header. The
 // slot stays: it's the one place a tool can register a true footer bar.
