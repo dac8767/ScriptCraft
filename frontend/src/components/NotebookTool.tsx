@@ -18,6 +18,7 @@
  * Tags that link notebook items to other tools come later, per Derek.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   useNotebookStore, newTable, nbUid,
   type NbNode, type NbTable, type NbBox,
@@ -512,11 +513,25 @@ function dragStartData(e: React.DragEvent, id: string) {
   e.dataTransfer.effectAllowed = 'move';
 }
 
+/** v2.63, Derek: top-level folders each get their own icon color — cycled
+ *  from this palette by top-level order, or the one picked via right-click.
+ *  Subfolders stay monotone. Exported for the test. */
+export const FOLDER_COLORS = [
+  '#e06060', '#e89b4f', '#d9c04a', '#6abf69',
+  '#4cbfbf', '#6fa8dc', '#b58ee0', '#d377b0',
+];
+export function folderColor(node: { color?: string }, topIndex: number, depth: number): string | undefined {
+  if (depth !== 0) return undefined;
+  return node.color ?? FOLDER_COLORS[topIndex % FOLDER_COLORS.length];
+}
+
 function TreeNodes({ nodes, depth }: { nodes: NbNode[]; depth: number }) {
+  // Pages interleaved between sections must not consume palette slots.
+  let secIdx = 0;
   return (
     <>
       {nodes.map((node) => node.type === 'section'
-        ? <SectionRow key={node.id} node={node} depth={depth} />
+        ? <SectionRow key={node.id} node={node} depth={depth} orderIndex={secIdx++} />
         : <PageRow key={node.id} id={node.id} depth={depth} />)}
     </>
   );
@@ -557,10 +572,26 @@ function PageRow({ id, depth }: { id: string; depth: number }) {
   );
 }
 
-function SectionRow({ node, depth }: { node: Extract<NbNode, { type: 'section' }>; depth: number }) {
-  const { toggleSection, renameSection, deleteSection, moveNode } = useNotebookStore.getState();
+function SectionRow({ node, depth, orderIndex }: { node: Extract<NbNode, { type: 'section' }>; depth: number; orderIndex: number }) {
+  const { toggleSection, renameSection, deleteSection, moveNode, setSectionColor } = useNotebookStore.getState();
   const [editing, setEditing] = useState(false);
   const [into, setInto] = useState(false);
+  // v2.63: right-click (top level only) → portalled color swatches,
+  // positioned by top/left, never bottom.
+  const [colorPop, setColorPop] = useState<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    if (!colorPop) return;
+    const close = (e: PointerEvent) => {
+      if (!(e.target as HTMLElement).closest('.fs-nb-colorpop')) setColorPop(null);
+    };
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setColorPop(null); };
+    document.addEventListener('pointerdown', close);
+    document.addEventListener('keydown', key);
+    return () => {
+      document.removeEventListener('pointerdown', close);
+      document.removeEventListener('keydown', key);
+    };
+  }, [colorPop]);
   return (
     <div style={{ marginLeft: depth * 12 }}>
       <div
@@ -575,13 +606,20 @@ function SectionRow({ node, depth }: { node: Extract<NbNode, { type: 'section' }
           if (dragged && dragged !== node.id) moveNode(dragged, { kind: 'into', id: node.id });
           setInto(false);
         }}
+        onContextMenu={(e) => {
+          if (depth !== 0) return;
+          e.preventDefault(); e.stopPropagation();
+          setColorPop({ x: Math.min(e.clientX, window.innerWidth - 190), y: e.clientY + 4 });
+        }}
       >
         {/* v2.08: the same caret the side-panel dock items wear. */}
         <button className="fs-nb-collapse" onClick={() => toggleSection(node.id)}>
           {node.collapsed ? <FaChevronRight /> : <FaChevronDown />}
         </button>
         <span className="fs-nb-grabber">⋮⋮</span>
-        <span className="fs-nb-pageicon">{node.collapsed ? <FaRegFolder /> : <FaRegFolderOpen />}</span>
+        <span className="fs-nb-pageicon" style={{ color: folderColor(node, orderIndex, depth) }}>
+          {node.collapsed ? <FaRegFolder /> : <FaRegFolderOpen />}
+        </span>
         {editing ? (
           <input
             autoFocus
@@ -604,6 +642,23 @@ function SectionRow({ node, depth }: { node: Extract<NbNode, { type: 'section' }
           <TreeNodes nodes={node.children} depth={depth + 1} />
           {node.children.length === 0 && <div className="fs-nb-emptysec">empty — drop pages here</div>}
         </div>
+      )}
+      {colorPop && createPortal(
+        <div className="fs-nb-colorpop" style={{ top: colorPop.y, left: colorPop.x }}>
+          <div className="fs-nb-colorpop-title">Folder color</div>
+          <div className="fs-nb-colorpop-swatches">
+            {FOLDER_COLORS.map((hex) => (
+              <button
+                key={hex}
+                className={`fs-nb-colorpop-swatch${folderColor(node, orderIndex, depth) === hex ? ' on' : ''}`}
+                style={{ background: hex }}
+                title={hex}
+                onClick={() => { setSectionColor(node.id, hex); setColorPop(null); }}
+              />
+            ))}
+          </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

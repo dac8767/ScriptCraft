@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.62';
+export const APP_VERSION = '2.63';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.63',
+    date: '2026-07-16',
+    items: [
+      { title: 'Scrapbook: colored top-level folders', detail: 'Each top-level section\'s folder icon gets its own color, cycled from a palette — subfolders stay monotone. Right-click a top-level folder to pick a different color from a swatch set.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '2.62',
     date: '2026-07-16',

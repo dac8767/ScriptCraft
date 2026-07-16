@@ -16346,6 +16346,37 @@ input.fs-switch:checked::after { left: 15px; }
   background: color-mix(in srgb, var(--fd-accent) 35%, transparent);
   border-color: var(--fd-accent);
 }
+/* v2.63: right-click color swatches for top-level Scrapbook folders.
+   Portalled to body, positioned by top/left (never bottom). */
+.fs-nb-colorpop {
+  position: fixed;
+  z-index: 10002;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  padding: 8px 10px;
+}
+.fs-nb-colorpop-title {
+  font-size: 11px;
+  color: var(--fd-text-secondary);
+  padding-bottom: 6px;
+}
+.fs-nb-colorpop-swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 20px);
+  gap: 6px;
+}
+.fs-nb-colorpop-swatch {
+  width: 20px; height: 20px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.fs-nb-colorpop-swatch.on {
+  border-color: var(--fd-text);
+}
 .fs-nb-box-head {
   flex: 0 0 20px;
   display: flex;

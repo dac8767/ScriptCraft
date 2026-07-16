@@ -49,7 +49,9 @@ export interface NotebookPage {
 }
 
 export type NbNode =
-  | { type: 'section'; id: string; name: string; collapsed: boolean; children: NbNode[] }
+  /** v2.63: `color` tints a TOP-LEVEL section's folder icon (subfolders stay
+   *  monotone). Unset = auto-assigned from the palette by top-level order. */
+  | { type: 'section'; id: string; name: string; collapsed: boolean; children: NbNode[]; color?: string }
   | { type: 'page'; id: string };
 
 export type NbDropTarget =
@@ -209,6 +211,8 @@ interface NotebookState {
   selectPage: (id: string | null) => void;
   addSection: () => void;
   renameSection: (id: string, name: string) => void;
+  /** v2.63: tint a top-level section's folder icon. */
+  setSectionColor: (id: string, color: string) => void;
   toggleSection: (id: string) => void;
   /** Deletes the section; descendant pages move back to the top level. */
   deleteSection: (id: string) => void;
@@ -294,6 +298,16 @@ export const useNotebookStore = create<NotebookState>((set, get) => ({
     const walk = (nodes: NbNode[]): NbNode[] => nodes.map((n) =>
       n.type === 'section'
         ? (n.id === id ? { ...n, name: name || 'Section' } : { ...n, children: walk(n.children) })
+        : n);
+    set((s) => ({ tree: walk(s.tree) }));
+    persist(get);
+  },
+  setSectionColor: (id, color) => {
+    // Colors only show on top-level folders, but the walk covers the whole
+    // tree so a section dragged to the top level keeps its chosen color.
+    const walk = (nodes: NbNode[]): NbNode[] => nodes.map((n) =>
+      n.type === 'section'
+        ? (n.id === id ? { ...n, color } : { ...n, children: walk(n.children) })
         : n);
     set((s) => ({ tree: walk(s.tree) }));
     persist(get);
