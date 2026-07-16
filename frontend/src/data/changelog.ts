@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.74';
+export const APP_VERSION = '2.75';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.75',
+    date: '2026-07-16',
+    items: [
+      { title: 'AI Writer: remove-from-sidebar button', detail: 'The AI Writer window grows a footer button that takes it out of the sidebar — the same hide Customize uses, so it returns from Customize > Panels whenever you miss it.', tags: ['Tools', 'UI'] },
+    ],
+  },
   {
     version: '2.74',
     date: '2026-07-16',

@@ -12804,12 +12804,26 @@ html.android .version-history-panel {
 /* ── AI Writer (v1.69) — the joke ── */
 .fs-aiwriter {
   display: flex;
+  flex-direction: column;   /* v2.75: message centered, footer pinned below */
   align-items: center;
   justify-content: center;
+  gap: 14px;
   height: 100%;
   min-height: 0;
   padding: 16px;
 }
+/* v2.75: the footer's remove button — quiet, like a dialog's secondary action. */
+.fs-aiwriter-footer { flex: 0 0 auto; }
+.fs-aiwriter-remove {
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text-muted);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.fs-aiwriter-remove:hover { background: var(--fd-toolbar-hover); color: var(--fd-text); }
 .fs-aiwriter p {
   margin: 0;
   font-size: 15px;
