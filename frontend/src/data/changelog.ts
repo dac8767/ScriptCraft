@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.15';
+export const APP_VERSION = '2.16';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.16',
+    date: '2026-07-16',
+    items: [
+      { title: 'The bar and the board stay in sync', detail: 'Drag a beat along the Outline Bar into a different section\'s page range and it moves into that section on the Outline board too — the two views are one model, always. Page counts also abbreviate as "p" (not "pp") across the bar and the board.', tags: ['Tools', 'Fix'] },
+      { title: 'Outline Bar controls cleaned up', detail: 'The ＋ and Send to Script buttons are a tidy row of equal squares instead of stretched, mismatched blocks; the zoom control slimmed to match.', tags: ['UI', 'Polish'] },
+      { title: 'Rename on the bar; whole pages only', detail: 'Double-click any section or beat on the Outline Bar to rename it in place (the Outline board follows — one model). Sections and beats also snap to whole pages now, no decimals; the Script row still shows true fractional scene lengths.', tags: ['Tools', 'UI'] },
+    ],
+  },
   {
     version: '2.15',
     date: '2026-07-16',

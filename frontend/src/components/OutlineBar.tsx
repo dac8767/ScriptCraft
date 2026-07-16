@@ -28,8 +28,9 @@ import { computeSceneLengths } from '../editor/pagination';
 import AddMenu from './AddMenu';
 import { showToast } from './Toast';
 
-const SNAP = 0.125;               // FD: an eighth of a page
-const DEFAULT_SPAN = 0.5;         // FD: beats default to half a page
+const SNAP = 1;                   // v2.16, Derek: whole pages only — no decimals
+const DEFAULT_SPAN = 1;           // beats default to one page
+const SCENE_MIN = 0.125;          // the script row stays TRUE to real lengths
 /** A section with no page budget yet still needs a visible block. */
 export const DEFAULT_COLUMN_PAGES = 10;
 
@@ -129,7 +130,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
         try { lengths = computeSceneLengths(editor.state.doc, pageLayout); } catch { /* mid-transaction */ }
         let start = 1;
         setScenes(heads.map((h, i) => {
-          const pages = Math.max(SNAP, lengths[i] ?? SNAP);
+          const pages = Math.max(SCENE_MIN, lengths[i] ?? SCENE_MIN);
           const s: SceneEntry = { ...h, start, pages };
           start += pages;
           return s;
@@ -190,7 +191,44 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
       updateBeatColumn(d.id, { targetPages: pages });
     }
   };
-  const onPointerUp = () => { dragRef.current = null; };
+  /** v2.16: the bar and the board are ONE model — dropping a beat inside a
+   *  section's page range moves it into that column on the Outline board. */
+  const onPointerUp = () => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    if (!d || d.kind !== 'beat-move') return;
+    const b = useEditorStore.getState().beats.find((x) => x.id === d.id);
+    if (!b) return;
+    const mid = (b.outlinePage ?? 1) + (b.outlineSpan ?? DEFAULT_SPAN) / 2;
+    const act = acts.find((a) => mid >= a.start && mid < a.start + a.pages);
+    if (act && b.columnId !== act.id) updateBeat(b.id, { columnId: act.id });
+  };
+
+  /* ── double-click: rename in place (v2.16) — the same title the
+        Outline board shows, one model. ── */
+  const [renaming, setRenaming] = useState<{ kind: 'column' | 'beat'; id: string } | null>(null);
+  const commitRename = (value: string) => {
+    if (!renaming) return;
+    const title = value.trim();
+    if (title) {
+      if (renaming.kind === 'column') updateBeatColumn(renaming.id, { title });
+      else updateBeat(renaming.id, { title });
+    }
+    setRenaming(null);
+  };
+  const renameInput = (defaultValue: string) => (
+    <input
+      autoFocus
+      className="fs-ob-rename"
+      defaultValue={defaultValue}
+      onPointerDown={(e) => e.stopPropagation()}
+      onBlur={(e) => commitRename(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+        if (e.key === 'Escape') setRenaming(null);
+      }}
+    />
+  );
 
   /* ── right-click: type the page target ── */
   const [pop, setPop] = useState<PagesPop | null>(null);
@@ -214,8 +252,8 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
   };
   const commitPop = () => {
     if (!pop) return;
-    const v = Math.max(pop.kind === 'column' ? 1 : SNAP, pop.value);
-    if (pop.kind === 'column') updateBeatColumn(pop.id, { targetPages: Math.round(v) });
+    const v = Math.max(1, Math.round(pop.value));   // whole pages only
+    if (pop.kind === 'column') updateBeatColumn(pop.id, { targetPages: v });
     else updateBeat(pop.id, { outlineSpan: v });
     setPop(null);
   };
@@ -263,19 +301,30 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
     <div className="fs-outline-bar">
       <div className="fs-ob-side">
         <span className="fs-ob-title">Outline</span>
-        <AddMenu
-          label="＋"
-          title="Add a section (column) or a beat"
-          center
-          onPick={addFromMenu}
-          groups={[{
-            label: 'Add',
-            options: [
-              { value: 'section', label: 'Section (column)' },
-              { value: 'beat', label: 'Beat' },
-            ],
-          }]}
-        />
+        {/* v2.16: one tidy row of equal square buttons. */}
+        <div className="fs-ob-actions">
+          <AddMenu
+            label="＋"
+            title="Add a section (column) or a beat"
+            center
+            onPick={addFromMenu}
+            groups={[{
+              label: 'Add',
+              options: [
+                { value: 'section', label: 'Section (column)' },
+                { value: 'beat', label: 'Beat' },
+              ],
+            }]}
+          />
+          <button
+            className="fs-ob-iconbtn"
+            onClick={sendToScript}
+            disabled={placed.length === 0}
+            title="Send to Script — insert each beat as a section line (# …)"
+          >
+            <FaFileExport />
+          </button>
+        </div>
         {unplaced.length > 0 && (
           <select
             value=""
@@ -286,15 +335,6 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             {unplaced.map((b) => <option key={b.id} value={b.id}>{b.title || '(untitled)'}</option>)}
           </select>
         )}
-        {/* v2.11: icon-only, tooltip carries the words. */}
-        <button
-          className="fs-ob-iconbtn"
-          onClick={sendToScript}
-          disabled={placed.length === 0}
-          title="Send to Script — insert each beat as a section line (# …)"
-        >
-          <FaFileExport />
-        </button>
         <div className="fs-ob-zoom" title="Zoom — how many pixels one page takes">
           <button className={zoom === 0 ? 'active' : ''} onClick={() => setZoom(0)}>Fit</button>
           <input
@@ -318,8 +358,9 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
                 key={a.id}
                 className={`fs-ob-act fs-ob-act-${i % 3}`}
                 style={{ left: pctLeft(a.start), width: pctWidth(a.pages) }}
-                title={`${a.title} — ${a.pages} page${a.pages === 1 ? '' : 's'} (pages ${a.start}–${a.start + a.pages - 1})\nRight-click to set the target page count`}
+                title={`${a.title} — ${a.pages}p (${a.start}–${a.start + a.pages - 1})\nRight-click to set the target page count`}
                 onContextMenu={(e) => openPop(e, 'column', a.id, a.pages)}
+                onDoubleClick={() => setRenaming({ kind: 'column', id: a.id })}
               >
                 {i > 0 && (
                   <span
@@ -332,7 +373,9 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
                 )}
                 {/* v2.15: no page count on the block — the ruler shows it,
                     and the hover tooltip spells it out. */}
-                <span className="fs-ob-act-title">{a.title}</span>
+                {renaming?.kind === 'column' && renaming.id === a.id
+                  ? renameInput(a.title)
+                  : <span className="fs-ob-act-title">{a.title}</span>}
                 <span
                   className="fs-ob-beat-resize"
                   title="Drag to change this section's page budget"
@@ -355,11 +398,12 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
                   key={b.id}
                   className="fs-ob-beat"
                   style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: b.color || undefined }}
-                  title={`${b.title} — page ${b.outlinePage ?? 1}, ${b.outlineSpan ?? DEFAULT_SPAN} page(s)${b.description ? `\n${b.description}` : ''}\nRight-click to set the page target`}
+                  title={`${b.title} — p${b.outlinePage ?? 1}, ${b.outlineSpan ?? DEFAULT_SPAN}p${b.description ? `\n${b.description}` : ''}\nRight-click to set the page target`}
                   onPointerDown={(e) => startBeatDrag(e, b, 'move')}
                   onPointerMove={onPointerMove}
                   onPointerUp={onPointerUp}
                   onContextMenu={(e) => openPop(e, 'beat', b.id, b.outlineSpan ?? DEFAULT_SPAN)}
+                  onDoubleClick={() => setRenaming({ kind: 'beat', id: b.id })}
                 >
                   <span
                     className="fs-ob-resize-l"
@@ -368,7 +412,9 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
                     onPointerMove={onPointerMove}
                     onPointerUp={onPointerUp}
                   />
-                  <span className="fs-ob-beat-title">{b.title}</span>
+                  {renaming?.kind === 'beat' && renaming.id === b.id
+                    ? renameInput(b.title)
+                    : <span className="fs-ob-beat-title">{b.title}</span>}
                   <button
                     className="fs-ob-beat-x"
                     title="Remove from the bar (stays on the Outline board)"
@@ -406,7 +452,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
                 key={`${s.pos}-${i}`}
                 className="fs-ob-scene"
                 style={{ left: pctLeft(s.start), width: pctWidth(s.pages) }}
-                title={`${s.text} — ${s.pages.toFixed(2)} pages`}
+                title={`${s.text} — ${s.pages.toFixed(2)}p`}
                 onClick={() => jumpToScene(s.pos)}
               >
                 {s.text}
@@ -423,8 +469,8 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             <input
               autoFocus
               type="number"
-              min={pop.kind === 'column' ? 1 : SNAP}
-              step={pop.kind === 'column' ? 1 : SNAP}
+              min={1}
+              step={1}
               value={pop.value}
               onChange={(e) => setPop({ ...pop, value: Number(e.target.value) || 0 })}
               onKeyDown={(e) => { if (e.key === 'Enter') commitPop(); }}

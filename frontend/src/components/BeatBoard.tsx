@@ -908,13 +908,13 @@ const BeatColumnView: React.FC<BeatColumnViewProps> = ({
             type="number"
             min={1}
             value={col.targetPages ?? ''}
-            placeholder="pp"
+            placeholder="p"
             onChange={(e) => {
               const n = Number(e.target.value);
               onUpdateColumn(col.id, { targetPages: Number.isFinite(n) && n >= 1 ? Math.round(n) : 0 });
             }}
           />
-          <span>pp</span>
+          <span>p</span>
         </label>
         {showMaximizeBtn && (
           <button

@@ -11,16 +11,17 @@ import OutlineBar, { snapPage, markerGeometry, columnRanges, DEFAULT_COLUMN_PAGE
 import { useEditorStore } from '../stores/editorStore';
 
 describe('placement math', () => {
-  it('snaps to eighths of a page and clamps to the document', () => {
-    expect(snapPage(2.3, 0.5, 10)).toBe(2.25);
-    expect(snapPage(0.2, 0.5, 10)).toBe(1);        // never before page 1
-    expect(snapPage(99, 0.5, 10)).toBe(10.5);      // last valid start: back half of page 10
+  /* v2.16, Derek: whole pages only — no decimals. */
+  it('snaps to whole pages and clamps to the document', () => {
+    expect(snapPage(2.3, 1, 10)).toBe(2);
+    expect(snapPage(0.2, 1, 10)).toBe(1);          // never before page 1
+    expect(snapPage(99, 1, 10)).toBe(10);          // last valid start: page 10
   });
 
   it('computes left/width as fractions of the page count', () => {
-    const g = markerGeometry(6, 0.5, 10);
+    const g = markerGeometry(6, 1, 10);
     expect(g.leftPct).toBe(50);
-    expect(g.widthPct).toBe(5);
+    expect(g.widthPct).toBe(10);
   });
 
   /* v2.11 — the acts row: columns pack from page 1 by their budgets. */
