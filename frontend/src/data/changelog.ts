@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.51';
+export const APP_VERSION = '2.52';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.52',
+    date: '2026-07-16',
+    items: [
+      { title: 'Customize: Reset Outline Bar Height in the right tab', detail: 'The button lived in the Toolbar tab; it now sits in Customize > Outline Bar, next to Reset Rows to Default.', tags: ['UI'] },
+    ],
+  },
   {
     version: '2.51',
     date: '2026-07-16',

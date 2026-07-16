@@ -136,6 +136,10 @@ function OutlineBarTab() {
           <button onClick={() => { setRows(DEFAULT_OUTLINE_BAR_ROWS); setLabels(true); }}>
             Reset Rows to Default
           </button>
+          {/* v2.52, Derek: this lived in the Toolbar tab — it belongs here. */}
+          <button onClick={() => useEditorStore.getState().setOutlineBarRowScale(1)}>
+            Reset Outline Bar Height
+          </button>
         </span>
       </div>
     </section>
@@ -896,9 +900,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   st.setChromeGap('toolbar', 2);
                   st.setChromeGap('bigbtn', 0);
                 }}>Reset to Default Size</button>
-                <button onClick={() => useEditorStore.getState().setOutlineBarRowScale(1)}>
-                  Reset Outline Bar Height
-                </button>
               </span>
             </div>
 
