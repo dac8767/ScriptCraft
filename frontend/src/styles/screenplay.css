@@ -16669,3 +16669,61 @@ input.fs-switch:checked::after { left: 15px; }
 /* Freeform beat cards: the pages field must never poke out of the card. */
 .beat-card-top { min-width: 0; flex-wrap: nowrap; overflow: hidden; }
 .beat-card-top .beat-card-pages { flex: 0 0 auto; white-space: nowrap; }
+
+/* ─── v2.33: Freeform mind map ─── */
+.beat-custom-canvas { position: relative; }
+.mind-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  z-index: 0;
+}
+.mind-lines line {
+  stroke: var(--fd-text-muted);
+  stroke-width: 1.5;
+  cursor: pointer;
+  pointer-events: stroke;
+}
+.mind-lines line:hover { stroke: var(--fd-accent); stroke-width: 2.5; }
+.mind-controls {
+  position: absolute;
+  top: -22px;
+  right: 0;
+  display: flex;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity .15s ease;
+  z-index: 2;
+}
+.beat-card-wrap-free:hover .mind-controls,
+.mind-link-target .mind-controls,
+.mind-linking-from .mind-controls { opacity: 1; }
+.mind-btn {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  padding: 0;
+}
+.mind-btn:hover, .mind-btn.active { color: var(--fd-accent); border-color: var(--fd-accent); }
+.mind-linking-from .beat-card { outline: 2px dashed var(--fd-accent); }
+.mind-link-target .beat-card { outline: 1px dashed var(--fd-text-muted); }
+/* Shapes: rectangle (default), rounded, ellipse. Bigger card = bigger title
+   (emphasis) via --mind-title-size. */
+.beat-card-wrap-free .beat-card-title { font-size: var(--mind-title-size, 13px); }
+.mind-shape-rect .beat-card { border-radius: 2px; }
+.mind-shape-rounded .beat-card { border-radius: 16px; }
+.mind-shape-ellipse .beat-card {
+  border-radius: 50%;
+  padding: 18px 26px;
+  text-align: center;
+}

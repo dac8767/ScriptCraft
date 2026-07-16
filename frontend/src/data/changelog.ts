@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.32';
+export const APP_VERSION = '2.33';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.33',
+    date: '2026-07-16',
+    items: [
+      { title: 'Freeform is a mind map now', detail: 'Hover a card for two new buttons: one cycles its shape (rectangle → rounded → ellipse), the other draws a connection — click it, then click another card\'s link button, and a line joins them (click the line to remove it). Cards still drag anywhere and resize from the corner, and the title now grows with the card, so big cards read as big beats.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '2.32',
     date: '2026-07-16',

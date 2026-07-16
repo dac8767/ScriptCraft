@@ -795,6 +795,10 @@ export interface BeatInfo {
   outlineLane?: 0 | 1;
   outlinePage?: number;
   outlineSpan?: number;
+  /** v2.33 mind map (Freeform arrangement): the card's shape and the ids of
+   *  beats this one draws connector lines to. */
+  mindShape?: 'rect' | 'rounded' | 'ellipse';
+  mindLinks?: string[];
 }
 
 export type BeatArrangeMode = 'auto' | 'custom';

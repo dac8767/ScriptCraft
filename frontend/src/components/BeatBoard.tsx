@@ -22,7 +22,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { FaRegCircle, FaDotCircle } from 'react-icons/fa';
+import { FaRegCircle, FaDotCircle, FaShapes, FaLink } from 'react-icons/fa';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 import { confirmDialog, promptDialog } from './ConfirmDialog';
@@ -673,7 +673,25 @@ interface FreeBeatCardProps {
   onDelete: (id: string) => void;
 }
 
-const FreeBeatCard: React.FC<FreeBeatCardProps> = ({ beat, onUpdate, onDelete }) => {
+/* v2.33: mind-map helpers — pure, exported for the test. */
+export const MIND_SHAPES = ['rect', 'rounded', 'ellipse'] as const;
+export function nextMindShape(s: string | undefined): 'rect' | 'rounded' | 'ellipse' {
+  const i = MIND_SHAPES.indexOf((s ?? 'rect') as typeof MIND_SHAPES[number]);
+  return MIND_SHAPES[(i + 1) % MIND_SHAPES.length];
+}
+export function toggleMindLink(links: string[] | undefined, target: string): string[] {
+  const cur = links ?? [];
+  return cur.includes(target) ? cur.filter((x) => x !== target) : [...cur, target];
+}
+/** Emphasis: the title grows with the card, clamped to stay readable. */
+export function mindTitleSize(cardWidth: number): number {
+  return Math.max(13, Math.min(24, Math.round((cardWidth || 240) / 15)));
+}
+
+const FreeBeatCard: React.FC<FreeBeatCardProps & {
+  linking: string | null;
+  onLinkClick: (id: string) => void;
+}> = ({ beat, onUpdate, onDelete, linking, onLinkClick }) => {
   const dragRef = useRef<{ startX: number; startY: number; beatX: number; beatY: number } | null>(null);
 
   const handleResize = useCallback(
@@ -716,10 +734,31 @@ const FreeBeatCard: React.FC<FreeBeatCardProps> = ({ beat, onUpdate, onDelete })
     top: by,
     width: beat.cardWidth || 240,
     zIndex: 1,
+    // v2.33: emphasis — the title scales with the card's size.
+    ['--mind-title-size' as string]: `${mindTitleSize(beat.cardWidth)}px`,
   };
+  const shape = beat.mindShape ?? 'rect';
 
   return (
-    <div style={wrapStyle} className="beat-card-wrap beat-card-wrap-free">
+    <div
+      style={wrapStyle}
+      className={`beat-card-wrap beat-card-wrap-free mind-shape-${shape}${linking === beat.id ? ' mind-linking-from' : ''}${linking && linking !== beat.id ? ' mind-link-target' : ''}`}
+    >
+      {/* v2.33: mind-map controls — cycle the shape, draw a connection. */}
+      <div className="mind-controls">
+        <button
+          className="mind-btn"
+          title={`Shape: ${shape} — click to change`}
+          onClick={(e) => { e.stopPropagation(); onUpdate(beat.id, { mindShape: nextMindShape(shape) }); }}
+        ><FaShapes /></button>
+        <button
+          className={`mind-btn${linking === beat.id ? ' active' : ''}`}
+          title={linking && linking !== beat.id
+            ? 'Connect to this card'
+            : linking === beat.id ? 'Cancel connecting' : 'Draw a connection — then click another card\'s link button'}
+          onClick={(e) => { e.stopPropagation(); onLinkClick(beat.id); }}
+        ><FaLink /></button>
+      </div>
       <BeatCardContent
         beat={beat}
         onUpdate={onUpdate}
@@ -748,14 +787,54 @@ interface CustomCanvasProps {
 const CustomCanvas: React.FC<CustomCanvasProps> = ({
   beats, onUpdateBeat, onDeleteBeat,
 }) => {
+  /* v2.33: mind map — click one card's link button, then another's, and a
+     line connects them (stored on the first beat's mindLinks; clicking a
+     line removes it). */
+  const [linking, setLinking] = useState<string | null>(null);
+  const handleLinkClick = (id: string) => {
+    if (!linking) { setLinking(id); return; }
+    if (linking === id) { setLinking(null); return; }
+    const from = beats.find((b) => b.id === linking);
+    if (from) onUpdateBeat(from.id, { mindLinks: toggleMindLink(from.mindLinks, id) });
+    setLinking(null);
+  };
+  const center = (b: BeatInfo) => ({
+    cx: (b.x || 0) + (b.cardWidth || 240) / 2,
+    cy: (b.y || 0) + (b.cardHeight || 110) / 2,
+  });
+  const lines: Array<{ from: BeatInfo; to: BeatInfo }> = [];
+  for (const b of beats) {
+    for (const t of b.mindLinks ?? []) {
+      const other = beats.find((x) => x.id === t);
+      if (other) lines.push({ from: b, to: other });
+    }
+  }
+
   return (
     <div className="beat-custom-canvas">
+      <svg className="mind-lines" aria-hidden="true">
+        {lines.map(({ from, to }) => {
+          const a = center(from);
+          const b = center(to);
+          return (
+            <line
+              key={`${from.id}-${to.id}`}
+              x1={a.cx} y1={a.cy} x2={b.cx} y2={b.cy}
+              onClick={() => onUpdateBeat(from.id, { mindLinks: toggleMindLink(from.mindLinks, to.id) })}
+            >
+              <title>Click to remove this connection</title>
+            </line>
+          );
+        })}
+      </svg>
       {beats.map((beat) => (
         <FreeBeatCard
           key={beat.id}
           beat={beat}
           onUpdate={onUpdateBeat}
           onDelete={onDeleteBeat}
+          linking={linking}
+          onLinkClick={handleLinkClick}
         />
       ))}
     </div>
