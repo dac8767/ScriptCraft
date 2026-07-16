@@ -622,24 +622,21 @@ const ScreenplayEditor: React.FC = () => {
 
   const editorMainRef = useRef<HTMLDivElement>(null);
 
-  /* v2.29: the whole top chrome (menu bar + toolbar + outline bar) resizes
-     as ONE from the strip at its bottom edge. The drag scales each visible
-     part proportionally: the bars via their custom px (mode flips to
-     'custom'), the outline bar via its row scale. */
+  /* v2.29/v2.31, Derek: two separate grips. The strip UNDER the menu bar +
+     toolbar scales those two together (custom px, mode flips to 'custom');
+     the strip at the very bottom — only when the outline bar is open —
+     scales the outline bar's row height alone. */
   const topChromeRef = useRef<HTMLDivElement>(null);
-  const startTopChromeResize = useCallback((e: React.PointerEvent) => {
+  const startBarsResize = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
-    const el = topChromeRef.current;
-    if (!el) return;
-    const h0 = el.offsetHeight;
-    if (h0 <= 0) return;
     const startY = e.clientY;
     const s0 = useEditorStore.getState();
     const menu0 = chromePx('menu', s0.menuMode === 'hidden' ? 'compact' : s0.menuMode, s0.chromeCustomPx.menu);
     const toolbar0 = chromePx('toolbar', s0.toolbarMode === 'hidden' ? 'compact' : s0.toolbarMode, s0.chromeCustomPx.toolbar);
-    const rowScale0 = s0.outlineBarRowScale;
     const menuHidden = s0.menuMode === 'hidden';
     const toolbarHidden = s0.toolbarMode === 'hidden';
+    const h0 = menu0 + toolbar0;
+    if (h0 <= 0) return;
     const onMove = (ev: PointerEvent) => {
       const f = Math.min(2.5, Math.max(0.5, (h0 + ev.clientY - startY) / h0));
       const st = useEditorStore.getState();
@@ -651,7 +648,21 @@ const ScreenplayEditor: React.FC = () => {
         if (st.toolbarMode !== 'custom') st.setToolbarMode('custom');
         st.setChromeCustomPx('toolbar', Math.min(chromeMax('toolbar'), Math.max(chromeMin('toolbar'), Math.round(toolbar0 * f))));
       }
-      if (st.outlineBarOpen) st.setOutlineBarRowScale(rowScale0 * f);
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }, []);
+  const startOutlineBarResize = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const rowScale0 = useEditorStore.getState().outlineBarRowScale;
+    const onMove = (ev: PointerEvent) => {
+      // ~90px of mouse spans the whole 0.7–2.5 scale range comfortably.
+      useEditorStore.getState().setOutlineBarRowScale(rowScale0 + (ev.clientY - startY) / 50);
     };
     const onUp = () => {
       window.removeEventListener('pointermove', onMove);
@@ -4013,13 +4024,22 @@ const ScreenplayEditor: React.FC = () => {
         </div>
         <BigButtonBar />
       </div>
-      {/* v1.75: Outline Bar — FD-style outline lanes directly under the toolbar. */}
-      {outlineBarOpen && <OutlineBar editor={editor} />}
+      {/* v2.31: this line scales the menu bar + toolbar together… */}
       <div
         className="fs-top-chrome-resize"
-        title="Drag to resize the top bars together"
-        onPointerDown={startTopChromeResize}
+        title="Drag to resize the menu bar and toolbar together"
+        onPointerDown={startBarsResize}
       />
+      {/* v1.75: Outline Bar — FD-style outline lanes directly under the toolbar. */}
+      {outlineBarOpen && <OutlineBar editor={editor} />}
+      {/* …and the bottom-most edge scales the outline bar's rows alone. */}
+      {outlineBarOpen && (
+        <div
+          className="fs-top-chrome-resize"
+          title="Drag to resize the outline bar"
+          onPointerDown={startOutlineBarResize}
+        />
+      )}
       </div>
       )}
       <div className={`editor-layout${previewMode ? " preview-mode" : " hide-title-page"}`}>

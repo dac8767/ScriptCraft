@@ -361,7 +361,14 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         </p>
         {/* v2.29, Derek: the per-side size rows are gone — panel width is
             all manual (drag the panel's inner edge; drag it small enough
-            and it snaps into the icon rail). */}
+            and it snaps into the icon rail). v2.31: plus a way back. */}
+        <div className="fs-customize-row fs-size-row">
+          <span className="fs-customize-tool">Panel Size</span>
+          <span className="fs-customize-seg">
+            <button onClick={() => useEditorStore.getState().setPanelSizeMode('left', 'comfortable')}>Reset Left to Default</button>
+            <button onClick={() => useEditorStore.getState().setPanelSizeMode('right', 'comfortable')}>Reset Right to Default</button>
+          </span>
+        </div>
         {/* v1.76: Outlook-style — Left Panel, Right Panel, Hidden. Drag
             between the three; the column a tool lands in is its side, and
             drop position is its position. Dividers and spacers dropped on
@@ -679,7 +686,18 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               where it sits on the bar. File always stays visible.
             </p>
             {/* v2.29, Derek: NO sizing options in Customize — sizing is all
-                manual on the main screen (drag the strip under the top bars). */}
+                manual on the main screen (drag the strip under the top bars).
+                v2.31: except a way back to the default size. */}
+            <div className="fs-customize-row fs-size-row">
+              <span className="fs-customize-tool">Menu Bar</span>
+              <span className="fs-customize-seg">
+                <button onClick={() => {
+                  const st = useEditorStore.getState();
+                  st.setMenuMode('compact');
+                  st.setChromeGap('menu', 0);
+                }}>Reset to Default Size</button>
+              </span>
+            </div>
             {/* v1.76: Outlook-style — Shown on the left, Hidden on the right,
                 drag between them; drop position IS the menu's position. */}
             <DndColumns
@@ -777,6 +795,18 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   className={toolbarMode === 'hidden' ? 'active' : ''}
                   onClick={() => setToolbarMode('hidden')}
                 >Hide</button>
+              </span>
+              {/* v2.31: the way back after manual resizing. */}
+              <span className="fs-customize-seg">
+                <button onClick={() => {
+                  const st = useEditorStore.getState();
+                  st.setToolbarMode('compact');
+                  st.setChromeGap('toolbar', 2);
+                  st.setChromeGap('bigbtn', 0);
+                }}>Reset to Default Size</button>
+                <button onClick={() => useEditorStore.getState().setOutlineBarRowScale(1)}>
+                  Reset Outline Bar Height
+                </button>
               </span>
             </div>
 

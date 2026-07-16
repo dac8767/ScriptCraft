@@ -27,6 +27,8 @@ import { useEditorStore, type BeatInfo, type BeatColumn } from '../stores/editor
 import { computeSceneLengths } from '../editor/pagination';
 import AddMenu from './AddMenu';
 import { showToast } from './Toast';
+import { confirmDialog } from './ConfirmDialog';
+import { BEAT_COLORS } from './BeatBoard';
 
 const SNAP = 1;                   // v2.16, Derek: whole pages only — no decimals
 const DEFAULT_SPAN = 1;           // beats default to one page
@@ -121,9 +123,9 @@ function collectScenes(editor: Editor | null): Array<{ text: string; pos: number
   return scenes;
 }
 
-/** The right-click "target pages" popover — portalled to body, positioned
- *  by top/left only (never bottom). */
-interface PagesPop { kind: 'column' | 'beat'; id: string; x: number; y: number; value: number }
+/** v2.31: the right-click menu — name, pages and (for beats) color in one
+ *  portalled popover, positioned by top/left only (never bottom). */
+interface PagesPop { kind: 'column' | 'beat'; id: string; x: number; y: number; value: number; name: string }
 
 export default function OutlineBar({ editor }: { editor: Editor | null }) {
   const beats = useEditorStore((s) => s.beats);
@@ -143,8 +145,9 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
   const pageLayout = useEditorStore((s) => s.pageLayout);
   const zoom = useEditorStore((s) => s.outlineBarZoom);
   const setZoom = useEditorStore((s) => s.setOutlineBarZoom);
+  // v2.31: row height is set by dragging the bar's bottom edge (the strip
+  // lives in ScreenplayEditor's top chrome) — the bar just renders it.
   const rowScale = useEditorStore((s) => s.outlineBarRowScale);
-  const setRowScale = useEditorStore((s) => s.setOutlineBarRowScale);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [viewW, setViewW] = useState(0);
@@ -277,33 +280,8 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
     barAssignBeat(d.id, act.id, index);
   };
 
-  /* ── double-click: rename in place (v2.16) — the same title the
-        Outline board shows, one model. ── */
-  const [renaming, setRenaming] = useState<{ kind: 'column' | 'beat'; id: string } | null>(null);
-  const commitRename = (value: string) => {
-    if (!renaming) return;
-    const title = value.trim();
-    if (title) {
-      if (renaming.kind === 'column') barUpdateColumn(renaming.id, { title });
-      else updateBeat(renaming.id, { title });
-    }
-    setRenaming(null);
-  };
-  const renameInput = (defaultValue: string) => (
-    <input
-      autoFocus
-      className="fs-ob-rename"
-      defaultValue={defaultValue}
-      onPointerDown={(e) => e.stopPropagation()}
-      onBlur={(e) => commitRename(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-        if (e.key === 'Escape') setRenaming(null);
-      }}
-    />
-  );
-
-  /* ── right-click: type the page target ── */
+  /* ── right-click: name / pages / color (v2.31 — rename moved here from
+        double-click, which now jumps to the script) ── */
   const [pop, setPop] = useState<PagesPop | null>(null);
   useEffect(() => {
     if (!pop) return;
@@ -319,16 +297,26 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
     };
   }, [pop]);
 
-  const openPop = (e: React.MouseEvent, kind: PagesPop['kind'], id: string, value: number) => {
+  const openPop = (e: React.MouseEvent, kind: PagesPop['kind'], id: string, value: number, name: string) => {
     e.preventDefault();
-    setPop({ kind, id, x: Math.min(e.clientX, window.innerWidth - 200), y: e.clientY + 4, value });
+    setPop({ kind, id, x: Math.min(e.clientX, window.innerWidth - 220), y: e.clientY + 4, value, name });
   };
   const commitPop = () => {
     if (!pop) return;
     const v = Math.max(1, Math.round(pop.value));   // whole pages only
-    if (pop.kind === 'column') barUpdateColumn(pop.id, { targetPages: v });
-    else updateBeat(pop.id, { outlineSpan: v });
+    const title = pop.name.trim();
+    if (pop.kind === 'column') barUpdateColumn(pop.id, { targetPages: v, ...(title ? { title } : {}) });
+    else updateBeat(pop.id, { outlineSpan: v, ...(title ? { title } : {}) });
     setPop(null);
+  };
+
+  /* v2.31, Derek: double-click jumps to the matching spot in the SCRIPT —
+     the scene whose real page range contains the item's start page. */
+  const jumpToPage = (page: number) => {
+    if (!editor || editor.isDestroyed || scenes.length === 0) return;
+    const scene = scenes.find((s) => page >= s.start && page < s.start + s.pages)
+      ?? (page < scenes[0].start ? scenes[0] : scenes[scenes.length - 1]);
+    jumpToScene(scene.pos);
   };
 
   /* ── actions ── */
@@ -415,21 +403,6 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
   };
   const endNavDrag = () => { navDrag.current = null; };
 
-  /* v2.27: the vertical scaler at the far right — drag to grow/shrink every
-     lane and the ruler (Premiere's track-height bar). */
-  const vDrag = useRef<{ startY: number; startScale: number } | null>(null);
-  const startVDrag = (e: React.PointerEvent) => {
-    e.preventDefault(); e.stopPropagation();
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-    vDrag.current = { startY: e.clientY, startScale: rowScale };
-  };
-  const onVMove = (e: React.PointerEvent) => {
-    const d = vDrag.current;
-    if (!d) return;
-    setRowScale(d.startScale + (e.clientY - d.startY) / 80);   // 80px ≈ one scale step
-  };
-  const endVDrag = () => { vDrag.current = null; };
-
   const navThumb = navThumbGeometry(scrollX, viewW, trackW);
 
   /* ── ruler ticks: label density follows the zoom ── */
@@ -441,43 +414,43 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
 
   return (
     <div className="fs-outline-bar">
-      <div className="fs-ob-side">
-        <span className="fs-ob-title">Outline</span>
-        {/* v2.16: one tidy row of equal square buttons. */}
-        <div className="fs-ob-actions">
-          <AddMenu
-            label="＋"
-            title="Add a section (column) or a beat"
-            center
-            onPick={addFromMenu}
-            groups={[{
-              label: 'Add',
-              options: [
-                { value: 'section', label: 'Section' },
-                { value: 'beat', label: 'Beat' },
-              ],
-            }]}
-          />
-          <button
-            className="fs-ob-iconbtn"
-            onClick={sendToScript}
-            disabled={beats.length === 0}
-            title="Send to Script — insert each beat as a section line (# …)"
-          >
-            <FaFileExport />
-          </button>
-        </div>
-        {/* v2.30: which outline variation the bar is showing. */}
-        {outlineTabs.length > 1 && (
-          <span className="fs-ob-tabname" title="The Outline tab this bar shows — pick it with the ◉ on the tab">
-            {outlineTabs.find((t) => t.id === barTab)?.name}
-          </span>
-        )}
-        {/* v2.28: the zoom slider is gone — the navigator bar under the
-            tracks scrolls AND rescales (Premiere's model). Fit stays. */}
-        <div className="fs-ob-zoom" title="Fit the whole ruler to the visible width">
-          <button className={zoom === 0 ? 'active' : ''} onClick={() => setZoom(0)}>Fit</button>
-        </div>
+      {/* v2.31, Derek: a slim column of exactly three buttons — add, send
+          to script, Fit. No "Outline" title; the tooltip names the tab. */}
+      <div
+        className="fs-ob-side"
+        title={outlineTabs.length > 1 ? `Showing: ${outlineTabs.find((t) => t.id === barTab)?.name ?? ''}` : undefined}
+      >
+        <AddMenu
+          label="＋"
+          title="Add a section or a beat"
+          center
+          onPick={addFromMenu}
+          groups={[{
+            label: 'Add',
+            options: [
+              { value: 'section', label: 'Section' },
+              { value: 'beat', label: 'Beat' },
+            ],
+          }]}
+        />
+        <button
+          className="fs-ob-iconbtn"
+          onClick={async () => {
+            if (await confirmDialog(
+              `Insert all ${beats.length} beat${beats.length === 1 ? '' : 's'} into the script as section lines (# …)?`,
+              { title: 'Send to Script', confirmLabel: 'Insert' },
+            )) sendToScript();
+          }}
+          disabled={beats.length === 0}
+          title="Send to Script — insert each beat as a section line (# …)"
+        >
+          <FaFileExport />
+        </button>
+        <button
+          className={`fs-ob-fitbtn${zoom === 0 ? ' active' : ''}`}
+          onClick={() => setZoom(0)}
+          title="Fit the whole ruler to the visible width"
+        >Fit</button>
       </div>
 
       <div className="fs-ob-main">
@@ -504,9 +477,9 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
                 key={a.id}
                 className={`fs-ob-act fs-ob-act-${i % 3}`}
                 style={{ left: pctLeft(a.start), width: pctWidth(a.pages) }}
-                title={`${a.title} — ${a.pages}p (${a.start}–${a.start + a.pages - 1})\nRight-click to set the target page count`}
-                onContextMenu={(e) => openPop(e, 'column', a.id, a.pages)}
-                onDoubleClick={() => setRenaming({ kind: 'column', id: a.id })}
+                title={`${a.title} — ${a.pages}p (${a.start}–${a.start + a.pages - 1})\nDouble-click: jump to this spot in the script. Right-click: rename / set pages`}
+                onContextMenu={(e) => openPop(e, 'column', a.id, a.pages, a.title)}
+                onDoubleClick={() => jumpToPage(a.start)}
               >
                 {i > 0 && (
                   <span
@@ -519,9 +492,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
                 )}
                 {/* v2.15: no page count on the block — the ruler shows it,
                     and the hover tooltip spells it out. */}
-                {renaming?.kind === 'column' && renaming.id === a.id
-                  ? renameInput(a.title)
-                  : <span className="fs-ob-act-title">{a.title}</span>}
+                <span className="fs-ob-act-title">{a.title}</span>
                 <span
                   className="fs-ob-beat-resize"
                   title="Drag to change this section's page budget"
@@ -548,16 +519,14 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
                   key={b.id}
                   className={`fs-ob-beat${ghost?.id === b.id ? ' fs-ob-beat-dragging' : ''}`}
                   style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: b.color || undefined }}
-                  title={`${b.title} — p${page}, ${l.span}p${b.description ? `\n${b.description}` : ''}\nDrag to move between sections; right-click to set the page target`}
+                  title={`${b.title} — p${page}, ${l.span}p${b.description ? `\n${b.description}` : ''}\nDouble-click: jump to this spot in the script. Right-click: rename / pages / color`}
                   onPointerDown={(e) => startBeatDrag(e, b, 'move')}
                   onPointerMove={onPointerMove}
                   onPointerUp={onPointerUp}
-                  onContextMenu={(e) => openPop(e, 'beat', b.id, l.span)}
-                  onDoubleClick={() => setRenaming({ kind: 'beat', id: b.id })}
+                  onContextMenu={(e) => openPop(e, 'beat', b.id, l.span, b.title)}
+                  onDoubleClick={() => jumpToPage(page)}
                 >
-                  {renaming?.kind === 'beat' && renaming.id === b.id
-                    ? renameInput(b.title)
-                    : <span className="fs-ob-beat-title">{b.title}</span>}
+                  <span className="fs-ob-beat-title">{b.title}</span>
                   <span
                     className="fs-ob-beat-resize"
                     title="Drag to change the page span"
@@ -626,23 +595,22 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
         </div>
       </div>
 
-      {/* v2.28: vertical scaler — drag to grow/shrink every row (Premiere's
-          track-height bar). */}
-      <div className="fs-ob-vscale" title="Drag to change the row height">
-        <div
-          className="fs-ob-vscale-thumb"
-          onPointerDown={startVDrag}
-          onPointerMove={onVMove}
-          onPointerUp={endVDrag}
-        />
-      </div>
-
+      {/* v2.31: right-click menu — name, pages, and (beats) color. */}
       {pop && createPortal(
         <div className="fs-ob-pagespop" style={{ top: pop.y, left: pop.x }}>
           <label>
-            Target pages
+            Name
             <input
               autoFocus
+              type="text"
+              value={pop.name}
+              onChange={(e) => setPop({ ...pop, name: e.target.value })}
+              onKeyDown={(e) => { if (e.key === 'Enter') commitPop(); }}
+            />
+          </label>
+          <label>
+            Pages
+            <input
               type="number"
               min={1}
               step={1}
@@ -651,6 +619,19 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
               onKeyDown={(e) => { if (e.key === 'Enter') commitPop(); }}
             />
           </label>
+          {pop.kind === 'beat' && (
+            <div className="fs-ob-pop-colors">
+              {BEAT_COLORS.map((c) => (
+                <button
+                  key={c || 'none'}
+                  className="fs-ob-pop-swatch"
+                  style={{ background: c || 'transparent' }}
+                  title={c ? c : 'No color'}
+                  onClick={() => updateBeat(pop.id, { color: c })}
+                >{c ? '' : '∅'}</button>
+              ))}
+            </div>
+          )}
           <button onClick={commitPop}>Set</button>
         </div>,
         document.body,

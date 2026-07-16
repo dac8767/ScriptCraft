@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.30';
+export const APP_VERSION = '2.31';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.31',
+    date: '2026-07-16',
+    items: [
+      { title: 'Two grips for the top of the app', detail: 'The line between the toolbar and the outline bar scales the menu bar + toolbar together; the bottom-most edge (when the outline bar is on) scales the outline bar\'s rows alone. The scaler that sat on the bar\'s right edge is gone, and Customize gained Reset-to-Default-Size buttons for the menu bar, toolbar, outline bar and side panels.', tags: ['UI'] },
+      { title: 'Outline Bar: slimmer controls, smarter clicks', detail: 'The side of the bar is now just three stacked buttons — add, send to script (with a confirmation so a stray click can\'t dump every beat into the script), and Fit. Double-clicking any bar item jumps to that spot in the script; right-click opens a menu with name, pages and (for beats) color.', tags: ['Tools', 'UI'] },
+    ],
+  },
   {
     version: '2.30',
     date: '2026-07-16',

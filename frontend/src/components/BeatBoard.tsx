@@ -30,7 +30,9 @@ import { showToast } from './Toast';
 import { saveFile, openTextFile } from '../utils/fileOps';
 import { api } from '../services/api';
 
-const BEAT_COLORS = [
+/* v2.31: exported — the Outline Bar's right-click menu offers the SAME
+   palette the board's color picker uses. One list. */
+export const BEAT_COLORS = [
   '', '#8b5cf6', '#4f46e5', '#2563eb', '#059669',
   '#eab308', '#f97316', '#ef4444', '#000000', '#ffffff',
 ];
