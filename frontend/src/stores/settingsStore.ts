@@ -63,6 +63,11 @@ interface SettingsState {
   setWindowStartup: (v: 'maximized' | 'remember') => void;
   /** Theme follows the OS light/dark appearance. */
   followSystemTheme: boolean;
+  /** v2.93: where the menus live. 'native' installs them in the real macOS
+   *  menu bar and hides the in-window bar; 'inWindow' is the classic bar.
+   *  The in-window system stays fully intact — flipping back IS the revert. */
+  menuSystem: 'inWindow' | 'native';
+  setMenuSystem: (v: 'inWindow' | 'native') => void;
   setFollowSystemTheme: (v: boolean) => void;
   /** v2.15 (Settings > Tools): launching the Scrapbook hides every other
    *  sidebar item and its panel window fills the sidebar; Return to editor
@@ -135,6 +140,7 @@ const STORAGE_KEY_DATEFMT = 'opendraft:dateFormat';
 const STORAGE_KEY_SPELLDEF = 'opendraft:spellCheckByDefault';
 const STORAGE_KEY_WINSTART = 'opendraft:windowStartup';
 const STORAGE_KEY_SYSTHEME = 'opendraft:followSystemTheme';
+const STORAGE_KEY_MENUSYS = 'opendraft:menuSystem';
 const STORAGE_KEY_SBEXCL = 'opendraft:scrapbookExclusive';
 const STORAGE_KEY_DRAFTDEF = 'opendraft:defaultDraftLabel';
 const STORAGE_KEY_SMARTTYPO = 'opendraft:smartTypography';
@@ -238,6 +244,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setWindowStartup: (v) => {
     try { localStorage.setItem(STORAGE_KEY_WINSTART, v); } catch { /* ignore */ }
     set({ windowStartup: v });
+  },
+  menuSystem: (localStorage.getItem(STORAGE_KEY_MENUSYS) === 'native' ? 'native' : 'inWindow'),
+  setMenuSystem: (v) => {
+    try { localStorage.setItem(STORAGE_KEY_MENUSYS, v); } catch { /* ignore */ }
+    set({ menuSystem: v });
   },
   followSystemTheme: localStorage.getItem(STORAGE_KEY_SYSTHEME) === '1',
   setFollowSystemTheme: (v) => {

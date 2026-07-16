@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.92';
+export const APP_VERSION = '2.93';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.93',
+    date: '2026-07-16',
+    items: [
+      { title: 'The menus can live in the real macOS menu bar', detail: 'Settings > General > Menus: choose "The macOS menu bar" and every menu installs natively next to the  — same items, order, shortcuts, and live labels, including the Scrapbook\'s contextual menus. The in-window bar hides and the script gains its room. Icons, the table-size grid, and drag-to-reorder are in-window-only by nature; switching back restores the classic bar instantly. The pre-migration state is also archived on the backup/web-menus-v2.92 branch.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '2.92',
     date: '2026-07-16',

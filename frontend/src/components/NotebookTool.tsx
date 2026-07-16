@@ -999,6 +999,9 @@ export function useScrapbookMenus(): Array<{
       {
         label: 'Insert Table',
         disabled: !page,
+        // v2.93: the native menu bar can't host the grid — its item falls
+        // back to this plain action (default 2×2; resize from the Table menu).
+        action: () => window.dispatchEvent(new CustomEvent('nb-add-table-canvas', { detail: { rows: 2, cols: 2 } })),
         // v2.62: the submenu IS the grid picker — sweep out a size, click.
         render: (close: () => void) => (
           <TableGridPicker

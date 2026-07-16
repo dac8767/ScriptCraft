@@ -64,6 +64,8 @@ import { useScrapbookMenus } from './NotebookTool';
 import { FaTable, FaImage as FaImageIcon } from 'react-icons/fa';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import GapHandle from './GapHandle';
+import { syncNativeMenu, uninstallNativeMenu } from '../menu/nativeMenuSync';
+import { isTauri as isTauriEnv } from '../services/platform';
 import { eventToCombo, COMMAND_BY_ID, formatCombo } from './shortcuts';
 import { useShortcutStore } from '../stores/shortcutStore';
 import { CHANGELOG, APP_VERSION, ALL_TAGS, TAG_META, tagsFor, type ChangeTag } from '../data/changelog';
@@ -2119,6 +2121,21 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     </>
   );
 
+  // v2.93, Derek: the menus can live in the REAL macOS menu bar. Same
+  // MenuSection data, mirrored natively; the in-window bar (and its
+  // dropdown portal) stays unrendered while native mode is on — but the
+  // component itself stays mounted: it owns the dialogs, the shortcut
+  // handler, and the menu data the native bar mirrors.
+  const menuSystem = useSettingsStore((st) => st.menuSystem);
+  const nativeMenus = menuSystem === 'native' && isTauriEnv();
+  useEffect(() => {
+    if (nativeMenus) {
+      void syncNativeMenu([...orderedMenus, ...scrapbookMenus] as never);
+    } else {
+      void uninstallNativeMenu();
+    }
+  });
+
   return (
     <>
     {/* v1.83: hidden picker behind Format > Highlighting > Custom… */}
@@ -2131,7 +2148,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       aria-hidden="true"
       tabIndex={-1}
     />
-    {menuMode === 'hidden' ? (
+    {nativeMenus ? null : menuMode === 'hidden' ? (
       createPortal(
         <>
           <div
@@ -2179,7 +2196,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {renderMenuItems()}
       </div>
     )}
-    {activeMenuData && createPortal(
+    {!nativeMenus && activeMenuData && createPortal(
       <div
         className={`menu-dropdown${menuMode === 'comfortable' ? ' menu-dropdown--comfortable' : ''}${dropdownPos.bottom != null ? ' menu-dropdown--above' : ''}`}
         style={{ top: dropdownPos.top, bottom: dropdownPos.bottom, left: dropdownPos.left }}

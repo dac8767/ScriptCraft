@@ -426,6 +426,7 @@ function GeneralTab() {
     spellCheckByDefault, setSpellCheckByDefault,
     windowStartup, setWindowStartup,
     followSystemTheme, setFollowSystemTheme,
+    menuSystem, setMenuSystem,
     smartTypography, setSmartTypography,
     units, setUnits,
     timeFormat, setTimeFormat,
@@ -481,6 +482,23 @@ function GeneralTab() {
         <p className="prefs-hint">
           Switches between the Dark and Light themes when macOS does. Picking
           a theme by hand still works; the next system change follows again.
+        </p>
+      </section>
+
+      <section>
+        <h3>Menus</h3>
+        <label className="prefs-field-row">
+          <span>Menu bar lives in:</span>
+          <select value={menuSystem} onChange={(e) => setMenuSystem(e.target.value as 'inWindow' | 'native')}>
+            <option value="inWindow">The app window (classic)</option>
+            <option value="native">The macOS menu bar</option>
+          </select>
+        </label>
+        <p className="prefs-hint">
+          v2.93 (experimental): the same menus, installed in the real menu bar
+          next to the  — the in-window bar hides and the script gains its
+          room. Icons, the table-size grid, and drag-to-reorder stay in-window
+          only. Switching back here restores the classic bar instantly.
         </p>
       </section>
 
