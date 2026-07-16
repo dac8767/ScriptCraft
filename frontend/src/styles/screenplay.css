@@ -13172,12 +13172,65 @@ html.android .version-history-panel {
 .fs-ob-zoom input[type='range'] { width: 70px; }
 
 /* v2.11: the tracks scroll horizontally; width = pages × zoom. */
-.fs-ob-scroll {
+.fs-ob-main {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.fs-ob-scroll {
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
+  /* v2.28: the navigator below is the scrollbar — hide the native one. */
+  scrollbar-width: none;
 }
+.fs-ob-scroll::-webkit-scrollbar { display: none; }
+/* v2.28: the Premiere-style navigator — scroll and rescale from one bar. */
+.fs-ob-nav {
+  position: relative;
+  height: 14px;
+  margin-top: 3px;
+  border-radius: 7px;
+  background: var(--fd-overlay-subtle);
+}
+.fs-ob-nav-thumb {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 7px;
+  background: var(--fd-border);
+  cursor: grab;
+}
+.fs-ob-nav-thumb:hover { filter: brightness(1.15); }
+.fs-ob-nav-handle {
+  position: absolute;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--fd-text-muted);
+  cursor: ew-resize;
+}
+.fs-ob-nav-handle-l { left: 1px; }
+.fs-ob-nav-handle-r { right: 1px; }
+/* v2.28: vertical scaler at the far right — drag to change row heights. */
+.fs-ob-vscale {
+  width: 14px;
+  margin-left: 3px;
+  border-radius: 7px;
+  background: var(--fd-overlay-subtle);
+  display: flex;
+  align-items: stretch;
+}
+.fs-ob-vscale-thumb {
+  flex: 1;
+  margin: 2px;
+  border-radius: 5px;
+  background: var(--fd-border);
+  cursor: ns-resize;
+}
+.fs-ob-vscale-thumb:hover { filter: brightness(1.15); }
 .fs-ob-tracks {
   display: flex;
   flex-direction: column;
@@ -13186,7 +13239,7 @@ html.android .version-history-panel {
 }
 .fs-ob-lane {
   position: relative;
-  height: 26px;
+  height: var(--ob-lane-h, 26px);
   background: var(--fd-overlay-subtle);
   border-radius: 4px;
 }
@@ -13301,7 +13354,7 @@ html.android .version-history-panel {
 /* v2.11: the page ruler — increments 1..total, like a measuring tape. */
 .fs-ob-ruler {
   position: relative;
-  height: 16px;
+  height: var(--ob-ruler-h, 16px);
 }
 .fs-ob-tick {
   position: absolute;

@@ -42,6 +42,19 @@ export function snapPage(page: number, span: number, totalPages: number): number
   return Math.min(Math.max(1, snapped), Math.max(1, totalPages - span + 1));
 }
 
+/** v2.27: the navigator thumb (Premiere-style). One bar both scrolls and
+ *  rescales: the thumb spans the visible fraction of the track; its left
+ *  edge tracks scrollLeft. Exported for the test. */
+export function navThumbGeometry(scrollX: number, viewW: number, trackW: number, minWidthPx = 24) {
+  const navW = Math.max(1, viewW);
+  const frac = trackW > 0 ? Math.min(1, viewW / trackW) : 1;
+  const width = Math.max(Math.min(minWidthPx, navW), navW * frac);
+  const maxThumbL = navW - width;
+  const maxScroll = Math.max(0, trackW - viewW);
+  const left = maxScroll > 0 ? (scrollX / maxScroll) * maxThumbL : 0;
+  return { left, width, maxThumbL, maxScroll };
+}
+
 /** Left/width percentages for a marker. Exported for the test. */
 export function markerGeometry(page: number, span: number, totalPages: number) {
   const total = Math.max(1, totalPages);
@@ -92,9 +105,12 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
   const pageLayout = useEditorStore((s) => s.pageLayout);
   const zoom = useEditorStore((s) => s.outlineBarZoom);
   const setZoom = useEditorStore((s) => s.setOutlineBarZoom);
+  const rowScale = useEditorStore((s) => s.outlineBarRowScale);
+  const setRowScale = useEditorStore((s) => s.setOutlineBarRowScale);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [viewW, setViewW] = useState(0);
+  const [scrollX, setScrollX] = useState(0);
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -297,6 +313,79 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
     editor.chain().focus().setTextSelection(pos + 1).scrollIntoView().run();
   };
 
+  /* ── v2.27: the Premiere-style navigator — ONE bar scrolls and rescales.
+        Thumb middle = scroll; either end handle = zoom, anchored on the
+        opposite edge. The native scrollbar is hidden; wheel scrolling still
+        works and keeps the thumb in sync via onScroll. ── */
+  const navDrag = useRef<{
+    kind: 'move' | 'l' | 'r';
+    startX: number; startLeft: number; startWidth: number;
+    startScroll: number; startPpp: number;
+  } | null>(null);
+  const pendingScroll = useRef<number | null>(null);
+
+  // A zoom change re-renders with a new track width before the browser can
+  // scroll — apply the anchored scroll position after layout.
+  useEffect(() => {
+    if (pendingScroll.current === null) return;
+    const el = scrollRef.current;
+    if (el) { el.scrollLeft = pendingScroll.current; setScrollX(el.scrollLeft); }
+    pendingScroll.current = null;
+  });
+
+  const startNavDrag = (e: React.PointerEvent, kind: 'move' | 'l' | 'r') => {
+    e.preventDefault(); e.stopPropagation();
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    const t = navThumbGeometry(scrollX, viewW, trackW);
+    navDrag.current = { kind, startX: e.clientX, startLeft: t.left, startWidth: t.width, startScroll: scrollX, startPpp: ppp };
+  };
+  const onNavMove = (e: React.PointerEvent) => {
+    const d = navDrag.current;
+    if (!d) return;
+    const dx = e.clientX - d.startX;
+    const navW = Math.max(1, viewW);
+    if (d.kind === 'move') {
+      const t = navThumbGeometry(d.startScroll, viewW, trackW);
+      if (t.maxThumbL <= 0) return;
+      const left = Math.min(Math.max(0, d.startLeft + dx), t.maxThumbL);
+      const el = scrollRef.current;
+      if (el) { el.scrollLeft = (left / t.maxThumbL) * t.maxScroll; setScrollX(el.scrollLeft); }
+      return;
+    }
+    // End handles: resize the visible window; the opposite edge stays put.
+    const right = d.startLeft + d.startWidth;
+    const newWidth = d.kind === 'r'
+      ? Math.min(Math.max(24, d.startWidth + dx), navW - d.startLeft)
+      : Math.min(Math.max(24, d.startWidth - dx), right);
+    const visiblePages = totalPages * (newWidth / navW);
+    const newPpp = viewW / Math.max(1, visiblePages);
+    const anchorPage = d.kind === 'r'
+      ? d.startScroll / d.startPpp                                   // left edge anchored
+      : (d.startScroll + viewW) / d.startPpp;                        // right edge anchored
+    setZoom(newPpp <= fitPpp + 0.01 ? 0 : newPpp);
+    pendingScroll.current = d.kind === 'r'
+      ? anchorPage * newPpp
+      : anchorPage * newPpp - viewW;
+  };
+  const endNavDrag = () => { navDrag.current = null; };
+
+  /* v2.27: the vertical scaler at the far right — drag to grow/shrink every
+     lane and the ruler (Premiere's track-height bar). */
+  const vDrag = useRef<{ startY: number; startScale: number } | null>(null);
+  const startVDrag = (e: React.PointerEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    vDrag.current = { startY: e.clientY, startScale: rowScale };
+  };
+  const onVMove = (e: React.PointerEvent) => {
+    const d = vDrag.current;
+    if (!d) return;
+    setRowScale(d.startScale + (e.clientY - d.startY) / 80);   // 80px ≈ one scale step
+  };
+  const endVDrag = () => { vDrag.current = null; };
+
+  const navThumb = navThumbGeometry(scrollX, viewW, trackW);
+
   /* ── ruler ticks: label density follows the zoom ── */
   const labelEvery = ppp >= 24 ? 1 : ppp >= 10 ? 5 : 10;
   const pages = useMemo(() => Array.from({ length: totalPages }, (_, i) => i + 1), [totalPages]);
@@ -342,21 +431,29 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             {unplaced.map((b) => <option key={b.id} value={b.id}>{b.title || '(untitled)'}</option>)}
           </select>
         )}
-        <div className="fs-ob-zoom" title="Zoom — how many pixels one page takes">
+        {/* v2.28: the zoom slider is gone — the navigator bar under the
+            tracks scrolls AND rescales (Premiere's model). Fit stays. */}
+        <div className="fs-ob-zoom" title="Fit the whole ruler to the visible width">
           <button className={zoom === 0 ? 'active' : ''} onClick={() => setZoom(0)}>Fit</button>
-          <input
-            type="range"
-            min={2}
-            max={64}
-            value={zoom > 0 ? zoom : Math.round(ppp)}
-            onChange={(e) => setZoom(Number(e.target.value))}
-          />
         </div>
       </div>
 
-      {/* Premiere-style: tracks scroll horizontally; labels stay pinned. */}
-      <div className="fs-ob-scroll" ref={scrollRef}>
-        <div className="fs-ob-tracks" style={{ width: trackW }}>
+      <div className="fs-ob-main">
+        {/* Premiere-style: tracks scroll horizontally; labels stay pinned. */}
+        <div
+          className="fs-ob-scroll"
+          ref={scrollRef}
+          onScroll={(e) => setScrollX(e.currentTarget.scrollLeft)}
+        >
+        <div
+          className="fs-ob-tracks"
+          style={{
+            width: trackW,
+            // v2.28: the right-edge scaler drives every row's height.
+            ['--ob-lane-h' as string]: `${Math.round(26 * rowScale)}px`,
+            ['--ob-ruler-h' as string]: `${Math.round(16 * rowScale)}px`,
+          }}
+        >
           {/* Row 1: acts / sections — sequential page budgets */}
           <div className="fs-ob-lane fs-ob-acts">
             <span className="fs-ob-lane-label">Acts</span>
@@ -467,6 +564,44 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             ))}
           </div>
         </div>
+        </div>
+
+        {/* v2.28: the navigator — always visible; drag the middle to scroll,
+            drag either round end handle to rescale (opposite edge anchored). */}
+        <div className="fs-ob-nav">
+          <div
+            className="fs-ob-nav-thumb"
+            style={{ left: navThumb.left, width: navThumb.width }}
+            title="Drag to scroll — drag an end to zoom"
+            onPointerDown={(e) => startNavDrag(e, 'move')}
+            onPointerMove={onNavMove}
+            onPointerUp={endNavDrag}
+          >
+            <span
+              className="fs-ob-nav-handle fs-ob-nav-handle-l"
+              onPointerDown={(e) => startNavDrag(e, 'l')}
+              onPointerMove={onNavMove}
+              onPointerUp={endNavDrag}
+            />
+            <span
+              className="fs-ob-nav-handle fs-ob-nav-handle-r"
+              onPointerDown={(e) => startNavDrag(e, 'r')}
+              onPointerMove={onNavMove}
+              onPointerUp={endNavDrag}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* v2.28: vertical scaler — drag to grow/shrink every row (Premiere's
+          track-height bar). */}
+      <div className="fs-ob-vscale" title="Drag to change the row height">
+        <div
+          className="fs-ob-vscale-thumb"
+          onPointerDown={startVDrag}
+          onPointerMove={onVMove}
+          onPointerUp={endVDrag}
+        />
       </div>
 
       {pop && createPortal(

@@ -21,6 +21,7 @@ interface ViewState {
   typewriterRestoreCursor?: boolean;
   outlineBarOpen?: boolean;
   outlineBarZoom?: number;
+  outlineBarRowScale?: number;
   highlightColor?: string;
   indexCardsOpen?: boolean;
   beatBoardOpen?: boolean;
@@ -968,6 +969,10 @@ interface EditorState {
    *  the whole ruler to the visible width. Persisted view state. */
   outlineBarZoom: number;
   setOutlineBarZoom: (px: number) => void;
+  /** v2.27: vertical scale of the Outline Bar's rows/ruler (1 = default).
+   *  Driven by the Premiere-style scaler at the bar's right edge. */
+  outlineBarRowScale: number;
+  setOutlineBarRowScale: (s: number) => void;
   /** v1.80: Navigator filter + kind visibility live in the store so the
    *  window's header (dropdown) and footer (filter field) — which render in
    *  the shared window chrome — stay in sync with the list body. */
@@ -1567,6 +1572,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setOutlineBarZoom: (px) => {
     saveViewState({ outlineBarZoom: px });
     set({ outlineBarZoom: px });
+  },
+  outlineBarRowScale: (_vs.outlineBarRowScale as number) ?? 1,
+  setOutlineBarRowScale: (s) => {
+    const clamped = Math.min(2.5, Math.max(0.7, s));
+    saveViewState({ outlineBarRowScale: clamped });
+    set({ outlineBarRowScale: clamped });
   },
   navFilter: '',
   setNavFilter: (v) => set({ navFilter: v }),

@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import OutlineBar, { snapPage, markerGeometry, columnRanges, DEFAULT_COLUMN_PAGES } from './OutlineBar';
+import OutlineBar, { snapPage, markerGeometry, columnRanges, navThumbGeometry, DEFAULT_COLUMN_PAGES } from './OutlineBar';
 import { useEditorStore } from '../stores/editorStore';
 
 describe('placement math', () => {
@@ -40,6 +40,21 @@ describe('placement math', () => {
   it('a section without a budget gets the default block', () => {
     const [r] = columnRanges([{ id: 'c', title: 'C', position: 0, width: 0 }]);
     expect(r.pages).toBe(DEFAULT_COLUMN_PAGES);
+  });
+
+  /* v2.28: the navigator thumb — one bar scrolls and rescales. */
+  it('navigator thumb spans the visible fraction and tracks the scroll', () => {
+    // Everything visible → thumb fills the bar and can't move.
+    const full = navThumbGeometry(0, 800, 800);
+    expect(full.width).toBe(800);
+    expect(full.left).toBe(0);
+    expect(full.maxScroll).toBe(0);
+    // Half visible → half-width thumb; scrolled to the end → thumb at the end.
+    const half = navThumbGeometry(800, 800, 1600);
+    expect(half.width).toBe(400);
+    expect(half.left).toBe(400);          // maxThumbL, since scrollX = maxScroll
+    // Tiny visible fraction still leaves a grabbable 24px thumb.
+    expect(navThumbGeometry(0, 800, 100000).width).toBe(24);
   });
 });
 

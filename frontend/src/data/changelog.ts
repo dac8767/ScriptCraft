@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.27';
+export const APP_VERSION = '2.28';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.28',
+    date: '2026-07-16',
+    items: [
+      { title: 'Outline Bar: a Premiere-style navigator', detail: 'The zoom slider and the scrollbar merged into one bar under the tracks, always visible: drag the middle to scroll, drag either round end handle to zoom — the opposite edge stays anchored, exactly like Premiere\'s timeline navigator. Mouse-wheel scrolling still works and keeps the thumb in sync.', tags: ['Tools', 'New Feature'] },
+      { title: 'Outline Bar: row-height scaler', detail: 'A slim vertical bar at the far right edge — drag it to grow or shrink every row and the ruler together. The height is remembered.', tags: ['Tools', 'UI'] },
+    ],
+  },
   {
     version: '2.27',
     date: '2026-07-16',
