@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.66';
+export const APP_VERSION = '2.67';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.67',
+    date: '2026-07-16',
+    items: [
+      { title: 'Toolbar: Reset Sizing button', detail: 'A toolbar button (beside the sizing lock) resets every adjustable size and spacing — side panels, toolbar, menu bar, outline bar, grips — back to defaults, after a confirmation. Grayed out while sizing is locked.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '2.66',
     date: '2026-07-16',

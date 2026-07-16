@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
+import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, migrateResetSizes, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
 import { uuid } from '../utils/uuid';
 import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { findLanguage, urlsFor } from '../editor/languageCatalog';
@@ -142,6 +142,7 @@ try {
   if (_vs.toolbarZonesSet && !localStorage.getItem(LOCK_FLAG)) {
     localStorage.setItem(LOCK_FLAG, '1');
     _tbZones = { left: migrateLockResize(_tbZones.left), right: _tbZones.right };
+    _tbZones = { left: migrateResetSizes(_tbZones.left), right: _tbZones.right };
     saveViewState({ toolbarLeft: _tbZones.left });
   }
 } catch { /* storage unavailable — keep what we have */ }

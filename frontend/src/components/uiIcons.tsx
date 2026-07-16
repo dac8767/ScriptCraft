@@ -18,7 +18,7 @@ import {
   FaPaintBrush, FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
   FaAlignJustify, FaSearch, FaHashtag, FaStickyNote, FaTags, FaSearchPlus,
   FaFont, FaTextHeight, FaDesktop, FaMinus, FaArrowsAltV,
-  FaLock, FaUnlock,
+  FaLock, FaUnlock, FaExpandArrowsAlt,
 } from 'react-icons/fa';
 
 /** Customize's utility rows (v1.33) — one icon per concept, read by BOTH the
@@ -192,4 +192,6 @@ export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
   // v2.55: the sizing lock — the Toolbar swaps to lockResizeOpen when off.
   lockResize: <FaLock />,
   lockResizeOpen: <FaUnlock />,
+  // v2.67: reset every adjustable size/spacing back to defaults.
+  resetSizes: <FaExpandArrowsAlt />,
 };

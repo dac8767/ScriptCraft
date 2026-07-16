@@ -28,6 +28,7 @@ import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import { useNotebookStore } from '../stores/notebookStore';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import GapHandle from './GapHandle';
+import { confirmDialog } from './ConfirmDialog';
 import { commandDef } from './toolbarCommands';
 import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, bigZoneAllowed } from './toolbarBuiltins';
 import { smartUndo, smartRedo, useEditorStore, NOTE_COLORS } from '../stores/editorStore';
@@ -1168,6 +1169,21 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           title={uiResizeLocked ? 'Sizing is locked — click to unlock' : 'Lock all sizing and spacing'}
           onClick={() => useEditorStore.getState().setUiResizeLocked(!uiResizeLocked)}
         >{uiResizeLocked ? TOOLBAR_ICONS.lockResize : TOOLBAR_ICONS.lockResizeOpen}</button>
+      );
+      /* v2.67, Derek: reset every adjustable size/spacing — confirm first;
+         grayed while the lock is on (a locked layout shouldn't be resettable). */
+      case 'resetSizes': return (
+        <button
+          className="toolbar-btn"
+          disabled={uiResizeLocked}
+          title={uiResizeLocked ? 'Sizing is locked — unlock to reset' : 'Reset all sizes & spacing to defaults'}
+          onClick={async () => {
+            if (await confirmDialog(
+              'Reset all sizes and spacing to their defaults? Side panels, toolbar, menu bar, outline bar, and spacing all go back to factory positions.',
+              { title: 'Reset All Sizes & Spacing', confirmLabel: 'Reset' },
+            )) useEditorStore.getState().resetChromeSizes();
+          }}
+        >{TOOLBAR_ICONS.resetSizes}</button>
       );
       case 'view': return (
         <>
