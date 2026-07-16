@@ -17,15 +17,15 @@ import { useEditorStore } from '../stores/editorStore';
 import { chromePx, chromeMin, chromeMax } from './chromeSizes';
 
 /** v2.61: which way a mouse move grows the gap depends on which side of the
- *  items the grip rides. The menu/toolbar grips sit RIGHT of left-anchored
- *  items — spacing grows to the right, drag right = wider. The Big Button
- *  grip sits LEFT of a right-anchored section — spacing grows to the LEFT
- *  (the buttons' right edge stays put), so drag left = wider. Getting this
- *  wrong makes the grip fight the mouse. Exported for the test. */
+ *  items the grip rides. All three grips sit RIGHT of left-anchored items —
+ *  spacing grows to the right, drag right = wider. (Until v2.94 the Big
+ *  Button grip sat LEFT of a right-anchored section and ran inverted; Row 2
+ *  is left-anchored like the others now.) Getting this wrong makes the grip
+ *  fight the mouse. Exported for the test. */
 export const GAP_DRAG_DIR: Record<'menu' | 'toolbar' | 'bigbtn', 1 | -1> = {
   menu: 1,
   toolbar: 1,
-  bigbtn: -1,
+  bigbtn: 1,
 };
 
 export const BIGBTN_INSET_MAX = 40;

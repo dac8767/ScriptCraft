@@ -78,6 +78,9 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   // v2.67, Derek: reset every adjustable size/spacing (confirm first;
   // grayed while the sizing lock is on).
   { key: 'resetSizes', label: 'Reset Sizing' },
+  // v2.94: the Insert Table grid — a menu item the native menu bar can't
+  // host, so it lives on the toolbar's second row (Scrapbook only).
+  { key: 'insertTable', label: 'Insert Table (Scrapbook)' },
   // v2.02: Customize is a toolbar ITEM again — the anchor of the Big Button
   // section (the old right zone, reborn). Permanent: reorderable within the
   // section, never hidden or lost.
@@ -107,7 +110,6 @@ export const DEFAULT_TOOLBAR_LEFT: string[] = [
   'b:alignLeft', 'b:alignCenter', 'b:alignRight', 'b:alignJustify', 'd:def-align',
   'b:find', 'b:goto', 'd:def-nav',
   'b:zoom', 'b:view', 'd:def-surfaces',
-  'b:togglePanelLeft', 'b:togglePanelRight', 'b:toggleOutlineBar', 'b:lockResize', 'b:resetSizes',
 ];
 
 /** v2.34 one-time: existing saved layouts get the three surface toggles
@@ -134,7 +136,43 @@ export function migrateResetSizes(left: string[]): string[] {
     : [...left, 'b:resetSizes'];
 }
 
-export const DEFAULT_TOOLBAR_RIGHT: string[] = ['customize'].map((k) => `b:${k}`);
+/* ── v2.94: the two-row toolbar ─────────────────────────────────────────
+   Row 1 (toolbarLeft) holds the standard formatting controls; Row 2
+   (toolbarRight — the old Big Button zone, repurposed) holds tool/window
+   buttons and app functions. A row-2 token may be flagged BIG by wrapping
+   it `big!<token>` — the flag rides in the token so it persists with the
+   layout, no third Customize column needed. */
+export const BIG_PREFIX = 'big!';
+export const isBigToken = (tok: string) => tok.startsWith(BIG_PREFIX);
+export const stripBig = (tok: string) => (isBigToken(tok) ? tok.slice(BIG_PREFIX.length) : tok);
+export const makeBig = (tok: string) => (isBigToken(tok) ? tok : BIG_PREFIX + tok);
+
+/** Row-1 keys that belong to Row 2 under the v2.94 split — tool/window
+ *  toggles and app functions, not formatting. */
+const ROW2_KEYS = new Set(['togglePanelLeft', 'togglePanelRight', 'toggleOutlineBar', 'lockResize', 'resetSizes']);
+
+/** v2.94 one-time: split a saved single-row layout into the two rows.
+ *  Surface toggles, lock/reset, pinned tools and commands move to Row 2
+ *  (keeping their order); the old Big Button zone's items become Row 2
+ *  items flagged big. Formatting, dividers and spacers stay in Row 1. */
+export function migrateTwoRows(left: string[], right: string[]): { left: string[]; right: string[] } {
+  const stays = (tok: string) => {
+    if (tok.startsWith('d:') || tok.startsWith('s:')) return true;
+    if (tok.startsWith('t:') || tok.startsWith('c:')) return false;
+    if (tok.startsWith('b:')) return !ROW2_KEYS.has(tok.slice(2));
+    return true;
+  };
+  const newLeft = left.filter(stays);
+  const moved = left.filter((t) => !stays(t));
+  const bigged = right.map((t) => (isBigToken(t) ? t : makeBig(t)));
+  return { left: newLeft, right: [...moved, ...bigged] };
+}
+
+export const DEFAULT_TOOLBAR_RIGHT: string[] = [
+  'b:togglePanelLeft', 'b:togglePanelRight', 'b:toggleOutlineBar',
+  'b:lockResize', 'b:resetSizes', 'b:insertTable',
+  'big!b:customize',
+];
 
 /** May this token live in the Big Button section? */
 export function bigZoneAllowed(tok: string): boolean {
@@ -201,7 +239,11 @@ export function normalizeToolbarZones(
   const seen = new Set<string>();
   const expand = (tokens: string[] | undefined): string[] => {
     const out: string[] = [];
-    for (const tok of tokens ?? []) {
+    for (const raw of tokens ?? []) {
+      // v2.94: the big flag rides the token — strip for validation/dedupe,
+      // re-apply on the way out so it survives normalization.
+      const big = isBigToken(raw);
+      const tok = stripBig(raw);
       if (tok.startsWith('g:')) {
         for (const key of LEGACY_GROUP_ITEMS[tok.slice(2)] ?? []) {
           if (hiddenKeys.has(key) || seen.has(key)) continue;
@@ -214,9 +256,9 @@ export function normalizeToolbarZones(
         const key = (tok === 'b:zoomIn' || tok === 'b:zoomOut') ? 'zoom' : tok.slice(2);
         if (!BUILTIN_BY_KEY[key] || seen.has(key)) continue;
         seen.add(key);
-        out.push(`b:${key}`);
+        out.push(big ? makeBig(`b:${key}`) : `b:${key}`);
       } else {
-        out.push(tok); // t: / c: / d:
+        out.push(big ? makeBig(tok) : tok); // t: / c: / d:
       }
     }
     return out;
@@ -229,7 +271,8 @@ export function normalizeToolbarZones(
   for (const b of TOOLBAR_BUILTINS) {
     if (!b.permanent) continue;
     const tok = `b:${b.key}`;
-    if (!l.includes(tok) && !r.includes(tok)) {
+    const has = (arr: string[]) => arr.some((t) => stripBig(t) === tok);
+    if (!has(l) && !has(r)) {
       (b.permanentZone === 'right' ? r : l).push(tok);
     }
   }

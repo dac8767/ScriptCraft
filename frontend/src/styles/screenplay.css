@@ -1081,25 +1081,24 @@ body {
   min-width: 0;                  /* lets the bars shrink instead of shoving the
                                     button off the edge */
 }
-/* v2.02: the Big Button section — the toolbar's right zone, rendered beside
-   the bars so its buttons span both. Every big button wears the Customize
-   format; Customize keeps its color, other items wear the alt color. */
-.chrome-bigbtns {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: stretch;
-  gap: 0;
+/* v2.94: the toolbar's SECOND ROW — tools, app functions and the old Big
+   Button items (a token's big! flag renders the large launcher format).
+   It sits under the formatting row and sizes itself to its content. */
+.toolbar.toolbar-row2 {
+  height: auto;
+  min-height: 33px;
+  padding-top: 2px;
 }
 .chrome-bigbtn {
   /* v0.93: halfway between the original toolbar button and the v0.91 size —
-     12px/600 -> 15px/700 became 13.5px/700, padding 12 -> 18 became 15. Still
-     spans both bars and stays vertically centred; just less shouty. */
+     12px/600 -> 15px/700 became 13.5px/700, padding 12 -> 18 became 15.
+     v2.94: lives on the toolbar's second row now — a fixed comfortable
+     height instead of spanning the bars. */
   flex: 0 0 auto;
-  align-self: center;            /* vertically centred across both bars */
-  margin: 0 6px;                 /* right edge aligns with the bars' 6px padding */
+  align-self: center;
+  margin: 0;
   padding: 0 15px;
-  height: calc(100% - var(--bigbtn-inset, 16px));   /* spans both bars; the grip's vertical axis adjusts the inset (v2.76) */
-  min-height: 31px;
+  height: 30px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -16442,6 +16441,38 @@ input.fs-switch:checked::after { left: 15px; }
   background: color-mix(in srgb, var(--fd-accent) 35%, transparent);
   border-color: var(--fd-accent);
 }
+/* v2.94: the same grid, hosted by the toolbar's Insert Table button (Row 2) —
+   the native menu bar can't render it, so the toolbar owns it now. Portalled
+   to body and positioned fixed from the trigger (the toolbar's stacking
+   context sits under the tool dock). */
+.toolbar-tablegrid-popup {
+  position: fixed;
+  z-index: 10000;
+  background: var(--fd-toolbar-bg, #2a2a2a);
+  border: 1px solid var(--fd-border, #555);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .35);
+}
+/* v2.94: Customize > Toolbar's Big pill — toggles a Row 2 item between the
+   normal button and the large labelled launcher. */
+.fs-big-pill {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: 1px solid var(--fd-border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--fd-text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  cursor: pointer;
+}
+.fs-big-pill:hover { background: var(--fd-overlay-light); }
+.fs-big-pill.active {
+  background: color-mix(in srgb, var(--fd-accent) 30%, transparent);
+  border-color: var(--fd-accent);
+  color: var(--fd-text);
+}
 /* v2.83: the local auto-save folder row (Settings > Save Options). */
 .prefs-path-chip {
   display: inline-block;
@@ -16747,8 +16778,7 @@ input.fs-switch:checked::after { left: 15px; }
   pointer-events: none;
 }
 .menu-bar:hover .fs-gap-handle,
-.toolbar:hover .fs-gap-handle,
-.chrome-bigbtns:hover .fs-gap-handle { opacity: 0.45; }
+.toolbar:hover .fs-gap-handle { opacity: 0.45; }
 /* v2.92, Derek: room between the last toolbar item and its grip. */
 .toolbar .fs-gap-handle { margin-left: 10px; }
 .fs-gap-handle:hover, .fs-gap-handle:active { opacity: 1 !important; }

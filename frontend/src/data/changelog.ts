@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.93';
+export const APP_VERSION = '2.94';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.94',
+    date: '2026-07-16',
+    items: [
+      { title: 'The toolbar becomes two rows', detail: 'Row 1 keeps the standard formatting controls; Row 2 holds the tool and window buttons, app functions (panel toggles, sizing lock and reset), and everything that can\'t live in a native menu — including the Scrapbook\'s insert-table grid. The old Big Button section folds into Row 2: any tool or command there can be shown as a large labelled button.', tags: ['New Feature', 'UI'] },
+      { title: 'Customize > Toolbar speaks two rows', detail: 'The columns are now Row 1 and Row 2 — drag items freely between them. A "Big" pill on Row 2 rows toggles the large-button look per item, so Big Buttons no longer need their own column. Existing layouts migrate automatically: surface toggles, lock/reset, and pinned tools move to Row 2 in their saved order.', tags: ['UI'] },
+      { title: 'Menu Bar tab steps aside for native menus', detail: 'While the macOS menu bar is active (Settings > General > Menus) there is no in-window menu bar to customize, so the Menu Bar tab hides. Switch back and it returns, layout intact.', tags: ['UI'] },
+    ],
+  },
   {
     version: '2.93',
     date: '2026-07-16',

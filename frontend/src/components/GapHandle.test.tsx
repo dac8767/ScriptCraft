@@ -1,11 +1,10 @@
 // @vitest-environment jsdom
 /**
- * GapHandle — pins the drag DIRECTION per bar (v2.61). The Big Button
- * section is anchored at the toolbar's right edge with its grip on the LEFT,
- * so its spacing grows leftward — dragging the grip left (away from the
- * buttons) must WIDEN the gap. The menu/toolbar grips sit right of
- * left-anchored items, so there dragging right widens. The v2.61 bug: the
- * bigbtn grip used the same sign as the others and fought the mouse.
+ * GapHandle — pins the drag DIRECTION per bar (v2.61). All three grips sit
+ * right of left-anchored items, so dragging right widens the gap. (Until
+ * v2.94 the Big Button grip sat LEFT of a right-anchored section and ran
+ * inverted — Row 2 is left-anchored now.) Getting the sign wrong makes the
+ * grip fight the mouse.
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
@@ -40,10 +39,10 @@ describe('GapHandle drag direction', () => {
     fire('pointerup', toX);
   };
 
-  it('menu/toolbar grow rightward, bigbtn grows leftward', () => {
+  it('all three bars grow rightward (Row 2 is left-anchored since v2.94)', () => {
     expect(GAP_DRAG_DIR.menu).toBe(1);
     expect(GAP_DRAG_DIR.toolbar).toBe(1);
-    expect(GAP_DRAG_DIR.bigbtn).toBe(-1);
+    expect(GAP_DRAG_DIR.bigbtn).toBe(1);
   });
 
   it('toolbar grip: dragging right widens the gap', () => {
@@ -52,15 +51,15 @@ describe('GapHandle drag direction', () => {
     expect(useEditorStore.getState().chromeGapPx.toolbar).toBe(20);
   });
 
-  it('bigbtn grip: dragging LEFT (away from the buttons) widens the gap', () => {
+  it('bigbtn (Row 2) grip: dragging right widens the gap', () => {
     useEditorStore.getState().setChromeGap('bigbtn', 10);
-    drag('bigbtn', 100, 90);
+    drag('bigbtn', 100, 110);
     expect(useEditorStore.getState().chromeGapPx.bigbtn).toBe(20);
   });
 
-  it('bigbtn grip: dragging toward the buttons tightens the gap', () => {
+  it('bigbtn (Row 2) grip: dragging left tightens the gap', () => {
     useEditorStore.getState().setChromeGap('bigbtn', 10);
-    drag('bigbtn', 100, 108);
+    drag('bigbtn', 100, 92);
     expect(useEditorStore.getState().chromeGapPx.bigbtn).toBe(2);
   });
 

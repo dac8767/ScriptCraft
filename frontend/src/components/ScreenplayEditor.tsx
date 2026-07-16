@@ -51,7 +51,7 @@ import type { PageLayout } from '../stores/editorStore';
 import { useEditorStore, migratePageLayout, DEFAULT_HEADER_CONTENT, DEFAULT_FOOTER_CONTENT, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_CATEGORIES, resolveMoresContds } from '../stores/editorStore';
 import type { ElementType } from '../stores/editorStore';
 import MenuBar from './MenuBar';
-import Toolbar, { BigButtonBar } from './Toolbar';
+import Toolbar from './Toolbar';
 import ToolDock, { TempToolWindow } from './ToolDock';
 import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
@@ -4012,11 +4012,9 @@ const ScreenplayEditor: React.FC = () => {
           </button>
         </div>
       )}
-      {/* v0.91: the two bars and the big buttons share one row — the bars
-          stack in a column taking the remaining width. v2.02: the standalone
-          Customize button became the Big Button SECTION (BigButtonBar): the
-          toolbar's right zone, rendered here so its buttons span both bars.
-          Customize is its permanent anchor item. */}
+      {/* v2.94: the Big Button SECTION is gone — the Toolbar renders two
+          rows itself (Row 1 formatting, Row 2 tools/app functions, where a
+          token's big! flag makes it a large launcher). */}
       {!isHistoryMode && (
       /* v2.29, Derek: everything above the editor acts as ONE while
          resizing — drag the strip at the bottom of this block and the menu
@@ -4039,7 +4037,6 @@ const ScreenplayEditor: React.FC = () => {
       }} onJoinCollab={() => setJoinCollabOpen(true)} isCollabActive={collabMode} isCollabGuest={collabMode && !isCollabHost} />}
       {<Toolbar editor={editor} />}
         </div>
-        <BigButtonBar />
       </div>
       {/* v2.31: this line scales the menu bar + toolbar together…
           v2.55: the sizing lock removes both strips — no dead controls. */}

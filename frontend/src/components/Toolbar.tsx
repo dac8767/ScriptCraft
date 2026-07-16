@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import {
   FaBold,
@@ -26,11 +27,12 @@ import {
 import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import { useNotebookStore } from '../stores/notebookStore';
+import { TableGridPicker } from './NotebookTool';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import GapHandle from './GapHandle';
 import { confirmDialog } from './ConfirmDialog';
 import { commandDef } from './toolbarCommands';
-import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, bigZoneAllowed } from './toolbarBuiltins';
+import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, bigZoneAllowed, stripBig, isBigToken } from './toolbarBuiltins';
 import { smartUndo, smartRedo, useEditorStore, NOTE_COLORS } from '../stores/editorStore';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
@@ -101,6 +103,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // no duplicate B/I/U/S anywhere. Declared up here because the responsive
   // overflow measurement (below) also re-measures on this flag (v2.10).
   const scrapbookOpen = useNotebookStore((s) => s.notebookOpen);
+  // v2.94: the Insert Table button needs a page to land the table on — the
+  // old menu item was disabled without one, and firing the event with no
+  // canvas mounted is a silent no-op.
+  const scrapbookPage = useNotebookStore((s) => !!s.selectedPageId);
 
   const activeTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate());
 
@@ -134,6 +140,21 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // button's mousedown and restored before the execCommand runs.
   const [sbBgOpen, setSbBgOpen] = useState(false);
   const sbBgRange = useRef<Range | null>(null);
+  // v2.94: the insert-table grid on the toolbar's second row — the one menu
+  // item that can't move into the native macOS menu bar. Portalled to
+  // document.body (the toolbar's own stacking context sits UNDER the tool
+  // dock — a popup inside it renders but can't be clicked) and positioned
+  // by measured top/left from the trigger, never bottom.
+  const [tableGridOpen, setTableGridOpen] = useState(false);
+  const [tableGridPos, setTableGridPos] = useState<{ top: number; left: number } | null>(null);
+  useEffect(() => {
+    if (!tableGridOpen) return;
+    const close = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest?.('.toolbar-tablegrid-anchor')) setTableGridOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [tableGridOpen]);
   const [currentTextColor, setCurrentTextColor] = useState<string>('#000000');
   // v1.83: the highlighter color is store state — Format > Highlighting shares it.
   const currentBgColor = useEditorStore((s) => s.highlightColor);
@@ -1254,6 +1275,49 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           }}
         >{TOOLBAR_ICONS.resetSizes}</button>
       );
+      /* v2.94: Customize with the Big flag off — a normal small button.
+         Without this case an un-bigged Customize token rendered NOTHING. */
+      case 'customize': return (
+        <button
+          className="toolbar-btn"
+          title="Customize ScriptCraft"
+          onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))}
+        >{TOOLBAR_ICONS.customize}</button>
+      );
+      /* v2.94, Derek: the Scrapbook's insert-table grid can't live in a native
+         macOS menu, so it moves to the toolbar's second row. Only rendered
+         while the Scrapbook is open — same visibility as its old menu. */
+      case 'insertTable': {
+        if (!scrapbookOpen) return null;
+        return (
+          <div className="toolbar-group toolbar-tablegrid-anchor">
+            <button
+              className={`toolbar-btn${tableGridOpen ? ' active' : ''}`}
+              disabled={!scrapbookPage}
+              title={scrapbookPage ? 'Insert Table (Scrapbook)' : 'Insert Table — select a Scrapbook page first'}
+              onClick={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setTableGridPos({ top: r.bottom + 4, left: r.left });
+                setTableGridOpen(!tableGridOpen);
+              }}
+            >{TOOLBAR_ICONS.insertTable}</button>
+            {showPopups && tableGridOpen && tableGridPos && createPortal(
+              <div
+                className="toolbar-tablegrid-popup toolbar-tablegrid-anchor"
+                style={{ top: tableGridPos.top, left: tableGridPos.left }}
+              >
+                <TableGridPicker
+                  onPick={(rows, cols) => {
+                    window.dispatchEvent(new CustomEvent('nb-add-table-canvas', { detail: { rows, cols } }));
+                    setTableGridOpen(false);
+                  }}
+                />
+              </div>,
+              document.body,
+            )}
+          </div>
+        );
+      }
       case 'view': return (
         <>
           <span className="view-style-label">Editor View:</span>
@@ -1382,7 +1446,46 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
   const tbCustomH = chromePx('toolbar', 'custom', chromeCustomPx.toolbar);
 
+  /** v2.94: a Row-2 token flagged big renders as a large launcher (the old
+   *  Big Button look) — the flag rides in the token, set from Customize. */
+  const renderBigToken = (tok: string): React.ReactNode => {
+    if (tok === 'b:customize') {
+      return (
+        <button
+          key={`big-${tok}`}
+          className="chrome-bigbtn chrome-customize-btn"
+          title="Customize ScriptCraft"
+          onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))}
+        >
+          Customize
+        </button>
+      );
+    }
+    if (tok.startsWith('t:')) {
+      const t = ALL_TOOLS.find((x) => x.id === tok.slice(2));
+      if (!t) return null;
+      return (
+        <button key={`big-${tok}`} className="chrome-bigbtn chrome-bigbtn-alt" title={t.label} onClick={() => openTool(t.id)}>
+          <span className="chrome-bigbtn-icon">{t.icon}</span>
+          {t.label}
+        </button>
+      );
+    }
+    if (tok.startsWith('c:')) {
+      const c = commandDef(tok.slice(2));
+      if (!c) return null;
+      return (
+        <button key={`big-${tok}`} className="chrome-bigbtn chrome-bigbtn-alt" title={c.label} onClick={() => c.run()}>
+          <span className="chrome-bigbtn-icon">{c.icon}</span>
+          {c.label}
+        </button>
+      );
+    }
+    return null;
+  };
+
   return (
+    <>
     <div
       className={`toolbar${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}${toolbarMode === 'custom' ? ' toolbar-custom' : ''}`}
       style={{
@@ -1396,16 +1499,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       }}
       ref={toolbarRef}
     >
-      {/* v2.02: the MAIN section — everything aligns left. Any small
-          controls a saved layout had on the right were migrated here; the
-          right zone is the Big Button section, rendered by BigButtonBar in
-          the chrome next to the bars. */}
+      {/* v2.94, Derek: ROW 1 — the standard formatting controls. */}
       {leftTokens.map(renderToken)}
-      {rightTokens.filter((t) => !bigZoneAllowed(t)).map(renderToken)}
 
-      {/* v2.54, Derek: the spacing grip rides just RIGHT of the last toolbar
-          item (the Big Button section is its own bar with its own grip) —
-          it was stranded at the window's far edge. */}
+      {/* v2.54, Derek: the spacing grip rides just RIGHT of the last item. */}
       <GapHandle bar="toolbar" />
 
       {/* Spacer */}
@@ -1430,68 +1527,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       )}
 
     </div>
-  );
-};
-
-/**
- * BigButtonBar (v2.02) — the toolbar's Big Button section, rendered in the
- * chrome row beside the bars so its buttons span both (like the old
- * permanent Customize button, which is now simply this section's anchor
- * item). Tools and commands render large — icon over label — in a color
- * distinct from Customize; dividers/spacers and small formatting controls
- * can't live here (bigZoneAllowed + the Customize tab's drop guard).
- */
-export const BigButtonBar: React.FC = () => {
-  const { toolbarRight, toolbarZonesSet, openTool, chromeGapPx, bigBtnInsetPx } = useEditorStore();
-  const tokens = (toolbarZonesSet
-    ? normalizeToolbarZones([], toolbarRight).right
-    : DEFAULT_TOOLBAR_RIGHT
-  ).filter(bigZoneAllowed);
-
-  return (
-    <div
-      className="chrome-bigbtns"
-      // v2.76: the grip's vertical axis sizes the buttons via the inset.
-      style={{ gap: chromeGapPx.bigbtn, ['--bigbtn-inset' as string]: `${bigBtnInsetPx}px` }}
-    >
-      {/* v2.29: faint grip LEFT of the buttons — drag to adjust their spacing */}
-      <GapHandle bar="bigbtn" />
-      {tokens.map((tok) => {
-        if (tok === 'b:customize') {
-          return (
-            <button
-              key={tok}
-              className="chrome-bigbtn chrome-customize-btn"
-              title="Customize ScriptCraft"
-              onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))}
-            >
-              Customize
-            </button>
-          );
-        }
-        if (tok.startsWith('t:')) {
-          const t = ALL_TOOLS.find((x) => x.id === tok.slice(2));
-          if (!t) return null;
-          return (
-            <button key={tok} className="chrome-bigbtn chrome-bigbtn-alt" title={t.label} onClick={() => openTool(t.id)}>
-              <span className="chrome-bigbtn-icon">{t.icon}</span>
-              {t.label}
-            </button>
-          );
-        }
-        if (tok.startsWith('c:')) {
-          const c = commandDef(tok.slice(2));
-          if (!c) return null;
-          return (
-            <button key={tok} className="chrome-bigbtn chrome-bigbtn-alt" title={c.label} onClick={() => c.run()}>
-              <span className="chrome-bigbtn-icon">{c.icon}</span>
-              {c.label}
-            </button>
-          );
-        }
-        return null;
+    {/* v2.94, Derek: ROW 2 — tool/window buttons and app functions (the old
+        Big Button section folded in: flagged tokens render large). */}
+    <div className="toolbar toolbar-row2" style={{ gap: chromeGapPx.bigbtn, ...(alignPad !== null ? { paddingLeft: alignPad } : {}) }}>
+      {rightTokens.map((raw) => {
+        const tok = stripBig(raw);
+        return isBigToken(raw) && bigZoneAllowed(tok) ? renderBigToken(tok) : renderToken(tok);
       })}
+      <GapHandle bar="bigbtn" />
+      <div style={{ flex: 1 }} />
     </div>
+    </>
   );
 };
 

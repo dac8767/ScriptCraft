@@ -18,7 +18,7 @@ import {
   FaPaintBrush, FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
   FaAlignJustify, FaSearch, FaHashtag, FaStickyNote, FaTags, FaSearchPlus,
   FaFont, FaTextHeight, FaDesktop, FaMinus, FaArrowsAltV,
-  FaLock, FaUnlock,
+  FaLock, FaUnlock, FaTable,
 } from 'react-icons/fa';
 import { FiRefreshCw } from 'react-icons/fi';
 
@@ -196,4 +196,7 @@ export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
   // v2.67: reset every adjustable size/spacing back to defaults.
   // v2.87, Derek: the circular-arrows reset, per his reference image.
   resetSizes: <FiRefreshCw />,
+  // v2.94: the Scrapbook's insert-table grid, promoted to toolbar row 2 —
+  // it can't live in a native menu (macOS menus can't host the grid picker).
+  insertTable: <FaTable />,
 };

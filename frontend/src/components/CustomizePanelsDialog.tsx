@@ -17,8 +17,9 @@ import { MENU_ICONS, TOOLBAR_ICONS, UTILITY_ICONS } from './uiIcons';
 import { DEFAULT_OUTLINE_BAR_ROWS, MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
-import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, bigZoneAllowed } from './toolbarBuiltins';
-import { showToast } from './Toast';
+import { TOOLBAR_BUILTINS, BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, bigZoneAllowed, stripBig, isBigToken, makeBig } from './toolbarBuiltins';
+import { useSettingsStore } from '../stores/settingsStore';
+import { isTauri } from '../services/platform';
 import EditElementsDialog from './EditElementsDialog';
 import KeyboardShortcutsTab from './KeyboardShortcutsTab';
 import ThemesTab from './ThemesTab';
@@ -616,6 +617,15 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const { panelDividers, setPanelDividers } = useEditorStore();
   const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'panels' | 'outlinebar' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'menu');
 
+  // v2.94, Derek: with the native macOS menu bar active there's no in-window
+  // menu bar to customize — the tab disappears (revert the menu system in
+  // Settings > General and it comes back).
+  const menuSystem = useSettingsStore((st) => st.menuSystem);
+  const nativeMenus = menuSystem === 'native' && isTauri();
+  React.useEffect(() => {
+    if (nativeMenus && activeCat === 'menu') setActiveCat('toolbar');
+  }, [nativeMenus, activeCat]);
+
   // v0.84: the window forgot any size you gave it and snapped back to the
   // default on reopen. CSS `resize` writes inline width/height on the element,
   // so a ResizeObserver captures the size the user drags to; we persist it and
@@ -688,7 +698,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   //    mirroring the menu bar taxonomy. Notes and Production Tags live
   //    under Tools and Production (not Toolbar); c:productionTags is excluded
   //    as a duplicate of the smarter b:tags button. Only absent items listed.
-  const tbPlaced = (v: string) => tbLeft.includes(v) || tbRight.includes(v);
+  // v2.94: Row 2 tokens may carry the big! flag — compare flag-blind, or a
+  // big item would be offered again in the Add list.
+  const tbPlaced = (v: string) => tbLeft.includes(v) || tbRight.some((t) => stripBig(t) === v);
   const PRODUCTION_CMDS = ['titlePage', 'setDraft', 'addSceneNumbers', 'removeSceneNumbers', 'lockSceneNumbers', 'revisionMode'];
   const TOOLS_CMDS = ['spellCheck', 'writingSuggestions', 'takeSnapshot', 'snapshots', 'trackChanges', 'compareSnapshot'];
   const PROJECT_CMDS = ['rename'];
@@ -742,7 +754,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
    * doesn't have. Dividers and spacers have none, and get a blank of the same
    * width so every label still lines up.
    */
-  const tokenIcon = (tok: string): React.ReactNode => {
+  const tokenIcon = (raw: string): React.ReactNode => {
+    const tok = stripBig(raw);   // v2.94: the big! flag never changes the icon
     if (tok.startsWith('b:')) return TOOLBAR_ICONS[tok.slice(2)] ?? null;
     if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.icon ?? null;
     // v2.04: commands carry their OWN icon (TOOLBAR_COMMANDS) — reading
@@ -758,7 +771,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     <span className="fs-customize-icon">{node}</span>
   );
 
-  const tokenLabel = (tok: string): string => {
+  const tokenLabel = (raw: string): string => {
+    const tok = stripBig(raw);
     if (tok.startsWith('b:')) return BUILTIN_BY_KEY[tok.slice(2)]?.label || tok;
     if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.label || tok;
     if (tok.startsWith('c:')) return TOOLBAR_COMMANDS.find((c) => c.id === tok.slice(2))?.label || tok;
@@ -777,7 +791,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       // simply stack, and adding an eighth costs no width at all.
       <div className="prefs-layout fs-customize-layout">
         <div className="prefs-tabs fs-customize-tabs">
-          {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['outlinebar', 'Outline Bar'], ['context', 'Context Menu'], ['elements', 'Elements'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const).map(([id, label]) => (
+          {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['outlinebar', 'Outline Bar'], ['context', 'Context Menu'], ['elements', 'Elements'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const)
+            .filter(([id]) => !(nativeMenus && id === 'menu'))
+            .map(([id, label]) => (
             <button
               key={id}
               className={`prefs-tab${activeCat === id ? ' active' : ''}`}
@@ -885,10 +901,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           <section>
             <h3>Toolbar Layout</h3>
             <p className="fs-customize-hint">
-              Drag items between the three lists. Left flows from the left
-              edge, Right sits at the far right of the bar, and Hidden stashes
+              Drag items between the three lists. Row 1 is the formatting bar,
+              Row 2 holds tools and app functions below it, and Hidden stashes
               an item by category until you drag it back. Drop position is the
-              item's position.
+              item's position. On Row 2, the Big toggle renders an item as a
+              large labelled button.
             </p>
             {/* v2.29: sizing left Customize (drag the strip under the top
                 bars on the main screen) — only Show/Hide remains here. */}
@@ -915,17 +932,30 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               </span>
             </div>
 
-            {/* v1.76: Outlook-style — Left zone, Right zone (far right of the
-                bar), Hidden. Drag anywhere; the zone an item lands in IS its
-                side, and drop position is its position. Dividers and spacers
-                dropped on Hidden are deleted (they're structure, not items). */}
+            {/* v1.76: Outlook-style — Row 1, Row 2, Hidden. Drag anywhere; the
+                zone an item lands in IS its row, and drop position is its
+                position. Dividers and spacers dropped on Hidden are deleted
+                (they're structure, not items). v2.94: rows carry RAW tokens —
+                a Row 2 token may wear the big! flag, and the Big pill toggles
+                it (no third column needed). */}
             {(() => {
-              const tbRowContent = (tok: string) => {
+              const tbRowContent = (raw: string, inRow2 = false) => {
+                const tok = stripBig(raw);
                 const isPermanent = tok.startsWith('b:') && !!BUILTIN_BY_KEY[tok.slice(2)]?.permanent;
                 return (
                   <span className="fs-customize-tool">
                     {iconSlot(tokenIcon(tok))}
                     {tokenLabel(tok)}
+                    {inRow2 && bigZoneAllowed(tok) && (
+                      <button
+                        className={`fs-big-pill${isBigToken(raw) ? ' active' : ''}`}
+                        title={isBigToken(raw) ? 'Shown as a large button — click for a normal one' : 'Show as a large labelled button'}
+                        onClick={() => setToolbarZones(
+                          tbLeft,
+                          tbRight.map((t) => (t === raw ? (isBigToken(raw) ? stripBig(raw) : makeBig(raw)) : t)),
+                        )}
+                      >Big</button>
+                    )}
                     {tok.startsWith('s:') && (
                       <SpacerSize
                         value={spacerPx(tok)}
@@ -945,38 +975,46 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                       <button
                         className="fs-dnd-rowbtn"
                         title="Remove from the toolbar"
-                        onClick={() => setToolbarZones(tbLeft.filter((t) => t !== tok), tbRight.filter((t) => t !== tok))}
+                        onClick={() => setToolbarZones(tbLeft.filter((t) => stripBig(t) !== tok), tbRight.filter((t) => stripBig(t) !== tok))}
                       >×</button>
                     )}
                   </span>
                 );
               };
-              const tbHiddenRow = (value: string, label: string) => ({
-                key: value,
-                content: (
-                  <span className="fs-customize-tool">
-                    {iconSlot(tokenIcon(value))}
-                    {label}
-                    <button
-                      className="fs-dnd-rowbtn"
-                      title="Add to the end of the Main section"
-                      onClick={() => setToolbarZones([...tbLeft, value], tbRight)}
-                    >+</button>
-                  </span>
-                ),
-              });
+              // v2.94: the + button sends tools and commands to Row 2 (that's
+              // where they live now); formatting items still land on Row 1.
+              const tbHiddenRow = (value: string, label: string) => {
+                const toRow2 = value.startsWith('t:') || value.startsWith('c:');
+                return {
+                  key: value,
+                  content: (
+                    <span className="fs-customize-tool">
+                      {iconSlot(tokenIcon(value))}
+                      {label}
+                      <button
+                        className="fs-dnd-rowbtn"
+                        title={toRow2 ? 'Add to the end of Row 2' : 'Add to the end of Row 1'}
+                        onClick={() => (toRow2
+                          ? setToolbarZones(tbLeft, [...tbRight, value])
+                          : setToolbarZones([...tbLeft, value], tbRight))}
+                      >+</button>
+                    </span>
+                  ),
+                };
+              };
               return (
                 <DndColumns
                   columns={[
                     {
-                      id: 'left', title: 'Main',
+                      id: 'left', title: 'Row 1',
                       sections: [{ rows: tbLeft.map((tok) => ({ key: tok, content: tbRowContent(tok) })) }],
                     },
                     {
-                      // v2.02: the right zone is the Big Button section —
-                      // large Customize-style launchers (tools & commands).
-                      id: 'right', title: 'Big Button',
-                      sections: [{ rows: tbRight.map((tok) => ({ key: tok, content: tbRowContent(tok) })) }],
+                      // v2.94: Row 2 — tools and app functions under the
+                      // formatting row. A row's big! flag (the Big pill)
+                      // renders it as a large labelled launcher.
+                      id: 'right', title: 'Row 2',
+                      sections: [{ rows: tbRight.map((raw) => ({ key: raw, content: tbRowContent(raw, true) })) }],
                     },
                     {
                       id: 'hidden', title: 'Hidden', isHidden: true,
@@ -987,21 +1025,19 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                     },
                   ]}
                   onDrop={(src, dst) => {
-                    const tok = src.key;
+                    const raw = src.key;   // may carry the big! flag
+                    const tok = stripBig(raw);
                     const isPermanent = tok.startsWith('b:') && !!BUILTIN_BY_KEY[tok.slice(2)]?.permanent;
                     if (dst.col === 'hidden' && isPermanent) return;   // Customize can't be hidden
-                    if (dst.col === 'right' && !bigZoneAllowed(tok)) {
-                      showToast('Only tools and commands can be Big Buttons — formatting controls stay in Main.', 'info');
-                      return;
-                    }
-                    const nextLeft = tbLeft.filter((t) => t !== tok);
-                    const nextRight = tbRight.filter((t) => t !== tok);
+                    const nextLeft = tbLeft.filter((t) => stripBig(t) !== tok);
+                    const nextRight = tbRight.filter((t) => stripBig(t) !== tok);
                     if (dst.col === 'hidden') {
                       setToolbarZones(nextLeft, nextRight);   // dividers/spacers simply vanish
                       return;
                     }
+                    // Row 1 never renders big — moving there sheds the flag.
                     const arr = dst.col === 'left' ? nextLeft : nextRight;
-                    arr.splice(Math.min(dst.idx, arr.length), 0, tok);
+                    arr.splice(Math.min(dst.idx, arr.length), 0, dst.col === 'left' ? tok : raw);
                     setToolbarZones(nextLeft, nextRight);
                   }}
                 />

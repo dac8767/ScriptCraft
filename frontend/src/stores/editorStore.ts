@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, migrateResetSizes, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
+import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, migrateResetSizes, migrateTwoRows, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
 import { uuid } from '../utils/uuid';
 import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { findLanguage, urlsFor } from '../editor/languageCatalog';
@@ -156,6 +156,21 @@ try {
     localStorage.setItem(RESET_FLAG, '1');
     _tbZones = { left: migrateResetSizes(_tbZones.left), right: _tbZones.right };
     saveViewState({ toolbarLeft: _tbZones.left });
+  }
+} catch { /* storage unavailable — keep what we have */ }
+// v2.94 one-time: the two-row toolbar. Saved single-row layouts split —
+// tool/window toggles, lock/reset, pinned tools and commands move to Row 2;
+// the old Big Button zone's items become Row 2 items flagged big.
+try {
+  const TWOROWS_FLAG = 'opendraft:toolbarTwoRows294';
+  if (_vs.toolbarZonesSet && !localStorage.getItem(TWOROWS_FLAG)) {
+    localStorage.setItem(TWOROWS_FLAG, '1');
+    _tbZones = migrateTwoRows(_tbZones.left, _tbZones.right);
+    // The leftover from the menu migration rides along (Scrapbook-gated).
+    if (!_tbZones.right.some((t) => t.includes('b:insertTable'))) {
+      _tbZones = { left: _tbZones.left, right: [..._tbZones.right, 'b:insertTable'] };
+    }
+    saveViewState({ toolbarLeft: _tbZones.left, toolbarRight: _tbZones.right });
   }
 } catch { /* storage unavailable — keep what we have */ }
 
