@@ -16754,3 +16754,23 @@ input.fs-switch:checked::after { left: 15px; }
   width: 52px; background: transparent; color: var(--fd-text);
   border: 1px solid var(--fd-border); border-radius: 4px; padding: 2px 4px; font-size: 12px;
 }
+
+/* ─── v2.43 ─── */
+/* Derek: equal-width Arrangement buttons — the toggle never reflows. */
+.beat-mode-btn { width: 82px; text-align: center; }
+/* The Arrangement block anchors RIGHT, same spot in Sections and Freeform;
+   the ? sits at the very end, just left of the window's carets. */
+.beat-header-controls .beat-mode-label { margin-left: auto; }
+/* The circled-? icon carries its own ring now — the button is bare. */
+.fs-help-btn {
+  border: none !important;
+  width: auto;
+  height: auto;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--fd-text-muted);
+}
+.fs-help-btn:hover { color: var(--fd-text); }
+.fs-goal-headerctl { flex: 1; }
+.fs-goal-headerctl .fs-help-btn { margin-left: auto; }

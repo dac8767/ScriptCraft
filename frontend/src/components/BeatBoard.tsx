@@ -23,7 +23,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
-import { FaRegCircle, FaDotCircle, FaShapes, FaLink } from 'react-icons/fa';
+import { FaRegCircle, FaDotCircle, FaShapes, FaLink, FaRegQuestionCircle } from 'react-icons/fa';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 import { confirmDialog, promptDialog } from './ConfirmDialog';
@@ -942,11 +942,47 @@ export function OutlineHeaderControls() {
     }, 0);
   }, []);
 
+  /* v2.43, Derek: left to right — Presets, the add button, THEN Arrangement.
+     The Arrangement block anchors to the RIGHT (auto margin), so it sits in
+     exactly the same spot in Sections and Freeform; the ? rides at the very
+     end, just left of the window's carets. */
   return (
     <span className="beat-header-controls">
       <span className="beat-board-info">
         {beatCount} beat{beatCount !== 1 ? 's' : ''}
       </span>
+      {beatArrangeMode === 'auto' && (
+        <select
+          className="beat-board-preset"
+          value=""
+          title="Apply an outline structure, or save your own"
+          onChange={(e) => { void handlePresetAction(e.target.value); }}
+        >
+          <option value="">Presets…</option>
+          <optgroup label="Built-in">
+            {OUTLINE_PRESETS.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </optgroup>
+          {customPresets.length > 0 && (
+            <optgroup label="My Presets">
+              {customPresets.map((p) => (
+                <option key={p.id} value={`custom:${p.id}`}>{p.name}</option>
+              ))}
+            </optgroup>
+          )}
+          <optgroup label="Manage">
+            <option value="__save">Save current as preset…</option>
+            {customPresets.length > 0 && <option value="__export">Export my presets…</option>}
+            <option value="__import">Import presets…</option>
+          </optgroup>
+        </select>
+      )}
+      {beatArrangeMode === 'auto' ? (
+        <button className="beat-board-add-col-btn" onClick={handleAddColumn}>+ Add Section</button>
+      ) : (
+        <button className="beat-board-add-col-btn" onClick={handleAddBeatFree}>+ Add Beat</button>
+      )}
       <span className="beat-mode-label">Arrangement:</span>
       <div className="beat-mode-toggle">
         <button
@@ -960,7 +996,7 @@ export function OutlineHeaderControls() {
           title="Freeform — place beats anywhere"
         >Freeform</button>
       </div>
-      <button ref={helpBtnRef} className="fs-help-btn" title="How to use the Outline" onClick={toggleHelp}>?</button>
+      <button ref={helpBtnRef} className="fs-help-btn" title="How to use the Outline" onClick={toggleHelp}><FaRegQuestionCircle /></button>
       {helpOpen && helpPos && createPortal(
         <div className="fs-help-pop" style={{ top: helpPos.top, left: helpPos.left }}>
           Create sections (Act 1, Act 2…) and drop beats into them — or pick
@@ -970,38 +1006,6 @@ export function OutlineHeaderControls() {
           their shape and color.
         </div>,
         document.body,
-      )}
-      {beatArrangeMode === 'auto' ? (
-        <>
-          <select
-            className="beat-board-preset"
-            value=""
-            title="Apply an outline structure, or save your own"
-            onChange={(e) => { void handlePresetAction(e.target.value); }}
-          >
-            <option value="">Presets…</option>
-            <optgroup label="Built-in">
-              {OUTLINE_PRESETS.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </optgroup>
-            {customPresets.length > 0 && (
-              <optgroup label="My Presets">
-                {customPresets.map((p) => (
-                  <option key={p.id} value={`custom:${p.id}`}>{p.name}</option>
-                ))}
-              </optgroup>
-            )}
-            <optgroup label="Manage">
-              <option value="__save">Save current as preset…</option>
-              {customPresets.length > 0 && <option value="__export">Export my presets…</option>}
-              <option value="__import">Import presets…</option>
-            </optgroup>
-          </select>
-          <button className="beat-board-add-col-btn" onClick={handleAddColumn}>+ Add Section</button>
-        </>
-      ) : (
-        <button className="beat-board-add-col-btn" onClick={handleAddBeatFree}>+ Add Beat</button>
       )}
     </span>
   );

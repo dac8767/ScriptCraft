@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.42';
+export const APP_VERSION = '2.43';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.43',
+    date: '2026-07-16',
+    items: [
+      { title: 'Outline header: steady Arrangement, tidier order', detail: 'Left to right it now reads Presets, + Add Section (or + Add Beat), then Arrangement — and the Arrangement block anchors to the right with equal-width buttons, so it sits in exactly the same spot in Sections and Freeform. The ? uses the circled icon and rides just left of the window\'s carets, in every window that has one.', tags: ['UI', 'Fix'] },
+    ],
+  },
   {
     version: '2.42',
     date: '2026-07-16',

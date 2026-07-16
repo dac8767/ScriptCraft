@@ -16,6 +16,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { FaRegQuestionCircle } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore, type WritingGoal } from '../stores/editorStore';
 import { useVomitStore } from '../stores/vomitStore';
@@ -138,7 +139,7 @@ export function GoalsHeaderExtra() {
           >{k[0].toUpperCase() + k.slice(1)}</button>
         ))}
       </span>
-      <button ref={helpBtnRef} className="fs-help-btn" title="About Goals" onClick={toggleHelp}>?</button>
+      <button ref={helpBtnRef} className="fs-help-btn" title="About Goals" onClick={toggleHelp}><FaRegQuestionCircle /></button>
       {helpOpen && pos && createPortal(
         <div className="fs-help-pop" style={{ top: pos.top, left: pos.left }}>
           Set a target and keep it in view while you write — a word count, a
