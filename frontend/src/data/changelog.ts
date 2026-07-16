@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.25';
+export const APP_VERSION = '2.26';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.26',
+    date: '2026-07-16',
+    items: [
+      { title: 'Your own outline presets', detail: 'The Outline\'s Presets menu gained a "My Presets" group: Save current as preset… captures your sections and their page budgets under a name, and Export / Import moves them between machines (or writers) as a .json file. Applying one works exactly like a built-in, including the replace confirmation.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '2.25',
     date: '2026-07-16',

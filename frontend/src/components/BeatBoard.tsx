@@ -23,7 +23,10 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
-import { confirmDialog } from './ConfirmDialog';
+import { useOutlinePresetStore } from '../stores/outlinePresetStore';
+import { confirmDialog, promptDialog } from './ConfirmDialog';
+import { showToast } from './Toast';
+import { saveFile, openTextFile } from '../utils/fileOps';
 import { api } from '../services/api';
 
 const BEAT_COLORS = [
@@ -91,8 +94,17 @@ export const OUTLINE_PRESETS: OutlinePreset[] = [
   },
 ];
 
+/** v2.26: a preset id resolves to a built-in, or (as `custom:<id>`) to one
+ *  of the user's saved presets — one lookup for apply/override alike. */
+export function resolveOutlinePreset(presetId: string): { columns: string[]; pages: number[] } | undefined {
+  if (presetId.startsWith('custom:')) {
+    return useOutlinePresetStore.getState().presets.find((p) => p.id === presetId.slice(7));
+  }
+  return OUTLINE_PRESETS.find((p) => p.id === presetId);
+}
+
 export function applyOutlinePreset(presetId: string, mode: 'append' | 'override' = 'append'): void {
-  const preset = OUTLINE_PRESETS.find((p) => p.id === presetId);
+  const preset = resolveOutlinePreset(presetId);
   if (!preset) return;
   if (mode === 'override') {
     // v2.23: replace the SECTIONS, never the beats. Clearing the columns
@@ -801,6 +813,50 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const isSingleColumn = sortedColumns.length === 1;
   // v2.23: beats orphaned by a preset override wait in "Uncategorized".
   const orphanBeats = uncategorizedBeats(beats, beatColumns);
+  // v2.26: the user's saved presets share the dropdown with the built-ins.
+  const customPresets = useOutlinePresetStore((s) => s.presets);
+
+  const handlePresetAction = useCallback(async (value: string) => {
+    if (!value) return;
+    const store = useOutlinePresetStore.getState();
+    if (value === '__save') {
+      const cols = [...useEditorStore.getState().beatColumns].sort((a, b) => a.position - b.position);
+      if (cols.length === 0) { showToast('Nothing to save — the outline has no sections yet.', 'error'); return; }
+      const name = await promptDialog('Name this preset', 'My Structure', { title: 'Save Outline Preset', confirmLabel: 'Save' });
+      if (!name || !name.trim()) return;
+      store.savePreset(name, cols.map((c) => c.title), cols.map((c) => c.targetPages ?? 1));
+      showToast(`Preset "${name.trim()}" saved.`, 'success');
+      return;
+    }
+    if (value === '__export') {
+      try {
+        const ok = await saveFile(store.exportJson(), 'outline-presets.json', [{ name: 'Outline Presets', extensions: ['json'] }]);
+        if (ok) showToast(`Exported ${store.presets.length} preset${store.presets.length === 1 ? '' : 's'}.`, 'success');
+      } catch (err) {
+        showToast(`Export failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
+      }
+      return;
+    }
+    if (value === '__import') {
+      try {
+        const file = await openTextFile([{ name: 'Outline Presets', extensions: ['json'] }]);
+        if (!file) return;
+        const result = store.importPresets(file.content);
+        if (result.error) showToast(result.error, 'error');
+        else showToast(`Imported ${result.added} preset${result.added === 1 ? '' : 's'}${result.skipped ? ` (${result.skipped} skipped)` : ''}.`, result.added > 0 ? 'success' : 'info');
+      } catch (err) {
+        showToast(`Import failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
+      }
+      return;
+    }
+    // A preset id (built-in or custom:<id>) — v2.23 override rules apply.
+    if (useEditorStore.getState().beatColumns.length === 0) { applyOutlinePreset(value); return; }
+    const ok = await confirmDialog(
+      'This preset will replace your current sections. Your beats are NOT deleted — they move to a temporary "Uncategorized" column on the left, and you drag each one into its new section.',
+      { title: 'Replace the current outline?', confirmLabel: 'Replace Sections', danger: true },
+    );
+    if (ok) applyOutlinePreset(value, 'override');
+  }, []);
 
   const handleAddColumn = useCallback(() => {
     addBeatColumn(`Section ${beatColumns.length + 1}`);
@@ -907,26 +963,33 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
                 placeholder so it reads "Presets" again after applying.
                 v2.23: with sections already on the board, a preset REPLACES
                 them (after a confirm) instead of piling more on — the beats
-                survive in the Uncategorized column. */}
+                survive in the Uncategorized column.
+                v2.26: the user's saved presets join the list, plus save /
+                export / import actions. */}
             <select
               className="beat-board-preset"
               value=""
-              title="Apply a common outline structure"
-              onChange={async (e) => {
-                const id = e.target.value;
-                if (!id) return;
-                if (beatColumns.length === 0) { applyOutlinePreset(id); return; }
-                const ok = await confirmDialog(
-                  'This preset will replace your current sections. Your beats are NOT deleted — they move to a temporary "Uncategorized" column on the left, and you drag each one into its new section.',
-                  { title: 'Replace the current outline?', confirmLabel: 'Replace Sections', danger: true },
-                );
-                if (ok) applyOutlinePreset(id, 'override');
-              }}
+              title="Apply an outline structure, or save your own"
+              onChange={(e) => { void handlePresetAction(e.target.value); }}
             >
               <option value="">Presets…</option>
-              {OUTLINE_PRESETS.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
+              <optgroup label="Built-in">
+                {OUTLINE_PRESETS.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </optgroup>
+              {customPresets.length > 0 && (
+                <optgroup label="My Presets">
+                  {customPresets.map((p) => (
+                    <option key={p.id} value={`custom:${p.id}`}>{p.name}</option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label="Manage">
+                <option value="__save">Save current as preset…</option>
+                {customPresets.length > 0 && <option value="__export">Export my presets…</option>}
+                <option value="__import">Import presets…</option>
+              </optgroup>
             </select>
             <button className="beat-board-add-col-btn" onClick={handleAddColumn}>+ Add Section</button>
           </>
