@@ -64,6 +64,10 @@ const GapHandle: React.FC<{ bar: 'menu' | 'toolbar' | 'bigbtn' }> = ({ bar }) =>
   // v2.55: the sizing lock hides every grip — no dead controls.
   if (locked) return null;
 
+  // v2.91, Derek: the Big Buttons size themselves to the chrome they span —
+  // their grip adjusts SPACING only, no vertical axis, no indicator dot.
+  const twoAxis = bar !== 'bigbtn';
+
   const applyVertical = (dy: number, start: number) => {
     const st = useEditorStore.getState();
     if (bar === 'bigbtn') {
@@ -82,7 +86,7 @@ const GapHandle: React.FC<{ bar: 'menu' | 'toolbar' | 'bigbtn' }> = ({ bar }) =>
   return (
     <span
       className="fs-gap-handle"
-      title="Drag sideways: item spacing · drag up/down: bar size"
+      title={twoAxis ? 'Drag sideways: item spacing · drag up/down: bar size' : 'Drag to adjust the spacing between items'}
       onPointerDown={(e) => {
         e.preventDefault(); e.stopPropagation();
         const el = e.currentTarget as HTMLElement;
@@ -105,8 +109,9 @@ const GapHandle: React.FC<{ bar: 'menu' | 'toolbar' | 'bigbtn' }> = ({ bar }) =>
         const dx = e.clientX - d.x;
         const dy = e.clientY - d.y;
         if (!d.axis) {
-          if (Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
-          d.axis = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
+          if (!twoAxis) d.axis = 'h';                      // v2.91: spacing only
+          else if (Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+          else d.axis = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
         }
         if (d.axis === 'h') setChromeGap(bar, d.gap + (GAP_DRAG_DIR[bar] * dx) / d.gaps);
         else applyVertical(dy, d.v);
@@ -115,7 +120,7 @@ const GapHandle: React.FC<{ bar: 'menu' | 'toolbar' | 'bigbtn' }> = ({ bar }) =>
     >
       <span className="fs-gap-handle-bar" />
       {/* v2.76: the indicator — where the bar's vertical size sits in range */}
-      <span className="fs-gap-handle-dot" style={{ top: `${8 + sizeIndicatorT(bar, vSize) * 84}%` }} />
+      {twoAxis && <span className="fs-gap-handle-dot" style={{ top: `${8 + sizeIndicatorT(bar, vSize) * 84}%` }} />}
     </span>
   );
 };

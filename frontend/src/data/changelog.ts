@@ -65,9 +65,37 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.88';
+export const APP_VERSION = '2.92';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.92',
+    date: '2026-07-16',
+    items: [
+      { title: 'Toolbar grip gets breathing room', detail: 'A little more space between the last toolbar item and the spacing grip.', tags: ['UI', 'Polish'] },
+    ],
+  },
+  {
+    version: '2.91',
+    date: '2026-07-16',
+    items: [
+      { title: 'Big Button grip: spacing only', detail: 'The Big Buttons size themselves to the chrome they span, so their grip lost the vertical axis and its indicator dot — sideways spacing only.', tags: ['UI'] },
+    ],
+  },
+  {
+    version: '2.90',
+    date: '2026-07-16',
+    items: [
+      { title: 'Scrapbook zoom bar: one handle', detail: 'The tree panel\'s size bar now has a single circle — drag it right to grow the sections and documents, left to shrink them.', tags: ['Tools', 'UI'] },
+    ],
+  },
+  {
+    version: '2.89',
+    date: '2026-07-16',
+    items: [
+      { title: 'Scrapbook: double-click renames; documents show their birthday', detail: 'Double-clicking a section or document in the tree renames it in place. The document name in the surface\'s upper-left is editable too (same name everywhere — one source), and the date the document was created now sits under it.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '2.88',
     date: '2026-07-16',

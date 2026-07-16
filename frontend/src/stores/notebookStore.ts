@@ -46,6 +46,9 @@ export interface NotebookPage {
   html: string;               // legacy flow pages only
   tables: NbTable[];          // legacy flow pages only
   boxes: NbBox[];             // the page content: free-floating boxes
+  /** v2.89: creation time (ms epoch) — shown under the title on the surface.
+   *  Optional: pages made before this simply have no date to show. */
+  createdAt?: number;
 }
 
 export type NbNode =
@@ -259,7 +262,7 @@ export const useNotebookStore = create<NotebookState>((set, get) => ({
 
   addPage: () => {
     const id = nbUid();
-    const page: NotebookPage = { id, title: 'Untitled', mode: 'canvas', html: '', tables: [], boxes: [] };
+    const page: NotebookPage = { id, title: 'Untitled', mode: 'canvas', html: '', tables: [], boxes: [], createdAt: Date.now() };
     set((s) => ({
       pages: { ...s.pages, [id]: page },
       tree: [...s.tree, { type: 'page', id }],

@@ -16137,8 +16137,7 @@ input.fs-switch:checked::after { left: 15px; }
 .fs-nb-zoom-thumb {
   position: absolute;
   top: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;                        /* v2.90: one handle — thumb anchors left */
   height: 100%;
   border-radius: 7px;
   background: var(--fd-border);
@@ -16152,8 +16151,7 @@ input.fs-switch:checked::after { left: 15px; }
   background: var(--fd-text-muted);
   cursor: ew-resize;
 }
-.fs-nb-zoom-handle-l { left: 1px; }
-.fs-nb-zoom-handle-r { right: 1px; }
+.fs-nb-zoom-handle-r { right: 1px; }   /* v2.90: the only handle */
 
 .fs-nb-toplevel-drop {
   flex: 0 0 auto;
@@ -16286,6 +16284,19 @@ input.fs-switch:checked::after { left: 15px; }
   font-size: 12.5px;
   padding: 24px;
   text-align: center;
+}
+/* v2.89: title + created-date stack in the surface's upper left. */
+.fs-nb-title-block {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.fs-nb-created {
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  padding-left: 2px;
+  margin-top: -2px;
 }
 .fs-nb-title {
   background: none;
@@ -16738,6 +16749,8 @@ input.fs-switch:checked::after { left: 15px; }
 .menu-bar:hover .fs-gap-handle,
 .toolbar:hover .fs-gap-handle,
 .chrome-bigbtns:hover .fs-gap-handle { opacity: 0.45; }
+/* v2.92, Derek: room between the last toolbar item and its grip. */
+.toolbar .fs-gap-handle { margin-left: 10px; }
 .fs-gap-handle:hover, .fs-gap-handle:active { opacity: 1 !important; }
 .fs-gap-handle-bar {
   width: 4px;

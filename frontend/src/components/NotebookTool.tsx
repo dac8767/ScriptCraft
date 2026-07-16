@@ -31,6 +31,7 @@ import {
 import { useSettingsStore } from '../stores/settingsStore';
 import { showToast } from './Toast';
 import { confirmDialog } from './ConfirmDialog';
+import { formatAppDate } from '../utils/dateFormat';
 
 const IMAGE_BUDGET = 300_000;   // dataURL chars — localStorage is the store
 
@@ -565,14 +566,16 @@ function TreeNodes({ nodes, depth }: { nodes: NbNode[]; depth: number }) {
 function PageRow({ id, depth }: { id: string; depth: number }) {
   const page = useNotebookStore((s) => s.pages[id]);
   const selected = useNotebookStore((s) => s.selectedPageId === id);
-  const { selectPage, deletePage, moveNode } = useNotebookStore.getState();
+  const { selectPage, deletePage, moveNode, renamePage } = useNotebookStore.getState();
   const [over, setOver] = useState<'before' | 'after' | null>(null);
+  // v2.89, Derek: double-click renames — same interaction sections have.
+  const [editing, setEditing] = useState(false);
   if (!page) return null;
   return (
     <div
       className={`fs-nb-pagerow${selected ? ' active' : ''}${over ? ` over-${over}` : ''}`}
       style={{ marginLeft: depth * 12 }}
-      draggable
+      draggable={!editing}
       onDragStart={(e) => dragStartData(e, id)}
       onDragOver={(e) => {
         e.preventDefault();
@@ -589,7 +592,22 @@ function PageRow({ id, depth }: { id: string; depth: number }) {
     >
       <span className="fs-nb-grabber">⋮⋮</span>
       <span className="fs-nb-pageicon"><FaRegFileAlt /></span>
-      <button className="fs-nb-pagename" onClick={() => selectPage(id)}>{page.title || 'Untitled'}</button>
+      {editing ? (
+        <input
+          autoFocus
+          defaultValue={page.title}
+          className="fs-nb-sectionname-input"
+          onBlur={(e) => { renamePage(id, e.target.value || 'Untitled'); setEditing(false); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+        />
+      ) : (
+        <button
+          className="fs-nb-pagename"
+          onClick={() => selectPage(id)}
+          onDoubleClick={() => setEditing(true)}
+          title="Double-click to rename"
+        >{page.title || 'Untitled'}</button>
+      )}
       <button className="fs-nb-rowdel" title="Delete page" onClick={async () => {
         if (await confirmDialog(`Delete “${page.title || 'Untitled'}”? This cannot be undone.`, { title: 'Delete Page', confirmLabel: 'Delete', danger: true })) deletePage(id);
       }}><FaRegTrashAlt /></button>
@@ -779,9 +797,10 @@ export default function NotebookTool() {
 }
 
 /** v2.66, Derek: a Premiere-style bar at the panel's bottom. Horizontal, but
- *  it zooms VERTICALLY: stretch the thumb (either round end handle) and the
- *  tree's rows grow, text and icons scaling with them; shrink it and they
- *  contract. Hidden while the sizing lock is on (v2.55: no dead controls).
+ *  it zooms VERTICALLY: stretch the thumb and the tree's rows grow, text and
+ *  icons scaling with them; shrink it and they contract. v2.90: ONE round
+ *  handle — the thumb anchors left and its right-end circle drags 1:1.
+ *  Hidden while the sizing lock is on (v2.55: no dead controls).
  *  The thumb-width ↔ scale mapping is linear; exported for the test. */
 export const TREE_SCALE_MIN = 0.7;
 export const TREE_SCALE_MAX = 2;
@@ -800,31 +819,29 @@ function ScrapbookTreeZoom() {
   const setScale = useEditorStore((s) => s.setScrapbookTreeScale);
   const locked = useEditorStore((s) => s.uiResizeLocked);
   const trackRef = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ x: number; frac: number; dir: 1 | -1 } | null>(null);
+  const drag = useRef<{ x: number; frac: number } | null>(null);
   if (locked) return null;
 
-  const start = (dir: 1 | -1) => (e: React.PointerEvent) => {
+  const start = (e: React.PointerEvent) => {
     e.preventDefault(); e.stopPropagation();
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-    drag.current = { x: e.clientX, frac: treeThumbFrac(scale), dir };
+    drag.current = { x: e.clientX, frac: treeThumbFrac(scale) };
   };
   const move = (e: React.PointerEvent) => {
     const d = drag.current;
     const w = trackRef.current?.clientWidth || 0;
     if (!d || w <= 0) return;
-    // The thumb is centered: pulling one end outward stretches both ends,
-    // so a pixel of mouse adds two pixels of width.
-    const frac = d.frac + ((e.clientX - d.x) * d.dir * 2) / w;
+    // Left-anchored thumb, one handle: the circle tracks the mouse 1:1.
+    const frac = d.frac + (e.clientX - d.x) / w;
     setScale(treeScaleFromFrac(Math.min(1, Math.max(TREE_THUMB_MIN_FRAC, frac))));
   };
   const end = () => { drag.current = null; };
 
   return (
-    <div className="fs-nb-zoom" title="Drag an end to grow or shrink the tree's rows">
+    <div className="fs-nb-zoom" title="Drag the circle to grow or shrink the tree's rows">
       <div className="fs-nb-zoom-track" ref={trackRef}>
         <div className="fs-nb-zoom-thumb" style={{ width: `${treeThumbFrac(scale) * 100}%` }}>
-          <span className="fs-nb-zoom-handle fs-nb-zoom-handle-l" onPointerDown={start(-1)} onPointerMove={move} onPointerUp={end} />
-          <span className="fs-nb-zoom-handle fs-nb-zoom-handle-r" onPointerDown={start(1)} onPointerMove={move} onPointerUp={end} />
+          <span className="fs-nb-zoom-handle fs-nb-zoom-handle-r" onPointerDown={start} onPointerMove={move} onPointerUp={end} />
         </div>
       </div>
     </div>
@@ -844,13 +861,24 @@ export function NotebookSurface() {
           and the toolbar's own formatting buttons drive text boxes. */}
       <div className="fs-nb-takeover-head">
         {page ? (
-          <input
-            key={page.id}
-            className="fs-nb-title"
-            defaultValue={page.title}
-            placeholder="Untitled"
-            onBlur={(e) => renamePage(page.id, e.target.value || 'Untitled')}
-          />
+          <span className="fs-nb-title-block">
+            {/* Editing this renames the page everywhere — the tree row reads
+                the same store title (one source). */}
+            <input
+              key={page.id}
+              className="fs-nb-title"
+              defaultValue={page.title}
+              placeholder="Untitled"
+              onBlur={(e) => renamePage(page.id, e.target.value || 'Untitled')}
+            />
+            {/* v2.89, Derek: the created date rides under the name. Pages
+                from before the field simply have none to show. */}
+            {page.createdAt && (
+              <span className="fs-nb-created">
+                Created {formatAppDate(new Date(page.createdAt), useSettingsStore.getState().dateFormat)}
+              </span>
+            )}
+          </span>
         ) : (
           <span className="fs-nb-title fs-nb-title-empty">Scrapbook</span>
         )}

@@ -90,10 +90,11 @@ describe('GapHandle drag direction', () => {
     expect(useEditorStore.getState().toolbarMode).toBe('compact');
   });
 
-  it('bigbtn grip: dragging down grows the buttons (smaller inset)', () => {
+  /* v2.91: the Big Button grip is spacing-only — vertical drags do nothing. */
+  it('bigbtn grip: a vertical drag never touches the button size', () => {
     useEditorStore.getState().setBigBtnInset(16);
     dragXY('bigbtn', [100, 50], [100, 60]);
-    expect(useEditorStore.getState().bigBtnInsetPx).toBe(6);
+    expect(useEditorStore.getState().bigBtnInsetPx).toBe(16);
   });
 
   /* v2.88: one axis per drag — the first direction to move claims it. */
