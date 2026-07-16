@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.82';
+export const APP_VERSION = '2.83';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.83',
+    date: '2026-07-16',
+    items: [
+      { title: 'Auto saves can copy to a folder you choose', detail: 'Settings > Save Options > Auto Save Locations gains a "Local folder" destination: pick any folder on your system and every auto save drops a timestamped .odraft copy there, alongside the always-on version history. Failures never block the save itself.', tags: ['New Feature', 'Saving'] },
+    ],
+  },
   {
     version: '2.82',
     date: '2026-07-16',

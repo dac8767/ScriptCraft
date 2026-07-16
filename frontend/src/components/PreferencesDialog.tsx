@@ -149,6 +149,16 @@ function DraftNumberRow({ editor }: { editor: Editor | null }) {
   );
 }
 
+/** v2.83: native folder picker — desktop only (a folder path only means
+ *  something where the OS dialog picked it). */
+async function pickFolder(): Promise<string | null> {
+  const { isTauri } = await import('../services/platform');
+  if (!isTauri()) { showToast('Choosing a local folder needs the desktop app.', 'info'); return null; }
+  const { open } = await import('@tauri-apps/plugin-dialog');
+  const picked = await open({ directory: true, multiple: false, title: 'Folder for auto save copies' });
+  return typeof picked === 'string' ? picked : null;
+}
+
 function SaveLocationsTab({ editor }: { editor: Editor | null }) {
   const {
     autoSnapshotMinutes, setAutoSnapshotMinutes,
@@ -159,6 +169,8 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
     snapToCloud, setSnapToCloud,
     snapToGDrive, setSnapToGDrive,
     snapToOneDrive, setSnapToOneDrive,
+    snapToLocalFolder, setSnapToLocalFolder,
+    snapLocalFolder, setSnapLocalFolder,
     gdriveClientId, setGdriveClientId,
     onedriveClientId, setOnedriveClientId,
     collabAuth,
@@ -241,6 +253,35 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
         <label className="prefs-check-row">
           <input type="checkbox" checked disabled />
           <span>Local version history (always on)</span>
+        </label>
+        {/* v2.83, Derek: a chosen folder on this device gets a timestamped
+            .odraft on every auto save. Checking with no folder yet opens the
+            picker; the path shows beside the row. */}
+        <label className="prefs-check-row">
+          <input
+            type="checkbox"
+            checked={snapToLocalFolder && !!snapLocalFolder}
+            onChange={async (e) => {
+              if (!e.target.checked) { setSnapToLocalFolder(false); return; }
+              let folder = snapLocalFolder;
+              if (!folder) folder = (await pickFolder()) || '';
+              if (!folder) return;
+              setSnapLocalFolder(folder);
+              setSnapToLocalFolder(true);
+            }}
+          />
+          <span>
+            Local folder — timestamped copies
+            {snapLocalFolder ? <code className="prefs-path-chip">{snapLocalFolder}</code> : ' — choose a folder'}
+          </span>
+          <button
+            className="prefs-inline-btn"
+            onClick={async (e) => {
+              e.preventDefault();
+              const folder = await pickFolder();
+              if (folder) { setSnapLocalFolder(folder); setSnapToLocalFolder(true); }
+            }}
+          >Choose Folder…</button>
         </label>
         <label className="prefs-check-row">
           <input type="checkbox" checked={snapToCloud} onChange={(e) => setSnapToCloud(e.target.checked)} disabled={!signedIn} />

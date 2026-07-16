@@ -282,10 +282,12 @@ export async function mirrorSnapshot(args: {
   content: Record<string, unknown>; message: string;
 }): Promise<void> {
   const s = useSettingsStore.getState();
-  const dests: Array<'cloud' | 'gdrive' | 'onedrive'> = [];
+  const dests: Array<'cloud' | 'gdrive' | 'onedrive' | 'localfolder'> = [];
   if (s.snapToCloud) dests.push('cloud');
   if (s.snapToGDrive) dests.push('gdrive');
   if (s.snapToOneDrive) dests.push('onedrive');
+  // v2.83, Derek: a chosen folder on this device gets a timestamped .odraft.
+  if (s.snapToLocalFolder && s.snapLocalFolder) dests.push('localfolder');
   if (dests.length === 0) return; // local git checkpoint already covers it
 
   const now = new Date();
@@ -299,6 +301,22 @@ export async function mirrorSnapshot(args: {
         await snapshotToGDrive(args.projectName, label, JSON.stringify(args.content));
       } else if (loc === 'onedrive') {
         await snapshotToOneDrive(args.projectName, label, JSON.stringify(args.content));
+      } else if (loc === 'localfolder') {
+        // v2.83: write an .odraft into the chosen folder (desktop only —
+        // the folder path only exists where a native dialog picked it).
+        const { isTauri } = await import('./platform');
+        if (!isTauri()) throw new Error('Local folder auto saves need the desktop app.');
+        const { exportOdraft } = await import('../utils/odraftFormat');
+        const blob = exportOdraft({
+          id: '', title: args.title, author: '', format: 'json',
+          created_at: '', updated_at: '', page_count: 0,
+          size_bytes: 0, color: '', pinned: false, sort_order: 0, preview: '',
+        }, args.content);
+        const text = await blob.text();
+        const safe = label.replace(/[/\\:*?"<>|]/g, '-');
+        const folder = useSettingsStore.getState().snapLocalFolder.replace(/[/\\]$/, '');
+        const { invoke } = await import('@tauri-apps/api/core');
+        await invoke('save_text_to_path', { path: `${folder}/Auto Save — ${safe}.odraft`, contents: text });
       } else {
         // Timestamped copy inside the mirrored cloud project.
         const map = mapGet(CLOUD_MAP);
@@ -315,7 +333,7 @@ export async function mirrorSnapshot(args: {
       }
     } catch (err) {
       console.error(`Snapshot copy to ${loc} failed:`, err);
-      const name = loc === 'gdrive' ? 'Google Drive' : loc === 'onedrive' ? 'OneDrive' : 'Cloud';
+      const name = loc === 'gdrive' ? 'Google Drive' : loc === 'onedrive' ? 'OneDrive' : loc === 'localfolder' ? 'Local folder' : 'Cloud';
       failures.push(`${name}: ${errText(err)}`);
     }
   }));
