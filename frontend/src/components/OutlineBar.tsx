@@ -311,7 +311,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             groups={[{
               label: 'Add',
               options: [
-                { value: 'section', label: 'Section (column)' },
+                { value: 'section', label: 'Section' },
                 { value: 'beat', label: 'Beat' },
               ],
             }]}

@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.17';
+export const APP_VERSION = '2.18';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.18',
+    date: '2026-07-16',
+    items: [
+      { title: 'Four classic structures join the presets', detail: 'The Outline\'s Presets dropdown now offers Save the Cat (Blake Snyder\'s 15 beats), The Hero\'s Journey (12 stages), Dan Harmon\'s Story Circle (8 steps) and the Sequence Method (8 sequences), alongside 3-Act. Every preset section arrives with one blank beat, ready to fill in.', tags: ['New Feature', 'Tools'] },
+      { title: '"Sections", everywhere', detail: 'The Outline window stopped saying "column" — it\'s + Add Section, Section name, Delete section, matching the bar and the ＋ menu. Sections were already one shared model: add, rename or delete one anywhere and the Outline window, the Outline Bar and the menus all update together.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '2.17',
     date: '2026-07-16',

@@ -41,13 +41,46 @@ export interface OutlinePreset {
 }
 export const OUTLINE_PRESETS: OutlinePreset[] = [
   { id: '3act', name: '3-Act Structure', columns: ['Act I', 'Act II', 'Act III'] },
+  {
+    id: 'savethecat', name: 'Save the Cat (15 beats)',
+    columns: [
+      'Opening Image', 'Theme Stated', 'Set-Up', 'Catalyst', 'Debate',
+      'Break into Two', 'B Story', 'Fun and Games', 'Midpoint',
+      'Bad Guys Close In', 'All Is Lost', 'Dark Night of the Soul',
+      'Break into Three', 'Finale', 'Final Image',
+    ],
+  },
+  {
+    id: 'herojourney', name: "The Hero's Journey (12 stages)",
+    columns: [
+      'Ordinary World', 'Call to Adventure', 'Refusal of the Call',
+      'Meeting the Mentor', 'Crossing the Threshold', 'Tests, Allies, Enemies',
+      'Approach to the Inmost Cave', 'The Ordeal', 'Reward',
+      'The Road Back', 'Resurrection', 'Return with the Elixir',
+    ],
+  },
+  {
+    id: 'storycircle', name: 'Story Circle (8 steps)',
+    columns: ['You', 'Need', 'Go', 'Search', 'Find', 'Take', 'Return', 'Change'],
+  },
+  {
+    id: 'sequences', name: 'Sequence Method (8 sequences)',
+    columns: [
+      'Seq 1: Status Quo', 'Seq 2: Predicament', 'Seq 3: First Obstacle',
+      'Seq 4: Midpoint', 'Seq 5: Rising Action', 'Seq 6: Main Culmination',
+      'Seq 7: New Tension', 'Seq 8: Resolution',
+    ],
+  },
 ];
 
 export function applyOutlinePreset(presetId: string): void {
   const preset = OUTLINE_PRESETS.find((p) => p.id === presetId);
   if (!preset) return;
-  const { addBeatColumn } = useEditorStore.getState();
-  for (const title of preset.columns) addBeatColumn(title);
+  const { addBeatColumn, addBeat } = useEditorStore.getState();
+  for (const title of preset.columns) {
+    // v2.18: every preset section starts with one blank beat, ready to fill.
+    addBeat('', addBeatColumn(title));
+  }
 }
 
 /* ─── URL detection ─── */
@@ -728,7 +761,7 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const isSingleColumn = sortedColumns.length === 1;
 
   const handleAddColumn = useCallback(() => {
-    addBeatColumn(`Column ${beatColumns.length + 1}`);
+    addBeatColumn(`Section ${beatColumns.length + 1}`);
   }, [addBeatColumn, beatColumns.length]);
 
   const handleDragStart = useCallback((e: DragStartEvent) => setActiveDragId(String(e.active.id)), []);
@@ -788,7 +821,7 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const defaultColumnId = sortedColumns.length > 0 ? sortedColumns[0].id : '';
 
   const handleAddBeatFree = useCallback(() => {
-    const colId = defaultColumnId || addBeatColumn('Column 1');
+    const colId = defaultColumnId || addBeatColumn('Section 1');
     const offset = (beats.length % 10) * 30;
     addBeat('New Beat', colId);
     setTimeout(() => {
@@ -840,7 +873,7 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
-            <button className="beat-board-add-col-btn" onClick={handleAddColumn}>+ Add Column</button>
+            <button className="beat-board-add-col-btn" onClick={handleAddColumn}>+ Add Section</button>
           </>
         ) : (
           <button className="beat-board-add-col-btn" onClick={handleAddBeatFree}>+ Add Beat</button>
@@ -849,7 +882,7 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
 
       {beatArrangeMode === 'auto' && (
         <div className="beat-board-hint">
-          Create a column to organize scenes/beats. Example: Act 1, Act 2, Act 3.
+          Create a section to organize scenes/beats. Example: Act 1, Act 2, Act 3.
         </div>
       )}
 
@@ -926,7 +959,7 @@ const BeatColumnView: React.FC<BeatColumnViewProps> = ({
           className="beat-column-title-input"
           value={col.title}
           onChange={(e) => onUpdateColumn(col.id, { title: e.target.value })}
-          placeholder="Column name..."
+          placeholder="Section name..."
         />
         {/* v2.11: the section's page budget — drives its block width on the
             Outline Bar's top row (also settable by right-click there). */}
@@ -947,10 +980,10 @@ const BeatColumnView: React.FC<BeatColumnViewProps> = ({
           <button
             className="beat-column-maximize"
             onClick={onToggleMaximize}
-            title={isMaximized ? 'Restore column' : 'Maximize column'}
+            title={isMaximized ? 'Restore section' : 'Maximize section'}
           >{isMaximized ? '\u29C9' : '\u2922'}</button>
         )}
-        <button className="beat-column-delete" onClick={() => onDeleteColumn(col.id)} title="Delete column">&times;</button>
+        <button className="beat-column-delete" onClick={() => onDeleteColumn(col.id)} title="Delete section">&times;</button>
       </div>
       <SortableContext items={colBeats.map((b) => b.id)} strategy={verticalListSortingStrategy}>
         <div ref={setDropRef} className={`beat-column-cards${isSingleColumn ? ' beat-column-cards-wrap' : ''}`}>
