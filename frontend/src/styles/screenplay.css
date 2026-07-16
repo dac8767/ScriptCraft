@@ -16727,3 +16727,8 @@ input.fs-switch:checked::after { left: 15px; }
   padding: 18px 26px;
   text-align: center;
 }
+
+/* v2.35: Scrapbook additions */
+.menu-scrapbook-sep-drag { cursor: ew-resize; touch-action: none; }
+.menu-scrapbook-sep-drag:hover { background: var(--fd-accent); }
+.fs-nb-side-btns button.active { color: var(--fd-accent); }

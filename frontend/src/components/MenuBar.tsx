@@ -1971,6 +1971,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       } as React.CSSProperties)
     : undefined;
 
+  // v2.35: dragging the line before "Scrapbook" slides that menu group.
+  const scrapbookSepDrag = useRef<{ x: number; offset: number } | null>(null);
+
   const renderMenuItems = () => (
     <>
       {orderedMenus.map((menu) => (
@@ -1990,7 +1993,23 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       {/* v2.13: the Scrapbook's contextual menus — divider, tag, then Table /
           Picture (Word's model) and the way back. Only while it's open. */}
       {scrapbookMenus.length > 0 && (<>
-        <span className="menu-scrapbook-sep" aria-hidden="true" />
+        {/* v2.35, Derek: grab this line to slide the whole Scrapbook menu
+            group left or right (the offset persists). */}
+        <span
+          className="menu-scrapbook-sep menu-scrapbook-sep-drag"
+          style={{ marginLeft: chromeGapPx.scrapbook }}
+          title="Drag to move the Scrapbook menus"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+            scrapbookSepDrag.current = { x: e.clientX, offset: chromeGapPx.scrapbook };
+          }}
+          onPointerMove={(e) => {
+            const d = scrapbookSepDrag.current;
+            if (d) useEditorStore.getState().setChromeGap('scrapbook', d.offset + (e.clientX - d.x));
+          }}
+          onPointerUp={() => { scrapbookSepDrag.current = null; }}
+        />
         <span className="menu-section-tag">Scrapbook</span>
         {scrapbookMenus.map((menu) => (
           <div

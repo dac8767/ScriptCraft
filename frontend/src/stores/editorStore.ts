@@ -44,7 +44,7 @@ interface ViewState {
   chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   /** v2.29: item spacing (flex gap, px) for the menu bar, toolbar and Big
    *  Button section — adjusted by the faint drag handles on the bars. */
-  chromeGapPx?: { menu?: number; toolbar?: number; bigbtn?: number };
+  chromeGapPx?: { menu?: number; toolbar?: number; bigbtn?: number; scrapbook?: number };
   panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
   workspaces?: Record<string, WorkspaceSnapshot>;
   workspaceOrder?: string[];
@@ -850,8 +850,8 @@ interface EditorState {
   chromeCustomPx: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   setChromeCustomPx: (surface: 'menu' | 'toolbar' | 'panelLeft' | 'panelRight', px: number) => void;
   /** v2.29: item spacing (flex gap) per bar — see the GapHandle grips. */
-  chromeGapPx: { menu: number; toolbar: number; bigbtn: number };
-  setChromeGap: (bar: 'menu' | 'toolbar' | 'bigbtn', px: number) => void;
+  chromeGapPx: { menu: number; toolbar: number; bigbtn: number; scrapbook: number };
+  setChromeGap: (bar: 'menu' | 'toolbar' | 'bigbtn' | 'scrapbook', px: number) => void;
   setPanelSizeMode: (side: 'left' | 'right', mode: 'compact' | 'comfortable' | 'custom' | 'icons') => void;
   panelDividers: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
   setPanelDividers: (d: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[]) => void;
@@ -2107,9 +2107,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ chromeCustomPx: next });
     return { chromeCustomPx: next };
   }),
-  chromeGapPx: { menu: 0, toolbar: 2, bigbtn: 0, ...((_vs.chromeGapPx as Record<string, number>) ?? {}) },
+  chromeGapPx: { menu: 0, toolbar: 2, bigbtn: 0, scrapbook: 12, ...((_vs.chromeGapPx as Record<string, number>) ?? {}) },
   setChromeGap: (bar, px) => set((st) => {
-    const next = { ...st.chromeGapPx, [bar]: Math.min(32, Math.max(0, Math.round(px))) };
+    // v2.35: 'scrapbook' is an OFFSET (how far the Scrapbook menu group sits
+    // from the last regular menu), so it gets a wider range than the gaps.
+    const max = bar === 'scrapbook' ? 400 : 32;
+    const next = { ...st.chromeGapPx, [bar]: Math.min(max, Math.max(0, Math.round(px))) };
     saveViewState({ chromeGapPx: next });
     return { chromeGapPx: next };
   }),

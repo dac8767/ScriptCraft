@@ -2239,6 +2239,10 @@ const ScreenplayEditor: React.FC = () => {
   // v1.75: Outline Bar visibility (View > Outline Bar).
   const outlineBarOpen = useEditorStore((st) => st.outlineBarOpen);
   const notebookOpen = useNotebookStore((st) => st.notebookOpen);
+  // v2.35: the Scrapbook's declutter toggle also drops the outline bar —
+  // render-time only, outlineBarOpen itself is never rewritten.
+  const scrapbookDeclutter = useSettingsStore((st) => st.scrapbookExclusive);
+  const outlineBarShown = outlineBarOpen && !(notebookOpen && scrapbookDeclutter);
 
   // v1.77: how faint "Dim unfocused text" goes — the decorations read the var.
   const typewriterDimOpacity = useEditorStore((st) => st.typewriterDimOpacity);
@@ -4031,9 +4035,9 @@ const ScreenplayEditor: React.FC = () => {
         onPointerDown={startBarsResize}
       />
       {/* v1.75: Outline Bar — FD-style outline lanes directly under the toolbar. */}
-      {outlineBarOpen && <OutlineBar editor={editor} />}
+      {outlineBarShown && <OutlineBar editor={editor} />}
       {/* …and the bottom-most edge scales the outline bar's rows alone. */}
-      {outlineBarOpen && (
+      {outlineBarShown && (
         <div
           className="fs-top-chrome-resize"
           title="Drag to resize the outline bar"

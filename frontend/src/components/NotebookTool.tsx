@@ -25,8 +25,9 @@ import {
 import { useEditorStore } from '../stores/editorStore';
 import {
   FaChevronRight, FaChevronDown, FaRegFileAlt, FaRegFolder, FaRegFolderOpen,
-  FaFolderPlus, FaRegEdit, FaRegTrashAlt,
+  FaFolderPlus, FaRegEdit, FaRegTrashAlt, FaRegEye, FaRegEyeSlash,
 } from 'react-icons/fa';
+import { useSettingsStore } from '../stores/settingsStore';
 import { showToast } from './Toast';
 import { confirmDialog } from './ConfirmDialog';
 
@@ -615,10 +616,20 @@ export function closeNotebook() {
  *  chrome's TOOL_HEADER_EXTRAS slot), not in the panel body. */
 export function NotebookHeaderExtra() {
   const { addPage, addSection } = useNotebookStore.getState();
+  // v2.35, Derek: the declutter toggle lives HERE now, not in Settings.
+  // On: every other sidebar tool hides and the outline bar drops away —
+  // render-time only, so switching back restores everything exactly.
+  const declutter = useSettingsStore((s) => s.scrapbookExclusive);
+  const setDeclutter = useSettingsStore((s) => s.setScrapbookExclusive);
   return (
     <span className="fs-nb-side-head">
       <span>Pages</span>
       <span className="fs-nb-side-btns">
+        <button
+          className={declutter ? 'active' : ''}
+          title={declutter ? 'Decluttered — click to show the other tools and the outline bar again' : 'Declutter — hide every other tool and the outline bar'}
+          onClick={() => setDeclutter(!declutter)}
+        >{declutter ? <FaRegEyeSlash /> : <FaRegEye />}</button>
         <button title="New section" onClick={addSection}><FaFolderPlus /></button>
         <button title="New page" onClick={() => addPage()}><FaRegEdit /></button>
       </span>

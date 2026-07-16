@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.34';
+export const APP_VERSION = '2.35';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.35',
+    date: '2026-07-16',
+    items: [
+      { title: 'Scrapbook declutter button', detail: 'The "Hide other tools when launched" setting left Settings and became an eye button at the top of the Scrapbook window — one click hides every other sidebar tool AND the outline bar; click again to bring them back exactly as they were. The Settings > Tools tab is gone: the Typewriter master switch lives in the Typewriter window, and restore-cursor moved back to General > Startup.', tags: ['Tools', 'UI'] },
+      { title: 'Slide the Scrapbook menus', detail: 'Grab the divider line before "Scrapbook" in the menu bar and drag to move the whole Scrapbook menu group left or right. The position sticks.', tags: ['UI'] },
+    ],
+  },
   {
     version: '2.34',
     date: '2026-07-16',

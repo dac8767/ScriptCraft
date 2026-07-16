@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
-import { FaSlidersH, FaColumns, FaFileAlt, FaRulerCombined, FaCommentDots, FaCog, FaCloudUploadAlt, FaWrench } from 'react-icons/fa';
+import { FaSlidersH, FaColumns, FaFileAlt, FaRulerCombined, FaCommentDots, FaCog, FaCloudUploadAlt } from 'react-icons/fa';
 import { applyDraftNumber } from './SetDraftDialog';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -34,7 +34,7 @@ import { redirectUri } from '../services/oauthPkce';
    points (where they still exist) edit exactly the same state.
    ───────────────────────────────────────────────────────────────────────── */
 
-type PrefTab = 'general' | 'layout' | 'formats' | 'page' | 'mores' | 'saveloc' | 'tools' | 'system';
+type PrefTab = 'general' | 'layout' | 'formats' | 'page' | 'mores' | 'saveloc' | 'system';
 
 const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   // App-wide first, then writing setup, then data, then system.
@@ -44,7 +44,6 @@ const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   { id: 'formats', label: 'Templates', icon: <FaFileAlt /> },
   { id: 'page', label: 'Page Setup', icon: <FaRulerCombined /> },
   { id: 'mores', label: 'Mores & Continueds', icon: <FaCommentDots /> },
-  { id: 'tools', label: 'Tools', icon: <FaWrench /> },
   { id: 'system', label: 'System', icon: <FaCog /> },
 ];
 
@@ -373,65 +372,13 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
   );
 }
 
-/** v2.15 — Settings > Tools: per-tool settings in one place. Everything
- *  here is the SAME store field the tool itself reads, never a copy. */
-function ToolsTab() {
-  const scrapbookExclusive = useSettingsStore((s) => s.scrapbookExclusive);
-  const setScrapbookExclusive = useSettingsStore((s) => s.setScrapbookExclusive);
-  const twMaster = useEditorStore((s) => s.typewriterMasterEnabled);
-  const setTwMaster = useEditorStore((s) => s.setTypewriterMasterEnabled);
-  // v1.77 moved this to General > Startup; v2.15 moves it home with its tool.
-  const restoreCursor = useEditorStore((s) => s.typewriterRestoreCursor);
-  const setRestoreCursor = useEditorStore((s) => s.setTypewriterRestoreCursor);
-
-  return (
-    <div className="prefs-general">
-      <section>
-        <h3>Scrapbook</h3>
-        <label className="prefs-check-row">
-          <input
-            type="checkbox"
-            checked={scrapbookExclusive}
-            onChange={(e) => setScrapbookExclusive(e.target.checked)}
-          />
-          <span>Hide other tools when launched</span>
-        </label>
-        <p className="prefs-hint">
-          Opening the Scrapbook hides every other sidebar item and its pages
-          panel fills the sidebar. "Return to Editor" puts the sidebars back
-          exactly as they were.
-        </p>
-      </section>
-
-      <section>
-        <h3>Typewriter</h3>
-        <label className="prefs-check-row">
-          <input
-            type="checkbox"
-            className="fs-switch"
-            checked={twMaster}
-            onChange={(e) => setTwMaster(e.target.checked)}
-          />
-          <span>Enable Typewriter tool</span>
-        </label>
-        <p className="prefs-hint">
-          The same master switch as the Typewriter window — sub-options keep
-          their state either way.
-        </p>
-        <label className="prefs-check-row">
-          <input
-            type="checkbox"
-            checked={restoreCursor}
-            onChange={(e) => setRestoreCursor(e.target.checked)}
-          />
-          <span>Restore the cursor position when opening a script</span>
-        </label>
-      </section>
-    </div>
-  );
-}
+/* v2.35, Derek: the Tools tab is gone — the Scrapbook declutter toggle
+   lives on the Scrapbook window, the Typewriter master switch lives in the
+   Typewriter window, and restore-cursor went back to General > Startup. */
 
 function GeneralTab() {
+  const restoreCursor = useEditorStore((s) => s.typewriterRestoreCursor);
+  const setRestoreCursor = useEditorStore((s) => s.setTypewriterRestoreCursor);
   const {
     autoLoadLastScript, setAutoLoadLastScript,
     dateFormat, setDateFormat,
@@ -447,6 +394,15 @@ function GeneralTab() {
     <div className="prefs-general">
       <section>
         <h3>Startup</h3>
+        {/* v2.35: back home after the Tools tab was removed. */}
+        <label className="prefs-check-row">
+          <input
+            type="checkbox"
+            checked={restoreCursor}
+            onChange={(e) => setRestoreCursor(e.target.checked)}
+          />
+          <span>Restore the cursor position when opening a script</span>
+        </label>
         <label className="prefs-check-row">
           <input
             type="checkbox"
@@ -613,7 +569,6 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
           </div>
           <div className="prefs-content">
             {tab === 'general' && <GeneralTab />}
-            {tab === 'tools' && <ToolsTab />}
             {tab === 'layout' && (
               <LayoutTab />
             )}
