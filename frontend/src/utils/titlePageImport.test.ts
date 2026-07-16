@@ -134,3 +134,41 @@ describe('titlePageBlockSpecs layout contract', () => {
     expect(draftIdx).toBeGreaterThan(specs.length - 5);        // pushed to the bottom
   });
 });
+
+/* v2.51 — Derek's Star Wars doc: page 1 showed one stray line on an
+   otherwise blank page. Pins the fountain-side fixes; the docx importer now
+   emits the SAME titlePageJsonNodes layout these tests already pin. */
+describe('v2.51 title page fixes', () => {
+  it('strips Fountain emphasis markup from title block values', () => {
+    const { data } = parseFountainTitleBlock([
+      'Title:',
+      '\t_**STAR WARS**_',
+      '\t_**THE NEW JEDI ORDER**_',
+      'Author: Derek Carl',
+      '',
+    ]);
+    expect(data?.tpTitle).toBe('STAR WARS\nTHE NEW JEDI ORDER');
+    expect(data?.tpWrittenBy).toBe('Derek Carl');
+  });
+
+  it('consumes === page breaks instead of printing them as action', () => {
+    const doc = parseFountain('Some action.\n\n===\n\nEXT. SPACE - DAY\n\nMore action.');
+    const texts = (doc.content ?? []).map((n) => n.content?.map((c) => c.text).join('') ?? '');
+    expect(texts).not.toContain('===');
+    const types = (doc.content ?? []).map((n) => n.type);
+    expect(types).toEqual(['action', 'sceneHeading', 'action']);
+  });
+
+  it('an all-caps line followed by a blank line is action, not a character', () => {
+    const doc = parseFountain('OPENING SCROLL\n\nEXT. SPACE - DAY\n\nAction.');
+    const first = (doc.content ?? [])[0];
+    expect(first.type).toBe('action');
+    expect(first.content?.[0].text).toBe('OPENING SCROLL');
+  });
+
+  it('an all-caps cue with dialogue under it is still a character', () => {
+    const doc = parseFountain('EXT. SPACE - DAY\n\nPILOT\nDo you copy?');
+    const types = (doc.content ?? []).map((n) => n.type);
+    expect(types).toEqual(['sceneHeading', 'character', 'dialogue']);
+  });
+});

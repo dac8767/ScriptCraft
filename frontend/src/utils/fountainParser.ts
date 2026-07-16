@@ -38,7 +38,12 @@ export function parseFountainTitleBlock(lines: string[]): { data: TitlePageData 
   let currentKey: keyof TitlePageData | 'credit' | null = null;
   let i = 0;
   const append = (key: keyof TitlePageData | 'credit', value: string) => {
-    const v = value.trim();
+    // v2.51: strip Fountain emphasis markup (_underline_, *italic*, **bold**)
+    // — titles like `_**STAR WARS**_` displayed their raw underscores and
+    // asterisks on the rendered title page.
+    const v = value.trim()
+      .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
+      .replace(/_([^_]+)_/g, '$1');
     if (!v) return;
     if (key === 'credit') return;   // "Written by" — deriveTitleFields adds it
     const prev = data[key];
@@ -75,6 +80,15 @@ export function parseFountain(text: string): TipTapNode {
 
     // Skip empty lines
     if (trimmed === '') {
+      i++;
+      continue;
+    }
+
+    // Page break: a line of 3+ equals signs (Fountain forced page break).
+    // v2.51: this used to fall through to action and print a literal "==="
+    // in the script. There's no forced-break element yet, so the marker is
+    // consumed; pagination still breaks pages on its own.
+    if (/^={3,}$/.test(trimmed)) {
       i++;
       continue;
     }
@@ -130,8 +144,10 @@ export function parseFountain(text: string): TipTapNode {
       continue;
     }
 
-    // Character: all uppercase, preceded by empty line
-    if (isCharacterLine(trimmed.replace(/\s*\^$/, '')) && isPrecededByEmptyLine(lines, i)) {
+    // Character: all uppercase, preceded by empty line — and, per the spec,
+    // FOLLOWED by a non-empty line (the dialogue). v2.51: without that check
+    // a lone all-caps line like "OPENING SCROLL" became a stranded character.
+    if (isCharacterLine(trimmed.replace(/\s*\^$/, '')) && isPrecededByEmptyLine(lines, i) && isFollowedByContent(lines, i)) {
       let charName = trimmed;
       const isDual = charName.endsWith('^');
       if (isDual) charName = charName.replace(/\s*\^$/, '').trim();
@@ -177,6 +193,12 @@ function isCharacterLine(line: string): boolean {
 function isPrecededByEmptyLine(lines: string[], index: number): boolean {
   if (index === 0) return true;
   return lines[index - 1].trim() === '';
+}
+
+/** Fountain: a character cue must have its dialogue directly under it. */
+function isFollowedByContent(lines: string[], index: number): boolean {
+  const next = lines[index + 1];
+  return next !== undefined && next.trim() !== '';
 }
 
 const DIALOGUE_TYPES = new Set(['character', 'dialogue', 'parenthetical']);

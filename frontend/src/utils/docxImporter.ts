@@ -15,6 +15,7 @@
 // paragraphs that fell back to 'action' so the caller can show a summary.
 
 import JSZip from 'jszip';
+import { EMPTY_TITLE_PAGE, titlePageJsonNodes, type TitlePageData } from './titlePageLayout';
 
 interface TipTapMark {
   type: string;
@@ -448,23 +449,13 @@ function classifyByText(p: ParaInfo): string | null {
 }
 
 // --- Title-page detection ---
-
-interface TitlePageData {
-  tpTitle: string;
-  tpWrittenBy: string;
-  tpBasedOn: string;
-  tpDraft: string;
-  tpDraftDate: string;
-  tpContact: string;
-  tpCopyright: string;
-  tpWgaRegistration: string;
-}
+// v2.51: the shared TitlePageData/layout from titlePageLayout.ts — this file
+// had its own copy of the type AND still emitted the pre-v2.25 single bare
+// titlePage node, which renders as one stray line at the top of an otherwise
+// blank page. One type, one layout builder, same as FDX and Fountain.
 
 function emptyTitlePage(): TitlePageData {
-  return {
-    tpTitle: '', tpWrittenBy: '', tpBasedOn: '', tpDraft: '', tpDraftDate: '',
-    tpContact: '', tpCopyright: '', tpWgaRegistration: '',
-  };
+  return { ...EMPTY_TITLE_PAGE };
 }
 
 function detectTitlePage(paragraphs: ParaInfo[]): { tp: TitlePageData | null; consumed: number } {
@@ -737,13 +728,11 @@ export async function parseDocx(buf: ArrayBuffer): Promise<DocxParseResult> {
   // Third pass: build TipTap nodes
   const content: TipTapNode[] = [];
 
-  // Title-page node
+  // Title page — the SAME classic layout the FDX/Fountain importers and the
+  // Title Page editor build (v2.51; a single bare node rendered as one stray
+  // line on a blank page).
   if (tp && tp.tpTitle) {
-    content.push({
-      type: 'titlePage',
-      attrs: { ...tp, field: 'title' },
-      content: [{ type: 'text', text: tp.tpTitle }],
-    });
+    content.push(...(titlePageJsonNodes(tp) as TipTapNode[]));
     if (!scriptTitle) scriptTitle = tp.tpTitle;
   }
 

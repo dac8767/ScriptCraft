@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.50';
+export const APP_VERSION = '2.51';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.51',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: Word-document title pages render properly', detail: 'Opening a .docx squeezed the whole title page into a single line at the top of an otherwise blank page. The Word importer now builds the same classic title-page layout as the Final Draft and Fountain importers and the Title Page editor.', tags: ['Fix', 'Saving'] },
+      { title: 'Fountain import: three fixes', detail: 'Emphasis markup in the title block (like _**STAR WARS**_) no longer shows its raw underscores and asterisks on the title page; a === page-break line is consumed instead of printed in the script; and a lone all-caps line (like OPENING SCROLL) imports as action instead of becoming a stranded character cue.', tags: ['Fix', 'Saving'] },
+    ],
+  },
   {
     version: '2.50',
     date: '2026-07-16',
