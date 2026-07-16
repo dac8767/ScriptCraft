@@ -940,13 +940,15 @@ body {
    slider, and --chrome-scale (px ÷ compact px) scales the CONTENTS with it —
    otherwise a taller bar would just be empty space around compact-sized text.
    Clamped so a huge bar doesn't produce absurd type. */
+/* v2.68, Derek: the edge drag scales the bars VERTICALLY only — horizontal
+   gaps and paddings are pinned, because item spacing has its own grips
+   (GapHandle) and must not drift when the bar grows taller. */
 .menu-bar.chrome-custom {
-  gap: calc(4px * var(--chrome-scale, 1));
-  padding: 0 calc(6px * var(--chrome-scale, 1));
+  gap: 4px;
+  padding: 0 6px;
 }
 .menu-bar.chrome-custom .menu-item {
-  padding: clamp(3px, calc(5px * var(--chrome-scale, 1)), 14px)
-           clamp(8px, calc(11px * var(--chrome-scale, 1)), 22px);
+  padding: clamp(3px, calc(5px * var(--chrome-scale, 1)), 14px) 11px;
   min-height: 0;
   border-radius: clamp(4px, calc(5px * var(--chrome-scale, 1)), 10px);
 }
@@ -955,7 +957,7 @@ body {
   font-size: clamp(11px, calc(12px * var(--chrome-scale, 1)), 18px);
 }
 
-.toolbar.toolbar-custom { padding: 0 calc(8px * var(--chrome-scale, 1)); }
+.toolbar.toolbar-custom { padding: 0 8px; }   /* v2.68: horizontal pinned */
 .toolbar.toolbar-custom .toolbar-btn {
   width: clamp(22px, calc(24px * var(--chrome-scale, 1)), 44px);
   height: clamp(20px, calc(22px * var(--chrome-scale, 1)), 40px);
@@ -1308,7 +1310,7 @@ body {
 .toolbar-btn-text { font-size: 12px; white-space: nowrap; }
 .toolbar.toolbar-comfortable .toolbar-btn.toolbar-btn-labeled { padding: 0 10px; }
 .toolbar.toolbar-comfortable .toolbar-btn-text { font-size: 13px; }
-.toolbar.toolbar-custom .toolbar-btn.toolbar-btn-labeled { padding: 0 calc(8px * var(--chrome-scale, 1)); }
+.toolbar.toolbar-custom .toolbar-btn.toolbar-btn-labeled { padding: 0 8px; }   /* v2.68: horizontal pinned */
 .toolbar.toolbar-custom .toolbar-btn-text {
   font-size: clamp(11px, calc(12px * var(--chrome-scale, 1)), 18px);
 }

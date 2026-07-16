@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.67';
+export const APP_VERSION = '2.68';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.68',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: bar height drag no longer shifts item spacing', detail: 'Dragging the chrome\'s bottom edge grew the menu bar and toolbar vertically but also widened horizontal paddings with it. Heights and type still scale; horizontal gaps and paddings are pinned — spacing belongs to its own grips now.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '2.67',
     date: '2026-07-16',
