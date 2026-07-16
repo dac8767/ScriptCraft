@@ -636,14 +636,16 @@ body {
 
 /* ============ TOOLBAR ============ */
 .toolbar {
-  display: flex; align-items: center; height: 30px;
+  display: flex; align-items: center; height: 33px;
   background: var(--fd-toolbar-bg); border-bottom: none;
   /* v0.87: right padding matched to the menu bar's (6px) so the toolbar's
-     right-most control lines up with the Local Only chip above it. */
-  padding: 0 6px 0 8px; gap: 2px; flex-shrink: 0;
+     right-most control lines up with the Local Only chip above it.
+     v2.73, Derek: 3px of bottom padding — breathing room between the
+     buttons and the bar's bottom edge (heights synced in chromeSizes.ts). */
+  padding: 0 6px 3px 8px; gap: 2px; flex-shrink: 0;
   position: relative; z-index: 1;
 }
-.toolbar.toolbar-comfortable { height: 36px; }
+.toolbar.toolbar-comfortable { height: 39px; }
 .toolbar-group { display: flex; align-items: center; gap: 1px; }
 .toolbar-btn {
   display: flex; align-items: center; justify-content: center;

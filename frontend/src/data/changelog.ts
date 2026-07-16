@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.72';
+export const APP_VERSION = '2.73';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.73',
+    date: '2026-07-16',
+    items: [
+      { title: 'Toolbar: room under the buttons', detail: 'The toolbar gains a little height and puts it below the buttons, so they no longer sit tight against the bar\'s bottom edge.', tags: ['UI', 'Polish'] },
+    ],
+  },
   {
     version: '2.72',
     date: '2026-07-16',

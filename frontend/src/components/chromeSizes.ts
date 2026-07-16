@@ -31,7 +31,7 @@ export interface ChromeScale {
 
 export const CHROME_SCALES: Record<ChromeSurface, ChromeScale> = {
   menu:       { compact: 28,  comfortable: 44,  axis: 'height' },
-  toolbar:    { compact: 30,  comfortable: 36,  axis: 'height' },
+  toolbar:    { compact: 33,  comfortable: 39,  axis: 'height' },   // v2.73: +3px bottom padding
   panelLeft:  { compact: 232, comfortable: 300, axis: 'width' },
   panelRight: { compact: 232, comfortable: 300, axis: 'width' },
 };
