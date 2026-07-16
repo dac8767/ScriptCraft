@@ -10,8 +10,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import GapHandle, { GAP_DRAG_DIR } from './GapHandle';
+import GapHandle, { GAP_DRAG_DIR, sizeIndicatorT, BIGBTN_INSET_MAX } from './GapHandle';
 import { useEditorStore } from '../stores/editorStore';
+import { chromeMin, chromeMax } from './chromeSizes';
 
 describe('GapHandle drag direction', () => {
   let host: HTMLElement;
@@ -61,5 +62,44 @@ describe('GapHandle drag direction', () => {
     useEditorStore.getState().setChromeGap('bigbtn', 10);
     drag('bigbtn', 100, 108);
     expect(useEditorStore.getState().chromeGapPx.bigbtn).toBe(2);
+  });
+
+  /* v2.76: the vertical axis — drag up/down sizes the bar itself. */
+  const dragXY = (bar: 'menu' | 'toolbar' | 'bigbtn', from: [number, number], to: [number, number]) => {
+    act(() => { root.render(<GapHandle bar={bar} />); });
+    const grip = host.querySelector('.fs-gap-handle')!;
+    const fire = (type: string, [clientX, clientY]: [number, number]) =>
+      act(() => { grip.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX, clientY })); });
+    fire('pointerdown', from);
+    fire('pointermove', to);
+    fire('pointerup', to);
+  };
+
+  it('toolbar grip: dragging down makes the bar taller (custom mode)', () => {
+    useEditorStore.setState({ toolbarMode: 'compact' });
+    const before = 33;   // compact toolbar height
+    dragXY('toolbar', [100, 50], [100, 60]);
+    const s = useEditorStore.getState();
+    expect(s.toolbarMode).toBe('custom');
+    expect(s.chromeCustomPx.toolbar).toBe(before + 10);
+  });
+
+  it('a pure horizontal drag never flips the bar into custom mode', () => {
+    useEditorStore.setState({ toolbarMode: 'compact' });
+    dragXY('toolbar', [100, 50], [120, 51]);   // 1px of y — under the engage threshold
+    expect(useEditorStore.getState().toolbarMode).toBe('compact');
+  });
+
+  it('bigbtn grip: dragging down grows the buttons (smaller inset)', () => {
+    useEditorStore.getState().setBigBtnInset(16);
+    dragXY('bigbtn', [100, 50], [100, 60]);
+    expect(useEditorStore.getState().bigBtnInsetPx).toBe(6);
+  });
+
+  it('the size indicator maps range ends to 0 and 1', () => {
+    expect(sizeIndicatorT('toolbar', chromeMin('toolbar'))).toBe(0);
+    expect(sizeIndicatorT('toolbar', chromeMax('toolbar'))).toBe(1);
+    expect(sizeIndicatorT('bigbtn', BIGBTN_INSET_MAX)).toBe(0);   // most inset = smallest
+    expect(sizeIndicatorT('bigbtn', 0)).toBe(1);                  // no inset = biggest
   });
 });

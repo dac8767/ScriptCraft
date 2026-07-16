@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.75';
+export const APP_VERSION = '2.76';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.76',
+    date: '2026-07-16',
+    items: [
+      { title: 'Spacing grips go two-axis', detail: 'The grips on the menu bar, toolbar, and Big Button section still adjust item spacing when dragged sideways — and now dragging up or down sizes the bar itself (the Big Buttons grow inside their chrome). A tiny indicator dot on the grip shows where the size sits in its range.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '2.75',
     date: '2026-07-16',

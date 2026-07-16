@@ -1439,14 +1439,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
  * can't live here (bigZoneAllowed + the Customize tab's drop guard).
  */
 export const BigButtonBar: React.FC = () => {
-  const { toolbarRight, toolbarZonesSet, openTool, chromeGapPx } = useEditorStore();
+  const { toolbarRight, toolbarZonesSet, openTool, chromeGapPx, bigBtnInsetPx } = useEditorStore();
   const tokens = (toolbarZonesSet
     ? normalizeToolbarZones([], toolbarRight).right
     : DEFAULT_TOOLBAR_RIGHT
   ).filter(bigZoneAllowed);
 
   return (
-    <div className="chrome-bigbtns" style={{ gap: chromeGapPx.bigbtn }}>
+    <div
+      className="chrome-bigbtns"
+      // v2.76: the grip's vertical axis sizes the buttons via the inset.
+      style={{ gap: chromeGapPx.bigbtn, ['--bigbtn-inset' as string]: `${bigBtnInsetPx}px` }}
+    >
       {/* v2.29: faint grip LEFT of the buttons — drag to adjust their spacing */}
       <GapHandle bar="bigbtn" />
       {tokens.map((tok) => {

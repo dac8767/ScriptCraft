@@ -1098,7 +1098,7 @@ body {
   align-self: center;            /* vertically centred across both bars */
   margin: 0 6px;                 /* right edge aligns with the bars' 6px padding */
   padding: 0 15px;
-  height: calc(100% - 16px);     /* spans both bars, with breathing room */
+  height: calc(100% - var(--bigbtn-inset, 16px));   /* spans both bars; the grip's vertical axis adjusts the inset (v2.76) */
   min-height: 31px;
   display: inline-flex;
   align-items: center;
@@ -16667,13 +16667,26 @@ input.fs-switch:checked::after { left: 15px; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;             /* v2.76: hosts the size-indicator dot */
   width: 12px;
   align-self: stretch;
   flex: 0 0 auto;
-  cursor: ew-resize;
+  cursor: move;                   /* v2.76: two-axis — spacing + bar size */
   opacity: 0;
   transition: opacity 0.15s ease;
   touch-action: none;
+}
+/* v2.76: the tiny-scrollbar indicator — where the bar's vertical size sits
+   in its range. Rides the grip line; dragging up/down moves it. */
+.fs-gap-handle-dot {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--fd-text);
+  pointer-events: none;
 }
 .menu-bar:hover .fs-gap-handle,
 .toolbar:hover .fs-gap-handle,

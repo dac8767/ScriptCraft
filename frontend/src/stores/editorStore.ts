@@ -23,6 +23,7 @@ interface ViewState {
   outlineBarZoom?: number;
   outlineBarRowScale?: number;
   scrapbookTreeScale?: number;
+  bigBtnInsetPx?: number;
   outlineBarRows?: OutlineBarRow[];
   outlineBarLabels?: boolean;
   beatColorAllTabs?: boolean;
@@ -887,6 +888,11 @@ interface EditorState {
   /** Custom sizes in px, used when the matching mode is 'custom' (v0.72). */
   chromeCustomPx: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   setChromeCustomPx: (surface: 'menu' | 'toolbar' | 'panelLeft' | 'panelRight', px: number) => void;
+  /** v2.76: how much shorter the Big Buttons are than the chrome they span
+   *  (px). 16 = default breathing room; smaller = bigger buttons. Driven by
+   *  the Big Button grip's vertical axis. */
+  bigBtnInsetPx: number;
+  setBigBtnInset: (px: number) => void;
   /** v2.29: item spacing (flex gap) per bar — see the GapHandle grips. */
   chromeGapPx: { menu: number; toolbar: number; bigbtn: number; scrapbook: number };
   setChromeGap: (bar: 'menu' | 'toolbar' | 'bigbtn' | 'scrapbook', px: number) => void;
@@ -1749,6 +1755,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     st.setPanelSizeMode('right', 'comfortable');
     st.setOutlineBarRowScale(1);
     st.setScrapbookTreeScale(1);
+    st.setBigBtnInset(16);
   },
   navFilter: '',
   setNavFilter: (v) => set({ navFilter: v }),
@@ -2296,6 +2303,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const next = { ...st.chromeCustomPx, [surface]: px };
     saveViewState({ chromeCustomPx: next });
     return { chromeCustomPx: next };
+  }),
+  bigBtnInsetPx: (_vs.bigBtnInsetPx as number) ?? 16,
+  setBigBtnInset: (px) => set(() => {
+    const clamped = Math.min(40, Math.max(0, Math.round(px)));
+    saveViewState({ bigBtnInsetPx: clamped });
+    return { bigBtnInsetPx: clamped };
   }),
   chromeGapPx: { menu: 0, toolbar: 2, bigbtn: 0, scrapbook: 12, ...((_vs.chromeGapPx as Record<string, number>) ?? {}) },
   setChromeGap: (bar, px) => set((st) => {
