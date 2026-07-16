@@ -12984,7 +12984,11 @@ html.android .version-history-panel {
   border-radius: 4px;
   margin: 4px;
 }
-.fs-dnd-hiddencol { background: transparent; }
+/* v2.53, Derek: the Hidden column reads as a distinct, darker well in EVERY
+   Customize tab — transparent, it blended into the window. The translucent
+   black darkens whichever theme background sits behind it. */
+.fs-dnd-hiddencol { background: rgba(0, 0, 0, 0.18); }
+[data-theme="light"] .fs-dnd-hiddencol { background: rgba(0, 0, 0, 0.08); }
 /* v1.86: Characters > Connections force graph. */
 .fs-connections-graph {
   flex: 1;

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.52';
+export const APP_VERSION = '2.53';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.53',
+    date: '2026-07-16',
+    items: [
+      { title: 'Customize: the Hidden column stands out', detail: 'In every Customize tab, the Hidden column now sits in a darker well derived from the current theme instead of blending into the window background.', tags: ['UI'] },
+    ],
+  },
   {
     version: '2.52',
     date: '2026-07-16',
