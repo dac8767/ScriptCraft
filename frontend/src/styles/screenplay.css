@@ -4402,6 +4402,9 @@ div[data-type="lyrics"].is-empty::before { font-style: italic; }
 }
 .beat-card-title {
   flex: 1;
+  /* v2.46: inputs refuse to shrink below their intrinsic width unless told —
+     without this the header's right-hand buttons get pushed off the card. */
+  min-width: 0;
   background: transparent;
   border: none;
   color: var(--fd-text);
@@ -4477,9 +4480,6 @@ div[data-type="lyrics"].is-empty::before { font-style: italic; }
 }
 
 /* ── Color picker ── */
-.beat-color-picker-wrap {
-  position: relative;
-}
 .beat-color-picker {
   position: absolute;
   bottom: 100%;
@@ -16670,9 +16670,10 @@ input.fs-switch:checked::after { left: 15px; }
   cursor: pointer;
 }
 .fs-nb-return:hover { filter: brightness(1.1); }
-/* Freeform beat cards: the pages field must never poke out of the card. */
-.beat-card-top { min-width: 0; flex-wrap: nowrap; overflow: hidden; }
-.beat-card-top .beat-card-pages { flex: 0 0 auto; white-space: nowrap; }
+/* v2.46: no overflow:hidden here — it was silently EATING the header
+   buttons whenever the title's intrinsic width overflowed the card (the
+   pages field this rule once contained moved to the card's foot in v2.44). */
+.beat-card-top { min-width: 0; flex-wrap: nowrap; }
 
 /* ─── v2.33: Freeform mind map ─── */
 .beat-custom-canvas { position: relative; }
@@ -16690,30 +16691,23 @@ input.fs-switch:checked::after { left: 15px; }
   cursor: pointer;
   pointer-events: stroke;
 }
-.mind-lines line:hover { stroke: var(--fd-accent); stroke-width: 2.5; }
-/* v2.44: connection NODES on the card's edges — drag one onto another card
-   to draw a line. Visible on hover, and on EVERY card while a line is out,
-   so the drop targets are obvious. */
-.mind-node {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  padding: 0;
-  border-radius: 50%;
-  border: 2px solid var(--fd-accent);
-  background: var(--fd-toolbar-bg);
-  cursor: crosshair;
-  opacity: 0;
-  transition: opacity .15s ease;
-  z-index: 3;
+/* v2.46: each connection is a <g> of two lines — a fat invisible twin for
+   clicking, and the visible one. Click selects; Delete removes. */
+.mind-lines line.mind-line-hit {
+  stroke: transparent;
+  stroke-width: 12;
 }
-.beat-card-wrap-free:hover .mind-node,
-.mind-linking .mind-node { opacity: 1; }
-.mind-node:hover { background: var(--fd-accent); }
-.mind-node-top { top: -6px; left: 50%; transform: translateX(-50%); }
-.mind-node-bottom { bottom: -6px; left: 50%; transform: translateX(-50%); }
-.mind-node-left { left: -6px; top: 50%; transform: translateY(-50%); }
-.mind-node-right { right: -6px; top: 50%; transform: translateY(-50%); }
+.mind-lines g:hover line:not(.mind-line-hit) { stroke: var(--fd-accent); stroke-width: 2.5; }
+.mind-lines g.selected line:not(.mind-line-hit) {
+  stroke: var(--fd-accent);
+  stroke-width: 2.5;
+  stroke-dasharray: 2 3;
+}
+/* v2.46: the Connect button ARMS a card — dashed outline + crosshair say
+   "drag from here"; the next pointer-down on it starts the line. */
+.mind-arm-btn.active { color: var(--fd-accent); }
+.mind-armed { cursor: crosshair; }
+.mind-armed .beat-card { outline: 2px dashed var(--fd-accent); }
 .mind-lines .mind-line-draft {
   stroke: var(--fd-accent);
   stroke-width: 1.5;
@@ -16781,16 +16775,27 @@ input.fs-switch:checked::after { left: 15px; }
   margin-left: auto;
   flex-shrink: 0;
 }
-/* The color picker used to sit at the card's bottom and opened UPWARD;
-   from the header it hangs below its button, hugging the right edge. */
-.beat-card-headbtns .beat-color-picker {
+/* v2.46: the picker is PORTALLED to <body> — its old absolute positioning
+   got clipped by the card/column/canvas overflow (footgun §4). Fixed
+   coordinates come from the trigger button. */
+.beat-color-picker-fixed {
+  position: fixed;
   bottom: auto;
-  top: 100%;
-  left: auto;
-  right: 0;
-  margin-bottom: 0;
-  margin-top: 4px;
+  right: auto;
+  margin: 0;
+  z-index: 10000;
 }
+/* v2.46: the "Show beat color on all tabs" option in the Outline header. */
+.beat-color-alltabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.beat-color-alltabs input { margin: 0; }
 /* Whole-card color: every control on a colored card reads in the computed
    black/white text color (readableTextOn), not the theme's muted gray. */
 .beat-card-colored .beat-card-title,

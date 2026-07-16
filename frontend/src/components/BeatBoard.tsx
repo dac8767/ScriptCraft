@@ -23,7 +23,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
-import { FaRegCircle, FaDotCircle, FaPaperclip, FaRegQuestionCircle } from 'react-icons/fa';
+import { FaRegCircle, FaDotCircle, FaLink, FaPaperclip, FaRegQuestionCircle } from 'react-icons/fa';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 import { confirmDialog, promptDialog } from './ConfirmDialog';
@@ -382,10 +382,13 @@ interface BeatCardContentProps {
   onDelete: (id: string) => void;
   dragHandleProps?: Record<string, unknown>;
   resizePointerDown: (e: React.PointerEvent) => void;
+  /** v2.46: an extra header button, first in the right-hand group — the
+   *  freeform card's Connect button rides here. */
+  headExtra?: React.ReactNode;
 }
 
 const BeatCardContent: React.FC<BeatCardContentProps> = ({
-  beat, onUpdate, onDelete, dragHandleProps, resizePointerDown,
+  beat, onUpdate, onDelete, dragHandleProps, resizePointerDown, headExtra,
 }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [descFocused, setDescFocused] = useState(false);
@@ -407,10 +410,41 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
   );
 
   // v2.44, Derek: the color paints the WHOLE block, not just the edge.
+  // v2.46: unless "Show beat color on all tabs" is off — then a thin edge
+  // stripe keeps the color findable without painting the card.
+  const colorAll = useEditorStore((s) => s.beatColorAllTabs);
+  const wholeColor = Boolean(beat.color) && colorAll;
   const cardStyle: React.CSSProperties = {
-    ...(beat.color ? { background: beat.color, color: readableTextOn(beat.color) } : {}),
+    ...(beat.color
+      ? wholeColor
+        ? { background: beat.color, color: readableTextOn(beat.color) }
+        : { borderLeft: `4px solid ${beat.color}` }
+      : {}),
     ...(beat.cardHeight ? { height: beat.cardHeight, overflow: 'auto' } : {}),
   };
+
+  /* v2.46: the color picker is PORTALLED — its trigger sits in the header
+     row, and the card (overflow:auto when resized), the column and the
+     canvas all clip absolutely-positioned children (footgun §4). Fixed
+     coordinates measured from the trigger, dropdown hangs below. */
+  const colorBtnRef = useRef<HTMLButtonElement>(null);
+  const [pickerPos, setPickerPos] = useState<{ top: number; left: number } | null>(null);
+  const toggleColorPicker = useCallback(() => {
+    if (!showColorPicker && colorBtnRef.current) {
+      const r = colorBtnRef.current.getBoundingClientRect();
+      setPickerPos({ top: r.bottom + 4, left: Math.max(8, Math.min(r.right - 140, window.innerWidth - 148)) });
+    }
+    setShowColorPicker((v) => !v);
+  }, [showColorPicker]);
+  useEffect(() => {
+    if (!showColorPicker) return;
+    const close = (e: PointerEvent) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest('.beat-color-picker') && t !== colorBtnRef.current) setShowColorPicker(false);
+    };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [showColorPicker]);
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -462,8 +496,41 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
       ? { maxHeight: imgH }
       : {};
 
+  /* v2.46: ONE header row — it used to be pasted into both layout branches. */
+  const headerRow = (
+    <div className="beat-card-top">
+      <span className="beat-drag-icon" {...(dragHandleProps || {})} style={{ touchAction: 'none' }}>&#x2630;</span>
+      <input
+        className="beat-card-title"
+        value={beat.title}
+        onChange={(e) => onUpdate(beat.id, { title: e.target.value })}
+        placeholder="Beat title..."
+      />
+      <span className="beat-card-headbtns">
+        {headExtra}
+        <button ref={colorBtnRef} className="beat-toolbar-btn" onClick={toggleColorPicker} title="Card color">&#9679;</button>
+        <button className="beat-toolbar-btn" onClick={() => fileInputRef.current?.click()} title="Attach image"><FaPaperclip /></button>
+        <button className="beat-card-delete" onClick={() => onDelete(beat.id)} title="Delete beat">&times;</button>
+      </span>
+      {showColorPicker && pickerPos && createPortal(
+        <div className="beat-color-picker beat-color-picker-fixed" style={{ top: pickerPos.top, left: pickerPos.left }}>
+          {BEAT_COLORS.map((c) => (
+            <button
+              key={c || 'none'}
+              className={`beat-color-swatch${beat.color === c ? ' active' : ''}`}
+              style={c ? { background: c } : undefined}
+              onClick={() => { onUpdate(beat.id, { color: c }); setShowColorPicker(false); }}
+              title={c || 'No color'}
+            >{!c && <span className="beat-color-none">&times;</span>}</button>
+          ))}
+        </div>,
+        document.body,
+      )}
+    </div>
+  );
+
   return (
-    <div className={`beat-card${isImgFull ? ' beat-card-img-full' : ''}${beat.color ? ' beat-card-colored' : ''}`} style={cardStyle}>
+    <div className={`beat-card${isImgFull ? ' beat-card-img-full' : ''}${wholeColor ? ' beat-card-colored' : ''}`} style={cardStyle}>
       {/* Floating drag handle over image */}
       {beat.imageUrl && (
         <span className="beat-drag-icon beat-drag-icon-floating" {...(dragHandleProps || {})} style={{ touchAction: 'none' }}>&#x2630;</span>
@@ -520,39 +587,7 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
 
       {isImgFull ? (
         <div className="beat-card-content-bottom">
-          <div className="beat-card-top">
-            <span className="beat-drag-icon" {...(dragHandleProps || {})} style={{ touchAction: 'none' }}>&#x2630;</span>
-            <input
-              className="beat-card-title"
-              value={beat.title}
-              onChange={(e) => onUpdate(beat.id, { title: e.target.value })}
-              placeholder="Beat title..."
-            />
-            <span className="beat-card-headbtns">
-              <span className="beat-color-picker-wrap">
-                <button
-                  className="beat-toolbar-btn"
-                  onClick={() => setShowColorPicker(!showColorPicker)}
-                  title="Card color"
-                >&#9679;</button>
-                {showColorPicker && (
-                  <div className="beat-color-picker">
-                    {BEAT_COLORS.map((c) => (
-                      <button
-                        key={c || 'none'}
-                        className={`beat-color-swatch${beat.color === c ? ' active' : ''}`}
-                        style={c ? { background: c } : undefined}
-                        onClick={() => { onUpdate(beat.id, { color: c }); setShowColorPicker(false); }}
-                        title={c || 'No color'}
-                      >{!c && <span className="beat-color-none">&times;</span>}</button>
-                    ))}
-                  </div>
-                )}
-              </span>
-              <button className="beat-toolbar-btn" onClick={() => fileInputRef.current?.click()} title="Attach image"><FaPaperclip /></button>
-              <button className="beat-card-delete" onClick={() => onDelete(beat.id)} title="Delete beat">&times;</button>
-            </span>
-          </div>
+          {headerRow}
           {descFocused ? (
             <textarea
               ref={descRef}
@@ -581,39 +616,7 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
         </div>
       ) : (
         <>
-          <div className="beat-card-top">
-            <span className="beat-drag-icon" {...(dragHandleProps || {})} style={{ touchAction: 'none' }}>&#x2630;</span>
-            <input
-              className="beat-card-title"
-              value={beat.title}
-              onChange={(e) => onUpdate(beat.id, { title: e.target.value })}
-              placeholder="Beat title..."
-            />
-            <span className="beat-card-headbtns">
-              <span className="beat-color-picker-wrap">
-                <button
-                  className="beat-toolbar-btn"
-                  onClick={() => setShowColorPicker(!showColorPicker)}
-                  title="Card color"
-                >&#9679;</button>
-                {showColorPicker && (
-                  <div className="beat-color-picker">
-                    {BEAT_COLORS.map((c) => (
-                      <button
-                        key={c || 'none'}
-                        className={`beat-color-swatch${beat.color === c ? ' active' : ''}`}
-                        style={c ? { background: c } : undefined}
-                        onClick={() => { onUpdate(beat.id, { color: c }); setShowColorPicker(false); }}
-                        title={c || 'No color'}
-                      >{!c && <span className="beat-color-none">&times;</span>}</button>
-                    ))}
-                  </div>
-                )}
-              </span>
-              <button className="beat-toolbar-btn" onClick={() => fileInputRef.current?.click()} title="Attach image"><FaPaperclip /></button>
-              <button className="beat-card-delete" onClick={() => onDelete(beat.id)} title="Delete beat">&times;</button>
-            </span>
-          </div>
+          {headerRow}
           {descFocused ? (
             <textarea
               ref={descRef}
@@ -719,13 +722,14 @@ export function mindTitleSize(cardWidth: number): number {
   return Math.max(13, Math.min(24, Math.round((cardWidth || 240) / 15)));
 }
 
-/* v2.44: connections start from a NODE on the card's edge (any side) —
-   grab a node and drag the line onto another card. */
-const MIND_NODE_SIDES = ['top', 'right', 'bottom', 'left'] as const;
-
+/* v2.46, Derek: connecting is a two-step — push the card's Connect button
+   to ARM it, then click-drag from anywhere on that card and release over
+   another card; a line follows the pointer the whole way. */
 const FreeBeatCard: React.FC<FreeBeatCardProps & {
+  armed: boolean;
+  onToggleArm: (id: string) => void;
   onStartLink: (e: React.PointerEvent, fromId: string) => void;
-}> = ({ beat, onUpdate, onDelete, onStartLink }) => {
+}> = ({ beat, onUpdate, onDelete, armed, onToggleArm, onStartLink }) => {
   const dragRef = useRef<{ startX: number; startY: number; beatX: number; beatY: number } | null>(null);
 
   const handleResize = useCallback(
@@ -773,24 +777,30 @@ const FreeBeatCard: React.FC<FreeBeatCardProps & {
   };
 
   return (
-    <div style={wrapStyle} className="beat-card-wrap beat-card-wrap-free" data-beat-id={beat.id}>
-      {/* v2.44: connection nodes on every edge — drag one onto another card.
-          data-beat-id on the wrapper is what the drop hit-test looks for. */}
-      {MIND_NODE_SIDES.map((side) => (
-        <button
-          key={side}
-          className={`mind-node mind-node-${side}`}
-          title="Drag to connect to another beat"
-          onPointerDown={(e) => onStartLink(e, beat.id)}
-          style={{ touchAction: 'none' }}
-        />
-      ))}
+    <div
+      style={wrapStyle}
+      className={`beat-card-wrap beat-card-wrap-free${armed ? ' mind-armed' : ''}`}
+      data-beat-id={beat.id}
+      /* Armed: the NEXT pointer-down anywhere on this card starts the line
+         (capture phase, so the title/drag handle don't swallow it).
+         data-beat-id on the wrapper is what the drop hit-test looks for. */
+      onPointerDownCapture={armed ? (e) => onStartLink(e, beat.id) : undefined}
+    >
       <BeatCardContent
         beat={beat}
         onUpdate={onUpdate}
         onDelete={onDelete}
         dragHandleProps={{ onPointerDown: onDragPointerDown, style: { touchAction: 'none', cursor: 'grab' } }}
         resizePointerDown={resizePointerDown}
+        headExtra={
+          <button
+            className={`beat-toolbar-btn mind-arm-btn${armed ? ' active' : ''}`}
+            title={armed
+              ? 'Armed — drag from this card to another card to connect (click to cancel)'
+              : 'Connect — click, then drag from this card to another card'}
+            onClick={() => onToggleArm(beat.id)}
+          ><FaLink /></button>
+        }
       />
     </div>
   );
@@ -813,17 +823,48 @@ interface CustomCanvasProps {
 const CustomCanvas: React.FC<CustomCanvasProps> = ({
   beats, onUpdateBeat, onDeleteBeat,
 }) => {
-  /* v2.44: mind map connections — grab a node on a card's edge and drag; a
-     live line follows the pointer, and releasing over another card links
-     them (stored on the source beat's mindLinks; clicking a line removes
-     it). Coordinates are canvas-content space: client minus the canvas
+  /* v2.46: mind map connections — arm a card with its Connect button, then
+     click-drag from that card; a live line follows the pointer, and
+     releasing over another card links them (stored on the source beat's
+     mindLinks). Click a line to SELECT it, then Delete/Backspace removes
+     it. Coordinates are canvas-content space: client minus the canvas
      rect, plus its scroll — the same space the beats' x/y live in. */
   const canvasRef = useRef<HTMLDivElement>(null);
   const [linkDrag, setLinkDrag] = useState<{ fromId: string; x: number; y: number } | null>(null);
+  const [armedId, setArmedId] = useState<string | null>(null);
+  const [selectedLine, setSelectedLine] = useState<{ fromId: string; toId: string } | null>(null);
+
+  const handleToggleArm = useCallback((id: string) => {
+    setArmedId((a) => (a === id ? null : id));
+  }, []);
+
+  /* Delete/Backspace removes the selected line; Escape clears selection and
+     disarms. Never while typing in a field. */
+  useEffect(() => {
+    if (!selectedLine && !armedId) return;
+    const handler = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.key === 'Escape') {
+        setSelectedLine(null);
+        setArmedId(null);
+        return;
+      }
+      if (selectedLine && (e.key === 'Delete' || e.key === 'Backspace')) {
+        e.preventDefault();
+        const from = useEditorStore.getState().beats.find((b) => b.id === selectedLine.fromId);
+        if (from) onUpdateBeat(from.id, { mindLinks: toggleMindLink(from.mindLinks, selectedLine.toId) });
+        setSelectedLine(null);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [selectedLine, armedId, onUpdateBeat]);
 
   const handleStartLink = useCallback((e: React.PointerEvent, fromId: string) => {
     e.preventDefault();
     e.stopPropagation();
+    setArmedId(null);
     const canvas = canvasRef.current;
     if (!canvas) return;
     const toCanvas = (ev: { clientX: number; clientY: number }) => {
@@ -841,9 +882,15 @@ const CustomCanvas: React.FC<CustomCanvasProps> = ({
       const targetId = hit?.getAttribute('data-beat-id');
       if (!targetId || targetId === fromId) return;
       // Read the LATEST links from the store — the closure's beats are stale
-      // by the time the pointer comes up.
-      const from = useEditorStore.getState().beats.find((b) => b.id === fromId);
-      if (from) onUpdateBeat(fromId, { mindLinks: toggleMindLink(from.mindLinks, targetId) });
+      // by the time the pointer comes up. Drop only ADDS (removal is
+      // select-line + Delete now); an existing pair in either direction is
+      // left alone so the same connection can't be drawn twice.
+      const st = useEditorStore.getState();
+      const from = st.beats.find((b) => b.id === fromId);
+      if (!from) return;
+      const already = (from.mindLinks ?? []).includes(targetId)
+        || ((st.beats.find((b) => b.id === targetId)?.mindLinks) ?? []).includes(fromId);
+      if (!already) onUpdateBeat(fromId, { mindLinks: [...(from.mindLinks ?? []), targetId] });
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
@@ -864,22 +911,37 @@ const CustomCanvas: React.FC<CustomCanvasProps> = ({
   const dragFrom = linkDrag ? beats.find((b) => b.id === linkDrag.fromId) : null;
 
   return (
-    <div className={`beat-custom-canvas${linkDrag ? ' mind-linking' : ''}`} ref={canvasRef}>
+    <div
+      className={`beat-custom-canvas${linkDrag ? ' mind-linking' : ''}`}
+      ref={canvasRef}
+      /* Clicking empty canvas deselects the line and disarms. */
+      onPointerDown={(e) => {
+        if (e.target === e.currentTarget || (e.target as HTMLElement).classList?.contains('mind-lines')) {
+          setSelectedLine(null);
+          setArmedId(null);
+        }
+      }}
+    >
       <svg className="mind-lines" aria-hidden="true">
         {lines.map(({ from, to }) => {
           const a = center(from);
           const b = center(to);
+          const selected = selectedLine?.fromId === from.id && selectedLine?.toId === to.id;
           return (
-            <line
+            <g
               key={`${from.id}-${to.id}`}
-              x1={a.cx} y1={a.cy} x2={b.cx} y2={b.cy}
-              onClick={() => onUpdateBeat(from.id, { mindLinks: toggleMindLink(from.mindLinks, to.id) })}
+              className={selected ? 'selected' : undefined}
+              onClick={(e) => { e.stopPropagation(); setSelectedLine({ fromId: from.id, toId: to.id }); }}
             >
-              <title>Click to remove this connection</title>
-            </line>
+              {/* Fat invisible twin makes the 1.5px line clickable. */}
+              <line className="mind-line-hit" x1={a.cx} y1={a.cy} x2={b.cx} y2={b.cy} />
+              <line x1={a.cx} y1={a.cy} x2={b.cx} y2={b.cy}>
+                <title>Click to select — press Delete to remove</title>
+              </line>
+            </g>
           );
         })}
-        {/* The live line while dragging from a node. */}
+        {/* The live line while dragging out a connection. */}
         {dragFrom && linkDrag && (
           <line
             className="mind-line-draft"
@@ -894,6 +956,8 @@ const CustomCanvas: React.FC<CustomCanvasProps> = ({
           beat={beat}
           onUpdate={onUpdateBeat}
           onDelete={onDeleteBeat}
+          armed={armedId === beat.id}
+          onToggleArm={handleToggleArm}
           onStartLink={handleStartLink}
         />
       ))}
@@ -916,6 +980,8 @@ export function OutlineHeaderControls() {
   const beatCount = useEditorStore((s) => s.beats.length);
   const beatArrangeMode = useEditorStore((s) => s.beatArrangeMode);
   const setBeatArrangeMode = useEditorStore((s) => s.setBeatArrangeMode);
+  const beatColorAllTabs = useEditorStore((s) => s.beatColorAllTabs);
+  const setBeatColorAllTabs = useEditorStore((s) => s.setBeatColorAllTabs);
   const customPresets = useOutlinePresetStore((s) => s.presets);
 
   /* Derek's rule: helper info lives behind a ? button, not on screen. */
@@ -1042,6 +1108,15 @@ export function OutlineHeaderControls() {
       ) : (
         <button className="beat-board-add-col-btn" onClick={handleAddBeatFree}>+ Add Beat</button>
       )}
+      {/* v2.46, Derek: whole-card color everywhere, or just an edge stripe. */}
+      <label className="beat-color-alltabs" title="On: a beat's color fills its whole card, in every outline tab. Off: just a thin stripe on the card's edge.">
+        <input
+          type="checkbox"
+          checked={beatColorAllTabs}
+          onChange={(e) => setBeatColorAllTabs(e.target.checked)}
+        />
+        Show beat color on all tabs
+      </label>
       <span className="beat-mode-label">Arrangement:</span>
       <div className="beat-mode-toggle">
         <button
@@ -1061,8 +1136,9 @@ export function OutlineHeaderControls() {
           Create sections (Act 1, Act 2…) and drop beats into them — or pick
           a Preset. Tabs below are separate arrangements of the SAME beats;
           the ◉ picks which one the Outline Bar shows. Freeform turns the
-          board into a mind map: drag cards anywhere, and drag from a node
-          on a card's edge onto another card to connect them.
+          board into a mind map: drag cards anywhere; to connect two, push a
+          card's link button, then drag from that card onto the other. Click
+          a line and press Delete to remove it.
         </div>,
         document.body,
       )}

@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.45';
+export const APP_VERSION = '2.46';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.46',
+    date: '2026-07-16',
+    items: [
+      { title: 'Fix: beat card header buttons were invisible', detail: 'The title box refused to shrink, pushing the color / attach / delete buttons off the card\'s right edge where they were clipped. The title now yields, and the color picker opens as a proper floating panel that can\'t be cut off by the card.', tags: ['Fix', 'UI'] },
+      { title: 'Show beat color on all tabs', detail: 'A new option at the top of the Outline window. On (the default), a beat\'s color fills its whole card in every outline tab; off, the color shows as a thin stripe on the card\'s left edge instead.', tags: ['New Feature', 'Tools'] },
+      { title: 'Freeform: connect via the card\'s link button', detail: 'The edge nodes are gone. Push a card\'s link button to arm it, then click and drag from anywhere on that card — a line follows the pointer — and let go on another card to connect them. Click a line to select it and press Delete to remove it.', tags: ['Tools', 'UI'] },
+    ],
+  },
   {
     version: '2.45',
     date: '2026-07-16',

@@ -24,6 +24,7 @@ interface ViewState {
   outlineBarRowScale?: number;
   outlineBarRows?: OutlineBarRow[];
   outlineBarLabels?: boolean;
+  beatColorAllTabs?: boolean;
   highlightColor?: string;
   indexCardsOpen?: boolean;
   beatBoardOpen?: boolean;
@@ -1024,6 +1025,10 @@ interface EditorState {
   setOutlineBarRows: (rows: OutlineBarRow[]) => void;
   outlineBarLabels: boolean;
   setOutlineBarLabels: (v: boolean) => void;
+  /** v2.46, Derek: "Show beat color on all tabs" — ON paints the whole card
+   *  with the beat's color everywhere; OFF falls back to a thin edge stripe. */
+  beatColorAllTabs: boolean;
+  setBeatColorAllTabs: (v: boolean) => void;
   /** v1.80: Navigator filter + kind visibility live in the store so the
    *  window's header (dropdown) and footer (filter field) — which render in
    *  the shared window chrome — stay in sync with the list body. */
@@ -1673,6 +1678,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setOutlineBarLabels: (v) => {
     saveViewState({ outlineBarLabels: v });
     set({ outlineBarLabels: v });
+  },
+  beatColorAllTabs: (_vs.beatColorAllTabs as boolean) ?? true,
+  setBeatColorAllTabs: (v) => {
+    saveViewState({ beatColorAllTabs: v });
+    set({ beatColorAllTabs: v });
   },
   navFilter: '',
   setNavFilter: (v) => set({ navFilter: v }),
