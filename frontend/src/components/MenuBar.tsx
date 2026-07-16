@@ -829,6 +829,58 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     confirmOrRun(() => { handleImportDocxCore(); });
   }, [confirmOrRun, handleImportDocxCore]);
 
+  // v2.79: PDF import — reconstructs elements from the PDF's text layer by
+  // indentation. pdf.js is heavy, so the parser loads lazily on first use.
+  const handleImportPdfCore = useCallback(async () => {
+    if (!editor) return;
+    try {
+      const result = await openBinaryFile([
+        { name: 'PDF', extensions: ['pdf'] },
+      ]);
+      if (!result) return;
+
+      const { name, content } = result;
+      const { parsePdfScreenplay } = await import('../utils/pdfImporter');
+      const parsed = await parsePdfScreenplay(content);
+
+      // Clear previous document state
+      clearTrackChanges();
+      const store = useEditorStore.getState();
+      store.setBeats([]);
+      store.setBeatColumns([]);
+      store.resetOutlineTabs();
+      store.setBeatArrangeMode('auto');
+      store.setNotes([]);
+      store.setTags([]);
+      store.setTagCategories([...DEFAULT_TAG_CATEGORIES]);
+      store.setCharacterProfiles([]);
+      store.setScenes([]);
+
+      editor.commands.setContent(parsed.doc, true);
+      clearEditorHistory(editor);
+
+      const scriptTitle = name.replace(/\.\w+$/, '') || 'Untitled';
+      store.setDocumentTitle(scriptTitle);
+      setCurrentProject(null);
+      setCurrentScriptId(null);
+      setScripts([]);
+      store.setImportedSource({ name, format: 'PDF (.pdf)' });
+
+      if (parsed.warnings.length > 0) {
+        for (const w of parsed.warnings) showToast(w, 'info');
+      } else {
+        showToast(`PDF imported (${parsed.pages} page${parsed.pages === 1 ? '' : 's'}). A PDF stores print layout, not elements — worth a review pass.`, 'info');
+      }
+    } catch (err) {
+      console.error('PDF import failed:', err);
+      showToast(`PDF import failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
+    }
+  }, [editor, clearTrackChanges, setCurrentProject, setCurrentScriptId, setScripts]);
+
+  const handleImportPdf = useCallback(() => {
+    confirmOrRun(() => { void handleImportPdfCore(); });
+  }, [confirmOrRun, handleImportPdfCore]);
+
   /** Resets all per-script session state for a fresh new-screenplay,
    *  but does NOT seed editor content — caller picks the format and content. */
   /* v1.50: what the New Script dialog collected, applied when the reset runs.
@@ -1226,6 +1278,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           children: [
             { icon: <FaFileCode />, label: 'Final Draft / Fountain / ScriptCraft…', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
             { icon: <FaFileWord />, label: 'Microsoft Word (.docx)…', action: handleImportDocx, disabled: isCollabGuest },
+            { icon: <FaFilePdf />, label: 'PDF (.pdf)…', action: handleImportPdf, disabled: isCollabGuest },
           ],
         },
         {

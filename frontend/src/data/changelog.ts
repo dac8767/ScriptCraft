@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.78';
+export const APP_VERSION = '2.79';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.79',
+    date: '2026-07-16',
+    items: [
+      { title: 'Import PDF screenplays', detail: 'File > Import > PDF (.pdf) reads a PDF\'s text layer and reconstructs the script — elements are recognized from the standard screenplay indents (dialogue, characters, parentheticals, transitions) with scene headings caught by prefix. A PDF stores print layout rather than elements, so unusual layouts import as action for review. Scanned PDFs without a text layer get a clear error instead of an empty script.', tags: ['New Feature', 'Saving'] },
+    ],
+  },
   {
     version: '2.78',
     date: '2026-07-16',
