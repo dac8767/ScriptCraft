@@ -13384,6 +13384,25 @@ html.android .version-history-panel {
   cursor: pointer;
 }
 
+/* v2.17: the beat card's page estimate (same outlineSpan as the bar). */
+.beat-card-pages {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  flex: 0 0 auto;
+}
+.beat-card-pages input {
+  width: 34px;
+  background: transparent;
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 1px 3px;
+}
+
 /* v2.11: the Outline window's per-column page budget. */
 .beat-column-target {
   display: inline-flex;

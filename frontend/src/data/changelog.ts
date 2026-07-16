@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.16';
+export const APP_VERSION = '2.17';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.17',
+    date: '2026-07-16',
+    items: [
+      { title: 'Beat page estimates on the board', detail: 'Every beat card in the Outline window carries a small "p" field — type the page estimate there and the Outline Bar block resizes to match. Same number, either place.', tags: ['Tools'] },
+    ],
+  },
   {
     version: '2.16',
     date: '2026-07-16',

@@ -175,6 +175,31 @@ const DescriptionWithLinks: React.FC<{ text: string }> = ({ text }) => {
   return <div className="beat-card-description-rendered">{elements}</div>;
 };
 
+/* v2.17: the beat's page estimate — the SAME outlineSpan the Outline Bar
+   draws, editable from the board card too. Whole pages only. */
+const BeatPagesField: React.FC<{
+  beat: BeatInfo; onUpdate: (id: string, updates: Partial<BeatInfo>) => void;
+}> = ({ beat, onUpdate }) => (
+  <label
+    className="beat-card-pages"
+    title="Page estimate — how many pages this beat spans on the Outline Bar"
+    onClick={(e) => e.stopPropagation()}
+  >
+    <input
+      type="number"
+      min={1}
+      step={1}
+      value={beat.outlineSpan ?? ''}
+      placeholder="p"
+      onChange={(e) => {
+        const n = Math.round(Number(e.target.value));
+        onUpdate(beat.id, { outlineSpan: Number.isFinite(n) && n >= 1 ? n : undefined });
+      }}
+    />
+    <span>p</span>
+  </label>
+);
+
 /* ─── Beat Card Resize Handle (pointer events for mouse + touch) ─── */
 const useResizeHandle = (
   onResize: (dw: number, dh: number) => void,
@@ -394,6 +419,7 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
               onChange={(e) => onUpdate(beat.id, { title: e.target.value })}
               placeholder="Beat title..."
             />
+            <BeatPagesField beat={beat} onUpdate={onUpdate} />
             <button className="beat-card-delete" onClick={() => onDelete(beat.id)} title="Delete beat">&times;</button>
           </div>
           {descFocused ? (
@@ -434,6 +460,7 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
               onChange={(e) => onUpdate(beat.id, { title: e.target.value })}
               placeholder="Beat title..."
             />
+            <BeatPagesField beat={beat} onUpdate={onUpdate} />
             <button className="beat-card-delete" onClick={() => onDelete(beat.id)} title="Delete beat">&times;</button>
           </div>
           {descFocused ? (
