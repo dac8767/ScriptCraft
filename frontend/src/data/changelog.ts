@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.16';
+export const APP_VERSION = '3.17';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.17',
+    date: '2026-07-17',
+    items: [
+      { title: 'Reorder whole ribbon sections', detail: 'Each section in the customizer has a grip at its left edge — drag it to move the entire section, with an insertion line showing where it will land. Items, rows and the align split all travel with it.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '3.16',
     date: '2026-07-17',

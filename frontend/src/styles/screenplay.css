@@ -16666,15 +16666,48 @@ input.fs-switch:checked::after { left: 15px; }
    their size and the ribbon strip scrolls horizontally instead. Without
    flex-shrink:0 a narrow window compressed the chips into each other. */
 .ribed-section {
+  /* v3.17: grip column | rows column */
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 3px;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 2px;
   padding: 3px;
   border: 1px dashed color-mix(in srgb, var(--fd-border) 70%, transparent);
   border-radius: 5px;
   min-width: 44px;
   flex-shrink: 0;
+}
+.ribed-sec-rows {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+/* v3.17: the section's move handle — drag it to reorder whole sections. */
+.ribed-sec-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  flex-shrink: 0;
+  color: var(--fd-text-muted);
+  font-size: 9px;
+  cursor: grab;
+  border-radius: 3px;
+  touch-action: none;
+}
+.ribed-sec-grip:hover { color: var(--fd-text); background: var(--fd-hover-bg); }
+/* insertion indicator while a section rides the pointer — zero net width */
+.ribed-sec-dropline {
+  width: 3px;
+  margin: 2px -1.5px;
+  align-self: stretch;
+  border-radius: 2px;
+  background: var(--fd-accent);
+  flex-shrink: 0;
+  z-index: 1;
 }
 .ribed-row {
   display: flex;

@@ -52,6 +52,7 @@ const payloadLabel = (payload: string): string => {
   if (payload === 'util:divider') return 'Divider';
   if (payload === 'util:spacer') return 'Spacer';
   if (payload === 'util:alignsplit') return 'Align Split';
+  if (payload.startsWith('sec:')) return 'Section';
   return '';
 };
 
@@ -60,6 +61,9 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
   const { sections, splitAt } = model;
   const [spot, setSpot] = useState<DropSpot | null>(null);
   const [dragging, setDragging] = useState(false);
+  // v3.17, Derek: whole SECTIONS reorder too — dragged by the grip at their
+  // left edge. This is the insertion boundary (0..sections.length).
+  const [secSpot, setSecSpot] = useState<number | null>(null);
   // v3.01: double-clicking a palette item drops it into the most recently
   // added or modified section — every mutation records its target.
   const lastSec = useRef<number | null>(null);
@@ -75,7 +79,19 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
     if (touchedSec !== undefined) lastSec.current = touchedSec;
     onChange(serializeRibbon(m));
   };
-  const endDrag = () => { setSpot(null); setDragging(false); };
+  const endDrag = () => { setSpot(null); setSecSpot(null); setDragging(false); };
+
+  /** v3.17: move a whole section to insertion boundary `to` (0..len). The
+   *  align-split boundary index stays put — the sections shuffle around it. */
+  const moveSection = (from: number, to: number) => {
+    if (to === from || to === from + 1) { endDrag(); return; }   // same place
+    const m = clone(model);
+    const [s] = m.sections.splice(from, 1);
+    const dest = to > from ? to - 1 : to;
+    m.sections.splice(dest, 0, s);
+    commit(m, dest);
+    endDrag();
+  };
 
   /** setSpot only on real change — same-valued updates re-render the whole
    *  editor mid-drag and read as flicker. */
@@ -185,6 +201,18 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
       return null;
     };
 
+    /** v3.17: a SECTION drag targets a boundary — the near half of whatever
+     *  section the pointer is over decides before/after. */
+    const secSpotFromPoint = (x: number, y: number): number | null => {
+      const el = document.elementFromPoint(x, y) as HTMLElement | null;
+      const hitSection = el?.closest<HTMLElement>('.ribed-section');
+      if (hitSection?.dataset.sec) {
+        const r = hitSection.getBoundingClientRect();
+        return Number(hitSection.dataset.sec) + (x > r.left + r.width / 2 ? 1 : 0);
+      }
+      return null;
+    };
+
     const move = (ev: PointerEvent) => {
       if (!active) {
         if (Math.abs(ev.clientX - startX) < 4 && Math.abs(ev.clientY - startY) < 4) return;
@@ -201,7 +229,11 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
         ghost.style.top = `${ev.clientY + 12}px`;
       }
       const overPalette = (document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null)?.closest('.ribed-palette');
-      moveSpot(overPalette ? null : spotFromPoint(ev.clientX, ev.clientY));
+      if (payload.startsWith('sec:')) {
+        setSecSpot(overPalette ? null : secSpotFromPoint(ev.clientX, ev.clientY));
+      } else {
+        moveSpot(overPalette ? null : spotFromPoint(ev.clientX, ev.clientY));
+      }
     };
     const up = (ev: PointerEvent) => {
       cleanup();
@@ -210,6 +242,12 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
       if (payload.startsWith('tok:') && el?.closest('.ribed-palette')) {
         removeToken(payload.slice(4));   // dragging out = remove
         endDrag();
+        return;
+      }
+      if (payload.startsWith('sec:')) {
+        const to = secSpotFromPoint(ev.clientX, ev.clientY);
+        if (to === null) { endDrag(); return; }
+        moveSection(Number(payload.slice(4)), to);
         return;
       }
       applyDrop(payload, spotFromPoint(ev.clientX, ev.clientY));
@@ -348,7 +386,15 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
       <div className="ribed-ribbon">
         {sections.map((s, i) => (
           <React.Fragment key={`sec-${i}`}>
+            {secSpot === i && <span className="ribed-sec-dropline" />}
             <div className={`ribed-section${s.hasBreak ? '' : ' ribed-single'}`} data-sec={i}>
+              {/* v3.17: drag the grip to move the WHOLE section. */}
+              <span
+                className="ribed-sec-grip"
+                title="Drag to move this section"
+                onPointerDown={(e) => startDrag(e, `sec:${i}`)}
+              ><FaGripLinesVertical /></span>
+              <div className="ribed-sec-rows">
               {renderRow(s, i, 'top')}
               {s.hasBreak && (
                 <div className="ribed-break">
@@ -363,6 +409,7 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
                 </div>
               )}
               {s.hasBreak && renderRow(s, i, 'bottom')}
+              </div>
             </div>
             {/* v3.02, Derek: EVERY section gets its closing divider on the
                 right — the last one closes leftward into its neighbour. At
@@ -385,6 +432,7 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
             )}
           </React.Fragment>
         ))}
+        {secSpot === sections.length && <span className="ribed-sec-dropline" />}
         {/* v2.97: the structural tools, beside the structure they build. */}
         <div className="ribed-tools">
           <button
