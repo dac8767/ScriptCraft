@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.98';
+export const APP_VERSION = '2.99';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.99',
+    date: '2026-07-17',
+    items: [
+      { title: 'Fixed: some ribbon items refused to drag in Customize', detail: 'On the Mac, chips for items already on the bar could silently refuse to start dragging (removing and re-adding them "cured" it). The editor no longer depends on the system drag starting at all: if you press and move a chip and the native drag never kicks in, the editor runs the drag itself — same drop indicator, same result. Chips are also explicitly marked draggable for WebKit.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '2.98',
     date: '2026-07-17',

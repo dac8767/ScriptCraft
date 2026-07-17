@@ -16,7 +16,7 @@
  * WebKit footgun (CLAUDE.md §4): every dragstart MUST call
  * dataTransfer.setData() or the drag silently never begins in Tauri.
  */
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { FaGripLinesVertical, FaLevelDownAlt, FaArrowsAltH } from 'react-icons/fa';
 import {
   parseRibbon, serializeRibbon, type RibbonSection,
@@ -42,9 +42,10 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
   const sections = parseRibbon(tokens);
   const [spot, setSpot] = useState<DropSpot | null>(null);
   const [dragging, setDragging] = useState(false);
+  const html5DragLive = useRef(false);
 
   const commit = (secs: RibbonSection[]) => onChange(serializeRibbon(secs));
-  const endDrag = () => { setSpot(null); setDragging(false); };
+  const endDrag = () => { setSpot(null); setDragging(false); html5DragLive.current = false; };
 
   const removeEverywhere = (secs: RibbonSection[], tok: string) => {
     for (const s of secs) {
@@ -67,16 +68,15 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
     setSpot({ sec, row, idx: len });
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const payload = e.dataTransfer.getData('text/plain');
-    if (!payload || !spot) { endDrag(); return; }
+  /** The one drop mutation, shared by the HTML5 path and the pointer
+   *  fallback: apply `payload` at `at`. */
+  const applyDrop = (payload: string, at: DropSpot | null) => {
+    if (!payload || !at) { endDrag(); return; }
     const secs = clone(sections);
-    const target = secs[spot.sec];
+    const target = secs[at.sec];
     if (!target) { endDrag(); return; }
-    const rowArr = spot.row === 'top' ? target.top : target.bottom;
-    let idx = Math.min(spot.idx, rowArr.length);
+    const rowArr = at.row === 'top' ? target.top : target.bottom;
+    let idx = Math.min(at.idx, rowArr.length);
 
     if (payload.startsWith('tok:')) {
       // moving an existing item — removing it first can shift the target
@@ -84,14 +84,14 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
       const before = rowArr.indexOf(tok);
       if (before >= 0 && before < idx) idx -= 1;
       removeEverywhere(secs, tok);
-      const arr = spot.row === 'top' ? target.top : target.bottom;
+      const arr = at.row === 'top' ? target.top : target.bottom;
       arr.splice(Math.min(idx, arr.length), 0, tok);
     } else if (payload === 'util:rowbreak') {
       if (!target.hasBreak) {
         target.bottom = target.top.slice(idx);
         target.top = target.top.slice(0, idx);
         target.hasBreak = true;
-      } else if (spot.row === 'top') {
+      } else if (at.row === 'top') {
         target.bottom = [...target.top.slice(idx), ...target.bottom];
         target.top = target.top.slice(0, idx);
       } else {
@@ -110,10 +110,79 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
     endDrag();
   };
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    applyDrop(e.dataTransfer.getData('text/plain'), spot);
+  };
+
   const dragStart = (e: React.DragEvent, payload: string) => {
     e.dataTransfer.setData('text/plain', payload);   // WebKit: mandatory
     e.dataTransfer.effectAllowed = 'move';
+    html5DragLive.current = true;
     setDragging(true);
+  };
+
+  /** v2.98, Derek's report: in the Mac app (WKWebView) some chips never got
+   *  a dragstart at all — HTML5 drag silently refused, while the same chip
+   *  dragged fine after being re-added. Belt and braces: if a pointer moves
+   *  4px on a chip and NO dragstart has fired, run the drag ourselves —
+   *  pointer capture, the same drop-spot math (via data attributes on rows
+   *  and chips), the same applyDrop on release. */
+  const startPointerFallback = (e: React.PointerEvent, payload: string) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('.ribed-x') || target.closest('.ribed-spacer-grip') || target.closest('input')) return;
+    const chip = e.currentTarget as HTMLElement;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let active = false;
+    const spotFromPoint = (x: number, y: number): DropSpot | null => {
+      const el = document.elementFromPoint(x, y) as HTMLElement | null;
+      const hitChip = el?.closest<HTMLElement>('.ribed-chip');
+      if (hitChip?.dataset.sec) {
+        const r = hitChip.getBoundingClientRect();
+        return {
+          sec: Number(hitChip.dataset.sec),
+          row: hitChip.dataset.row as Row,
+          idx: Number(hitChip.dataset.idx) + (x > r.left + r.width / 2 ? 1 : 0),
+        };
+      }
+      const hitRow = el?.closest<HTMLElement>('.ribed-row');
+      if (hitRow?.dataset.sec) {
+        return { sec: Number(hitRow.dataset.sec), row: hitRow.dataset.row as Row, idx: Number(hitRow.dataset.len) };
+      }
+      return null;
+    };
+    const move = (ev: PointerEvent) => {
+      if (!active) {
+        // an HTML5 drag took over, or the pointer hasn't traveled yet
+        if (html5DragLive.current) { cleanup(); return; }
+        if (Math.abs(ev.clientX - startX) < 4 && Math.abs(ev.clientY - startY) < 4) return;
+        active = true;
+        setDragging(true);
+        chip.classList.add('ribed-chip-lifted');
+      }
+      setSpot(spotFromPoint(ev.clientX, ev.clientY));
+    };
+    const up = (ev: PointerEvent) => {
+      cleanup();
+      if (!active) return;
+      const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+      if (payload.startsWith('tok:') && el?.closest('.ribed-palette')) {
+        removeToken(payload.slice(4));   // dragging out = remove, same as HTML5
+        endDrag();
+        return;
+      }
+      applyDrop(payload, spotFromPoint(ev.clientX, ev.clientY));
+    };
+    const cleanup = () => {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', up);
+      chip.classList.remove('ribed-chip-lifted');
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
   };
 
   const removeToken = (tok: string) => {
@@ -166,9 +235,13 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
         draggable
         title={tokenLabel(tok)}
         style={tok.startsWith('s:') ? { width: spacerPx(tok) } : undefined}
+        data-sec={sec}
+        data-row={row}
+        data-idx={idx}
         onDragStart={(e) => dragStart(e, `tok:${tok}`)}
         onDragEnd={endDrag}
         onDragOver={(e) => overChip(e, sec, row, idx)}
+        onPointerDown={(e) => startPointerFallback(e, `tok:${tok}`)}
       >
         {!tok.startsWith('s:') && !tok.startsWith('d:') && (
           <span className="ribed-chip-icon">{tokenIcon(tok)}</span>
@@ -192,6 +265,9 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
     return (
       <div
         className="ribed-row"
+        data-sec={sec}
+        data-row={row}
+        data-len={items.length}
         onDragOver={(e) => overRow(e, sec, row, items.length)}
       >
         {items.map((tok, i) => renderChip(tok, sec, row, i))}
@@ -268,15 +344,18 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
             onClick={() => commit([...clone(sections), { ...EMPTY_SECTION }])}
           >+ Section</button>
           <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a section to split it into two rows"
-            onDragStart={(e) => dragStart(e, 'util:rowbreak')} onDragEnd={endDrag}>
+            onDragStart={(e) => dragStart(e, 'util:rowbreak')} onDragEnd={endDrag}
+            onPointerDown={(e) => startPointerFallback(e, 'util:rowbreak')}>
             <FaLevelDownAlt /> New Row
           </span>
           <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a row: a one-row vertical divider line"
-            onDragStart={(e) => dragStart(e, 'util:divider')} onDragEnd={endDrag}>
+            onDragStart={(e) => dragStart(e, 'util:divider')} onDragEnd={endDrag}
+            onPointerDown={(e) => startPointerFallback(e, 'util:divider')}>
             <FaGripLinesVertical /> Divider
           </span>
           <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a row: blank space — drag its edge to resize"
-            onDragStart={(e) => dragStart(e, 'util:spacer')} onDragEnd={endDrag}>
+            onDragStart={(e) => dragStart(e, 'util:spacer')} onDragEnd={endDrag}
+            onPointerDown={(e) => startPointerFallback(e, 'util:spacer')}>
             <FaArrowsAltH /> Spacer
           </span>
         </div>
@@ -312,6 +391,7 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
                 title={`Drag onto the ribbon: ${o.label}`}
                 onDragStart={(e) => dragStart(e, `new:${o.value}`)}
                 onDragEnd={endDrag}
+                onPointerDown={(e) => startPointerFallback(e, `new:${o.value}`)}
               >
                 <span className="ribed-chip-icon">{tokenIcon(o.value)}</span>
                 {o.label}

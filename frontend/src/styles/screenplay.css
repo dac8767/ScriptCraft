@@ -16581,6 +16581,16 @@ input.fs-switch:checked::after { left: 15px; }
   font-size: 13px;
 }
 .ribed-chip:active { cursor: grabbing; }
+/* WebKit drag hardening (v2.98, Derek's Mac): mark the chip itself as the
+   draggable element and keep children out of drag/selection negotiation —
+   WKWebView can otherwise refuse to start the drag at all. */
+.ribed-chip, .ribed-pal-chip {
+  -webkit-user-drag: element;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.ribed-chip svg, .ribed-pal-chip svg { -webkit-user-drag: none; }
+.ribed-chip-lifted { opacity: 0.45; }
 .ribed-chip-icon { display: inline-flex; pointer-events: none; }
 /* v2.97: the spacer chip's WIDTH is the spacer's width — resized by
    dragging the grip on its right edge. */
