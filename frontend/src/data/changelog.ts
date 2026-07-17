@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.18';
+export const APP_VERSION = '3.19';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.19',
+    date: '2026-07-17',
+    items: [
+      { title: 'Leaner customize palette', detail: 'Thirteen weak toolbar candidates are no longer offered: Subscript, Superscript, Reset Sizing, Select All, the three imports, Settings, Script Format Preferences, Grammar & Spelling Settings, and the Help one-shots (About, Feature Request, Report a Bug, Changelog, Knowledge Base). Anything already pinned in your layout keeps working — only the option to add them is gone.', tags: ['UI', 'Polish'] },
+    ],
+  },
   {
     version: '3.18',
     date: '2026-07-17',

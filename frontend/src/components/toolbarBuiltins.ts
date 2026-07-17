@@ -34,6 +34,10 @@ export interface ToolbarBuiltin {
   permanent?: boolean;
   /** Which zone a re-inserted permanent item lands in (default 'left'). */
   permanentZone?: 'left' | 'right';
+  /** v3.19, Derek's palette cull: not offered in Customize anymore. The
+   *  registry entry STAYS so a saved layout that already carries the token
+   *  keeps rendering — only the option to add it goes away. */
+  unlisted?: boolean;
 }
 
 export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
@@ -50,8 +54,10 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'italic', label: 'Italic', priority: '4', desktopOnly: true },
   { key: 'underline', label: 'Underline', priority: '4', desktopOnly: true },
   { key: 'strike', label: 'Strikethrough', priority: '4', desktopOnly: true },
-  { key: 'subscript', label: 'Subscript', priority: '4', desktopOnly: true },
-  { key: 'superscript', label: 'Superscript', priority: '4', desktopOnly: true },
+  // v3.19: sub/superscript are word-processor leftovers — screenplay format
+  // never uses them. Unlisted from the palette, kept for old layouts.
+  { key: 'subscript', label: 'Subscript', priority: '4', desktopOnly: true, unlisted: true },
+  { key: 'superscript', label: 'Superscript', priority: '4', desktopOnly: true, unlisted: true },
   { key: 'textColor', label: 'Text Color', priority: '4', desktopOnly: true },
   { key: 'highlightColor', label: 'Highlight Color', priority: '4', desktopOnly: true },
   { key: 'alignLeft', label: 'Align Left', priority: '3', desktopOnly: true },
@@ -72,7 +78,9 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'lockResize', label: 'Lock Sizing' },
   // v2.67, Derek: reset every adjustable size/spacing (confirm first;
   // grayed while the sizing lock is on).
-  { key: 'resetSizes', label: 'Reset Sizing' },
+  // v3.19: a destructive one-shot with a home in the View menu (confirmed
+  // there) — too risky as a stray toolbar click. Unlisted, kept for old layouts.
+  { key: 'resetSizes', label: 'Reset Sizing', unlisted: true },
   // v2.94: the Insert Table grid — a menu item the native menu bar can't
   // host, so it lives on the toolbar's second row (Scrapbook only).
   { key: 'insertTable', label: 'Insert Table (Scrapbook)' },

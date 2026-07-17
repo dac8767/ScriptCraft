@@ -78,8 +78,9 @@ describe('migrateResetSizes (v2.67)', () => {
     expect(migrateResetSizes(once)).toEqual(once);
   });
 
-  it('registered as a builtin (v3.01: default layout keeps it in the palette)', () => {
+  it('stays registered so old layouts render it — but unlisted from the palette (v3.19)', () => {
     expect(BUILTIN_BY_KEY.resetSizes?.label).toBe('Reset Sizing');
+    expect(BUILTIN_BY_KEY.resetSizes?.unlisted).toBe(true);
   });
 });
 

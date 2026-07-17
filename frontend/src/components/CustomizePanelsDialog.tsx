@@ -703,18 +703,22 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   //    (Ribbon tokens may carry the 2! span flag — compare flag-blind.)
   const tbPlaced = (v: string) => [...tbLeft, ...tbRight].some((t) => stripTall(t) === v);
   const PRODUCTION_CMDS = ['titlePage', 'setDraft', 'addSceneNumbers', 'removeSceneNumbers', 'lockSceneNumbers', 'revisionMode'];
-  const TOOLS_CMDS = ['spellCheck', 'writingSuggestions', 'grammarSettings', 'takeSnapshot', 'snapshots', 'trackChanges', 'compareSnapshot'];
+  // v3.19, Derek's palette cull: settings dialogs (grammarSettings,
+  // formatPrefs, settings), one-shot imports, Select All and the Help
+  // one-shots are no longer pinnable options. The COMMAND registry keeps
+  // every id, so tokens already pinned in a saved layout keep working.
+  const TOOLS_CMDS = ['spellCheck', 'writingSuggestions', 'takeSnapshot', 'snapshots', 'trackChanges', 'compareSnapshot'];
   const PROJECT_CMDS = ['rename'];
-  // v2.97/v2.98, Derek: every menu action is ribbon-pinnable — File, Edit,
+  // v2.97/v2.98, Derek: menu actions are ribbon-pinnable — File, Edit,
   // Insert, View, Format and Help join the palette (ids resolve through the
   // same command bus the menus use).
-  const FILE_CMDS = ['newScreenplay', 'openFile', 'importLocal', 'importDocx', 'importPdf', 'save', 'saveAs', 'print', 'preview', 'exportPDF', 'exportFDX', 'exportFountain', 'exportDocx', 'exportOdraft', 'settings'];
-  const EDIT_CMDS = ['cut', 'copy', 'paste', 'selectAll', 'dualDialogue'];
+  const FILE_CMDS = ['newScreenplay', 'openFile', 'save', 'saveAs', 'print', 'preview', 'exportPDF', 'exportFDX', 'exportFountain', 'exportDocx', 'exportOdraft'];
+  const EDIT_CMDS = ['cut', 'copy', 'paste', 'dualDialogue'];
   const INSERT_CMDS = ['insertImage', 'insertMarker'];
   const VIEW_CMDS = ['fitPage', 'fitWidth', 'actualSize', 'showRulers'];
-  const FORMAT_CMDS = ['formatPrefs'];
+  const FORMAT_CMDS: string[] = [];
   const BOOKMARK_CMDS = ['addBookmark', 'lastEditLocation'];   // v3.08
-  const HELP_CMDS = ['about', 'keyboardShortcuts', 'knowledgeBase', 'changelog', 'featureRequest', 'reportBug'];
+  const HELP_CMDS = ['keyboardShortcuts'];
   const cmdOpt = (id: string) => {
     const c = TOOLBAR_COMMANDS.find((x) => x.id === id);
     return c ? [{ value: `c:${c.id}`, label: c.label }] : [];
@@ -727,7 +731,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     {
       id: 'toolbar', label: 'Toolbar',
       options: Object.values(BUILTIN_BY_KEY)
-        .filter((b) => b.key !== 'tags' && b.key !== 'scriptNotes' && !b.permanent)
+        .filter((b) => b.key !== 'tags' && b.key !== 'scriptNotes' && !b.permanent && !b.unlisted)
         .map((b) => ({ value: `b:${b.key}`, label: b.label })),
     },
     {
