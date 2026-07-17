@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.27';
+export const APP_VERSION = '3.28';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.28',
+    date: '2026-07-17',
+    items: [
+      { title: 'More air at the ribbon\'s right edge', detail: 'The right-aligned tail (Customize) gets 24px of padding from the window edge — v3.10\'s 12px still read as touching.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '3.27',
     date: '2026-07-17',
