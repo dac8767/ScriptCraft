@@ -146,6 +146,13 @@ import {
   FaRulerHorizontal,
 } from 'react-icons/fa';
 
+/** v2.98: the Help-menu form links, shared by the menu items and the
+ *  ribbon-pinnable commands — one place for each URL. */
+const HELP_FORMS = {
+  featureRequest: { title: 'Feature Request', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagqeHW8Hd0qZZxD5/form' },
+  reportBug: { title: 'Report a Bug', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagykyhflKTRjphGr/form' },
+};
+
 interface MenuBarProps {
   editor: Editor | null;
   onCollaborate?: () => void;
@@ -622,6 +629,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         case 'trackChanges': handleTrackChangesToggle(); break;
         case 'spellCheck': setSpellModalOpen(true); break;
         case 'writingSuggestions': setGrammarModalOpen(true); break;
+        // fitPage/fitWidth are OWNED by ScreenplayEditor's listener on this
+        // same event — falling through to the map would re-dispatch the
+        // event and recurse until the stack blows. Explicit no-ops here.
+        case 'fitPage': case 'fitWidth': break;
         // v2.97, Derek: EVERY menu action is pinnable to the ribbon — any
         // command id the actions map knows resolves here, so the ribbon,
         // the menus and the keyboard all run the same closure. (Safe for
@@ -1042,6 +1053,23 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     copy: () => document.execCommand('copy'),
     paste: () => document.execCommand('paste'),
     selectAll: () => editor?.chain().focus().selectAll().run(),
+    // v2.98, Derek: the REST of the menus — every remaining action becomes
+    // ribbon-pinnable through the same bus. Pickers and dialogs with their
+    // own flows (Workspaces, Theme, Element) stay menu-only.
+    importDocx: () => { if (!isCollabGuest) handleImportDocx(); },
+    importPdf: () => { if (!isCollabGuest) handleImportPdf(); },
+    exportOdraft: () => { void handleExportOdraft(); },
+    insertImage: () => useEditorStore.getState().imageInsertHandler?.(),
+    insertMarker: () => insertOutlineLine('⚑ '),
+    showRulers: () => { const s = useEditorStore.getState(); s.setRulersVisible(!s.rulersVisible); },
+    formatPrefs: () => setFormatPrefsOpen({ firstRun: false, afterSave: null }),
+    grammarSettings: () => setGrammarRulesPanelOpen(true),
+    about: () => setAboutOpen(true),
+    keyboardShortcuts: () => setShortcutsOpen(true),
+    knowledgeBase: () => setKnowledgeBaseOpen(true),
+    changelog: () => setChangelogOpen(true),
+    featureRequest: () => setHelpForm(HELP_FORMS.featureRequest),
+    reportBug: () => setHelpForm(HELP_FORMS.reportBug),
   };
   const shortcutActionsRef = useRef(shortcutActions);
   // Menu items display the EFFECTIVE binding, so a rebound (or cleared)
@@ -1757,12 +1785,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       {
         icon: <FaExternalLinkAlt />,
         label: 'Feature Request…',
-        action: () => setHelpForm({ title: 'Feature Request', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagqeHW8Hd0qZZxD5/form' }),
+        action: () => setHelpForm(HELP_FORMS.featureRequest),
       },
       {
         icon: <FaExternalLinkAlt />,
         label: 'Report a Bug…',
-        action: () => setHelpForm({ title: 'Report a Bug', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagykyhflKTRjphGr/form' }),
+        action: () => setHelpForm(HELP_FORMS.reportBug),
       },
       { separator: true, label: '' },
       {

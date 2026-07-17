@@ -11,7 +11,8 @@ import {
   FaUpload, FaHistory, FaExchangeAlt, FaSpellCheck, FaTags, FaCodeBranch,
   FaFile, FaFolderOpen, FaFileImport, FaSave, FaRegSave, FaPrint, FaEye,
   FaFilePdf, FaFileExport, FaFileWord, FaCog, FaCut, FaCopy, FaPaste,
-  FaMousePointer, FaColumns,
+  FaMousePointer, FaColumns, FaImage, FaFlag, FaSearchPlus, FaSearchMinus,
+  FaRulerHorizontal, FaInfoCircle, FaKeyboard, FaExternalLinkAlt, FaBug,
 } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 
@@ -60,6 +61,26 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'paste', label: 'Paste', icon: <FaPaste />, run: () => emit('paste') },
   { id: 'selectAll', label: 'Select All', icon: <FaMousePointer />, run: () => emit('selectAll') },
   { id: 'dualDialogue', label: 'Dual Dialogue', icon: <FaColumns />, run: () => emit('dualDialogue') },
+  // v2.98, Derek: the rest of the menus — import variants, the .odraft
+  // export, Insert/View/Format/Help actions. fitPage/fitWidth are handled
+  // by ScreenplayEditor's listener on the same bus.
+  { id: 'importDocx', label: 'Import Word (.docx)', icon: <FaFileWord />, run: () => emit('importDocx') },
+  { id: 'importPdf', label: 'Import PDF', icon: <FaFilePdf />, run: () => emit('importPdf') },
+  { id: 'exportOdraft', label: 'Export ScriptCraft (.odraft)', icon: <FaFile />, run: () => emit('exportOdraft') },
+  { id: 'insertImage', label: 'Insert Image', icon: <FaImage />, run: () => emit('insertImage') },
+  { id: 'insertMarker', label: 'Insert Marker', icon: <FaFlag />, run: () => emit('insertMarker') },
+  { id: 'fitPage', label: 'Scale to Fit Page', icon: <FaSearchPlus />, run: () => emit('fitPage') },
+  { id: 'fitWidth', label: 'Scale to Max Width', icon: <FaSearchPlus />, run: () => emit('fitWidth') },
+  { id: 'actualSize', label: 'Actual Size (100%)', icon: <FaSearchMinus />, run: () => emit('actualSize') },
+  { id: 'showRulers', label: 'Show/Hide Rulers', icon: <FaRulerHorizontal />, run: () => emit('showRulers') },
+  { id: 'formatPrefs', label: 'Script Format Preferences', icon: <FaFileAlt />, run: () => emit('formatPrefs') },
+  { id: 'grammarSettings', label: 'Grammar & Spelling Settings', icon: <FaSpellCheck />, run: () => emit('grammarSettings') },
+  { id: 'about', label: 'About ScriptCraft', icon: <FaInfoCircle />, run: () => emit('about') },
+  { id: 'keyboardShortcuts', label: 'Keyboard Shortcuts', icon: <FaKeyboard />, run: () => emit('keyboardShortcuts') },
+  { id: 'knowledgeBase', label: 'Knowledge Base', icon: <FaInfoCircle />, run: () => emit('knowledgeBase') },
+  { id: 'changelog', label: 'Changelog', icon: <FaHistory />, run: () => emit('changelog') },
+  { id: 'featureRequest', label: 'Feature Request', icon: <FaExternalLinkAlt />, run: () => emit('featureRequest') },
+  { id: 'reportBug', label: 'Report a Bug', icon: <FaBug />, run: () => emit('reportBug') },
 ];
 
 export const commandDef = (id: string): ToolbarCommand | null =>

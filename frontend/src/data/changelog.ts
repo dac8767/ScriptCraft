@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.97';
+export const APP_VERSION = '2.98';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.98',
+    date: '2026-07-17',
+    items: [
+      { title: 'The whole menu is ribbon-pinnable now', detail: 'The v2.97 palette covered the common commands; this finishes the audit. New in Customize: Insert (Image, Marker), View (Scale to Fit Page, Scale to Max Width, Actual Size, Show/Hide Rulers), Format (Script Format Preferences), Help (About, Keyboard Shortcuts, Knowledge Base, Changelog, Feature Request, Report a Bug), plus the Word/PDF import variants, the ScriptCraft (.odraft) export and Grammar & Spelling Settings. Pickers with their own flows (Workspaces, Theme, Element) stay in the menus.', tags: ['New Feature', 'UI'] },
+      { title: 'Fixed: "Scale to Max Width" could hang the app', detail: 'The v2.97 command-bus fallback made fitPage/fitWidth re-dispatch themselves in a loop. They are explicitly routed to the editor now.', tags: ['Fix'] },
+    ],
+  },
   {
     version: '2.97',
     date: '2026-07-17',

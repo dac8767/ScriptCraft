@@ -703,12 +703,17 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   //    (Ribbon tokens may carry the 2! span flag — compare flag-blind.)
   const tbPlaced = (v: string) => [...tbLeft, ...tbRight].some((t) => stripTall(t) === v);
   const PRODUCTION_CMDS = ['titlePage', 'setDraft', 'addSceneNumbers', 'removeSceneNumbers', 'lockSceneNumbers', 'revisionMode'];
-  const TOOLS_CMDS = ['spellCheck', 'writingSuggestions', 'takeSnapshot', 'snapshots', 'trackChanges', 'compareSnapshot'];
+  const TOOLS_CMDS = ['spellCheck', 'writingSuggestions', 'grammarSettings', 'takeSnapshot', 'snapshots', 'trackChanges', 'compareSnapshot'];
   const PROJECT_CMDS = ['rename'];
-  // v2.97, Derek: every menu action is ribbon-pinnable — File and Edit join
-  // the palette (ids resolve through the same command bus the menus use).
-  const FILE_CMDS = ['newScreenplay', 'openFile', 'importLocal', 'save', 'saveAs', 'print', 'preview', 'exportPDF', 'exportFDX', 'exportFountain', 'exportDocx', 'settings'];
+  // v2.97/v2.98, Derek: every menu action is ribbon-pinnable — File, Edit,
+  // Insert, View, Format and Help join the palette (ids resolve through the
+  // same command bus the menus use).
+  const FILE_CMDS = ['newScreenplay', 'openFile', 'importLocal', 'importDocx', 'importPdf', 'save', 'saveAs', 'print', 'preview', 'exportPDF', 'exportFDX', 'exportFountain', 'exportDocx', 'exportOdraft', 'settings'];
   const EDIT_CMDS = ['cut', 'copy', 'paste', 'selectAll', 'dualDialogue'];
+  const INSERT_CMDS = ['insertImage', 'insertMarker'];
+  const VIEW_CMDS = ['fitPage', 'fitWidth', 'actualSize', 'showRulers'];
+  const FORMAT_CMDS = ['formatPrefs'];
+  const HELP_CMDS = ['about', 'keyboardShortcuts', 'knowledgeBase', 'changelog', 'featureRequest', 'reportBug'];
   const cmdOpt = (id: string) => {
     const c = TOOLBAR_COMMANDS.find((x) => x.id === id);
     return c ? [{ value: `c:${c.id}`, label: c.label }] : [];
@@ -731,6 +736,22 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     {
       id: 'edit', label: 'Edit',
       options: EDIT_CMDS.flatMap(cmdOpt),
+    },
+    {
+      id: 'insert', label: 'Insert',
+      options: INSERT_CMDS.flatMap(cmdOpt),
+    },
+    {
+      id: 'view', label: 'View',
+      options: VIEW_CMDS.flatMap(cmdOpt),
+    },
+    {
+      id: 'format', label: 'Format',
+      options: FORMAT_CMDS.flatMap(cmdOpt),
+    },
+    {
+      id: 'help', label: 'Help',
+      options: HELP_CMDS.flatMap(cmdOpt),
     },
     {
       id: 'production', label: 'Production',
