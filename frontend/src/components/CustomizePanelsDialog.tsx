@@ -19,7 +19,7 @@ import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { confirmDialog } from './ConfirmDialog';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
 import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, stripTall } from './toolbarBuiltins';
-import RibbonEditor from './RibbonEditor';
+import RibbonPalette from './RibbonPalette';
 import { useSettingsStore } from '../stores/settingsStore';
 import { isTauri } from '../services/platform';
 import EditElementsDialog from './EditElementsDialog';
@@ -683,6 +683,14 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     const b = bar?.getBoundingClientRect().bottom ?? 0;
     setOverlayPadTop(b > 0 ? Math.round(b) + 14 : null);
   }, [open]);
+  // v3.36, Derek: while the Toolbar tab is open, the REAL ribbon bar becomes
+  // the editor (drop surface + handles). Closing the window, or leaving the
+  // tab, locks the layout. The store flag drives Toolbar's edit rendering.
+  const editingToolbar = open && activeCat === 'toolbar';
+  React.useEffect(() => {
+    useEditorStore.getState().setToolbarEditing(editingToolbar);
+    return () => { useEditorStore.getState().setToolbarEditing(false); };
+  }, [editingToolbar]);
   // v1.76: the old per-list drag plumbing (dragProps/zoneDragProps, v0.45 and
   // v0.95) is gone — DndColumns owns drag state for every customization list.
 
@@ -819,14 +827,14 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           {/* v3.24, Derek's menu reorg #5: the global controls, visible from
               every tab. v3.34: they cover ALL customizations now — sizes and
               layouts — and read as real buttons. */}
-          <div className="fs-customize-globals">
+          <div className="fs-customize-globals fs-customize-globals-row">
             <button
               className={uiResizeLocked ? 'active' : ''}
               title={uiResizeLocked
                 ? 'Customizations are locked — click to unlock'
                 : 'Freeze every customization: sizing, spacing, and layout edits'}
               onClick={() => useEditorStore.getState().setUiResizeLocked(!uiResizeLocked)}
-            >{uiResizeLocked ? 'Customizations Locked' : 'Lock All Customizations'}</button>
+            >{uiResizeLocked ? 'Locked' : 'Lock All'}</button>
             <button
               title="Reset every customization to the defaults — sizes, toolbar layout, Quick Access, menu bar, panels, outline bar"
               onClick={async () => {
@@ -835,7 +843,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   { title: 'Reset All Customizations', confirmLabel: 'Reset Everything', danger: true },
                 )) useEditorStore.getState().resetAllCustomizations();
               }}
-            >Reset All Customizations</button>
+            >Reset All</button>
           </div>
         </div>
         <div className="dialog-body fs-customize-body">
@@ -946,19 +954,15 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           <section>
             <h3>Toolbar Layout</h3>
             <p className="fs-customize-hint">
-              The toolbar is a ribbon built from SECTIONS — everything between
-              two tall dividers. Edit it visually below: drag items straight
-              into place, split a section into two rows with the New Row
-              utility, merge sections by removing their divider. A section
-              without a split spans its items across both rows.
+              {/* v3.36, Derek: editing happens ON the real toolbar above —
+                  this tab is just the source palette. */}
+              Your toolbar above is now the editor. Drag items and utilities
+              from below straight onto it; drag an item off the bar to remove
+              it. Close this window to lock the layout.
             </p>
-            {/* v2.96: the VISUAL ribbon editor — sections, rows, drag & drop.
-                RibbonEditor owns all structure edits; the token sequence in
-                the store stays the single source the real Toolbar renders.
-                v3.20, Derek: Show/Hide/Reset ride the editor's utility row. */}
-            <RibbonEditor
-              tokens={tbLeft}
-              onChange={(seq) => setToolbarZones(seq, [])}
+            {/* v3.36: the SOURCE side only — the real bar is the drop
+                surface (see RibbonPalette / ribbonDrag). */}
+            <RibbonPalette
               palette={tbAddCategories}
               headerControls={<>
                 <span className="fs-customize-seg">
@@ -1106,10 +1110,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   };
 
   return (
+    /* v3.36, Derek: while editing the toolbar, the overlay lets pointer
+       events THROUGH to the real bar above (so drags can drop on it) and
+       drops its dimming — the dialog box re-enables its own events. */
     <div
-      className="dialog-overlay"
+      className={`dialog-overlay${editingToolbar ? ' dialog-overlay-tbedit' : ''}`}
       style={overlayPadTop !== null ? { paddingTop: overlayPadTop } : undefined}
-      onClick={onClose}
+      onClick={editingToolbar ? undefined : onClose}
     >
       {/* ref: also what the v0.84 size-persist ResizeObserver watches — it
           had come detached from the element entirely (dead code until now). */}

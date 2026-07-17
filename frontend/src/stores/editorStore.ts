@@ -578,6 +578,10 @@ export interface WorkspaceSnapshot {
 // that still carry 'Production' are harmless — unknown labels are ignored.
 export const MENU_BAR_LABELS = ['File', 'Edit', 'View', 'Insert', 'Format', 'Project', 'Tools', 'Help'];
 
+/** v3.36: where a dragged ribbon item would drop — section index, which row,
+ *  and the item slot. Shared by the in-place editor's drag controller. */
+export interface RibDropSpot { sec: number; row: 'top' | 'bottom'; idx: number }
+
 /**
  * v0.85: Navigator belongs INSIDE the left panel by default. It already does on
  * a fresh install (its default width equals the dock, so it docks inline), but
@@ -1123,6 +1127,14 @@ interface EditorState {
    *  live ribbon and the visual editor. */
   toolbarDdWidths: Record<string, number>;
   setToolbarDdWidth: (key: string, px: number) => void;
+  /** v3.36, Derek: the ribbon is edited IN PLACE on the real bar — the
+   *  Customize > Toolbar tab shows only the palette; the bar itself becomes
+   *  the drop surface while that tab is open, and locks when it closes.
+   *  These are EPHEMERAL (not persisted). */
+  toolbarEditing: boolean;
+  setToolbarEditing: (b: boolean) => void;
+  ribEdit: { dragging: boolean; spot: RibDropSpot | null; secSpot: number | null };
+  setRibEdit: (partial: Partial<{ dragging: boolean; spot: RibDropSpot | null; secSpot: number | null }>) => void;
   setQatItems: (ids: string[]) => void;
   /** v2.11: Outline Bar zoom — pixels per page on the timeline. 0 = fit
    *  the whole ruler to the visible width. Persisted view state. */
@@ -1812,6 +1824,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ toolbarDdWidths: next });
     set({ toolbarDdWidths: next });
   },
+  toolbarEditing: false,
+  setToolbarEditing: (b) => set({
+    toolbarEditing: b,
+    ...(b ? {} : { ribEdit: { dragging: false, spot: null, secSpot: null } }),
+  }),
+  ribEdit: { dragging: false, spot: null, secSpot: null },
+  setRibEdit: (partial) => set((s) => ({ ribEdit: { ...s.ribEdit, ...partial } })),
   outlineBarZoom: (_vs.outlineBarZoom as number) ?? 0,
   setOutlineBarZoom: (px) => {
     saveViewState({ outlineBarZoom: px });

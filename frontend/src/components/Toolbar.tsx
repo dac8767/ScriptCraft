@@ -22,10 +22,14 @@ import {
   FaEllipsisV,
   FaHashtag,
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
-  FaFolderPlus, FaRegEdit,
+  FaFolderPlus, FaRegEdit, FaExchangeAlt,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
+import {
+  startRibbonDrag, ribMergeSections, ribRemoveToken, ribRemoveBreak,
+  ribToggleBreakLine, ribRemoveSplit,
+} from './ribbonDrag';
 import { useNotebookStore } from '../stores/notebookStore';
 import { TableGridPicker } from './NotebookTool';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
@@ -96,6 +100,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     outlineBarOpen,
     uiResizeLocked,
     toolbarDdWidths,
+    toolbarEditing, ribEdit,
   } = useEditorStore();
 
   // v2.07: while the Scrapbook is open, the toolbar's own formatting buttons
@@ -1529,6 +1534,102 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   const leftLive = liveSplitAt === null || liveSplitAt < 0 ? liveSections : liveSections.slice(0, liveSplitAt);
   const rightLive = liveSplitAt === null || liveSplitAt < 0 ? [] : liveSections.slice(liveSplitAt);
 
+  /* v3.36, Derek: EDIT MODE — while Customize > Toolbar is open the real bar
+     IS the editor. Every ALL section renders (empty ones too, as drop
+     targets), each item wrapped with a drag cover + remove ×, sections
+     draggable to reorder and closeable. The drop indicators read from the
+     store's ribEdit state; drops mutate toolbarLeft via ribbonDrag.ts. */
+  const editDropline = <span className="rib-edit-dropline" />;
+  const editItem = (tok: string, sec: number, row: 'top' | 'bottom', idx: number, big: boolean) => (
+    <span
+      key={`ei-${tok}`}
+      className="rib-edit-item"
+      data-sec={sec}
+      data-row={row}
+      data-idx={idx}
+      onPointerDown={(e) => startRibbonDrag(e, `tok:${tok}`)}
+    >
+      {renderToken(tok, big)}
+      {/* the cover eats clicks so the real control never fires while editing */}
+      <span className="rib-edit-cover" />
+      <button
+        className="rib-edit-x"
+        title="Remove from the toolbar"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => ribRemoveToken(tok)}
+      >×</button>
+    </span>
+  );
+  const editRow = (s: typeof sections[number], sec: number, row: 'top' | 'bottom') => {
+    const items = row === 'top' ? s.top : s.bottom;
+    const showLine = (idx: number) => ribEdit.dragging && ribEdit.spot
+      && ribEdit.spot.sec === sec && ribEdit.spot.row === row && ribEdit.spot.idx === idx;
+    return (
+      <div className="rib-row" data-sec={sec} data-row={row} data-len={items.length}>
+        {items.map((tok, idx) => (
+          <React.Fragment key={`eiw-${tok}`}>
+            {showLine(idx) && editDropline}
+            {editItem(tok, sec, row, idx, !s.hasBreak)}
+          </React.Fragment>
+        ))}
+        {ribEdit.dragging && ribEdit.spot && ribEdit.spot.sec === sec && ribEdit.spot.row === row
+          && ribEdit.spot.idx >= items.length && editDropline}
+        {items.length === 0 && <span className="rib-edit-emptyhint">drop here</span>}
+      </div>
+    );
+  };
+  const editLayout = (
+    <>
+      {sections.map((s, i) => (
+        <React.Fragment key={`esec-${i}`}>
+          {ribEdit.secSpot === i && <span className="rib-edit-sec-dropline" />}
+          {i > 0 && (i === splitAt
+            ? <div className="rib-align-gap" />
+            : <div className="toolbar-separator rib-section-sep" />)}
+          {i === splitAt && (
+            <span className="rib-edit-alignsplit" title="Align Split — sections after this hug the right edge">
+              <FaExchangeAlt />
+              <button className="rib-edit-x" title="Remove the align split" onPointerDown={(e) => e.stopPropagation()} onClick={ribRemoveSplit}>×</button>
+            </span>
+          )}
+          <div
+            className={`rib-section rib-edit-section${s.hasBreak ? '' : ' rib-single'}`}
+            data-sec={i}
+            title="Drag to move this section"
+            onPointerDown={(e) => {
+              const t = e.target as HTMLElement;
+              if (t.closest('.rib-edit-item, .rib-edit-x, .rib-edit-cover, .rib-edit-break, .rib-row-line, input, select, button')) return;
+              startRibbonDrag(e, `sec:${i}`);
+            }}
+          >
+            {sections.length > 1 && (
+              <button
+                className="rib-edit-x rib-edit-secclose"
+                title="Close this section (its items join the neighbour)"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => ribMergeSections(i < sections.length - 1 ? i : i - 1)}
+              >×</button>
+            )}
+            {editRow(s, i, 'top')}
+            {s.hasBreak && (
+              <div className="rib-edit-break">
+                <span
+                  className={`rib-row-line rib-edit-breakline${s.breakLine ? ' heavy' : ''}`}
+                  title={s.breakLine ? 'Row split line: shown — click to hide' : 'Row split line: hidden — click to show'}
+                  onClick={() => ribToggleBreakLine(i)}
+                />
+                <button className="rib-edit-x" title="Remove the row split" onPointerDown={(e) => e.stopPropagation()} onClick={() => ribRemoveBreak(i)}>×</button>
+              </div>
+            )}
+            {s.hasBreak && editRow(s, i, 'bottom')}
+          </div>
+        </React.Fragment>
+      ))}
+      {ribEdit.secSpot === sections.length && <span className="rib-edit-sec-dropline" />}
+      {sections.length === 0 && <span className="rib-edit-emptybar">Drag items here to build your toolbar</span>}
+    </>
+  );
+
   return (
     /* v2.96, Derek: the WORD RIBBON, arranged by SECTION. Everything between
        two full-height dividers is a section; items read left-to-right, an
@@ -1538,7 +1639,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
        button. No spacing grips inside the toolbar (the menu bar keeps its). */
     <div className="toolbar-stack">
     <div
-      className={`toolbar toolbar-ribbon${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}${toolbarMode === 'custom' ? ' toolbar-custom' : ''}`}
+      className={`toolbar toolbar-ribbon${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}${toolbarMode === 'custom' ? ' toolbar-custom' : ''}${toolbarEditing ? ' toolbar-editing' : ''}`}
       style={{
         ...(toolbarMode === 'custom' ? ({
           ['--chrome-scale' as string]: String(chromeScaleFactor('toolbar', tbCustomH)),
@@ -1553,6 +1654,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       }}
       ref={toolbarRef}
     >
+      {toolbarEditing ? editLayout : <>
       {leftLive.map(({ s, orig }, i) => (
         <React.Fragment key={`sec-${orig}`}>
           {/* v3.25: dividers only BETWEEN rendered sections — empty ones are
@@ -1606,6 +1708,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           </div>
         </React.Fragment>
       ))}
+      </>}
     </div>
 
     {/* Overflow 3-dot menu — beside the ribbon, spanning its height */}

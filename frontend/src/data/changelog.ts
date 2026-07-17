@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.35';
+export const APP_VERSION = '3.36';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.36',
+    date: '2026-07-17',
+    items: [
+      { title: 'Customize the toolbar ON the toolbar', detail: 'No more separate mini-preview to second-guess. Open Customize > Toolbar and the REAL ribbon becomes the editor: drag items and utilities from the window straight onto the bar, drag a section by its body to move it, hover an item or section for its ×, drag an item off the bar to remove it. Close the window and the layout locks. What you edit is the bar itself, so it always matches.', tags: ['New Feature', 'UI'] },
+      { title: 'Lock All / Reset All, side by side', detail: 'The two global Customize buttons are shorter and sit in one row.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.35',
     date: '2026-07-17',

@@ -12682,6 +12682,9 @@ html.android .version-history-panel {
   flex-direction: column;
   gap: 6px;
 }
+/* v3.36, Derek: Lock All / Reset All sit side by side, equal width. */
+.fs-customize-globals-row { flex-direction: row; }
+.fs-customize-globals-row button { flex: 1 1 0; min-width: 0; }
 .fs-customize-globals button {
   padding: 6px 8px;
   font-size: 11px;
@@ -16712,6 +16715,102 @@ input.fs-switch:checked::after { left: 15px; }
 .rib-scrapbook-sec { justify-content: center; }
 .rib-scrapbook-sec .rib-row { align-items: center; gap: 6px; }
 .rib-scrapbook-tag { margin-right: 2px; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   v3.36, Derek: IN-PLACE toolbar editing. While Customize > Toolbar is open
+   the real bar IS the editor. The Customize overlay lets pointer events
+   through to the bar (so drags land on it) and drops its dimming; the dialog
+   box keeps its own events.
+   ════════════════════════════════════════════════════════════════════════ */
+.dialog-overlay-tbedit { pointer-events: none; background: transparent; }
+.dialog-overlay-tbedit > .dialog-box { pointer-events: auto; }
+
+/* the bar in edit mode: dashed sections, item covers, remove ×s, drop lines */
+.toolbar-ribbon.toolbar-editing { overflow: visible; }
+.rib-edit-section {
+  position: relative;
+  border: 1px dashed color-mix(in srgb, var(--fd-border) 80%, transparent);
+  border-radius: 5px;
+  padding: 2px 4px;
+  cursor: grab;
+  touch-action: none;
+  background: color-mix(in srgb, var(--fd-navigator-bg) 40%, transparent);
+}
+.rib-edit-section:hover { border-color: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border)); }
+.rib-edit-item { position: relative; display: inline-flex; }
+/* the cover eats clicks so the real control never fires while editing */
+.rib-edit-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  cursor: grab;
+  border-radius: 4px;
+}
+.rib-edit-item:hover > .rib-edit-cover { background: color-mix(in srgb, var(--fd-accent) 12%, transparent); }
+.rib-edit-x {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--fd-btn-bg);
+  color: var(--fd-btn-text);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  z-index: 5;
+}
+.rib-edit-item:hover > .rib-edit-x,
+.rib-edit-section:hover > .rib-edit-secclose,
+.rib-edit-break:hover > .rib-edit-x,
+.rib-edit-alignsplit:hover > .rib-edit-x { opacity: 1; }
+.rib-edit-secclose { top: -8px; right: -8px; z-index: 6; }
+/* drop indicators — thin accent bars */
+.rib-edit-dropline {
+  width: 3px;
+  align-self: stretch;
+  margin: 2px -1.5px;
+  border-radius: 2px;
+  background: var(--fd-accent);
+  flex-shrink: 0;
+  z-index: 4;
+}
+.rib-edit-sec-dropline {
+  width: 3px;
+  align-self: stretch;
+  margin: 2px 0;
+  border-radius: 2px;
+  background: var(--fd-accent);
+  flex-shrink: 0;
+}
+.rib-edit-emptyhint {
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  padding: 0 8px;
+  white-space: nowrap;
+  align-self: center;
+}
+.rib-edit-emptybar {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  padding: 0 12px;
+  align-self: center;
+}
+.rib-edit-break { position: relative; display: flex; align-items: center; height: 4px; }
+.rib-edit-breakline { flex: 1; cursor: pointer; }
+.rib-edit-alignsplit {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  color: var(--fd-accent);
+  font-size: 12px;
+  padding: 0 2px;
+}
 /* v3.34: dropdown width grip — the field's right edge. */
 .ribed-dd-grip {
   position: absolute;
