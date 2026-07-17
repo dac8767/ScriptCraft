@@ -997,6 +997,14 @@ async fn open_new_window(app: tauri::AppHandle) -> Result<(), String> {
             .resizable(true)
             .maximized(true);
     }
+    // v3.09: match the main window's overlay titlebar (the in-app Quick
+    // Access Toolbar row draws the title; see TitleBar.tsx).
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder
+            .title_bar_style(tauri::TitleBarStyle::Overlay)
+            .hidden_title(true);
+    }
     builder.build()
         .map_err(|e| format!("Failed to create window: {}", e))?;
     // Refresh window list in the Window menu

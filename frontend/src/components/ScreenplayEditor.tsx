@@ -55,6 +55,7 @@ import Toolbar from './Toolbar';
 import ToolDock, { TempToolWindow } from './ToolDock';
 import { DoubleChevronIcon } from './uiIcons';
 import { useBookmarkStore, bookmarkScriptKey } from '../stores/bookmarkStore';
+import TitleBar from './TitleBar';
 import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
 import ScriptStatistics from './ScriptStatistics';
@@ -4032,6 +4033,10 @@ const ScreenplayEditor: React.FC = () => {
           </button>
         </div>
       )}
+      {/* v3.09, Derek: the Quick Access Toolbar row (macOS overlay titlebar).
+          Rendered in EVERY mode — the traffic lights float over the webview
+          now, so something draggable must always occupy that strip. */}
+      <TitleBar editor={editor} />
       {/* v2.94: the Big Button SECTION is gone — the Toolbar renders two
           rows itself (Row 1 formatting, Row 2 tools/app functions, where a
           token's big! flag makes it a large launcher). */}

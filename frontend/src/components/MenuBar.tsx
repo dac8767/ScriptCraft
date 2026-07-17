@@ -145,7 +145,7 @@ import {
   FaFlag, FaEyeSlash,
   FaBug,
   FaRulerHorizontal,
-  FaBookmark, FaRegBookmark, FaPencilAlt, FaPizzaSlice,
+  FaBookmark, FaRegBookmark, FaPencilAlt, FaCoffee,
 } from 'react-icons/fa';
 
 /** v2.98: the Help-menu form links, shared by the menu items and the
@@ -1937,8 +1937,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       { separator: true, label: '' },
       /* v3.08, Derek: donation link — last item of Help. */
       {
-        icon: <FaPizzaSlice />,
-        label: 'Buy Me Some Pizza',
+        icon: <FaCoffee />,
+        label: 'Buy Me a Coffee',
         action: () => openInBrowser(DONATE_URL),
       },
     ],

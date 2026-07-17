@@ -65,16 +65,24 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.08';
+export const APP_VERSION = '3.09';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.09',
+    date: '2026-07-17',
+    items: [
+      { title: 'Quick Access Toolbar in the titlebar', detail: 'Word-style: the macOS titlebar is now part of the app — Save, Undo and Redo sit beside the traffic lights, with the document title centered where macOS used to draw it. The whole strip still drags and double-click-zooms the window.', tags: ['New Feature', 'UI'] },
+      { title: 'Donation link is "Buy Me a Coffee"', detail: 'Renamed from the pizza wording, per the updated button.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '3.08',
     date: '2026-07-17',
     items: [
       { title: 'Bookmarks', detail: 'A new Bookmarks menu (native and in-window). Add Bookmark drops a named jump point at the cursor — it keeps pointing at the same text as the script changes. Clicking a bookmark jumps there; Remove Bookmark clears one. Both actions are also pinnable to the ribbon.', tags: ['New Feature'] },
       { title: 'Last Edit Location', detail: 'The Bookmarks menu\'s permanent first jump: return to wherever the script was last actually changed — not necessarily the end.', tags: ['New Feature', 'Editor'] },
-      { title: 'Buy Me Some Pizza', detail: 'A donation link at the end of the Help menu, opening in your default browser.', tags: ['UI'] },
+      { title: 'Buy Me a Coffee', detail: 'A donation link at the end of the Help menu, opening in your default browser.', tags: ['UI'] },
       { title: 'Two more checkmarks moved to the check column', detail: 'Lock Scene Numbers and Revision Mode (Production menu) now use the v3.05 check column instead of a ✓ label prefix.', tags: ['Polish'] },
     ],
   },

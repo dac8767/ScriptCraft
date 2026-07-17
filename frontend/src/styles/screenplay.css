@@ -12445,6 +12445,42 @@ html.android .version-history-panel {
   border-color: var(--fd-accent);
 }
 .fs-customize-hide:disabled { opacity: .4; cursor: not-allowed; }
+/* v3.09, Derek: the Quick Access Toolbar — the macOS titlebar row. The
+   native bar is an overlay (traffic lights float over the webview), so this
+   strip is the titlebar: left inset clears the lights, QAT buttons follow,
+   the document title sits centered where macOS used to draw it. The whole
+   row is a Tauri drag region. */
+.fs-titlebar {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  flex-shrink: 0;
+  padding-left: 78px;   /* traffic lights */
+  padding-right: 8px;
+  background: var(--fd-navigator-bg);
+  border-bottom: 1px solid var(--fd-border);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.fs-titlebar-qat { display: flex; align-items: center; gap: 2px; flex: 1; }
+.fs-titlebar-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 20px; padding: 0;
+  border: none; border-radius: 4px; background: transparent;
+  color: var(--fd-text-muted); cursor: pointer; font-size: 11px;
+}
+.fs-titlebar-btn:hover { background: var(--fd-hover-bg); color: var(--fd-text); }
+.fs-titlebar-title {
+  flex: 0 1 auto;
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* mirrors the traffic-light inset + QAT width so the title stays centered */
+.fs-titlebar-balance { flex: 1; min-width: 78px; align-self: stretch; }
+
 /* v3.07, Derek: Obsidian-style collapse row atop each side panel. The button
    hugs the panel's OUTER edge (the side it folds into). */
 .tool-dock-collapse { display: flex; padding: 0 6px 4px; flex-shrink: 0; }
