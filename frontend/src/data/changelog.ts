@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.04';
+export const APP_VERSION = '3.05';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.05',
+    date: '2026-07-17',
+    items: [
+      { title: 'Menu checkmarks get their own column', detail: 'Checkable menu items (highlight color, Auto Spell Check, Auto Writing Suggestions, Show Rulers) no longer prefix a ✓ to their label — the mark lives in a dedicated left column, macOS style, so labels stay aligned whether an item is checked or not. The native menu bar renders them as real check items.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.04',
     date: '2026-07-17',

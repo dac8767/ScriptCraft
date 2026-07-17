@@ -173,6 +173,11 @@ interface MenuItem {
    *  shuts the whole menu after the content commits its action. */
   render?: (close: () => void) => React.ReactNode;
   icon?: React.ReactNode;
+  /** v3.05, Derek: checkable items set this (true OR false) instead of
+   *  prefixing '✓ ' to the label. Any list containing a checkable item
+   *  reserves a left check column so labels stay aligned (macOS style);
+   *  the native bar renders these as real CheckMenuItems. */
+  checked?: boolean;
 }
 
 interface MenuSection {
@@ -1437,7 +1442,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         // v2.95, Derek: Word/Docs-style rulers on the editor's top and left.
         {
           icon: <FaRulerHorizontal />,
-          label: rulersVisible ? '\u2713 Show Rulers' : 'Show Rulers',
+          label: 'Show Rulers',
+          checked: rulersVisible,
           action: () => useEditorStore.getState().setRulersVisible(!rulersVisible),
         },
         // v2.29, Derek: the side panels toggle from here too, like the bar.
@@ -1639,7 +1645,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { separator: true, label: '' },
             ...HIGHLIGHT_MENU_COLORS.map(([name, hex]) => ({
               icon: <span className="fs-hl-chip" style={{ background: hex }} />,
-              label: highlightColor.toLowerCase() === hex ? `✓ ${name}` : name,
+              label: name,
+              checked: highlightColor.toLowerCase() === hex,
               action: () => pickHighlightColor(hex),
             })),
             { separator: true, label: '' },
@@ -1678,10 +1685,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           children: [
             { icon: <FaSpellCheck />, label: 'Spell Check Panel', action: () => useEditorStore.getState().openTool('spelling') },
             { separator: true, label: '' },
-            { icon: <FaSpellCheck />, label: spellCheckEnabled ? '✓ Auto Spell Check' : 'Auto Spell Check', action: toggleSpellCheck },
+            { icon: <FaSpellCheck />, label: 'Auto Spell Check', checked: spellCheckEnabled, action: toggleSpellCheck },
             { icon: <FaSpellCheck />, label: 'Spell Check…', shortcut: 'F7', action: () => setSpellModalOpen(true) },
             { separator: true, label: '' },
-            { icon: <FaSpellCheck />, label: grammarCheckEnabled ? '✓ Auto Writing Suggestions' : 'Auto Writing Suggestions', action: toggleGrammarCheck },
+            { icon: <FaSpellCheck />, label: 'Auto Writing Suggestions', checked: grammarCheckEnabled, action: toggleGrammarCheck },
             { icon: <FaSpellCheck />, label: 'Writing Suggestions…', shortcut: '⇧F7', action: () => setGrammarModalOpen(true) },
             { icon: <FaSpellCheck />, label: 'Grammar & Spelling Settings…', action: () => setGrammarRulesPanelOpen(true) },
           ],
@@ -2184,6 +2191,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     }
   });
 
+  /** v3.05: a list reserves the left check column when ANY of its items is
+   *  checkable — so toggling doesn't shift the labels sideways. */
+  const hasChecks = (items?: MenuItem[]) => !!items?.some((it) => it.checked !== undefined);
+
   return (
     <>
     {/* v1.83: hidden picker behind Format > Highlighting > Custom… */}
@@ -2260,6 +2271,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               onTouchEnd={(e) => { if (!item.disabled) handleSubmenuTouchEnd(submenuKey(activeMenuData.label, item.label!, i), e); }}
               onClick={(e) => { e.stopPropagation(); if (!item.disabled) setOpenSubmenu(submenuKey(activeMenuData.label, item.label!, i)); }}
             >
+              {hasChecks(activeMenuData.items) && <span className="menu-check" />}
               {item.icon && <span className="menu-dropdown-icon">{item.icon}</span>}
               <span>{item.label}</span>
               <span className="menu-submenu-arrow">{openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? '\u25BE' : '\u25B8'}</span>
@@ -2291,6 +2303,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                       onTouchEnd={(e) => e.stopPropagation()}
                       onClick={(e) => handleItemClick(child, e)}
                     >
+                      {hasChecks(item.children) && <span className="menu-check">{child.checked ? '✓' : ''}</span>}
                       {child.icon && <span className="menu-dropdown-icon">{child.icon}</span>}
                       <span>{child.label}</span>
                       {child.shortcut && (
@@ -2308,6 +2321,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               onPointerEnter={handleItemPointerEnter}
               onClick={(e) => handleItemClick(item, e)}
             >
+              {hasChecks(activeMenuData.items) && <span className="menu-check">{item.checked ? '✓' : ''}</span>}
               {item.icon && <span className="menu-dropdown-icon">{item.icon}</span>}
               <span>{item.label}</span>
               {item.shortcut && (

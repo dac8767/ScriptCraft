@@ -517,6 +517,10 @@ body {
   padding: 5px 16px; cursor: default; font-size: 13px; color: var(--fd-text);
 }
 .menu-dropdown-icon { display: flex; width: 16px; justify-content: center; font-size: 11px; color: var(--fd-text-muted); flex-shrink: 0; }
+/* v3.05, Derek: checkable items get a dedicated left column (macOS style) —
+   reserved for EVERY row of a list that contains one, so labels align and
+   toggling never shifts them sideways. */
+.menu-check { display: flex; width: 12px; justify-content: center; font-size: 11px; color: var(--fd-text); flex-shrink: 0; }
 .menu-dropdown-item:hover .menu-dropdown-icon { color: var(--fd-text); }
 .menu-dropdown-item:hover { background: var(--fd-menu-hover); }
 .menu-dropdown-item.disabled { color: var(--fd-text-muted); pointer-events: none; }

@@ -28,6 +28,7 @@ export interface NativeItemData {
   disabled?: boolean;
   children?: NativeItemData[];
   render?: unknown;          // custom submenu content — cannot exist natively
+  checked?: boolean;         // v3.05: checkable items become CheckMenuItems
 }
 export interface NativeSectionData { label: string; items: NativeItemData[] }
 
@@ -67,6 +68,7 @@ export function displayShortcutToAccelerator(s?: string): string | undefined {
 function signatureOf(sections: NativeSectionData[]): string {
   const item = (it: NativeItemData): unknown => [
     it.separator ? '|' : it.label, it.disabled ? 1 : 0, it.shortcut ?? '',
+    it.checked === undefined ? '' : (it.checked ? 'C1' : 'C0'),
     it.children ? it.children.map(item) : (it.render ? 'R' : 0),
   ];
   return JSON.stringify(sections.map((s) => [s.label, s.items.map(item)]));
@@ -89,7 +91,7 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
   if (installed && sig === lastSignature) return;
   lastSignature = sig;
 
-  const { Menu, Submenu, MenuItem, PredefinedMenuItem } = await import('@tauri-apps/api/menu');
+  const { Menu, Submenu, MenuItem, CheckMenuItem, PredefinedMenuItem } = await import('@tauri-apps/api/menu');
 
   const buildItem = async (it: NativeItemData, path: number[], inEdit: boolean): Promise<unknown> => {
     if (it.separator) return PredefinedMenuItem.new({ item: 'Separator' });
@@ -99,6 +101,18 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
     if (it.children && it.children.length > 0) {
       const kids = await Promise.all(it.children.map((c, i) => buildItem(c, [...path, i], false)));
       return Submenu.new({ text: it.label, enabled: !it.disabled, items: kids as never[] });
+    }
+    // v3.05: checkable items are real CheckMenuItems, so macOS draws the
+    // checkmark in its own gutter. The signature includes checked state,
+    // so a toggle rebuilds the menu with the mark in the right place.
+    if (it.checked !== undefined) {
+      return CheckMenuItem.new({
+        text: it.label,
+        checked: it.checked,
+        enabled: !it.disabled && !!it.action,
+        accelerator: displayShortcutToAccelerator(it.shortcut),
+        action: () => { actionAt(path)?.(); },
+      });
     }
     return MenuItem.new({
       text: it.label,
