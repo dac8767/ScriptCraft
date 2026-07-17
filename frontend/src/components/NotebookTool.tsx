@@ -31,7 +31,6 @@ import {
 import { useSettingsStore } from '../stores/settingsStore';
 import { showToast } from './Toast';
 import { confirmDialog } from './ConfirmDialog';
-import { formatAppDate } from '../utils/dateFormat';
 
 const IMAGE_BUDGET = 300_000;   // dataURL chars — localStorage is the store
 
@@ -871,11 +870,23 @@ export function NotebookSurface() {
               placeholder="Untitled"
               onBlur={(e) => renamePage(page.id, e.target.value || 'Untitled')}
             />
-            {/* v2.89, Derek: the created date rides under the name. Pages
-                from before the field simply have none to show. */}
+            {/* v2.89, Derek: the created date rides under the name.
+                v3.33: OneNote's format — a rule under the title, then the
+                long date and the creation time on one line. Pages from
+                before the field simply have none to show. */}
             {page.createdAt && (
               <span className="fs-nb-created">
-                Created {formatAppDate(new Date(page.createdAt), useSettingsStore.getState().dateFormat)}
+                <span>
+                  {new Date(page.createdAt).toLocaleDateString(undefined, {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                  })}
+                </span>
+                <span className="fs-nb-created-time">
+                  {new Date(page.createdAt).toLocaleTimeString(undefined, {
+                    hour: 'numeric', minute: '2-digit',
+                    hour12: useSettingsStore.getState().timeFormat !== '24h',
+                  })}
+                </span>
               </span>
             )}
           </span>

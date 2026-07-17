@@ -16397,26 +16397,34 @@ input.fs-switch:checked::after { left: 15px; }
   padding: 24px;
   text-align: center;
 }
-/* v2.89: title + created-date stack in the surface's upper left. */
+/* v2.89: title + created-date stack in the surface's upper left.
+   v3.33, Derek: OneNote's look — a light large title over a rule, with the
+   long date and creation time on the line below. */
 .fs-nb-title-block {
   display: flex;
   flex-direction: column;
   min-width: 0;
   flex: 1;
+  max-width: 560px;
 }
 .fs-nb-created {
-  font-size: 11px;
+  display: flex;
+  gap: 32px;
+  font-size: 13px;
   color: var(--fd-text-muted);
   padding-left: 2px;
-  margin-top: -2px;
+  margin-top: 6px;
 }
 .fs-nb-title {
   background: none;
   border: none;
   outline: none;
   color: var(--fd-text);
-  font-size: 20px;
-  font-weight: 700;
+  /* v3.33: OneNote's page title — large and light, over a rule. */
+  font-size: 26px;
+  font-weight: 300;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--fd-border);
   min-width: 0;
   /* v3.25: `flex: 0 1 320px` predates the v2.89 title-block wrapper. Inside
      that COLUMN flexbox the 320px basis became a HEIGHT — the title input
@@ -16648,18 +16656,17 @@ input.fs-switch:checked::after { left: 15px; }
   gap: 2px;
   padding: 4px 8px;
 }
-.ribed-chip-big .ribed-chip-icon { font-size: 24px; }
+.ribed-chip-big .ribed-chip-icon { font-size: 29px; }  /* v3.33: the live big-button icon size */
 .ribed-chip-biglabel {
-  font-size: 9.5px;
+  font-size: 10px;
   line-height: 1.1;
   color: var(--fd-text);
   white-space: nowrap;
 }
-/* dropdown builtins look like the fields they are on the bar.
-   v3.30, Derek: SAME height as every other chip — the 24px they launched
-   with made the dropdown row read half the size of the button row. */
+/* dropdown builtins look like the fields they are on the bar — 24px, the
+   live selects' resting height (same as the chips, so rows stay equal). */
 .ribed-chip.ribed-chip-dd {
-  height: 28px;
+  height: 24px;
   padding: 0 22px 0 8px;
   position: relative;
   background: var(--fd-input-bg);
@@ -16667,6 +16674,11 @@ input.fs-switch:checked::after { left: 15px; }
   border-radius: 5px;
 }
 .ribed-dd-text { font-size: 11.5px; color: var(--fd-text); white-space: nowrap; }
+/* v3.33, Derek: the Scrapbook's injected ribbon section — tag + tools,
+   always the last left-aligned section while the tool is open. */
+.rib-scrapbook-sec { justify-content: center; }
+.rib-scrapbook-sec .rib-row { align-items: center; gap: 6px; }
+.rib-scrapbook-tag { margin-right: 2px; }
 /* v3.32, Derek: each dropdown chip carries its LIVE counterpart's min-width
    (.font-selector 120 / .font-size-selector 60 / .element-selector 140), so
    the editor's fields are the same length as the bar's. Text sits left like
@@ -16699,29 +16711,33 @@ input.fs-switch:checked::after { left: 15px; }
 .ribed-row {
   display: flex;
   align-items: center;
-  gap: 3px;
-  /* v3.30, Derek: FIXED height, like the live bar's rows — min-height let
-     the two rows of a section size to their content and come out unequal. */
-  height: 34px;
-  min-height: 34px;
+  /* v3.33: the live bar's default row — 28px tall, 2px item gap. */
+  gap: 2px;
+  height: 28px;
+  min-height: 28px;
   flex: 1;
 }
 .ribed-row > * { flex-shrink: 0; }
 .ribed-secdiv { flex-shrink: 0; }
+/* v3.33, Derek: chips carry the LIVE bar's exact metrics — 26×24 like
+   .toolbar-btn, 12px glyphs, transparent at rest (the live buttons are
+   flat until hovered). The background only appears on hover, as the
+   grab affordance. */
 .ribed-chip {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 4px;
-  border-radius: 4px;
-  background: var(--fd-overlay-light);
+  min-width: 26px;
+  height: 24px;
+  padding: 0 3px;
+  border-radius: 5px;
+  background: transparent;
   color: var(--fd-text);
   cursor: grab;
-  font-size: 13px;
+  font-size: 12px;
 }
+.ribed-chip:hover { background: var(--fd-overlay-light); }
 .ribed-chip:active { cursor: grabbing; }
 /* WebKit drag hardening (v2.98, Derek's Mac): mark the chip itself as the
    draggable element and keep children out of drag/selection negotiation —

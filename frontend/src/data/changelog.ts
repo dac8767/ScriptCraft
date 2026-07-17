@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.32';
+export const APP_VERSION = '3.33';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.33',
+    date: '2026-07-17',
+    items: [
+      { title: 'Editor strip matches the bar, to the pixel', detail: 'Chips are the live buttons\' exact size (26×24, 12px glyphs, 28px rows, 24px dropdown fields) and sit flat like the real bar — the grab highlight only appears on hover. Big-button icons match the live 29px too.', tags: ['Polish', 'UI'] },
+      { title: 'Scrapbook tools are back on the ribbon — permanently', detail: 'While the Scrapbook is open, a SCRAPBOOK section (tag + its tools) is injected as the last left-aligned section, whatever your saved layout says. It used to depend on a token surviving in the layout — close that section in Customize and the tools silently vanished.', tags: ['Fix', 'Tools'] },
+      { title: 'Scrapbook page title, OneNote style', detail: 'A large light title over a rule, with the full date ("Friday, July 17, 2026") and the creation time beneath — the time follows your 12/24-hour setting.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '3.32',
     date: '2026-07-17',

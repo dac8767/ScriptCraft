@@ -1519,6 +1519,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     .filter(({ s }) => s.top.length + s.bottom.length > 0);
   const liveSplitAt = splitAt === null ? null
     : liveSections.findIndex(({ orig }) => orig >= splitAt);
+  /* v3.33, Derek: the Scrapbook's ribbon presence is INJECTED, not a stored
+     token — while the tool is open, a Scrapbook section (tag + its buttons)
+     always appears as the LAST left-aligned section, whatever the saved
+     layout says. (It used to depend on a b:insertTable token surviving in
+     the layout — close that section in Customize and the tools vanished.) */
+  const leftLive = liveSplitAt === null || liveSplitAt < 0 ? liveSections : liveSections.slice(0, liveSplitAt);
+  const rightLive = liveSplitAt === null || liveSplitAt < 0 ? [] : liveSections.slice(liveSplitAt);
 
   return (
     /* v2.96, Derek: the WORD RIBBON, arranged by SECTION. Everything between
@@ -1541,19 +1548,41 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       }}
       ref={toolbarRef}
     >
-      {liveSections.map(({ s, orig }, i) => (
+      {leftLive.map(({ s, orig }, i) => (
         <React.Fragment key={`sec-${orig}`}>
-          {/* v3.02, Derek: the align split — everything after it hugs the
-              toolbar's right edge. Other boundaries draw the divider.
-              v3.25: never at the outer edges — empty sections are skipped
-              above, so i indexes only sections that actually render. */}
-          {i > 0 && (i === liveSplitAt
-            ? <div className="rib-align-gap" />
-            : <div className="toolbar-separator rib-section-sep" />)}
+          {/* v3.25: dividers only BETWEEN rendered sections — empty ones are
+              skipped above, so nothing paints at the outer edges. */}
+          {i > 0 && <div className="toolbar-separator rib-section-sep" />}
           <div className={`rib-section${s.hasBreak ? '' : ' rib-single'}`}>
             <div className="rib-row">{s.top.map((t) => renderToken(t, !s.hasBreak))}</div>
             {/* v2.97, Derek: the split line is optionally VISIBLE — toggled
                 by clicking it in the visual editor. */}
+            {s.hasBreak && s.breakLine && <div className="rib-row-line" />}
+            {s.hasBreak && <div className="rib-row">{s.bottom.map((t) => renderToken(t, false))}</div>}
+          </div>
+        </React.Fragment>
+      ))}
+      {/* v3.33, Derek: the Scrapbook section — injected while the tool is
+          open, always the last left-aligned section. */}
+      {scrapbookOpen && (
+        <>
+          {leftLive.length > 0 && <div className="toolbar-separator rib-section-sep" />}
+          <div className="rib-section rib-scrapbook-sec">
+            <div className="rib-row">
+              <span className="menu-section-tag rib-scrapbook-tag">Scrapbook</span>
+              {renderBuiltinToken('b:insertTable', false)}
+            </div>
+          </div>
+        </>
+      )}
+      {/* v3.02, Derek: the align split — everything after it hugs the
+          toolbar's right edge. */}
+      {rightLive.length > 0 && <div className="rib-align-gap" />}
+      {rightLive.map(({ s, orig }, i) => (
+        <React.Fragment key={`sec-${orig}`}>
+          {i > 0 && <div className="toolbar-separator rib-section-sep" />}
+          <div className={`rib-section${s.hasBreak ? '' : ' rib-single'}`}>
+            <div className="rib-row">{s.top.map((t) => renderToken(t, !s.hasBreak))}</div>
             {s.hasBreak && s.breakLine && <div className="rib-row-line" />}
             {s.hasBreak && <div className="rib-row">{s.bottom.map((t) => renderToken(t, false))}</div>}
           </div>
