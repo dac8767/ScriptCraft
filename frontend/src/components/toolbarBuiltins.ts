@@ -83,7 +83,9 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'resetSizes', label: 'Reset Sizing', unlisted: true },
   // v2.94: the Insert Table grid — a menu item the native menu bar can't
   // host, so it lives on the toolbar's second row (Scrapbook only).
-  { key: 'insertTable', label: 'Insert Table (Scrapbook)' },
+  // v3.32, Derek: tool-specific items don't belong in the palette —
+  // unlisted, kept working for layouts that already have it.
+  { key: 'insertTable', label: 'Insert Table (Scrapbook)', unlisted: true },
   // v3.02, Derek: Customize is an ordinary ribbon ITEM again — placeable,
   // removable, in the palette like everything else (View > Customize…
   // always remains as the way back in).

@@ -122,7 +122,31 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
     });
   };
 
-  const submenus = await Promise.all(sections.map(async (s, si) =>
+  /* v3.32, Derek: native menus get a MINIMUM width. macOS sizes an NSMenu to
+     its widest item and offers no min-width — a menu of short tool names
+     (Tools) came out skinny. The one lever is label width itself: pad the
+     first item's label with trailing non-breaking spaces until the menu's
+     widest label reaches ~30 characters. NBSP so nothing trims it; it's
+     invisible, and shortcut hints keep their own right-aligned column. */
+  const MIN_MENU_CHARS = 30;
+  const widenSection = (s: NativeSectionData): NativeSectionData => {
+    const widest = Math.max(0, ...s.items.filter((it) => !it.separator).map((it) => it.label.length));
+    if (widest >= MIN_MENU_CHARS) return s;
+    const pad = ' '.repeat(MIN_MENU_CHARS - widest);
+    let padded = false;
+    return {
+      ...s,
+      items: s.items.map((it) => {
+        // Never pad an Edit predefined item — buildItem matches those by
+        // exact label (Cut/Copy/Paste/Select All).
+        if (padded || it.separator || PREDEFINED_EDIT[it.label]) return it;
+        padded = true;
+        return { ...it, label: it.label + pad };
+      }),
+    };
+  };
+
+  const submenus = await Promise.all(sections.map(widenSection).map(async (s, si) =>
     Submenu.new({
       text: s.label,
       items: (await Promise.all(s.items.map((it, ii) => buildItem(it, [si, ii], s.label === 'Edit')))) as never[],

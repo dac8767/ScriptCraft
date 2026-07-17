@@ -65,9 +65,19 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.31';
+export const APP_VERSION = '3.32';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.32',
+    date: '2026-07-17',
+    items: [
+      { title: 'Menus get a minimum width', detail: 'macOS sizes a native menu to its widest item, so menus full of short names (Tools) came out skinny. Every menu now pads out to a comfortable minimum width.', tags: ['UI'] },
+      { title: 'Editor dropdowns match the bar\'s lengths', detail: 'Each dropdown chip in the visual editor now carries its live counterpart\'s width — the font field is as long as the real font field, and so on.', tags: ['Polish'] },
+      { title: 'Ribbon edge padding back to 12px', detail: 'The v3.28 doubling is walked back — the real culprit (the Customize button sizing only to its icon) was fixed in v3.29.', tags: ['Polish'] },
+      { title: 'Tool-specific items out of the palette', detail: 'Insert Table (Scrapbook) is no longer offered in Customize > Toolbar — it only ever worked inside the Scrapbook. Layouts that already have it keep it.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '3.31',
     date: '2026-07-17',

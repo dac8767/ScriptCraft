@@ -363,6 +363,7 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
           className={`ribed-chip${tok.startsWith('s:') ? ' ribed-chip-spacer' : ''}${tok.startsWith('d:') ? ' ribed-chip-div' : ''}${ddText ? ' ribed-chip-dd' : ''}${big && !ddText && !tok.startsWith('s:') && !tok.startsWith('d:') ? ' ribed-chip-big' : ''}`}
           title={tokenLabel(tok)}
           style={tok.startsWith('s:') ? { width: spacerPx(tok) } : undefined}
+          {...(ddText ? { 'data-dd': tok.slice(2) } : {})}
           data-sec={sec}
           data-row={row}
           data-idx={idx}
