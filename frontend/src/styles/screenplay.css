@@ -1184,6 +1184,52 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   margin: 4px 0;
   display: block;
 }
+/* v3.23, Derek: RIBBON icons wear color — scoped to .toolbar-ribbon only,
+   every other surface stays monotone (CLAUDE.md rule; this is the one
+   sanctioned exception, like the red A). Single tint per glyph: react-icons
+   are one-path currentColor shapes, so multi-color needs provided art.
+   B/I/U/S and the alignment glyphs stay text-colored on purpose (they are
+   letterforms, colored versions read as formatting applied). */
+.toolbar-ribbon [data-key="undo"] svg,
+.toolbar-ribbon [data-key="redo"] svg { color: #d9a441; }
+.toolbar-ribbon [data-key="cut"] svg,
+.toolbar-ribbon [data-key="copy"] svg,
+.toolbar-ribbon [data-key="paste"] svg,
+.toolbar-ribbon [data-key="save"] svg,
+.toolbar-ribbon [data-key="saveAs"] svg,
+.toolbar-ribbon [data-key="openFile"] svg,
+.toolbar-ribbon [data-key="newScreenplay"] svg,
+.toolbar-ribbon [data-key="print"] svg,
+.toolbar-ribbon [data-key="preview"] svg { color: #6fa8dc; }
+.toolbar-ribbon [data-key="exportPDF"] svg { color: #e06060; }
+.toolbar-ribbon [data-key="insertSection"] svg { color: #b58ee0; }
+.toolbar-ribbon [data-key="insertNote"] svg { color: #e8c34f; }
+.toolbar-ribbon [data-key="insertChecklist"] svg { color: #6abf69; }
+.toolbar-ribbon [data-key="insertMarker"] svg { color: #e06060; }
+.toolbar-ribbon [data-key="insertImage"] svg { color: #b58ee0; }
+.toolbar-ribbon [data-key="find"] svg,
+.toolbar-ribbon [data-key="goto"] svg { color: #4cbfbf; }
+.toolbar-ribbon [data-key="customize"] svg { color: #d377b0; }
+.toolbar-ribbon [data-key="spellCheck"] svg,
+.toolbar-ribbon [data-key="writingSuggestions"] svg { color: #6abf69; }
+.toolbar-ribbon [data-key="addBookmark"] svg,
+.toolbar-ribbon [data-key="lastEditLocation"] svg { color: #e06060; }
+.toolbar-ribbon [data-key="takeSnapshot"] svg,
+.toolbar-ribbon [data-key="snapshots"] svg,
+.toolbar-ribbon [data-key="compareSnapshot"] svg { color: #d9a441; }
+.toolbar-ribbon [data-key="togglePanelLeft"] svg,
+.toolbar-ribbon [data-key="togglePanelRight"] svg,
+.toolbar-ribbon [data-key="toggleOutlineBar"] svg { color: #7f9ec9; }
+/* pinned side-panel tools (Outline, Notes, To-Do, ...) */
+.toolbar-ribbon [data-key="beatboard"] svg { color: #b58ee0; }
+.toolbar-ribbon [data-key="sticky"] svg { color: #e8c34f; }
+.toolbar-ribbon [data-key="todo"] svg { color: #6abf69; }
+.toolbar-ribbon [data-key="indexcards"] svg { color: #6fa8dc; }
+.toolbar-ribbon [data-key="highlights"] svg { color: #e8c34f; }
+.toolbar-ribbon [data-key="goals"] svg { color: #4cbfbf; }
+.toolbar-ribbon [data-key="fragments"] svg { color: #d377b0; }
+.toolbar-ribbon [data-key="notebook"] svg { color: #d9a441; }
+
 /* The overflow menu rides beside the ribbon, centered on its height. */
 .toolbar-stack .toolbar-overflow-wrap { align-self: center; position: relative; }
 

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.22';
+export const APP_VERSION = '3.23';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.23',
+    date: '2026-07-17',
+    items: [
+      { title: 'Color comes to the ribbon', detail: 'Ribbon icons wear tasteful single colors — amber undo/redo, blue clipboard and file actions, yellow notes, green to-dos, teal find, the pink Customize wrench. Menus, panels and everything else stay monotone.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.22',
     date: '2026-07-17',

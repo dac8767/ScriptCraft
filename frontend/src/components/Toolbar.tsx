@@ -1384,6 +1384,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           key={tok}
           className="toolbar-btn rib-tall-btn"
           title="Customize ScriptCraft"
+          data-key="customize"
           onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))}
         >
           <span className="rib-tall-icon">{TOOLBAR_ICONS.customize}</span>
@@ -1400,6 +1401,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       <React.Fragment key={tok}>
         <div
           className={cls}
+          data-key={def.key}
           {...(def.priority ? { 'data-priority': def.priority } : {})}
           // v2.97, Derek: in a one-row section every item is a BIG BUTTON —
           // large icon with its name underneath (drawn by CSS from this).
@@ -1484,12 +1486,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       const t = ALL_TOOLS.find((x) => x.id === tok.slice(2));
       if (!t) return null;
       return tall ? (
-        <button key={tok} className="toolbar-btn rib-tall rib-tall-btn" title={t.label} onClick={() => openTool(t.id)}>
+        <button key={tok} className="toolbar-btn rib-tall rib-tall-btn" title={t.label} data-key={t.id} onClick={() => openTool(t.id)}>
           <span className="rib-tall-icon">{t.icon}</span>
           <span className="rib-tall-label">{t.label}</span>
         </button>
       ) : (
-        <button key={tok} className="toolbar-btn" title={t.label} onClick={() => openTool(t.id)}>
+        <button key={tok} className="toolbar-btn" title={t.label} data-key={t.id} onClick={() => openTool(t.id)}>
           {t.icon}
         </button>
       );
@@ -1498,12 +1500,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       const c = commandDef(tok.slice(2));
       if (!c) return null;
       return tall ? (
-        <button key={tok} className="toolbar-btn rib-tall rib-tall-btn" title={c.label} onClick={() => c.run()}>
+        <button key={tok} className="toolbar-btn rib-tall rib-tall-btn" title={c.label} data-key={c.id} onClick={() => c.run()}>
           <span className="rib-tall-icon">{c.icon}</span>
           <span className="rib-tall-label">{c.label}</span>
         </button>
       ) : (
-        <button key={tok} className="toolbar-btn" title={c.label} onClick={() => c.run()}>
+        <button key={tok} className="toolbar-btn" title={c.label} data-key={c.id} onClick={() => c.run()}>
           {c.icon}
         </button>
       );
