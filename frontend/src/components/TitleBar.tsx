@@ -17,6 +17,7 @@ import { FaSave, FaUndo, FaRedo } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore, smartUndo, smartRedo } from '../stores/editorStore';
 import { isDesktopTauri } from '../services/platform';
+import { openInBrowser, DONATE_URL } from '../services/external';
 
 const isMacLike = /mac/i.test(navigator.platform || navigator.userAgent);
 
@@ -51,8 +52,26 @@ const TitleBar: React.FC<{ editor: Editor | null }> = ({ editor }) => {
         ><FaRedo /></button>
       </div>
       <div className="fs-titlebar-title" data-tauri-drag-region>{title}</div>
-      {/* right counterweight keeps the title centered against the QAT */}
-      <div className="fs-titlebar-balance" data-tauri-drag-region />
+      {/* right counterweight keeps the title centered against the QAT.
+          v3.12, Derek: it carries the Buy Me a Coffee button at the far
+          right — the widget's look (yellow #FFDD00 pill, white cup, black
+          script text) drawn locally, since the real embed is a remote CDN
+          script the app must not load. */}
+      <div className="fs-titlebar-right" data-tauri-drag-region>
+        <button
+          className="fs-bmc-btn"
+          title="Buy me a coffee"
+          onClick={() => openInBrowser(DONATE_URL)}
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            {/* to-go cup: lid + tapered body, BMC-style */}
+            <path d="M3 4.5 h10 l-0.4 2 h-9.2 Z" fill="#000" />
+            <path d="M3.9 7 h8.2 l-1 6.2 a1 1 0 0 1 -1 0.8 h-4.2 a1 1 0 0 1 -1 -0.8 Z" fill="#fff" stroke="#000" strokeWidth="0.8" />
+            <path d="M4.6 3 c0 -0.8 6.8 -0.8 6.8 0 l0.2 1.5 h-7.2 Z" fill="#fff" stroke="#000" strokeWidth="0.8" />
+          </svg>
+          <span>Buy me a coffee</span>
+        </button>
+      </div>
     </div>
   );
 };

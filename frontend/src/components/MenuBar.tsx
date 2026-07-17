@@ -42,6 +42,7 @@ import { useProjectStore } from '../stores/projectStore';
 import { api } from '../services/api';
 import { showToast } from './Toast';
 import { useBookmarkStore, bookmarkLabelAt, bookmarkScriptKey } from '../stores/bookmarkStore';
+import { openInBrowser, DONATE_URL } from '../services/external';
 import { parseFountain } from '../utils/fountainParser';
 import { parseFDXFull } from '../utils/fdxParser';
 import { downloadFDX } from '../utils/fdxExporter';
@@ -155,20 +156,12 @@ const HELP_FORMS = {
   reportBug: { title: 'Report a Bug', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagykyhflKTRjphGr/form' },
 };
 
-/** v3.08, Derek: the donation link at the end of Help. Opens the Buy Me a
- *  Coffee page in the DEFAULT browser — the BMC widget script is a remote
- *  CDN embed, which a native menu can't render and the desktop app
- *  shouldn't load (same rule as the dictionary CDN in §open items). */
-const DONATE_URL = 'https://buymeacoffee.com/derektor';
-const openInBrowser = (url: string) => {
-  if (isTauriEnv()) {
-    void import('@tauri-apps/api/core').then(({ invoke }) => {
-      invoke('open_url', { url }).catch((err: unknown) => console.error('Failed to open URL:', err));
-    });
-  } else {
-    window.open(url, '_blank');
-  }
-};
+/* v3.08, Derek: the donation link at the end of Help. Opens the Buy Me a
+ * Coffee page in the DEFAULT browser — the BMC widget script is a remote
+ * CDN embed, which a native menu can't render and the desktop app
+ * shouldn't load (same rule as the dictionary CDN in §open items).
+ * v3.12: opener + URL live in services/external.ts, shared with the
+ * titlebar's donate button. */
 
 interface MenuBarProps {
   editor: Editor | null;

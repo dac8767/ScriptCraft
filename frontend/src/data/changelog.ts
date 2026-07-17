@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.11';
+export const APP_VERSION = '3.12';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.12',
+    date: '2026-07-17',
+    items: [
+      { title: 'Buy Me a Coffee button in the titlebar', detail: 'The donation button — yellow pill, cup and all — sits at the far right of the Quick Access Toolbar row and opens the donation page in your default browser. The Help menu link stays too.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.11',
     date: '2026-07-17',

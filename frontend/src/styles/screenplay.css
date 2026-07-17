@@ -12482,8 +12482,37 @@ html.android .version-history-panel {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* mirrors the traffic-light inset + QAT width so the title stays centered */
-.fs-titlebar-balance { flex: 1; min-width: 78px; align-self: stretch; }
+/* mirrors the QAT side so the title stays centered; carries the donate
+   button at the far right (v3.12). */
+.fs-titlebar-right {
+  flex: 1;
+  min-width: 78px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+/* Buy Me a Coffee — the widget's look, drawn locally: #FFDD00 pill, black
+   outline/text, white cup. Brand button, so the monotone-icon rule doesn't
+   apply here (like the red text-color A). */
+.fs-bmc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 21px;
+  padding: 0 10px;
+  background: #FFDD00;
+  color: #000;
+  border: 1px solid #000;
+  border-radius: 11px;
+  font-family: 'Cookie', 'Snell Roundhand', 'Comic Sans MS', cursive;
+  font-size: 14px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.fs-bmc-btn:hover { background: #ffe733; }
+.fs-bmc-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
 
 /* v3.07, Derek: Obsidian-style collapse row atop each side panel. The button
    hugs the panel's OUTER edge (the side it folds into). */
