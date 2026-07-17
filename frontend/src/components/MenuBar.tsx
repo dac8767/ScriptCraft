@@ -622,7 +622,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         case 'trackChanges': handleTrackChangesToggle(); break;
         case 'spellCheck': setSpellModalOpen(true); break;
         case 'writingSuggestions': setGrammarModalOpen(true); break;
-        default: break;
+        // v2.97, Derek: EVERY menu action is pinnable to the ribbon — any
+        // command id the actions map knows resolves here, so the ribbon,
+        // the menus and the keyboard all run the same closure. (Safe for
+        // system-owned ids like selectAll: the KEYBOARD handler still
+        // bails on owner==='system' before reaching the map.)
+        default: shortcutActionsRef.current[id]?.(); break;
       }
     };
     window.addEventListener('scriptcraft:command', onCmd);
@@ -1030,6 +1035,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     takeSnapshot: () => handleCheckinOpen(),
     scriptHistory: () => setVersionHistoryOpen(true),
     trackChanges: () => { void handleTrackChangesToggle(); },
+    // v2.97: ribbon-pinnable Edit actions. Their SHORTCUTS stay with the OS
+    // (the keyboard handler bails on system-owned ids); these closures run
+    // only via menu clicks and ribbon buttons.
+    cut: () => document.execCommand('cut'),
+    copy: () => document.execCommand('copy'),
+    paste: () => document.execCommand('paste'),
+    selectAll: () => editor?.chain().focus().selectAll().run(),
   };
   const shortcutActionsRef = useRef(shortcutActions);
   // Menu items display the EFFECTIVE binding, so a rebound (or cleared)

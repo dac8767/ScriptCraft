@@ -1329,7 +1329,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       + (def.zoom ? ' zoom-group' : '');
     return (
       <React.Fragment key={tok}>
-        <div className={cls} {...(def.priority ? { 'data-priority': def.priority } : {})}>
+        <div
+          className={cls}
+          {...(def.priority ? { 'data-priority': def.priority } : {})}
+          // v2.97, Derek: in a one-row section every item is a BIG BUTTON —
+          // large icon with its name underneath (drawn by CSS from this).
+          {...(tall ? { 'data-riblabel': def.label } : {})}
+        >
           {renderBuiltinControl(def.key, false, showPopups)}
         </div>
         {def.key === 'zoomIn' && (
@@ -1472,6 +1478,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           {i > 0 && <div className="toolbar-separator rib-section-sep" />}
           <div className={`rib-section${s.hasBreak ? '' : ' rib-single'}`}>
             <div className="rib-row">{s.top.map((t) => renderToken(t, !s.hasBreak))}</div>
+            {/* v2.97, Derek: the split line is optionally VISIBLE — toggled
+                by clicking it in the visual editor. */}
+            {s.hasBreak && s.breakLine && <div className="rib-row-line" />}
             {s.hasBreak && <div className="rib-row">{s.bottom.map((t) => renderToken(t, false))}</div>}
           </div>
         </React.Fragment>

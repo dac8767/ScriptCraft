@@ -1116,13 +1116,34 @@ body {
   gap: var(--rib-gap, 2px);
   height: var(--rib-rowh, 28px);
 }
-/* A single-row section spans its items across both rows. */
-.rib-section.rib-single .rib-row { height: 100%; flex: 1; }
-.rib-single .toolbar-btn { min-height: calc(var(--rib-rowh, 28px) * 1.6); }
-div.rib-tall, .toolbar-priority-block.rib-tall { height: 100%; display: flex; align-items: center; }
-/* Tall pinned tools/commands: Word's large-button format — icon over label. */
+/* A single-row section spans its items across both rows — every item is a
+   BIG BUTTON, Word style (v2.97, Derek): large icon, name underneath, the
+   two together filling 80% of the section's height. */
+.rib-section.rib-single .rib-row { height: 100%; flex: 1; align-items: center; }
+div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; align-items: center; }
+.toolbar-priority-block.rib-tall {
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+/* the item's name, drawn under whatever control the block holds */
+.toolbar-priority-block.rib-tall::after {
+  content: attr(data-riblabel);
+  font-size: 10px;
+  line-height: 1.1;
+  color: var(--fd-text);
+  white-space: nowrap;
+}
+.rib-single .toolbar-btn {
+  width: auto;
+  min-width: 30px;
+  height: auto;
+  padding: 3px 8px;
+}
+.rib-single .toolbar-btn svg { font-size: 19px; }
+/* Tall pinned tools/commands: the same big-button format, self-contained. */
 .toolbar-btn.rib-tall-btn {
-  height: 100%;
+  height: 80%;
   width: auto;
   padding: 3px 8px;
   display: inline-flex;
@@ -1131,8 +1152,15 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 100%; display: flex; al
   justify-content: center;
   gap: 3px;
 }
-.rib-tall-icon { display: inline-flex; font-size: 17px; }
+.rib-tall-icon { display: inline-flex; font-size: 19px; }
 .rib-tall-label { font-size: 10px; line-height: 1.1; white-space: nowrap; }
+/* v2.97: the OPTIONAL line between a section's two rows (click the split
+   in the visual editor to toggle it). */
+.rib-row-line {
+  height: 1px;
+  margin: 0 2px;
+  background: var(--fd-border);
+}
 /* Dividers: section separators run the ribbon's height; a plain d: inside
    a row marks just that row. */
 .toolbar-ribbon .toolbar-separator { height: calc(var(--rib-rowh, 28px) - 8px); align-self: center; }
@@ -16554,14 +16582,35 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .ribed-chip:active { cursor: grabbing; }
 .ribed-chip-icon { display: inline-flex; pointer-events: none; }
-.ribed-chip-spacer { background: transparent; border: 1px dashed var(--fd-border); }
-.ribed-spacer-w {
-  width: 42px;
+/* v2.97: the spacer chip's WIDTH is the spacer's width — resized by
+   dragging the grip on its right edge. */
+.ribed-chip-spacer {
   background: transparent;
-  border: none;
-  color: var(--fd-text);
-  font-size: 11px;
-  text-align: center;
+  border: 1px dashed var(--fd-border);
+  min-width: 8px;
+  padding: 0;
+  justify-content: flex-end;
+  box-sizing: border-box;
+}
+.ribed-spacer-grip {
+  width: 7px;
+  align-self: stretch;
+  border-right: 3px solid var(--fd-accent);
+  border-radius: 0 4px 4px 0;
+  cursor: ew-resize;
+}
+/* v2.97: a one-row divider inside a row — shown as the line it is. */
+.ribed-chip-div {
+  min-width: 10px;
+  padding: 0;
+  background: transparent;
+}
+.ribed-chip-div::before {
+  content: '';
+  width: 2px;
+  height: 18px;
+  border-radius: 1px;
+  background: var(--fd-border);
 }
 .ribed-x {
   position: absolute;
@@ -16580,9 +16629,12 @@ input.fs-switch:checked::after { left: 15px; }
   opacity: 0;
   z-index: 2;
 }
+/* hidden ✕ buttons must not swallow pointer events (they overhang their
+   neighbours) — they only become clickable when their owner is hovered */
+.ribed-x { pointer-events: none; }
 .ribed-chip:hover .ribed-x,
 .ribed-secdiv:hover .ribed-x,
-.ribed-break:hover .ribed-x { opacity: 1; }
+.ribed-break:hover .ribed-x { opacity: 1; pointer-events: auto; }
 .ribed-secdiv {
   position: relative;
   width: 3px;
@@ -16598,12 +16650,17 @@ input.fs-switch:checked::after { left: 15px; }
   align-items: center;
   height: 6px;
 }
+/* v2.97, Derek: click the split line to toggle it — HEAVY means the line is
+   drawn on the real toolbar, faint means the split is invisible there. */
 .ribed-break-line {
   flex: 1;
-  height: 2px;
+  height: 3px;
   border-radius: 1px;
-  background: color-mix(in srgb, var(--fd-accent) 60%, transparent);
+  background: color-mix(in srgb, var(--fd-accent) 25%, transparent);
+  cursor: pointer;
 }
+.ribed-break-line:hover { background: color-mix(in srgb, var(--fd-accent) 45%, transparent); }
+.ribed-break-line.heavy { background: var(--fd-accent); }
 .ribed-break .ribed-x { top: -6px; }
 .ribed-dropline {
   width: 3px;
@@ -16619,8 +16676,6 @@ input.fs-switch:checked::after { left: 15px; }
   white-space: nowrap;
 }
 .ribed-add-section {
-  align-self: center;
-  margin-left: 4px;
   padding: 6px 10px;
   border: 1px dashed var(--fd-border);
   border-radius: 5px;
@@ -16631,6 +16686,17 @@ input.fs-switch:checked::after { left: 15px; }
   cursor: pointer;
 }
 .ribed-add-section:hover { color: var(--fd-text); border-color: var(--fd-accent); }
+/* v2.97: the structural tools live beside + Section, in a compact 2×2. */
+.ribed-tools {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 4px;
+  align-self: center;
+  align-items: stretch;
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+.ribed-tools .ribed-pal-chip { justify-content: center; }
 /* the palette — also the drop target that removes items from the ribbon */
 .ribed-palette {
   display: flex;

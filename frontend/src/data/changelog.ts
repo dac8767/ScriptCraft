@@ -65,9 +65,19 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.96';
+export const APP_VERSION = '2.97';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.97',
+    date: '2026-07-17',
+    items: [
+      { title: 'One-row sections grow BIG buttons', detail: 'Word style: an item in a section with no row split renders as a large icon with its name underneath, the pair filling most of the section\'s height — exactly the Styles Pane / Dictate format from the reference. Two-row sections keep compact icons.', tags: ['UI'] },
+      { title: 'Every menu action is ribbon-pinnable', detail: 'New Script, Open, Import, Save, Save As, Print, Preview, all four exports, Settings, Cut, Copy, Paste, Select All and Dual Dialogue join the Customize palette under File and Edit. One command bus runs them — the menu item, the keyboard shortcut and the ribbon button share a single closure.', tags: ['New Feature', 'UI'] },
+      { title: 'Ribbon editor refinements', detail: 'The structural tools (New Row, Divider, Spacer) moved beside + Section. Spacers resize by dragging their right edge — the chip\'s width IS the spacer. A new Divider utility drops a one-row vertical line into a row. A section\'s closing divider is the one on its right: its × folds the section into the next one.', tags: ['UI'] },
+      { title: 'The row-split line can be visible', detail: 'Click the split line in the visual editor to toggle it: heavy means a line is drawn between the section\'s two rows on the real toolbar, faint means the split is invisible. Hidden ✕ buttons in the editor also no longer swallow clicks meant for their neighbours.', tags: ['UI', 'Fix'] },
+    ],
+  },
   {
     version: '2.96',
     date: '2026-07-17',

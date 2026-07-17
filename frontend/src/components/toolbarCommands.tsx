@@ -9,6 +9,9 @@ import React from 'react';
 import {
   FaFileAlt, FaFileSignature, FaEdit, FaListUl, FaLock, FaToggleOn,
   FaUpload, FaHistory, FaExchangeAlt, FaSpellCheck, FaTags, FaCodeBranch,
+  FaFile, FaFolderOpen, FaFileImport, FaSave, FaRegSave, FaPrint, FaEye,
+  FaFilePdf, FaFileExport, FaFileWord, FaCog, FaCut, FaCopy, FaPaste,
+  FaMousePointer, FaColumns,
 } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 
@@ -37,6 +40,26 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'trackChanges', label: 'Track Changes', icon: <FaExchangeAlt />, run: () => emit('trackChanges') },
   { id: 'spellCheck', label: 'Spell Check', icon: <FaSpellCheck />, run: () => emit('spellCheck') },
   { id: 'writingSuggestions', label: 'Writing Suggestions', icon: <FaSpellCheck />, run: () => emit('writingSuggestions') },
+  // v2.97, Derek: EVERY menu action is ribbon-pinnable. These run through
+  // the same 'scriptcraft:command' bus, which falls back to MenuBar's
+  // shortcut-actions map — one closure per command, three surfaces.
+  { id: 'newScreenplay', label: 'New Script', icon: <FaFile />, run: () => emit('newScreenplay') },
+  { id: 'openFile', label: 'Open', icon: <FaFolderOpen />, run: () => emit('openFile') },
+  { id: 'importLocal', label: 'Import', icon: <FaFileImport />, run: () => emit('importLocal') },
+  { id: 'save', label: 'Save', icon: <FaSave />, run: () => emit('save') },
+  { id: 'saveAs', label: 'Save As', icon: <FaRegSave />, run: () => emit('saveAs') },
+  { id: 'print', label: 'Print', icon: <FaPrint />, run: () => emit('print') },
+  { id: 'preview', label: 'Preview', icon: <FaEye />, run: () => emit('preview') },
+  { id: 'exportPDF', label: 'Export PDF', icon: <FaFilePdf />, run: () => emit('exportPDF') },
+  { id: 'exportFDX', label: 'Export FDX', icon: <FaFileExport />, run: () => emit('exportFDX') },
+  { id: 'exportFountain', label: 'Export Fountain', icon: <FaFileAlt />, run: () => emit('exportFountain') },
+  { id: 'exportDocx', label: 'Export Word (.docx)', icon: <FaFileWord />, run: () => emit('exportDocx') },
+  { id: 'settings', label: 'Settings', icon: <FaCog />, run: () => emit('settings') },
+  { id: 'cut', label: 'Cut', icon: <FaCut />, run: () => emit('cut') },
+  { id: 'copy', label: 'Copy', icon: <FaCopy />, run: () => emit('copy') },
+  { id: 'paste', label: 'Paste', icon: <FaPaste />, run: () => emit('paste') },
+  { id: 'selectAll', label: 'Select All', icon: <FaMousePointer />, run: () => emit('selectAll') },
+  { id: 'dualDialogue', label: 'Dual Dialogue', icon: <FaColumns />, run: () => emit('dualDialogue') },
 ];
 
 export const commandDef = (id: string): ToolbarCommand | null =>

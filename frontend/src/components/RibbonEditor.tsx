@@ -17,7 +17,7 @@
  * dataTransfer.setData() or the drag silently never begins in Tauri.
  */
 import React, { useState } from 'react';
-import { FaGripLinesVertical, FaLevelDownAlt } from 'react-icons/fa';
+import { FaGripLinesVertical, FaLevelDownAlt, FaArrowsAltH } from 'react-icons/fa';
 import {
   parseRibbon, serializeRibbon, type RibbonSection,
 } from './toolbarBuiltins';
@@ -34,7 +34,9 @@ interface Props {
 }
 
 const clone = (secs: RibbonSection[]): RibbonSection[] =>
-  secs.map((s) => ({ top: [...s.top], bottom: [...s.bottom], hasBreak: s.hasBreak }));
+  secs.map((s) => ({ top: [...s.top], bottom: [...s.bottom], hasBreak: s.hasBreak, breakLine: s.breakLine }));
+
+const EMPTY_SECTION: RibbonSection = { top: [], bottom: [], hasBreak: false, breakLine: false };
 
 const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
   const sections = parseRibbon(tokens);
@@ -98,6 +100,9 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
       }
     } else if (payload === 'util:spacer') {
       rowArr.splice(idx, 0, `s:${Date.now()}`);
+    } else if (payload === 'util:divider') {
+      // a ONE-ROW vertical line inside the row (plain d:, not a section 2!d:)
+      rowArr.splice(idx, 0, `d:${Date.now()}`);
     } else if (payload.startsWith('new:')) {
       rowArr.splice(idx, 0, payload.slice(4));
     }
@@ -128,6 +133,29 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
     commit(secs);
   };
 
+  /** v2.97, Derek: spacers resize by dragging their right edge — the chip's
+   *  width IS the spacer's width. Pointer-driven (not HTML5 drag), live on
+   *  the element, committed to the token on release. */
+  const startSpacerResize = (e: React.PointerEvent, tok: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const chip = (e.currentTarget as HTMLElement).parentElement as HTMLElement;
+    const startX = e.clientX;
+    const startW = spacerPx(tok);
+    let w = startW;
+    const move = (ev: PointerEvent) => {
+      w = Math.max(8, Math.min(240, Math.round(startW + (ev.clientX - startX))));
+      chip.style.width = `${w}px`;
+    };
+    const up = () => {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', up);
+      setSpacerWidth(tok, w);
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+  };
+
   const dropLine = <span className="ribed-dropline" />;
 
   const renderChip = (tok: string, sec: number, row: Row, idx: number) => (
@@ -137,23 +165,22 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
         className={`ribed-chip${tok.startsWith('s:') ? ' ribed-chip-spacer' : ''}${tok.startsWith('d:') ? ' ribed-chip-div' : ''}`}
         draggable
         title={tokenLabel(tok)}
+        style={tok.startsWith('s:') ? { width: spacerPx(tok) } : undefined}
         onDragStart={(e) => dragStart(e, `tok:${tok}`)}
         onDragEnd={endDrag}
         onDragOver={(e) => overChip(e, sec, row, idx)}
       >
-        {tok.startsWith('s:') ? (
-          <input
-            className="ribed-spacer-w"
-            type="number"
-            min={8}
-            max={240}
-            value={spacerPx(tok)}
-            title="Spacer width (px)"
-            onChange={(e) => setSpacerWidth(tok, Number(e.target.value))}
-            onPointerDown={(e) => e.stopPropagation()}
-          />
-        ) : (
+        {!tok.startsWith('s:') && !tok.startsWith('d:') && (
           <span className="ribed-chip-icon">{tokenIcon(tok)}</span>
+        )}
+        {tok.startsWith('s:') && (
+          <span
+            className="ribed-spacer-grip"
+            title="Drag to resize the spacer"
+            draggable={false}
+            onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            onPointerDown={(e) => startSpacerResize(e, tok)}
+          />
         )}
         <button className="ribed-x" title="Remove" onClick={() => removeToken(tok)}>×</button>
       </span>
@@ -174,23 +201,33 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
     );
   };
 
-  const removeDividerBefore = (i: number) => {
-    // merging section i-1 and i: rows concatenate, a break in either survives
+  /** v2.97, Derek: a section's RIGHT divider is the one associated with it —
+   *  closing the section (its × ) merges it into the section that follows. */
+  const closeSection = (i: number) => {
     const secs = clone(sections);
-    const a = secs[i - 1];
-    const b = secs[i];
+    const a = secs[i];
+    const b = secs[i + 1];
     const merged: RibbonSection = {
       top: [...a.top, ...b.top],
       bottom: [...a.bottom, ...b.bottom],
       hasBreak: a.hasBreak || b.hasBreak,
+      breakLine: a.breakLine || b.breakLine,
     };
-    secs.splice(i - 1, 2, merged);
+    secs.splice(i, 2, merged);
     commit(secs);
   };
 
   const removeBreak = (i: number) => {
     const secs = clone(sections);
-    secs[i] = { top: [...secs[i].top, ...secs[i].bottom], bottom: [], hasBreak: false };
+    secs[i] = { top: [...secs[i].top, ...secs[i].bottom], bottom: [], hasBreak: false, breakLine: false };
+    commit(secs);
+  };
+
+  /** v2.97, Derek: clicking the split line toggles it heavy (drawn on the
+   *  real toolbar) or faint (invisible split). */
+  const toggleBreakLine = (i: number) => {
+    const secs = clone(sections);
+    secs[i] = { ...secs[i], breakLine: !secs[i].breakLine };
     commit(secs);
   };
 
@@ -199,38 +236,61 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
       <div className="ribed-ribbon" onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>
         {sections.map((s, i) => (
           <React.Fragment key={`sec-${i}`}>
-            {i > 0 && (
-              <span className="ribed-secdiv" title="Section divider">
-                <button className="ribed-x" title="Remove divider (merges the sections)" onClick={() => removeDividerBefore(i)}>×</button>
-              </span>
-            )}
             <div className={`ribed-section${s.hasBreak ? '' : ' ribed-single'}`}>
               {renderRow(s, i, 'top')}
               {s.hasBreak && (
-                <div className="ribed-break" title="New Row — items after this sit on the second row">
-                  <span className="ribed-break-line" />
+                <div className="ribed-break">
+                  <span
+                    className={`ribed-break-line${s.breakLine ? ' heavy' : ''}`}
+                    title={s.breakLine
+                      ? 'Row split line: SHOWN on the toolbar — click to hide it'
+                      : 'Row split line: hidden on the toolbar — click to show it'}
+                    onClick={() => toggleBreakLine(i)}
+                  />
                   <button className="ribed-x" title="Remove the row split (back to one row)" onClick={() => removeBreak(i)}>×</button>
                 </div>
               )}
               {s.hasBreak && renderRow(s, i, 'bottom')}
             </div>
+            {i < sections.length - 1 && (
+              <span className="ribed-secdiv" title="This section's closing divider">
+                <button className="ribed-x" title="Close this section (its items join the next one)" onClick={() => closeSection(i)}>×</button>
+              </span>
+            )}
           </React.Fragment>
         ))}
-        <button
-          className="ribed-add-section"
-          title="Add a new empty section at the end"
-          onClick={() => commit([...clone(sections), { top: [], bottom: [], hasBreak: false }])}
-        >+ Section</button>
+        {/* v2.97, Derek: the utilities live HERE, beside + Section — the
+            structural tools, next to the structure they build. */}
+        <div className="ribed-tools">
+          <button
+            className="ribed-add-section"
+            title="Add a new empty section at the end"
+            onClick={() => commit([...clone(sections), { ...EMPTY_SECTION }])}
+          >+ Section</button>
+          <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a section to split it into two rows"
+            onDragStart={(e) => dragStart(e, 'util:rowbreak')} onDragEnd={endDrag}>
+            <FaLevelDownAlt /> New Row
+          </span>
+          <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a row: a one-row vertical divider line"
+            onDragStart={(e) => dragStart(e, 'util:divider')} onDragEnd={endDrag}>
+            <FaGripLinesVertical /> Divider
+          </span>
+          <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a row: blank space — drag its edge to resize"
+            onDragStart={(e) => dragStart(e, 'util:spacer')} onDragEnd={endDrag}>
+            <FaArrowsAltH /> Spacer
+          </span>
+        </div>
       </div>
 
       <p className="fs-customize-hint">
         Drag items between the sections above — drop position is the item's
         position. Drag <strong>New Row</strong> into a section to split it
         into two rows at that spot; a section without a split spans its items
-        across both rows. Drag an item onto the lists below to remove it.
+        across both rows. Spacers resize by dragging their right edge. Drag
+        an item onto the lists below to remove it.
       </p>
 
-      {/* utilities + available items; also the drop target for removal */}
+      {/* available items; also the drop target for removal */}
       <div
         className="ribed-palette"
         onDragOver={(e) => { e.preventDefault(); setSpot(null); }}
@@ -241,17 +301,6 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
           endDrag();
         }}
       >
-        <div className="ribed-pal-group">
-          <div className="ribed-pal-title">Utilities</div>
-          <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a section to split it into two rows"
-            onDragStart={(e) => dragStart(e, 'util:rowbreak')} onDragEnd={endDrag}>
-            <FaLevelDownAlt /> New Row
-          </span>
-          <span className="ribed-pal-chip ribed-pal-util" draggable title="Blank space between items"
-            onDragStart={(e) => dragStart(e, 'util:spacer')} onDragEnd={endDrag}>
-            <FaGripLinesVertical /> Spacer
-          </span>
-        </div>
         {palette.map((cat) => cat.options.length > 0 && (
           <div key={cat.id} className="ribed-pal-group">
             <div className="ribed-pal-title">{cat.label}</div>

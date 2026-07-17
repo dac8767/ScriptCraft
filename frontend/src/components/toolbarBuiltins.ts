@@ -167,26 +167,33 @@ export const makeTall = (tok: string) => (isTall(tok) ? tok : TALL_PREFIX + tok)
 
 /** Section divider: a full-height d: token. */
 export const isSectionDivider = (tok: string) => isTall(tok) && stripTall(tok).startsWith('d:');
-/** Row break: the v2.96 utility that starts a section's second row. */
-export const isRowBreak = (tok: string) => tok.startsWith('r:');
+/** Row break: the v2.96 utility that starts a section's second row.
+ *  v2.97: `rl:` is a break whose line SHOWS in the toolbar; plain `r:`
+ *  splits invisibly. */
+export const isRowBreak = (tok: string) => tok.startsWith('r:') || tok.startsWith('rl:');
 
 /** A parsed ribbon section. `hasBreak` false ⇒ single row, items span both
- *  rows; true ⇒ `top` row above `bottom` row. */
-export interface RibbonSection { top: string[]; bottom: string[]; hasBreak: boolean }
+ *  rows; true ⇒ `top` row above `bottom` row. `breakLine` ⇒ the split
+ *  draws a visible line between the rows on the real toolbar. */
+export interface RibbonSection { top: string[]; bottom: string[]; hasBreak: boolean; breakLine: boolean }
 
 /** The ribbon's structure, straight from the token sequence. Extra row
  *  breaks in one section merge into the first (a section has at most two
  *  rows); serializeRibbon writes the canonical form back. */
 export function parseRibbon(tokens: string[]): RibbonSection[] {
   const sections: RibbonSection[] = [];
-  let cur: RibbonSection = { top: [], bottom: [], hasBreak: false };
+  let cur: RibbonSection = { top: [], bottom: [], hasBreak: false, breakLine: false };
   for (const raw of tokens) {
     if (isSectionDivider(raw)) {
       sections.push(cur);
-      cur = { top: [], bottom: [], hasBreak: false };
+      cur = { top: [], bottom: [], hasBreak: false, breakLine: false };
       continue;
     }
-    if (isRowBreak(raw)) { cur.hasBreak = true; continue; }
+    if (isRowBreak(raw)) {
+      cur.hasBreak = true;
+      cur.breakLine = cur.breakLine || raw.startsWith('rl:');
+      continue;
+    }
     (cur.hasBreak ? cur.bottom : cur.top).push(raw);
   }
   sections.push(cur);
@@ -200,7 +207,7 @@ export function serializeRibbon(sections: RibbonSection[]): string[] {
   sections.forEach((s, i) => {
     if (i > 0) out.push(`2!d:sec-${i}`);
     out.push(...s.top);
-    if (s.hasBreak) out.push(`r:row-${i}`, ...s.bottom);
+    if (s.hasBreak) out.push(`${s.breakLine ? 'rl' : 'r'}:row-${i}`, ...s.bottom);
   });
   return out;
 }

@@ -16,8 +16,8 @@ describe('parseRibbon / serializeRibbon (v2.96)', () => {
   it('splits on tall dividers; an r: break separates a section\'s rows', () => {
     const secs = parseRibbon(['b:undo', 'b:redo', 'r:x', 'b:find', '2!d:a', 'b:element']);
     expect(secs).toEqual([
-      { top: ['b:undo', 'b:redo'], bottom: ['b:find'], hasBreak: true },
-      { top: ['b:element'], bottom: [], hasBreak: false },
+      { top: ['b:undo', 'b:redo'], bottom: ['b:find'], hasBreak: true, breakLine: false },
+      { top: ['b:element'], bottom: [], hasBreak: false, breakLine: false },
     ]);
   });
 
@@ -28,7 +28,13 @@ describe('parseRibbon / serializeRibbon (v2.96)', () => {
 
   it('extra breaks in one section merge into the first', () => {
     const secs = parseRibbon(['b:a', 'r:1', 'b:b', 'r:2', 'b:c']);
-    expect(secs).toEqual([{ top: ['b:a'], bottom: ['b:b', 'b:c'], hasBreak: true }]);
+    expect(secs).toEqual([{ top: ['b:a'], bottom: ['b:b', 'b:c'], hasBreak: true, breakLine: false }]);
+  });
+
+  it('v2.97: an rl: break means the split line SHOWS, and it round-trips', () => {
+    const secs = parseRibbon(['b:a', 'rl:1', 'b:b']);
+    expect(secs).toEqual([{ top: ['b:a'], bottom: ['b:b'], hasBreak: true, breakLine: true }]);
+    expect(serializeRibbon(secs)).toEqual(['b:a', 'rl:row-0', 'b:b']);
   });
 
   it('the default ribbon parses into sections without loss', () => {

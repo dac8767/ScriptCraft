@@ -705,6 +705,10 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const PRODUCTION_CMDS = ['titlePage', 'setDraft', 'addSceneNumbers', 'removeSceneNumbers', 'lockSceneNumbers', 'revisionMode'];
   const TOOLS_CMDS = ['spellCheck', 'writingSuggestions', 'takeSnapshot', 'snapshots', 'trackChanges', 'compareSnapshot'];
   const PROJECT_CMDS = ['rename'];
+  // v2.97, Derek: every menu action is ribbon-pinnable — File and Edit join
+  // the palette (ids resolve through the same command bus the menus use).
+  const FILE_CMDS = ['newScreenplay', 'openFile', 'importLocal', 'save', 'saveAs', 'print', 'preview', 'exportPDF', 'exportFDX', 'exportFountain', 'exportDocx', 'settings'];
+  const EDIT_CMDS = ['cut', 'copy', 'paste', 'selectAll', 'dualDialogue'];
   const cmdOpt = (id: string) => {
     const c = TOOLBAR_COMMANDS.find((x) => x.id === id);
     return c ? [{ value: `c:${c.id}`, label: c.label }] : [];
@@ -719,6 +723,14 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       options: Object.values(BUILTIN_BY_KEY)
         .filter((b) => b.key !== 'tags' && b.key !== 'scriptNotes' && !b.permanent)
         .map((b) => ({ value: `b:${b.key}`, label: b.label })),
+    },
+    {
+      id: 'file', label: 'File',
+      options: FILE_CMDS.flatMap(cmdOpt),
+    },
+    {
+      id: 'edit', label: 'Edit',
+      options: EDIT_CMDS.flatMap(cmdOpt),
     },
     {
       id: 'production', label: 'Production',
