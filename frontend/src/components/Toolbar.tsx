@@ -1351,7 +1351,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       }
       case 'view': return (
         <>
-          <span className="view-style-label">Editor View:</span>
+          <span className="view-style-label">Editor View</span>
           <select
             className="view-style-selector"
             value={previewMode ? 'preview' : viewStyle}

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.46';
+export const APP_VERSION = '3.47';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.47',
+    date: '2026-07-17',
+    items: [
+      { title: 'Editor View label sits under its dropdown', detail: 'On the big Editor View button the “Editor View” label (no colon) now sits beneath the dropdown, matching the other big buttons.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.46',
     date: '2026-07-17',
