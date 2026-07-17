@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.42';
+export const APP_VERSION = '3.43';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.43',
+    date: '2026-07-17',
+    items: [
+      { title: 'No more blank page after a title page', detail: 'In Page view, adding a title page left the first script element stranded alone on an otherwise-blank page 1 while everything else jumped to page 2. The title page still shows only in Preview — but the editing views now flow straight from the top, no phantom page.', tags: ['Fix', 'Editor'] },
+    ],
+  },
   {
     version: '3.42',
     date: '2026-07-17',

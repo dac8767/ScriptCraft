@@ -269,7 +269,12 @@ function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = E
     // Leading images (when a title page exists) belong to the title page, so they
     // don't trigger the body break and stay on the title page.
     const isTitleRegionNode = node.typeName === 'titlePage' || node.typeName === 'screenplayImage';
-    if (!titleBroken && sawTitlePage && !isTitleRegionNode && lineCount > 0) {
+    // v3.43, Derek: only force the body onto a fresh page when the title page is
+    // actually SHOWN (Preview/print). While it's hidden (Page/Continuous) it
+    // takes 0 lines, so the old `lineCount > 0` guard fired this break one node
+    // late — stranding the first body element alone on a blank page 1. Hidden,
+    // there is no title page to break away from, so skip it entirely.
+    if (!titleBroken && sawTitlePage && !visibilityOpts.hideTitlePage && !isTitleRegionNode && lineCount > 0) {
       // First script element after the title page → start it on a fresh page.
       // pageNumber stays at its current value (the title page does not consume a
       // number); the body's first page remains the implicit unnumbered page 1.
