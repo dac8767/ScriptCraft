@@ -36,6 +36,9 @@ interface Props {
   onChange: (tokens: string[]) => void;
   /** Available (not-placed) items, by category — same data as + Add Item. */
   palette: Array<{ id: string; label: string; options: Array<{ value: string; label: string }> }>;
+  /** v3.20, Derek: the dialog's Show/Hide/Reset controls render in the same
+   *  row as the structural utilities, left of them. */
+  headerControls?: React.ReactNode;
 }
 
 const clone = (m: RibbonModel): RibbonModel => ({
@@ -56,7 +59,7 @@ const payloadLabel = (payload: string): string => {
   return '';
 };
 
-const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
+const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerControls }) => {
   const model = parseRibbon(tokens);
   const { sections, splitAt } = model;
   const [spot, setSpot] = useState<DropSpot | null>(null);
@@ -155,13 +158,19 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
     endDrag();
   };
 
-  /** v3.01: double-click a palette item → it lands at the end of the most
-   *  recently added or modified section (the last one, if none yet). */
+  /** v3.01: double-click a palette item → it lands in the most recently
+   *  added or modified section (the last one, if none yet). v3.20, Derek:
+   *  sections RIGHT of the align split are anchored to the toolbar's right
+   *  edge, so they fill right-to-left — new items go at the FRONT, and the
+   *  anchor items (e.g. Customize) keep their spot at the edge. */
   const quickAdd = (tok: string) => {
     const m = clone(model);
     const sec = Math.min(lastSec.current ?? m.sections.length - 1, m.sections.length - 1);
     const target = m.sections[sec];
-    (target.hasBreak ? target.bottom : target.top).push(tok);
+    const row = target.hasBreak ? target.bottom : target.top;
+    const rightAligned = m.splitAt !== null && sec >= m.splitAt;
+    if (rightAligned) row.unshift(tok);
+    else row.push(tok);
     commit(m, sec);
   };
 
@@ -383,6 +392,37 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
 
   return (
     <div className="ribed">
+      {/* v3.20, Derek: ONE control row — the dialog's Show/Hide/Reset
+          (headerControls) and the structural utilities share it. */}
+      <div className="ribed-utilrow">
+        {headerControls}
+        <span className="ribed-utilrow-spring" />
+        <div className="ribed-tools">
+          <button
+            className="ribed-add-section"
+            title="Add a new empty section at the end"
+            onClick={() => commit({ sections: [...clone(model).sections, { ...EMPTY_SECTION }], splitAt }, sections.length)}
+          >+ Section</button>
+          <span className="ribed-pal-chip ribed-pal-util" title="Drag into a section to split it into two rows"
+            onPointerDown={(e) => startDrag(e, 'util:rowbreak')}>
+            <FaLevelDownAlt /> New Row
+          </span>
+          <span className="ribed-pal-chip ribed-pal-util" title="Drag into a row: a one-row vertical divider line (double-click: add to the last-touched section)"
+            onPointerDown={(e) => startDrag(e, 'util:divider')}
+            onDoubleClick={() => quickAdd(`d:${Date.now()}`)}>
+            <FaGripLinesVertical /> Divider
+          </span>
+          <span className="ribed-pal-chip ribed-pal-util" title="Drag into a row: blank space — drag its edge to resize (double-click: add to the last-touched section)"
+            onPointerDown={(e) => startDrag(e, 'util:spacer')}
+            onDoubleClick={() => quickAdd(`s:${Date.now()}`)}>
+            <FaArrowsAltH /> Spacer
+          </span>
+          <span className="ribed-pal-chip ribed-pal-util" title="Drag onto a section: everything after it aligns to the toolbar's RIGHT edge"
+            onPointerDown={(e) => startDrag(e, 'util:alignsplit')}>
+            <FaExchangeAlt /> Align Split
+          </span>
+        </div>
+      </div>
       <div className="ribed-ribbon">
         {sections.map((s, i) => (
           <React.Fragment key={`sec-${i}`}>
@@ -433,32 +473,6 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
           </React.Fragment>
         ))}
         {secSpot === sections.length && <span className="ribed-sec-dropline" />}
-        {/* v2.97: the structural tools, beside the structure they build. */}
-        <div className="ribed-tools">
-          <button
-            className="ribed-add-section"
-            title="Add a new empty section at the end"
-            onClick={() => commit({ sections: [...clone(model).sections, { ...EMPTY_SECTION }], splitAt }, sections.length)}
-          >+ Section</button>
-          <span className="ribed-pal-chip ribed-pal-util" title="Drag into a section to split it into two rows"
-            onPointerDown={(e) => startDrag(e, 'util:rowbreak')}>
-            <FaLevelDownAlt /> New Row
-          </span>
-          <span className="ribed-pal-chip ribed-pal-util" title="Drag into a row: a one-row vertical divider line (double-click: add to the last-touched section)"
-            onPointerDown={(e) => startDrag(e, 'util:divider')}
-            onDoubleClick={() => quickAdd(`d:${Date.now()}`)}>
-            <FaGripLinesVertical /> Divider
-          </span>
-          <span className="ribed-pal-chip ribed-pal-util" title="Drag into a row: blank space — drag its edge to resize (double-click: add to the last-touched section)"
-            onPointerDown={(e) => startDrag(e, 'util:spacer')}
-            onDoubleClick={() => quickAdd(`s:${Date.now()}`)}>
-            <FaArrowsAltH /> Spacer
-          </span>
-          <span className="ribed-pal-chip ribed-pal-util" title="Drag onto a section: everything after it aligns to the toolbar's RIGHT edge"
-            onPointerDown={(e) => startDrag(e, 'util:alignsplit')}>
-            <FaExchangeAlt /> Align Split
-          </span>
-        </div>
       </div>
 
       <p className="fs-customize-hint">

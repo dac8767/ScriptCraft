@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.19';
+export const APP_VERSION = '3.20';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.20',
+    date: '2026-07-17',
+    items: [
+      { title: 'Room between big buttons', detail: 'Single-row ribbon sections space their buttons further apart.', tags: ['UI'] },
+      { title: 'Right-aligned sections fill right-to-left', detail: 'Double-click-adding into a section right of the align split inserts at the front, so the anchor button (Customize) keeps its place at the edge.', tags: ['Fix', 'UI'] },
+      { title: 'One control row in the toolbar customizer', detail: 'Show/Hide, Reset to Default Size and the structural utilities (+ Section, New Row, Divider, Spacer, Align Split) share a single row above the editor.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.19',
     date: '2026-07-17',

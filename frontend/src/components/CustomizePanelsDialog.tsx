@@ -921,37 +921,34 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               utility, merge sections by removing their divider. A section
               without a split spans its items across both rows.
             </p>
-            {/* v2.29: sizing left Customize (drag the strip under the top
-                bars on the main screen) — only Show/Hide remains here. */}
-            <div className="fs-customize-row fs-size-row">
-              <span className="fs-customize-tool">Toolbar</span>
-              <span className="fs-customize-seg">
-                <button
-                  className={toolbarMode !== 'hidden' ? 'active' : ''}
-                  onClick={() => { if (toolbarMode === 'hidden') setToolbarMode('custom'); }}
-                >Show</button>
-                <button
-                  className={toolbarMode === 'hidden' ? 'active' : ''}
-                  onClick={() => setToolbarMode('hidden')}
-                >Hide</button>
-              </span>
-              {/* v2.31: the way back after manual resizing. */}
-              <span className="fs-customize-seg">
-                <button onClick={() => {
-                  const st = useEditorStore.getState();
-                  st.setToolbarMode('compact');
-                  st.setChromeGap('toolbar', 2);
-                }}>Reset to Default Size</button>
-              </span>
-            </div>
-
             {/* v2.96: the VISUAL ribbon editor — sections, rows, drag & drop.
                 RibbonEditor owns all structure edits; the token sequence in
-                the store stays the single source the real Toolbar renders. */}
+                the store stays the single source the real Toolbar renders.
+                v3.20, Derek: Show/Hide/Reset ride the editor's utility row. */}
             <RibbonEditor
               tokens={tbLeft}
               onChange={(seq) => setToolbarZones(seq, [])}
               palette={tbAddCategories}
+              headerControls={<>
+                <span className="fs-customize-seg">
+                  <button
+                    className={toolbarMode !== 'hidden' ? 'active' : ''}
+                    onClick={() => { if (toolbarMode === 'hidden') setToolbarMode('custom'); }}
+                  >Show</button>
+                  <button
+                    className={toolbarMode === 'hidden' ? 'active' : ''}
+                    onClick={() => setToolbarMode('hidden')}
+                  >Hide</button>
+                </span>
+                {/* v2.31: the way back after manual resizing. */}
+                <span className="fs-customize-seg">
+                  <button onClick={() => {
+                    const st = useEditorStore.getState();
+                    st.setToolbarMode('compact');
+                    st.setChromeGap('toolbar', 2);
+                  }}>Reset to Default Size</button>
+                </span>
+              </>}
             />
             <div className="fs-tbzone-adders fs-adders-equal">
               <button

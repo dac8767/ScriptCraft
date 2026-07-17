@@ -1123,8 +1123,14 @@ body {
 }
 /* A single-row section spans its items across both rows — every item is a
    BIG BUTTON, Word style (v2.97, Derek): large icon, name underneath, the
-   two together filling 80% of the section's height. */
-.rib-section.rib-single .rib-row { height: 100%; flex: 1; align-items: center; }
+   two together filling 80% of the section's height. v3.20: big buttons get
+   extra breathing room between them. */
+.rib-section.rib-single .rib-row {
+  height: 100%;
+  flex: 1;
+  align-items: center;
+  gap: calc(var(--rib-gap, 2px) + 8px);
+}
 div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; align-items: center; }
 .toolbar-priority-block.rib-tall {
   flex-direction: column;
@@ -16901,13 +16907,20 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .ribed-add-section:hover { color: var(--fd-text); border-color: var(--fd-accent); }
 /* v2.97: the structural tools live beside + Section, in a compact 2×2. */
+/* v3.20: the utilities share ONE row with the dialog's Show/Hide/Reset —
+   controls left, structural tools right. */
+.ribed-utilrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.ribed-utilrow-spring { flex: 1; }
 .ribed-tools {
-  display: grid;
-  grid-template-columns: auto auto;
+  display: flex;
+  align-items: center;
   gap: 4px;
-  align-self: center;
-  align-items: stretch;
-  margin-left: 6px;
   flex-shrink: 0;
 }
 .ribed-tools .ribed-pal-chip { justify-content: center; }
