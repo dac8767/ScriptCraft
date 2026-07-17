@@ -1081,24 +1081,62 @@ body {
   min-width: 0;                  /* lets the bars shrink instead of shoving the
                                     button off the edge */
 }
-/* v2.94: the toolbar's SECOND ROW — tools, app functions and the old Big
-   Button items (a token's big! flag renders the large launcher format).
-   It sits under the formatting row and sizes itself to its content. */
-.toolbar.toolbar-row2 {
-  height: auto;
-  min-height: 33px;
-  padding-top: 2px;
+/* ── v2.95: the RIBBON ─────────────────────────────────────────────────────
+   One token sequence flows into a two-row grid, column by column — two
+   consecutive small items stack into a column (Word's dense areas). A 2!
+   item spans both rows. The stack puts the ribbon, the overflow menu and
+   the fixed Customize button side by side. */
+.toolbar-stack {
+  display: flex;
+  align-items: stretch;
+  background: var(--fd-toolbar-bg);
+  flex-shrink: 0;
 }
+.toolbar.toolbar-ribbon {
+  display: grid;
+  grid-template-rows: repeat(2, var(--rib-rowh, 28px));
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  align-items: center;
+  row-gap: 2px;
+  height: auto;
+  padding-top: 3px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;   /* collapse measurement reads scrollWidth vs clientWidth */
+}
+/* A 2! cell spans both ribbon rows. */
+.rib-tall { grid-row: span 2; }
+div.rib-tall, .toolbar-priority-block.rib-tall { height: 100%; display: flex; align-items: center; }
+.rib-tall .toolbar-btn { min-height: calc(var(--rib-rowh, 28px) * 1.6); }
+/* Tall pinned tools/commands: Word's large-button format — icon over label. */
+.toolbar-btn.rib-tall-btn {
+  height: 100%;
+  width: auto;
+  padding: 3px 8px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+.rib-tall-icon { display: inline-flex; font-size: 17px; }
+.rib-tall-label { font-size: 10px; line-height: 1.1; white-space: nowrap; }
+/* Dividers: full-height when tall, row-height otherwise. */
+.toolbar-ribbon .toolbar-separator { height: calc(var(--rib-rowh, 28px) - 8px); align-self: center; }
+.toolbar-ribbon .toolbar-separator.rib-tall { height: calc(var(--rib-rowh, 28px) * 2 - 10px); display: block; }
+/* The overflow menu rides beside the ribbon, centered on its height. */
+.toolbar-stack .toolbar-overflow-wrap { align-self: center; position: relative; }
+
+/* The one big button: Customize, fixed at the right edge spanning both
+   ribbon rows (v0.91's shape, reborn). */
 .chrome-bigbtn {
-  /* v0.93: halfway between the original toolbar button and the v0.91 size —
-     12px/600 -> 15px/700 became 13.5px/700, padding 12 -> 18 became 15.
-     v2.94: lives on the toolbar's second row now — a fixed comfortable
-     height instead of spanning the bars. */
   flex: 0 0 auto;
   align-self: center;
-  margin: 0;
+  margin: 0 6px;
   padding: 0 15px;
-  height: 30px;
+  height: calc(100% - 14px);
+  min-height: 31px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1113,13 +1151,6 @@ body {
   cursor: pointer;
 }
 .chrome-bigbtn:hover { background: var(--fd-btn-hover); }
-.chrome-bigbtn-icon { display: inline-flex; font-size: 15px; }
-/* non-Customize big buttons: same format, different color (Derek's spec) */
-.chrome-bigbtn-alt {
-  background: color-mix(in srgb, #4cbfbf 24%, var(--fd-toolbar-bg));
-  color: var(--fd-text);
-}
-.chrome-bigbtn-alt:hover { background: color-mix(in srgb, #4cbfbf 38%, var(--fd-toolbar-bg)); }
 .chrome-customize-btn {
   box-shadow: 0 1px 2px rgba(0,0,0,.25);
 }
@@ -12346,7 +12377,10 @@ html.android .version-history-panel {
 }
 
 /* v1.1: grab the panel's outer edge and drag it to the width you want. Sits on
-   the edge that faces the editor, so it never covers panel content. */
+   the edge that faces the editor, so it never covers panel content.
+   v2.95, Derek: the edge used to overhang 3px INTO the editor, sitting on top
+   of its scrollbar — it now stays inside the panel, and the wrap keeps a
+   6px gap so the scrollbar and the grab edge each have their own room. */
 .tool-dock-edge {
   position: absolute;
   top: 0;
@@ -12356,8 +12390,10 @@ html.android .version-history-panel {
   cursor: move;   /* v2.77: two-axis — width + item size */
   background: transparent;
 }
-.tool-dock-edge-left  { right: -3px; }   /* left panel grows rightwards */
-.tool-dock-edge-right { left: -3px; }    /* right panel grows leftwards */
+.tool-dock-edge-left  { right: 0; }   /* left panel grows rightwards */
+.tool-dock-edge-right { left: 0; }    /* right panel grows leftwards */
+.tool-dock-wrap.tool-dock-right { margin-left: 6px; }
+.tool-dock-wrap.tool-dock-left  { margin-right: 6px; }
 .tool-dock-edge:hover { background: var(--fd-accent); opacity: .35; }
 .tool-dock-edge:active { background: var(--fd-accent); opacity: .6; }
 
@@ -16453,11 +16489,12 @@ input.fs-switch:checked::after { left: 15px; }
   border-radius: 6px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, .35);
 }
-/* v2.94: Customize > Toolbar's Big pill — toggles a Row 2 item between the
-   normal button and the large labelled launcher. */
-.fs-big-pill {
+/* v2.95: Customize > Toolbar's span pill — how many ribbon rows the item
+   spans (1 or 2). */
+.fs-span-pill {
   margin-left: 8px;
-  padding: 1px 8px;
+  min-width: 22px;
+  padding: 1px 7px;
   border: 1px solid var(--fd-border);
   border-radius: 9px;
   background: transparent;
@@ -16467,11 +16504,93 @@ input.fs-switch:checked::after { left: 15px; }
   letter-spacing: .03em;
   cursor: pointer;
 }
-.fs-big-pill:hover { background: var(--fd-overlay-light); }
-.fs-big-pill.active {
+.fs-span-pill:hover { background: var(--fd-overlay-light); }
+.fs-span-pill.active {
   background: color-mix(in srgb, var(--fd-accent) 30%, transparent);
   border-color: var(--fd-accent);
   color: var(--fd-text);
+}
+/* v2.95: the ribbon editor's live preview — the same column-flow grid the
+   real ribbon uses, in miniature. */
+.fs-ribbon-preview {
+  display: grid;
+  grid-template-rows: repeat(2, 24px);
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  align-items: center;
+  row-gap: 2px;
+  column-gap: 2px;
+  margin: 8px 0 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: var(--fd-toolbar-bg);
+  overflow-x: auto;
+}
+.fs-ribprev-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 22px;
+  border-radius: 4px;
+  color: var(--fd-text);
+  font-size: 11px;
+}
+.fs-ribprev-cell.tall { grid-row: span 2; height: 46px; background: var(--fd-overlay-light); }
+.fs-ribprev-div {
+  width: 1px;
+  height: 16px;
+  background: var(--fd-border);
+  justify-self: center;
+  margin: 0 3px;
+}
+.fs-ribprev-div.tall { grid-row: span 2; height: 40px; }
+.fs-ribprev-spacer {
+  width: 14px;
+  height: 6px;
+  border: 1px dashed var(--fd-border);
+  border-radius: 3px;
+}
+.fs-ribprev-spacer.tall { grid-row: span 2; }
+.fs-ribprev-flex { width: 12px; }
+.fs-ribprev-customize {
+  grid-row: span 2;
+  align-self: center;
+  padding: 6px 10px;
+  border-radius: 5px;
+  background: var(--fd-btn-bg);
+  color: var(--fd-btn-text);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* v2.95: Word-style editor rulers (EditorRulers.tsx). A zero-size sticky pin
+   keeps the canvases at the scroll container's visible corner; the canvases
+   inherit their tick color from `color` here. */
+.fs-rulers-pin {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  z-index: 45;
+}
+.fs-ruler {
+  position: absolute;
+  color: var(--fd-text-muted, #999);
+  background: var(--fd-bg, #2a2a2a);
+}
+.fs-ruler-h { top: 0; left: 0; }
+.fs-ruler-v { top: 20px; left: 0; }
+.fs-ruler-corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  background: var(--fd-bg, #2a2a2a);
 }
 /* v2.83: the local auto-save folder row (Settings > Save Options). */
 .prefs-path-chip {
@@ -16982,7 +17101,7 @@ input.fs-switch:checked::after { left: 15px; }
 /* v2.48, Derek: the Arrangement block sits DEAD CENTER in the header —
    absolute centering, so it can't drift as the side content changes. The
    ? keeps the very end, just left of the window's carets. */
-.beat-header-controls { position: relative; }
+.beat-header-controls { position: relative; container-type: inline-size; }
 .beat-mode-center {
   position: absolute;
   left: 50%;
@@ -16991,6 +17110,17 @@ input.fs-switch:checked::after { left: 15px; }
   align-items: center;
   gap: 8px;
   white-space: nowrap;
+}
+/* v2.95, Derek: in a NARROW window the absolutely-centered Arrangement block
+   rode on top of the flow content beside it. Below the width where they'd
+   collide, it rejoins the flow (pushed right) — never overlapping. */
+@container (max-width: 960px) {
+  .beat-mode-center {
+    position: static;
+    transform: none;
+    margin-left: auto;
+  }
+  .beat-color-alltabs { flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; }
 }
 .beat-header-controls .fs-help-btn { margin-left: auto; }
 /* v2.48: Presets + add button ride the TABS row, hugging the right edge. */

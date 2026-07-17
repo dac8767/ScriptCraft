@@ -29,10 +29,9 @@ import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import { useNotebookStore } from '../stores/notebookStore';
 import { TableGridPicker } from './NotebookTool';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
-import GapHandle from './GapHandle';
 import { confirmDialog } from './ConfirmDialog';
 import { commandDef } from './toolbarCommands';
-import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, bigZoneAllowed, stripBig, isBigToken } from './toolbarBuiltins';
+import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, isTall, stripTall } from './toolbarBuiltins';
 import { smartUndo, smartRedo, useEditorStore, NOTE_COLORS } from '../stores/editorStore';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
@@ -518,44 +517,29 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     if (!toolbar) return;
 
     const measure = () => {
-      const containerWidth = toolbar.clientWidth;
-      const groups = toolbar.querySelectorAll<HTMLElement>('[data-priority]');
+      const groups = Array.from(toolbar.querySelectorAll<HTMLElement>('[data-priority]'));
       if (groups.length === 0) return;
 
-      // Show all groups to measure natural widths
-      groups.forEach(g => g.style.display = '');
+      // Show all groups to measure the natural layout
+      groups.forEach(g => { g.style.display = ''; });
 
-      const OVERFLOW_BTN_WIDTH = 36;
-      const allItems: { el: HTMLElement; key: string }[] = [];
       const newHidden = new Set<string>();
-
-      let totalWidth = 0;
-      for (const child of toolbar.children) {
-        const el = child as HTMLElement;
-        const w = el.offsetWidth;
-        if (el.dataset.priority) {
-          // CSS-hidden items (e.g. toolbar-desktop-only on mobile) have 0 width —
-          // mark them as hidden so they appear in the overflow menu.
-          if (w === 0) {
-            newHidden.add(el.dataset.priority);
-          } else {
-            allItems.push({ el, key: el.dataset.priority });
-          }
-        }
-        totalWidth += w + 2;
+      for (const g of groups) {
+        // CSS-hidden items (e.g. toolbar-desktop-only on mobile) have 0 width —
+        // mark them as hidden so they appear in the overflow menu.
+        if (g.offsetWidth === 0) newHidden.add(g.dataset.priority!);
       }
 
-      if (totalWidth > containerWidth) {
-        let currentTotal = totalWidth + OVERFLOW_BTN_WIDTH;
-
-        for (const prefix of HIDE_ORDER) {
-          if (currentTotal <= containerWidth) break;
-          const matching = allItems.filter(p => p.key.startsWith(prefix));
-          for (const { el, key } of matching) {
-            newHidden.add(key);
-            currentTotal -= el.offsetWidth + 2;
-            el.style.display = 'none';
-          }
+      // v2.95: the ribbon is a two-row GRID — per-child width sums double-
+      // count stacked columns, so overflow is judged by the layout itself:
+      // hide priority groups until the grid stops overflowing its box.
+      for (const prefix of HIDE_ORDER) {
+        if (toolbar.scrollWidth <= toolbar.clientWidth) break;
+        for (const g of groups) {
+          const key = g.dataset.priority!;
+          if (!key.startsWith(prefix) || newHidden.has(key)) continue;
+          newHidden.add(key);
+          g.style.display = 'none';
         }
       }
 
@@ -737,8 +721,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     zonesReady ? toolbarLeft : [...DEFAULT_TOOLBAR_LEFT, ...toolbarPinnedTools.map((id) => `t:${id}`)],
     zonesReady ? toolbarRight : DEFAULT_TOOLBAR_RIGHT,
   );
+  // v2.95: one ribbon sequence — normalize folds any legacy right zone in.
   const leftTokens = zones.left;
-  const rightTokens = zones.right;
 
   if (toolbarMode === 'hidden') return null;
 
@@ -1275,15 +1259,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           }}
         >{TOOLBAR_ICONS.resetSizes}</button>
       );
-      /* v2.94: Customize with the Big flag off — a normal small button.
-         Without this case an un-bigged Customize token rendered NOTHING. */
-      case 'customize': return (
-        <button
-          className="toolbar-btn"
-          title="Customize ScriptCraft"
-          onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))}
-        >{TOOLBAR_ICONS.customize}</button>
-      );
       /* v2.94, Derek: the Scrapbook's insert-table grid can't live in a native
          macOS menu, so it moves to the toolbar's second row. Only rendered
          while the Scrapbook is open — same visibility as its old menu. */
@@ -1344,11 +1319,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
   /** Inline wrapper for a b: token — priority block, mobile classes, and the
    *  item's own trailing separator (it hides and moves with the item). */
-  const renderBuiltinToken = (tok: string): React.ReactNode => {
+  const renderBuiltinToken = (tok: string, tall = false): React.ReactNode => {
     const def = BUILTIN_BY_KEY[tok.slice(2)];
     if (!def) return null;
     const showPopups = !def.priority || !isHidden(def.priority);
     const cls = 'toolbar-priority-block'
+      + (tall ? ' rib-tall' : '')
       + (def.desktopOnly ? ' toolbar-desktop-only' : '')
       + (def.zoom ? ' zoom-group' : '');
     return (
@@ -1373,8 +1349,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
   // Overflow menu: collapsed priorities re-render their PRESENT items only —
   // items removed from the toolbar in Customize never reappear here.
+  // (Ribbon tokens may carry the 2! span flag — compare flag-blind.)
   const presentKeys = new Set(
-    [...leftTokens, ...rightTokens].filter((t) => t.startsWith('b:')).map((t) => t.slice(2)),
+    leftTokens.map(stripTall).filter((t) => t.startsWith('b:')).map((t) => t.slice(2)),
   );
   let overflowContent: React.ReactNode[] | null = null;
   if (hiddenPriorities.size > 0) {
@@ -1383,7 +1360,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     // items relative to how they sit on the bar. Runs of neighbours that
     // collapsed together stay grouped, separated where the bar had a break.
     const runs: { pr: string; keys: string[] }[] = [];
-    for (const tok of [...leftTokens, ...rightTokens]) {
+    for (const raw of leftTokens) {
+      const tok = stripTall(raw);
       if (!tok.startsWith('b:')) continue;
       const key = tok.slice(2);
       const d = BUILTIN_BY_KEY[key];
@@ -1404,9 +1382,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     overflowContent = items.length ? items : null;
   }
 
-  const renderToken = (tok: string): React.ReactNode => {
+  /** v2.95: ribbon token → grid cell. The 2! flag makes a cell SPAN both
+   *  rows: icon buttons grow a label under the icon (Word's large-button
+   *  format), wide controls center vertically, dividers run full height. */
+  const renderToken = (raw: string): React.ReactNode => {
+    const tall = isTall(raw);
+    const tok = stripTall(raw);
     if (tok.startsWith('d:')) {
-      return <div key={tok} className="toolbar-separator toolbar-user-divider" />;
+      return <div key={tok} className={`toolbar-separator toolbar-user-divider${tall ? ' rib-tall' : ''}`} />;
     }
     // s:<id> — blank space to push neighbouring buttons apart (v0.69).
     // v0.82: an optional width rides along as s:<id>:<px>. Tokens saved before
@@ -1417,7 +1400,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       return (
         <div
           key={tok}
-          className="toolbar-spacer"
+          className={`toolbar-spacer${tall ? ' rib-tall' : ''}`}
           style={Number.isFinite(px) && px > 0 ? { width: px } : undefined}
         />
       );
@@ -1425,7 +1408,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     if (tok.startsWith('t:')) {
       const t = ALL_TOOLS.find((x) => x.id === tok.slice(2));
       if (!t) return null;
-      return (
+      return tall ? (
+        <button key={tok} className="toolbar-btn rib-tall rib-tall-btn" title={t.label} onClick={() => openTool(t.id)}>
+          <span className="rib-tall-icon">{t.icon}</span>
+          <span className="rib-tall-label">{t.label}</span>
+        </button>
+      ) : (
         <button key={tok} className="toolbar-btn" title={t.label} onClick={() => openTool(t.id)}>
           {t.icon}
         </button>
@@ -1434,110 +1422,77 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     if (tok.startsWith('c:')) {
       const c = commandDef(tok.slice(2));
       if (!c) return null;
-      return (
+      return tall ? (
+        <button key={tok} className="toolbar-btn rib-tall rib-tall-btn" title={c.label} onClick={() => c.run()}>
+          <span className="rib-tall-icon">{c.icon}</span>
+          <span className="rib-tall-label">{c.label}</span>
+        </button>
+      ) : (
         <button key={tok} className="toolbar-btn" title={c.label} onClick={() => c.run()}>
           {c.icon}
         </button>
       );
     }
-    if (tok.startsWith('b:')) return renderBuiltinToken(tok);
+    if (tok.startsWith('b:')) return renderBuiltinToken(tok, tall);
     return null;
   };
 
   const tbCustomH = chromePx('toolbar', 'custom', chromeCustomPx.toolbar);
-
-  /** v2.94: a Row-2 token flagged big renders as a large launcher (the old
-   *  Big Button look) — the flag rides in the token, set from Customize. */
-  const renderBigToken = (tok: string): React.ReactNode => {
-    if (tok === 'b:customize') {
-      return (
-        <button
-          key={`big-${tok}`}
-          className="chrome-bigbtn chrome-customize-btn"
-          title="Customize ScriptCraft"
-          onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))}
-        >
-          Customize
-        </button>
-      );
-    }
-    if (tok.startsWith('t:')) {
-      const t = ALL_TOOLS.find((x) => x.id === tok.slice(2));
-      if (!t) return null;
-      return (
-        <button key={`big-${tok}`} className="chrome-bigbtn chrome-bigbtn-alt" title={t.label} onClick={() => openTool(t.id)}>
-          <span className="chrome-bigbtn-icon">{t.icon}</span>
-          {t.label}
-        </button>
-      );
-    }
-    if (tok.startsWith('c:')) {
-      const c = commandDef(tok.slice(2));
-      if (!c) return null;
-      return (
-        <button key={`big-${tok}`} className="chrome-bigbtn chrome-bigbtn-alt" title={c.label} onClick={() => c.run()}>
-          <span className="chrome-bigbtn-icon">{c.icon}</span>
-          {c.label}
-        </button>
-      );
-    }
-    return null;
-  };
+  // One ribbon row's height. chromePx describes the old single-row bar; the
+  // ribbon stacks two of them (minus the chrome padding it now owns once).
+  const barH = toolbarMode === 'custom' ? tbCustomH
+    : toolbarMode === 'comfortable' ? 39 : 33;
+  const ribRowH = Math.max(22, Math.round(barH) - 5);
 
   return (
-    <>
+    /* v2.95, Derek: the WORD RIBBON. One token sequence flows into a two-row
+       grid column by column — consecutive small items stack in pairs, 2!
+       items span both rows, dividers run one row or two. Customize is fixed
+       chrome at the right edge spanning both rows — the one big button.
+       The in-toolbar spacing grips are gone (the menu bar keeps its own). */
+    <div className="toolbar-stack">
     <div
-      className={`toolbar${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}${toolbarMode === 'custom' ? ' toolbar-custom' : ''}`}
+      className={`toolbar toolbar-ribbon${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}${toolbarMode === 'custom' ? ' toolbar-custom' : ''}`}
       style={{
         ...(toolbarMode === 'custom' ? ({
-          height: tbCustomH,
           ['--chrome-scale' as string]: String(chromeScaleFactor('toolbar', tbCustomH)),
         } as React.CSSProperties) : {}),
-        gap: chromeGapPx.toolbar,   // v2.29: the grip at the right end adjusts this
+        ['--rib-rowh' as string]: `${ribRowH}px`,
+        columnGap: chromeGapPx.toolbar,
         // v2.72: measured so the first icons of the two bars align.
         ...(alignPad !== null ? { paddingLeft: alignPad } : {}),
       }}
       ref={toolbarRef}
     >
-      {/* v2.94, Derek: ROW 1 — the standard formatting controls. */}
       {leftTokens.map(renderToken)}
-
-      {/* v2.54, Derek: the spacing grip rides just RIGHT of the last item. */}
-      <GapHandle bar="toolbar" />
-
-      {/* Spacer */}
-      <div style={{ flex: 1 }} />
-
-      {/* Overflow 3-dot menu */}
-      {hasOverflow && overflowContent && (
-        <div className="toolbar-group toolbar-overflow-wrap" ref={overflowRef}>
-          <button
-            className={`toolbar-btn toolbar-overflow-btn${overflowOpen ? ' active' : ''}`}
-            title="More formatting options"
-            onClick={() => setOverflowOpen(!overflowOpen)}
-          >
-            <FaEllipsisV />
-          </button>
-          {overflowOpen && (
-            <div className="toolbar-overflow-menu">
-              {overflowContent}
-            </div>
-          )}
-        </div>
-      )}
-
     </div>
-    {/* v2.94, Derek: ROW 2 — tool/window buttons and app functions (the old
-        Big Button section folded in: flagged tokens render large). */}
-    <div className="toolbar toolbar-row2" style={{ gap: chromeGapPx.bigbtn, ...(alignPad !== null ? { paddingLeft: alignPad } : {}) }}>
-      {rightTokens.map((raw) => {
-        const tok = stripBig(raw);
-        return isBigToken(raw) && bigZoneAllowed(tok) ? renderBigToken(tok) : renderToken(tok);
-      })}
-      <GapHandle bar="bigbtn" />
-      <div style={{ flex: 1 }} />
+
+    {/* Overflow 3-dot menu — beside the ribbon, spanning its height */}
+    {hasOverflow && overflowContent && (
+      <div className="toolbar-group toolbar-overflow-wrap" ref={overflowRef}>
+        <button
+          className={`toolbar-btn toolbar-overflow-btn${overflowOpen ? ' active' : ''}`}
+          title="More formatting options"
+          onClick={() => setOverflowOpen(!overflowOpen)}
+        >
+          <FaEllipsisV />
+        </button>
+        {overflowOpen && (
+          <div className="toolbar-overflow-menu">
+            {overflowContent}
+          </div>
+        )}
+      </div>
+    )}
+
+    <button
+      className="chrome-bigbtn chrome-customize-btn"
+      title="Customize ScriptCraft"
+      onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))}
+    >
+      Customize
+    </button>
     </div>
-    </>
   );
 };
 

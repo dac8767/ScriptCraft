@@ -62,6 +62,7 @@ import FormatPanel from './FormatPanel';
 import StatusBar from './StatusBar';
 import SearchReplace, { createSearchPlugin } from './SearchReplace';
 import GoToPage from './GoToPage';
+import EditorRulers from './EditorRulers';
 import { chromePx, chromeMin, chromeMax } from './chromeSizes';
 import ElementPicker from './ElementPicker';
 import CharacterAutocomplete from './CharacterAutocomplete';
@@ -2248,6 +2249,7 @@ const ScreenplayEditor: React.FC = () => {
 
   // v1.75: Outline Bar visibility (View > Outline Bar).
   const outlineBarOpen = useEditorStore((st) => st.outlineBarOpen);
+  const rulersVisible = useEditorStore((st) => st.rulersVisible);
   const notebookOpen = useNotebookStore((st) => st.notebookOpen);
   // v2.35: the Scrapbook's declutter toggle also drops the outline bar —
   // render-time only, outlineBarOpen itself is never rewritten.
@@ -4074,6 +4076,8 @@ const ScreenplayEditor: React.FC = () => {
             <BeatBoard />
           ) : (
             <div className="editor-main" ref={editorMainRef}>
+              {/* v2.95, Derek: Word-style rulers, toggled in View > Show Rulers */}
+              {rulersVisible && <EditorRulers container={editorMainRef} />}
               <div
                 className="page-sizer"
                 style={{

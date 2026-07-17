@@ -143,6 +143,7 @@ import {
   FaTags,
   FaFlag, FaEyeSlash,
   FaBug,
+  FaRulerHorizontal,
 } from 'react-icons/fa';
 
 interface MenuBarProps {
@@ -198,6 +199,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     menuBarOrder, menuBarHidden,
     previewMode,
     outlineBarOpen, setOutlineBarOpen,
+    rulersVisible,
     highlightColor, setHighlightColor,
     notesVisible, setNotesVisible,
     scriptTodosVisible, setScriptTodosVisible,
@@ -1391,6 +1393,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           icon: <FaStream />,
           label: outlineBarOpen ? '\u2713 Outline Bar' : 'Outline Bar',
           action: () => setOutlineBarOpen(!outlineBarOpen),
+        },
+        // v2.95, Derek: Word/Docs-style rulers on the editor's top and left.
+        {
+          icon: <FaRulerHorizontal />,
+          label: rulersVisible ? '\u2713 Show Rulers' : 'Show Rulers',
+          action: () => useEditorStore.getState().setRulersVisible(!rulersVisible),
         },
         // v2.29, Derek: the side panels toggle from here too, like the bar.
         {

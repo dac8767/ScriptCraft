@@ -32,13 +32,8 @@ export interface ToolbarBuiltin {
    *  hidden or removed. normalizeToolbarZones re-inserts it if a persisted
    *  layout is missing it, so it can't be lost. */
   permanent?: boolean;
-  /** Which zone a re-inserted permanent item lands in (default 'left').
-   *  v2.02: Customize belongs to the Big Button section (the right zone). */
+  /** Which zone a re-inserted permanent item lands in (default 'left'). */
   permanentZone?: 'left' | 'right';
-  /** v2.02: this item may live in the Big Button section. Everything else is
-   *  a formatting control that has no big-button shape — Customize's Toolbar
-   *  tab refuses to drop it there. Tools (t:) and commands (c:) always may. */
-  bigOk?: boolean;
 }
 
 export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
@@ -81,10 +76,9 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   // v2.94: the Insert Table grid — a menu item the native menu bar can't
   // host, so it lives on the toolbar's second row (Scrapbook only).
   { key: 'insertTable', label: 'Insert Table (Scrapbook)' },
-  // v2.02: Customize is a toolbar ITEM again — the anchor of the Big Button
-  // section (the old right zone, reborn). Permanent: reorderable within the
-  // section, never hidden or lost.
-  { key: 'customize', label: 'Customize', permanent: true, permanentZone: 'right', bigOk: true },
+  // v2.95, Derek: Customize left the item registry — it's fixed chrome again,
+  // rendered by the Toolbar at the right edge spanning both rows. Removing
+  // the entry makes normalizeToolbarZones drop stray b:customize tokens.
 ];
 
 export const BUILTIN_BY_KEY: Record<string, ToolbarBuiltin> = Object.fromEntries(
@@ -100,16 +94,33 @@ export const BUILTIN_BY_KEY: Record<string, ToolbarBuiltin> = Object.fromEntries
 // v2.14: the group separators are REAL divider tokens now — they show up in
 // Customize > Toolbar like any user divider, movable and removable. (The old
 // sepAfter flags rendered ghosts Customize couldn't see.)
+// v2.95: ONE ribbon sequence, column-major into two rows — consecutive small
+// items stack in pairs (undo over redo, Bold over Italic…); `2!` items span
+// both rows. Group dividers are full-height, Word style.
 export const DEFAULT_TOOLBAR_LEFT: string[] = [
-  'b:undo', 'b:redo', 'd:def-history',
-  'b:element', 'b:insertSection', 'b:insertNote', 'b:insertChecklist',
-  'b:fontFamily', 'b:fontSize', 'd:def-font',
-  'b:bold', 'b:italic', 'b:underline', 'b:strike',
-  'b:subscript', 'b:superscript', 'd:def-style',
-  'b:textColor', 'b:highlightColor', 'd:def-color',
-  'b:alignLeft', 'b:alignCenter', 'b:alignRight', 'b:alignJustify', 'd:def-align',
-  'b:find', 'b:goto', 'd:def-nav',
-  'b:zoom', 'b:view', 'd:def-surfaces',
+  'b:undo', 'b:redo',
+  '2!d:def-history',
+  '2!b:element',
+  'b:insertSection', 'b:insertNote',
+  'b:insertChecklist',
+  '2!d:def-insert',
+  'b:fontFamily', 'b:fontSize',
+  'b:bold', 'b:italic',
+  'b:underline', 'b:strike',
+  'b:subscript', 'b:superscript',
+  'b:textColor', 'b:highlightColor',
+  '2!d:def-style',
+  'b:alignLeft', 'b:alignCenter',
+  'b:alignRight', 'b:alignJustify',
+  '2!d:def-align',
+  'b:find', 'b:goto',
+  '2!d:def-nav',
+  '2!b:zoom',
+  '2!b:view',
+  '2!d:def-surfaces',
+  'b:togglePanelLeft', 'b:togglePanelRight',
+  'b:toggleOutlineBar', 'b:lockResize',
+  'b:resetSizes', 'b:insertTable',
 ];
 
 /** v2.34 one-time: existing saved layouts get the three surface toggles
@@ -136,16 +147,41 @@ export function migrateResetSizes(left: string[]): string[] {
     : [...left, 'b:resetSizes'];
 }
 
-/* ── v2.94: the two-row toolbar ─────────────────────────────────────────
-   Row 1 (toolbarLeft) holds the standard formatting controls; Row 2
-   (toolbarRight — the old Big Button zone, repurposed) holds tool/window
-   buttons and app functions. A row-2 token may be flagged BIG by wrapping
-   it `big!<token>` — the flag rides in the token so it persists with the
-   layout, no third Customize column needed. */
+/* ── v2.95: the RIBBON ──────────────────────────────────────────────────
+   Derek: "update the toolbar so it emulates the Microsoft Word ribbon."
+   The toolbar is ONE flat sequence of tokens flowing into a two-row grid,
+   column by column — two consecutive small items stack into a column,
+   exactly like Word's dense button areas. Any token may carry the `2!`
+   flag to SPAN both rows: buttons render tall (icon over label), wide
+   controls center vertically, dividers become full-height group
+   separators. A plain `d:` divider marks only its own row.
+
+   Customize is not a token — it's fixed chrome at the right edge,
+   spanning both rows (the old v0.91 shape, reborn).
+
+   The v2.94 `big!` prefix lived one day; stripBig survives only so
+   layouts saved that day normalize clean. */
 export const BIG_PREFIX = 'big!';
-export const isBigToken = (tok: string) => tok.startsWith(BIG_PREFIX);
-export const stripBig = (tok: string) => (isBigToken(tok) ? tok.slice(BIG_PREFIX.length) : tok);
-export const makeBig = (tok: string) => (isBigToken(tok) ? tok : BIG_PREFIX + tok);
+export const stripBig = (tok: string) => (tok.startsWith(BIG_PREFIX) ? tok.slice(BIG_PREFIX.length) : tok);
+
+export const TALL_PREFIX = '2!';
+export const isTall = (tok: string) => tok.startsWith(TALL_PREFIX);
+export const stripTall = (tok: string) => (isTall(tok) ? tok.slice(TALL_PREFIX.length) : tok);
+export const makeTall = (tok: string) => (isTall(tok) ? tok : TALL_PREFIX + tok);
+
+/** v2.95 one-time: fold the two-row zones into the single ribbon sequence.
+ *  Row 1 keeps its order, a full-height divider separates it from the old
+ *  Row 2 items, and structural dividers become full-height (they used to
+ *  mark a whole-bar break). big! flags and customize tokens are shed. */
+export function migrateRibbon(left: string[], right: string[]): string[] {
+  const clean = (arr: string[]) => arr
+    .map(stripBig)
+    .filter((t) => t !== 'b:customize')
+    .map((t) => (t.startsWith('d:') ? makeTall(t) : t));
+  const l = clean(left);
+  const r = clean(right);
+  return r.length ? [...l, '2!d:ribbon-split', ...r] : l;
+}
 
 /** Row-1 keys that belong to Row 2 under the v2.94 split — tool/window
  *  toggles and app functions, not formatting. */
@@ -164,22 +200,13 @@ export function migrateTwoRows(left: string[], right: string[]): { left: string[
   };
   const newLeft = left.filter(stays);
   const moved = left.filter((t) => !stays(t));
-  const bigged = right.map((t) => (isBigToken(t) ? t : makeBig(t)));
-  return { left: newLeft, right: [...moved, ...bigged] };
+  return { left: newLeft, right: [...moved, ...right] };
 }
 
-export const DEFAULT_TOOLBAR_RIGHT: string[] = [
-  'b:togglePanelLeft', 'b:togglePanelRight', 'b:toggleOutlineBar',
-  'b:lockResize', 'b:resetSizes', 'b:insertTable',
-  'big!b:customize',
-];
-
-/** May this token live in the Big Button section? */
-export function bigZoneAllowed(tok: string): boolean {
-  if (tok.startsWith('t:') || tok.startsWith('c:')) return true;
-  if (tok.startsWith('b:')) return !!BUILTIN_BY_KEY[tok.slice(2)]?.bigOk;
-  return false;   // dividers/spacers stay in Main
-}
+// v2.95: the right zone is RETIRED — the ribbon is one sequence. The empty
+// export keeps the (left, right) plumbing type-stable; normalizeToolbarZones
+// folds anything still stored on the right into the sequence.
+export const DEFAULT_TOOLBAR_RIGHT: string[] = [];
 
 /** v2.14 one-time: sepAfter separators became real d: tokens. A saved
  *  layout gets a divider inserted after each item that used to carry one
@@ -203,8 +230,11 @@ export function migrateSepDividers(left: string[]): string[] {
 export function migrateToolbarBigZone(
   left: string[], right: string[],
 ): { left: string[]; right: string[] } {
-  const stay = right.filter(bigZoneAllowed);
-  const moved = right.filter((t) => !bigZoneAllowed(t));
+  // (v2.95: bigZoneAllowed is gone — historically tools and commands could
+  // stay in the Big Button zone, everything else moved to Main.)
+  const couldStay = (t: string) => t.startsWith('t:') || t.startsWith('c:');
+  const stay = right.filter(couldStay);
+  const moved = right.filter((t) => !couldStay(t));
   return { left: [...left, ...moved], right: stay };
 }
 
@@ -240,10 +270,12 @@ export function normalizeToolbarZones(
   const expand = (tokens: string[] | undefined): string[] => {
     const out: string[] = [];
     for (const raw of tokens ?? []) {
-      // v2.94: the big flag rides the token — strip for validation/dedupe,
-      // re-apply on the way out so it survives normalization.
-      const big = isBigToken(raw);
-      const tok = stripBig(raw);
+      // v2.95: shed any big! flag from the short-lived v2.94 scheme; the 2!
+      // ribbon span flag is stripped for validation and re-applied on the
+      // way out. Stray customize tokens vanish (it's fixed chrome now).
+      const tall = isTall(stripBig(raw));
+      const tok = stripTall(stripBig(raw));
+      const keep = (t: string) => out.push(tall ? makeTall(t) : t);
       if (tok.startsWith('g:')) {
         for (const key of LEGACY_GROUP_ITEMS[tok.slice(2)] ?? []) {
           if (hiddenKeys.has(key) || seen.has(key)) continue;
@@ -256,25 +288,15 @@ export function normalizeToolbarZones(
         const key = (tok === 'b:zoomIn' || tok === 'b:zoomOut') ? 'zoom' : tok.slice(2);
         if (!BUILTIN_BY_KEY[key] || seen.has(key)) continue;
         seen.add(key);
-        out.push(big ? makeBig(`b:${key}`) : `b:${key}`);
+        keep(`b:${key}`);
       } else {
-        out.push(big ? makeBig(tok) : tok); // t: / c: / d:
+        keep(tok); // t: / c: / d: / s:
       }
     }
     return out;
   };
-  const l = expand(left);
-  const r = expand(right);
-  // Permanent items can be reordered or moved between zones, but never lost.
-  // A layout saved before this item existed (or one that somehow dropped it)
-  // gets it appended to its home zone rather than silently missing the button.
-  for (const b of TOOLBAR_BUILTINS) {
-    if (!b.permanent) continue;
-    const tok = `b:${b.key}`;
-    const has = (arr: string[]) => arr.some((t) => stripBig(t) === tok);
-    if (!has(l) && !has(r)) {
-      (b.permanentZone === 'right' ? r : l).push(tok);
-    }
-  }
-  return { left: l, right: r };
+  // v2.95: one sequence — anything still stored in the retired right zone
+  // folds onto the end, so a pre-ribbon layout can't silently lose items.
+  const l = [...expand(left), ...expand(right)];
+  return { left: l, right: [] };
 }

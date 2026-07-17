@@ -65,9 +65,20 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.94';
+export const APP_VERSION = '2.95';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.95',
+    date: '2026-07-17',
+    items: [
+      { title: 'The toolbar becomes a Word-style ribbon', detail: 'One sequence of items flows into two rows, column by column — two small items stack (Undo over Redo, Bold over Italic…), and any item or divider can span both rows: tall buttons wear Word\'s icon-over-label format, wide controls center vertically, and full-height dividers separate groups. The spacing grips are gone from the toolbar (the menu bar keeps its own), and Customize sits fixed at the right edge spanning both rows — the one big button. The per-item Big option from v2.94 is retired.', tags: ['New Feature', 'UI'] },
+      { title: 'Customize > Toolbar is a ribbon editor', detail: 'A live preview shows the ribbon exactly as it will flow — pairs, spans, dividers, the fixed Customize button — while you drag the sequence below it. Each row has a 1/2 toggle for how many rows it spans; + Divider adds a full-height group line (flip it to one row with the same toggle).', tags: ['UI'] },
+      { title: 'Rulers', detail: 'Word/Docs-style rulers along the editor\'s top and left edges — margin zones shaded, the vertical scale restarting at every page, marks in your Settings units (in/cm), tracking zoom and scrolling. Toggle them in View > Show Rulers.', tags: ['New Feature', 'Editor'] },
+      { title: 'The side-panel grab edge no longer covers the editor scrollbar', detail: 'The panel\'s adjustment edge used to overhang into the editor, sitting on top of its scrollbar. It stays inside the panel now, with a small gap so each has its own room.', tags: ['Fix', 'UI'] },
+      { title: 'Outline window header no longer overlaps itself', detail: 'In narrower windows the dead-centered Arrangement control rode on top of the "Show beat color" checkbox. Below the width where they\'d collide, the Arrangement block rejoins the row instead of overlapping it.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '2.94',
     date: '2026-07-16',

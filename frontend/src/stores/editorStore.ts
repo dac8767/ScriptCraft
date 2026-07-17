@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, migrateResetSizes, migrateTwoRows, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
+import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, migrateResetSizes, migrateTwoRows, migrateRibbon, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
 import { uuid } from '../utils/uuid';
 import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { findLanguage, urlsFor } from '../editor/languageCatalog';
@@ -20,6 +20,7 @@ interface ViewState {
   typewriterDimOpacity?: number;
   typewriterRestoreCursor?: boolean;
   outlineBarOpen?: boolean;
+  rulersVisible?: boolean;
   outlineBarZoom?: number;
   outlineBarRowScale?: number;
   scrapbookTreeScale?: number;
@@ -167,10 +168,22 @@ try {
     localStorage.setItem(TWOROWS_FLAG, '1');
     _tbZones = migrateTwoRows(_tbZones.left, _tbZones.right);
     // The leftover from the menu migration rides along (Scrapbook-gated).
-    if (!_tbZones.right.some((t) => t.includes('b:insertTable'))) {
+    if (![..._tbZones.left, ..._tbZones.right].some((t) => t.includes('b:insertTable'))) {
       _tbZones = { left: _tbZones.left, right: [..._tbZones.right, 'b:insertTable'] };
     }
     saveViewState({ toolbarLeft: _tbZones.left, toolbarRight: _tbZones.right });
+  }
+} catch { /* storage unavailable — keep what we have */ }
+// v2.95 one-time: the RIBBON. The two zones fold into one sequence (a full-
+// height divider between them), structural dividers become full-height, and
+// the retired big!/customize tokens are shed. The right zone stays empty
+// from here on.
+try {
+  const RIBBON_FLAG = 'opendraft:toolbarRibbon295';
+  if (_vs.toolbarZonesSet && !localStorage.getItem(RIBBON_FLAG)) {
+    localStorage.setItem(RIBBON_FLAG, '1');
+    _tbZones = { left: migrateRibbon(_tbZones.left, _tbZones.right), right: [] };
+    saveViewState({ toolbarLeft: _tbZones.left, toolbarRight: [] });
   }
 } catch { /* storage unavailable — keep what we have */ }
 
@@ -1067,6 +1080,10 @@ interface EditorState {
   /** v1.75: the Outline Bar (Final Draft's Outline Editor) under the toolbar. */
   outlineBarOpen: boolean;
   setOutlineBarOpen: (v: boolean) => void;
+  /** v2.95: Word/Docs-style rulers on the editor's top and left edges,
+   *  toggled from the View menu. Persisted view state. */
+  rulersVisible: boolean;
+  setRulersVisible: (v: boolean) => void;
   /** v2.11: Outline Bar zoom — pixels per page on the timeline. 0 = fit
    *  the whole ruler to the visible width. Persisted view state. */
   outlineBarZoom: number;
@@ -1733,6 +1750,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setOutlineBarOpen: (v) => {
     saveViewState({ outlineBarOpen: v });
     set({ outlineBarOpen: v });
+  },
+  // v2.95, Derek: Word/Docs-style rulers along the editor's top and left.
+  rulersVisible: (_vs.rulersVisible as boolean) ?? true,
+  setRulersVisible: (v) => {
+    saveViewState({ rulersVisible: v });
+    set({ rulersVisible: v });
   },
   outlineBarZoom: (_vs.outlineBarZoom as number) ?? 0,
   setOutlineBarZoom: (px) => {
