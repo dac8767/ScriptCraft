@@ -1145,7 +1145,7 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   height: auto;
   padding: 3px 8px;
 }
-.rib-single .toolbar-btn svg { font-size: 19px; }
+.rib-single .toolbar-btn svg { font-size: 29px; }  /* v3.16, Derek: 50% bigger — the single-row standard */
 /* Tall pinned tools/commands: the same big-button format, self-contained. */
 .toolbar-btn.rib-tall-btn {
   height: 80%;
@@ -1157,7 +1157,7 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   justify-content: center;
   gap: 3px;
 }
-.rib-tall-icon { display: inline-flex; font-size: 19px; }
+.rib-tall-icon { display: inline-flex; font-size: 29px; }  /* v3.16: matches .rib-single */
 .rib-tall-label { font-size: 10px; line-height: 1.1; white-space: nowrap; }
 /* v2.97: the OPTIONAL line between a section's two rows (click the split
    in the visual editor to toggle it). */
@@ -16181,16 +16181,25 @@ input.fs-switch:checked::after { left: 15px; }
      (plus its 28px gap) left the fields ending short of the buttons below. */
   grid-template-columns: max-content 1fr;
 }
-/* v1.88: the Format dropdown wears the same box as the text fields. */
+/* v1.88: the Format dropdown wears the same box as the text fields.
+   v3.16, Derek: it rendered SHORTER than them — WebKit's native select
+   appearance ignores vertical padding. appearance:none makes the padding
+   real (same height as the inputs); the chevron is drawn back on since
+   the native one goes with it. */
 .fs-newscript-grid > select.fs-newscript-format {
   width: 100%;
-  padding: 8px 10px;
+  padding: 8px 28px 8px 10px;
   background: var(--fd-input-bg, var(--fd-dropdown-bg));
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 5px;
   font-size: 13px;
   box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='12' viewBox='0 0 10 12'><path d='M1.5 4.5 L5 1 L8.5 4.5 M1.5 7.5 L5 11 L8.5 7.5' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
 }
 .fs-newscript-actions {
   display: flex;

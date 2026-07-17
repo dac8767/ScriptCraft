@@ -219,8 +219,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const bookmarksByScript = useBookmarkStore((s) => s.byScript);
   const bookmarksLastEdit = useBookmarkStore((s) => s.lastEdit);
   // v3.15: read early — the Help menu's contents depend on it (About moves
-  // to the native app menu when that menu exists).
+  // to the native app menu when that menu exists). v3.16: so does the
+  // Bookmarks submenu's removal item.
   const menuSystem = useSettingsStore((st) => st.menuSystem);
+  const nativeMenus = menuSystem === 'native' && isTauriEnv();
   const menuRef = useRef<HTMLDivElement>(null);
   // Platform-aware modifier key symbol for shortcut labels
   const mod = /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl+';
@@ -1054,6 +1056,51 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     const max = editor.state.doc.content.size;
     editor.chain().focus().setTextSelection(Math.max(1, Math.min(pos, max - 1))).scrollIntoView().run();
   };
+  /* v3.16, Derek: Bookmarks moved from its own top-level menu into
+   * Project > Bookmarks. "Last Edit Location" stays the permanent first
+   * jump; entries are per-script and ride every transaction's mapping (see
+   * ScreenplayEditor's 'transaction' listener). One items list, so the
+   * native bar mirrors it. Per-bookmark removal needs a THIRD menu level —
+   * fine natively (submenus nest), but the in-window renderer only draws
+   * one submenu deep, so that mode gets Clear All Bookmarks instead of a
+   * dead item. */
+  const jumpToPos = (pos: number) => {
+    if (!editor) return;
+    const max = editor.state.doc.content.size;
+    editor.chain().focus().setTextSelection(Math.max(1, Math.min(pos, max - 1))).scrollIntoView().run();
+  };
+  const scriptBookmarks = bookmarksByScript[bookmarkKey] ?? [];
+  const lastEditPos = bookmarksLastEdit[bookmarkKey];
+  const bookmarksSubmenu: MenuItem[] = [
+    { icon: <FaBookmark />, label: 'Add Bookmark', disabled: !editor, action: addBookmarkHere },
+    nativeMenus ? {
+      icon: <FaRegBookmark />,
+      label: 'Remove Bookmark',
+      disabled: scriptBookmarks.length === 0,
+      ...(scriptBookmarks.length > 0 ? {
+        children: scriptBookmarks.map((b) => ({
+          icon: <FaRegBookmark />,
+          label: b.label,
+          action: () => useBookmarkStore.getState().remove(bookmarkKey, b.id),
+        })),
+      } : {}),
+    } : {
+      icon: <FaRegBookmark />,
+      label: 'Clear All Bookmarks',
+      disabled: scriptBookmarks.length === 0,
+      action: () => scriptBookmarks.forEach((b) => useBookmarkStore.getState().remove(bookmarkKey, b.id)),
+    },
+    { separator: true, label: '' },
+    { icon: <FaPencilAlt />, label: 'Last Edit Location', disabled: lastEditPos == null, action: jumpToLastEdit },
+    ...(scriptBookmarks.length > 0 ? [
+      { separator: true, label: '' },
+      ...scriptBookmarks.map((b) => ({
+        icon: <FaBookmark />,
+        label: b.label,
+        action: () => jumpToPos(b.pos),
+      })),
+    ] : []),
+  ];
 
   const shortcutActions: Record<string, () => void> = {
     addBookmark: addBookmarkHere,
@@ -1474,11 +1521,15 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaEye />, label: previewMode ? '\u2713 Preview' : 'Preview', action: () => useEditorStore.getState().setPreviewMode(true) },
           ],
         },
-        // v1.75: the Outline Bar (Final Draft-style Outline Editor) under the toolbar.
+        // v3.16, Derek: the surface toggles group under one Toolbars submenu
+        // (they were flat View items since v1.75/v2.29), as check items.
         {
-          icon: <FaStream />,
-          label: outlineBarOpen ? '\u2713 Outline Bar' : 'Outline Bar',
-          action: () => setOutlineBarOpen(!outlineBarOpen),
+          icon: <FaColumns />, label: 'Toolbars',
+          children: [
+            { icon: <FaColumns />, label: 'Left Panel', checked: navigatorOpen, action: () => toggleNavigator() },
+            { icon: <FaColumns />, label: 'Right Panel', checked: shelfOpen, action: () => toggleShelf() },
+            { icon: <FaStream />, label: 'Outline Bar', checked: outlineBarOpen, action: () => setOutlineBarOpen(!outlineBarOpen) },
+          ],
         },
         // v2.95, Derek: Word/Docs-style rulers on the editor's top and left.
         {
@@ -1486,17 +1537,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           label: 'Show Rulers',
           checked: rulersVisible,
           action: () => useEditorStore.getState().setRulersVisible(!rulersVisible),
-        },
-        // v2.29, Derek: the side panels toggle from here too, like the bar.
-        {
-          icon: <FaColumns />,
-          label: navigatorOpen ? '\u2713 Left Panel' : 'Left Panel',
-          action: () => toggleNavigator(),
-        },
-        {
-          icon: <FaColumns />,
-          label: shelfOpen ? '\u2713 Right Panel' : 'Right Panel',
-          action: () => toggleShelf(),
         },
         { separator: true, label: '' },
         // v2.55, Derek: freeze every chrome resize; and one way back to the
@@ -1754,6 +1794,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaFileSignature />, label: 'Compare with Auto Save\u2026', action: () => setCompareVersionOpen(true) },
           ],
         },
+        // v3.16, Derek: Bookmarks moved here from its own top-level menu.
+        { separator: true, label: '' },
+        { icon: <FaBookmark />, label: 'Bookmarks', children: bookmarksSubmenu },
       ],
     },
     {
@@ -1809,59 +1852,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       ],
     },
   ];
-
-  /* v3.08, Derek: the Bookmarks menu. "Last Edit Location" is the permanent
-   * first jump — where the script was last CHANGED (not necessarily the end).
-   * Bookmarks below it are per-script; positions ride every transaction's
-   * mapping (see ScreenplayEditor's 'transaction' listener), so they stay
-   * pointed at the same text as the script grows and shrinks. Built here in
-   * the ONE menu source, so the native macOS bar gets it for free. */
-  const jumpToPos = (pos: number) => {
-    if (!editor) return;
-    const max = editor.state.doc.content.size;
-    editor.chain().focus().setTextSelection(Math.max(1, Math.min(pos, max - 1))).scrollIntoView().run();
-  };
-  const scriptBookmarks = bookmarksByScript[bookmarkKey] ?? [];
-  const lastEditPos = bookmarksLastEdit[bookmarkKey];
-  const bookmarksMenu: MenuSection = {
-    label: 'Bookmarks',
-    items: [
-      {
-        icon: <FaBookmark />,
-        label: 'Add Bookmark',
-        disabled: !editor,
-        action: addBookmarkHere,
-      },
-      {
-        icon: <FaRegBookmark />,
-        label: 'Remove Bookmark',
-        disabled: scriptBookmarks.length === 0,
-        ...(scriptBookmarks.length > 0 ? {
-          children: scriptBookmarks.map((b) => ({
-            icon: <FaRegBookmark />,
-            label: b.label,
-            action: () => useBookmarkStore.getState().remove(bookmarkKey, b.id),
-          })),
-        } : {}),
-      },
-      { separator: true, label: '' },
-      {
-        icon: <FaPencilAlt />,
-        label: 'Last Edit Location',
-        disabled: lastEditPos == null,
-        action: jumpToLastEdit,
-      },
-      ...(scriptBookmarks.length > 0 ? [
-        { separator: true, label: '' },
-        ...scriptBookmarks.map((b) => ({
-          icon: <FaBookmark />,
-          label: b.label,
-          action: () => jumpToPos(b.pos),
-        })),
-      ] : []),
-    ],
-  };
-  menus.push(bookmarksMenu);
 
   // Help menu rendered separately as a 3-dot overflow on the right
   const helpMenu: MenuSection = {
@@ -2286,7 +2276,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // dropdown portal) stays unrendered while native mode is on — but the
   // component itself stays mounted: it owns the dialogs, the shortcut
   // handler, and the menu data the native bar mirrors.
-  const nativeMenus = menuSystem === 'native' && isTauriEnv();
   useEffect(() => {
     if (nativeMenus) {
       void syncNativeMenu([...orderedMenus, ...scrapbookMenus] as never);

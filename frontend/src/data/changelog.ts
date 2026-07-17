@@ -65,9 +65,19 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.15';
+export const APP_VERSION = '3.16';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.16',
+    date: '2026-07-17',
+    items: [
+      { title: 'Bookmarks live under Project', detail: 'The Bookmarks menu moved from the top level into Project > Bookmarks — same contents: add, remove, Last Edit Location, and the jump list.', tags: ['UI'] },
+      { title: 'View > Toolbars', detail: 'The Left Panel, Right Panel and Outline Bar toggles group under one Toolbars submenu, with checkmarks in the check column.', tags: ['UI'] },
+      { title: 'New Script: Format field height', detail: 'The Format dropdown now stands as tall as the other fields — WebKit\'s native select was ignoring the padding the text boxes use.', tags: ['Fix', 'UI'] },
+      { title: 'Bigger single-row ribbon buttons', detail: 'Big-button icons are 50% larger (19px → 29px) — Customize and every other item in a one-row section. That icon-plus-label height is the single-row standard.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.15',
     date: '2026-07-17',
