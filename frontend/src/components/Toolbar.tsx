@@ -136,6 +136,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // itself now. { at: section-boundary index, rightSide, x, y for the popup }.
   const [addMenu, setAddMenu] = useState<{ at: number; rightSide: boolean; x: number; y: number } | null>(null);
   const [addSearch, setAddSearch] = useState('');
+  // v3.40, Derek: the +Add menu has two views — the structural utilities up
+  // front, and every addable item behind an "Add Item ▸" submenu.
+  const [addView, setAddView] = useState<'main' | 'items'>('main');
   // Per-attribute locking state — updates reactively when cursor moves between elements
   const [locked, setLocked] = useState<LockedFormatting>({
     bold: false, italic: false, underline: false, strikethrough: false,
@@ -1614,6 +1617,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       onClick={(e) => {
         const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
         setAddSearch('');
+        setAddView('main');
         setAddMenu({ at, rightSide, x: r.left, y: r.bottom + 4 });
       }}
     >
@@ -1790,16 +1794,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         the Customize palette reads (ribbonPaletteData). A search box filters
         the whole thing. */}
     {addMenu && (() => {
-      const close = () => { setAddMenu(null); setAddSearch(''); };
+      const close = () => { setAddMenu(null); setAddSearch(''); setAddView('main'); };
       const act = (fn: () => void) => { fn(); close(); };
-      const q = addSearch.trim().toLowerCase();
       const structural = [
         { label: '1 Row Section', run: () => ribAddSectionAtBoundary('single', addMenu.at, addMenu.rightSide) },
         { label: '2 Row Section', run: () => ribAddSectionAtBoundary('double', addMenu.at, addMenu.rightSide) },
         { label: 'Divider', run: () => ribAddInlineAtBoundary(`d:${Date.now()}`, addMenu.at, addMenu.rightSide) },
         { label: 'Spacer', run: () => ribAddInlineAtBoundary(`s:${Date.now()}`, addMenu.at, addMenu.rightSide) },
         ...(splitAt === null ? [{ label: 'Alignment Split', run: () => ribSetAlignSplit(addMenu.at) }] : []),
-      ].filter((o) => !q || o.label.toLowerCase().includes(q));
+      ];
+      const q = addSearch.trim().toLowerCase();
       const placedSet = new Set(leftTokens.map(stripTall));
       const cats = buildRibbonPalette((v) => placedSet.has(v))
         .map((c) => ({ ...c, options: c.options.filter((o) => !q || o.label.toLowerCase().includes(q)) }))
@@ -1811,39 +1815,46 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             style={{ top: addMenu.y, left: addMenu.x }}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <input
-              className="rib-add-search"
-              autoFocus
-              placeholder="Search items…"
-              value={addSearch}
-              onChange={(e) => setAddSearch(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Escape') close(); }}
-            />
-            <div className="rib-add-scroll">
-              {structural.length > 0 && (
-                <div className="rib-add-group">
-                  <div className="rib-add-grouphdr">Structure</div>
-                  {structural.map((o) => (
-                    <button key={o.label} className="rib-add-opt" onClick={() => act(o.run)}>{o.label}</button>
+            {addView === 'main' ? (
+              // Utilities up front; every other item lives behind the submenu.
+              <div className="rib-add-scroll">
+                {structural.map((o) => (
+                  <button key={o.label} className="rib-add-opt" onClick={() => act(o.run)}>{o.label}</button>
+                ))}
+                <div className="rib-add-sep" />
+                <button
+                  className="rib-add-opt rib-add-more"
+                  onClick={() => { setAddSearch(''); setAddView('items'); }}
+                >Add Item<span className="rib-add-caret">›</span></button>
+              </div>
+            ) : (
+              <>
+                <button className="rib-add-back" onClick={() => setAddView('main')}>‹ Back</button>
+                <input
+                  className="rib-add-search"
+                  autoFocus
+                  placeholder="Search items…"
+                  value={addSearch}
+                  onChange={(e) => setAddSearch(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Escape') setAddView('main'); }}
+                />
+                <div className="rib-add-scroll">
+                  {cats.map((c) => (
+                    <div className="rib-add-group" key={c.id}>
+                      <div className="rib-add-grouphdr">{c.label}</div>
+                      {c.options.map((o) => (
+                        <button
+                          key={o.value}
+                          className="rib-add-opt"
+                          onClick={() => act(() => ribAddInlineAtBoundary(o.value, addMenu.at, addMenu.rightSide))}
+                        >{o.label}</button>
+                      ))}
+                    </div>
                   ))}
+                  {cats.length === 0 && <div className="rib-add-empty">No matches</div>}
                 </div>
-              )}
-              {cats.map((c) => (
-                <div className="rib-add-group" key={c.id}>
-                  <div className="rib-add-grouphdr">{c.label}</div>
-                  {c.options.map((o) => (
-                    <button
-                      key={o.value}
-                      className="rib-add-opt"
-                      onClick={() => act(() => ribAddInlineAtBoundary(o.value, addMenu.at, addMenu.rightSide))}
-                    >{o.label}</button>
-                  ))}
-                </div>
-              ))}
-              {structural.length === 0 && cats.length === 0 && (
-                <div className="rib-add-empty">No matches</div>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </div>,
         document.body,

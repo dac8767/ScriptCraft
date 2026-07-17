@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.39';
+export const APP_VERSION = '3.40';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.40',
+    date: '2026-07-17',
+    items: [
+      { title: '“+ Add” leads with the utilities', detail: 'The on-bar + Add menu now lists the structural pieces up front — 1 Row Section, 2 Row Section, Divider, Spacer, Alignment Split — with everything else tucked behind an “Add Item ›” submenu (searchable, by category). Less to wade through when all you want is a divider.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.39',
     date: '2026-07-17',
