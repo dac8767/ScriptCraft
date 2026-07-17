@@ -1173,33 +1173,9 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 /* The overflow menu rides beside the ribbon, centered on its height. */
 .toolbar-stack .toolbar-overflow-wrap { align-self: center; position: relative; }
 
-/* The one big button: Customize, fixed at the right edge spanning both
-   ribbon rows (v0.91's shape, reborn). */
-.chrome-bigbtn {
-  flex: 0 0 auto;
-  align-self: center;
-  margin: 0 6px;
-  padding: 0 15px;
-  height: calc(100% - 14px);
-  min-height: 31px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--fd-btn-bg);
-  color: var(--fd-btn-text);
-  border: 1px solid transparent;
-  border-radius: 6px;
-  font-size: 13.5px;
-  font-weight: 700;
-  letter-spacing: .02em;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.chrome-bigbtn:hover { background: var(--fd-btn-hover); }
-.chrome-customize-btn {
-  box-shadow: 0 1px 2px rgba(0,0,0,.25);
-}
-.chrome-customize-btn:hover { background: var(--fd-btn-hover); }
+/* v3.02: the align split — the gap that pushes later sections to the
+   toolbar's right edge. */
+.rib-align-gap { flex: 1; min-width: 8px; }
 
 /* Customize toolbar button (v0.84): text on a themed button surface, no icon.
    It carries .toolbar-btn-labeled — the SAME class as the Zoom control — and
@@ -16669,6 +16645,7 @@ input.fs-switch:checked::after { left: 15px; }
 .ribed-x { pointer-events: none; }
 .ribed-chip:hover .ribed-x,
 .ribed-secdiv:hover .ribed-x,
+.ribed-alignsplit:hover .ribed-x,
 .ribed-break:hover .ribed-x { opacity: 1; pointer-events: auto; }
 .ribed-secdiv {
   position: relative;
@@ -16679,6 +16656,37 @@ input.fs-switch:checked::after { left: 15px; }
   background: var(--fd-border);
 }
 .ribed-secdiv .ribed-x { top: -4px; right: -7px; }
+/* v3.02: the align-split marker between sections */
+.ribed-alignsplit {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 34px;
+  align-self: stretch;
+  margin: 2px 2px;
+  border: 1px dashed color-mix(in srgb, var(--fd-accent) 55%, transparent);
+  border-radius: 4px;
+  color: var(--fd-accent);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.ribed-alignsplit .ribed-x { top: -6px; right: -6px; }
+/* v3.02: the pointer-drag ghost riding the cursor */
+.ribed-ghost {
+  position: fixed;
+  z-index: 100000;
+  padding: 3px 9px;
+  border-radius: 4px;
+  background: var(--fd-btn-bg);
+  color: var(--fd-btn-text);
+  font-size: 11.5px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(0,0,0,.35);
+}
+
 .ribed-break {
   position: relative;
   display: flex;

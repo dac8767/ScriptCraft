@@ -76,9 +76,10 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   // v2.94: the Insert Table grid — a menu item the native menu bar can't
   // host, so it lives on the toolbar's second row (Scrapbook only).
   { key: 'insertTable', label: 'Insert Table (Scrapbook)' },
-  // v2.95, Derek: Customize left the item registry — it's fixed chrome again,
-  // rendered by the Toolbar at the right edge spanning both rows. Removing
-  // the entry makes normalizeToolbarZones drop stray b:customize tokens.
+  // v3.02, Derek: Customize is an ordinary ribbon ITEM again — placeable,
+  // removable, in the palette like everything else (View > Customize…
+  // always remains as the way back in).
+  { key: 'customize', label: 'Customize' },
 ];
 
 export const BUILTIN_BY_KEY: Record<string, ToolbarBuiltin> = Object.fromEntries(
@@ -111,6 +112,9 @@ export const DEFAULT_TOOLBAR_LEFT: string[] = [
   'b:element', 'r:def-3', 'b:insertSection', 'b:insertNote', 'b:insertChecklist',
   '2!d:def-c',
   'b:find', 'b:goto',
+  // v3.02: the align split — Customize hugs the right edge by default.
+  'a:def-split',
+  'b:customize',
 ];
 
 /** v2.34 one-time: existing saved layouts get the three surface toggles
@@ -167,24 +171,38 @@ export const isSectionDivider = (tok: string) => isTall(tok) && stripTall(tok).s
  *  v2.97: `rl:` is a break whose line SHOWS in the toolbar; plain `r:`
  *  splits invisibly. */
 export const isRowBreak = (tok: string) => tok.startsWith('r:') || tok.startsWith('rl:');
+/** v3.02, Derek: the align split — a section boundary that also pushes
+ *  everything after it to the toolbar's RIGHT edge. */
+export const isAlignSplit = (tok: string) => tok.startsWith('a:');
 
 /** A parsed ribbon section. `hasBreak` false ⇒ single row, items span both
  *  rows; true ⇒ `top` row above `bottom` row. `breakLine` ⇒ the split
  *  draws a visible line between the rows on the real toolbar. */
 export interface RibbonSection { top: string[]; bottom: string[]; hasBreak: boolean; breakLine: boolean }
 
+/** The whole ribbon: its sections, plus the index of the first section in
+ *  the RIGHT-aligned group (null ⇒ everything left-aligned). */
+export interface RibbonModel { sections: RibbonSection[]; splitAt: number | null }
+
 /** The ribbon's structure, straight from the token sequence. Extra row
  *  breaks in one section merge into the first (a section has at most two
- *  rows); serializeRibbon writes the canonical form back. */
-export function parseRibbon(tokens: string[]): RibbonSection[] {
+ *  rows); an extra align split acts as a plain divider. serializeRibbon
+ *  writes the canonical form back. */
+export function parseRibbon(tokens: string[]): RibbonModel {
   const sections: RibbonSection[] = [];
+  let splitAt: number | null = null;
   let cur: RibbonSection = { top: [], bottom: [], hasBreak: false, breakLine: false };
+  const push = () => {
+    sections.push(cur);
+    cur = { top: [], bottom: [], hasBreak: false, breakLine: false };
+  };
   for (const raw of tokens) {
-    if (isSectionDivider(raw)) {
-      sections.push(cur);
-      cur = { top: [], bottom: [], hasBreak: false, breakLine: false };
+    if (isAlignSplit(raw)) {
+      push();
+      if (splitAt === null) splitAt = sections.length;
       continue;
     }
+    if (isSectionDivider(raw)) { push(); continue; }
     if (isRowBreak(raw)) {
       cur.hasBreak = true;
       cur.breakLine = cur.breakLine || raw.startsWith('rl:');
@@ -192,16 +210,17 @@ export function parseRibbon(tokens: string[]): RibbonSection[] {
     }
     (cur.hasBreak ? cur.bottom : cur.top).push(raw);
   }
-  sections.push(cur);
-  return sections;
+  push();
+  return { sections, splitAt };
 }
 
-/** Sections → the flat token sequence. Divider/break ids are positional —
+/** Model → the flat token sequence. Divider/break ids are positional —
  *  they only need to be unique within the sequence. */
-export function serializeRibbon(sections: RibbonSection[]): string[] {
+export function serializeRibbon(model: RibbonModel): string[] {
+  const { sections, splitAt } = model;
   const out: string[] = [];
   sections.forEach((s, i) => {
-    if (i > 0) out.push(`2!d:sec-${i}`);
+    if (i > 0) out.push(i === splitAt ? `a:split-${i}` : `2!d:sec-${i}`);
     out.push(...s.top);
     if (s.hasBreak) out.push(`${s.breakLine ? 'rl' : 'r'}:row-${i}`, ...s.bottom);
   });

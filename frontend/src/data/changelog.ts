@@ -65,9 +65,19 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.01';
+export const APP_VERSION = '3.02';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.02',
+    date: '2026-07-17',
+    items: [
+      { title: 'Ribbon drag works everywhere', detail: 'The customize editor moved off the browser\'s native drag-and-drop (unreliable in the Mac app) to direct pointer tracking — chips in single-row sections, and everything else, now drag first time, with a small ghost riding the cursor.', tags: ['Fix', 'UI'] },
+      { title: 'Customize is a ribbon item', detail: 'The fixed Customize button is gone from the toolbar chrome. It\'s now a regular ribbon item — movable, removable, and re-addable from the palette. Saved layouts get it appended automatically so it doesn\'t vanish.', tags: ['UI'] },
+      { title: 'The last section can be closed', detail: 'Every section now carries its own closing divider with an ✕ — including the last one, which merges leftward.', tags: ['Fix', 'UI'] },
+      { title: 'Align Split utility', detail: 'A new utility splits the ribbon in two: sections before it hug the left edge, sections after it hug the right. The default layout uses it to keep Customize on the far right.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '3.01',
     date: '2026-07-17',

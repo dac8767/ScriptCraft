@@ -14,11 +14,12 @@ import {
 
 describe('parseRibbon / serializeRibbon (v2.96)', () => {
   it('splits on tall dividers; an r: break separates a section\'s rows', () => {
-    const secs = parseRibbon(['b:undo', 'b:redo', 'r:x', 'b:find', '2!d:a', 'b:element']);
-    expect(secs).toEqual([
+    const m = parseRibbon(['b:undo', 'b:redo', 'r:x', 'b:find', '2!d:a', 'b:element']);
+    expect(m.sections).toEqual([
       { top: ['b:undo', 'b:redo'], bottom: ['b:find'], hasBreak: true, breakLine: false },
       { top: ['b:element'], bottom: [], hasBreak: false, breakLine: false },
     ]);
+    expect(m.splitAt).toBeNull();
   });
 
   it('round-trips through serialize (canonical ids)', () => {
@@ -27,20 +28,28 @@ describe('parseRibbon / serializeRibbon (v2.96)', () => {
   });
 
   it('extra breaks in one section merge into the first', () => {
-    const secs = parseRibbon(['b:a', 'r:1', 'b:b', 'r:2', 'b:c']);
-    expect(secs).toEqual([{ top: ['b:a'], bottom: ['b:b', 'b:c'], hasBreak: true, breakLine: false }]);
+    const m = parseRibbon(['b:a', 'r:1', 'b:b', 'r:2', 'b:c']);
+    expect(m.sections).toEqual([{ top: ['b:a'], bottom: ['b:b', 'b:c'], hasBreak: true, breakLine: false }]);
   });
 
   it('v2.97: an rl: break means the split line SHOWS, and it round-trips', () => {
-    const secs = parseRibbon(['b:a', 'rl:1', 'b:b']);
-    expect(secs).toEqual([{ top: ['b:a'], bottom: ['b:b'], hasBreak: true, breakLine: true }]);
-    expect(serializeRibbon(secs)).toEqual(['b:a', 'rl:row-0', 'b:b']);
+    const m = parseRibbon(['b:a', 'rl:1', 'b:b']);
+    expect(m.sections).toEqual([{ top: ['b:a'], bottom: ['b:b'], hasBreak: true, breakLine: true }]);
+    expect(serializeRibbon(m)).toEqual(['b:a', 'rl:row-0', 'b:b']);
+  });
+
+  it('v3.02: an a: token is a section boundary AND the right-align point', () => {
+    const m = parseRibbon(['b:undo', 'a:x', 'b:customize']);
+    expect(m.sections.length).toBe(2);
+    expect(m.splitAt).toBe(1);
+    expect(serializeRibbon(m)).toEqual(['b:undo', 'a:split-1', 'b:customize']);
   });
 
   it('the default ribbon parses into sections without loss', () => {
-    const secs = parseRibbon(DEFAULT_TOOLBAR_LEFT);
-    expect(secs.length).toBeGreaterThan(3);
-    expect(serializeRibbon(secs).filter((t) => t.startsWith('b:')))
+    const m = parseRibbon(DEFAULT_TOOLBAR_LEFT);
+    expect(m.sections.length).toBeGreaterThan(3);
+    expect(m.splitAt).not.toBeNull();   // v3.02: Customize hugs the right edge
+    expect(serializeRibbon(m).filter((t) => t.startsWith('b:')))
       .toEqual(DEFAULT_TOOLBAR_LEFT.filter((t) => t.startsWith('b:')));
   });
 });
@@ -124,8 +133,8 @@ describe('normalizeToolbarZones under the ribbon (v2.95)', () => {
     expect(z.left).toEqual(['b:element', '2!d:group', 'r:split']);
   });
 
-  it('drops stray customize and big! tokens from the v2.94 scheme', () => {
+  it('sheds big! flags and dedupes; customize is a real item again (v3.02)', () => {
     const z = normalizeToolbarZones(['b:bold', 'big!b:customize', 'b:customize'], []);
-    expect(z.left).toEqual(['b:bold']);
+    expect(z.left).toEqual(['b:bold', 'b:customize']);
   });
 });

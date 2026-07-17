@@ -1,25 +1,30 @@
 /**
- * RibbonEditor (v2.96, Derek) — "make the ribbon a true visual customizer."
+ * RibbonEditor (v2.96–v3.02, Derek) — the ribbon's true visual customizer.
  *
  * An editable replica of the ribbon: sections between full-height dividers,
  * one or two rows each, items dragged and dropped exactly where they'll sit.
- * The New Row utility, dropped into a section, splits it into two rows at
- * the drop point (dropping it again moves the split); the × on the split
- * bar merges the rows back. Section dividers carry an × that merges the
- * neighbouring sections; + Section appends an empty one. Items dragged onto
- * the palette leave the ribbon.
+ * The New Row utility splits a section into two rows at the drop point; the
+ * Align Split utility (v3.02) marks where the toolbar switches from left-
+ * to right-aligned. Every section shows its closing divider on the RIGHT —
+ * including the last one — and its × folds the section into its neighbour.
+ * Items dragged onto the palette leave the ribbon; double-clicking a
+ * palette item adds it to the most recently touched section.
  *
- * Every mutation is expressed on the parsed section structure and written
- * back through serializeRibbon — the token sequence in the store stays the
+ * v3.02: dragging is POINTER-ONLY. HTML5 drag-and-drop in WKWebView kept
+ * refusing to start on arbitrary chips (v2.99's report, then again inside
+ * one-row sections) — the app's other drags all use pointer events, the
+ * mechanism that has never failed here (CLAUDE.md §4 names HTML5 drag as
+ * the platform's oldest footgun). One code path, a ghost chip under the
+ * cursor, the same drop-spot math for every payload.
+ *
+ * Every mutation is expressed on the parsed RibbonModel and written back
+ * through serializeRibbon — the token sequence in the store stays the
  * single source of truth the real Toolbar renders from.
- *
- * WebKit footgun (CLAUDE.md §4): every dragstart MUST call
- * dataTransfer.setData() or the drag silently never begins in Tauri.
  */
 import React, { useState, useRef } from 'react';
-import { FaGripLinesVertical, FaLevelDownAlt, FaArrowsAltH } from 'react-icons/fa';
+import { FaGripLinesVertical, FaLevelDownAlt, FaArrowsAltH, FaExchangeAlt } from 'react-icons/fa';
 import {
-  parseRibbon, serializeRibbon, type RibbonSection,
+  parseRibbon, serializeRibbon, type RibbonModel, type RibbonSection,
 } from './toolbarBuiltins';
 import { tokenIcon, tokenLabel, spacerPx } from './tokenMeta';
 
@@ -33,36 +38,38 @@ interface Props {
   palette: Array<{ id: string; label: string; options: Array<{ value: string; label: string }> }>;
 }
 
-const clone = (secs: RibbonSection[]): RibbonSection[] =>
-  secs.map((s) => ({ top: [...s.top], bottom: [...s.bottom], hasBreak: s.hasBreak, breakLine: s.breakLine }));
+const clone = (m: RibbonModel): RibbonModel => ({
+  sections: m.sections.map((s) => ({ top: [...s.top], bottom: [...s.bottom], hasBreak: s.hasBreak, breakLine: s.breakLine })),
+  splitAt: m.splitAt,
+});
 
 const EMPTY_SECTION: RibbonSection = { top: [], bottom: [], hasBreak: false, breakLine: false };
 
+const payloadLabel = (payload: string): string => {
+  if (payload.startsWith('tok:')) return tokenLabel(payload.slice(4));
+  if (payload.startsWith('new:')) return tokenLabel(payload.slice(4));
+  if (payload === 'util:rowbreak') return 'New Row';
+  if (payload === 'util:divider') return 'Divider';
+  if (payload === 'util:spacer') return 'Spacer';
+  if (payload === 'util:alignsplit') return 'Align Split';
+  return '';
+};
+
 const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
-  const sections = parseRibbon(tokens);
+  const model = parseRibbon(tokens);
+  const { sections, splitAt } = model;
   const [spot, setSpot] = useState<DropSpot | null>(null);
   const [dragging, setDragging] = useState(false);
-  const html5DragLive = useRef(false);
-  // The armed pointer fallback's cleanup. Pointer events are SUPPRESSED for
-  // the duration of a native HTML5 drag, so the fallback can never clean
-  // itself up during one — whoever starts/ends a drag disarms it instead,
-  // or a stale fallback wakes after the drop and runs a phantom drag.
-  const fallbackCleanup = useRef<(() => void) | null>(null);
-
-  // v3.01, Derek: double-clicking a palette item drops it into the most
-  // recently added or modified section — every mutation records its target.
+  // v3.01: double-clicking a palette item drops it into the most recently
+  // added or modified section — every mutation records its target.
   const lastSec = useRef<number | null>(null);
 
-  const commit = (secs: RibbonSection[], touchedSec?: number) => {
+  const commit = (m: RibbonModel, touchedSec?: number) => {
     if (touchedSec !== undefined) lastSec.current = touchedSec;
-    onChange(serializeRibbon(secs));
+    onChange(serializeRibbon(m));
   };
-  const endDrag = () => {
-    setSpot(null);
-    setDragging(false);
-    html5DragLive.current = false;
-    fallbackCleanup.current?.();
-  };
+  const endDrag = () => { setSpot(null); setDragging(false); };
+
   /** setSpot only on real change — same-valued updates re-render the whole
    *  editor mid-drag and read as flicker. */
   const moveSpot = (next: DropSpot | null) => {
@@ -73,33 +80,18 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
     ));
   };
 
-  const removeEverywhere = (secs: RibbonSection[], tok: string) => {
-    for (const s of secs) {
+  const removeEverywhere = (m: RibbonModel, tok: string) => {
+    for (const s of m.sections) {
       s.top = s.top.filter((t) => t !== tok);
       s.bottom = s.bottom.filter((t) => t !== tok);
     }
   };
 
-  /* ── drop targeting: hovering a chip picks before/after by midpoint;
-        hovering row/section space appends at the end of that row. ── */
-  const overChip = (e: React.DragEvent, sec: number, row: Row, idx: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    moveSpot({ sec, row, idx: idx + (e.clientX > r.left + r.width / 2 ? 1 : 0) });
-  };
-  const overRow = (e: React.DragEvent, sec: number, row: Row, len: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    moveSpot({ sec, row, idx: len });
-  };
-
-  /** The one drop mutation, shared by the HTML5 path and the pointer
-   *  fallback: apply `payload` at `at`. */
+  /** The one drop mutation: apply `payload` at `at`. */
   const applyDrop = (payload: string, at: DropSpot | null) => {
     if (!payload || !at) { endDrag(); return; }
-    const secs = clone(sections);
-    const target = secs[at.sec];
+    const m = clone(model);
+    const target = m.sections[at.sec];
     if (!target) { endDrag(); return; }
     const rowArr = at.row === 'top' ? target.top : target.bottom;
     let idx = Math.min(at.idx, rowArr.length);
@@ -109,7 +101,7 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
       const tok = payload.slice(4);
       const before = rowArr.indexOf(tok);
       if (before >= 0 && before < idx) idx -= 1;
-      removeEverywhere(secs, tok);
+      removeEverywhere(m, tok);
       const arr = at.row === 'top' ? target.top : target.bottom;
       arr.splice(Math.min(idx, arr.length), 0, tok);
     } else if (payload === 'util:rowbreak') {
@@ -124,6 +116,10 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
         target.top = [...target.top, ...target.bottom.slice(0, idx)];
         target.bottom = target.bottom.slice(idx);
       }
+    } else if (payload === 'util:alignsplit') {
+      // v3.02: the split lands AFTER the section you drop it on.
+      m.splitAt = Math.min(at.sec + 1, m.sections.length);
+      if (m.splitAt === m.sections.length) m.sections.push({ ...EMPTY_SECTION });
     } else if (payload === 'util:spacer') {
       rowArr.splice(idx, 0, `s:${Date.now()}`);
     } else if (payload === 'util:divider') {
@@ -132,48 +128,34 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
     } else if (payload.startsWith('new:')) {
       rowArr.splice(idx, 0, payload.slice(4));
     }
-    commit(secs, at.sec);
+    commit(m, at.sec);
     endDrag();
   };
 
-  /** v3.01, Derek: double-click a palette item → it lands at the end of the
-   *  most recently added or modified section (the last one, if none yet). */
+  /** v3.01: double-click a palette item → it lands at the end of the most
+   *  recently added or modified section (the last one, if none yet). */
   const quickAdd = (tok: string) => {
-    const secs = clone(sections);
-    const sec = Math.min(lastSec.current ?? secs.length - 1, secs.length - 1);
-    const target = secs[sec];
+    const m = clone(model);
+    const sec = Math.min(lastSec.current ?? m.sections.length - 1, m.sections.length - 1);
+    const target = m.sections[sec];
     (target.hasBreak ? target.bottom : target.top).push(tok);
-    commit(secs, sec);
+    commit(m, sec);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    applyDrop(e.dataTransfer.getData('text/plain'), spot);
-  };
-
-  const dragStart = (e: React.DragEvent, payload: string) => {
-    e.dataTransfer.setData('text/plain', payload);   // WebKit: mandatory
-    e.dataTransfer.effectAllowed = 'move';
-    html5DragLive.current = true;
-    fallbackCleanup.current?.();   // the native drag owns this gesture
-    setDragging(true);
-  };
-
-  /** v2.98, Derek's report: in the Mac app (WKWebView) some chips never got
-   *  a dragstart at all — HTML5 drag silently refused, while the same chip
-   *  dragged fine after being re-added. Belt and braces: if a pointer moves
-   *  4px on a chip and NO dragstart has fired, run the drag ourselves —
-   *  pointer capture, the same drop-spot math (via data attributes on rows
-   *  and chips), the same applyDrop on release. */
-  const startPointerFallback = (e: React.PointerEvent, payload: string) => {
+  /* ── v3.02: POINTER drag — the only drag mechanism. A ghost chip follows
+        the cursor; the drop spot comes from elementFromPoint against the
+        data attributes rows and chips carry. ── */
+  const startDrag = (e: React.PointerEvent, payload: string) => {
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
     if (target.closest('.ribed-x') || target.closest('.ribed-spacer-grip') || target.closest('input')) return;
+    e.preventDefault();
     const chip = e.currentTarget as HTMLElement;
     const startX = e.clientX;
     const startY = e.clientY;
     let active = false;
+    let ghost: HTMLElement | null = null;
+
     const spotFromPoint = (x: number, y: number): DropSpot | null => {
       const el = document.elementFromPoint(x, y) as HTMLElement | null;
       const hitChip = el?.closest<HTMLElement>('.ribed-chip');
@@ -189,25 +171,37 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
       if (hitRow?.dataset.sec) {
         return { sec: Number(hitRow.dataset.sec), row: hitRow.dataset.row as Row, idx: Number(hitRow.dataset.len) };
       }
+      const hitSection = el?.closest<HTMLElement>('.ribed-section');
+      if (hitSection?.dataset.sec) {
+        return { sec: Number(hitSection.dataset.sec), row: 'top', idx: 9999 };
+      }
       return null;
     };
+
     const move = (ev: PointerEvent) => {
       if (!active) {
-        // an HTML5 drag took over, or the pointer hasn't traveled yet
-        if (html5DragLive.current) { cleanup(); return; }
         if (Math.abs(ev.clientX - startX) < 4 && Math.abs(ev.clientY - startY) < 4) return;
         active = true;
         setDragging(true);
         chip.classList.add('ribed-chip-lifted');
+        ghost = document.createElement('div');
+        ghost.className = 'ribed-ghost';
+        ghost.textContent = payloadLabel(payload);
+        document.body.appendChild(ghost);
       }
-      moveSpot(spotFromPoint(ev.clientX, ev.clientY));
+      if (ghost) {
+        ghost.style.left = `${ev.clientX + 10}px`;
+        ghost.style.top = `${ev.clientY + 12}px`;
+      }
+      const overPalette = (document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null)?.closest('.ribed-palette');
+      moveSpot(overPalette ? null : spotFromPoint(ev.clientX, ev.clientY));
     };
     const up = (ev: PointerEvent) => {
       cleanup();
       if (!active) return;
       const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
       if (payload.startsWith('tok:') && el?.closest('.ribed-palette')) {
-        removeToken(payload.slice(4));   // dragging out = remove, same as HTML5
+        removeToken(payload.slice(4));   // dragging out = remove
         endDrag();
         return;
       }
@@ -217,34 +211,31 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', up);
       chip.classList.remove('ribed-chip-lifted');
-      fallbackCleanup.current = null;
+      ghost?.remove();
     };
-    fallbackCleanup.current?.();   // never two armed fallbacks
-    fallbackCleanup.current = cleanup;
     document.addEventListener('pointermove', move);
     document.addEventListener('pointerup', up);
   };
 
   const removeToken = (tok: string) => {
-    const secs = clone(sections);
-    removeEverywhere(secs, tok);
-    commit(secs);
+    const m = clone(model);
+    removeEverywhere(m, tok);
+    commit(m);
   };
 
   const setSpacerWidth = (tok: string, px: number) => {
     const [, id] = tok.split(':');
     const next = `s:${id}:${Math.max(8, Math.min(240, Math.round(px)))}`;
-    const secs = clone(sections);
-    for (const s of secs) {
+    const m = clone(model);
+    for (const s of m.sections) {
       s.top = s.top.map((t) => (t === tok ? next : t));
       s.bottom = s.bottom.map((t) => (t === tok ? next : t));
     }
-    commit(secs);
+    commit(m);
   };
 
-  /** v2.97, Derek: spacers resize by dragging their right edge — the chip's
-   *  width IS the spacer's width. Pointer-driven (not HTML5 drag), live on
-   *  the element, committed to the token on release. */
+  /** v2.97: spacers resize by dragging their right edge — the chip's width
+   *  IS the spacer's width. Committed to the token on release. */
   const startSpacerResize = (e: React.PointerEvent, tok: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -272,16 +263,12 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
       {dragging && spot && spot.sec === sec && spot.row === row && spot.idx === idx && dropLine}
       <span
         className={`ribed-chip${tok.startsWith('s:') ? ' ribed-chip-spacer' : ''}${tok.startsWith('d:') ? ' ribed-chip-div' : ''}`}
-        draggable
         title={tokenLabel(tok)}
         style={tok.startsWith('s:') ? { width: spacerPx(tok) } : undefined}
         data-sec={sec}
         data-row={row}
         data-idx={idx}
-        onDragStart={(e) => dragStart(e, `tok:${tok}`)}
-        onDragEnd={endDrag}
-        onDragOver={(e) => overChip(e, sec, row, idx)}
-        onPointerDown={(e) => startPointerFallback(e, `tok:${tok}`)}
+        onPointerDown={(e) => startDrag(e, `tok:${tok}`)}
       >
         {!tok.startsWith('s:') && !tok.startsWith('d:') && (
           <span className="ribed-chip-icon">{tokenIcon(tok)}</span>
@@ -290,8 +277,6 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
           <span
             className="ribed-spacer-grip"
             title="Drag to resize the spacer"
-            draggable={false}
-            onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
             onPointerDown={(e) => startSpacerResize(e, tok)}
           />
         )}
@@ -303,13 +288,7 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
   const renderRow = (s: RibbonSection, sec: number, row: Row) => {
     const items = row === 'top' ? s.top : s.bottom;
     return (
-      <div
-        className="ribed-row"
-        data-sec={sec}
-        data-row={row}
-        data-len={items.length}
-        onDragOver={(e) => overRow(e, sec, row, items.length)}
-      >
+      <div className="ribed-row" data-sec={sec} data-row={row} data-len={items.length}>
         {items.map((tok, i) => renderChip(tok, sec, row, i))}
         {dragging && spot && spot.sec === sec && spot.row === row && spot.idx >= items.length && dropLine}
         {items.length === 0 && !dragging && <span className="ribed-empty-hint">drop items here</span>}
@@ -317,42 +296,52 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
     );
   };
 
-  /** v2.97, Derek: a section's RIGHT divider is the one associated with it —
-   *  closing the section (its × ) merges it into the section that follows. */
-  const closeSection = (i: number) => {
-    const secs = clone(sections);
-    const a = secs[i];
-    const b = secs[i + 1];
-    const merged: RibbonSection = {
+  /** Merging two adjacent sections (the divider between them goes away).
+   *  A split boundary sitting at or before the merge point shifts with it. */
+  const mergeSections = (i: number) => {
+    const m = clone(model);
+    const a = m.sections[i];
+    const b = m.sections[i + 1];
+    if (!a || !b) return;
+    m.sections.splice(i, 2, {
       top: [...a.top, ...b.top],
       bottom: [...a.bottom, ...b.bottom],
       hasBreak: a.hasBreak || b.hasBreak,
       breakLine: a.breakLine || b.breakLine,
-    };
-    secs.splice(i, 2, merged);
-    commit(secs, i);
+    });
+    if (m.splitAt !== null) {
+      if (m.splitAt === i + 1) m.splitAt = null;      // the merged boundary WAS the split
+      else if (m.splitAt > i + 1) m.splitAt -= 1;
+    }
+    commit(m, i);
+  };
+
+  const removeSplit = () => {
+    const m = clone(model);
+    m.splitAt = null;   // the boundary becomes a regular divider
+    commit(m);
   };
 
   const removeBreak = (i: number) => {
-    const secs = clone(sections);
-    secs[i] = { top: [...secs[i].top, ...secs[i].bottom], bottom: [], hasBreak: false, breakLine: false };
-    commit(secs, i);
+    const m = clone(model);
+    m.sections[i] = { top: [...m.sections[i].top, ...m.sections[i].bottom], bottom: [], hasBreak: false, breakLine: false };
+    commit(m, i);
   };
 
-  /** v2.97, Derek: clicking the split line toggles it heavy (drawn on the
-   *  real toolbar) or faint (invisible split). */
+  /** v2.97: clicking the split line toggles it heavy (drawn on the real
+   *  toolbar) or faint (invisible split). */
   const toggleBreakLine = (i: number) => {
-    const secs = clone(sections);
-    secs[i] = { ...secs[i], breakLine: !secs[i].breakLine };
-    commit(secs, i);
+    const m = clone(model);
+    m.sections[i] = { ...m.sections[i], breakLine: !m.sections[i].breakLine };
+    commit(m, i);
   };
 
   return (
     <div className="ribed">
-      <div className="ribed-ribbon" onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>
+      <div className="ribed-ribbon">
         {sections.map((s, i) => (
           <React.Fragment key={`sec-${i}`}>
-            <div className={`ribed-section${s.hasBreak ? '' : ' ribed-single'}`}>
+            <div className={`ribed-section${s.hasBreak ? '' : ' ribed-single'}`} data-sec={i}>
               {renderRow(s, i, 'top')}
               {s.hasBreak && (
                 <div className="ribed-break">
@@ -368,37 +357,51 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
               )}
               {s.hasBreak && renderRow(s, i, 'bottom')}
             </div>
-            {i < sections.length - 1 && (
+            {/* v3.02, Derek: EVERY section gets its closing divider on the
+                right — the last one closes leftward into its neighbour. At
+                the align split the boundary is the split marker instead. */}
+            {i + 1 === splitAt ? (
+              <span className="ribed-alignsplit" title="Align Split — sections after this hug the toolbar's right edge">
+                <FaExchangeAlt />
+                <button className="ribed-x" title="Remove the align split (back to one left-aligned run)" onClick={removeSplit}>×</button>
+              </span>
+            ) : (i < sections.length - 1 || sections.length > 1) && (
               <span className="ribed-secdiv" title="This section's closing divider">
-                <button className="ribed-x" title="Close this section (its items join the next one)" onClick={() => closeSection(i)}>×</button>
+                <button
+                  className="ribed-x"
+                  title={i < sections.length - 1
+                    ? 'Close this section (its items join the next one)'
+                    : 'Close this section (its items join the previous one)'}
+                  onClick={() => mergeSections(i < sections.length - 1 ? i : i - 1)}
+                >×</button>
               </span>
             )}
           </React.Fragment>
         ))}
-        {/* v2.97, Derek: the utilities live HERE, beside + Section — the
-            structural tools, next to the structure they build. */}
+        {/* v2.97: the structural tools, beside the structure they build. */}
         <div className="ribed-tools">
           <button
             className="ribed-add-section"
             title="Add a new empty section at the end"
-            onClick={() => commit([...clone(sections), { ...EMPTY_SECTION }], sections.length)}
+            onClick={() => commit({ sections: [...clone(model).sections, { ...EMPTY_SECTION }], splitAt }, sections.length)}
           >+ Section</button>
-          <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a section to split it into two rows"
-            onDragStart={(e) => dragStart(e, 'util:rowbreak')} onDragEnd={endDrag}
-            onPointerDown={(e) => startPointerFallback(e, 'util:rowbreak')}>
+          <span className="ribed-pal-chip ribed-pal-util" title="Drag into a section to split it into two rows"
+            onPointerDown={(e) => startDrag(e, 'util:rowbreak')}>
             <FaLevelDownAlt /> New Row
           </span>
-          <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a row: a one-row vertical divider line (double-click: add to the last-touched section)"
-            onDragStart={(e) => dragStart(e, 'util:divider')} onDragEnd={endDrag}
-            onPointerDown={(e) => startPointerFallback(e, 'util:divider')}
+          <span className="ribed-pal-chip ribed-pal-util" title="Drag into a row: a one-row vertical divider line (double-click: add to the last-touched section)"
+            onPointerDown={(e) => startDrag(e, 'util:divider')}
             onDoubleClick={() => quickAdd(`d:${Date.now()}`)}>
             <FaGripLinesVertical /> Divider
           </span>
-          <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a row: blank space — drag its edge to resize (double-click: add to the last-touched section)"
-            onDragStart={(e) => dragStart(e, 'util:spacer')} onDragEnd={endDrag}
-            onPointerDown={(e) => startPointerFallback(e, 'util:spacer')}
+          <span className="ribed-pal-chip ribed-pal-util" title="Drag into a row: blank space — drag its edge to resize (double-click: add to the last-touched section)"
+            onPointerDown={(e) => startDrag(e, 'util:spacer')}
             onDoubleClick={() => quickAdd(`s:${Date.now()}`)}>
             <FaArrowsAltH /> Spacer
+          </span>
+          <span className="ribed-pal-chip ribed-pal-util" title="Drag onto a section: everything after it aligns to the toolbar's RIGHT edge"
+            onPointerDown={(e) => startDrag(e, 'util:alignsplit')}>
+            <FaExchangeAlt /> Align Split
           </span>
         </div>
       </div>
@@ -407,22 +410,15 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
         Drag items between the sections above — drop position is the item's
         position. Drag <strong>New Row</strong> into a section to split it
         into two rows at that spot; a section without a split spans its items
-        across both rows. Spacers resize by dragging their right edge. Drag
-        an item onto the lists below to remove it — or double-click one below
-        to add it to the section you touched last.
+        across both rows. Drop <strong>Align Split</strong> on a section and
+        everything after it hugs the toolbar's right edge. Spacers resize by
+        dragging their right edge. Drag an item onto the lists below to
+        remove it — or double-click one below to add it to the section you
+        touched last.
       </p>
 
       {/* available items; also the drop target for removal */}
-      <div
-        className="ribed-palette"
-        onDragOver={(e) => { e.preventDefault(); setSpot(null); }}
-        onDrop={(e) => {
-          e.preventDefault();
-          const p = e.dataTransfer.getData('text/plain');
-          if (p.startsWith('tok:')) removeToken(p.slice(4));
-          endDrag();
-        }}
-      >
+      <div className="ribed-palette">
         {palette.map((cat) => cat.options.length > 0 && (
           <div key={cat.id} className="ribed-pal-group">
             <div className="ribed-pal-title">{cat.label}</div>
@@ -430,11 +426,8 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
               <span
                 key={o.value}
                 className="ribed-pal-chip"
-                draggable
                 title={`Drag onto the ribbon — or double-click to add: ${o.label}`}
-                onDragStart={(e) => dragStart(e, `new:${o.value}`)}
-                onDragEnd={endDrag}
-                onPointerDown={(e) => startPointerFallback(e, `new:${o.value}`)}
+                onPointerDown={(e) => startDrag(e, `new:${o.value}`)}
                 onDoubleClick={() => quickAdd(o.value)}
               >
                 <span className="ribed-chip-icon">{tokenIcon(o.value)}</span>

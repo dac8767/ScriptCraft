@@ -197,6 +197,19 @@ try {
     saveViewState({ toolbarLeft: _tbZones.left, toolbarRight: [] });
   }
 } catch { /* storage unavailable — keep what we have */ }
+// v3.02 one-time: Customize became a ribbon ITEM (it was fixed chrome in
+// v2.95–v3.01). Saved layouts get it appended as its own section so the
+// button doesn't silently vanish; it's fully movable/removable after.
+try {
+  const CUSTBTN_FLAG = 'opendraft:toolbarCustomizeItem302';
+  if (_vs.toolbarZonesSet && !localStorage.getItem(CUSTBTN_FLAG)) {
+    localStorage.setItem(CUSTBTN_FLAG, '1');
+    if (!_tbZones.left.includes('b:customize')) {
+      _tbZones = { left: [..._tbZones.left, '2!d:cust-302', 'b:customize'], right: [] };
+      saveViewState({ toolbarLeft: _tbZones.left, toolbarRight: [] });
+    }
+  }
+} catch { /* storage unavailable — keep what we have */ }
 
 // ── Custom dictionary library (named global word lists) ──
 const DICTS_KEY = 'opendraft:dictionaries';

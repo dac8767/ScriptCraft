@@ -1262,6 +1262,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           }}
         >{TOOLBAR_ICONS.resetSizes}</button>
       );
+      /* v3.02, Derek: Customize is an ordinary ribbon item again — in a
+         one-row section it gets the big icon-over-label format for free. */
+      case 'customize': return (
+        <button
+          className="toolbar-btn"
+          title="Customize ScriptCraft"
+          onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))}
+        >{TOOLBAR_ICONS.customize}</button>
+      );
       /* v2.94, Derek: the Scrapbook's insert-table grid can't live in a native
          macOS menu, so it moves to the toolbar's second row. Only rendered
          while the Scrapbook is open — same visibility as its old menu. */
@@ -1453,7 +1462,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     : toolbarMode === 'comfortable' ? 39 : 33;
   const ribRowH = Math.max(22, Math.round(barH) - 5);
 
-  const sections = parseRibbon(leftTokens);
+  const { sections, splitAt } = parseRibbon(leftTokens);
 
   return (
     /* v2.96, Derek: the WORD RIBBON, arranged by SECTION. Everything between
@@ -1478,7 +1487,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     >
       {sections.map((s, i) => (
         <React.Fragment key={`sec-${i}`}>
-          {i > 0 && <div className="toolbar-separator rib-section-sep" />}
+          {/* v3.02, Derek: the align split — everything after it hugs the
+              toolbar's right edge. Other boundaries draw the divider. */}
+          {i > 0 && (i === splitAt
+            ? <div className="rib-align-gap" />
+            : <div className="toolbar-separator rib-section-sep" />)}
           <div className={`rib-section${s.hasBreak ? '' : ' rib-single'}`}>
             <div className="rib-row">{s.top.map((t) => renderToken(t, !s.hasBreak))}</div>
             {/* v2.97, Derek: the split line is optionally VISIBLE — toggled
@@ -1507,14 +1520,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         )}
       </div>
     )}
-
-    <button
-      className="chrome-bigbtn chrome-customize-btn"
-      title="Customize ScriptCraft"
-      onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))}
-    >
-      Customize
-    </button>
     </div>
   );
 };
