@@ -1144,14 +1144,28 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       );
       case 'zoom': return (
         <div className="zoom-menu-wrap" ref={zoomMenuRef}>
+          {/* v3.04, Derek: step zoom straight from the toolbar — the dropdown
+              stays for Reset / Fit / exact values. */}
+          <button
+            className="toolbar-btn zoom-tb-step"
+            title="Zoom out"
+            disabled={zoomLevel <= ZOOM_MIN}
+            onClick={() => setZoomLevel(Math.max(ZOOM_MIN, zoomLevel - 10))}
+          ><CircleMinusIcon /></button>
           <button
             className="toolbar-btn toolbar-btn-labeled"
             title="Zoom"
             onClick={() => setZoomMenuOpen((o) => !o)}
           >
             <FaSearchPlus />
-            <span className="toolbar-btn-text">{zoomLevel}%</span>
+            <span className="toolbar-btn-text zoom-tb-value">{zoomLevel}%</span>
           </button>
+          <button
+            className="toolbar-btn zoom-tb-step"
+            title="Zoom in"
+            disabled={zoomLevel >= ZOOM_MAX}
+            onClick={() => setZoomLevel(Math.min(ZOOM_MAX, zoomLevel + 10))}
+          ><CirclePlusIcon /></button>
           {zoomMenuOpen && (
             <div className="zoom-menu">
               {/* v1.36: the menu's HEADER is a three-cell grid — minus | amount

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.03';
+export const APP_VERSION = '3.04';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.04',
+    date: '2026-07-17',
+    items: [
+      { title: 'Zoom in/out from the toolbar', detail: 'The zoom control gains − and + buttons either side of the dropdown trigger, so stepping the zoom no longer requires opening the menu. The current-zoom readout is a size smaller to keep the group compact.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.03',
     date: '2026-07-17',

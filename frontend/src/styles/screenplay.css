@@ -1293,7 +1293,13 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
    version used 14px+ type (words got clipped) and z-index: 300, which lost to
    the side panels and drew UNDERNEATH them — .menu-dropdown's z-index is what
    keeps a menu on top. */
-.zoom-menu-wrap { position: relative; display: inline-flex; }
+.zoom-menu-wrap { position: relative; display: inline-flex; align-items: center; }
+/* v3.04, Derek: −/+ steppers flank the dropdown trigger in the toolbar
+   itself, and the current-zoom readout drops a size so the group stays
+   compact. */
+.zoom-tb-step { width: 22px; min-width: 22px; padding: 0; }
+.zoom-tb-step svg { width: 12px; height: 12px; }
+.toolbar-btn-text.zoom-tb-value { font-size: 10px; padding: 0 4px; }
 .zoom-menu {
   position: absolute; top: calc(100% + 4px); right: 0;
   z-index: 2147483647;                 /* same as .menu-dropdown */
