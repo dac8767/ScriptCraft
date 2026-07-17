@@ -63,6 +63,13 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
   // v3.01: double-clicking a palette item drops it into the most recently
   // added or modified section — every mutation records its target.
   const lastSec = useRef<number | null>(null);
+  // v3.11: palette keyword filter. Categories keep their grouping; empty
+  // groups drop out while a query is active.
+  const [paletteQuery, setPaletteQuery] = useState('');
+  const q = paletteQuery.trim().toLowerCase();
+  const filteredPalette = q
+    ? palette.map((cat) => ({ ...cat, options: cat.options.filter((o) => o.label.toLowerCase().includes(q)) }))
+    : palette;
 
   const commit = (m: RibbonModel, touchedSec?: number) => {
     if (touchedSec !== undefined) lastSec.current = touchedSec;
@@ -417,9 +424,24 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
         touched last.
       </p>
 
+      {/* v3.11, Derek: keyword filter — "save" surfaces Save, Save As,
+          autosave... across every category at once. */}
+      <div className="ribed-pal-search">
+        <input
+          type="search"
+          value={paletteQuery}
+          onChange={(e) => setPaletteQuery(e.target.value)}
+          placeholder="Search items…"
+          aria-label="Search available items"
+        />
+      </div>
+
       {/* available items; also the drop target for removal */}
       <div className="ribed-palette">
-        {palette.map((cat) => cat.options.length > 0 && (
+        {filteredPalette.every((cat) => cat.options.length === 0) && (
+          <div className="ribed-pal-empty">Nothing matches “{paletteQuery}”.</div>
+        )}
+        {filteredPalette.map((cat) => cat.options.length > 0 && (
           <div key={cat.id} className="ribed-pal-group">
             <div className="ribed-pal-title">{cat.label}</div>
             {cat.options.map((o) => (

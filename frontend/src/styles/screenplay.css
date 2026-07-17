@@ -1167,9 +1167,12 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   background: var(--fd-border);
 }
 /* Dividers: section separators run the ribbon's height; a plain d: inside
-   a row marks just that row. */
-.toolbar-ribbon .toolbar-separator { height: calc(var(--rib-rowh, 28px) - 8px); align-self: center; }
-.toolbar-ribbon .rib-section-sep {
+   a row marks just that row. The extra .toolbar class matters: the legacy
+   custom-scale rule (.toolbar.toolbar-custom .toolbar-separator, with its
+   clamp cap) otherwise outweighs these the moment the edge is dragged —
+   v3.11, Derek: section dividers collapsed to one row and stopped scaling. */
+.toolbar.toolbar-ribbon .toolbar-separator { height: calc(var(--rib-rowh, 28px) - 8px); align-self: center; }
+.toolbar.toolbar-ribbon .rib-section-sep {
   height: auto;
   align-self: stretch;
   margin: 4px 0;
@@ -16827,6 +16830,21 @@ input.fs-switch:checked::after { left: 15px; }
   flex-shrink: 0;
 }
 .ribed-tools .ribed-pal-chip { justify-content: center; }
+/* v3.11: the palette's keyword filter */
+.ribed-pal-search { margin-bottom: 6px; }
+.ribed-pal-search input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--fd-text);
+  background: var(--fd-input-bg, var(--fd-navigator-bg));
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  outline: none;
+}
+.ribed-pal-search input:focus { border-color: var(--fd-accent); }
+.ribed-pal-empty { font-size: 12px; color: var(--fd-text-muted); padding: 4px 2px; }
 /* the palette — also the drop target that removes items from the ribbon */
 .ribed-palette {
   display: flex;

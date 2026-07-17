@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.10';
+export const APP_VERSION = '3.11';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.11',
+    date: '2026-07-17',
+    items: [
+      { title: 'Search the customizer palette', detail: 'A keyword filter above the available items — type "save" and every category narrows to Save, Save As, the auto-save commands, and so on. Clearing it restores the full list.', tags: ['New Feature', 'UI'] },
+      { title: 'Section dividers survive toolbar scaling', detail: 'Dragging the toolbar edge to scale it collapsed the two-row section dividers to single-row height (a leftover rule from the pre-ribbon bar). They now span and scale with the ribbon.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '3.10',
     date: '2026-07-17',
