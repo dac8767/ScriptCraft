@@ -22,7 +22,7 @@ const TYPE_LABEL: Record<string, string> = {
 const PREFIX_RE = /^(INT\.?\/?EXT\.?|EXT\.?\/?INT\.?|INT\.?|EXT\.?|I\/E\.?)\s+/i;
 const TIME_WORDS = 'DAY|NIGHT|DAWN|DUSK|MORNING|AFTERNOON|EVENING|SUNSET|SUNRISE|LATER|CONTINUOUS|SAME TIME|MOMENTS LATER|SAME|MAGIC HOUR';
 
-function parseLocationFromHeading(heading: string): string {
+export function parseLocationFromHeading(heading: string): string {
   let rest = heading.trim();
   const prefix = rest.match(PREFIX_RE);
   if (prefix && prefix.index !== undefined) rest = rest.slice(prefix.index + prefix[0].length);

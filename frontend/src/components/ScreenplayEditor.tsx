@@ -60,7 +60,7 @@ import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
 import ScriptStatistics from './ScriptStatistics';
 import { makeSnippetCard } from './StickyNotes';
-import LocationDatabase from './LocationDatabase';
+import LocationDatabase, { parseLocationFromHeading } from './LocationDatabase';
 import FormatPanel from './FormatPanel';
 import StatusBar from './StatusBar';
 import SearchReplace, { createSearchPlugin } from './SearchReplace';
@@ -149,6 +149,12 @@ const ALL_ELEMENT_TYPES: ElementType[] = [
   'transition', 'general', 'shot', 'newAct', 'endOfAct', 'lyrics',
   'showEpisode', 'castList',
 ];
+
+// v3.44, Derek: element autofill option lists (shown as soon as you're in an
+// empty element, filtered as you type). Scene prefixes get a trailing space so
+// the location follows immediately.
+const SCENE_PREFIX_OPTIONS = ['INT.', 'EXT.'];
+const TRANSITION_OPTIONS = ['CUT TO:', 'DISSOLVE TO:', 'FADE IN:', 'FADE OUT:', 'FADE TO:', 'INTERCUT:', 'CUT TO BLACK:'];
 
 const SAMPLE_CONTENT = {
   type: 'doc',
@@ -1084,13 +1090,16 @@ const ScreenplayEditor: React.FC = () => {
 
   const showPickerRef = useRef<(defaultType: ElementType, availableTypes?: ElementType[]) => void>(() => {});
 
-  // Character autocomplete state
+  // Character autocomplete state. v3.44, Derek: the same dropdown also serves
+  // scene headings (INT./EXT.) and transitions — `mode` picks how a pick is
+  // inserted (a trailing space for scene prefixes).
   const [knownCharacters, setKnownCharacters] = useState<string[]>([]);
   const [charAutoState, setCharAutoState] = useState<{
     visible: boolean;
+    mode: 'character' | 'scene' | 'transition';
     position: { top: number; left: number };
     suggestions: string[];
-  }>({ visible: false, position: { top: 0, left: 0 }, suggestions: [] });
+  }>({ visible: false, mode: 'character', position: { top: 0, left: 0 }, suggestions: [] });
   const charAutoDismissedRef = useRef(false);
 
   const [formatPanelOpen, setFormatPanelOpen] = useState(false);
@@ -1976,11 +1985,19 @@ const ScreenplayEditor: React.FC = () => {
     };
   }, [editor, stripCharacterExtension, characterContd, contdText]);
 
-  // --- Character autocomplete: show/update on each editor update while in character block ---
+  // --- Element autofill: character names, scene INT./EXT., transitions ---
+  // v3.44, Derek: the dropdown appears the moment you're in an EMPTY element
+  // (all options), then filters as you type. Scene headings and transitions
+  // join characters as autofill sources.
   useEffect(() => {
     if (!editor) return;
     const onUpdate = () => {
-      if (!editor.isActive('character')) {
+      const mode: 'character' | 'scene' | 'transition' | null =
+        editor.isActive('character') ? 'character'
+          : editor.isActive('sceneHeading') ? 'scene'
+            : editor.isActive('transition') ? 'transition'
+              : null;
+      if (!mode) {
         setCharAutoState(s => s.visible ? { ...s, visible: false } : s);
         charAutoDismissedRef.current = false;
         return;
@@ -1989,18 +2006,41 @@ const ScreenplayEditor: React.FC = () => {
 
       const { $from } = editor.state.selection;
       const rawText = $from.parent.textContent.trim().toUpperCase();
-      const text = stripCharacterExtension(rawText);
-      if (!text) {
-        setCharAutoState(s => s.visible ? { ...s, visible: false } : s);
-        charAutoDismissedRef.current = false;
-        return;
-      }
 
-      // Filter known characters that start with typed text (exclude exact match)
-      // Only match against base names (without extensions)
-      const matches = knownCharacters.filter(
-        n => n.startsWith(text) && n !== text,
-      );
+      // The option pool + the text to filter it by. Empty element ⇒ show all;
+      // otherwise options that start with the typed text (no exact match).
+      let pool: string[];
+      let text: string;
+      if (mode === 'character') {
+        pool = knownCharacters;
+        text = stripCharacterExtension(rawText);
+      } else if (mode === 'transition') {
+        pool = TRANSITION_OPTIONS;
+        text = rawText;
+      } else {
+        // scene: INT./EXT. first, then — once a prefix is chosen — every
+        // location the Location tool knows (derived from the script's headings,
+        // upper-cased so it matches whatever case is stored).
+        const afterPrefix = rawText.match(/^(?:INT\.|EXT\.|INT\.\/EXT\.|EST\.)\s+(.*)$/);
+        if (afterPrefix) {
+          const locs = new Set<string>();
+          editor.state.doc.descendants((n) => {
+            if (n.type.name === 'sceneHeading') {
+              const loc = parseLocationFromHeading(n.textContent);
+              if (loc) locs.add(loc);
+            }
+            return true;
+          });
+          pool = Array.from(locs).sort();
+          text = afterPrefix[1].trim();
+        } else {
+          pool = SCENE_PREFIX_OPTIONS;
+          text = rawText;
+        }
+      }
+      const matches = text
+        ? pool.filter(n => n.startsWith(text) && n !== text)
+        : pool.slice();
 
       if (matches.length === 0) {
         setCharAutoState(s => s.visible ? { ...s, visible: false } : s);
@@ -2011,6 +2051,7 @@ const ScreenplayEditor: React.FC = () => {
       const coords = editor.view.coordsAtPos(from);
       setCharAutoState({
         visible: true,
+        mode,
         position: { top: coords.bottom + 4, left: coords.left },
         suggestions: matches,
       });
@@ -2018,7 +2059,7 @@ const ScreenplayEditor: React.FC = () => {
     editor.on('update', onUpdate);
     editor.on('selectionUpdate', onUpdate);
     return () => { editor.off('update', onUpdate); editor.off('selectionUpdate', onUpdate); };
-  }, [editor, knownCharacters]);
+  }, [editor, knownCharacters, stripCharacterExtension]);
 
   // Re-measure overlays after editor updates (decorations settle)
   useEffect(() => {
@@ -3692,18 +3733,26 @@ const ScreenplayEditor: React.FC = () => {
 
   const handleCharAutoSelect = useCallback((name: string) => {
     if (!editor) return;
-    // Replace the current character block text with the selected name
     const { $from } = editor.state.selection;
     const start = $from.start();
     const end = $from.end();
+    // v3.44, Derek: scene headings are two-stage. A prefix (INT./EXT.) inserts
+    // with a trailing space; once a prefix is present, a picked location keeps
+    // that prefix ("INT. THE BRIDGE"). Characters/transitions insert as-is.
+    let insert = name;
+    if (charAutoState.mode === 'scene') {
+      const cur = $from.parent.textContent.trim().toUpperCase();
+      const pm = cur.match(/^(INT\.|EXT\.|INT\.\/EXT\.|EST\.)\s+/);
+      insert = pm ? `${pm[1]} ${name}` : `${name} `;
+    }
     editor.chain().focus()
       .command(({ tr }) => {
-        tr.insertText(name, start, end);
+        tr.insertText(insert, start, end);
         return true;
       })
       .run();
     setCharAutoState(s => ({ ...s, visible: false }));
-  }, [editor]);
+  }, [editor, charAutoState.mode]);
 
   const handleCharAutoDismiss = useCallback(() => {
     setCharAutoState(s => ({ ...s, visible: false }));

@@ -205,7 +205,7 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
     setData((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  const handleApply = useCallback(() => {
+  const applyTitlePage = useCallback((thenPreview: boolean) => {
     try {
       const { imagesAbove, imagesBelow } = classifyTitleImages(editor);
       const built = buildTitlePageBlocks(editor, data, imagesAbove, imagesBelow);
@@ -220,12 +220,17 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
       if (appliedDraft && appliedDraft !== useEditorStore.getState().draftLabel) {
         useEditorStore.getState().setDraftLabel(appliedDraft);
       }
+      // v3.44, Derek: Preview applies, then flips the editor to Preview view —
+      // the one place the title page actually shows.
+      if (thenPreview) useEditorStore.getState().setPreviewMode(true);
       onClose();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to update title page', 'error');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, data, onClose]);
+  const handleApply = useCallback(() => applyTitlePage(false), [applyTitlePage]);
+  const handlePreview = useCallback(() => applyTitlePage(true), [applyTitlePage]);
 
   // --- Title-page image: upload and insert a screenplayImage node at the chosen
   // position within the title page (free-flow: exporters render it in order). ---
@@ -586,6 +591,8 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
           <button onClick={handleDeleteTitlePage} style={{ marginRight: 'auto', color: '#c0392b' }}>
             Delete Title Page
           </button>
+          {/* v3.44, Derek: apply and jump to Preview to see the title page in place. */}
+          <button onClick={handlePreview}>Preview</button>
           <button onClick={onClose}>Cancel</button>
           <button className="dialog-primary" onClick={handleApply}>
             Apply

@@ -65,9 +65,19 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.43';
+export const APP_VERSION = '3.44';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.44',
+    date: '2026-07-17',
+    items: [
+      { title: 'Smarter element autofill', detail: 'The autofill list now appears the moment you’re in an empty Character, Scene Heading or Transition — no need to type a letter first. Scene headings suggest INT. / EXT. (with a space added after), then every location from the Location tool. Transitions suggest CUT TO:, DISSOLVE TO:, FADE IN:, FADE OUT:, FADE TO:, INTERCUT:, CUT TO BLACK:.', tags: ['New Feature', 'Editor'] },
+      { title: 'Parentheticals auto-wrap', detail: 'Adding a parenthetical drops in “()” with your cursor already between them.', tags: ['New Feature', 'Editor'] },
+      { title: 'Preview from the Title Page window', detail: 'A Preview button applies the title page and jumps you to Preview view, where it actually shows.', tags: ['UI'] },
+      { title: 'A little room under the ribbon', detail: '2px of padding between the ribbon buttons and the bar’s bottom edge.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.43',
     date: '2026-07-17',
