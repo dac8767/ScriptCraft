@@ -724,8 +724,12 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // v2.97/v2.98, Derek: menu actions are ribbon-pinnable — File, Edit,
   // Insert, View, Format and Help join the palette (ids resolve through the
   // same command bus the menus use).
-  const FILE_CMDS = ['newScreenplay', 'openFile', 'save', 'saveAs', 'print', 'preview', 'exportPDF', 'exportFDX', 'exportFountain', 'exportDocx', 'exportOdraft'];
-  const EDIT_CMDS = ['cut', 'copy', 'paste', 'dualDialogue', 'lastEditLocation'];
+  /* v3.30, Derek: the File category is gone from the ribbon palette — File
+     actions live in the Quick Access Toolbar (Customize > Quick Access).
+     Dual Dialogue is gone too (it's an Element, inserted from the menu).
+     The COMMAND registry keeps every id, so tokens already pinned in a
+     saved layout keep working (the v3.19 cull rule). */
+  const EDIT_CMDS = ['cut', 'copy', 'paste', 'lastEditLocation'];
   const INSERT_CMDS = ['insertImage', 'insertMarker'];
   const VIEW_CMDS = ['fitPage', 'fitWidth', 'actualSize', 'showRulers'];
   /* v3.25, Derek: Keyboard Shortcuts is no longer a ribbon option — it was
@@ -746,10 +750,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       options: Object.values(BUILTIN_BY_KEY)
         .filter((b) => b.key !== 'tags' && b.key !== 'scriptNotes' && !b.permanent && !b.unlisted)
         .map((b) => ({ value: `b:${b.key}`, label: b.label })),
-    },
-    {
-      id: 'file', label: 'File',
-      options: FILE_CMDS.flatMap(cmdOpt),
     },
     {
       id: 'edit', label: 'Edit',

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.29';
+export const APP_VERSION = '3.30';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.30',
+    date: '2026-07-17',
+    items: [
+      { title: 'Leaner ribbon palette', detail: 'The File category is gone from Customize > Toolbar — File actions belong to the Quick Access Toolbar (Customize > Quick Access). Dual Dialogue left too; it\'s an element, inserted from the Insert menu. Anything already pinned keeps working.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '3.29',
     date: '2026-07-17',
