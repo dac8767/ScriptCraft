@@ -12445,6 +12445,37 @@ html.android .version-history-panel {
   border-color: var(--fd-accent);
 }
 .fs-customize-hide:disabled { opacity: .4; cursor: not-allowed; }
+/* v3.07, Derek: Obsidian-style collapse row atop each side panel. The button
+   hugs the panel's OUTER edge (the side it folds into). */
+.tool-dock-collapse { display: flex; padding: 0 6px 4px; flex-shrink: 0; }
+.tool-dock-collapse-left { justify-content: flex-start; }
+.tool-dock-collapse-right { justify-content: flex-end; }
+.tool-dock-collapse-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 20px; padding: 0;
+  border: none; border-radius: 4px; background: transparent;
+  color: var(--fd-text-muted); cursor: pointer;
+}
+.tool-dock-collapse-btn:hover { background: var(--fd-hover-bg); color: var(--fd-text); }
+/* The counterpart when a panel is COLLAPSED: a slim strip on that edge of the
+   editor layout that expands it back. */
+.fs-panel-expand {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 6px 0 0;
+  border: none;
+  background: var(--fd-navigator-bg);
+  color: var(--fd-text-muted);
+  cursor: pointer;
+}
+.fs-panel-expand-left { border-right: 1px solid var(--fd-border); }
+.fs-panel-expand-right { border-left: 1px solid var(--fd-border); }
+.fs-panel-expand:hover { color: var(--fd-text); background: var(--fd-hover-bg); }
+.fs-panel-expand svg { width: 11px; height: 11px; }
 .tool-dock {
   width: 300px; /* same footprint as the original right panel */
   flex-shrink: 0;

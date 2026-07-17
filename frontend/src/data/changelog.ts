@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.06';
+export const APP_VERSION = '3.07';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.07',
+    date: '2026-07-17',
+    items: [
+      { title: 'Collapse buttons atop the side panels', detail: 'Obsidian-style: each side panel has a double-chevron button at its top that collapses it. A slim strip stays at that edge to expand it back — the toolbar toggles and View menu still work too.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '3.06',
     date: '2026-07-17',

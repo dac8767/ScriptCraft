@@ -53,6 +53,7 @@ import type { ElementType } from '../stores/editorStore';
 import MenuBar from './MenuBar';
 import Toolbar from './Toolbar';
 import ToolDock, { TempToolWindow } from './ToolDock';
+import { DoubleChevronIcon } from './uiIcons';
 import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
 import ScriptStatistics from './ScriptStatistics';
@@ -4064,6 +4065,15 @@ const ScreenplayEditor: React.FC = () => {
       <div className={`editor-layout${previewMode ? " preview-mode" : " hide-title-page"}`}>
       {previewMode && <PreviewSidebar editor={editor} />}
         {!isHistoryMode && navigatorOpen && <ToolDock side="left" editor={editor} scrollContainer={editorMainRef.current} />}
+        {/* v3.07, Derek: the collapsed panel leaves a slim expand strip at its
+            edge (Obsidian-style counterpart to the collapse button). */}
+        {!isHistoryMode && !navigatorOpen && !previewMode && (
+          <button
+            className="fs-panel-expand fs-panel-expand-left"
+            title="Expand the left panel"
+            onClick={toggleNavigator}
+          ><DoubleChevronIcon towards="right" /></button>
+        )}
         <div className="editor-center">
           {!isHistoryMode && <IndexCards editor={editor} scrollContainer={editorMainRef.current} />}
           {/* v1.96: the Notebook writing surface takes over the editor area
@@ -4214,6 +4224,13 @@ const ScreenplayEditor: React.FC = () => {
         )}
         {!isHistoryMode && <TempToolWindow editor={editor} scrollContainer={editorMainRef.current} />}
         {!isHistoryMode && shelfOpen && <ToolDock side="right" editor={editor} scrollContainer={editorMainRef.current} />}
+        {!isHistoryMode && !shelfOpen && !previewMode && (
+          <button
+            className="fs-panel-expand fs-panel-expand-right"
+            title="Expand the right panel"
+            onClick={toggleShelf}
+          ><DoubleChevronIcon towards="left" /></button>
+        )}
         {!isHistoryMode && <LocationDatabase editor={editor} style={{ width: rightPanelWidth, minWidth: rightPanelWidth }} />}
         {!isHistoryMode && pluginRegistry.getPanels('right-sidebar').map((p) => (
           <p.component key={p.id} editor={editor} />
