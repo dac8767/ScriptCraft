@@ -18,7 +18,6 @@ import {
   FaSearch,
   FaStickyNote,
   FaTags,
-  FaPaintBrush,
   FaHighlighter,
   FaEllipsisV,
   FaHashtag,
@@ -1017,7 +1016,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             disabled={locked.textColor}
             onClick={() => { if (!locked.textColor) { setTextColorOpen(!textColorOpen); setBgColorOpen(false); } }}
           >
-            <FaPaintBrush style={{ color: currentTextColor }} />
+            {/* v3.01, Derek: a red A — the picked color rides the underline */}
+            <span className="fs-textcolor-icon" aria-hidden="true">
+              A
+              <span className="fs-textcolor-bar" style={{ background: currentTextColor }} />
+            </span>
           </button>
           {showPopups && textColorOpen && (
             <ColorPicker

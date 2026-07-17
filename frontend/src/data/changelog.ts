@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.00';
+export const APP_VERSION = '3.01';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.01',
+    date: '2026-07-17',
+    items: [
+      { title: 'A new default ribbon — Derek\'s layout', detail: 'Fresh installs and Reset to Default now match the curated bar: Copy/Paste over Undo/Redo, font name and size over the styling and alignment row, the Element picker over the insert buttons, and big Find & Go-to buttons. Everything else waits in the Customize palette.', tags: ['UI'] },
+      { title: 'Text Color is a red A', detail: 'The toolbar button\'s underline bar carries whatever color is currently picked.', tags: ['UI'] },
+      { title: 'Double-click to add ribbon items', detail: 'Double-clicking a palette item (or the Divider/Spacer utilities) drops it straight into the most recently added or modified section — no drag needed.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '3.00',
     date: '2026-07-17',

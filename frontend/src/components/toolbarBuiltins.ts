@@ -98,23 +98,19 @@ export const BUILTIN_BY_KEY: Record<string, ToolbarBuiltin> = Object.fromEntries
 // full-height dividers (2!d:) is a section. Items read left-to-right; an
 // r: row-break inside a section puts what follows on a second row. A
 // section WITHOUT a break renders its items spanning both rows.
+// v3.01, Derek: the default is HIS layout (per screenshot) — clipboard +
+// history, font + styling + alignment, element + inserts, find/goto.
+// Everything else lives in the palette.
 export const DEFAULT_TOOLBAR_LEFT: string[] = [
-  'b:undo', 'b:redo', 'r:def-1', 'b:find', 'b:goto',
+  'c:copy', 'c:paste', 'r:def-1', 'b:undo', 'b:redo',
   '2!d:def-a',
-  'b:element',
+  'b:fontFamily', 'b:fontSize', 'r:def-2',
+  'b:bold', 'b:italic', 'b:underline', 'b:textColor', 'b:highlightColor',
+  'b:alignLeft', 'b:alignCenter', 'b:alignRight', 'b:alignJustify',
   '2!d:def-b',
-  'b:insertSection', 'b:insertNote', 'r:def-2', 'b:insertChecklist',
+  'b:element', 'r:def-3', 'b:insertSection', 'b:insertNote', 'b:insertChecklist',
   '2!d:def-c',
-  'b:fontFamily', 'b:fontSize', 'r:def-3',
-  'b:bold', 'b:italic', 'b:underline', 'b:strike',
-  'b:subscript', 'b:superscript', 'b:textColor', 'b:highlightColor',
-  '2!d:def-d',
-  'b:alignLeft', 'b:alignCenter', 'r:def-4', 'b:alignRight', 'b:alignJustify',
-  '2!d:def-e',
-  'b:zoom', 'b:view',
-  '2!d:def-f',
-  'b:togglePanelLeft', 'b:togglePanelRight', 'b:toggleOutlineBar', 'r:def-5',
-  'b:lockResize', 'b:resetSizes', 'b:insertTable',
+  'b:find', 'b:goto',
 ];
 
 /** v2.34 one-time: existing saved layouts get the three surface toggles

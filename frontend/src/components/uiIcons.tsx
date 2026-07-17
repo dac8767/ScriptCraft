@@ -15,7 +15,7 @@ import {
   FaColumns, FaQuestionCircle, FaStream,
   FaUndo, FaRedo, FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
   FaBold, FaItalic, FaUnderline, FaStrikethrough, FaSubscript, FaSuperscript,
-  FaPaintBrush, FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
+  FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
   FaAlignJustify, FaSearch, FaHashtag, FaStickyNote, FaTags, FaSearchPlus,
   FaFont, FaTextHeight, FaDesktop, FaMinus, FaArrowsAltV,
   FaLock, FaUnlock, FaTable,
@@ -173,7 +173,9 @@ export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
   strike: <FaStrikethrough />,
   subscript: <FaSubscript />,
   superscript: <FaSuperscript />,
-  textColor: <FaPaintBrush />,
+  // v3.01, Derek: the Text Color icon is a red A (his one deliberate
+  // exception to the monotone-icons rule).
+  textColor: <span className="fs-textcolor-icon" aria-hidden="true">A</span>,
   highlightColor: <FaHighlighter />,
   alignLeft: <FaAlignLeft />,
   alignCenter: <FaAlignCenter />,

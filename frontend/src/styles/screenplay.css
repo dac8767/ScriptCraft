@@ -16522,6 +16522,25 @@ input.fs-switch:checked::after { left: 15px; }
   background: color-mix(in srgb, var(--fd-accent) 35%, transparent);
   border-color: var(--fd-accent);
 }
+/* v3.01, Derek: the Text Color icon — a red A. The live toolbar button adds
+   an underline bar carrying the currently-picked color. */
+.fs-textcolor-icon {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  color: #e04444;
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.05;
+}
+.fs-textcolor-bar {
+  width: 12px;
+  height: 3px;
+  border-radius: 1px;
+  margin-top: 1px;
+}
+
 /* v2.94: the same grid, hosted by the toolbar's Insert Table button (Row 2) —
    the native menu bar can't render it, so the toolbar owns it now. Portalled
    to body and positioned fixed from the trigger (the toolbar's stacking

@@ -69,8 +69,7 @@ describe('migrateResetSizes (v2.67)', () => {
     expect(migrateResetSizes(once)).toEqual(once);
   });
 
-  it('registered as a builtin; in the default ribbon sequence', () => {
-    expect(DEFAULT_TOOLBAR_LEFT).toContain('b:resetSizes');
+  it('registered as a builtin (v3.01: default layout keeps it in the palette)', () => {
     expect(BUILTIN_BY_KEY.resetSizes?.label).toBe('Reset Sizing');
   });
 });

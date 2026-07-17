@@ -49,7 +49,14 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
   // or a stale fallback wakes after the drop and runs a phantom drag.
   const fallbackCleanup = useRef<(() => void) | null>(null);
 
-  const commit = (secs: RibbonSection[]) => onChange(serializeRibbon(secs));
+  // v3.01, Derek: double-clicking a palette item drops it into the most
+  // recently added or modified section — every mutation records its target.
+  const lastSec = useRef<number | null>(null);
+
+  const commit = (secs: RibbonSection[], touchedSec?: number) => {
+    if (touchedSec !== undefined) lastSec.current = touchedSec;
+    onChange(serializeRibbon(secs));
+  };
   const endDrag = () => {
     setSpot(null);
     setDragging(false);
@@ -125,8 +132,18 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
     } else if (payload.startsWith('new:')) {
       rowArr.splice(idx, 0, payload.slice(4));
     }
-    commit(secs);
+    commit(secs, at.sec);
     endDrag();
+  };
+
+  /** v3.01, Derek: double-click a palette item → it lands at the end of the
+   *  most recently added or modified section (the last one, if none yet). */
+  const quickAdd = (tok: string) => {
+    const secs = clone(sections);
+    const sec = Math.min(lastSec.current ?? secs.length - 1, secs.length - 1);
+    const target = secs[sec];
+    (target.hasBreak ? target.bottom : target.top).push(tok);
+    commit(secs, sec);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -313,13 +330,13 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
       breakLine: a.breakLine || b.breakLine,
     };
     secs.splice(i, 2, merged);
-    commit(secs);
+    commit(secs, i);
   };
 
   const removeBreak = (i: number) => {
     const secs = clone(sections);
     secs[i] = { top: [...secs[i].top, ...secs[i].bottom], bottom: [], hasBreak: false, breakLine: false };
-    commit(secs);
+    commit(secs, i);
   };
 
   /** v2.97, Derek: clicking the split line toggles it heavy (drawn on the
@@ -327,7 +344,7 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
   const toggleBreakLine = (i: number) => {
     const secs = clone(sections);
     secs[i] = { ...secs[i], breakLine: !secs[i].breakLine };
-    commit(secs);
+    commit(secs, i);
   };
 
   return (
@@ -364,21 +381,23 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
           <button
             className="ribed-add-section"
             title="Add a new empty section at the end"
-            onClick={() => commit([...clone(sections), { ...EMPTY_SECTION }])}
+            onClick={() => commit([...clone(sections), { ...EMPTY_SECTION }], sections.length)}
           >+ Section</button>
           <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a section to split it into two rows"
             onDragStart={(e) => dragStart(e, 'util:rowbreak')} onDragEnd={endDrag}
             onPointerDown={(e) => startPointerFallback(e, 'util:rowbreak')}>
             <FaLevelDownAlt /> New Row
           </span>
-          <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a row: a one-row vertical divider line"
+          <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a row: a one-row vertical divider line (double-click: add to the last-touched section)"
             onDragStart={(e) => dragStart(e, 'util:divider')} onDragEnd={endDrag}
-            onPointerDown={(e) => startPointerFallback(e, 'util:divider')}>
+            onPointerDown={(e) => startPointerFallback(e, 'util:divider')}
+            onDoubleClick={() => quickAdd(`d:${Date.now()}`)}>
             <FaGripLinesVertical /> Divider
           </span>
-          <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a row: blank space — drag its edge to resize"
+          <span className="ribed-pal-chip ribed-pal-util" draggable title="Drop into a row: blank space — drag its edge to resize (double-click: add to the last-touched section)"
             onDragStart={(e) => dragStart(e, 'util:spacer')} onDragEnd={endDrag}
-            onPointerDown={(e) => startPointerFallback(e, 'util:spacer')}>
+            onPointerDown={(e) => startPointerFallback(e, 'util:spacer')}
+            onDoubleClick={() => quickAdd(`s:${Date.now()}`)}>
             <FaArrowsAltH /> Spacer
           </span>
         </div>
@@ -389,7 +408,8 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
         position. Drag <strong>New Row</strong> into a section to split it
         into two rows at that spot; a section without a split spans its items
         across both rows. Spacers resize by dragging their right edge. Drag
-        an item onto the lists below to remove it.
+        an item onto the lists below to remove it — or double-click one below
+        to add it to the section you touched last.
       </p>
 
       {/* available items; also the drop target for removal */}
@@ -411,10 +431,11 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
                 key={o.value}
                 className="ribed-pal-chip"
                 draggable
-                title={`Drag onto the ribbon: ${o.label}`}
+                title={`Drag onto the ribbon — or double-click to add: ${o.label}`}
                 onDragStart={(e) => dragStart(e, `new:${o.value}`)}
                 onDragEnd={endDrag}
                 onPointerDown={(e) => startPointerFallback(e, `new:${o.value}`)}
+                onDoubleClick={() => quickAdd(o.value)}
               >
                 <span className="ribed-chip-icon">{tokenIcon(o.value)}</span>
                 {o.label}
