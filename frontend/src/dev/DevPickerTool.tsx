@@ -23,8 +23,21 @@ import {
   captureApp, copyImage, buildBundle, downloadText, downloadShot, type Shot,
 } from './devCapture';
 
-const DRAFT_KEY = 'freescript:devpicker:draft';
-const PHRASES_KEY = 'freescript:devpicker:phrases';
+/* v3.14: renamed from freescript:* (Derek's FreeScript→ScriptCraft sweep).
+   Dev-only scratch state, but a rename must not eat his draft — one-time
+   copy from the old keys, then the old ones are removed. */
+const DRAFT_KEY = 'scriptcraft:devpicker:draft';
+const PHRASES_KEY = 'scriptcraft:devpicker:phrases';
+try {
+  for (const [oldKey, newKey] of [
+    ['freescript:devpicker:draft', DRAFT_KEY],
+    ['freescript:devpicker:phrases', PHRASES_KEY],
+  ] as const) {
+    const v = localStorage.getItem(oldKey);
+    if (v !== null && localStorage.getItem(newKey) === null) localStorage.setItem(newKey, v);
+    if (v !== null) localStorage.removeItem(oldKey);
+  }
+} catch { /* storage unavailable */ }
 
 interface Props { onClose?: () => void }
 

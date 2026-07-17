@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.13';
+export const APP_VERSION = '3.14';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.14',
+    date: '2026-07-17',
+    items: [
+      { title: 'FreeScript → ScriptCraft, everywhere it was left', detail: 'The splash screen (it still said FreeScript and OPEN DRAFT), the Dev Picker\'s storage keys (with a one-time migration so drafts survive), and the docs. The repo itself renames on GitHub — old links redirect.', tags: ['Branding'] },
+    ],
+  },
   {
     version: '3.13',
     date: '2026-07-17',

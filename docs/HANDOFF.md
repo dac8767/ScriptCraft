@@ -25,7 +25,7 @@ rotated; a rebase conflict when the chat-Claude and a local Claude Code both edi
 sandbox hadn't pulled, so the next delivery would have clobbered his commit.
 
 **You have none of those constraints. You are editing the real repo on Derek's Mac
-(`/Users/dcarl/FreeScript`). The change is just *there*.** So:
+(`/Users/dcarl/ScriptCraft`). The change is just *there*.** So:
 
 1. **Start every session with** `git pull --rebase` (pull.rebase is already set
    globally, so plain `git pull` also rebases). The chat-Claude can still push to
@@ -45,7 +45,7 @@ sandbox hadn't pulled, so the next delivery would have clobbered his commit.
 7. **End your message with the restart command.** Derek tests every change:
 
    ```
-   cd /Users/dcarl/FreeScript && npm run app
+   cd /Users/dcarl/ScriptCraft && npm run app
    ```
 
    (`npm run app` launches without pulling — right when you've just edited his
@@ -171,4 +171,4 @@ examples (search "pinned").
 3. `tsc -b` = 0, `npm test` green, `npm run build` passes — before "it works".
 4. One source of truth. No silent no-ops. Root cause, not patch.
 5. Pin every bug fix with a test.
-6. End with: `cd /Users/dcarl/FreeScript && npm run app`
+6. End with: `cd /Users/dcarl/ScriptCraft && npm run app`

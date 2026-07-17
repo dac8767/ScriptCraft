@@ -1,10 +1,12 @@
 # ScriptCraft — working notes for Claude
 
 > **Naming history:** OpenDraft (upstream) → FreeScript (repo name) → FreeDraft
-> (v0.5–v1.33) → **ScriptCraft** (v1.34, Derek's rename). The repo, the
+> (v0.5–v1.33) → **ScriptCraft** (v1.34, Derek's rename). v3.14: the repo and
+> Derek's clone are renamed to ScriptCraft too (`dac8767/ScriptCraft`,
+> `/Users/dcarl/ScriptCraft` — GitHub redirects the old URLs). The
 > `.odraft` format, the `com.freedraft.app` bundle id and the `opendraft:*`
-> storage keys keep their old names on purpose — renaming identifiers that
-> persist data or define the app's identity orphans user data.
+> storage keys STILL keep their old names on purpose — renaming identifiers
+> that persist data or define the app's identity orphans user data.
 
 Read this before touching anything. It is the residue of 100 shipped versions, and
 most of it is the kind of thing you only learn by getting it wrong first.
@@ -56,8 +58,8 @@ A professional screenwriting desktop app, forked from Proteus's OpenDraft.
 | **Frontend** | React 19 + TypeScript + Vite, TipTap editor (`frontend/`) |
 | **Backend** | FastAPI, SQLite, dulwich for script history |
 | **Desktop** | Tauri (WebKit on macOS), shipping as a signed `.dmg` |
-| **Repo** | `dac8767/FreeScript`, branch **`claude/v0_32`** |
-| **Derek's clone** | `/Users/dcarl/FreeScript` |
+| **Repo** | `dac8767/ScriptCraft` (renamed from FreeScript in v3.14; old URLs redirect), branch **`claude/v0_32`** |
+| **Derek's clone** | `/Users/dcarl/ScriptCraft` |
 
 **`main` is a stale v0.6 baseline. Never commit to it.** All work is on `claude/v0_32`.
 
@@ -114,7 +116,7 @@ it actually produced — not by staring at the source and reasoning.
 End any message that delivers a change with:
 
 ```
-cd /Users/dcarl/FreeScript && npm run desktop
+cd /Users/dcarl/ScriptCraft && npm run desktop
 ```
 
 `npm run desktop` = `git pull` → `npm install` (a no-op unless deps changed — this is
