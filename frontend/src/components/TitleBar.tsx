@@ -43,6 +43,13 @@ export const QAT_OPTIONS: Array<{ id: string; label: string; icon: React.ReactNo
 ];
 export const QAT_BY_ID = Object.fromEntries(QAT_OPTIONS.map((o) => [o.id, o]));
 
+/** v3.39, Derek: the QAT can carry dividers and spacers between its buttons —
+ *  stored as prefixed ids (unique so several can coexist) alongside the
+ *  option ids. One place recognizes them, read by both the titlebar and
+ *  Customize > Quick Access. */
+export const isQatDivider = (id: string) => id.startsWith('qdiv:');
+export const isQatSpacer = (id: string) => id.startsWith('qsp:');
+
 const isMacLike = /mac/i.test(navigator.platform || navigator.userAgent);
 
 /** One place decides whether the overlay titlebar row exists. The DEV-only
@@ -61,6 +68,8 @@ const TitleBar: React.FC<{ editor: Editor | null }> = ({ editor }) => {
       {/* left inset clears the traffic lights */}
       <div className="fs-titlebar-qat">
         {qatItems.map((id) => {
+          if (isQatDivider(id)) return <span key={id} className="fs-titlebar-sep" />;
+          if (isQatSpacer(id)) return <span key={id} className="fs-titlebar-spacer" />;
           const o = QAT_BY_ID[id];
           if (!o) return null;
           const run = id === 'undo' ? () => smartUndo(editor)

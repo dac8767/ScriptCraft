@@ -866,6 +866,9 @@ export interface OutlineBarRow {
   id: string;
   kind: 'ruler' | 'acts' | 'beats' | 'script';
   h?: number;
+  /** v3.39, Derek: a user-chosen label for this row (Customize > Outline Bar).
+   *  Blank ⇒ the kind's default name. */
+  name?: string;
 }
 export const DEFAULT_OUTLINE_BAR_ROWS: OutlineBarRow[] = [
   { id: 'ruler-1', kind: 'ruler' },

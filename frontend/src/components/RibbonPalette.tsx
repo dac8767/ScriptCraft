@@ -10,7 +10,7 @@
  * the token sequence in `toolbarLeft` stays the single source of truth.
  */
 import React, { useState } from 'react';
-import { FaGripLinesVertical, FaArrowsAltH, FaExchangeAlt, FaRegQuestionCircle } from 'react-icons/fa';
+import { FaGripLinesVertical, FaArrowsAltH, FaExchangeAlt } from 'react-icons/fa';
 import { tokenIcon } from './tokenMeta';
 import {
   startRibbonDrag, ribAppendSection, ribQuickAdd,
@@ -23,7 +23,6 @@ interface Props {
 
 const RibbonPalette: React.FC<Props> = ({ palette, headerControls }) => {
   const [paletteQuery, setPaletteQuery] = useState('');
-  const [helpOpen, setHelpOpen] = useState(false);
   const q = paletteQuery.trim().toLowerCase();
   const filtered = q
     ? palette.map((cat) => ({ ...cat, options: cat.options.filter((o) => o.label.toLowerCase().includes(q)) }))
@@ -58,24 +57,6 @@ const RibbonPalette: React.FC<Props> = ({ palette, headerControls }) => {
           <span className="ribed-pal-chip ribed-pal-util" title="Drag onto the toolbar between two sections: everything after aligns to the RIGHT edge"
             onPointerDown={(e) => startRibbonDrag(e, 'util:alignsplit')}>
             <FaExchangeAlt /> Align Split
-          </span>
-          <span className="ribed-help-anchor">
-            <button
-              className="ribed-help-btn"
-              title="How toolbar editing works"
-              onClick={() => setHelpOpen((v) => !v)}
-            ><FaRegQuestionCircle /></button>
-            {helpOpen && (
-              <div className="ribed-help-pop" onClick={() => setHelpOpen(false)}>
-                While this tab is open, the <strong>real toolbar</strong> above
-                is the editor. Drag items from the lists below straight onto it;
-                drag a section by its body to move it; hover a section for its
-                closing ×. Drop <strong>Align Split</strong> between two sections
-                so everything after hugs the right edge. Drag an item off the bar
-                (back here) to remove it, or double-click one below to add it.
-                Close this window to lock the layout.
-              </div>
-            )}
           </span>
         </div>
       </div>

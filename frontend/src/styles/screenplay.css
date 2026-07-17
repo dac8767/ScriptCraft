@@ -17822,6 +17822,46 @@ input.fs-switch:checked::after { left: 15px; }
   width: 52px; background: transparent; color: var(--fd-text);
   border: 1px solid var(--fd-border); border-radius: 4px; padding: 2px 4px; font-size: 12px;
 }
+/* v3.39, Derek: the outline row's name is editable — same column width as the
+   static label it replaced, so the arrows/height/× still line up. */
+.fs-obrow-name {
+  flex: 0 0 auto; width: 150px;
+  padding: 3px 7px;
+  background: var(--fd-input-bg, var(--fd-navigator-bg)); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: 5px; font-size: 12.5px; outline: none;
+}
+.fs-obrow-name:focus { border-color: var(--fd-accent); }
+
+/* v3.39, Derek: per-tab info button — the ?-in-a-circle pinned to the tab
+   window's upper-right. A zero-height sticky wrapper keeps it in the corner
+   even as the tab body scrolls. */
+.fs-tabinfo { position: sticky; top: 0; height: 0; z-index: 6; }
+.fs-tabinfo-btn {
+  position: absolute; top: 2px; right: 4px;
+  width: 22px; height: 22px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: 50%;
+  background: transparent; color: var(--fd-text-muted);
+  cursor: pointer; font-size: 15px;
+}
+.fs-tabinfo-btn:hover, .fs-tabinfo-btn.active { color: var(--fd-accent); background: var(--fd-hover-bg); }
+.fs-tabinfo-pop {
+  position: absolute; top: 28px; right: 4px;
+  width: 268px; max-width: 82vw;
+  padding: 10px 12px;
+  background: var(--fd-menu-bg, var(--fd-panel-bg));
+  border: 1px solid var(--fd-border); border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  font-size: 11.5px; line-height: 1.45; color: var(--fd-text);
+}
+
+/* v3.39, Derek: QAT dividers + spacers in the macOS titlebar row. */
+.fs-titlebar-sep {
+  flex: none; align-self: center;
+  width: 1px; height: 14px; margin: 0 3px;
+  background: var(--fd-border);
+}
+.fs-titlebar-spacer { flex: none; width: 16px; }
 
 /* ─── v2.43 ─── */
 /* Derek: equal-width Arrangement buttons — the toggle never reflows. */

@@ -1,4 +1,5 @@
 import React from 'react';
+import { FaRegQuestionCircle, FaGripLinesVertical, FaArrowsAltH } from 'react-icons/fa';
 import { MENU_ICONS, UTILITY_ICONS } from './uiIcons';
 /**
  * CustomizePanelsDialog — View → Customize Layout.
@@ -26,7 +27,7 @@ import EditElementsDialog from './EditElementsDialog';
 import KeyboardShortcutsTab from './KeyboardShortcutsTab';
 import ThemesTab from './ThemesTab';
 import ContextMenuTab from './ContextMenuTab';
-import { QAT_OPTIONS, QAT_BY_ID } from './TitleBar';
+import { QAT_OPTIONS, QAT_BY_ID, isQatDivider, isQatSpacer } from './TitleBar';
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
@@ -53,6 +54,33 @@ export function titleCase(s: string): string {
     return w.charAt(0).toUpperCase() + w.slice(1);
   }).join('');
 }
+
+/* v3.39, Derek: every tab's helper text moved OUT of the body and into ONE
+   info button (?-in-a-circle) pinned to the tab window's upper-right corner.
+   The text lives in TAB_HINTS, keyed by the tab id, so there's a single place
+   per tab and a single affordance for all of them. */
+function TabInfo({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className="fs-tabinfo">
+      <button
+        type="button"
+        className={`fs-tabinfo-btn${open ? ' active' : ''}`}
+        title="About this tab"
+        aria-label="About this tab"
+        onClick={() => setOpen((v) => !v)}
+      ><FaRegQuestionCircle /></button>
+      {open && <div className="fs-tabinfo-pop" onClick={() => setOpen(false)}>{children}</div>}
+    </div>
+  );
+}
+const TAB_HINTS: Record<string, React.ReactNode> = {
+  menu: <>Drag menus between Shown and Hidden — where you drop one is where it sits on the bar. File always stays visible.</>,
+  toolbar: <>Your toolbar above is now the editor. While this tab is open the real ribbon is live: drag items from the palette straight onto it, drag a section by its body to move it, hover an item or section for its ×. Use a faint “+ Add” block on the bar to insert a section, divider, spacer, alignment split or any item. Drag an item off the bar to remove it. Close this window to lock the layout.</>,
+  qat: <>The buttons beside the traffic lights in the titlebar. Drag between Shown and Hidden — where you drop one is where it sits. Add dividers and spacers to group them.</>,
+  panels: <>Drag tools between Left Panel, Right Panel and Hidden — where you drop one is where it sits. The Show/Hide in a list’s header controls the whole panel (drag a panel’s inner edge in the app to resize it). Divider labels are edited here only.</>,
+  outlinebar: <>Rename a row by typing over its name; reorder with the arrows; set a height in pixels (blank = default); × removes a row. Add Row can also add a second copy — a ruler at the bottom, say. Drag the bar’s bottom edge in the app to scale every row at once.</>,
+};
 
 /** v2.42, Derek: Customize > Outline Bar — reorder the bar's rows, add
  *  extra ones, set each row's height, toggle the row labels. One config
@@ -94,15 +122,15 @@ function OutlineBarTab() {
         </span>
       </div>
       <h3>Outline Bar Rows</h3>
-      <p className="fs-customize-hint">
-        Reorder with the arrows; set a height in pixels (blank = default);
-        × removes a row. Add Row can also add a second copy — a ruler at the
-        bottom, say. Drag the bar's bottom edge in the app to scale every
-        row at once.
-      </p>
       {rows.map((r, i) => (
         <div key={r.id} className="fs-customize-row fs-size-row">
-          <span className="fs-customize-tool">{OUTLINE_ROW_LABELS[r.kind] ?? r.kind}</span>
+          <input
+            className="fs-obrow-name"
+            value={r.name ?? ''}
+            placeholder={OUTLINE_ROW_LABELS[r.kind] ?? r.kind}
+            title="Row name (blank = the default)"
+            onChange={(e) => setRows(rows.map((x) => (x.id === r.id ? { ...x, name: e.target.value || undefined } : x)))}
+          />
           <span className="fs-customize-seg">
             <button title="Move up" disabled={i === 0} onClick={() => move(i, -1)}>↑</button>
             <button title="Move down" disabled={i === rows.length - 1} onClick={() => move(i, 1)}>↓</button>
@@ -465,12 +493,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     return (
       <section>
         <h3>Panel Items</h3>
-        <p className="fs-customize-hint">
-          Drag tools between Left Panel, Right Panel and Hidden — where you
-          drop one is where it sits. The Show/Hide in a list's header controls
-          the whole panel (drag a panel's inner edge in the app to resize it).
-          Divider labels are edited here only.
-        </p>
         {/* v2.29, Derek: the per-side size rows are gone — panel width is
             all manual (drag the panel's inner edge; drag it small enough
             and it snaps into the icon rail). v2.31: plus a way back. */}
@@ -793,6 +815,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           </div>
         </div>
         <div className="dialog-body fs-customize-body">
+          {/* v3.39, Derek: the tab's helper text, one ?-in-a-circle pinned to
+              the upper-right corner. Keyed by tab so it re-closes on switch. */}
+          {TAB_HINTS[activeCat] && <TabInfo key={activeCat}>{TAB_HINTS[activeCat]}</TabInfo>}
           {/* v3.34, Derek: the lock covers ALL customizations — while it's
               on, every tab's editors are veiled (the rail's unlock button
               stays reachable). */}
@@ -804,10 +829,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           {activeCat === 'menu' && (<>
           <section>
             <h3>Menus</h3>
-            <p className="fs-customize-hint">
-              Drag menus between Shown and Hidden — where you drop one is
-              where it sits on the bar. File always stays visible.
-            </p>
             {/* v2.29, Derek: NO sizing options in Customize — sizing is all
                 manual on the main screen (drag the strip under the top bars).
                 v2.31: except a way back to the default size. */}
@@ -899,13 +920,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           {activeCat === 'toolbar' && (<>
           <section>
             <h3>Toolbar Layout</h3>
-            <p className="fs-customize-hint">
-              {/* v3.36, Derek: editing happens ON the real toolbar above —
-                  this tab is just the source palette. */}
-              Your toolbar above is now the editor. Drag items and utilities
-              from below straight onto it; drag an item off the bar to remove
-              it. Close this window to lock the layout.
-            </p>
+            {/* v3.39: the helper text moved to the tab info icon (TAB_HINTS). */}
             {/* v3.36: the SOURCE side only — the real bar is the drop
                 surface (see RibbonPalette / ribbonDrag). */}
             <RibbonPalette
@@ -948,22 +963,20 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           {activeCat === 'qat' && (<>
           <section>
             <h3>Quick Access Toolbar</h3>
-            <p className="fs-customize-hint">
-              The buttons beside the traffic lights in the titlebar. Drag
-              between Shown and Hidden — where you drop one is where it sits
-              on the bar.
-            </p>
             <DndColumns
               columns={[
                 {
                   id: 'shown', title: 'Shown',
                   sections: [{
-                    rows: qatItems.filter((id) => QAT_BY_ID[id]).map((id) => ({
+                    // v3.39: divider/spacer ids ride here too — they carry no
+                    // QAT_BY_ID entry, so render them as their own chips.
+                    rows: qatItems.filter((id) => QAT_BY_ID[id] || isQatDivider(id) || isQatSpacer(id)).map((id) => ({
                       key: id,
                       content: (
                         <span className="fs-customize-tool">
-                          {iconSlot(QAT_BY_ID[id].icon)}
-                          {QAT_BY_ID[id].label}
+                          {isQatDivider(id) ? <>{iconSlot(<FaGripLinesVertical />)}<em>Divider</em></>
+                            : isQatSpacer(id) ? <>{iconSlot(<FaArrowsAltH />)}<em>Spacer</em></>
+                            : <>{iconSlot(QAT_BY_ID[id].icon)}{QAT_BY_ID[id].label}</>}
                           <button
                             className="fs-dnd-rowbtn"
                             title="Remove from the Quick Access Toolbar"
@@ -1007,6 +1020,16 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               }}
             />
             <div className="fs-tbzone-adders fs-adders-equal">
+              <button
+                className="swn-add-btn"
+                title="Add a divider (a thin line) to the end — drag it into place"
+                onClick={() => setQatItems([...qatItems, `qdiv:${Date.now().toString(36)}`])}
+              >Add Divider</button>
+              <button
+                className="swn-add-btn"
+                title="Add a spacer (blank gap) to the end — drag it into place"
+                onClick={() => setQatItems([...qatItems, `qsp:${Date.now().toString(36)}`])}
+              >Add Spacer</button>
               <button
                 className="swn-add-btn"
                 title="Restore the default Quick Access buttons: Save, Undo, Redo"

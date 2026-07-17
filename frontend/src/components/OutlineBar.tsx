@@ -593,6 +593,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             if (row.kind === 'ruler') {
               return (
                 <div key={row.id} className="fs-ob-ruler" style={rowStyle}>
+                  {showLabels && row.name?.trim() && <span className="fs-ob-lane-label">{row.name.trim()}</span>}
                   {pages.map((p) => (
                     <span key={p} className="fs-ob-tick" style={{ left: pctLeft(p), width: pctWidth(1) }}>
                       {(p === 1 || p % labelEvery === 0) && <span className="fs-ob-tick-label">{p}</span>}
@@ -604,7 +605,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             if (row.kind === 'acts') {
               return (
                 <div key={row.id} className="fs-ob-lane fs-ob-acts" style={rowStyle}>
-                  {showLabels && <span className="fs-ob-lane-label">Acts</span>}
+                  {showLabels && <span className="fs-ob-lane-label">{row.name?.trim() || 'Acts'}</span>}
                   {acts.map((a, i) => (
                     <div
                       key={a.id}
@@ -640,7 +641,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             if (row.kind === 'beats') {
               return (
                 <div key={row.id} className="fs-ob-lane fs-ob-beats" style={rowStyle}>
-                  {showLabels && <span className="fs-ob-lane-label">Beats</span>}
+                  {showLabels && <span className="fs-ob-lane-label">{row.name?.trim() || 'Beats'}</span>}
                   {beats.map((b) => {
                     const l = layout.get(b.id);
                     if (!l) return null;
@@ -675,7 +676,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             // 'script' — one block per scene heading, true fractional lengths.
             return (
               <div key={row.id} className="fs-ob-lane fs-ob-scenes" style={rowStyle}>
-                {showLabels && <span className="fs-ob-lane-label">Script</span>}
+                {showLabels && <span className="fs-ob-lane-label">{row.name?.trim() || 'Script'}</span>}
                 {scenes.length === 0 ? (
                   <span className="fs-ob-empty">No scene headings yet</span>
                 ) : scenes.map((sc, i) => (

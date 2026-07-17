@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.38';
+export const APP_VERSION = '3.39';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.39',
+    date: '2026-07-17',
+    items: [
+      { title: 'Dividers and spacers in the Quick Access Toolbar', detail: 'Customize > Quick Access now has Add Divider and Add Spacer — drop a thin line or a blank gap between the titlebar buttons and drag it where you want, just like the ribbon.', tags: ['New Feature', 'UI'] },
+      { title: 'Name your Outline Bar rows', detail: 'Each row in Customize > Outline Bar has an editable name — type over “Beats” to call it whatever you like. Blank falls back to the default. The name shows on the bar.', tags: ['New Feature', 'Tools'] },
+      { title: 'Tab help tucked into an info button', detail: 'Every Customize tab’s instructions moved out of the way into a single ?-in-a-circle in the tab’s upper-right corner. Click it when you want the guidance; otherwise the tab stays clean.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.38',
     date: '2026-07-17',
