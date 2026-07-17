@@ -94,33 +94,27 @@ export const BUILTIN_BY_KEY: Record<string, ToolbarBuiltin> = Object.fromEntries
 // v2.14: the group separators are REAL divider tokens now — they show up in
 // Customize > Toolbar like any user divider, movable and removable. (The old
 // sepAfter flags rendered ghosts Customize couldn't see.)
-// v2.95: ONE ribbon sequence, column-major into two rows — consecutive small
-// items stack in pairs (undo over redo, Bold over Italic…); `2!` items span
-// both rows. Group dividers are full-height, Word style.
+// v2.96: ONE ribbon sequence organized by SECTION — everything between two
+// full-height dividers (2!d:) is a section. Items read left-to-right; an
+// r: row-break inside a section puts what follows on a second row. A
+// section WITHOUT a break renders its items spanning both rows.
 export const DEFAULT_TOOLBAR_LEFT: string[] = [
-  'b:undo', 'b:redo',
-  '2!d:def-history',
-  '2!b:element',
-  'b:insertSection', 'b:insertNote',
-  'b:insertChecklist',
-  '2!d:def-insert',
-  'b:fontFamily', 'b:fontSize',
-  'b:bold', 'b:italic',
-  'b:underline', 'b:strike',
-  'b:subscript', 'b:superscript',
-  'b:textColor', 'b:highlightColor',
-  '2!d:def-style',
-  'b:alignLeft', 'b:alignCenter',
-  'b:alignRight', 'b:alignJustify',
-  '2!d:def-align',
-  'b:find', 'b:goto',
-  '2!d:def-nav',
-  '2!b:zoom',
-  '2!b:view',
-  '2!d:def-surfaces',
-  'b:togglePanelLeft', 'b:togglePanelRight',
-  'b:toggleOutlineBar', 'b:lockResize',
-  'b:resetSizes', 'b:insertTable',
+  'b:undo', 'b:redo', 'r:def-1', 'b:find', 'b:goto',
+  '2!d:def-a',
+  'b:element',
+  '2!d:def-b',
+  'b:insertSection', 'b:insertNote', 'r:def-2', 'b:insertChecklist',
+  '2!d:def-c',
+  'b:fontFamily', 'b:fontSize', 'r:def-3',
+  'b:bold', 'b:italic', 'b:underline', 'b:strike',
+  'b:subscript', 'b:superscript', 'b:textColor', 'b:highlightColor',
+  '2!d:def-d',
+  'b:alignLeft', 'b:alignCenter', 'r:def-4', 'b:alignRight', 'b:alignJustify',
+  '2!d:def-e',
+  'b:zoom', 'b:view',
+  '2!d:def-f',
+  'b:togglePanelLeft', 'b:togglePanelRight', 'b:toggleOutlineBar', 'r:def-5',
+  'b:lockResize', 'b:resetSizes', 'b:insertTable',
 ];
 
 /** v2.34 one-time: existing saved layouts get the three surface toggles
@@ -147,14 +141,16 @@ export function migrateResetSizes(left: string[]): string[] {
     : [...left, 'b:resetSizes'];
 }
 
-/* ── v2.95: the RIBBON ──────────────────────────────────────────────────
-   Derek: "update the toolbar so it emulates the Microsoft Word ribbon."
-   The toolbar is ONE flat sequence of tokens flowing into a two-row grid,
-   column by column — two consecutive small items stack into a column,
-   exactly like Word's dense button areas. Any token may carry the `2!`
-   flag to SPAN both rows: buttons render tall (icon over label), wide
-   controls center vertically, dividers become full-height group
-   separators. A plain `d:` divider marks only its own row.
+/* ── v2.95/v2.96: the RIBBON ────────────────────────────────────────────
+   Derek: "update the toolbar so it emulates the Microsoft Word ribbon",
+   then (v2.96): "arrange by section. all items between two large dividers
+   is a section... a utility item indicates at which point the icons move
+   to the second row... if it is not used, the items span both rows."
+
+   The sequence is flat; structure comes from two token kinds:
+     2!d:<id>  full-height SECTION divider
+     r:<id>    ROW BREAK — items after it sit on the section's second row
+   A section with no break renders its items spanning both rows.
 
    Customize is not a token — it's fixed chrome at the right edge,
    spanning both rows (the old v0.91 shape, reborn).
@@ -169,6 +165,46 @@ export const isTall = (tok: string) => tok.startsWith(TALL_PREFIX);
 export const stripTall = (tok: string) => (isTall(tok) ? tok.slice(TALL_PREFIX.length) : tok);
 export const makeTall = (tok: string) => (isTall(tok) ? tok : TALL_PREFIX + tok);
 
+/** Section divider: a full-height d: token. */
+export const isSectionDivider = (tok: string) => isTall(tok) && stripTall(tok).startsWith('d:');
+/** Row break: the v2.96 utility that starts a section's second row. */
+export const isRowBreak = (tok: string) => tok.startsWith('r:');
+
+/** A parsed ribbon section. `hasBreak` false ⇒ single row, items span both
+ *  rows; true ⇒ `top` row above `bottom` row. */
+export interface RibbonSection { top: string[]; bottom: string[]; hasBreak: boolean }
+
+/** The ribbon's structure, straight from the token sequence. Extra row
+ *  breaks in one section merge into the first (a section has at most two
+ *  rows); serializeRibbon writes the canonical form back. */
+export function parseRibbon(tokens: string[]): RibbonSection[] {
+  const sections: RibbonSection[] = [];
+  let cur: RibbonSection = { top: [], bottom: [], hasBreak: false };
+  for (const raw of tokens) {
+    if (isSectionDivider(raw)) {
+      sections.push(cur);
+      cur = { top: [], bottom: [], hasBreak: false };
+      continue;
+    }
+    if (isRowBreak(raw)) { cur.hasBreak = true; continue; }
+    (cur.hasBreak ? cur.bottom : cur.top).push(raw);
+  }
+  sections.push(cur);
+  return sections;
+}
+
+/** Sections → the flat token sequence. Divider/break ids are positional —
+ *  they only need to be unique within the sequence. */
+export function serializeRibbon(sections: RibbonSection[]): string[] {
+  const out: string[] = [];
+  sections.forEach((s, i) => {
+    if (i > 0) out.push(`2!d:sec-${i}`);
+    out.push(...s.top);
+    if (s.hasBreak) out.push(`r:row-${i}`, ...s.bottom);
+  });
+  return out;
+}
+
 /** v2.95 one-time: fold the two-row zones into the single ribbon sequence.
  *  Row 1 keeps its order, a full-height divider separates it from the old
  *  Row 2 items, and structural dividers become full-height (they used to
@@ -181,6 +217,38 @@ export function migrateRibbon(left: string[], right: string[]): string[] {
   const l = clean(left);
   const r = clean(right);
   return r.length ? [...l, '2!d:ribbon-split', ...r] : l;
+}
+
+/** v2.96 one-time: column-major ribbon → section model. The old renderer
+ *  paired consecutive small items vertically, so a section's visual TOP row
+ *  was the even-indexed items and its BOTTOM row the odd ones — that split
+ *  becomes an explicit r: break, keeping the bar looking the same. Sections
+ *  that were a lone item (or all 2!-tall items) become single-row sections;
+ *  item-level 2! flags are shed (height is the section's business now). */
+export function migrateRibbonSections(tokens: string[]): string[] {
+  const out: string[] = [];
+  let chunk: string[] = [];
+  let n = 0;
+  const flush = () => {
+    const smalls = chunk.filter((t) => !isTall(t));
+    if (chunk.length <= 1 || smalls.length <= 1) {
+      out.push(...chunk.map(stripTall));
+    } else {
+      const items = chunk.map(stripTall);
+      out.push(
+        ...items.filter((_, i) => i % 2 === 0),
+        `r:mig-${n++}`,
+        ...items.filter((_, i) => i % 2 === 1),
+      );
+    }
+    chunk = [];
+  };
+  for (const raw of tokens) {
+    if (isSectionDivider(raw)) { flush(); out.push(raw); continue; }
+    chunk.push(raw);
+  }
+  flush();
+  return out;
 }
 
 /** Row-1 keys that belong to Row 2 under the v2.94 split — tool/window
@@ -270,12 +338,13 @@ export function normalizeToolbarZones(
   const expand = (tokens: string[] | undefined): string[] => {
     const out: string[] = [];
     for (const raw of tokens ?? []) {
-      // v2.95: shed any big! flag from the short-lived v2.94 scheme; the 2!
-      // ribbon span flag is stripped for validation and re-applied on the
-      // way out. Stray customize tokens vanish (it's fixed chrome now).
+      // v2.95: shed any big! flag from the short-lived v2.94 scheme.
+      // v2.96: the 2! flag only means something on d: tokens (section
+      // dividers) — items get their height from their section now, so the
+      // flag is shed everywhere else. Stray customize tokens vanish.
       const tall = isTall(stripBig(raw));
       const tok = stripTall(stripBig(raw));
-      const keep = (t: string) => out.push(tall ? makeTall(t) : t);
+      const keep = (t: string) => out.push(tall && t.startsWith('d:') ? makeTall(t) : t);
       if (tok.startsWith('g:')) {
         for (const key of LEGACY_GROUP_ITEMS[tok.slice(2)] ?? []) {
           if (hiddenKeys.has(key) || seen.has(key)) continue;

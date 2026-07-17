@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, migrateResetSizes, migrateTwoRows, migrateRibbon, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
+import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, migrateResetSizes, migrateTwoRows, migrateRibbon, migrateRibbonSections, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
 import { uuid } from '../utils/uuid';
 import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { findLanguage, urlsFor } from '../editor/languageCatalog';
@@ -183,6 +183,17 @@ try {
   if (_vs.toolbarZonesSet && !localStorage.getItem(RIBBON_FLAG)) {
     localStorage.setItem(RIBBON_FLAG, '1');
     _tbZones = { left: migrateRibbon(_tbZones.left, _tbZones.right), right: [] };
+    saveViewState({ toolbarLeft: _tbZones.left, toolbarRight: [] });
+  }
+} catch { /* storage unavailable — keep what we have */ }
+// v2.96 one-time: the ribbon reorganizes by SECTION — the old column-major
+// pairing becomes explicit r: row breaks so the bar keeps its look, and
+// item-level 2! flags are shed (a section's shape sets item height now).
+try {
+  const SECTIONS_FLAG = 'opendraft:toolbarRibbonSections296';
+  if (_vs.toolbarZonesSet && !localStorage.getItem(SECTIONS_FLAG)) {
+    localStorage.setItem(SECTIONS_FLAG, '1');
+    _tbZones = { left: migrateRibbonSections(_tbZones.left), right: [] };
     saveViewState({ toolbarLeft: _tbZones.left, toolbarRight: [] });
   }
 } catch { /* storage unavailable — keep what we have */ }

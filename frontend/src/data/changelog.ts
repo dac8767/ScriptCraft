@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.95';
+export const APP_VERSION = '2.96';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.96',
+    date: '2026-07-17',
+    items: [
+      { title: 'The ribbon arranges by SECTION', detail: 'Everything between two tall dividers is a section. Items read left to right; the new New Row utility marks where a section\'s second row begins, and a section without one spans its items across both rows — tall buttons, Word style. Existing layouts convert automatically, keeping their look.', tags: ['UI', 'Editor'] },
+      { title: 'Customize > Toolbar is a true visual editor', detail: 'The ribbon itself is what you edit: drag buttons from the palette straight into place, drag between sections to rearrange, drop the New Row utility where the second row should start (drop it again to move the split), remove a divider to merge two sections, + Section to start a new one. Spacers take their width right on the chip; drag anything onto the palette to remove it.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '2.95',
     date: '2026-07-17',

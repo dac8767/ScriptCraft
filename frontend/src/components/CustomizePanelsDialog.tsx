@@ -1,5 +1,5 @@
 import React from 'react';
-import { MENU_ICONS, TOOLBAR_ICONS, UTILITY_ICONS } from './uiIcons';
+import { MENU_ICONS, UTILITY_ICONS } from './uiIcons';
 /**
  * CustomizePanelsDialog — View → Customize Layout.
  *
@@ -17,7 +17,8 @@ import { MENU_ICONS, TOOLBAR_ICONS, UTILITY_ICONS } from './uiIcons';
 import { DEFAULT_OUTLINE_BAR_ROWS, MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
-import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, isTall, stripTall, makeTall } from './toolbarBuiltins';
+import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, stripTall } from './toolbarBuiltins';
+import RibbonEditor from './RibbonEditor';
 import { useSettingsStore } from '../stores/settingsStore';
 import { isTauri } from '../services/platform';
 import EditElementsDialog from './EditElementsDialog';
@@ -161,8 +162,7 @@ function OutlineBarTab() {
 
 const CUSTOMIZE_SIZE_KEY = 'opendraft:customizeSize';
 
-const DEFAULT_TOOLBAR_SPACER = 50;   // v0.86
-const DEFAULT_PANEL_SPACER = 50;   // v0.86
+const DEFAULT_PANEL_SPACER = 50;   // v0.86 (the toolbar's lives in tokenMeta.ts)
 
 /**
  * v0.86: was a slider, which couldn't be dragged — the whole ROW is draggable
@@ -744,40 +744,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     },
   ].map((cat) => ({ ...cat, options: cat.options.filter((o) => !tbPlaced(o.value)) }));
 
-  const spacerPx = (tok: string) => {
-    const n = Number(tok.split(':')[2]);
-    return Number.isFinite(n) && n > 0 ? n : DEFAULT_TOOLBAR_SPACER;
-  };
-  /**
-   * v0.99 — the icon a row's item wears in the real UI. Resolved from the SAME
-   * sources the UI itself draws from (MENU_ICONS, TOOLBAR_ICONS, and a tool's own
-   * ToolDef.icon), so a Customize row can't end up showing an icon the button
-   * doesn't have. Dividers and spacers have none, and get a blank of the same
-   * width so every label still lines up.
-   */
-  const tokenIcon = (tok: string): React.ReactNode => {
-    if (tok.startsWith('b:')) return TOOLBAR_ICONS[tok.slice(2)] ?? null;
-    if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.icon ?? null;
-    // v2.04: commands carry their OWN icon (TOOLBAR_COMMANDS) — reading
-    // TOOLBAR_ICONS here was a second list, and every command id missing
-    // from it rendered an iconless row (Derek's "Production items with no
-    // icons"). One source now: the same icon the pinned button shows.
-    if (tok.startsWith('c:')) return TOOLBAR_COMMANDS.find((c) => c.id === tok.slice(2))?.icon ?? null;
-    return UTILITY_ICONS[tok.startsWith('s:') ? 'spacer' : 'divider'];
-  };
+  // v2.96: tokenIcon/tokenLabel/spacerPx moved to tokenMeta.ts — the ribbon
+  // editor is a second consumer, and two copies is how lists drift.
 
   /** Icon slot: fixed width whether or not there's an icon, so labels align. */
   const iconSlot = (node: React.ReactNode) => (
     <span className="fs-customize-icon">{node}</span>
   );
-
-  const tokenLabel = (tok: string): string => {
-    if (tok.startsWith('b:')) return BUILTIN_BY_KEY[tok.slice(2)]?.label || tok;
-    if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.label || tok;
-    if (tok.startsWith('c:')) return TOOLBAR_COMMANDS.find((c) => c.id === tok.slice(2))?.label || tok;
-    if (tok.startsWith('s:')) return '— Spacer —';
-    return '— Divider —';
-  };
 
   // v0.76: embedded (docked / Settings) previously forced overflowY: 'visible',
   // so a list longer than the window just ran off with no scrollbar. It now
@@ -900,29 +873,12 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           <section>
             <h3>Toolbar Layout</h3>
             <p className="fs-customize-hint">
-              The toolbar is a ribbon: items flow into two rows, column by
-              column — two small items stack, and the 1/2 toggle makes an item
-              (or divider) span both rows. Drag to reorder; Hidden stashes an
-              item by category until you drag it back. The preview shows the
-              ribbon as you build it. Customize is fixed at the right edge.
+              The toolbar is a ribbon built from SECTIONS — everything between
+              two tall dividers. Edit it visually below: drag items straight
+              into place, split a section into two rows with the New Row
+              utility, merge sections by removing their divider. A section
+              without a split spans its items across both rows.
             </p>
-            {/* v2.95: the live preview — the same column-flow grid the real
-                ribbon uses, so pairing and spans read exactly as they will. */}
-            <div className="fs-ribbon-preview">
-              {tbLeft.map((raw, i) => {
-                const tall = isTall(raw);
-                const tok = stripTall(raw);
-                if (tok.startsWith('d:')) return <span key={`${raw}-${i}`} className={`fs-ribprev-div${tall ? ' tall' : ''}`} />;
-                if (tok.startsWith('s:')) return <span key={`${raw}-${i}`} className={`fs-ribprev-spacer${tall ? ' tall' : ''}`} />;
-                return (
-                  <span key={`${raw}-${i}`} className={`fs-ribprev-cell${tall ? ' tall' : ''}`} title={tokenLabel(tok)}>
-                    {tokenIcon(tok)}
-                  </span>
-                );
-              })}
-              <span className="fs-ribprev-flex" />
-              <span className="fs-ribprev-customize">Customize</span>
-            </div>
             {/* v2.29: sizing left Customize (drag the strip under the top
                 bars on the main screen) — only Show/Hide remains here. */}
             <div className="fs-customize-row fs-size-row">
@@ -947,108 +903,23 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               </span>
             </div>
 
-            {/* v2.95: the ribbon editor — ONE ordered sequence (drag to
-                reorder; position in the list IS position in the flow) plus
-                Hidden. Each row's 1/2 toggle sets how many rows the item
-                spans. Dividers and spacers dropped on Hidden are deleted
-                (they're structure, not items). */}
-            {(() => {
-              const setSeq = (seq: string[]) => setToolbarZones(seq, []);
-              const tbRowContent = (raw: string) => {
-                const tall = isTall(raw);
-                const tok = stripTall(raw);
-                return (
-                  <span className="fs-customize-tool">
-                    {iconSlot(tokenIcon(tok))}
-                    {tokenLabel(tok)}
-                    <button
-                      className={`fs-span-pill${tall ? ' active' : ''}`}
-                      title={tall ? 'Spans both rows — click for one row' : 'One row — click to span both rows'}
-                      onClick={() => setSeq(tbLeft.map((t) => (t === raw ? (tall ? stripTall(t) : makeTall(t)) : t)))}
-                    >{tall ? '2' : '1'}</button>
-                    {tok.startsWith('s:') && (
-                      <SpacerSize
-                        value={spacerPx(tok)}
-                        min={8}
-                        max={240}
-                        onChange={(px) => {
-                          // The size rides in the token itself (s:<id>:<px>),
-                          // so it persists with the layout it belongs to.
-                          const [, id] = tok.split(':');
-                          const next = tall ? makeTall(`s:${id}:${px}`) : `s:${id}:${px}`;
-                          setSeq(tbLeft.map((t) => (t === raw ? next : t)));
-                        }}
-                      />
-                    )}
-                    <button
-                      className="fs-dnd-rowbtn"
-                      title="Remove from the toolbar"
-                      onClick={() => setSeq(tbLeft.filter((t) => t !== raw))}
-                    >×</button>
-                  </span>
-                );
-              };
-              const tbHiddenRow = (value: string, label: string) => ({
-                key: value,
-                content: (
-                  <span className="fs-customize-tool">
-                    {iconSlot(tokenIcon(value))}
-                    {label}
-                    <button
-                      className="fs-dnd-rowbtn"
-                      title="Add to the end of the ribbon"
-                      onClick={() => setSeq([...tbLeft, value])}
-                    >+</button>
-                  </span>
-                ),
-              });
-              return (
-                <DndColumns
-                  columns={[
-                    {
-                      id: 'seq', title: 'Ribbon',
-                      sections: [{ rows: tbLeft.map((raw) => ({ key: raw, content: tbRowContent(raw) })) }],
-                    },
-                    {
-                      id: 'hidden', title: 'Hidden', isHidden: true,
-                      sections: tbAddCategories.map((cat) => ({
-                        label: cat.label,
-                        rows: cat.options.map((o) => tbHiddenRow(o.value, o.label)),
-                      })),
-                    },
-                  ]}
-                  onDrop={(src, dst) => {
-                    const raw = src.key;
-                    const next = tbLeft.filter((t) => t !== raw);
-                    if (dst.col === 'hidden') {
-                      setSeq(next);   // dividers/spacers simply vanish
-                      return;
-                    }
-                    next.splice(Math.min(dst.idx, next.length), 0, raw);
-                    setSeq(next);
-                  }}
-                />
-              );
-            })()}
+            {/* v2.96: the VISUAL ribbon editor — sections, rows, drag & drop.
+                RibbonEditor owns all structure edits; the token sequence in
+                the store stays the single source the real Toolbar renders. */}
+            <RibbonEditor
+              tokens={tbLeft}
+              onChange={(seq) => setToolbarZones(seq, [])}
+              palette={tbAddCategories}
+            />
             <div className="fs-tbzone-adders fs-adders-equal">
               <button
                 className="swn-add-btn"
-                title="Add a full-height divider line (toggle it to one row in the list)"
-                onClick={() => setToolbarZones([...tbLeft, `2!d:${Date.now()}`], [])}
-              >+ Divider</button>
-              <button
-                className="swn-add-btn"
-                title="Add a spacer to the ribbon"
-                onClick={() => setToolbarZones([...tbLeft, `s:${Date.now()}`], [])}
-              >+ Spacer</button>
-              <button
-                className="swn-add-btn"
-                title="Hide every toolbar item (re-add items from the Hidden list)"
+                title="Hide every toolbar item (re-add items from the palette)"
                 onClick={() => setToolbarZones([], [])}
               >Hide All</button>
               <button
                 className="swn-add-btn"
-                title="Restore the default ribbon: all items in default order"
+                title="Restore the default ribbon: all sections in default order"
                 onClick={() => setToolbarZones([...DEFAULT_TOOLBAR_LEFT], [])}
               >Reset to Default</button>
             </div>

@@ -31,7 +31,7 @@ import { TableGridPicker } from './NotebookTool';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { confirmDialog } from './ConfirmDialog';
 import { commandDef } from './toolbarCommands';
-import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, isTall, stripTall } from './toolbarBuiltins';
+import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, stripTall, parseRibbon } from './toolbarBuiltins';
 import { smartUndo, smartRedo, useEditorStore, NOTE_COLORS } from '../stores/editorStore';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
@@ -1382,11 +1382,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     overflowContent = items.length ? items : null;
   }
 
-  /** v2.95: ribbon token → grid cell. The 2! flag makes a cell SPAN both
-   *  rows: icon buttons grow a label under the icon (Word's large-button
-   *  format), wide controls center vertically, dividers run full height. */
-  const renderToken = (raw: string): React.ReactNode => {
-    const tall = isTall(raw);
+  /** v2.96: ribbon token → cell in its section row. `tall` comes from the
+   *  SECTION now (a section with no row break spans its items across both
+   *  rows): icon buttons grow a label under the icon (Word's large-button
+   *  format), wide controls center vertically. */
+  const renderToken = (raw: string, tall = false): React.ReactNode => {
     const tok = stripTall(raw);
     if (tok.startsWith('d:')) {
       return <div key={tok} className={`toolbar-separator toolbar-user-divider${tall ? ' rib-tall' : ''}`} />;
@@ -1444,12 +1444,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     : toolbarMode === 'comfortable' ? 39 : 33;
   const ribRowH = Math.max(22, Math.round(barH) - 5);
 
+  const sections = parseRibbon(leftTokens);
+
   return (
-    /* v2.95, Derek: the WORD RIBBON. One token sequence flows into a two-row
-       grid column by column — consecutive small items stack in pairs, 2!
-       items span both rows, dividers run one row or two. Customize is fixed
-       chrome at the right edge spanning both rows — the one big button.
-       The in-toolbar spacing grips are gone (the menu bar keeps its own). */
+    /* v2.96, Derek: the WORD RIBBON, arranged by SECTION. Everything between
+       two full-height dividers is a section; items read left-to-right, an
+       r: row break puts what follows on the section's second row, and a
+       section with no break spans its items across both rows. Customize is
+       fixed chrome at the right edge spanning both rows — the one big
+       button. No spacing grips inside the toolbar (the menu bar keeps its). */
     <div className="toolbar-stack">
     <div
       className={`toolbar toolbar-ribbon${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}${toolbarMode === 'custom' ? ' toolbar-custom' : ''}`}
@@ -1458,13 +1461,21 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           ['--chrome-scale' as string]: String(chromeScaleFactor('toolbar', tbCustomH)),
         } as React.CSSProperties) : {}),
         ['--rib-rowh' as string]: `${ribRowH}px`,
-        columnGap: chromeGapPx.toolbar,
+        ['--rib-gap' as string]: `${chromeGapPx.toolbar}px`,
         // v2.72: measured so the first icons of the two bars align.
         ...(alignPad !== null ? { paddingLeft: alignPad } : {}),
       }}
       ref={toolbarRef}
     >
-      {leftTokens.map(renderToken)}
+      {sections.map((s, i) => (
+        <React.Fragment key={`sec-${i}`}>
+          {i > 0 && <div className="toolbar-separator rib-section-sep" />}
+          <div className={`rib-section${s.hasBreak ? '' : ' rib-single'}`}>
+            <div className="rib-row">{s.top.map((t) => renderToken(t, !s.hasBreak))}</div>
+            {s.hasBreak && <div className="rib-row">{s.bottom.map((t) => renderToken(t, false))}</div>}
+          </div>
+        </React.Fragment>
+      ))}
     </div>
 
     {/* Overflow 3-dot menu — beside the ribbon, spanning its height */}

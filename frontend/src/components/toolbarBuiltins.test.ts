@@ -6,10 +6,50 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
-  migrateResetSizes, migrateTwoRows, migrateRibbon, normalizeToolbarZones,
+  migrateResetSizes, migrateTwoRows, migrateRibbon, migrateRibbonSections,
+  normalizeToolbarZones, parseRibbon, serializeRibbon,
   DEFAULT_TOOLBAR_LEFT, BUILTIN_BY_KEY,
   isTall, stripTall, makeTall,
 } from './toolbarBuiltins';
+
+describe('parseRibbon / serializeRibbon (v2.96)', () => {
+  it('splits on tall dividers; an r: break separates a section\'s rows', () => {
+    const secs = parseRibbon(['b:undo', 'b:redo', 'r:x', 'b:find', '2!d:a', 'b:element']);
+    expect(secs).toEqual([
+      { top: ['b:undo', 'b:redo'], bottom: ['b:find'], hasBreak: true },
+      { top: ['b:element'], bottom: [], hasBreak: false },
+    ]);
+  });
+
+  it('round-trips through serialize (canonical ids)', () => {
+    const seq = ['b:undo', 'r:row-0', 'b:redo', '2!d:sec-1', 'b:element'];
+    expect(serializeRibbon(parseRibbon(seq))).toEqual(seq);
+  });
+
+  it('extra breaks in one section merge into the first', () => {
+    const secs = parseRibbon(['b:a', 'r:1', 'b:b', 'r:2', 'b:c']);
+    expect(secs).toEqual([{ top: ['b:a'], bottom: ['b:b', 'b:c'], hasBreak: true }]);
+  });
+
+  it('the default ribbon parses into sections without loss', () => {
+    const secs = parseRibbon(DEFAULT_TOOLBAR_LEFT);
+    expect(secs.length).toBeGreaterThan(3);
+    expect(serializeRibbon(secs).filter((t) => t.startsWith('b:')))
+      .toEqual(DEFAULT_TOOLBAR_LEFT.filter((t) => t.startsWith('b:')));
+  });
+});
+
+describe('migrateRibbonSections (v2.96)', () => {
+  it('column-major pairs become explicit rows: evens on top, odds below', () => {
+    expect(migrateRibbonSections(['b:undo', 'b:redo', 'b:bold', 'b:italic']))
+      .toEqual(['b:undo', 'b:bold', 'r:mig-0', 'b:redo', 'b:italic']);
+  });
+
+  it('lone or all-tall sections become single-row; item 2! flags shed', () => {
+    expect(migrateRibbonSections(['2!b:element', '2!d:a', 'b:undo']))
+      .toEqual(['b:element', '2!d:a', 'b:undo']);
+  });
+});
 
 describe('migrateResetSizes (v2.67)', () => {
   it('inserts the reset right after the lock', () => {
@@ -74,9 +114,9 @@ describe('normalizeToolbarZones under the ribbon (v2.95)', () => {
     expect(z.right).toEqual([]);
   });
 
-  it('keeps 2! flags through validation and dedupes flag-blind', () => {
-    const z = normalizeToolbarZones(['2!b:element', 'b:element', '2!d:group'], []);
-    expect(z.left).toEqual(['2!b:element', '2!d:group']);
+  it('keeps 2! on dividers only (v2.96: sections set item height) and dedupes flag-blind', () => {
+    const z = normalizeToolbarZones(['2!b:element', 'b:element', '2!d:group', 'r:split'], []);
+    expect(z.left).toEqual(['b:element', '2!d:group', 'r:split']);
   });
 
   it('drops stray customize and big! tokens from the v2.94 scheme', () => {
