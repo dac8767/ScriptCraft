@@ -194,11 +194,16 @@ export const isRowBreak = (tok: string) => tok.startsWith('r:') || tok.startsWit
 /** v3.02, Derek: the align split — a section boundary that also pushes
  *  everything after it to the toolbar's RIGHT edge. */
 export const isAlignSplit = (tok: string) => tok.startsWith('a:');
+/** v3.38, Derek: a section TITLE/descriptor (Word's ribbon-group label).
+ *  Everything after the `st:` prefix is the literal title text. Only two-row
+ *  sections carry one — one-row sections already read their buttons' labels. */
+export const isSectionTitle = (tok: string) => tok.startsWith('st:');
 
 /** A parsed ribbon section. `hasBreak` false ⇒ single row, items span both
  *  rows; true ⇒ `top` row above `bottom` row. `breakLine` ⇒ the split
- *  draws a visible line between the rows on the real toolbar. */
-export interface RibbonSection { top: string[]; bottom: string[]; hasBreak: boolean; breakLine: boolean }
+ *  draws a visible line between the rows on the real toolbar. `title` ⇒ a
+ *  two-row section's descriptor label (v3.38). */
+export interface RibbonSection { top: string[]; bottom: string[]; hasBreak: boolean; breakLine: boolean; title?: string }
 
 /** The whole ribbon: its sections, plus the index of the first section in
  *  the RIGHT-aligned group (null ⇒ everything left-aligned). */
@@ -223,6 +228,7 @@ export function parseRibbon(tokens: string[]): RibbonModel {
       continue;
     }
     if (isSectionDivider(raw)) { push(); continue; }
+    if (isSectionTitle(raw)) { cur.title = raw.slice(3); continue; }
     if (isRowBreak(raw)) {
       cur.hasBreak = true;
       cur.breakLine = cur.breakLine || raw.startsWith('rl:');
@@ -241,6 +247,9 @@ export function serializeRibbon(model: RibbonModel): string[] {
   const out: string[] = [];
   sections.forEach((s, i) => {
     if (i > 0) out.push(i === splitAt ? `a:split-${i}` : `2!d:sec-${i}`);
+    // v3.38: a two-row section's title rides at the section's head. One-row
+    // sections never keep one (their buttons already carry text).
+    if (s.hasBreak && s.title) out.push(`st:${s.title}`);
     out.push(...s.top);
     if (s.hasBreak) out.push(`${s.breakLine ? 'rl' : 'r'}:row-${i}`, ...s.bottom);
   });

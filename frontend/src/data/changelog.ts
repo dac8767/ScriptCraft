@@ -65,9 +65,20 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.37';
+export const APP_VERSION = '3.38';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.38',
+    date: '2026-07-17',
+    items: [
+      { title: 'Add anything to the ribbon from the bar itself', detail: 'While editing the toolbar, a faint “+ Add” block appears at the end of the left-aligned run and — if you have an align split — at the start of the right-aligned run. Click it for a searchable menu that builds a 1-row section, a 2-row section, a divider, a spacer, an alignment split, or any item (button, dropdown, tool) — all from the same list the Customize palette uses.', tags: ['New Feature', 'UI'] },
+      { title: 'Name your two-row sections', detail: 'A two-row section can carry a title/descriptor underneath (like Word’s ribbon-group labels). Type it in the field under the section while editing; it shows on the live bar. One-row sections skip it — their buttons already read as words.', tags: ['New Feature', 'UI'] },
+      { title: 'Steadier item placement', detail: 'The drop indicator no longer flutters back and forth when you hover a spot — placement is read from the items’ own positions, so it stays put instead of fighting the indicator it just drew.', tags: ['Fix', 'UI'] },
+      { title: 'Section-close no longer collides with an item’s ×', detail: 'The button that closes a section moved to the section’s top-left corner, clear of the last item’s remove ×.', tags: ['Fix', 'UI'] },
+      { title: 'Editor View button stops repeating its name', detail: 'The big “Editor View” dropdown showed its label twice — it already captions itself, so the duplicate underneath is gone.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '3.37',
     date: '2026-07-17',

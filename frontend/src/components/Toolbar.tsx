@@ -28,8 +28,10 @@ import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import {
   startRibbonDrag, ribMergeSections, ribRemoveToken, ribRemoveBreak,
-  ribToggleBreakLine, ribRemoveSplit,
+  ribToggleBreakLine, ribRemoveSplit, ribAddSectionAtBoundary, ribAddInlineAtBoundary,
+  ribSetAlignSplit, ribSetSectionTitle,
 } from './ribbonDrag';
+import { buildRibbonPalette } from './ribbonPaletteData';
 import { useNotebookStore } from '../stores/notebookStore';
 import { TableGridPicker } from './NotebookTool';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
@@ -130,6 +132,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   const isEnforceMode = activeTemplate.mode === 'enforce';
   const isOverrideMode = activeTemplate.mode === 'override';
 
+  // v3.37, Derek: the on-bar "+ Add" menu — utilities are added from the bar
+  // itself now. { at: section-boundary index, rightSide, x, y for the popup }.
+  const [addMenu, setAddMenu] = useState<{ at: number; rightSide: boolean; x: number; y: number } | null>(null);
+  const [addSearch, setAddSearch] = useState('');
   // Per-attribute locking state — updates reactively when cursor moves between elements
   const [locked, setLocked] = useState<LockedFormatting>({
     bold: false, italic: false, underline: false, strikethrough: false,
@@ -1398,7 +1404,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           {...(def.priority ? { 'data-priority': def.priority } : {})}
           // v2.97, Derek: in a one-row section every item is a BIG BUTTON —
           // large icon with its name underneath (drawn by CSS from this).
-          {...(tall ? { 'data-riblabel': def.label } : {})}
+          // v3.38: the `view` control already draws its own "Editor View:"
+          // caption, so the underneath label would repeat the name — skip it
+          // for any builtin that captions itself.
+          {...(tall && def.key !== 'view' ? { 'data-riblabel': def.label } : {})}
         >
           {renderBuiltinControl(def.key, false, showPopups)}
         </div>
@@ -1534,6 +1543,19 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   const leftLive = liveSplitAt === null || liveSplitAt < 0 ? liveSections : liveSections.slice(0, liveSplitAt);
   const rightLive = liveSplitAt === null || liveSplitAt < 0 ? [] : liveSections.slice(liveSplitAt);
 
+  /* v3.38, Derek: ONE renderer for a live section's inner rows — both the
+     left and right zones read it, so the row/line/title layout can't drift.
+     A two-row section's title/descriptor sits under its rows (Word's ribbon
+     group label); one-row sections never carry one. */
+  const liveSectionInner = (s: typeof sections[number]) => (
+    <>
+      <div className="rib-row">{s.top.map((t) => renderToken(t, !s.hasBreak))}</div>
+      {s.hasBreak && s.breakLine && <div className="rib-row-line" />}
+      {s.hasBreak && <div className="rib-row">{s.bottom.map((t) => renderToken(t, false))}</div>}
+      {s.hasBreak && s.title && <div className="rib-sec-title">{s.title}</div>}
+    </>
+  );
+
   /* v3.36, Derek: EDIT MODE — while Customize > Toolbar is open the real bar
      IS the editor. Every ALL section renders (empty ones too, as drop
      targets), each item wrapped with a drag cover + remove ×, sections
@@ -1578,11 +1600,34 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       </div>
     );
   };
+  /* v3.38, Derek: the faint on-bar "+ Add" block. One sits at the end of the
+     left-aligned run and, when an align split exists, one at the START of the
+     right-aligned run (the left-most right item). Clicking opens a menu that
+     builds sections / dividers / spacers / the split / any item — the same
+     item list the Customize palette uses (ribbonPaletteData). */
+  const addBlock = (at: number, rightSide: boolean) => (
+    <button
+      type="button"
+      className="rib-edit-add"
+      title="Add a section, divider, spacer, alignment split or item here"
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        setAddSearch('');
+        setAddMenu({ at, rightSide, x: r.left, y: r.bottom + 4 });
+      }}
+    >
+      <span className="rib-edit-add-plus">+</span>
+      <span className="rib-edit-add-label">Add</span>
+    </button>
+  );
   const editLayout = (
     <>
       {sections.map((s, i) => (
         <React.Fragment key={`esec-${i}`}>
           {ribEdit.secSpot === i && <span className="rib-edit-sec-dropline" />}
+          {/* end of the left-aligned run — the +Add sits just before the gap */}
+          {i === splitAt && addBlock(splitAt, false)}
           {i > 0 && (i === splitAt
             ? <div className="rib-align-gap" />
             : <div className="toolbar-separator rib-section-sep" />)}
@@ -1592,6 +1637,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               <button className="rib-edit-x" title="Remove the align split" onPointerDown={(e) => e.stopPropagation()} onClick={ribRemoveSplit}>×</button>
             </span>
           )}
+          {/* start of the right-aligned run — the left-most right item */}
+          {i === splitAt && addBlock(splitAt, true)}
           <div
             className={`rib-section rib-edit-section${s.hasBreak ? '' : ' rib-single'}`}
             data-sec={i}
@@ -1622,11 +1669,25 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               </div>
             )}
             {s.hasBreak && editRow(s, i, 'bottom')}
+            {/* v3.38, Derek: two-row sections carry an editable title/descriptor
+                (Word's ribbon-group label). One-row sections skip it — their
+                buttons already read as words. */}
+            {s.hasBreak && (
+              <input
+                className="rib-edit-title"
+                value={s.title ?? ''}
+                placeholder="Add title"
+                title="Section title (shown under a two-row section)"
+                onPointerDown={(e) => e.stopPropagation()}
+                onChange={(e) => ribSetSectionTitle(i, e.target.value)}
+              />
+            )}
           </div>
         </React.Fragment>
       ))}
       {ribEdit.secSpot === sections.length && <span className="rib-edit-sec-dropline" />}
-      {sections.length === 0 && <span className="rib-edit-emptybar">Drag items here to build your toolbar</span>}
+      {/* no split → the single left run ends here; empty bar → the only +Add */}
+      {splitAt === null && addBlock(sections.length, false)}
     </>
   );
 
@@ -1661,11 +1722,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               skipped above, so nothing paints at the outer edges. */}
           {i > 0 && <div className="toolbar-separator rib-section-sep" />}
           <div className={`rib-section${s.hasBreak ? '' : ' rib-single'}`}>
-            <div className="rib-row">{s.top.map((t) => renderToken(t, !s.hasBreak))}</div>
-            {/* v2.97, Derek: the split line is optionally VISIBLE — toggled
-                by clicking it in the visual editor. */}
-            {s.hasBreak && s.breakLine && <div className="rib-row-line" />}
-            {s.hasBreak && <div className="rib-row">{s.bottom.map((t) => renderToken(t, false))}</div>}
+            {liveSectionInner(s)}
           </div>
         </React.Fragment>
       ))}
@@ -1702,9 +1759,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <React.Fragment key={`sec-${orig}`}>
           {i > 0 && <div className="toolbar-separator rib-section-sep" />}
           <div className={`rib-section${s.hasBreak ? '' : ' rib-single'}`}>
-            <div className="rib-row">{s.top.map((t) => renderToken(t, !s.hasBreak))}</div>
-            {s.hasBreak && s.breakLine && <div className="rib-row-line" />}
-            {s.hasBreak && <div className="rib-row">{s.bottom.map((t) => renderToken(t, false))}</div>}
+            {liveSectionInner(s)}
           </div>
         </React.Fragment>
       ))}
@@ -1728,6 +1783,72 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         )}
       </div>
     )}
+
+    {/* v3.38, Derek: the on-bar "+ Add" menu, portalled to the body so it
+        escapes the ribbon's overflow/stacking context. One item list —
+        structural pieces first, then every addable item from the SAME source
+        the Customize palette reads (ribbonPaletteData). A search box filters
+        the whole thing. */}
+    {addMenu && (() => {
+      const close = () => { setAddMenu(null); setAddSearch(''); };
+      const act = (fn: () => void) => { fn(); close(); };
+      const q = addSearch.trim().toLowerCase();
+      const structural = [
+        { label: '1 Row Section', run: () => ribAddSectionAtBoundary('single', addMenu.at, addMenu.rightSide) },
+        { label: '2 Row Section', run: () => ribAddSectionAtBoundary('double', addMenu.at, addMenu.rightSide) },
+        { label: 'Divider', run: () => ribAddInlineAtBoundary(`d:${Date.now()}`, addMenu.at, addMenu.rightSide) },
+        { label: 'Spacer', run: () => ribAddInlineAtBoundary(`s:${Date.now()}`, addMenu.at, addMenu.rightSide) },
+        ...(splitAt === null ? [{ label: 'Alignment Split', run: () => ribSetAlignSplit(addMenu.at) }] : []),
+      ].filter((o) => !q || o.label.toLowerCase().includes(q));
+      const placedSet = new Set(leftTokens.map(stripTall));
+      const cats = buildRibbonPalette((v) => placedSet.has(v))
+        .map((c) => ({ ...c, options: c.options.filter((o) => !q || o.label.toLowerCase().includes(q)) }))
+        .filter((c) => c.options.length > 0);
+      return createPortal(
+        <div className="rib-add-backdrop" onPointerDown={close}>
+          <div
+            className="rib-add-menu"
+            style={{ top: addMenu.y, left: addMenu.x }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <input
+              className="rib-add-search"
+              autoFocus
+              placeholder="Search items…"
+              value={addSearch}
+              onChange={(e) => setAddSearch(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Escape') close(); }}
+            />
+            <div className="rib-add-scroll">
+              {structural.length > 0 && (
+                <div className="rib-add-group">
+                  <div className="rib-add-grouphdr">Structure</div>
+                  {structural.map((o) => (
+                    <button key={o.label} className="rib-add-opt" onClick={() => act(o.run)}>{o.label}</button>
+                  ))}
+                </div>
+              )}
+              {cats.map((c) => (
+                <div className="rib-add-group" key={c.id}>
+                  <div className="rib-add-grouphdr">{c.label}</div>
+                  {c.options.map((o) => (
+                    <button
+                      key={o.value}
+                      className="rib-add-opt"
+                      onClick={() => act(() => ribAddInlineAtBoundary(o.value, addMenu.at, addMenu.rightSide))}
+                    >{o.label}</button>
+                  ))}
+                </div>
+              ))}
+              {structural.length === 0 && cats.length === 0 && (
+                <div className="rib-add-empty">No matches</div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      );
+    })()}
     </div>
   );
 };

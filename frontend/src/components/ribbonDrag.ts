@@ -23,7 +23,7 @@ type Row = 'top' | 'bottom';
 const EMPTY_SECTION: RibbonSection = { top: [], bottom: [], hasBreak: false, breakLine: false };
 
 const clone = (m: RibbonModel): RibbonModel => ({
-  sections: m.sections.map((s) => ({ top: [...s.top], bottom: [...s.bottom], hasBreak: s.hasBreak, breakLine: s.breakLine })),
+  sections: m.sections.map((s) => ({ top: [...s.top], bottom: [...s.bottom], hasBreak: s.hasBreak, breakLine: s.breakLine, title: s.title })),
   splitAt: m.splitAt,
 });
 
@@ -77,6 +77,36 @@ export const ribAppendSection = (type: 'single' | 'double') => {
   ribInsertSection(type, getModel().sections.length);
 };
 
+/** v3.37, Derek: the on-bar "+ Add" adds a section at a boundary. `rightSide`
+ *  picks whether the new section lands LEFT of the split (end of the
+ *  left-aligned run) or RIGHT of it (start of the right-aligned run) — the
+ *  split index shifts for a left insert but stays for a right one. */
+export const ribAddSectionAtBoundary = (type: 'single' | 'double', at: number, rightSide: boolean) => {
+  const m = clone(getModel());
+  m.sections.splice(at, 0, { top: [], bottom: [], hasBreak: type === 'double', breakLine: false });
+  if (m.splitAt !== null && (rightSide ? at < m.splitAt : at <= m.splitAt)) m.splitAt += 1;
+  commit(m);
+};
+
+/** v3.38, Derek: the on-bar "+ Add" drops an item, divider or spacer at a
+ *  run boundary. `at` is the section index the boundary sits before; the
+ *  nearest existing section takes the token — the LAST left-aligned section
+ *  (`at-1`) on the left of the split, the FIRST right-aligned section (`at`)
+ *  on the right. A builtin/command/tool is deduped first (single instance);
+ *  dividers/spacers carry a unique id so they never dedupe. Everything added
+ *  this way stays draggable on the bar to reposition. */
+export const ribAddInlineAtBoundary = (tok: string, at: number, rightSide: boolean) => {
+  const m = clone(getModel());
+  if (m.sections.length === 0) m.sections.push({ ...EMPTY_SECTION });
+  removeEverywhere(m, tok);
+  let secIdx = rightSide ? at : at - 1;
+  secIdx = Math.max(0, Math.min(secIdx, m.sections.length - 1));
+  const s = m.sections[secIdx];
+  const row = s.hasBreak ? s.bottom : s.top;
+  if (rightSide) row.unshift(tok); else row.push(tok);
+  commit(m);
+};
+
 export const ribSetAlignSplit = (at: number) => {
   const m = clone(getModel());
   // Clamp ≥1: serializeRibbon only writes boundary tokens after a section.
@@ -104,6 +134,7 @@ export const ribMergeSections = (i: number) => {
     bottom: [...a.bottom, ...b.bottom],
     hasBreak: a.hasBreak || b.hasBreak,
     breakLine: a.breakLine || b.breakLine,
+    title: a.title || b.title,
   });
   if (m.splitAt !== null) {
     if (m.splitAt === i + 1) m.splitAt = null;
@@ -129,6 +160,17 @@ export const ribRemoveBreak = (i: number) => {
   const s = m.sections[i];
   if (!s) return;
   m.sections[i] = { top: [...s.top, ...s.bottom], bottom: [], hasBreak: false, breakLine: false };
+  commit(m);
+};
+
+/** v3.38, Derek: set (or clear) a two-row section's title/descriptor. Empty
+ *  string clears it. Only meaningful for two-row sections; serializeRibbon
+ *  drops the title for one-row sections anyway. */
+export const ribSetSectionTitle = (i: number, title: string) => {
+  const m = clone(getModel());
+  const s = m.sections[i];
+  if (!s) return;
+  m.sections[i] = { ...s, title: title.trim() ? title : undefined };
   commit(m);
 };
 
@@ -166,27 +208,43 @@ const payloadLabel = (payload: string): string => {
   return '';
 };
 
-/** Drop-spot from a screen point, hit-testing the REAL bar's edit elements. */
+/** Insertion index within a row, from item GEOMETRY: how many item midpoints
+ *  lie left of x. v3.38, Derek: this replaced elementFromPoint-on-a-specific-
+ *  item math, which fluttered — inserting the drop indicator shifted the item
+ *  under the cursor (or the cursor landed on the indicator itself, which is
+ *  not a `.rib-edit-item`, collapsing the spot to "append to end"), so the
+ *  computed index oscillated. Measuring the items (indicators excluded, and
+ *  they barely move the row) is stable no matter what pixel we're over. */
+const rowIdxAt = (rowEl: HTMLElement, x: number): number => {
+  let idx = 0;
+  for (const it of Array.from(rowEl.querySelectorAll<HTMLElement>('.rib-edit-item'))) {
+    const r = it.getBoundingClientRect();
+    if (x > r.left + r.width / 2) idx += 1;
+  }
+  return idx;
+};
+
+/** Drop-spot from a screen point. Resolve the target ROW (directly, or the
+ *  nearest row of the section the cursor is over — its padding counts), then
+ *  read the index from geometry. Row-first keeps section padding and the row
+ *  itself agreeing, so there's no fluttering seam at the section edge. */
 const spotFromPoint = (x: number, y: number): RibDropSpot | null => {
   const el = document.elementFromPoint(x, y) as HTMLElement | null;
-  const hitItem = el?.closest<HTMLElement>('.toolbar-ribbon .rib-edit-item');
-  if (hitItem?.dataset.sec) {
-    const r = hitItem.getBoundingClientRect();
-    return {
-      sec: Number(hitItem.dataset.sec),
-      row: hitItem.dataset.row as Row,
-      idx: Number(hitItem.dataset.idx) + (x > r.left + r.width / 2 ? 1 : 0),
-    };
+  if (!el?.closest('.toolbar-ribbon')) return null;
+  let row = el.closest<HTMLElement>('.toolbar-ribbon .rib-row');
+  if (!row) {
+    const sec = el.closest<HTMLElement>('.toolbar-ribbon .rib-section');
+    const rows = sec ? Array.from(sec.querySelectorAll<HTMLElement>('.rib-row')) : [];
+    if (!rows.length) return null;
+    // pick the row whose vertical centre is nearest the cursor (two-row cases)
+    row = rows.reduce((best, r) => {
+      const rc = r.getBoundingClientRect();
+      const bc = best.getBoundingClientRect();
+      return Math.abs(y - (rc.top + rc.bottom) / 2) < Math.abs(y - (bc.top + bc.bottom) / 2) ? r : best;
+    });
   }
-  const hitRow = el?.closest<HTMLElement>('.toolbar-ribbon .rib-row');
-  if (hitRow?.dataset.sec) {
-    return { sec: Number(hitRow.dataset.sec), row: hitRow.dataset.row as Row, idx: Number(hitRow.dataset.len) };
-  }
-  const hitSection = el?.closest<HTMLElement>('.toolbar-ribbon .rib-section');
-  if (hitSection?.dataset.sec) {
-    return { sec: Number(hitSection.dataset.sec), row: 'top', idx: 9999 };
-  }
-  return null;
+  if (!row.dataset.sec) return null;
+  return { sec: Number(row.dataset.sec), row: row.dataset.row as Row, idx: rowIdxAt(row, x) };
 };
 
 /** Section boundary from a point — how many section midpoints lie left of x

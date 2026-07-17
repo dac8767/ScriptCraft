@@ -17,9 +17,9 @@ import { MENU_ICONS, UTILITY_ICONS } from './uiIcons';
 import { DEFAULT_OUTLINE_BAR_ROWS, MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { confirmDialog } from './ConfirmDialog';
-import { TOOLBAR_COMMANDS } from './toolbarCommands';
-import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, stripTall } from './toolbarBuiltins';
+import { DEFAULT_TOOLBAR_LEFT, stripTall } from './toolbarBuiltins';
 import RibbonPalette from './RibbonPalette';
+import { buildRibbonPalette } from './ribbonPaletteData';
 import { useSettingsStore } from '../stores/settingsStore';
 import { isTauri } from '../services/platform';
 import EditElementsDialog from './EditElementsDialog';
@@ -734,84 +734,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const tbLeft = tbReady ? tbLeftRaw : [...DEFAULT_TOOLBAR_LEFT, ...toolbarPinnedTools.map((id) => `t:${id}`)];
   const tbRight = tbReady ? tbRightRaw : [];
 
-  // ── Add-dropdown categories (v0.44): Toolbar / Production / Tools / Project,
-  //    mirroring the menu bar taxonomy. Notes and Production Tags live
-  //    under Tools and Production (not Toolbar); c:productionTags is excluded
-  //    as a duplicate of the smarter b:tags button. Only absent items listed.
+  // ── Add-item categories: Toolbar / Edit / Insert / View / Tools / Project,
+  //    mirroring the menu-bar taxonomy. v3.38, Derek: the whole list now lives
+  //    in ribbonPaletteData.buildRibbonPalette — ONE source shared with the
+  //    on-bar "+ Add" picker, so the dialog palette and the bar can't drift.
   //    (Ribbon tokens may carry the 2! span flag — compare flag-blind.)
   const tbPlaced = (v: string) => [...tbLeft, ...tbRight].some((t) => stripTall(t) === v);
-  const PRODUCTION_CMDS = ['titlePage', 'setDraft', 'addSceneNumbers', 'removeSceneNumbers', 'lockSceneNumbers', 'revisionMode'];
-  // v3.19, Derek's palette cull: settings dialogs (grammarSettings,
-  // formatPrefs, settings), one-shot imports, Select All and the Help
-  // one-shots are no longer pinnable options. The COMMAND registry keeps
-  // every id, so tokens already pinned in a saved layout keep working.
-  const TOOLS_CMDS = ['spellCheck', 'writingSuggestions', 'takeSnapshot', 'snapshots', 'trackChanges', 'compareSnapshot'];
-  const PROJECT_CMDS = ['rename'];
-  // v2.97/v2.98, Derek: menu actions are ribbon-pinnable — File, Edit,
-  // Insert, View, Format and Help join the palette (ids resolve through the
-  // same command bus the menus use).
-  /* v3.30, Derek: the File category is gone from the ribbon palette — File
-     actions live in the Quick Access Toolbar (Customize > Quick Access).
-     Dual Dialogue is gone too (it's an Element, inserted from the menu).
-     The COMMAND registry keeps every id, so tokens already pinned in a
-     saved layout keep working (the v3.19 cull rule). */
-  const EDIT_CMDS = ['cut', 'copy', 'paste', 'lastEditLocation'];
-  const INSERT_CMDS = ['insertImage', 'insertMarker'];
-  const VIEW_CMDS = ['fitPage', 'fitWidth', 'actualSize', 'showRulers'];
-  /* v3.25, Derek: Keyboard Shortcuts is no longer a ribbon option — it was
-     the Help category's only entry, so the category goes with it. The
-     COMMAND registry keeps the id, so already-pinned tokens keep working
-     (the v3.19 cull rule). */
-  const cmdOpt = (id: string) => {
-    const c = TOOLBAR_COMMANDS.find((x) => x.id === id);
-    return c ? [{ value: `c:${c.id}`, label: c.label }] : [];
-  };
-  const toolOpt = (id: string) => {
-    const t = ALL_TOOLS.find((x) => x.id === id);
-    return t ? [{ value: `t:${t.id}`, label: t.label }] : [];
-  };
-  const tbAddCategories: Array<{ id: string; label: string; options: Array<{ value: string; label: string }>; utility?: boolean }> = [
-    {
-      id: 'toolbar', label: 'Toolbar',
-      options: Object.values(BUILTIN_BY_KEY)
-        .filter((b) => b.key !== 'tags' && b.key !== 'scriptNotes' && !b.permanent && !b.unlisted)
-        .map((b) => ({ value: `b:${b.key}`, label: b.label })),
-    },
-    {
-      id: 'edit', label: 'Edit',
-      options: EDIT_CMDS.flatMap(cmdOpt),
-    },
-    {
-      id: 'insert', label: 'Insert',
-      options: [
-        ...INSERT_CMDS.flatMap(cmdOpt),
-        // v3.25: Production Tags moved Project → Insert — palette mirrors the menus.
-        { value: 'b:tags', label: 'Production Tags' },
-      ],
-    },
-    {
-      id: 'view', label: 'View',
-      options: VIEW_CMDS.flatMap(cmdOpt),
-    },
-    {
-      id: 'tools', label: 'Tools',
-      options: [
-        ...ALL_TOOLS.filter((t) => !WINDOW_IDS.includes(t.id) && t.id !== 'tags').flatMap((t) => toolOpt(t.id)),
-        { value: 'b:scriptNotes', label: 'Notes' },
-        ...TOOLS_CMDS.flatMap(cmdOpt),
-      ],
-    },
-    {
-      id: 'project', label: 'Project',
-      options: [
-        ...ALL_TOOLS.filter((t) => WINDOW_IDS.includes(t.id)).flatMap((t) => toolOpt(t.id)),
-        ...PROJECT_CMDS.flatMap(cmdOpt),
-        // v3.24: Production merged into Project — palette mirrors the menus.
-        // (v3.25: Production Tags itself moved on to Insert.)
-        ...PRODUCTION_CMDS.flatMap(cmdOpt),
-      ],
-    },
-  ].map((cat) => ({ ...cat, options: cat.options.filter((o) => !tbPlaced(o.value)) }));
+  const tbAddCategories = buildRibbonPalette(tbPlaced);
 
   // v2.96: tokenIcon/tokenLabel/spacerPx moved to tokenMeta.ts — the ribbon
   // editor is a second consumer, and two copies is how lists drift.

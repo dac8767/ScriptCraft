@@ -16787,8 +16787,14 @@ input.fs-switch:checked::after { left: 15px; }
 .rib-edit-section:hover > .rib-edit-secclose,
 .rib-edit-break:hover > .rib-edit-x,
 .rib-edit-alignsplit:hover > .rib-edit-x { opacity: 1; }
-.rib-edit-secclose { top: -8px; right: -8px; z-index: 6; }
-/* drop indicators — thin accent bars */
+/* v3.38, Derek: the section-close moves to the section's top-LEFT corner.
+   Item removal ×s all sit at their item's top-right, so a right-anchored
+   section × collided with the LAST item's × — top-left keeps them apart. */
+.rib-edit-secclose { top: -8px; left: -8px; right: auto; z-index: 6; }
+/* drop indicators — thin accent bars. v3.38: pointer-events NONE so the drag
+   hit-test (elementFromPoint) never lands on the indicator itself — it reads
+   the row/items underneath, which is what keeps the drop spot from
+   fluttering. */
 .rib-edit-dropline {
   width: 3px;
   align-self: stretch;
@@ -16797,6 +16803,7 @@ input.fs-switch:checked::after { left: 15px; }
   background: var(--fd-accent);
   flex-shrink: 0;
   z-index: 4;
+  pointer-events: none;
 }
 .rib-edit-sec-dropline {
   width: 3px;
@@ -16805,6 +16812,7 @@ input.fs-switch:checked::after { left: 15px; }
   border-radius: 2px;
   background: var(--fd-accent);
   flex-shrink: 0;
+  pointer-events: none;
 }
 .rib-edit-emptyhint {
   font-size: 10px;
@@ -16830,6 +16838,114 @@ input.fs-switch:checked::after { left: 15px; }
   font-size: 12px;
   padding: 0 2px;
 }
+
+/* ─── v3.38, Derek: the on-bar "+ Add" block + its menu ─────────────────── */
+/* A faint, dashed suggested-button at the end of the left run and the start
+   of the right run. Clicking opens the add menu. */
+.rib-edit-add {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 9px;
+  margin: 0 3px;
+  border: 1px dashed color-mix(in srgb, var(--fd-accent) 55%, var(--fd-border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--fd-accent) 8%, transparent);
+  color: color-mix(in srgb, var(--fd-accent) 85%, var(--fd-text));
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: .55;
+  touch-action: none;
+}
+.rib-edit-add:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--fd-accent) 16%, transparent);
+  border-style: solid;
+}
+.rib-edit-add-plus { font-size: 13px; }
+
+.rib-add-backdrop { position: fixed; inset: 0; z-index: 3200; }
+.rib-add-menu {
+  position: fixed;
+  min-width: 196px;
+  max-width: 250px;
+  max-height: 62vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--fd-menu-bg, var(--fd-panel-bg));
+  border: 1px solid var(--fd-border);
+  border-radius: 9px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, .42);
+  overflow: hidden;
+}
+.rib-add-search {
+  margin: 8px;
+  padding: 6px 9px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: var(--fd-input-bg, var(--fd-navigator-bg));
+  color: var(--fd-text);
+  font-size: 12.5px;
+  outline: none;
+}
+.rib-add-search:focus { border-color: var(--fd-accent); }
+.rib-add-scroll { overflow-y: auto; padding: 0 6px 8px; }
+.rib-add-group { margin-top: 3px; }
+.rib-add-grouphdr {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--fd-text-muted);
+  padding: 5px 8px 2px;
+}
+.rib-add-opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fd-text);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.rib-add-opt:hover { background: color-mix(in srgb, var(--fd-accent) 20%, transparent); }
+.rib-add-empty { padding: 14px; text-align: center; color: var(--fd-text-muted); font-size: 12px; }
+
+/* ─── v3.38, Derek: two-row section title/descriptor (Word ribbon-group
+   label). Sits centred under the section's rows on the LIVE bar; an inline
+   input while editing. */
+.rib-sec-title {
+  text-align: center;
+  font-size: 9.5px;
+  line-height: 1.1;
+  color: var(--fd-text-muted);
+  padding: 1px 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.rib-edit-title {
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+  padding: 1px 3px;
+  border: 1px dashed color-mix(in srgb, var(--fd-border) 80%, transparent);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fd-text-muted);
+  font-size: 9.5px;
+  text-align: center;
+  outline: none;
+}
+.rib-edit-title:focus { border-color: var(--fd-accent); color: var(--fd-text); }
+.rib-edit-title::placeholder { color: color-mix(in srgb, var(--fd-text-muted) 65%, transparent); }
 /* v3.34: dropdown width grip — the field's right edge. */
 .ribed-dd-grip {
   position: absolute;
