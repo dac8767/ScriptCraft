@@ -672,6 +672,16 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   React.useEffect(() => {
     if (open && category) setActiveCat(category);
   }, [open, category]);
+  // v3.29, Derek: the window OPENS below the toolbar ribbon so the whole bar
+  // stays visible while editing (it's still draggable anywhere after).
+  // Measured per open — the top chrome's height depends on his scaling.
+  const [overlayPadTop, setOverlayPadTop] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    if (!open) { setOverlayPadTop(null); return; }
+    const bar = document.querySelector('.toolbar-stack');
+    const b = bar?.getBoundingClientRect().bottom ?? 0;
+    setOverlayPadTop(b > 0 ? Math.round(b) + 14 : null);
+  }, [open]);
   // v1.76: the old per-list drag plumbing (dragProps/zoneDragProps, v0.45 and
   // v0.95) is gone — DndColumns owns drag state for every customization list.
 
@@ -1079,7 +1089,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   };
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
+    <div
+      className="dialog-overlay"
+      style={overlayPadTop !== null ? { paddingTop: overlayPadTop } : undefined}
+      onClick={onClose}
+    >
       {/* ref: also what the v0.84 size-persist ResizeObserver watches — it
           had come detached from the element entirely (dead code until now). */}
       <div ref={dialogRef} className="dialog-box fs-customize-dialog" onClick={(e) => e.stopPropagation()}>

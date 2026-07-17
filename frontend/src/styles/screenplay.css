@@ -1188,6 +1188,15 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
    a hardcoded 26px and never scaled. Horizontal gaps stay pinned (v2.68).
    Placed AFTER the .toolbar-custom clamp rules on purpose: equal
    specificity, so source order lets these win in custom mode. */
+/* v3.29, Derek: "the customize button is considering the button just the
+   icon." Right — the per-mode width clamps (.toolbar-comfortable's 28px,
+   .toolbar-custom's 44px cap) outrank the big-button rules, so the button
+   box was icon-sized and its nowrap label overflowed it — dividers landed
+   on the text. These ribbon-scoped rules come AFTER both mode rules (equal
+   specificity, source order wins), so in EVERY mode a big or tall button's
+   box sizes to icon + label like any other button. */
+.toolbar.toolbar-ribbon .rib-single .toolbar-btn { width: auto; min-width: 30px; height: auto; }
+.toolbar.toolbar-ribbon .toolbar-btn.rib-tall-btn { width: auto; height: 80%; }
 .toolbar.toolbar-ribbon { --rib-itemh: 24px; }
 .toolbar.toolbar-ribbon.toolbar-comfortable { --rib-itemh: 26px; }
 .toolbar.toolbar-ribbon.toolbar-custom {
@@ -11574,6 +11583,10 @@ html.android .version-history-panel {
 }
 .color-picker-hex {
   flex: 1;
+  /* v3.29, Derek: text inputs refuse to shrink below their intrinsic width
+     (min-width:auto) — the hex field held ~170px and shoved Apply out of
+     the popup's right edge. */
+  min-width: 0;
   height: 26px;
   font-size: 12px;
   padding: 0 6px;
@@ -11583,6 +11596,7 @@ html.android .version-history-panel {
   border-radius: 4px;
 }
 .color-picker-apply {
+  flex-shrink: 0;
   height: 26px;
   padding: 0 8px;
   font-size: 12px;
@@ -16613,13 +16627,52 @@ input.fs-switch:checked::after { left: 15px; }
   flex: 1;
   min-width: 0;
 }
-/* v3.24, Derek: the section IS the handle — a grabbable bubble. */
+/* v3.24, Derek: the section IS the handle — a grabbable bubble.
+   v3.29: position:relative anchors the close × on its top-right corner. */
 .ribed-section {
+  position: relative;
   cursor: grab;
   touch-action: none;
   background: color-mix(in srgb, var(--fd-navigator-bg) 55%, transparent);
 }
 .ribed-section:hover { border-color: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border)); }
+/* v3.29, Derek: the close-section × rides the section bubble's top-right
+   corner (it lived on the divider line before). Hover the section to see it. */
+.ribed-section > .ribed-sec-close { top: -7px; right: -7px; }
+.ribed-section:hover > .ribed-sec-close { opacity: 1; pointer-events: auto; }
+/* v3.29, Derek: WYSIWYG chips — the editor mirrors the live bar. */
+.ribed-chip.ribed-chip-big {
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 8px;
+}
+.ribed-chip-big .ribed-chip-icon { font-size: 24px; }
+.ribed-chip-biglabel {
+  font-size: 9.5px;
+  line-height: 1.1;
+  color: var(--fd-text);
+  white-space: nowrap;
+}
+/* dropdown builtins look like the fields they are on the bar */
+.ribed-chip.ribed-chip-dd {
+  height: 24px;
+  padding: 0 22px 0 8px;
+  position: relative;
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-overlay-medium);
+  border-radius: 5px;
+}
+.ribed-dd-text { font-size: 11.5px; color: var(--fd-text); white-space: nowrap; }
+.ribed-dd-chev {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--fd-text-muted);
+  border-bottom: 1.5px solid var(--fd-text-muted);
+  transform: translateY(-70%) rotate(45deg);
+}
 /* insertion indicator while a section rides the pointer — zero net width */
 .ribed-sec-dropline {
   width: 3px;
@@ -16716,7 +16769,6 @@ input.fs-switch:checked::after { left: 15px; }
    neighbours) — they only become clickable when their owner is hovered */
 .ribed-x { pointer-events: none; }
 .ribed-chip:hover .ribed-x,
-.ribed-secdiv:hover .ribed-x,
 .ribed-alignsplit:hover .ribed-x,
 .ribed-break:hover .ribed-x { opacity: 1; pointer-events: auto; }
 .ribed-secdiv {
@@ -16727,7 +16779,7 @@ input.fs-switch:checked::after { left: 15px; }
   border-radius: 2px;
   background: var(--fd-border);
 }
-.ribed-secdiv .ribed-x { top: -4px; right: -7px; }
+/* (v3.29: the divider's × moved onto the section bubble — .ribed-sec-close.) */
 /* v3.02: the align-split marker between sections */
 .ribed-alignsplit {
   position: relative;

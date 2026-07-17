@@ -233,19 +233,21 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
       return null;
     };
 
-    /** v3.17: a SECTION drag targets a boundary — the near half of whatever
-     *  section the pointer is over decides before/after. */
+    /** v3.17: a SECTION drag targets a boundary. v3.29, Derek: GEOMETRY, not
+     *  hit-testing — the pointer spends half its life over the gaps between
+     *  sections (or the drop line itself), and the old "not over a section →
+     *  the end" fallback made the indicator leap to the strip's end, so a
+     *  middle drop needed the cursor dragged way left. The boundary is
+     *  simply how many section midpoints lie left of the cursor. */
     const secSpotFromPoint = (x: number, y: number): number | null => {
       const el = document.elementFromPoint(x, y) as HTMLElement | null;
-      const hitSection = el?.closest<HTMLElement>('.ribed-section');
-      if (hitSection?.dataset.sec) {
-        const r = hitSection.getBoundingClientRect();
-        return Number(hitSection.dataset.sec) + (x > r.left + r.width / 2 ? 1 : 0);
+      if (!el?.closest('.ribed-ribbon')) return null;
+      let b = 0;
+      for (const s of Array.from(document.querySelectorAll<HTMLElement>('.ribed-ribbon .ribed-section'))) {
+        const r = s.getBoundingClientRect();
+        if (x > r.left + r.width / 2) b += 1;
       }
-      // over the strip but not over a section (empty ribbon, or the gap at
-      // the end): the boundary is the end.
-      if (el?.closest('.ribed-ribbon')) return sections.length;
-      return null;
+      return b;
     };
     /* v3.25, Derek: the align split drops BETWEEN sections, like the section
        blocks — not into a section's item flow. */
@@ -344,38 +346,57 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
 
   const dropLine = <span className="ribed-dropline" />;
 
-  const renderChip = (tok: string, sec: number, row: Row, idx: number) => (
-    <React.Fragment key={tok}>
-      {dragging && spot && spot.sec === sec && spot.row === row && spot.idx === idx && dropLine}
-      <span
-        className={`ribed-chip${tok.startsWith('s:') ? ' ribed-chip-spacer' : ''}${tok.startsWith('d:') ? ' ribed-chip-div' : ''}`}
-        title={tokenLabel(tok)}
-        style={tok.startsWith('s:') ? { width: spacerPx(tok) } : undefined}
-        data-sec={sec}
-        data-row={row}
-        data-idx={idx}
-        onPointerDown={(e) => startDrag(e, `tok:${tok}`)}
-      >
-        {!tok.startsWith('s:') && !tok.startsWith('d:') && (
-          <span className="ribed-chip-icon">{tokenIcon(tok)}</span>
-        )}
-        {tok.startsWith('s:') && (
-          <span
-            className="ribed-spacer-grip"
-            title="Drag to resize the spacer"
-            onPointerDown={(e) => startSpacerResize(e, tok)}
-          />
-        )}
-        <button className="ribed-x" title="Remove" onClick={() => removeToken(tok)}>×</button>
-      </span>
-    </React.Fragment>
-  );
+  /* v3.29, Derek: the editor is WYSIWYG — chips mirror the LIVE ribbon.
+     Dropdown builtins render as select-looking fields with their real
+     resting text; items in a single-row section render big (large icon,
+     name underneath), exactly like the bar. Same drag payloads and data
+     attributes throughout — only the chip's face changed. */
+  const DROPDOWN_PREVIEW: Record<string, string> = {
+    fontFamily: 'Courier Prime', fontSize: '12pt', element: 'Action', view: 'Page', zoom: '100%',
+  };
+  const renderChip = (tok: string, sec: number, row: Row, idx: number, big = false) => {
+    const ddText = tok.startsWith('b:') ? DROPDOWN_PREVIEW[tok.slice(2)] : undefined;
+    return (
+      <React.Fragment key={tok}>
+        {dragging && spot && spot.sec === sec && spot.row === row && spot.idx === idx && dropLine}
+        <span
+          className={`ribed-chip${tok.startsWith('s:') ? ' ribed-chip-spacer' : ''}${tok.startsWith('d:') ? ' ribed-chip-div' : ''}${ddText ? ' ribed-chip-dd' : ''}${big && !ddText && !tok.startsWith('s:') && !tok.startsWith('d:') ? ' ribed-chip-big' : ''}`}
+          title={tokenLabel(tok)}
+          style={tok.startsWith('s:') ? { width: spacerPx(tok) } : undefined}
+          data-sec={sec}
+          data-row={row}
+          data-idx={idx}
+          onPointerDown={(e) => startDrag(e, `tok:${tok}`)}
+        >
+          {ddText ? (
+            <>
+              <span className="ribed-dd-text">{ddText}</span>
+              <span className="ribed-dd-chev" aria-hidden="true" />
+            </>
+          ) : !tok.startsWith('s:') && !tok.startsWith('d:') && (
+            <>
+              <span className="ribed-chip-icon">{tokenIcon(tok)}</span>
+              {big && <span className="ribed-chip-biglabel">{tokenLabel(tok)}</span>}
+            </>
+          )}
+          {tok.startsWith('s:') && (
+            <span
+              className="ribed-spacer-grip"
+              title="Drag to resize the spacer"
+              onPointerDown={(e) => startSpacerResize(e, tok)}
+            />
+          )}
+          <button className="ribed-x" title="Remove" onClick={() => removeToken(tok)}>×</button>
+        </span>
+      </React.Fragment>
+    );
+  };
 
   const renderRow = (s: RibbonSection, sec: number, row: Row) => {
     const items = row === 'top' ? s.top : s.bottom;
     return (
       <div className="ribed-row" data-sec={sec} data-row={row} data-len={items.length}>
-        {items.map((tok, i) => renderChip(tok, sec, row, i))}
+        {items.map((tok, i) => renderChip(tok, sec, row, i, !s.hasBreak))}
         {dragging && spot && spot.sec === sec && spot.row === row && spot.idx >= items.length && dropLine}
         {items.length === 0 && !dragging && <span className="ribed-empty-hint">drop items here</span>}
       </div>
@@ -478,6 +499,17 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
                 startDrag(e, `sec:${i}`);
               }}
             >
+              {/* v3.29, Derek: the close-section × lives on the section
+                  BUBBLE's top-right corner, not on its divider. */}
+              {sections.length > 1 && (
+                <button
+                  className="ribed-x ribed-sec-close"
+                  title={i < sections.length - 1
+                    ? 'Close this section (its items join the next one)'
+                    : 'Close this section (its items join the previous one)'}
+                  onClick={() => mergeSections(i < sections.length - 1 ? i : i - 1)}
+                >×</button>
+              )}
               <div className="ribed-sec-rows">
               {renderRow(s, i, 'top')}
               {s.hasBreak && (
@@ -496,23 +528,16 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
               </div>
             </div>
             {/* v3.02, Derek: EVERY section gets its closing divider on the
-                right — the last one closes leftward into its neighbour. At
-                the align split the boundary is the split marker instead. */}
+                right. At the align split the boundary is the split marker.
+                v3.29: the close-section × moved onto the section bubble
+                itself — the divider is just a divider now. */}
             {i + 1 === splitAt ? (
               <span className="ribed-alignsplit" title="Align Split — sections after this hug the toolbar's right edge">
                 <FaExchangeAlt />
                 <button className="ribed-x" title="Remove the align split (back to one left-aligned run)" onClick={removeSplit}>×</button>
               </span>
             ) : (i < sections.length - 1 || sections.length > 1) && (
-              <span className="ribed-secdiv" title="This section's closing divider">
-                <button
-                  className="ribed-x"
-                  title={i < sections.length - 1
-                    ? 'Close this section (its items join the next one)'
-                    : 'Close this section (its items join the previous one)'}
-                  onClick={() => mergeSections(i < sections.length - 1 ? i : i - 1)}
-                >×</button>
-              </span>
+              <span className="ribed-secdiv" title="Divider between sections" />
             )}
           </React.Fragment>
         ))}
@@ -520,14 +545,14 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
       </div>
 
       <p className="fs-customize-hint">
-        Drag items between the sections above — drop position is the item's
-        position. Drag <strong>New Row</strong> into a section to split it
-        into two rows at that spot; a section without a split spans its items
-        across both rows. Drop <strong>Align Split</strong> on a section and
-        everything after it hugs the toolbar's right edge. Spacers resize by
-        dragging their right edge. Drag an item onto the lists below to
-        remove it — or double-click one below to add it to the section you
-        touched last.
+        The strip above shows the ribbon as it will look. Drag items between
+        the sections — drop position is the item's position; drag a section
+        anywhere on its body to move the whole block. Drop <strong>Align
+        Split</strong> between two sections and everything after it hugs the
+        toolbar's right edge. Hover a section for the × that closes it (its
+        items join the neighbour). Spacers resize by dragging their right
+        edge. Drag an item onto the lists below to remove it — or
+        double-click one below to add it to the section you touched last.
       </p>
 
       {/* v3.11, Derek: keyword filter — "save" surfaces Save, Save As,

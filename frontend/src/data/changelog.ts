@@ -65,9 +65,21 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.28';
+export const APP_VERSION = '3.29';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.29',
+    date: '2026-07-17',
+    items: [
+      { title: 'The ribbon editor is WYSIWYG', detail: 'The strip in Customize > Toolbar now mirrors the real bar: items in a single-row section render big (large icon, name underneath), and the dropdown fields — font, size, element, Editor View, zoom — look like the dropdowns they are, resting text and all.', tags: ['New Feature', 'UI'] },
+      { title: 'Section drops track the cursor', detail: 'Dragging a section or block, the insertion line leaped to the strip\'s end whenever the pointer crossed the gap BETWEEN sections — placing one mid-strip meant aiming way left. The boundary now comes from geometry (nearest section midpoints), so the line stays with the cursor.', tags: ['Fix', 'UI'] },
+      { title: 'Close-section × on the section itself', detail: 'It rides the section bubble\'s top-right corner now (hover to see it) instead of hanging off the divider line. The divider is just a divider.', tags: ['UI'] },
+      { title: 'Customize opens below the ribbon', detail: 'The window\'s default position clears the whole toolbar so you can see your edits land live. Still draggable anywhere.', tags: ['UI'] },
+      { title: 'Divider no longer overlaps Customize at custom scale', detail: 'With a dragged toolbar height, the width clamp meant for small buttons squeezed the tall Customize button under its own label, which painted over the divider beside it. Big and tall buttons now size to their content in every mode.', tags: ['Fix'] },
+      { title: 'Apply stays inside the color picker', detail: 'The hex field refused to shrink (a text input\'s intrinsic width) and shoved the Apply button out of the popup\'s edge.', tags: ['Fix'] },
+    ],
+  },
   {
     version: '3.28',
     date: '2026-07-17',
