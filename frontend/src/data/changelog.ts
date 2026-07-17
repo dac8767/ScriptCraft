@@ -65,9 +65,19 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.23';
+export const APP_VERSION = '3.24';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.24',
+    date: '2026-07-17',
+    items: [
+      { title: 'Leaner menus', detail: 'Production merged into Project (Title Page, Set Draft Number, Scene Numbers, Revision Mode, Production Tags live there now); Add/Remove Scene Numbers is one checkable toggle; Subscript/Superscript and File > Preview are gone; Lock/Reset All Sizing moved into the Customize window; Grammar & Spelling Settings opens from Settings; Changelog lives in About as "What\'s New". Eight menus, down from nine.', tags: ['UI'] },
+      { title: 'Customize palette mirrors the new menus', detail: 'The Production category folded into Project; the empty Format category is gone.', tags: ['Polish'] },
+      { title: 'Sections drag by their body', detail: 'Grab a section bubble anywhere that isn\'t an item and move it — the grip handle is gone, and sections read as blocks. New Row is retired; the Two Rows block covers it.', tags: ['UI'] },
+      { title: 'Color for big buttons only', detail: 'Small one-row-tall ribbon buttons are back to monotone; large single-row buttons keep their colors.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '3.23',
     date: '2026-07-17',

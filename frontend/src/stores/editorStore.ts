@@ -557,7 +557,9 @@ export interface WorkspaceSnapshot {
 
 /** Default layout: script-structure tools left, everything else right. */
 /** Canonical menu-bar labels in default order (File islocked visible). */
-export const MENU_BAR_LABELS = ['File', 'Edit', 'View', 'Insert', 'Format', 'Project', 'Tools', 'Production', 'Help'];
+// v3.24, Derek's menu reorg: Production merged into Project. Saved orders
+// that still carry 'Production' are harmless — unknown labels are ignored.
+export const MENU_BAR_LABELS = ['File', 'Edit', 'View', 'Insert', 'Format', 'Project', 'Tools', 'Help'];
 
 /**
  * v0.85: Navigator belongs INSIDE the left panel by default. It already does on

@@ -340,6 +340,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     toolOrder, setToolOrder,
     toolbarMode, setToolbarMode,
     qatItems, setQatItems,
+    uiResizeLocked,
   } = useEditorStore();
 
 
@@ -717,7 +718,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const EDIT_CMDS = ['cut', 'copy', 'paste', 'dualDialogue'];
   const INSERT_CMDS = ['insertImage', 'insertMarker'];
   const VIEW_CMDS = ['fitPage', 'fitWidth', 'actualSize', 'showRulers'];
-  const FORMAT_CMDS: string[] = [];
   const BOOKMARK_CMDS = ['addBookmark', 'lastEditLocation'];   // v3.08
   const HELP_CMDS = ['keyboardShortcuts'];
   const cmdOpt = (id: string) => {
@@ -752,10 +752,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       options: VIEW_CMDS.flatMap(cmdOpt),
     },
     {
-      id: 'format', label: 'Format',
-      options: FORMAT_CMDS.flatMap(cmdOpt),
-    },
-    {
       id: 'bookmarks', label: 'Bookmarks',
       options: BOOKMARK_CMDS.flatMap(cmdOpt),
     },
@@ -763,13 +759,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       id: 'help', label: 'Help',
       options: HELP_CMDS.flatMap(cmdOpt),
     },
-    {
-      id: 'production', label: 'Production',
-      options: [
-        { value: 'b:tags', label: 'Production Tags' },
-        ...PRODUCTION_CMDS.flatMap(cmdOpt),
-      ],
-    },
+
     {
       id: 'tools', label: 'Tools',
       options: [
@@ -783,6 +773,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       options: [
         ...ALL_TOOLS.filter((t) => WINDOW_IDS.includes(t.id)).flatMap((t) => toolOpt(t.id)),
         ...PROJECT_CMDS.flatMap(cmdOpt),
+        // v3.24: Production merged into Project — palette mirrors the menus.
+        { value: 'b:tags', label: 'Production Tags' },
+        ...PRODUCTION_CMDS.flatMap(cmdOpt),
       ],
     },
   ].map((cat) => ({ ...cat, options: cat.options.filter((o) => !tbPlaced(o.value)) }));
@@ -815,6 +808,19 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               onClick={() => setActiveCat(id)}
             >{label}</button>
           ))}
+          {/* v3.24, Derek's menu reorg #5: the global sizing controls moved
+              here from the View menu — visible from every tab. */}
+          <div className="fs-customize-globals">
+            <button
+              className={uiResizeLocked ? 'active' : ''}
+              title={uiResizeLocked ? 'Sizing is locked — click to unlock' : 'Freeze all sizing and spacing'}
+              onClick={() => useEditorStore.getState().setUiResizeLocked(!uiResizeLocked)}
+            >{uiResizeLocked ? 'Sizing Locked' : 'Lock All Sizing'}</button>
+            <button
+              title="Reset every adjustable size and spacing to the defaults"
+              onClick={() => useEditorStore.getState().resetChromeSizes()}
+            >Reset All Sizes</button>
+          </div>
         </div>
         <div className="dialog-body fs-customize-body">
           {activeCat === 'menu' && (<>

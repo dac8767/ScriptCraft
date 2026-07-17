@@ -1184,51 +1184,51 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   margin: 4px 0;
   display: block;
 }
-/* v3.23, Derek: RIBBON icons wear color — scoped to .toolbar-ribbon only,
-   every other surface stays monotone (CLAUDE.md rule; this is the one
-   sanctioned exception, like the red A). Single tint per glyph: react-icons
-   are one-path currentColor shapes, so multi-color needs provided art.
-   B/I/U/S and the alignment glyphs stay text-colored on purpose (they are
-   letterforms, colored versions read as formatting applied). */
-.toolbar-ribbon [data-key="undo"] svg,
-.toolbar-ribbon [data-key="redo"] svg { color: #d9a441; }
-.toolbar-ribbon [data-key="cut"] svg,
-.toolbar-ribbon [data-key="copy"] svg,
-.toolbar-ribbon [data-key="paste"] svg,
-.toolbar-ribbon [data-key="save"] svg,
-.toolbar-ribbon [data-key="saveAs"] svg,
-.toolbar-ribbon [data-key="openFile"] svg,
-.toolbar-ribbon [data-key="newScreenplay"] svg,
-.toolbar-ribbon [data-key="print"] svg,
-.toolbar-ribbon [data-key="preview"] svg { color: #6fa8dc; }
-.toolbar-ribbon [data-key="exportPDF"] svg { color: #e06060; }
-.toolbar-ribbon [data-key="insertSection"] svg { color: #b58ee0; }
-.toolbar-ribbon [data-key="insertNote"] svg { color: #e8c34f; }
-.toolbar-ribbon [data-key="insertChecklist"] svg { color: #6abf69; }
-.toolbar-ribbon [data-key="insertMarker"] svg { color: #e06060; }
-.toolbar-ribbon [data-key="insertImage"] svg { color: #b58ee0; }
-.toolbar-ribbon [data-key="find"] svg,
-.toolbar-ribbon [data-key="goto"] svg { color: #4cbfbf; }
-.toolbar-ribbon [data-key="customize"] svg { color: #d377b0; }
-.toolbar-ribbon [data-key="spellCheck"] svg,
-.toolbar-ribbon [data-key="writingSuggestions"] svg { color: #6abf69; }
-.toolbar-ribbon [data-key="addBookmark"] svg,
-.toolbar-ribbon [data-key="lastEditLocation"] svg { color: #e06060; }
-.toolbar-ribbon [data-key="takeSnapshot"] svg,
-.toolbar-ribbon [data-key="snapshots"] svg,
-.toolbar-ribbon [data-key="compareSnapshot"] svg { color: #d9a441; }
-.toolbar-ribbon [data-key="togglePanelLeft"] svg,
-.toolbar-ribbon [data-key="togglePanelRight"] svg,
-.toolbar-ribbon [data-key="toggleOutlineBar"] svg { color: #7f9ec9; }
+/* v3.23, Derek: ribbon icons wear color. v3.24: LARGE buttons only — items
+   in a single-row section (.rib-single). Small one-row-tall buttons went
+   back to monotone, like every other surface (CLAUDE.md rule; the big
+   buttons are the sanctioned exception, like the red A). Single tint per
+   glyph: react-icons are one-path currentColor shapes, so multi-color
+   needs provided art. */
+.toolbar-ribbon .rib-single [data-key="undo"] svg,
+.toolbar-ribbon .rib-single [data-key="redo"] svg { color: #d9a441; }
+.toolbar-ribbon .rib-single [data-key="cut"] svg,
+.toolbar-ribbon .rib-single [data-key="copy"] svg,
+.toolbar-ribbon .rib-single [data-key="paste"] svg,
+.toolbar-ribbon .rib-single [data-key="save"] svg,
+.toolbar-ribbon .rib-single [data-key="saveAs"] svg,
+.toolbar-ribbon .rib-single [data-key="openFile"] svg,
+.toolbar-ribbon .rib-single [data-key="newScreenplay"] svg,
+.toolbar-ribbon .rib-single [data-key="print"] svg,
+.toolbar-ribbon .rib-single [data-key="preview"] svg { color: #6fa8dc; }
+.toolbar-ribbon .rib-single [data-key="exportPDF"] svg { color: #e06060; }
+.toolbar-ribbon .rib-single [data-key="insertSection"] svg { color: #b58ee0; }
+.toolbar-ribbon .rib-single [data-key="insertNote"] svg { color: #e8c34f; }
+.toolbar-ribbon .rib-single [data-key="insertChecklist"] svg { color: #6abf69; }
+.toolbar-ribbon .rib-single [data-key="insertMarker"] svg { color: #e06060; }
+.toolbar-ribbon .rib-single [data-key="insertImage"] svg { color: #b58ee0; }
+.toolbar-ribbon .rib-single [data-key="find"] svg,
+.toolbar-ribbon .rib-single [data-key="goto"] svg { color: #4cbfbf; }
+.toolbar-ribbon .rib-single [data-key="customize"] svg { color: #d377b0; }
+.toolbar-ribbon .rib-single [data-key="spellCheck"] svg,
+.toolbar-ribbon .rib-single [data-key="writingSuggestions"] svg { color: #6abf69; }
+.toolbar-ribbon .rib-single [data-key="addBookmark"] svg,
+.toolbar-ribbon .rib-single [data-key="lastEditLocation"] svg { color: #e06060; }
+.toolbar-ribbon .rib-single [data-key="takeSnapshot"] svg,
+.toolbar-ribbon .rib-single [data-key="snapshots"] svg,
+.toolbar-ribbon .rib-single [data-key="compareSnapshot"] svg { color: #d9a441; }
+.toolbar-ribbon .rib-single [data-key="togglePanelLeft"] svg,
+.toolbar-ribbon .rib-single [data-key="togglePanelRight"] svg,
+.toolbar-ribbon .rib-single [data-key="toggleOutlineBar"] svg { color: #7f9ec9; }
 /* pinned side-panel tools (Outline, Notes, To-Do, ...) */
-.toolbar-ribbon [data-key="beatboard"] svg { color: #b58ee0; }
-.toolbar-ribbon [data-key="sticky"] svg { color: #e8c34f; }
-.toolbar-ribbon [data-key="todo"] svg { color: #6abf69; }
-.toolbar-ribbon [data-key="indexcards"] svg { color: #6fa8dc; }
-.toolbar-ribbon [data-key="highlights"] svg { color: #e8c34f; }
-.toolbar-ribbon [data-key="goals"] svg { color: #4cbfbf; }
-.toolbar-ribbon [data-key="fragments"] svg { color: #d377b0; }
-.toolbar-ribbon [data-key="notebook"] svg { color: #d9a441; }
+.toolbar-ribbon .rib-single [data-key="beatboard"] svg { color: #b58ee0; }
+.toolbar-ribbon .rib-single [data-key="sticky"] svg { color: #e8c34f; }
+.toolbar-ribbon .rib-single [data-key="todo"] svg { color: #6abf69; }
+.toolbar-ribbon .rib-single [data-key="indexcards"] svg { color: #6fa8dc; }
+.toolbar-ribbon .rib-single [data-key="highlights"] svg { color: #e8c34f; }
+.toolbar-ribbon .rib-single [data-key="goals"] svg { color: #4cbfbf; }
+.toolbar-ribbon .rib-single [data-key="fragments"] svg { color: #d377b0; }
+.toolbar-ribbon .rib-single [data-key="notebook"] svg { color: #d9a441; }
 
 /* The overflow menu rides beside the ribbon, centered on its height. */
 .toolbar-stack .toolbar-overflow-wrap { align-self: center; position: relative; }
@@ -12570,6 +12570,37 @@ html.android .version-history-panel {
    button rule (and its light-theme variant) otherwise repaints the pill
    with the stock dialog-button colors. */
 .about-actions { display: flex; justify-content: space-between; align-items: center; }
+.about-whatsnew {
+  margin-left: 10px;
+  padding: 2px 8px;
+  font-size: 11px;
+  border: 1px solid var(--fd-border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--fd-accent);
+  cursor: pointer;
+}
+.about-whatsnew:hover { background: var(--fd-hover-bg); }
+/* v3.24: global sizing controls at the bottom of the Customize tab rail */
+.fs-customize-tabs { display: flex; flex-direction: column; }
+.fs-customize-globals {
+  margin-top: auto;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fs-customize-globals button {
+  padding: 5px 8px;
+  font-size: 11px;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fd-text);
+  cursor: pointer;
+}
+.fs-customize-globals button:hover { background: var(--fd-hover-bg); }
+.fs-customize-globals button.active { background: var(--fd-accent); border-color: var(--fd-accent); color: #fff; }
 .about-actions button.fs-bmc-btn {
   height: 28px;
   padding: 0 14px;
@@ -16758,20 +16789,13 @@ input.fs-switch:checked::after { left: 15px; }
   flex: 1;
   min-width: 0;
 }
-/* v3.17: the section's move handle — drag it to reorder whole sections. */
-.ribed-sec-grip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 12px;
-  flex-shrink: 0;
-  color: var(--fd-text-muted);
-  font-size: 9px;
+/* v3.24, Derek: the section IS the handle — a grabbable bubble. */
+.ribed-section {
   cursor: grab;
-  border-radius: 3px;
   touch-action: none;
+  background: color-mix(in srgb, var(--fd-navigator-bg) 55%, transparent);
 }
-.ribed-sec-grip:hover { color: var(--fd-text); background: var(--fd-hover-bg); }
+.ribed-section:hover { border-color: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border)); }
 /* insertion indicator while a section rides the pointer — zero net width */
 .ribed-sec-dropline {
   width: 3px;

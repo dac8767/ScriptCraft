@@ -3,9 +3,9 @@
  *
  * An editable replica of the ribbon: sections between full-height dividers,
  * one or two rows each, items dragged and dropped exactly where they'll sit.
- * The New Row utility splits a section into two rows at the drop point; the
- * Align Split utility (v3.02) marks where the toolbar switches from left-
- * to right-aligned. Every section shows its closing divider on the RIGHT —
+ * v3.22/v3.24: sections are BLOCKS — drop a Single Row / Two Rows bubble to
+ * create one, drag a section's own body to move it. The Align Split utility
+ * (v3.02) marks where the toolbar switches from left- to right-aligned. Every section shows its closing divider on the RIGHT —
  * including the last one — and its × folds the section into its neighbour.
  * Items dragged onto the palette leave the ribbon; double-clicking a
  * palette item adds it to the most recently touched section.
@@ -22,7 +22,7 @@
  * single source of truth the real Toolbar renders from.
  */
 import React, { useState, useRef } from 'react';
-import { FaGripLinesVertical, FaLevelDownAlt, FaArrowsAltH, FaExchangeAlt } from 'react-icons/fa';
+import { FaGripLinesVertical, FaArrowsAltH, FaExchangeAlt } from 'react-icons/fa';
 import {
   parseRibbon, serializeRibbon, type RibbonModel, type RibbonSection,
 } from './toolbarBuiltins';
@@ -66,8 +66,8 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
   const { sections, splitAt } = model;
   const [spot, setSpot] = useState<DropSpot | null>(null);
   const [dragging, setDragging] = useState(false);
-  // v3.17, Derek: whole SECTIONS reorder too — dragged by the grip at their
-  // left edge. This is the insertion boundary (0..sections.length).
+  // v3.17/v3.24, Derek: whole SECTIONS reorder — dragged by their own body.
+  // This is the insertion boundary (0..sections.length).
   const [secSpot, setSecSpot] = useState<number | null>(null);
   // v3.01: double-clicking a palette item drops it into the most recently
   // added or modified section — every mutation records its target.
@@ -430,10 +430,6 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
             onDoubleClick={() => insertSectionAt('double', sections.length)}>
             <span className="ribed-blk-glyph"><i /><i /></span> Two Rows
           </span>
-          <span className="ribed-pal-chip ribed-pal-util" title="Drag into a section to split it into two rows at that spot"
-            onPointerDown={(e) => startDrag(e, 'util:rowbreak')}>
-            <FaLevelDownAlt /> New Row
-          </span>
           <span className="ribed-pal-chip ribed-pal-util" title="Drag into a row: a one-row vertical divider line (double-click: add to the last-touched section)"
             onPointerDown={(e) => startDrag(e, 'util:divider')}
             onDoubleClick={() => quickAdd(`d:${Date.now()}`)}>
@@ -454,13 +450,20 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
         {sections.map((s, i) => (
           <React.Fragment key={`sec-${i}`}>
             {secSpot === i && <span className="ribed-sec-dropline" />}
-            <div className={`ribed-section${s.hasBreak ? '' : ' ribed-single'}`} data-sec={i}>
-              {/* v3.17: drag the grip to move the WHOLE section. */}
-              <span
-                className="ribed-sec-grip"
-                title="Drag to move this section"
-                onPointerDown={(e) => startDrag(e, `sec:${i}`)}
-              ><FaGripLinesVertical /></span>
+            <div
+              className={`ribed-section${s.hasBreak ? '' : ' ribed-single'}`}
+              data-sec={i}
+              title="Drag to move this section"
+              /* v3.24, Derek: the section ITSELF is the drag handle — grab
+                 anywhere that isn't a chip or a control and the whole bubble
+                 moves. Chips keep their own drag (they stopPropagation via
+                 the closest() guard below). */
+              onPointerDown={(e) => {
+                const t = e.target as HTMLElement;
+                if (t.closest('.ribed-chip, .ribed-x, .ribed-spacer-grip, .ribed-break, input, button')) return;
+                startDrag(e, `sec:${i}`);
+              }}
+            >
               <div className="ribed-sec-rows">
               {renderRow(s, i, 'top')}
               {s.hasBreak && (

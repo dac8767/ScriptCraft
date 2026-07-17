@@ -18,7 +18,9 @@ const PROJECT_MENU_GROUPS: string[][] = [
   // v1.63: 'spelling' is NOT a plain item here anymore — Spelling & Grammar
   // is the extensive submenu appended to the Project menu below (one version,
   // one home; the docked panel now carries the full feature set).
-  ['titlepage', 'assets'],
+  // v3.24: 'titlepage' is out of the windows groups — the merged-in
+  // Production block heads with Title Page (one home, per v1.64's rule).
+  ['assets'],
 ];
 /** Tools menu: story planning / writing aids / production & analysis. */
 const TOOL_MENU_GROUPS: string[][] = [
@@ -116,8 +118,6 @@ import {
   FaItalic,
   FaUnderline,
   FaStrikethrough,
-  FaSubscript,
-  FaSuperscript,
   FaAlignLeft,
   FaAlignCenter,
   FaAlignRight,
@@ -1442,7 +1442,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         },
         { icon: <FaEdit />, label: 'Rename…', action: () => setRenameOpen(true) },
         { separator: true, label: '' },
-        { icon: <FaEye />, label: 'Preview', action: () => useEditorStore.getState().setPreviewMode(true) },
+        /* v3.24 reorg #4: Preview left File — it duplicates
+           View > Editor > Preview; view modes belong to View. */
         {
           icon: <FaFileExport />, label: 'Export',
           children: [
@@ -1539,18 +1540,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           action: () => useEditorStore.getState().setRulersVisible(!rulersVisible),
         },
         { separator: true, label: '' },
-        // v2.55, Derek: freeze every chrome resize; and one way back to the
-        // default sizes \u2014 the same defaults Customize's per-surface resets use.
-        {
-          icon: <FaLock />,
-          label: uiResizeLocked ? '\u2713 Lock All Sizing & Spacing' : 'Lock All Sizing & Spacing',
-          action: () => useEditorStore.getState().setUiResizeLocked(!uiResizeLocked),
-        },
-        {
-          icon: <FaUndo />,
-          label: 'Reset All Sizes & Spacing',
-          action: () => useEditorStore.getState().resetChromeSizes(),
-        },
+        /* v3.24 reorg #5: Lock All / Reset All Sizing moved into the
+           Customize window (they're customization controls; the per-surface
+           resets already live there). */
         // v2.58, Derek: the Customize window straight from View.
         {
           icon: <FaSlidersH />,
@@ -1697,8 +1689,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { icon: <FaItalic />, label: 'Italic', shortcut: sc('italic'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(), disabled: locked.italic },
         { icon: <FaUnderline />, label: 'Underline', shortcut: sc('underline'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleUnderline().run(), disabled: locked.underline },
         { icon: <FaStrikethrough />, label: 'Strikethrough', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleStrike().run(), disabled: locked.strikethrough },
-        { icon: <FaSubscript />, label: 'Subscript', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleSubscript().run(), disabled: locked.subscript },
-        { icon: <FaSuperscript />, label: 'Superscript', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleSuperscript().run(), disabled: locked.superscript },
+        /* v3.24 reorg #3: Subscript/Superscript removed — screenplay
+           format never uses them (same call as the v3.19 palette cull).
+           The editor marks still exist for imported documents. */
         { separator: true, label: '' },
         // v1.95: the four alignment actions fold into one submenu.
         {
@@ -1742,12 +1735,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {
       label: 'Project',
       items: [
-        // v1.64: Title Page lives in exactly ONE menu — Production when that
-        // menu is shown (it heads the list there), Project only when the user
-        // has hidden Production in Customize > Menu Bar.
-        ...PROJECT_MENU_GROUPS.map((group) =>
-          menuBarHidden.includes('Production') ? group : group.filter((id) => id !== 'titlepage'),
-        ).filter((group) => group.length > 0).flatMap((group, gi) => [
+        ...PROJECT_MENU_GROUPS.filter((group) => group.length > 0).flatMap((group, gi) => [
           ...(gi > 0 ? [{ separator: true, label: '' }] : []),
           ...group
             .map((id) => ALL_TOOLS.find((t) => t.id === id))
@@ -1771,7 +1759,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { separator: true, label: '' },
             { icon: <FaSpellCheck />, label: 'Auto Writing Suggestions', checked: grammarCheckEnabled, action: toggleGrammarCheck },
             { icon: <FaSpellCheck />, label: 'Writing Suggestions…', shortcut: '⇧F7', action: () => setGrammarModalOpen(true) },
-            { icon: <FaSpellCheck />, label: 'Grammar & Spelling Settings…', action: () => setGrammarRulesPanelOpen(true) },
+            /* v3.24 reorg #6: Grammar & Spelling Settings moved to the
+               Settings dialog (it's configuration, not workflow). */
           ],
         },
         // v1.66: Script History moved here from Tools — it's project/script
@@ -1797,6 +1786,31 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         // v3.16, Derek: Bookmarks moved here from its own top-level menu.
         { separator: true, label: '' },
         { icon: <FaBookmark />, label: 'Bookmarks', children: bookmarksSubmenu },
+        /* v3.24, Derek's menu reorg #1: the Production menu merged in —
+           everything below was that menu. Title Page heads the block
+           (v0.91's rule) and appears ONLY here (v1.64's one-home rule).
+           #2: Add/Remove Scene Numbers folded into one checkable toggle. */
+        { separator: true, label: '' },
+        { icon: <FaFileAlt />, label: 'Title Page', action: () => useEditorStore.getState().openTool('titlepage') },
+        { icon: <FaFileSignature />, label: 'Set Draft Number…', action: () => setDraftDialogOpen(true) },
+        { separator: true, label: '' },
+        {
+          icon: <FaListUl />,
+          label: 'Scene Numbers',
+          checked: sceneNumbersVisible,
+          action: () => setSceneNumbersVisible(!sceneNumbersVisible),
+        },
+        {
+          icon: <FaLock />,
+          label: 'Lock Scene Numbers',
+          checked: sceneNumbersLocked,
+          action: () => setSceneNumbersLocked(!sceneNumbersLocked),
+          disabled: !sceneNumbersVisible,
+        },
+        // v1.34: Lock Pages is UNRELEASED — same Developer toggle as Help's.
+        ...(showUnreleasedTools ? [{ icon: <FaLock />, label: 'Lock Pages', disabled: true }] : []),
+        { icon: <FaToggleOn />, label: 'Revision Mode', checked: revisionMode, action: () => setRevisionMode(!revisionMode) },
+        { icon: <FaTags />, label: 'Production Tags', action: () => useEditorStore.getState().openTool('tags') },
       ],
     },
     {
@@ -1813,42 +1827,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               action: () => useEditorStore.getState().openTool(t.id),
             })),
         ]),
-      ],
-    },
-    {
-      label: 'Production',
-      items: [
-        // v0.91: Title Page heads the Production list — it's the first page of
-        // any production draft.
-        { icon: <FaFileAlt />, label: 'Title Page', action: () => useEditorStore.getState().openTool('titlepage') },
-        { separator: true, label: '' },
-        { icon: <FaFileSignature />, label: 'Set Draft Number…', action: () => setDraftDialogOpen(true) },
-        { separator: true, label: '' },
-        {
-          icon: <FaListUl />,
-          label: 'Add Scene Numbers',
-          action: () => setSceneNumbersVisible(true),
-          disabled: sceneNumbersVisible,
-        },
-        {
-          icon: <FaListUl />,
-          label: 'Remove Scene Numbers',
-          action: () => setSceneNumbersVisible(false),
-          disabled: !sceneNumbersVisible,
-        },
-        {
-          icon: <FaLock />,
-          label: 'Lock Scene Numbers',
-          checked: sceneNumbersLocked,
-          action: () => setSceneNumbersLocked(!sceneNumbersLocked),
-          disabled: !sceneNumbersVisible,
-        },
-        // v1.34: Lock Pages is UNRELEASED — same Developer toggle as above.
-        ...(showUnreleasedTools ? [{ icon: <FaLock />, label: 'Lock Pages', disabled: true }] : []),
-        { separator: true, label: '' },
-        { icon: <FaToggleOn />, label: 'Revision Mode', checked: revisionMode, action: () => setRevisionMode(!revisionMode) },
-        { separator: true, label: '' },
-        { icon: <FaTags />, label: 'Production Tags', action: () => useEditorStore.getState().openTool('tags') },
       ],
     },
   ];
@@ -1875,7 +1853,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         label: 'Knowledge Base',
         action: () => setKnowledgeBaseOpen(true),
       },
-      { icon: <FaHistory />, label: 'Changelog', action: () => setChangelogOpen(true) },
+      /* v3.24 reorg #7: Changelog folded into About ("What's New"). */
       { separator: true, label: '' },
       {
         icon: <FaExternalLinkAlt />,
@@ -2655,7 +2633,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           <div className="dialog-header">About ScriptCraft</div>
           <div className="dialog-body about-body">
             <div className="about-title">ScriptCraft</div>
-            <div className="about-version">Version {APP_VERSION}</div>
+            <div className="about-version">
+              Version {APP_VERSION}
+              {/* v3.24 reorg #7: the changelog's home is here now */}
+              <button className="about-whatsnew" onClick={() => { setAboutOpen(false); setChangelogOpen(true); }}>
+                What's New
+              </button>
+            </div>
             <div className="about-tagline">Free, open-source screenwriting software</div>
             <div className="about-credit">
               Built from the{' '}

@@ -515,6 +515,15 @@ function GeneralTab() {
         <p className="prefs-hint">
           Each script's own Tools → Spell Check toggle still wins once set.
         </p>
+        {/* v3.24, Derek's menu reorg #6: the rules panel opens from HERE now
+            (it left the Project > Spell Check submenu — it's configuration).
+            The bus command is the same one the old menu item used. */}
+        <div className="prefs-check-row">
+          <button
+            className="swn-add-btn"
+            onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'grammarSettings' }))}
+          >Grammar &amp; Spelling Settings…</button>
+        </div>
         <label className="prefs-check-row">
           <input
             type="checkbox"
