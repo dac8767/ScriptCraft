@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.17';
+export const APP_VERSION = '3.18';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.18',
+    date: '2026-07-17',
+    items: [
+      { title: 'Donate button in the About footer', detail: 'Buy Me a Coffee sits bottom-left of the About window, inline with Close — back in the yellow pill with the white cup.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.17',
     date: '2026-07-17',

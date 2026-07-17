@@ -12484,17 +12484,17 @@ html.android .version-history-panel {
 }
 /* mirrors the traffic-light inset + QAT width so the title stays centered */
 .fs-titlebar-balance { flex: 1; min-width: 78px; align-self: stretch; }
-/* Buy Me a Coffee — the widget's look, drawn locally. v3.13, Derek's config:
-   pill #00d6e5, black outline/text, yellow #FFDD00 cup. v3.15: lives in the
-   About ScriptCraft dialog. Brand button, so the monotone-icon rule doesn't
-   apply here (like the red text-color A). */
+/* Buy Me a Coffee — the widget's look, drawn locally. v3.18, Derek's config:
+   pill #FFDD00, black outline/text, white cup. Lives in the About dialog's
+   footer row, left of Close. Brand button, so the monotone-icon rule
+   doesn't apply here (like the red text-color A). */
 .fs-bmc-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   height: 21px;
   padding: 0 10px;
-  background: #00d6e5;
+  background: #FFDD00;
   color: #000;
   border: 1px solid #000;
   border-radius: 11px;
@@ -12504,11 +12504,25 @@ html.android .version-history-panel {
   white-space: nowrap;
   cursor: pointer;
 }
-.fs-bmc-btn:hover { background: #2ee0ec; }
+.fs-bmc-btn:hover { background: #ffe733; }
 .fs-bmc-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
-.about-donate { display: flex; justify-content: center; margin: 10px 0 4px; }
-.about-donate .fs-bmc-btn { height: 26px; padding: 0 14px; font-size: 16px; border-radius: 13px; }
-.about-donate .fs-bmc-btn svg { width: 15px; height: 15px; }
+/* v3.18: the About footer holds donate (left) and Close (right). The
+   button.fs-bmc-btn specificity matters — the generic .dialog-actions
+   button rule (and its light-theme variant) otherwise repaints the pill
+   with the stock dialog-button colors. */
+.about-actions { display: flex; justify-content: space-between; align-items: center; }
+.about-actions button.fs-bmc-btn {
+  height: 28px;
+  padding: 0 14px;
+  font-size: 16px;
+  border-radius: 14px;
+  background: #FFDD00;
+  color: #000;
+  border: 1px solid #000;
+  font-family: 'Cookie', 'Snell Roundhand', 'Comic Sans MS', cursive;
+}
+.about-actions button.fs-bmc-btn:hover { background: #ffe733; }
+.about-actions .fs-bmc-btn svg { width: 15px; height: 15px; }
 
 /* v3.07, Derek: Obsidian-style collapse row atop each side panel. The button
    hugs the panel's OUTER edge (the side it folds into). */
