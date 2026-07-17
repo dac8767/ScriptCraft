@@ -955,20 +955,26 @@ fn rebuild_window_menu(app: &tauri::AppHandle, _menu: &Menu<tauri::Wry>) {
             .collect();
 
         if let Ok(new_window_sub) = Submenu::with_items(app, "Window", true, &item_refs) {
-            // Replace the Window submenu in the app menu
+            // Replace the Window submenu in the app menu — at the SAME
+            // position. Appending would drag it to the end, undoing the
+            // Window-before-Help order the JS menu sync installs (v3.03).
             if let Some(menu) = app.menu() {
-                // Remove old Window submenu and append new one
+                let mut pos: Option<usize> = None;
                 if let Ok(menu_items) = menu.items() {
-                    for item in &menu_items {
+                    for (i, item) in menu_items.iter().enumerate() {
                         if let tauri::menu::MenuItemKind::Submenu(sub) = item {
                             if sub.text().unwrap_or_default() == "Window" {
+                                pos = Some(i);
                                 let _ = menu.remove(item);
                                 break;
                             }
                         }
                     }
                 }
-                let _ = menu.append(&new_window_sub);
+                match pos {
+                    Some(i) => { let _ = menu.insert(&new_window_sub, i); }
+                    None => { let _ = menu.append(&new_window_sub); }
+                }
             }
         }
     }

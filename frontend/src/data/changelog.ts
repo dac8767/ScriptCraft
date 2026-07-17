@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.02';
+export const APP_VERSION = '3.03';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.03',
+    date: '2026-07-17',
+    items: [
+      { title: 'Window before Help', detail: 'The native macOS menu bar now follows the platform convention: the Window menu sits before Help instead of trailing the whole bar. Retitling a window no longer shuffles it back to the end either.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '3.02',
     date: '2026-07-17',

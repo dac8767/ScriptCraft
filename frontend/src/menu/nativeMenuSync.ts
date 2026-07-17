@@ -140,7 +140,13 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
     ] as never[],
   });
 
-  const menu = await Menu.new({ items: [appMenu, ...submenus, windowMenu] as never[] });
+  // v3.03, Derek: Window sits BEFORE Help (the macOS convention) — it used
+  // to trail the whole bar because it's appended after the synced sections.
+  const helpIdx = sections.findIndex((s) => s.label === 'Help');
+  const ordered = helpIdx === -1
+    ? [...submenus, windowMenu]
+    : [...submenus.slice(0, helpIdx), windowMenu, ...submenus.slice(helpIdx)];
+  const menu = await Menu.new({ items: [appMenu, ...ordered] as never[] });
   await menu.setAsAppMenu();
   installed = true;
 }
