@@ -54,6 +54,7 @@ import MenuBar from './MenuBar';
 import Toolbar from './Toolbar';
 import ToolDock, { TempToolWindow } from './ToolDock';
 import { DoubleChevronIcon } from './uiIcons';
+import { useBookmarkStore, bookmarkScriptKey } from '../stores/bookmarkStore';
 import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
 import ScriptStatistics from './ScriptStatistics';
@@ -1840,6 +1841,22 @@ const ScreenplayEditor: React.FC = () => {
       editor.off('update', stampDocEdit);
     };
   }, [editor, updateCharacters]);
+
+  // v3.08: bookmarks ride the document — every docChanged transaction maps
+  // each bookmark position, and the selection after an edit becomes the
+  // script's "last edit" spot (the Bookmarks menu's permanent first entry).
+  useEffect(() => {
+    if (!editor) return;
+    const onTx = ({ transaction }: { transaction: { docChanged: boolean; mapping: { map: (p: number) => number }; selection: { from: number } } }) => {
+      if (!transaction.docChanged) return;
+      const scriptId = bookmarkScriptKey(useProjectStore.getState().currentScriptId);
+      const bms = useBookmarkStore.getState();
+      bms.mapPositions(scriptId, (pos) => transaction.mapping.map(pos));
+      bms.setLastEdit(scriptId, transaction.selection.from);
+    };
+    editor.on('transaction', onTx);
+    return () => { editor.off('transaction', onTx); };
+  }, [editor]);
 
   // --- Auto CONT'D: add/remove (CONT'D) based on previous dialogue ---
   // Industry rule (Final Draft / WriterDuet / Fade In): append the continued

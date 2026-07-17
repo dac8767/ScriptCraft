@@ -41,6 +41,7 @@ import { smartUndo, smartRedo, useEditorStore, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_
 import { useProjectStore } from '../stores/projectStore';
 import { api } from '../services/api';
 import { showToast } from './Toast';
+import { useBookmarkStore, bookmarkLabelAt, bookmarkScriptKey } from '../stores/bookmarkStore';
 import { parseFountain } from '../utils/fountainParser';
 import { parseFDXFull } from '../utils/fdxParser';
 import { downloadFDX } from '../utils/fdxExporter';
@@ -144,6 +145,7 @@ import {
   FaFlag, FaEyeSlash,
   FaBug,
   FaRulerHorizontal,
+  FaBookmark, FaRegBookmark, FaPencilAlt, FaPizzaSlice,
 } from 'react-icons/fa';
 
 /** v2.98: the Help-menu form links, shared by the menu items and the
@@ -151,6 +153,21 @@ import {
 const HELP_FORMS = {
   featureRequest: { title: 'Feature Request', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagqeHW8Hd0qZZxD5/form' },
   reportBug: { title: 'Report a Bug', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagykyhflKTRjphGr/form' },
+};
+
+/** v3.08, Derek: the donation link at the end of Help. Opens the Buy Me a
+ *  Coffee page in the DEFAULT browser — the BMC widget script is a remote
+ *  CDN embed, which a native menu can't render and the desktop app
+ *  shouldn't load (same rule as the dictionary CDN in §open items). */
+const DONATE_URL = 'https://buymeacoffee.com/derektor';
+const openInBrowser = (url: string) => {
+  if (isTauriEnv()) {
+    void import('@tauri-apps/api/core').then(({ invoke }) => {
+      invoke('open_url', { url }).catch((err: unknown) => console.error('Failed to open URL:', err));
+    });
+  } else {
+    window.open(url, '_blank');
+  }
 };
 
 interface MenuBarProps {
@@ -204,6 +221,10 @@ const DiagRow: React.FC<{ label: string; value: string; mono?: boolean }> = ({ l
 const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, isCollabActive, isCollabGuest }) => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  // v3.08: the Bookmarks menu reads live from the store, so adds/removes and
+  // mapped positions re-render (and re-sync natively) immediately.
+  const bookmarksByScript = useBookmarkStore((s) => s.byScript);
+  const bookmarksLastEdit = useBookmarkStore((s) => s.lastEdit);
   const menuRef = useRef<HTMLDivElement>(null);
   // Platform-aware modifier key symbol for shortcut labels
   const mod = /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl+';
@@ -1016,7 +1037,31 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // What each command DOES. The registry (shortcuts.ts) owns the key bindings;
   // this owns the behavior. Held in a ref so the capture-phase listener below
   // can be registered once and still call the current closures.
+  /* v3.08: bookmark actions — shared by the Bookmarks menu, the keyboard
+   * map and the ribbon's pinned commands (one closure each, per CLAUDE.md's
+   * single-source rule). */
+  const bookmarkKey = bookmarkScriptKey(currentScriptId);
+  const addBookmarkHere = () => {
+    if (!editor) return;
+    const pos = editor.state.selection.from;
+    useBookmarkStore.getState().add(bookmarkKey, {
+      id: `bm-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+      label: bookmarkLabelAt(editor.state.doc, pos),
+      pos,
+    });
+    showToast('Bookmark added', 'success');
+  };
+  const jumpToLastEdit = () => {
+    if (!editor) return;
+    const pos = useBookmarkStore.getState().lastEdit[bookmarkKey];
+    if (pos == null) { showToast('No edits recorded yet.', 'info'); return; }
+    const max = editor.state.doc.content.size;
+    editor.chain().focus().setTextSelection(Math.max(1, Math.min(pos, max - 1))).scrollIntoView().run();
+  };
+
   const shortcutActions: Record<string, () => void> = {
+    addBookmark: addBookmarkHere,
+    lastEditLocation: jumpToLastEdit,
     newScreenplay: () => { if (!isCollabGuest) handleNewScreenplay(); },
     openFile: () => { if (!isCollabGuest) confirmOrRun(() => setOpenFileOpen(true)); },
     importLocal: () => { if (!isCollabGuest) confirmOrRun(handleImport); },
@@ -1754,19 +1799,73 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         },
         {
           icon: <FaLock />,
-          label: sceneNumbersLocked ? '\u2713 Lock Scene Numbers' : 'Lock Scene Numbers',
+          label: 'Lock Scene Numbers',
+          checked: sceneNumbersLocked,
           action: () => setSceneNumbersLocked(!sceneNumbersLocked),
           disabled: !sceneNumbersVisible,
         },
         // v1.34: Lock Pages is UNRELEASED — same Developer toggle as above.
         ...(showUnreleasedTools ? [{ icon: <FaLock />, label: 'Lock Pages', disabled: true }] : []),
         { separator: true, label: '' },
-        { icon: <FaToggleOn />, label: revisionMode ? '\u2713 Revision Mode' : 'Revision Mode', action: () => setRevisionMode(!revisionMode) },
+        { icon: <FaToggleOn />, label: 'Revision Mode', checked: revisionMode, action: () => setRevisionMode(!revisionMode) },
         { separator: true, label: '' },
         { icon: <FaTags />, label: 'Production Tags', action: () => useEditorStore.getState().openTool('tags') },
       ],
     },
   ];
+
+  /* v3.08, Derek: the Bookmarks menu. "Last Edit Location" is the permanent
+   * first jump — where the script was last CHANGED (not necessarily the end).
+   * Bookmarks below it are per-script; positions ride every transaction's
+   * mapping (see ScreenplayEditor's 'transaction' listener), so they stay
+   * pointed at the same text as the script grows and shrinks. Built here in
+   * the ONE menu source, so the native macOS bar gets it for free. */
+  const jumpToPos = (pos: number) => {
+    if (!editor) return;
+    const max = editor.state.doc.content.size;
+    editor.chain().focus().setTextSelection(Math.max(1, Math.min(pos, max - 1))).scrollIntoView().run();
+  };
+  const scriptBookmarks = bookmarksByScript[bookmarkKey] ?? [];
+  const lastEditPos = bookmarksLastEdit[bookmarkKey];
+  const bookmarksMenu: MenuSection = {
+    label: 'Bookmarks',
+    items: [
+      {
+        icon: <FaBookmark />,
+        label: 'Add Bookmark',
+        disabled: !editor,
+        action: addBookmarkHere,
+      },
+      {
+        icon: <FaRegBookmark />,
+        label: 'Remove Bookmark',
+        disabled: scriptBookmarks.length === 0,
+        ...(scriptBookmarks.length > 0 ? {
+          children: scriptBookmarks.map((b) => ({
+            icon: <FaRegBookmark />,
+            label: b.label,
+            action: () => useBookmarkStore.getState().remove(bookmarkKey, b.id),
+          })),
+        } : {}),
+      },
+      { separator: true, label: '' },
+      {
+        icon: <FaPencilAlt />,
+        label: 'Last Edit Location',
+        disabled: lastEditPos == null,
+        action: jumpToLastEdit,
+      },
+      ...(scriptBookmarks.length > 0 ? [
+        { separator: true, label: '' },
+        ...scriptBookmarks.map((b) => ({
+          icon: <FaBookmark />,
+          label: b.label,
+          action: () => jumpToPos(b.pos),
+        })),
+      ] : []),
+    ],
+  };
+  menus.push(bookmarksMenu);
 
   // Help menu rendered separately as a 3-dot overflow on the right
   const helpMenu: MenuSection = {
@@ -1834,6 +1933,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             },
           ] : []),
         ],
+      },
+      { separator: true, label: '' },
+      /* v3.08, Derek: donation link — last item of Help. */
+      {
+        icon: <FaPizzaSlice />,
+        label: 'Buy Me Some Pizza',
+        action: () => openInBrowser(DONATE_URL),
       },
     ],
   };

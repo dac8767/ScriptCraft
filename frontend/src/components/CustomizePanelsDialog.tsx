@@ -713,6 +713,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const INSERT_CMDS = ['insertImage', 'insertMarker'];
   const VIEW_CMDS = ['fitPage', 'fitWidth', 'actualSize', 'showRulers'];
   const FORMAT_CMDS = ['formatPrefs'];
+  const BOOKMARK_CMDS = ['addBookmark', 'lastEditLocation'];   // v3.08
   const HELP_CMDS = ['about', 'keyboardShortcuts', 'knowledgeBase', 'changelog', 'featureRequest', 'reportBug'];
   const cmdOpt = (id: string) => {
     const c = TOOLBAR_COMMANDS.find((x) => x.id === id);
@@ -748,6 +749,10 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     {
       id: 'format', label: 'Format',
       options: FORMAT_CMDS.flatMap(cmdOpt),
+    },
+    {
+      id: 'bookmarks', label: 'Bookmarks',
+      options: BOOKMARK_CMDS.flatMap(cmdOpt),
     },
     {
       id: 'help', label: 'Help',

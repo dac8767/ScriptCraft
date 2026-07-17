@@ -13,6 +13,7 @@ import {
   FaFilePdf, FaFileExport, FaFileWord, FaCog, FaCut, FaCopy, FaPaste,
   FaMousePointer, FaColumns, FaImage, FaFlag, FaSearchPlus, FaSearchMinus,
   FaRulerHorizontal, FaInfoCircle, FaKeyboard, FaExternalLinkAlt, FaBug,
+  FaBookmark, FaPencilAlt,
 } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 
@@ -73,6 +74,9 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'fitWidth', label: 'Scale to Max Width', icon: <FaSearchPlus />, run: () => emit('fitWidth') },
   { id: 'actualSize', label: 'Actual Size (100%)', icon: <FaSearchMinus />, run: () => emit('actualSize') },
   { id: 'showRulers', label: 'Show/Hide Rulers', icon: <FaRulerHorizontal />, run: () => emit('showRulers') },
+  // v3.08: the Bookmarks menu's two actions, ribbon-pinnable like the rest.
+  { id: 'addBookmark', label: 'Add Bookmark', icon: <FaBookmark />, run: () => emit('addBookmark') },
+  { id: 'lastEditLocation', label: 'Last Edit Location', icon: <FaPencilAlt />, run: () => emit('lastEditLocation') },
   { id: 'formatPrefs', label: 'Script Format Preferences', icon: <FaFileAlt />, run: () => emit('formatPrefs') },
   { id: 'grammarSettings', label: 'Grammar & Spelling Settings', icon: <FaSpellCheck />, run: () => emit('grammarSettings') },
   { id: 'about', label: 'About ScriptCraft', icon: <FaInfoCircle />, run: () => emit('about') },

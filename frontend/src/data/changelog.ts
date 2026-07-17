@@ -65,9 +65,19 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.07';
+export const APP_VERSION = '3.08';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.08',
+    date: '2026-07-17',
+    items: [
+      { title: 'Bookmarks', detail: 'A new Bookmarks menu (native and in-window). Add Bookmark drops a named jump point at the cursor — it keeps pointing at the same text as the script changes. Clicking a bookmark jumps there; Remove Bookmark clears one. Both actions are also pinnable to the ribbon.', tags: ['New Feature'] },
+      { title: 'Last Edit Location', detail: 'The Bookmarks menu\'s permanent first jump: return to wherever the script was last actually changed — not necessarily the end.', tags: ['New Feature', 'Editor'] },
+      { title: 'Buy Me Some Pizza', detail: 'A donation link at the end of the Help menu, opening in your default browser.', tags: ['UI'] },
+      { title: 'Two more checkmarks moved to the check column', detail: 'Lock Scene Numbers and Revision Mode (Production menu) now use the v3.05 check column instead of a ✓ label prefix.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '3.07',
     date: '2026-07-17',
