@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.05';
+export const APP_VERSION = '3.06';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.06',
+    date: '2026-07-17',
+    items: [
+      { title: 'Outline Bar buttons reworked', detail: 'The side column now reads add → open Outline window → choose outline → send to script → fit. Fit is an icon like its neighbours, and the buttons keep their size when the bar is resized (the rows still scale).', tags: ['UI', 'Tools'] },
+      { title: 'Outline window opens popped out', detail: 'The bar\'s open-Outline-window button opens it as a floating window instead of docking it into the side panel.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '3.05',
     date: '2026-07-17',

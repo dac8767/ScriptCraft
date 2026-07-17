@@ -22,8 +22,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
-import { FaFileExport, FaStream, FaLayerGroup, FaDotCircle, FaRegCircle } from 'react-icons/fa';
-import { useEditorStore, type BeatInfo, type BeatColumn } from '../stores/editorStore';
+import { FaFileExport, FaStream, FaLayerGroup, FaDotCircle, FaRegCircle, FaArrowsAltH } from 'react-icons/fa';
+import { useEditorStore, toolConfigFor, type BeatInfo, type BeatColumn } from '../stores/editorStore';
+import { dockWidthFor, toolDef } from './ToolDock';
 import { computeSceneLengths } from '../editor/pagination';
 import AddMenu from './AddMenu';
 import { showToast } from './Toast';
@@ -497,14 +498,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
         className="fs-ob-side"
         title={outlineTabs.length > 1 ? `Showing: ${outlineTabs.find((t) => t.id === barTab)?.name ?? ''}` : undefined}
       >
-        {/* v2.39, Derek: top item — jump to the Outline window itself. */}
-        <button
-          className="fs-ob-iconbtn"
-          title="Open the Outline window"
-          onClick={() => useEditorStore.getState().openTool('beatboard')}
-        >
-          <FaStream />
-        </button>
+        {/* v3.06, Derek: order is add → outline window → choose → insert → fit. */}
         <AddMenu
           label="＋"
           title="Add a section or a beat"
@@ -518,6 +512,23 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             ],
           }]}
         />
+        {/* v2.39, Derek: jump to the Outline window itself. v3.06: it opens
+            POPPED OUT — stored width forced past the panel width, the same
+            trick as the header's pop-out chevron. */}
+        <button
+          className="fs-ob-iconbtn"
+          title="Open the Outline window (popped out)"
+          onClick={() => {
+            const st = useEditorStore.getState();
+            const side = toolConfigFor(st.toolConfig, 'beatboard').side;
+            const dockW = dockWidthFor(side, st.panelSizeMode[side], st.chromeCustomPx[side === 'left' ? 'panelLeft' : 'panelRight']);
+            const h = st.toolSizes.beatboard?.h ?? toolDef('beatboard')?.defaultSize.h ?? 480;
+            st.setToolSize('beatboard', Math.max(st.toolSizes.beatboard?.w ?? 0, dockW + 140), h);
+            st.openTool('beatboard');
+          }}
+        >
+          <FaStream />
+        </button>
         {/* v2.49, Derek: third item — pick which outline tab the bar mirrors
             (the same choice as the ◉ on the window's tabs — one setter). */}
         <AddMenu
@@ -547,11 +558,12 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
         >
           <FaFileExport />
         </button>
+        {/* v3.06, Derek: Fit is an icon like its neighbours. */}
         <button
           className={`fs-ob-fitbtn${zoom === 0 ? ' active' : ''}`}
           onClick={() => setZoom(0)}
           title="Fit the whole ruler to the visible width"
-        >Fit</button>
+        ><FaArrowsAltH /></button>
       </div>
 
       <div className="fs-ob-main">
