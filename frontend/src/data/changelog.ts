@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.12';
+export const APP_VERSION = '3.13';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.13',
+    date: '2026-07-17',
+    items: [
+      { title: 'Donate button recolored', detail: 'The titlebar\'s Buy Me a Coffee button follows the updated design: cyan pill, yellow cup, black text.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '3.12',
     date: '2026-07-17',

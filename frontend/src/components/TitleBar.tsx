@@ -64,10 +64,11 @@ const TitleBar: React.FC<{ editor: Editor | null }> = ({ editor }) => {
           onClick={() => openInBrowser(DONATE_URL)}
         >
           <svg viewBox="0 0 16 16" aria-hidden="true">
-            {/* to-go cup: lid + tapered body, BMC-style */}
+            {/* to-go cup: lid + tapered body, BMC-style. Cup color follows
+                Derek's data-coffee-color (v3.13: #FFDD00). */}
             <path d="M3 4.5 h10 l-0.4 2 h-9.2 Z" fill="#000" />
-            <path d="M3.9 7 h8.2 l-1 6.2 a1 1 0 0 1 -1 0.8 h-4.2 a1 1 0 0 1 -1 -0.8 Z" fill="#fff" stroke="#000" strokeWidth="0.8" />
-            <path d="M4.6 3 c0 -0.8 6.8 -0.8 6.8 0 l0.2 1.5 h-7.2 Z" fill="#fff" stroke="#000" strokeWidth="0.8" />
+            <path d="M3.9 7 h8.2 l-1 6.2 a1 1 0 0 1 -1 0.8 h-4.2 a1 1 0 0 1 -1 -0.8 Z" fill="#FFDD00" stroke="#000" strokeWidth="0.8" />
+            <path d="M4.6 3 c0 -0.8 6.8 -0.8 6.8 0 l0.2 1.5 h-7.2 Z" fill="#FFDD00" stroke="#000" strokeWidth="0.8" />
           </svg>
           <span>Buy me a coffee</span>
         </button>
