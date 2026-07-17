@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.30';
+export const APP_VERSION = '3.31';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.31',
+    date: '2026-07-17',
+    items: [
+      { title: 'Editor rows match the real ribbon', detail: 'In a two-row section the dropdown row rendered about half the height of the button row. Rows are a fixed, equal height now — like the live bar — and dropdown fields stand as tall as every other chip.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '3.30',
     date: '2026-07-17',

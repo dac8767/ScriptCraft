@@ -16653,9 +16653,11 @@ input.fs-switch:checked::after { left: 15px; }
   color: var(--fd-text);
   white-space: nowrap;
 }
-/* dropdown builtins look like the fields they are on the bar */
+/* dropdown builtins look like the fields they are on the bar.
+   v3.30, Derek: SAME height as every other chip — the 24px they launched
+   with made the dropdown row read half the size of the button row. */
 .ribed-chip.ribed-chip-dd {
-  height: 24px;
+  height: 28px;
   padding: 0 22px 0 8px;
   position: relative;
   background: var(--fd-input-bg);
@@ -16687,7 +16689,10 @@ input.fs-switch:checked::after { left: 15px; }
   display: flex;
   align-items: center;
   gap: 3px;
-  min-height: 30px;
+  /* v3.30, Derek: FIXED height, like the live bar's rows — min-height let
+     the two rows of a section size to their content and come out unequal. */
+  height: 34px;
+  min-height: 34px;
   flex: 1;
 }
 .ribed-row > * { flex-shrink: 0; }
