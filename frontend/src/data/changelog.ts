@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.09';
+export const APP_VERSION = '3.10';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.10',
+    date: '2026-07-17',
+    items: [
+      { title: 'Breathing room at the ribbon\'s right edge', detail: 'The right-aligned tail (Customize) sat flush against the window edge — the ribbon now keeps a 12px inset.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '3.09',
     date: '2026-07-17',
