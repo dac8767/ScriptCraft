@@ -55,6 +55,8 @@ const payloadLabel = (payload: string): string => {
   if (payload === 'util:divider') return 'Divider';
   if (payload === 'util:spacer') return 'Spacer';
   if (payload === 'util:alignsplit') return 'Align Split';
+  if (payload === 'blk:single') return 'Single Row Section';
+  if (payload === 'blk:double') return 'Two Row Section';
   if (payload.startsWith('sec:')) return 'Section';
   return '';
 };
@@ -83,6 +85,17 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
     onChange(serializeRibbon(m));
   };
   const endDrag = () => { setSpot(null); setSecSpot(null); setDragging(false); };
+
+  /** v3.22, Derek's block model: drop a Single Row / Two Row BLOCK at a
+   *  boundary and an empty section of that shape appears there. Dividers
+   *  between adjacent sections are automatic (every boundary draws one). */
+  const insertSectionAt = (type: 'single' | 'double', at: number) => {
+    const m = clone(model);
+    m.sections.splice(at, 0, { top: [], bottom: [], hasBreak: type === 'double', breakLine: false });
+    if (m.splitAt !== null && at <= m.splitAt) m.splitAt += 1;
+    commit(m, at);
+    endDrag();
+  };
 
   /** v3.17: move a whole section to insertion boundary `to` (0..len). The
    *  align-split boundary index stays put — the sections shuffle around it. */
@@ -219,8 +232,12 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
         const r = hitSection.getBoundingClientRect();
         return Number(hitSection.dataset.sec) + (x > r.left + r.width / 2 ? 1 : 0);
       }
+      // over the strip but not over a section (empty ribbon, or the gap at
+      // the end): the boundary is the end.
+      if (el?.closest('.ribed-ribbon')) return sections.length;
       return null;
     };
+    const boundaryDrag = payload.startsWith('sec:') || payload.startsWith('blk:');
 
     const move = (ev: PointerEvent) => {
       if (!active) {
@@ -238,7 +255,7 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
         ghost.style.top = `${ev.clientY + 12}px`;
       }
       const overPalette = (document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null)?.closest('.ribed-palette');
-      if (payload.startsWith('sec:')) {
+      if (boundaryDrag) {
         setSecSpot(overPalette ? null : secSpotFromPoint(ev.clientX, ev.clientY));
       } else {
         moveSpot(overPalette ? null : spotFromPoint(ev.clientX, ev.clientY));
@@ -253,10 +270,11 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
         endDrag();
         return;
       }
-      if (payload.startsWith('sec:')) {
+      if (boundaryDrag) {
         const to = secSpotFromPoint(ev.clientX, ev.clientY);
         if (to === null) { endDrag(); return; }
-        moveSection(Number(payload.slice(4)), to);
+        if (payload.startsWith('blk:')) insertSectionAt(payload.slice(4) as 'single' | 'double', to);
+        else moveSection(Number(payload.slice(4)), to);
         return;
       }
       applyDrop(payload, spotFromPoint(ev.clientX, ev.clientY));
@@ -398,12 +416,21 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
         {headerControls}
         <span className="ribed-utilrow-spring" />
         <div className="ribed-tools">
-          <button
-            className="ribed-add-section"
-            title="Add a new empty section at the end"
-            onClick={() => commit({ sections: [...clone(model).sections, { ...EMPTY_SECTION }], splitAt }, sections.length)}
-          >+ Section</button>
-          <span className="ribed-pal-chip ribed-pal-util" title="Drag into a section to split it into two rows"
+          {/* v3.22, Derek's block model: sections are built by dropping one
+              of these two BLOCKS onto the strip — a boundary line shows
+              where it lands (double-click: append at the end). Dividers
+              between adjacent sections are automatic. */}
+          <span className="ribed-pal-chip ribed-pal-util ribed-blk" title="Drag onto the ribbon: a new single-row section (double-click: add at the end)"
+            onPointerDown={(e) => startDrag(e, 'blk:single')}
+            onDoubleClick={() => insertSectionAt('single', sections.length)}>
+            <span className="ribed-blk-glyph"><i /></span> Single Row
+          </span>
+          <span className="ribed-pal-chip ribed-pal-util ribed-blk" title="Drag onto the ribbon: a new two-row section (double-click: add at the end)"
+            onPointerDown={(e) => startDrag(e, 'blk:double')}
+            onDoubleClick={() => insertSectionAt('double', sections.length)}>
+            <span className="ribed-blk-glyph"><i /><i /></span> Two Rows
+          </span>
+          <span className="ribed-pal-chip ribed-pal-util" title="Drag into a section to split it into two rows at that spot"
             onPointerDown={(e) => startDrag(e, 'util:rowbreak')}>
             <FaLevelDownAlt /> New Row
           </span>

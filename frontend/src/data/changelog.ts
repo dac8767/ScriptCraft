@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.21';
+export const APP_VERSION = '3.22';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.22',
+    date: '2026-07-17',
+    items: [
+      { title: 'Build the ribbon from section blocks', detail: 'The customizer\'s utilities now lead with two blocks — Single Row and Two Rows. Drop one anywhere on the strip and an empty section of that shape appears there (double-click adds one at the end); dividers between adjacent sections draw themselves. New Row stays for splitting an existing section at a chosen spot.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '3.21',
     date: '2026-07-17',

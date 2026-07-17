@@ -16931,6 +16931,20 @@ input.fs-switch:checked::after { left: 15px; }
   flex-shrink: 0;
 }
 .ribed-tools .ribed-pal-chip { justify-content: center; }
+/* v3.22: the two section BLOCKS — little bubble glyphs, one bar per row. */
+.ribed-blk-glyph {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-right: 2px;
+}
+.ribed-blk-glyph i {
+  display: block;
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  border: 1px solid currentColor;
+}
 /* v3.11: the palette's keyword filter */
 .ribed-pal-search { margin-bottom: 6px; }
 .ribed-pal-search input {
