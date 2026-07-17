@@ -718,7 +718,10 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const EDIT_CMDS = ['cut', 'copy', 'paste', 'dualDialogue', 'lastEditLocation'];
   const INSERT_CMDS = ['insertImage', 'insertMarker'];
   const VIEW_CMDS = ['fitPage', 'fitWidth', 'actualSize', 'showRulers'];
-  const HELP_CMDS = ['keyboardShortcuts'];
+  /* v3.25, Derek: Keyboard Shortcuts is no longer a ribbon option — it was
+     the Help category's only entry, so the category goes with it. The
+     COMMAND registry keeps the id, so already-pinned tokens keep working
+     (the v3.19 cull rule). */
   const cmdOpt = (id: string) => {
     const c = TOOLBAR_COMMANDS.find((x) => x.id === id);
     return c ? [{ value: `c:${c.id}`, label: c.label }] : [];
@@ -754,11 +757,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       id: 'view', label: 'View',
       options: VIEW_CMDS.flatMap(cmdOpt),
     },
-    {
-      id: 'help', label: 'Help',
-      options: HELP_CMDS.flatMap(cmdOpt),
-    },
-
     {
       id: 'tools', label: 'Tools',
       options: [

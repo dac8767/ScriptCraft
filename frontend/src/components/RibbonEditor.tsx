@@ -97,6 +97,20 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
     endDrag();
   };
 
+  /** v3.25, Derek: the align split drops at a section BOUNDARY (0..len),
+   *  exactly like the section blocks — never inside a section. Dropping it
+   *  at the very end grows an empty section so there's something to
+   *  right-align into. */
+  const setAlignSplit = (at: number) => {
+    const m = clone(model);
+    // Clamp to ≥1: serializeRibbon only writes boundary tokens after a
+    // section, so a split at boundary 0 could never round-trip.
+    m.splitAt = Math.max(1, Math.min(at, m.sections.length));
+    if (m.splitAt === m.sections.length) m.sections.push({ ...EMPTY_SECTION });
+    commit(m, Math.min(m.splitAt, m.sections.length - 1));
+    endDrag();
+  };
+
   /** v3.17: move a whole section to insertion boundary `to` (0..len). The
    *  align-split boundary index stays put — the sections shuffle around it. */
   const moveSection = (from: number, to: number) => {
@@ -155,10 +169,6 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
         target.top = [...target.top, ...target.bottom.slice(0, idx)];
         target.bottom = target.bottom.slice(idx);
       }
-    } else if (payload === 'util:alignsplit') {
-      // v3.02: the split lands AFTER the section you drop it on.
-      m.splitAt = Math.min(at.sec + 1, m.sections.length);
-      if (m.splitAt === m.sections.length) m.sections.push({ ...EMPTY_SECTION });
     } else if (payload === 'util:spacer') {
       rowArr.splice(idx, 0, `s:${Date.now()}`);
     } else if (payload === 'util:divider') {
@@ -237,7 +247,10 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
       if (el?.closest('.ribed-ribbon')) return sections.length;
       return null;
     };
-    const boundaryDrag = payload.startsWith('sec:') || payload.startsWith('blk:');
+    /* v3.25, Derek: the align split drops BETWEEN sections, like the section
+       blocks — not into a section's item flow. */
+    const boundaryDrag = payload.startsWith('sec:') || payload.startsWith('blk:')
+      || payload === 'util:alignsplit';
 
     const move = (ev: PointerEvent) => {
       if (!active) {
@@ -273,7 +286,8 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
       if (boundaryDrag) {
         const to = secSpotFromPoint(ev.clientX, ev.clientY);
         if (to === null) { endDrag(); return; }
-        if (payload.startsWith('blk:')) insertSectionAt(payload.slice(4) as 'single' | 'double', to);
+        if (payload === 'util:alignsplit') setAlignSplit(to);
+        else if (payload.startsWith('blk:')) insertSectionAt(payload.slice(4) as 'single' | 'double', to);
         else moveSection(Number(payload.slice(4)), to);
         return;
       }

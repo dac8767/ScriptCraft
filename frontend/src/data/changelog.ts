@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.26';
+export const APP_VERSION = '3.27';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.27',
+    date: '2026-07-17',
+    items: [
+      { title: 'No divider at the ribbon\'s edges', detail: 'A section left empty (say, by dropping the align split at the end) still painted its boundary line — a stray divider left of the first item or right of the last. The live bar now skips empty sections and their dividers entirely; they remain visible in the Customize editor so you can fill them.', tags: ['Fix', 'UI'] },
+      { title: 'Align Split drops between sections', detail: 'It behaves like the section blocks now — drag it to a boundary (the same drop line sections use) instead of into a section\'s item row.', tags: ['UI'] },
+      { title: 'Keyboard Shortcuts is no longer a ribbon option', detail: 'Removed from the Customize palette (its Help category went with it, now empty). A copy already pinned to your toolbar keeps working.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '3.26',
     date: '2026-07-17',

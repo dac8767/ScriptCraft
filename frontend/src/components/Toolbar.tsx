@@ -1508,6 +1508,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   const ribRowH = Math.max(22, Math.round(barH) - 5);
 
   const { sections, splitAt } = parseRibbon(leftTokens);
+  /* v3.25, Derek: EMPTY sections render nothing but their boundary divider
+     still painted — a stray line left of the first item or right of the last
+     (an empty edge section exists whenever the align split is dropped at the
+     end, or a section's last item is removed). The LIVE bar skips empty
+     sections entirely; the align gap survives by re-deriving the split
+     against the kept sections. The editor still shows empty sections. */
+  const liveSections = sections
+    .map((s, orig) => ({ s, orig }))
+    .filter(({ s }) => s.top.length + s.bottom.length > 0);
+  const liveSplitAt = splitAt === null ? null
+    : liveSections.findIndex(({ orig }) => orig >= splitAt);
 
   return (
     /* v2.96, Derek: the WORD RIBBON, arranged by SECTION. Everything between
@@ -1530,11 +1541,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       }}
       ref={toolbarRef}
     >
-      {sections.map((s, i) => (
-        <React.Fragment key={`sec-${i}`}>
+      {liveSections.map(({ s, orig }, i) => (
+        <React.Fragment key={`sec-${orig}`}>
           {/* v3.02, Derek: the align split — everything after it hugs the
-              toolbar's right edge. Other boundaries draw the divider. */}
-          {i > 0 && (i === splitAt
+              toolbar's right edge. Other boundaries draw the divider.
+              v3.25: never at the outer edges — empty sections are skipped
+              above, so i indexes only sections that actually render. */}
+          {i > 0 && (i === liveSplitAt
             ? <div className="rib-align-gap" />
             : <div className="toolbar-separator rib-section-sep" />)}
           <div className={`rib-section${s.hasBreak ? '' : ' rib-single'}`}>
