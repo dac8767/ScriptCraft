@@ -14376,6 +14376,13 @@ body.fs-writing-focus::before {
   resize: both; overflow: hidden;      /* grip clear of any scrollbar */
 }
 .fs-customize-dialog .fs-customize-body { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
+/* v3.49, Derek: Cancel / Save sit at the window's bottom-right. Save is the
+   accent primary; Cancel is the plain neutral beside it. */
+.fs-customize-footer { justify-content: flex-end; }
+.fs-customize-footer .fs-customize-save {
+  background: var(--fd-accent); border-color: var(--fd-accent); color: #fff;
+}
+.fs-customize-footer .fs-customize-save:hover { background: var(--fd-accent); filter: brightness(1.1); }
 /* Docked in a side panel / embedded in Settings: fill the host and scroll. */
 .tool-inline-body .fs-customize-body,
 .tool-window-body .fs-customize-body { height: 100%; max-height: none; overflow-y: auto; }
@@ -16985,9 +16992,9 @@ input.fs-switch:checked::after { left: 15px; }
   padding: 0 2px 1px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
-.rib-edit-sectitle-wrap { position: relative; display: flex; justify-content: center; }
+.rib-edit-sectitle-wrap { position: relative; display: flex; align-items: center; justify-content: center; gap: 3px; }
 .rib-edit-sectitle {
-  width: 100%; min-width: 40px;
+  flex: 1 1 auto; min-width: 40px;
   padding: 0 4px;
   border: 1px dashed color-mix(in srgb, var(--fd-border) 80%, transparent);
   border-radius: 4px;
@@ -16999,6 +17006,29 @@ input.fs-switch:checked::after { left: 15px; }
 .rib-edit-sectitle:focus { border-color: var(--fd-accent); }
 .rib-edit-sectitle-x { top: -7px; right: -7px; }
 .rib-edit-sectitle-wrap:hover > .rib-edit-sectitle-x { opacity: 1; }
+
+/* v3.49, Derek: the title's drag grip — an inline handle just left of the
+   label (its space is always reserved, so revealing it on hover doesn't shove
+   the field). It's the ONLY thing that starts a title drag; the field itself
+   stays click-to-edit. Dragging it moves the title to another section, which
+   lights up as the drop target. Kept INSIDE the wrap (not hung off a corner)
+   so it never collides with the section-close or title-remove ×s. */
+.rib-edit-sectitle-grip {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center;
+  font-size: 8px; line-height: 1;
+  color: color-mix(in srgb, var(--fd-text) 55%, transparent);
+  cursor: grab; opacity: 0; transition: opacity 0.1s;
+  z-index: 7;
+}
+.rib-edit-sectitle-wrap:hover > .rib-edit-sectitle-grip { opacity: 1; }
+.rib-edit-sectitle-grip:active { cursor: grabbing; }
+.rib-edit-section.rib-title-target {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: -1px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--fd-accent) 12%, transparent);
+}
 
 /* ─── v3.41, Derek: larger visual representations for each ribbon utility in
    the "+ Add" menu — a mini diagram of the shape, not just an icon. */
@@ -17621,6 +17651,12 @@ input.fs-switch:checked::after { left: 15px; }
 .fs-confirm-danger {
   background: #c0392b;
   border-color: #c0392b;
+}
+/* v3.49: the middle "Don't Save" button of a three-way save prompt — neutral,
+   but tinted a touch warm so it doesn't read as the plain Cancel beside it. */
+.fs-confirm-tertiary {
+  border-color: color-mix(in srgb, #c0392b 45%, var(--fd-border));
+  color: color-mix(in srgb, #c0392b 70%, var(--fd-text));
 }
 .fs-confirm-actions button:hover { filter: brightness(1.1); }
 /* v3.36: a requireText confirm — the button is dead until the phrase matches. */

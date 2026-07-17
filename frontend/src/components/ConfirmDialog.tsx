@@ -29,20 +29,28 @@ export interface ConfirmOptions {
   /** v3.36: gate confirm behind typing this exact phrase (e.g. "Reset
    *  Everything") — the button and Enter stay dead until it matches. */
   requireText?: string;
+  /** v3.49: three-way (save) mode — a middle button between Cancel and the
+   *  confirm button (e.g. "Don't Save"). Only used by saveDialog. */
+  tertiaryLabel?: string;
 }
+
+/** v3.49: the three outcomes of a save-before-closing prompt. */
+export type SaveChoice = 'save' | 'discard' | 'cancel';
 
 interface ConfirmRequest extends ConfirmOptions {
   id: number;
   message: string;
   /** Present = prompt mode: show a text input, resolve its value or null. */
   promptDefault?: string;
-  resolve: (result: boolean | string | null) => void;
+  /** v3.49: three-way mode — resolve 'save' | 'discard' | 'cancel'. */
+  threeWay?: boolean;
+  resolve: (result: boolean | string | null | SaveChoice) => void;
 }
 
 let nextId = 0;
 const listeners: Array<(req: ConfirmRequest) => void> = [];
 
-function enqueue(req: ConfirmRequest, failSafe: boolean | null) {
+function enqueue(req: ConfirmRequest, failSafe: boolean | null | SaveChoice) {
   if (listeners.length === 0) {
     // No host mounted (shouldn't happen in the app). Fail SAFE: a dialog
     // that can't be shown is a "no"/cancel, never a silent "yes".
@@ -64,6 +72,15 @@ export function promptDialog(message: string, defaultValue = '', opts: ConfirmOp
   });
 }
 
+/** v3.49: a "save before leaving?" prompt with three outcomes. Fails SAFE to
+ *  'cancel' when no host is mounted — a prompt that can't be shown must never
+ *  silently close-and-lose or close-and-keep on the user's behalf. */
+export function saveDialog(message: string, opts: ConfirmOptions = {}): Promise<SaveChoice> {
+  return new Promise<SaveChoice>((resolve) => {
+    enqueue({ id: ++nextId, message, ...opts, threeWay: true, resolve: resolve as ConfirmRequest['resolve'] }, 'cancel');
+  });
+}
+
 const ConfirmDialogHost: React.FC = () => {
   const [queue, setQueue] = useState<ConfirmRequest[]>([]);
   const current = queue[0] ?? null;
@@ -82,14 +99,16 @@ const ConfirmDialogHost: React.FC = () => {
     };
   }, []);
 
-  const answer = useCallback((ok: boolean) => {
+  const answer = useCallback((kind: 'confirm' | 'cancel' | 'tertiary') => {
     setQueue((prev) => {
       const req = prev[0];
       if (req) {
-        if (req.promptDefault !== undefined) {
-          req.resolve(ok ? (inputRef.current?.value ?? '') : null);
+        if (req.threeWay) {
+          req.resolve(kind === 'confirm' ? 'save' : kind === 'tertiary' ? 'discard' : 'cancel');
+        } else if (req.promptDefault !== undefined) {
+          req.resolve(kind === 'confirm' ? (inputRef.current?.value ?? '') : null);
         } else {
-          req.resolve(ok);
+          req.resolve(kind === 'confirm');
         }
       }
       return prev.slice(1);
@@ -99,9 +118,9 @@ const ConfirmDialogHost: React.FC = () => {
   useEffect(() => {
     if (!current) return;
     const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.stopPropagation(); answer(false); }
+      if (e.key === 'Escape') { e.stopPropagation(); answer('cancel'); }
       // Enter only confirms when the required phrase (if any) has been typed.
-      else if (e.key === 'Enter' && requireOk) { e.stopPropagation(); answer(true); }
+      else if (e.key === 'Enter' && requireOk) { e.stopPropagation(); answer('confirm'); }
     };
     document.addEventListener('keydown', key, true);
     return () => document.removeEventListener('keydown', key, true);
@@ -111,7 +130,7 @@ const ConfirmDialogHost: React.FC = () => {
   const isPrompt = current.promptDefault !== undefined;
 
   return createPortal(
-    <div className="fs-confirm-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) answer(false); }}>
+    <div className="fs-confirm-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) answer('cancel'); }}>
       <div className="fs-confirm-box" role="alertdialog" aria-modal="true">
         {current.title && <div className="fs-confirm-title">{current.title}</div>}
         <div className="fs-confirm-message">{current.message}</div>
@@ -136,14 +155,19 @@ const ConfirmDialogHost: React.FC = () => {
           />
         )}
         <div className="fs-confirm-actions">
-          <button className="fs-confirm-cancel" onClick={() => answer(false)}>
+          <button className="fs-confirm-cancel" onClick={() => answer('cancel')}>
             {current.cancelLabel ?? 'Cancel'}
           </button>
+          {current.threeWay && current.tertiaryLabel && (
+            <button className="fs-confirm-tertiary" onClick={() => answer('tertiary')}>
+              {current.tertiaryLabel}
+            </button>
+          )}
           <button
             autoFocus={!isPrompt && !current.requireText}
             disabled={!requireOk}
             className={`fs-confirm-ok${current.danger ? ' fs-confirm-danger' : ''}`}
-            onClick={() => answer(true)}
+            onClick={() => answer('confirm')}
           >
             {current.confirmLabel ?? 'OK'}
           </button>

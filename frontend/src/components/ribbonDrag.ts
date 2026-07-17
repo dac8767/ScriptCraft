@@ -196,6 +196,25 @@ export const ribRemoveSectionTitle = (i: number) => {
   commit(m);
 };
 
+/** v3.49, Derek: move a section title from one section onto another (dragged
+ *  by its grip). A section owns at most one title, so landing on a section
+ *  that already has one swaps the two labels rather than clobbering. Dropping
+ *  a title back on its own section is a no-op. */
+export const ribMoveTitle = (from: number, to: number) => {
+  if (from === to) return;
+  const m = clone(getModel());
+  const src = m.sections[from];
+  const dst = m.sections[to];
+  if (!src || !dst || src.title === undefined) return;
+  const moved = src.title;
+  const displaced = dst.title;              // undefined unless dst already labelled
+  m.sections[from] = displaced === undefined
+    ? (() => { const { title: _d, ...rest } = src; return rest; })()
+    : { ...src, title: displaced };
+  m.sections[to] = { ...dst, title: moved };
+  commit(m);
+};
+
 export const ribToggleBreakLine = (i: number) => {
   const m = clone(getModel());
   const s = m.sections[i];
@@ -227,6 +246,7 @@ const payloadLabel = (payload: string): string => {
   if (payload === 'blk:single') return 'Single Row Section';
   if (payload === 'blk:double') return 'Two Row Section';
   if (payload.startsWith('sec:')) return 'Section';
+  if (payload.startsWith('title:')) return 'Title';
   return '';
 };
 
@@ -282,6 +302,28 @@ const secSpotFromPoint = (x: number, y: number): number | null => {
   return b;
 };
 
+/** v3.49: the SECTION a point is over (its whole box, padding included), for
+ *  dragging a title onto a section. Geometry-based like the others: the
+ *  cursor spends much of a drag over gaps, so pick the nearest section by the
+ *  centre of the row the pointer is closest to. Returns null off the bar. */
+const titleSecFromPoint = (x: number, y: number): number | null => {
+  const el = document.elementFromPoint(x, y) as HTMLElement | null;
+  if (!el?.closest('.toolbar-ribbon')) return null;
+  const secs = Array.from(document.querySelectorAll<HTMLElement>('.toolbar-ribbon .rib-section[data-sec]'));
+  if (!secs.length) return null;
+  const over = el.closest<HTMLElement>('.toolbar-ribbon .rib-section[data-sec]');
+  if (over) return Number(over.dataset.sec);
+  // In a gap — snap to the section whose horizontal span is nearest x.
+  let best = secs[0];
+  let bestDist = Infinity;
+  for (const s of secs) {
+    const r = s.getBoundingClientRect();
+    const d = x < r.left ? r.left - x : x > r.right ? x - r.right : 0;
+    if (d < bestDist) { bestDist = d; best = s; }
+  }
+  return Number(best.dataset.sec);
+};
+
 const overPalette = (x: number, y: number): boolean =>
   !!(document.elementFromPoint(x, y) as HTMLElement | null)?.closest('.ribed-palette, .ribed-tools');
 
@@ -294,9 +336,12 @@ export const startRibbonDrag = (e: React.PointerEvent, payload: string) => {
   const startY = e.clientY;
   let active = false;
   let ghost: HTMLElement | null = null;
-  const setEdit = (p: Partial<{ dragging: boolean; spot: RibDropSpot | null; secSpot: number | null }>) =>
+  const setEdit = (p: Partial<{ dragging: boolean; spot: RibDropSpot | null; secSpot: number | null; titleSpot: number | null }>) =>
     useEditorStore.getState().setRibEdit(p);
   const boundaryDrag = payload.startsWith('sec:') || payload.startsWith('blk:') || payload === 'util:alignsplit';
+  // v3.49: a title drags onto a whole SECTION (it owns the label), not a
+  // between-sections boundary and not a within-row slot.
+  const titleDrag = payload.startsWith('title:');
 
   const move = (ev: PointerEvent) => {
     if (!active) {
@@ -313,15 +358,19 @@ export const startRibbonDrag = (e: React.PointerEvent, payload: string) => {
       ghost.style.top = `${ev.clientY + 12}px`;
     }
     const op = overPalette(ev.clientX, ev.clientY);
-    if (boundaryDrag) setEdit({ secSpot: op ? null : secSpotFromPoint(ev.clientX, ev.clientY), spot: null });
+    if (titleDrag) setEdit({ titleSpot: op ? null : titleSecFromPoint(ev.clientX, ev.clientY), spot: null, secSpot: null });
+    else if (boundaryDrag) setEdit({ secSpot: op ? null : secSpotFromPoint(ev.clientX, ev.clientY), spot: null });
     else setEdit({ spot: op ? null : spotFromPoint(ev.clientX, ev.clientY), secSpot: null });
   };
   const up = (ev: PointerEvent) => {
     cleanup();
-    if (!active) { setEdit({ dragging: false, spot: null, secSpot: null }); return; }
+    if (!active) { setEdit({ dragging: false, spot: null, secSpot: null, titleSpot: null }); return; }
     const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
     if (payload.startsWith('tok:') && el?.closest('.ribed-palette')) {
       ribRemoveToken(payload.slice(4));      // dragged out to the palette = remove
+    } else if (titleDrag) {
+      const to = titleSecFromPoint(ev.clientX, ev.clientY);
+      if (to !== null) ribMoveTitle(Number(payload.slice(6)), to);
     } else if (boundaryDrag) {
       const to = secSpotFromPoint(ev.clientX, ev.clientY);
       if (to !== null) {
@@ -332,7 +381,7 @@ export const startRibbonDrag = (e: React.PointerEvent, payload: string) => {
     } else {
       ribApplyDrop(payload, spotFromPoint(ev.clientX, ev.clientY));
     }
-    setEdit({ dragging: false, spot: null, secSpot: null });
+    setEdit({ dragging: false, spot: null, secSpot: null, titleSpot: null });
   };
   const cleanup = () => {
     document.removeEventListener('pointermove', move);

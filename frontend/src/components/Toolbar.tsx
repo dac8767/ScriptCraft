@@ -22,7 +22,7 @@ import {
   FaEllipsisV,
   FaHashtag,
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
-  FaFolderPlus, FaRegEdit, FaExchangeAlt,
+  FaFolderPlus, FaRegEdit, FaExchangeAlt, FaGripLinesVertical,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
@@ -1628,12 +1628,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           {/* start of the right-aligned run — the left-most right item */}
           {i === splitAt && addBlock(splitAt, true)}
           <div
-            className={`rib-section rib-edit-section${s.hasBreak ? '' : ' rib-single'}`}
+            className={`rib-section rib-edit-section${s.hasBreak ? '' : ' rib-single'}${ribEdit.titleSpot === i ? ' rib-title-target' : ''}`}
             data-sec={i}
             title="Drag to move this section"
             onPointerDown={(e) => {
               const t = e.target as HTMLElement;
-              if (t.closest('.rib-edit-item, .rib-edit-x, .rib-edit-cover, .rib-edit-break, .rib-row-line, input, select, button')) return;
+              if (t.closest('.rib-edit-item, .rib-edit-x, .rib-edit-cover, .rib-edit-break, .rib-row-line, .rib-edit-sectitle-grip, input, select, button')) return;
               startRibbonDrag(e, `sec:${i}`);
             }}
           >
@@ -1649,6 +1649,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 shown once one's been added from + Add. */}
             {s.title !== undefined && (
               <span className="rib-edit-sectitle-wrap">
+                {/* v3.49, Derek: the title carries its own drag grip so it can
+                    be moved onto another section — the label field itself
+                    still clicks-to-edit (the grip is the only drag handle). */}
+                <span
+                  className="rib-edit-sectitle-grip"
+                  title="Drag this title onto another section"
+                  onPointerDown={(e) => { e.stopPropagation(); startRibbonDrag(e, `title:${i}`); }}
+                >
+                  <FaGripLinesVertical />
+                </span>
                 <input
                   className="rib-edit-sectitle"
                   value={s.title}

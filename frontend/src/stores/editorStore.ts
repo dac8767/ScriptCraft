@@ -1136,8 +1136,8 @@ interface EditorState {
    *  These are EPHEMERAL (not persisted). */
   toolbarEditing: boolean;
   setToolbarEditing: (b: boolean) => void;
-  ribEdit: { dragging: boolean; spot: RibDropSpot | null; secSpot: number | null };
-  setRibEdit: (partial: Partial<{ dragging: boolean; spot: RibDropSpot | null; secSpot: number | null }>) => void;
+  ribEdit: { dragging: boolean; spot: RibDropSpot | null; secSpot: number | null; titleSpot: number | null };
+  setRibEdit: (partial: Partial<{ dragging: boolean; spot: RibDropSpot | null; secSpot: number | null; titleSpot: number | null }>) => void;
   setQatItems: (ids: string[]) => void;
   /** v2.11: Outline Bar zoom — pixels per page on the timeline. 0 = fit
    *  the whole ruler to the visible width. Persisted view state. */
@@ -1172,6 +1172,12 @@ interface EditorState {
   /** v3.34: factory-resets every Customize layout — sizes, ribbon, QAT,
    *  dropdown widths, menu bar, panels, outline bar. */
   resetAllCustomizations: () => void;
+  /** v3.49: a plain snapshot of every persistent customization field, so the
+   *  Customize dialog can take one on open and, on Cancel / "don't save",
+   *  restore it wholesale. ONE field list (CUSTOMIZATION_FIELDS) drives both
+   *  capture and restore, so they can't drift. */
+  captureCustomizations: () => Record<string, unknown>;
+  restoreCustomizations: (snap: Record<string, unknown>) => void;
   /** v1.80: Navigator filter + kind visibility live in the store so the
    *  window's header (dropdown) and footer (filter field) — which render in
    *  the shared window chrome — stay in sync with the list body. */
@@ -1541,6 +1547,22 @@ function _pushBeatSnapshot(get: () => EditorState, force = false) {
   useEditorStore.setState({ _beatUndoStack: stack, _beatRedoStack: [], _beatSnapshotTime: now, canBeatUndo: true, canBeatRedo: false, lastBeatEditAt: now } as any);
 }
 
+/** v3.49: every persistent field the Customize dialog can change. The one
+ *  list captureCustomizations / restoreCustomizations both read — so a
+ *  Cancel reverts ALL of it, with nothing quietly left behind. Panel
+ *  open/close and the active tool are view state, not customizations, so
+ *  they're deliberately excluded (Cancel shouldn't slam panels shut). */
+const CUSTOMIZATION_FIELDS = [
+  'toolbarLeft', 'toolbarRight', 'toolbarMode',
+  'toolConfig', 'toolOrder', 'toolbarHiddenItems', 'toolbarPinnedTools',
+  'menuBarOrder', 'menuBarHidden', 'menuMode',
+  'panelDividers', 'panelSizeMode',
+  'qatItems', 'toolbarDdWidths',
+  'chromeCustomPx', 'chromeGapPx',
+  'outlineBarRows', 'outlineBarZoom', 'outlineBarLabels', 'outlineBarRowScale',
+  'uiResizeLocked',
+] as const;
+
 export const useEditorStore = create<EditorState>((set, get) => ({
   activeElement: 'action',
   setActiveElement: (el) => set({ activeElement: el }),
@@ -1830,9 +1852,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   toolbarEditing: false,
   setToolbarEditing: (b) => set({
     toolbarEditing: b,
-    ...(b ? {} : { ribEdit: { dragging: false, spot: null, secSpot: null } }),
+    ...(b ? {} : { ribEdit: { dragging: false, spot: null, secSpot: null, titleSpot: null } }),
   }),
-  ribEdit: { dragging: false, spot: null, secSpot: null },
+  ribEdit: { dragging: false, spot: null, secSpot: null, titleSpot: null },
   setRibEdit: (partial) => set((s) => ({ ribEdit: { ...s.ribEdit, ...partial } })),
   outlineBarZoom: (_vs.outlineBarZoom as number) ?? 0,
   setOutlineBarZoom: (px) => {
@@ -1907,6 +1929,26 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     st.setToolOrder([...DEFAULT_TOOL_ORDER]);
     st.setOutlineBarRows([...DEFAULT_OUTLINE_BAR_ROWS]);
     st.setOutlineBarZoom(0);
+  },
+  // v3.49: capture reads the current value of every persistent-customization
+  // field; restore writes them straight back (state + persisted view state).
+  // Both walk the one CUSTOMIZATION_FIELDS list, so a field added to one is
+  // added to the other — no drifting half-revert.
+  captureCustomizations: () => {
+    const s = get() as unknown as Record<string, unknown>;
+    const snap: Record<string, unknown> = {};
+    for (const k of CUSTOMIZATION_FIELDS) snap[k] = s[k];
+    // Deep copy so later edits can't mutate the snapshot in place.
+    return JSON.parse(JSON.stringify(snap));
+  },
+  restoreCustomizations: (snap) => {
+    const patch: Record<string, unknown> = {};
+    for (const k of CUSTOMIZATION_FIELDS) if (k in snap) patch[k] = snap[k];
+    // toolbarZonesSet must ride along so restored ribbon zones aren't treated
+    // as "never customized" and re-defaulted on the next load.
+    patch.toolbarZonesSet = true;
+    saveViewState(patch as Partial<ViewState>);
+    set(patch as Partial<EditorState>);
   },
   navFilter: '',
   setNavFilter: (v) => set({ navFilter: v }),

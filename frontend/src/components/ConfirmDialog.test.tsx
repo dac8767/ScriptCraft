@@ -9,7 +9,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import ConfirmDialogHost, { confirmDialog, promptDialog } from './ConfirmDialog';
+import ConfirmDialogHost, { confirmDialog, promptDialog, saveDialog } from './ConfirmDialog';
 
 let host: HTMLElement;
 let root: Root;
@@ -71,6 +71,44 @@ describe('confirmDialog', () => {
     act(() => { p = promptDialog('Rename dictionary', 'x'); });
     act(() => { (document.querySelector('.fs-confirm-cancel') as HTMLButtonElement).click(); });
     await expect(p!).resolves.toBeNull();
+  });
+
+  /* v3.49: saveDialog is the three-way "save before leaving?" prompt. Save /
+     Don't Save / Cancel must resolve three DISTINCT outcomes — a two-way
+     confirm can't tell "discard and close" from "keep editing". */
+  describe('saveDialog', () => {
+    it('resolves save / discard / cancel from its three buttons', async () => {
+      act(() => { root.render(<ConfirmDialogHost />); });
+
+      let p: Promise<'save' | 'discard' | 'cancel'>;
+      act(() => { p = saveDialog('Save first?', { confirmLabel: 'Save', tertiaryLabel: "Don't Save" }); });
+      // The middle (tertiary) button is present only in three-way mode.
+      expect(document.querySelector('.fs-confirm-tertiary')!.textContent).toBe("Don't Save");
+      act(() => { (document.querySelector('.fs-confirm-ok') as HTMLButtonElement).click(); });
+      await expect(p!).resolves.toBe('save');
+
+      act(() => { p = saveDialog('Save first?', { tertiaryLabel: "Don't Save" }); });
+      act(() => { (document.querySelector('.fs-confirm-tertiary') as HTMLButtonElement).click(); });
+      await expect(p!).resolves.toBe('discard');
+
+      act(() => { p = saveDialog('Save first?', { tertiaryLabel: "Don't Save" }); });
+      act(() => { (document.querySelector('.fs-confirm-cancel') as HTMLButtonElement).click(); });
+      await expect(p!).resolves.toBe('cancel');
+    });
+
+    it('Escape resolves cancel (keep editing), never a silent discard', async () => {
+      act(() => { root.render(<ConfirmDialogHost />); });
+      let p: Promise<'save' | 'discard' | 'cancel'>;
+      act(() => { p = saveDialog('Save first?', { tertiaryLabel: "Don't Save" }); });
+      act(() => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      });
+      await expect(p!).resolves.toBe('cancel');
+    });
+
+    it('fails safe to cancel when no host is mounted', async () => {
+      await expect(saveDialog('Anyone there?')).resolves.toBe('cancel');
+    });
   });
 
   it('queues overlapping requests instead of dropping them', async () => {

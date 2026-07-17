@@ -17,7 +17,7 @@ import { MENU_ICONS, UTILITY_ICONS } from './uiIcons';
  */
 import { DEFAULT_OUTLINE_BAR_ROWS, MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
-import { confirmDialog } from './ConfirmDialog';
+import { confirmDialog, saveDialog } from './ConfirmDialog';
 import { DEFAULT_TOOLBAR_LEFT, stripTall } from './toolbarBuiltins';
 import RibbonPalette from './RibbonPalette';
 import { buildRibbonPalette } from './ribbonPaletteData';
@@ -754,6 +754,39 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // v1.76: the old per-list drag plumbing (dragProps/zoneDragProps, v0.45 and
   // v0.95) is gone — DndColumns owns drag state for every customization list.
 
+  // v3.49, Derek: Customize edits apply LIVE (the ribbon is edited on the real
+  // bar), so "Cancel" means revert to how everything looked when the window
+  // opened. Snapshot every persistent customization the moment it opens; Save
+  // just closes, Cancel restores the snapshot, and closing via the X with
+  // changes outstanding asks first. Snapshot is stored as JSON so the dirty
+  // check is a plain string compare.
+  const openSnapRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (open) openSnapRef.current = JSON.stringify(useEditorStore.getState().captureCustomizations());
+    else openSnapRef.current = null;
+  }, [open]);
+  const isDirty = () => {
+    const snap = openSnapRef.current;
+    if (snap === null) return false;
+    return JSON.stringify(useEditorStore.getState().captureCustomizations()) !== snap;
+  };
+  const revertCustomizations = () => {
+    const snap = openSnapRef.current;
+    if (snap) useEditorStore.getState().restoreCustomizations(JSON.parse(snap));
+  };
+  const handleSave = () => onClose();
+  const handleCancel = () => { revertCustomizations(); onClose(); };
+  const requestClose = async () => {
+    if (!isDirty()) { onClose(); return; }
+    const choice = await saveDialog(
+      'You have unsaved changes to your customizations. Save them before closing?',
+      { title: 'Save changes?', confirmLabel: 'Save', tertiaryLabel: "Don’t Save", cancelLabel: 'Cancel' },
+    );
+    if (choice === 'cancel') return;      // stay open, keep editing
+    if (choice === 'discard') revertCustomizations();
+    onClose();
+  };
+
   if (!open) return null;
 
   const cfgOf = (id: ToolId): ToolConfig =>
@@ -1115,16 +1148,22 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     <div
       className={`dialog-overlay${editingToolbar ? ' dialog-overlay-tbedit' : ''}`}
       style={overlayPadTop !== null ? { paddingTop: overlayPadTop } : undefined}
-      onClick={editingToolbar ? undefined : onClose}
+      onClick={editingToolbar ? undefined : requestClose}
     >
       {/* ref: also what the v0.84 size-persist ResizeObserver watches — it
           had come detached from the element entirely (dead code until now). */}
       <div ref={dialogRef} className="dialog-box fs-customize-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="dialog-header fs-customize-draghandle" onPointerDown={startHeaderDrag}>
           Customize
-          <button className="fs-dialog-x" onClick={onClose} title="Close">&times;</button>
+          <button className="fs-dialog-x" onClick={requestClose} title="Close">&times;</button>
         </div>
         {body}
+        {/* v3.49, Derek: Cancel reverts every customization to the open-time
+            snapshot; Save just closes (edits already applied live). */}
+        <div className="dialog-footer fs-customize-footer">
+          <button className="fs-customize-cancel" onClick={handleCancel}>Cancel</button>
+          <button className="fs-customize-save" onClick={handleSave}>Save</button>
+        </div>
       </div>
     </div>
     </>
