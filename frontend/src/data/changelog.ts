@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.45';
+export const APP_VERSION = '3.46';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.46',
+    date: '2026-07-17',
+    items: [
+      { title: 'Cleaner big Zoom button', detail: 'The large Zoom control drops its magnifier glyph — the percentage and the “Zoom” label already say what it is.', tags: ['UI'] },
+      { title: 'Editor View dropdown back to its old size', detail: 'Reverted the enlarged single-row Editor View control.', tags: ['UI'] },
+      { title: '“Reset Customizations” confirmation', detail: 'Reset All now asks you to type “Reset Customizations” instead of “Reset Everything”.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.45',
     date: '2026-07-17',

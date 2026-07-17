@@ -829,7 +829,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               onClick={async () => {
                 if (await confirmDialog(
                   'Reset ALL customizations to their defaults? Sizes and spacing, the toolbar layout, dropdown widths, Quick Access Toolbar, menu bar order, side panels, and the Outline Bar all go back to factory. (Themes, Elements and Keyboard Shortcuts have their own resets and are not touched.)',
-                  { title: 'Reset All Customizations', confirmLabel: 'Reset Everything', danger: true, requireText: 'Reset Everything' },
+                  { title: 'Reset All Customizations', confirmLabel: 'Reset Customizations', danger: true, requireText: 'Reset Customizations' },
                 )) useEditorStore.getState().resetAllCustomizations();
               }}
             >Reset All</button>

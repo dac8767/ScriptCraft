@@ -1220,15 +1220,9 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar.toolbar-ribbon .font-size-selector { width: var(--ddw-fontSize, auto); min-width: var(--ddw-fontSize, 60px); }
 .toolbar.toolbar-ribbon .element-selector { width: var(--ddw-element, auto); min-width: var(--ddw-element, 140px); }
 .toolbar.toolbar-ribbon .view-style-selector { width: var(--ddw-view, auto); }
-/* v3.42, Derek: the LARGE (single-row) Editor View control — a bigger dropdown
-   window whose field + caption stand as tall as any other one-row big button. */
-.toolbar.toolbar-ribbon .rib-tall[data-key="view"] { gap: 3px; }
-.toolbar.toolbar-ribbon .rib-tall[data-key="view"] .view-style-label { font-size: 11px; line-height: 1.1; }
-.toolbar.toolbar-ribbon .rib-tall[data-key="view"] .view-style-selector {
-  height: auto; min-height: 30px;
-  font-size: 13px; padding: 4px 12px;
-  width: var(--ddw-view, auto); min-width: var(--ddw-view, 150px);
-}
+/* v3.46, Derek: the BIG (single-row) Zoom control drops its magnifier glyph —
+   the "98%" value and the "Zoom" label under it already name it. */
+.toolbar.toolbar-ribbon .rib-tall[data-key="zoom"] .toolbar-btn-labeled svg { display: none; }
 .toolbar.toolbar-ribbon .rib-section-sep {
   height: auto;
   align-self: stretch;
