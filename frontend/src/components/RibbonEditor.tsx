@@ -22,11 +22,12 @@
  * single source of truth the real Toolbar renders from.
  */
 import React, { useState, useRef } from 'react';
-import { FaGripLinesVertical, FaArrowsAltH, FaExchangeAlt } from 'react-icons/fa';
+import { FaGripLinesVertical, FaArrowsAltH, FaExchangeAlt, FaRegQuestionCircle } from 'react-icons/fa';
 import {
   parseRibbon, serializeRibbon, type RibbonModel, type RibbonSection,
 } from './toolbarBuiltins';
 import { tokenIcon, tokenLabel, spacerPx } from './tokenMeta';
+import { useEditorStore } from '../stores/editorStore';
 
 type Row = 'top' | 'bottom';
 interface DropSpot { sec: number; row: Row; idx: number }
@@ -75,6 +76,8 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
   // v3.11: palette keyword filter. Categories keep their grouping; empty
   // groups drop out while a query is active.
   const [paletteQuery, setPaletteQuery] = useState('');
+  // v3.34: the ? popover that replaced the helper paragraph.
+  const [helpOpen, setHelpOpen] = useState(false);
   const q = paletteQuery.trim().toLowerCase();
   const filteredPalette = q
     ? palette.map((cat) => ({ ...cat, options: cat.options.filter((o) => o.label.toLowerCase().includes(q)) }))
@@ -203,7 +206,7 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
   const startDrag = (e: React.PointerEvent, payload: string) => {
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
-    if (target.closest('.ribed-x') || target.closest('.ribed-spacer-grip') || target.closest('input')) return;
+    if (target.closest('.ribed-x') || target.closest('.ribed-spacer-grip') || target.closest('.ribed-dd-grip') || target.closest('input')) return;
     e.preventDefault();
     const chip = e.currentTarget as HTMLElement;
     const startX = e.clientX;
@@ -354,6 +357,30 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
   const DROPDOWN_PREVIEW: Record<string, string> = {
     fontFamily: 'Courier Prime', fontSize: '12pt', element: 'Action', view: 'Page', zoom: '100%',
   };
+  /* v3.34, Derek: dropdown widths are draggable — grab the field's right
+     edge. ONE store (toolbarDdWidths) drives the chip here and the live
+     select on the bar. */
+  const ddWidths = useEditorStore((s) => s.toolbarDdWidths);
+  const setDdWidth = useEditorStore((s) => s.setToolbarDdWidth);
+  const startDdResize = (e: React.PointerEvent, key: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const chip = (e.currentTarget as HTMLElement).parentElement as HTMLElement;
+    const startX = e.clientX;
+    const startW = chip.getBoundingClientRect().width;
+    let w = startW;
+    const move = (ev: PointerEvent) => {
+      w = Math.max(40, Math.min(360, Math.round(startW + (ev.clientX - startX))));
+      chip.style.width = `${w}px`;
+    };
+    const up = () => {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', up);
+      setDdWidth(key, w);
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+  };
   const renderChip = (tok: string, sec: number, row: Row, idx: number, big = false) => {
     const ddText = tok.startsWith('b:') ? DROPDOWN_PREVIEW[tok.slice(2)] : undefined;
     return (
@@ -362,7 +389,8 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
         <span
           className={`ribed-chip${tok.startsWith('s:') ? ' ribed-chip-spacer' : ''}${tok.startsWith('d:') ? ' ribed-chip-div' : ''}${ddText ? ' ribed-chip-dd' : ''}${big && !ddText && !tok.startsWith('s:') && !tok.startsWith('d:') ? ' ribed-chip-big' : ''}`}
           title={tokenLabel(tok)}
-          style={tok.startsWith('s:') ? { width: spacerPx(tok) } : undefined}
+          style={tok.startsWith('s:') ? { width: spacerPx(tok) }
+            : ddText && ddWidths[tok.slice(2)] ? { width: ddWidths[tok.slice(2)] } : undefined}
           {...(ddText ? { 'data-dd': tok.slice(2) } : {})}
           data-sec={sec}
           data-row={row}
@@ -373,6 +401,13 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
             <>
               <span className="ribed-dd-text">{ddText}</span>
               <span className="ribed-dd-chev" aria-hidden="true" />
+              {/* v3.34: drag this edge to set the field's width — applies
+                  to the REAL ribbon too (one store). */}
+              <span
+                className="ribed-dd-grip"
+                title="Drag to set this dropdown's width"
+                onPointerDown={(e) => startDdResize(e, tok.slice(2))}
+              />
             </>
           ) : !tok.startsWith('s:') && !tok.startsWith('d:') && (
             <>
@@ -480,6 +515,25 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
             onPointerDown={(e) => startDrag(e, 'util:alignsplit')}>
             <FaExchangeAlt /> Align Split
           </span>
+          {/* v3.34, Derek: the helper paragraph became this ? popover. */}
+          <span className="ribed-help-anchor">
+            <button
+              className="ribed-help-btn"
+              title="How the ribbon editor works"
+              onClick={() => setHelpOpen((v) => !v)}
+            ><FaRegQuestionCircle /></button>
+            {helpOpen && (
+              <div className="ribed-help-pop" onClick={() => setHelpOpen(false)}>
+                The strip shows the ribbon as it will look. Drag items into
+                sections; drag a section's body to move the whole block. Drop
+                <strong> Align Split</strong> between sections — everything
+                after it hugs the right edge. Hover a section for its closing
+                ×. Drag a dropdown's or spacer's right edge to set its width.
+                Drag an item onto the lists below to remove it; double-click
+                one below to add it.
+              </div>
+            )}
+          </span>
         </div>
       </div>
       <div className="ribed-ribbon">
@@ -545,16 +599,8 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette, headerContro
         {secSpot === sections.length && <span className="ribed-sec-dropline" />}
       </div>
 
-      <p className="fs-customize-hint">
-        The strip above shows the ribbon as it will look. Drag items between
-        the sections — drop position is the item's position; drag a section
-        anywhere on its body to move the whole block. Drop <strong>Align
-        Split</strong> between two sections and everything after it hugs the
-        toolbar's right edge. Hover a section for the × that closes it (its
-        items join the neighbour). Spacers resize by dragging their right
-        edge. Drag an item onto the lists below to remove it — or
-        double-click one below to add it to the section you touched last.
-      </p>
+      {/* v3.34, Derek: the paragraph of helper text is gone — a ? icon
+          holds the condensed version instead. */}
 
       {/* v3.11, Derek: keyword filter — "save" surfaces Save, Save As,
           autosave... across every category at once. */}

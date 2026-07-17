@@ -1211,6 +1211,13 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   height: var(--rib-itemh);
   font-size: clamp(11px, calc(11.5px * var(--chrome-scale, 1)), 16px);
 }
+/* v3.34, Derek: user-set dropdown widths, dragged in the visual editor.
+   --ddw-* vars come from the store via the ribbon container; unset, each
+   field keeps its usual min-width behavior. */
+.toolbar.toolbar-ribbon .font-selector { width: var(--ddw-fontFamily, auto); min-width: var(--ddw-fontFamily, 120px); }
+.toolbar.toolbar-ribbon .font-size-selector { width: var(--ddw-fontSize, auto); min-width: var(--ddw-fontSize, 60px); }
+.toolbar.toolbar-ribbon .element-selector { width: var(--ddw-element, auto); min-width: var(--ddw-element, 140px); }
+.toolbar.toolbar-ribbon .view-style-selector { width: var(--ddw-view, auto); }
 .toolbar.toolbar-ribbon .rib-section-sep {
   height: auto;
   align-self: stretch;
@@ -12669,15 +12676,32 @@ html.android .version-history-panel {
   gap: 6px;
 }
 .fs-customize-globals button {
-  padding: 5px 8px;
+  padding: 6px 8px;
   font-size: 11px;
   border: 1px solid var(--fd-border);
   border-radius: 5px;
-  background: transparent;
+  /* v3.34, Derek: clearly a BUTTON — same surface as dialog buttons. */
+  background: var(--fd-toolbar-bg);
   color: var(--fd-text);
   cursor: pointer;
 }
 .fs-customize-globals button:hover { background: var(--fd-hover-bg); }
+/* v3.34: the lock veil — blocks every tab's editors while customizations
+   are locked; the rail (with the unlock button) stays reachable. */
+.fs-customize-body { position: relative; }
+.fs-customize-lockveil {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--fd-dialog-bg, #222) 72%, transparent);
+  color: var(--fd-text);
+  font-size: 13px;
+}
 .fs-customize-globals button.active { background: var(--fd-accent); border-color: var(--fd-accent); color: #fff; }
 .about-actions button.fs-bmc-btn {
   /* v3.25, Derek: 20% bigger */
@@ -16420,11 +16444,13 @@ input.fs-switch:checked::after { left: 15px; }
   border: none;
   outline: none;
   color: var(--fd-text);
-  /* v3.33: OneNote's page title — large and light, over a rule. */
-  font-size: 26px;
-  font-weight: 300;
+  /* v3.33: OneNote's layout (rule + date below); v3.34, Derek: back to the
+     app's own title font — the light 26px read as a foreign typeface. The
+     rule is brightened too (var(--fd-border) was barely visible). */
+  font-size: 20px;
+  font-weight: 700;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--fd-border);
+  border-bottom: 1px solid color-mix(in srgb, var(--fd-text) 35%, transparent);
   min-width: 0;
   /* v3.25: `flex: 0 1 320px` predates the v2.89 title-block wrapper. Inside
      that COLUMN flexbox the 320px basis became a HEIGHT — the title input
@@ -16633,7 +16659,7 @@ input.fs-switch:checked::after { left: 15px; }
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;   /* v3.34: the live bar's inter-row gap */
   flex: 1;
   min-width: 0;
 }
@@ -16679,6 +16705,49 @@ input.fs-switch:checked::after { left: 15px; }
 .rib-scrapbook-sec { justify-content: center; }
 .rib-scrapbook-sec .rib-row { align-items: center; gap: 6px; }
 .rib-scrapbook-tag { margin-right: 2px; }
+/* v3.34: dropdown width grip — the field's right edge. */
+.ribed-dd-grip {
+  position: absolute;
+  right: -4px;
+  top: 0;
+  bottom: 0;
+  width: 9px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.ribed-dd-grip:hover { background: color-mix(in srgb, var(--fd-accent) 35%, transparent); border-radius: 2px; }
+/* v3.34: the ? popover that replaced the Toolbar tab's helper paragraph. */
+.ribed-help-anchor { position: relative; display: inline-flex; }
+.ribed-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+.ribed-help-btn:hover { color: var(--fd-text); background: var(--fd-hover-bg); }
+.ribed-help-pop {
+  position: absolute;
+  top: 26px;
+  right: 0;
+  width: 320px;
+  padding: 10px 12px;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fd-text);
+  z-index: 10002;
+}
 /* v3.32, Derek: each dropdown chip carries its LIVE counterpart's min-width
    (.font-selector 120 / .font-size-selector 60 / .element-selector 140), so
    the editor's fields are the same length as the bar's. Text sits left like
@@ -16688,15 +16757,18 @@ input.fs-switch:checked::after { left: 15px; }
 .ribed-chip-dd[data-dd="fontSize"] { min-width: 60px; }
 .ribed-chip-dd[data-dd="element"] { min-width: 140px; }
 .ribed-chip-dd[data-dd="view"] { min-width: 90px; }
+/* v3.34: the macOS select STEPPER (up+down carets), not a single chevron —
+   the live fields are native selects and draw exactly this. */
 .ribed-dd-chev {
   position: absolute;
-  right: 7px;
+  right: 6px;
   top: 50%;
-  width: 6px;
-  height: 6px;
-  border-right: 1.5px solid var(--fd-text-muted);
-  border-bottom: 1.5px solid var(--fd-text-muted);
-  transform: translateY(-70%) rotate(45deg);
+  transform: translateY(-50%);
+  width: 8px;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='12'%3E%3Cpath d='M1 4.5l3-3 3 3' stroke='%23999' fill='none' stroke-width='1.3'/%3E%3Cpath d='M1 7.5l3 3 3-3' stroke='%23999' fill='none' stroke-width='1.3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
 }
 /* insertion indicator while a section rides the pointer — zero net width */
 .ribed-sec-dropline {
@@ -16847,13 +16919,13 @@ input.fs-switch:checked::after { left: 15px; }
   position: relative;
   display: flex;
   align-items: center;
-  height: 6px;
+  height: 4px;   /* v3.34: thinner — a two-row section reads like the bar's */
 }
 /* v2.97, Derek: click the split line to toggle it — HEAVY means the line is
    drawn on the real toolbar, faint means the split is invisible there. */
 .ribed-break-line {
   flex: 1;
-  height: 3px;
+  height: 2px;   /* v3.34: closer to the bar's 1px rule, still clickable */
   border-radius: 1px;
   background: color-mix(in srgb, var(--fd-accent) 25%, transparent);
   cursor: pointer;

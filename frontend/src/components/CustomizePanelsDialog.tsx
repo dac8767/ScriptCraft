@@ -16,6 +16,7 @@ import { MENU_ICONS, UTILITY_ICONS } from './uiIcons';
  */
 import { DEFAULT_OUTLINE_BAR_ROWS, MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
+import { confirmDialog } from './ConfirmDialog';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
 import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, stripTall } from './toolbarBuiltins';
 import RibbonEditor from './RibbonEditor';
@@ -815,21 +816,37 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               onClick={() => setActiveCat(id)}
             >{label}</button>
           ))}
-          {/* v3.24, Derek's menu reorg #5: the global sizing controls moved
-              here from the View menu — visible from every tab. */}
+          {/* v3.24, Derek's menu reorg #5: the global controls, visible from
+              every tab. v3.34: they cover ALL customizations now — sizes and
+              layouts — and read as real buttons. */}
           <div className="fs-customize-globals">
             <button
               className={uiResizeLocked ? 'active' : ''}
-              title={uiResizeLocked ? 'Sizing is locked — click to unlock' : 'Freeze all sizing and spacing'}
+              title={uiResizeLocked
+                ? 'Customizations are locked — click to unlock'
+                : 'Freeze every customization: sizing, spacing, and layout edits'}
               onClick={() => useEditorStore.getState().setUiResizeLocked(!uiResizeLocked)}
-            >{uiResizeLocked ? 'Sizing Locked' : 'Lock All Sizing'}</button>
+            >{uiResizeLocked ? 'Customizations Locked' : 'Lock All Customizations'}</button>
             <button
-              title="Reset every adjustable size and spacing to the defaults"
-              onClick={() => useEditorStore.getState().resetChromeSizes()}
-            >Reset All Sizes</button>
+              title="Reset every customization to the defaults — sizes, toolbar layout, Quick Access, menu bar, panels, outline bar"
+              onClick={async () => {
+                if (await confirmDialog(
+                  'Reset ALL customizations to their defaults? Sizes and spacing, the toolbar layout, dropdown widths, Quick Access Toolbar, menu bar order, side panels, and the Outline Bar all go back to factory. (Themes, Elements and Keyboard Shortcuts have their own resets and are not touched.)',
+                  { title: 'Reset All Customizations', confirmLabel: 'Reset Everything', danger: true },
+                )) useEditorStore.getState().resetAllCustomizations();
+              }}
+            >Reset All Customizations</button>
           </div>
         </div>
         <div className="dialog-body fs-customize-body">
+          {/* v3.34, Derek: the lock covers ALL customizations — while it's
+              on, every tab's editors are veiled (the rail's unlock button
+              stays reachable). */}
+          {uiResizeLocked && (
+            <div className="fs-customize-lockveil">
+              Customizations are locked — click “Customizations Locked” to unlock.
+            </div>
+          )}
           {activeCat === 'menu' && (<>
           <section>
             <h3>Menus</h3>

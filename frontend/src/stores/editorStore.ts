@@ -22,6 +22,10 @@ interface ViewState {
   outlineBarOpen?: boolean;
   rulersVisible?: boolean;
   qatItems?: string[];
+  /** v3.34: per-dropdown widths for the ribbon's select fields (px), keyed
+   *  by builtin key — set by dragging a dropdown's edge in the visual
+   *  editor, read by the live bar AND the editor (one source). */
+  toolbarDdWidths?: Record<string, number>;
   outlineBarZoom?: number;
   outlineBarRowScale?: number;
   scrapbookTreeScale?: number;
@@ -1115,6 +1119,10 @@ interface EditorState {
   /** v3.21, Derek: the Quick Access Toolbar's buttons (titlebar row) —
    *  ordered ids from TitleBar's QAT_OPTIONS. Persisted view state. */
   qatItems: string[];
+  /** v3.34: dropdown field widths (px) by builtin key — one source for the
+   *  live ribbon and the visual editor. */
+  toolbarDdWidths: Record<string, number>;
+  setToolbarDdWidth: (key: string, px: number) => void;
   setQatItems: (ids: string[]) => void;
   /** v2.11: Outline Bar zoom — pixels per page on the timeline. 0 = fit
    *  the whole ruler to the visible width. Persisted view state. */
@@ -1146,6 +1154,9 @@ interface EditorState {
   /** v2.55: View > Reset All Sizes & Spacing — the same defaults the
    *  per-surface Customize reset buttons apply, all at once. */
   resetChromeSizes: () => void;
+  /** v3.34: factory-resets every Customize layout — sizes, ribbon, QAT,
+   *  dropdown widths, menu bar, panels, outline bar. */
+  resetAllCustomizations: () => void;
   /** v1.80: Navigator filter + kind visibility live in the store so the
    *  window's header (dropdown) and footer (filter field) — which render in
    *  the shared window chrome — stay in sync with the list body. */
@@ -1794,6 +1805,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ qatItems: ids });
     set({ qatItems: ids });
   },
+  toolbarDdWidths: (_vs.toolbarDdWidths && typeof _vs.toolbarDdWidths === 'object')
+    ? (_vs.toolbarDdWidths as Record<string, number>) : {},
+  setToolbarDdWidth: (key, px) => {
+    const next = { ...get().toolbarDdWidths, [key]: Math.max(40, Math.min(360, Math.round(px))) };
+    saveViewState({ toolbarDdWidths: next });
+    set({ toolbarDdWidths: next });
+  },
   outlineBarZoom: (_vs.outlineBarZoom as number) ?? 0,
   setOutlineBarZoom: (px) => {
     saveViewState({ outlineBarZoom: px });
@@ -1849,6 +1867,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     st.setBigBtnInset(16);
     st.setPanelItemScale('left', 1);
     st.setPanelItemScale('right', 1);
+  },
+  /** v3.34, Derek: "Reset All Customizations" — everything Customize can
+   *  change goes back to factory: sizes AND layouts (ribbon, QAT, dropdown
+   *  widths, menu bar, panels, outline bar rows). Themes, Elements and
+   *  Keyboard Shortcuts keep their own per-tab resets — they're content,
+   *  not layout. */
+  resetAllCustomizations: () => {
+    const st = get();
+    st.resetChromeSizes();
+    st.setToolbarZones([...DEFAULT_TOOLBAR_LEFT], []);
+    st.setQatItems(['save', 'undo', 'redo']);
+    saveViewState({ toolbarDdWidths: {} });
+    set({ toolbarDdWidths: {} });
+    st.setMenuBarOrder([...MENU_BAR_LABELS]);
+    st.setToolConfig({ ...DEFAULT_TOOL_CONFIG });
+    st.setToolOrder([...DEFAULT_TOOL_ORDER]);
+    st.setOutlineBarRows([...DEFAULT_OUTLINE_BAR_ROWS]);
+    st.setOutlineBarZoom(0);
   },
   navFilter: '',
   setNavFilter: (v) => set({ navFilter: v }),

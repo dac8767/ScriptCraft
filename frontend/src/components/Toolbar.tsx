@@ -22,6 +22,7 @@ import {
   FaEllipsisV,
   FaHashtag,
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
+  FaFolderPlus, FaRegEdit,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
@@ -94,6 +95,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     toolbarMode, chromeCustomPx, chromeGapPx,
     outlineBarOpen,
     uiResizeLocked,
+    toolbarDdWidths,
   } = useEditorStore();
 
   // v2.07: while the Scrapbook is open, the toolbar's own formatting buttons
@@ -1543,6 +1545,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         } as React.CSSProperties) : {}),
         ['--rib-rowh' as string]: `${ribRowH}px`,
         ['--rib-gap' as string]: `${chromeGapPx.toolbar}px`,
+        // v3.34, Derek: user-set dropdown widths (dragged in the visual
+        // editor) — one store, applied here AND in the editor's chips.
+        ...Object.fromEntries(Object.entries(toolbarDdWidths).map(([k, v]) => [`--ddw-${k}`, `${v}px`])),
         // v2.72: measured so the first icons of the two bars align.
         ...(alignPad !== null ? { paddingLeft: alignPad } : {}),
       }}
@@ -1570,6 +1575,19 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           <div className="rib-section rib-scrapbook-sec">
             <div className="rib-row">
               <span className="menu-section-tag rib-scrapbook-tag">Scrapbook</span>
+              {/* v3.34, Derek: the section carries the Scrapbook's own
+                  actions, not just Insert Table — same handlers as the
+                  panel's header buttons. */}
+              <button
+                className="toolbar-btn"
+                title="New Section (Scrapbook)"
+                onClick={() => useNotebookStore.getState().addSection()}
+              ><FaFolderPlus /></button>
+              <button
+                className="toolbar-btn"
+                title="New Page (Scrapbook)"
+                onClick={() => useNotebookStore.getState().addPage()}
+              ><FaRegEdit /></button>
               {renderBuiltinToken('b:insertTable', false)}
             </div>
           </div>

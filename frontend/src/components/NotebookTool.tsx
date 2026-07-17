@@ -682,7 +682,8 @@ function SectionRow({ node, depth, orderIndex }: { node: Extract<NbNode, { type:
       {!node.collapsed && (
         <div className="fs-nb-children">
           <TreeNodes nodes={node.children} depth={depth + 1} />
-          {node.children.length === 0 && <div className="fs-nb-emptysec">empty — drop pages here</div>}
+          {/* v3.34, Derek: the "empty — drop pages here" hint is gone. The
+              empty children div stays — it's still the drop target. */}
         </div>
       )}
       {colorPop && createPortal(

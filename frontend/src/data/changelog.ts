@@ -65,9 +65,21 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.33';
+export const APP_VERSION = '3.34';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.34',
+    date: '2026-07-17',
+    items: [
+      { title: 'Drag a dropdown\'s edge to set its width', detail: 'In the visual editor, grab the right edge of the font, size, element or Editor View field and drag. The width applies to the REAL ribbon instantly — one setting drives both — and Reset All Customizations clears it.', tags: ['New Feature', 'UI'] },
+      { title: 'Lock/Reset cover ALL customizations', detail: '"Lock All Sizing" is now "Lock All Customizations" — while locked, every Customize tab is veiled, not just resize handles. "Reset All Sizes" is "Reset All Customizations" — sizes, toolbar layout, dropdown widths, Quick Access, menu bar order, side panels and the Outline Bar all return to factory (after a confirm). Both read as real buttons now.', tags: ['UI'] },
+      { title: 'Scrapbook toolbar section grows', detail: 'New Section and New Page ride beside Insert Table — the same actions as the panel header, one tap from the ribbon.', tags: ['Tools'] },
+      { title: 'Scrapbook title font restored', detail: 'Back to the app\'s own title style (the OneNote-inspired light face read as foreign); the rule under it is brighter, and the "empty — drop pages here" hint is gone from the tree.', tags: ['Polish', 'Tools'] },
+      { title: 'Toolbar tab helper text → ? icon', detail: 'The paragraph under the strip is gone; a ? button by the utilities holds the condensed version.', tags: ['UI'] },
+      { title: 'Editor strip: native stepper chevrons + tighter rows', detail: 'Dropdown chips draw the macOS up/down stepper like real selects, and section internals (row gaps, the split line) match the live bar\'s spacing.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '3.33',
     date: '2026-07-17',
