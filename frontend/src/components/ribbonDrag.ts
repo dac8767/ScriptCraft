@@ -23,8 +23,9 @@ type Row = 'top' | 'bottom';
 const EMPTY_SECTION: RibbonSection = { top: [], bottom: [], hasBreak: false, breakLine: false };
 
 const clone = (m: RibbonModel): RibbonModel => ({
-  sections: m.sections.map((s) => ({ top: [...s.top], bottom: [...s.bottom], hasBreak: s.hasBreak, breakLine: s.breakLine, title: s.title })),
+  sections: m.sections.map((s) => ({ top: [...s.top], bottom: [...s.bottom], hasBreak: s.hasBreak, breakLine: s.breakLine })),
   splitAt: m.splitAt,
+  titleRow: [...(m.titleRow ?? [])],
 });
 
 const getModel = (): RibbonModel => parseRibbon(useEditorStore.getState().toolbarLeft);
@@ -134,7 +135,6 @@ export const ribMergeSections = (i: number) => {
     bottom: [...a.bottom, ...b.bottom],
     hasBreak: a.hasBreak || b.hasBreak,
     breakLine: a.breakLine || b.breakLine,
-    title: a.title || b.title,
   });
   if (m.splitAt !== null) {
     if (m.splitAt === i + 1) m.splitAt = null;
@@ -163,14 +163,40 @@ export const ribRemoveBreak = (i: number) => {
   commit(m);
 };
 
-/** v3.38, Derek: set (or clear) a two-row section's title/descriptor. Empty
- *  string clears it. Only meaningful for two-row sections; serializeRibbon
- *  drops the title for one-row sections anyway. */
-export const ribSetSectionTitle = (i: number, title: string) => {
+/* ── v3.41, Derek: the TITLE ROW above the sections. Titles (`st:` tokens)
+   and spacers (`s:` tokens) live here as placeable items; spacers set where
+   each title sits. ── */
+
+/** Append a title or a spacer to the title row. */
+export const ribAddTitleRowItem = (kind: 'title' | 'spacer') => {
   const m = clone(getModel());
-  const s = m.sections[i];
-  if (!s) return;
-  m.sections[i] = { ...s, title: title.trim() ? title : undefined };
+  m.titleRow = [...m.titleRow, kind === 'title' ? 'st:Title' : `s:${Date.now()}`];
+  commit(m);
+};
+
+/** Set (or blank) the text of the title at title-row index `i`. */
+export const ribSetTitleText = (i: number, text: string) => {
+  const m = clone(getModel());
+  if (!m.titleRow[i] || !m.titleRow[i].startsWith('st:')) return;
+  m.titleRow[i] = `st:${text}`;
+  commit(m);
+};
+
+/** Remove the title-row item at index `i`. */
+export const ribRemoveTitleRowItem = (i: number) => {
+  const m = clone(getModel());
+  if (i < 0 || i >= m.titleRow.length) return;
+  m.titleRow.splice(i, 1);
+  commit(m);
+};
+
+/** Move a title-row item from `from` to before index `to` (drag reorder). */
+export const ribMoveTitleRowItem = (from: number, to: number) => {
+  const m = clone(getModel());
+  if (from < 0 || from >= m.titleRow.length) return;
+  const [it] = m.titleRow.splice(from, 1);
+  const dest = to > from ? to - 1 : to;
+  m.titleRow.splice(Math.max(0, Math.min(dest, m.titleRow.length)), 0, it);
   commit(m);
 };
 
@@ -316,6 +342,50 @@ export const startRibbonDrag = (e: React.PointerEvent, payload: string) => {
     document.removeEventListener('pointermove', move);
     document.removeEventListener('pointerup', up);
     ghost?.remove();
+  };
+  document.addEventListener('pointermove', move);
+  document.addEventListener('pointerup', up);
+};
+
+/** v3.41, Derek: reorder a title-row item by dragging it among its siblings.
+ *  Geometry-based (count item midpoints left of x) — the same stable trick
+ *  the section drops use. Standalone so the title row's pointer handling stays
+ *  independent of the section editor. */
+export const startTitleRowDrag = (e: React.PointerEvent, from: number) => {
+  if (e.button !== 0) return;
+  if ((e.target as HTMLElement).closest('.rib-tr-x, input')) return;
+  e.preventDefault();
+  const startX = e.clientX;
+  const startY = e.clientY;
+  let active = false;
+  let ghost: HTMLElement | null = null;
+
+  const targetIndex = (x: number): number => {
+    const row = document.querySelector<HTMLElement>('.rib-titlerow');
+    if (!row) return from;
+    let idx = 0;
+    for (const it of Array.from(row.querySelectorAll<HTMLElement>('.rib-tr-item'))) {
+      const r = it.getBoundingClientRect();
+      if (x > r.left + r.width / 2) idx += 1;
+    }
+    return idx;
+  };
+  const move = (ev: PointerEvent) => {
+    if (!active) {
+      if (Math.abs(ev.clientX - startX) < 4 && Math.abs(ev.clientY - startY) < 4) return;
+      active = true;
+      ghost = document.createElement('div');
+      ghost.className = 'ribed-ghost';
+      ghost.textContent = 'Title item';
+      document.body.appendChild(ghost);
+    }
+    if (ghost) { ghost.style.left = `${ev.clientX + 10}px`; ghost.style.top = `${ev.clientY + 12}px`; }
+  };
+  const up = (ev: PointerEvent) => {
+    document.removeEventListener('pointermove', move);
+    document.removeEventListener('pointerup', up);
+    ghost?.remove();
+    if (active) ribMoveTitleRowItem(from, targetIndex(ev.clientX));
   };
   document.addEventListener('pointermove', move);
   document.addEventListener('pointerup', up);

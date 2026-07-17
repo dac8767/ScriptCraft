@@ -29,7 +29,8 @@ import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import {
   startRibbonDrag, ribMergeSections, ribRemoveToken, ribRemoveBreak,
   ribToggleBreakLine, ribRemoveSplit, ribAddSectionAtBoundary, ribAddInlineAtBoundary,
-  ribSetAlignSplit, ribSetSectionTitle,
+  ribSetAlignSplit, ribAddTitleRowItem, ribSetTitleText, ribRemoveTitleRowItem,
+  startTitleRowDrag,
 } from './ribbonDrag';
 import { buildRibbonPalette } from './ribbonPaletteData';
 import { useNotebookStore } from '../stores/notebookStore';
@@ -1526,7 +1527,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     : toolbarMode === 'comfortable' ? 39 : 33;
   const ribRowH = Math.max(22, Math.round(barH) - 5);
 
-  const { sections, splitAt } = parseRibbon(leftTokens);
+  const { sections, splitAt, titleRow } = parseRibbon(leftTokens);
   /* v3.25, Derek: EMPTY sections render nothing but their boundary divider
      still painted — a stray line left of the first item or right of the last
      (an empty edge section exists whenever the align split is dropped at the
@@ -1555,8 +1556,53 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       <div className="rib-row">{s.top.map((t) => renderToken(t, !s.hasBreak))}</div>
       {s.hasBreak && s.breakLine && <div className="rib-row-line" />}
       {s.hasBreak && <div className="rib-row">{s.bottom.map((t) => renderToken(t, false))}</div>}
-      {s.hasBreak && s.title && <div className="rib-sec-title">{s.title}</div>}
     </>
+  );
+
+  /* v3.41, Derek: the TITLE ROW — a strip above the sections holding title
+     items and spacers. On the live bar it's read-only text; while editing,
+     titles are inline inputs, spacers are visible gaps, both draggable to
+     reorder with an × to remove, and a trailing pair of add buttons. It only
+     appears when it has content (or you're editing). Left-padded to the same
+     origin as the sections so titles line up over them. */
+  const titleRowPad = alignPad !== null ? alignPad : undefined;
+  const liveTitleRow = titleRow.length > 0 && (
+    <div className="rib-titlerow" style={{ paddingLeft: titleRowPad }}>
+      {titleRow.map((t, i) => (t.startsWith('st:')
+        ? <span key={`tr-${i}`} className="rib-tr-title">{t.slice(3)}</span>
+        : <span key={`tr-${i}`} className="rib-tr-space" />))}
+    </div>
+  );
+  const editTitleRow = (
+    <div className="rib-titlerow rib-titlerow-edit" style={{ paddingLeft: titleRowPad }}>
+      {titleRow.map((t, i) => (
+        <span
+          key={`tre-${i}`}
+          className={`rib-tr-item${t.startsWith('st:') ? ' is-title' : ' is-space'}`}
+          onPointerDown={(e) => startTitleRowDrag(e, i)}
+        >
+          {t.startsWith('st:')
+            ? <input
+                className="rib-tr-input"
+                value={t.slice(3)}
+                placeholder="Title"
+                onPointerDown={(e) => e.stopPropagation()}
+                onChange={(e) => ribSetTitleText(i, e.target.value)}
+              />
+            : <span className="rib-tr-spaceglyph" title="Spacer" />}
+          <button
+            className="rib-edit-x rib-tr-x"
+            title="Remove"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => ribRemoveTitleRowItem(i)}
+          >×</button>
+        </span>
+      ))}
+      <span className="rib-tr-adders">
+        <button className="rib-tr-add" title="Add a title" onPointerDown={(e) => e.stopPropagation()} onClick={() => ribAddTitleRowItem('title')}>+ Title</button>
+        <button className="rib-tr-add" title="Add a spacer to position titles" onPointerDown={(e) => e.stopPropagation()} onClick={() => ribAddTitleRowItem('spacer')}>+ Spacer</button>
+      </span>
+    </div>
   );
 
   /* v3.36, Derek: EDIT MODE — while Customize > Toolbar is open the real bar
@@ -1673,19 +1719,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               </div>
             )}
             {s.hasBreak && editRow(s, i, 'bottom')}
-            {/* v3.38, Derek: two-row sections carry an editable title/descriptor
-                (Word's ribbon-group label). One-row sections skip it — their
-                buttons already read as words. */}
-            {s.hasBreak && (
-              <input
-                className="rib-edit-title"
-                value={s.title ?? ''}
-                placeholder="Add title"
-                title="Section title (shown under a two-row section)"
-                onPointerDown={(e) => e.stopPropagation()}
-                onChange={(e) => ribSetSectionTitle(i, e.target.value)}
-              />
-            )}
           </div>
         </React.Fragment>
       ))}
@@ -1703,6 +1736,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
        fixed chrome at the right edge spanning both rows — the one big
        button. No spacing grips inside the toolbar (the menu bar keeps its). */
     <div className="toolbar-stack">
+    {/* v3.41, Derek: the ribbon lives inside a column wrapper so an optional
+        TITLE ROW can sit above the sections. The ribbon element itself is
+        untouched (its section flex row and overflow measurement are unchanged). */}
+    <div className="toolbar-colwrap">
+    {toolbarEditing ? editTitleRow : liveTitleRow}
     <div
       className={`toolbar toolbar-ribbon${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}${toolbarMode === 'custom' ? ' toolbar-custom' : ''}${toolbarEditing ? ' toolbar-editing' : ''}`}
       style={{
@@ -1769,6 +1807,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       ))}
       </>}
     </div>
+    </div>
 
     {/* Overflow 3-dot menu — beside the ribbon, spanning its height */}
     {hasOverflow && overflowContent && (
@@ -1796,12 +1835,23 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     {addMenu && (() => {
       const close = () => { setAddMenu(null); setAddSearch(''); setAddView('main'); };
       const act = (fn: () => void) => { fn(); close(); };
+      // v3.41: each utility carries a larger visual representation (not just an
+      // icon) so its shape reads at a glance.
+      const vis = {
+        single: <span className="rib-util-vis"><span className="ruv-sec"><span className="ruv-row" /></span></span>,
+        double: <span className="rib-util-vis"><span className="ruv-sec"><span className="ruv-row" /><span className="ruv-row" /></span></span>,
+        divider: <span className="rib-util-vis"><span className="ruv-divider" /></span>,
+        spacer: <span className="rib-util-vis"><span className="ruv-spacer" /></span>,
+        split: <span className="rib-util-vis"><span className="ruv-box" /><span className="ruv-splitgap"><span /><span /></span><span className="ruv-box" /></span>,
+        title: <span className="rib-util-vis"><span className="ruv-title">Aa</span><span className="ruv-sec ruv-sec-sm"><span className="ruv-row" /></span></span>,
+      };
       const structural = [
-        { label: '1 Row Section', run: () => ribAddSectionAtBoundary('single', addMenu.at, addMenu.rightSide) },
-        { label: '2 Row Section', run: () => ribAddSectionAtBoundary('double', addMenu.at, addMenu.rightSide) },
-        { label: 'Divider', run: () => ribAddInlineAtBoundary(`d:${Date.now()}`, addMenu.at, addMenu.rightSide) },
-        { label: 'Spacer', run: () => ribAddInlineAtBoundary(`s:${Date.now()}`, addMenu.at, addMenu.rightSide) },
-        ...(splitAt === null ? [{ label: 'Alignment Split', run: () => ribSetAlignSplit(addMenu.at) }] : []),
+        { label: '1 Row Section', vis: vis.single, run: () => ribAddSectionAtBoundary('single', addMenu.at, addMenu.rightSide) },
+        { label: '2 Row Section', vis: vis.double, run: () => ribAddSectionAtBoundary('double', addMenu.at, addMenu.rightSide) },
+        { label: 'Divider', vis: vis.divider, run: () => ribAddInlineAtBoundary(`d:${Date.now()}`, addMenu.at, addMenu.rightSide) },
+        { label: 'Spacer', vis: vis.spacer, run: () => ribAddInlineAtBoundary(`s:${Date.now()}`, addMenu.at, addMenu.rightSide) },
+        { label: 'Title', vis: vis.title, run: () => ribAddTitleRowItem('title') },
+        ...(splitAt === null ? [{ label: 'Alignment Split', vis: vis.split, run: () => ribSetAlignSplit(addMenu.at) }] : []),
       ];
       const q = addSearch.trim().toLowerCase();
       const placedSet = new Set(leftTokens.map(stripTall));
@@ -1816,11 +1866,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             onPointerDown={(e) => e.stopPropagation()}
           >
             {addView === 'main' ? (
-              // Utilities up front; every other item lives behind the submenu.
+              // Utilities up front (each with a visual), items behind the submenu.
               <div className="rib-add-scroll">
-                {structural.map((o) => (
-                  <button key={o.label} className="rib-add-opt" onClick={() => act(o.run)}>{o.label}</button>
-                ))}
+                <div className="rib-add-utilgrid">
+                  {structural.map((o) => (
+                    <button key={o.label} className="rib-add-util" onClick={() => act(o.run)}>
+                      {o.vis}
+                      <span className="rib-add-util-label">{o.label}</span>
+                    </button>
+                  ))}
+                </div>
                 <div className="rib-add-sep" />
                 <button
                   className="rib-add-opt rib-add-more"

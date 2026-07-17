@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.40';
+export const APP_VERSION = '3.41';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.41',
+    date: '2026-07-17',
+    items: [
+      { title: 'Titles are a placeable ribbon utility now', detail: 'Instead of belonging to one two-row section, a Title is an item you add from + Add. Titles live in a row ABOVE the sections; add as many as you like and drop spacers between them to slide each title over the section it labels. Drag to reorder, type to rename, × to remove.', tags: ['New Feature', 'UI'] },
+      { title: 'Each ribbon utility shows what it looks like', detail: 'The + Add menu draws a little picture of every utility — a one- or two-row box, a divider line, a dashed spacer, the split, an “Aa” title — so you can pick by shape, not just by name.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.40',
     date: '2026-07-17',

@@ -16931,35 +16931,100 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .rib-add-back:hover { background: var(--fd-hover-bg); color: var(--fd-text); }
 
-/* ─── v3.38, Derek: two-row section title/descriptor (Word ribbon-group
-   label). Sits centred under the section's rows on the LIVE bar; an inline
-   input while editing. */
-.rib-sec-title {
-  text-align: center;
-  font-size: 9.5px;
-  line-height: 1.1;
-  color: var(--fd-text-muted);
-  padding: 1px 2px 0;
-  white-space: nowrap;
+/* ─── v3.41, Derek: the TITLE ROW — a strip above the ribbon's sections
+   holding title items and spacers. The ribbon sits in a column wrapper so the
+   row can stack above it; the ribbon element itself is unchanged. */
+.toolbar-colwrap { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.toolbar-colwrap > .toolbar.toolbar-ribbon { flex: none; width: 100%; }
+.rib-titlerow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 15px;
+  padding-right: 12px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-.rib-edit-title {
-  display: block;
-  width: 100%;
-  margin-top: 2px;
-  padding: 1px 3px;
-  border: 1px dashed color-mix(in srgb, var(--fd-border) 80%, transparent);
-  border-radius: 4px;
-  background: transparent;
+  font-size: 10px;
   color: var(--fd-text-muted);
-  font-size: 9.5px;
-  text-align: center;
+}
+.rib-tr-title { white-space: nowrap; font-weight: 600; letter-spacing: .02em; }
+.rib-tr-space { display: inline-block; width: 24px; flex: none; }
+/* editing: chips with an input / spacer glyph + remove × */
+.rib-titlerow-edit { height: 20px; }
+.rib-tr-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: grab;
+  touch-action: none;
+  border: 1px dashed transparent;
+  border-radius: 4px;
+  padding: 0 1px;
+}
+.rib-tr-item.is-space { min-width: 24px; }
+.rib-tr-item:hover { border-color: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border)); }
+.rib-tr-input {
+  width: 72px;
+  padding: 0 4px;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: var(--fd-input-bg, var(--fd-navigator-bg));
+  color: var(--fd-text);
+  font-size: 10px; font-weight: 600;
   outline: none;
 }
-.rib-edit-title:focus { border-color: var(--fd-accent); color: var(--fd-text); }
-.rib-edit-title::placeholder { color: color-mix(in srgb, var(--fd-text-muted) 65%, transparent); }
+.rib-tr-input:focus { border-color: var(--fd-accent); }
+.rib-tr-spaceglyph {
+  display: inline-block; width: 24px; height: 10px;
+  background: repeating-linear-gradient(90deg, transparent 0 3px, color-mix(in srgb, var(--fd-text-muted) 45%, transparent) 3px 4px);
+  border-radius: 2px;
+}
+.rib-tr-x { top: -6px; right: -6px; }
+.rib-tr-adders { display: inline-flex; gap: 4px; margin-left: 8px; }
+.rib-tr-add {
+  padding: 1px 6px;
+  border: 1px dashed color-mix(in srgb, var(--fd-accent) 55%, var(--fd-border));
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--fd-accent) 8%, transparent);
+  color: color-mix(in srgb, var(--fd-accent) 85%, var(--fd-text));
+  font-size: 9.5px; font-weight: 600; cursor: pointer;
+}
+.rib-tr-add:hover { background: color-mix(in srgb, var(--fd-accent) 16%, transparent); }
+
+/* ─── v3.41, Derek: larger visual representations for each ribbon utility in
+   the "+ Add" menu — a mini diagram of the shape, not just an icon. */
+.rib-add-utilgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 2px; }
+.rib-add-util {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 9px 6px;
+  border: 1px solid var(--fd-border); border-radius: 8px;
+  background: transparent; color: var(--fd-text);
+  font-size: 11px; cursor: pointer;
+}
+.rib-add-util:hover { border-color: var(--fd-accent); background: color-mix(in srgb, var(--fd-accent) 12%, transparent); }
+.rib-add-util-label { font-weight: 600; }
+.rib-util-vis {
+  display: flex; align-items: center; justify-content: center; gap: 3px;
+  width: 100%; height: 30px;
+  color: var(--fd-text-muted);
+}
+.ruv-sec {
+  display: flex; flex-direction: column; justify-content: center; gap: 3px;
+  width: 46px; height: 26px; padding: 3px;
+  border: 1px solid currentColor; border-radius: 4px;
+}
+.ruv-sec-sm { width: 34px; height: 16px; }
+.ruv-row { height: 5px; border-radius: 2px; background: currentColor; opacity: .7; }
+.ruv-divider { width: 2px; height: 26px; background: currentColor; border-radius: 1px; }
+.ruv-spacer {
+  width: 34px; height: 12px; border-radius: 3px;
+  background: repeating-linear-gradient(90deg, transparent 0 4px, currentColor 4px 5px);
+  opacity: .6;
+}
+.ruv-box { width: 16px; height: 24px; border: 1px solid currentColor; border-radius: 3px; }
+.ruv-splitgap { display: flex; flex-direction: column; gap: 2px; color: var(--fd-accent); }
+.ruv-splitgap span { width: 7px; height: 2px; background: currentColor; }
+.ruv-title { font-weight: 700; font-size: 13px; color: var(--fd-text); line-height: 1; }
+.rib-add-utilgrid + .rib-add-sep { margin-top: 8px; }
 /* v3.34: dropdown width grip — the field's right edge. */
 .ribed-dd-grip {
   position: absolute;

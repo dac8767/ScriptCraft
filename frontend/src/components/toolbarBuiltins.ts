@@ -194,26 +194,37 @@ export const isRowBreak = (tok: string) => tok.startsWith('r:') || tok.startsWit
 /** v3.02, Derek: the align split — a section boundary that also pushes
  *  everything after it to the toolbar's RIGHT edge. */
 export const isAlignSplit = (tok: string) => tok.startsWith('a:');
-/** v3.38, Derek: a section TITLE/descriptor (Word's ribbon-group label).
- *  Everything after the `st:` prefix is the literal title text. Only two-row
- *  sections carry one — one-row sections already read their buttons' labels. */
+/** v3.38: a TITLE token — everything after `st:` is the literal label text.
+ *  v3.41, Derek: titles are no longer a section property; they're placeable
+ *  items living in a dedicated TITLE ROW above the sections (with spacers to
+ *  position them). `st:` tokens in the title row are those titles; any left
+ *  in the section body are legacy v3.38 section titles and get dropped. */
 export const isSectionTitle = (tok: string) => tok.startsWith('st:');
+/** v3.41, Derek: marks the end of the title-row prefix. Everything before the
+ *  first one is the title row; everything after is the sections. */
+export const isTitleRowEnd = (tok: string) => tok.startsWith('tre:');
 
 /** A parsed ribbon section. `hasBreak` false ⇒ single row, items span both
  *  rows; true ⇒ `top` row above `bottom` row. `breakLine` ⇒ the split
- *  draws a visible line between the rows on the real toolbar. `title` ⇒ a
- *  two-row section's descriptor label (v3.38). */
-export interface RibbonSection { top: string[]; bottom: string[]; hasBreak: boolean; breakLine: boolean; title?: string }
+ *  draws a visible line between the rows on the real toolbar. */
+export interface RibbonSection { top: string[]; bottom: string[]; hasBreak: boolean; breakLine: boolean }
 
-/** The whole ribbon: its sections, plus the index of the first section in
+/** The whole ribbon: an optional TITLE ROW (title/spacer tokens shown above
+ *  the sections, v3.41), the sections, plus the index of the first section in
  *  the RIGHT-aligned group (null ⇒ everything left-aligned). */
-export interface RibbonModel { sections: RibbonSection[]; splitAt: number | null }
+export interface RibbonModel { sections: RibbonSection[]; splitAt: number | null; titleRow: string[] }
 
 /** The ribbon's structure, straight from the token sequence. Extra row
  *  breaks in one section merge into the first (a section has at most two
  *  rows); an extra align split acts as a plain divider. serializeRibbon
  *  writes the canonical form back. */
 export function parseRibbon(tokens: string[]): RibbonModel {
+  // v3.41: split the title row off the front (up to the first `tre:` marker).
+  let titleRow: string[] = [];
+  let body = tokens;
+  const treIdx = tokens.findIndex(isTitleRowEnd);
+  if (treIdx >= 0) { titleRow = tokens.slice(0, treIdx); body = tokens.slice(treIdx + 1); }
+
   const sections: RibbonSection[] = [];
   let splitAt: number | null = null;
   let cur: RibbonSection = { top: [], bottom: [], hasBreak: false, breakLine: false };
@@ -221,14 +232,15 @@ export function parseRibbon(tokens: string[]): RibbonModel {
     sections.push(cur);
     cur = { top: [], bottom: [], hasBreak: false, breakLine: false };
   };
-  for (const raw of tokens) {
+  for (const raw of body) {
     if (isAlignSplit(raw)) {
       push();
       if (splitAt === null) splitAt = sections.length;
       continue;
     }
     if (isSectionDivider(raw)) { push(); continue; }
-    if (isSectionTitle(raw)) { cur.title = raw.slice(3); continue; }
+    if (isTitleRowEnd(raw)) continue;             // stray marker — ignore
+    if (isSectionTitle(raw)) continue;            // legacy v3.38 section title — drop
     if (isRowBreak(raw)) {
       cur.hasBreak = true;
       cur.breakLine = cur.breakLine || raw.startsWith('rl:');
@@ -237,19 +249,18 @@ export function parseRibbon(tokens: string[]): RibbonModel {
     (cur.hasBreak ? cur.bottom : cur.top).push(raw);
   }
   push();
-  return { sections, splitAt };
+  return { sections, splitAt, titleRow };
 }
 
 /** Model → the flat token sequence. Divider/break ids are positional —
  *  they only need to be unique within the sequence. */
 export function serializeRibbon(model: RibbonModel): string[] {
-  const { sections, splitAt } = model;
+  const { sections, splitAt, titleRow } = model;
   const out: string[] = [];
+  // v3.41: the title row rides at the very front, capped by a `tre:` marker.
+  if (titleRow && titleRow.length) out.push(...titleRow, 'tre:end');
   sections.forEach((s, i) => {
     if (i > 0) out.push(i === splitAt ? `a:split-${i}` : `2!d:sec-${i}`);
-    // v3.38: a two-row section's title rides at the section's head. One-row
-    // sections never keep one (their buttons already carry text).
-    if (s.hasBreak && s.title) out.push(`st:${s.title}`);
     out.push(...s.top);
     if (s.hasBreak) out.push(`${s.breakLine ? 'rl' : 'r'}:row-${i}`, ...s.bottom);
   });
