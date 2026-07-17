@@ -57,6 +57,10 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'exportFountain', label: 'Export Fountain', icon: <FaFileAlt />, run: () => emit('exportFountain') },
   { id: 'exportDocx', label: 'Export Word (.docx)', icon: <FaFileWord />, run: () => emit('exportDocx') },
   { id: 'settings', label: 'Settings', icon: <FaCog />, run: () => emit('settings') },
+  // v3.42, Derek: show/hide the side panels from the ribbon (same toggles the
+  // panel edge strips use).
+  { id: 'toggleLeftPanel', label: 'Toggle Left Panel', icon: <FaColumns />, run: () => useEditorStore.getState().toggleNavigator() },
+  { id: 'toggleRightPanel', label: 'Toggle Right Panel', icon: <FaColumns />, run: () => useEditorStore.getState().toggleShelf() },
   { id: 'cut', label: 'Cut', icon: <FaCut />, run: () => emit('cut') },
   { id: 'copy', label: 'Copy', icon: <FaCopy />, run: () => emit('copy') },
   { id: 'paste', label: 'Paste', icon: <FaPaste />, run: () => emit('paste') },

@@ -29,9 +29,9 @@ import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import {
   startRibbonDrag, ribMergeSections, ribRemoveToken, ribRemoveBreak,
   ribToggleBreakLine, ribRemoveSplit, ribAddSectionAtBoundary, ribAddInlineAtBoundary,
-  ribSetAlignSplit, ribAddTitleRowItem, ribSetTitleText, ribRemoveTitleRowItem,
-  startTitleRowDrag,
+  ribSetAlignSplit, ribAddTitleAtBoundary, ribSetSectionTitle, ribRemoveSectionTitle,
 } from './ribbonDrag';
+import { tokenLabel } from './tokenMeta';
 import { buildRibbonPalette } from './ribbonPaletteData';
 import { useNotebookStore } from '../stores/notebookStore';
 import { TableGridPicker } from './NotebookTool';
@@ -1527,7 +1527,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     : toolbarMode === 'comfortable' ? 39 : 33;
   const ribRowH = Math.max(22, Math.round(barH) - 5);
 
-  const { sections, splitAt, titleRow } = parseRibbon(leftTokens);
+  const { sections, splitAt } = parseRibbon(leftTokens);
   /* v3.25, Derek: EMPTY sections render nothing but their boundary divider
      still painted — a stray line left of the first item or right of the last
      (an empty edge section exists whenever the align split is dropped at the
@@ -1547,62 +1547,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   const leftLive = liveSplitAt === null || liveSplitAt < 0 ? liveSections : liveSections.slice(0, liveSplitAt);
   const rightLive = liveSplitAt === null || liveSplitAt < 0 ? [] : liveSections.slice(liveSplitAt);
 
-  /* v3.38, Derek: ONE renderer for a live section's inner rows — both the
-     left and right zones read it, so the row/line/title layout can't drift.
-     A two-row section's title/descriptor sits under its rows (Word's ribbon
-     group label); one-row sections never carry one. */
+  /* v3.42, Derek: ONE renderer for a live section's inner rows (both zones
+     read it, so the layout can't drift). A section's title sits ON TOP of its
+     rows — first child of the section column, one- or two-row alike. */
   const liveSectionInner = (s: typeof sections[number]) => (
     <>
+      {s.title && <div className="rib-sec-title">{s.title}</div>}
       <div className="rib-row">{s.top.map((t) => renderToken(t, !s.hasBreak))}</div>
       {s.hasBreak && s.breakLine && <div className="rib-row-line" />}
       {s.hasBreak && <div className="rib-row">{s.bottom.map((t) => renderToken(t, false))}</div>}
     </>
-  );
-
-  /* v3.41, Derek: the TITLE ROW — a strip above the sections holding title
-     items and spacers. On the live bar it's read-only text; while editing,
-     titles are inline inputs, spacers are visible gaps, both draggable to
-     reorder with an × to remove, and a trailing pair of add buttons. It only
-     appears when it has content (or you're editing). Left-padded to the same
-     origin as the sections so titles line up over them. */
-  const titleRowPad = alignPad !== null ? alignPad : undefined;
-  const liveTitleRow = titleRow.length > 0 && (
-    <div className="rib-titlerow" style={{ paddingLeft: titleRowPad }}>
-      {titleRow.map((t, i) => (t.startsWith('st:')
-        ? <span key={`tr-${i}`} className="rib-tr-title">{t.slice(3)}</span>
-        : <span key={`tr-${i}`} className="rib-tr-space" />))}
-    </div>
-  );
-  const editTitleRow = (
-    <div className="rib-titlerow rib-titlerow-edit" style={{ paddingLeft: titleRowPad }}>
-      {titleRow.map((t, i) => (
-        <span
-          key={`tre-${i}`}
-          className={`rib-tr-item${t.startsWith('st:') ? ' is-title' : ' is-space'}`}
-          onPointerDown={(e) => startTitleRowDrag(e, i)}
-        >
-          {t.startsWith('st:')
-            ? <input
-                className="rib-tr-input"
-                value={t.slice(3)}
-                placeholder="Title"
-                onPointerDown={(e) => e.stopPropagation()}
-                onChange={(e) => ribSetTitleText(i, e.target.value)}
-              />
-            : <span className="rib-tr-spaceglyph" title="Spacer" />}
-          <button
-            className="rib-edit-x rib-tr-x"
-            title="Remove"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => ribRemoveTitleRowItem(i)}
-          >×</button>
-        </span>
-      ))}
-      <span className="rib-tr-adders">
-        <button className="rib-tr-add" title="Add a title" onPointerDown={(e) => e.stopPropagation()} onClick={() => ribAddTitleRowItem('title')}>+ Title</button>
-        <button className="rib-tr-add" title="Add a spacer to position titles" onPointerDown={(e) => e.stopPropagation()} onClick={() => ribAddTitleRowItem('spacer')}>+ Spacer</button>
-      </span>
-    </div>
   );
 
   /* v3.36, Derek: EDIT MODE — while Customize > Toolbar is open the real bar
@@ -1621,8 +1575,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       onPointerDown={(e) => startRibbonDrag(e, `tok:${tok}`)}
     >
       {renderToken(tok, big)}
-      {/* the cover eats clicks so the real control never fires while editing */}
-      <span className="rib-edit-cover" />
+      {/* v3.42, Derek: hovering an item shows its NAME (on the cover, which is
+          what the pointer actually sits over), not a generic helper string. */}
+      <span className="rib-edit-cover" title={tokenLabel(tok)} />
       <button
         className="rib-edit-x"
         title="Remove from the toolbar"
@@ -1707,6 +1662,26 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 onClick={() => ribMergeSections(i < sections.length - 1 ? i : i - 1)}
               >×</button>
             )}
+            {/* v3.42, Derek: a section title, editable, on top of the rows —
+                shown once one's been added from + Add. */}
+            {s.title !== undefined && (
+              <span className="rib-edit-sectitle-wrap">
+                <input
+                  className="rib-edit-sectitle"
+                  value={s.title}
+                  placeholder="Title"
+                  title="Section title"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onChange={(e) => ribSetSectionTitle(i, e.target.value)}
+                />
+                <button
+                  className="rib-edit-x rib-edit-sectitle-x"
+                  title="Remove the title"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => ribRemoveSectionTitle(i)}
+                >×</button>
+              </span>
+            )}
             {editRow(s, i, 'top')}
             {s.hasBreak && (
               <div className="rib-edit-break">
@@ -1736,11 +1711,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
        fixed chrome at the right edge spanning both rows — the one big
        button. No spacing grips inside the toolbar (the menu bar keeps its). */
     <div className="toolbar-stack">
-    {/* v3.41, Derek: the ribbon lives inside a column wrapper so an optional
-        TITLE ROW can sit above the sections. The ribbon element itself is
-        untouched (its section flex row and overflow measurement are unchanged). */}
-    <div className="toolbar-colwrap">
-    {toolbarEditing ? editTitleRow : liveTitleRow}
     <div
       className={`toolbar toolbar-ribbon${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}${toolbarMode === 'custom' ? ' toolbar-custom' : ''}${toolbarEditing ? ' toolbar-editing' : ''}`}
       style={{
@@ -1774,8 +1744,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <>
           {leftLive.length > 0 && <div className="toolbar-separator rib-section-sep" />}
           <div className="rib-section rib-scrapbook-sec">
+            {/* v3.42, Derek: the tag sits CENTERED above the buttons (like a
+                section title), and the section gets extra left padding. */}
+            <span className="menu-section-tag rib-scrapbook-tag">Scrapbook</span>
             <div className="rib-row">
-              <span className="menu-section-tag rib-scrapbook-tag">Scrapbook</span>
               {/* v3.34, Derek: the section carries the Scrapbook's own
                   actions, not just Insert Table — same handlers as the
                   panel's header buttons. */}
@@ -1806,7 +1778,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         </React.Fragment>
       ))}
       </>}
-    </div>
     </div>
 
     {/* Overflow 3-dot menu — beside the ribbon, spanning its height */}
@@ -1850,7 +1821,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         { label: '2 Row Section', vis: vis.double, run: () => ribAddSectionAtBoundary('double', addMenu.at, addMenu.rightSide) },
         { label: 'Divider', vis: vis.divider, run: () => ribAddInlineAtBoundary(`d:${Date.now()}`, addMenu.at, addMenu.rightSide) },
         { label: 'Spacer', vis: vis.spacer, run: () => ribAddInlineAtBoundary(`s:${Date.now()}`, addMenu.at, addMenu.rightSide) },
-        { label: 'Title', vis: vis.title, run: () => ribAddTitleRowItem('title') },
+        { label: 'Title', vis: vis.title, run: () => ribAddTitleAtBoundary(addMenu.at, addMenu.rightSide) },
         ...(splitAt === null ? [{ label: 'Alignment Split', vis: vis.split, run: () => ribSetAlignSplit(addMenu.at) }] : []),
       ];
       const q = addSearch.trim().toLowerCase();

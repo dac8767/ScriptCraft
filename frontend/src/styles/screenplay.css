@@ -1218,6 +1218,15 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar.toolbar-ribbon .font-size-selector { width: var(--ddw-fontSize, auto); min-width: var(--ddw-fontSize, 60px); }
 .toolbar.toolbar-ribbon .element-selector { width: var(--ddw-element, auto); min-width: var(--ddw-element, 140px); }
 .toolbar.toolbar-ribbon .view-style-selector { width: var(--ddw-view, auto); }
+/* v3.42, Derek: the LARGE (single-row) Editor View control — a bigger dropdown
+   window whose field + caption stand as tall as any other one-row big button. */
+.toolbar.toolbar-ribbon .rib-tall[data-key="view"] { gap: 3px; }
+.toolbar.toolbar-ribbon .rib-tall[data-key="view"] .view-style-label { font-size: 11px; line-height: 1.1; }
+.toolbar.toolbar-ribbon .rib-tall[data-key="view"] .view-style-selector {
+  height: auto; min-height: 30px;
+  font-size: 13px; padding: 4px 12px;
+  width: var(--ddw-view, auto); min-width: var(--ddw-view, 150px);
+}
 .toolbar.toolbar-ribbon .rib-section-sep {
   height: auto;
   align-self: stretch;
@@ -3201,6 +3210,9 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
   padding: 16px; overflow-y: auto; flex: 1;
 }
+/* v3.42, Derek: the action buttons were flush against the window's bottom
+   edge — give the row real padding all round. */
+.tp-editor-dialog .dialog-actions { padding: 12px 16px 16px; }
 .tp-editor-form {
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;
   align-content: start;
@@ -16266,7 +16278,9 @@ input.fs-switch:checked::after { left: 15px; }
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 2px 6px;
+  /* v3.42, Derek: tighten the gap between the panel header and the first
+     folder — no top padding. */
+  padding: 0 6px 2px;
 }
 /* v2.66: the tree panel's Premiere-style zoom bar — stretch the thumb and
    the rows above grow with it (text + icons proportional). */
@@ -16406,9 +16420,12 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .fs-nb-takeover-head {
   display: flex;
-  align-items: center;
+  /* v3.42, Derek: top-align so the title lines up with the Return to Editor
+     button (they used to centre against the taller title+date block, floating
+     the title above the button); extra top padding shifts the stack down. */
+  align-items: flex-start;
   gap: 12px;
-  padding: 8px 16px;
+  padding: 14px 16px 8px;
   border-bottom: 1px solid var(--fd-border);
   flex: 0 0 auto;
 }
@@ -16460,7 +16477,11 @@ input.fs-switch:checked::after { left: 15px; }
   font-size: 20px;
   font-weight: 700;
   padding-bottom: 8px;
-  border-bottom: 1px solid color-mix(in srgb, var(--fd-text) 35%, transparent);
+  /* v3.42, Derek: the rule under the title runs HALF the width (a gradient
+     bottom-line, since an <input> can't carry a ::after). */
+  border-bottom: none;
+  background: linear-gradient(to right,
+    color-mix(in srgb, var(--fd-text) 35%, transparent) 0 50%, transparent 50%) left bottom / 100% 1px no-repeat;
   min-width: 0;
   /* v3.25: `flex: 0 1 320px` predates the v2.89 title-block wrapper. Inside
      that COLUMN flexbox the 320px basis became a HEIGHT — the title input
@@ -16712,9 +16733,11 @@ input.fs-switch:checked::after { left: 15px; }
 .ribed-dd-text { font-size: 11.5px; color: var(--fd-text); white-space: nowrap; }
 /* v3.33, Derek: the Scrapbook's injected ribbon section — tag + tools,
    always the last left-aligned section while the tool is open. */
-.rib-scrapbook-sec { justify-content: center; }
-.rib-scrapbook-sec .rib-row { align-items: center; gap: 6px; }
-.rib-scrapbook-tag { margin-right: 2px; }
+/* v3.42, Derek: the tag rides CENTERED on top of the buttons, and the whole
+   section gets more breathing room on its left. */
+.rib-scrapbook-sec { justify-content: center; align-items: stretch; padding-left: 14px; }
+.rib-scrapbook-sec .rib-row { align-items: center; justify-content: center; gap: 6px; }
+.rib-scrapbook-tag { text-align: center; margin: 0 0 1px; }
 
 /* ════════════════════════════════════════════════════════════════════════
    v3.36, Derek: IN-PLACE toolbar editing. While Customize > Toolbar is open
@@ -16931,64 +16954,30 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .rib-add-back:hover { background: var(--fd-hover-bg); color: var(--fd-text); }
 
-/* ─── v3.41, Derek: the TITLE ROW — a strip above the ribbon's sections
-   holding title items and spacers. The ribbon sits in a column wrapper so the
-   row can stack above it; the ribbon element itself is unchanged. */
-.toolbar-colwrap { display: flex; flex-direction: column; flex: 1; min-width: 0; }
-.toolbar-colwrap > .toolbar.toolbar-ribbon { flex: none; width: 100%; }
-.rib-titlerow {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  height: 15px;
-  padding-right: 12px;
-  overflow: hidden;
-  font-size: 10px;
+/* ─── v3.42, Derek: a section TITLE sits on top of the section's rows. On the
+   live bar it's small centred text; while editing it's an inline input with an
+   × to remove. */
+.rib-sec-title {
+  text-align: center;
+  font-size: 9.5px; line-height: 1.1; font-weight: 600;
   color: var(--fd-text-muted);
+  padding: 0 2px 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
-.rib-tr-title { white-space: nowrap; font-weight: 600; letter-spacing: .02em; }
-.rib-tr-space { display: inline-block; width: 24px; flex: none; }
-/* editing: chips with an input / spacer glyph + remove × */
-.rib-titlerow-edit { height: 20px; }
-.rib-tr-item {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  cursor: grab;
-  touch-action: none;
-  border: 1px dashed transparent;
-  border-radius: 4px;
-  padding: 0 1px;
-}
-.rib-tr-item.is-space { min-width: 24px; }
-.rib-tr-item:hover { border-color: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border)); }
-.rib-tr-input {
-  width: 72px;
+.rib-edit-sectitle-wrap { position: relative; display: flex; justify-content: center; }
+.rib-edit-sectitle {
+  width: 100%; min-width: 40px;
   padding: 0 4px;
-  border: 1px solid var(--fd-border);
+  border: 1px dashed color-mix(in srgb, var(--fd-border) 80%, transparent);
   border-radius: 4px;
-  background: var(--fd-input-bg, var(--fd-navigator-bg));
+  background: transparent;
   color: var(--fd-text);
-  font-size: 10px; font-weight: 600;
+  font-size: 9.5px; font-weight: 600; text-align: center;
   outline: none;
 }
-.rib-tr-input:focus { border-color: var(--fd-accent); }
-.rib-tr-spaceglyph {
-  display: inline-block; width: 24px; height: 10px;
-  background: repeating-linear-gradient(90deg, transparent 0 3px, color-mix(in srgb, var(--fd-text-muted) 45%, transparent) 3px 4px);
-  border-radius: 2px;
-}
-.rib-tr-x { top: -6px; right: -6px; }
-.rib-tr-adders { display: inline-flex; gap: 4px; margin-left: 8px; }
-.rib-tr-add {
-  padding: 1px 6px;
-  border: 1px dashed color-mix(in srgb, var(--fd-accent) 55%, var(--fd-border));
-  border-radius: 5px;
-  background: color-mix(in srgb, var(--fd-accent) 8%, transparent);
-  color: color-mix(in srgb, var(--fd-accent) 85%, var(--fd-text));
-  font-size: 9.5px; font-weight: 600; cursor: pointer;
-}
-.rib-tr-add:hover { background: color-mix(in srgb, var(--fd-accent) 16%, transparent); }
+.rib-edit-sectitle:focus { border-color: var(--fd-accent); }
+.rib-edit-sectitle-x { top: -7px; right: -7px; }
+.rib-edit-sectitle-wrap:hover > .rib-edit-sectitle-x { opacity: 1; }
 
 /* ─── v3.41, Derek: larger visual representations for each ribbon utility in
    the "+ Add" menu — a mini diagram of the shape, not just an icon. */
@@ -17910,6 +17899,46 @@ input.fs-switch:checked::after { left: 15px; }
   border: 1px solid var(--fd-border); border-radius: 5px; font-size: 12.5px; outline: none;
 }
 .fs-obrow-name:focus { border-color: var(--fd-accent); }
+
+/* v3.42, Derek: the VISUAL outline-bar editor — each row a block sized to its
+   real height, its bottom edge a drag handle. */
+.fs-obviz { display: flex; flex-direction: column; gap: 3px; margin: 4px 0 10px; max-width: 420px; }
+.fs-obviz-row {
+  position: relative;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--fd-border); border-radius: 6px;
+  background: color-mix(in srgb, var(--fd-navigator-bg) 55%, transparent);
+  box-sizing: border-box;
+}
+.fs-obviz-label { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--fd-text); }
+.fs-obviz-name {
+  width: 100%; max-width: 160px;
+  padding: 2px 6px;
+  background: var(--fd-input-bg, var(--fd-panel-bg)); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: 4px; font-size: 12px; outline: none;
+}
+.fs-obviz-name:focus { border-color: var(--fd-accent); }
+.fs-obviz-h { font-size: 10.5px; color: var(--fd-text-muted); font-variant-numeric: tabular-nums; }
+.fs-obviz-ctrls { display: inline-flex; gap: 2px; }
+.fs-obviz-ctrls button {
+  width: 20px; height: 20px; padding: 0;
+  border: 1px solid var(--fd-border); border-radius: 4px;
+  background: var(--fd-btn-bg); color: var(--fd-btn-text);
+  font-size: 11px; line-height: 1; cursor: pointer;
+}
+.fs-obviz-ctrls button:disabled { opacity: .4; cursor: default; }
+.fs-obviz-x:hover:not(:disabled) { border-color: var(--fd-danger, #e06060); color: var(--fd-danger, #e06060); }
+.fs-obviz-grip {
+  position: absolute; left: 0; right: 0; bottom: -2px; height: 6px;
+  cursor: ns-resize; touch-action: none;
+}
+.fs-obviz-grip::after {
+  content: ''; position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%);
+  width: 28px; height: 2px; border-radius: 1px;
+  background: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border));
+}
+.fs-obviz-grip:hover::after { background: var(--fd-accent); height: 3px; }
 
 /* v3.39, Derek: per-tab info button — the ?-in-a-circle pinned to the tab
    window's upper-right. A zero-height sticky wrapper keeps it in the corner

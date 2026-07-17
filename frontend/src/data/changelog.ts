@@ -65,9 +65,23 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.41';
+export const APP_VERSION = '3.42';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.42',
+    date: '2026-07-17',
+    items: [
+      { title: 'Titles belong to a section now', detail: 'Adding a Title from + Add drops it INTO the nearest section, on top of that section’s rows — no separate floating row. Edit the text inline, × to remove.', tags: ['New Feature', 'UI'] },
+      { title: 'Toggle the side panels from the ribbon', detail: 'Two new ribbon items — Toggle Left Panel and Toggle Right Panel — under View in the palette.', tags: ['New Feature', 'UI'] },
+      { title: 'Visual Outline Bar editor', detail: 'Customize > Outline Bar is now a visual stack: each row is a block sized to its real height — drag its bottom edge to resize. The four built-in rows (Page Ruler, Sections, Beats, Scenes) keep their names; only rows you add can be renamed. “Script Scenes” is now just “Scenes”.', tags: ['New Feature', 'Tools'] },
+      { title: 'Hover an item to see its name', detail: 'While editing the toolbar, hovering an item shows its name instead of a generic tip.', tags: ['UI'] },
+      { title: 'Cleaner Customize > Toolbar palette', detail: 'The structural utilities left the palette — they’re added from the bar’s own + Add. The Customize window opens 10px below the ribbon.', tags: ['UI'] },
+      { title: 'Bigger Editor View button', detail: 'The large single-row Editor View dropdown gets a roomier window; its field and caption stand as tall as any other one-row button.', tags: ['UI'] },
+      { title: 'Scrapbook polish', detail: 'The rule under a page title runs half-width; the title lines up with Return to Editor; less gap between the panel header and the first folder; and the ribbon’s SCRAPBOOK tag is centred over its buttons with more room on the left.', tags: ['UI'] },
+      { title: 'Title Page buttons off the edge', detail: 'Delete / Cancel / Apply no longer sit flush against the window’s bottom edge.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '3.41',
     date: '2026-07-17',

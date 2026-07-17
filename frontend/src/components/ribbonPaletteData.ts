@@ -22,7 +22,7 @@ const TOOLS_CMDS = ['spellCheck', 'writingSuggestions', 'takeSnapshot', 'snapsho
 const PROJECT_CMDS = ['rename'];
 const EDIT_CMDS = ['cut', 'copy', 'paste', 'lastEditLocation'];
 const INSERT_CMDS = ['insertImage', 'insertMarker'];
-const VIEW_CMDS = ['fitPage', 'fitWidth', 'actualSize', 'showRulers'];
+const VIEW_CMDS = ['fitPage', 'fitWidth', 'actualSize', 'showRulers', 'toggleLeftPanel', 'toggleRightPanel'];
 
 const cmdOpt = (id: string) => {
   const c = TOOLBAR_COMMANDS.find((x) => x.id === id);

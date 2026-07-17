@@ -10,11 +10,8 @@
  * the token sequence in `toolbarLeft` stays the single source of truth.
  */
 import React, { useState } from 'react';
-import { FaGripLinesVertical, FaArrowsAltH, FaExchangeAlt } from 'react-icons/fa';
 import { tokenIcon } from './tokenMeta';
-import {
-  startRibbonDrag, ribAppendSection, ribQuickAdd,
-} from './ribbonDrag';
+import { startRibbonDrag, ribQuickAdd } from './ribbonDrag';
 
 interface Props {
   palette: Array<{ id: string; label: string; options: Array<{ value: string; label: string }> }>;
@@ -30,36 +27,10 @@ const RibbonPalette: React.FC<Props> = ({ palette, headerControls }) => {
 
   return (
     <div className="ribed ribed-palette-only">
-      <div className="ribed-utilrow">
-        {headerControls}
-        <span className="ribed-utilrow-spring" />
-        <div className="ribed-tools">
-          <span className="ribed-pal-chip ribed-pal-util ribed-blk" title="Drag onto the toolbar: a new single-row section (double-click: add at the end)"
-            onPointerDown={(e) => startRibbonDrag(e, 'blk:single')}
-            onDoubleClick={() => ribAppendSection('single')}>
-            <span className="ribed-blk-glyph"><i /></span> Single Row
-          </span>
-          <span className="ribed-pal-chip ribed-pal-util ribed-blk" title="Drag onto the toolbar: a new two-row section (double-click: add at the end)"
-            onPointerDown={(e) => startRibbonDrag(e, 'blk:double')}
-            onDoubleClick={() => ribAppendSection('double')}>
-            <span className="ribed-blk-glyph"><i /><i /></span> Two Rows
-          </span>
-          <span className="ribed-pal-chip ribed-pal-util" title="Drag into a row on the toolbar: a one-row vertical divider line (double-click: add to the last section)"
-            onPointerDown={(e) => startRibbonDrag(e, 'util:divider')}
-            onDoubleClick={() => ribQuickAdd(`d:${Date.now()}`)}>
-            <FaGripLinesVertical /> Divider
-          </span>
-          <span className="ribed-pal-chip ribed-pal-util" title="Drag into a row on the toolbar: blank space — drag its edge to resize (double-click: add to the last section)"
-            onPointerDown={(e) => startRibbonDrag(e, 'util:spacer')}
-            onDoubleClick={() => ribQuickAdd(`s:${Date.now()}`)}>
-            <FaArrowsAltH /> Spacer
-          </span>
-          <span className="ribed-pal-chip ribed-pal-util" title="Drag onto the toolbar between two sections: everything after aligns to the RIGHT edge"
-            onPointerDown={(e) => startRibbonDrag(e, 'util:alignsplit')}>
-            <FaExchangeAlt /> Align Split
-          </span>
-        </div>
-      </div>
+      {/* v3.42, Derek: the structural utilities (sections/divider/spacer/split/
+          title) are added from the bar's own "+ Add" now — the palette holds
+          only the item list. */}
+      {headerControls && <div className="ribed-utilrow">{headerControls}</div>}
 
       <div className="ribed-pal-search">
         <input

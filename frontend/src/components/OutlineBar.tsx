@@ -676,7 +676,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
             // 'script' — one block per scene heading, true fractional lengths.
             return (
               <div key={row.id} className="fs-ob-lane fs-ob-scenes" style={rowStyle}>
-                {showLabels && <span className="fs-ob-lane-label">{row.name?.trim() || 'Script'}</span>}
+                {showLabels && <span className="fs-ob-lane-label">{row.name?.trim() || 'Scenes'}</span>}
                 {scenes.length === 0 ? (
                   <span className="fs-ob-empty">No scene headings yet</span>
                 ) : scenes.map((sc, i) => (
