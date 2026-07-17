@@ -16549,6 +16549,9 @@ input.fs-switch:checked::after { left: 15px; }
   background: var(--fd-toolbar-bg);
   overflow-x: auto;
 }
+/* v2.99, Derek: the editor never SHRINKS — sections, chips and tools keep
+   their size and the ribbon strip scrolls horizontally instead. Without
+   flex-shrink:0 a narrow window compressed the chips into each other. */
 .ribed-section {
   display: flex;
   flex-direction: column;
@@ -16558,6 +16561,7 @@ input.fs-switch:checked::after { left: 15px; }
   border: 1px dashed color-mix(in srgb, var(--fd-border) 70%, transparent);
   border-radius: 5px;
   min-width: 44px;
+  flex-shrink: 0;
 }
 .ribed-row {
   display: flex;
@@ -16566,6 +16570,8 @@ input.fs-switch:checked::after { left: 15px; }
   min-height: 30px;
   flex: 1;
 }
+.ribed-row > * { flex-shrink: 0; }
+.ribed-secdiv { flex-shrink: 0; }
 .ribed-chip {
   position: relative;
   display: inline-flex;
@@ -16672,12 +16678,18 @@ input.fs-switch:checked::after { left: 15px; }
 .ribed-break-line:hover { background: color-mix(in srgb, var(--fd-accent) 45%, transparent); }
 .ribed-break-line.heavy { background: var(--fd-accent); }
 .ribed-break .ribed-x { top: -6px; }
+/* v2.99: the drop indicator takes ZERO layout space (width offset by
+   negative margins) — when it consumed 3px it shifted the chips under the
+   cursor, the drop target flipped, and the line flickered back and forth. */
 .ribed-dropline {
   width: 3px;
+  margin: 0 -1.5px;
   height: 24px;
   border-radius: 2px;
   background: var(--fd-accent);
   flex-shrink: 0;
+  position: relative;
+  z-index: 3;
 }
 .ribed-empty-hint {
   font-size: 10.5px;

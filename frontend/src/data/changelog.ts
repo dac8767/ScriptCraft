@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '2.99';
+export const APP_VERSION = '3.00';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.00',
+    date: '2026-07-17',
+    items: [
+      { title: 'Ribbon editor: no more squashed chips in narrow windows', detail: 'The visual editor never shrinks its sections now — when the window is too small, the strip scrolls horizontally instead of stacking icons on top of each other.', tags: ['Fix', 'UI'] },
+      { title: 'Ribbon editor: dragging is stable', detail: 'Two causes of the flicker-and-jump: the drop indicator used to take up real space, shifting the chips under your cursor so the target flip-flopped — it overlays the gap now. And after a successful drag, a leftover internal handler could fire a phantom second drag on the next mouse move, teleporting the item back — drags now hand off cleanly.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '2.99',
     date: '2026-07-17',

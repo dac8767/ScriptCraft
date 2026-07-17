@@ -43,9 +43,28 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
   const [spot, setSpot] = useState<DropSpot | null>(null);
   const [dragging, setDragging] = useState(false);
   const html5DragLive = useRef(false);
+  // The armed pointer fallback's cleanup. Pointer events are SUPPRESSED for
+  // the duration of a native HTML5 drag, so the fallback can never clean
+  // itself up during one — whoever starts/ends a drag disarms it instead,
+  // or a stale fallback wakes after the drop and runs a phantom drag.
+  const fallbackCleanup = useRef<(() => void) | null>(null);
 
   const commit = (secs: RibbonSection[]) => onChange(serializeRibbon(secs));
-  const endDrag = () => { setSpot(null); setDragging(false); html5DragLive.current = false; };
+  const endDrag = () => {
+    setSpot(null);
+    setDragging(false);
+    html5DragLive.current = false;
+    fallbackCleanup.current?.();
+  };
+  /** setSpot only on real change — same-valued updates re-render the whole
+   *  editor mid-drag and read as flicker. */
+  const moveSpot = (next: DropSpot | null) => {
+    setSpot((prev) => (
+      prev === next ? prev
+        : prev && next && prev.sec === next.sec && prev.row === next.row && prev.idx === next.idx ? prev
+          : next
+    ));
+  };
 
   const removeEverywhere = (secs: RibbonSection[], tok: string) => {
     for (const s of secs) {
@@ -60,12 +79,12 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
     e.preventDefault();
     e.stopPropagation();
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setSpot({ sec, row, idx: idx + (e.clientX > r.left + r.width / 2 ? 1 : 0) });
+    moveSpot({ sec, row, idx: idx + (e.clientX > r.left + r.width / 2 ? 1 : 0) });
   };
   const overRow = (e: React.DragEvent, sec: number, row: Row, len: number) => {
     e.preventDefault();
     e.stopPropagation();
-    setSpot({ sec, row, idx: len });
+    moveSpot({ sec, row, idx: len });
   };
 
   /** The one drop mutation, shared by the HTML5 path and the pointer
@@ -120,6 +139,7 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
     e.dataTransfer.setData('text/plain', payload);   // WebKit: mandatory
     e.dataTransfer.effectAllowed = 'move';
     html5DragLive.current = true;
+    fallbackCleanup.current?.();   // the native drag owns this gesture
     setDragging(true);
   };
 
@@ -163,7 +183,7 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
         setDragging(true);
         chip.classList.add('ribed-chip-lifted');
       }
-      setSpot(spotFromPoint(ev.clientX, ev.clientY));
+      moveSpot(spotFromPoint(ev.clientX, ev.clientY));
     };
     const up = (ev: PointerEvent) => {
       cleanup();
@@ -180,7 +200,10 @@ const RibbonEditor: React.FC<Props> = ({ tokens, onChange, palette }) => {
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', up);
       chip.classList.remove('ribed-chip-lifted');
+      fallbackCleanup.current = null;
     };
+    fallbackCleanup.current?.();   // never two armed fallbacks
+    fallbackCleanup.current = cleanup;
     document.addEventListener('pointermove', move);
     document.addEventListener('pointerup', up);
   };
