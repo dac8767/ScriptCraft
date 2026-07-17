@@ -3532,6 +3532,12 @@ div[data-type="lyrics"].is-empty::before { font-style: italic; }
   padding: 5vh 16px 16px;
   overflow-y: auto;
 }
+/* v3.25, Derek: the New Script window centers on the screen (the overlay's
+   default anchors dialogs toward the top). Auto vertical margins do the
+   centering and collapse to 0 when the card is taller than the viewport,
+   so the overlay's scroll still works. */
+.dialog-overlay.fs-overlay-center { padding: 16px; }
+.dialog-overlay.fs-overlay-center > * { margin-top: auto; margin-bottom: auto; }
 /* Every dialog is resizable (v0.73): drag the bottom-right corner.
    v0.75: overflow is HIDDEN, not auto. `resize` needs a non-visible overflow,
    but `auto` gave the dialog its own scrollbar whose corner sits exactly where
@@ -12669,20 +12675,9 @@ html.android .version-history-panel {
 .about-actions button.fs-bmc-btn:hover { background: #ffe733; }
 .about-actions .fs-bmc-btn svg { width: 18px; height: 18px; }
 
-/* v3.07, Derek: Obsidian-style collapse row atop each side panel. The button
-   hugs the panel's OUTER edge (the side it folds into). */
-.tool-dock-collapse { display: flex; padding: 0 6px 4px; flex-shrink: 0; }
-.tool-dock-collapse-left { justify-content: flex-start; }
-.tool-dock-collapse-right { justify-content: flex-end; }
-.tool-dock-collapse-btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 22px; height: 20px; padding: 0;
-  border: none; border-radius: 4px; background: transparent;
-  color: var(--fd-text-muted); cursor: pointer;
-}
-.tool-dock-collapse-btn:hover { background: var(--fd-hover-bg); color: var(--fd-text); }
-/* The counterpart when a panel is COLLAPSED: a slim strip on that edge of the
-   editor layout that expands it back. */
+/* (v3.07's collapse row atop each panel was removed in v3.25 — Derek.)
+   When a panel is COLLAPSED (View > Toolbars): a slim strip on that edge of
+   the editor layout that expands it back. */
 .fs-panel-expand {
   flex: 0 0 auto;
   align-self: stretch;
@@ -16546,14 +16541,15 @@ input.fs-switch:checked::after { left: 15px; }
   background: color-mix(in srgb, var(--fd-accent) 35%, transparent);
   border-color: var(--fd-accent);
 }
-/* v3.01, Derek: the Text Color icon — a red A. The live toolbar button adds
-   an underline bar carrying the currently-picked color. */
+/* The Text Color icon. v3.25, Derek: no red default anymore — the live
+   toolbar button paints the A with the currently-picked color (inline
+   style); everywhere else (Customize palette rows) it inherits like any
+   monotone icon. The underline bar carries the picked color too. */
 .fs-textcolor-icon {
   position: relative;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  color: #e04444;
   font-weight: 800;
   font-size: 13px;
   line-height: 1.05;

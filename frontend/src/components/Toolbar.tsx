@@ -1026,12 +1026,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               setBgColorOpen(false);
             }}
           >
-            {/* v3.01, Derek: the A — red by default; v3.21: the WHOLE glyph
-                takes the picked color (the bar rides along). */}
+            {/* v3.25, Derek: the A ALWAYS wears the picked color — black when
+                black is chosen (the red-default special case is gone). */}
             <span
               className="fs-textcolor-icon"
               aria-hidden="true"
-              style={currentTextColor !== '#000000' ? { color: currentTextColor } : undefined}
+              style={{ color: currentTextColor }}
             >
               A
               <span className="fs-textcolor-bar" style={{ background: currentTextColor }} />

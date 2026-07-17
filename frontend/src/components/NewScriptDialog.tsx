@@ -87,7 +87,9 @@ export default function NewScriptDialog({ open, onClose, onCreate, onOpenScript,
 
   return (
     <div
-      className="dialog-overlay"
+      /* fs-overlay-center (v3.25, Derek): this hero card centers on the
+         screen instead of the overlay's usual upper anchor. */
+      className="dialog-overlay fs-overlay-center"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="welcome-card fs-newscript-card" onClick={(e) => e.stopPropagation()}>

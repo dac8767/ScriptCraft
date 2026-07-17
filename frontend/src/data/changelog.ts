@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.25';
+export const APP_VERSION = '3.26';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.26',
+    date: '2026-07-17',
+    items: [
+      { title: 'New Script window centers on the screen', detail: 'It sat high — dialogs anchor toward the top by default. The hero card now centers vertically, and still scrolls if it ever outgrows the window.', tags: ['UI'] },
+      { title: 'Panel collapse chevrons removed', detail: 'The slim collapse row atop each side panel is gone. Hide panels from View > Toolbars; a collapsed panel still re-opens from the strip on its edge.', tags: ['UI'] },
+      { title: 'The A always wears the chosen text color', detail: 'The Text Color icon defaulted to red. It now matches whatever color is picked — black when black — everywhere, all the time.', tags: ['UI', 'Fix'] },
+    ],
+  },
   {
     version: '3.25',
     date: '2026-07-17',

@@ -571,18 +571,9 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
         </div>
       )}
       <div className={`tool-dock${iconsMode ? ' tool-dock-iconrail' : ''}${solo ? ' tool-dock-scrapbook-solo' : ''}`} style={{ width: dockW }}>
-        {/* v3.07, Derek: Obsidian-style collapse — a slim row atop the panel,
-            chevrons pointing at the edge the panel folds into. Re-open via the
-            View menu or the toolbar's panel toggles. */}
-        <div className={`tool-dock-collapse tool-dock-collapse-${side}`}>
-          <button
-            className="tool-dock-collapse-btn"
-            title={side === 'left' ? 'Collapse the left panel' : 'Collapse the right panel'}
-            onClick={() => (side === 'left'
-              ? useEditorStore.getState().toggleNavigator()
-              : useEditorStore.getState().toggleShelf())}
-          ><DoubleChevronIcon towards={side} /></button>
-        </div>
+        {/* v3.07's collapse chevron row was REMOVED in v3.25 at Derek's
+            request — panels hide from View > Toolbars; the edge strips
+            (fs-panel-expand) still re-open a collapsed panel. */}
         {/* v2.06: icon rail — a square per tool (OneNote-style). Clicking
             opens the tool as a floating window; there is no inline state. */}
         {iconsMode ? shownEntries.map((entry) => entry.kind === 'tool' ? (
