@@ -26,6 +26,9 @@ export interface ConfirmOptions {
   cancelLabel?: string;
   /** Styles the confirm button red for destructive actions. */
   danger?: boolean;
+  /** v3.36: gate confirm behind typing this exact phrase (e.g. "Reset
+   *  Everything") — the button and Enter stay dead until it matches. */
+  requireText?: string;
 }
 
 interface ConfirmRequest extends ConfirmOptions {
@@ -65,6 +68,10 @@ const ConfirmDialogHost: React.FC = () => {
   const [queue, setQueue] = useState<ConfirmRequest[]>([]);
   const current = queue[0] ?? null;
   const inputRef = useRef<HTMLInputElement>(null);
+  // v3.36: for requireText confirms — the typed value gates the OK button.
+  const [typed, setTyped] = useState('');
+  useEffect(() => { setTyped(''); }, [current?.id]);
+  const requireOk = !current?.requireText || typed.trim() === current.requireText;
 
   useEffect(() => {
     const add = (req: ConfirmRequest) => setQueue((prev) => [...prev, req]);
@@ -93,11 +100,12 @@ const ConfirmDialogHost: React.FC = () => {
     if (!current) return;
     const key = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { e.stopPropagation(); answer(false); }
-      else if (e.key === 'Enter') { e.stopPropagation(); answer(true); }
+      // Enter only confirms when the required phrase (if any) has been typed.
+      else if (e.key === 'Enter' && requireOk) { e.stopPropagation(); answer(true); }
     };
     document.addEventListener('keydown', key, true);
     return () => document.removeEventListener('keydown', key, true);
-  }, [current, answer]);
+  }, [current, answer, requireOk]);
 
   if (!current) return null;
   const isPrompt = current.promptDefault !== undefined;
@@ -117,12 +125,23 @@ const ConfirmDialogHost: React.FC = () => {
             onFocus={(e) => e.target.select()}
           />
         )}
+        {current.requireText && (
+          <input
+            key={`req-${current.id}`}
+            autoFocus
+            className="fs-confirm-input"
+            value={typed}
+            placeholder={`Type “${current.requireText}” to confirm`}
+            onChange={(e) => setTyped(e.target.value)}
+          />
+        )}
         <div className="fs-confirm-actions">
           <button className="fs-confirm-cancel" onClick={() => answer(false)}>
             {current.cancelLabel ?? 'Cancel'}
           </button>
           <button
-            autoFocus={!isPrompt}
+            autoFocus={!isPrompt && !current.requireText}
+            disabled={!requireOk}
             className={`fs-confirm-ok${current.danger ? ' fs-confirm-danger' : ''}`}
             onClick={() => answer(true)}
           >

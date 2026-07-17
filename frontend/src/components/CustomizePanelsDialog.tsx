@@ -691,6 +691,23 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     useEditorStore.getState().setToolbarEditing(editingToolbar);
     return () => { useEditorStore.getState().setToolbarEditing(false); };
   }, [editingToolbar]);
+  // v3.36, Derek: SPOTLIGHT the ribbon while editing — dim + block everything
+  // in the app except the bar and this window. Two fixed strips (above and
+  // below the bar) do it; the bar is full-width so nothing sits beside it.
+  // Re-measured when the bar changes size (edits change tbLeftRaw).
+  const [barRect, setBarRect] = React.useState<{ top: number; bottom: number } | null>(null);
+  React.useEffect(() => {
+    if (!editingToolbar) { setBarRect(null); return; }
+    const measure = () => {
+      const bar = document.querySelector('.toolbar-stack');
+      if (!bar) { setBarRect(null); return; }
+      const r = bar.getBoundingClientRect();
+      setBarRect({ top: Math.round(r.top), bottom: Math.round(r.bottom) });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [editingToolbar, tbLeftRaw]);
   // v1.76: the old per-list drag plumbing (dragProps/zoneDragProps, v0.45 and
   // v0.95) is gone — DndColumns owns drag state for every customization list.
 
@@ -840,7 +857,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               onClick={async () => {
                 if (await confirmDialog(
                   'Reset ALL customizations to their defaults? Sizes and spacing, the toolbar layout, dropdown widths, Quick Access Toolbar, menu bar order, side panels, and the Outline Bar all go back to factory. (Themes, Elements and Keyboard Shortcuts have their own resets and are not touched.)',
-                  { title: 'Reset All Customizations', confirmLabel: 'Reset Everything', danger: true },
+                  { title: 'Reset All Customizations', confirmLabel: 'Reset Everything', danger: true, requireText: 'Reset Everything' },
                 )) useEditorStore.getState().resetAllCustomizations();
               }}
             >Reset All</button>
@@ -1110,9 +1127,18 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   };
 
   return (
-    /* v3.36, Derek: while editing the toolbar, the overlay lets pointer
+    <>
+    {/* v3.36, Derek: the SPOTLIGHT — two dim strips above and below the bar
+        block + obscure the rest of the app, so only the ribbon and this
+        window read as usable. The bar between them stays bright and
+        droppable; the window (z above these) stays bright too. */}
+    {editingToolbar && barRect && (<>
+      <div className="fs-tbedit-scrim" style={{ top: 0, height: Math.max(0, barRect.top) }} />
+      <div className="fs-tbedit-scrim" style={{ top: barRect.bottom, bottom: 0 }} />
+    </>)}
+    {/* v3.36, Derek: while editing the toolbar, the overlay lets pointer
        events THROUGH to the real bar above (so drags can drop on it) and
-       drops its dimming — the dialog box re-enables its own events. */
+       drops its dimming — the dialog box re-enables its own events. */}
     <div
       className={`dialog-overlay${editingToolbar ? ' dialog-overlay-tbedit' : ''}`}
       style={overlayPadTop !== null ? { paddingTop: overlayPadTop } : undefined}
@@ -1128,5 +1154,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         {body}
       </div>
     </div>
+    </>
   );
 }

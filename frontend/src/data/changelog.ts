@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.36';
+export const APP_VERSION = '3.37';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.37',
+    date: '2026-07-17',
+    items: [
+      { title: 'The toolbar spotlights itself while editing', detail: 'Open Customize > Toolbar and the rest of the app dims and locks out — only the ribbon (now ringed in the accent color) and the Customize window stay bright and usable, so it\'s obvious what you can touch.', tags: ['UI'] },
+      { title: 'Reset All asks you to type it', detail: 'Resetting every customization now requires typing “Reset Everything” — the button stays dead until it matches. No more one-click wipe of your whole layout.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.36',
     date: '2026-07-17',

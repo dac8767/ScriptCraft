@@ -16724,6 +16724,25 @@ input.fs-switch:checked::after { left: 15px; }
    ════════════════════════════════════════════════════════════════════════ */
 .dialog-overlay-tbedit { pointer-events: none; background: transparent; }
 .dialog-overlay-tbedit > .dialog-box { pointer-events: auto; }
+/* v3.36, Derek: the SPOTLIGHT strips — dim + BLOCK everything above and
+   below the bar, so only the ribbon and the Customize window read as live.
+   z-index sits below the dialog overlay (3000) so the window stays bright,
+   above the app so it's obscured; pointer-events block interaction. */
+.fs-tbedit-scrim {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 2990;
+  background: rgba(0, 0, 0, .58);
+  pointer-events: auto;
+}
+/* the editable bar announces itself — an accent ring + it floats above the
+   scrims (which never cover it, but a hair of glow could otherwise clip). */
+.toolbar-ribbon.toolbar-editing {
+  position: relative;
+  z-index: 2995;
+  box-shadow: 0 0 0 2px var(--fd-accent), 0 6px 24px rgba(0, 0, 0, .45);
+}
 
 /* the bar in edit mode: dashed sections, item covers, remove ×s, drop lines */
 .toolbar-ribbon.toolbar-editing { overflow: visible; }
@@ -17399,6 +17418,13 @@ input.fs-switch:checked::after { left: 15px; }
   border-color: #c0392b;
 }
 .fs-confirm-actions button:hover { filter: brightness(1.1); }
+/* v3.36: a requireText confirm — the button is dead until the phrase matches. */
+.fs-confirm-ok:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  filter: none;
+}
+.fs-confirm-actions button:disabled:hover { filter: none; }
 
 /* ─── Uncategorized column (v2.23) — the temporary holding pen after a
        preset override. Looks like a section but isn't one. ─── */
