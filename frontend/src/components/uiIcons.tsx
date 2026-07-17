@@ -189,8 +189,6 @@ export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
   view: <FaDesktop />,
   // v2.34: surface toggles. The right panel is the left icon mirrored —
   // one glyph, two directions.
-  togglePanelLeft: <FaColumns />,
-  togglePanelRight: <FaColumns style={{ transform: 'scaleX(-1)' }} />,
   toggleOutlineBar: <FaStream />,
   // v2.55: the sizing lock — the Toolbar swaps to lockResizeOpen when off.
   lockResize: <FaLock />,

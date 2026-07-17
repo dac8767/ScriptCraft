@@ -5,7 +5,8 @@
  * cycler was removed with the shape feature in v2.44.
  */
 import { describe, it, expect } from 'vitest';
-import { toggleMindLink, mindTitleSize, readableTextOn, BEAT_COLORS } from './BeatBoard';
+import { toggleMindLink, mindTitleSize, readableTextOn, BEAT_COLORS, freeformAutoLayout } from './BeatBoard';
+import type { BeatInfo } from '../stores/editorStore';
 
 describe('mind map helpers', () => {
   it('toggleMindLink adds a missing link and removes an existing one', () => {
@@ -18,6 +19,38 @@ describe('mind map helpers', () => {
     expect(mindTitleSize(0)).toBe(16);        // default 240px card
     expect(mindTitleSize(150)).toBe(13);      // floor
     expect(mindTitleSize(600)).toBe(24);      // ceiling
+  });
+});
+
+describe('freeformAutoLayout (v3.25, task #138)', () => {
+  const beat = (id: string, extra: Partial<BeatInfo> = {}) =>
+    ({ id, title: id, description: '', position: 0, ...extra }) as BeatInfo;
+
+  it('unplaced beats never stack — each gets a distinct spot', () => {
+    const out = freeformAutoLayout([beat('a'), beat('b'), beat('c'), beat('d')]);
+    const spots = out.map((b) => `${b.x},${b.y}`);
+    expect(new Set(spots).size).toBe(4);
+    // 3 across, then wrap to the next row
+    expect(out[3].y).toBeGreaterThan(out[0].y!);
+  });
+
+  it('beats stamped x:0/y:0 by addBeat count as unplaced (the actual bug)', () => {
+    const out = freeformAutoLayout([beat('a', { x: 0, y: 0 }), beat('b', { x: 0, y: 0 })]);
+    expect(`${out[0].x},${out[0].y}`).not.toBe(`${out[1].x},${out[1].y}`);
+  });
+
+  it('a hand-placed beat keeps its stored spot, including x=0', () => {
+    const out = freeformAutoLayout([beat('a', { x: 0, y: 300 }), beat('b')]);
+    expect(out[0].x).toBe(0);
+    expect(out[0].y).toBe(300);
+    // and the unplaced one does not collide with the cascade origin of a
+    expect(`${out[1].x},${out[1].y}`).not.toBe('0,300');
+  });
+
+  it('is stable: same input order, same derived spots', () => {
+    const a = freeformAutoLayout([beat('a'), beat('b')]);
+    const b = freeformAutoLayout([beat('a'), beat('b')]);
+    expect(a.map((x) => [x.x, x.y])).toEqual(b.map((x) => [x.x, x.y]));
   });
 });
 

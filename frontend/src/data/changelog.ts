@@ -65,9 +65,25 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.24';
+export const APP_VERSION = '3.25';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.25',
+    date: '2026-07-17',
+    items: [
+      { title: 'One item per on/off feature', detail: 'Everything with a show/hide or on/off dichotomy is a single menu item with a checkmark now — Scene Numbers, Show Rulers, the Working Notes toggles, Auto Spell Check, the Editor views, themes and workspaces. No more Add/Remove or Show/Hide pairs anywhere.', tags: ['UI'] },
+      { title: 'Bookmarks removed', detail: 'Markers already cover the job. The bookmark list, its menu and the editor gutter marks are gone; Last Edit Location survives and moved to the Edit menu (still pinnable to the ribbon and reachable from Customize).', tags: ['UI'] },
+      { title: 'Production Tags moved to Insert', detail: 'Tagging is something you do to the script, so it sits with markers and notes now. The Customize palette mirrors the move. Customize… also moved to the top of the View menu.', tags: ['UI'] },
+      { title: 'Every window wears the same header and footer', detail: 'The Save As treatment is the app-wide standard: dialog headers and footers share the toolbar\'s chrome surface with no divider lines, and the resize-grip strip below the footer is painted to match.', tags: ['UI'] },
+      { title: 'Scrapbook header un-stretched', detail: 'A leftover width rule from before the created-date line existed was being read as a HEIGHT, ballooning the title box to 320px and shoving the title, the created date and Return to Editor way off position. The header is back to one tidy row — name on top, "Created …" right under it.', tags: ['Fix', 'Tools'] },
+      { title: 'Outline: Freeform cards no longer spawn stacked — linking works', detail: 'Every beat was created at the canvas origin, so Freeform piled them all onto one spot and the Connect drag could never reach a second card. Beats you haven\'t placed now cascade into a grid; drag one anywhere and it keeps that spot.', tags: ['Fix', 'Tools'] },
+      { title: 'Ribbon dropdowns scale with the bar', detail: 'Font, size, element and Editor View fields track the exact button height in every toolbar size, including edge-drag scaling — they were stuck at fixed heights. The side-panel toggle buttons are retired (the collapse chevrons and View > Toolbars cover them), and the QAT\'s Save icons get an optical size correction so nothing reads bigger than its neighbors.', tags: ['UI', 'Fix'] },
+      { title: 'Auto Save locations explained', detail: 'Settings > Save now says what each local row actually is: the version history lives inside the app (browse it from Project > Script History), while the Local folder row writes real timestamped .odraft files to a folder you choose.', tags: ['Polish'] },
+      { title: 'Donate button 20% bigger', detail: 'In About ScriptCraft.', tags: ['Polish'] },
+      { title: 'Dev Picker removed', detail: 'The development-only inspector tool is gone — code, styles, panel registration and its Help menu entry.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '3.24',
     date: '2026-07-17',

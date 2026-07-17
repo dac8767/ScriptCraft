@@ -70,9 +70,9 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'tags', label: 'Production Tags' },
   { key: 'zoom', label: 'Zoom', priority: '1', zoom: true },
   { key: 'view', label: 'Editor View', desktopOnly: true },
-  // v2.34, Derek: one-click surface toggles.
-  { key: 'togglePanelLeft', label: 'Left Panel' },
-  { key: 'togglePanelRight', label: 'Right Panel' },
+  /* v2.34's one-click surface toggles. v3.25, Derek: the side-panel pair is
+     REMOVED (task #137) — the panel collapse chevrons and View > Toolbars
+     already cover it. Outline Bar keeps its button (no chevron equivalent). */
   { key: 'toggleOutlineBar', label: 'Outline Bar' },
   // v2.55, Derek: freeze every chrome resize (panels, bars, grips).
   { key: 'lockResize', label: 'Lock Sizing' },
@@ -126,11 +126,21 @@ export const DEFAULT_TOOLBAR_LEFT: string[] = [
 ];
 
 /** v2.34 one-time: existing saved layouts get the three surface toggles
- *  appended to Main (new installs have them via the default above). */
+ *  appended to Main (new installs have them via the default above).
+ *  (v3.25 strips the side-panel pair back out — see below.) */
 export function migratePanelToggles(left: string[]): string[] {
   const toggles = ['b:togglePanelLeft', 'b:togglePanelRight', 'b:toggleOutlineBar'];
   if (toggles.some((t) => left.includes(t))) return left;
   return [...left, 'd:def-surfaces', ...toggles];
+}
+
+/** v3.25 one-time, Derek (task #137): the Left/Right Panel toggle buttons are
+ *  retired — the collapse chevrons on the panels themselves and View >
+ *  Toolbars cover it. Saved layouts shed the tokens (flag-blind: they may
+ *  carry a 2! span flag). Outline Bar's toggle stays. */
+export function migrateDropPanelToggles(left: string[]): string[] {
+  const dropped = new Set(['b:togglePanelLeft', 'b:togglePanelRight']);
+  return left.filter((t) => !dropped.has(t.replace(/^2!/, '')));
 }
 
 /** v2.55 one-time: existing saved layouts get the sizing lock appended. */

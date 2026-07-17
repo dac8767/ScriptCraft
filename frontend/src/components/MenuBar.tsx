@@ -43,7 +43,7 @@ import { smartUndo, smartRedo, useEditorStore, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_
 import { useProjectStore } from '../stores/projectStore';
 import { api } from '../services/api';
 import { showToast } from './Toast';
-import { useBookmarkStore, bookmarkLabelAt, bookmarkScriptKey } from '../stores/bookmarkStore';
+import { useBookmarkStore, bookmarkScriptKey } from '../stores/bookmarkStore';
 import { openInBrowser, DONATE_URL } from '../services/external';
 import { parseFountain } from '../utils/fountainParser';
 import { parseFDXFull } from '../utils/fdxParser';
@@ -146,7 +146,7 @@ import {
   FaFlag, FaEyeSlash,
   FaBug,
   FaRulerHorizontal,
-  FaBookmark, FaRegBookmark, FaPencilAlt, FaCoffee,
+  FaPencilAlt, FaCoffee,
 } from 'react-icons/fa';
 
 /** v2.98: the Help-menu form links, shared by the menu items and the
@@ -214,10 +214,6 @@ const DiagRow: React.FC<{ label: string; value: string; mono?: boolean }> = ({ l
 const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, isCollabActive, isCollabGuest }) => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
-  // v3.08: the Bookmarks menu reads live from the store, so adds/removes and
-  // mapped positions re-render (and re-sync natively) immediately.
-  const bookmarksByScript = useBookmarkStore((s) => s.byScript);
-  const bookmarksLastEdit = useBookmarkStore((s) => s.lastEdit);
   // v3.15: read early — the Help menu's contents depend on it (About moves
   // to the native app menu when that menu exists). v3.16: so does the
   // Bookmarks submenu's removal item.
@@ -1035,20 +1031,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // What each command DOES. The registry (shortcuts.ts) owns the key bindings;
   // this owns the behavior. Held in a ref so the capture-phase listener below
   // can be registered once and still call the current closures.
-  /* v3.08: bookmark actions — shared by the Bookmarks menu, the keyboard
-   * map and the ribbon's pinned commands (one closure each, per CLAUDE.md's
-   * single-source rule). */
+  /* v3.08/v3.25: Last Edit Location — shared by the Edit menu, the
+   * keyboard map and the ribbon's pinned command. */
   const bookmarkKey = bookmarkScriptKey(currentScriptId);
-  const addBookmarkHere = () => {
-    if (!editor) return;
-    const pos = editor.state.selection.from;
-    useBookmarkStore.getState().add(bookmarkKey, {
-      id: `bm-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
-      label: bookmarkLabelAt(editor.state.doc, pos),
-      pos,
-    });
-    showToast('Bookmark added', 'success');
-  };
   const jumpToLastEdit = () => {
     if (!editor) return;
     const pos = useBookmarkStore.getState().lastEdit[bookmarkKey];
@@ -1056,54 +1041,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     const max = editor.state.doc.content.size;
     editor.chain().focus().setTextSelection(Math.max(1, Math.min(pos, max - 1))).scrollIntoView().run();
   };
-  /* v3.16, Derek: Bookmarks moved from its own top-level menu into
-   * Project > Bookmarks. "Last Edit Location" stays the permanent first
-   * jump; entries are per-script and ride every transaction's mapping (see
-   * ScreenplayEditor's 'transaction' listener). One items list, so the
-   * native bar mirrors it. Per-bookmark removal needs a THIRD menu level —
-   * fine natively (submenus nest), but the in-window renderer only draws
-   * one submenu deep, so that mode gets Clear All Bookmarks instead of a
-   * dead item. */
-  const jumpToPos = (pos: number) => {
-    if (!editor) return;
-    const max = editor.state.doc.content.size;
-    editor.chain().focus().setTextSelection(Math.max(1, Math.min(pos, max - 1))).scrollIntoView().run();
-  };
-  const scriptBookmarks = bookmarksByScript[bookmarkKey] ?? [];
-  const lastEditPos = bookmarksLastEdit[bookmarkKey];
-  const bookmarksSubmenu: MenuItem[] = [
-    { icon: <FaBookmark />, label: 'Add Bookmark', disabled: !editor, action: addBookmarkHere },
-    nativeMenus ? {
-      icon: <FaRegBookmark />,
-      label: 'Remove Bookmark',
-      disabled: scriptBookmarks.length === 0,
-      ...(scriptBookmarks.length > 0 ? {
-        children: scriptBookmarks.map((b) => ({
-          icon: <FaRegBookmark />,
-          label: b.label,
-          action: () => useBookmarkStore.getState().remove(bookmarkKey, b.id),
-        })),
-      } : {}),
-    } : {
-      icon: <FaRegBookmark />,
-      label: 'Clear All Bookmarks',
-      disabled: scriptBookmarks.length === 0,
-      action: () => scriptBookmarks.forEach((b) => useBookmarkStore.getState().remove(bookmarkKey, b.id)),
-    },
-    { separator: true, label: '' },
-    { icon: <FaPencilAlt />, label: 'Last Edit Location', disabled: lastEditPos == null, action: jumpToLastEdit },
-    ...(scriptBookmarks.length > 0 ? [
-      { separator: true, label: '' },
-      ...scriptBookmarks.map((b) => ({
-        icon: <FaBookmark />,
-        label: b.label,
-        action: () => jumpToPos(b.pos),
-      })),
-    ] : []),
-  ];
-
   const shortcutActions: Record<string, () => void> = {
-    addBookmark: addBookmarkHere,
     lastEditLocation: jumpToLastEdit,
     newScreenplay: () => { if (!isCollabGuest) handleNewScreenplay(); },
     openFile: () => { if (!isCollabGuest) confirmOrRun(() => setOpenFileOpen(true)); },
@@ -1485,12 +1423,23 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { icon: <FaMousePointer />, label: 'Select All', shortcut: sc('selectAll'), action: () => editor?.chain().focus().selectAll().run() },
         { separator: true, label: '' },
         { icon: <FaSearch />, label: 'Find & Replace…', shortcut: sc('find'), action: () => setSearchOpen(true) },
+        /* v3.25: bookmarks removed (markers cover them); Last Edit Location
+           survives here — it's navigation, like Go to Page. */
         { icon: <FaHashtag />, label: 'Go to Page…', shortcut: sc('goToPage'), action: () => setGoToPageOpen(true) },
+        { icon: <FaPencilAlt />, label: 'Last Edit Location', action: () => shortcutActionsRef.current.lastEditLocation?.() },
       ],
     },
     {
       label: 'View',
       items: [
+        /* v3.25, Derek: Customize leads the View menu. */
+        // v2.58, Derek: the Customize window straight from View.
+        {
+          icon: <FaSlidersH />,
+          label: 'Customize…',
+          action: () => openCustomize('menu'),
+        },
+        { separator: true, label: '' },
         {
           icon: <FaColumns />, label: 'Workspaces',
           children: [
@@ -1543,46 +1492,44 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         /* v3.24 reorg #5: Lock All / Reset All Sizing moved into the
            Customize window (they're customization controls; the per-surface
            resets already live there). */
-        // v2.58, Derek: the Customize window straight from View.
-        {
-          icon: <FaSlidersH />,
-          label: 'Customize…',
-          action: () => openCustomize('menu'),
-        },
         { separator: true, label: '' },
         {
           /**
            * v1.4 — everything you can put IN the script that isn't part of the
-           * script. Each says what clicking it will DO, not what state it's in:
-           * "Hide Notes in Script" when they're showing, "Show Notes in Script"
-           * when they're not. None of these ever reach Preview, print or export,
-           * whatever they're set to here.
+           * script. v3.25, Derek's rule: every on/off pair is ONE checkable
+           * item with a stable label — the check column shows the state.
+           * None of these ever reach Preview, print or export.
            */
           icon: <FaEye />, label: 'Working Notes',
           children: [
             {
               icon: <FaRegStickyNote />,
-              label: notesVisible ? 'Hide Notes in Script' : 'Show Notes in Script',
+              label: 'Notes in Script',
+              checked: notesVisible,
               action: () => setNotesVisible(!notesVisible),
             },
             {
               icon: <FaCheckSquare />,
-              label: scriptTodosVisible ? 'Hide To-Do Lists in Script' : 'Show To-Do Lists in Script',
+              label: 'To-Do Lists in Script',
+              checked: scriptTodosVisible,
               action: () => setScriptTodosVisible(!scriptTodosVisible),
             },
             {
               icon: <FaFlag />,
-              label: markersVisible ? 'Hide Markers in Script' : 'Show Markers in Script',
+              label: 'Markers in Script',
+              checked: markersVisible,
               action: () => setMarkersVisible(!markersVisible),
             },
             {
               icon: <FaListOl />,
-              label: sectionsVisible ? 'Hide Sections in Script' : 'Show Sections in Script',
+              label: 'Sections in Script',
+              checked: sectionsVisible,
               action: () => setSectionsVisible(!sectionsVisible),
             },
             {
               icon: <FaTags />,
-              label: tagsVisible ? 'Hide Tags in Script' : 'Show Tags in Script',
+              label: 'Tags in Script',
+              checked: tagsVisible,
               action: () => setTagsVisible(!tagsVisible),
             },
             { separator: true, label: '' },
@@ -1677,6 +1624,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { icon: <FaListOl />, label: 'Marker', action: () => insertOutlineLine('⚑ ') },
         { icon: <FaRegStickyNote />, label: 'Note', action: () => useEditorStore.getState().openShelfTab('script') },
         { icon: <FaCheckSquare />, label: 'To-Do List', action: () => insertOutlineLine('[ ] ') },
+        { separator: true, label: '' },
+        // v3.25, Derek: moved here from Project (ex-Production menu).
+        { icon: <FaTags />, label: 'Production Tags', action: () => useEditorStore.getState().openTool('tags') },
       ],
     },
     {
@@ -1783,9 +1733,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaFileSignature />, label: 'Compare with Auto Save\u2026', action: () => setCompareVersionOpen(true) },
           ],
         },
-        // v3.16, Derek: Bookmarks moved here from its own top-level menu.
-        { separator: true, label: '' },
-        { icon: <FaBookmark />, label: 'Bookmarks', children: bookmarksSubmenu },
         /* v3.24, Derek's menu reorg #1: the Production menu merged in —
            everything below was that menu. Title Page heads the block
            (v0.91's rule) and appears ONLY here (v1.64's one-home rule).
@@ -1810,7 +1757,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         // v1.34: Lock Pages is UNRELEASED — same Developer toggle as Help's.
         ...(showUnreleasedTools ? [{ icon: <FaLock />, label: 'Lock Pages', disabled: true }] : []),
         { icon: <FaToggleOn />, label: 'Revision Mode', checked: revisionMode, action: () => setRevisionMode(!revisionMode) },
-        { icon: <FaTags />, label: 'Production Tags', action: () => useEditorStore.getState().openTool('tags') },
+        /* v3.25, Derek: Production Tags moved to Insert — tagging is
+           something you do TO the script, alongside markers and notes. */
       ],
     },
     {
@@ -1874,8 +1822,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
          * what a user runs when something breaks and what support would ask them
          * for, so burying it behind import.meta.env.DEV would delete it from every
          * release build — a real loss dressed up as tidying. So the Developer group
-         * itself always exists, and only the Dev Picker inside it is DEV-only. In
-         * production this menu holds Diagnostics alone.
+         * always ships. (v3.25: the Dev Picker that used to live here is gone.)
          */
         icon: <FaBug />, label: 'Developer',
         children: [
@@ -1889,16 +1836,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
            * unreleased item renders — not a per-feature checkbox list. */
           {
             icon: <FaToggleOn />,
-            label: showUnreleasedTools ? 'Hide Unreleased Tools' : 'Show Unreleased Tools',
+            label: 'Show Unreleased Tools',
+            checked: showUnreleasedTools,
             action: () => setShowUnreleasedTools(!showUnreleasedTools),
           },
-          ...(import.meta.env.DEV ? [
-            {
-              icon: <FaBug />,
-              label: 'Dev Picker',
-              action: () => useEditorStore.getState().openTool('devpicker'),
-            },
-          ] : []),
         ],
       },
       { separator: true, label: '' },

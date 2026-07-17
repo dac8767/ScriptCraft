@@ -191,11 +191,11 @@ all three.
 | `utils/fountainExporter.ts` | Export — filters working notes |
 | `styles/screenplay.css` | All styling. One large file. |
 
-**The Dev Picker** (`src/dev/`, DEV-only, verified absent from production builds): Derek opens
-it via View → Developer, hits Inspect, clicks a UI element, and it writes that element's *real
-internal name* into a note — `Notes — Right Panel`, `toolbar key: bold`. **If he pastes names
-in that form, they came from there and they are exact.** It also takes screenshots and exports
-a `.md` bundle with them embedded.
+**The Dev Picker is GONE** (removed v3.25 at Derek's request — it lived in `src/dev/`,
+DEV-only). It let him click a UI element and get its *real internal name* into a note —
+`Notes — Right Panel`, `toolbar key: bold`. **If he pastes names in that form, they came
+from there (an older build) and they are exact.** Recover it from git history if he ever
+wants it back.
 
 ---
 

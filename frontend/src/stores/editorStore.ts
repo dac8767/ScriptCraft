@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, migrateResetSizes, migrateTwoRows, migrateRibbon, migrateRibbonSections, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
+import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, migrateResetSizes, migrateTwoRows, migrateRibbon, migrateRibbonSections, migrateDropPanelToggles, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
 import { uuid } from '../utils/uuid';
 import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { findLanguage, urlsFor } from '../editor/languageCatalog';
@@ -208,6 +208,20 @@ try {
     if (!_tbZones.left.includes('b:customize')) {
       _tbZones = { left: [..._tbZones.left, '2!d:cust-302', 'b:customize'], right: [] };
       saveViewState({ toolbarLeft: _tbZones.left, toolbarRight: [] });
+    }
+  }
+} catch { /* storage unavailable — keep what we have */ }
+// v3.25 one-time, Derek (task #137): the Left/Right Panel toggle buttons are
+// retired — saved layouts shed the tokens so the ribbon doesn't render dead
+// buttons the palette no longer offers.
+try {
+  const DROP_TOGGLES_FLAG = 'opendraft:toolbarDropPanelToggles325';
+  if (_vs.toolbarZonesSet && !localStorage.getItem(DROP_TOGGLES_FLAG)) {
+    localStorage.setItem(DROP_TOGGLES_FLAG, '1');
+    const stripped = migrateDropPanelToggles(_tbZones.left);
+    if (stripped.length !== _tbZones.left.length) {
+      _tbZones = { left: stripped, right: _tbZones.right };
+      saveViewState({ toolbarLeft: _tbZones.left });
     }
   }
 } catch { /* storage unavailable — keep what we have */ }
@@ -517,7 +531,6 @@ export type ToolId =
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
   | 'spelling' | 'history' | 'titlepage' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
   | 'notebook'
-  | 'devpicker'   // DEV ONLY (see src/dev/) — absent from production builds
   /** legacy — Notes merged back into 'sticky' (Notes > Script tab); kept
    *  in the type so persisted configs still typecheck, remapped on use. */
   | 'scriptnotes';
@@ -652,9 +665,6 @@ function migrateNotebookInline(
 /** Tools that never dock — they always open as a floating window. */
 export const ALWAYS_FLOAT: ToolId[] = ['analytics'];
 
-/** DEV ONLY. The Dev Picker is a build-time tool; it never ships. */
-export const DEV_TOOLS: ToolId[] = ['devpicker'];
-
 export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   // v0.68: the default panel layout. LEFT = script-structure windows;
   // RIGHT = writing tools. Production Tags is hidden by default (it opens from
@@ -703,15 +713,6 @@ export function toolConfigFor(
 ): ToolConfig {
   return cfg[id] ?? DEFAULT_TOOL_CONFIG[id] ?? { side: 'right', enabled: true };
 }
-
-/**
- * The Dev Picker lives in the right panel by default, like any other tool. It was
- * relying on toolConfigFor()'s catch-all fallback to appear there, which worked by
- * accident and read as an oversight. Hide it in Customize and it behaves like every
- * other hidden tool: the menu item floats it as a window.
- * (DEV-only tool; in production it isn't in ALL_TOOLS, so this entry is inert.)
- */
-DEFAULT_TOOL_CONFIG.devpicker = { side: 'right', enabled: true };
 
 /** A writing goal: word count, page count, or timed session. */
 export interface WritingGoal {
@@ -1880,7 +1881,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
      * This used to do its own lookup: `s.toolConfig[tool] ?? DEFAULT_TOOL_CONFIG[tool]`.
      * ToolDock, meanwhile, calls toolConfigFor(), which falls back to
      * {side:'right', enabled:true} for anything it doesn't recognise. So a tool with
-     * no DEFAULT_TOOL_CONFIG entry (the Dev Picker) was RENDERED IN THE DOCK by one
+     * no DEFAULT_TOOL_CONFIG entry (historically the Dev Picker) was RENDERED IN THE DOCK by one
      * function and treated as undocked by the other — click its tab and it opened in
      * the panel; pick it from the menu and it floated a window in the middle of the
      * screen. Two sources of truth for one question, which is the bug this codebase

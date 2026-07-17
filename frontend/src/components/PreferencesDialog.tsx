@@ -250,10 +250,17 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
 
       <section>
         <h3>Auto Save Locations</h3>
+        {/* v3.25, Derek (task #139): the two "local" rows read like the same
+            thing. Each row now says what it actually IS — invisible in-app
+            history vs real files in a folder you choose. */}
         <label className="prefs-check-row">
           <input type="checkbox" checked disabled />
           <span>Local version history (always on)</span>
         </label>
+        <p className="prefs-hint prefs-subhint">
+          Kept inside the app — not files on disk. Browse, compare and restore
+          any version from Project → Script History.
+        </p>
         {/* v2.83, Derek: a chosen folder on this device gets a timestamped
             .odraft on every auto save. Checking with no folder yet opens the
             picker; the path shows beside the row. */}
@@ -283,6 +290,10 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
             }}
           >Choose Folder…</button>
         </label>
+        <p className="prefs-hint prefs-subhint">
+          Real .odraft files, one per auto save, named with the date and time —
+          in a folder you pick (for Finder, Time Machine, or a synced folder).
+        </p>
         <label className="prefs-check-row">
           <input type="checkbox" checked={snapToCloud} onChange={(e) => setSnapToCloud(e.target.checked)} disabled={!signedIn} />
           <span>Cloud — timestamped copies{!signedIn ? ' — sign in above first' : ''}</span>
@@ -296,7 +307,7 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
           <span>OneDrive — Auto Saves folder{!oConnected ? ' — connect below first' : ''}</span>
         </label>
         <p className="prefs-hint">
-          The local version history (Tools → Script History) is always kept.
+          The local version history (Project → Script History) is always kept.
           Every checked location additionally receives a timestamped copy of
           the script whenever an auto save is taken, manual or automatic.
         </p>

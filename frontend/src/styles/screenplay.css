@@ -1178,6 +1178,26 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
    clamp cap) otherwise outweighs these the moment the edge is dragged —
    v3.11, Derek: section dividers collapsed to one row and stopped scaling. */
 .toolbar.toolbar-ribbon .toolbar-separator { height: calc(var(--rib-rowh, 28px) - 8px); align-self: center; }
+/* v3.25, Derek (tasks #136/#141): dropdowns are ROW ITEMS — same height as
+   the buttons beside them, in every mode. --rib-itemh restates the
+   .toolbar-btn height rules (base 24 / comfortable 26 / custom clamp) as ONE
+   variable every select consumes, so a dragged toolbar edge scales the
+   dropdowns in lockstep with the buttons — including Editor View, which had
+   a hardcoded 26px and never scaled. Horizontal gaps stay pinned (v2.68).
+   Placed AFTER the .toolbar-custom clamp rules on purpose: equal
+   specificity, so source order lets these win in custom mode. */
+.toolbar.toolbar-ribbon { --rib-itemh: 24px; }
+.toolbar.toolbar-ribbon.toolbar-comfortable { --rib-itemh: 26px; }
+.toolbar.toolbar-ribbon.toolbar-custom {
+  --rib-itemh: clamp(20px, calc(22px * var(--chrome-scale, 1)), 40px);
+}
+.toolbar.toolbar-ribbon .element-selector,
+.toolbar.toolbar-ribbon .font-selector,
+.toolbar.toolbar-ribbon .font-size-selector,
+.toolbar.toolbar-ribbon .view-style-selector {
+  height: var(--rib-itemh);
+  font-size: clamp(11px, calc(11.5px * var(--chrome-scale, 1)), 16px);
+}
 .toolbar.toolbar-ribbon .rib-section-sep {
   height: auto;
   align-self: stretch;
@@ -3568,6 +3588,35 @@ div[data-type="lyrics"].is-empty::before { font-style: italic; }
   border: 1px solid var(--fd-border); border-radius: 4px; cursor: pointer; font-size: 14px;
 }
 .dialog-actions button:hover { background: var(--fd-menu-hover); }
+/* ── v3.25, Derek (task #135): the header/footer redesign goes APP-WIDE ──
+   The v1.33 Save As treatment is the standard for every window now: the
+   header wears the theme's chrome surface (--fd-toolbar-bg, same as the
+   toolbar) with no divider line, and the footer wears the same surface.
+   The dialog-box's 14px resize-grip clearance below the footer is painted
+   to match (::after, pointer-events: none keeps the native grip reachable),
+   with the footer's own bottom padding zeroed so the bottom edge doesn't
+   read twice as fat — exactly the v1.46 Save As fix. Dialogs without a
+   direct-child footer are untouched by the strip (:has guards it). */
+.dialog-header {
+  border-bottom: none;
+  background: var(--fd-toolbar-bg);
+}
+.dialog-actions,
+.dialog-footer {
+  border-top: none;
+  background: var(--fd-toolbar-bg);
+  padding-bottom: 0;
+}
+.dialog-box { position: relative; }
+.dialog-box:has(> .dialog-actions)::after,
+.dialog-box:has(> .dialog-footer)::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 14px;
+  background: var(--fd-toolbar-bg);
+  pointer-events: none;
+}
 .dialog-primary { background: var(--fd-accent) !important; border-color: var(--fd-accent) !important; color: #fff !important; }
 .dialog-primary:hover { opacity: .9; }
 .dialog-btn {
@@ -12526,6 +12575,11 @@ html.android .version-history-panel {
   color: var(--fd-text-muted); cursor: pointer; font-size: 11px;
 }
 .fs-titlebar-btn:hover { background: var(--fd-hover-bg); color: var(--fd-text); }
+/* v3.25, Derek (task #140): every QAT icon box is 11px, but FaSave's disk
+   glyph fills its viewBox edge-to-edge while arrows/search carry built-in
+   air — so Save READS bigger. Optical correction, not a metric bug. */
+.fs-titlebar-btn[data-qat="save"] svg,
+.fs-titlebar-btn[data-qat="saveAs"] svg { font-size: 10px; }
 /* v3.21, Derek: the title centers on the WINDOW, not on the leftover flex
    space — absolute at 50% of the bar, so QAT width can't push it around. */
 .fs-titlebar { position: relative; }
@@ -12602,17 +12656,18 @@ html.android .version-history-panel {
 .fs-customize-globals button:hover { background: var(--fd-hover-bg); }
 .fs-customize-globals button.active { background: var(--fd-accent); border-color: var(--fd-accent); color: #fff; }
 .about-actions button.fs-bmc-btn {
-  height: 28px;
-  padding: 0 14px;
-  font-size: 16px;
-  border-radius: 14px;
+  /* v3.25, Derek: 20% bigger */
+  height: 34px;
+  padding: 0 17px;
+  font-size: 19px;
+  border-radius: 17px;
   background: #FFDD00;
   color: #000;
   border: 1px solid #000;
   font-family: 'Cookie', 'Snell Roundhand', 'Comic Sans MS', cursive;
 }
 .about-actions button.fs-bmc-btn:hover { background: #ffe733; }
-.about-actions .fs-bmc-btn svg { width: 15px; height: 15px; }
+.about-actions .fs-bmc-btn svg { width: 18px; height: 18px; }
 
 /* v3.07, Derek: Obsidian-style collapse row atop each side panel. The button
    hugs the panel's OUTER edge (the side it folds into). */
@@ -14924,6 +14979,12 @@ input.fs-switch:checked::after { left: 15px; }
   margin: 6px 0 0 26px;
   max-width: 520px;
 }
+/* v3.25 (task #139): a hint that belongs to the checkbox row right above it —
+   tucked close and slightly smaller than a section-level hint. */
+.prefs-hint.prefs-subhint {
+  font-size: 11.5px;
+  margin: 1px 0 10px 26px;
+}
 .prefs-field-row {
   display: flex;
   align-items: center;
@@ -15684,246 +15745,6 @@ input.fs-switch:checked::after { left: 15px; }
 .fs-tb-subitems { margin: 0 0 8px 44px; }
 .fs-customize-seg button:disabled { opacity: .35; cursor: default; }
 
-/* ════════════════════════════════════════════════════════════════════════════
-   Dev Picker (DEV ONLY — see src/dev/). Styles are namespaced under .dev-picker
-   and .dev-inspecting, so deleting this block removes every trace.
-   ════════════════════════════════════════════════════════════════════════════ */
-.dev-picker {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  height: 100%;
-  min-height: 0;
-  padding: 8px;
-  box-sizing: border-box;
-}
-.dev-picker-bar { display: flex; gap: 6px; flex-shrink: 0; }
-.dev-picker-inspect {
-  flex: 1;
-  padding: 6px 10px;
-  background: var(--fd-btn-bg, var(--fd-overlay-subtle));
-  color: var(--fd-text);
-  border: 1px solid var(--fd-border);
-  border-radius: 5px;
-  font-size: 12px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.dev-picker-inspect:hover { border-color: var(--fd-accent); }
-.dev-picker-inspect.active {
-  background: var(--fd-accent);
-  border-color: var(--fd-accent);
-  color: #fff;
-}
-.dev-picker-btn {
-  padding: 6px 10px;
-  background: var(--fd-btn-bg, var(--fd-overlay-subtle));
-  color: var(--fd-text);
-  border: 1px solid var(--fd-border);
-  border-radius: 5px;
-  font-size: 12px;
-  cursor: pointer;
-}
-.dev-picker-btn:hover:not(:disabled) { border-color: var(--fd-accent); }
-.dev-picker-btn:disabled { opacity: .4; cursor: default; }
-
-/* Saved phrases — a wrapping row of chips; click to paste, × to remove. */
-.dev-picker-phrases {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  flex-shrink: 0;
-  max-height: 96px;
-  overflow-y: auto;
-}
-.dev-picker-phrase {
-  display: inline-flex;
-  align-items: stretch;
-  max-width: 100%;
-  border: 1px solid var(--fd-border);
-  border-radius: 5px;
-  overflow: hidden;
-}
-.dev-picker-phrase:hover { border-color: var(--fd-accent); }
-.dev-picker-phrase-paste {
-  max-width: 220px;
-  padding: 3px 7px;
-  background: var(--fd-btn-bg, var(--fd-overlay-subtle));
-  color: var(--fd-text);
-  border: none;
-  font-size: 11px;
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.dev-picker-phrase-del {
-  padding: 3px 6px;
-  background: var(--fd-btn-bg, var(--fd-overlay-subtle));
-  color: var(--fd-text-muted);
-  border: none;
-  border-left: 1px solid var(--fd-border);
-  font-size: 11px;
-  line-height: 1;
-  cursor: pointer;
-}
-.dev-picker-phrase-del:hover { color: #e06060; }
-
-.dev-picker-draft {
-  flex: 1;
-  min-height: 140px;
-  padding: 8px;
-  background: var(--fd-input-bg, var(--fd-dropdown-bg));
-  color: var(--fd-text);
-  border: 1px solid var(--fd-border);
-  border-radius: 6px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-  line-height: 1.5;
-  resize: none;
-}
-.dev-picker-draft:focus { outline: none; border-color: var(--fd-accent); }
-.dev-picker-hint {
-  flex-shrink: 0;
-  font-size: 10.5px;
-  line-height: 1.4;
-  color: var(--fd-text-muted);
-}
-
-/* While picking, the pointer says so everywhere — you're not going to click
-   something by accident and wonder why nothing happened. */
-/* v1.9: no crosshair. The app is still fully clickable while inspecting — a
-   crosshair over a working menu would claim otherwise. The outline and the
-   ⌥-click badge carry the message instead. */
-
-.dev-picker-outline {
-  position: fixed;
-  pointer-events: none;
-  z-index: 2147483646;
-  border: 2px solid var(--fd-accent);
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--fd-accent) 12%, transparent);
-}
-/* v1.9: the badge that teaches the gesture — a plain click no longer captures,
-   because the app stays usable while inspecting so you can open the menu you
-   actually want to name. */
-.dev-picker-tip-key {
-  margin-left: 8px;
-  padding: 0 4px;
-  border-radius: 3px;
-  background: rgba(255,255,255,.25);
-  font-size: 10px;
-  font-weight: 500;
-}
-.dev-picker-tip {
-  position: fixed;
-  pointer-events: none;
-  z-index: 2147483647;
-  max-width: 320px;
-  padding: 2px 7px;
-  background: var(--fd-accent);
-  color: #fff;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Dev Picker — Claude Code bridge (DEV ONLY). */
-.dev-picker-send { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.dev-picker-toggle {
-  display: flex; align-items: center; gap: 4px;
-  font-size: 10.5px; color: var(--fd-text-muted);
-  white-space: nowrap; cursor: pointer;
-}
-.dev-picker-log {
-  flex: 2;
-  min-height: 100px;
-  overflow-y: auto;
-  padding: 8px;
-  background: var(--fd-input-bg, var(--fd-dropdown-bg));
-  border: 1px solid var(--fd-border);
-  border-radius: 6px;
-  font-size: 11.5px;
-  line-height: 1.5;
-}
-.dev-log-text { color: var(--fd-text); white-space: pre-wrap; margin-bottom: 6px; }
-.dev-log-result {
-  color: var(--fd-text);
-  white-space: pre-wrap;
-  margin: 6px 0;
-  padding-top: 6px;
-  border-top: 1px solid var(--fd-border);
-}
-.dev-log-tool {
-  color: var(--fd-text-muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10.5px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.dev-log-tool b { color: var(--fd-accent); font-weight: 600; }
-.dev-log-error { color: #e06060; white-space: pre-wrap; }
-.dev-log-cost { color: var(--fd-text-muted); }
-.dev-log-diff {
-  margin: 6px 0 0;
-  padding: 6px;
-  background: var(--fd-overlay-subtle);
-  border-radius: 4px;
-  font-size: 10.5px;
-  white-space: pre-wrap;
-  color: var(--fd-text-muted);
-}
-
-/* Dev Picker — screenshots (DEV ONLY). */
-.dev-picker-shoot { flex: 1; }
-.dev-picker-shots {
-  flex-shrink: 0;
-  max-height: 260px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.dev-shot {
-  border: 1px solid var(--fd-border);
-  border-radius: 6px;
-  overflow: hidden;
-  background: var(--fd-overlay-subtle);
-}
-.dev-shot img {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 130px;
-  object-fit: cover;
-  object-position: top left;
-}
-.dev-shot-bar {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 6px;
-  border-top: 1px solid var(--fd-border);
-}
-.dev-shot-label {
-  flex: 1;
-  font-size: 10.5px;
-  color: var(--fd-text-muted);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.dev-shot-bar button {
-  padding: 2px 6px;
-  background: none;
-  border: 1px solid var(--fd-border);
-  border-radius: 4px;
-  color: var(--fd-text-muted);
-  font-size: 10px;
-  cursor: pointer;
-}
-.dev-shot-bar button:hover { color: var(--fd-text); border-color: var(--fd-accent); }
-
 /* The section you were sent to should announce itself. */
 .prefs-section-flash {
   animation: prefs-flash 1.2s ease-out;
@@ -16584,8 +16405,13 @@ input.fs-switch:checked::after { left: 15px; }
   font-size: 20px;
   font-weight: 700;
   min-width: 0;
-  flex: 0 1 320px;
+  /* v3.25: `flex: 0 1 320px` predates the v2.89 title-block wrapper. Inside
+     that COLUMN flexbox the 320px basis became a HEIGHT — the title input
+     grew 320px tall, shoving the created date to the bottom and floating
+     the title and Return to Editor way off the top edge. */
+  flex: 0 0 auto;
 }
+.fs-nb-title-block .fs-nb-title { width: 100%; }
 .fs-nb-title::placeholder { color: var(--fd-text-muted); }
 .fs-nb-title-empty { flex: 0 0 auto; }
 /* v2.13: the Scrapbook's contextual MENU BAR section — divider + tag, then

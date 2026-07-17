@@ -15,7 +15,7 @@
 import React from 'react';
 import {
   FaSave, FaRegSave, FaUndo, FaRedo, FaFolderOpen, FaFile, FaPrint, FaEye,
-  FaFilePdf, FaSpellCheck, FaSearch, FaBookmark,
+  FaFilePdf, FaSpellCheck, FaSearch,
 } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore, smartUndo, smartRedo } from '../stores/editorStore';
@@ -40,7 +40,6 @@ export const QAT_OPTIONS: Array<{ id: string; label: string; icon: React.ReactNo
   { id: 'exportPDF', label: 'Export PDF', icon: <FaFilePdf />, cmd: 'exportPDF' },
   { id: 'spellCheck', label: 'Spell Check', icon: <FaSpellCheck />, cmd: 'spellCheck' },
   { id: 'find', label: 'Find & Replace', icon: <FaSearch />, cmd: 'find' },
-  { id: 'addBookmark', label: 'Add Bookmark', icon: <FaBookmark />, cmd: 'addBookmark' },
 ];
 export const QAT_BY_ID = Object.fromEntries(QAT_OPTIONS.map((o) => [o.id, o]));
 
@@ -68,7 +67,9 @@ const TitleBar: React.FC<{ editor: Editor | null }> = ({ editor }) => {
             : id === 'redo' ? () => smartRedo(editor)
               : () => emit(o.cmd!);
           return (
-            <button key={id} className="fs-titlebar-btn" title={o.label} onClick={run}>
+            /* data-qat: hook for the per-glyph optical size correction —
+               see .fs-titlebar-btn[data-qat] in screenplay.css (task #140). */
+            <button key={id} className="fs-titlebar-btn" data-qat={id} title={o.label} onClick={run}>
               {o.icon}
             </button>
           );

@@ -715,10 +715,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // Insert, View, Format and Help join the palette (ids resolve through the
   // same command bus the menus use).
   const FILE_CMDS = ['newScreenplay', 'openFile', 'save', 'saveAs', 'print', 'preview', 'exportPDF', 'exportFDX', 'exportFountain', 'exportDocx', 'exportOdraft'];
-  const EDIT_CMDS = ['cut', 'copy', 'paste', 'dualDialogue'];
+  const EDIT_CMDS = ['cut', 'copy', 'paste', 'dualDialogue', 'lastEditLocation'];
   const INSERT_CMDS = ['insertImage', 'insertMarker'];
   const VIEW_CMDS = ['fitPage', 'fitWidth', 'actualSize', 'showRulers'];
-  const BOOKMARK_CMDS = ['addBookmark', 'lastEditLocation'];   // v3.08
   const HELP_CMDS = ['keyboardShortcuts'];
   const cmdOpt = (id: string) => {
     const c = TOOLBAR_COMMANDS.find((x) => x.id === id);
@@ -745,15 +744,15 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     },
     {
       id: 'insert', label: 'Insert',
-      options: INSERT_CMDS.flatMap(cmdOpt),
+      options: [
+        ...INSERT_CMDS.flatMap(cmdOpt),
+        // v3.25: Production Tags moved Project → Insert — palette mirrors the menus.
+        { value: 'b:tags', label: 'Production Tags' },
+      ],
     },
     {
       id: 'view', label: 'View',
       options: VIEW_CMDS.flatMap(cmdOpt),
-    },
-    {
-      id: 'bookmarks', label: 'Bookmarks',
-      options: BOOKMARK_CMDS.flatMap(cmdOpt),
     },
     {
       id: 'help', label: 'Help',
@@ -774,7 +773,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         ...ALL_TOOLS.filter((t) => WINDOW_IDS.includes(t.id)).flatMap((t) => toolOpt(t.id)),
         ...PROJECT_CMDS.flatMap(cmdOpt),
         // v3.24: Production merged into Project — palette mirrors the menus.
-        { value: 'b:tags', label: 'Production Tags' },
+        // (v3.25: Production Tags itself moved on to Insert.)
         ...PRODUCTION_CMDS.flatMap(cmdOpt),
       ],
     },

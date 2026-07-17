@@ -717,6 +717,27 @@ export function toggleMindLink(links: string[] | undefined, target: string): str
   const cur = links ?? [];
   return cur.includes(target) ? cur.filter((x) => x !== target) : [...cur, target];
 }
+
+/** v3.25, Derek (task #138 — "fix outline beat linking"): addBeat initializes
+ *  every beat at x:0/y:0, so beats never hand-placed on the Freeform canvas
+ *  ALL piled onto the same spot at the origin. Perfectly stacked cards made
+ *  the Connect drag land on whichever card was on top — linking looked broken
+ *  because the targets were unreachable. Beats still at the origin (or with
+ *  no coords at all — legacy data) now lay out in a cascade grid (3 across,
+ *  then wrap), derived from board order so it's stable across renders; a
+ *  beat keeps its stored spot the moment it's dragged anywhere else. (The
+ *  one sacrifice: a card deliberately parked at exactly 0,0 re-flows — the
+ *  origin is the tool's "never placed" value, it can't also mean "placed
+ *  here".) Pure + exported for the test. */
+export function freeformAutoLayout(beats: BeatInfo[]): BeatInfo[] {
+  let slot = 0;
+  return beats.map((b) => {
+    const placed = (b.x != null && b.x !== 0) || (b.y != null && b.y !== 0);
+    if (placed) return b;
+    const i = slot++;
+    return { ...b, x: 24 + (i % 3) * 270, y: 24 + Math.floor(i / 3) * 150 };
+  });
+}
 /** Emphasis: the title grows with the card, clamped to stay readable. */
 export function mindTitleSize(cardWidth: number): number {
   return Math.max(13, Math.min(24, Math.round((cardWidth || 240) / 15)));
@@ -821,8 +842,12 @@ interface CustomCanvasProps {
 }
 
 const CustomCanvas: React.FC<CustomCanvasProps> = ({
-  beats, onUpdateBeat, onDeleteBeat,
+  beats: rawBeats, onUpdateBeat, onDeleteBeat,
 }) => {
+  // v3.25 (task #138): unplaced beats get a derived cascade position so they
+  // never stack — see freeformAutoLayout. Everything below (cards, line
+  // endpoints, the drag maths) reads these effective coordinates.
+  const beats = useMemo(() => freeformAutoLayout(rawBeats), [rawBeats]);
   /* v2.46: mind map connections — arm a card with its Connect button, then
      click-drag from that card; a live line follows the pointer, and
      releasing over another card links them (stored on the source beat's

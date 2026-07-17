@@ -1843,17 +1843,14 @@ const ScreenplayEditor: React.FC = () => {
     };
   }, [editor, updateCharacters]);
 
-  // v3.08: bookmarks ride the document — every docChanged transaction maps
-  // each bookmark position, and the selection after an edit becomes the
-  // script's "last edit" spot (the Bookmarks menu's permanent first entry).
+  // v3.08/v3.25: the selection after every docChanged transaction becomes
+  // the script's "last edit" spot (Edit > Last Edit Location).
   useEffect(() => {
     if (!editor) return;
-    const onTx = ({ transaction }: { transaction: { docChanged: boolean; mapping: { map: (p: number) => number }; selection: { from: number } } }) => {
+    const onTx = ({ transaction }: { transaction: { docChanged: boolean; selection: { from: number } } }) => {
       if (!transaction.docChanged) return;
       const scriptId = bookmarkScriptKey(useProjectStore.getState().currentScriptId);
-      const bms = useBookmarkStore.getState();
-      bms.mapPositions(scriptId, (pos) => transaction.mapping.map(pos));
-      bms.setLastEdit(scriptId, transaction.selection.from);
+      useBookmarkStore.getState().setLastEdit(scriptId, transaction.selection.from);
     };
     editor.on('transaction', onTx);
     return () => { editor.off('transaction', onTx); };

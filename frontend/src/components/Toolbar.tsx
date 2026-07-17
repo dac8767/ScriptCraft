@@ -92,7 +92,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     setPendingTagSelection,
     setEditingTagId,
     toolbarMode, chromeCustomPx, chromeGapPx,
-    navigatorOpen, shelfOpen, outlineBarOpen,
+    outlineBarOpen,
     uiResizeLocked,
   } = useEditorStore();
 
@@ -1256,22 +1256,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           )}
         </div>
       );
-      /* v2.34, Derek: one-click toggles for the side panels and the
-         Outline Bar — lit while the surface is showing. */
-      case 'togglePanelLeft': return (
-        <button
-          className={`toolbar-btn${navigatorOpen ? ' active' : ''}`}
-          title={navigatorOpen ? 'Hide the left panel' : 'Show the left panel'}
-          onClick={() => useEditorStore.getState().toggleNavigator()}
-        >{TOOLBAR_ICONS.togglePanelLeft}</button>
-      );
-      case 'togglePanelRight': return (
-        <button
-          className={`toolbar-btn${shelfOpen ? ' active' : ''}`}
-          title={shelfOpen ? 'Hide the right panel' : 'Show the right panel'}
-          onClick={() => useEditorStore.getState().toggleShelf()}
-        >{TOOLBAR_ICONS.togglePanelRight}</button>
-      );
+      /* v2.34, Derek: one-click surface toggle — lit while showing.
+         (v3.25: the Left/Right Panel pair retired; chevrons cover them.) */
       case 'toggleOutlineBar': return (
         <button
           className={`toolbar-btn${outlineBarOpen ? ' active' : ''}`}
