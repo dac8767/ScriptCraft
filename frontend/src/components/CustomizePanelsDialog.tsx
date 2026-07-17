@@ -25,6 +25,7 @@ import EditElementsDialog from './EditElementsDialog';
 import KeyboardShortcutsTab from './KeyboardShortcutsTab';
 import ThemesTab from './ThemesTab';
 import ContextMenuTab from './ContextMenuTab';
+import { QAT_OPTIONS, QAT_BY_ID } from './TitleBar';
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
@@ -338,7 +339,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
     toolOrder, setToolOrder,
     toolbarMode, setToolbarMode,
-
+    qatItems, setQatItems,
   } = useEditorStore();
 
 
@@ -615,7 +616,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // React ('Rendered more hooks than during the previous render').
   const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones, toolbarZonesSet } = useEditorStore();
   const { panelDividers, setPanelDividers } = useEditorStore();
-  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'panels' | 'outlinebar' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'menu');
+  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'qat' | 'panels' | 'outlinebar' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'menu');
 
   // v2.94, Derek: with the native macOS menu bar active there's no in-window
   // menu bar to customize — the tab disappears (revert the menu system in
@@ -805,7 +806,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       // simply stack, and adding an eighth costs no width at all.
       <div className="prefs-layout fs-customize-layout">
         <div className="prefs-tabs fs-customize-tabs">
-          {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['outlinebar', 'Outline Bar'], ['context', 'Context Menu'], ['elements', 'Elements'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const)
+          {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['qat', 'Quick Access'], ['panels', 'Side Panels'], ['outlinebar', 'Outline Bar'], ['context', 'Context Menu'], ['elements', 'Elements'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const)
             .filter(([id]) => !(nativeMenus && id === 'menu'))
             .map(([id, label]) => (
             <button
@@ -960,6 +961,76 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 className="swn-add-btn"
                 title="Restore the default ribbon: all sections in default order"
                 onClick={() => setToolbarZones([...DEFAULT_TOOLBAR_LEFT], [])}
+              >Reset to Default</button>
+            </div>
+          </section>
+          </>)}
+          {activeCat === 'qat' && (<>
+          <section>
+            <h3>Quick Access Toolbar</h3>
+            <p className="fs-customize-hint">
+              The buttons beside the traffic lights in the titlebar. Drag
+              between Shown and Hidden — where you drop one is where it sits
+              on the bar.
+            </p>
+            <DndColumns
+              columns={[
+                {
+                  id: 'shown', title: 'Shown',
+                  sections: [{
+                    rows: qatItems.filter((id) => QAT_BY_ID[id]).map((id) => ({
+                      key: id,
+                      content: (
+                        <span className="fs-customize-tool">
+                          {iconSlot(QAT_BY_ID[id].icon)}
+                          {QAT_BY_ID[id].label}
+                          <button
+                            className="fs-dnd-rowbtn"
+                            title="Remove from the Quick Access Toolbar"
+                            onClick={() => setQatItems(qatItems.filter((x) => x !== id))}
+                          >×</button>
+                        </span>
+                      ),
+                    })),
+                  }],
+                },
+                {
+                  id: 'hidden', title: 'Hidden', isHidden: true,
+                  sections: [{
+                    label: 'Available',
+                    rows: QAT_OPTIONS.filter((o) => !qatItems.includes(o.id)).map((o) => ({
+                      key: o.id,
+                      content: (
+                        <span className="fs-customize-tool">
+                          {iconSlot(o.icon)}
+                          {o.label}
+                          <button
+                            className="fs-dnd-rowbtn"
+                            title="Add to the Quick Access Toolbar"
+                            onClick={() => setQatItems([...qatItems, o.id])}
+                          >+</button>
+                        </span>
+                      ),
+                    })),
+                  }],
+                },
+              ]}
+              onDrop={(src, dst) => {
+                const id = src.key;
+                if (dst.col === 'hidden') {
+                  setQatItems(qatItems.filter((x) => x !== id));
+                  return;
+                }
+                const next = qatItems.filter((x) => x !== id);
+                next.splice(Math.min(dst.idx, next.length), 0, id);
+                setQatItems(next);
+              }}
+            />
+            <div className="fs-tbzone-adders fs-adders-equal">
+              <button
+                className="swn-add-btn"
+                title="Restore the default Quick Access buttons: Save, Undo, Redo"
+                onClick={() => setQatItems(['save', 'undo', 'redo'])}
               >Reset to Default</button>
             </div>
           </section>

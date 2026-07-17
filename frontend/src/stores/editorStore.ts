@@ -21,6 +21,7 @@ interface ViewState {
   typewriterRestoreCursor?: boolean;
   outlineBarOpen?: boolean;
   rulersVisible?: boolean;
+  qatItems?: string[];
   outlineBarZoom?: number;
   outlineBarRowScale?: number;
   scrapbookTreeScale?: number;
@@ -1108,6 +1109,10 @@ interface EditorState {
    *  toggled from the View menu. Persisted view state. */
   rulersVisible: boolean;
   setRulersVisible: (v: boolean) => void;
+  /** v3.21, Derek: the Quick Access Toolbar's buttons (titlebar row) —
+   *  ordered ids from TitleBar's QAT_OPTIONS. Persisted view state. */
+  qatItems: string[];
+  setQatItems: (ids: string[]) => void;
   /** v2.11: Outline Bar zoom — pixels per page on the timeline. 0 = fit
    *  the whole ruler to the visible width. Persisted view state. */
   outlineBarZoom: number;
@@ -1780,6 +1785,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setRulersVisible: (v) => {
     saveViewState({ rulersVisible: v });
     set({ rulersVisible: v });
+  },
+  qatItems: Array.isArray(_vs.qatItems) ? (_vs.qatItems as string[]) : ['save', 'undo', 'redo'],
+  setQatItems: (ids) => {
+    saveViewState({ qatItems: ids });
+    set({ qatItems: ids });
   },
   outlineBarZoom: (_vs.outlineBarZoom as number) ?? 0,
   setOutlineBarZoom: (px) => {

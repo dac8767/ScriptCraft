@@ -65,9 +65,20 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.20';
+export const APP_VERSION = '3.21';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.21',
+    date: '2026-07-17',
+    items: [
+      { title: 'Customize the Quick Access Toolbar', detail: 'A new Quick Access tab in Customize — the same Shown/Hidden columns as the other tabs. Twelve options, mostly File actions: Save, Save As, Open, New, Undo, Redo, Print, Preview, Export PDF, Spell Check, Find & Replace, Add Bookmark. Order is drag-to-arrange and persists.', tags: ['New Feature', 'UI'] },
+      { title: 'Titlebar script name truly centered', detail: 'The document title centers on the window itself, so the number of Quick Access buttons can\'t push it off-center.', tags: ['Fix', 'UI'] },
+      { title: 'Customize matches the other big buttons', detail: 'In a one-row section, Customize is one button block with its label inside — same format and size as every other large button.', tags: ['Polish'] },
+      { title: 'Text Color and Highlight Color work again', detail: 'Their pickers opened INSIDE the ribbon, which clips its overflow — so they were invisible and the buttons looked dead. They now open in front of everything, anchored under the button.', tags: ['Fix'] },
+      { title: 'The A wears the picked color', detail: 'The Text Color icon tints to whatever color is selected (red until you pick one).', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.20',
     date: '2026-07-17',

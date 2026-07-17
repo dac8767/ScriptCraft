@@ -13,10 +13,36 @@
  * (decorations stay native there), and the web build has no titlebar at all.
  */
 import React from 'react';
-import { FaSave, FaUndo, FaRedo } from 'react-icons/fa';
+import {
+  FaSave, FaRegSave, FaUndo, FaRedo, FaFolderOpen, FaFile, FaPrint, FaEye,
+  FaFilePdf, FaSpellCheck, FaSearch, FaBookmark,
+} from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore, smartUndo, smartRedo } from '../stores/editorStore';
 import { isDesktopTauri } from '../services/platform';
+
+const emit = (id: string) =>
+  window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: id }));
+
+/** v3.21, Derek: the QAT is customizable (Customize > Quick Access). ONE
+ *  registry — the titlebar renders from it and the dialog offers it.
+ *  undo/redo run smartUndo/smartRedo (they need the editor); everything
+ *  else rides the command bus, same as the menus. */
+export const QAT_OPTIONS: Array<{ id: string; label: string; icon: React.ReactNode; cmd?: string }> = [
+  { id: 'save', label: 'Save', icon: <FaSave />, cmd: 'save' },
+  { id: 'saveAs', label: 'Save As', icon: <FaRegSave />, cmd: 'saveAs' },
+  { id: 'open', label: 'Open Script', icon: <FaFolderOpen />, cmd: 'openFile' },
+  { id: 'new', label: 'New Script', icon: <FaFile />, cmd: 'newScreenplay' },
+  { id: 'undo', label: 'Undo', icon: <FaUndo /> },
+  { id: 'redo', label: 'Redo', icon: <FaRedo /> },
+  { id: 'print', label: 'Print', icon: <FaPrint />, cmd: 'print' },
+  { id: 'preview', label: 'Preview', icon: <FaEye />, cmd: 'preview' },
+  { id: 'exportPDF', label: 'Export PDF', icon: <FaFilePdf />, cmd: 'exportPDF' },
+  { id: 'spellCheck', label: 'Spell Check', icon: <FaSpellCheck />, cmd: 'spellCheck' },
+  { id: 'find', label: 'Find & Replace', icon: <FaSearch />, cmd: 'find' },
+  { id: 'addBookmark', label: 'Add Bookmark', icon: <FaBookmark />, cmd: 'addBookmark' },
+];
+export const QAT_BY_ID = Object.fromEntries(QAT_OPTIONS.map((o) => [o.id, o]));
 
 const isMacLike = /mac/i.test(navigator.platform || navigator.userAgent);
 
@@ -29,26 +55,24 @@ export const showTitleBar = (): boolean =>
 
 const TitleBar: React.FC<{ editor: Editor | null }> = ({ editor }) => {
   const title = useEditorStore((s) => s.documentTitle);
+  const qatItems = useEditorStore((s) => s.qatItems);
   if (!showTitleBar()) return null;
   return (
     <div className="fs-titlebar" data-tauri-drag-region>
       {/* left inset clears the traffic lights */}
       <div className="fs-titlebar-qat">
-        <button
-          className="fs-titlebar-btn"
-          title="Save"
-          onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'save' }))}
-        ><FaSave /></button>
-        <button
-          className="fs-titlebar-btn"
-          title="Undo"
-          onClick={() => smartUndo(editor)}
-        ><FaUndo /></button>
-        <button
-          className="fs-titlebar-btn"
-          title="Redo"
-          onClick={() => smartRedo(editor)}
-        ><FaRedo /></button>
+        {qatItems.map((id) => {
+          const o = QAT_BY_ID[id];
+          if (!o) return null;
+          const run = id === 'undo' ? () => smartUndo(editor)
+            : id === 'redo' ? () => smartRedo(editor)
+              : () => emit(o.cmd!);
+          return (
+            <button key={id} className="fs-titlebar-btn" title={o.label} onClick={run}>
+              {o.icon}
+            </button>
+          );
+        })}
       </div>
       <div className="fs-titlebar-title" data-tauri-drag-region>{title}</div>
       {/* right counterweight keeps the title centered against the QAT.

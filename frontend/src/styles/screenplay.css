@@ -12480,15 +12480,22 @@ html.android .version-history-panel {
   color: var(--fd-text-muted); cursor: pointer; font-size: 11px;
 }
 .fs-titlebar-btn:hover { background: var(--fd-hover-bg); color: var(--fd-text); }
+/* v3.21, Derek: the title centers on the WINDOW, not on the leftover flex
+   space — absolute at 50% of the bar, so QAT width can't push it around. */
+.fs-titlebar { position: relative; }
 .fs-titlebar-title {
-  flex: 0 1 auto;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 38%;
   font-size: 12px;
   color: var(--fd-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* mirrors the traffic-light inset + QAT width so the title stays centered */
+/* the rest of the row stays a plain drag surface */
 .fs-titlebar-balance { flex: 1; min-width: 78px; align-self: stretch; }
 /* Buy Me a Coffee — the widget's look, drawn locally. v3.18, Derek's config:
    pill #FFDD00, black outline/text, white cup. Lives in the About dialog's

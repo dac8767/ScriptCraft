@@ -133,6 +133,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // Color picker state
   const [textColorOpen, setTextColorOpen] = useState(false);
   const [bgColorOpen, setBgColorOpen] = useState(false);
+  // v3.21: the color pickers are PORTALLED (the ribbon clips overflow, so an
+  // absolute popup inside it is invisible — the "dead button" report).
+  // Fixed coordinates measured from the trigger, per the AddMenu rule.
+  const [colorPopAnchor, setColorPopAnchor] = useState<{ top: number; left: number } | null>(null);
   // v2.69: the Scrapbook's text-background picker. Its swatch clicks move
   // focus out of the contentEditable, so the selection is captured on the
   // button's mousedown and restored before the execCommand runs.
@@ -1014,28 +1018,42 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             className="toolbar-btn"
             title="Text Color"
             disabled={locked.textColor}
-            onClick={() => { if (!locked.textColor) { setTextColorOpen(!textColorOpen); setBgColorOpen(false); } }}
+            onClick={(e) => {
+              if (locked.textColor) return;
+              const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+              setColorPopAnchor({ top: r.bottom + 4, left: r.left });
+              setTextColorOpen(!textColorOpen);
+              setBgColorOpen(false);
+            }}
           >
-            {/* v3.01, Derek: a red A — the picked color rides the underline */}
-            <span className="fs-textcolor-icon" aria-hidden="true">
+            {/* v3.01, Derek: the A — red by default; v3.21: the WHOLE glyph
+                takes the picked color (the bar rides along). */}
+            <span
+              className="fs-textcolor-icon"
+              aria-hidden="true"
+              style={currentTextColor !== '#000000' ? { color: currentTextColor } : undefined}
+            >
               A
               <span className="fs-textcolor-bar" style={{ background: currentTextColor }} />
             </span>
           </button>
-          {showPopups && textColorOpen && (
-            <ColorPicker
-              value={currentTextColor}
-              onChange={(color) => {
-                setCurrentTextColor(color || '#000000');
-                if (color) {
-                  editor?.chain().focus(undefined, { scrollIntoView: false }).setColor(color).run();
-                } else {
-                  editor?.chain().focus(undefined, { scrollIntoView: false }).unsetColor().run();
-                }
-                setTextColorOpen(false);
-              }}
-              onClose={() => setTextColorOpen(false)}
-            />
+          {showPopups && textColorOpen && colorPopAnchor && createPortal(
+            <div style={{ position: 'fixed', top: colorPopAnchor.top, left: colorPopAnchor.left, zIndex: 2147483647 }}>
+              <ColorPicker
+                value={currentTextColor}
+                onChange={(color) => {
+                  setCurrentTextColor(color || '#000000');
+                  if (color) {
+                    editor?.chain().focus(undefined, { scrollIntoView: false }).setColor(color).run();
+                  } else {
+                    editor?.chain().focus(undefined, { scrollIntoView: false }).unsetColor().run();
+                  }
+                  setTextColorOpen(false);
+                }}
+                onClose={() => setTextColorOpen(false)}
+              />
+            </div>,
+            document.body,
           )}
         </div>
       );
@@ -1045,24 +1063,33 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             className="toolbar-btn"
             title="Highlight Color"
             disabled={locked.backgroundColor}
-            onClick={() => { if (!locked.backgroundColor) { setBgColorOpen(!bgColorOpen); setTextColorOpen(false); } }}
+            onClick={(e) => {
+              if (locked.backgroundColor) return;
+              const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+              setColorPopAnchor({ top: r.bottom + 4, left: r.left });
+              setBgColorOpen(!bgColorOpen);
+              setTextColorOpen(false);
+            }}
           >
             <FaHighlighter style={{ color: currentBgColor }} />
           </button>
-          {showPopups && bgColorOpen && (
-            <ColorPicker
-              value={currentBgColor}
-              onChange={(color) => {
-                setCurrentBgColor(color || '#ffff00');
-                if (color) {
-                  editor?.chain().focus(undefined, { scrollIntoView: false }).toggleHighlight({ color }).run();
-                } else {
-                  editor?.chain().focus(undefined, { scrollIntoView: false }).unsetHighlight().run();
-                }
-                setBgColorOpen(false);
-              }}
-              onClose={() => setBgColorOpen(false)}
-            />
+          {showPopups && bgColorOpen && colorPopAnchor && createPortal(
+            <div style={{ position: 'fixed', top: colorPopAnchor.top, left: colorPopAnchor.left, zIndex: 2147483647 }}>
+              <ColorPicker
+                value={currentBgColor}
+                onChange={(color) => {
+                  setCurrentBgColor(color || '#ffff00');
+                  if (color) {
+                    editor?.chain().focus(undefined, { scrollIntoView: false }).toggleHighlight({ color }).run();
+                  } else {
+                    editor?.chain().focus(undefined, { scrollIntoView: false }).unsetHighlight().run();
+                  }
+                  setBgColorOpen(false);
+                }}
+                onClose={() => setBgColorOpen(false)}
+              />
+            </div>,
+            document.body,
           )}
         </div>
       );
@@ -1348,6 +1375,22 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   const renderBuiltinToken = (tok: string, tall = false): React.ReactNode => {
     const def = BUILTIN_BY_KEY[tok.slice(2)];
     if (!def) return null;
+    // v3.21, Derek: tall Customize matches the other big buttons — ONE
+    // button block with the label INSIDE (the rib-tall-btn format pinned
+    // commands use), not an icon button with a caption drawn under it.
+    if (tall && def.key === 'customize') {
+      return (
+        <button
+          key={tok}
+          className="toolbar-btn rib-tall-btn"
+          title="Customize ScriptCraft"
+          onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))}
+        >
+          <span className="rib-tall-icon">{TOOLBAR_ICONS.customize}</span>
+          <span className="rib-tall-label">{def.label}</span>
+        </button>
+      );
+    }
     const showPopups = !def.priority || !isHidden(def.priority);
     const cls = 'toolbar-priority-block'
       + (tall ? ' rib-tall' : '')
