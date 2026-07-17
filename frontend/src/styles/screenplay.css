@@ -1222,7 +1222,26 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar.toolbar-ribbon .view-style-selector { width: var(--ddw-view, auto); }
 /* v3.46, Derek: the BIG (single-row) Zoom control drops its magnifier glyph —
    the "98%" value and the "Zoom" label under it already name it. */
-.toolbar.toolbar-ribbon .rib-tall[data-key="zoom"] .toolbar-btn-labeled svg { display: none; }
+.toolbar.toolbar-ribbon .rib-tall[data-key="zoom"] .zoom-tb-icon { display: none; }
+/* v3.48, Derek: the % is edited inline in the bar. */
+.zoom-tb-mid { display: inline-flex; align-items: center; gap: 3px; }
+.zoom-tb-value { cursor: text; }
+.zoom-tb-input {
+  width: 46px;
+  padding: 1px 4px;
+  border: 1px solid var(--fd-accent);
+  border-radius: 4px;
+  background: var(--fd-input-bg, var(--fd-navigator-bg));
+  color: var(--fd-text);
+  font-size: inherit;
+  text-align: center;
+}
+.zoom-tb-caret {
+  border: none; background: none; cursor: pointer;
+  color: var(--fd-text-muted); font-size: 10px; line-height: 1;
+  padding: 0 2px;
+}
+.zoom-tb-caret:hover { color: var(--fd-text); }
 /* v3.47, Derek: the BIG Editor View button reads like the other big buttons —
    the dropdown on top with "Editor View" (no colon) as the label under it. */
 .toolbar.toolbar-ribbon .rib-tall[data-key="view"] { flex-direction: column-reverse; }

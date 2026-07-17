@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.47';
+export const APP_VERSION = '3.48';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.48',
+    date: '2026-07-17',
+    items: [
+      { title: 'Edit the zoom % right in the bar', detail: 'Clicking the zoom percentage now turns it into an input in place — no popup that just repeated the same stepper. A small ▾ still holds Reset / Fit Page / Scale to Max Width.', tags: ['UI'] },
+      { title: 'Fit button no longer stays lit blue', detail: 'One-shot ribbon commands (like Fit) now drop their focus ring after running, so they stop holding a blue highlight the way a toggle would.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '3.47',
     date: '2026-07-17',

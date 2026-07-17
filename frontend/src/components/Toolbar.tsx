@@ -1188,22 +1188,47 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       );
       case 'zoom': return (
         <div className="zoom-menu-wrap" ref={zoomMenuRef}>
-          {/* v3.04, Derek: step zoom straight from the toolbar — the dropdown
-              stays for Reset / Fit / exact values. */}
+          {/* v3.04, Derek: step zoom straight from the toolbar. v3.48: the %
+              is edited RIGHT HERE (click to type) — no popup that just repeats
+              the stepper. A small caret keeps Reset / Fit within reach. */}
           <button
             className="toolbar-btn zoom-tb-step"
             title="Zoom out"
             disabled={zoomLevel <= ZOOM_MIN}
             onClick={() => setZoomLevel(Math.max(ZOOM_MIN, zoomLevel - 10))}
           ><CircleMinusIcon /></button>
-          <button
-            className="toolbar-btn toolbar-btn-labeled"
-            title="Zoom"
-            onClick={() => setZoomMenuOpen((o) => !o)}
-          >
-            <FaSearchPlus />
-            <span className="toolbar-btn-text zoom-tb-value">{zoomLevel}%</span>
-          </button>
+          <span className="zoom-tb-mid">
+            <FaSearchPlus className="zoom-tb-icon" />
+            {zoomEditing ? (
+              <input
+                ref={zoomInputRef}
+                className="zoom-tb-input"
+                type="number"
+                min={ZOOM_MIN}
+                max={ZOOM_MAX}
+                step={10}
+                value={zoomInput}
+                onChange={(e) => setZoomInput(e.target.value)}
+                onBlur={commitZoom}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { commitZoom(); }
+                  if (e.key === 'Escape') { setZoomInput(String(zoomLevel)); setZoomEditing(false); }
+                }}
+                autoFocus
+              />
+            ) : (
+              <span
+                className="toolbar-btn-text zoom-tb-value"
+                title="Click to type an exact zoom"
+                onClick={() => { setZoomEditing(true); setTimeout(() => zoomInputRef.current?.select(), 0); }}
+              >{zoomLevel}%</span>
+            )}
+            <button
+              className="zoom-tb-caret"
+              title="Zoom options"
+              onClick={() => setZoomMenuOpen((o) => !o)}
+            >▾</button>
+          </span>
           <button
             className="toolbar-btn zoom-tb-step"
             title="Zoom in"
@@ -1212,51 +1237,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           ><CirclePlusIcon /></button>
           {zoomMenuOpen && (
             <div className="zoom-menu">
-              {/* v1.36: the menu's HEADER is a three-cell grid — minus | amount
-                * | plus — full-bleed, icons filling their cells. The amount is
-                * still click-to-type. */}
-              <div className="zoom-menu-stepper">
-                <button
-                  className="zoom-step"
-                  title="Zoom out"
-                  disabled={zoomLevel <= ZOOM_MIN}
-                  onClick={() => setZoomLevel(Math.max(ZOOM_MIN, zoomLevel - 10))}
-                ><CircleMinusIcon /></button>
-                <div className="zoom-menu-value">
-                  {zoomEditing ? (
-                    <input
-                      ref={zoomInputRef}
-                      className="zoom-input"
-                      type="number"
-                      min={ZOOM_MIN}
-                      max={ZOOM_MAX}
-                      step={10}
-                      value={zoomInput}
-                      onChange={(e) => setZoomInput(e.target.value)}
-                      onBlur={commitZoom}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') { commitZoom(); setZoomMenuOpen(false); }
-                        if (e.key === 'Escape') { setZoomInput(String(zoomLevel)); setZoomEditing(false); }
-                      }}
-                      autoFocus
-                    />
-                  ) : (
-                    <span
-                      className="zoom-label"
-                      onClick={() => { setZoomEditing(true); setTimeout(() => zoomInputRef.current?.select(), 0); }}
-                      title="Click to type an exact zoom"
-                    >
-                      {zoomLevel}%
-                    </span>
-                  )}
-                </div>
-                <button
-                  className="zoom-step"
-                  title="Zoom in"
-                  disabled={zoomLevel >= ZOOM_MAX}
-                  onClick={() => setZoomLevel(Math.min(ZOOM_MAX, zoomLevel + 10))}
-                ><CirclePlusIcon /></button>
-              </div>
               <button
                 className="zoom-menu-item"
                 onClick={() => { setZoomLevel(100); setZoomMenuOpen(false); }}
@@ -1505,13 +1485,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     if (tok.startsWith('c:')) {
       const c = commandDef(tok.slice(2));
       if (!c) return null;
+      // v3.48, Derek: blur after running so a command button (e.g. Fit) doesn't
+      // keep the focus ring lit blue — it's a one-shot action, not a toggle.
+      const runCmd = (e: React.MouseEvent) => { c.run(); (e.currentTarget as HTMLElement).blur(); };
       return tall ? (
-        <button key={tok} className="toolbar-btn rib-tall rib-tall-btn" title={c.label} data-key={c.id} onClick={() => c.run()}>
+        <button key={tok} className="toolbar-btn rib-tall rib-tall-btn" title={c.label} data-key={c.id} onClick={runCmd}>
           <span className="rib-tall-icon">{c.icon}</span>
           <span className="rib-tall-label">{c.label}</span>
         </button>
       ) : (
-        <button key={tok} className="toolbar-btn" title={c.label} data-key={c.id} onClick={() => c.run()}>
+        <button key={tok} className="toolbar-btn" title={c.label} data-key={c.id} onClick={runCmd}>
           {c.icon}
         </button>
       );
