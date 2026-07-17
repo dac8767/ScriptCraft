@@ -129,10 +129,16 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
     })));
 
   // The application menu (first slot on macOS): the standard block.
+  // v3.15, Derek: About opens the APP's About dialog (version, credits,
+  // compatibility, donate) — not macOS's stock panel. It rides the command
+  // bus; MenuBar's 'about' action owns the dialog. Help no longer lists it.
   const appMenu = await Submenu.new({
     text: 'ScriptCraft',
     items: [
-      await PredefinedMenuItem.new({ text: 'About ScriptCraft', item: { About: null } }),
+      await MenuItem.new({
+        text: 'About ScriptCraft',
+        action: () => { window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'about' })); },
+      }),
       await PredefinedMenuItem.new({ item: 'Separator' }),
       await PredefinedMenuItem.new({ item: 'Services' }),
       await PredefinedMenuItem.new({ item: 'Separator' }),

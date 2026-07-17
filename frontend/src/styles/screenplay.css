@@ -12482,19 +12482,12 @@ html.android .version-history-panel {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* mirrors the QAT side so the title stays centered; carries the donate
-   button at the far right (v3.12). */
-.fs-titlebar-right {
-  flex: 1;
-  min-width: 78px;
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
+/* mirrors the traffic-light inset + QAT width so the title stays centered */
+.fs-titlebar-balance { flex: 1; min-width: 78px; align-self: stretch; }
 /* Buy Me a Coffee — the widget's look, drawn locally. v3.13, Derek's config:
-   pill #00d6e5, black outline/text, yellow #FFDD00 cup. Brand button, so
-   the monotone-icon rule doesn't apply here (like the red text-color A). */
+   pill #00d6e5, black outline/text, yellow #FFDD00 cup. v3.15: lives in the
+   About ScriptCraft dialog. Brand button, so the monotone-icon rule doesn't
+   apply here (like the red text-color A). */
 .fs-bmc-btn {
   display: inline-flex;
   align-items: center;
@@ -12513,6 +12506,9 @@ html.android .version-history-panel {
 }
 .fs-bmc-btn:hover { background: #2ee0ec; }
 .fs-bmc-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+.about-donate { display: flex; justify-content: center; margin: 10px 0 4px; }
+.about-donate .fs-bmc-btn { height: 26px; padding: 0 14px; font-size: 16px; border-radius: 13px; }
+.about-donate .fs-bmc-btn svg { width: 15px; height: 15px; }
 
 /* v3.07, Derek: Obsidian-style collapse row atop each side panel. The button
    hugs the panel's OUTER edge (the side it folds into). */

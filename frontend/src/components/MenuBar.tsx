@@ -218,6 +218,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // mapped positions re-render (and re-sync natively) immediately.
   const bookmarksByScript = useBookmarkStore((s) => s.byScript);
   const bookmarksLastEdit = useBookmarkStore((s) => s.lastEdit);
+  // v3.15: read early — the Help menu's contents depend on it (About moves
+  // to the native app menu when that menu exists).
+  const menuSystem = useSettingsStore((st) => st.menuSystem);
   const menuRef = useRef<HTMLDivElement>(null);
   // Platform-aware modifier key symbol for shortcut labels
   const mod = /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl+';
@@ -1864,11 +1867,14 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const helpMenu: MenuSection = {
     label: 'Help',
     items: [
-      {
+      /* v3.15, Derek: About lives in the ScriptCraft app menu, not Help —
+         but ONLY native mode has an app menu, so the in-window Help keeps
+         it (removing it there would leave About unreachable). */
+      ...(menuSystem === 'native' && isTauriEnv() ? [] : [{
         icon: <FaInfoCircle />,
         label: 'About ScriptCraft',
         action: () => setAboutOpen(true),
-      },
+      }]),
       {
         icon: <FaKeyboard />,
         label: 'Keyboard Shortcuts',
@@ -2280,7 +2286,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // dropdown portal) stays unrendered while native mode is on — but the
   // component itself stays mounted: it owns the dialogs, the shortcut
   // handler, and the menu data the native bar mirrors.
-  const menuSystem = useSettingsStore((st) => st.menuSystem);
   const nativeMenus = menuSystem === 'native' && isTauriEnv();
   useEffect(() => {
     if (nativeMenus) {
@@ -2663,6 +2668,22 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             <div className="about-title">ScriptCraft</div>
             <div className="about-version">Version {APP_VERSION}</div>
             <div className="about-tagline">Free, open-source screenwriting software</div>
+            {/* v3.15, Derek: the donate button lives here now (out of the
+                titlebar). Same locally-drawn BMC look as before. */}
+            <div className="about-donate">
+              <button
+                className="fs-bmc-btn"
+                title="Buy me a coffee"
+                onClick={() => openInBrowser(DONATE_URL)}
+              >
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 4.5 h10 l-0.4 2 h-9.2 Z" fill="#000" />
+                  <path d="M3.9 7 h8.2 l-1 6.2 a1 1 0 0 1 -1 0.8 h-4.2 a1 1 0 0 1 -1 -0.8 Z" fill="#FFDD00" stroke="#000" strokeWidth="0.8" />
+                  <path d="M4.6 3 c0 -0.8 6.8 -0.8 6.8 0 l0.2 1.5 h-7.2 Z" fill="#FFDD00" stroke="#000" strokeWidth="0.8" />
+                </svg>
+                <span>Buy me a coffee</span>
+              </button>
+            </div>
             <div className="about-credit">
               Built from the{' '}
               <a href="https://github.com/Proteus-Technologies-Private-Limited/OpenDraft" target="_blank" rel="noopener noreferrer">

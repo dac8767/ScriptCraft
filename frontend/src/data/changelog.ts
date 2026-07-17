@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.14';
+export const APP_VERSION = '3.15';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.15',
+    date: '2026-07-17',
+    items: [
+      { title: 'One About, in the right place', detail: 'ScriptCraft > About ScriptCraft now opens the full About window (version, credits, compatibility) instead of macOS\'s stock panel, and Help no longer duplicates it. With in-window menus, Help keeps the item — there\'s no app menu there to hold it.', tags: ['UI'] },
+      { title: 'Donate button moved into About', detail: 'The Buy Me a Coffee button leaves the titlebar and lives in the About ScriptCraft window.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.14',
     date: '2026-07-17',
