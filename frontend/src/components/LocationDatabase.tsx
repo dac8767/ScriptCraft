@@ -77,8 +77,10 @@ const LocationDatabase: React.FC<Props> = ({ editor, style }) => {
   }, [scenes]);
 
   const getSceneCount = useCallback((loc: LocationEntry): number => {
-    const fromName = locationSceneCounts.get(loc.name)?.length || 0;
-    const fromAliases = loc.aliases.reduce((sum, a) => sum + (locationSceneCounts.get(a)?.length || 0), 0);
+    // v3.45, Derek: match case-insensitively — scene headings are upper-cased,
+    // so an older lowercase location entry still counts its scenes.
+    const fromName = locationSceneCounts.get(loc.name.toUpperCase())?.length || 0;
+    const fromAliases = loc.aliases.reduce((sum, a) => sum + (locationSceneCounts.get(a.toUpperCase())?.length || 0), 0);
     return fromName + fromAliases;
   }, [locationSceneCounts]);
 
@@ -235,7 +237,7 @@ const LocationDatabase: React.FC<Props> = ({ editor, style }) => {
                 onClick={() => setSelectedId(loc.id)}
               >
                 <div className="location-db-card-header">
-                  <span className="location-db-card-name">{loc.name}</span>
+                  <span className="location-db-card-name">{loc.name.toUpperCase()}</span>
                   <span className="location-db-card-count">{getSceneCount(loc)}</span>
                 </div>
                 <div className="location-db-card-meta">
@@ -304,7 +306,7 @@ interface DetailViewProps {
 const LocationDetailView: React.FC<DetailViewProps> = ({ loc, sceneIndices, scenes, onEdit, onDelete, onGoToScene }) => (
   <>
     <div className="location-db-detail-header">
-      <h3>{loc.name}</h3>
+      <h3>{loc.name.toUpperCase()}</h3>
       <div className="location-db-detail-actions">
         <button onClick={onEdit}>Edit</button>
         <button onClick={onDelete} className="location-db-danger">Delete</button>

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.44';
+export const APP_VERSION = '3.45';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.45',
+    date: '2026-07-17',
+    items: [
+      { title: 'Scene headings are really uppercase', detail: 'Scene heading text is now stored in caps, not just shown that way — so the Location tool, the scene list, search and Fountain/PDF export all see real uppercase. Older lowercase headings fix themselves the moment you touch them, and the Location tool shows every name in caps regardless.', tags: ['Fix', 'Editor'] },
+    ],
+  },
   {
     version: '3.44',
     date: '2026-07-17',
