@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.34';
+export const APP_VERSION = '3.35';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.35',
+    date: '2026-07-17',
+    items: [
+      { title: 'Quick Access icons truly the same height', detail: 'Sized from each glyph\'s MEASURED drawn extent instead of its font box — icon glyphs fill anywhere from 75% to 100% of their boxes, which is why Open and Save read smaller. Every icon now draws at the same visual height.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '3.34',
     date: '2026-07-17',

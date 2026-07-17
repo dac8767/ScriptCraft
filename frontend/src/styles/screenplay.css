@@ -12609,8 +12609,15 @@ html.android .version-history-panel {
 /* v3.25, Derek (task #140): every QAT icon box is 11px, but FaSave's disk
    glyph fills its viewBox edge-to-edge while arrows/search carry built-in
    air — so Save READS bigger. Optical correction, not a metric bug. */
+/* v3.35, Derek: per-glyph sizes computed from MEASURED ink heights
+   (svg getBBox ÷ viewBox), so every QAT icon's drawn height is ~10.5px.
+   FA glyphs cover different fractions of their boxes: the folder and eye
+   only ~75%, the save disk ~87%, most others 100%. */
+.fs-titlebar-btn svg { font-size: 10.5px; }
 .fs-titlebar-btn[data-qat="save"] svg,
-.fs-titlebar-btn[data-qat="saveAs"] svg { font-size: 10px; }
+.fs-titlebar-btn[data-qat="saveAs"] svg { font-size: 12px; }
+.fs-titlebar-btn[data-qat="open"] svg,
+.fs-titlebar-btn[data-qat="preview"] svg { font-size: 14px; }
 /* v3.21, Derek: the title centers on the WINDOW, not on the leftover flex
    space — absolute at 50% of the bar, so QAT width can't push it around. */
 .fs-titlebar { position: relative; }
