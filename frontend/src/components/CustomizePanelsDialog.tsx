@@ -16,7 +16,7 @@ import { MENU_ICONS, UTILITY_ICONS } from './uiIcons';
  * from the Add dropdown. Item registry: toolbarBuiltins.ts.
  */
 import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
-import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
+import { ALL_TOOLS, WINDOW_IDS, PANEL_EXCLUDED_IDS } from './ToolDock';
 import { confirmDialog, saveDialog } from './ConfirmDialog';
 import { DEFAULT_TOOLBAR_LEFT, stripTall } from './toolbarBuiltins';
 import RibbonPalette from './RibbonPalette';
@@ -266,9 +266,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
 
 
   const PANEL_PRODUCTION_IDS: ToolId[] = ['tags'];
-  // v3.63, Derek: Asset Manager and Spell Check are not offered as side-panel
-  // tools — they open from the Tools menu / as their own windows instead.
-  const PANEL_EXCLUDED_IDS: ToolId[] = ['assets', 'spelling'];
+  // PANEL_EXCLUDED_IDS (Asset Manager, Spell Check) lives in ToolDock now — one
+  // list, so the dock and this dialog agree on what can be a side-panel tool.
   // One combined Panels tab (v0.48): every panel item in one list — the
   // Left / Right buttons on each row already choose the side, so separate
   // Left Panel and Right Panel tabs were redundant.

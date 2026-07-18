@@ -297,7 +297,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     const onKey = (e: KeyboardEvent) => {
       if (!((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === 'z' || e.key === 'Z'))) return;
       const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      // Skip ONLY real text fields (the section-title / spacer-size inputs) so
+      // they keep native text undo. NOT the script editor (contentEditable) —
+      // when you click a toolbar button the editor keeps focus, so bailing on
+      // contentEditable meant Cmd+Z fell through to the script's undo.
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
       e.preventDefault();
       e.stopPropagation();
       ribUndo();

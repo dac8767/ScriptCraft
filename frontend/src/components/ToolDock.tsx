@@ -141,6 +141,11 @@ export const TOOL_FOOTERS: Partial<Record<ToolId, React.FC>> = {
 export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'titlepage', 'history'];
 export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 
+/** v3.73, Derek: tools that are NOT offered as side-panel tools and never
+ *  render in a dock — they open from the Tools menu / as their own windows.
+ *  ONE list, read by the dock AND Customize > Side Panels. */
+export const PANEL_EXCLUDED_IDS: ToolId[] = ['assets', 'spelling'];
+
 const MIN_W = 240;
 const MIN_H = 260;
 /** Dock column width; tools whose remembered width fits open inline. */
@@ -390,6 +395,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     return i === -1 ? 1000 + ALL_TOOLS.findIndex((t) => t.id === id) : i;
   };
   const tools = ALL_TOOLS.filter((t) => {
+    if (PANEL_EXCLUDED_IDS.includes(t.id)) return false;   // never dock these
     const cfg = toolConfigFor(toolConfig, t.id);
     return cfg.enabled && cfg.side === side;
   }).sort((a, b) => orderIdx(a.id) - orderIdx(b.id));

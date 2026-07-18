@@ -65,9 +65,19 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.72';
+export const APP_VERSION = '3.73';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.73',
+    date: '2026-07-18',
+    items: [
+      { title: 'Asset Manager & Spell Check gone from the side panels for good', detail: 'They are no longer offered as side-panel tools AND no longer render in a dock even if a saved layout had them there — so an old file can no longer leave them stuck in the sidebar.', tags: ['Fix', 'Tools'] },
+      { title: 'Trimmed the ribbon customize palette', detail: 'Spell Check, Writing Suggestions, Take Auto Save, Compare with Auto Save and AI Writer are no longer offered as ribbon buttons.', tags: ['UI'] },
+      { title: 'Section titles centred; titled rows sit a little lower', detail: 'Ribbon section titles are centred again, and when a section has a title its first row of items drops a few px to give the title room.', tags: ['UI'] },
+      { title: 'Undo works while clicked into the toolbar during edit mode', detail: 'Cmd/Ctrl+Z now undoes ribbon edits even when the script editor still holds focus — previously it only worked when focus was in the Customize window.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '3.72',
     date: '2026-07-18',
