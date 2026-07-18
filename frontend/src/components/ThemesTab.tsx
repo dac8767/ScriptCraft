@@ -34,6 +34,19 @@ export default function ThemesTab() {
   const [pickerKey, setPickerKey] = React.useState<string | null>(null);
   const [importNote, setImportNote] = React.useState('');
 
+  // v3.79, Derek: if the user builds a theme then clicks the Customize dialog's
+  // Save (instead of the tab's "Save Theme"), commit it anyway so it lands in
+  // the list. The dialog dispatches this right before it closes.
+  React.useEffect(() => {
+    const commit = () => {
+      if (!editing) return;
+      saveCustomTheme({ ...editing, label: editing.label.trim() || 'My Theme' });
+      setEditing(null);
+    };
+    window.addEventListener('scriptcraft:customize-save', commit);
+    return () => window.removeEventListener('scriptcraft:customize-save', commit);
+  }, [editing, saveCustomTheme]);
+
   const ids = allThemeIds();
   const labelOf = (id: string) =>
     BUILTIN_THEMES.find((b) => b.id === id)?.label

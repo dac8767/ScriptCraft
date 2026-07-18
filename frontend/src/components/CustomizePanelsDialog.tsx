@@ -648,7 +648,10 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     const snap = openSnapRef.current;
     if (snap) useEditorStore.getState().restoreCustomizations(JSON.parse(snap));
   };
-  const handleSave = () => onClose();
+  // v3.79, Derek: clicking the dialog's Save also commits a theme that's being
+  // edited in the Themes tab (its own "Save Theme" button is easy to miss). The
+  // ThemesTab listens for this and saves whatever it has open.
+  const handleSave = () => { window.dispatchEvent(new CustomEvent('scriptcraft:customize-save')); onClose(); };
   const handleCancel = () => { revertCustomizations(); onClose(); };
   const requestClose = async () => {
     if (!isDirty()) { onClose(); return; }
