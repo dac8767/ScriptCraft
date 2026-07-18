@@ -897,11 +897,12 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar-editing .toolbar-spacer {
   position: relative;
   box-sizing: border-box;
-  /* v3.66/v3.68, Derek: a real BAR — brighter accent fill, a min width, and an
-     explicit height (it was collapsing to a flat dashed line because a spacer
-     has no content to give it height). align-self:center keeps it centred in
-     its row. */
-  min-width: 48px;
+  /* v3.66/v3.68, Derek: a real BAR — brighter accent fill and an explicit
+     height (it was collapsing to a flat dashed line because a spacer has no
+     content to give it height). align-self:center keeps it centred in its row.
+     v3.69: min width 5px so a spacer can be dragged down to its 5px minimum
+     (the resize grip still overhangs the right edge, so it stays grabbable). */
+  min-width: 5px;
   height: var(--rib-itemh, 24px);
   align-self: center;
   border: 1px solid color-mix(in srgb, var(--fd-accent) 70%, var(--fd-border));

@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.68';
+export const APP_VERSION = '3.69';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.69',
+    date: '2026-07-18',
+    items: [
+      { title: 'Help menu: one "Feedback" item replaces Report a Bug / Feature Request', detail: 'The separate Report a Bug and Feature Request items are gone; a single Feedback item opens the feedback form the same in-app way.', tags: ['UI'] },
+      { title: 'Ribbon spacers can shrink to 5px', detail: 'The minimum spacer width is now 5px (was 8), and the edit-mode bar can be dragged down that far — the resize grip overhangs the edge so it stays grabbable.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.68',
     date: '2026-07-18',

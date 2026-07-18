@@ -152,8 +152,7 @@ import {
 /** v2.98: the Help-menu form links, shared by the menu items and the
  *  ribbon-pinnable commands — one place for each URL. */
 const HELP_FORMS = {
-  featureRequest: { title: 'Feature Request', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagqeHW8Hd0qZZxD5/form' },
-  reportBug: { title: 'Report a Bug', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagykyhflKTRjphGr/form' },
+  feedback: { title: 'Feedback', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagnRKrWVIbujv2Wf/form' },
 };
 
 /* v3.08, Derek: the donation link at the end of Help. Opens the Buy Me a
@@ -1107,8 +1106,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     keyboardShortcuts: () => setShortcutsOpen(true),
     knowledgeBase: () => setKnowledgeBaseOpen(true),
     changelog: () => setChangelogOpen(true),
-    featureRequest: () => setHelpForm(HELP_FORMS.featureRequest),
-    reportBug: () => setHelpForm(HELP_FORMS.reportBug),
+    feedback: () => setHelpForm(HELP_FORMS.feedback),
   };
   const shortcutActionsRef = useRef(shortcutActions);
   // Menu items display the EFFECTIVE binding, so a rebound (or cleared)
@@ -1813,13 +1811,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       { separator: true, label: '' },
       {
         icon: <FaExternalLinkAlt />,
-        label: 'Feature Request…',
-        action: () => setHelpForm(HELP_FORMS.featureRequest),
-      },
-      {
-        icon: <FaExternalLinkAlt />,
-        label: 'Report a Bug…',
-        action: () => setHelpForm(HELP_FORMS.reportBug),
+        label: 'Feedback…',
+        action: () => setHelpForm(HELP_FORMS.feedback),
       },
       { separator: true, label: '' },
       {

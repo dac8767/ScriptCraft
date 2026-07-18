@@ -172,7 +172,7 @@ export const ribRemoveToken = (tok: string) => {
 
 // v3.67: a ribbon spacer is `s:<id>` with an optional `:<px>` width. Dragging
 // its edge in edit mode rewrites that width in place.
-export const SPACER_MIN_PX = 8;
+export const SPACER_MIN_PX = 5;
 export const SPACER_MAX_PX = 400;
 /** Set the pixel width of the spacer whose token is `tok` (matched by its
  *  `s:<id>` identity, whatever width it currently carries). */

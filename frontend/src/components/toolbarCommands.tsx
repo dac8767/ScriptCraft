@@ -12,7 +12,7 @@ import {
   FaFile, FaFolderOpen, FaFileImport, FaSave, FaRegSave, FaPrint, FaEye,
   FaFilePdf, FaFileExport, FaFileWord, FaCog, FaCut, FaCopy, FaPaste,
   FaMousePointer, FaColumns, FaImage, FaFlag, FaSearchPlus, FaSearchMinus,
-  FaRulerHorizontal, FaInfoCircle, FaKeyboard, FaExternalLinkAlt, FaBug,
+  FaRulerHorizontal, FaInfoCircle, FaKeyboard, FaExternalLinkAlt,
   FaPencilAlt,
 } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
@@ -86,8 +86,7 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'keyboardShortcuts', label: 'Keyboard Shortcuts', icon: <FaKeyboard />, run: () => emit('keyboardShortcuts') },
   { id: 'knowledgeBase', label: 'Knowledge Base', icon: <FaInfoCircle />, run: () => emit('knowledgeBase') },
   { id: 'changelog', label: 'Changelog', icon: <FaHistory />, run: () => emit('changelog') },
-  { id: 'featureRequest', label: 'Feature Request', icon: <FaExternalLinkAlt />, run: () => emit('featureRequest') },
-  { id: 'reportBug', label: 'Report a Bug', icon: <FaBug />, run: () => emit('reportBug') },
+  { id: 'feedback', label: 'Feedback', icon: <FaExternalLinkAlt />, run: () => emit('feedback') },
 ];
 
 export const commandDef = (id: string): ToolbarCommand | null =>
