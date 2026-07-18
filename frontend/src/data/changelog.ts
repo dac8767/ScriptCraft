@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.65';
+export const APP_VERSION = '3.66';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.66',
+    date: '2026-07-18',
+    items: [
+      { title: 'Spacers are easier to see and grab while editing', detail: 'The edit-mode spacer bubble is now brighter (an accent-tinted fill and border instead of a dim gray) and has a minimum width, so even a narrow spacer is easy to spot and grab. It is still invisible on the live bar.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.65',
     date: '2026-07-18',

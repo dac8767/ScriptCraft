@@ -897,17 +897,19 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar-editing .toolbar-spacer {
   position: relative;
   box-sizing: border-box;
-  border: 1px dashed color-mix(in srgb, var(--fd-border) 70%, transparent);
+  /* v3.66, Derek: brighter and always grabbable — an accent-tinted bubble with
+     a min width, so even a narrow spacer is easy to spot and grab. */
+  min-width: 48px;
+  border: 1px dashed color-mix(in srgb, var(--fd-accent) 70%, var(--fd-border));
   border-radius: 5px;
-  background: color-mix(in srgb, var(--fd-navigator-bg) 22%, transparent);
-  opacity: 0.55;
+  background: color-mix(in srgb, var(--fd-accent) 24%, var(--fd-toolbar-bg));
 }
 .toolbar-editing .toolbar-spacer::after {
   content: 'spacer';
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: 8px; letter-spacing: 0.02em;
-  color: var(--fd-text-muted);
+  font-size: 9px; letter-spacing: 0.02em;
+  color: var(--fd-text);
   overflow: hidden; white-space: nowrap;
   pointer-events: none;
 }
