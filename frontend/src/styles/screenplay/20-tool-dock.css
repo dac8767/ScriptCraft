@@ -336,8 +336,11 @@
 }
 .tool-window-resize:hover { opacity: 1; }
 
-/* Embedded former left-panel views fill the window */
-.tool-window .scene-navigator-embed {
+/* Embedded former left-panel views fill the window — floating AND inline, so
+   the scene list grows with the body when the tool is resized taller (rather
+   than sitting at content height and leaving dead space above the footer). */
+.tool-window .scene-navigator-embed,
+.tool-inline-body .scene-navigator-embed {
   display: flex;
   flex-direction: column;
   flex: 1;

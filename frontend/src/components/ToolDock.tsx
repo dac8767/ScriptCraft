@@ -451,7 +451,10 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     e.preventDefault();
     const startY = e.clientY;
     const startH = activeSize.h;
-    const el = (e.currentTarget as HTMLElement).previousElementSibling as HTMLElement | null;
+    // Resize the BODY, not just whatever sits above the handle: tools with a
+    // footer (Scenes' search) put the footer between the body and this handle,
+    // so previousElementSibling would balloon the footer instead of the list.
+    const el = (e.currentTarget as HTMLElement).closest('.tool-inline')?.querySelector('.tool-inline-body') as HTMLElement | null;
     let h = startH;
     const onMove = (ev: PointerEvent) => {
       h = Math.max(160, startH + (ev.clientY - startY));

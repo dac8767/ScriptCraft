@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.56';
+export const APP_VERSION = '3.57';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.57',
+    date: '2026-07-18',
+    items: [
+      { title: 'Fixed resizing the Scenes tool jumping to a huge empty height', detail: 'Dragging the bottom of the Scenes window to resize it grabbed the search footer instead of the scene list, so the window ballooned with a big gap between the list and the search bar. The drag now resizes the list body, and the list stretches to fill the taller window instead of leaving dead space.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '3.56',
     date: '2026-07-18',
