@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.53';
+export const APP_VERSION = '3.54';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.54',
+    date: '2026-07-18',
+    items: [
+      { title: 'Scenes tool: count & filter up top, search at the bottom', detail: 'The Scenes tool now matches the other tool windows — the scene count and the filter live in the window header, and the search is a footer bar. The old in-panel title/filter strip and floating search bar are gone.', tags: ['UI', 'Tools'] },
+      { title: 'Opening a script no longer marks it changed', detail: 'The scene-heading auto-uppercase now only fires on your edits, not when a script loads. Opening an older script with lowercase headings leaves it clean (nothing to save) — the headings still snap to caps the moment you touch them.', tags: ['Fix', 'Editor'] },
+    ],
+  },
   {
     version: '3.53',
     date: '2026-07-18',

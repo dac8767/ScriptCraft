@@ -14642,6 +14642,25 @@ body.fs-writing-focus::before {
   padding: 6px 8px;
   display: flex;
 }
+/* v3.54, Derek: the Scenes tool's search lives in the window footer bar; the
+   footer already owns the border + padding, so the search strips its own. */
+.tool-window-footer .navigator-search--footer {
+  flex: 1; min-width: 0;
+  padding: 0; border-bottom: none;
+}
+/* v3.54: the Scenes filter popover — a floating shell (portalled to body,
+   positioned by top/left) wrapping the same .scene-filters rows the tool body
+   used to hold inline. */
+.fs-scene-filterpop {
+  position: fixed;
+  z-index: 10050;
+  width: 240px;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .35);
+  padding: 10px;
+}
 /* v1.91: a toggle switch that is still a checkbox underneath — same input,
    same persistence, only the face changes. First wearer: Enable Typewriter. */
 input.fs-switch {

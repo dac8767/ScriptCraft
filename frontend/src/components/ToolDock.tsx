@@ -30,7 +30,7 @@ import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { DoubleChevronIcon, chevronTowards } from './uiIcons';
 import { useProjectStore } from '../stores/projectStore';
-import SceneNavigator, { type NavTab } from './SceneNavigator';
+import SceneNavigator, { SceneHeaderExtra, SceneFooter, type NavTab } from './SceneNavigator';
 import NavigatorTool, { NavigatorHeaderExtra } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
@@ -130,10 +130,12 @@ export const TOOL_HEADER_EXTRAS: Partial<Record<ToolId, React.FC>> = {
   goals: GoalsHeaderExtra,
   notebook: NotebookHeaderExtra,   // v2.05: Pages + create buttons
   beatboard: OutlineHeaderControls, // v2.41: count/Arrangement/Presets/add in the chrome
+  scenes: SceneHeaderExtra,        // v3.54: scene count + filter popover
 };
-// v1.97: currently empty — Navigator's filter moved into its header. The
-// slot stays: it's the one place a tool can register a true footer bar.
-export const TOOL_FOOTERS: Partial<Record<ToolId, React.FC>> = {};
+// v3.54: the Scenes tool's search bar is a true footer.
+export const TOOL_FOOTERS: Partial<Record<ToolId, React.FC>> = {
+  scenes: SceneFooter,
+};
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
 export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'titlepage', 'history'];

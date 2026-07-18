@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
-import { useEditorStore } from '../stores/editorStore';
+import { useEditorStore, EMPTY_SCENE_FILTERS, type SceneFilters } from '../stores/editorStore';
 import { computeSceneLengths, computePageBlocks, type PageContentInfo } from '../editor/pagination';
 import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../utils/scriptTiming';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
@@ -205,20 +205,14 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   // Expanded scene (shows synopsis inline)
   const [expandedSceneIdx, setExpandedSceneIdx] = useState<number | null>(null);
 
-  // Search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [scrollingUp, setScrollingUp] = useState(true);
-  const listRef = useRef<HTMLDivElement>(null);
-  const lastScrollTop = useRef(0);
-
-  // Filter state
-  const [showFilters, setShowFilters] = useState(false);
-  const [filterCharacters, setFilterCharacters] = useState<string[]>([]);
-  const [filterLocation, setFilterLocation] = useState('');
-  const [filterPrefix, setFilterPrefix] = useState('');
-  const [filterTime, setFilterTime] = useState('');
-  const [filterColor, setFilterColor] = useState('');
-  const [filterSynopsis, setFilterSynopsis] = useState('');
+  // v3.54, Derek: the search + filters now live in the store — the window's
+  // header popover (count + filters) and its footer (search) render them
+  // outside this body. The body just reads them and publishes the derived
+  // option lists + count back (setSceneNavData) for the header to show.
+  const searchQuery = useEditorStore((s) => s.sceneSearch);
+  const sceneFilters = useEditorStore((s) => s.sceneFilters);
+  const setSceneNavData = useEditorStore((s) => s.setSceneNavData);
+  const { characters: filterCharacters, location: filterLocation, prefix: filterPrefix, time: filterTime, color: filterColor, synopsis: filterSynopsis } = sceneFilters;
 
   // Page preview state
   const pageGridRef = useRef<HTMLDivElement>(null);
@@ -265,28 +259,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
       renameInputRef.current.select();
     }
   }, [renamingLocation]);
-
-  // Detect scroll direction in the scene list — show search bar on scroll-up.
-  // Re-run when the Scenes tab becomes active; the `.navigator-list` div is
-  // unmounted while the user is on another tab, so the scroll listener must
-  // re-attach to the freshly mounted element when they come back.
-  useEffect(() => {
-    if (activeTab !== 'scenes') return;
-    const el = listRef.current;
-    if (!el) return;
-    lastScrollTop.current = el.scrollTop;
-    const onScroll = () => {
-      const top = el.scrollTop;
-      if (top < lastScrollTop.current) {
-        setScrollingUp(true);
-      } else if (top > lastScrollTop.current) {
-        setScrollingUp(false);
-      }
-      lastScrollTop.current = top;
-    };
-    el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
-  }, [activeTab]);
 
   // ── Compute scene details (characters, location, length) ──
 
@@ -523,6 +495,21 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     }, [] as number[]);
   }, [scenes, sceneDetails, searchQuery, filterCharacters, filterLocation, filterPrefix, filterTime, filterColor, filterSynopsis, hasActiveFilter]);
 
+  // v3.54: publish the count + filter option lists for the window's header
+  // popover, which renders outside this body. Scenes view only (the Pages /
+  // Locations tools share this component but have no such header).
+  useEffect(() => {
+    if (activeTab !== 'scenes') return;
+    setSceneNavData({
+      filtered: filteredIndices.length,
+      total: scenes.length,
+      characters: allCharacters,
+      locations: allLocations,
+      prefixes: allPrefixes,
+      times: allTimes,
+    });
+  }, [activeTab, filteredIndices.length, scenes.length, allCharacters, allLocations, allPrefixes, allTimes, setSceneNavData]);
+
   // ── Navigate to a scene by index ──
 
   const goToScene = useCallback(
@@ -633,118 +620,11 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     <div className="scene-navigator scene-navigator-embed">
 
       {/* ── Scenes tab ───────────────────────────────────────────────── */}
+      {/* v3.54, Derek: the title/count/filter now live in the window HEADER
+          (SceneHeaderExtra) and the search in the FOOTER (SceneFooter). The
+          body is just the list. */}
       {activeTab === 'scenes' && (
-        <>
-          <div className="navigator-header">
-            <span className="navigator-title">Scenes</span>
-            <span className="scene-count">
-              {(hasActiveFilter || searchQuery) ? `${filteredIndices.length}/` : ''}{scenes.length}
-            </span>
-            <button
-              className={`scene-filter-btn${hasActiveFilter ? ' active' : ''}`}
-              onClick={() => setShowFilters(!showFilters)}
-              title="Filter scenes"
-            >
-              <FilterIcon filled={hasActiveFilter} />
-            </button>
-          </div>
-
-          {showFilters && (
-            <div className="scene-filters">
-              <div className="scene-filter-group">
-                <select
-                  className="scene-filter-select"
-                  value=""
-                  onChange={(e) => {
-                    if (e.target.value && !filterCharacters.includes(e.target.value)) {
-                      setFilterCharacters([...filterCharacters, e.target.value]);
-                    }
-                  }}
-                >
-                  <option value="">Character...</option>
-                  {allCharacters.filter(c => !filterCharacters.includes(c)).map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-                {filterCharacters.length > 0 && (
-                  <div className="filter-tags">
-                    {filterCharacters.map(c => (
-                      <span key={c} className="filter-tag">
-                        {c}
-                        <button onClick={() => setFilterCharacters(filterCharacters.filter(x => x !== c))}>×</button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="scene-filter-row">
-                <select className="scene-filter-select" value={filterLocation} onChange={(e) => setFilterLocation(e.target.value)}>
-                  <option value="">Location...</option>
-                  {allLocations.map(l => <option key={l} value={l}>{l}</option>)}
-                </select>
-                <select className="scene-filter-select" value={filterPrefix} onChange={(e) => setFilterPrefix(e.target.value)}>
-                  <option value="">INT/EXT...</option>
-                  {allPrefixes.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-              <div className="scene-filter-row">
-                <select className="scene-filter-select" value={filterTime} onChange={(e) => setFilterTime(e.target.value)}>
-                  <option value="">Time of Day...</option>
-                  {allTimes.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-                <div className="scene-filter-colors">
-                  {['', '#8b5cf6', '#4f46e5', '#2563eb', '#059669', '#eab308', '#f97316', '#ef4444', '#000000', '#ffffff'].map(c => (
-                    <button
-                      key={c || 'all'}
-                      className={`scene-filter-color-dot${filterColor === c ? ' active' : ''}`}
-                      style={{ background: c || 'var(--fd-text)', opacity: c ? 1 : 0.25 }}
-                      onClick={() => setFilterColor(c)}
-                      title={c ? c : 'All colors'}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="scene-filter-row">
-                <input
-                  className="scene-filter-input"
-                  type="text"
-                  placeholder="Synopsis contains..."
-                  value={filterSynopsis}
-                  onChange={(e) => setFilterSynopsis(e.target.value)}
-                />
-              </div>
-              <div className="scene-filter-row">
-                {hasActiveFilter && (
-                  <button className="filter-clear-btn" onClick={() => {
-                    setFilterCharacters([]);
-                    setFilterLocation('');
-                    setFilterPrefix('');
-                    setFilterTime('');
-                    setFilterColor('');
-                    setFilterSynopsis('');
-                  }}>Clear All</button>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="navigator-list" ref={listRef}>
-            {/* Search bar — sticky on scroll-up, scrolls away on scroll-down */}
-            <div className={`navigator-search${scrollingUp ? ' navigator-search--pinned' : ''}`}>
-              <svg className="navigator-search-icon" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="6.5" cy="6.5" r="5" /><line x1="10" y1="10" x2="14.5" y2="14.5" />
-              </svg>
-              <input
-                className="navigator-search-input"
-                type="text"
-                placeholder="Search headings & synopses..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button className="navigator-search-clear" onClick={() => setSearchQuery('')}>×</button>
-              )}
-            </div>
+          <div className="navigator-list">
             {filteredIndices.length === 0 ? (
               <div className="navigator-empty">
                 {(hasActiveFilter || searchQuery)
@@ -819,7 +699,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               })
             )}
           </div>
-        </>
       )}
 
       {/* ── Pages tab ────────────────────────────────────────────────── */}
@@ -1033,5 +912,144 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     </>
   );
 };
+
+// ── Window-chrome slots (v3.54, Derek) ──────────────────────────────────
+// The Scenes tool's count + filter render in the window HEADER and its search
+// in the FOOTER, matching the other tool windows. State lives in the store so
+// these — rendered outside the tool body — stay in sync with the list. The
+// COLORS list mirrors the old in-body filter panel.
+
+const SCENE_FILTER_COLORS = ['', '#8b5cf6', '#4f46e5', '#2563eb', '#059669', '#eab308', '#f97316', '#ef4444', '#000000', '#ffffff'];
+
+export function SceneHeaderExtra() {
+  const data = useEditorStore((s) => s.sceneNavData);
+  const filters = useEditorStore((s) => s.sceneFilters);
+  const setFilters = useEditorStore((s) => s.setSceneFilters);
+  const search = useEditorStore((s) => s.sceneSearch);
+  const hasActiveFilter = filters.characters.length > 0 || !!filters.location || !!filters.prefix || !!filters.time || !!filters.color || !!filters.synopsis;
+  const patch = (p: Partial<SceneFilters>) => setFilters({ ...filters, ...p });
+
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: PointerEvent) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest('.fs-scene-filterpop') && t !== btnRef.current && !btnRef.current?.contains(t)) setOpen(false);
+    };
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('pointerdown', close);
+    document.addEventListener('keydown', key);
+    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', key); };
+  }, [open]);
+
+  const toggle = () => {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 6, left: Math.max(8, Math.min(r.right - 240, window.innerWidth - 256)) });
+    }
+    setOpen((v) => !v);
+  };
+
+  return (
+    <span className="fs-nav-filterctl">
+      <span className="scene-count">{(hasActiveFilter || search) ? `${data.filtered}/` : ''}{data.total}</span>
+      <button
+        ref={btnRef}
+        className={`fs-nav-filterbtn${hasActiveFilter ? ' active' : ''}`}
+        title="Filter scenes"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={toggle}
+      >
+        <FilterIcon filled={hasActiveFilter} />
+      </button>
+      {open && pos && createPortal(
+        <div className="fs-scene-filterpop scene-filters" style={{ top: pos.top, left: pos.left }}>
+          <div className="scene-filter-group">
+            <select
+              className="scene-filter-select"
+              value=""
+              onChange={(e) => { if (e.target.value && !filters.characters.includes(e.target.value)) patch({ characters: [...filters.characters, e.target.value] }); }}
+            >
+              <option value="">Character...</option>
+              {data.characters.filter((c) => !filters.characters.includes(c)).map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            {filters.characters.length > 0 && (
+              <div className="filter-tags">
+                {filters.characters.map((c) => (
+                  <span key={c} className="filter-tag">{c}<button onClick={() => patch({ characters: filters.characters.filter((x) => x !== c) })}>×</button></span>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="scene-filter-row">
+            <select className="scene-filter-select" value={filters.location} onChange={(e) => patch({ location: e.target.value })}>
+              <option value="">Location...</option>
+              {data.locations.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+            <select className="scene-filter-select" value={filters.prefix} onChange={(e) => patch({ prefix: e.target.value })}>
+              <option value="">INT/EXT...</option>
+              {data.prefixes.map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+          <div className="scene-filter-row">
+            <select className="scene-filter-select" value={filters.time} onChange={(e) => patch({ time: e.target.value })}>
+              <option value="">Time of Day...</option>
+              {data.times.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <div className="scene-filter-colors">
+              {SCENE_FILTER_COLORS.map((c) => (
+                <button
+                  key={c || 'all'}
+                  className={`scene-filter-color-dot${filters.color === c ? ' active' : ''}`}
+                  style={{ background: c || 'var(--fd-text)', opacity: c ? 1 : 0.25 }}
+                  onClick={() => patch({ color: c })}
+                  title={c ? c : 'All colors'}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="scene-filter-row">
+            <input
+              className="scene-filter-input"
+              type="text"
+              placeholder="Synopsis contains..."
+              value={filters.synopsis}
+              onChange={(e) => patch({ synopsis: e.target.value })}
+            />
+          </div>
+          {hasActiveFilter && (
+            <div className="scene-filter-row">
+              <button className="filter-clear-btn" onClick={() => setFilters({ ...EMPTY_SCENE_FILTERS })}>Clear All</button>
+            </div>
+          )}
+        </div>,
+        document.body,
+      )}
+    </span>
+  );
+}
+
+export function SceneFooter() {
+  const search = useEditorStore((s) => s.sceneSearch);
+  const setSearch = useEditorStore((s) => s.setSceneSearch);
+  return (
+    <div className="navigator-search navigator-search--footer">
+      <svg className="navigator-search-icon" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <circle cx="6.5" cy="6.5" r="5" /><line x1="10" y1="10" x2="14.5" y2="14.5" />
+      </svg>
+      <input
+        className="navigator-search-input"
+        type="text"
+        placeholder="Search headings & synopses..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+      {search && <button className="navigator-search-clear" onClick={() => setSearch('')}>×</button>}
+    </div>
+  );
+}
 
 export default SceneNavigator;

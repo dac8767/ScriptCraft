@@ -9,15 +9,21 @@ export const SceneHeading = Node.create({
 
   // v3.45, Derek: scene headings are ALWAYS upper-cased in the text itself, not
   // just via CSS — so the Location tool, Fountain/PDF export and search all see
-  // real caps. Fixes lowercase headings the moment you type or edit them (and
-  // self-heals older lowercase ones on the next edit/open). Only a-z→A-Z, which
-  // is length-preserving, so positions/marks/selection are untouched.
+  // real caps. Fixes lowercase headings the moment you type or edit them. Only
+  // a-z→A-Z, which is length-preserving, so positions/marks/selection are
+  // untouched.
+  //
+  // v3.54, Derek: EDITS ONLY. This used to also fire on the transaction that
+  // loads a script (setContent), which rewrote every heading and marked a
+  // freshly-opened file dirty. setContent carries `preventUpdate`; skipping
+  // those means opening an old script with lowercase headings no longer dirties
+  // it — they still self-heal the moment you touch the script.
   addProseMirrorPlugins() {
     return [
       new Plugin({
         key: new PluginKey('sceneHeadingUppercase'),
         appendTransaction: (trs, _oldState, newState) => {
-          if (!trs.some((t) => t.docChanged)) return null;
+          if (!trs.some((t) => t.docChanged && !t.getMeta('preventUpdate'))) return null;
           const edits: { from: number; to: number; text: string }[] = [];
           newState.doc.descendants((node, pos) => {
             if (node.type.name !== 'sceneHeading') return;

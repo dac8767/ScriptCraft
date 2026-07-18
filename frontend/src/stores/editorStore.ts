@@ -877,6 +877,29 @@ export const DEFAULT_OUTLINE_BAR_ROWS: OutlineBarRow[] = [
   { id: 'script-1', kind: 'script' },
 ];
 
+/** v3.54, Derek: the Scenes tool's active filter set. Lives in the store so the
+ *  window's header popover, its footer search and the tool body all share it. */
+export interface SceneFilters {
+  characters: string[];
+  location: string;
+  prefix: string;
+  time: string;
+  color: string;
+  synopsis: string;
+}
+export const EMPTY_SCENE_FILTERS: SceneFilters = { characters: [], location: '', prefix: '', time: '', color: '', synopsis: '' };
+/** The derived data the Scenes body publishes for the header popover + count
+ *  (the header/footer render outside the body and can't see the editor). */
+export interface SceneNavData {
+  filtered: number;
+  total: number;
+  characters: string[];
+  locations: string[];
+  prefixes: string[];
+  times: string[];
+}
+export const EMPTY_SCENE_NAV_DATA: SceneNavData = { filtered: 0, total: 0, characters: [], locations: [], prefixes: [], times: [] };
+
 /** v2.30: a non-viewed outline tab's parked data — its sections plus each
  *  beat's section/order in that tab. Beats themselves are SHARED. v2.60:
  *  barOffset is the beat's hand-placed page offset within its section on the
@@ -1183,6 +1206,13 @@ interface EditorState {
    *  the shared window chrome — stay in sync with the list body. */
   navFilter: string;
   setNavFilter: (v: string) => void;
+  /** v3.54: Scenes tool search / filters / published option lists (ephemeral). */
+  sceneSearch: string;
+  setSceneSearch: (v: string) => void;
+  sceneFilters: SceneFilters;
+  setSceneFilters: (f: SceneFilters) => void;
+  sceneNavData: SceneNavData;
+  setSceneNavData: (d: SceneNavData) => void;
   navShowKinds: Record<string, boolean>;
   setNavShowKinds: (v: Record<string, boolean>) => void;
   /** v1.83: the CURRENT text-highlighter color — one source shared by the
@@ -1952,6 +1982,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   navFilter: '',
   setNavFilter: (v) => set({ navFilter: v }),
+  sceneSearch: '',
+  setSceneSearch: (v) => set({ sceneSearch: v }),
+  sceneFilters: EMPTY_SCENE_FILTERS,
+  setSceneFilters: (f) => set({ sceneFilters: f }),
+  sceneNavData: EMPTY_SCENE_NAV_DATA,
+  setSceneNavData: (d) => set({ sceneNavData: d }),
   navShowKinds: {},
   setNavShowKinds: (v) => set({ navShowKinds: v }),
   highlightColor: (_vs.highlightColor as string) ?? '#ffff00',
