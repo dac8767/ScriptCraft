@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.61';
+export const APP_VERSION = '3.62';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.62',
+    date: '2026-07-18',
+    items: [
+      { title: 'Closing a ribbon section no longer drags the right-aligned run leftward', detail: 'Removing a section on the left of the alignment split used to merge it into the first right-aligned section and collapse the split, so the right-aligned sections jumped over to the left. A section now closes into a neighbour on its OWN side of the split (or clears itself if it is the only one there), leaving the other side untouched.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '3.61',
     date: '2026-07-18',

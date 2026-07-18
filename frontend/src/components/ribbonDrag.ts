@@ -124,23 +124,45 @@ export const ribMoveSection = (from: number, to: number) => {
   commit(m);
 };
 
-export const ribMergeSections = (i: number) => {
-  const m = clone(getModel());
-  const a = m.sections[i];
-  const b = m.sections[i + 1];
-  if (!a || !b) return;
-  m.sections.splice(i, 2, {
+/** Close (remove) section `i` without disturbing the align split or the OTHER
+ *  side of it: the section's items merge into a SAME-SIDE neighbour, or — if
+ *  it's the only section on its side — it's cleared to empty so the split (and
+ *  the far side) survive. The old behaviour merged with the next section
+ *  regardless of the split, so closing the last left section swallowed the
+ *  first right one and collapsed the split, dragging the right run leftward.
+ *  Exported pure (no store) for testing. */
+export const closeSectionInModel = (m: RibbonModel, i: number): RibbonModel => {
+  const n = m.sections.length;
+  if (i < 0 || i >= n) return m;
+  const split = m.splitAt;
+  const onLeft = split === null || i < split;
+  // This side spans [.., hi): the left run ends at the split, the right at the end.
+  const hi = onLeft ? (split === null ? n : split) : n;
+  const lo = onLeft ? 0 : (split as number);
+  if (hi - lo <= 1) {
+    // Only section on its side — clearing beats merging across the boundary.
+    m.sections[i] = { top: [], bottom: [], hasBreak: false, breakLine: false };
+    return m;
+  }
+  const mergeAt = i + 1 < hi ? i : i - 1;   // merge forward, or back at the side's end
+  const a = m.sections[mergeAt];
+  const b = m.sections[mergeAt + 1];
+  if (!a || !b) return m;
+  m.sections.splice(mergeAt, 2, {
     top: [...a.top, ...b.top],
     bottom: [...a.bottom, ...b.bottom],
     hasBreak: a.hasBreak || b.hasBreak,
     breakLine: a.breakLine || b.breakLine,
     title: a.title || b.title,
   });
-  if (m.splitAt !== null) {
-    if (m.splitAt === i + 1) m.splitAt = null;
-    else if (m.splitAt > i + 1) m.splitAt -= 1;
-  }
-  commit(m);
+  // The merged pair is wholly on one side; the split only shifts if it sat
+  // strictly after the pair (i.e. the pair is on the left run).
+  if (m.splitAt !== null && m.splitAt > mergeAt + 1) m.splitAt -= 1;
+  return m;
+};
+
+export const ribCloseSection = (i: number) => {
+  commit(closeSectionInModel(clone(getModel()), i));
 };
 
 export const ribRemoveToken = (tok: string) => {

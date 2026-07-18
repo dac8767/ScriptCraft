@@ -27,7 +27,7 @@ import {
 import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import {
-  startRibbonDrag, ribMergeSections, ribRemoveToken, ribRemoveBreak,
+  startRibbonDrag, ribCloseSection, ribRemoveToken, ribRemoveBreak,
   ribToggleBreakLine, ribRemoveSplit, ribAddSectionAtBoundary, ribAddInlineAtBoundary,
   ribSetAlignSplit, ribSetSectionTitle, ribRemoveSectionTitle,
 } from './ribbonDrag';
@@ -1642,7 +1642,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 className="rib-edit-x rib-edit-secclose"
                 title="Close this section (its items join the neighbour)"
                 onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => ribMergeSections(i < sections.length - 1 ? i : i - 1)}
+                onClick={() => ribCloseSection(i)}
               >×</button>
             )}
             {/* v3.50, Derek: EVERY section wears a title field on top — type to
