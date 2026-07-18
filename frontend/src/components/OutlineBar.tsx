@@ -23,7 +23,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import { FaFileExport, FaStream, FaLayerGroup, FaDotCircle, FaRegCircle, FaArrowsAltH } from 'react-icons/fa';
-import { useEditorStore, toolConfigFor, type BeatInfo, type BeatColumn } from '../stores/editorStore';
+import { useEditorStore, toolConfigFor, DEFAULT_OUTLINE_BAR_ROWS, type BeatInfo, type BeatColumn } from '../stores/editorStore';
 import { dockWidthFor, toolDef } from './ToolDock';
 import { computeSceneLengths } from '../editor/pagination';
 import AddMenu from './AddMenu';
@@ -222,8 +222,10 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
   // v2.31: row height is set by dragging the bar's bottom edge (the strip
   // lives in ScreenplayEditor's top chrome) — the bar just renders it.
   const rowScale = useEditorStore((s) => s.outlineBarRowScale);
-  // v2.42: row order / extra rows / per-row heights + the labels toggle.
-  const barRows = useEditorStore((s) => s.outlineBarRows);
+  // v3.53, Derek: the Outline Bar is no longer customizable — it always shows
+  // the four default rows (Page Ruler / Sections / Beats / Scenes). The labels
+  // toggle stays (it's a plain view preference, not a layout edit).
+  const barRows = DEFAULT_OUTLINE_BAR_ROWS;
   const showLabels = useEditorStore((s) => s.outlineBarLabels);
 
   const scrollRef = useRef<HTMLDivElement>(null);

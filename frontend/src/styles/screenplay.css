@@ -17986,15 +17986,6 @@ input.fs-switch:checked::after { left: 15px; }
   border: 1px solid var(--fd-border); border-radius: 6px;
   background: color-mix(in srgb, var(--fd-navigator-bg) 55%, transparent);
   box-sizing: border-box;
-  cursor: grab;      /* v3.52: rows reorder by drag */
-  touch-action: none;
-}
-.fs-obviz-row.fs-obviz-dragging { opacity: 0.45; cursor: grabbing; }
-/* v3.52: the drop indicator between rows while dragging. */
-.fs-obviz-dropline {
-  height: 2px; border-radius: 2px;
-  background: var(--fd-accent);
-  margin: -1px 0;
 }
 .fs-obviz-label { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--fd-text); }
 .fs-obviz-name {

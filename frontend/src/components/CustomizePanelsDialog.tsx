@@ -15,7 +15,7 @@ import { MENU_ICONS, UTILITY_ICONS } from './uiIcons';
  * checkboxes (a ScriptCraft v5.5 holdover) are gone; hidden items are re-added
  * from the Add dropdown. Item registry: toolbarBuiltins.ts.
  */
-import { DEFAULT_OUTLINE_BAR_ROWS, MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
+import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
 import { confirmDialog, saveDialog } from './ConfirmDialog';
 import { DEFAULT_TOOLBAR_LEFT, stripTall } from './toolbarBuiltins';
@@ -79,176 +79,8 @@ const TAB_HINTS: Record<string, React.ReactNode> = {
   toolbar: <>Your toolbar above is now the editor. While this tab is open the real ribbon is live: drag items from the palette straight onto it, drag a section by its body to move it, hover an item or section for its ×. Use a faint “+ Add” block on the bar to insert a section, divider, spacer, alignment split or any item. Drag an item off the bar to remove it. Close this window to lock the layout.</>,
   qat: <>The buttons beside the traffic lights in the titlebar. Drag between Shown and Hidden — where you drop one is where it sits. Add dividers and spacers to group them.</>,
   panels: <>Drag tools between Left Panel, Right Panel and Hidden — where you drop one is where it sits. The Show/Hide in a list’s header controls the whole panel (drag a panel’s inner edge in the app to resize it). Divider labels are edited here only.</>,
-  outlinebar: <>Drag a row to reorder it; drag a row’s bottom edge to set its height; × removes a row. The four original rows keep their names — only rows you add can be renamed. Add Row can add a second copy (a ruler at the bottom, say). Drag the bar’s bottom edge in the app to scale every row at once.</>,
 };
 
-/** v2.42, Derek: Customize > Outline Bar — reorder the bar's rows, add
- *  extra ones, set each row's height, toggle the row labels. One config
- *  (outlineBarRows) that the bar renders directly. */
-const OUTLINE_ROW_LABELS: Record<string, string> = {
-  ruler: 'Page Ruler', acts: 'Sections', beats: 'Beats', script: 'Scenes',
-};
-const OUTLINE_ROW_DEFAULT_H: Record<string, number> = { ruler: 16, acts: 26, beats: 26, script: 26 };
-// v3.42, Derek: the four original rows keep their names locked — only rows the
-// user ADDS can be renamed.
-const LOCKED_ROW_IDS = new Set(DEFAULT_OUTLINE_BAR_ROWS.map((r) => r.id));
-function OutlineBarTab() {
-  const rows = useEditorStore((s) => s.outlineBarRows);
-  const setRows = useEditorStore((s) => s.setOutlineBarRows);
-  const labels = useEditorStore((s) => s.outlineBarLabels);
-  const setLabels = useEditorStore((s) => s.setOutlineBarLabels);
-  // v2.82, Derek: show/hide the bar from HERE too — the same outlineBarOpen
-  // the View menu and toolbar toggle drive (one setter, no rival state).
-  const barOpen = useEditorStore((s) => s.outlineBarOpen);
-  const setBarOpen = useEditorStore((s) => s.setOutlineBarOpen);
-
-  // v3.52, Derek: rows reorder by DRAG-AND-DROP (grab the row body), not ↑/↓
-  // arrows. Pointer-based (WebKit-safe, no dataTransfer needed); a drop line
-  // shows where it'll land, computed from row midpoints like the ribbon drags.
-  const vizRef = React.useRef<HTMLDivElement>(null);
-  const [dragId, setDragId] = React.useState<string | null>(null);
-  const [dropIdx, setDropIdx] = React.useState<number | null>(null);
-  const startRowDrag = (e: React.PointerEvent, id: string) => {
-    const t = e.target as HTMLElement;
-    if (t.closest('.fs-obviz-grip, .fs-obviz-x, input, button')) return;
-    e.preventDefault();
-    const snapshot = rows;
-    const fromIdx = snapshot.findIndex((r) => r.id === id);
-    if (fromIdx < 0) return;
-    setDragId(id);
-    let target = fromIdx;
-    const onMove = (ev: PointerEvent) => {
-      const rowEls = Array.from(vizRef.current?.querySelectorAll<HTMLElement>('.fs-obviz-row') ?? []);
-      let idx = rowEls.length;
-      for (let i = 0; i < rowEls.length; i++) {
-        const rr = rowEls[i].getBoundingClientRect();
-        if (ev.clientY < rr.top + rr.height / 2) { idx = i; break; }
-      }
-      target = idx;
-      setDropIdx(idx);
-    };
-    const onUp = () => {
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onUp);
-      setDragId(null);
-      setDropIdx(null);
-      if (target !== fromIdx && target !== fromIdx + 1) {
-        const next = [...snapshot];
-        const [moved] = next.splice(fromIdx, 1);
-        next.splice(target > fromIdx ? target - 1 : target, 0, moved);
-        setRows(next);
-      }
-    };
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onUp);
-  };
-  const addRow = (kind: 'ruler' | 'acts' | 'beats' | 'script') => {
-    const n = rows.filter((r) => r.kind === kind).length + 1;
-    setRows([...rows, { id: `${kind}-${n}-${Date.now().toString(36)}`, kind }]);
-  };
-  const effH = (r: { h?: number; kind: string }) => r.h ?? (OUTLINE_ROW_DEFAULT_H[r.kind] ?? 26);
-  // v3.42, Derek: heights are set by DRAGGING a row's bottom edge, not typed.
-  const startResize = (e: React.PointerEvent, r: { id: string; h?: number; kind: string }) => {
-    e.preventDefault();
-    const startY = e.clientY;
-    const startH = effH(r);
-    const move2 = (ev: PointerEvent) => {
-      const h = Math.max(10, Math.min(120, Math.round(startH + (ev.clientY - startY))));
-      setRows(rows.map((x) => (x.id === r.id ? { ...x, h } : x)));
-    };
-    const up = () => {
-      document.removeEventListener('pointermove', move2);
-      document.removeEventListener('pointerup', up);
-    };
-    document.addEventListener('pointermove', move2);
-    document.addEventListener('pointerup', up);
-  };
-
-  return (
-    <section>
-      <h3>Outline Bar</h3>
-      <div className="fs-customize-row fs-size-row">
-        <span className="fs-customize-tool">Outline Bar</span>
-        <span className="fs-customize-seg">
-          <button className={barOpen ? 'active' : ''} onClick={() => setBarOpen(true)}>Show</button>
-          <button className={!barOpen ? 'active' : ''} onClick={() => setBarOpen(false)}>Hide</button>
-        </span>
-      </div>
-      <h3>Outline Bar Rows</h3>
-      {/* v3.42, Derek: a VISUAL editor — each row is a block sized to its real
-          height; drag the bottom edge to resize. Original rows keep fixed
-          names; added rows can be renamed. */}
-      <div className="fs-obviz" ref={vizRef}>
-        {rows.map((r, i) => {
-          const locked = LOCKED_ROW_IDS.has(r.id);
-          return (
-            <React.Fragment key={r.id}>
-            {dragId && dropIdx === i && <div className="fs-obviz-dropline" />}
-            <div
-              className={`fs-obviz-row${dragId === r.id ? ' fs-obviz-dragging' : ''}`}
-              style={{ height: Math.max(18, effH(r)) }}
-              title="Drag to reorder"
-              onPointerDown={(e) => startRowDrag(e, r.id)}
-            >
-              <span className="fs-obviz-label">
-                {locked
-                  ? OUTLINE_ROW_LABELS[r.kind]
-                  : (
-                    <input
-                      className="fs-obviz-name"
-                      value={r.name ?? ''}
-                      placeholder={OUTLINE_ROW_LABELS[r.kind] ?? r.kind}
-                      title="Row name"
-                      onChange={(e) => setRows(rows.map((x) => (x.id === r.id ? { ...x, name: e.target.value || undefined } : x)))}
-                    />
-                  )}
-              </span>
-              <span className="fs-obviz-h">{effH(r)}px</span>
-              <span className="fs-obviz-ctrls">
-                <button
-                  className="fs-obviz-x"
-                  title={rows.length <= 1 ? 'The last row cannot be removed' : 'Remove this row'}
-                  disabled={rows.length <= 1}
-                  onClick={() => setRows(rows.filter((x) => x.id !== r.id))}
-                >×</button>
-              </span>
-              <span className="fs-obviz-grip" title="Drag to set this row's height" onPointerDown={(e) => startResize(e, r)} />
-            </div>
-            </React.Fragment>
-          );
-        })}
-        {dragId && dropIdx === rows.length && <div className="fs-obviz-dropline" />}
-      </div>
-      <div className="fs-customize-row fs-size-row">
-        <span className="fs-customize-tool">Add Row</span>
-        <span className="fs-customize-seg">
-          {(['ruler', 'acts', 'beats', 'script'] as const).map((k) => (
-            <button key={k} onClick={() => addRow(k)}>{OUTLINE_ROW_LABELS[k]}</button>
-          ))}
-        </span>
-      </div>
-      <div className="fs-customize-row fs-size-row">
-        <span className="fs-customize-tool">Row Labels</span>
-        <span className="fs-customize-seg">
-          <button className={labels ? 'active' : ''} onClick={() => setLabels(true)}>Show</button>
-          <button className={!labels ? 'active' : ''} onClick={() => setLabels(false)}>Hide</button>
-        </span>
-      </div>
-      <div className="fs-customize-row fs-size-row">
-        <span className="fs-customize-tool">Reset</span>
-        <span className="fs-customize-seg">
-          <button onClick={() => { setRows(DEFAULT_OUTLINE_BAR_ROWS); setLabels(true); }}>
-            Reset Rows to Default
-          </button>
-          {/* v2.52, Derek: this lived in the Toolbar tab — it belongs here. */}
-          <button onClick={() => useEditorStore.getState().setOutlineBarRowScale(1)}>
-            Reset Outline Bar Height
-          </button>
-        </span>
-      </div>
-    </section>
-  );
-}
 
 const CUSTOMIZE_SIZE_KEY = 'opendraft:customizeSize';
 
@@ -700,7 +532,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // React ('Rendered more hooks than during the previous render').
   const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones, toolbarZonesSet } = useEditorStore();
   const { panelDividers, setPanelDividers } = useEditorStore();
-  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'qat' | 'panels' | 'outlinebar' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'menu');
+  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'qat' | 'panels' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'menu');
 
   // v2.94, Derek: with the native macOS menu bar active there's no in-window
   // menu bar to customize — the tab disappears (revert the menu system in
@@ -899,7 +731,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       // simply stack, and adding an eighth costs no width at all.
       <div className="prefs-layout fs-customize-layout">
         <div className="prefs-tabs fs-customize-tabs">
-          {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['qat', 'Quick Access'], ['panels', 'Side Panels'], ['outlinebar', 'Outline Bar'], ['context', 'Context Menu'], ['elements', 'Elements'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const)
+          {([['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['qat', 'Quick Access'], ['panels', 'Side Panels'], ['context', 'Context Menu'], ['elements', 'Elements'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const)
             .filter(([id]) => !(nativeMenus && id === 'menu'))
             .map(([id, label]) => (
             <button
@@ -1140,7 +972,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             </div>
           </section>
           </>)}
-          {activeCat === 'outlinebar' && <OutlineBarTab />}
           {activeCat === 'elements' && <EditElementsDialog embedded />}
           {activeCat === 'keys' && <KeyboardShortcutsTab />}
           {activeCat === 'themes' && <ThemesTab />}

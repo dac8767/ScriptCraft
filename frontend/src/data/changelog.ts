@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.52';
+export const APP_VERSION = '3.53';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.53',
+    date: '2026-07-18',
+    items: [
+      { title: 'Outline Bar is fixed to its default rows', detail: 'The Customize > Outline Bar tab is gone — the bar always shows the four rows (Page Ruler, Sections, Beats, Scenes). You can still show/hide the bar from the View menu and drag its bottom edge to scale the rows.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '3.52',
     date: '2026-07-18',
