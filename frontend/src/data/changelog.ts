@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.77';
+export const APP_VERSION = '3.78';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.78',
+    date: '2026-07-18',
+    items: [
+      { title: 'Theme editor: the color picker no longer opens off-screen', detail: 'The swatch + hex column is pulled in from the right edge and the picker popup opens into that space on the right, so it stays on screen.', tags: ['Fix', 'UI'] },
+      { title: 'Smaller zoom − / + buttons', detail: 'The step buttons on the zoom control are smaller.', tags: ['UI'] },
+      { title: 'Add / Remove Scene Numbers is one toggle', detail: 'The ribbon/customize command is now a single "Scene Numbers" toggle (the menu already was), matching how it works everywhere.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.77',
     date: '2026-07-18',

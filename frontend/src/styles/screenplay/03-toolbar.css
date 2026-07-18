@@ -390,8 +390,11 @@
 /* The picker is anchored to the swatch INSIDE the dialog, so it can never land
    on another screen. */
 .fs-theme-picker-anchor { position: relative; }
+/* v3.78, Derek: the swatch + hex column is pulled in from the right edge (see
+   .fs-theme-color-controls) so the picker popup opens to its RIGHT, into that
+   freed space, instead of sliding off the edge of the window. */
 .fs-theme-picker-anchor .color-picker-popup {
-  position: absolute; top: calc(100% + 6px); right: 0; z-index: 2147483647;
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 2147483647;
   width: 232px;
 }
 
@@ -766,7 +769,9 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   border: 1px solid var(--fd-border); border-radius: 5px;
   color: var(--fd-text); font-size: 13px;
 }
-.fs-theme-color-controls { display: flex; align-items: center; gap: 8px; flex: none; }
+/* v3.78, Derek: pull the swatch + hex column left off the right edge so the
+   color-picker popup has room to open on the right without going off-screen. */
+.fs-theme-color-controls { display: flex; align-items: center; gap: 8px; flex: none; margin-right: 260px; }
 .fs-theme-color {
   width: 34px; height: 26px; padding: 0;
   border: 1px solid var(--fd-border);
@@ -826,8 +831,9 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 /* v3.04, Derek: −/+ steppers flank the dropdown trigger in the toolbar
    itself, and the current-zoom readout drops a size so the group stays
    compact. */
-.zoom-tb-step { width: 22px; min-width: 22px; padding: 0; }
-.zoom-tb-step svg { width: 12px; height: 12px; }
+/* v3.78, Derek: smaller zoom − / + step buttons. */
+.zoom-tb-step { width: 16px; min-width: 16px; padding: 0; }
+.zoom-tb-step svg { width: 9px; height: 9px; }
 .toolbar-btn-text.zoom-tb-value { font-size: 10px; padding: 0 4px; }
 .zoom-menu {
   position: absolute; top: calc(100% + 4px); right: 0;

@@ -31,8 +31,9 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'titlePage', label: 'Title Page', icon: <FaFileAlt />, run: () => useEditorStore.getState().setTitlePageEditorOpen(true) },
   { id: 'setDraft', label: 'Set Draft Number', icon: <FaFileSignature />, run: () => emit('setDraft') },
   { id: 'rename', label: 'Rename', icon: <FaEdit />, run: () => emit('rename') },
-  { id: 'addSceneNumbers', label: 'Add Scene Numbers', icon: <FaListUl />, run: () => useEditorStore.getState().setSceneNumbersVisible(true) },
-  { id: 'removeSceneNumbers', label: 'Remove Scene Numbers', icon: <FaListUl />, run: () => useEditorStore.getState().setSceneNumbersVisible(false) },
+  // v3.78, Derek: ONE toggle instead of separate Add / Remove — shows or hides
+  // scene numbers from whatever state you're in.
+  { id: 'sceneNumbers', label: 'Scene Numbers', icon: <FaListUl />, run: () => { const s = useEditorStore.getState(); s.setSceneNumbersVisible(!s.sceneNumbersVisible); } },
   { id: 'lockSceneNumbers', label: 'Lock Scene Numbers', icon: <FaLock />, run: () => { const s = useEditorStore.getState(); s.setSceneNumbersLocked(!s.sceneNumbersLocked); } },
   { id: 'revisionMode', label: 'Revision Mode', icon: <FaToggleOn />, run: () => { const s = useEditorStore.getState(); s.setRevisionMode(!s.revisionMode); } },
   { id: 'productionTags', label: 'Production Tags', icon: <FaTags />, run: () => useEditorStore.getState().openTool('tags') },
