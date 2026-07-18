@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.71';
+export const APP_VERSION = '3.72';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.72',
+    date: '2026-07-18',
+    items: [
+      { title: 'Fixed dragging the window by the title bar', detail: 'The Quick Access strip that fills most of the title bar row was not a drag surface (Tauri v2 only drags the exact element under the pointer), so most of the bar could not move the window. The whole row is draggable again — the QAT buttons still click as normal.', tags: ['Fix'] },
+    ],
+  },
   {
     version: '3.71',
     date: '2026-07-18',

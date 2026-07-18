@@ -65,11 +65,15 @@ const TitleBar: React.FC<{ editor: Editor | null }> = ({ editor }) => {
   if (!showTitleBar()) return null;
   return (
     <div className="fs-titlebar" data-tauri-drag-region>
-      {/* left inset clears the traffic lights */}
-      <div className="fs-titlebar-qat">
+      {/* left inset clears the traffic lights. v3.72, Derek: the drag attribute
+          has to be on THIS container too — Tauri v2 only drags the element
+          directly under the pointer, not descendants of .fs-titlebar, so the
+          QAT strip (which fills most of the bar) was a dead zone. The buttons
+          are the click target, so they still click rather than drag. */}
+      <div className="fs-titlebar-qat" data-tauri-drag-region>
         {qatItems.map((id) => {
-          if (isQatDivider(id)) return <span key={id} className="fs-titlebar-sep" />;
-          if (isQatSpacer(id)) return <span key={id} className="fs-titlebar-spacer" />;
+          if (isQatDivider(id)) return <span key={id} className="fs-titlebar-sep" data-tauri-drag-region />;
+          if (isQatSpacer(id)) return <span key={id} className="fs-titlebar-spacer" data-tauri-drag-region />;
           const o = QAT_BY_ID[id];
           if (!o) return null;
           const run = id === 'undo' ? () => smartUndo(editor)
