@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.79';
+export const APP_VERSION = '3.80';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.80',
+    date: '2026-07-18',
+    items: [
+      { title: 'Screenshot button', detail: 'A new Screenshot command (add it from Customize > Toolbar, under View) captures the script page you\'re looking at and saves it as a PNG.', tags: ['New Feature'] },
+    ],
+  },
   {
     version: '3.79',
     date: '2026-07-18',

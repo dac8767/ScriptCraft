@@ -13,7 +13,7 @@ import {
   FaFilePdf, FaFileExport, FaFileWord, FaCog, FaCut, FaCopy, FaPaste,
   FaMousePointer, FaColumns, FaImage, FaFlag, FaSearchPlus, FaSearchMinus,
   FaRulerHorizontal, FaInfoCircle, FaKeyboard, FaExternalLinkAlt,
-  FaPencilAlt,
+  FaPencilAlt, FaCamera,
 } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 
@@ -79,6 +79,9 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'fitWidth', label: 'Scale to Max Width', icon: <FaSearchPlus />, run: () => emit('fitWidth') },
   { id: 'actualSize', label: 'Actual Size (100%)', icon: <FaSearchMinus />, run: () => emit('actualSize') },
   { id: 'showRulers', label: 'Show/Hide Rulers', icon: <FaRulerHorizontal />, run: () => emit('showRulers') },
+  // v3.80, Derek: capture the page you're looking at as a PNG (html2canvas is
+  // loaded lazily inside the util so it only costs weight when used).
+  { id: 'screenshot', label: 'Screenshot', icon: <FaCamera />, run: () => { void import('../utils/screenshot').then((m) => m.captureScreenshot()); } },
   // v3.25: bookmarks removed (markers cover them); Last Edit stays pinnable.
   { id: 'lastEditLocation', label: 'Go to Last Edited', icon: <FaPencilAlt />, run: () => emit('lastEditLocation') },
   { id: 'formatPrefs', label: 'Script Format Preferences', icon: <FaFileAlt />, run: () => emit('formatPrefs') },

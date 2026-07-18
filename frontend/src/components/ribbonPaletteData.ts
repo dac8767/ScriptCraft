@@ -25,7 +25,7 @@ const RIBBON_HIDE = new Set(['c:spellCheck', 'c:writingSuggestions', 'c:takeSnap
 const PROJECT_CMDS = ['rename'];
 const EDIT_CMDS = ['cut', 'copy', 'paste', 'lastEditLocation'];
 const INSERT_CMDS = ['insertImage', 'insertMarker'];
-const VIEW_CMDS = ['fitPage', 'fitWidth', 'actualSize', 'showRulers', 'toggleLeftPanel', 'toggleRightPanel'];
+const VIEW_CMDS = ['fitPage', 'fitWidth', 'actualSize', 'showRulers', 'screenshot', 'toggleLeftPanel', 'toggleRightPanel'];
 
 const cmdOpt = (id: string) => {
   const c = TOOLBAR_COMMANDS.find((x) => x.id === id);
