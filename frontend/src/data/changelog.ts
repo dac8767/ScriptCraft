@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.58';
+export const APP_VERSION = '3.59';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.59',
+    date: '2026-07-18',
+    items: [
+      { title: 'Title Page: the two size selects are now the same width', detail: 'Title Size and Title Line 2 Size share a fixed width so they line up instead of sizing to their labels.', tags: ['UI'] },
+      { title: 'Title Page: the Delete Title Page button has a red background', detail: 'The destructive Delete Title Page button now carries a red tint so it reads apart from Preview/Cancel/Apply.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.58',
     date: '2026-07-18',

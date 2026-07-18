@@ -590,7 +590,7 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
           </div>
         </div>
         <div className="dialog-actions">
-          <button onClick={handleDeleteTitlePage} style={{ marginRight: 'auto', color: '#c0392b' }}>
+          <button onClick={handleDeleteTitlePage} style={{ marginRight: 'auto', color: '#c0392b', background: 'rgba(192, 57, 43, 0.14)', borderColor: 'rgba(192, 57, 43, 0.45)' }}>
             Delete Title Page
           </button>
           {/* v3.44, Derek: apply and jump to Preview to see the title page in place. */}

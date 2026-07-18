@@ -277,7 +277,8 @@
    text field grows, the size select rides at the right of the same row. */
 .tp-field-row { display: flex; gap: 16px; align-items: flex-end; }
 .tp-field-row .tp-field-grow { flex: 1; min-width: 0; }
-.tp-field-row .tp-field-size { flex: 0 0 auto; }
+/* Fixed basis so "Title Size" and "Title Line 2 Size" are the same length. */
+.tp-field-row .tp-field-size { flex: 0 0 140px; }
 .tp-field-row .tp-field-size .props-label { white-space: nowrap; }
 .tp-sync-btn {
   grid-column: 1 / -1; background: none; border: 1px dashed var(--fd-border);
