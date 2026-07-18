@@ -170,6 +170,25 @@ export const ribRemoveToken = (tok: string) => {
   commit(m);
 };
 
+// v3.67: a ribbon spacer is `s:<id>` with an optional `:<px>` width. Dragging
+// its edge in edit mode rewrites that width in place.
+export const SPACER_MIN_PX = 8;
+export const SPACER_MAX_PX = 400;
+/** Set the pixel width of the spacer whose token is `tok` (matched by its
+ *  `s:<id>` identity, whatever width it currently carries). */
+export const ribSetSpacerWidth = (tok: string, px: number) => {
+  const m = clone(getModel());
+  const parts = tok.split(':');
+  const id = `${parts[0]}:${parts[1]}`;            // 's:<id>'
+  const w = Math.max(SPACER_MIN_PX, Math.min(SPACER_MAX_PX, Math.round(px)));
+  const next = `${id}:${w}`;
+  const matches = (t: string) => t === id || t.startsWith(`${id}:`);
+  let changed = false;
+  const remap = (arr: string[]) => arr.map((t) => (matches(t) ? ((changed = true), next) : t));
+  for (const s of m.sections) { s.top = remap(s.top); s.bottom = remap(s.bottom); }
+  if (changed) commit(m);
+};
+
 export const ribRemoveSplit = () => {
   const m = clone(getModel());
   m.splitAt = null;

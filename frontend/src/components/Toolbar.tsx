@@ -30,6 +30,7 @@ import {
   startRibbonDrag, ribCloseSection, ribRemoveToken, ribRemoveBreak,
   ribToggleBreakLine, ribRemoveSplit, ribAddSectionAtBoundary, ribAddInlineAtBoundary,
   ribSetAlignSplit, ribSetSectionTitle, ribRemoveSectionTitle,
+  ribSetSpacerWidth, SPACER_MIN_PX, SPACER_MAX_PX,
 } from './ribbonDrag';
 import { tokenLabel } from './tokenMeta';
 import { buildRibbonPalette } from './ribbonPaletteData';
@@ -1548,6 +1549,30 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
      draggable to reorder and closeable. The drop indicators read from the
      store's ribEdit state; drops mutate toolbarLeft via ribbonDrag.ts. */
   const editDropline = <span className="rib-edit-dropline" />;
+  // v3.67, Derek: drag a spacer's right edge to resize it. The handle sits
+  // above the hover cover so it gets the pointer; we resize the .toolbar-spacer
+  // element live and commit the new width to its s:<id>:<px> token on release.
+  const startSpacerResize = (e: React.PointerEvent, tok: string) => {
+    e.preventDefault();
+    e.stopPropagation();   // don't start the item drag
+    const item = (e.currentTarget as HTMLElement).closest('.rib-edit-item');
+    const spacerEl = item?.querySelector('.toolbar-spacer') as HTMLElement | null;
+    if (!spacerEl) return;
+    const startX = e.clientX;
+    const startW = spacerEl.getBoundingClientRect().width;
+    let w = startW;
+    const onMove = (ev: PointerEvent) => {
+      w = Math.max(SPACER_MIN_PX, Math.min(SPACER_MAX_PX, startW + (ev.clientX - startX)));
+      spacerEl.style.width = `${w}px`;
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      ribSetSpacerWidth(tok, w);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  };
   const editItem = (tok: string, sec: number, row: 'top' | 'bottom', idx: number, big: boolean) => (
     <span
       key={`ei-${tok}`}
@@ -1561,6 +1586,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       {/* v3.42, Derek: hovering an item shows its NAME (on the cover, which is
           what the pointer actually sits over), not a generic helper string. */}
       <span className="rib-edit-cover" title={tokenLabel(tok)} />
+      {tok.startsWith('s:') && (
+        <span
+          className="toolbar-spacer-resize"
+          title="Drag to resize this spacer"
+          onPointerDown={(e) => startSpacerResize(e, tok)}
+        />
+      )}
       <button
         className="rib-edit-x"
         title="Remove from the toolbar"

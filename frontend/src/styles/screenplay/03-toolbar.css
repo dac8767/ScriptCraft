@@ -913,6 +913,18 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   overflow: hidden; white-space: nowrap;
   pointer-events: none;
 }
+/* v3.67, Derek: the drag-to-resize grip on a spacer's right edge (edit mode
+   only — it's rendered inside .rib-edit-item). Sits above the hover cover. */
+.toolbar-spacer-resize {
+  position: absolute;
+  top: 2px; bottom: 2px; right: -1px;
+  width: 8px;
+  z-index: 3;
+  cursor: ew-resize;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--fd-accent) 65%, transparent);
+}
+.toolbar-spacer-resize:hover { background: var(--fd-accent); }
 .tool-dock-spacer { height: 50px; flex: none; }
 .fs-spacer-row-label { color: var(--fd-text-muted); font-size: 12px; font-style: italic; }
 

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { closeSectionInModel, ribAddSectionAtBoundary, ribQuickAdd } from './ribbonDrag';
+import { closeSectionInModel, ribAddSectionAtBoundary, ribQuickAdd, ribSetSpacerWidth, SPACER_MAX_PX } from './ribbonDrag';
 import { parseRibbon, type RibbonModel } from './toolbarBuiltins';
 import { useEditorStore } from '../stores/editorStore';
 
@@ -72,5 +72,17 @@ describe('ribQuickAdd lands double-clicked items in the section just created/upd
     expect(m.sections[1].top).toContain('b:strike');      // landed in the new section
     const right = m.splitAt !== null ? m.sections.slice(m.splitAt) : [];
     expect(right.flatMap((s) => [...s.top, ...s.bottom])).not.toContain('b:strike');
+  });
+});
+
+describe('ribSetSpacerWidth rewrites a spacer token width in place', () => {
+  it('writes the width onto a width-less spacer and clamps to the max', () => {
+    useEditorStore.setState({ toolbarLeft: ['b:bold', 's:99', 'b:italic'], toolbarRight: [] });
+    ribSetSpacerWidth('s:99', 120);
+    expect(useEditorStore.getState().toolbarLeft).toContain('s:99:120');
+    ribSetSpacerWidth('s:99:120', 99999);   // over the max → clamped
+    expect(useEditorStore.getState().toolbarLeft).toContain(`s:99:${SPACER_MAX_PX}`);
+    // the neighbours are untouched
+    expect(useEditorStore.getState().toolbarLeft.filter((t) => t.startsWith('b:'))).toEqual(['b:bold', 'b:italic']);
   });
 });

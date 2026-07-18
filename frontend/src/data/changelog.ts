@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.66';
+export const APP_VERSION = '3.67';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.67',
+    date: '2026-07-18',
+    items: [
+      { title: 'Ribbon spacers are drag-resizeable', detail: 'While editing the toolbar, a spacer now has a grip on its right edge — drag it to set the spacer\'s width (8–400px). The width is saved with the spacer, and it stays invisible on the live bar.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '3.66',
     date: '2026-07-18',
