@@ -373,10 +373,10 @@ function TableBox({ box, focused, onChange, onFocusBox, onDelete }: {
 }) {
   const startDrag = useBoxDrag(box, onChange, () => onFocusBox(box.id));
   const [hover, setHover] = useState(false);
-  const isEmpty = tableIsEmpty(box.rows || []);
-  // v2.05: same slim head bar as text boxes; visible per Derek's empty/
-  // hover/focus rules so the move grip can never just vanish.
-  const showHead = focused || isEmpty || hover;
+  // v3.81, Derek: the head bar hides when you click away from the table; it
+  // comes back on hover or when the table is focused/active. (No longer pinned
+  // open just because the cells are empty.)
+  const showHead = focused || hover;
   return (
     <div className={`fs-nb-tablebox${focused ? ' focused' : ''}`} style={{ left: box.x, top: box.y }}
       onMouseDown={(e) => { e.stopPropagation(); onFocusBox(box.id); }}

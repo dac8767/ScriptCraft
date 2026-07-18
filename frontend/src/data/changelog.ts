@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.80';
+export const APP_VERSION = '3.81';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.81',
+    date: '2026-07-18',
+    items: [
+      { title: 'Scrapbook can pop out of the side panel', detail: 'The Scrapbook now has the pop-out button like every other tool — it is no longer locked inside the panel.', tags: ['Tools', 'UI'] },
+      { title: 'Scrapbook table bar hides when you click away', detail: 'A table\'s move/delete bar now hides once you click off it and returns on hover or when the table is active (images already worked this way).', tags: ['UI', 'Tools'] },
+      { title: 'Scrapbook text box: one border colour', detail: 'The text box uses the same border on hover and when clicked into, so there is no colour jump.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.80',
     date: '2026-07-18',

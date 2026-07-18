@@ -357,7 +357,8 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
 }
 .fs-nb-box.focused {
-  border-color: var(--fd-accent);
+  /* v3.81, Derek: same border on hover and when clicked in — no colour jump. */
+  border-color: var(--fd-border);
   box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
 }
 /* v1.99: an EMPTY item must announce itself since it has no contents to make
