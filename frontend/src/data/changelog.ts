@@ -65,15 +65,21 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.49';
+export const APP_VERSION = '3.50';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.50',
+    date: '2026-07-18',
+    items: [
+      { title: 'A title field over every ribbon section', detail: 'While editing the toolbar, each section now shows a “title” field on top — just type to name it, no adding a title from + Add and no dragging one around. Leave a field blank and nothing shows on the saved bar.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.49',
     date: '2026-07-17',
     items: [
       { title: 'Save & Cancel on the Customize window', detail: 'The Customize window now has Save and Cancel buttons. Cancel puts every customization — ribbon layout, Quick Access, menu bar, panels, sizes, the Outline Bar — back to how it looked when you opened the window. Closing with the X while you have unsaved changes asks whether to Save, not save (“Don’t Save”), or keep editing.', tags: ['UI'] },
-      { title: 'Drag a ribbon section title between sections', detail: 'A section title in the ribbon editor now has a small grip on its left — drag it to move the title onto another section, which lights up as you hover it. The title field itself still clicks to edit.', tags: ['UI'] },
     ],
   },
   {

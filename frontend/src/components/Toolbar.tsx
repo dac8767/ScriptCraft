@@ -22,14 +22,14 @@ import {
   FaEllipsisV,
   FaHashtag,
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
-  FaFolderPlus, FaRegEdit, FaExchangeAlt, FaGripLinesVertical,
+  FaFolderPlus, FaRegEdit, FaExchangeAlt,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import {
   startRibbonDrag, ribMergeSections, ribRemoveToken, ribRemoveBreak,
   ribToggleBreakLine, ribRemoveSplit, ribAddSectionAtBoundary, ribAddInlineAtBoundary,
-  ribSetAlignSplit, ribAddTitleAtBoundary, ribSetSectionTitle, ribRemoveSectionTitle,
+  ribSetAlignSplit, ribSetSectionTitle, ribRemoveSectionTitle,
 } from './ribbonDrag';
 import { tokenLabel } from './tokenMeta';
 import { buildRibbonPalette } from './ribbonPaletteData';
@@ -1628,12 +1628,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           {/* start of the right-aligned run — the left-most right item */}
           {i === splitAt && addBlock(splitAt, true)}
           <div
-            className={`rib-section rib-edit-section${s.hasBreak ? '' : ' rib-single'}${ribEdit.titleSpot === i ? ' rib-title-target' : ''}`}
+            className={`rib-section rib-edit-section${s.hasBreak ? '' : ' rib-single'}`}
             data-sec={i}
             title="Drag to move this section"
             onPointerDown={(e) => {
               const t = e.target as HTMLElement;
-              if (t.closest('.rib-edit-item, .rib-edit-x, .rib-edit-cover, .rib-edit-break, .rib-row-line, .rib-edit-sectitle-grip, input, select, button')) return;
+              if (t.closest('.rib-edit-item, .rib-edit-x, .rib-edit-cover, .rib-edit-break, .rib-row-line, input, select, button')) return;
               startRibbonDrag(e, `sec:${i}`);
             }}
           >
@@ -1645,36 +1645,25 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 onClick={() => ribMergeSections(i < sections.length - 1 ? i : i - 1)}
               >×</button>
             )}
-            {/* v3.42, Derek: a section title, editable, on top of the rows —
-                shown once one's been added from + Add. */}
-            {s.title !== undefined && (
-              <span className="rib-edit-sectitle-wrap">
-                {/* v3.49, Derek: the title carries its own drag grip so it can
-                    be moved onto another section — the label field itself
-                    still clicks-to-edit (the grip is the only drag handle). */}
-                <span
-                  className="rib-edit-sectitle-grip"
-                  title="Drag this title onto another section"
-                  onPointerDown={(e) => { e.stopPropagation(); startRibbonDrag(e, `title:${i}`); }}
-                >
-                  <FaGripLinesVertical />
-                </span>
-                <input
-                  className="rib-edit-sectitle"
-                  value={s.title}
-                  placeholder="Title"
-                  title="Section title"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => ribSetSectionTitle(i, e.target.value)}
-                />
-                <button
-                  className="rib-edit-x rib-edit-sectitle-x"
-                  title="Remove the title"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => ribRemoveSectionTitle(i)}
-                >×</button>
-              </span>
-            )}
+            {/* v3.50, Derek: EVERY section wears a title field on top — type to
+                name it, leave it blank and nothing shows on the saved bar.
+                (No more adding a title from + Add, no drag handle: the field is
+                just always here.) Empty ⇒ drop the title from the model so it
+                neither serializes nor renders live. */}
+            <span className="rib-edit-sectitle-wrap">
+              <input
+                className="rib-edit-sectitle"
+                value={s.title ?? ''}
+                placeholder="title"
+                title="Section title — leave blank for none"
+                onPointerDown={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v.trim() === '') ribRemoveSectionTitle(i);
+                  else ribSetSectionTitle(i, v);
+                }}
+              />
+            </span>
             {editRow(s, i, 'top')}
             {s.hasBreak && (
               <div className="rib-edit-break">
@@ -1807,14 +1796,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         divider: <span className="rib-util-vis"><span className="ruv-divider" /></span>,
         spacer: <span className="rib-util-vis"><span className="ruv-spacer" /></span>,
         split: <span className="rib-util-vis"><span className="ruv-box" /><span className="ruv-splitgap"><span /><span /></span><span className="ruv-box" /></span>,
-        title: <span className="rib-util-vis"><span className="ruv-title">Aa</span><span className="ruv-sec ruv-sec-sm"><span className="ruv-row" /></span></span>,
       };
       const structural = [
         { label: '1 Row Section', vis: vis.single, run: () => ribAddSectionAtBoundary('single', addMenu.at, addMenu.rightSide) },
         { label: '2 Row Section', vis: vis.double, run: () => ribAddSectionAtBoundary('double', addMenu.at, addMenu.rightSide) },
         { label: 'Divider', vis: vis.divider, run: () => ribAddInlineAtBoundary(`d:${Date.now()}`, addMenu.at, addMenu.rightSide) },
         { label: 'Spacer', vis: vis.spacer, run: () => ribAddInlineAtBoundary(`s:${Date.now()}`, addMenu.at, addMenu.rightSide) },
-        { label: 'Title', vis: vis.title, run: () => ribAddTitleAtBoundary(addMenu.at, addMenu.rightSide) },
         ...(splitAt === null ? [{ label: 'Alignment Split', vis: vis.split, run: () => ribSetAlignSplit(addMenu.at) }] : []),
       ];
       const q = addSearch.trim().toLowerCase();

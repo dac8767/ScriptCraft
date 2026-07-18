@@ -1,21 +1,20 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useEditorStore } from './editorStore';
-import { ribMoveTitle } from '../components/ribbonDrag';
+import { ribSetSectionTitle, ribRemoveSectionTitle } from '../components/ribbonDrag';
 import { parseRibbon, serializeRibbon, type RibbonSection } from '../components/toolbarBuiltins';
-
-/**
- * v3.49 — the Customize window's Save / Cancel rests on two things:
- *   1. captureCustomizations() / restoreCustomizations() round-trip EVERY
- *      persistent customization, so Cancel can put the layout back exactly.
- *      A field left out of one but not the other is the classic two-lists-
- *      that-drift bug — a Cancel that quietly keeps some edits.
- *   2. dragging a ribbon section title moves it onto another section.
- */
-const store = () => useEditorStore.getState();
 
 const sec = (over: Partial<RibbonSection>): RibbonSection =>
   ({ top: [], bottom: [], hasBreak: false, breakLine: false, ...over });
+
+/**
+ * v3.49 — the Customize window's Save / Cancel rests on
+ * captureCustomizations() / restoreCustomizations() round-tripping EVERY
+ * persistent customization, so Cancel can put the layout back exactly. A
+ * field left out of one but not the other is the classic two-lists-that-drift
+ * bug — a Cancel that quietly keeps some edits.
+ */
+const store = () => useEditorStore.getState();
 
 describe('captureCustomizations / restoreCustomizations', () => {
   beforeEach(() => {
@@ -61,26 +60,26 @@ describe('captureCustomizations / restoreCustomizations', () => {
   });
 });
 
-describe('ribMoveTitle — drag a section title onto another section', () => {
-  const setBar = (sections: RibbonSection[], splitAt: number | null = null) =>
-    useEditorStore.setState({ toolbarLeft: serializeRibbon({ sections, splitAt }), toolbarRight: [] });
+/**
+ * v3.50 — every section carries a title field. Naming one sets it; clearing
+ * the field drops the title so it neither serializes nor renders on the saved
+ * bar (an empty title must not leave a stray `st:` token behind).
+ */
+describe('section titles — set, clear, and empty-does-not-persist', () => {
+  const setBar = (sections: RibbonSection[]) =>
+    useEditorStore.setState({ toolbarLeft: serializeRibbon({ sections, splitAt: null }), toolbarRight: [] });
   const titles = () => parseRibbon(store().toolbarLeft).sections.map((s) => s.title);
 
-  it('moves the title off its source section onto the target', () => {
-    setBar([sec({ top: ['b:save'], title: 'One' }), sec({ top: ['b:undo'] })]);
-    ribMoveTitle(0, 1);
-    expect(titles()).toEqual([undefined, 'One']);
+  it('naming a section stores the title', () => {
+    setBar([sec({ top: ['b:save'] }), sec({ top: ['b:undo'] })]);
+    ribSetSectionTitle(0, 'Format');
+    expect(titles()).toEqual(['Format', undefined]);
   });
 
-  it('swaps when the target already has a title', () => {
-    setBar([sec({ top: ['b:save'], title: 'A' }), sec({ top: ['b:undo'], title: 'B' })]);
-    ribMoveTitle(0, 1);
-    expect(titles()).toEqual(['B', 'A']);
-  });
-
-  it('dropping a title on its own section is a no-op', () => {
-    setBar([sec({ top: ['b:save'], title: 'Keep' })]);
-    ribMoveTitle(0, 0);
-    expect(titles()).toEqual(['Keep']);
+  it('clearing the title removes it entirely — no empty st: token survives', () => {
+    setBar([sec({ top: ['b:save'], title: 'Format' })]);
+    ribRemoveSectionTitle(0);
+    expect(titles()).toEqual([undefined]);
+    expect(store().toolbarLeft.some((t) => t.startsWith('st:'))).toBe(false);
   });
 });

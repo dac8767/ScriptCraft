@@ -17004,31 +17004,9 @@ input.fs-switch:checked::after { left: 15px; }
   outline: none;
 }
 .rib-edit-sectitle:focus { border-color: var(--fd-accent); }
-.rib-edit-sectitle-x { top: -7px; right: -7px; }
-.rib-edit-sectitle-wrap:hover > .rib-edit-sectitle-x { opacity: 1; }
-
-/* v3.49, Derek: the title's drag grip — an inline handle just left of the
-   label (its space is always reserved, so revealing it on hover doesn't shove
-   the field). It's the ONLY thing that starts a title drag; the field itself
-   stays click-to-edit. Dragging it moves the title to another section, which
-   lights up as the drop target. Kept INSIDE the wrap (not hung off a corner)
-   so it never collides with the section-close or title-remove ×s. */
-.rib-edit-sectitle-grip {
-  flex: 0 0 auto;
-  display: inline-flex; align-items: center;
-  font-size: 8px; line-height: 1;
-  color: color-mix(in srgb, var(--fd-text) 55%, transparent);
-  cursor: grab; opacity: 0; transition: opacity 0.1s;
-  z-index: 7;
-}
-.rib-edit-sectitle-wrap:hover > .rib-edit-sectitle-grip { opacity: 1; }
-.rib-edit-sectitle-grip:active { cursor: grabbing; }
-.rib-edit-section.rib-title-target {
-  outline: 2px solid var(--fd-accent);
-  outline-offset: -1px;
-  border-radius: 5px;
-  background: color-mix(in srgb, var(--fd-accent) 12%, transparent);
-}
+/* v3.50, Derek: the placeholder ("title") reads faint so an unnamed section's
+   field is obviously optional, not an empty label waiting to be filled. */
+.rib-edit-sectitle::placeholder { color: var(--fd-text-muted); opacity: 0.6; }
 
 /* ─── v3.41, Derek: larger visual representations for each ribbon utility in
    the "+ Add" menu — a mini diagram of the shape, not just an icon. */

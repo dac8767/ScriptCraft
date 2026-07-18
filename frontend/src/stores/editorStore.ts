@@ -1136,8 +1136,8 @@ interface EditorState {
    *  These are EPHEMERAL (not persisted). */
   toolbarEditing: boolean;
   setToolbarEditing: (b: boolean) => void;
-  ribEdit: { dragging: boolean; spot: RibDropSpot | null; secSpot: number | null; titleSpot: number | null };
-  setRibEdit: (partial: Partial<{ dragging: boolean; spot: RibDropSpot | null; secSpot: number | null; titleSpot: number | null }>) => void;
+  ribEdit: { dragging: boolean; spot: RibDropSpot | null; secSpot: number | null };
+  setRibEdit: (partial: Partial<{ dragging: boolean; spot: RibDropSpot | null; secSpot: number | null }>) => void;
   setQatItems: (ids: string[]) => void;
   /** v2.11: Outline Bar zoom — pixels per page on the timeline. 0 = fit
    *  the whole ruler to the visible width. Persisted view state. */
@@ -1852,9 +1852,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   toolbarEditing: false,
   setToolbarEditing: (b) => set({
     toolbarEditing: b,
-    ...(b ? {} : { ribEdit: { dragging: false, spot: null, secSpot: null, titleSpot: null } }),
+    ...(b ? {} : { ribEdit: { dragging: false, spot: null, secSpot: null } }),
   }),
-  ribEdit: { dragging: false, spot: null, secSpot: null, titleSpot: null },
+  ribEdit: { dragging: false, spot: null, secSpot: null },
   setRibEdit: (partial) => set((s) => ({ ribEdit: { ...s.ribEdit, ...partial } })),
   outlineBarZoom: (_vs.outlineBarZoom as number) ?? 0,
   setOutlineBarZoom: (px) => {
