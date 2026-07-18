@@ -1,0 +1,1078 @@
+/* ============ TOOLBAR ============ */
+.toolbar {
+  display: flex; align-items: center; height: 33px;
+  background: var(--fd-toolbar-bg); border-bottom: none;
+  /* v0.87: right padding matched to the menu bar's (6px) so the toolbar's
+     right-most control lines up with the Local Only chip above it.
+     v2.73, Derek: 3px of bottom padding — breathing room between the
+     buttons and the bar's bottom edge (heights synced in chromeSizes.ts). */
+  padding: 0 6px 3px 8px; gap: 2px; flex-shrink: 0;
+  position: relative; z-index: 1;
+}
+.toolbar.toolbar-comfortable { height: 39px; }
+.toolbar-group { display: flex; align-items: center; gap: 1px; }
+.toolbar-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 24px; background: transparent;
+  border: 1px solid transparent; border-radius: 5px;
+  color: var(--fd-text); cursor: pointer; font-size: 12px;
+  transition: background 0.1s;
+}
+.toolbar-btn:hover { background: var(--fd-overlay-light); border-color: transparent; }
+.toolbar-btn.active { background: var(--fd-overlay-medium); border-color: transparent; }
+.toolbar-btn:disabled { opacity: .3; cursor: default; }
+.toolbar-btn-text { width: auto; padding: 0 8px; font-size: 11px; }
+.toolbar-separator {
+  width: 2px; height: 18px;
+  background: var(--fd-text-muted);
+  opacity: 0.55;               /* v0.97: was 1px @ .5 on --fd-border — invisible */
+  border-radius: 1px;
+  margin: 0 6px;
+}
+.toolbar.toolbar-comfortable .toolbar-btn { width: 28px; height: 26px; font-size: 13px; }
+.toolbar.toolbar-comfortable .toolbar-separator { height: 20px; margin: 0 6px; }
+
+.element-selector, .font-selector, .font-size-selector {
+  height: 22px; background: var(--fd-input-bg); color: var(--fd-text);
+  border: 1px solid var(--fd-overlay-medium); border-radius: 5px; padding: 0 8px;
+  font-size: 11.5px; cursor: pointer; outline: none;
+}
+.toolbar.toolbar-comfortable .element-selector,
+.toolbar.toolbar-comfortable .font-selector,
+.toolbar.toolbar-comfortable .font-size-selector { height: 24px; font-size: 12px; }
+.element-selector { min-width: 140px; }
+.font-selector { min-width: 120px; }
+.font-size-selector { min-width: 60px; }
+.element-selector:focus, .font-selector:focus, .font-size-selector:focus { border-color: var(--fd-accent); }
+
+.toolbar-desktop-only { display: contents; }
+.toolbar-priority-block { display: flex; align-items: center; gap: 2px; }
+.toolbar-priority-block.toolbar-desktop-only { display: flex; }
+.zoom-group { gap: 4px; }
+.zoom-mobile-group { display: none; }
+
+/* ── Toolbar overflow (3-dot) menu ── */
+.toolbar-overflow-wrap { position: relative; }
+.toolbar-overflow-btn { font-size: 14px; }
+.toolbar-overflow-menu {
+  position: absolute; top: 100%; right: 0; z-index: 200;
+  background: var(--fd-dropdown-bg, var(--fd-bg));
+  border: 1px solid var(--fd-border); border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
+  padding: 6px 8px; margin-top: 4px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  min-width: 200px; max-width: min(400px, calc(100vw - 16px));
+  overflow: visible;
+}
+/* Color picker inside overflow menu: open upward so it stays on-screen */
+.toolbar-overflow-menu .color-picker-popup {
+  top: auto; bottom: 100%; left: auto; right: 0;
+}
+.toolbar-overflow-sep {
+  width: 100%; height: 1px; background: var(--fd-border); margin: 2px 0;
+}
+.zoom-label {
+  color: var(--fd-text-muted); font-size: 11px; min-width: 36px;
+  text-align: center; font-variant-numeric: tabular-nums;
+}
+
+/* ── Settings > System: Reset All Settings (v0.48) ── */
+.fs-reset-confirm-overlay { z-index: 10060; }
+.fs-reset-confirm-dialog { max-width: 400px; }
+.fs-reset-confirm-dialog .dialog-body p { margin: 0; font-size: 12.5px; line-height: 1.5; }
+.settings-reset-all-btn { border-color: #c62828 !important; color: #e57373; }
+.settings-reset-all-btn:hover { background: rgba(198, 40, 40, 0.12) !important; }
+
+/* ── Settings: Auto Saves number inputs (v0.51) ── */
+.prefs-autosave-row { display: flex; align-items: center; gap: 8px; }
+.prefs-num-input {
+  width: 72px; height: 26px; background: var(--fd-input-bg); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: 5px; padding: 0 8px;
+  font-size: 12.5px; outline: none; box-sizing: border-box;
+}
+.prefs-num-input:focus { border-color: var(--fd-accent); }
+.prefs-num-input:disabled { opacity: 0.45; }
+.prefs-unit-label { font-size: 12px; color: var(--fd-text-muted); }
+
+/* ── About: OpenDraft attribution (v0.50) ── */
+.about-credit { font-size: 11.5px; color: var(--fd-text-muted); margin: 4px 0 10px; }
+.about-credit a { color: var(--fd-accent); text-decoration: none; }
+.about-credit a:hover { text-decoration: underline; }
+.about-oss { line-height: 1.6; }
+
+/* ── Changelog dialog (Help > Changelog, v0.63) ── */
+.fs-changelog-dialog.fs-changelog-dialog {
+  width: min(720px, 92vw); height: min(720px, 86vh);
+  max-width: 96vw; max-height: 92vh; min-width: 380px; min-height: 300px;
+  display: flex; flex-direction: column;
+  resize: both; overflow: hidden;
+}
+.fs-changelog-body { flex: 1; min-height: 0; overflow-y: auto; }
+
+/* ── Modal components hosted as docked panels (v0.64) ── */
+/* Spelling & Grammar: the component now has a real embedded mode; this just
+   makes it fill the dock instead of floating. */
+.spell-modal-embedded {
+  position: static; left: auto; top: auto; transform: none;
+  width: 100%; height: 100%; min-height: 0;
+  box-shadow: none; border: none; border-radius: 0;
+  display: flex; flex-direction: column; resize: none;
+}
+.spell-modal-embedded .spell-modal-header { cursor: default; }
+.spell-modal-embedded .spell-modal-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
+/* v1.35: in a panel the two action columns must FLOW with the width instead
+   of assuming 490px — they wrap, split the row evenly, and their buttons
+   fill their column. Everything tracks the window as it's resized. */
+.spell-modal-embedded .spell-modal-actions { flex-wrap: wrap; padding: 10px 12px; }
+.spell-modal-embedded .spell-modal-actions-col { flex: 1 1 130px; min-width: 0; }
+.spell-modal-embedded .spell-modal-actions button {
+  width: 100%;
+  padding: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Spelling & Grammar combined panel (v1.63) ──
+   Tabs + auto-check toggles above the embedded checker. The embedded modal
+   stops sizing itself (height:100%) and flexes under the header rows. */
+.fs-spellgram {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  /* v1.67: if the window is shorter than the checker's floor below, the
+     panel scrolls — content is never crushed out of existence. */
+  overflow-y: auto;
+}
+.fs-spellgram .spell-modal-embedded { height: auto; flex: 1 0 auto; }
+/* v1.67: the checker body may not collapse — the misspelled word, Change To
+   and the suggestions list must always be visible. 355px = context box +
+   Change To + the 130px suggestions list + labels and margins. */
+.fs-spellgram .spell-modal-body { min-height: 355px; }
+.fs-spellgram-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 0;
+}
+.fs-spellgram-tabs {
+  display: inline-flex;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.fs-spellgram-tabs button {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.fs-spellgram-tabs button.active {
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+}
+.fs-spellgram-settings {
+  background: none;
+  border: 1px solid var(--fd-border);
+  color: var(--fd-text-muted);
+  border-radius: 5px;
+  font-size: 11px;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fs-spellgram-settings:hover { color: var(--fd-text); }
+.fs-spellgram-autos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--fd-chrome-separator);
+}
+.fs-spellgram-autos label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fd-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Title Page: still a dialog internally — neutralize its overlay. */
+.fs-modal-as-panel { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.fs-modal-as-panel .dialog-overlay {
+  position: static; inset: auto; background: transparent; display: block;
+  z-index: auto; height: 100%; padding: 0;
+}
+.fs-modal-as-panel .dialog-box {
+  /* v0.85: shrink-wrap instead of stretching to 100%. Stretching meant the
+     hosted modal always "filled" its window, so the dead space sat INSIDE it
+     and the window's content-slack measurement couldn't see it — you could drag
+     Title Page out to any size and just get more grey. Sizing to the content
+     makes that slack visible, so the window stops growing once the box is fully
+     shown. max-* keeps it scrollable when the window is smaller than the box. */
+  width: max-content; max-width: 100%;
+  height: auto; max-height: 100%;
+  box-shadow: none;
+  border: none; border-radius: 0; background: transparent; display: flex;
+  flex-direction: column; min-height: 0; overflow: auto;
+}
+
+/* ── Spelling & Grammar as a docked panel (v0.62) ── */
+.fs-spellcheck-panel { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.fs-spellcheck-panel .dialog-overlay {
+  position: static; inset: auto; background: transparent; display: block;
+  z-index: auto; height: 100%; padding: 0;
+}
+.fs-spellcheck-panel .dialog-box {
+  width: 100%; max-width: none; height: 100%; box-shadow: none;
+  border: none; border-radius: 0; background: transparent; display: flex;
+  flex-direction: column; min-height: 0;
+}
+.fs-panel-empty {
+  padding: 16px; font-size: 12.5px; color: var(--fd-text-muted); text-align: center;
+}
+
+/* ── File > Manage Projects window (v0.54; sizing fixed v0.68) ── */
+/* .dialog-box sets max-width: 400px and is declared LATER in this file, so at
+   equal specificity it won. Doubling the class raises specificity so the
+   window actually gets its intended size. */
+.fs-manager-dialog.fs-manager-dialog {
+  width: min(1180px, 94vw); height: min(820px, 90vh);
+  max-width: 96vw; max-height: 92vh;
+  min-width: 420px; min-height: 300px;
+  display: flex; flex-direction: column;
+  resize: both; overflow: hidden;
+  padding-bottom: 14px;                /* keep the resize grip reachable */
+}
+.fs-manager-dialog-body { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+.fs-manager-dialog-body > * { flex: 1; min-height: 0; }
+
+/* ── Project Manager: embedded OpenDraft project pages (v0.52) ── */
+.fs-pm-embedded { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 0; }
+.fs-pm-embedded .project-list-page,
+.fs-pm-embedded .project-view { flex: 1; min-height: 0; height: auto; padding: 14px; overflow-y: auto; }
+.fs-pm-embedded .project-list-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; max-width: none; }
+.dropdown-item.dropdown-item-disabled { opacity: 0.4; cursor: default; }
+/* Compact assets so the grid fits a ~300px side panel with no horizontal
+   cutoff (v0.53.1). Expanding the tool window shows more/bigger columns. */
+.fs-pm-embedded .project-list-page { overflow-x: hidden; }
+.fs-pm-embedded .project-list-title { font-size: 18px; letter-spacing: -0.3px; }
+.fs-pm-embedded .project-list-subtitle { font-size: 11px; overflow-wrap: anywhere; }
+.fs-pm-embedded .project-list-header {
+  flex-wrap: wrap; gap: 8px; align-items: flex-start;
+  margin-bottom: 16px; max-width: none;
+}
+.fs-pm-embedded .project-list-controls { flex-wrap: wrap; gap: 6px; }
+.fs-pm-embedded .project-list-controls > * { max-width: 100%; }
+.fs-pm-embedded .sort-select { height: 26px; font-size: 11px; padding: 0 6px; }
+.fs-pm-embedded .project-source-bar { max-width: none; margin-bottom: 12px; }
+.fs-pm-embedded .project-source-tab { padding: 7px 10px; font-size: 12px; }
+.fs-pm-embedded .project-list-grid {
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px;
+}
+.fs-pm-embedded .project-card { padding: 12px; }
+.fs-pm-embedded .project-card-name { font-size: 14px; margin-bottom: 5px; overflow-wrap: anywhere; }
+.fs-pm-embedded .project-card-meta { font-size: 11px; gap: 4px; flex-wrap: wrap; }
+.fs-pm-embedded .project-card-actions { margin-top: 7px; }
+.fs-pm-embedded .project-view-header { flex-wrap: wrap; gap: 8px; }
+
+/* ── Project Manager: project action chooser (v0.50) ── */
+.fs-project-chooser-dialog { max-width: 300px; }
+.fs-project-chooser-body { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
+.fs-project-chooser-body .dialog-btn { width: 100%; height: 32px; }
+.fs-project-chooser-body .dialog-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* ── Customize: 'still reachable via Settings > Layout' warning (v0.47) ── */
+.fs-stuck-warn-overlay { z-index: 10050; }
+.fs-stuck-warn-dialog { max-width: 380px; }
+.fs-stuck-warn-dialog .dialog-body p { margin: 0; font-size: 12.5px; line-height: 1.5; }
+
+/* ── Customize: equal-width adder rows (v0.46) ── */
+.fs-tbzone-adders.fs-adders-equal { display: flex; gap: 6px; }
+.fs-tbzone-adders.fs-adders-equal > select,
+.fs-tbzone-adders.fs-adders-equal > button {
+  flex: 1 1 0; min-width: 0; width: auto; box-sizing: border-box;
+}
+
+/* ── Custom chrome sizing (v0.72) ──────────────────────────────────────────
+   In 'custom' mode the element's height/width is set inline from the user's
+   slider, and --chrome-scale (px ÷ compact px) scales the CONTENTS with it —
+   otherwise a taller bar would just be empty space around compact-sized text.
+   Clamped so a huge bar doesn't produce absurd type. */
+/* v2.68, Derek: the edge drag scales the bars VERTICALLY only — horizontal
+   gaps and paddings are pinned, because item spacing has its own grips
+   (GapHandle) and must not drift when the bar grows taller. */
+.menu-bar.chrome-custom {
+  gap: 4px;
+  padding: 0 6px;
+}
+.menu-bar.chrome-custom .menu-item {
+  padding: clamp(3px, calc(5px * var(--chrome-scale, 1)), 14px) 11px;
+  min-height: 0;
+  border-radius: clamp(4px, calc(5px * var(--chrome-scale, 1)), 10px);
+}
+.menu-bar.chrome-custom .menu-label,
+.menu-bar.chrome-custom .menu-icon {
+  font-size: clamp(11px, calc(12px * var(--chrome-scale, 1)), 18px);
+}
+
+.toolbar.toolbar-custom { padding: 0 8px; }   /* v2.68: horizontal pinned */
+.toolbar.toolbar-custom .toolbar-btn {
+  width: clamp(22px, calc(24px * var(--chrome-scale, 1)), 44px);
+  height: clamp(20px, calc(22px * var(--chrome-scale, 1)), 40px);
+  font-size: clamp(11px, calc(12px * var(--chrome-scale, 1)), 20px);
+}
+.toolbar.toolbar-custom .toolbar-separator {
+  height: clamp(14px, calc(16px * var(--chrome-scale, 1)), 30px);
+}
+.toolbar.toolbar-custom .element-selector,
+.toolbar.toolbar-custom .font-selector,
+.toolbar.toolbar-custom .font-size-selector {
+  height: clamp(20px, calc(22px * var(--chrome-scale, 1)), 38px);
+  font-size: clamp(11px, calc(11.5px * var(--chrome-scale, 1)), 16px);
+}
+
+/* Customize: the size slider shown when a surface is set to Custom. */
+.fs-chrome-slider-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 0 10px;
+  margin-top: 12px;                    /* v0.75: space above the slider */
+}
+.fs-chrome-slider-row input[type="range"] { flex: 1; accent-color: var(--fd-accent); cursor: pointer; }
+.fs-chrome-slider-val {
+  min-width: 52px; text-align: right;
+  font-size: 12px; color: var(--fd-text-muted); font-variant-numeric: tabular-nums;
+}
+
+/* Side-panel width modes (v0.70). Must stay in sync with DOCK_W /
+   DOCK_W_COMPACT in ToolDock.tsx — inline tool windows are sized against those
+   constants, so a mismatch would let a docked window overflow its panel. */
+.tool-dock-wrap.tool-dock-compact .tool-dock-item { padding-top: calc(7px * var(--dock-scale, 1)); padding-bottom: calc(7px * var(--dock-scale, 1)); }
+.tool-dock-wrap.tool-dock-compact .tool-dock-label { font-size: calc(12px * var(--dock-scale, 1)); }
+
+/* In-app color picker surface (v0.80) — replaces <input type="color">, which
+   opened the OS color panel on whatever monitor the OS chose. */
+.cp-sv {
+  position: relative; width: 100%; height: 110px;
+  border-radius: 6px; margin-bottom: 8px; cursor: crosshair;
+  touch-action: none; overflow: hidden;
+}
+.cp-sv-white, .cp-sv-black { position: absolute; inset: 0; border-radius: 6px; }
+.cp-sv-white { background: linear-gradient(to right, #fff, rgba(255,255,255,0)); }
+.cp-sv-black { background: linear-gradient(to top, #000, rgba(0,0,0,0)); }
+.cp-thumb {
+  position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px;
+  border: 2px solid #fff; border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.5); pointer-events: none;
+}
+.cp-hue {
+  width: 100%; margin: 0 0 8px; cursor: pointer; accent-color: var(--fd-accent);
+  background: linear-gradient(to right,
+    #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
+  border-radius: 4px; height: 10px; -webkit-appearance: none; appearance: none;
+}
+.cp-hue::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px; height: 16px;
+  background: #fff; border: 1px solid rgba(0,0,0,.4); border-radius: 3px; cursor: pointer;
+}
+.cp-preview {
+  width: 24px; height: 24px; border-radius: 4px;
+  border: 1px solid var(--fd-border); flex: none;
+}
+
+/* The picker is anchored to the swatch INSIDE the dialog, so it can never land
+   on another screen. */
+.fs-theme-picker-anchor { position: relative; }
+.fs-theme-picker-anchor .color-picker-popup {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 2147483647;
+  width: 232px;
+}
+
+/* v0.82: rows used to justify to the far edges, so widening the window pushed
+   the label left and the controls right with a lake of dead space between them
+   (worse the wider you made it). Capping the row width keeps the label and its
+   controls a normal distance apart; the row simply stops growing instead of
+   stretching. The list still fills the window vertically and scrolls. */
+.fs-customize-grid,
+.fs-customize-row,
+.fs-tbzone-adders,
+.fs-shortcut-group {
+  max-width: 720px;
+}
+
+/* Fixed-size tool window (v0.89) — Title Page. The window is exactly the size of
+   the form inside it: no imposed width/height, no resize grip, no dead grey. */
+.tool-window.tool-window-fixed {
+  width: max-content;
+  height: auto;
+  max-width: 96vw;
+  max-height: 92vh;
+  resize: none;
+}
+.tool-window.tool-window-fixed .tool-window-body {
+  flex: 0 0 auto;
+  overflow: auto;        /* only scrolls if the screen is smaller than the form */
+}
+.fs-modal-as-panel-fixed { height: auto; }
+.fs-modal-as-panel-fixed .dialog-box {
+  width: max-content; max-width: none;
+  height: auto; max-height: none;
+}
+
+/* ── Permanent Customize button (v0.91) ────────────────────────────────────
+   The menu bar and toolbar now sit in a column, and this button sits to their
+   right spanning BOTH — so the two bars give up a little width at the far right
+   and this occupies it. It's chrome, not a toolbar item: it can't be reordered,
+   hidden, or dragged into a zone, which is why it no longer appears in
+   Customize > Toolbar.                                                        */
+.chrome-stack {
+  display: flex;
+  align-items: stretch;          /* the button matches the bars' combined height */
+  background: var(--fd-toolbar-bg);
+  flex-shrink: 0;
+}
+.chrome-bars {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;                  /* lets the bars shrink instead of shoving the
+                                    button off the edge */
+}
+/* ── v2.95: the RIBBON ─────────────────────────────────────────────────────
+   One token sequence flows into a two-row grid, column by column — two
+   consecutive small items stack into a column (Word's dense areas). A 2!
+   item spans both rows. The stack puts the ribbon, the overflow menu and
+   the fixed Customize button side by side. */
+.toolbar-stack {
+  display: flex;
+  align-items: stretch;
+  background: var(--fd-toolbar-bg);
+  flex-shrink: 0;
+}
+.toolbar.toolbar-ribbon {
+  display: flex;
+  align-items: stretch;
+  gap: calc(var(--rib-gap, 2px) + 6px);
+  height: calc(var(--rib-rowh, 28px) * 2 + 10px);
+  padding-top: 3px;
+  /* v3.44, Derek: a hair of breathing room under the buttons. */
+  padding-bottom: 2px;
+  /* v3.10, Derek: the right-aligned tail (Customize) sat flush against the
+     window edge. (v3.28 doubled this to 24px, but the real culprit was the
+     Customize button's icon-only sizing, fixed in v3.29 — so v3.32 walks it
+     back to 12px at Derek's request.) */
+  padding-right: 12px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;   /* collapse measurement reads scrollWidth vs clientWidth */
+}
+/* v2.96: a SECTION — one or two rows of items reading left-to-right. */
+.rib-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+.rib-row {
+  display: flex;
+  align-items: center;
+  gap: var(--rib-gap, 2px);
+  height: var(--rib-rowh, 28px);
+}
+/* A single-row section spans its items across both rows — every item is a
+   BIG BUTTON, Word style (v2.97, Derek): large icon, name underneath, the
+   two together filling 80% of the section's height. v3.20: big buttons get
+   extra breathing room between them. */
+.rib-section.rib-single .rib-row {
+  height: 100%;
+  flex: 1;
+  align-items: center;
+  gap: calc(var(--rib-gap, 2px) + 8px);
+}
+div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; align-items: center; }
+.toolbar-priority-block.rib-tall {
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+/* the item's name, drawn under whatever control the block holds */
+.toolbar-priority-block.rib-tall::after {
+  content: attr(data-riblabel);
+  font-size: 10px;
+  line-height: 1.1;
+  color: var(--fd-text);
+  white-space: nowrap;
+}
+.rib-single .toolbar-btn {
+  width: auto;
+  min-width: 30px;
+  height: auto;
+  padding: 3px 8px;
+}
+.rib-single .toolbar-btn svg { font-size: 29px; }  /* v3.16, Derek: 50% bigger — the single-row standard */
+/* Tall pinned tools/commands: the same big-button format, self-contained. */
+.toolbar-btn.rib-tall-btn {
+  height: 80%;
+  width: auto;
+  padding: 3px 8px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+.rib-tall-icon { display: inline-flex; font-size: 29px; }  /* v3.16: matches .rib-single */
+.rib-tall-label { font-size: 10px; line-height: 1.1; white-space: nowrap; }
+/* v2.97: the OPTIONAL line between a section's two rows (click the split
+   in the visual editor to toggle it). */
+.rib-row-line {
+  height: 1px;
+  margin: 0 2px;
+  background: var(--fd-border);
+}
+/* Dividers: section separators run the ribbon's height; a plain d: inside
+   a row marks just that row. The extra .toolbar class matters: the legacy
+   custom-scale rule (.toolbar.toolbar-custom .toolbar-separator, with its
+   clamp cap) otherwise outweighs these the moment the edge is dragged —
+   v3.11, Derek: section dividers collapsed to one row and stopped scaling. */
+.toolbar.toolbar-ribbon .toolbar-separator { height: calc(var(--rib-rowh, 28px) - 8px); align-self: center; }
+/* v3.25, Derek (tasks #136/#141): dropdowns are ROW ITEMS — same height as
+   the buttons beside them, in every mode. --rib-itemh restates the
+   .toolbar-btn height rules (base 24 / comfortable 26 / custom clamp) as ONE
+   variable every select consumes, so a dragged toolbar edge scales the
+   dropdowns in lockstep with the buttons — including Editor View, which had
+   a hardcoded 26px and never scaled. Horizontal gaps stay pinned (v2.68).
+   Placed AFTER the .toolbar-custom clamp rules on purpose: equal
+   specificity, so source order lets these win in custom mode. */
+/* v3.29, Derek: "the customize button is considering the button just the
+   icon." Right — the per-mode width clamps (.toolbar-comfortable's 28px,
+   .toolbar-custom's 44px cap) outrank the big-button rules, so the button
+   box was icon-sized and its nowrap label overflowed it — dividers landed
+   on the text. These ribbon-scoped rules come AFTER both mode rules (equal
+   specificity, source order wins), so in EVERY mode a big or tall button's
+   box sizes to icon + label like any other button. */
+.toolbar.toolbar-ribbon .rib-single .toolbar-btn { width: auto; min-width: 30px; height: auto; }
+.toolbar.toolbar-ribbon .toolbar-btn.rib-tall-btn { width: auto; height: 80%; }
+.toolbar.toolbar-ribbon { --rib-itemh: 24px; }
+.toolbar.toolbar-ribbon.toolbar-comfortable { --rib-itemh: 26px; }
+.toolbar.toolbar-ribbon.toolbar-custom {
+  --rib-itemh: clamp(20px, calc(22px * var(--chrome-scale, 1)), 40px);
+}
+.toolbar.toolbar-ribbon .element-selector,
+.toolbar.toolbar-ribbon .font-selector,
+.toolbar.toolbar-ribbon .font-size-selector,
+.toolbar.toolbar-ribbon .view-style-selector {
+  height: var(--rib-itemh);
+  font-size: clamp(11px, calc(11.5px * var(--chrome-scale, 1)), 16px);
+}
+/* v3.34, Derek: user-set dropdown widths, dragged in the visual editor.
+   --ddw-* vars come from the store via the ribbon container; unset, each
+   field keeps its usual min-width behavior. */
+.toolbar.toolbar-ribbon .font-selector { width: var(--ddw-fontFamily, auto); min-width: var(--ddw-fontFamily, 120px); }
+.toolbar.toolbar-ribbon .font-size-selector { width: var(--ddw-fontSize, auto); min-width: var(--ddw-fontSize, 60px); }
+.toolbar.toolbar-ribbon .element-selector { width: var(--ddw-element, auto); min-width: var(--ddw-element, 140px); }
+.toolbar.toolbar-ribbon .view-style-selector { width: var(--ddw-view, auto); }
+/* v3.46, Derek: the BIG (single-row) Zoom control drops its magnifier glyph —
+   the "98%" value and the "Zoom" label under it already name it. */
+.toolbar.toolbar-ribbon .rib-tall[data-key="zoom"] .zoom-tb-icon { display: none; }
+/* v3.51, Derek: the BIG Zoom button drops the ▾ caret next to the % too — the
+   Reset / Fit Page / Scale options all live in the View ▸ Zoom menu. */
+.toolbar.toolbar-ribbon .rib-tall[data-key="zoom"] .zoom-tb-caret { display: none; }
+/* v3.48, Derek: the % is edited inline in the bar. */
+.zoom-tb-mid { display: inline-flex; align-items: center; gap: 3px; }
+.zoom-tb-value { cursor: text; }
+.zoom-tb-input {
+  width: 46px;
+  padding: 1px 4px;
+  border: 1px solid var(--fd-accent);
+  border-radius: 4px;
+  background: var(--fd-input-bg, var(--fd-navigator-bg));
+  color: var(--fd-text);
+  font-size: inherit;
+  text-align: center;
+}
+.zoom-tb-caret {
+  border: none; background: none; cursor: pointer;
+  color: var(--fd-text-muted); font-size: 10px; line-height: 1;
+  padding: 0 2px;
+}
+.zoom-tb-caret:hover { color: var(--fd-text); }
+/* v3.47, Derek: the BIG Editor View button reads like the other big buttons —
+   the dropdown on top with "Editor View" (no colon) as the label under it. */
+.toolbar.toolbar-ribbon .rib-tall[data-key="view"] { flex-direction: column-reverse; }
+.toolbar.toolbar-ribbon .rib-tall[data-key="view"] .view-style-label {
+  margin: 0; font-size: 10px; line-height: 1.1;
+}
+/* v3.51, Derek: the big Editor View dropdown is 50% taller (it has the room —
+   the button spans both ribbon rows). flex:none so the column doesn't shrink
+   it back toward the select's content min-height. */
+.toolbar.toolbar-ribbon .rib-tall[data-key="view"] .view-style-selector {
+  height: calc(var(--rib-itemh) * 1.5);
+  flex: none;
+}
+.toolbar.toolbar-ribbon .rib-section-sep {
+  height: auto;
+  align-self: stretch;
+  margin: 4px 0;
+  display: block;
+}
+/* v3.23, Derek: ribbon icons wear color. v3.24: LARGE buttons only — items
+   in a single-row section (.rib-single). Small one-row-tall buttons went
+   back to monotone, like every other surface (CLAUDE.md rule; the big
+   buttons are the sanctioned exception, like the red A). Single tint per
+   glyph: react-icons are one-path currentColor shapes, so multi-color
+   needs provided art. */
+.toolbar-ribbon .rib-single [data-key="undo"] svg,
+.toolbar-ribbon .rib-single [data-key="redo"] svg { color: #d9a441; }
+.toolbar-ribbon .rib-single [data-key="cut"] svg,
+.toolbar-ribbon .rib-single [data-key="copy"] svg,
+.toolbar-ribbon .rib-single [data-key="paste"] svg,
+.toolbar-ribbon .rib-single [data-key="save"] svg,
+.toolbar-ribbon .rib-single [data-key="saveAs"] svg,
+.toolbar-ribbon .rib-single [data-key="openFile"] svg,
+.toolbar-ribbon .rib-single [data-key="newScreenplay"] svg,
+.toolbar-ribbon .rib-single [data-key="print"] svg,
+.toolbar-ribbon .rib-single [data-key="preview"] svg { color: #6fa8dc; }
+.toolbar-ribbon .rib-single [data-key="exportPDF"] svg { color: #e06060; }
+.toolbar-ribbon .rib-single [data-key="insertSection"] svg { color: #b58ee0; }
+.toolbar-ribbon .rib-single [data-key="insertNote"] svg { color: #e8c34f; }
+.toolbar-ribbon .rib-single [data-key="insertChecklist"] svg { color: #6abf69; }
+.toolbar-ribbon .rib-single [data-key="insertMarker"] svg { color: #e06060; }
+.toolbar-ribbon .rib-single [data-key="insertImage"] svg { color: #b58ee0; }
+.toolbar-ribbon .rib-single [data-key="find"] svg,
+.toolbar-ribbon .rib-single [data-key="goto"] svg { color: #4cbfbf; }
+.toolbar-ribbon .rib-single [data-key="customize"] svg { color: #d377b0; }
+.toolbar-ribbon .rib-single [data-key="spellCheck"] svg,
+.toolbar-ribbon .rib-single [data-key="writingSuggestions"] svg { color: #6abf69; }
+.toolbar-ribbon .rib-single [data-key="addBookmark"] svg,
+.toolbar-ribbon .rib-single [data-key="lastEditLocation"] svg { color: #e06060; }
+.toolbar-ribbon .rib-single [data-key="takeSnapshot"] svg,
+.toolbar-ribbon .rib-single [data-key="snapshots"] svg,
+.toolbar-ribbon .rib-single [data-key="compareSnapshot"] svg { color: #d9a441; }
+.toolbar-ribbon .rib-single [data-key="togglePanelLeft"] svg,
+.toolbar-ribbon .rib-single [data-key="togglePanelRight"] svg,
+.toolbar-ribbon .rib-single [data-key="toggleOutlineBar"] svg { color: #7f9ec9; }
+/* pinned side-panel tools (Outline, Notes, To-Do, ...) */
+.toolbar-ribbon .rib-single [data-key="beatboard"] svg { color: #b58ee0; }
+.toolbar-ribbon .rib-single [data-key="sticky"] svg { color: #e8c34f; }
+.toolbar-ribbon .rib-single [data-key="todo"] svg { color: #6abf69; }
+.toolbar-ribbon .rib-single [data-key="indexcards"] svg { color: #6fa8dc; }
+.toolbar-ribbon .rib-single [data-key="highlights"] svg { color: #e8c34f; }
+.toolbar-ribbon .rib-single [data-key="goals"] svg { color: #4cbfbf; }
+.toolbar-ribbon .rib-single [data-key="fragments"] svg { color: #d377b0; }
+.toolbar-ribbon .rib-single [data-key="notebook"] svg { color: #d9a441; }
+
+/* The overflow menu rides beside the ribbon, centered on its height. */
+.toolbar-stack .toolbar-overflow-wrap { align-self: center; position: relative; }
+
+/* v3.02: the align split — the gap that pushes later sections to the
+   toolbar's right edge. */
+.rib-align-gap { flex: 1; min-width: 8px; }
+
+/* Customize toolbar button (v0.84): text on a themed button surface, no icon.
+   It carries .toolbar-btn-labeled — the SAME class as the Zoom control — and
+   deliberately does NOT set its own height, so the two always match, including
+   in Compact/Comfortable/Custom toolbar modes where that height changes. */
+.toolbar-btn.toolbar-customize-btn {
+  width: auto; padding: 0 12px; gap: 0;
+  margin: 0 6px;                       /* a little air on each side */
+  /* v0.85: built from the theme's ACCENT, the one color in every palette meant
+     to stand out. The v0.83 greys were drawn from the chrome itself, which is
+     why the button vanished into the toolbar. */
+  background: var(--fd-btn-bg);
+  color: var(--fd-btn-text);
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font-size: 12px; font-weight: 700; letter-spacing: .02em;
+  box-shadow: 0 1px 2px rgba(0,0,0,.25);
+  white-space: nowrap;
+}
+.toolbar-btn.toolbar-customize-btn:hover { background: var(--fd-btn-hover); }
+/* When it's the right-most control, drop the right margin so its edge sits flush
+   with the Local Only chip in the menu bar rather than 6px inside it. */
+.toolbar-btn.toolbar-customize-btn:last-child { margin-right: 0; }
+.toolbar-customize-btn .toolbar-btn-text { color: inherit; }
+
+/* Customize: tabs in a left sidebar, like Settings (v0.83) */
+.fs-customize-layout { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.fs-customize-tabs { width: 172px; }
+.fs-customize-layout .fs-customize-body { flex: 1; min-width: 0; overflow-x: hidden; }
+.fs-customize-body > section { min-width: 0; }
+
+/* Theme export picker (v0.82) */
+.fs-theme-export-row input[type="checkbox"] { margin-right: 8px; accent-color: var(--fd-accent); }
+
+/* Spacer size (v0.86): an editable number, not a slider — the row's drag
+   gesture made a slider impossible to drag. */
+.fs-spacer-size { display: inline-flex; align-items: center; gap: 6px; margin-left: 12px; }
+.fs-spacer-label { font-size: 11px; color: var(--fd-text-muted); }
+.fs-spacer-input {
+  width: 62px; padding: 3px 6px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  border: 1px solid var(--fd-border); border-radius: 4px;
+  color: var(--fd-text); font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.fs-spacer-px { font-size: 11px; color: var(--fd-text-muted); }
+
+/* Themes tab (v0.78) */
+.fs-theme-row-controls { display: flex; align-items: center; gap: 6px; flex: none; }
+.fs-theme-badge {
+  margin-left: 8px; padding: 1px 6px; border-radius: 9px;
+  background: var(--fd-overlay-light); color: var(--fd-text-muted);
+  font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
+}
+.fs-theme-active-dot { color: var(--fd-accent); }
+.fs-theme-name-input {
+  flex: 1; max-width: 240px; padding: 5px 8px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  border: 1px solid var(--fd-border); border-radius: 5px;
+  color: var(--fd-text); font-size: 13px;
+}
+.fs-theme-color-controls { display: flex; align-items: center; gap: 8px; flex: none; }
+.fs-theme-color {
+  width: 34px; height: 26px; padding: 0;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px; cursor: pointer; flex: none;
+}
+.fs-theme-color:hover { border-color: var(--fd-accent); }
+.fs-theme-hex {
+  width: 96px; padding: 4px 8px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  border: 1px solid var(--fd-border); border-radius: 5px;
+  color: var(--fd-text); font-size: 12px; font-family: ui-monospace, monospace;
+}
+
+/* Keyboard Shortcuts tab (v0.77) */
+.fs-shortcut-group { margin-bottom: 14px; }
+.fs-shortcut-group-title {
+  font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--fd-text-muted);
+  padding: 8px 0 4px; border-bottom: 1px solid var(--fd-border); margin-bottom: 4px;
+}
+.fs-shortcut-row { gap: 12px; }
+.fs-shortcut-controls { display: flex; align-items: center; gap: 6px; flex: none; }
+.fs-shortcut-key {
+  min-width: 104px; padding: 4px 10px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  border: 1px solid var(--fd-border); border-radius: 5px;
+  color: var(--fd-text); font-size: 12px; font-family: inherit;
+  cursor: pointer; text-align: center; white-space: nowrap;
+}
+.fs-shortcut-key:hover:not(:disabled) { border-color: var(--fd-accent); }
+.fs-shortcut-key.unset { color: var(--fd-text-muted); font-style: italic; }
+.fs-shortcut-key.recording {
+  border-color: var(--fd-accent); color: var(--fd-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--fd-accent) 25%, transparent);
+}
+.fs-shortcut-key:disabled { opacity: .55; cursor: default; }
+.fs-shortcut-clear {
+  padding: 4px 8px; font-size: 11px;
+  background: none; border: 1px solid transparent; border-radius: 5px;
+  color: var(--fd-text-muted); cursor: pointer;
+}
+.fs-shortcut-clear:hover:not(:disabled) { border-color: var(--fd-border); color: var(--fd-text); }
+.fs-shortcut-clear:disabled { opacity: .35; cursor: default; }
+.fs-shortcut-note {
+  margin: 0 0 10px; padding: 7px 10px;
+  background: color-mix(in srgb, var(--fd-accent) 12%, transparent);
+  border-left: 2px solid var(--fd-accent); border-radius: 4px;
+  font-size: 12px; color: var(--fd-text);
+}
+
+/* Zoom dropdown (v0.76) — styled to match .menu-dropdown / .menu-dropdown-item
+   so it reads as the same kind of menu as the Element dropdown. The v0.75
+   version used 14px+ type (words got clipped) and z-index: 300, which lost to
+   the side panels and drew UNDERNEATH them — .menu-dropdown's z-index is what
+   keeps a menu on top. */
+.zoom-menu-wrap { position: relative; display: inline-flex; align-items: center; }
+/* v3.04, Derek: −/+ steppers flank the dropdown trigger in the toolbar
+   itself, and the current-zoom readout drops a size so the group stays
+   compact. */
+.zoom-tb-step { width: 22px; min-width: 22px; padding: 0; }
+.zoom-tb-step svg { width: 12px; height: 12px; }
+.toolbar-btn-text.zoom-tb-value { font-size: 10px; padding: 0 4px; }
+.zoom-menu {
+  position: absolute; top: calc(100% + 4px); right: 0;
+  z-index: 2147483647;                 /* same as .menu-dropdown */
+  min-width: 200px; padding: 0 0 4px;  /* v1.36: the stepper header sits flush */
+  overflow: hidden;                    /* header corners follow the radius */
+  background: var(--fd-dropdown-bg); border: 1px solid var(--fd-border);
+  border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.4);
+  display: flex; flex-direction: column;
+}
+/* v1.36: the zoom menu's HEADER — a three-cell grid, minus | amount | plus,
+   flush with the menu's top edge. The +/- icons fill their whole cell. */
+.zoom-menu-stepper {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr 1fr;
+  align-items: stretch;
+  height: 34px;
+  border-bottom: 1px solid var(--fd-border);
+  margin-bottom: 4px;
+}
+.zoom-step {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--fd-text);
+  cursor: pointer;
+  padding: 0;
+}
+.zoom-step svg { width: 13px; height: 13px; } /* v1.38: same height as the zoom text */
+.zoom-step:first-child { border-right: 1px solid var(--fd-border); }
+.zoom-step:last-child { border-left: 1px solid var(--fd-border); }
+.zoom-step:hover:not(:disabled) { background: var(--fd-hover-bg); }
+.zoom-step:disabled { opacity: .4; cursor: default; }
+.zoom-menu-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 0;
+}
+.zoom-menu-value .zoom-label {
+  cursor: text; font-size: 13px; font-weight: 600; color: var(--fd-text);
+  padding: 2px 6px; border-radius: 3px; display: inline-block; min-width: 54px;
+}
+.zoom-menu-value .zoom-label:hover { background: var(--fd-hover-bg); }
+.zoom-menu-value .zoom-input { width: 76px; font-size: 13px; }
+.zoom-menu-sep { height: 1px; background: var(--fd-border); margin: 4px 0; }
+.zoom-menu-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 16px; border: none;
+  background: none; color: var(--fd-text); font-size: 13px;
+  text-align: left; cursor: default; width: 100%;
+  white-space: nowrap;                 /* 'Fit Page to Screen' must not clip */
+}
+.zoom-menu-item:hover:not(:disabled) { background: var(--fd-hover-bg); }
+.zoom-menu-item:disabled { opacity: .45; }
+
+/* Labeled toolbar button (v0.74) — icon + text, e.g. Customize. Wider than an
+   icon-only button, so it sizes to content rather than the fixed .toolbar-btn box. */
+.toolbar-btn.toolbar-btn-labeled {
+  width: auto; padding: 0 8px; gap: 5px;
+  display: inline-flex; align-items: center;
+}
+.toolbar-btn-text { font-size: 12px; white-space: nowrap; }
+.toolbar.toolbar-comfortable .toolbar-btn.toolbar-btn-labeled { padding: 0 10px; }
+.toolbar.toolbar-comfortable .toolbar-btn-text { font-size: 13px; }
+.toolbar.toolbar-custom .toolbar-btn.toolbar-btn-labeled { padding: 0 8px; }   /* v2.68: horizontal pinned */
+.toolbar.toolbar-custom .toolbar-btn-text {
+  font-size: clamp(11px, calc(12px * var(--chrome-scale, 1)), 18px);
+}
+
+/* Spacer (v0.69) — a blank gap that pushes neighbouring items apart. In the
+   toolbar it takes horizontal space; in a side panel, vertical. */
+.toolbar-spacer { width: 50px; flex: none; }
+/* v3.51, Derek: on the live bar a spacer is invisible (that's the point), so
+   it's impossible to find when editing. While the toolbar is being edited,
+   outline it faintly and label it "spacer" so you can spot and grab it. */
+.toolbar-editing .toolbar-spacer {
+  position: relative;
+  outline: 1px dashed color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border));
+  outline-offset: -1px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--fd-accent) 7%, transparent);
+}
+.toolbar-editing .toolbar-spacer::after {
+  content: 'spacer';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; letter-spacing: 0.02em;
+  color: var(--fd-text-muted);
+  overflow: hidden; white-space: nowrap;
+  pointer-events: none;
+}
+.tool-dock-spacer { height: 50px; flex: none; }
+.fs-spacer-row-label { color: var(--fd-text-muted); font-size: 12px; font-style: italic; }
+
+/* Divider between the grouped Left and Right item lists (v0.65). No label —
+   the Left/Right buttons on each row already say which side it is. */
+.fs-customize-side-sep {
+  height: 1px; background: var(--fd-border);
+  margin: 7px 0; opacity: 0.85;
+}
+
+/* ── Customize: drag-and-drop reordering (v0.45) ── */
+.fs-customize-row[draggable="true"] { cursor: grab; }
+.fs-customize-row.dragging { opacity: 0.45; }
+.fs-customize-drag {
+  color: var(--fd-text-muted); font-size: 11px; margin-right: 7px;
+  user-select: none; letter-spacing: -1px; cursor: grab;
+}
+
+/* v0.99: the item's own icon, shown left of its label — the same icon it wears in
+   the real UI. FIXED width whether or not there is one (a divider or spacer has
+   none), so every label in the list starts at the same x. */
+.fs-customize-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  margin-right: 8px;
+  font-size: 12px;
+  color: var(--fd-text-muted);
+}
+.fs-customize-row:hover .fs-customize-icon { color: var(--fd-text); }
+/* Same slot in the + Add Item menu, so a row and its dropdown entry line up. */
+.fs-addmenu-item { display: flex; align-items: center; }
+.fs-addmenu-item .fs-customize-icon { margin-right: 8px; }
+
+/* ── Project Manager: row actions + delete confirmation (v0.44) ── */
+.fs-project-actions { display: none; align-items: center; gap: 2px; margin-left: auto; }
+.fs-project-row:hover .fs-project-actions { display: inline-flex; }
+.fs-project-actions button {
+  background: transparent; border: none; color: var(--fd-text-muted);
+  cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 4px; line-height: 1;
+}
+.fs-project-actions button:hover { background: var(--fd-overlay-light); color: var(--fd-text); }
+.fs-project-rename-input {
+  flex: 1; min-width: 0; height: 22px; background: var(--fd-input-bg);
+  color: var(--fd-text); border: 1px solid var(--fd-accent); border-radius: 4px;
+  padding: 0 6px; font-size: 12px; outline: none;
+}
+.fs-delete-project-dialog { max-width: 420px; }
+.fs-delete-project-dialog .dialog-body p { margin: 0 0 10px; font-size: 12.5px; line-height: 1.45; }
+.fs-delete-backup-check {
+  display: flex; align-items: flex-start; gap: 8px; margin: 0 0 12px;
+  font-size: 12px; line-height: 1.45; color: var(--fd-text); cursor: pointer;
+}
+.fs-delete-backup-check input { margin-top: 2px; }
+.fs-delete-confirm-label { margin-bottom: 6px !important; }
+.fs-delete-confirm-input {
+  width: 100%; height: 26px; background: var(--fd-input-bg); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: 5px; padding: 0 8px;
+  font-size: 12.5px; outline: none; box-sizing: border-box;
+}
+.fs-delete-confirm-input:focus { border-color: var(--fd-accent); }
+.fs-customize-stuck-hint { color: var(--fd-accent); }
+
+/* Editor View: label to the LEFT of its dropdown (v0.63), with extra leading
+   space so it reads as its own control rather than trailing the zoom buttons. */
+.view-style-label {
+  color: var(--fd-text-muted); font-size: 11px;
+  margin-left: 14px; margin-right: 5px;
+  white-space: nowrap; user-select: none;
+}
+
+/* ── Editable zoom input (desktop toolbar) ── */
+.zoom-input {
+  width: 40px;
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-accent);
+  border-radius: 3px;
+  color: var(--fd-text);
+  font-size: 11px;
+  text-align: center;
+  outline: none;
+  padding: 1px 2px;
+  -moz-appearance: textfield;
+}
+.zoom-input::-webkit-inner-spin-button,
+.zoom-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.zoom-label { cursor: pointer; }
+
+/* ── Floating zoom panel (mobile) ── */
+.zoom-panel {
+  position: fixed;
+  top: 80px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(30, 30, 30, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 8px 12px;
+  z-index: 5000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  color: #fff !important;
+}
+.zoom-panel * { color: inherit !important; }
+[data-theme="light"] .zoom-panel {
+  background: #f5f5f5 !important;
+  border-color: #c0c0c0 !important;
+  box-shadow: 0 4px 16px #b0b0b0;
+  color: #1a1a1a !important;
+}
+[data-theme="light"] .zoom-panel * { color: inherit !important; }
+[data-theme="light"] .zoom-panel input { background: #ffffff !important; border-color: #c0c0c0 !important; color: #1a1a1a !important; }
+[data-theme="light"] .zoom-panel .zoom-panel-input-wrap { background: #f0f0f0 !important; border-color: #c0c0c0 !important; }
+[data-theme="light"] .zoom-panel .zoom-panel-btn { background: #e8e8e8; border-color: #c0c0c0; color: #333 !important; }
+[data-theme="light"] .zoom-panel .zoom-panel-btn:active { background: #d8d8d8; }
+[data-theme="light"] .zoom-panel .zoom-panel-close { background: #e5e5e5; color: #555 !important; }
+[data-theme="light"] .zoom-panel .zoom-panel-pct { color: #444 !important; }
+.zoom-panel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+.zoom-panel-btn:active { background: rgba(255, 255, 255, 0.25); }
+.zoom-panel-btn:disabled { opacity: 0.3; }
+.zoom-panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: 4px;
+}
+.zoom-panel-close:active { background: rgba(255, 255, 255, 0.3); }
+.zoom-panel-input-wrap {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  padding: 0 6px;
+  height: 36px;
+}
+.zoom-panel-input {
+  width: 44px;
+  background: transparent !important;
+  border: none !important;
+  color: #fff !important;
+  font-size: 14px !important;
+  text-align: right;
+  outline: none;
+  -moz-appearance: textfield;
+  height: auto;
+}
+.zoom-panel-input::-webkit-inner-spin-button,
+.zoom-panel-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.zoom-panel-pct {
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 13px;
+  margin-left: 1px;
+}
+

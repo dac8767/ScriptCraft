@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.54';
+export const APP_VERSION = '3.55';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.55',
+    date: '2026-07-18',
+    items: [
+      { title: 'Split the giant screenplay stylesheet into area files', detail: 'screenplay.css was one ~18,000-line stylesheet; it is now a barrel index that imports 25 area files (toolbar, scene navigator, tools/dock, outline bar, print, settings, …) under styles/screenplay/. Pure housekeeping — the compiled CSS is byte-for-byte identical, so nothing looks or behaves differently; editing a single area is just faster now.', tags: ['Polish'] },
+    ],
+  },
   {
     version: '3.54',
     date: '2026-07-18',

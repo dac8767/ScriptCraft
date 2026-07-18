@@ -1,0 +1,510 @@
+/* ═══ v0.38: toolbar zones, user dividers, panel dividers ═══ */
+.toolbar-user-divider {
+  align-self: stretch;
+  margin: 4px 6px;
+  width: 1px;
+  background: var(--fd-border);
+}
+
+.tool-dock-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 4px;
+}
+.tool-dock-divider-line {
+  flex: 1;
+  height: 2px;                 /* v0.97: 1px on --fd-border read as nothing */
+  background: var(--fd-text-muted);
+  opacity: 0.45;
+  border-radius: 1px;
+}
+.tool-dock-divider-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
+}
+
+.fs-tbzone { border: 1px solid var(--fd-border); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; }
+.fs-tbzone-title { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fd-text-muted); margin-bottom: 6px; }
+.fs-tbzone-adders { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+.fs-tbzone-adders select {
+  height: 26px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  font-size: 12px;
+}
+.fs-divider-label-input {
+  height: 24px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: 12px;
+  width: 150px;
+}
+
+
+/* v0.39: Customize category headers */
+.fs-customize-cat {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fd-accent);
+  border-bottom: 1px solid var(--fd-border);
+  padding-bottom: 4px;
+  margin: 18px 0 10px;
+}
+.fs-customize-cat:first-child { margin-top: 0; }
+
+
+/* v0.40: Settings > Layout sub-tabs + toolbar sub-item checkboxes */
+.prefs-subtabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.prefs-subtabs button {
+  background: var(--fd-menu-bg);
+  color: var(--fd-text-muted);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.prefs-subtabs button.active { color: var(--fd-accent); border-color: var(--fd-accent); }
+.fs-tb-subitems { margin: 0 0 8px 44px; }
+.fs-customize-seg button:disabled { opacity: .35; cursor: default; }
+
+/* The section you were sent to should announce itself. */
+.prefs-section-flash {
+  animation: prefs-flash 1.2s ease-out;
+  border-radius: 6px;
+}
+@keyframes prefs-flash {
+  0%, 100% { background: transparent; }
+  20%      { background: color-mix(in srgb, var(--fd-accent) 18%, transparent); }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Save As — laid out like an export panel (v1.21).
+
+   One column of labels, one of controls, so the eye runs straight down both.
+   The destination is a clickable path rather than a text box you can't type into
+   anyway — the same move Premiere makes, and for the same reason: a path is
+   something you *pick*, not something you *write*.
+   ════════════════════════════════════════════════════════════════════════════ */
+/* v1.23: 720px default (v1.22's 600 + another 20%) — the path and the composed
+   name both need the room. Still resizable; this is only the default. */
+.dialog-box.fs-saveas-dialog {
+  width: min(720px, 92vw);
+  /* v1.30: a long composed filename in the footer WIDENS the window instead
+     of being clipped — and the resize handle can't drag it narrower than
+     the name either. */
+  min-width: fit-content;
+}
+/* v1.33: the header wears the theme's normal chrome color (--fd-toolbar-bg,
+   the same surface the app toolbar uses); the footer matches the window. */
+.fs-saveas-dialog > .dialog-header {
+  border-bottom: none;
+  background: var(--fd-toolbar-bg);
+  cursor: grab; /* v1.43: grab the header to move the dialog, like tool windows */
+  user-select: none;
+}
+.fs-saveas-dialog > .dialog-header:active { cursor: grabbing; }
+.fs-saveas-dialog > .dialog-actions {
+  border-top: none;
+  /* v1.42: same surface as the header. v1.46: bottom padding is ZERO — the
+     painted 14px grip strip below (::after) provides it, so the text sits
+     14px from both edges, exactly like the header. Before this the strip
+     STACKED under the footer's own 14px and the bottom read twice as fat. */
+  background: var(--fd-toolbar-bg);
+  padding: 14px 20px 0;
+  /* v1.30: "Saves as:" sits down here, left of the buttons. */
+  justify-content: flex-start;
+  align-items: center;
+}
+/* The 14px strip under the footer is the dialog-box's own padding (the v0.76
+   resize-grip clearance) — painted to match the footer, pointer-events: none
+   so the native grip stays reachable. */
+.fs-saveas-dialog { position: relative; }
+.fs-saveas-dialog::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 14px;
+  background: var(--fd-toolbar-bg);
+  pointer-events: none;
+}
+/* Flexible spacer between the composed name and Cancel — the name may grow,
+   but never into the buttons. */
+.fs-saveas-actions-gap { flex: 1 1 auto; min-width: 24px; }
+/* v1.27: less dead air between the last row and the buttons.
+   v1.28: and less between the title's divider and the Include header. */
+/* v1.47: symmetric — the gap under "Additional save locations:" matches the
+   gap above "Script Name:" (which includes the Include header row: 10 + 4
+   grid padding + ~13 header line + 6 gap ≈ 33px). */
+.fs-saveas-dialog .dialog-body { padding-top: 10px; padding-bottom: 23px; } /* v1.50: -5px per Derek */
+
+.fs-saveas-grid {
+  display: grid;
+  /*
+   * v1.29, per Derek's drawing: labels | fields | toggles — the toggle column
+   * sits at the dialog's right edge and the fields run the full stretch up to
+   * it. (v1.28 glued the toggles to shortened fields and left dead space on
+   * the right; that was a misread of "move the toggles with the fields".)
+   */
+  grid-template-columns: max-content 1fr max-content;
+  align-items: center;
+  /*
+   * v1.26: spacing is measured TEXT TO TEXT, not box to box. Field text sits
+   * 9px inside its box (8px padding + 1px border), so with a box-uniform gap
+   * the field rows looked twice as far apart as the text rows. The text-only
+   * rows below get the same 9px vertical inset, making every row metrically
+   * identical — then this one gap IS the text rhythm. 6px gap + 2×9px inset
+   * = 24px between any two rows' text, fields included (v1.43: was 8px gap).
+   */
+  gap: 6px 28px;
+  padding: 4px 0 0;
+}
+/* Rows with no toggle run their control under the toggle column too. */
+.fs-saveas-grid > .fs-saveas-span { grid-column: 2 / -1; }
+/* v1.41: a LIGHT rule between the name fields and the location rows (the
+   field-fill color read too dark), with generous air on both sides. Derived
+   from the theme's text color so it stays light-on-dark and dark-on-light. */
+.fs-saveas-divider {
+  grid-column: 1 / -1;
+  height: 1px; /* v1.42 */
+  background: color-mix(in srgb, var(--fd-text) 30%, transparent);
+  margin: 12px 0;
+}
+/* v1.35: the folder row holds a field-styled box now — align the BOX with the
+   fields, not its text. The locations row keeps the vertical rhythm; chips
+   align at the box edge, plain "None" keeps the 10px text inset. */
+.fs-saveas-folder { padding: 0; box-sizing: border-box; }
+.fs-saveas-locations { padding: 9px 0; box-sizing: border-box; }
+.fs-saveas-grid > label {
+  /* Pinned to column 1 so auto-placement can never drift a label. */
+  grid-column: 1;
+  font-size: 13px;
+  color: var(--fd-text);
+  white-space: nowrap;
+}
+/* "Saves as:" lives in the footer now — a step larger, in the same muted
+   grey as the filename it labels (v1.41). */
+.fs-saveas-rowlabel {
+  font-size: 15px;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
+  margin-right: 10px; /* v1.43: extra breath before the filename */
+}
+.fs-saveas-grid > input {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+.fs-saveas-grid > input:focus { outline: none; border-color: var(--fd-accent); }
+
+/* The toggle column: Draft and Version are optional parts of the name.
+   The header flows into the Script Name row's empty third cell, directly
+   above the switches it labels. */
+.fs-saveas-colhead {
+  grid-column: 3;
+  justify-self: center;
+  font-size: 11px;
+  color: var(--fd-text);
+  white-space: nowrap;
+}
+.fs-toggle {
+  grid-column: 3;
+  justify-self: center;
+  position: relative;
+  width: 34px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--fd-border);
+  border-radius: 10px;
+  background: var(--fd-overlay-subtle, rgba(255,255,255,.12));
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.fs-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--fd-text-muted);
+  transition: left .15s ease, background .15s ease;
+}
+.fs-toggle-on { background: var(--fd-accent); border-color: var(--fd-accent); }
+.fs-toggle-on .fs-toggle-knob { left: 16px; background: #fff; }
+/* Script Name's toggle: permanently on, never usable — gray, not blue, so it
+   reads as locked rather than merely switched on. */
+.fs-toggle-locked,
+.fs-toggle-locked:disabled {
+  background: var(--fd-overlay-subtle, rgba(255,255,255,.12));
+  border-color: var(--fd-border);
+  opacity: .55;
+  cursor: default;
+}
+.fs-toggle-locked .fs-toggle-knob { background: var(--fd-text-muted); }
+
+/* The destination: a path you click, not a field you type into. */
+.fs-saveas-folder { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.fs-saveas-path {
+  flex: 1;
+  min-width: 0;
+  /* v1.35: dressed like the three fields above — the bare link didn't read
+     as clickable. Font color stays the accent. */
+  padding: 8px 10px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  color: var(--fd-accent);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  /* Long paths are shortened at "/" boundaries in JS (shortenPathToFit) so the
+     visible segments are always real ones; the ellipsis is only a backstop. */
+  text-overflow: ellipsis;
+}
+.fs-saveas-path:hover { filter: brightness(1.25); }
+.fs-saveas-change {
+  padding: 5px 10px;
+  background: var(--fd-btn-bg, var(--fd-overlay-subtle));
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fs-saveas-change:hover { border-color: var(--fd-accent); }
+
+/* v1.34: center everything on the row's midline — the flex-start + negative
+   margin pairing left "None" visibly higher than its label. */
+.fs-saveas-locations { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.fs-saveas-locations-list {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  /* v1.45: bubbles flow one after another and WRAP when a name won't fully
+     fit. contain: inline-size keeps the row's content out of the dialog's
+     intrinsic width, so wrapping never widens the window (unlike the
+     filename, which is meant to). */
+  flex-wrap: wrap;
+  gap: 6px;
+  contain: inline-size;
+}
+.fs-saveas-locations-list span {
+  min-width: 0;
+  font-size: 13px;
+  color: var(--fd-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* v1.37: Customize > Side Panels — each panel is a distinct table with the
+   panel's name and its whole-panel Show/Hide in the header. */
+.fs-panel-table {
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 0 0 16px;
+}
+.fs-panel-table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--fd-toolbar-bg);
+  border-bottom: 1px solid var(--fd-border);
+}
+.fs-panel-table-title { font-weight: 600; font-size: 13px; color: var(--fd-text); }
+.fs-panel-table .fs-customize-row { margin: 0; padding-left: 10px; padding-right: 10px; }
+
+/* v1.42: the browse button beside the filepath — sits in the toggle column,
+   toggle-sized, and does exactly what clicking the path does. */
+.fs-saveas-folderbtn {
+  grid-column: 3;
+  justify-self: center;
+  width: 34px;
+  height: 24px; /* v1.49: holds the bigger icon */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--fd-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+.fs-saveas-folderbtn:hover { filter: brightness(1.15); }
+.fs-saveas-folderbtn svg { display: block; width: 24px; height: 24px; } /* v1.49: 20% bigger per Derek */
+
+/* v1.56: changelog tags + filter bar. Tag colors come from --tag-color set
+   inline per tag from TAG_META — one registry, chips just render it. */
+.fs-changelog-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 14px;
+}
+.fs-changelog-search {
+  flex: 1 1 180px;
+  min-width: 0;
+  padding: 6px 10px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  font-size: 12.5px;
+}
+.fs-changelog-datelabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--fd-text-muted);
+}
+.fs-changelog-datelabel input {
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  padding: 4px 6px;
+  font-size: 12px;
+}
+.fs-changelog-tagselect {
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+/* v1.57: description left, tags in their own right-hand column. */
+.fs-cl-row { display: flex; align-items: baseline; gap: 12px; }
+.fs-cl-text { flex: 1; min-width: 0; }
+.fs-cl-tagcol { flex: 0 0 auto; display: flex; gap: 4px; justify-content: flex-end; min-width: 90px; }
+.fs-cl-tag {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.6;
+  cursor: pointer;
+  border: 1px solid var(--tag-color);
+  color: var(--tag-color);
+  background: transparent;
+}
+.fs-cl-tag-active {
+  background: var(--tag-color);
+  color: #1c1c1c;
+  font-weight: 600;
+}
+.fs-cl-tag-mini {
+  cursor: default;
+  font-size: 10px;
+  padding: 1px 7px;
+  background: color-mix(in srgb, var(--tag-color) 18%, transparent);
+}
+.fs-changelog-empty { color: var(--fd-text-muted); font-size: 12.5px; padding: 12px 0; }
+
+/* v1.55: release date beside each changelog version. */
+.fs-changelog-date { color: var(--fd-text-muted); font-weight: 400; font-size: 12px; }
+
+/* v1.50: New Script… — the welcome card around the Save dialog's field grid. */
+.fs-newscript-card { width: min(560px, 92vw); }
+/* v1.51: the welcome card has no body padding of its own (only the hero pads
+   itself), so the grid and the buttons carry the 24px inset — the fields were
+   running flush to the card's edges. */
+.fs-newscript-grid {
+  text-align: left;
+  margin-top: 16px;
+  padding: 0 24px;
+  /* v1.53: two columns — without this the Save grid's empty toggle column
+     (plus its 28px gap) left the fields ending short of the buttons below. */
+  grid-template-columns: max-content 1fr;
+}
+/* v1.88: the Format dropdown wears the same box as the text fields.
+   v3.16, Derek: it rendered SHORTER than them — WebKit's native select
+   appearance ignores vertical padding. appearance:none makes the padding
+   real (same height as the inputs); the chevron is drawn back on since
+   the native one goes with it. */
+.fs-newscript-grid > select.fs-newscript-format {
+  width: 100%;
+  padding: 8px 28px 8px 10px;
+  background: var(--fd-input-bg, var(--fd-dropdown-bg));
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  font-size: 13px;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='12' viewBox='0 0 10 12'><path d='M1.5 4.5 L5 1 L8.5 4.5 M1.5 7.5 L5 11 L8.5 7.5' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.fs-newscript-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 0 24px 20px;
+}
+.fs-newscript-actions button {
+  height: 32px;
+  padding: 0 18px;
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.fs-newscript-actions button:hover { background: var(--fd-menu-hover); }
+/* v1.54: Open/Import sit left; the gap pushes Cancel/Create right. */
+.fs-newscript-actions-gap { flex: 1 1 auto; }
+.fs-newscript-actions .fs-newscript-alt {
+  background: none;
+  border-color: transparent;
+  color: var(--fd-accent);
+  padding: 0 6px;
+}
+.fs-newscript-actions .fs-newscript-alt:hover { background: none; text-decoration: underline; }
+
+/* v1.35: each location is a chip; colors cycle so neighbours never match. */
+.fs-saveas-loc-chip {
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 4px 12px;
+  border-radius: 999px; /* v1.44: bubbles */
+  border: 1px solid var(--fd-border);
+}
+.fs-saveas-locations-list .fs-saveas-loc-chip:nth-child(3n + 1) { background: rgba(111, 168, 220, .22); }
+.fs-saveas-locations-list .fs-saveas-loc-chip:nth-child(3n + 2) { background: rgba(106, 191, 105, .22); }
+.fs-saveas-locations-list .fs-saveas-loc-chip:nth-child(3n)     { background: rgba(232, 155, 79, .22); }
+/* v1.44: "None" wears the same chip box, in neutral gray — boxed like a
+   location, colored like an empty state. */
+.fs-saveas-locations-list .fs-saveas-loc-chip.fs-saveas-loc-none {
+  background: var(--fd-overlay-subtle, rgba(255, 255, 255, .06));
+  color: var(--fd-text-muted);
+}
+.fs-saveas-draft { color: inherit; }
+

@@ -1,0 +1,1323 @@
+/* ═══════════════════════ v1.87: Notebook tool (fs-nb-*) ═══════════════════════
+   Sidebar tree of sections/pages + a document surface: 'flow' pages run a
+   tiptap editor with stacked tables; 'canvas' pages are a free board of
+   draggable text/table/image boxes. Ported from Derek's Airtable extension. */
+.fs-notebook {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  color: var(--fd-text);
+  font-size: 13px;
+}
+/* v1.96: the tool window IS the tree — a single vertical panel. The
+   writing surface lives in the editor area (.fs-nb-takeover below). */
+.fs-nb-panel {
+  flex-direction: column;
+  height: 100%;
+}
+/* v2.05: lives in the window HEADER (TOOL_HEADER_EXTRAS), not the panel. */
+.fs-nb-side-head {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--fd-text-muted);
+}
+.fs-nb-side-btns { display: inline-flex; gap: 2px; }
+.fs-nb-side-btns button {
+  background: none;
+  border: none;
+  color: var(--fd-text);
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.fs-nb-side-btns button:hover { background: var(--fd-menu-hover); }
+.fs-nb-tree {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  /* v3.42, Derek: tighten the gap between the panel header and the first
+     folder — no top padding. */
+  padding: 0 6px 2px;
+}
+/* v2.66: the tree panel's Premiere-style zoom bar — stretch the thumb and
+   the rows above grow with it (text + icons proportional). */
+.fs-nb-zoom {
+  flex: 0 0 auto;
+  padding: 3px 8px 6px;
+}
+.fs-nb-zoom-track {
+  position: relative;
+  height: 14px;
+  border-radius: 7px;
+  background: var(--fd-overlay-subtle);
+}
+.fs-nb-zoom-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;                        /* v2.90: one handle — thumb anchors left */
+  height: 100%;
+  border-radius: 7px;
+  background: var(--fd-border);
+}
+.fs-nb-zoom-handle {
+  position: absolute;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--fd-text-muted);
+  cursor: ew-resize;
+}
+.fs-nb-zoom-handle-r { right: 1px; }   /* v2.90: the only handle */
+
+.fs-nb-toplevel-drop {
+  flex: 0 0 auto;
+  margin: 6px;
+  padding: 6px;
+  border: 1px dashed var(--fd-border);
+  border-radius: 6px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--fd-text-muted);
+}
+
+/* ── tree rows ── */
+.fs-nb-pagerow, .fs-nb-sectionrow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  /* v2.66: the panel's bottom zoom bar scales the rows vertically... */
+  padding: calc(3px * var(--nb-tree-scale, 1)) 4px;
+  border-radius: 5px;
+  border-top: 2px solid transparent;    /* drop indicators live in these */
+  border-bottom: 2px solid transparent;
+  cursor: grab;
+  min-width: 0;
+}
+.fs-nb-pagerow:hover, .fs-nb-sectionrow:hover { background: var(--fd-menu-hover); }
+.fs-nb-pagerow.active { background: var(--fd-menu-hover); }
+.fs-nb-pagerow.over-before { border-top-color: var(--fd-accent); }
+.fs-nb-pagerow.over-after { border-bottom-color: var(--fd-accent); }
+.fs-nb-sectionrow.over-into {
+  outline: 1.5px dashed var(--fd-accent);
+  outline-offset: -1.5px;
+}
+.fs-nb-grabber {
+  color: var(--fd-text-muted);
+  font-size: 9px;
+  letter-spacing: -2px;
+  opacity: 0;
+  flex: 0 0 auto;
+}
+.fs-nb-pagerow:hover .fs-nb-grabber, .fs-nb-sectionrow:hover .fs-nb-grabber { opacity: .8; }
+.fs-nb-pageicon { flex: 0 0 auto; font-size: calc(11px * var(--nb-tree-scale, 1)); }  /* ...icons follow... */
+.fs-nb-pagename, .fs-nb-sectionname {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  color: var(--fd-text);
+  text-align: left;
+  font-size: calc(12.5px * var(--nb-tree-scale, 1));   /* ...and so does the text (v2.66) */
+  padding: 1px 2px;
+  cursor: pointer;
+}
+.fs-nb-sectionname { font-weight: 600; }
+.fs-nb-sectionname-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-accent);
+  border-radius: 4px;
+  color: var(--fd-text);
+  font-size: 12.5px;
+  padding: 1px 4px;
+}
+.fs-nb-collapse {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: calc(10px * var(--nb-tree-scale, 1));   /* v2.66: zoom bar scale */
+  padding: 0 1px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.fs-nb-rowdel {
+  background: none;
+  border: none;
+  font-size: calc(11px * var(--nb-tree-scale, 1));   /* v2.66: zoom bar scale */
+  padding: 1px 3px;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  flex: 0 0 auto;
+}
+.fs-nb-pagerow:hover .fs-nb-rowdel, .fs-nb-sectionrow:hover .fs-nb-rowdel { opacity: .7; }
+.fs-nb-rowdel:hover { opacity: 1; background: var(--fd-menu-hover); }
+.fs-nb-children { border-left: 1px solid var(--fd-border); margin-left: 10px; }
+.fs-nb-emptysec {
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  font-style: italic;
+  padding: 2px 8px 4px;
+}
+
+/* ── the takeover surface (v1.96): fills the editor area ── */
+.fs-nb-takeover {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--fd-bg);
+  color: var(--fd-text);
+}
+.fs-nb-takeover-head {
+  display: flex;
+  /* v3.42, Derek: top-align so the title lines up with the Return to Editor
+     button (they used to centre against the taller title+date block, floating
+     the title above the button); extra top padding shifts the stack down. */
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px 8px;
+  border-bottom: 1px solid var(--fd-border);
+  flex: 0 0 auto;
+}
+.fs-nb-return {
+  margin-left: auto;
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fs-nb-empty {
+  margin: auto;
+  color: var(--fd-text-muted);
+  font-size: 12.5px;
+  padding: 24px;
+  text-align: center;
+}
+/* v2.89: title + created-date stack in the surface's upper left.
+   v3.33, Derek: OneNote's look — a light large title over a rule, with the
+   long date and creation time on the line below. */
+.fs-nb-title-block {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  max-width: 560px;
+}
+.fs-nb-created {
+  display: flex;
+  gap: 32px;
+  font-size: 13px;
+  color: var(--fd-text-muted);
+  padding-left: 2px;
+  margin-top: 6px;
+}
+.fs-nb-title {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--fd-text);
+  /* v3.33: OneNote's layout (rule + date below); v3.34, Derek: back to the
+     app's own title font — the light 26px read as a foreign typeface. The
+     rule is brightened too (var(--fd-border) was barely visible). */
+  font-size: 20px;
+  font-weight: 700;
+  padding-bottom: 8px;
+  /* v3.42, Derek: the rule under the title runs HALF the width (a gradient
+     bottom-line, since an <input> can't carry a ::after). */
+  border-bottom: none;
+  background: linear-gradient(to right,
+    color-mix(in srgb, var(--fd-text) 35%, transparent) 0 50%, transparent 50%) left bottom / 100% 1px no-repeat;
+  min-width: 0;
+  /* v3.25: `flex: 0 1 320px` predates the v2.89 title-block wrapper. Inside
+     that COLUMN flexbox the 320px basis became a HEIGHT — the title input
+     grew 320px tall, shoving the created date to the bottom and floating
+     the title and Return to Editor way off the top edge. */
+  flex: 0 0 auto;
+}
+.fs-nb-title-block .fs-nb-title { width: 100%; }
+.fs-nb-title::placeholder { color: var(--fd-text-muted); }
+.fs-nb-title-empty { flex: 0 0 auto; }
+/* v2.13: the Scrapbook's contextual MENU BAR section — divider + tag, then
+   Table / Picture menus and Return to Editor. Only while the tool is open. */
+.menu-scrapbook-sep {
+  width: 2px;
+  height: 18px;
+  background: var(--fd-accent, #4a90d9);
+  border-radius: 1px;
+  margin: 0 10px 0 18px;
+  align-self: center;
+}
+.menu-section-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--fd-accent, #4a90d9);
+  align-self: center;
+  margin-right: 6px;
+  user-select: none;
+}
+.fs-nb-table { border-collapse: collapse; }
+.fs-nb-table td {
+  position: relative;   /* the resize grips anchor to the cell */
+  border: 1px solid var(--fd-border);
+  padding: 0;
+  vertical-align: top;
+}
+.fs-nb-cell {
+  min-height: 100%;
+  height: 100%;
+  padding: 5px 7px;
+  font-size: 12.5px;
+  outline: none;
+  overflow-wrap: break-word;
+}
+.fs-nb-cell:focus { box-shadow: inset 0 0 0 1.5px var(--fd-accent); }
+.fs-nb-colgrip {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 2;
+}
+.fs-nb-rowgrip {
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 100%;
+  height: 6px;
+  cursor: row-resize;
+  z-index: 2;
+}
+
+/* ── canvas surface ── */
+.fs-nb-canvas {
+  position: relative;   /* boxes are absolutely positioned in here */
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  /* faint dot grid — reads as "board", not "spreadsheet" */
+  background-image: radial-gradient(var(--fd-border) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.fs-nb-canvas-hint {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--fd-text-muted);
+  font-size: 12.5px;
+  pointer-events: none;
+  text-align: center;
+  max-width: 340px;
+}
+.fs-nb-filepick { display: none; }
+.fs-nb-box, .fs-nb-imgbox, .fs-nb-tablebox { position: absolute; }
+.fs-nb-box {
+  background: var(--fd-bg);
+  /* v2.05: a filled item is chromeless until you hover or click into it —
+     its contents carry the visibility (Derek's rules). */
+  border: 1px solid transparent;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  /* v2.12: visible — the head bar floats ABOVE the box's top edge; the
+     body scrolls itself, so nothing needs clipping here. */
+  overflow: visible;
+}
+.fs-nb-box:hover {
+  border-color: var(--fd-border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
+}
+.fs-nb-box.focused {
+  border-color: var(--fd-accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
+}
+/* v1.99: an EMPTY item must announce itself since it has no contents to make
+   it visible. Filled items keep the faint line.
+   v2.01: solid thin line (Derek: not dashed), in the theme's text color. */
+.fs-nb-box.empty {
+  border: 1px solid color-mix(in srgb, var(--fd-text) 75%, transparent);
+}
+.fs-nb-table-wrap.fs-nb-table-empty .fs-nb-table td {
+  border: 1px solid color-mix(in srgb, var(--fd-text) 75%, transparent);
+}
+/* v2.62: the Table menu's insert grid — sweep to preview a size, click to
+   insert. Lives inside a .menu-submenu flyout, OneNote-style. */
+.fs-nb-tablegrid { padding: 6px 10px 10px; }
+.fs-nb-tablegrid-label {
+  font-size: 12px;
+  color: var(--fd-text);
+  padding-bottom: 6px;
+}
+.fs-nb-tablegrid-cells {
+  display: grid;
+  grid-template-columns: repeat(10, 18px);
+  gap: 4px;
+}
+.fs-nb-tablegrid-cell {
+  width: 18px; height: 15px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--fd-text) 45%, transparent);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.fs-nb-tablegrid-cell.on {
+  background: color-mix(in srgb, var(--fd-accent) 35%, transparent);
+  border-color: var(--fd-accent);
+}
+/* The Text Color icon. v3.25, Derek: no red default anymore — the live
+   toolbar button paints the A with the currently-picked color (inline
+   style); everywhere else (Customize palette rows) it inherits like any
+   monotone icon. The underline bar carries the picked color too. */
+.fs-textcolor-icon {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.05;
+}
+.fs-textcolor-bar {
+  width: 12px;
+  height: 3px;
+  border-radius: 1px;
+  margin-top: 1px;
+}
+
+/* v2.94: the same grid, hosted by the toolbar's Insert Table button (Row 2) —
+   the native menu bar can't render it, so the toolbar owns it now. Portalled
+   to body and positioned fixed from the trigger (the toolbar's stacking
+   context sits under the tool dock). */
+.toolbar-tablegrid-popup {
+  position: fixed;
+  z-index: 10000;
+  background: var(--fd-toolbar-bg, #2a2a2a);
+  border: 1px solid var(--fd-border, #555);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .35);
+}
+/* ── v2.96: the VISUAL ribbon editor (RibbonEditor.tsx) ─────────────────
+   An editable replica of the ribbon: section boxes, one or two rows each,
+   chips dragged into place, a palette of available items below. */
+.ribed-ribbon {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  min-height: 84px;
+  margin: 8px 0 10px;
+  padding: 8px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: var(--fd-toolbar-bg);
+  overflow-x: auto;
+}
+/* v2.99, Derek: the editor never SHRINKS — sections, chips and tools keep
+   their size and the ribbon strip scrolls horizontally instead. Without
+   flex-shrink:0 a narrow window compressed the chips into each other. */
+.ribed-section {
+  /* v3.17: grip column | rows column */
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 2px;
+  padding: 3px;
+  border: 1px dashed color-mix(in srgb, var(--fd-border) 70%, transparent);
+  border-radius: 5px;
+  min-width: 44px;
+  flex-shrink: 0;
+}
+.ribed-sec-rows {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;   /* v3.34: the live bar's inter-row gap */
+  flex: 1;
+  min-width: 0;
+}
+/* v3.24, Derek: the section IS the handle — a grabbable bubble.
+   v3.29: position:relative anchors the close × on its top-right corner. */
+.ribed-section {
+  position: relative;
+  cursor: grab;
+  touch-action: none;
+  background: color-mix(in srgb, var(--fd-navigator-bg) 55%, transparent);
+}
+.ribed-section:hover { border-color: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border)); }
+/* v3.29, Derek: the close-section × rides the section bubble's top-right
+   corner (it lived on the divider line before). Hover the section to see it. */
+.ribed-section > .ribed-sec-close { top: -7px; right: -7px; }
+.ribed-section:hover > .ribed-sec-close { opacity: 1; pointer-events: auto; }
+/* v3.29, Derek: WYSIWYG chips — the editor mirrors the live bar. */
+.ribed-chip.ribed-chip-big {
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 8px;
+}
+.ribed-chip-big .ribed-chip-icon { font-size: 29px; }  /* v3.33: the live big-button icon size */
+.ribed-chip-biglabel {
+  font-size: 10px;
+  line-height: 1.1;
+  color: var(--fd-text);
+  white-space: nowrap;
+}
+/* dropdown builtins look like the fields they are on the bar — 24px, the
+   live selects' resting height (same as the chips, so rows stay equal). */
+.ribed-chip.ribed-chip-dd {
+  height: 24px;
+  padding: 0 22px 0 8px;
+  position: relative;
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-overlay-medium);
+  border-radius: 5px;
+}
+.ribed-dd-text { font-size: 11.5px; color: var(--fd-text); white-space: nowrap; }
+/* v3.33, Derek: the Scrapbook's injected ribbon section — tag + tools,
+   always the last left-aligned section while the tool is open. */
+/* v3.42, Derek: the tag rides CENTERED on top of the buttons, and the whole
+   section gets more breathing room on its left. */
+.rib-scrapbook-sec { justify-content: center; align-items: stretch; padding-left: 14px; }
+.rib-scrapbook-sec .rib-row { align-items: center; justify-content: center; gap: 6px; }
+.rib-scrapbook-tag { text-align: center; margin: 0 0 1px; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   v3.36, Derek: IN-PLACE toolbar editing. While Customize > Toolbar is open
+   the real bar IS the editor. The Customize overlay lets pointer events
+   through to the bar (so drags land on it) and drops its dimming; the dialog
+   box keeps its own events.
+   ════════════════════════════════════════════════════════════════════════ */
+.dialog-overlay-tbedit { pointer-events: none; background: transparent; }
+.dialog-overlay-tbedit > .dialog-box { pointer-events: auto; }
+/* v3.36, Derek: the SPOTLIGHT strips — dim + BLOCK everything above and
+   below the bar, so only the ribbon and the Customize window read as live.
+   z-index sits below the dialog overlay (3000) so the window stays bright,
+   above the app so it's obscured; pointer-events block interaction. */
+.fs-tbedit-scrim {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 2990;
+  background: rgba(0, 0, 0, .58);
+  pointer-events: auto;
+}
+/* the editable bar announces itself — an accent ring + it floats above the
+   scrims (which never cover it, but a hair of glow could otherwise clip). */
+.toolbar-ribbon.toolbar-editing {
+  position: relative;
+  z-index: 2995;
+  box-shadow: 0 0 0 2px var(--fd-accent), 0 6px 24px rgba(0, 0, 0, .45);
+}
+
+/* the bar in edit mode: dashed sections, item covers, remove ×s, drop lines */
+.toolbar-ribbon.toolbar-editing { overflow: visible; }
+.rib-edit-section {
+  position: relative;
+  border: 1px dashed color-mix(in srgb, var(--fd-border) 80%, transparent);
+  border-radius: 5px;
+  padding: 2px 4px;
+  cursor: grab;
+  touch-action: none;
+  background: color-mix(in srgb, var(--fd-navigator-bg) 40%, transparent);
+}
+.rib-edit-section:hover { border-color: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border)); }
+.rib-edit-item { position: relative; display: inline-flex; }
+/* the cover eats clicks so the real control never fires while editing */
+.rib-edit-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  cursor: grab;
+  border-radius: 4px;
+}
+.rib-edit-item:hover > .rib-edit-cover { background: color-mix(in srgb, var(--fd-accent) 12%, transparent); }
+.rib-edit-x {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--fd-btn-bg);
+  color: var(--fd-btn-text);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  z-index: 5;
+}
+.rib-edit-item:hover > .rib-edit-x,
+.rib-edit-section:hover > .rib-edit-secclose,
+.rib-edit-break:hover > .rib-edit-x,
+.rib-edit-alignsplit:hover > .rib-edit-x { opacity: 1; }
+/* v3.38, Derek: the section-close moves to the section's top-LEFT corner.
+   Item removal ×s all sit at their item's top-right, so a right-anchored
+   section × collided with the LAST item's × — top-left keeps them apart. */
+.rib-edit-secclose { top: -8px; left: -8px; right: auto; z-index: 6; }
+/* drop indicators — thin accent bars. v3.38: pointer-events NONE so the drag
+   hit-test (elementFromPoint) never lands on the indicator itself — it reads
+   the row/items underneath, which is what keeps the drop spot from
+   fluttering. */
+.rib-edit-dropline {
+  width: 3px;
+  align-self: stretch;
+  margin: 2px -1.5px;
+  border-radius: 2px;
+  background: var(--fd-accent);
+  flex-shrink: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.rib-edit-sec-dropline {
+  width: 3px;
+  align-self: stretch;
+  margin: 2px 0;
+  border-radius: 2px;
+  background: var(--fd-accent);
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.rib-edit-emptyhint {
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  padding: 0 8px;
+  white-space: nowrap;
+  align-self: center;
+}
+.rib-edit-emptybar {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  padding: 0 12px;
+  align-self: center;
+}
+.rib-edit-break { position: relative; display: flex; align-items: center; height: 4px; }
+.rib-edit-breakline { flex: 1; cursor: pointer; }
+.rib-edit-alignsplit {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  color: var(--fd-accent);
+  font-size: 12px;
+  padding: 0 2px;
+}
+
+/* ─── v3.38, Derek: the on-bar "+ Add" block + its menu ─────────────────── */
+/* A faint, dashed suggested-button at the end of the left run and the start
+   of the right run. Clicking opens the add menu. */
+.rib-edit-add {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 9px;
+  margin: 0 3px;
+  border: 1px dashed color-mix(in srgb, var(--fd-accent) 55%, var(--fd-border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--fd-accent) 8%, transparent);
+  color: color-mix(in srgb, var(--fd-accent) 85%, var(--fd-text));
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: .55;
+  touch-action: none;
+}
+.rib-edit-add:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--fd-accent) 16%, transparent);
+  border-style: solid;
+}
+.rib-edit-add-plus { font-size: 13px; }
+
+.rib-add-backdrop { position: fixed; inset: 0; z-index: 3200; }
+.rib-add-menu {
+  position: fixed;
+  min-width: 196px;
+  max-width: 250px;
+  max-height: 62vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--fd-menu-bg, var(--fd-panel-bg));
+  border: 1px solid var(--fd-border);
+  border-radius: 9px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, .42);
+  overflow: hidden;
+}
+.rib-add-search {
+  margin: 8px;
+  padding: 6px 9px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: var(--fd-input-bg, var(--fd-navigator-bg));
+  color: var(--fd-text);
+  font-size: 12.5px;
+  outline: none;
+}
+.rib-add-search:focus { border-color: var(--fd-accent); }
+.rib-add-scroll { overflow-y: auto; padding: 0 6px 8px; }
+/* main view (no search box above it) needs its own top breathing room */
+.rib-add-menu > .rib-add-scroll:first-child { padding-top: 6px; }
+.rib-add-group { margin-top: 3px; }
+.rib-add-grouphdr {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--fd-text-muted);
+  padding: 5px 8px 2px;
+}
+.rib-add-opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fd-text);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.rib-add-opt:hover { background: color-mix(in srgb, var(--fd-accent) 20%, transparent); }
+.rib-add-empty { padding: 14px; text-align: center; color: var(--fd-text-muted); font-size: 12px; }
+/* v3.40, Derek: utilities up front, all other items behind a submenu. */
+.rib-add-sep { height: 1px; margin: 5px 8px; background: var(--fd-border); }
+.rib-add-more { display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+.rib-add-caret { color: var(--fd-text-muted); font-size: 15px; }
+.rib-add-back {
+  display: block; width: calc(100% - 16px); margin: 8px 8px 0;
+  padding: 4px 8px; text-align: left;
+  border: none; border-radius: 6px;
+  background: transparent; color: var(--fd-text-muted);
+  font-size: 12px; cursor: pointer;
+}
+.rib-add-back:hover { background: var(--fd-hover-bg); color: var(--fd-text); }
+
+/* ─── v3.42, Derek: a section TITLE sits on top of the section's rows. On the
+   live bar it's small centred text; while editing it's an inline input with an
+   × to remove. */
+.rib-sec-title {
+  text-align: center;
+  font-size: 9.5px; line-height: 1.1; font-weight: 600;
+  color: var(--fd-text-muted);
+  padding: 0 2px 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+.rib-edit-sectitle-wrap { position: relative; display: flex; align-items: center; justify-content: center; gap: 3px; }
+.rib-edit-sectitle {
+  flex: 1 1 auto; min-width: 40px;
+  padding: 0 4px;
+  border: 1px dashed color-mix(in srgb, var(--fd-border) 80%, transparent);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fd-text);
+  font-size: 9.5px; font-weight: 600; text-align: center;
+  outline: none;
+}
+.rib-edit-sectitle:focus { border-color: var(--fd-accent); }
+/* v3.50, Derek: the placeholder ("title") reads faint so an unnamed section's
+   field is obviously optional, not an empty label waiting to be filled. */
+.rib-edit-sectitle::placeholder { color: var(--fd-text-muted); opacity: 0.6; }
+
+/* ─── v3.41, Derek: larger visual representations for each ribbon utility in
+   the "+ Add" menu — a mini diagram of the shape, not just an icon. */
+.rib-add-utilgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 2px; }
+.rib-add-util {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 9px 6px;
+  border: 1px solid var(--fd-border); border-radius: 8px;
+  background: transparent; color: var(--fd-text);
+  font-size: 11px; cursor: pointer;
+}
+.rib-add-util:hover { border-color: var(--fd-accent); background: color-mix(in srgb, var(--fd-accent) 12%, transparent); }
+.rib-add-util-label { font-weight: 600; }
+.rib-util-vis {
+  display: flex; align-items: center; justify-content: center; gap: 3px;
+  width: 100%; height: 30px;
+  color: var(--fd-text-muted);
+}
+.ruv-sec {
+  display: flex; flex-direction: column; justify-content: center; gap: 3px;
+  width: 46px; height: 26px; padding: 3px;
+  border: 1px solid currentColor; border-radius: 4px;
+}
+.ruv-sec-sm { width: 34px; height: 16px; }
+.ruv-row { height: 5px; border-radius: 2px; background: currentColor; opacity: .7; }
+.ruv-divider { width: 2px; height: 26px; background: currentColor; border-radius: 1px; }
+.ruv-spacer {
+  width: 34px; height: 12px; border-radius: 3px;
+  background: repeating-linear-gradient(90deg, transparent 0 4px, currentColor 4px 5px);
+  opacity: .6;
+}
+.ruv-box { width: 16px; height: 24px; border: 1px solid currentColor; border-radius: 3px; }
+.ruv-splitgap { display: flex; flex-direction: column; gap: 2px; color: var(--fd-accent); }
+.ruv-splitgap span { width: 7px; height: 2px; background: currentColor; }
+.ruv-title { font-weight: 700; font-size: 13px; color: var(--fd-text); line-height: 1; }
+.rib-add-utilgrid + .rib-add-sep { margin-top: 8px; }
+/* v3.34: dropdown width grip — the field's right edge. */
+.ribed-dd-grip {
+  position: absolute;
+  right: -4px;
+  top: 0;
+  bottom: 0;
+  width: 9px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.ribed-dd-grip:hover { background: color-mix(in srgb, var(--fd-accent) 35%, transparent); border-radius: 2px; }
+/* v3.34: the ? popover that replaced the Toolbar tab's helper paragraph. */
+.ribed-help-anchor { position: relative; display: inline-flex; }
+.ribed-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+.ribed-help-btn:hover { color: var(--fd-text); background: var(--fd-hover-bg); }
+.ribed-help-pop {
+  position: absolute;
+  top: 26px;
+  right: 0;
+  width: 320px;
+  padding: 10px 12px;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fd-text);
+  z-index: 10002;
+}
+/* v3.32, Derek: each dropdown chip carries its LIVE counterpart's min-width
+   (.font-selector 120 / .font-size-selector 60 / .element-selector 140), so
+   the editor's fields are the same length as the bar's. Text sits left like
+   a real select. */
+.ribed-chip.ribed-chip-dd { justify-content: flex-start; box-sizing: border-box; }
+.ribed-chip-dd[data-dd="fontFamily"] { min-width: 165px; }  /* the live select rests at ~167px with "Courier Prime" */
+.ribed-chip-dd[data-dd="fontSize"] { min-width: 60px; }
+.ribed-chip-dd[data-dd="element"] { min-width: 140px; }
+.ribed-chip-dd[data-dd="view"] { min-width: 90px; }
+/* v3.34: the macOS select STEPPER (up+down carets), not a single chevron —
+   the live fields are native selects and draw exactly this. */
+.ribed-dd-chev {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='12'%3E%3Cpath d='M1 4.5l3-3 3 3' stroke='%23999' fill='none' stroke-width='1.3'/%3E%3Cpath d='M1 7.5l3 3 3-3' stroke='%23999' fill='none' stroke-width='1.3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+/* insertion indicator while a section rides the pointer — zero net width */
+.ribed-sec-dropline {
+  width: 3px;
+  margin: 2px -1.5px;
+  align-self: stretch;
+  border-radius: 2px;
+  background: var(--fd-accent);
+  flex-shrink: 0;
+  z-index: 1;
+}
+.ribed-row {
+  display: flex;
+  align-items: center;
+  /* v3.33: the live bar's default row — 28px tall, 2px item gap. */
+  gap: 2px;
+  height: 28px;
+  min-height: 28px;
+  flex: 1;
+}
+.ribed-row > * { flex-shrink: 0; }
+.ribed-secdiv { flex-shrink: 0; }
+/* v3.33, Derek: chips carry the LIVE bar's exact metrics — 26×24 like
+   .toolbar-btn, 12px glyphs, transparent at rest (the live buttons are
+   flat until hovered). The background only appears on hover, as the
+   grab affordance. */
+.ribed-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 3px;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fd-text);
+  cursor: grab;
+  font-size: 12px;
+}
+.ribed-chip:hover { background: var(--fd-overlay-light); }
+.ribed-chip:active { cursor: grabbing; }
+/* WebKit drag hardening (v2.98, Derek's Mac): mark the chip itself as the
+   draggable element and keep children out of drag/selection negotiation —
+   WKWebView can otherwise refuse to start the drag at all. */
+.ribed-chip, .ribed-pal-chip {
+  -webkit-user-drag: element;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.ribed-chip svg, .ribed-pal-chip svg { -webkit-user-drag: none; }
+.ribed-chip-lifted { opacity: 0.45; }
+.ribed-chip-icon { display: inline-flex; pointer-events: none; }
+/* v2.97: the spacer chip's WIDTH is the spacer's width — resized by
+   dragging the grip on its right edge. */
+.ribed-chip-spacer {
+  background: transparent;
+  border: 1px dashed var(--fd-border);
+  min-width: 8px;
+  padding: 0;
+  justify-content: flex-end;
+  box-sizing: border-box;
+}
+.ribed-spacer-grip {
+  width: 7px;
+  align-self: stretch;
+  border-right: 3px solid var(--fd-accent);
+  border-radius: 0 4px 4px 0;
+  cursor: ew-resize;
+}
+/* v2.97: a one-row divider inside a row — shown as the line it is. */
+.ribed-chip-div {
+  min-width: 10px;
+  padding: 0;
+  background: transparent;
+}
+.ribed-chip-div::before {
+  content: '';
+  width: 2px;
+  height: 18px;
+  border-radius: 1px;
+  background: var(--fd-border);
+}
+.ribed-x {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--fd-btn-bg);
+  color: var(--fd-btn-text);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  z-index: 2;
+}
+/* hidden ✕ buttons must not swallow pointer events (they overhang their
+   neighbours) — they only become clickable when their owner is hovered */
+.ribed-x { pointer-events: none; }
+.ribed-chip:hover .ribed-x,
+.ribed-alignsplit:hover .ribed-x,
+.ribed-break:hover .ribed-x { opacity: 1; pointer-events: auto; }
+.ribed-secdiv {
+  position: relative;
+  width: 3px;
+  align-self: stretch;
+  margin: 2px 2px;
+  border-radius: 2px;
+  background: var(--fd-border);
+}
+/* (v3.29: the divider's × moved onto the section bubble — .ribed-sec-close.) */
+/* v3.02: the align-split marker between sections */
+.ribed-alignsplit {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 34px;
+  align-self: stretch;
+  margin: 2px 2px;
+  border: 1px dashed color-mix(in srgb, var(--fd-accent) 55%, transparent);
+  border-radius: 4px;
+  color: var(--fd-accent);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.ribed-alignsplit .ribed-x { top: -6px; right: -6px; }
+/* v3.02: the pointer-drag ghost riding the cursor */
+.ribed-ghost {
+  position: fixed;
+  z-index: 100000;
+  padding: 3px 9px;
+  border-radius: 4px;
+  background: var(--fd-btn-bg);
+  color: var(--fd-btn-text);
+  font-size: 11.5px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(0,0,0,.35);
+}
+
+.ribed-break {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 4px;   /* v3.34: thinner — a two-row section reads like the bar's */
+}
+/* v2.97, Derek: click the split line to toggle it — HEAVY means the line is
+   drawn on the real toolbar, faint means the split is invisible there. */
+.ribed-break-line {
+  flex: 1;
+  height: 2px;   /* v3.34: closer to the bar's 1px rule, still clickable */
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--fd-accent) 25%, transparent);
+  cursor: pointer;
+}
+.ribed-break-line:hover { background: color-mix(in srgb, var(--fd-accent) 45%, transparent); }
+.ribed-break-line.heavy { background: var(--fd-accent); }
+.ribed-break .ribed-x { top: -6px; }
+/* v2.99: the drop indicator takes ZERO layout space (width offset by
+   negative margins) — when it consumed 3px it shifted the chips under the
+   cursor, the drop target flipped, and the line flickered back and forth. */
+.ribed-dropline {
+  width: 3px;
+  margin: 0 -1.5px;
+  height: 24px;
+  border-radius: 2px;
+  background: var(--fd-accent);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 3;
+}
+.ribed-empty-hint {
+  font-size: 10.5px;
+  color: var(--fd-text-muted);
+  padding: 0 8px;
+  white-space: nowrap;
+}
+.ribed-add-section {
+  padding: 6px 10px;
+  border: 1px dashed var(--fd-border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fd-text-muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ribed-add-section:hover { color: var(--fd-text); border-color: var(--fd-accent); }
+/* v2.97: the structural tools live beside + Section, in a compact 2×2. */
+/* v3.20: the utilities share ONE row with the dialog's Show/Hide/Reset —
+   controls left, structural tools right. */
+.ribed-utilrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.ribed-utilrow-spring { flex: 1; }
+.ribed-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.ribed-tools .ribed-pal-chip { justify-content: center; }
+/* v3.22: the two section BLOCKS — little bubble glyphs, one bar per row. */
+.ribed-blk-glyph {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-right: 2px;
+}
+.ribed-blk-glyph i {
+  display: block;
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  border: 1px solid currentColor;
+}
+/* v3.11: the palette's keyword filter. v3.52, Derek: it rides on the utilrow
+   (with Show/Hide), pinned right at a fixed 300px. */
+.ribed-pal-search { margin-bottom: 6px; }
+.ribed-utilrow .ribed-pal-search {
+  margin-bottom: 0;
+  margin-left: auto;          /* push to the right edge of the row */
+  width: 300px;
+  max-width: 100%;
+  flex: 0 0 auto;
+}
+.ribed-pal-search input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--fd-text);
+  background: var(--fd-input-bg, var(--fd-navigator-bg));
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  outline: none;
+}
+.ribed-pal-search input:focus { border-color: var(--fd-accent); }
+.ribed-pal-empty { font-size: 12px; color: var(--fd-text-muted); padding: 4px 2px; }
+/* the palette — also the drop target that removes items from the ribbon */
+.ribed-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: var(--fd-overlay-subtle);
+}
+.ribed-pal-group { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+.ribed-pal-title {
+  width: 88px;
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--fd-text-muted);
+}
+.ribed-pal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  font-size: 11.5px;
+  cursor: grab;
+  white-space: nowrap;
+}
+.ribed-pal-chip:active { cursor: grabbing; }
+.ribed-pal-util { border-color: color-mix(in srgb, var(--fd-accent) 55%, var(--fd-border)); }
+
+/* v2.95: Word-style editor rulers (EditorRulers.tsx). A zero-size sticky pin
+   keeps the canvases at the scroll container's visible corner; the canvases
+   inherit their tick color from `color` here. */
+.fs-rulers-pin {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  z-index: 45;
+}
+.fs-ruler {
+  position: absolute;
+  color: var(--fd-text-muted, #999);
+  background: var(--fd-bg, #2a2a2a);
+}
+.fs-ruler-h { top: 0; left: 0; }
+.fs-ruler-v { top: 20px; left: 0; }
+.fs-ruler-corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  background: var(--fd-bg, #2a2a2a);
+}
+/* v2.83: the local auto-save folder row (Settings > Save Options). */
+.prefs-path-chip {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: var(--fd-input-bg);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--fd-text-secondary);
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.prefs-inline-btn {
+  margin-left: 8px;
+  padding: 2px 10px;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  font-size: 12px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.prefs-inline-btn:hover { background: var(--fd-toolbar-hover); }
+
+/* v2.63: right-click color swatches for top-level Scrapbook folders.
+   Portalled to body, positioned by top/left (never bottom). */
+.fs-nb-colorpop {
+  position: fixed;
+  z-index: 10002;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  padding: 8px 10px;
+}
+.fs-nb-colorpop-title {
+  font-size: 11px;
+  color: var(--fd-text-secondary);
+  padding-bottom: 6px;
+}
+.fs-nb-colorpop-swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 20px);
+  gap: 6px;
+}
+.fs-nb-colorpop-swatch {
+  width: 20px; height: 20px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.fs-nb-colorpop-swatch.on {
+  border-color: var(--fd-text);
+}
+.fs-nb-box-head {
+  flex: 0 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  font-size: 9px;
+  letter-spacing: -2px;
+  color: var(--fd-text-muted);
+  background: var(--fd-overlay-subtle, rgba(255, 255, 255, .06));
+  cursor: grab;
+  user-select: none;
+}
+.fs-nb-box-head button {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 10px;
+  letter-spacing: 0;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.fs-nb-box-head button:hover { color: var(--fd-text); }
+.fs-nb-box-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 6px 8px;
+  font-size: 12.5px;
+  outline: none;
+}
+.fs-nb-box-grip {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  /* v2.74: pattern comes from the shared corner-grip rule (tool-window-resize) */
+  opacity: .6;
+}
+.fs-nb-imgbox img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  cursor: grab;
+  display: block;
+}
+/* v2.13: click-to-type — the parked caret before a text box exists. */
+.fs-nb-protocaret {
+  position: absolute;
+  min-width: 4px;
+  min-height: 18px;
+  max-width: 220px;
+  outline: none;
+  z-index: 2;
+  font-size: 12.5px;
+  color: var(--fd-text);
+  caret-color: var(--fd-accent, #4a90d9);
+}
+/* v2.13: Table menu > Hide Borders. The empty-table rule still wins so an
+   empty borderless table can't go invisible. */
+.fs-nb-table-borderless:not(.fs-nb-table-empty) .fs-nb-table td { border-color: transparent; }
+
+/* v2.12: on text boxes and tables the head FLOATS above the item — it must
+   never push content down when it appears on hover. Solid background so it
+   reads over the canvas grid. */
+.fs-nb-box-head-float {
+  position: absolute;
+  top: -20px;
+  left: -1px;
+  right: -1px;
+  height: 20px;
+  z-index: 3;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+}
+
+/* v2.05: images and tables wear the SAME slim head bar as text boxes. On an
+   image it overlays the top edge; on a table it sits above the grid. */
+.fs-nb-box-head-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  background: rgba(0, 0, 0, .55);
+  color: #fff;
+}
+.fs-nb-tablebox {
+  background: var(--fd-bg);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 2px;
+}
+.fs-nb-tablebox:hover { border-color: var(--fd-border); }
+.fs-nb-tablebox.focused { border-color: var(--fd-accent); }
+.fs-nb-tablebox .fs-nb-box-head { border-radius: 4px 4px 0 0; }
+

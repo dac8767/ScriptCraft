@@ -1,0 +1,1768 @@
+/* ── Vomit Draft tool (v1.62) ── */
+.fs-vomit {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+.fs-vomit-modes {
+  display: inline-flex;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.fs-vomit-modes button {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.fs-vomit-modes button.active {
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+}
+.fs-vomit-presets {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.fs-vomit-presets button {
+  background: rgba(128, 128, 128, 0.15);
+  border: none;
+  color: var(--fd-text);
+  border-radius: 5px;
+  font-size: 12px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.fs-vomit-presets button:hover { background: rgba(128, 128, 128, 0.28); }
+.fs-vomit-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--fd-text);
+}
+.fs-vomit-custom input {
+  width: 64px;
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text);
+  font-size: 12px;
+  padding: 5px 6px;
+}
+/* Segmented time field (v1.73) — reads as one input, types like a clock. */
+.fs-timefield {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.fs-timefield-seg {
+  width: 26px;
+  background: none;
+  border: none;
+  color: var(--fd-text);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  padding: 3px 0;
+  outline: none;
+}
+.fs-timefield-seg:focus { background: var(--fd-overlay-light); border-radius: 3px; }
+.fs-timefield-colon { color: var(--fd-text-muted); }
+.fs-timefield-half {
+  background: none;
+  border: none;
+  color: var(--fd-text);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 4px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.fs-timefield-half:focus { background: var(--fd-overlay-light); outline: none; }
+.fs-timefield-half.empty { color: var(--fd-text-muted); }
+.fs-vomit-start {
+  background: var(--fd-accent, #4a90d9);
+  border: none;
+  color: #fff;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.fs-vomit-start:disabled { opacity: 0.45; cursor: default; }
+.fs-vomit-hemingway {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--fd-text);
+  cursor: pointer;
+  margin: 12px 0 2px;
+  padding-top: 10px;
+  border-top: 1px solid var(--fd-chrome-separator);
+}
+
+/* running state */
+.fs-vomit-countdown {
+  font-size: 34px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--fd-text);
+  text-align: center;
+  margin: 6px 0 10px;
+}
+.fs-vomit-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(128, 128, 128, 0.2);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.fs-vomit-progress > div {
+  height: 100%;
+  background: var(--fd-accent, #4a90d9);
+  transition: width 1s linear;
+}
+.fs-vomit-until {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  text-align: center;
+  margin-bottom: 10px;
+}
+.fs-vomit-lockednote {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  line-height: 1.45;
+  margin: 0 0 12px;
+}
+.fs-vomit-endearly {
+  background: none;
+  border: 1px solid var(--fd-border);
+  color: var(--fd-text-muted);
+  border-radius: 5px;
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.fs-vomit-endearly:hover { color: var(--fd-text); }
+.fs-vomit-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--fd-text);
+}
+.fs-vomit-confirm button {
+  background: rgba(128, 128, 128, 0.15);
+  border: none;
+  color: var(--fd-text);
+  border-radius: 5px;
+  font-size: 12px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.fs-vomit-confirm button:first-of-type {
+  background: #c0392b;
+  color: #fff;
+}
+
+/* v1.92: the upper-right pill is gone — the Goals window IS the lock view
+   while Vomit Draft runs. The note shakes when a locked edit is rejected. */
+.fs-goals-locked .fs-goal-progress { margin-bottom: 0; }
+.fs-goal-vomit-note.blocked {
+  animation: fs-vomit-shake 0.45s ease;
+  color: #e07a6f;
+}
+@keyframes fs-vomit-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+/* ── Status bar goal chip ── */
+.status-goal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 10px;
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  padding: 1px 8px;
+  cursor: pointer;
+}
+.status-goal.done { border-color: #4caf50; color: #4caf50; }
+.status-goal-track {
+  width: 46px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(128, 128, 128, 0.25);
+  overflow: hidden;
+  display: inline-block;
+}
+.status-goal-track > span {
+  display: block;
+  height: 100%;
+  background: var(--fd-accent, #4a90d9);
+}
+.status-goal.done .status-goal-track > span { background: #4caf50; }
+
+/* ── Script note focus flash (replaces the old "Selected note" filter) ── */
+@keyframes note-flash {
+  0%, 60% { box-shadow: 0 0 0 2px var(--fd-accent, #4a90d9), 0 1px 3px rgba(0, 0, 0, 0.25); }
+  100% { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
+}
+.note-item-flash { animation: note-flash 1.6s ease-out; }
+
+/* ── Analytics tool (Statistics + Gender under one roof) ── */
+.fs-analytics {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.fs-analytics-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px 0;
+  border-bottom: 1px solid var(--fd-border);
+  flex-shrink: 0;
+}
+.fs-analytics-tabs button {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--fd-text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 10px 7px;
+  cursor: pointer;
+}
+.fs-analytics-tabs button.active {
+  color: var(--fd-text);
+  border-bottom-color: var(--fd-accent, #4a90d9);
+}
+.fs-analytics-stats {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* The embedded stats panel keeps its own scrolling; hide its close button
+   and duplicate title (the tool window supplies the chrome). */
+.fs-analytics-stats .stats-close { display: none; }
+
+/* Gender tab (v0.49): ONE scroll container for the whole tab. The stats
+   card and the assignment table each had their own scroller; the lower one
+   never got a workable height inside the clipped tab, so the wheel did
+   nothing below the card. Scoped to the gender tab only. */
+.fs-analytics-stats[data-show="gender"] { display: block; overflow-y: auto; }
+.fs-analytics-stats[data-show="gender"] .stats-panel { display: block; flex: none; overflow: visible; }
+.fs-analytics-stats[data-show="gender"] .stats-content { flex: none; overflow: visible; }
+.fs-analytics-stats[data-show="gender"] .fs-gender { flex: none; min-height: auto; overflow: visible; }
+
+/* Statistics embedded in the Analytics tool window: fill and scroll */
+.fs-analytics-stats {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.fs-analytics-stats .stats-panel { background: transparent; }
+
+/* ═══ v0.6: defined borders for tool buttons + right dock + customize ═══ */
+.tool-dock-item {
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  margin: 2px 10px;
+  width: calc(100% - 20px);
+  background: rgba(128, 128, 128, 0.06);
+}
+.tool-dock-item.active {
+  border-color: var(--fd-accent, #4a90d9);
+}
+.fs-analytics-tabs button,
+.fs-goal-kinds button,
+.fs-analytics-tabs { flex-wrap: wrap; gap: 4px; }
+.fs-analytics-tabs button.active {
+  border-color: var(--fd-accent, #4a90d9);
+  background: color-mix(in srgb, var(--fd-accent, #4a90d9) 14%, transparent);
+  color: var(--fd-text);
+}
+.fs-goal-kinds { border: none; gap: 4px; }
+.fs-goal-kinds button { background: rgba(128, 128, 128, 0.06); }
+.fs-goal-kinds button.active { border-color: var(--fd-accent, #4a90d9); }
+
+/* Right-side dock: window opens to the LEFT of the dock */
+.tool-dock-right .tool-dock { border-right: none; border-left: 1px solid var(--fd-border); }
+.tool-dock-right .tool-window { left: auto; right: 308px; }
+
+/* Sticky tools */
+.fs-sticky-tool {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.fs-sticky-tool .swn-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+.fs-sticky-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 0;
+  flex-shrink: 0;
+}
+.fs-sticky-toolbar .swn-subtabs { flex: 1; padding: 0; }
+
+/* Temporary tool window (tool disabled in both panels) */
+.tool-temp-anchor { position: relative; }
+.tool-window-temp {
+  position: fixed;
+  left: 50%;
+  top: 90px;
+  right: auto;
+  transform: translateX(-50%);
+  z-index: 120;
+}
+
+/* Analytics tab filtering: hide only the sections that DON'T match the
+   active tab, so matching ones keep their natural display (grids, tables). */
+.fs-analytics-stats[data-show="overview"] .stats-content > [data-sec]:not([data-sec="overview"]),
+.fs-analytics-stats[data-show="dialogue"] .stats-content > [data-sec]:not([data-sec="dialogue"]),
+.fs-analytics-stats[data-show="scenes"] .stats-content > [data-sec]:not([data-sec="scenes"]),
+.fs-analytics-stats[data-show="characters"] .stats-content > [data-sec]:not([data-sec="characters"]),
+.fs-analytics-stats[data-show="gender"] .stats-content > [data-sec]:not([data-sec="gender"]),
+.fs-analytics-stats[data-show="timing"] .stats-content > [data-sec]:not([data-sec="timing"]) { display: none; }
+.fs-analytics-gender-assign { padding: 0 12px 12px; }
+.fs-analytics-gender-assign .fs-gender { padding: 0; }
+
+/* Customize dialog */
+/* Resizable (v0.71). CSS resize needs a non-visible overflow and an explicit
+   size to grow from; the body scrolls inside so the frame can be dragged
+   smaller without clipping the controls. */
+.fs-customize-dialog {
+  /* v0.84: sized so nothing overflows horizontally at the DEFAULT size —
+     sidebar (172) + row cap (720) + body padding (36) + borders ≈ 936. Anything
+     narrower and the widest row (a spacer slider) forces a horizontal
+     scrollbar. Users can still resize, and that size is now remembered. */
+  width: min(950px, 94vw); height: min(700px, 88vh);
+  max-width: 96vw; max-height: 92vh;
+  min-width: 380px; min-height: 320px;
+  resize: both; overflow: hidden;      /* grip clear of any scrollbar */
+}
+.fs-customize-dialog .fs-customize-body { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
+/* v3.49/v3.52, Derek: the footer carries Lock All / Reset All on the LEFT and
+   Cancel / Save on the RIGHT. Save is the accent primary. */
+.fs-customize-footer { justify-content: space-between; gap: 12px; }
+.fs-customize-footer-globals {
+  flex-direction: row; margin-top: 0; padding-top: 0; align-items: center;
+}
+.fs-customize-footer-actions { display: flex; align-items: center; gap: 8px; }
+.fs-customize-footer .fs-customize-save {
+  background: var(--fd-accent); border-color: var(--fd-accent); color: #fff;
+}
+.fs-customize-footer .fs-customize-save:hover { background: var(--fd-accent); filter: brightness(1.1); }
+/* Docked in a side panel / embedded in Settings: fill the host and scroll. */
+.tool-inline-body .fs-customize-body,
+.tool-window-body .fs-customize-body { height: 100%; max-height: none; overflow-y: auto; }
+/* NOTE: no max-height here. It used to be 70vh — a VIEWPORT cap that ignored
+   the dialog's own height, so enlarging the resizable window never revealed
+   more rows (v0.73 fix). The dialog is a flex column; the body flexes to fill
+   whatever height the window has and scrolls only when it must. */
+/* Scrolls whenever the list outgrows the window (in the modal, docked in a
+   panel, or in Settings), and keeps side padding so the ⠿ drag handles at the
+   row's left edge aren't clipped (v0.76). */
+.fs-customize-body {
+  overflow-y: auto; min-height: 0;
+  padding: 10px 18px 12px;
+}
+.fs-customize-body h3 { font-size: 13px; margin: 14px 0 4px; color: var(--fd-text); }
+.fs-customize-hint { font-size: 11.5px; color: var(--fd-text-muted); margin: 0 0 8px; }
+.fs-customize-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0;
+}
+.fs-customize-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--fd-text);
+}
+.fs-customize-seg { display: inline-flex; gap: 4px; }
+.fs-customize-seg button {
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  background: rgba(128, 128, 128, 0.06);
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.fs-customize-seg button.active {
+  border-color: var(--fd-accent, #4a90d9);
+  color: var(--fd-text);
+  background: color-mix(in srgb, var(--fd-accent, #4a90d9) 14%, transparent);
+}
+.fs-customize-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 4px 12px;
+}
+.fs-customize-checks label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fd-text);
+  cursor: pointer;
+}
+
+
+/* ═══ v0.7: inline tool windows (open downward inside the dock) ═══ */
+.tool-inline {
+  margin: 0 10px 3px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: var(--fd-navigator-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.tool-inline-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.tool-inline-resize {
+  height: 8px;
+  cursor: ns-resize;
+  flex-shrink: 0;
+  background:
+    linear-gradient(to bottom, transparent 3px, var(--fd-border) 3px, var(--fd-border) 4px, transparent 4px);
+}
+.tool-inline-resize:hover { background-color: rgba(128, 128, 128, 0.15); }
+
+/* ═══ v0.8 ═══ */
+/* Item 4: uniform dock rhythm — separator zones match the item gap */
+.tool-dock-sep { display: none; }
+
+/* Item 5/7: dialog close button + help dialog */
+.fs-dialog-x {
+  float: right;
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.fs-dialog-x:hover { color: var(--fd-text); }
+.fs-help-dialog { max-width: 620px; width: 92vw; }
+.fs-help-body { max-height: 70vh; overflow-y: auto; font-size: 12.5px; }
+.fs-help-grid { display: flex; flex-direction: column; gap: 6px; }
+.fs-help-row { display: grid; grid-template-columns: 190px 1fr; gap: 12px; align-items: baseline; color: var(--fd-text); }
+.fs-kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  background: rgba(128, 128, 128, 0.15);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  justify-self: start;
+}
+.fs-kb-h {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fd-text-muted);
+  margin: 14px 0 4px;
+}
+.fs-kb-p { font-size: 12.5px; line-height: 1.55; margin: 4px 0; color: var(--fd-text); }
+
+/* v1.80: the pop-out lives ON the popped-in window's header row now, on the
+   editor-facing side (the old floating .tool-inline-popout corner button is
+   gone). The open row reads as a real header: separator below, no gap jump. */
+.tool-inline { position: relative; }
+.tool-dock-item-header {
+  border-bottom: 1px solid var(--fd-border);
+  background: rgba(128, 128, 128, 0.22);
+}
+.tool-dock-popout {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.tool-dock-popout:hover { color: var(--fd-text); }
+/* v2.15: Scrapbook solo mode (Settings > Tools) — while the Scrapbook is
+   open, its dock is the only row and its window fills the whole sidebar. */
+.tool-dock-scrapbook-solo {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.tool-dock-scrapbook-solo .tool-inline.tool-inline-solo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tool-inline-solo .tool-inline-body {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
+/* v2.06: the Icons Only panel — a rail of square tool buttons (OneNote's
+   left rail). No labels, no inline windows; clicking opens a floating
+   window. */
+.tool-dock-iconrail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 0;
+}
+.tool-dock-iconbtn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--fd-text-muted);
+  font-size: 16px;
+  cursor: pointer;
+}
+.tool-dock-iconbtn:hover { color: var(--fd-text); background: var(--fd-menu-hover); }
+.tool-dock-iconbtn.active {
+  color: var(--fd-accent, #4a90d9);
+  background: color-mix(in srgb, var(--fd-accent, #4a90d9) 14%, transparent);
+}
+.tool-dock-iconrail-divider {
+  width: 24px;
+  height: 1px;
+  background: var(--fd-border);
+  margin: 3px 0;
+}
+
+/* v2.00: the window HEADER — the row inside the window, under the dock
+   button. Holds the tool's header controls and the pop-out, with real
+   breathing room between the pop button and the nearest text. */
+.tool-inline-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--fd-border);
+  background: var(--fd-navigator-bg);
+  flex-shrink: 0;
+}
+.tool-inline-header-extra {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+}
+.tool-inline-header .tool-dock-popout { flex-shrink: 0; }
+
+/* v1.80: true footer bar under a tool window's body (docked and floating). */
+.tool-window-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--fd-border);
+  background: var(--fd-navigator-bg);
+  padding: 6px 8px;
+  display: flex;
+}
+/* v3.54, Derek: the Scenes tool's search lives in the window footer bar; the
+   footer already owns the border + padding, so the search strips its own. */
+.tool-window-footer .navigator-search--footer {
+  flex: 1; min-width: 0;
+  padding: 0; border-bottom: none;
+}
+/* v3.54: the Scenes filter popover — a floating shell (portalled to body,
+   positioned by top/left) wrapping the same .scene-filters rows the tool body
+   used to hold inline. */
+.fs-scene-filterpop {
+  position: fixed;
+  z-index: 10050;
+  width: 240px;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .35);
+  padding: 10px;
+}
+/* v1.91: a toggle switch that is still a checkbox underneath — same input,
+   same persistence, only the face changes. First wearer: Enable Typewriter. */
+input.fs-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 30px;
+  height: 17px;
+  border-radius: 999px;
+  background: var(--fd-border);
+  position: relative;
+  cursor: pointer;
+  transition: background .15s;
+  flex-shrink: 0;
+  margin: 0;
+}
+input.fs-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .3);
+  transition: left .15s;
+}
+input.fs-switch:checked { background: var(--fd-accent, #4a90d9); }
+input.fs-switch:checked::after { left: 15px; }
+
+/* v2.03: Navigator's ONE filter control — a funnel button, right-aligned in
+   the header (filter icons sit at the right edge of every window header);
+   clicking it opens the keyword + element-type popover. */
+.fs-nav-filterctl {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.fs-nav-filterbtn {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  padding: 2px 3px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+.fs-nav-filterbtn:hover { color: var(--fd-text); background: var(--fd-menu-hover); }
+.fs-nav-filterpop {
+  position: fixed;   /* portalled to body; top/left measured from the button */
+  z-index: 10050;
+  width: 220px;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .35);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fd-text);
+}
+.fs-nav-filterpop .fs-nav-filter { margin: 0 0 2px; }
+.fs-nav-filterpop-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--fd-text-muted);
+  margin-top: 2px;
+}
+.fs-nav-filterpop-kind {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+.fs-nav-filterpop-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.fs-nav-filterpop-actions button {
+  flex: 1;
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  color: var(--fd-text);
+  font-size: 11.5px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.fs-nav-filterpop-actions button:hover { background: var(--fd-menu-hover); }
+/* (Scenes/Pages/Locations' .scene-filter-btn already right-aligns via its
+   own margin-left: auto — every filter icon lives at the right edge.) */
+.tool-window-header-extra {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 8px;
+  flex: 1;
+  justify-content: flex-start;
+}
+
+
+/* ═══ v0.9: themes ═══ */
+[data-theme="sepia"] {
+  --fd-bg: #efe6d5; --fd-toolbar-bg: #e7dcc7; --fd-menu-bg: #efe6d5;
+  --fd-menu-hover: #ddd0b8; --fd-accent: #a5673f; --fd-border: #d4c5a9;
+  --fd-text: #4a3f2f; --fd-text-muted: #8a7a5f; --fd-navigator-bg: #e7dcc7;
+  --fd-status-bg: #e0d4bd; --fd-dropdown-bg: #efe6d5; --fd-dialog-bg: #efe6d5;
+  --fd-input-bg: rgba(0, 0, 0, 0.06);
+  --fd-overlay-subtle: rgba(0,0,0,.03); --fd-overlay-light: rgba(0,0,0,.06);
+  --fd-overlay-medium: rgba(0,0,0,.12); --fd-shadow: rgba(90,70,40,.25);
+  --fd-chrome-separator: rgba(0,0,0,0.08);
+  --fd-btn-bg: #975e39; --fd-btn-text: #fdf6e8; --fd-btn-hover: #a57454;
+}
+[data-theme="nord"] {
+  --fd-bg: #2e3440; --fd-toolbar-bg: #3b4252; --fd-menu-bg: #3b4252;
+  --fd-menu-hover: #434c5e; --fd-accent: #88c0d0; --fd-border: #434c5e;
+  --fd-text: #eceff4; --fd-text-muted: #9aa5b8; --fd-navigator-bg: #272c36;
+  --fd-status-bg: #232830; --fd-dropdown-bg: #3b4252; --fd-dialog-bg: #3b4252;
+  --fd-btn-bg: #4c6b74; --fd-btn-text: #eceff4; --fd-btn-hover: #657f87;
+}
+[data-theme="dracula"] {
+  --fd-bg: #282a36; --fd-toolbar-bg: #21222c; --fd-menu-bg: #21222c;
+  --fd-menu-hover: #44475a; --fd-accent: #bd93f9; --fd-border: #44475a;
+  --fd-text: #f8f8f2; --fd-text-muted: #8a8fa8; --fd-navigator-bg: #21222c;
+  --fd-status-bg: #191a21; --fd-dropdown-bg: #282a36; --fd-dialog-bg: #282a36;
+  --fd-btn-bg: #8063a9; --fd-btn-text: #f8f8f2; --fd-btn-hover: #9178b5;
+}
+[data-theme="solarized-dark"] {
+  --fd-bg: #002b36; --fd-toolbar-bg: #073642; --fd-menu-bg: #073642;
+  --fd-menu-hover: #0d4a5a; --fd-accent: #268bd2; --fd-border: #0d4a5a;
+  --fd-text: #eee8d5; --fd-text-muted: #93a1a1; --fd-navigator-bg: #00252e;
+  --fd-status-bg: #00212b; --fd-dropdown-bg: #073642; --fd-dialog-bg: #073642;
+  --fd-btn-bg: #1c699f; --fd-btn-text: #eee8d5; --fd-btn-hover: #3b7eac;
+}
+[data-theme="solarized-light"] {
+  --fd-bg: #fdf6e3; --fd-toolbar-bg: #eee8d5; --fd-menu-bg: #fdf6e3;
+  --fd-menu-hover: #e4ddc8; --fd-accent: #268bd2; --fd-border: #d9d2be;
+  --fd-text: #586e75; --fd-text-muted: #93a1a1; --fd-navigator-bg: #eee8d5;
+  --fd-status-bg: #e4ddc8; --fd-dropdown-bg: #fdf6e3; --fd-dialog-bg: #fdf6e3;
+  --fd-input-bg: rgba(0, 0, 0, 0.05);
+  --fd-overlay-subtle: rgba(0,0,0,.03); --fd-overlay-light: rgba(0,0,0,.06);
+  --fd-overlay-medium: rgba(0,0,0,.12); --fd-shadow: rgba(88,110,117,.25);
+  --fd-chrome-separator: rgba(0,0,0,0.08);
+  --fd-btn-bg: #1f74b0; --fd-btn-text: #fdf6e3; --fd-btn-hover: #3e87bb;
+}
+[data-theme="midnight"] {
+  --fd-bg: #0d1117; --fd-toolbar-bg: #161b22; --fd-menu-bg: #161b22;
+  --fd-menu-hover: #21262d; --fd-accent: #58a6ff; --fd-border: #30363d;
+  --fd-text: #e6edf3; --fd-text-muted: #8b949e; --fd-navigator-bg: #0a0e14;
+  --fd-status-bg: #010409; --fd-dropdown-bg: #161b22; --fd-dialog-bg: #161b22;
+  --fd-btn-bg: #386aa3; --fd-btn-text: #e6edf3; --fd-btn-hover: #537eaf;
+}
+/* Light-family themes keep the light editor chrome behaviors */
+[data-theme="sepia"] .menu-dropdown,
+[data-theme="solarized-light"] .menu-dropdown,
+[data-theme="sepia"] .dialog-box,
+[data-theme="solarized-light"] .dialog-box {
+  background: var(--fd-dropdown-bg);
+  color: var(--fd-text);
+}
+
+
+/* v0.10: reorder controls in Customize Layout */
+.fs-customize-order { display: inline-flex; flex-direction: column; gap: 1px; margin-right: 4px; }
+.fs-customize-order button {
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 3px;
+  color: var(--fd-text-muted);
+  font-size: 7px;
+  line-height: 1;
+  padding: 1px 4px;
+  cursor: pointer;
+}
+.fs-customize-order button:disabled { opacity: 0.3; cursor: default; }
+.fs-customize-order button:not(:disabled):hover { color: var(--fd-text); }
+
+
+/* ═══ v0.11 ═══ */
+
+/* Light theme: the tool/window buttons were nearly invisible on the light
+   dock — darken just the button fill and border (the rest of the light
+   palette is back to its pre-v0.10 values). */
+[data-theme="light"] .tool-dock-item {
+  background: #dedede;
+  border-color: #b5b5b5;
+}
+[data-theme="light"] .tool-dock-item:hover {
+  background: #d2d2d2;
+}
+[data-theme="light"] .tool-dock-item.active {
+  background: #cfe0f3;
+  border-color: var(--fd-accent, #1565c0);
+}
+
+/* Workspace dialogs (Save Workspace / Edit Workspaces) */
+.ws-dialog { max-width: 440px; width: 440px; }
+.ws-dialog-header-icon { margin-right: 8px; vertical-align: -1px; opacity: .8; }
+.ws-dialog .dialog-row label { line-height: 1.45; }
+.ws-overwrite-hint {
+  font-size: 12.5px;
+  color: var(--fd-text-muted);
+  min-height: 17px;
+  visibility: hidden;
+}
+.ws-overwrite-hint.visible { visibility: visible; color: #c9862b; }
+
+.ws-edit-dialog .dialog-body { padding: 12px; }
+.ws-empty {
+  text-align: center;
+  color: var(--fd-text-muted);
+  font-size: 13.5px;
+  line-height: 1.7;
+  padding: 22px 10px;
+}
+.ws-list { display: flex; flex-direction: column; gap: 4px; }
+.ws-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: var(--fd-overlay-subtle);
+}
+.ws-row.active { border-color: var(--fd-accent); }
+.ws-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--fd-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ws-active-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--fd-accent);
+  border: 1px solid var(--fd-accent);
+  border-radius: 10px;
+  padding: 1px 7px;
+  flex-shrink: 0;
+}
+.ws-rename-input {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-accent);
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 14px;
+  outline: none;
+}
+.ws-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text-muted);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.ws-icon-btn:hover { color: var(--fd-text); background: var(--fd-menu-hover); }
+.ws-icon-btn:disabled { opacity: .4; cursor: default; }
+.ws-icon-btn.ws-danger:hover { color: #d05050; border-color: #d05050; }
+.ws-icon-btn.ws-confirm:hover { color: var(--fd-accent); border-color: var(--fd-accent); }
+.ws-confirm-label { font-size: 12.5px; color: #d05050; font-weight: 600; flex-shrink: 0; }
+
+
+/* ═══ v0.12 ═══ */
+
+/* Inline pop-out button. v1.34: upper-RIGHT for every window — matching the
+   floating windows' header pop-in — instead of the old bottom corner. The
+   inline body reserves a top strip for it (see the v0.94 rule), so no tool's
+   own top controls can ever run underneath it. */
+.tool-inline-popout {
+  top: 4px;
+  bottom: auto;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+.tool-inline-popout::after {
+  content: '';
+  display: block;
+  width: 11px;
+  height: 11px;
+  background:
+    linear-gradient(135deg, transparent 50%, var(--fd-text-muted) 50%, var(--fd-text-muted) 55%,
+      transparent 55%, transparent 70%, var(--fd-text-muted) 70%, var(--fd-text-muted) 75%, transparent 75%);
+  opacity: 0.75;
+}
+.tool-inline-popout:hover::after { opacity: 1; }
+
+/* ── Pop-out / pop-in buttons must not sit on top of the panel's own controls
+   (v0.90). Both are absolutely positioned in a corner, so anything full-width at
+   the bottom of a panel — the Add button in Notes, Snippets and To-Do — ran
+   straight under them.
+
+   Fixed by reserving a gutter in the bottom row rather than by shrinking each
+   button by hand: the row keeps its layout, the control just stops short of the
+   corner. Applied to every bottom row, so any tool that grows one is covered,
+   and to both corners, since the two buttons live on opposite sides:
+     • inline panel  → pop-OUT, bottom-RIGHT
+     • floating window → pop-IN, bottom-LEFT                                   */
+/* v0.94 — RESERVE THE CORNER, once, for every panel.
+
+   v0.90 and v0.93 chased this control by control (the Add button) and side by
+   side, and it kept resurfacing — the Navigator's filter field sits in the same
+   corner, and any tool that grows a bottom control would have hit it next. The
+   button is absolutely positioned over the panel's content, so the fix is to
+   stop content from occupying that strip AT ALL rather than to shrink each
+   control that wanders into it.
+
+   The strip is the height of the button plus its offset. Content stays clear
+   of it; the button sits in the reserved space. Applies to every tool, so no
+   future one has to remember this.
+
+   v1.34: the inline pop-out moved to the TOP-right, so the inline reserve is
+   now a top strip; the bottom keeps a sliver for the height-drag handle. The
+   floating window's buttons all live in its header now, so its body only
+   clears the corner resize grip. */
+.tool-inline-body {
+  box-sizing: border-box;       /* the height is set inline — keep padding INSIDE it */
+  padding-top: 26px;
+  padding-bottom: 10px;
+}
+.tool-window-body {
+  box-sizing: border-box;
+  padding-bottom: 18px;
+}
+/* A fixed window (Title Page) has no handle in the corner and hugs its content,
+   so reserving a strip there would just add dead space. */
+.tool-window.tool-window-fixed .tool-window-body { padding-bottom: 0; }
+
+/* Outline (Beat Board) helper note */
+.beat-board-hint {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  padding: 4px 12px 6px;
+  flex-shrink: 0;
+}
+
+/* Edit Workspaces: reorder controls */
+.ws-order { display: inline-flex; flex-direction: column; gap: 1px; flex-shrink: 0; }
+.ws-order button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 3px;
+  color: var(--fd-text-muted);
+  font-size: 7px;
+  line-height: 1;
+  padding: 1px 5px;
+  cursor: pointer;
+}
+.ws-order button:disabled { opacity: 0.3; cursor: default; }
+.ws-order button:not(:disabled):hover { color: var(--fd-text); }
+
+
+/* ═══ v0.13: Preferences ═══ */
+.prefs-dialog {
+  max-width: 860px;
+  width: min(860px, 94vw);
+  height: min(640px, 86vh);
+}
+.prefs-dialog .dialog-header { display: flex; align-items: center; justify-content: space-between; }
+.prefs-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.prefs-tabs {
+  width: 190px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--fd-border);
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+.prefs-tab {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--fd-text);
+  font-size: 13px;
+  text-align: left;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.prefs-tab:hover { background: var(--fd-overlay-light); }
+.prefs-tab.active {
+  background: var(--fd-overlay-medium);
+  color: var(--fd-accent);
+  font-weight: 600;
+}
+.prefs-tab-icon { width: 16px; display: inline-flex; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.prefs-content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 16px 20px 20px;
+}
+.prefs-general section { margin-bottom: 26px; }
+.prefs-general h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--fd-text-muted);
+  margin: 0 0 10px;
+}
+.prefs-check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--fd-text);
+}
+.prefs-hint {
+  font-size: 12.5px;
+  color: var(--fd-text-muted);
+  line-height: 1.5;
+  margin: 6px 0 0 26px;
+  max-width: 520px;
+}
+/* v3.25 (task #139): a hint that belongs to the checkbox row right above it —
+   tucked close and slightly smaller than a section-level hint. */
+.prefs-hint.prefs-subhint {
+  font-size: 11.5px;
+  margin: 1px 0 10px 26px;
+}
+.prefs-field-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--fd-text);
+}
+.prefs-field-row select {
+  height: 32px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 13.5px;
+}
+.prefs-field-row + .prefs-hint { margin-left: 0; }
+@media (max-width: 700px) {
+  .prefs-layout { flex-direction: column; }
+  .prefs-tabs { width: 100%; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--fd-border); }
+}
+
+
+/* ═══ v0.15 ═══ */
+
+/* Sub-tabs inside merged Notes / To-Do windows (General | Script) */
+.fs-subtab-row {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--fd-border);
+  flex-shrink: 0;
+}
+.fs-subtab {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  color: var(--fd-text-muted);
+  font-size: 12.5px;
+  padding: 5px 0;
+  cursor: pointer;
+}
+.fs-subtab:hover { color: var(--fd-text); }
+.fs-subtab.active {
+  background: var(--fd-overlay-medium);
+  color: var(--fd-accent);
+  border-color: var(--fd-accent);
+  font-weight: 600;
+}
+
+/* To-Do window > Script tab: doc checklist list */
+.fs-doc-todo-list { flex: 1; overflow-y: auto; padding: 8px; }
+.fs-doc-todo-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  font-size: 13px;
+  color: var(--fd-text);
+}
+.fs-doc-todo-row:hover { background: var(--fd-overlay-subtle); }
+.fs-doc-todo-row input { margin-top: 2px; cursor: pointer; }
+
+/* v0.92: one To-Do list, no sub-tabs. Each row shows WHERE the to-do lives —
+   the scene, for one added to the script; nothing at all for a standalone one,
+   which is the whole signal. */
+.fs-todo-list { flex: 1; overflow-y: auto; padding: 8px; min-height: 0; }
+
+/* v0.94: the link on a script-linked to-do or note. It isn't a description of
+   where the thing lives — it's how you GET there. */
+.fs-script-link {
+  display: block;
+  margin: 6px 0 2px;
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: var(--fd-accent, #4a90d9);
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fs-script-link:hover { filter: brightness(1.2); }
+
+/* v1.0: the field at the foot of every card. A card in the script links to it;
+   one that isn't says so plainly and does nothing when clicked — the ABSENCE of
+   a link is the information. */
+.fs-general-tag {
+  font-size: 11px;
+  color: #8a8a7a;
+  font-style: italic;
+}
+
+/* v1.2: the foot of a card is one row — link bottom-LEFT, date bottom-right,
+   sharing a baseline. */
+.swn-card-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+.swn-card-foot .fs-script-link { margin: 0; text-align: left; }
+.swn-card-foot .swn-card-date { margin: 0; white-space: nowrap; }
+
+/* Filter / Sort bar shared by Notes and To-Do. */
+.fs-list-toolbar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--fd-border);
+  flex-shrink: 0;
+}
+.fs-list-count {
+  font-size: 10.5px; font-weight: 600; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--fd-text-muted);
+  white-space: nowrap; margin-right: auto;
+}
+.fs-list-toolbar .fs-addmenu { flex: 0 1 auto; }
+.fs-list-toolbar .fs-addmenu-trigger {
+  padding: 3px 8px; font-size: 11px; white-space: nowrap;
+}
+.fs-list-toolbar .fs-addmenu-pop { min-width: 170px; }   /* placement is inline */
+
+/* Both note kinds are the SAME card — no bespoke width or padding on either. */
+.note-item.swn-card { border-top: none; width: auto; }
+.swn-card.dragging { opacity: .45; }
+
+/* Help > Keyboard Shortcuts (v0.97): grouped, and rendered from the LIVE
+   bindings, so a rebound key shows here and is marked as customized. */
+.fs-help-group + .fs-help-group { margin-top: 14px; }
+.fs-help-group-head {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--fd-text-muted);
+}
+.fs-kbd-custom {
+  border-color: var(--fd-accent);
+  color: var(--fd-accent);
+}
+.fs-help-custom-tag {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--fd-overlay-subtle);
+  border: 1px solid var(--fd-border);
+  font-size: 10px;
+  color: var(--fd-text-muted);
+}
+
+/* v0.96: a script-anchored card sits in the grip's slot with a jump arrow — it
+   follows the script, so it can't be dragged into an arbitrary order. Same size
+   and position as the grip, so the card's shape is unchanged. */
+.swn-card-jump {
+  flex: none;
+  width: 14px; height: 14px;
+  padding: 0;
+  background: none; border: none;
+  color: #555;
+  font-size: 12px; line-height: 1;
+  cursor: pointer;
+  opacity: .6;
+}
+.swn-card-jump:hover { opacity: 1; }
+
+/* v0.98: a script note is now the SAME card as a window note — same header, same
+   live textarea body. Media and @asset references render in a block BELOW the
+   box instead of replacing it with a click-to-edit preview, which was the last
+   thing making the two look like different objects. */
+.note-item-media {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(0,0,0,.15);
+}
+.note-item.swn-card .note-edit-area { position: relative; }
+/* The old bespoke note chrome is gone — the card provides all of it now. */
+.note-item-preview, .note-item-placeholder, .note-item-actions,
+.note-item-colors, .note-item-delete, .note-item-content { display: none; }
+/* A script note IS a card now — drop the old bespoke note styling that fought it. */
+.note-item.swn-card { border-top: none; }
+.note-item.swn-card .fs-script-link { color: #2c5e98; }
+/* A script to-do uses the same card as one made in the window. */
+.swn-card-script .swn-todo-item { margin-top: 2px; }
+
+/* v0.93: Notes is one list too. Script-linked notes and standalone ones share a
+   single scroll area, so the inner list stops being its own scroller — otherwise
+   you'd get two scrollbars stacked inside one panel. */
+.fs-notes-list { flex: 1; overflow-y: auto; min-height: 0; }
+.fs-notes-list .script-notes-list {
+  flex: none;
+  overflow: visible;
+}
+.fs-todo-text { cursor: pointer; flex: 1; line-height: 1.4; min-width: 0; }
+
+.fs-todo-hint { padding: 10px 4px; }
+
+/* Highlights window */
+.fs-highlights-tool { display: flex; flex-direction: column; height: 100%; }
+.fs-highlight-list { flex: 1; overflow-y: auto; padding: 6px 8px; }
+.fs-highlight-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.fs-highlight-row:hover { background: var(--fd-overlay-subtle); }
+.fs-highlight-swatch {
+  width: 12px; height: 12px;
+  border-radius: 3px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,.15);
+}
+.fs-highlight-text { flex: 1; font-size: 12.5px; line-height: 1.45; color: var(--fd-text); }
+.fs-highlight-remove {
+  background: none; border: none;
+  color: var(--fd-text-muted);
+  font-size: 14px; cursor: pointer;
+  padding: 0 2px; flex-shrink: 0;
+}
+.fs-highlight-remove:hover { color: #d05050; }
+.fs-highlight-toggles {
+  border-top: 1px solid var(--fd-border);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.fs-highlight-toggles label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; color: var(--fd-text); cursor: pointer;
+}
+
+/* View > Preview: hide outline kinds in the script */
+.page.hide-sections .ol-section { display: none !important; }
+/* v1.4: markers have their own switch — they used to vanish with sections. */
+.page.hide-markers .ol-marker { display: none !important; }
+.page.hide-script-todos .ol-todo { display: none !important; }
+
+/* Navigator: make structural rows stand out (item 16) */
+.fs-nav-item.section {
+  color: var(--fd-accent);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.fs-nav-item.note { color: #d9a521; }
+.fs-nav-item.todo { color: #4caf7d; }
+.fs-nav-item.marker { color: #b06fd8; }
+[data-theme="light"] .fs-nav-item.note { color: #a97b0a; }
+[data-theme="light"] .fs-nav-item.todo { color: #2e7d54; }
+[data-theme="light"] .fs-nav-item.marker { color: #8e44ad; }
+
+/* Pop-out button: distinct expand-arrow glyph (was sharing the resize grip) */
+.tool-inline-popout {
+  font-size: 13px;
+  line-height: 1;
+  color: var(--fd-text-muted);
+  align-items: center;
+  justify-content: center;
+}
+.tool-inline-popout::after { content: none; }
+.tool-inline-popout:hover { color: var(--fd-text); }
+
+/* Right-docked floating windows: resize handle bottom-LEFT, mirrored grip */
+.tool-window-resize-left {
+  right: auto;
+  left: 0;
+  cursor: nesw-resize;
+  transform: scaleX(-1);
+}
+
+/* In-app help forms (Feature Request / Report a Bug) */
+.help-form-dialog {
+  width: min(720px, 94vw);
+  height: min(760px, 90vh);
+  display: flex;
+  flex-direction: column;
+}
+.help-form-dialog .dialog-header { display: flex; justify-content: space-between; align-items: center; }
+.help-form-frame {
+  flex: 1;
+  border: none;
+  width: 100%;
+  background: #fff;
+  border-radius: 0 0 8px 8px;
+}
+
+/* System Settings embedded as a Settings tab */
+.settings-page-embedded {
+  min-height: 0 !important;
+  height: auto !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+.settings-page-embedded .settings-content {
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+
+/* ═══ v0.16 ═══ */
+
+/* Continuous view: thin page-boundary line with a small page label */
+.page-sep-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  pointer-events: none;
+  background: var(--fd-page-bg);
+}
+.page-sep-line::before {
+  content: '';
+  flex: 1;
+  border-top: 1px dashed var(--fd-border);
+}
+.page-sep-line-label {
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+
+/* Save As: composed file-name preview — footer row, beside the buttons that
+   act on it (v1.30). No min-width:0: its full nowrap width is what forces
+   the dialog's min-width: fit-content to widen the window for a long name. */
+.save-as-preview {
+  font-size: 15px; /* matches its "Saves as:" label (v1.34) */
+  /* v1.40: light grey (after accent-blue and a gold trial) — the theme's
+     muted text color, so every theme keeps an appropriate grey. v1.48:
+     underlined. */
+  color: var(--fd-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+
+/* ═══ v0.17 ═══ */
+
+/* 4) In-editor outline colors matching the Navigator */
+.page .ol-section {
+  color: var(--fd-accent);
+  font-weight: 700;
+}
+.page .ol-marker { color: #b06fd8; }
+.page .ol-todo { color: #4caf7d; }
+[data-theme="light"] .page .ol-marker { color: #8e44ad; }
+[data-theme="light"] .page .ol-todo { color: #2e7d54; }
+
+/* 5) Preview mode: hide editing chrome, banner to exit */
+.preview-mode .toolbar,
+.preview-mode .tool-dock-wrap,
+.preview-mode .tool-window,
+.preview-mode .status-bar { display: none !important; }
+.preview-banner {
+  position: fixed;
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--fd-menu-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: var(--fd-chrome-shadow, 0 2px 8px rgba(0,0,0,.25));
+  padding: 7px 14px;
+}
+.preview-banner-label {
+  font-size: 12.5px;
+  color: var(--fd-text-muted);
+  letter-spacing: .02em;
+}
+.preview-banner-exit {
+  background: var(--fd-accent);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.preview-banner-exit:hover { filter: brightness(1.1); }
+
+/* 5c) Toolbar editor-view dropdown */
+.view-style-selector {
+  height: 26px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 0 6px;
+}
+
+
+/* ═══ v0.18 ═══ */
+
+/* Preview sidebar (File > Preview) — old-app style option rail */
+.preview-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 272px;
+  z-index: 4500;
+  background: var(--fd-navigator-bg);
+  border-left: 1px solid var(--fd-border);
+  padding: 56px 18px 18px;
+  overflow-y: auto;
+  font-size: 13px;
+  color: var(--fd-text);
+}
+.preview-mode .editor-main { padding-right: 288px !important; }
+.pv-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--fd-text-muted);
+  margin: 18px 0 8px;
+}
+.pv-section-title:first-child { margin-top: 0; }
+.pv-check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  cursor: pointer;
+}
+.pv-hint {
+  font-size: 11.5px;
+  color: var(--fd-text-muted);
+  line-height: 1.5;
+  margin: 8px 0 0;
+}
+.pv-export-primary {
+  display: block;
+  width: 100%;
+  background: var(--fd-accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.pv-export-primary:hover { filter: brightness(1.1); }
+.pv-export-btn {
+  display: block;
+  width: 100%;
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  padding: 8px 0;
+  font-size: 12.5px;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+.pv-export-btn:hover { background: var(--fd-menu-hover); }
+.pv-export-primary:disabled, .pv-export-btn:disabled { opacity: .55; cursor: default; }
+
+/* Preview scene-header template options */
+.page.pv-hdr-double .scene-heading { margin-top: 24pt !important; }
+.page.pv-hdr-double .scene-heading:first-child { margin-top: 0 !important; }
+.page.pv-hdr-plain .scene-heading { font-weight: 400 !important; }
+.page.pv-hdr-underline .scene-heading { text-decoration: underline; }
+
+/* Floating windows: pop-in button (returns the tool to the side panel) */
+/* v1.33: pop-in lives in the window header (its top toolbar), not a floating
+   corner button. */
+.tool-window-popin {
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.tool-window-popin:hover { color: var(--fd-text); }
+/* v1.32: the pop buttons carry an SVG chevron now, not a text glyph. */
+.tool-window-popin svg,
+.tool-inline-popout svg { display: block; margin: auto; }
+
+/* v1.33: Premiere-style open/closed caret at the left of every dock item.
+   v1.34: a single chevron (right = closed, down = open) with extra breathing
+   room before the item's icon. */
+.tool-dock-caret {
+  display: inline-flex;
+  width: 10px;
+  justify-content: center;
+  color: var(--fd-text-muted);
+  flex-shrink: 0;
+  font-size: 9px;
+  margin-right: 8px;
+}
+.tool-dock-caret svg { display: block; }
+
+/* Customize: toolbar item sub-groups */
+.fs-customize-subgroup {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--fd-text-muted);
+  margin: 10px 0 4px;
+}
+
+/* Settings: language checklist */
+.prefs-lang-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 4px 18px;
+  max-width: 560px;
+}
+
+
+/* ═══ v0.21 ═══ */
+
+/* Customize: built-in toolbar items as boxed groups (no labels) */
+.fs-customize-boxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fs-customize-box {
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 130px;
+}
+.fs-customize-box label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--fd-text);
+  cursor: pointer;
+}
+
+/* Customize: pinned tool reorder arrows */
+.fs-customize-pin-row { display: flex; align-items: center; gap: 7px; }
+.fs-pin-order { display: inline-flex; gap: 2px; }
+.fs-pin-order button {
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 3px;
+  color: var(--fd-text-muted);
+  font-size: 8px;
+  line-height: 1;
+  padding: 2px 5px;
+  cursor: pointer;
+}
+.fs-pin-order button:disabled { opacity: .3; cursor: default; }
+.fs-pin-order button:not(:disabled):hover { color: var(--fd-text); }
+
+/* Preview sidebar: exit button at the top */
+.pv-exit-btn {
+  display: block;
+  width: 100%;
+  background: var(--fd-menu-bg);
+  color: var(--fd-accent);
+  border: 1px solid var(--fd-accent);
+  border-radius: 6px;
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+.pv-exit-btn:hover { background: var(--fd-menu-hover); }
+.pv-exit-bottom { margin-top: 18px; margin-bottom: 0; }
+
+
+/* ═══ v0.23 ═══ */
+
+/* Project Manager tool */
+.fs-projects-tool { display: flex; flex-direction: column; height: 100%; }
+.fs-projects-list { flex: 1; overflow-y: auto; padding: 8px; }
+.fs-project-row {
+  padding: 8px 10px;
+  border-radius: 5px;
+  font-size: 13px;
+  color: var(--fd-text);
+  cursor: pointer;
+}
+.fs-project-row:hover { background: var(--fd-overlay-subtle); }
+.fs-project-row.active { background: var(--fd-overlay-medium); color: var(--fd-accent); font-weight: 600; }
+
+/* Status bar: per-location save chips */
+.status-item.status-saved { color: #4caf7d; }
+.status-item.status-saving { color: var(--fd-text-muted); }
+.status-item.status-error { color: #d05050; }
+
+
+/* ═══ v0.25 ═══ */
+.fs-projects-crumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--fd-border);
+  flex-shrink: 0;
+}
+.fs-projects-back {
+  background: none;
+  border: none;
+  color: var(--fd-accent);
+  font-size: 12.5px;
+  cursor: pointer;
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+.fs-projects-crumb-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fd-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fs-project-row { display: flex; align-items: center; gap: 8px; }
+.fs-project-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fs-project-chevron { color: var(--fd-text-muted); }
+.fs-project-meta { color: var(--fd-text-muted); font-size: 11px; }
+.fs-projects-add-row { display: flex; gap: 6px; width: 100%; }
+.fs-projects-add-row input {
+  flex: 1;
+  height: 28px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 12.5px;
+}
+
+
+/* v0.30: account row in Save Options */
+.prefs-account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 13px;
+  color: var(--fd-text);
+  padding: 4px 0;
+}
+
+

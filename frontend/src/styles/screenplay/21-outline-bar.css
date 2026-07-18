@@ -1,0 +1,454 @@
+/* ── Outline Bar (v1.75, Final Draft's Outline Editor) ── */
+.fs-outline-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--fd-toolbar-bg);
+  border-bottom: 1px solid var(--fd-border);
+  padding: 4px 8px;
+}
+.fs-ob-side {
+  /* v2.49: five buttons, spread evenly over the bar's height. */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 3px;
+  width: 34px;
+  flex: 0 0 auto;
+  margin-right: 6px;
+}
+.fs-ob-side .fs-addmenu-trigger, .fs-ob-side .fs-ob-iconbtn, .fs-ob-fitbtn {
+  width: 100%;
+  height: 22px;
+  /* v3.06, Derek: the buttons keep their size — shrinking the bar squashed
+     them along with the rows. The rows scale; the buttons don't. */
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fd-text);
+  cursor: pointer;
+  padding: 0;
+}
+.fs-ob-fitbtn.active { background: var(--fd-accent); border-color: var(--fd-accent); color: #fff; }
+.fs-ob-side .fs-addmenu { width: 100%; flex-shrink: 0; }
+.fs-ob-pop-colors { display: flex; gap: 4px; margin: 6px 0; flex-wrap: wrap; }
+.fs-ob-pop-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--fd-border);
+  cursor: pointer;
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  padding: 0;
+}
+.fs-ob-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fd-text-muted);
+}
+.fs-ob-side button, .fs-ob-side select {
+  background: rgba(128, 128, 128, 0.15);
+  border: none;
+  color: var(--fd-text);
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 3px 8px;
+  cursor: pointer;
+  text-align: left;
+}
+.fs-ob-side button:hover { background: rgba(128, 128, 128, 0.28); }
+.fs-ob-side button:disabled { opacity: 0.45; cursor: default; }
+/* v2.16: the side controls are one row of equal squares — the AddMenu
+   trigger and the send icon were inheriting stretchy full-width styles. */
+.fs-ob-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.fs-ob-actions .fs-addmenu { flex: 0 0 auto; }
+.fs-ob-actions .fs-addmenu-trigger,
+.fs-ob-actions .fs-ob-iconbtn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 13px;
+  background: rgba(128, 128, 128, 0.15);
+  border: none;
+  border-radius: 4px;
+  color: var(--fd-text);
+  cursor: pointer;
+}
+.fs-ob-actions .fs-addmenu-trigger:hover,
+.fs-ob-actions .fs-ob-iconbtn:hover { background: rgba(128, 128, 128, 0.28); }
+/* v2.11: zoom — Fit + a px-per-page slider (the Premiere pattern). */
+.fs-ob-zoom {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fs-ob-zoom button {
+  height: 22px;
+  padding: 0 8px;
+  font-size: 10.5px;
+}
+.fs-ob-zoom button.active { background: color-mix(in srgb, var(--fd-accent, #4a90d9) 30%, transparent); }
+.fs-ob-zoom input[type='range'] { width: 70px; }
+
+/* v2.11: the tracks scroll horizontally; width = pages × zoom. */
+.fs-ob-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.fs-ob-scroll {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* v2.28: the navigator below is the scrollbar — hide the native one. */
+  scrollbar-width: none;
+}
+.fs-ob-scroll::-webkit-scrollbar { display: none; }
+/* v2.28: the Premiere-style navigator — scroll and rescale from one bar. */
+.fs-ob-nav {
+  position: relative;
+  height: 14px;
+  margin-top: 3px;
+  border-radius: 7px;
+  background: var(--fd-overlay-subtle);
+}
+.fs-ob-nav-thumb {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 7px;
+  background: var(--fd-border);
+  cursor: grab;
+}
+.fs-ob-nav-thumb:hover { filter: brightness(1.15); }
+.fs-ob-nav-handle {
+  position: absolute;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--fd-text-muted);
+  cursor: ew-resize;
+}
+.fs-ob-nav-handle-l { left: 1px; }
+.fs-ob-nav-handle-r { right: 1px; }
+.fs-ob-tracks {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 100%;
+}
+.fs-ob-lane {
+  position: relative;
+  height: var(--ob-lane-h, 26px);
+  background: var(--fd-overlay-subtle);
+  border-radius: 4px;
+}
+.fs-ob-lane-label {
+  position: sticky;
+  left: 6px;
+  float: left;
+  margin-top: 7px;
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  pointer-events: none;
+  z-index: 3;
+}
+/* Row 1: acts — sequential budget blocks, FD-style alternating tints. */
+.fs-ob-act {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border-radius: 4px;
+  color: var(--fd-text);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px 0 8px;
+  user-select: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.fs-ob-act-0 { background: rgba(186, 104, 200, 0.55); }
+.fs-ob-act-1 { background: rgba(79, 195, 247, 0.5); }
+.fs-ob-act-2 { background: rgba(255, 183, 77, 0.55); }
+.fs-ob-act-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+.fs-ob-beat {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  min-width: 24px;
+  background: var(--fd-accent, #4a90d9);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px 0 8px;
+  cursor: grab;
+  user-select: none;
+  z-index: 1;
+  overflow: hidden;
+}
+.fs-ob-beat:active { cursor: grabbing; }
+.fs-ob-beat-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fs-ob-beat-x {
+  position: absolute;
+  right: 12px;
+  top: 1px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px;
+  display: none;
+}
+.fs-ob-beat:hover .fs-ob-beat-x { display: block; }
+.fs-ob-beat-resize {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: ew-resize;
+  border-right: 3px solid rgba(255, 255, 255, 0.45);
+  border-radius: 0 4px 4px 0;
+}
+.fs-ob-act .fs-ob-beat-resize { border-right-color: color-mix(in srgb, var(--fd-text) 45%, transparent); }
+/* v2.15: the mirrored LEFT resize handle — both edges trim. */
+.fs-ob-resize-l {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: ew-resize;
+  border-left: 3px solid rgba(255, 255, 255, 0.45);
+  border-radius: 4px 0 0 4px;
+}
+.fs-ob-act .fs-ob-resize-l { border-left-color: color-mix(in srgb, var(--fd-text) 45%, transparent); }
+/* v2.16: double-click rename, in place. */
+.fs-ob-rename {
+  flex: 1;
+  min-width: 40px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-accent, #4a90d9);
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 1px 5px;
+}
+
+/* v2.11: the page ruler — increments 1..total, like a measuring tape. */
+.fs-ob-ruler {
+  position: relative;
+  height: var(--ob-ruler-h, 16px);
+}
+.fs-ob-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid color-mix(in srgb, var(--fd-text) 25%, transparent);
+}
+.fs-ob-tick-label {
+  position: absolute;
+  left: 2px;
+  top: 1px;
+  font-size: 9px;
+  color: var(--fd-text-muted);
+  user-select: none;
+}
+/* Row 3: the script — one block per scene heading, sized by real pages. */
+.fs-ob-scenes { height: 30px; }
+.fs-ob-scene {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  background: var(--fd-overlay-light);
+  border: none;
+  border-right: 1px solid var(--fd-toolbar-bg);
+  border-radius: 3px;
+  color: var(--fd-text-muted);
+  font-size: 10px;
+  font-family: 'Courier Prime', 'Courier New', monospace;
+  cursor: pointer;
+  min-width: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: left;
+  padding: 0 4px;
+  z-index: 1;
+}
+.fs-ob-scene:hover { background: var(--fd-overlay-medium); color: var(--fd-text); }
+.fs-ob-empty {
+  position: absolute;
+  left: 60px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: var(--fd-text-muted);
+}
+/* v2.11: right-click "target pages" popover (body portal, top/left only). */
+.fs-ob-pagespop {
+  position: fixed;
+  z-index: 10060;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .35);
+  padding: 10px;
+  font-size: 11px;
+  color: var(--fd-text);
+}
+.fs-ob-pagespop label { display: flex; flex-direction: column; gap: 4px; }
+.fs-ob-pagespop input {
+  width: 72px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  font-size: 12px;
+  padding: 4px 6px;
+}
+.fs-ob-pagespop button {
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+/* v2.17: the beat card's page estimate (same outlineSpan as the bar). */
+.beat-card-pages {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  flex: 0 0 auto;
+}
+.beat-card-pages input {
+  width: 34px;
+  background: transparent;
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 1px 3px;
+}
+
+/* v2.11: the Outline window's per-column page budget. */
+.beat-column-target {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  flex: 0 0 auto;
+}
+.beat-column-target input {
+  width: 44px;
+  background: transparent;
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 2px 4px;
+}
+
+/* ── Writing focus (v1.74, ported: their writing-focus + vignette) ──
+   All chrome disappears; a soft vignette frames the page. Esc leaves. */
+body.fs-writing-focus .chrome-stack,
+body.fs-writing-focus .status-bar,
+body.fs-writing-focus .tool-dock,
+body.fs-writing-focus .panel-resize-handle {
+  display: none !important;
+}
+body.fs-writing-focus::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 12vw 3vw rgba(0, 0, 0, 0.45);
+  z-index: 8000;
+}
+/* v1.84: Extreme focus wears its exit sign — upper right, always visible. */
+body.fs-writing-focus::before {
+  content: 'esc to leave';
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  pointer-events: none;
+  z-index: 8001;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  color: rgba(255, 255, 255, 0.65);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* v1.84: the tool's master switch reads heavier than the options below it. */
+.fs-typewriter-master {
+  font-weight: 700;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--fd-chrome-separator);
+  margin-bottom: 4px;
+}
+
+/* (v1.77: the v1.74 limit-line-length rule is gone — Derek cut the option.) */
+
+/* The typewriter current-line bar (ported: their ptm-current-line). Lives in
+   the scroller's content space, so it scrolls with the text. Left/width are
+   set inline to the PAGE's bounds (v1.78), and the color comes from the tool
+   window; multiply keeps any tint readable over the white page. */
+.fs-typewriter-line {
+  position: absolute;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Dim-others (ported: their dim-unfocused "paragraphs" mode, opacity 0.25). */
+.ProseMirror .fs-dimmed {
+  opacity: var(--fs-dimmed-opacity, 0.25);
+  transition: opacity 0.2s ease;
+}
+

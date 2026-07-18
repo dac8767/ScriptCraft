@@ -1,0 +1,983 @@
+/* ═══════════════ Tool Dock (Photoshop-style panel list) ═══════════════ */
+.tool-dock-wrap {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  z-index: 30;
+}
+
+/* v1.1: grab the panel's outer edge and drag it to the width you want. Sits on
+   the edge that faces the editor, so it never covers panel content.
+   v2.95, Derek: the edge used to overhang 3px INTO the editor, sitting on top
+   of its scrollbar — it now stays inside the panel, and the wrap keeps a
+   6px gap so the scrollbar and the grab edge each have their own room. */
+.tool-dock-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  z-index: 31;
+  cursor: move;   /* v2.77: two-axis — width + item size */
+  background: transparent;
+}
+.tool-dock-edge-left  { right: 0; }   /* left panel grows rightwards */
+.tool-dock-edge-right { left: 0; }    /* right panel grows leftwards */
+.tool-dock-wrap.tool-dock-right { margin-left: 6px; }
+.tool-dock-wrap.tool-dock-left  { margin-right: 6px; }
+.tool-dock-edge:hover { background: var(--fd-accent); opacity: .35; }
+.tool-dock-edge:active { background: var(--fd-accent); opacity: .6; }
+
+/* v1.1: ONE Hide button in every Customize tab — it removes the row and stashes
+   the item in + Add Item. It's an action, not half of a toggle pair, so it isn't
+   drawn as a segmented control any more. */
+.fs-customize-hide {
+  padding: 3px 10px;
+  background: var(--fd-btn-bg, var(--fd-overlay-subtle));
+  color: var(--fd-text-muted);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.fs-customize-hide:hover:not(:disabled) {
+  color: var(--fd-text);
+  border-color: var(--fd-accent);
+}
+.fs-customize-hide:disabled { opacity: .4; cursor: not-allowed; }
+/* v3.09, Derek: the Quick Access Toolbar — the macOS titlebar row. The
+   native bar is an overlay (traffic lights float over the webview), so this
+   strip is the titlebar: left inset clears the lights, QAT buttons follow,
+   the document title sits centered where macOS used to draw it. The whole
+   row is a Tauri drag region. */
+.fs-titlebar {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  flex-shrink: 0;
+  padding-left: 78px;   /* traffic lights */
+  padding-right: 8px;
+  background: var(--fd-navigator-bg);
+  border-bottom: 1px solid var(--fd-border);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.fs-titlebar-qat { display: flex; align-items: center; gap: 2px; flex: 1; }
+.fs-titlebar-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 20px; padding: 0;
+  border: none; border-radius: 4px; background: transparent;
+  color: var(--fd-text-muted); cursor: pointer; font-size: 11px;
+}
+.fs-titlebar-btn:hover { background: var(--fd-hover-bg); color: var(--fd-text); }
+/* v3.25, Derek (task #140): every QAT icon box is 11px, but FaSave's disk
+   glyph fills its viewBox edge-to-edge while arrows/search carry built-in
+   air — so Save READS bigger. Optical correction, not a metric bug. */
+/* v3.35, Derek: per-glyph sizes computed from MEASURED ink heights
+   (svg getBBox ÷ viewBox), so every QAT icon's drawn height is ~10.5px.
+   FA glyphs cover different fractions of their boxes: the folder and eye
+   only ~75%, the save disk ~87%, most others 100%. */
+.fs-titlebar-btn svg { font-size: 10.5px; }
+.fs-titlebar-btn[data-qat="save"] svg,
+.fs-titlebar-btn[data-qat="saveAs"] svg { font-size: 12px; }
+.fs-titlebar-btn[data-qat="open"] svg,
+.fs-titlebar-btn[data-qat="preview"] svg { font-size: 14px; }
+/* v3.21, Derek: the title centers on the WINDOW, not on the leftover flex
+   space — absolute at 50% of the bar, so QAT width can't push it around. */
+.fs-titlebar { position: relative; }
+.fs-titlebar-title {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 38%;
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* the rest of the row stays a plain drag surface */
+.fs-titlebar-balance { flex: 1; min-width: 78px; align-self: stretch; }
+/* Buy Me a Coffee — the widget's look, drawn locally. v3.18, Derek's config:
+   pill #FFDD00, black outline/text, white cup. Lives in the About dialog's
+   footer row, left of Close. Brand button, so the monotone-icon rule
+   doesn't apply here (like the red text-color A). */
+.fs-bmc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 21px;
+  padding: 0 10px;
+  background: #FFDD00;
+  color: #000;
+  border: 1px solid #000;
+  border-radius: 11px;
+  font-family: 'Cookie', 'Snell Roundhand', 'Comic Sans MS', cursive;
+  font-size: 14px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.fs-bmc-btn:hover { background: #ffe733; }
+.fs-bmc-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+/* v3.18: the About footer holds donate (left) and Close (right). The
+   button.fs-bmc-btn specificity matters — the generic .dialog-actions
+   button rule (and its light-theme variant) otherwise repaints the pill
+   with the stock dialog-button colors. */
+.about-actions { display: flex; justify-content: space-between; align-items: center; }
+.about-whatsnew {
+  margin-left: 10px;
+  padding: 2px 8px;
+  font-size: 11px;
+  border: 1px solid var(--fd-border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--fd-accent);
+  cursor: pointer;
+}
+.about-whatsnew:hover { background: var(--fd-hover-bg); }
+/* v3.24: global sizing controls at the bottom of the Customize tab rail */
+.fs-customize-tabs { display: flex; flex-direction: column; }
+.fs-customize-globals {
+  margin-top: auto;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* v3.36, Derek: Lock All / Reset All sit side by side, equal width. */
+.fs-customize-globals-row { flex-direction: row; }
+.fs-customize-globals-row button { flex: 1 1 0; min-width: 0; }
+.fs-customize-globals button {
+  padding: 6px 8px;
+  font-size: 11px;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  /* v3.34, Derek: clearly a BUTTON — same surface as dialog buttons. */
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  cursor: pointer;
+}
+.fs-customize-globals button:hover { background: var(--fd-hover-bg); }
+/* v3.34: the lock veil — blocks every tab's editors while customizations
+   are locked; the rail (with the unlock button) stays reachable. */
+.fs-customize-body { position: relative; }
+.fs-customize-lockveil {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--fd-dialog-bg, #222) 72%, transparent);
+  color: var(--fd-text);
+  font-size: 13px;
+}
+.fs-customize-globals button.active { background: var(--fd-accent); border-color: var(--fd-accent); color: #fff; }
+.about-actions button.fs-bmc-btn {
+  /* v3.25, Derek: 20% bigger */
+  height: 34px;
+  padding: 0 17px;
+  font-size: 19px;
+  border-radius: 17px;
+  background: #FFDD00;
+  color: #000;
+  border: 1px solid #000;
+  font-family: 'Cookie', 'Snell Roundhand', 'Comic Sans MS', cursive;
+}
+.about-actions button.fs-bmc-btn:hover { background: #ffe733; }
+.about-actions .fs-bmc-btn svg { width: 18px; height: 18px; }
+
+/* (v3.07's collapse row atop each panel was removed in v3.25 — Derek.)
+   When a panel is COLLAPSED (View > Toolbars): a slim strip on that edge of
+   the editor layout that expands it back. */
+.fs-panel-expand {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 6px 0 0;
+  border: none;
+  background: var(--fd-navigator-bg);
+  color: var(--fd-text-muted);
+  cursor: pointer;
+}
+.fs-panel-expand-left { border-right: 1px solid var(--fd-border); }
+.fs-panel-expand-right { border-left: 1px solid var(--fd-border); }
+.fs-panel-expand:hover { color: var(--fd-text); background: var(--fd-hover-bg); }
+.fs-panel-expand svg { width: 11px; height: 11px; }
+.tool-dock {
+  width: 300px; /* same footprint as the original right panel */
+  flex-shrink: 0;
+  background: var(--fd-navigator-bg); /* same scheme as the Sticky Notes pane */
+  border-right: 1px solid var(--fd-border);
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  overflow-y: auto;
+}
+.tool-dock-sep {
+  height: 1px;
+  background: var(--fd-border);
+  margin: 7px 10px;
+  flex-shrink: 0;
+}
+.tool-dock-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  color: var(--fd-text);
+  /* v2.77: the panel edge's vertical axis scales rows, text and icons. */
+  font-size: calc(12.5px * var(--dock-scale, 1));
+  font-weight: 600;
+  padding: calc(8px * var(--dock-scale, 1)) 14px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+.tool-dock-item:hover { background: rgba(128, 128, 128, 0.12); }
+.tool-dock-item.active {
+  background: rgba(128, 128, 128, 0.22);
+  color: var(--fd-accent, #4a90d9);
+}
+.tool-dock-icon {
+  width: calc(18px * var(--dock-scale, 1));
+  display: inline-flex;
+  justify-content: center;
+  font-size: calc(14px * var(--dock-scale, 1));   /* v2.77: scales with rows */
+  flex-shrink: 0;
+}
+.tool-dock-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Floating tool window ── */
+.tool-window {
+  position: absolute;
+  left: 308px;
+  top: 8px;
+  background: var(--fd-navigator-bg); /* same scheme as the Sticky Notes pane */
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  min-width: 240px;
+  min-height: 260px;
+  max-width: calc(100vw - 200px);
+  max-height: calc(100vh - 120px);
+  overflow: hidden;
+  z-index: 40;
+}
+.tool-window-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--fd-border);
+  flex-shrink: 0;
+  user-select: none;
+  cursor: grab; /* v1.33: grab the header to move the window */
+}
+.tool-window-header:active { cursor: grabbing; }
+.tool-window-header-actions { display: flex; align-items: center; gap: 6px; }
+/* v2.00: air between the pop in/out button and the nearest header text. */
+.tool-window-header > .tool-window-popin { margin-right: 10px; }
+.tool-window-header-actions .tool-window-popin { margin-left: 10px; }
+.tool-window-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fd-text);
+}
+.tool-window-close {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+.tool-window-close:hover { color: var(--fd-text); }
+.tool-window-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* v2.74, Derek: ONE corner-resize indicator everywhere. This selector list
+   is the single source of the pattern — every bottom-right grip in the app
+   (tool windows, Scrapbook boxes, beat cards) paints these same diagonal
+   stripes. Add new grips HERE, don't invent another triangle. */
+.tool-window-resize,
+.fs-nb-box-grip,
+.beat-card-resize-handle::after {
+  background:
+    linear-gradient(135deg, transparent 50%, var(--fd-text-muted) 50%, var(--fd-text-muted) 55%,
+      transparent 55%, transparent 70%, var(--fd-text-muted) 70%, var(--fd-text-muted) 75%, transparent 75%);
+}
+.tool-window-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  opacity: 0.6;
+}
+.tool-window-resize:hover { opacity: 1; }
+
+/* Embedded former left-panel views fill the window */
+.tool-window .scene-navigator-embed {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: auto;
+  border: none;
+  overflow: hidden;
+}
+
+/* ── Navigator tool ── */
+.fs-navigator {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+/* (v1.80: .fs-nav-toolbar is gone — the dropdown rides in the window header.) */
+/* v1.90: the show/hide select hides behind THE filter icon (uiIcons). The
+   icon is the visible face; the native select is stretched invisibly over it
+   so its checkmark menu still opens on click. */
+.fs-nav-showhide-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 3px;
+  border-radius: 4px;
+  color: var(--fd-text-muted);
+}
+.fs-nav-showhide-wrap:hover { color: var(--fd-text); background: var(--fd-menu-hover); }
+.fs-nav-showhide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+}
+.fs-nav-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 4px 0;
+}
+.fs-nav-empty {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--fd-text-muted);
+}
+.fs-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--fd-text);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fs-nav-item:hover { background: rgba(128, 128, 128, 0.12); }
+.fs-nav-item.scene { font-weight: 600; }
+.fs-nav-item.act {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.fs-nav-item.note { color: var(--fd-text-muted); }
+.fs-nav-item.todo { padding-left: 18px; }
+.fs-nav-item span { overflow: hidden; text-overflow: ellipsis; }
+.fs-nav-done { text-decoration: line-through; opacity: 0.6; }
+.fs-nav-filter {
+  margin: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  background: transparent;
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  outline: none;
+  flex-shrink: 0;
+}
+.fs-nav-filter:focus { border-color: var(--fd-accent, #4a90d9); }
+
+/* ── Shared tool bits ── */
+.fs-tool-intro {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+
+/* ── Gender Analysis tool ── */
+.fs-gender {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+.fs-gender-legend {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 10.5px;
+  color: var(--fd-text-muted);
+  margin-bottom: 10px;
+}
+.fs-gender-legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  margin-right: 4px;
+}
+.fs-gender-metric { margin-bottom: 8px; }
+.fs-gender-metric b { font-size: 12px; color: var(--fd-text); }
+.fs-gender-bar {
+  display: flex;
+  height: 12px;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 3px;
+  background: rgba(128, 128, 128, 0.15);
+}
+.fs-gender-bechdel { font-size: 12px; color: var(--fd-text); margin: 10px 0; }
+.fs-gender-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  color: var(--fd-text);
+}
+.fs-gender-table th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fd-text-muted);
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--fd-border);
+}
+.fs-gender-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--fd-border);
+}
+.fs-gender-name {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Goals tool ── */
+.fs-goals {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+.fs-goal-progress {
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.fs-goal-progress.done { border-color: #4caf50; }
+.fs-goal-progress-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(128, 128, 128, 0.2);
+  overflow: hidden;
+}
+.fs-goal-progress-bar > div {
+  height: 100%;
+  background: var(--fd-accent, #4a90d9);
+  transition: width 0.4s;
+}
+.fs-goal-progress.done .fs-goal-progress-bar > div { background: #4caf50; }
+.fs-goal-progress-label {
+  font-size: 12px;
+  color: var(--fd-text);
+  margin-top: 6px;
+  font-weight: 600;
+}
+.fs-goal-stop {
+  margin-top: 8px;
+  background: none;
+  border: 1px solid var(--fd-border);
+  color: var(--fd-text-muted);
+  border-radius: 5px;
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.fs-goal-stop:hover { color: #c0392b; border-color: #c0392b; }
+.fs-goal-kinds {
+  display: inline-flex;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.fs-goal-kinds button {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.fs-goal-kinds button.active {
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+}
+.fs-goal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--fd-text);
+}
+.fs-goal-row input {
+  width: 80px;
+  padding: 5px 7px;
+  font-size: 12px;
+  background: transparent;
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  outline: none;
+}
+.fs-goal-start {
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+/* v1.93: the Time tab's either/or rows — radio + label + input, boxed so
+   the chosen shape is unmistakable, with ONE Start under both. */
+.fs-goal-timemode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  padding: 7px 9px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.fs-goal-timemode.active { border-color: var(--fd-accent, #4a90d9); }
+.fs-goal-timemode:not(.active) { opacity: .65; }
+.fs-goal-timemode input[type='radio'] { margin: 0; accent-color: var(--fd-accent, #4a90d9); }
+.fs-goal-timemode input[type='number'] {
+  width: 64px;
+  padding: 4px 7px;
+  font-size: 12px;
+  background: transparent;
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  outline: none;
+}
+.fs-goal-timemode-label { min-width: 62px; }
+.fs-goal-startrow { justify-content: flex-end; }
+.fs-goal-startrow .fs-goal-start:disabled { opacity: .5; cursor: default; }
+.fs-goal-quick-label { font-size: 12px; color: var(--fd-text); }
+.fs-goal-quick {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.fs-goal-quick button {
+  background: rgba(128, 128, 128, 0.15);
+  border: none;
+  color: var(--fd-text);
+  border-radius: 5px;
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.fs-goal-quick button:hover { background: rgba(128, 128, 128, 0.28); }
+.fs-goal-current { font-size: 11px; color: var(--fd-text-muted); }
+/* v1.82: Vomit Draft is a Goals mode now. */
+.fs-goal-vomit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--fd-text);
+  cursor: pointer;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--fd-chrome-separator);
+}
+.fs-goal-vomit-note {
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  margin: 6px 0;
+}
+
+/* ── AI Writer (v1.69) — the joke ── */
+.fs-aiwriter {
+  display: flex;
+  flex-direction: column;   /* v2.75: message centered, footer pinned below */
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  height: 100%;
+  min-height: 0;
+  padding: 16px;
+}
+/* v2.75: the footer's remove button — quiet, like a dialog's secondary action. */
+.fs-aiwriter-footer { flex: 0 0 auto; }
+.fs-aiwriter-remove {
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text-muted);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.fs-aiwriter-remove:hover { background: var(--fd-toolbar-hover); color: var(--fd-text); }
+.fs-aiwriter p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fd-text);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ── Typewriter tool (v1.68) ── */
+.fs-typewriter {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+.fs-typewriter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--fd-text);
+  cursor: pointer;
+}
+.fs-typewriter-toggle + .fs-typewriter-toggle { margin-top: 8px; }
+.fs-typewriter-sub {
+  margin: 8px 0 0 22px;
+  font-size: 12px;
+}
+.fs-typewriter-sub.disabled {
+  color: var(--fd-text-muted);
+  cursor: default;
+}
+/* v1.77: sub-options nest under their parent toggle behind a guide line, so
+   "Keep bright"/"Dimmed to" unmistakably belong to "Dim unfocused text". */
+.fs-typewriter-subgroup {
+  margin: 6px 0 10px 9px;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--fd-chrome-separator);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+.fs-typewriter-subgroup.disabled { color: var(--fd-text-muted); }
+.fs-typewriter-swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.fs-typewriter-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.fs-typewriter-swatch.active { border-color: var(--fd-text); }
+.fs-typewriter-swatch:disabled { opacity: 0.4; cursor: default; }
+.fs-typewriter-swatch-custom {
+  width: 24px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+.fs-typewriter-swatch-custom:disabled { opacity: 0.4; cursor: default; }
+.fs-typewriter-offset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fd-text);
+}
+.fs-typewriter-offset input[type="range"] { flex: 1; min-width: 60px; }
+.fs-typewriter-offset-val {
+  font-variant-numeric: tabular-nums;
+  color: var(--fd-text-muted);
+  min-width: 34px;
+  text-align: right;
+}
+.fs-typewriter-section {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fd-text-muted);
+  border-top: 1px solid var(--fd-chrome-separator);
+  padding-top: 10px;
+  margin: 14px 0 8px;
+}
+.fs-typewriter-section:first-of-type { border-top: none; padding-top: 0; margin-top: 4px; }
+.fs-typewriter-offset select {
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text);
+  font-size: 12px;
+  padding: 3px 6px;
+}
+.fs-typewriter-offset input[type="number"] {
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text);
+  font-size: 12px;
+  padding: 3px 6px;
+}
+
+/* ── Customize: Outlook-style DnD columns (v1.76) ── */
+.fs-dnd-cols {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  flex-wrap: wrap;      /* narrow window: Hidden wraps below */
+  margin: 10px 0;
+}
+.fs-dnd-col {
+  flex: 1 1 220px;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: var(--fd-overlay-subtle);
+  min-height: 160px;
+  max-height: 420px;
+}
+.fs-dnd-col.drop-target { border-color: var(--fd-accent, #4a90d9); }
+.fs-dnd-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fd-text);
+  border-bottom: 1px solid var(--fd-chrome-separator);
+}
+.fs-dnd-col-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+  min-height: 0;
+}
+.fs-dnd-cat {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fd-text-muted);
+  padding: 8px 4px 3px;
+}
+.fs-dnd-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--fd-text);
+  cursor: grab;
+}
+.fs-dnd-row:hover { background: var(--fd-overlay-light); }
+.fs-dnd-row.dragging { opacity: 0.45; }
+.fs-dnd-row.locked { cursor: default; padding-left: 20px; }
+.fs-dnd-row .fs-customize-tool { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.fs-dnd-rowbtn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 1px 5px;
+  border-radius: 3px;
+  visibility: hidden;
+}
+.fs-dnd-row:hover .fs-dnd-rowbtn { visibility: visible; }
+.fs-dnd-rowbtn:hover { color: var(--fd-text); background: var(--fd-overlay-medium); }
+.fs-dnd-empty {
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  text-align: center;
+  padding: 22px 8px;
+  border: 1px dashed var(--fd-border);
+  border-radius: 4px;
+  margin: 4px;
+}
+/* v2.53, Derek: the Hidden column reads as a distinct, darker well in EVERY
+   Customize tab — transparent, it blended into the window. The translucent
+   black darkens whichever theme background sits behind it. */
+.fs-dnd-hiddencol { background: rgba(0, 0, 0, 0.18); }
+[data-theme="light"] .fs-dnd-hiddencol { background: rgba(0, 0, 0, 0.08); }
+/* v1.86: Characters > Connections force graph. */
+.fs-connections-graph {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  color: var(--fd-text);
+}
+.fs-connections-svg { width: 100%; height: 100%; min-height: 300px; }
+.fs-connections-empty {
+  margin: auto;
+  max-width: 320px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--fd-text-muted);
+  padding: 24px;
+}
+
+/* v1.85: Goals header controls — kind tabs + the ? helper. */
+.fs-goal-headerctl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.fs-goal-tabs {
+  display: inline-flex;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.fs-goal-tabs button {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+.fs-goal-tabs button.active {
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+}
+.fs-help-btn {
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  line-height: 1;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+.fs-help-btn:hover { color: var(--fd-text); border-color: var(--fd-accent, #4a90d9); }
+.fs-help-pop {
+  position: fixed;
+  z-index: 100001;
+  width: 280px;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  box-shadow: 0 6px 24px var(--fd-shadow);
+  color: var(--fd-text);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 10px 12px;
+}
+
+/* v1.83: color chips in Format > Highlighting. */
+.fs-hl-chip {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+}
+
+/* v1.81: "(required)" tag on locked rows (File), slightly greyed. */
+.fs-dnd-required {
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  margin-left: 6px;
+}
+.fs-dnd-row.locked .fs-customize-tool { opacity: 0.7; }
+.fs-dnd-rowactions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.fs-dnd-rowactions .fs-dnd-rowbtn { margin-left: 0; }
+/* v2.09: the Customize window drags by its header, like other windows. */
+.fs-customize-draghandle { cursor: grab; user-select: none; }
+.fs-customize-draghandle:active { cursor: grabbing; }
+
+/* v1.81: size-mode rows sit left-aligned — label, a beat, buttons.
+   v2.07: the label gets a fixed column so stacked size rows (Left/Right
+   Panel Size) line their button groups up. */
+.fs-customize-row.fs-size-row {
+  justify-content: flex-start;
+  gap: 28px;
+}
+.fs-customize-row.fs-size-row > .fs-customize-tool {
+  flex: 0 0 auto;
+  min-width: 150px;
+}
+

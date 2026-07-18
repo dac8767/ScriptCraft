@@ -1,0 +1,535 @@
+/* ─── ConfirmDialog (v2.23) — the in-app confirm; window.confirm is a
+       Tauri IPC shim in the desktop app and must never be used ─── */
+.fs-confirm-overlay {
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  z-index: 100001;                 /* above toasts */
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fs-confirm-box {
+  background: var(--fd-panel-bg, var(--fd-toolbar-bg));
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  width: min(440px, calc(100vw - 48px));
+  padding: 18px 20px 16px;
+  color: var(--fd-text);
+}
+.fs-confirm-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.fs-confirm-message {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fd-text-muted);
+  white-space: pre-wrap;
+}
+.fs-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+.fs-confirm-actions button {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid var(--fd-border);
+  background: transparent;
+  color: var(--fd-text);
+}
+.fs-confirm-ok {
+  background: var(--fd-accent);
+  border-color: var(--fd-accent);
+  color: #fff;
+}
+.fs-confirm-danger {
+  background: #c0392b;
+  border-color: #c0392b;
+}
+/* v3.49: the middle "Don't Save" button of a three-way save prompt — neutral,
+   but tinted a touch warm so it doesn't read as the plain Cancel beside it. */
+.fs-confirm-tertiary {
+  border-color: color-mix(in srgb, #c0392b 45%, var(--fd-border));
+  color: color-mix(in srgb, #c0392b 70%, var(--fd-text));
+}
+.fs-confirm-actions button:hover { filter: brightness(1.1); }
+/* v3.36: a requireText confirm — the button is dead until the phrase matches. */
+.fs-confirm-ok:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  filter: none;
+}
+.fs-confirm-actions button:disabled:hover { filter: none; }
+
+/* ─── Uncategorized column (v2.23) — the temporary holding pen after a
+       preset override. Looks like a section but isn't one. ─── */
+.beat-column-uncategorized {
+  border: 1px dashed var(--fd-text-muted);
+  background: var(--fd-overlay-subtle);
+}
+.beat-column-uncategorized .beat-column-header {
+  justify-content: center;
+}
+.beat-column-uncat-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fd-text-muted);
+  font-style: italic;
+  padding: 4px 0;
+}
+.beat-column-uncat-hint {
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  padding: 6px 10px 10px;
+  text-align: center;
+}
+/* v2.24: promptDialog's text input */
+.fs-confirm-input {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fd-text);
+  font-size: 13px;
+}
+.fs-confirm-input:focus { outline: none; border-color: var(--fd-accent); }
+
+/* ─── v2.29: top chrome acts as one — unified resize + spacing grips ─── */
+.fs-top-chrome {
+  position: relative;
+  flex-shrink: 0;
+}
+.fs-top-chrome-resize {
+  height: 5px;
+  cursor: ns-resize;
+  flex-shrink: 0;
+}
+.fs-top-chrome-resize:hover,
+.fs-top-chrome-resize:active {
+  background: var(--fd-accent);
+  opacity: 0.5;
+}
+/* v2.29, Derek: a breath of space between the toolbar and the outline bar.
+   v2.38: halved. */
+.fs-top-chrome .fs-outline-bar {
+  margin-top: 3px;
+}
+/* The faint spacing grips — invisible until their bar is hovered. */
+.fs-gap-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;             /* v2.76: hosts the size-indicator dot */
+  width: 12px;
+  align-self: stretch;
+  flex: 0 0 auto;
+  cursor: move;                   /* v2.76: two-axis — spacing + bar size */
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  touch-action: none;
+}
+/* v2.76: the tiny-scrollbar indicator — where the bar's vertical size sits
+   in its range. Rides the grip line; dragging up/down moves it. */
+.fs-gap-handle-dot {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--fd-text);
+  pointer-events: none;
+}
+.menu-bar:hover .fs-gap-handle,
+.toolbar:hover .fs-gap-handle { opacity: 0.45; }
+/* v2.92, Derek: room between the last toolbar item and its grip. */
+.toolbar .fs-gap-handle { margin-left: 10px; }
+.fs-gap-handle:hover, .fs-gap-handle:active { opacity: 1 !important; }
+.fs-gap-handle-bar {
+  width: 4px;
+  height: 60%;
+  border-radius: 2px;
+  background: var(--fd-text-muted);
+  pointer-events: none;
+}
+
+/* ─── v2.30: outline variation tabs (browser-style) ─── */
+.beat-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 6px 10px 0;
+  border-bottom: 1px solid var(--fd-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.beat-tabs::-webkit-scrollbar { display: none; }
+.beat-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px 5px 6px;
+  border: 1px solid var(--fd-border);
+  border-bottom: none;
+  border-radius: 7px 7px 0 0;
+  background: var(--fd-overlay-subtle);
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+  max-width: 220px;
+  white-space: nowrap;
+}
+.beat-tab.active {
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  position: relative;
+  top: 1px;
+}
+.beat-tab-name { overflow: hidden; text-overflow: ellipsis; }
+.beat-tab-use {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+}
+.beat-tab-use.on { color: var(--fd-accent); }
+.beat-tab-x {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font-size: 13px;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+}
+.beat-tab-x:hover { color: var(--fd-text); background: var(--fd-overlay-subtle); }
+.beat-tab-rename {
+  font-size: 12px;
+  width: 110px;
+  background: transparent;
+  color: var(--fd-text);
+  border: 1px solid var(--fd-accent);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+.beat-tab-add {
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-bottom: none;
+  border-radius: 7px 7px 0 0;
+  color: var(--fd-text-muted);
+  font-size: 13px;
+  padding: 4px 9px;
+  cursor: pointer;
+}
+.beat-tab-add:hover { color: var(--fd-text); background: var(--fd-overlay-subtle); }
+/* v2.30: the bar's side shows which variation it's mirroring. */
+.fs-ob-tabname {
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── v2.32 polish batch ─── */
+/* Derek: the text box must not poke past its head bar — same outer width,
+   square top corners tucked under the bar, rounded ONLY at the bottom
+   (that's what tells it apart from a table). */
+.fs-nb-box { border-radius: 0 0 8px 8px; }
+.fs-nb-box .fs-nb-box-body {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  border-radius: 0 0 8px 8px;
+}
+/* "Return to Editor" back in the surface's top-right corner, with its
+   background color. */
+.fs-nb-takeover-head { display: flex; align-items: center; gap: 10px; }
+.fs-nb-return {
+  margin-left: auto;
+  padding: 5px 14px;
+  border: none;
+  border-radius: 6px;
+  background: var(--fd-accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fs-nb-return:hover { filter: brightness(1.1); }
+/* v2.46: no overflow:hidden here — it was silently EATING the header
+   buttons whenever the title's intrinsic width overflowed the card (the
+   pages field this rule once contained moved to the card's foot in v2.44). */
+.beat-card-top { min-width: 0; flex-wrap: nowrap; }
+
+/* ─── v2.33: Freeform mind map ─── */
+.beat-custom-canvas { position: relative; }
+.mind-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  z-index: 0;
+}
+.mind-lines line {
+  stroke: var(--fd-text-muted);
+  stroke-width: 1.5;
+  cursor: pointer;
+  pointer-events: stroke;
+}
+/* v2.46: each connection is a <g> of two lines — a fat invisible twin for
+   clicking, and the visible one. Click selects; Delete removes. */
+.mind-lines line.mind-line-hit {
+  stroke: transparent;
+  stroke-width: 12;
+}
+.mind-lines g:hover line:not(.mind-line-hit) { stroke: var(--fd-accent); stroke-width: 2.5; }
+.mind-lines g.selected line:not(.mind-line-hit) {
+  stroke: var(--fd-accent);
+  stroke-width: 2.5;
+  stroke-dasharray: 2 3;
+}
+/* v2.46: the Connect button ARMS a card — dashed outline + crosshair say
+   "drag from here"; the next pointer-down on it starts the line. */
+.mind-arm-btn.active { color: var(--fd-accent); }
+.mind-armed { cursor: crosshair; }
+.mind-armed .beat-card { outline: 2px dashed var(--fd-accent); }
+.mind-lines .mind-line-draft {
+  stroke: var(--fd-accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  pointer-events: none;
+}
+/* While a line is out, the card under the pointer shows it can take the drop. */
+.mind-linking .beat-card-wrap-free:hover .beat-card { outline: 2px dashed var(--fd-accent); }
+/* Emphasis: bigger card = bigger title, via --mind-title-size. */
+.beat-card-wrap-free .beat-card-title { font-size: var(--mind-title-size, 13px); }
+
+/* v2.35: Scrapbook additions */
+.menu-scrapbook-sep-drag { cursor: ew-resize; touch-action: none; }
+.menu-scrapbook-sep-drag:hover { background: var(--fd-accent); }
+.fs-nb-side-btns button.active { color: var(--fd-accent); }
+/* v2.39, Derek: a wider berth between the last menu item and the grip. */
+.menu-bar .fs-gap-handle { margin-left: 14px; }
+
+/* v2.41, Derek: the Outline window's controls live in the chrome HEADER —
+   one flexible strip that shares the row with the title and the »/× . */
+.beat-header-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.beat-header-controls .beat-board-preset { max-width: 160px; }
+.beat-header-controls .beat-board-add-col-btn { white-space: nowrap; }
+/* v2.42: Customize > Outline Bar height field */
+.fs-obrow-height { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--fd-text-muted); }
+.fs-obrow-height input {
+  width: 52px; background: transparent; color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: 4px; padding: 2px 4px; font-size: 12px;
+}
+/* v3.39, Derek: the outline row's name is editable — same column width as the
+   static label it replaced, so the arrows/height/× still line up. */
+.fs-obrow-name {
+  flex: 0 0 auto; width: 150px;
+  padding: 3px 7px;
+  background: var(--fd-input-bg, var(--fd-navigator-bg)); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: 5px; font-size: 12.5px; outline: none;
+}
+.fs-obrow-name:focus { border-color: var(--fd-accent); }
+
+/* v3.42, Derek: the VISUAL outline-bar editor — each row a block sized to its
+   real height, its bottom edge a drag handle. */
+.fs-obviz { display: flex; flex-direction: column; gap: 3px; margin: 4px 0 10px; max-width: 420px; }
+.fs-obviz-row {
+  position: relative;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--fd-border); border-radius: 6px;
+  background: color-mix(in srgb, var(--fd-navigator-bg) 55%, transparent);
+  box-sizing: border-box;
+}
+.fs-obviz-label { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--fd-text); }
+.fs-obviz-name {
+  width: 100%; max-width: 160px;
+  padding: 2px 6px;
+  background: var(--fd-input-bg, var(--fd-panel-bg)); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: 4px; font-size: 12px; outline: none;
+}
+.fs-obviz-name:focus { border-color: var(--fd-accent); }
+.fs-obviz-h { font-size: 10.5px; color: var(--fd-text-muted); font-variant-numeric: tabular-nums; }
+.fs-obviz-ctrls { display: inline-flex; gap: 2px; }
+.fs-obviz-ctrls button {
+  width: 20px; height: 20px; padding: 0;
+  border: 1px solid var(--fd-border); border-radius: 4px;
+  background: var(--fd-btn-bg); color: var(--fd-btn-text);
+  font-size: 11px; line-height: 1; cursor: pointer;
+}
+.fs-obviz-ctrls button:disabled { opacity: .4; cursor: default; }
+.fs-obviz-x:hover:not(:disabled) { border-color: var(--fd-danger, #e06060); color: var(--fd-danger, #e06060); }
+.fs-obviz-grip {
+  position: absolute; left: 0; right: 0; bottom: -2px; height: 6px;
+  cursor: ns-resize; touch-action: none;
+}
+.fs-obviz-grip::after {
+  content: ''; position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%);
+  width: 28px; height: 2px; border-radius: 1px;
+  background: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border));
+}
+.fs-obviz-grip:hover::after { background: var(--fd-accent); height: 3px; }
+
+/* v3.39, Derek: per-tab info button — the ?-in-a-circle pinned to the tab
+   window's upper-right. A zero-height sticky wrapper keeps it in the corner
+   even as the tab body scrolls. */
+.fs-tabinfo { position: sticky; top: 0; height: 0; z-index: 6; }
+.fs-tabinfo-btn {
+  position: absolute; top: 2px; right: 4px;
+  width: 22px; height: 22px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: 50%;
+  background: transparent; color: var(--fd-text-muted);
+  cursor: pointer; font-size: 15px;
+}
+.fs-tabinfo-btn:hover, .fs-tabinfo-btn.active { color: var(--fd-accent); background: var(--fd-hover-bg); }
+.fs-tabinfo-pop {
+  position: absolute; top: 28px; right: 4px;
+  width: 268px; max-width: 82vw;
+  padding: 10px 12px;
+  background: var(--fd-menu-bg, var(--fd-panel-bg));
+  border: 1px solid var(--fd-border); border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  font-size: 11.5px; line-height: 1.45; color: var(--fd-text);
+}
+
+/* v3.39, Derek: QAT dividers + spacers in the macOS titlebar row. */
+.fs-titlebar-sep {
+  flex: none; align-self: center;
+  width: 1px; height: 14px; margin: 0 3px;
+  background: var(--fd-border);
+}
+.fs-titlebar-spacer { flex: none; width: 16px; }
+
+/* ─── v2.43 ─── */
+/* Derek: equal-width Arrangement buttons — the toggle never reflows. */
+.beat-mode-btn { width: 82px; text-align: center; }
+/* v2.48, Derek: the Arrangement block sits DEAD CENTER in the header —
+   absolute centering, so it can't drift as the side content changes. The
+   ? keeps the very end, just left of the window's carets. */
+.beat-header-controls { position: relative; container-type: inline-size; }
+.beat-mode-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+/* v2.95, Derek: in a NARROW window the absolutely-centered Arrangement block
+   rode on top of the flow content beside it. Below the width where they'd
+   collide, it rejoins the flow (pushed right) — never overlapping. */
+@container (max-width: 960px) {
+  .beat-mode-center {
+    position: static;
+    transform: none;
+    margin-left: auto;
+  }
+  .beat-color-alltabs { flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; }
+}
+.beat-header-controls .fs-help-btn { margin-left: auto; }
+/* v2.48: Presets + add button ride the TABS row, hugging the right edge. */
+.beat-tabs-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 4px;
+}
+.beat-tabs-actions .beat-board-preset { max-width: 160px; }
+.beat-tabs-actions .beat-board-add-col-btn { white-space: nowrap; }
+/* The circled-? icon carries its own ring now — the button is bare. */
+.fs-help-btn {
+  border: none !important;
+  width: auto;
+  height: auto;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--fd-text-muted);
+}
+.fs-help-btn:hover { color: var(--fd-text); }
+.fs-goal-headerctl { flex: 1; }
+.fs-goal-headerctl .fs-help-btn { margin-left: auto; }
+
+/* ─── v2.44, Derek: beat card redesign ───
+   Every control lives in the HEADER: drag + title on the left; color,
+   attach (paperclip) and delete hug the right edge. */
+.beat-card-headbtns {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+/* v2.46: the picker is PORTALLED to <body> — its old absolute positioning
+   got clipped by the card/column/canvas overflow (footgun §4). Fixed
+   coordinates come from the trigger button. */
+.beat-color-picker-fixed {
+  position: fixed;
+  bottom: auto;
+  right: auto;
+  margin: 0;
+  z-index: 10000;
+}
+/* v2.46: the "Show beat color on all tabs" option in the Outline header. */
+.beat-color-alltabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.beat-color-alltabs input { margin: 0; }
+/* Whole-card color: every control on a colored card reads in the computed
+   black/white text color (readableTextOn), not the theme's muted gray. */
+.beat-card-colored .beat-card-title,
+.beat-card-colored .beat-card-description,
+.beat-card-colored .beat-card-description-view,
+.beat-card-colored .beat-drag-icon,
+.beat-card-colored .beat-toolbar-btn,
+.beat-card-colored .beat-card-delete,
+.beat-card-colored .beat-card-pages,
+.beat-card-colored .beat-card-pages input,
+.beat-card-colored .beat-card-desc-placeholder {
+  color: inherit;
+}
+.beat-card-colored .beat-card-title::placeholder,
+.beat-card-colored .beat-card-description::placeholder {
+  color: inherit;
+  opacity: 0.6;
+}
+.beat-card-colored .beat-card-resize-handle::after {
+  border-color: currentColor;
+}

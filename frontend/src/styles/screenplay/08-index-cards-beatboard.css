@@ -1,0 +1,1004 @@
+/* ============ EDITOR CENTER (wrapper for IndexCards + editor/beatboard) ============ */
+.editor-center {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ============ INDEX CARDS ============ */
+.index-cards {
+  background: var(--fd-navigator-bg);
+  border-bottom: 1px solid var(--fd-border);
+  max-height: 50vh;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+/* ── Fullscreen mode ── */
+.index-cards-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 3500;
+  max-height: none;
+  overflow-y: auto;
+  background: var(--fd-bg);
+}
+.index-cards-fullscreen .index-cards-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--fd-bg);
+}
+.index-cards-fullscreen .index-cards-grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  padding: 16px 24px;
+  gap: 16px;
+  align-content: start;
+}
+.index-cards-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--fd-border);
+  gap: 8px;
+}
+.index-cards-title {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fd-text-muted);
+}
+.index-cards-count {
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  margin-right: auto;
+}
+.index-cards-actions {
+  display: flex;
+  gap: 4px;
+}
+.ic-action-btn {
+  padding: 3px 10px;
+  background: transparent;
+  border: 1px solid var(--fd-border);
+  border-radius: 3px;
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+.ic-action-btn:hover { border-color: #555; color: var(--fd-text); }
+.ic-action-btn.active { background: var(--fd-accent); border-color: var(--fd-accent); color: #fff; }
+.ic-action-btn:disabled { opacity: 0.4; cursor: default; }
+.ic-action-btn:disabled:hover { border-color: var(--fd-border); color: var(--fd-text-muted); }
+.ic-apply-btn.active { background: #2d8a4e; border-color: #2d8a4e; }
+.ic-undo-redo-btn { display: flex; align-items: center; justify-content: center; padding: 3px 6px; }
+.ic-fullscreen-btn { display: flex; align-items: center; justify-content: center; padding: 3px 6px; }
+.ic-close-btn { display: flex; align-items: center; justify-content: center; padding: 3px 6px; }
+/* v0.64: fit as many whole cards per row as the CONTAINER allows and wrap the
+   rest, instead of squeezing 3 columns into a narrow panel. The old fixed
+   repeat(3,1fr) + viewport media queries shrank cards to unreadable slivers
+   in a side panel (the viewport was still wide — only the panel was narrow).
+   auto-fill + minmax reflows off the panel's own width, like the Pages grid. */
+.index-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+  padding: 12px 16px;
+}
+/* Fullscreen keeps roomier cards. */
+.index-cards-fullscreen .index-cards-grid {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+/* ── Drag-drop styles ── */
+.ic-draggable { cursor: grab; }
+.ic-draggable:active { cursor: grabbing; }
+.ic-dragging { opacity: .25; }
+.ic-moved-up { border-color: #2d8a4e; box-shadow: 0 0 0 1px #2d8a4e; }
+.ic-moved-down { border-color: #d97706; box-shadow: 0 0 0 1px #d97706; }
+.ic-moved-up .index-card-badge { background: #2d8a4e; }
+.ic-moved-down .index-card-badge { background: #d97706; }
+/* Floating drag overlay — exact clone of the card */
+.ic-drag-overlay {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  opacity: 0.92;
+  overflow: hidden;
+}
+.ic-drag-overlay * {
+  pointer-events: none !important;
+}
+/* Insertion indicator for index cards reorder */
+.ic-insert-indicator {
+  background: var(--fd-accent);
+  border-radius: 2px;
+}
+.ic-insert-indicator-dot {
+  position: absolute;
+  top: -4px;
+  left: -3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--fd-accent);
+}
+.ic-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  min-height: 44px;
+  color: var(--fd-text-muted);
+  font-size: 18px;
+  cursor: grab;
+  flex-shrink: 0;
+  letter-spacing: -3px;
+  user-select: none;
+  touch-action: none;
+}
+.ic-drag-handle:hover { color: var(--fd-text); }
+.index-cards-empty {
+  grid-column: 1 / -1;
+  padding: 20px;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  font-style: italic;
+  text-align: center;
+}
+.index-card {
+  display: flex;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.index-card:hover {
+  border-color: var(--fd-accent);
+}
+.index-card-color-strip {
+  width: 3px;
+  flex-shrink: 0;
+}
+.index-card-body {
+  flex: 1;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.index-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.index-card-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  background: var(--fd-text-muted);
+  color: var(--fd-bg, #fff);
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 50%;
+  flex-shrink: 0;
+  padding: 0 4px;
+  gap: 2px;
+  white-space: nowrap;
+}
+.ic-orig-num {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.index-card-heading {
+  flex: 1;
+  font-size: 12px;
+  font-family: var(--screenplay-font);
+  color: var(--fd-text);
+  cursor: pointer;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
+}
+.index-card-heading:hover {
+  color: var(--fd-accent);
+}
+.index-card-synopsis {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--fd-text);
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.4;
+  resize: vertical;
+  outline: none;
+}
+.index-card-synopsis::placeholder {
+  color: var(--fd-text-muted);
+}
+.index-card-synopsis:focus {
+  border-color: var(--fd-accent);
+  background: rgba(0, 0, 0, 0.3);
+}
+.index-card-meta {
+  display: flex; gap: 4px; font-size: 9px; color: var(--fd-text-muted);
+  font-variant-numeric: tabular-nums; flex-shrink: 0; margin-left: auto;
+  align-items: center; white-space: nowrap;
+}
+.ic-meta-item { font-weight: 600; }
+
+.index-card-synopsis-wrap {
+  position: relative; width: 100%;
+}
+.ic-synopsis-expand {
+  position: absolute; top: 4px; right: 4px;
+  background: none; border: none; cursor: pointer;
+  color: var(--fd-text); opacity: 0.3; padding: 3px;
+  border-radius: 3px; display: flex; align-items: center; justify-content: center;
+}
+.ic-synopsis-expand:hover { opacity: 0.8; background: var(--fd-overlay-subtle); }
+.ic-synopsis-expand:disabled { cursor: default; opacity: 0.15; }
+
+/* ============ BEAT BOARD ============ */
+.beat-board {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--fd-bg);
+  overflow: hidden;
+}
+.beat-board-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--fd-border);
+  background: var(--fd-navigator-bg);
+  flex-shrink: 0;
+}
+.beat-board-title {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fd-text-muted);
+}
+.beat-board-info {
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  margin-right: auto;
+}
+.beat-board-add-col-btn {
+  background: transparent;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.beat-board-add-col-btn:hover {
+  border-color: var(--fd-accent);
+  color: var(--fd-accent);
+}
+/* v1.89: the Presets dropdown wears the add-column button's clothes. */
+.beat-board-preset {
+  background: transparent;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.beat-board-preset:hover {
+  border-color: var(--fd-accent);
+  color: var(--fd-accent);
+}
+.beat-board-preset option { background: var(--fd-dropdown-bg, var(--fd-bg)); color: var(--fd-text); }
+.beat-board-columns {
+  display: flex;
+  gap: 16px;
+  padding: 16px 32px 32px 16px;
+  overflow-x: auto;
+  overflow-y: auto;
+  flex: 1;
+  align-items: flex-start;
+}
+.beat-column {
+  position: relative;
+  min-width: 280px;
+  max-width: 500px;
+  flex-shrink: 0;
+  background: var(--fd-navigator-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.beat-column-header {
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--fd-border);
+  background: rgba(74, 158, 255, 0.05);
+}
+.beat-column-title-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--fd-accent);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  outline: none;
+  padding: 2px 4px;
+  min-width: 0;
+}
+.beat-column-title-input:focus {
+  border-bottom: 1px solid var(--fd-accent);
+  text-transform: none;
+}
+.beat-column-title-input::placeholder {
+  color: var(--fd-text-muted);
+}
+.beat-column-delete {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.beat-column-header:hover .beat-column-delete { opacity: 1; }
+.beat-column-delete:hover { color: #ff6b6b; }
+/* ── Maximize / restore button ── */
+.beat-column-maximize {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.beat-column-header:hover .beat-column-maximize { opacity: 1; }
+.beat-column-maximize:hover { color: var(--fd-accent); }
+/* Maximized column fills the board */
+.beat-column-maximized {
+  max-width: none !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  height: 100%;
+}
+.beat-board-columns-maximized {
+  padding: 8px;
+}
+.beat-column-cards {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 40px;
+  flex: 1;
+  overflow-y: auto;
+}
+/* When single column is full-width, beats can wrap side-by-side */
+.beat-column-cards-wrap {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+}
+.beat-card-wrap {
+  min-width: 0;
+  touch-action: manipulation;
+}
+/* Column right-edge resize handle */
+.beat-column-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 5;
+}
+.beat-column-resize-handle:hover {
+  background: var(--fd-accent);
+  opacity: 0.4;
+  border-radius: 3px;
+}
+
+/* ── Beat Card ── */
+.beat-card {
+  position: relative;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.beat-card:hover {
+  border-color: var(--fd-accent);
+}
+.beat-card-dragging {
+  opacity: 0.4;
+}
+.beat-card-overlay {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  transform: rotate(2deg);
+}
+
+/* ── Drag handle (inline with title) ── */
+.beat-drag-icon {
+  cursor: grab;
+  font-size: 12px;
+  letter-spacing: 1px;
+  opacity: 0.35;
+  user-select: none;
+  flex-shrink: 0;
+  padding: 2px 2px 2px 0;
+  color: var(--fd-text-muted);
+}
+.beat-drag-icon:active { cursor: grabbing; }
+.beat-card:hover .beat-drag-icon { opacity: 1; }
+
+/* ── Image preview ── */
+.beat-card-image {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  max-height: 140px;
+  flex-shrink: 0;
+}
+.beat-card-image img {
+  width: 100%;
+  max-height: 140px;
+  object-fit: cover;
+  display: block;
+  border-radius: 4px;
+}
+/* Full-card image mode: image fills the card, content at bottom */
+.beat-card-img-full {
+  overflow: hidden;
+  justify-content: flex-end;
+}
+.beat-card-img-full .beat-card-image {
+  position: absolute;
+  inset: 0;
+  max-height: none;
+  border-radius: 0;
+  z-index: 0;
+}
+.beat-card-img-full .beat-card-image img {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  border-radius: 0;
+}
+/* Floating drag handle — visible over images */
+.beat-drag-icon-floating {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 3;
+  cursor: grab;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity .15s;
+  user-select: none;
+}
+.beat-drag-icon-floating:active { cursor: grabbing; }
+.beat-card:hover .beat-drag-icon-floating { opacity: 1; }
+.beat-card-img-full .beat-drag-icon {
+  position: relative;
+  z-index: 1;
+}
+.beat-card-img-full .beat-card-content-bottom {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+  background: linear-gradient(transparent, rgba(0,0,0,0.6) 20%);
+  padding: 8px 4px 4px;
+  border-radius: 0 0 5px 5px;
+  margin: auto -10px -10px -10px;
+  padding: 24px 10px 10px;
+}
+.beat-card-img-full .beat-card-title {
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+.beat-card-img-full .beat-card-delete {
+  color: rgba(255,255,255,0.7);
+}
+.beat-card-img-full .beat-card-description {
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+}
+.beat-card-img-full .beat-card-foot {
+  position: relative;
+  z-index: 1;
+}
+.beat-card-img-full .beat-card-resize-handle {
+  z-index: 2;
+}
+/* Floating image actions in full mode — direct child of card, above drag handle */
+.beat-card-image-actions-floating {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.beat-card-img-full:hover .beat-card-image-actions-floating {
+  opacity: 1;
+}
+
+/* Image action buttons (top-right cluster) */
+.beat-card-image-actions {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.beat-card-image:hover .beat-card-image-actions { opacity: 1; }
+.beat-card-image-action-btn,
+.beat-card-image-remove {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  border: none;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+}
+.beat-card-image-action-btn:hover,
+.beat-card-image-remove:hover {
+  background: rgba(0,0,0,0.9);
+}
+
+/* Image bottom-edge resize handle */
+.beat-card-image-resize-handle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.beat-card-image-resize-handle::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.6);
+}
+.beat-card-image:hover .beat-card-image-resize-handle { opacity: 1; }
+
+/* ── Title + delete ── */
+.beat-card-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.beat-card-title {
+  flex: 1;
+  /* v2.46: inputs refuse to shrink below their intrinsic width unless told —
+     without this the header's right-hand buttons get pushed off the card. */
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: var(--fd-text);
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  padding: 2px 0;
+}
+.beat-card-title::placeholder {
+  color: var(--fd-text-muted);
+}
+.beat-card-title:focus {
+  border-bottom: 1px solid var(--fd-accent);
+}
+.beat-card-delete {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+.beat-card-delete:hover {
+  color: #ff6b6b;
+}
+
+/* ── Description ── (v2.44: no manual resize grip — the text box grows and
+   shrinks WITH the card, filling whatever room the card's own resize gives it) */
+.beat-card-description {
+  width: 100%;
+  flex: 1;
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--fd-text);
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.4;
+  resize: none;
+  min-height: 48px;
+  outline: none;
+}
+.beat-card-description::placeholder {
+  color: var(--fd-text-muted);
+}
+.beat-card-description:focus {
+  border-color: var(--fd-accent);
+}
+
+/* ── Card foot (v2.44: just the page estimate — color/attach moved to the header) ── */
+.beat-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-top: 2px;
+}
+.beat-toolbar-btn {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 3px;
+  line-height: 1;
+  transition: background 0.12s;
+}
+.beat-toolbar-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--fd-text);
+}
+
+/* ── Color picker ── */
+.beat-color-picker {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 4px;
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 20;
+  flex-wrap: wrap;
+  width: 140px;
+}
+.beat-color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.12s, transform 0.12s;
+}
+.beat-color-swatch:not([style]) {
+  background: var(--fd-border);
+}
+.beat-color-swatch:hover {
+  transform: scale(1.15);
+}
+.beat-color-swatch.active {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--fd-accent);
+}
+.beat-color-none {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  line-height: 1;
+}
+
+/* ── Beat card resize handle (bottom-right corner) ── */
+.beat-card-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.beat-card-resize-handle::after {
+  content: '';
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 12px;
+  height: 12px;
+  /* v2.74: pattern comes from the shared corner-grip rule (tool-window-resize) */
+}
+.beat-card:hover .beat-card-resize-handle { opacity: 1; }
+
+/* ── Description view (rendered with clickable links) ── */
+.beat-card-description-view {
+  width: 100%;
+  flex: 1;
+  min-height: 32px;
+  padding: 6px 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--fd-text);
+  cursor: text;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.1);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.beat-card-description-view:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+.beat-card-desc-placeholder {
+  color: var(--fd-text-muted);
+  font-style: italic;
+}
+.beat-card-description-rendered {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.beat-desc-link {
+  color: var(--fd-accent);
+  text-decoration: underline;
+  word-break: break-all;
+}
+.beat-desc-link:hover {
+  color: #6fb8ff;
+}
+
+/* ── Link previews ── */
+.beat-link-previews {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+.beat-link-preview {
+  display: flex;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--fd-text);
+  transition: border-color 0.15s;
+  position: relative;
+  cursor: pointer;
+}
+.beat-link-preview:hover {
+  border-color: var(--fd-accent);
+}
+.beat-link-preview-image {
+  flex-shrink: 0;
+  width: 80px;
+  min-height: 60px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.2);
+}
+.beat-link-preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.beat-link-preview-body {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+.beat-link-preview-site {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fd-text-muted);
+}
+.beat-link-preview-title {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.beat-link-preview-desc {
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.beat-link-preview-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(0,0,0,0.6);
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+  line-height: 1;
+}
+.beat-link-preview:hover .beat-link-preview-remove {
+  opacity: 1;
+}
+.beat-link-preview-remove:hover {
+  background: rgba(0,0,0,0.9);
+}
+
+/* ── Add beat button ── */
+.beat-add-btn {
+  margin: 8px;
+  padding: 8px;
+  background: transparent;
+  border: 1px dashed var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.beat-add-btn:hover {
+  border-color: var(--fd-accent);
+  color: var(--fd-accent);
+  background: rgba(74, 158, 255, 0.05);
+}
+
+/* Beat Board scrollbar */
+.beat-board-columns::-webkit-scrollbar { height: 8px; }
+.beat-board-columns::-webkit-scrollbar-track { background: var(--fd-bg); }
+.beat-board-columns::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+.beat-board-columns::-webkit-scrollbar-thumb:hover { background: #666; }
+.beat-column-cards::-webkit-scrollbar { width: 5px; }
+.beat-column-cards::-webkit-scrollbar-track { background: transparent; }
+.beat-column-cards::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+/* ── Beat Board Mode Toggle ── */
+/* v1.98: names the control (Derek: "Arrangement: Columns | Freeform"). */
+.beat-mode-label {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
+}
+.beat-mode-toggle {
+  display: flex;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-right: auto;
+}
+.beat-mode-btn {
+  background: transparent;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.beat-mode-btn:first-child {
+  border-right: 1px solid var(--fd-border);
+}
+.beat-mode-btn:hover {
+  color: var(--fd-text);
+  background: rgba(255,255,255,0.04);
+}
+.beat-mode-btn.active {
+  background: var(--fd-accent);
+  color: #fff;
+}
+
+/* ── Custom Canvas (free-form mode) ── */
+.beat-custom-canvas {
+  flex: 1;
+  position: relative;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 400px;
+  background:
+    radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.beat-card-wrap-free {
+  user-select: none;
+}
+.beat-card-wrap-free .beat-drag-icon {
+  cursor: grab;
+}
+.beat-card-wrap-free .beat-drag-icon:active {
+  cursor: grabbing;
+}
+.beat-custom-canvas::-webkit-scrollbar { width: 8px; height: 8px; }
+.beat-custom-canvas::-webkit-scrollbar-track { background: var(--fd-bg); }
+.beat-custom-canvas::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+.beat-custom-canvas::-webkit-scrollbar-thumb:hover { background: #666; }
+
