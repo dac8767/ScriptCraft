@@ -482,7 +482,8 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
+  /* v3.70, Derek: tighter gap between a section's two rows. */
+  gap: 0;
   min-width: 0;
 }
 .rib-row {
@@ -634,7 +635,9 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar.toolbar-ribbon .rib-section-sep {
   height: auto;
   align-self: stretch;
-  margin: 4px 0;
+  /* v3.70, Derek: full-height section dividers run all the way to the top and
+     bottom of the ribbon (no inset margin). */
+  margin: 0;
   display: block;
 }
 /* v3.23, Derek: ribbon icons wear color. v3.24: LARGE buttons only — items
@@ -688,7 +691,10 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 
 /* v3.02: the align split — the gap that pushes later sections to the
    toolbar's right edge. */
-.rib-align-gap { flex: 1; min-width: 8px; }
+/* v3.70: the align gap centres its content (the align-split bubble in edit
+   mode) so the split sits halfway between the left and right runs. Empty on the
+   live bar, so this just stays a flexible spacer there. */
+.rib-align-gap { flex: 1; min-width: 8px; display: flex; align-items: stretch; justify-content: center; }
 
 /* Customize toolbar button (v0.84): text on a themed button surface, no icon.
    It carries .toolbar-btn-labeled — the SAME class as the Zoom control — and

@@ -620,14 +620,20 @@
 }
 .rib-edit-break { position: relative; display: flex; align-items: center; height: 4px; }
 .rib-edit-breakline { flex: 1; cursor: pointer; }
+/* v3.70, Derek: the align split reads as a block/bubble the size of a 1-/2-row
+   section (full height, dashed border + fill), centred in the align gap so it
+   sits halfway between the left run and the right run. */
 .rib-edit-alignsplit {
   position: relative;
   display: inline-flex;
   align-items: center;
-  align-self: center;
+  justify-content: center;
   color: var(--fd-accent);
-  font-size: 12px;
-  padding: 0 2px;
+  font-size: 16px;
+  padding: 2px 14px;
+  border: 1px dashed color-mix(in srgb, var(--fd-accent) 55%, var(--fd-border));
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--fd-accent) 12%, transparent);
 }
 
 /* ─── v3.38, Derek: the on-bar "+ Add" block + its menu ─────────────────── */

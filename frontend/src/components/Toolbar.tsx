@@ -1649,14 +1649,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           {/* end of the left-aligned run — the +Add sits just before the gap */}
           {i === splitAt && addBlock(splitAt, false)}
           {i > 0 && (i === splitAt
-            ? <div className="rib-align-gap" />
+            ? (
+              <div className="rib-align-gap">
+                <span className="rib-edit-alignsplit" title="Align Split — sections after this hug the right edge">
+                  <FaExchangeAlt />
+                  <button className="rib-edit-x" title="Remove the align split" onPointerDown={(e) => e.stopPropagation()} onClick={ribRemoveSplit}>×</button>
+                </span>
+              </div>
+            )
             : <div className="toolbar-separator rib-section-sep" />)}
-          {i === splitAt && (
-            <span className="rib-edit-alignsplit" title="Align Split — sections after this hug the right edge">
-              <FaExchangeAlt />
-              <button className="rib-edit-x" title="Remove the align split" onPointerDown={(e) => e.stopPropagation()} onClick={ribRemoveSplit}>×</button>
-            </span>
-          )}
           {/* start of the right-aligned run — the left-most right item */}
           {i === splitAt && addBlock(splitAt, true)}
           <div

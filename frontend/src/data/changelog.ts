@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.69';
+export const APP_VERSION = '3.70';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.70',
+    date: '2026-07-18',
+    items: [
+      { title: 'Align Split is a bubble centred in the gap', detail: 'While editing the ribbon, the alignment split now reads as a block/bubble the size of a section, sitting halfway between the left-aligned run and the right-aligned run instead of as a small button by the right group.', tags: ['UI'] },
+      { title: 'Tighter rows and full-height dividers in the ribbon', detail: 'The gap between a two-row section\'s rows is smaller, and full-height section dividers now run all the way to the top and bottom of the ribbon.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.69',
     date: '2026-07-18',
