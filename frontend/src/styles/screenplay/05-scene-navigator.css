@@ -16,9 +16,9 @@
    this label). The label owns the dimming so the count reads at one weight. */
 .scene-count-label { font-size: 12px; color: var(--fd-text-secondary, var(--fd-text)); opacity: 0.7; white-space: nowrap; flex-shrink: 0; }
 .scene-count-label .scene-count { opacity: 1; }
-/* Scenes tool: the list sits flush under the header — drop the inline tool's
-   default top strip for this tool only (scoped by the embedded body). */
-.tool-inline-body:has(.scene-navigator-embed) { padding-top: 0; }
+/* (The header/content top strip is gone app-wide now — see .tool-inline-body
+   in 22-tools-extra.css — so the Scenes-only override that lived here is no
+   longer needed.) */
 /* Search bar — inside scroll area; scrolls away on scroll-down, pins on scroll-up */
 .navigator-search {
   display: flex; align-items: center; gap: 6px;

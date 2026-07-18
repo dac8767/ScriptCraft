@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.59';
+export const APP_VERSION = '3.60';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.60',
+    date: '2026-07-18',
+    items: [
+      { title: 'Removed the empty row between every tool header and its contents', detail: 'Docked tool windows reserved a 26px top strip for a pop-out button that has actually lived in the header row since v1.80 — so it was just dead space. Dropped it everywhere, so every tool’s content sits flush under its header (the Scenes tool already had this).', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '3.59',
     date: '2026-07-18',

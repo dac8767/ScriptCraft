@@ -967,13 +967,15 @@ input.fs-switch:checked::after { left: 15px; }
    of it; the button sits in the reserved space. Applies to every tool, so no
    future one has to remember this.
 
-   v1.34: the inline pop-out moved to the TOP-right, so the inline reserve is
-   now a top strip; the bottom keeps a sliver for the height-drag handle. The
-   floating window's buttons all live in its header now, so its body only
-   clears the corner resize grip. */
+   v1.34: the inline pop-out moved to the TOP-right, so the inline reserve
+   became a top strip. v3.60: the pop-out has ridden in the header ROW since
+   v1.80 (a flex child, not an overlay), so that top strip was just dead space
+   between the header and the content — an extra empty row in every tool. Dropped
+   it. The bottom keeps a sliver for the height-drag handle. The floating
+   window's buttons all live in its header now, so its body only clears the
+   corner resize grip. */
 .tool-inline-body {
   box-sizing: border-box;       /* the height is set inline — keep padding INSIDE it */
-  padding-top: 26px;
   padding-bottom: 10px;
 }
 .tool-window-body {
