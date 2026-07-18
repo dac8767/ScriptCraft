@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.67';
+export const APP_VERSION = '3.68';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.68',
+    date: '2026-07-18',
+    items: [
+      { title: 'Ribbon spacer now renders as a real bar', detail: 'The edit-mode spacer was collapsing to a flat dashed line because it had no height; it now has an explicit height and a solid accent fill, so it shows as a proper bar with the drag-to-resize grip on its right edge.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '3.67',
     date: '2026-07-18',
