@@ -333,9 +333,10 @@ function ImageBox({ box, focused, onChange, onFocusBox, onDelete }: {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      {/* v2.05: same slim head bar as text boxes, overlaid on the image */}
+      {/* v2.05: same slim head bar as text boxes. v3.83, Derek: it FLOATS above
+          the image's top edge (was overlaid on top of the picture). */}
       {show && (
-        <div className="fs-nb-box-head fs-nb-box-head-overlay" onMouseDown={(e) => { e.stopPropagation(); startDrag(e, 'move'); }}>
+        <div className="fs-nb-box-head fs-nb-box-head-float" onMouseDown={(e) => { e.stopPropagation(); startDrag(e, 'move'); }}>
           <span>⋮⋮</span>
           <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}>✕</button>
         </div>

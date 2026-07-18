@@ -285,7 +285,10 @@
 .fs-nb-table { border-collapse: collapse; }
 .fs-nb-table td {
   position: relative;   /* the resize grips anchor to the cell */
-  border: 1px solid var(--fd-border);
+  /* v3.83, Derek: the grid must stay visible once you type — the old
+     --fd-border line was near-invisible in dark themes, so a filled table
+     read as gridless. One always-on grid colour (empty and filled alike). */
+  border: 1px solid color-mix(in srgb, var(--fd-text) 45%, transparent);
   padding: 0;
   vertical-align: top;
 }
@@ -357,17 +360,15 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
 }
 .fs-nb-box.focused {
-  /* v3.81, Derek: same border on hover and when clicked in — no colour jump. */
-  border-color: var(--fd-border);
+  /* v3.83, Derek: clicked-in shows the accent border again (reverted the v3.81
+     match-hover change) — same as the focused table box. */
+  border-color: var(--fd-accent);
   box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
 }
 /* v1.99: an EMPTY item must announce itself since it has no contents to make
    it visible. Filled items keep the faint line.
    v2.01: solid thin line (Derek: not dashed), in the theme's text color. */
 .fs-nb-box.empty {
-  border: 1px solid color-mix(in srgb, var(--fd-text) 75%, transparent);
-}
-.fs-nb-table-wrap.fs-nb-table-empty .fs-nb-table td {
   border: 1px solid color-mix(in srgb, var(--fd-text) 75%, transparent);
 }
 /* v2.62: the Table menu's insert grid — sweep to preview a size, click to
@@ -502,17 +503,13 @@
   border-radius: 5px;
 }
 .ribed-dd-text { font-size: 11.5px; color: var(--fd-text); white-space: nowrap; }
-/* v3.33, Derek: the Scrapbook's injected ribbon section — tag + tools,
-   always the last left-aligned section while the tool is open. */
-/* v3.42, Derek: the tag rides CENTERED on top of the buttons, and the whole
-   section gets more breathing room on its left. */
-.rib-scrapbook-sec { justify-content: center; align-items: stretch; padding-left: 14px; }
-.rib-scrapbook-sec .rib-row { align-items: center; justify-content: center; gap: 6px; }
-/* v3.77, Derek: the "Scrapbook:" label sits at the LEFT of the section. */
-.rib-scrapbook-tag { text-align: left; margin: 0 0 1px; }
-/* v3.74, Derek: the Scrapbook actions and the Return to Editor button sit side
-   by side. */
-.rib-scrapbook-body { display: flex; align-items: center; gap: 10px; flex: 1; min-height: 0; }
+/* v3.33, Derek: the Scrapbook's injected ribbon section — always the last
+   left-aligned section while the tool is open.
+   v3.83, Derek: a standard centred section title (.rib-sec-title) sits on top;
+   the Return to Editor button is the only control. */
+.rib-scrapbook-sec { justify-content: center; align-items: stretch; }
+/* v3.83, Derek: the Return to Editor button, centred under the title. */
+.rib-scrapbook-body { display: flex; align-items: center; justify-content: center; flex: 1; min-height: 0; }
 /* v3.77, Derek: Return to Editor — blue like the old surface button, the arrow
    icon beside two lines of text. */
 .rib-scrapbook-return {
@@ -1334,19 +1331,8 @@
   border-radius: 4px 4px 0 0;
 }
 
-/* v2.05: images and tables wear the SAME slim head bar as text boxes. On an
-   image it overlays the top edge; on a table it sits above the grid. */
-.fs-nb-box-head-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 2;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
-  background: rgba(0, 0, 0, .55);
-  color: #fff;
-}
+/* v2.05/v3.83: images, tables and text boxes all wear the SAME slim head bar,
+   floating ABOVE the item's top edge (.fs-nb-box-head-float). */
 .fs-nb-tablebox {
   background: var(--fd-bg);
   border: 1px solid transparent;

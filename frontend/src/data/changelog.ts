@@ -65,9 +65,20 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.81';
+export const APP_VERSION = '3.83';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.83',
+    date: '2026-07-18',
+    items: [
+      { title: 'Scrapbook stays in the side panel', detail: 'The Scrapbook is panel-bound again — its pop-out button is gone (its writing surface takes over the editor area, so a floating window never made sense).', tags: ['Fix', 'Tools'] },
+      { title: 'Scrapbook ribbon: just Return to Editor', detail: 'The ribbon\'s Scrapbook section now shows only the Return to Editor button under a standard, centred section title. Insert Picture and Insert Table live in the menu bar\'s Picture / Table menus.', tags: ['UI', 'Tools'] },
+      { title: 'Image bar sits above the picture', detail: 'The move/delete bar for a Scrapbook image now floats above the picture instead of overlapping its top edge — same as text boxes and tables.', tags: ['Fix', 'UI'] },
+      { title: 'Scrapbook text box: accent border when clicked in', detail: 'Reverted the clicked-in text box to its accent border (distinct from hover), matching the focused table box.', tags: ['UI'] },
+      { title: 'Table grid stays visible while typing', detail: 'A Scrapbook table kept its grid only while empty; typing dropped it to a near-invisible line. The grid now uses one always-on colour, empty or filled.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '3.81',
     date: '2026-07-18',

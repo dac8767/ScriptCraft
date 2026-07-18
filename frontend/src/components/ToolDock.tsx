@@ -622,9 +622,10 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
              INSIDE the window, below the dock button (Derek's terminology) —
              on the side closest to the editor: far right in the left panel,
              far left in the right panel, pointing at the editor.
-             v3.81, Derek: the Scrapbook can pop out now like every other tool
-             (it used to be panel-bound). */
-          const popOutBtn = isOpenInline ? (
+             v3.83, Derek: the Scrapbook is panel-bound again — its writing
+             surface takes over the editor area, so a floating pop-out makes no
+             sense. No pop-out button on it. */
+          const popOutBtn = isOpenInline && t.id !== 'notebook' ? (
             <button
               className="tool-dock-popout"
               title="Pop out into a floating window for resizing"

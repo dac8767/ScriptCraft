@@ -22,7 +22,7 @@ import {
   FaEllipsisV,
   FaHashtag,
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
-  FaImage, FaExchangeAlt, FaArrowLeft,
+  FaExchangeAlt, FaArrowLeft,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
@@ -1787,21 +1787,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <>
           {leftLive.length > 0 && <div className="toolbar-separator rib-section-sep" />}
           <div className="rib-section rib-scrapbook-sec">
-            {/* v3.42, Derek: the tag sits CENTERED above the buttons (like a
-                section title), and the section gets extra left padding. */}
-            <span className="menu-section-tag rib-scrapbook-tag">Scrapbook:</span>
+            {/* v3.83, Derek: a standard ribbon section title (white, centred —
+                same as every other section), and the Return to Editor button is
+                the ONLY control here. Insert Picture / Insert Table live in the
+                menu bar's contextual Picture / Table menus. */}
+            <div className="rib-sec-title">Scrapbook</div>
             <div className="rib-scrapbook-body">
-              <div className="rib-row">
-                {/* v3.34/v3.61, Derek: the Scrapbook section carries its own
-                    actions — Insert Picture (clicks the notebook's hidden file
-                    input) + Insert Table. */}
-                <button
-                  className="toolbar-btn"
-                  title="Insert Picture (Scrapbook)"
-                  onClick={() => (document.getElementById('fs-nb-filepick') as HTMLInputElement | null)?.click()}
-                ><FaImage /></button>
-                {renderBuiltinToken('b:insertTable', false)}
-              </div>
               {/* v3.77, Derek: Return to Editor — blue like the old surface
                   button, icon beside two-line text. */}
               <button
