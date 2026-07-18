@@ -1,0 +1,800 @@
+/* ============ RESPONSIVE ============ */
+
+/* Safe area insets for notched devices */
+@supports (padding: env(safe-area-inset-top)) {
+  .app-container {
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  /* Android: env(safe-area-inset-top/bottom) often returns 0 even when the
+     WebView extends behind the system bars. Use max() with explicit fallbacks
+     (28dp top status bar, 24dp bottom gesture-pill area) so content stays
+     clear of the bars even when env() under-reports. */
+  html.android .app-container {
+    padding-top: max(env(safe-area-inset-top), 28px);
+    padding-bottom: max(env(safe-area-inset-bottom), 24px);
+  }
+  html.android .project-list-page {
+    padding-top: calc(40px + max(env(safe-area-inset-top), 28px));
+    padding-bottom: calc(40px + max(env(safe-area-inset-bottom), 24px));
+  }
+  html.android .project-view {
+    padding-top: max(env(safe-area-inset-top), 28px);
+    padding-bottom: max(env(safe-area-inset-bottom), 24px);
+  }
+}
+
+/* Large screens (≤1400px): narrow side panels */
+@media (max-width: 1400px) {
+  .script-notes-panel, .char-profiles-panel, .tags-panel {
+    width: 260px;
+    min-width: 260px;
+  }
+}
+
+/* Medium screens (≤1100px): navigator as overlay, narrow panels further */
+@media (max-width: 1100px) {
+  /* Scene navigator: overlay from left (same as small-screen behavior) */
+  .scene-navigator {
+    display: flex !important;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 3400;
+    width: 280px;
+    min-width: 0;
+    box-shadow: 4px 0 20px rgba(0,0,0,.4);
+    transition: transform 0.25s ease;
+    transform: translateX(-100%);
+    overflow: visible;
+  }
+  .scene-navigator.panel-open { transform: translateX(0); }
+  .scene-navigator.panel-closing { transform: translateX(-100%); }
+  .scene-navigator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 100%;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,.45);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .scene-navigator.panel-open::before { opacity: 1; pointer-events: auto; }
+
+  .script-notes-panel, .char-profiles-panel, .tags-panel {
+    width: 240px;
+    min-width: 240px;
+  }
+  .editor-main { padding: 20px 0 40px; }
+}
+
+/* ── Small screens (≤900px): panels as overlays ── */
+@media (max-width: 900px) {
+  /* Scene navigator overlay styles already applied at ≤1100px */
+
+  /* Side panels: slide-in overlay from right */
+  .script-notes-panel, .char-profiles-panel, .tags-panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 3400;
+    width: 280px;
+    min-width: 0;
+    box-shadow: -4px 0 20px rgba(0,0,0,.4);
+    transition: transform 0.25s ease;
+    transform: translateX(100%);
+  }
+  .script-notes-panel.panel-open,
+  .char-profiles-panel.panel-open,
+  .tags-panel.panel-open { transform: translateX(0); }
+  .script-notes-panel.panel-closing,
+  .char-profiles-panel.panel-closing,
+  .tags-panel.panel-closing { transform: translateX(100%); }
+
+  /* Backdrop for right panels — positioned outside panel to the left */
+  .script-notes-panel, .char-profiles-panel, .tags-panel { overflow: visible; }
+  .script-notes-panel::before, .char-profiles-panel::before, .tags-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 100%;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,.45);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .script-notes-panel.panel-open::before,
+  .char-profiles-panel.panel-open::before,
+  .tags-panel.panel-open::before { opacity: 1; pointer-events: auto; }
+
+  /* Tags tab bar: larger touch targets on mobile */
+  .tags-tab-bar {
+    gap: 0;
+  }
+  .tags-tab {
+    font-size: 14px;
+    padding: 12px 0;
+    min-height: 44px;
+  }
+
+  /* Hide panel resize handles on mobile */
+  .panel-resize-handle { display: none; }
+
+  /* Toolbar: wrap items, touch-friendly */
+  .toolbar { flex-wrap: wrap; height: auto; min-height: 40px; padding: 4px 8px; gap: 4px; }
+  .toolbar-separator { display: none; }
+  .toolbar-btn { width: 36px; height: 34px; font-size: 15px; }
+  .toolbar-btn-text { padding: 0 10px; }
+
+  /* Selectors: touch-friendly height */
+  .element-selector, .font-selector, .font-size-selector { height: 32px; }
+
+  /* Menu bar: touch-friendly */
+  .menu-bar { height: 40px; gap: 2px; }
+  .menu-item { padding: 8px 12px; min-height: 40px; gap: 6px; }
+  .menu-label { font-size: 13px; }
+  .menu-icon { font-size: 14px; }
+
+  /* Status bar: simplified */
+  .status-project, .status-sep { display: none; }
+
+  /* Version history: wider */
+  .version-history-panel { width: 360px; }
+
+  /* Project pages: less padding */
+  .project-list-page { padding: 24px; }
+  .project-view-header { padding: 16px 24px; }
+  .project-view-tabs { padding: 0 24px; }
+  .project-view-body { padding: 20px 24px; }
+}
+
+/* ── Tablet / phone landscape (≤768px) ── */
+@media (max-width: 768px) {
+
+  /* Editor: hide horizontal overflow for auto-zoom fit */
+  .editor-main { padding: 12px 0 30px; }
+
+  /* Side panels: overlay, slightly narrower to avoid edge-swipe conflict */
+  .script-notes-panel, .char-profiles-panel, .tags-panel {
+    width: min(280px, 80vw);
+  }
+
+  /* Toolbar: no wrap; hidden items go into overflow (3-dot) menu */
+  .toolbar {
+    flex-wrap: nowrap;
+    overflow: visible;
+    gap: 4px;
+  }
+  .toolbar-desktop-only { display: none !important; }
+  /* Show mobile zoom button, hide desktop zoom group */
+  .zoom-group { display: none !important; }
+  .zoom-mobile-group { display: flex !important; }
+  /* Comfortable toolbar: bigger than compact */
+  .toolbar.toolbar-comfortable .toolbar-btn { width: 30px; height: 28px; font-size: 13px; }
+
+  /* Menu bar: scroll horizontally if items exceed width */
+  .menu-bar {
+    overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+    height: 40px;
+  }
+  .menu-bar::-webkit-scrollbar { display: none; }
+  .menu-item { padding: 8px 12px; min-height: 40px; gap: 6px; white-space: nowrap; flex-shrink: 0; }
+  .menu-label { font-size: 13px; }
+  .menu-icon { font-size: 14px; }
+  .menu-item--more { flex-shrink: 0; }
+  .menu-spacer { flex: 0 0 4px; }
+
+  /* Comfortable mode: bigger than compact, scroll if too wide */
+  .menu-bar.chrome-comfortable {
+    height: 44px; gap: 4px; padding: 0 8px;
+    overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .menu-bar.chrome-comfortable::-webkit-scrollbar { display: none; }
+  .menu-bar.chrome-comfortable .menu-item { padding: 10px 14px; min-height: 44px; gap: 7px; }
+  .menu-bar.chrome-comfortable .menu-label { font-size: 14px; }
+  .menu-bar.chrome-comfortable .menu-icon { font-size: 15px; }
+  .menu-bar.chrome-comfortable .menu-item--more { padding: 10px 12px; min-height: 44px; }
+  .menu-bar.chrome-comfortable .menu-spacer { flex: 0 0 auto; width: 0; }
+
+  /* Floating menu bar (hidden mode): constrain to viewport, scroll */
+  .menu-bar--floating {
+    max-width: calc(100vw - 28px);
+    flex-wrap: nowrap;
+    overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .menu-bar--floating::-webkit-scrollbar { display: none; }
+  .menu-bar--floating .menu-item { flex-shrink: 0; }
+  .menu-bar--floating .menu-spacer { flex: 0 0 4px; }
+
+  /* Menu dropdown: full-width on mobile */
+  .menu-dropdown {
+    left: 0 !important;
+    right: 0;
+    width: 100vw;
+    max-width: 100vw;
+    min-width: 0;
+    max-height: 70vh;
+    overflow-y: auto;
+    border-radius: 0;
+  }
+  .menu-dropdown-item { padding: 10px 16px; font-size: 14px; min-height: 40px; }
+  .menu-shortcut { display: none; }
+
+  /* Submenus: inline on mobile instead of flyout */
+  .menu-dropdown-item.has-children {
+    flex-wrap: wrap;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .menu-submenu {
+    position: static;
+    left: auto;
+    top: auto;
+    width: 100%;
+    min-width: 0;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    border-top: 1px solid var(--fd-border);
+    margin-top: 6px;
+    padding: 4px 0;
+    background: var(--fd-overlay-medium);
+  }
+  .menu-submenu .menu-dropdown-item {
+    padding-left: 32px;
+    font-size: 13px;
+    min-height: 40px;
+    color: var(--fd-text);
+  }
+
+  /* Status bar: compact */
+  .status-center { display: none; }
+  .status-bar { height: 28px; }
+
+  /* Dialogs / floating panels: nearly full-screen.
+     env(safe-area-inset-left/right) ensures the panel doesn't run into the
+     curved-edge region on devices like the Galaxy S-series Edge — without it
+     the panel's right side gets clipped under the curve. */
+  .dialog-box {
+    min-width: 0;
+    max-width: none;
+    width: calc(100vw - 32px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+  }
+  .dialog-actions button { height: 40px; font-size: 14px; }
+  .dialog-row input { height: 40px; font-size: 16px; }
+
+  /* Format panel: full-width */
+  .format-panel {
+    width: calc(100vw - 32px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    max-width: 380px;
+  }
+  .format-style-btn { width: 40px; height: 38px; }
+
+  /* Spell check modal: full-width */
+  .spell-modal {
+    min-width: 0;
+    max-width: none;
+    width: calc(100vw - 32px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+  }
+  .spell-modal-actions { flex-direction: column; gap: 8px; }
+  .spell-modal-actions-col { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+  .spell-modal-actions button { min-width: 0; flex: 1; min-height: 40px; }
+
+  /* Search & Replace: full-width */
+  .search-replace-panel {
+    right: calc(8px + env(safe-area-inset-right, 0px));
+    left: calc(8px + env(safe-area-inset-left, 0px));
+    width: auto;
+    top: 50px;
+  }
+  .search-actions { flex-wrap: wrap; }
+  .search-actions button { height: 36px; }
+
+  /* Version history: full-width */
+  .version-history-panel {
+    width: calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    margin-left: env(safe-area-inset-left, 0px);
+  }
+
+  /* Welcome card: responsive */
+  .welcome-card {
+    width: calc(100vw - 32px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    max-width: 380px;
+  }
+
+  /* Props dialog: responsive */
+  .props-dialog {
+    width: calc(100vw - 32px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    max-width: 580px;
+  }
+  .props-grid { grid-template-columns: 1fr; }
+
+  /* Asset manager: full-width */
+  .asset-manager.dialog { width: calc(100vw - 24px); max-width: 720px; }
+
+  /* Project list: compact, full-width controls so the page is usable on
+     phones. Source tabs become a row of equal-width pills above the title;
+     the title row stacks; sort + buttons line up underneath. */
+  .project-list-page { padding: 16px 12px; }
+  .project-source-bar {
+    margin-bottom: 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .project-source-bar::-webkit-scrollbar { display: none; }
+  .project-source-tab {
+    flex: 1 1 50%;
+    justify-content: center;
+    padding: 12px 10px;
+    font-size: 14px;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+  .project-list-header {
+    margin-bottom: 20px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  .project-list-title { font-size: 22px; }
+  .project-list-controls {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .project-list-controls .sort-select { flex: 1 1 100%; height: 44px; font-size: 14px; }
+  .project-list-controls .project-new-btn,
+  .project-list-controls .project-secondary-btn {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    height: 44px;
+    font-size: 14px;
+  }
+  .project-list-grid { grid-template-columns: 1fr; gap: 12px; }
+  .project-card { padding: 16px; }
+  .project-card-actions {
+    /* Larger tap targets on touch devices. */
+    gap: 6px;
+  }
+  .project-card-actions .card-action-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+  /* Always show the more-actions / dropdown menu items at full width on
+     mobile so a fat finger can hit them. */
+  .script-card-dropdown { right: 8px; min-width: 200px; }
+  .dropdown-item { min-height: 44px; padding: 12px 14px; font-size: 14px; }
+
+  /* Auth-indicator dropdown is portaled to <body>, but the items still need
+     touch-friendly hit areas. */
+  .auth-indicator__menu--portal { min-width: 220px; }
+  .auth-indicator__menu-item { min-height: 44px; padding: 12px 14px; font-size: 14px; }
+
+  /* Project view: compact */
+  .project-view-header { padding: 14px 16px; gap: 12px; flex-wrap: wrap; }
+  .project-view-title { font-size: 18px; }
+  .project-view-tabs { padding: 0 16px; overflow-x: auto; scrollbar-width: none; }
+  .project-view-tabs::-webkit-scrollbar { display: none; }
+  .project-tab { padding: 10px 14px; white-space: nowrap; font-size: 13px; min-height: 44px; }
+  .project-view-body { padding: 16px; }
+  .project-scripts-actions { flex-wrap: wrap; }
+  .project-action-btn { height: 40px; font-size: 13px; }
+  .project-version-item { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .project-version-time { margin-left: 0; }
+
+  /* Index cards fullscreen: auto-fill with min 250px */
+  .index-cards-fullscreen .index-cards-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+
+  /* Collab banner: larger touch targets */
+  .collab-banner-btn {
+    padding: 6px 14px;
+    font-size: 13px;
+    min-height: 32px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  /* Activity: avatar-sized icon button on small screens */
+  .collab-activity-label { display: none !important; }
+  .collab-activity-icon { display: block !important; }
+  .collab-activity-btn {
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    min-height: unset;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    background: #3a7a5a;
+    border-color: transparent;
+    color: #fff;
+  }
+  .collab-activity-btn:hover {
+    background: #4a8a6a;
+  }
+  .collab-activity-dropdown {
+    width: calc(100vw - 24px);
+    max-width: 320px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    position: fixed;
+    top: auto;
+    margin-top: 6px;
+    max-height: 50vh;
+  }
+
+  /* Beat board: narrower columns, touch-scroll */
+  .beat-column { min-width: 240px; max-width: 320px; }
+  .beat-board-columns {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ── Phone portrait (≤480px) ── */
+@media (max-width: 480px) {
+  /* Status bar: compact with filename + page */
+  .status-bar {
+    height: 24px !important;
+    min-height: 24px !important;
+    padding: 0 12px !important;
+    border-top: 1px solid var(--fd-border) !important;
+    background: var(--fd-toolbar-bg) !important;
+    display: flex !important;
+    flex-shrink: 0 !important;
+  }
+  .status-left { flex: 1; min-width: 0; gap: 4px !important; display: flex !important; overflow: hidden; }
+  .status-left .status-project { display: none !important; }
+  .status-left .status-sep { display: none !important; }
+  .status-left .status-item {
+    font-size: 11px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block !important;
+    color: var(--fd-text-muted) !important;
+  }
+  .status-center { display: none !important; }
+  .status-right { flex: 0 0 auto; white-space: nowrap; display: flex !important; margin-left: 12px; }
+  .status-right .status-page { font-size: 11px !important; color: var(--fd-text-muted) !important; }
+  .status-revision { display: none !important; }
+
+  /* Menu bar: compact but keep labels visible for touch */
+  .menu-bar { height: 38px; gap: 0; }
+  .menu-item { padding: 8px 10px; min-height: 38px; gap: 5px; }
+  .menu-label { font-size: 12px; }
+  .menu-icon { font-size: 13px; color: var(--fd-text); }
+
+  /* Comfortable mode: bigger than compact, scroll if too wide */
+  .menu-bar.chrome-comfortable { height: 42px; gap: 2px; padding: 0 6px; }
+  .menu-bar.chrome-comfortable .menu-item { padding: 10px 12px; min-height: 42px; gap: 6px; }
+  .menu-bar.chrome-comfortable .menu-label { font-size: 13px; }
+  .menu-bar.chrome-comfortable .menu-icon { font-size: 14px; }
+  .menu-bar.chrome-comfortable .menu-item--more { padding: 10px 10px; min-height: 42px; }
+
+  /* Floating menu bar (hidden mode): full-width on phone, scroll */
+  .menu-bar--floating {
+    left: 8px !important;
+    right: 8px;
+    max-width: calc(100vw - 16px);
+  }
+
+  /* Toolbar: compact, scrollable */
+  .toolbar { min-height: 38px; padding: 2px 6px; }
+  .toolbar-btn { width: 36px; height: 34px; font-size: 14px; }
+  .element-selector { min-width: 100px; font-size: 11px; }
+  .font-selector { min-width: 0; max-width: 90px; font-size: 11px; }
+  .font-size-selector { min-width: 48px; }
+
+  /* Editor: minimal padding */
+  .editor-main { padding: 4px 0 8px; }
+
+  /* Side panels: full-screen on phone */
+  .script-notes-panel, .char-profiles-panel, .tags-panel {
+    width: 100vw !important;
+    border-left: none;
+  }
+
+  /* Dialogs: full-width sheet anchored to the TOP of the screen. We used to
+     anchor to the bottom (flex-end) like a bottom sheet, but Android Tauri
+     WebView does not fire visualViewport.resize for the soft keyboard, so a
+     bottom-anchored sheet ends up hidden behind the IME. Top-anchored keeps
+     the inputs in the upper half of the screen, well clear of the keyboard. */
+  .dialog-overlay {
+    padding: env(safe-area-inset-top, 0) 0 0;
+    align-items: flex-start;
+  }
+  .dialog-box {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-radius: 0 0 12px 12px;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  .dialog-row input { font-size: 16px; } /* Prevent iOS zoom on focus */
+
+  /* Format panel: full-width bottom sheet */
+  .format-panel-overlay { align-items: flex-end; }
+  .format-panel {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-radius: 12px 12px 0 0;
+  }
+
+  /* Spell modal: full-width sheet anchored to TOP. Bottom-anchored sheets
+     get hidden by the Android soft keyboard because the WebView doesn't
+     fire visualViewport.resize. `--vv-height` is set in main.tsx from
+     window.visualViewport.height so max-height shrinks correctly when the
+     IME appears on either platform. */
+  .spell-modal {
+    width: calc(100vw - 16px) !important;
+    left: 8px !important;
+    right: 8px !important;
+    top: calc(env(safe-area-inset-top, 0) + 8px) !important;
+    bottom: auto !important;
+    max-height: calc(var(--vv-height, 100dvh) - 16px);
+    overflow-y: auto;
+    border-radius: 12px;
+  }
+
+  /* Search/Replace: full-width sheet anchored to TOP (same reason as above) */
+  .search-replace-panel {
+    top: env(safe-area-inset-top, 0);
+    bottom: auto;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    max-height: calc(var(--vv-height, 100dvh) - 8px);
+    overflow-y: auto;
+    border-radius: 0 0 12px 12px;
+  }
+  .search-options { flex-wrap: wrap; gap: 10px; }
+
+  /* Version history: full-screen */
+  .version-history-panel { width: 100vw !important; }
+
+  /* Welcome card: full-width */
+  .welcome-card { width: calc(100vw - 16px) !important; }
+  .welcome-hero { padding: 24px 16px 16px; }
+  .welcome-tips { padding: 16px 16px 6px; }
+
+  /* Props dialog: full-width */
+  .props-dialog { width: calc(100vw - 16px) !important; }
+
+  /* Project list: ultra-compact */
+  .project-list-page { padding: 16px 12px; }
+  .project-list-title { font-size: 20px; }
+  .project-card-name { font-size: 15px; }
+
+  /* Project view: compact */
+  .project-view-header { padding: 12px; }
+  .project-back-btn { padding: 8px 12px; min-height: 40px; font-size: 14px; }
+  .project-view-title { font-size: 16px; }
+  .project-view-body { padding: 12px; }
+  .project-script-item { padding: 14px 12px; }
+
+  /* Index cards: always single column */
+  .index-cards-grid { grid-template-columns: 1fr !important; }
+  .index-cards-fullscreen .index-cards-grid { grid-template-columns: 1fr !important; padding: 12px; gap: 10px; }
+  .index-cards-header { padding: 8px 12px; }
+  .ic-action-btn { padding: 6px 10px; min-height: 32px; }
+
+  /* Beat board: mobile-optimized */
+  .beat-board-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .beat-board-title { font-size: 11px; }
+  .beat-board-info { margin-right: 0; }
+  .beat-mode-toggle { order: 10; width: 100%; }
+  .beat-mode-btn {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 12px;
+    min-height: 40px;
+    text-align: center;
+  }
+  .beat-board-add-col-btn {
+    min-height: 36px;
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+  .beat-board-columns {
+    padding: 10px 10px 24px 10px;
+    gap: 10px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .beat-column {
+    min-width: 85vw;
+    max-width: 90vw;
+    scroll-snap-align: start;
+  }
+  .beat-card { padding: 12px; }
+  .beat-add-btn { padding: 12px; min-height: 44px; font-size: 13px; }
+  .beat-card-description, .beat-card-description-view {
+    font-size: 14px;
+    min-height: 44px;
+  }
+  .beat-card-title { font-size: 15px; }
+  /* Link previews: stack image above text on phone */
+  .beat-link-preview { flex-direction: column; }
+  .beat-link-preview-image { width: 100%; height: 120px; }
+  .beat-link-preview-remove { opacity: 1; width: 24px; height: 24px; font-size: 14px; }
+  /* Custom canvas: full-width on phone */
+  .beat-custom-canvas { min-height: 60vh; }
+
+  /* Menu dropdown: phone max-height */
+  .menu-dropdown {
+    max-height: calc(100vh - 80px);
+  }
+  .menu-dropdown-item { padding: 12px 16px; min-height: 44px; font-size: 14px; }
+
+  /* Asset manager: full-screen */
+  .asset-manager.dialog {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  /* Inputs: prevent iOS zoom (16px minimum) */
+  input[type="text"], input[type="search"], input[type="number"],
+  textarea, select {
+    font-size: 16px;
+  }
+
+  /* Activity dropdown: full-width bottom sheet on phone */
+  .collab-activity-dropdown {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    transform: none !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    max-height: 60vh;
+    border-radius: 12px 12px 0 0;
+    margin-top: 0;
+  }
+  .collab-activity-header {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+  .collab-activity-item {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  .collab-activity-close {
+    font-size: 20px;
+    padding: 4px 8px;
+  }
+
+  /* Touch: improve tap targets globally */
+  button, [role="button"], .toolbar-btn, .menu-item {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* ── Interaction hints for touch devices ── */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger close buttons on panels */
+  .navigator-close, .script-notes-close, .version-history-close, .search-close-btn,
+  .asset-manager-close, .format-panel-close, .ic-close-btn {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  /* Larger tap targets for scene navigator items */
+  .navigator-scene { padding: 12px; min-height: 44px; }
+
+  /* Larger tap targets for list items */
+  .project-card { padding: 18px; }
+  .project-script-item { min-height: 56px; }
+  .project-tab { min-height: 44px; }
+
+  /* Larger tap targets for version items */
+  .version-item { padding: 14px 16px; min-height: 56px; }
+  .version-restore-btn { min-height: 36px; padding: 6px 12px; font-size: 12px; }
+
+  /* Index card actions: larger */
+  .ic-action-btn { min-height: 36px; padding: 6px 12px; }
+
+  /* Beat board: larger tap targets & always-visible controls */
+  .beat-card-delete { min-width: 36px; min-height: 36px; font-size: 20px;
+    display: flex; align-items: center; justify-content: center; }
+  .beat-add-btn { min-height: 44px; }
+  .beat-column-delete { opacity: 0.7 !important; min-width: 36px; min-height: 36px;
+    display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .beat-column-maximize { opacity: 0.7 !important; min-width: 36px; min-height: 36px;
+    display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .beat-drag-icon { opacity: 0.7 !important; min-width: 28px; min-height: 28px;
+    display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .beat-mode-btn { min-height: 40px; }
+  .beat-board-add-col-btn { min-height: 36px; }
+  /* Link preview: always show remove on touch */
+  .beat-link-preview-remove { opacity: 1 !important; min-width: 28px; min-height: 28px; }
+  /* Description view: adequate tap target */
+  .beat-card-description-view { min-height: 44px; }
+  /* Color picker swatches: larger on touch */
+  .beat-color-swatch { min-width: 32px; min-height: 32px; }
+  .beat-toolbar-btn { min-width: 36px; min-height: 36px; font-size: 16px; }
+  /* Image action buttons: larger on touch */
+  .beat-card-image-action-btn,
+  .beat-card-image-remove { width: 32px; height: 32px; font-size: 16px; }
+
+  /* Note items: larger */
+  .sn-filter-chip { padding: 4px 10px; min-height: 28px; }
+
+  /* Scrollbars: hidden on touch (use native scroll) */
+  .editor-main::-webkit-scrollbar,
+  .beat-board-columns::-webkit-scrollbar { display: none; }
+  .editor-main, .beat-board-columns { scrollbar-width: none; }
+
+  /* Disable hover effects that feel wrong on touch */
+  .menu-item:hover { background: transparent; }
+  .menu-item.active { background: var(--fd-menu-hover); }
+  .toolbar-btn:hover { background: transparent; border-color: transparent; }
+  .toolbar-btn.active { background: #555; border-color: #666; }
+
+
+  /* Swipe pill affordance on open panels */
+  .script-notes-panel.panel-open::after,
+  .char-profiles-panel.panel-open::after,
+  .tags-panel.panel-open::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 36px;
+    border-radius: 2px;
+    background: var(--fd-text-muted);
+    opacity: 0.4;
+  }
+  .scene-navigator.panel-open::after {
+    content: '';
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 36px;
+    border-radius: 2px;
+    background: var(--fd-text-muted);
+    opacity: 0.4;
+  }
+
+  /* Beat board resize handles: larger, always visible on touch */
+  .beat-card-resize-handle {
+    opacity: 0.6 !important;
+    width: 28px;
+    height: 28px;
+  }
+  .beat-column-resize-handle {
+    width: 14px;
+  }
+}
+

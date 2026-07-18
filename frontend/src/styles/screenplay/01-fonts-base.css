@@ -1,0 +1,356 @@
+/* Courier Prime — open-source screenplay font (SIL Open Font License) */
+@font-face {
+  font-family: 'Courier Prime';
+  src: url('/fonts/CourierPrime-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Courier Prime';
+  src: url('/fonts/CourierPrime-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Courier Prime';
+  src: url('/fonts/CourierPrime-Italic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Courier Prime';
+  src: url('/fonts/CourierPrime-BoldItalic.ttf') format('truetype');
+  font-weight: bold;
+  font-style: italic;
+}
+
+/* ============================================
+   FreeScript — Final Draft Exact Layout
+   ============================================
+   All measurements match Final Draft defaults:
+   - Page: 8.5" x 11" US Letter
+   - Top margin: 1.25" (90pt)
+   - Bottom margin: 0.861" (62pt)
+   - Left indent (body): 1.25"
+   - Right indent (body): 1.25" (page 8.5" - RightIndent 7.25")
+   - Font: Courier 12pt, single-spaced
+   ============================================ */
+
+/* ── Dark theme (default) ── */
+:root {
+  --fd-bg: #2b2b2b;
+  --fd-page-bg: #ffffff;
+  --fd-toolbar-bg: #353535;
+  --fd-menu-bg: #333333;
+  --fd-menu-hover: #4a4a4a;
+  --fd-accent: #4a9eff;
+  --fd-border: #2a2a2a;
+  --fd-chrome-separator: rgba(255,255,255,0.06);
+  --fd-chrome-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  --fd-text: #e0e0e0;
+  --fd-text-muted: #999999;
+  --fd-navigator-bg: #252525;
+  --fd-status-bg: #1e1e1e;
+  --fd-dropdown-bg: #2d2d2d;
+  --fd-overlay-subtle: rgba(255,255,255,.04);
+  --fd-overlay-light: rgba(255,255,255,.08);
+  --fd-overlay-medium: rgba(255,255,255,.15);
+  --fd-shadow: rgba(0,0,0,.3);
+  --fd-dialog-bg: #333;
+  --fd-input-bg: rgba(0,0,0,.2);
+
+  /* Final Draft exact page dimensions */
+  --page-width: 8.5in;
+  --page-min-height: 11in;
+  --page-margin-top: 1.25in;       /* 90pt */
+  --page-margin-bottom: 0.861in;   /* 62pt */
+  --page-margin-left: 1.25in;      /* LeftIndent of body elements */
+  --page-margin-right: 1.25in;     /* 8.5" - 7.25" RightIndent */
+
+  --screenplay-font: 'Courier Final Draft', 'Courier Prime', 'Courier New', 'Courier', monospace;
+  --screenplay-font-size: 12pt;
+  --screenplay-line-height: 1;
+}
+
+/* ── Light theme ── */
+[data-theme="light"] {
+  --fd-bg: #e8e8e8;
+  --fd-page-bg: #ffffff;
+  --fd-toolbar-bg: #f4f4f4;
+  --fd-menu-bg: #f6f6f6;
+  --fd-menu-hover: #e0e0e0;
+  --fd-accent: #1565c0;
+  --fd-border: #d8d8d8;
+  --fd-chrome-separator: rgba(0,0,0,0.04);
+  --fd-chrome-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --fd-text: #1a1a1a;
+  --fd-text-muted: #666666;
+  --fd-navigator-bg: #f2f2f2;
+  --fd-status-bg: #e0e0e0;
+  --fd-dropdown-bg: #f5f5f5;
+  --fd-overlay-subtle: #ededed;
+  --fd-overlay-light: #e5e5e5;
+  --fd-overlay-medium: #dcdcdc;
+  --fd-shadow: #c0c0c0;
+  --fd-dialog-bg: #f5f5f5;
+  --fd-input-bg: #ffffff;
+}
+/* Light theme: page keeps white bg, editor area uses a warm gray */
+[data-theme="light"] .editor-main {
+  background: #d5d5d5;
+}
+/* Light theme: page shadow */
+[data-theme="light"] .page {
+  box-shadow: 0 1px 6px #b8b8b8;
+}
+/* Light theme: menus, dialogs, toasts */
+[data-theme="light"] .menu-dropdown {
+  box-shadow: 0 4px 16px #b0b0b0;
+  border-color: #b0b0b0;
+}
+[data-theme="light"] .dialog-box {
+  background: var(--fd-dialog-bg);
+  box-shadow: 0 8px 32px #a0a0a0;
+}
+[data-theme="light"] .dialog-header {
+  color: var(--fd-text);
+}
+[data-theme="light"] .dialog-body input,
+[data-theme="light"] .dialog-body textarea,
+[data-theme="light"] .dialog-body select {
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border-color: var(--fd-border);
+}
+/* Light theme: side panels */
+[data-theme="light"] .scene-navigator,
+[data-theme="light"] .version-history-panel,
+[data-theme="light"] .tags-panel,
+[data-theme="light"] .script-notes-panel,
+[data-theme="light"] .char-profiles-panel {
+  background: #f2f2f2;
+  box-shadow: -2px 0 8px #c0c0c0;
+}
+/* Light theme: navigator overlay (matches ≤1100px overlay breakpoint) */
+@media (max-width: 1100px) {
+  [data-theme="light"] .scene-navigator {
+    box-shadow: 4px 0 20px #999;
+  }
+}
+/* Light theme: side panel overlays */
+@media (max-width: 900px) {
+  [data-theme="light"] .tags-panel,
+  [data-theme="light"] .script-notes-panel,
+  [data-theme="light"] .char-profiles-panel {
+    box-shadow: -4px 0 20px #999;
+  }
+}
+[data-theme="light"] .tags-pending {
+  background: #f0f0f0;
+}
+[data-theme="light"] .tags-tab {
+  color: #666;
+}
+[data-theme="light"] .tags-tab:hover {
+  color: #222;
+}
+[data-theme="light"] .tags-tab-active {
+  color: var(--fd-accent);
+}
+[data-theme="light"] .tags-category-name,
+[data-theme="light"] .tags-pending-item {
+  color: #1a1a1a;
+}
+[data-theme="light"] .tags-pending-header {
+  color: #222;
+}
+[data-theme="light"] .tags-category-header:hover {
+  background: #e5e5e5;
+}
+[data-theme="light"] .tags-pending-item:hover {
+  background: var(--fd-accent);
+  color: #fff;
+}
+/* Light theme: scrollbars */
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #b0b0b0;
+}
+/* Light theme: toolbar & selectors */
+[data-theme="light"] .toolbar-btn:hover,
+[data-theme="light"] .toolbar-btn.active {
+  background: var(--fd-menu-hover);
+  border-color: var(--fd-border);
+}
+[data-theme="light"] .toolbar-separator {
+  background: var(--fd-border);
+}
+[data-theme="light"] .menu-separator {
+  background: var(--fd-border);
+}
+/* Light theme: all inputs, textareas, selects */
+[data-theme="light"] input[type="text"],
+[data-theme="light"] input[type="number"],
+[data-theme="light"] textarea,
+[data-theme="light"] select {
+  background: var(--fd-input-bg) !important;
+  color: var(--fd-text) !important;
+  border-color: var(--fd-border) !important;
+}
+[data-theme="light"] input[type="text"]:focus,
+[data-theme="light"] input[type="number"]:focus,
+[data-theme="light"] textarea:focus,
+[data-theme="light"] select:focus {
+  border-color: var(--fd-accent) !important;
+}
+/* Light theme: buttons */
+[data-theme="light"] .search-actions button,
+[data-theme="light"] .spell-modal-actions button,
+[data-theme="light"] .dialog-actions button {
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  border-color: var(--fd-border);
+}
+[data-theme="light"] .search-actions button:hover,
+[data-theme="light"] .spell-modal-actions button:hover,
+[data-theme="light"] .dialog-actions button:hover {
+  background: var(--fd-menu-hover);
+}
+/* Light theme: dialog buttons */
+[data-theme="light"] .dialog-btn {
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  border-color: var(--fd-border);
+}
+[data-theme="light"] .dialog-btn:hover {
+  background: var(--fd-menu-hover);
+}
+[data-theme="light"] .dialog-btn-primary {
+  background: var(--fd-accent);
+  border-color: var(--fd-accent);
+  color: #fff;
+}
+[data-theme="light"] .dialog-btn-primary:hover {
+  background: #104d8f;
+}
+[data-theme="light"] .dialog-footer button {
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  border-color: var(--fd-border);
+}
+[data-theme="light"] .dialog-footer button:hover {
+  background: var(--fd-menu-hover);
+}
+[data-theme="light"] .collab-copy-btn {
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  border-color: var(--fd-border);
+}
+[data-theme="light"] .collab-copy-btn:hover {
+  background: var(--fd-menu-hover);
+}
+[data-theme="light"] .collab-revoke-btn {
+  color: #c62828;
+}
+[data-theme="light"] .collab-revoke-btn:hover {
+  background: #ffebee;
+}
+/* Light theme: context menu */
+[data-theme="light"] .ctx-menu {
+  background: var(--fd-menu-bg);
+  border-color: var(--fd-border);
+  box-shadow: 0 4px 16px #b0b0b0;
+}
+[data-theme="light"] .ctx-item:hover {
+  background: var(--fd-accent);
+  color: #fff;
+}
+/* Light theme: spell check modal */
+[data-theme="light"] .spell-modal {
+  background: var(--fd-dropdown-bg);
+}
+[data-theme="light"] .spell-active {
+  background: rgba(255, 193, 7, 0.35);
+  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.45);
+}
+/* Light theme: format panel */
+[data-theme="light"] .format-panel {
+  background: var(--fd-dropdown-bg);
+  box-shadow: 0 4px 16px #b0b0b0;
+}
+/* Light theme: go-to-page, element picker */
+[data-theme="light"] .goto-page-panel,
+[data-theme="light"] .element-picker {
+  background: var(--fd-dropdown-bg);
+  box-shadow: 0 4px 16px #b0b0b0;
+}
+/* Light theme: asset panels */
+[data-theme="light"] .asset-manager-panel {
+  background: var(--fd-dropdown-bg);
+}
+/* Light theme: index cards, beat board */
+[data-theme="light"] .index-card,
+[data-theme="light"] .beat-card {
+  background: #ffffff;
+  border-color: var(--fd-border);
+}
+[data-theme="light"] .beat-column-header {
+  background: var(--fd-toolbar-bg);
+}
+[data-theme="light"] .beat-card-description-view {
+  background: rgba(0, 0, 0, 0.04);
+}
+[data-theme="light"] .beat-card-description-view:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+[data-theme="light"] .beat-link-preview {
+  background: rgba(0, 0, 0, 0.03);
+}
+/* Light theme: note cards / profile cards */
+[data-theme="light"] .note-item {
+  background: #ffffff;
+  border-color: var(--fd-border);
+}
+[data-theme="light"] .note-item:hover {
+  border-color: #888;
+}
+[data-theme="light"] .char-profile-card {
+  background: #ffffff;
+  border-color: var(--fd-border);
+}
+[data-theme="light"] .char-profile-card:hover {
+  border-color: #888;
+}
+/* Light theme: MiniRichText editor */
+[data-theme="light"] .mini-rt-wrapper:focus-within {
+  background: #ffffff;
+}
+[data-theme="light"] .mini-rt-btn:hover {
+  background: #e0e0e0;
+}
+[data-theme="light"] .mini-rt-btn.active {
+  background: #d5d5d5;
+}
+/* Light theme: character profile textarea focus */
+[data-theme="light"] .char-profile-textarea:focus {
+  background: #ffffff;
+}
+
+/* ---- Reset ---- */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body, #root { height: 100%; overflow: hidden; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--fd-bg);
+  color: var(--fd-text);
+  font-size: 13px;
+}
+
+/* ---- App Container ---- */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+

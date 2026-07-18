@@ -1,0 +1,436 @@
+/* ============ EDITOR MAIN AREA ============ */
+.editor-main {
+  flex: 1; overflow-y: auto; overflow-x: auto;
+  background: var(--fd-bg); display: flex; justify-content: center;
+  padding: 30px 0 60px;
+}
+
+.page-sizer {
+  margin: 0 auto;
+}
+.page-container {
+  width: var(--page-width); min-width: var(--page-width); max-width: var(--page-width);
+}
+
+/* ============ PAGE ============ */
+.page {
+  background: var(--fd-page-bg);
+  min-height: var(--page-min-height);
+  padding: var(--page-margin-top) var(--page-margin-right) var(--page-margin-bottom) var(--page-margin-left);
+  box-shadow: 0 1px 4px rgba(0,0,0,.3), 0 0 0 1px rgba(0,0,0,.06);
+  position: relative;
+}
+
+/* ============ TIPTAP EDITOR CONTENT ============ */
+.screenplay-content {
+  font-family: var(--screenplay-font);
+  font-size: var(--screenplay-font-size);
+  line-height: var(--screenplay-line-height);
+  /* Adjust letter-spacing so Courier New matches Final Draft Courier width.
+     FD: 62 chars in 6.0" = 9.29px/char. Courier New: 9.60px/char. Diff: -0.31px */
+  letter-spacing: -0.31px;
+  color: #000;
+  outline: none;
+  overflow: visible;
+}
+.screenplay-content:focus { outline: none; }
+
+/* ============ SCREENPLAY ELEMENTS ============ */
+.screenplay-element {
+  margin: 0; padding: 0;
+  font-family: inherit; font-size: inherit; line-height: 1;
+}
+
+/* Scene Heading: FDX SpaceBefore=12pt (1 line) */
+.scene-heading {
+  text-transform: uppercase;
+  font-weight: bold;
+  margin-top: 12pt;
+  position: relative;
+}
+.scene-heading:first-child { margin-top: 0; }
+
+/* Scene numbers — shown on both sides of the heading when .show-scene-numbers is active */
+.show-scene-numbers .scene-heading[data-scene-number]::before,
+.show-scene-numbers .scene-heading[data-scene-number]::after {
+  content: attr(data-scene-number);
+  position: absolute;
+  top: 0;
+  font-weight: bold;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  text-transform: none;
+  pointer-events: none;
+}
+.show-scene-numbers .scene-heading[data-scene-number]::before {
+  right: calc(100% + 0.15in);
+  text-align: right;
+}
+.show-scene-numbers .scene-heading[data-scene-number]::after {
+  left: calc(100% + 0.15in);
+  text-align: left;
+}
+
+/* Action */
+.action { margin-top: 12pt; }
+
+/* Character: FDX LeftIndent=3.50, RightIndent=7.50 */
+.character {
+  text-transform: uppercase;
+  margin-top: 12pt;
+  padding-left: calc(3.50in - var(--pl, 1.50in));
+  padding-right: calc(var(--pw, 8.26in) - 7.50in - var(--pr, 0.76in));
+}
+
+/* Parenthetical: FDX LeftIndent=3.00, RightIndent=5.50 */
+.parenthetical {
+  padding-left: calc(3.00in - var(--pl, 1.50in));
+  padding-right: calc(var(--pw, 8.26in) - 5.50in - var(--pr, 0.76in));
+}
+
+/* Dialogue: FDX LeftIndent=2.50, RightIndent=6.00 */
+.dialogue {
+  padding-left: calc(2.50in - var(--pl, 1.50in));
+  padding-right: calc(var(--pw, 8.26in) - 6.00in - var(--pr, 0.76in));
+}
+
+/* Transition: FDX LeftIndent=5.50, RightIndent=7.50 */
+.transition {
+  text-transform: uppercase;
+  text-align: right;
+  margin-top: 12pt;
+  padding-left: calc(5.50in - var(--pl, 1.50in));
+  padding-right: calc(var(--pw, 8.26in) - 7.50in - var(--pr, 0.76in));
+}
+
+/* General */
+.general { }
+
+/* Shot */
+.shot {
+  text-transform: uppercase;
+  margin-top: 12pt;
+}
+
+/* New Act */
+.new-act {
+  text-transform: uppercase;
+  text-align: center;
+  font-weight: bold;
+  text-decoration: underline;
+  margin-top: 24pt;
+}
+
+/* End of Act */
+.end-of-act {
+  text-transform: uppercase;
+  text-align: center;
+  font-weight: bold;
+  margin-top: 24pt;
+}
+
+/* Lyrics: same indents as Dialogue */
+.lyrics {
+  font-style: italic;
+  padding-left: calc(2.50in - var(--pl, 1.50in));
+  padding-right: calc(var(--pw, 8.26in) - 6.00in - var(--pr, 0.76in));
+}
+
+/* Show/Episode */
+.show-episode {
+  text-transform: uppercase;
+  text-align: center;
+  font-weight: bold;
+  margin-top: 12pt;
+}
+
+/* Cast List */
+.cast-list {
+  text-transform: uppercase;
+  padding-left: 0.25in;
+}
+
+/* Dual Dialogue */
+/* ── Dual Dialogue ── */
+.dual-dialogue {
+  display: flex;
+  gap: 0;
+  margin-top: 12pt;
+  border-left: 2px solid var(--fd-accent, #3b82f6);
+  border-radius: 2px;
+}
+.dual-dialogue-column {
+  flex: 1;
+  min-width: 0;
+}
+.dual-dialogue-column + .dual-dialogue-column {
+  border-left: 1px dashed var(--fd-border, #444);
+}
+/* Tighter indents for dialogue elements inside dual columns */
+.dual-dialogue .screenplay-element.character {
+  padding-left: 0.8in;
+  margin-top: 0;
+}
+.dual-dialogue .screenplay-element.dialogue {
+  padding-left: 0.3in;
+  padding-right: 0.1in;
+}
+.dual-dialogue .screenplay-element.parenthetical {
+  padding-left: 0.5in;
+  padding-right: 0.1in;
+}
+/* First character in each column gets top margin */
+.dual-dialogue-column > .screenplay-element.character:first-child {
+  margin-top: 12pt;
+}
+
+/* Title Page — WYSIWYG free-flow: title, credits and images render in document
+   order, top-to-bottom, identically in the editor, dialog preview and PDF/DOCX.
+   Spacing is modest and uniform; writers add blank title-page lines for vertical
+   space and reorder images freely. Per-field alignment only. */
+/* No block margin: the paginator counts pure text lines, and spacing on the
+   title page comes from blank spacer lines (matches how it's built). */
+.title-page { text-align: center; margin: 0; }
+.title-page-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  text-align: center;
+}
+.title-page-title2 {
+  font-weight: 700;
+  text-transform: uppercase;
+  text-align: center;
+}
+.title-page-author { text-align: center; line-height: 1.5; }
+.title-page-draft { text-align: left; }
+.title-page-contact,
+.title-page-copyright { text-align: right; }
+.title-page-date { text-align: center; }
+
+/* Inserted images (body + title page) */
+.sp-image { display: block; margin: 6pt 0; }
+.sp-image.align-center { text-align: center; }
+.sp-image.align-left { text-align: left; }
+.sp-image.align-right { text-align: right; }
+.sp-image-inner { position: relative; display: inline-block; max-width: 100%; line-height: 0; }
+.sp-image-img { display: block; width: 100%; height: auto; max-width: 100%; }
+.sp-image.is-selected .sp-image-inner { outline: 2px solid var(--fd-accent, #4a90d9); }
+.sp-image-resize {
+  position: absolute; right: -5px; bottom: -5px; width: 12px; height: 12px;
+  background: var(--fd-accent, #4a90d9); border: 1px solid #fff; border-radius: 2px;
+  cursor: nwse-resize; z-index: 3;
+}
+
+/* Title Page Editor Dialog */
+.tp-editor-dialog {
+  background: var(--fd-dropdown-bg); border: 1px solid var(--fd-border);
+  border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,.6);
+  width: min(780px, 96vw); max-width: 96vw; max-height: 85vh;
+  display: flex; flex-direction: column;
+}
+.tp-editor-body {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  padding: 16px; overflow-y: auto; flex: 1;
+}
+.tp-editor-form {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;
+  align-content: start;
+}
+.tp-sync-btn {
+  grid-column: 1 / -1; background: none; border: 1px dashed var(--fd-border);
+  color: var(--fd-text-muted); border-radius: 3px; padding: 5px 12px;
+  font-size: 12px; cursor: pointer; margin-top: 4px;
+}
+.tp-sync-btn:hover { border-color: var(--fd-accent); color: var(--fd-accent); }
+
+/* Title Page Live Preview */
+.tp-editor-preview {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--fd-input-bg, #111); border-radius: 6px; padding: 12px;
+}
+.tp-preview-page {
+  width: 100%; max-width: 280px; aspect-ratio: 8.5 / 11;
+  background: #fff; color: #111; font-family: 'Courier New', Courier, monospace;
+  font-size: 9px; padding: 24px 16px; display: flex; flex-direction: column;
+  border-radius: 2px; box-shadow: 0 2px 12px rgba(0,0,0,.3);
+  position: relative;
+}
+.tp-preview-title {
+  text-align: center; font-size: 12px; font-weight: bold;
+  text-transform: uppercase; margin-top: 35%; letter-spacing: 0.5px;
+}
+.tp-preview-author {
+  text-align: center; margin-top: 16px; line-height: 1.5;
+}
+.tp-preview-credit { margin-bottom: 2px; }
+.tp-preview-basedon { font-size: 8px; margin-top: 2px; font-style: italic; }
+.tp-preview-bottom {
+  margin-top: auto; display: flex; justify-content: space-between;
+  align-items: flex-end; gap: 8px;
+}
+.tp-preview-bottom-left { text-align: left; line-height: 1.4; font-size: 8px; }
+.tp-preview-bottom-right { text-align: right; line-height: 1.4; font-size: 8px; }
+.tp-preview-contact { margin-bottom: 4px; }
+.tp-preview-notes { margin-top: 4px; font-style: italic; }
+
+/* Title Page dialog — mobile: stack form above preview, single-column fields,
+   so it fits the screen without horizontal scroll. */
+@media (max-width: 720px) {
+  .tp-editor-dialog { width: 96vw; max-height: 90vh; }
+  .tp-editor-body { grid-template-columns: 1fr; gap: 14px; }
+  .tp-editor-form { grid-template-columns: 1fr; }
+  .tp-preview-page { max-width: 240px; }
+}
+
+/* ============ RTL SUPPORT FOR MULTI-LINGUAL DIALOGUE ============ */
+.dialogue[dir="rtl"],
+.parenthetical[dir="rtl"],
+.character[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+/* ============ LANGUAGE SELECTOR ============ */
+.language-selector {
+  height: 24px;
+  background: #2a2a2a;
+  color: var(--fd-text);
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 0 8px;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+  min-width: 120px;
+}
+.language-selector:focus {
+  border-color: var(--fd-accent);
+}
+
+/* ============ PLACEHOLDER TEXT ============ */
+div[data-type="scene-heading"].is-empty::before { content: 'INT./EXT. LOCATION - TIME'; color: #ccc; pointer-events: none; float: left; height: 0; text-transform: uppercase; }
+div[data-type="action"].is-empty::before { content: 'Describe the action...'; color: #ccc; pointer-events: none; float: left; height: 0; font-style: italic; }
+div[data-type="character"].is-empty::before { content: 'CHARACTER NAME'; color: #ccc; pointer-events: none; float: left; height: 0; text-transform: uppercase; }
+div[data-type="dialogue"].is-empty::before { content: 'Dialogue...'; color: #ccc; pointer-events: none; float: left; height: 0; font-style: italic; }
+div[data-type="parenthetical"].is-empty::before { content: '(direction)'; color: #ccc; pointer-events: none; float: left; height: 0; font-style: italic; }
+div[data-type="transition"].is-empty::before { content: 'TRANSITION:'; color: #ccc; pointer-events: none; float: left; height: 0; text-transform: uppercase; }
+div[data-type="general"].is-empty::before { content: 'Text...'; color: #ccc; pointer-events: none; float: left; height: 0; }
+div[data-type="shot"].is-empty::before { content: 'SHOT DESCRIPTION'; color: #ccc; pointer-events: none; float: left; height: 0; text-transform: uppercase; }
+div[data-type="new-act"].is-empty::before { content: 'ACT ONE'; color: #ccc; pointer-events: none; float: left; height: 0; text-transform: uppercase; }
+div[data-type="end-of-act"].is-empty::before { content: 'END OF ACT'; color: #ccc; pointer-events: none; float: left; height: 0; text-transform: uppercase; }
+div[data-type="lyrics"].is-empty::before { content: 'Lyrics...'; color: #ccc; pointer-events: none; float: left; height: 0; font-style: italic; }
+div[data-type="show-episode"].is-empty::before { content: 'SHOW TITLE'; color: #ccc; pointer-events: none; float: left; height: 0; text-transform: uppercase; }
+div[data-type="cast-list"].is-empty::before { content: 'Cast...'; color: #ccc; pointer-events: none; float: left; height: 0; }
+
+
+/* ====================================================================
+   PAGE BREAK SEPARATOR — Final Draft Page View
+   ====================================================================
+   Rendered as React elements, absolutely positioned inside .page.
+   This guarantees full page width since .page has position: relative
+   and the overlays use left:0/right:0. No negative-margin tricks.
+   Break nodes in the editor are marked via Decoration.node and get
+   margin-top injected by JS to create space for the separator.
+   ==================================================================== */
+
+/* Overlay wrapper — absolutely positioned inside .page, full width */
+.page-sep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  user-select: none;
+  z-index: 10;
+}
+
+/* Bottom margin of current page — transparent so content is never clipped */
+.page-sep-bottom {
+}
+
+/* Gap — workspace background between pages */
+.page-sep-gap {
+  height: 40px;
+  background: var(--fd-bg);
+}
+
+/* Top margin of next page — transparent so split dialogue text stays visible */
+.page-sep-top {
+  position: relative;
+}
+
+/* Page number (legacy, kept for compatibility) */
+.page-sep-number {
+  position: absolute;
+  top: 0.25in;
+  right: var(--page-margin-right);
+  font-family: var(--screenplay-font);
+  font-size: 12pt;
+  color: #000;
+  line-height: 1;
+}
+
+/* Header/Footer containers */
+.page-sep-header,
+.page-sep-footer {
+  position: absolute;
+  left: var(--page-margin-left, 1.5in);
+  right: var(--page-margin-right, 0.76in);
+  display: flex;
+  align-items: baseline;
+  font-family: var(--screenplay-font);
+  font-size: 12pt;
+  color: #000;
+  line-height: 1;
+}
+.page-sep-header {
+  top: 0.25in;
+}
+.page-sep-footer {
+  bottom: 0.1in;
+}
+.page-sep-hf-left {
+  flex: 1;
+  text-align: left;
+}
+.page-sep-hf-center {
+  flex: 1;
+  text-align: center;
+}
+.page-sep-hf-right {
+  flex: 1;
+  text-align: right;
+}
+
+/* (MORE) marker — positioned inside the bottom margin area of the page */
+.page-sep-more {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  font-family: var(--screenplay-font);
+  font-size: 12pt;
+  color: #000;
+  line-height: 1;
+  text-align: center;
+  padding-left: calc(var(--page-margin-left) + 1.31in);
+  padding-right: calc(var(--page-margin-right) + 1.0in);
+  z-index: 2;
+}
+
+/* CHARACTER (CONT'D) — flow element at the bottom of the separator,
+   styled like a character cue. Extra margin-top space is allocated by
+   the pagination plugin so this does not overlap content below. */
+.page-sep-contd {
+  font-family: var(--screenplay-font);
+  font-size: 12pt;
+  color: #000;
+  line-height: 16px;
+  height: 16px;
+  text-transform: uppercase;
+  padding-left: 3.5in; /* character indent from page edge */
+  box-sizing: border-box;
+}
+
+
+
