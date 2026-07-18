@@ -610,17 +610,22 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .zoom-tb-caret:hover { color: var(--fd-text); }
 /* v3.47, Derek: the BIG Editor View button reads like the other big buttons —
    the dropdown on top with "Editor View" (no colon) as the label under it. */
-.toolbar.toolbar-ribbon .rib-tall[data-key="view"] { flex-direction: column-reverse; height: 100%; justify-content: center; }
+/* v3.64, Derek: the WHOLE Editor View button — from the top of the dark
+   dropdown box down to the bottom of the "Editor View" text — matches the span
+   from a row-1 item's text top to a row-2 item's text bottom: one item height +
+   one row height + the 2px inter-row gap. The block owns that height; the
+   dropdown flexes to fill the space above the label. */
+.toolbar.toolbar-ribbon .rib-tall[data-key="view"] {
+  flex-direction: column-reverse;
+  height: calc(var(--rib-itemh) + var(--rib-rowh, 28px) + 2px);
+  justify-content: center;
+}
 .toolbar.toolbar-ribbon .rib-tall[data-key="view"] .view-style-label {
   margin: 0; font-size: 10px; line-height: 1.1;
 }
-/* v3.63, Derek: the big Editor View dropdown spans the full two-row item run —
-   its top lines up with a row-1 item's top and its bottom with a row-2 item's
-   bottom (one item height + one row height apart). flex:none so the column
-   doesn't shrink it back toward the select's content min-height. */
 .toolbar.toolbar-ribbon .rib-tall[data-key="view"] .view-style-selector {
-  height: calc(var(--rib-itemh) + var(--rib-rowh, 28px));
-  flex: none;
+  flex: 1;
+  min-height: 0;
 }
 .toolbar.toolbar-ribbon .rib-section-sep {
   height: auto;

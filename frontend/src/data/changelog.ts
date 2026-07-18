@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.63';
+export const APP_VERSION = '3.64';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.64',
+    date: '2026-07-18',
+    items: [
+      { title: 'Editor View button sized to the whole two-row span', detail: 'The Editor View button now measures — from the top of its dropdown box to the bottom of the "Editor View" text — exactly the distance from a row-1 item\'s text top to a row-2 item\'s text bottom, rather than just the dropdown alone.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.63',
     date: '2026-07-18',
