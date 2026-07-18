@@ -79,7 +79,7 @@ const TAB_HINTS: Record<string, React.ReactNode> = {
   toolbar: <>Your toolbar above is now the editor. While this tab is open the real ribbon is live: drag items from the palette straight onto it, drag a section by its body to move it, hover an item or section for its ×. Use a faint “+ Add” block on the bar to insert a section, divider, spacer, alignment split or any item. Drag an item off the bar to remove it. Close this window to lock the layout.</>,
   qat: <>The buttons beside the traffic lights in the titlebar. Drag between Shown and Hidden — where you drop one is where it sits. Add dividers and spacers to group them.</>,
   panels: <>Drag tools between Left Panel, Right Panel and Hidden — where you drop one is where it sits. The Show/Hide in a list’s header controls the whole panel (drag a panel’s inner edge in the app to resize it). Divider labels are edited here only.</>,
-  outlinebar: <>Drag a row’s bottom edge to set its height; reorder with the arrows; × removes a row. The four original rows keep their names — only rows you add can be renamed. Add Row can add a second copy (a ruler at the bottom, say). Drag the bar’s bottom edge in the app to scale every row at once.</>,
+  outlinebar: <>Drag a row to reorder it; drag a row’s bottom edge to set its height; × removes a row. The four original rows keep their names — only rows you add can be renamed. Add Row can add a second copy (a ruler at the bottom, say). Drag the bar’s bottom edge in the app to scale every row at once.</>,
 };
 
 /** v2.42, Derek: Customize > Outline Bar — reorder the bar's rows, add
@@ -102,12 +102,45 @@ function OutlineBarTab() {
   const barOpen = useEditorStore((s) => s.outlineBarOpen);
   const setBarOpen = useEditorStore((s) => s.setOutlineBarOpen);
 
-  const move = (i: number, d: -1 | 1) => {
-    const j = i + d;
-    if (j < 0 || j >= rows.length) return;
-    const next = [...rows];
-    [next[i], next[j]] = [next[j], next[i]];
-    setRows(next);
+  // v3.52, Derek: rows reorder by DRAG-AND-DROP (grab the row body), not ↑/↓
+  // arrows. Pointer-based (WebKit-safe, no dataTransfer needed); a drop line
+  // shows where it'll land, computed from row midpoints like the ribbon drags.
+  const vizRef = React.useRef<HTMLDivElement>(null);
+  const [dragId, setDragId] = React.useState<string | null>(null);
+  const [dropIdx, setDropIdx] = React.useState<number | null>(null);
+  const startRowDrag = (e: React.PointerEvent, id: string) => {
+    const t = e.target as HTMLElement;
+    if (t.closest('.fs-obviz-grip, .fs-obviz-x, input, button')) return;
+    e.preventDefault();
+    const snapshot = rows;
+    const fromIdx = snapshot.findIndex((r) => r.id === id);
+    if (fromIdx < 0) return;
+    setDragId(id);
+    let target = fromIdx;
+    const onMove = (ev: PointerEvent) => {
+      const rowEls = Array.from(vizRef.current?.querySelectorAll<HTMLElement>('.fs-obviz-row') ?? []);
+      let idx = rowEls.length;
+      for (let i = 0; i < rowEls.length; i++) {
+        const rr = rowEls[i].getBoundingClientRect();
+        if (ev.clientY < rr.top + rr.height / 2) { idx = i; break; }
+      }
+      target = idx;
+      setDropIdx(idx);
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      setDragId(null);
+      setDropIdx(null);
+      if (target !== fromIdx && target !== fromIdx + 1) {
+        const next = [...snapshot];
+        const [moved] = next.splice(fromIdx, 1);
+        next.splice(target > fromIdx ? target - 1 : target, 0, moved);
+        setRows(next);
+      }
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
   };
   const addRow = (kind: 'ruler' | 'acts' | 'beats' | 'script') => {
     const n = rows.filter((r) => r.kind === kind).length + 1;
@@ -145,11 +178,18 @@ function OutlineBarTab() {
       {/* v3.42, Derek: a VISUAL editor — each row is a block sized to its real
           height; drag the bottom edge to resize. Original rows keep fixed
           names; added rows can be renamed. */}
-      <div className="fs-obviz">
+      <div className="fs-obviz" ref={vizRef}>
         {rows.map((r, i) => {
           const locked = LOCKED_ROW_IDS.has(r.id);
           return (
-            <div key={r.id} className="fs-obviz-row" style={{ height: Math.max(18, effH(r)) }}>
+            <React.Fragment key={r.id}>
+            {dragId && dropIdx === i && <div className="fs-obviz-dropline" />}
+            <div
+              className={`fs-obviz-row${dragId === r.id ? ' fs-obviz-dragging' : ''}`}
+              style={{ height: Math.max(18, effH(r)) }}
+              title="Drag to reorder"
+              onPointerDown={(e) => startRowDrag(e, r.id)}
+            >
               <span className="fs-obviz-label">
                 {locked
                   ? OUTLINE_ROW_LABELS[r.kind]
@@ -165,8 +205,6 @@ function OutlineBarTab() {
               </span>
               <span className="fs-obviz-h">{effH(r)}px</span>
               <span className="fs-obviz-ctrls">
-                <button title="Move up" disabled={i === 0} onClick={() => move(i, -1)}>↑</button>
-                <button title="Move down" disabled={i === rows.length - 1} onClick={() => move(i, 1)}>↓</button>
                 <button
                   className="fs-obviz-x"
                   title={rows.length <= 1 ? 'The last row cannot be removed' : 'Remove this row'}
@@ -176,8 +214,10 @@ function OutlineBarTab() {
               </span>
               <span className="fs-obviz-grip" title="Drag to set this row's height" onPointerDown={(e) => startResize(e, r)} />
             </div>
+            </React.Fragment>
           );
         })}
+        {dragId && dropIdx === rows.length && <div className="fs-obviz-dropline" />}
       </div>
       <div className="fs-customize-row fs-size-row">
         <span className="fs-customize-tool">Add Row</span>
@@ -830,6 +870,28 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // so a list longer than the window just ran off with no scrollbar. It now
   // scrolls like the modal does, and keeps side padding so the drag handles
   // aren't clipped.
+  // v3.52, Derek: Lock All / Reset All — ONE definition, placed in the modal's
+  // footer (left of Cancel/Save) for the window, and kept in the tab rail for
+  // the embedded (Settings) view, which has no footer.
+  const globalsButtons = (<>
+    <button
+      className={uiResizeLocked ? 'active' : ''}
+      title={uiResizeLocked
+        ? 'Customizations are locked — click to unlock'
+        : 'Freeze every customization: sizing, spacing, and layout edits'}
+      onClick={() => useEditorStore.getState().setUiResizeLocked(!uiResizeLocked)}
+    >{uiResizeLocked ? 'Locked' : 'Lock All'}</button>
+    <button
+      title="Reset every customization to the defaults — sizes, toolbar layout, Quick Access, menu bar, panels, outline bar"
+      onClick={async () => {
+        if (await confirmDialog(
+          'Reset ALL customizations to their defaults? Sizes and spacing, the toolbar layout, dropdown widths, Quick Access Toolbar, menu bar order, side panels, and the Outline Bar all go back to factory. (Themes, Elements and Keyboard Shortcuts have their own resets and are not touched.)',
+          { title: 'Reset All Customizations', confirmLabel: 'Reset Customizations', danger: true, requireText: 'Reset Customizations' },
+        )) useEditorStore.getState().resetAllCustomizations();
+      }}
+    >Reset All</button>
+  </>);
+
   const body = (
       // v0.83: tabs live in a LEFT SIDEBAR, the same shape as Settings
       // (.prefs-layout + .prefs-tabs). Across the top, seven tabs couldn't fit
@@ -846,27 +908,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               onClick={() => setActiveCat(id)}
             >{label}</button>
           ))}
-          {/* v3.24, Derek's menu reorg #5: the global controls, visible from
-              every tab. v3.34: they cover ALL customizations now — sizes and
-              layouts — and read as real buttons. */}
-          <div className="fs-customize-globals fs-customize-globals-row">
-            <button
-              className={uiResizeLocked ? 'active' : ''}
-              title={uiResizeLocked
-                ? 'Customizations are locked — click to unlock'
-                : 'Freeze every customization: sizing, spacing, and layout edits'}
-              onClick={() => useEditorStore.getState().setUiResizeLocked(!uiResizeLocked)}
-            >{uiResizeLocked ? 'Locked' : 'Lock All'}</button>
-            <button
-              title="Reset every customization to the defaults — sizes, toolbar layout, Quick Access, menu bar, panels, outline bar"
-              onClick={async () => {
-                if (await confirmDialog(
-                  'Reset ALL customizations to their defaults? Sizes and spacing, the toolbar layout, dropdown widths, Quick Access Toolbar, menu bar order, side panels, and the Outline Bar all go back to factory. (Themes, Elements and Keyboard Shortcuts have their own resets and are not touched.)',
-                  { title: 'Reset All Customizations', confirmLabel: 'Reset Customizations', danger: true, requireText: 'Reset Customizations' },
-                )) useEditorStore.getState().resetAllCustomizations();
-              }}
-            >Reset All</button>
-          </div>
+          {/* v3.24, Derek's menu reorg #5: the global controls. v3.52: in the
+              Customize WINDOW they moved to the footer (beside Cancel/Save);
+              here they show only in the embedded (Settings) view, which has no
+              footer. */}
+          {embedded && (
+            <div className="fs-customize-globals fs-customize-globals-row">{globalsButtons}</div>
+          )}
         </div>
         <div className="dialog-body fs-customize-body">
           {/* v3.39, Derek: the tab's helper text, one ?-in-a-circle pinned to
@@ -1159,10 +1207,14 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         </div>
         {body}
         {/* v3.49, Derek: Cancel reverts every customization to the open-time
-            snapshot; Save just closes (edits already applied live). */}
+            snapshot; Save just closes (edits already applied live). v3.52:
+            Lock All / Reset All sit on this same row, left; Cancel/Save right. */}
         <div className="dialog-footer fs-customize-footer">
-          <button className="fs-customize-cancel" onClick={handleCancel}>Cancel</button>
-          <button className="fs-customize-save" onClick={handleSave}>Save</button>
+          <div className="fs-customize-globals fs-customize-footer-globals">{globalsButtons}</div>
+          <div className="fs-customize-footer-actions">
+            <button className="fs-customize-cancel" onClick={handleCancel}>Cancel</button>
+            <button className="fs-customize-save" onClick={handleSave}>Save</button>
+          </div>
         </div>
       </div>
     </div>

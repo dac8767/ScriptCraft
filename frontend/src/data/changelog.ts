@@ -65,9 +65,20 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.51';
+export const APP_VERSION = '3.52';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.52',
+    date: '2026-07-18',
+    items: [
+      { title: 'No more duplicate ribbon items', detail: 'The Customize “add to the ribbon” list showed the same feature more than once — Title Page appeared three times (it exists as a button, a command and a tool). The list now shows each item exactly once.', tags: ['Fix', 'UI'] },
+      { title: 'Lock All / Reset All move to the footer', detail: 'In the Customize window, Lock All and Reset All now sit on the bottom row with Cancel and Save — the two of them on the left, Cancel/Save on the right.', tags: ['UI'] },
+      { title: 'Toolbar search shares the Show/Hide row', detail: 'The item search in Customize > Toolbar is now a fixed 300px, pinned to the right end of the Show/Hide row instead of a full-width bar on its own line.', tags: ['UI'] },
+      { title: 'Drag to reorder Outline Bar rows', detail: 'Customize > Outline Bar rows now reorder by dragging the row itself — the ↑/↓ arrows are gone. Drag a row’s bottom edge still sets its height.', tags: ['UI', 'Tools'] },
+      { title: '“Move to Snippets” in the context menu', detail: 'The right-click “Copy to Snippets” is now “Move to Snippets” — it cuts the selection into a snippet card (one undo puts it back).', tags: ['Tools', 'Editor'] },
+    ],
+  },
   {
     version: '3.51',
     date: '2026-07-18',

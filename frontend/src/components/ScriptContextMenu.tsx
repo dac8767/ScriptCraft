@@ -40,7 +40,7 @@ export const CONTEXT_MENU_SECTIONS: { id: string; label: string; group: ContextM
   { id: 'revisionMode', label: 'Revision Mode', group: 'Production' },
   { id: 'revisionColor', label: 'Revision Color', group: 'Production' },
   { id: 'addScriptNote', label: 'Add Note', group: 'Context Menu' },
-  { id: 'copyToSnippets', label: 'Copy to Snippets', group: 'Tools' },
+  { id: 'copyToSnippets', label: 'Move to Snippets', group: 'Tools' },
   { id: 'insertSection', label: 'Insert Section', group: 'Insert' },
   { id: 'insertMarker', label: 'Insert Marker', group: 'Insert' },
   // v0.90/v0.92: 'Add as To-Do Item' removed — it duplicated this. A standalone
@@ -790,12 +790,17 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
             const text = editor.state.doc.textBetween(from, to, '\n');
             if (text.trim()) {
               addShelfCard({ id: uuid(), type: 'snippet', color: '#f4d35e', text: text.trim(), createdAt: new Date().toISOString() });
+              // v3.52, Derek: this MOVES — the selection is cut from the script
+              // once it's stashed, so "Move to Snippets" tells the truth (one
+              // undo restores it). The internal id stays `copyToSnippets` so no
+              // saved context-menu customization is orphaned.
+              editor.chain().focus().deleteRange({ from, to }).run();
               useEditorStore.getState().openTool('fragments');
-              showToast('Copied to Snippets', 'success');
+              showToast('Moved to Snippets', 'success');
             }
             onClose();
           }}>
-            <span>Copy to Snippets</span>
+            <span>Move to Snippets</span>
           </div></>) : null,
     insertSection: (<><div className="ctx-item" onClick={() => {
         editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '# ' }] }).run();

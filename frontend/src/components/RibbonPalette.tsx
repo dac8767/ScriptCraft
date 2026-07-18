@@ -29,17 +29,19 @@ const RibbonPalette: React.FC<Props> = ({ palette, headerControls }) => {
     <div className="ribed ribed-palette-only">
       {/* v3.42, Derek: the structural utilities (sections/divider/spacer/split/
           title) are added from the bar's own "+ Add" now — the palette holds
-          only the item list. */}
-      {headerControls && <div className="ribed-utilrow">{headerControls}</div>}
-
-      <div className="ribed-pal-search">
-        <input
-          type="search"
-          value={paletteQuery}
-          onChange={(e) => setPaletteQuery(e.target.value)}
-          placeholder="Search items…"
-          aria-label="Search available items"
-        />
+          only the item list. v3.52: the search sits on this SAME row as the
+          Show/Hide buttons, pinned to the right and a fixed 300px wide. */}
+      <div className="ribed-utilrow">
+        {headerControls}
+        <div className="ribed-pal-search">
+          <input
+            type="search"
+            value={paletteQuery}
+            onChange={(e) => setPaletteQuery(e.target.value)}
+            placeholder="Search items…"
+            aria-label="Search available items"
+          />
+        </div>
       </div>
 
       {/* the drag SOURCES; also the drop target for removal */}

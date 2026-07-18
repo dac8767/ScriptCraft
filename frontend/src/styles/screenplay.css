@@ -14405,9 +14405,13 @@ body.fs-writing-focus::before {
   resize: both; overflow: hidden;      /* grip clear of any scrollbar */
 }
 .fs-customize-dialog .fs-customize-body { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
-/* v3.49, Derek: Cancel / Save sit at the window's bottom-right. Save is the
-   accent primary; Cancel is the plain neutral beside it. */
-.fs-customize-footer { justify-content: flex-end; }
+/* v3.49/v3.52, Derek: the footer carries Lock All / Reset All on the LEFT and
+   Cancel / Save on the RIGHT. Save is the accent primary. */
+.fs-customize-footer { justify-content: space-between; gap: 12px; }
+.fs-customize-footer-globals {
+  flex-direction: row; margin-top: 0; padding-top: 0; align-items: center;
+}
+.fs-customize-footer-actions { display: flex; align-items: center; gap: 8px; }
 .fs-customize-footer .fs-customize-save {
   background: var(--fd-accent); border-color: var(--fd-accent); color: #fff;
 }
@@ -17362,8 +17366,16 @@ input.fs-switch:checked::after { left: 15px; }
   border-radius: 2px;
   border: 1px solid currentColor;
 }
-/* v3.11: the palette's keyword filter */
+/* v3.11: the palette's keyword filter. v3.52, Derek: it rides on the utilrow
+   (with Show/Hide), pinned right at a fixed 300px. */
 .ribed-pal-search { margin-bottom: 6px; }
+.ribed-utilrow .ribed-pal-search {
+  margin-bottom: 0;
+  margin-left: auto;          /* push to the right edge of the row */
+  width: 300px;
+  max-width: 100%;
+  flex: 0 0 auto;
+}
 .ribed-pal-search input {
   width: 100%;
   box-sizing: border-box;
@@ -17974,6 +17986,15 @@ input.fs-switch:checked::after { left: 15px; }
   border: 1px solid var(--fd-border); border-radius: 6px;
   background: color-mix(in srgb, var(--fd-navigator-bg) 55%, transparent);
   box-sizing: border-box;
+  cursor: grab;      /* v3.52: rows reorder by drag */
+  touch-action: none;
+}
+.fs-obviz-row.fs-obviz-dragging { opacity: 0.45; cursor: grabbing; }
+/* v3.52: the drop indicator between rows while dragging. */
+.fs-obviz-dropline {
+  height: 2px; border-radius: 2px;
+  background: var(--fd-accent);
+  margin: -1px 0;
 }
 .fs-obviz-label { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--fd-text); }
 .fs-obviz-name {

@@ -66,6 +66,23 @@ export function buildRibbonPalette(placed: (v: string) => boolean): PaletteCateg
       ],
     },
   ] as PaletteCategory[])
+    // v3.52, Derek: ONE entry per label across the whole palette. The same
+    // feature can exist as a builtin, a command AND a tool (Title Page was all
+    // three), so the list showed it repeatedly. Keep the first occurrence in
+    // category order (builtins win) and drop the rest — no duplicates.
+    .reduce<{ cats: PaletteCategory[]; seen: Set<string> }>(
+      (acc, cat) => {
+        const options = cat.options.filter((o) => {
+          const key = o.label.trim().toLowerCase();
+          if (acc.seen.has(key)) return false;
+          acc.seen.add(key);
+          return true;
+        });
+        acc.cats.push({ ...cat, options });
+        return acc;
+      },
+      { cats: [], seen: new Set() },
+    ).cats
     .map((cat) => ({ ...cat, options: cat.options.filter((o) => !placed(o.value)) }))
     .filter((cat) => cat.options.length > 0);
 }
