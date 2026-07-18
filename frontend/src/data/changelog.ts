@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.57';
+export const APP_VERSION = '3.58';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.58',
+    date: '2026-07-18',
+    items: [
+      { title: 'Scene list no longer shifts when its scrollbar disappears', detail: 'Stretching the Scenes window tall enough that the list fits made the scrollbar vanish and nudged every row and icon a few pixels right. The scrollbar gutter is now always reserved, so the list stays put whether or not it can scroll.', tags: ['Fix', 'UI'] },
+      { title: 'Title Page: point-size sits on the same row as its title', detail: 'Title Size now rides at the right of the Title row, and Title Line 2 Size shares the Title Line 2 row, instead of dropping onto their own lines below.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.57',
     date: '2026-07-18',

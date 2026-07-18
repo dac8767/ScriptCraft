@@ -358,50 +358,52 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
         <div className="tp-editor-body">
           <div className="tp-editor-form">
             {showField('tpTitle') && (
-            <div className="props-field props-field-wide">
-              <label className="props-label">Title</label>
-              <input
-                className="props-input"
-                value={data.tpTitle}
-                onChange={(e) => setField('tpTitle', e.target.value)}
-                placeholder="SCRIPT TITLE"
-                autoFocus
-              />
+            <div className="props-field-wide tp-field-row">
+              <div className="props-field tp-field-grow">
+                <label className="props-label">Title</label>
+                <input
+                  className="props-input"
+                  value={data.tpTitle}
+                  onChange={(e) => setField('tpTitle', e.target.value)}
+                  placeholder="SCRIPT TITLE"
+                  autoFocus
+                />
+              </div>
+              <div className="props-field tp-field-size">
+                <label className="props-label">Title Size</label>
+                <select
+                  className="props-input"
+                  value={data.tpTitleFontSize}
+                  onChange={(e) => setData((prev) => ({ ...prev, tpTitleFontSize: Number(e.target.value) }))}
+                >
+                  {TITLE_FONT_SIZES.map((s) => <option key={s} value={s}>{s} pt</option>)}
+                </select>
+              </div>
             </div>
             )}
             {showField('tpTitle') && (
-            <div className="props-field">
-              <label className="props-label">Title Size</label>
-              <select
-                className="props-input"
-                value={data.tpTitleFontSize}
-                onChange={(e) => setData((prev) => ({ ...prev, tpTitleFontSize: Number(e.target.value) }))}
-              >
-                {TITLE_FONT_SIZES.map((s) => <option key={s} value={s}>{s} pt</option>)}
-              </select>
-            </div>
-            )}
-            {showField('tpTitle') && (
-            <div className="props-field props-field-wide">
-              <label className="props-label">Title Line 2</label>
-              <input
-                className="props-input"
-                value={data.tpTitle2}
-                onChange={(e) => setField('tpTitle2', e.target.value)}
-                placeholder="Optional second title line"
-              />
-            </div>
-            )}
-            {showField('tpTitle') && data.tpTitle2 && (
-            <div className="props-field">
-              <label className="props-label">Title Line 2 Size</label>
-              <select
-                className="props-input"
-                value={data.tpTitle2FontSize}
-                onChange={(e) => setData((prev) => ({ ...prev, tpTitle2FontSize: Number(e.target.value) }))}
-              >
-                {TITLE_FONT_SIZES.map((s) => <option key={s} value={s}>{s} pt</option>)}
-              </select>
+            <div className="props-field-wide tp-field-row">
+              <div className="props-field tp-field-grow">
+                <label className="props-label">Title Line 2</label>
+                <input
+                  className="props-input"
+                  value={data.tpTitle2}
+                  onChange={(e) => setField('tpTitle2', e.target.value)}
+                  placeholder="Optional second title line"
+                />
+              </div>
+              {data.tpTitle2 && (
+              <div className="props-field tp-field-size">
+                <label className="props-label">Title Line 2 Size</label>
+                <select
+                  className="props-input"
+                  value={data.tpTitle2FontSize}
+                  onChange={(e) => setData((prev) => ({ ...prev, tpTitle2FontSize: Number(e.target.value) }))}
+                >
+                  {TITLE_FONT_SIZES.map((s) => <option key={s} value={s}>{s} pt</option>)}
+                </select>
+              </div>
+              )}
             </div>
             )}
             {showField('tpWrittenBy') && (

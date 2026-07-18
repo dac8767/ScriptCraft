@@ -273,6 +273,12 @@
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;
   align-content: start;
 }
+/* Title / Title Line 2 each share their row with their point-size select: the
+   text field grows, the size select rides at the right of the same row. */
+.tp-field-row { display: flex; gap: 16px; align-items: flex-end; }
+.tp-field-row .tp-field-grow { flex: 1; min-width: 0; }
+.tp-field-row .tp-field-size { flex: 0 0 auto; }
+.tp-field-row .tp-field-size .props-label { white-space: nowrap; }
 .tp-sync-btn {
   grid-column: 1 / -1; background: none; border: 1px dashed var(--fd-border);
   color: var(--fd-text-muted); border-radius: 3px; padding: 5px 12px;
@@ -316,6 +322,8 @@
   .tp-editor-dialog { width: 96vw; max-height: 90vh; }
   .tp-editor-body { grid-template-columns: 1fr; gap: 14px; }
   .tp-editor-form { grid-template-columns: 1fr; }
+  /* Narrow screens: let the size select drop below its text field again. */
+  .tp-field-row { flex-direction: column; align-items: stretch; }
   .tp-preview-page { max-width: 240px; }
 }
 
