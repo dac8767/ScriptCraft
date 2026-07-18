@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.78';
+export const APP_VERSION = '3.79';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.79',
+    date: '2026-07-18',
+    items: [
+      { title: 'New themes save when you click the Customize Save button', detail: 'Building a theme and clicking the dialog’s Save now adds it to the list (the View menu and the Themes tab) — you no longer have to find the separate "Save Theme" button first.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '3.78',
     date: '2026-07-18',
