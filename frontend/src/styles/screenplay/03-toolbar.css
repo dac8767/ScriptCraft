@@ -582,7 +582,10 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar.toolbar-ribbon .view-style-selector { width: var(--ddw-view, auto); }
 /* v3.46, Derek: the BIG (single-row) Zoom control drops its magnifier glyph —
    the "98%" value and the "Zoom" label under it already name it. */
-.toolbar.toolbar-ribbon .rib-tall[data-key="zoom"] .zoom-tb-icon { display: none; }
+/* v3.63: the magnifying-glass icon is dropped from the zoom control in BOTH
+   the big (tall) and the small (inline) forms — the − % + stepper reads on its
+   own. (It was already hidden on the tall one.) */
+.toolbar.toolbar-ribbon .zoom-tb-icon { display: none; }
 /* v3.51, Derek: the BIG Zoom button drops the ▾ caret next to the % too — the
    Reset / Fit Page / Scale options all live in the View ▸ Zoom menu. */
 .toolbar.toolbar-ribbon .rib-tall[data-key="zoom"] .zoom-tb-caret { display: none; }
@@ -607,15 +610,16 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .zoom-tb-caret:hover { color: var(--fd-text); }
 /* v3.47, Derek: the BIG Editor View button reads like the other big buttons —
    the dropdown on top with "Editor View" (no colon) as the label under it. */
-.toolbar.toolbar-ribbon .rib-tall[data-key="view"] { flex-direction: column-reverse; }
+.toolbar.toolbar-ribbon .rib-tall[data-key="view"] { flex-direction: column-reverse; height: 100%; justify-content: center; }
 .toolbar.toolbar-ribbon .rib-tall[data-key="view"] .view-style-label {
   margin: 0; font-size: 10px; line-height: 1.1;
 }
-/* v3.51, Derek: the big Editor View dropdown is 50% taller (it has the room —
-   the button spans both ribbon rows). flex:none so the column doesn't shrink
-   it back toward the select's content min-height. */
+/* v3.63, Derek: the big Editor View dropdown spans the full two-row item run —
+   its top lines up with a row-1 item's top and its bottom with a row-2 item's
+   bottom (one item height + one row height apart). flex:none so the column
+   doesn't shrink it back toward the select's content min-height. */
 .toolbar.toolbar-ribbon .rib-tall[data-key="view"] .view-style-selector {
-  height: calc(var(--rib-itemh) * 1.5);
+  height: calc(var(--rib-itemh) + var(--rib-rowh, 28px));
   flex: none;
 }
 .toolbar.toolbar-ribbon .rib-section-sep {

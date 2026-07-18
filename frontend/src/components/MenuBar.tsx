@@ -1039,7 +1039,15 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     const pos = useBookmarkStore.getState().lastEdit[bookmarkKey];
     if (pos == null) { showToast('No edits recorded yet.', 'info'); return; }
     const max = editor.state.doc.content.size;
-    editor.chain().focus().setTextSelection(Math.max(1, Math.min(pos, max - 1))).scrollIntoView().run();
+    const at = Math.max(1, Math.min(pos, max - 1));
+    editor.chain().focus().setTextSelection(at).run();
+    // Center the last-edit line in the viewport — Tiptap's own scrollIntoView
+    // only nudges it barely into view. domAtPos → nearest element → center.
+    requestAnimationFrame(() => {
+      const { node } = editor.view.domAtPos(at);
+      const el = (node instanceof HTMLElement ? node : node.parentElement) as HTMLElement | null;
+      el?.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
   };
   const shortcutActions: Record<string, () => void> = {
     lastEditLocation: jumpToLastEdit,
@@ -1426,7 +1434,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         /* v3.25: bookmarks removed (markers cover them); Last Edit Location
            survives here — it's navigation, like Go to Page. */
         { icon: <FaHashtag />, label: 'Go to Page…', shortcut: sc('goToPage'), action: () => setGoToPageOpen(true) },
-        { icon: <FaPencilAlt />, label: 'Last Edit Location', action: () => shortcutActionsRef.current.lastEditLocation?.() },
+        { icon: <FaPencilAlt />, label: 'Go to Last Edited', action: () => shortcutActionsRef.current.lastEditLocation?.() },
       ],
     },
     {

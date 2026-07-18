@@ -1640,7 +1640,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             {sections.length > 1 && (
               <button
                 className="rib-edit-x rib-edit-secclose"
-                title="Close this section (its items join the neighbour)"
+                title="Remove this section"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => ribCloseSection(i)}
               >×</button>

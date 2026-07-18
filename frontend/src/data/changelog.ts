@@ -65,9 +65,20 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.62';
+export const APP_VERSION = '3.63';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.63',
+    date: '2026-07-18',
+    items: [
+      { title: 'Removing a ribbon section deletes it cleanly instead of merging', detail: 'Closing a section now removes just that section (and its own divider) and leaves the neighbours as separate sections — no more "extra long" merged section, and the alignment split / the other side stay put.', tags: ['Fix', 'UI'] },
+      { title: '"Go to Last Edited" (renamed) now centres the spot on screen', detail: 'The old "Last Edit Location" command is renamed to "Go to Last Edited" and, instead of nudging the line barely into view, it scrolls so the last-edited line sits in the middle of the editor.', tags: ['Editor'] },
+      { title: 'Editor View button: the dropdown spans both ribbon rows', detail: 'The big Editor View dropdown is now as tall as a top-row item through a bottom-row item, matching the two-row button.', tags: ['UI'] },
+      { title: 'Zoom control: dropped the magnifying-glass icon on the small version', detail: 'The inline zoom now shows just the − % + stepper (the big version already had no icon).', tags: ['UI'] },
+      { title: 'Asset Manager and Spell Check are no longer side-panel options', detail: 'They no longer appear in Customize > Side Panels; they open from the Tools menu / as their own windows instead.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '3.62',
     date: '2026-07-18',

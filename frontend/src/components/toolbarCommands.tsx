@@ -79,7 +79,7 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'actualSize', label: 'Actual Size (100%)', icon: <FaSearchMinus />, run: () => emit('actualSize') },
   { id: 'showRulers', label: 'Show/Hide Rulers', icon: <FaRulerHorizontal />, run: () => emit('showRulers') },
   // v3.25: bookmarks removed (markers cover them); Last Edit stays pinnable.
-  { id: 'lastEditLocation', label: 'Last Edit Location', icon: <FaPencilAlt />, run: () => emit('lastEditLocation') },
+  { id: 'lastEditLocation', label: 'Go to Last Edited', icon: <FaPencilAlt />, run: () => emit('lastEditLocation') },
   { id: 'formatPrefs', label: 'Script Format Preferences', icon: <FaFileAlt />, run: () => emit('formatPrefs') },
   { id: 'grammarSettings', label: 'Grammar & Spelling Settings', icon: <FaSpellCheck />, run: () => emit('grammarSettings') },
   { id: 'about', label: 'About ScriptCraft', icon: <FaInfoCircle />, run: () => emit('about') },

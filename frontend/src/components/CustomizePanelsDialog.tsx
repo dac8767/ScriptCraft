@@ -266,6 +266,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
 
 
   const PANEL_PRODUCTION_IDS: ToolId[] = ['tags'];
+  // v3.63, Derek: Asset Manager and Spell Check are not offered as side-panel
+  // tools — they open from the Tools menu / as their own windows instead.
+  const PANEL_EXCLUDED_IDS: ToolId[] = ['assets', 'spelling'];
   // One combined Panels tab (v0.48): every panel item in one list — the
   // Left / Right buttons on each row already choose the side, so separate
   // Left Panel and Right Panel tabs were redundant.
@@ -279,7 +282,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       | { kind: 'tool'; id: ToolId; label: string; side: 'left' | 'right' }
       | { kind: 'divider'; id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number };
     const rows: Row[] = [
-      ...ALL_TOOLS.filter((t) => cfgOf(t.id).enabled).map((t) => ({
+      ...ALL_TOOLS.filter((t) => cfgOf(t.id).enabled && !PANEL_EXCLUDED_IDS.includes(t.id)).map((t) => ({
         kind: 'tool' as const, id: t.id, label: t.label, side: cfgOf(t.id).side, ord: oIdx(t.id),
       })),
       ...panelDividers.map((d) => ({
@@ -331,7 +334,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     const homeSide = (id: ToolId): 'left' | 'right' =>
       DEFAULT_TOOL_CONFIG[id]?.side ?? (WINDOW_IDS.includes(id) ? 'left' : 'right');
     const addOptions = [
-      ...ALL_TOOLS.filter((t) => WINDOW_IDS.includes(t.id) && !cfgOf(t.id).enabled).map((t) => ({ group: 'Project Windows', value: `t:${t.id}`, label: t.label })),
+      ...ALL_TOOLS.filter((t) => WINDOW_IDS.includes(t.id) && !PANEL_EXCLUDED_IDS.includes(t.id) && !cfgOf(t.id).enabled).map((t) => ({ group: 'Project Windows', value: `t:${t.id}`, label: t.label })),
       ...ALL_TOOLS.filter((t) => !WINDOW_IDS.includes(t.id) && !PANEL_PRODUCTION_IDS.includes(t.id) && !cfgOf(t.id).enabled).map((t) => ({ group: 'Tools', value: `t:${t.id}`, label: t.label })),
       ...ALL_TOOLS.filter((t) => PANEL_PRODUCTION_IDS.includes(t.id) && !cfgOf(t.id).enabled).map((t) => ({ group: 'Production', value: `t:${t.id}`, label: t.label })),
     ];

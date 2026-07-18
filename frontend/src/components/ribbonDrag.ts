@@ -124,40 +124,30 @@ export const ribMoveSection = (from: number, to: number) => {
   commit(m);
 };
 
-/** Close (remove) section `i` without disturbing the align split or the OTHER
- *  side of it: the section's items merge into a SAME-SIDE neighbour, or — if
- *  it's the only section on its side — it's cleared to empty so the split (and
- *  the far side) survive. The old behaviour merged with the next section
- *  regardless of the split, so closing the last left section swallowed the
- *  first right one and collapsed the split, dragging the right run leftward.
- *  Exported pure (no store) for testing. */
+/** Close (remove) section `i` cleanly: the section AND its own boundary divider
+ *  go, the neighbours stay SEPARATE sections (their divider intact — no merged
+ *  "extra long" section), and the align split / the far side are untouched.
+ *  A section that is the only one on its side (or the only section, period) is
+ *  cleared to empty instead of deleted, so the split and the at-least-one
+ *  -section invariant survive. Exported pure (no store) for testing. */
 export const closeSectionInModel = (m: RibbonModel, i: number): RibbonModel => {
   const n = m.sections.length;
   if (i < 0 || i >= n) return m;
   const split = m.splitAt;
-  const onLeft = split === null || i < split;
-  // This side spans [.., hi): the left run ends at the split, the right at the end.
-  const hi = onLeft ? (split === null ? n : split) : n;
-  const lo = onLeft ? 0 : (split as number);
-  if (hi - lo <= 1) {
-    // Only section on its side — clearing beats merging across the boundary.
+  const onLeft = split !== null && i < split;
+  const onRight = split !== null && i >= split;
+  const leftCount = split ?? n;
+  const rightCount = split === null ? 0 : n - split;
+  // Deleting would leave a side (or the whole bar) with no section — clear it
+  // to empty instead, which keeps the split representable and the far side put.
+  if (n <= 1 || (onLeft && leftCount <= 1) || (onRight && rightCount <= 1)) {
     m.sections[i] = { top: [], bottom: [], hasBreak: false, breakLine: false };
     return m;
   }
-  const mergeAt = i + 1 < hi ? i : i - 1;   // merge forward, or back at the side's end
-  const a = m.sections[mergeAt];
-  const b = m.sections[mergeAt + 1];
-  if (!a || !b) return m;
-  m.sections.splice(mergeAt, 2, {
-    top: [...a.top, ...b.top],
-    bottom: [...a.bottom, ...b.bottom],
-    hasBreak: a.hasBreak || b.hasBreak,
-    breakLine: a.breakLine || b.breakLine,
-    title: a.title || b.title,
-  });
-  // The merged pair is wholly on one side; the split only shifts if it sat
-  // strictly after the pair (i.e. the pair is on the left run).
-  if (m.splitAt !== null && m.splitAt > mergeAt + 1) m.splitAt -= 1;
+  m.sections.splice(i, 1);
+  // Only a LEFT-side removal shifts the boundary; removing on the right leaves
+  // splitAt where it is, so the right run stays right-aligned.
+  if (m.splitAt !== null && i < m.splitAt) m.splitAt -= 1;
   return m;
 };
 
