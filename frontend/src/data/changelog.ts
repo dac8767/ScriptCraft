@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.70';
+export const APP_VERSION = '3.71';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.71',
+    date: '2026-07-18',
+    items: [
+      { title: 'Cmd/Ctrl+Z undoes ribbon edits while customizing the toolbar', detail: 'While the toolbar is being edited, undo now reverts your last ribbon change (add/remove/move a section or item, resize a spacer, the align split, …) instead of undoing the script. Typing in a section-title field still gets normal text undo.', tags: ['New Feature', 'UI'] },
+    ],
+  },
   {
     version: '3.70',
     date: '2026-07-18',

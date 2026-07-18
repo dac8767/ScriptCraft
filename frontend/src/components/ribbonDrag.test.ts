@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { closeSectionInModel, ribAddSectionAtBoundary, ribQuickAdd, ribSetSpacerWidth, SPACER_MAX_PX } from './ribbonDrag';
+import { closeSectionInModel, ribAddSectionAtBoundary, ribQuickAdd, ribSetSpacerWidth, SPACER_MAX_PX, ribUndo, ribResetHistory } from './ribbonDrag';
 import { parseRibbon, type RibbonModel } from './toolbarBuiltins';
 import { useEditorStore } from '../stores/editorStore';
 
@@ -84,5 +84,17 @@ describe('ribSetSpacerWidth rewrites a spacer token width in place', () => {
     expect(useEditorStore.getState().toolbarLeft).toContain(`s:99:${SPACER_MAX_PX}`);
     // the neighbours are untouched
     expect(useEditorStore.getState().toolbarLeft.filter((t) => t.startsWith('b:'))).toEqual(['b:bold', 'b:italic']);
+  });
+});
+
+describe('ribUndo reverts the last ribbon edit', () => {
+  it('restores the toolbar to its state before an add-section', () => {
+    ribResetHistory();
+    useEditorStore.setState({ toolbarLeft: ['b:bold', 'a:split-1', 'b:italic'], toolbarRight: [] });
+    const before = [...useEditorStore.getState().toolbarLeft];
+    ribAddSectionAtBoundary('single', 1, false);
+    expect(useEditorStore.getState().toolbarLeft).not.toEqual(before);
+    ribUndo();
+    expect(useEditorStore.getState().toolbarLeft).toEqual(before);
   });
 });

@@ -34,8 +34,23 @@ const clone = (m: RibbonModel): RibbonModel => ({
 });
 
 const getModel = (): RibbonModel => parseRibbon(useEditorStore.getState().toolbarLeft);
+
+// v3.71: a small undo stack for ribbon edits so Cmd/Ctrl+Z works while editing
+// the toolbar (the script's own undo shouldn't swallow it). Every commit snaps
+// the PRE-change toolbarLeft; ribUndo restores the last snapshot.
+let undoStack: string[][] = [];
+export const ribResetHistory = () => { undoStack = []; };
+export const ribCanUndo = () => undoStack.length > 0;
+export const ribUndo = () => {
+  const st = useEditorStore.getState();
+  const prev = undoStack.pop();
+  if (prev) st.setToolbarZones([...prev], st.toolbarRight);
+};
+
 const commit = (m: RibbonModel) => {
   const st = useEditorStore.getState();
+  undoStack.push([...st.toolbarLeft]);          // snapshot before the change
+  if (undoStack.length > 100) undoStack.shift();
   st.setToolbarZones(serializeRibbon(m), st.toolbarRight);
 };
 const removeEverywhere = (m: RibbonModel, tok: string) => {

@@ -31,6 +31,7 @@ import {
   ribToggleBreakLine, ribRemoveSplit, ribAddSectionAtBoundary, ribAddInlineAtBoundary,
   ribSetAlignSplit, ribSetSectionTitle, ribRemoveSectionTitle,
   ribSetSpacerWidth, SPACER_MIN_PX, SPACER_MAX_PX,
+  ribUndo, ribResetHistory,
 } from './ribbonDrag';
 import { tokenLabel } from './tokenMeta';
 import { buildRibbonPalette } from './ribbonPaletteData';
@@ -285,6 +286,25 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       editor.off('transaction', detectFormatting);
     };
   }, [editor, detectFormatting]);
+
+  // v3.71, Derek: while editing the toolbar, Cmd/Ctrl+Z undoes the last ribbon
+  // change (each mutation snapshots toolbarLeft). Capture-phase so it beats the
+  // editor's own undo; skipped inside a text field so typing a section title
+  // still gets native text undo. History resets each time editing begins.
+  useEffect(() => {
+    if (!toolbarEditing) return;
+    ribResetHistory();
+    const onKey = (e: KeyboardEvent) => {
+      if (!((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === 'z' || e.key === 'Z'))) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      ribUndo();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [toolbarEditing]);
 
   // Collect all unique fonts used in the document (for extra fonts display)
   useEffect(() => {
