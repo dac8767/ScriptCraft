@@ -18,10 +18,12 @@ most of it is the kind of thing you only learn by getting it wrong first.
 
 ---
 
-> **Also read `docs/HANDOFF.md`** — it covers the working process, the coordination
-> rules between the chat-Claude and Claude Code, and everything that shipped after
-> this file was written (v1.9–v1.21: projects removed, Save/Save As rebuilt, the
-> Tauri fs scope, the Dev Picker's current shape).
+> **Fresh chat? Read `docs/HANDOFF-CONTINUE.md` first** — the current state (v3.54),
+> the dual-branch push workflow this environment uses, what shipped recently, and the
+> live architecture. Then **`docs/HANDOFF.md`** for the working process and history
+> (v1.9–v1.21: projects removed, Save/Save As rebuilt, the Tauri fs scope, the Dev
+> Picker's shape) — its §1 workflow is superseded by HANDOFF-CONTINUE.md §0, but its
+> footguns and Derek-practices sections still hold.
 
 ## 0. The thing you are probably confused about
 

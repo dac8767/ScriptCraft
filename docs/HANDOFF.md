@@ -1,10 +1,15 @@
 # ScriptCraft — handoff to Claude Code
 
-You are picking up a project with **100 shipped versions**, currently at **v1.21**
-(commit `9091599`, branch `claude/v0_32`). Derek is the product owner and sole
-tester. Read `/CLAUDE.md` first — it carries the footguns and architecture map.
-This document covers what that one doesn't: **the workflow you should run**, why it
-exists, and the state of things right now.
+> **Current state / fresh-chat catch-up: read `docs/HANDOFF-CONTINUE.md`.** It has the
+> present version (v3.54), the dual-branch push workflow this environment uses, what
+> shipped recently, and the current architecture. THIS file is the older, durable
+> handoff — its §1 workflow describes an "editing Derek's Mac directly, single branch"
+> mode that HANDOFF-CONTINUE.md §0 supersedes; its footguns and Derek-practices
+> sections (§3) still hold.
+
+Derek is the product owner and sole tester. Read `/CLAUDE.md` first — it carries the
+footguns and architecture map. This document covers what that one doesn't: the working
+process and its history.
 
 ---
 
@@ -69,7 +74,7 @@ Both of you write to the same branch. The rules that keep that safe:
 ```bash
 cd frontend
 npx tsc -b        # MUST be 0 errors. Not "baseline". Zero.
-npm test          # currently 61 tests, all green
+npm test          # 271 tests as of v3.54, all green
 npm run build     # tsc -b && vite build — must pass
 ```
 
