@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.75';
+export const APP_VERSION = '3.76';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.76',
+    date: '2026-07-18',
+    items: [
+      { title: 'The sizing-lock button shows its state', detail: 'As a big ribbon button it now reads "Unlocked" with an open padlock when sizing is unlocked, and "Locked" with a closed padlock when locked (its palette name stays "Lock All").', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.75',
     date: '2026-07-18',

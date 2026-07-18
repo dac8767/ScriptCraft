@@ -1405,6 +1405,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       + (tall ? ' rib-tall' : '')
       + (def.desktopOnly ? ' toolbar-desktop-only' : '')
       + (def.zoom ? ' zoom-group' : '');
+    // v3.76, Derek: the sizing-lock big button captions its STATE — "Locked"
+    // when on (padlock closed), "Unlocked" when off (padlock open); the icon
+    // already swaps in the control below. The palette keeps the "Lock All" name.
+    const riblabel = def.key === 'lockResize' ? (uiResizeLocked ? 'Locked' : 'Unlocked') : def.label;
     return (
       <React.Fragment key={tok}>
         <div
@@ -1416,7 +1420,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           // v3.38: the `view` control already draws its own "Editor View:"
           // caption, so the underneath label would repeat the name — skip it
           // for any builtin that captions itself.
-          {...(tall && def.key !== 'view' ? { 'data-riblabel': def.label } : {})}
+          {...(tall && def.key !== 'view' ? { 'data-riblabel': riblabel } : {})}
         >
           {renderBuiltinControl(def.key, false, showPopups)}
         </div>
