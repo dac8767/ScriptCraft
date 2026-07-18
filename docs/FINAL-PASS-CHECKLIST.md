@@ -46,6 +46,13 @@ to each. Process:
 - [ ] Tools
 - [ ] Help
 
+## Audits
+
+- [ ] Stability audit — crash paths, silent no-ops, error handling, state that can desync
+- [ ] Security — secrets/PAT exposure, external fetches, storage, injection surfaces
+- [ ] Cleanup — dead code, unused exports, stale files, TODO/FIXME debt
+- [ ] Recommendations — prioritized list of what to fix next and release blockers
+
 ---
 
 ### Notes / open threads per item
