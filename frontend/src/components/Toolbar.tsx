@@ -22,7 +22,7 @@ import {
   FaEllipsisV,
   FaHashtag,
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
-  FaImage, FaExchangeAlt,
+  FaImage, FaExchangeAlt, FaArrowLeft,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
@@ -36,7 +36,7 @@ import {
 import { tokenLabel } from './tokenMeta';
 import { buildRibbonPalette } from './ribbonPaletteData';
 import { useNotebookStore } from '../stores/notebookStore';
-import { TableGridPicker } from './NotebookTool';
+import { TableGridPicker, closeNotebook } from './NotebookTool';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { confirmDialog } from './ConfirmDialog';
 import { commandDef } from './toolbarCommands';
@@ -1786,19 +1786,28 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             {/* v3.42, Derek: the tag sits CENTERED above the buttons (like a
                 section title), and the section gets extra left padding. */}
             <span className="menu-section-tag rib-scrapbook-tag">Scrapbook</span>
-            <div className="rib-row">
-              {/* v3.34, Derek: the section carries the Scrapbook's own
-                  actions, not just Insert Table — same handlers as the
-                  panel's header buttons. */}
-              {/* v3.61, Derek: the Scrapbook ribbon section carries Insert
-                  Picture (same handler as the panel's "Insert Picture…" menu —
-                  clicks the notebook's hidden file input) + Insert Table. */}
+            <div className="rib-scrapbook-body">
+              <div className="rib-row">
+                {/* v3.34/v3.61, Derek: the Scrapbook section carries its own
+                    actions — Insert Picture (clicks the notebook's hidden file
+                    input) + Insert Table. */}
+                <button
+                  className="toolbar-btn"
+                  title="Insert Picture (Scrapbook)"
+                  onClick={() => (document.getElementById('fs-nb-filepick') as HTMLInputElement | null)?.click()}
+                ><FaImage /></button>
+                {renderBuiltinToken('b:insertTable', false)}
+              </div>
+              {/* v3.74, Derek: Return to Editor rides here as a two-row big
+                  button, beside the Scrapbook actions. */}
               <button
-                className="toolbar-btn"
-                title="Insert Picture (Scrapbook)"
-                onClick={() => (document.getElementById('fs-nb-filepick') as HTMLInputElement | null)?.click()}
-              ><FaImage /></button>
-              {renderBuiltinToken('b:insertTable', false)}
+                className="toolbar-btn rib-tall rib-tall-btn rib-scrapbook-return"
+                title="Return to Editor"
+                onClick={() => closeNotebook()}
+              >
+                <span className="rib-tall-icon"><FaArrowLeft /></span>
+                <span className="rib-tall-label">Return to Editor</span>
+              </button>
             </div>
           </div>
         </>

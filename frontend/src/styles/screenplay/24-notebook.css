@@ -506,6 +506,10 @@
 .rib-scrapbook-sec { justify-content: center; align-items: stretch; padding-left: 14px; }
 .rib-scrapbook-sec .rib-row { align-items: center; justify-content: center; gap: 6px; }
 .rib-scrapbook-tag { text-align: center; margin: 0 0 1px; }
+/* v3.74, Derek: the Scrapbook actions and the two-row Return to Editor button
+   sit side by side; the tall button fills the section's height. */
+.rib-scrapbook-body { display: flex; align-items: stretch; gap: 10px; flex: 1; min-height: 0; }
+.rib-scrapbook-return { align-self: stretch; }
 
 /* ════════════════════════════════════════════════════════════════════════
    v3.36, Derek: IN-PLACE toolbar editing. While Customize > Toolbar is open

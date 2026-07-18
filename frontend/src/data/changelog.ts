@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.73';
+export const APP_VERSION = '3.74';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.74',
+    date: '2026-07-18',
+    items: [
+      { title: 'Scrapbook: Return to Editor is a two-row ribbon button', detail: 'While the Scrapbook is open, "Return to Editor" now sits in the Scrapbook ribbon section as a two-row big button (icon + label) beside Insert Picture and Insert Table.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '3.73',
     date: '2026-07-18',
