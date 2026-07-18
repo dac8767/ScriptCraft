@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.83';
+export const APP_VERSION = '3.84';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.84',
+    date: '2026-07-18',
+    items: [
+      { title: 'Table row/column inserts and deletes now land correctly', detail: 'A Scrapbook table cell showed its text only when first drawn, so inserting or deleting a row/column shifted the data but left the cells showing their neighbour\'s old text — every Table menu op looked like it hit the wrong cell. Cells now stay in sync with the data (the caret is still never disturbed while you type). Insert Row Above/Below and Insert Column Left/Right act relative to the active cell as intended.', tags: ['Fix', 'Tools'] },
+      { title: 'New Return to Editor icon', detail: 'The Scrapbook\'s Return to Editor button uses the undo-style return arrow.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.83',
     date: '2026-07-18',

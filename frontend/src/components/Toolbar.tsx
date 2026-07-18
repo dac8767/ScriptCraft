@@ -22,8 +22,9 @@ import {
   FaEllipsisV,
   FaHashtag,
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
-  FaExchangeAlt, FaArrowLeft,
+  FaExchangeAlt,
 } from 'react-icons/fa';
+import { LuUndo2 } from 'react-icons/lu';
 import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import {
@@ -1800,7 +1801,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 title="Return to Editor"
                 onClick={() => closeNotebook()}
               >
-                <FaArrowLeft className="rib-scrapbook-return-icon" />
+                <LuUndo2 className="rib-scrapbook-return-icon" />
                 <span className="rib-scrapbook-return-label">Return to<br />Editor</span>
               </button>
             </div>
