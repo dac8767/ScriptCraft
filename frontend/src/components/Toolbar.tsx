@@ -1789,7 +1789,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           <div className="rib-section rib-scrapbook-sec">
             {/* v3.42, Derek: the tag sits CENTERED above the buttons (like a
                 section title), and the section gets extra left padding. */}
-            <span className="menu-section-tag rib-scrapbook-tag">Scrapbook</span>
+            <span className="menu-section-tag rib-scrapbook-tag">Scrapbook:</span>
             <div className="rib-scrapbook-body">
               <div className="rib-row">
                 {/* v3.34/v3.61, Derek: the Scrapbook section carries its own
@@ -1802,15 +1802,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 ><FaImage /></button>
                 {renderBuiltinToken('b:insertTable', false)}
               </div>
-              {/* v3.74, Derek: Return to Editor rides here as a two-row big
-                  button, beside the Scrapbook actions. */}
+              {/* v3.77, Derek: Return to Editor — blue like the old surface
+                  button, icon beside two-line text. */}
               <button
-                className="toolbar-btn rib-tall rib-tall-btn rib-scrapbook-return"
+                className="rib-scrapbook-return"
                 title="Return to Editor"
                 onClick={() => closeNotebook()}
               >
-                <span className="rib-tall-icon"><FaArrowLeft /></span>
-                <span className="rib-tall-label">Return to Editor</span>
+                <FaArrowLeft className="rib-scrapbook-return-icon" />
+                <span className="rib-scrapbook-return-label">Return to<br />Editor</span>
               </button>
             </div>
           </div>

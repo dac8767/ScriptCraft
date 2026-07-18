@@ -540,6 +540,11 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 }
 .rib-tall-icon { display: inline-flex; align-items: center; justify-content: center; height: 26px; }
 .rib-tall-icon svg { height: 26px; width: auto; }   /* v3.75: same fixed height as .rib-single */
+/* v3.77, Derek: the sizing-lock icon sits in a fixed SQUARE box so the closed
+   and open padlocks (different proportions) occupy identical space — toggling
+   the lock no longer resizes the big button and shoves the layout up/down. */
+.rib-tall[data-key="lockResize"] svg,
+.rib-single .toolbar-priority-block[data-key="lockResize"] svg { width: 26px; height: 26px; }
 .rib-tall-label { font-size: 10px; line-height: 1.1; white-space: nowrap; }
 /* v2.97: the OPTIONAL line between a section's two rows (click the split
    in the visual editor to toggle it). */

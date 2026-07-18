@@ -21,9 +21,8 @@
   min-width: 0;
   display: inline-flex;
   align-items: center;
-  /* v3.61: the "Pages" title was removed, so the create buttons keep to the
-     right edge on their own rather than being spaced against a title. */
-  justify-content: flex-end;
+  /* v3.77: the declutter (eye) toggle sits left, the create buttons right. */
+  justify-content: space-between;
   font-weight: 600;
   font-size: 11px;
   text-transform: uppercase;
@@ -31,7 +30,8 @@
   color: var(--fd-text-muted);
 }
 .fs-nb-side-btns { display: inline-flex; gap: 2px; }
-.fs-nb-side-btns button {
+.fs-nb-side-btns button,
+.fs-nb-declutter {
   background: none;
   border: none;
   color: var(--fd-text);
@@ -41,7 +41,9 @@
   border-radius: 4px;
   cursor: pointer;
 }
-.fs-nb-side-btns button:hover { background: var(--fd-menu-hover); }
+.fs-nb-side-btns button:hover,
+.fs-nb-declutter:hover { background: var(--fd-menu-hover); }
+.fs-nb-declutter.active { color: var(--fd-accent); }
 .fs-nb-tree {
   flex: 1;
   min-height: 0;
@@ -505,11 +507,28 @@
    section gets more breathing room on its left. */
 .rib-scrapbook-sec { justify-content: center; align-items: stretch; padding-left: 14px; }
 .rib-scrapbook-sec .rib-row { align-items: center; justify-content: center; gap: 6px; }
-.rib-scrapbook-tag { text-align: center; margin: 0 0 1px; }
-/* v3.74, Derek: the Scrapbook actions and the two-row Return to Editor button
-   sit side by side; the tall button fills the section's height. */
-.rib-scrapbook-body { display: flex; align-items: stretch; gap: 10px; flex: 1; min-height: 0; }
-.rib-scrapbook-return { align-self: stretch; }
+/* v3.77, Derek: the "Scrapbook:" label sits at the LEFT of the section. */
+.rib-scrapbook-tag { text-align: left; margin: 0 0 1px; }
+/* v3.74, Derek: the Scrapbook actions and the Return to Editor button sit side
+   by side. */
+.rib-scrapbook-body { display: flex; align-items: center; gap: 10px; flex: 1; min-height: 0; }
+/* v3.77, Derek: Return to Editor — blue like the old surface button, the arrow
+   icon beside two lines of text. */
+.rib-scrapbook-return {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: center;
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.rib-scrapbook-return:hover { filter: brightness(1.1); }
+.rib-scrapbook-return-icon { flex-shrink: 0; font-size: 15px; }
+.rib-scrapbook-return-label { font-size: 11px; font-weight: 600; line-height: 1.15; text-align: left; white-space: nowrap; }
 
 /* ════════════════════════════════════════════════════════════════════════
    v3.36, Derek: IN-PLACE toolbar editing. While Customize > Toolbar is open

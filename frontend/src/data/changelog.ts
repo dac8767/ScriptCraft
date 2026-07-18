@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.76';
+export const APP_VERSION = '3.77';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.77',
+    date: '2026-07-18',
+    items: [
+      { title: 'Toggling the sizing lock no longer nudges the layout', detail: 'The lock icon now sits in a fixed square, so switching between the open and closed padlocks keeps the button the same size instead of pushing the panels and editor up and down.', tags: ['Fix', 'UI'] },
+      { title: 'Scrapbook ribbon + window tidy-up', detail: 'The "Scrapbook:" label is left-aligned; Return to Editor is a single blue button (icon beside two lines of text) in the ribbon — the duplicate one on the canvas is gone; and in the Scrapbook window the declutter (eye) toggle sits left with the create buttons on the right.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '3.76',
     date: '2026-07-18',

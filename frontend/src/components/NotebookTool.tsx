@@ -730,12 +730,14 @@ export function NotebookHeaderExtra() {
   const setDeclutter = useSettingsStore((s) => s.setScrapbookExclusive);
   return (
     <span className="fs-nb-side-head">
+      {/* v3.77, Derek: the declutter (eye) toggle sits at the LEFT; the create
+          buttons keep to the RIGHT. */}
+      <button
+        className={`fs-nb-declutter${declutter ? ' active' : ''}`}
+        title={declutter ? 'Decluttered — click to show the other tools and the outline bar again' : 'Declutter — hide every other tool and the outline bar'}
+        onClick={() => setDeclutter(!declutter)}
+      >{declutter ? <FaRegEyeSlash /> : <FaRegEye />}</button>
       <span className="fs-nb-side-btns">
-        <button
-          className={declutter ? 'active' : ''}
-          title={declutter ? 'Decluttered — click to show the other tools and the outline bar again' : 'Declutter — hide every other tool and the outline bar'}
-          onClick={() => setDeclutter(!declutter)}
-        >{declutter ? <FaRegEyeSlash /> : <FaRegEye />}</button>
         <button title="New section" onClick={addSection}><FaFolderPlus /></button>
         <button title="New page" onClick={() => addPage()}><FaRegEdit /></button>
       </span>
@@ -893,11 +895,8 @@ export function NotebookSurface() {
         ) : (
           <span className="fs-nb-title fs-nb-title-empty">Scrapbook</span>
         )}
-        {/* v2.32, Derek: back in the surface's top-right corner, with its
-            background color (it left for the menu bar in v2.13). */}
-        <button className="fs-nb-return" onClick={() => closeNotebook()}>
-          Return to Editor
-        </button>
+        {/* v3.77, Derek: the surface's Return to Editor button is gone — the
+            ribbon's Scrapbook section carries the one Return to Editor now. */}
       </div>
       {page ? (
         <CanvasSurface key={page.id} boxes={page.boxes} onChangeBoxes={(boxes) => updatePage(page.id, { boxes })} />
