@@ -1223,6 +1223,9 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 /* v3.46, Derek: the BIG (single-row) Zoom control drops its magnifier glyph —
    the "98%" value and the "Zoom" label under it already name it. */
 .toolbar.toolbar-ribbon .rib-tall[data-key="zoom"] .zoom-tb-icon { display: none; }
+/* v3.51, Derek: the BIG Zoom button drops the ▾ caret next to the % too — the
+   Reset / Fit Page / Scale options all live in the View ▸ Zoom menu. */
+.toolbar.toolbar-ribbon .rib-tall[data-key="zoom"] .zoom-tb-caret { display: none; }
 /* v3.48, Derek: the % is edited inline in the bar. */
 .zoom-tb-mid { display: inline-flex; align-items: center; gap: 3px; }
 .zoom-tb-value { cursor: text; }
@@ -1247,6 +1250,13 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar.toolbar-ribbon .rib-tall[data-key="view"] { flex-direction: column-reverse; }
 .toolbar.toolbar-ribbon .rib-tall[data-key="view"] .view-style-label {
   margin: 0; font-size: 10px; line-height: 1.1;
+}
+/* v3.51, Derek: the big Editor View dropdown is 50% taller (it has the room —
+   the button spans both ribbon rows). flex:none so the column doesn't shrink
+   it back toward the select's content min-height. */
+.toolbar.toolbar-ribbon .rib-tall[data-key="view"] .view-style-selector {
+  height: calc(var(--rib-itemh) * 1.5);
+  flex: none;
 }
 .toolbar.toolbar-ribbon .rib-section-sep {
   height: auto;
@@ -1507,6 +1517,25 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 /* Spacer (v0.69) — a blank gap that pushes neighbouring items apart. In the
    toolbar it takes horizontal space; in a side panel, vertical. */
 .toolbar-spacer { width: 50px; flex: none; }
+/* v3.51, Derek: on the live bar a spacer is invisible (that's the point), so
+   it's impossible to find when editing. While the toolbar is being edited,
+   outline it faintly and label it "spacer" so you can spot and grab it. */
+.toolbar-editing .toolbar-spacer {
+  position: relative;
+  outline: 1px dashed color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border));
+  outline-offset: -1px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--fd-accent) 7%, transparent);
+}
+.toolbar-editing .toolbar-spacer::after {
+  content: 'spacer';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; letter-spacing: 0.02em;
+  color: var(--fd-text-muted);
+  overflow: hidden; white-space: nowrap;
+  pointer-events: none;
+}
 .tool-dock-spacer { height: 50px; flex: none; }
 .fs-spacer-row-label { color: var(--fd-text-muted); font-size: 12px; font-style: italic; }
 

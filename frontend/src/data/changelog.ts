@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.50';
+export const APP_VERSION = '3.51';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.51',
+    date: '2026-07-18',
+    items: [
+      { title: 'Spacers are visible while editing the toolbar', detail: 'A spacer is an invisible gap on the live bar, which made it a pain to find in the editor. While editing the toolbar, spacers now show a faint dashed outline and a “spacer” label so you can spot and grab them.', tags: ['UI'] },
+      { title: 'Taller Editor View dropdown', detail: 'The big Editor View dropdown is now 50% taller.', tags: ['UI'] },
+      { title: 'No caret on the big Zoom button', detail: 'The ▾ next to the zoom percentage is gone from the big Zoom button — Reset, Fit Page and Scale to Max Width all live in the View ▸ Zoom menu.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.50',
     date: '2026-07-18',
