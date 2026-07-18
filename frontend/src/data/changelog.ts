@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.64';
+export const APP_VERSION = '3.65';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.65',
+    date: '2026-07-18',
+    items: [
+      { title: 'Double-clicking a palette item adds it to the section you just made', detail: 'When editing the ribbon, double-clicking an item now drops it into the most recently created or edited section, instead of always the last (right-aligned) section.', tags: ['Fix', 'UI'] },
+      { title: 'Section titles: white, left-aligned, and the bar grows to fit them', detail: 'A section title is now white and left-aligned with more space below it, and adding one makes the whole ribbon taller (rather than overflowing) — the full-height section dividers stretch to match and sections stay vertically centered.', tags: ['UI'] },
+      { title: 'Spacers are visible while editing the ribbon', detail: 'A spacer now shows as a dimmed section-style bubble while the toolbar is being edited, so you can find and grab it; it stays completely invisible on the live bar.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.64',
     date: '2026-07-18',

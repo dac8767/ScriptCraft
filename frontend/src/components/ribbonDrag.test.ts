@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { closeSectionInModel } from './ribbonDrag';
-import type { RibbonModel } from './toolbarBuiltins';
+import { closeSectionInModel, ribAddSectionAtBoundary, ribQuickAdd } from './ribbonDrag';
+import { parseRibbon, type RibbonModel } from './toolbarBuiltins';
+import { useEditorStore } from '../stores/editorStore';
 
 // Build a model whose sections each carry one identifiable token, so we can
 // read back which section ended up where after a close.
@@ -55,5 +56,21 @@ describe('closeSectionInModel — a section is removed cleanly, split & far side
     const m = closeSectionInModel(model(['A'], null), 0);
     expect(m.sections).toHaveLength(1);
     expect(tokensOf(m, 0)).toEqual([]);
+  });
+});
+
+describe('ribQuickAdd lands double-clicked items in the section just created/updated', () => {
+  it('adds to a freshly created LEFT section, not the right-aligned last one', () => {
+    // [bold] [italic | underline] — underline is the right-aligned last section.
+    useEditorStore.setState({
+      toolbarLeft: ['b:bold', '2!d:sec-1', 'b:italic', 'a:split-2', 'b:underline'],
+      toolbarRight: [],
+    });
+    ribAddSectionAtBoundary('single', 1, false); // new empty left section at index 1
+    ribQuickAdd('b:strike');                     // double-click a palette item
+    const m = parseRibbon(useEditorStore.getState().toolbarLeft);
+    expect(m.sections[1].top).toContain('b:strike');      // landed in the new section
+    const right = m.splitAt !== null ? m.sections.slice(m.splitAt) : [];
+    expect(right.flatMap((s) => [...s.top, ...s.bottom])).not.toContain('b:strike');
   });
 });

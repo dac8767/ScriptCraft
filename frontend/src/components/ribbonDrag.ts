@@ -22,6 +22,12 @@ type Row = 'top' | 'bottom';
 
 const EMPTY_SECTION: RibbonSection = { top: [], bottom: [], hasBreak: false, breakLine: false };
 
+// The section a double-click quick-add lands in: the one most recently created
+// or added to (where the user is actively building), rather than always the
+// last section — which, past the align split, is right-aligned. Updated by the
+// section-create, item-drop and title-edit mutations; clamped on read.
+let lastTouchedSection: number | null = null;
+
 const clone = (m: RibbonModel): RibbonModel => ({
   sections: m.sections.map((s) => ({ top: [...s.top], bottom: [...s.bottom], hasBreak: s.hasBreak, breakLine: s.breakLine, title: s.title })),
   splitAt: m.splitAt,
@@ -62,6 +68,7 @@ export const ribApplyDrop = (payload: string, at: RibDropSpot | null) => {
   } else if (payload.startsWith('new:')) {
     rowArr.splice(idx, 0, payload.slice(4));
   }
+  lastTouchedSection = at.sec;   // the section just edited is the quick-add target
   commit(m);
 };
 
@@ -69,6 +76,7 @@ export const ribInsertSection = (type: 'single' | 'double', at: number) => {
   const m = clone(getModel());
   m.sections.splice(at, 0, { top: [], bottom: [], hasBreak: type === 'double', breakLine: false });
   if (m.splitAt !== null && at <= m.splitAt) m.splitAt += 1;
+  lastTouchedSection = at;   // a just-made section becomes the quick-add target
   commit(m);
 };
 
@@ -85,6 +93,7 @@ export const ribAddSectionAtBoundary = (type: 'single' | 'double', at: number, r
   const m = clone(getModel());
   m.sections.splice(at, 0, { top: [], bottom: [], hasBreak: type === 'double', breakLine: false });
   if (m.splitAt !== null && (rightSide ? at < m.splitAt : at <= m.splitAt)) m.splitAt += 1;
+  lastTouchedSection = at;   // a just-made section becomes the quick-add target
   commit(m);
 };
 
@@ -185,6 +194,7 @@ export const ribSetSectionTitle = (i: number, text: string) => {
   const s = m.sections[i];
   if (!s) return;
   m.sections[i] = { ...s, title: text };
+  lastTouchedSection = i;   // titling a section counts as "working in" it
   commit(m);
 };
 
@@ -211,11 +221,16 @@ export const ribToggleBreakLine = (i: number) => {
 export const ribQuickAdd = (tok: string) => {
   const m = clone(getModel());
   if (m.sections.length === 0) m.sections.push({ ...EMPTY_SECTION });
-  const sec = m.sections.length - 1;
+  // Land in the most recently created/updated section, not always the last one
+  // (which is right-aligned past the split). Fall back to the last section if
+  // nothing has been touched yet, and clamp a stale index back into range.
+  let sec = lastTouchedSection ?? m.sections.length - 1;
+  if (sec < 0 || sec >= m.sections.length) sec = m.sections.length - 1;
   const target = m.sections[sec];
   const row = target.hasBreak ? target.bottom : target.top;
   const rightAligned = m.splitAt !== null && sec >= m.splitAt;
   if (rightAligned) row.unshift(tok); else row.push(tok);
+  lastTouchedSection = sec;   // keep building in the same section on repeat adds
   commit(m);
 };
 

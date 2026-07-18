@@ -726,10 +726,12 @@
    live bar it's small centred text; while editing it's an inline input with an
    × to remove. */
 .rib-sec-title {
-  text-align: center;
+  text-align: left;
   font-size: 9.5px; line-height: 1.1; font-weight: 600;
-  color: var(--fd-text-muted);
-  padding: 0 2px 1px;
+  color: var(--fd-text);
+  /* v3.65, Derek: white, left-aligned, with more breathing room BELOW the title
+     before the section's item rows. */
+  padding: 0 2px 5px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
 .rib-edit-sectitle-wrap { position: relative; display: flex; align-items: center; justify-content: center; gap: 3px; }

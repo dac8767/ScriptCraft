@@ -460,7 +460,11 @@
   display: flex;
   align-items: stretch;
   gap: calc(var(--rib-gap, 2px) + 6px);
-  height: calc(var(--rib-rowh, 28px) * 2 + 10px);
+  /* v3.65, Derek: min-height (not a fixed height) so a section title makes the
+     WHOLE bar taller instead of overflowing. Sections stay vertically centered
+     (justify-content: center) and the full-height section dividers stretch to
+     the new height automatically (align-self: stretch). */
+  min-height: calc(var(--rib-rowh, 28px) * 2 + 10px);
   padding-top: 3px;
   /* v3.44, Derek: a hair of breathing room under the buttons. */
   padding-bottom: 2px;
@@ -886,15 +890,17 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 /* Spacer (v0.69) — a blank gap that pushes neighbouring items apart. In the
    toolbar it takes horizontal space; in a side panel, vertical. */
 .toolbar-spacer { width: 50px; flex: none; }
-/* v3.51, Derek: on the live bar a spacer is invisible (that's the point), so
-   it's impossible to find when editing. While the toolbar is being edited,
-   outline it faintly and label it "spacer" so you can spot and grab it. */
+/* v3.51/v3.65, Derek: on the live bar a spacer is invisible (that's the point).
+   While the toolbar is being edited it reads as a block/bubble like a section —
+   same dashed border and fill — but dimmed, so it's easy to spot and grab.
+   Out of edit mode none of this applies, so it goes completely invisible. */
 .toolbar-editing .toolbar-spacer {
   position: relative;
-  outline: 1px dashed color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border));
-  outline-offset: -1px;
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--fd-accent) 7%, transparent);
+  box-sizing: border-box;
+  border: 1px dashed color-mix(in srgb, var(--fd-border) 70%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--fd-navigator-bg) 22%, transparent);
+  opacity: 0.55;
 }
 .toolbar-editing .toolbar-spacer::after {
   content: 'spacer';
