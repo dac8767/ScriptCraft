@@ -7,6 +7,7 @@ import { computeOverviewStats } from '../utils/scriptStatistics';
 import { useGoalProgress } from './GoalsTool';
 import { computeScriptStructure } from '../utils/scriptStructure';
 import AuthIndicator from './AuthIndicator';
+import { useNotebookStore } from '../stores/notebookStore';
 
 const SAVE_STATUS_DISPLAY: Record<string, { label: string; className: string }> = {
   idle: { label: '', className: '' },
@@ -42,6 +43,10 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
   const getActiveTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate);
 
   const saveDisplay = SAVE_STATUS_DISPLAY[saveStatus] || SAVE_STATUS_DISPLAY.idle;
+  // With the Scrapbook open, the editor surface is the notebook — not the
+  // script — so the script-specific readouts (current element, page count,
+  // acts, runtime, revision, goal) don't apply. File + account info stays.
+  const scrapbookActive = useNotebookStore((s) => s.notebookOpen);
 
   const elementLabel = useMemo(() => {
     const builtIn = (ELEMENT_LABELS as Record<string, string>)[activeElement as BuiltInElementType];
@@ -121,11 +126,14 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
         ))}
       </div>
       <div className="status-center">
+        {!scrapbookActive && (
         <span className="status-item status-element">
           {elementLabel}
         </span>
+        )}
       </div>
       <div className="status-right">
+        {!scrapbookActive && <>
         {goal && goalProgress && (
           <button
             className={`status-item status-goal${goalProgress.done ? ' done' : ''}`}
@@ -159,6 +167,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
         <span className="status-item status-page">
           Page {currentPage} of {pageCount}
         </span>
+        </>}
         {/* v2.32, Derek: the Local only / account chip lives down here now,
             not in the menu bar. */}
         <AuthIndicator />

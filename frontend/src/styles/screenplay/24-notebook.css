@@ -21,7 +21,9 @@
   min-width: 0;
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
+  /* v3.61: the "Pages" title was removed, so the create buttons keep to the
+     right edge on their own rather than being spaced against a title. */
+  justify-content: flex-end;
   font-weight: 600;
   font-size: 11px;
   text-transform: uppercase;

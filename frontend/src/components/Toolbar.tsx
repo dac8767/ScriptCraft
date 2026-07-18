@@ -22,7 +22,7 @@ import {
   FaEllipsisV,
   FaHashtag,
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
-  FaFolderPlus, FaRegEdit, FaExchangeAlt,
+  FaImage, FaExchangeAlt,
 } from 'react-icons/fa';
 import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
@@ -1733,16 +1733,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               {/* v3.34, Derek: the section carries the Scrapbook's own
                   actions, not just Insert Table — same handlers as the
                   panel's header buttons. */}
+              {/* v3.61, Derek: the Scrapbook ribbon section carries Insert
+                  Picture (same handler as the panel's "Insert Picture…" menu —
+                  clicks the notebook's hidden file input) + Insert Table. */}
               <button
                 className="toolbar-btn"
-                title="New Section (Scrapbook)"
-                onClick={() => useNotebookStore.getState().addSection()}
-              ><FaFolderPlus /></button>
-              <button
-                className="toolbar-btn"
-                title="New Page (Scrapbook)"
-                onClick={() => useNotebookStore.getState().addPage()}
-              ><FaRegEdit /></button>
+                title="Insert Picture (Scrapbook)"
+                onClick={() => (document.getElementById('fs-nb-filepick') as HTMLInputElement | null)?.click()}
+              ><FaImage /></button>
               {renderBuiltinToken('b:insertTable', false)}
             </div>
           </div>

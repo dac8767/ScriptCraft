@@ -730,7 +730,6 @@ export function NotebookHeaderExtra() {
   const setDeclutter = useSettingsStore((s) => s.setScrapbookExclusive);
   return (
     <span className="fs-nb-side-head">
-      <span>Pages</span>
       <span className="fs-nb-side-btns">
         <button
           className={declutter ? 'active' : ''}

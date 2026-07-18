@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.60';
+export const APP_VERSION = '3.61';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.61',
+    date: '2026-07-18',
+    items: [
+      { title: 'Scrapbook ribbon section: Insert Picture replaces New Page / New Section', detail: 'The Scrapbook section on the toolbar dropped its New Section and New Page buttons (both still live in the Scrapbook panel header) and gained an Insert Picture button beside Insert Table.', tags: ['UI', 'Tools'] },
+      { title: 'Removed the "Pages" title above the Scrapbook list', detail: 'The Scrapbook panel header no longer prints "Pages" above the sections and pages; the create buttons keep to the right.', tags: ['UI', 'Tools'] },
+      { title: 'Status bar hides script info while the Scrapbook is open', detail: 'With the Scrapbook active, the bottom bar no longer shows the current element, page count, act, runtime, revision or goal — those describe the script, not the notebook. The file name, save status and account chip stay.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '3.60',
     date: '2026-07-18',
