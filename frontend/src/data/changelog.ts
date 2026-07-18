@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.74';
+export const APP_VERSION = '3.75';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.75',
+    date: '2026-07-18',
+    items: [
+      { title: 'Moving a ribbon section across the split no longer drags another section over', detail: 'When you move a section from the left-aligned run to the right (or vice versa), only that section changes sides now — the section that used to get pushed across to fill its place stays put.', tags: ['Fix', 'UI'] },
+      { title: 'Big ribbon buttons share one icon height', detail: 'Two-row / big buttons pin their icon to a fixed height, so every icon+label button measures the same top-to-bottom instead of varying with the icon.', tags: ['UI'] },
+      { title: '"Lock Sizing" renamed to "Lock All"', detail: 'The toolbar button that freezes every chrome resize is now labelled Lock All.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.74',
     date: '2026-07-18',

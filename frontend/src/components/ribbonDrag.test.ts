@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { closeSectionInModel, ribAddSectionAtBoundary, ribQuickAdd, ribSetSpacerWidth, SPACER_MAX_PX, ribUndo, ribResetHistory } from './ribbonDrag';
+import { closeSectionInModel, moveSectionInModel, ribAddSectionAtBoundary, ribQuickAdd, ribSetSpacerWidth, SPACER_MAX_PX, ribUndo, ribResetHistory } from './ribbonDrag';
 import { parseRibbon, type RibbonModel } from './toolbarBuiltins';
 import { useEditorStore } from '../stores/editorStore';
 
@@ -84,6 +84,25 @@ describe('ribSetSpacerWidth rewrites a spacer token width in place', () => {
     expect(useEditorStore.getState().toolbarLeft).toContain(`s:99:${SPACER_MAX_PX}`);
     // the neighbours are untouched
     expect(useEditorStore.getState().toolbarLeft.filter((t) => t.startsWith('b:'))).toEqual(['b:bold', 'b:italic']);
+  });
+});
+
+describe('moveSectionInModel — only the moved section changes side of the split', () => {
+  it('moving a LEFT section to the right does not push a right section left', () => {
+    // [A B | C D] — move A to the far right; C and D must stay right.
+    const m = moveSectionInModel(model(['A', 'B', 'C', 'D'], 2), 0, 4);
+    expect(m.sections.map((s) => s.top)).toEqual([['b:B'], ['b:C'], ['b:D'], ['b:A']]);
+    expect(m.splitAt).toBe(1);                 // left: B ; right: C, D, A
+  });
+  it('moving a section within the left run keeps it left', () => {
+    const m = moveSectionInModel(model(['A', 'B', 'C', 'D'], 2), 0, 2); // A after B
+    expect(m.splitAt).toBe(2);
+    expect(m.sections.slice(0, 2).map((s) => s.top)).toEqual([['b:B'], ['b:A']]);
+  });
+  it('moving a RIGHT section to the left keeps the other right sections right', () => {
+    const m = moveSectionInModel(model(['A', 'B', 'C', 'D'], 2), 3, 0); // D to front
+    expect(m.sections.map((s) => s.top)).toEqual([['b:D'], ['b:A'], ['b:B'], ['b:C']]);
+    expect(m.splitAt).toBe(3);                 // left: D, A, B ; right: C
   });
 });
 

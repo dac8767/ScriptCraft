@@ -75,7 +75,7 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
      already cover it. Outline Bar keeps its button (no chevron equivalent). */
   { key: 'toggleOutlineBar', label: 'Outline Bar' },
   // v2.55, Derek: freeze every chrome resize (panels, bars, grips).
-  { key: 'lockResize', label: 'Lock Sizing' },
+  { key: 'lockResize', label: 'Lock All' },
   // v2.67, Derek: reset every adjustable size/spacing (confirm first;
   // grayed while the sizing lock is on).
   // v3.19: a destructive one-shot with a home in the View menu (confirmed

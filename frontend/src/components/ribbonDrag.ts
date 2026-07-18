@@ -141,11 +141,26 @@ export const ribSetAlignSplit = (at: number) => {
 
 export const ribMoveSection = (from: number, to: number) => {
   if (to === from || to === from + 1) return;
-  const m = clone(getModel());
+  commit(moveSectionInModel(clone(getModel()), from, to));
+};
+
+/** Move a section, keeping the align split honest: only the MOVED section
+ *  changes sides (based on where it lands relative to the split); every other
+ *  section stays on its own side. The old move left splitAt fixed, so moving a
+ *  section across the split shoved a section on the far side over to fill the
+ *  index. Exported pure for testing. */
+export const moveSectionInModel = (m: RibbonModel, from: number, to: number): RibbonModel => {
+  const split = m.splitAt;
   const [s] = m.sections.splice(from, 1);
   const dest = to > from ? to - 1 : to;
   m.sections.splice(dest, 0, s);
-  commit(m);
+  if (split !== null) {
+    // Boundary after the removal (it shifts left if the moved section came from
+    // the left run), then +1 if the section is re-inserted on the left side.
+    const afterRemoval = from < split ? split - 1 : split;
+    m.splitAt = dest <= afterRemoval ? afterRemoval + 1 : afterRemoval;
+  }
+  return m;
 };
 
 /** Close (remove) section `i` cleanly: the section AND its own boundary divider

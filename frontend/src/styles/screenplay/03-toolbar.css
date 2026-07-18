@@ -522,7 +522,11 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   height: auto;
   padding: 3px 8px;
 }
-.rib-single .toolbar-btn svg { font-size: 29px; }  /* v3.16, Derek: 50% bigger — the single-row standard */
+/* v3.75, Derek: big-button icons are pinned to ONE height (not 1em font-size,
+   which let icons with taller/wider viewBoxes render at different heights). A
+   fixed svg height with auto width = every big icon the same height, so the
+   whole icon+label button measures the same top-to-bottom. */
+.rib-single .toolbar-btn svg { height: 26px; width: auto; }
 /* Tall pinned tools/commands: the same big-button format, self-contained. */
 .toolbar-btn.rib-tall-btn {
   height: 80%;
@@ -534,7 +538,8 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   justify-content: center;
   gap: 3px;
 }
-.rib-tall-icon { display: inline-flex; font-size: 29px; }  /* v3.16: matches .rib-single */
+.rib-tall-icon { display: inline-flex; align-items: center; justify-content: center; height: 26px; }
+.rib-tall-icon svg { height: 26px; width: auto; }   /* v3.75: same fixed height as .rib-single */
 .rib-tall-label { font-size: 10px; line-height: 1.1; white-space: nowrap; }
 /* v2.97: the OPTIONAL line between a section's two rows (click the split
    in the visual editor to toggle it). */
