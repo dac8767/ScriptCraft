@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.84';
+export const APP_VERSION = '3.85';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.85',
+    date: '2026-07-18',
+    items: [
+      { title: 'Table inserts/deletes fixed for the cell you\'re in', detail: 'The v3.84 fix missed the case that mattered: the menu bar never removes focus from the cell you clicked, so Insert Row Above copied the active cell upward and Delete Row/Column left the deleted value behind. Table cells now redraw correctly even while focused, so every row/column op acts cleanly on the active cell.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '3.84',
     date: '2026-07-18',

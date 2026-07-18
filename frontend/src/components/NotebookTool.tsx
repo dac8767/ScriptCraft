@@ -72,15 +72,17 @@ function Cell({ value, onCommit, onCellFocus, align }: {
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    // v3.84, Derek: KEEP the DOM text in sync with the value. Cells are keyed
-    // by array index, so an insert/delete/sort shifts the data under reused
-    // <div>s — the old "set once" guard left every cell showing its neighbour's
-    // stale text, which made the Table menu's row/column ops look like they
-    // acted on the wrong cell. Re-apply on any external change, but NEVER while
-    // this cell is the one being typed into (that was his first-character fix —
-    // stomping textContent mid-edit resets the caret).
+    // v3.85, Derek: RECONCILE the uncontrolled contentEditable with its data on
+    // every value change — including when this cell is focused. Cells are keyed
+    // by array index, so a row/column insert or delete reuses a DOM node for a
+    // DIFFERENT logical cell; and the menu bar never takes focus off the cell,
+    // so the reused node stays the activeElement. The v3.84 "skip if focused"
+    // guard therefore left the just-restructured focused cell showing its old
+    // neighbour's text (insert copied the active cell up; delete left the value
+    // behind). This can't eat a typed character: there is no onInput, so `value`
+    // only changes on blur-commit or a structural edit, never mid-keystroke.
     const el = ref.current;
-    if (!el || document.activeElement === el) return;
+    if (!el) return;
     const next = value || '';
     if (el.textContent !== next) el.textContent = next;
   }, [value]);
