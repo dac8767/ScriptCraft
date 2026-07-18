@@ -954,8 +954,9 @@ export function SceneHeaderExtra() {
   };
 
   return (
-    <span className="fs-nav-filterctl">
-      <span className="scene-count">{(hasActiveFilter || search) ? `${data.filtered}/` : ''}{data.total}</span>
+    <>
+      <span className="scene-count-label">Scenes: <span className="scene-count">{(hasActiveFilter || search) ? `${data.filtered}/` : ''}{data.total}</span></span>
+      <span className="fs-nav-filterctl">
       <button
         ref={btnRef}
         className={`fs-nav-filterbtn${hasActiveFilter ? ' active' : ''}`}
@@ -1028,7 +1029,8 @@ export function SceneHeaderExtra() {
         </div>,
         document.body,
       )}
-    </span>
+      </span>
+    </>
   );
 }
 

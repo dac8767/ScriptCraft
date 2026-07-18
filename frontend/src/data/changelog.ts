@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.55';
+export const APP_VERSION = '3.56';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.56',
+    date: '2026-07-18',
+    items: [
+      { title: 'Scenes tool header: count on the left, reading "Scenes: N"', detail: 'The scene count moved from the right side of the Scenes window header to the left edge and now reads "Scenes: N" (e.g. "Scenes: 8"). The filter funnel stays right-aligned where it was.', tags: ['UI', 'Tools'] },
+      { title: 'Scenes list sits flush under its header', detail: 'Removed the dead strip between the Scenes window header and the first scene — the list now starts right below the count/filter row.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '3.55',
     date: '2026-07-18',

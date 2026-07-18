@@ -52,6 +52,18 @@ describe('SceneHeaderExtra (window header)', () => {
     expect(document.querySelector('.scene-count')!.textContent).toBe('1/3');
   });
 
+  it('labels the count "Scenes:" and seats it left of the filter control', () => {
+    act(() => root.render(<SceneHeaderExtra />));
+    // The count wears a "Scenes:" label...
+    const label = document.querySelector('.scene-count-label') as HTMLElement;
+    expect(label).toBeTruthy();
+    expect(label.textContent).toBe('Scenes: 3');
+    // ...and it lives OUTSIDE .fs-nav-filterctl (which right-aligns the funnel),
+    // so it renders at the left edge rather than beside the filter button.
+    expect(label.closest('.fs-nav-filterctl')).toBeNull();
+    expect(document.querySelector('.fs-nav-filterctl .scene-count')).toBeNull();
+  });
+
   it('opens a filter popover whose choices write into the store', () => {
     act(() => root.render(<SceneHeaderExtra />));
     act(() => { (document.querySelector('.fs-nav-filterbtn') as HTMLButtonElement).click(); });
