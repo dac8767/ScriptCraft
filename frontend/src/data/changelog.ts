@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.97';
+export const APP_VERSION = '3.98';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.98',
+    date: '2026-07-19',
+    items: [
+      { title: 'Big ribbon icons sized to match', detail: 'Font Awesome glyphs fill their box by different amounts, so framed icons (camera, image, chart…) read smaller than full-bleed ones. Measured every ribbon icon\'s glyph and scaled the padded ones up so the big buttons look the same height.', tags: ['UI'] },
+      { title: 'Tighter ribbon spacing, roomier titles', detail: 'Reduced the gaps between buttons and sections, and added more space above the section titles at the top of the ribbon.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.97',
     date: '2026-07-19',
