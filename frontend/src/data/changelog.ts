@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.4';
+export const APP_VERSION = '4.5';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.5',
+    date: '2026-07-19',
+    items: [
+      { title: 'Ribbon button rows line up across sections', detail: 'A section with a title used to push its buttons lower than a title-less section beside it. Every two-row section now reserves the same title band — empty or not — so all the button rows sit on the same line.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '4.4',
     date: '2026-07-19',

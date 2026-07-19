@@ -761,12 +761,25 @@
 .rib-sec-title {
   /* v3.73, Derek: centred (was left). */
   text-align: center;
-  font-size: 9.5px; line-height: 1.1; font-weight: 600;
+  /* v4.5, Derek: FIXED height (was line-height:1.1, auto height). Every two-row
+     section renders this band — titled or not — so the band height must be
+     deterministic even when the element is empty, otherwise a title-less
+     section reserves 0px and its button row rides up above the titled ones.
+     Explicit height + matching line-height reserves the exact same band
+     whether or not there's text in it. */
+  font-size: 9.5px; line-height: 11px; font-weight: 600;
+  height: 11px;
   color: var(--fd-text);
   /* v4.1: trimmed bottom padding so the title needs less vertical room. */
   padding: 0 2px 3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
+/* v4.5, Derek: a section with no title still renders the band (kept invisible)
+   so its button row lines up with the titled sections'. */
+.rib-sec-title-empty { visibility: hidden; }
+/* v4.5: single-row big-button sections don't reserve the band when they have no
+   title — the tall buttons keep spanning the full ribbon height as before. */
+.rib-section.rib-single .rib-sec-title-empty { display: none; }
 /* v3.73, Derek: when a section HAS a title, nudge its first row of items down a
    few px to give the title more room above them. */
 .rib-sec-title + .rib-row { margin-top: 2px; }

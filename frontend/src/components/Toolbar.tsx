@@ -1655,7 +1655,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
      rows — first child of the section column, one- or two-row alike. */
   const liveSectionInner = (s: typeof sections[number]) => (
     <>
-      {s.title && <div className="rib-sec-title">{s.title}</div>}
+      <div className={`rib-sec-title${s.title ? '' : ' rib-sec-title-empty'}`}>{s.title || ''}</div>
       <div className="rib-row">{s.top.map((t) => renderToken(t, !s.hasBreak))}</div>
       {s.hasBreak && s.breakLine && <div className="rib-row-line" />}
       {s.hasBreak && <div className="rib-row">{s.bottom.map((t) => renderToken(t, false))}</div>}
