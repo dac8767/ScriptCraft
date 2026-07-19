@@ -1992,6 +1992,17 @@ const ScreenplayEditor: React.FC = () => {
   useEffect(() => {
     if (!editor) return;
     const onUpdate = () => {
+      // Autofill is an active-typing affordance — never show it unless the
+      // editor actually has focus. Without this it popped up at (0,0) on every
+      // launch: a selectionUpdate fires while the doc loads (often with the
+      // caret in a transition), and coordsAtPos returns the top-left corner
+      // because the editor isn't focused/laid out yet (e.g. the Scrapbook is
+      // covering the editor area).
+      if (!editor.isFocused) {
+        setCharAutoState(s => s.visible ? { ...s, visible: false } : s);
+        charAutoDismissedRef.current = false;
+        return;
+      }
       const mode: 'character' | 'scene' | 'transition' | null =
         editor.isActive('character') ? 'character'
           : editor.isActive('sceneHeading') ? 'scene'
@@ -2056,9 +2067,11 @@ const ScreenplayEditor: React.FC = () => {
         suggestions: matches,
       });
     };
+    const onBlur = () => setCharAutoState(s => (s.visible ? { ...s, visible: false } : s));
     editor.on('update', onUpdate);
     editor.on('selectionUpdate', onUpdate);
-    return () => { editor.off('update', onUpdate); editor.off('selectionUpdate', onUpdate); };
+    editor.on('blur', onBlur);
+    return () => { editor.off('update', onUpdate); editor.off('selectionUpdate', onUpdate); editor.off('blur', onBlur); };
   }, [editor, knownCharacters, stripCharacterExtension]);
 
   // Re-measure overlays after editor updates (decorations settle)

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.89';
+export const APP_VERSION = '3.90';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.90',
+    date: '2026-07-19',
+    items: [
+      { title: 'No stray transitions list on launch', detail: 'The autofill suggestions (transitions/characters/scene headings) no longer pop up in the top-left corner when the app opens — they only appear while you\'re actually typing in the editor.', tags: ['Fix', 'Editor'] },
+    ],
+  },
   {
     version: '3.89',
     date: '2026-07-19',
