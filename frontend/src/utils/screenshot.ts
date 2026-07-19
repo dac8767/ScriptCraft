@@ -1,53 +1,52 @@
 /**
- * Screenshot (v3.80, Derek; hardened v3.89) — capture what the writer is
- * looking at and download it as a PNG. Uses html2canvas (a dependency), lazily
+ * Screenshot (v3.80, Derek; reworked v3.94) — capture the app AS IT LOOKS ON
+ * SCREEN and download it as a PNG. Uses html2canvas (a dependency), lazily
  * imported so its weight only loads when the button is used.
  *
- * Target: the `.page` whose middle is nearest the viewport centre (what you're
- * reading). Falls back to the Scrapbook board, then the editor content, so the
- * button always captures *something*.
+ * v3.94: this now grabs the whole window (menus, toolbar, panels, and whatever
+ * you're looking at), cropped to the visible viewport — NOT the `.page`, which
+ * is the entire multi-page script and rendered top-to-bottom as one tall image.
  *
- * v3.89: the download anchor is now appended to the document before .click() —
+ * v3.89: the download anchor is appended to the document before .click() —
  * WebKit (and thus the Tauri app) will not start a download from a detached
- * anchor, which is why the button "did nothing." Errors now surface as a toast
+ * anchor, which is why the button "did nothing." Errors surface as a toast
  * instead of a silent unhandled rejection.
  */
 import { showToast } from '../components/Toast';
 
-function pickTarget(): HTMLElement | null {
-  const pages = Array.from(document.querySelectorAll<HTMLElement>('.page'));
-  if (pages.length) {
-    const cy = window.innerHeight / 2;
-    const dist = (el: HTMLElement) => {
-      const r = el.getBoundingClientRect();
-      return Math.abs((r.top + r.bottom) / 2 - cy);
-    };
-    return pages.reduce((best, p) => (dist(p) < dist(best) ? p : best), pages[0]);
-  }
-  // Scrapbook (the notebook surface takes over the editor area), then the
-  // ProseMirror doc, then the whole editor centre as a last resort.
-  return document.querySelector<HTMLElement>('.fs-nb-takeover')
-    || document.querySelector<HTMLElement>('.ProseMirror')
-    || document.querySelector<HTMLElement>('.editor-center');
-}
-
 export async function captureScreenshot(): Promise<void> {
-  const target = pickTarget();
-  if (!target) { showToast('Nothing on screen to capture.', 'error'); return; }
+  const root = document.body;
+  if (!root) { showToast('Nothing on screen to capture.', 'error'); return; }
   try {
     const { default: html2canvas } = await import('html2canvas');
-    const canvas = await html2canvas(target, {
-      backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false,
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const bg = getComputedStyle(root).backgroundColor || '#1e1e1e';
+    const canvas = await html2canvas(root, {
+      backgroundColor: bg,
+      scale: window.devicePixelRatio || 2,
+      useCORS: true,
+      logging: false,
+      // Crop to the visible viewport (top-left origin) so it's a picture of the
+      // current screen, not the full scrollable document.
+      x: window.scrollX,
+      y: window.scrollY,
+      width: w,
+      height: h,
+      windowWidth: w,
+      windowHeight: h,
+      scrollX: 0,
+      scrollY: 0,
     });
     const link = document.createElement('a');
     link.href = canvas.toDataURL('image/png');
-    const title = (document.title || 'script').replace(/[^\w-]+/g, '_').slice(0, 40) || 'script';
+    const title = (document.title || 'screen').replace(/[^\w-]+/g, '_').slice(0, 40) || 'screen';
     link.download = `${title}-screenshot.png`;
     // WebKit needs the anchor in the document for a programmatic download.
     document.body.appendChild(link);
     link.click();
     link.remove();
-    showToast('Screenshot saved.', 'success');
+    showToast('Screenshot saved to Downloads.', 'success');
   } catch (e) {
     console.error('screenshot failed', e);
     showToast('Could not capture a screenshot of this view.', 'error');

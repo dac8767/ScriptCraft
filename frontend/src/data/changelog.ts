@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.93';
+export const APP_VERSION = '3.94';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.94',
+    date: '2026-07-19',
+    items: [
+      { title: 'Screenshot captures the screen, not the whole script', detail: 'The Screenshot button now grabs the current window as you see it — toolbar, panels, menus and all — cropped to the visible area, instead of rendering the entire multi-page script into one tall image.', tags: ['Fix'] },
+    ],
+  },
   {
     version: '3.93',
     date: '2026-07-19',
