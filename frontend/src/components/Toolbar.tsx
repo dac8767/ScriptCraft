@@ -162,6 +162,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // button's mousedown and restored before the execCommand runs.
   const [sbBgOpen, setSbBgOpen] = useState(false);
   const sbBgRange = useRef<Range | null>(null);
+  // v3.87: the font shown in the Scrapbook's Font picker. It tracked the SCRIPT
+  // editor's cursor font (always Courier Prime while a box is open); now it
+  // follows the selection inside the box and the last font you pick.
+  const [sbFont, setSbFont] = useState<string>('');
   // v2.94: the insert-table grid on the toolbar's second row — the one menu
   // item that can't move into the native macOS menu bar. Portalled to
   // document.body (the toolbar's own stacking context sits UNDER the tool
@@ -810,11 +814,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       return (
         <div className="toolbar-group">
           <FontPicker
-            value={cursorFont}
+            // v3.87: show the Scrapbook's font (what you last applied), not the
+            // script editor's cursor font, which stayed at Courier Prime.
+            value={sbFont || cursorFont}
             extraFonts={extraFonts}
             onChange={(val) => {
               const entry = FONT_REGISTRY.find((f) => f.name === val);
               if (entry) loadFont(entry);
+              setSbFont(val);
               applyScrapbookTextFormat('fontName', val);
               if (inOverflow) setOverflowOpen(false);
             }}
@@ -1852,21 +1859,19 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <>
           {leftLive.length > 0 && <div className="toolbar-separator rib-section-sep" />}
           <div className="rib-section rib-scrapbook-sec">
-            {/* v3.83, Derek: a standard ribbon section title (white, centred —
-                same as every other section), and the Return to Editor button is
-                the ONLY control here. Insert Picture / Insert Table live in the
-                menu bar's contextual Picture / Table menus. */}
-            <div className="rib-sec-title">Scrapbook</div>
+            {/* v3.87, Derek: no section title — the Return to Editor button is
+                the only control. Insert Picture / Insert Table live in the menu
+                bar's contextual Picture / Table menus. */}
             <div className="rib-scrapbook-body">
-              {/* v3.77, Derek: Return to Editor — blue like the old surface
-                  button, icon beside two-line text. */}
+              {/* v3.77/v3.87, Derek: Return to Editor — blue like the old surface
+                  button, icon beside two lines of text ("Return" / "to Editor"). */}
               <button
                 className="rib-scrapbook-return"
                 title="Return to Editor"
                 onClick={() => closeNotebook()}
               >
                 <LuUndo2 className="rib-scrapbook-return-icon" />
-                <span className="rib-scrapbook-return-label">Return to Editor</span>
+                <span className="rib-scrapbook-return-label">Return<br />to Editor</span>
               </button>
             </div>
           </div>

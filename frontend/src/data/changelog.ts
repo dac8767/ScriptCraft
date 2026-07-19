@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.86';
+export const APP_VERSION = '3.87';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.87',
+    date: '2026-07-19',
+    items: [
+      { title: 'Scrapbook font picker shows the chosen font', detail: 'While a Scrapbook box is open the Font picker showed Courier Prime no matter what you picked (it was reading the script editor). It now shows the font you applied.', tags: ['Fix', 'Tools'] },
+      { title: 'Scrapbook ribbon: two-line Return button, no title', detail: 'Removed the "Scrapbook" ribbon title; the Return to Editor button is back to two lines ("Return" / "to Editor").', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.86',
     date: '2026-07-19',
