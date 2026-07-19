@@ -763,12 +763,13 @@
   text-align: center;
   font-size: 9.5px; line-height: 1.1; font-weight: 600;
   color: var(--fd-text);
-  padding: 0 2px 5px;
+  /* v4.1: trimmed bottom padding so the title needs less vertical room. */
+  padding: 0 2px 3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
 /* v3.73, Derek: when a section HAS a title, nudge its first row of items down a
    few px to give the title more room above them. */
-.rib-sec-title + .rib-row { margin-top: 4px; }
+.rib-sec-title + .rib-row { margin-top: 2px; }
 .rib-edit-sectitle-wrap { position: relative; display: flex; align-items: center; justify-content: center; gap: 3px; }
 .rib-edit-sectitle {
   flex: 1 1 auto; min-width: 40px;

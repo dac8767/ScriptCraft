@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.0';
+export const APP_VERSION = '4.1';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.1',
+    date: '2026-07-19',
+    items: [
+      { title: 'Screenshots work again', detail: 'Capturing the whole window had stopped working; it now captures reliably (and crops to the selected area afterwards).', tags: ['Fix'] },
+      { title: 'Ribbon titles no longer cut off', detail: 'Section titles at the top of the ribbon had their tops clipped; the ribbon now leaves room for them.', tags: ['Fix', 'UI'] },
+      { title: 'Ribbon size drag-bar is back', detail: 'The bar under the ribbon for dragging its height was invisible; it shows again (and still never shifts the layout when you lock/unlock).', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '4.0',
     date: '2026-07-19',

@@ -122,22 +122,25 @@ async function saveCanvas(canvas: HTMLCanvasElement): Promise<void> {
 async function render(crop?: Rect): Promise<void> {
   const { default: html2canvas } = await import('html2canvas');
   const bg = getComputedStyle(document.body).backgroundColor || '#1e1e1e';
-  const region: Rect = crop ?? { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
-  const canvas = await html2canvas(document.body, {
+  const dpr = window.devicePixelRatio || 2;
+  // v4.1: capture the whole window with MINIMAL options (the crop/window options
+  // added in v3.94 made html2canvas throw on the full app — the button stopped
+  // working). Crop AFTER capture instead. The app is a fixed-viewport window, so
+  // document.body ≈ the visible screen.
+  const full = await html2canvas(document.body, {
     backgroundColor: bg,
-    scale: window.devicePixelRatio || 2,
+    scale: dpr,
     useCORS: true,
     logging: false,
-    x: region.x + window.scrollX,
-    y: region.y + window.scrollY,
-    width: region.width,
-    height: region.height,
-    windowWidth: window.innerWidth,
-    windowHeight: window.innerHeight,
-    scrollX: 0,
-    scrollY: 0,
   });
-  await saveCanvas(canvas);
+  const region: Rect = crop ?? { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
+  const out = document.createElement('canvas');
+  out.width = Math.max(1, Math.round(region.width * dpr));
+  out.height = Math.max(1, Math.round(region.height * dpr));
+  const ctx = out.getContext('2d');
+  if (!ctx) { await saveCanvas(full); return; }
+  ctx.drawImage(full, Math.round(region.x * dpr), Math.round(region.y * dpr), out.width, out.height, 0, 0, out.width, out.height);
+  await saveCanvas(out);
 }
 
 export async function captureScreenshot(mode: 'full' | 'area' | 'choose' = 'choose'): Promise<void> {

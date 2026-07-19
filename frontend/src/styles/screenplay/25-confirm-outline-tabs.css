@@ -127,11 +127,16 @@
   right: 0;
   top: -3px;
   height: 6px;
+  /* v4.1, Derek: a faint always-visible bar (was invisible in v3.86) so the
+     ribbon-size drag handle can be seen and grabbed — still zero flow height,
+     so toggling the lock never shifts the layout. */
+  background: var(--fd-border);
+  opacity: 0.5;
 }
 .fs-top-chrome-resize:hover::before,
 .fs-top-chrome-resize:active::before {
   background: var(--fd-accent);
-  opacity: 0.5;
+  opacity: 0.7;
 }
 /* v2.29, Derek: a breath of space between the toolbar and the outline bar.
    v2.38: halved. */

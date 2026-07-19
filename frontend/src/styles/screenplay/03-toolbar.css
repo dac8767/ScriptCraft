@@ -468,9 +468,11 @@
      WHOLE bar taller instead of overflowing. Sections stay vertically centered
      (justify-content: center) and the full-height section dividers stretch to
      the new height automatically (align-self: stretch). */
-  min-height: calc(var(--rib-rowh, 28px) * 2 + 10px);
-  /* v3.98, Derek: more breathing room above the section titles at the top. */
-  padding-top: 7px;
+  /* v4.1, Derek: extra room in the floor so a section TITLE (a fixed ~15px, not
+     scaled with the rows) fits above the two rows instead of clipping at the top. */
+  min-height: calc(var(--rib-rowh, 28px) * 2 + 22px);
+  /* v3.98/v4.1, Derek: breathing room above the section titles at the top. */
+  padding-top: 5px;
   /* v3.44, Derek: a hair of breathing room under the buttons. */
   padding-bottom: 2px;
   /* v3.10, Derek: the right-aligned tail (Customize) sat flush against the
