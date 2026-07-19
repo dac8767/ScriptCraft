@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.92';
+export const APP_VERSION = '3.93';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.93',
+    date: '2026-07-19',
+    items: [
+      { title: 'Delete key removes Scrapbook items reliably', detail: 'Selecting an image or table and pressing Delete now removes it even if a text box elsewhere still held the caret (that stale focus was wrongly blocking deletion). Grabbing a box\'s move bar selects it so Delete removes the whole box; typing in text or a cell still edits.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '3.92',
     date: '2026-07-19',

@@ -369,6 +369,7 @@ function TextBox({ box, focused, onChange, onFocusBox, onDelete, zoom = 1 }: {
   return (
     <div
       className={`fs-nb-box${focused ? ' focused' : ''}${isEmpty && !focused ? ' empty' : ''}`}
+      data-nb-box-id={box.id}
       style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
       onMouseDown={(e) => e.stopPropagation()}
       onMouseEnter={() => setHover(true)}
@@ -377,7 +378,9 @@ function TextBox({ box, focused, onChange, onFocusBox, onDelete, zoom = 1 }: {
       {/* v2.12: the head FLOATS above the box — appearing on hover must
           never push the text down. */}
       {showHead && (
-        <div className="fs-nb-box-head fs-nb-box-head-float" onMouseDown={(e) => startDrag(e, 'move')}>
+        // v3.93: grabbing the bar SELECTS the box (drops the text caret) so
+        // Delete removes the whole box instead of editing its text.
+        <div className="fs-nb-box-head fs-nb-box-head-float" onMouseDown={(e) => { (document.activeElement as HTMLElement | null)?.blur?.(); onFocusBox(box.id); startDrag(e, 'move'); }}>
           <span>⋮⋮</span>
           <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}>✕</button>
         </div>
@@ -423,6 +426,7 @@ function ImageBox({ box, focused, onChange, onFocusBox, onDelete, zoom = 1 }: {
   return (
     <div
       className="fs-nb-imgbox"
+      data-nb-box-id={box.id}
       style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
       onMouseDown={(e) => { e.stopPropagation(); onFocusBox(box.id); }}
       onMouseEnter={() => setHover(true)}
@@ -476,7 +480,7 @@ function TableBox({ box, focused, onChange, onFocusBox, onDelete, onContext, zoo
   // open just because the cells are empty.)
   const showHead = focused || hover;
   return (
-    <div className={`fs-nb-tablebox${focused ? ' focused' : ''}`} style={{ left: box.x, top: box.y }}
+    <div className={`fs-nb-tablebox${focused ? ' focused' : ''}`} data-nb-box-id={box.id} style={{ left: box.x, top: box.y }}
       onMouseDown={(e) => { e.stopPropagation(); onFocusBox(box.id); }}
       // v3.86: right-click anywhere on the table → the Table context menu. The
       // cell under the cursor sets itself active first (its own onContextMenu).
@@ -584,18 +588,22 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
     return () => window.removeEventListener('nb-add-table-canvas', tblH);
   }, [boxes, onChangeBoxes]);
 
-  // v3.89, Derek: Delete / Backspace removes the selected box — but NOT while
-  // the caret is in editable text (a text box body or a table cell), where
-  // those keys edit the content. So: click an image / a table's move bar / a
-  // text box's move bar to select it, then Delete.
+  // v3.89/v3.93, Derek: Delete / Backspace removes the selected box — but NOT
+  // while the caret is editing THAT box's own content (its text body or one of
+  // its table cells), where those keys edit text. Earlier this checked whether
+  // ANY element was editable, so a stale text-box focus (kept alive by the
+  // drag's preventDefault) blocked deleting a just-clicked image or table.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-      const el = document.activeElement as HTMLElement | null;
-      const ce = el?.getAttribute?.('contenteditable');
-      if (el && (el.isContentEditable || ce === '' || ce === 'true' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) return;
       const id = useNotebookStore.getState().focusedBoxId;
       if (!id) return;
+      const el = document.activeElement as HTMLElement | null;
+      const boxEl = document.querySelector<HTMLElement>(`[data-nb-box-id="${id}"]`);
+      const ce = el?.getAttribute?.('contenteditable');
+      const editingThisBox = !!el && !!boxEl && boxEl.contains(el)
+        && (el.isContentEditable || ce === '' || ce === 'true' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
+      if (editingThisBox) return;
       e.preventDefault();
       onChangeBoxes(boxes.filter((b) => b.id !== id));
       useNotebookStore.getState().setFocusedBox(null);

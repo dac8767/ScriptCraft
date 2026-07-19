@@ -50,6 +50,23 @@ describe('scrapbook delete key', () => {
     expect(boxIds()).not.toContain(img.id);
   });
 
+  it('deletes a selected image even while another text box still holds focus', () => {
+    // Reproduces the bug: clicking a box preventDefaults, so a previously
+    // focused text body stays activeElement — deletion was wrongly blocked.
+    const text: NbBox = { id: nbUid(), type: 'text', x: 20, y: 20, w: 200, h: 100, html: 'hi' };
+    const img: NbBox = { id: nbUid(), type: 'image', x: 260, y: 20, w: 120, h: 90, src: 'data:,' };
+    setBoxes([text, img]);
+    act(() => root.render(<NotebookSurface />));
+    const body = host.querySelector('.fs-nb-box-body') as HTMLElement;
+    act(() => { body.focus(); });                       // caret parked in the text box
+    act(() => { useNotebookStore.getState().setFocusedBox(img.id); }); // but the IMAGE is selected
+    expect(document.activeElement).toBe(body);           // focus still on the text body
+
+    pressDelete();
+    expect(boxIds()).not.toContain(img.id);              // the image is removed
+    expect(boxIds()).toContain(text.id);                 // the text box stays
+  });
+
   it('does NOT delete while typing in a text box', () => {
     const text: NbBox = { id: nbUid(), type: 'text', x: 20, y: 20, w: 200, h: 100, html: 'hi' };
     setBoxes([text]);
