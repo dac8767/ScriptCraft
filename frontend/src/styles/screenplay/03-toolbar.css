@@ -27,7 +27,7 @@
   background: var(--fd-text-muted);
   opacity: 0.55;               /* v0.97: was 1px @ .5 on --fd-border — invisible */
   border-radius: 1px;
-  margin: 0 var(--dz-toolbar-sep-margin, 6px);
+  margin: 0 6px;
 }
 .toolbar.toolbar-comfortable .toolbar-btn { width: 28px; height: 26px; font-size: 13px; }
 .toolbar.toolbar-comfortable .toolbar-separator { height: 20px; margin: 0 6px; }
@@ -639,9 +639,9 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row { gap: 1px; }
 .toolbar.toolbar-ribbon .rib-section:not(.rib-single) .toolbar-priority-block { gap: 0; }
 .toolbar.toolbar-ribbon:not(.toolbar-comfortable):not(.toolbar-custom)
-  .rib-section:not(.rib-single) .toolbar-btn:not(.toolbar-btn-labeled):not(.zoom-tb-step) { width: 20px; }
+  .rib-section:not(.rib-single) .toolbar-btn:not(.toolbar-btn-labeled):not(.zoom-tb-step) { width: var(--dz-toolbar-btn-w, 20px); }
 .toolbar.toolbar-ribbon.toolbar-comfortable
-  .rib-section:not(.rib-single) .toolbar-btn:not(.toolbar-btn-labeled):not(.zoom-tb-step) { width: 22px; }
+  .rib-section:not(.rib-single) .toolbar-btn:not(.toolbar-btn-labeled):not(.zoom-tb-step) { width: var(--dz-toolbar-btn-w, 22px); }
 .toolbar.toolbar-ribbon { --rib-itemh: 24px; }
 .toolbar.toolbar-ribbon.toolbar-comfortable { --rib-itemh: 26px; }
 .toolbar.toolbar-ribbon.toolbar-custom {

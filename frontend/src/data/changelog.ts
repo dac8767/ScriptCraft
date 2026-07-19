@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.8';
+export const APP_VERSION = '4.9';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.9',
+    date: '2026-07-19',
+    items: [
+      { title: 'Design panel — fixed the dead sliders', detail: 'Some knobs wrote into the void: the ribbon “Small button width” was shadowed by a more specific rule, the separator-margin knob did nothing in the ribbon, and the page width/margins/font knobs fought Page Setup (which owns page geometry) so they never moved anything. The width knob now works, the no-op ones are gone, and the whole panel was re-verified against the running app so every remaining slider changes what it says. Page geometry lives in Page Setup, where it belongs.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '4.8',
     date: '2026-07-19',

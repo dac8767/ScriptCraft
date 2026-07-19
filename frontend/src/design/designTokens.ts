@@ -7,17 +7,24 @@
  * rule falls back to DEFAULT — which is the same literal that lives in the base
  * rule, so there's exactly one default and nothing to drift.
  *
- * Two kinds of `cssVar`:
- *  - `--dz-*`  — a knob we introduced. The base CSS rule was edited to read
- *    `var(--dz-x, <original literal>)`, so DEFAULT here MUST equal that literal.
- *  - a pre-existing var (`--page-width`, `--screenplay-font-size`, …) already
- *    consumed by the CSS and only defined in :root, so we can drive it directly.
- *    (Vars that are set INLINE on an element — --rib-gap, --rib-rowh, --dock-scale,
- *    --chrome-scale, --ddw-*, --pl/--pr/--pw, --nb-grid-w — are deliberately NOT
- *    here: an inline style beats :root, so they're owned by their own controls.)
+ * Every `cssVar` here is a `--dz-*` knob we introduced: the base CSS rule was
+ * edited to read `var(--dz-x, <original literal>)`, so a token's DEFAULT MUST
+ * equal that fallback literal (a test enforces it). A token with more than one
+ * usage — a base rule plus a mode-specific one, e.g. the ribbon small-button
+ * width — just needs its default to match ONE of the fallbacks (the mode it
+ * represents).
  *
- * Adding a knob later = one entry here + making its CSS rule read the var. That's
- * the whole point of this file: it replaces a note-per-formatting-change.
+ * What is deliberately NOT here, and why (all verified against the live app):
+ *  - Values set INLINE from a store beat a :root override, so a slider here
+ *    would be a dead no-op: --rib-gap / --rib-rowh (ribbon gap/height, own drag
+ *    grips), --dock-scale / --chrome-scale, --ddw-* (dropdown widths), and the
+ *    whole page geometry (width, margins, script font/line-height — applied
+ *    inline from pageLayout; owned by Page Setup, and they reflow pagination).
+ *
+ * Adding a knob later = one entry here + making its CSS rule read the var, and
+ * confirm it actually wins the cascade in the mode you use (a more specific rule
+ * can shadow the base one). That's the whole point of this file: it replaces a
+ * note-per-formatting-change.
  */
 
 export interface DesignToken {
@@ -45,16 +52,14 @@ export interface DesignGroup {
 
 export const DESIGN_GROUPS: DesignGroup[] = [
   {
-    id: 'page',
-    label: 'Editor Page',
+    id: 'editor',
+    label: 'Editor Surface',
     tokens: [
-      { id: 'pageWidth', label: 'Page width', cssVar: '--page-width', unit: 'in', min: 6, max: 12, step: 0.05, def: 8.5 },
-      { id: 'pageMarginTop', label: 'Margin — top', cssVar: '--page-margin-top', unit: 'in', min: 0, max: 3, step: 0.05, def: 1.25 },
-      { id: 'pageMarginBottom', label: 'Margin — bottom', cssVar: '--page-margin-bottom', unit: 'in', min: 0, max: 3, step: 0.05, def: 0.861 },
-      { id: 'pageMarginLeft', label: 'Margin — left', cssVar: '--page-margin-left', unit: 'in', min: 0, max: 3, step: 0.05, def: 1.25 },
-      { id: 'pageMarginRight', label: 'Margin — right', cssVar: '--page-margin-right', unit: 'in', min: 0, max: 3, step: 0.05, def: 1.25 },
-      { id: 'pageFontSize', label: 'Script font size', cssVar: '--screenplay-font-size', unit: 'pt', min: 8, max: 18, step: 0.5, def: 12, hint: 'Courier is 12pt by convention.' },
-      { id: 'pageLineHeight', label: 'Script line height', cssVar: '--screenplay-line-height', unit: '', min: 0.8, max: 2, step: 0.05, def: 1 },
+      // NB: page geometry — width, margins, script font size & line spacing —
+      // is deliberately NOT here. It's owned by Page Setup (applied inline on
+      // the page from the pageLayout store) and changing it reflows pagination,
+      // so it belongs to that dialog, not a free design slider. Only chrome-ish
+      // surface knobs live here.
       { id: 'editorMainPadTop', label: 'Space above first page', cssVar: '--dz-editor-main-pad-top', unit: 'px', min: 0, max: 120, step: 2, def: 30 },
     ],
   },
@@ -76,10 +81,11 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     id: 'toolbar',
     label: 'Toolbar / Ribbon',
     tokens: [
-      { id: 'toolbarBtnW', label: 'Small button width', cssVar: '--dz-toolbar-btn-w', unit: 'px', min: 18, max: 40, step: 1, def: 26 },
-      { id: 'toolbarBtnH', label: 'Small button height', cssVar: '--dz-toolbar-btn-h', unit: 'px', min: 18, max: 40, step: 1, def: 24 },
+      // Ribbon default. The compact ribbon draws small buttons at 20px (22 in
+      // comfortable); the slider drives both. def matches the compact default.
+      { id: 'toolbarBtnW', label: 'Small button width', cssVar: '--dz-toolbar-btn-w', unit: 'px', min: 14, max: 36, step: 1, def: 20 },
+      { id: 'toolbarBtnH', label: 'Small button height', cssVar: '--dz-toolbar-btn-h', unit: 'px', min: 18, max: 36, step: 1, def: 24 },
       { id: 'toolbarBtnRadius', label: 'Button corner radius', cssVar: '--dz-toolbar-btn-radius', unit: 'px', min: 0, max: 12, step: 1, def: 5 },
-      { id: 'toolbarSepMargin', label: 'Separator side margin', cssVar: '--dz-toolbar-sep-margin', unit: 'px', min: 0, max: 16, step: 1, def: 6 },
       { id: 'toolbarBigIcon', label: 'Big icon size', cssVar: '--dz-toolbar-big-icon', unit: 'px', min: 16, max: 40, step: 1, def: 26 },
       { id: 'toolbarBigLabel', label: 'Big button label font', cssVar: '--dz-toolbar-big-label', unit: 'px', min: 7, max: 16, step: 0.5, def: 10 },
     ],

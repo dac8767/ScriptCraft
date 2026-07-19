@@ -41,15 +41,17 @@ describe('design token registry', () => {
     expect(dead.map((t) => `${t.id} → ${t.cssVar}`)).toEqual([]);
   });
 
-  // A --dz-* fallback literal must equal the token default, or an unset knob
-  // would render at a value the panel claims is something else.
-  it('--dz-* fallbacks match the declared defaults', () => {
+  // At least one --dz-* usage must fall back to the declared default, or the
+  // knob's reset target is a value the CSS never actually renders. (A token can
+  // be read in several rules — e.g. a base rule and a mode-specific one — with
+  // different fallbacks; the default must match the mode the def represents.)
+  it('--dz-* defaults are a real fallback somewhere in the CSS', () => {
     for (const t of DESIGN_TOKENS) {
       if (!t.cssVar.startsWith('--dz-')) continue;
-      const re = new RegExp(`var\\(${t.cssVar},\\s*([0-9.]+)(px|in|pt)?\\)`);
-      const m = ALL_CSS.match(re);
-      expect(m, `${t.id} has no var() usage with a numeric fallback`).toBeTruthy();
-      if (m) expect(parseFloat(m[1]), `${t.id} fallback`).toBe(t.def);
+      const re = new RegExp(`var\\(${t.cssVar},\\s*([0-9.]+)(px|in|pt)?\\)`, 'g');
+      const fallbacks = [...ALL_CSS.matchAll(re)].map((m) => parseFloat(m[1]));
+      expect(fallbacks.length, `${t.id} has no var() usage with a numeric fallback`).toBeGreaterThan(0);
+      expect(fallbacks, `${t.id} default ${t.def} is not a fallback anywhere`).toContain(t.def);
     }
   });
 });
@@ -60,9 +62,9 @@ describe('applyDesignVars', () => {
   });
 
   it('sets overridden tokens and clears the rest', () => {
-    applyDesignVars({ pageWidth: 8, toolbarBtnW: 22 });
+    applyDesignVars({ editorMainPadTop: 48, toolbarBtnW: 22 });
     const root = document.documentElement;
-    expect(root.style.getPropertyValue('--page-width')).toBe('8in');
+    expect(root.style.getPropertyValue('--dz-editor-main-pad-top')).toBe('48px');
     expect(root.style.getPropertyValue('--dz-toolbar-btn-w')).toBe('22px');
     // an untouched token leaves no inline property (CSS default wins)
     expect(root.style.getPropertyValue('--dz-menu-height')).toBe('');
@@ -88,17 +90,16 @@ describe('buildOverrideCss', () => {
   });
 
   it('emits only tokens that differ from their default', () => {
-    const css = buildOverrideCss({ menuHeight: 32, toolbarBtnW: 26 /* == default */ });
+    const css = buildOverrideCss({ menuHeight: 32, toolbarBtnW: 20 /* == default */ });
     expect(css).toContain('--dz-menu-height: 32px;');
     expect(css).not.toContain('--dz-toolbar-btn-w');
     expect(css.startsWith(':root {')).toBe(true);
   });
 
-  it('formats units per token', () => {
-    const css = buildOverrideCss({ pageWidth: 8, pageLineHeight: 1.15, pageFontSize: 11 });
-    expect(css).toContain('--page-width: 8in;');
-    expect(css).toContain('--screenplay-line-height: 1.15;');
-    expect(css).toContain('--screenplay-font-size: 11pt;');
+  it('formats px overrides in the :root block', () => {
+    const css = buildOverrideCss({ editorMainPadTop: 48, dialogRadius: 12 });
+    expect(css).toContain('--dz-editor-main-pad-top: 48px;');
+    expect(css).toContain('--dz-dialog-radius: 12px;');
   });
 });
 
