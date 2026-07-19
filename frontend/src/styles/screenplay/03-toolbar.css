@@ -837,12 +837,11 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
    26px icon, .rib-single .toolbar-btn min-width:30px) outrank a plain
    .zoom-tb-step, which is why the steppers never shrank — scope these to the
    ribbon so they win on specificity. */
-/* v3.91, Derek: split the difference — 16px was too big, 12px too small — and
-   pull the +/- in tight against the % readout (its side padding shrinks). */
+/* v3.92, Derek: 12px +/- icons, tucked right up against the % readout. */
 .toolbar.toolbar-ribbon .zoom-tb-step { width: 14px; min-width: 14px; padding: 0; }
-.toolbar.toolbar-ribbon .zoom-tb-step svg { width: 8px; height: 8px; }
-.toolbar.toolbar-ribbon .toolbar-btn-text.zoom-tb-value { font-size: 14px; font-weight: 600; padding: 0 2px; }
-.toolbar.toolbar-ribbon .zoom-menu-wrap .zoom-tb-mid { gap: 1px; }
+.toolbar.toolbar-ribbon .zoom-tb-step svg { width: 12px; height: 12px; }
+.toolbar.toolbar-ribbon .toolbar-btn-text.zoom-tb-value { font-size: 14px; font-weight: 600; padding: 0 1px; }
+.toolbar.toolbar-ribbon .zoom-menu-wrap .zoom-tb-mid { gap: 0; }
 .zoom-menu {
   position: absolute; top: calc(100% + 4px); right: 0;
   z-index: 2147483647;                 /* same as .menu-dropdown */
