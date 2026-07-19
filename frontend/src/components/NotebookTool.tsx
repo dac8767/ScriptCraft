@@ -584,6 +584,27 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
     return () => window.removeEventListener('nb-add-table-canvas', tblH);
   }, [boxes, onChangeBoxes]);
 
+  // v3.89, Derek: Delete / Backspace removes the selected box — but NOT while
+  // the caret is in editable text (a text box body or a table cell), where
+  // those keys edit the content. So: click an image / a table's move bar / a
+  // text box's move bar to select it, then Delete.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      const el = document.activeElement as HTMLElement | null;
+      const ce = el?.getAttribute?.('contenteditable');
+      if (el && (el.isContentEditable || ce === '' || ce === 'true' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) return;
+      const id = useNotebookStore.getState().focusedBoxId;
+      if (!id) return;
+      e.preventDefault();
+      onChangeBoxes(boxes.filter((b) => b.id !== id));
+      useNotebookStore.getState().setFocusedBox(null);
+      useNotebookStore.getState().setFocusedCell(null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [boxes, onChangeBoxes]);
+
   const updateBox = (b: NbBox) => onChangeBoxes(boxes.map((x) => (x.id === b.id ? b : x)));
   const deleteBox = (id: string) => { onChangeBoxes(boxes.filter((x) => x.id !== id)); if (focusedId === id) setFocusedId(null); };
   // v3.86: the table context menu (right-click) — position + kind of the box.

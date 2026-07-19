@@ -832,10 +832,14 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
    itself, and the current-zoom readout drops a size so the group stays
    compact. */
 /* v3.78, Derek: smaller zoom − / + step buttons. */
-/* v3.88, Derek: smaller +/- steppers, a bigger, more legible % readout. */
-.zoom-tb-step { width: 12px; min-width: 12px; padding: 0; }
-.zoom-tb-step svg { width: 7px; height: 7px; }
-.toolbar-btn-text.zoom-tb-value { font-size: 14px; font-weight: 600; padding: 0 5px; }
+/* v3.88/v3.89, Derek: smaller +/- steppers, a bigger, more legible % readout.
+   The ribbon's blanket big-button rules (.rib-single .toolbar-btn svg forcing a
+   26px icon, .rib-single .toolbar-btn min-width:30px) outrank a plain
+   .zoom-tb-step, which is why the steppers never shrank — scope these to the
+   ribbon so they win on specificity. */
+.toolbar.toolbar-ribbon .zoom-tb-step { width: 12px; min-width: 12px; padding: 0; }
+.toolbar.toolbar-ribbon .zoom-tb-step svg { width: 7px; height: 7px; }
+.toolbar.toolbar-ribbon .toolbar-btn-text.zoom-tb-value { font-size: 14px; font-weight: 600; padding: 0 5px; }
 .zoom-menu {
   position: absolute; top: calc(100% + 4px); right: 0;
   z-index: 2147483647;                 /* same as .menu-dropdown */

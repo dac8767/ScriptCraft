@@ -1871,7 +1871,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 onClick={() => closeNotebook()}
               >
                 <LuUndo2 className="rib-scrapbook-return-icon" />
-                <span className="rib-scrapbook-return-label">Return<br />to Editor</span>
+                <span className="rib-scrapbook-return-label">Return to Editor</span>
               </button>
             </div>
           </div>

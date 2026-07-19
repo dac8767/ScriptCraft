@@ -65,9 +65,19 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.88';
+export const APP_VERSION = '3.89';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.89',
+    date: '2026-07-19',
+    items: [
+      { title: 'Delete a selected Scrapbook item', detail: 'Select an image, table or text box (click it, or its move bar) and press Delete or Backspace to remove it. Typing in text or a table cell still edits normally.', tags: ['New Feature', 'Tools'] },
+      { title: 'Screenshot button fixed', detail: 'The Screenshot button did nothing because the download never started (WebKit needs the link in the page) and errors were swallowed. It now saves the PNG, works on the Scrapbook too, and reports if it can\'t.', tags: ['Fix'] },
+      { title: 'Page Zoom +/- actually shrink now', detail: 'The ribbon\'s big-button styling was overriding the smaller steppers; scoped the zoom sizing so the +/- are small and the % is large as intended.', tags: ['Fix', 'UI'] },
+      { title: 'Return to Editor on one line', detail: 'The button label is a single row again, centered.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.88',
     date: '2026-07-19',
