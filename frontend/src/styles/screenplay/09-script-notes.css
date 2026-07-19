@@ -91,7 +91,7 @@
 /* ── General note title ── */
 .general-note-title {
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--dz-gen-note-title-font, 13px);
   color: var(--fd-text);
   margin-bottom: 4px;
 }

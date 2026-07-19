@@ -9,7 +9,7 @@
   padding: 3px 14px; border-bottom: 1px solid var(--fd-border); flex-shrink: 0;
   gap: 8px;
 }
-.navigator-title { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; color: var(--fd-text); }
+.navigator-title { font-weight: 700; font-size: var(--dz-nav-title-font, 13px); text-transform: uppercase; letter-spacing: .5px; color: var(--fd-text); }
 .scene-count { font-size: 12px; color: var(--fd-text-secondary, var(--fd-text)); opacity: 0.7; }
 /* Scenes tool window header: "Scenes: N" sits at the LEFT edge; the filter
    funnel stays right-aligned (it lives in the flex:1 .fs-nav-filterctl beside
@@ -74,7 +74,7 @@
 }
 /* Synopsis preview (collapsed) — first line below heading */
 .scene-synopsis-preview {
-  font-size: 11px; color: var(--fd-text); opacity: 0.5; line-height: 1.3;
+  font-size: var(--dz-nav-synopsis-font, 11px); color: var(--fd-text); opacity: 0.5; line-height: 1.3;
   margin-top: 3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }

@@ -168,9 +168,9 @@
 .dialog-body { padding: var(--dz-dialog-body-pad, 20px); overflow-y: auto; flex: 1 1 auto; min-height: 0; }
 .dialog-actions { flex-shrink: 0; }
 .dialog-row { display: flex; flex-direction: column; gap: 8px; }
-.dialog-row label { font-size: 14px; color: var(--fd-text-muted); }
+.dialog-row label { font-size: var(--dz-dialog-label-font, 14px); color: var(--fd-text-muted); }
 .dialog-row input {
-  height: 36px; background: var(--fd-input-bg); color: var(--fd-text);
+  height: var(--dz-dialog-input-h, 36px); background: var(--fd-input-bg); color: var(--fd-text);
   border: 1px solid var(--fd-border); border-radius: 4px; padding: 0 10px;
   font-size: 14px; outline: none;
 }

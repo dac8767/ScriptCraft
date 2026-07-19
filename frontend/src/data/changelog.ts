@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.10';
+export const APP_VERSION = '4.11';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.11',
+    date: '2026-07-19',
+    items: [
+      { title: 'Design panel — finer ribbon spacing and more font knobs', detail: 'The toolbar spacing slider is now three: “Section spacing” (between sections), “Button spacing (in section)” for the small buttons inside a section, and “Two-row vertical gap” for the space between the two rows of a two-row section. Added font-size sliders for more places text lives — navigator panel title & scene synopsis, tool-window title, script-note title, sticky-note snippet (code), scrapbook sidebar heading, dialog field labels — plus dialog input height, index-card badge size, and beat-column header padding. Every new knob was verified to change its target in the running app.', tags: ['New Feature', 'Tools', 'UI'] },
+    ],
+  },
   {
     version: '4.10',
     date: '2026-07-19',

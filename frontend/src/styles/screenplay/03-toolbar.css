@@ -489,8 +489,9 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  /* v3.70, Derek: tighter gap between a section's two rows. */
-  gap: 0;
+  /* v3.70, Derek: tighter gap between a section's two rows. v4.11: the vertical
+     gap between the two rows of a two-row section is a Design knob. */
+  gap: var(--dz-rib-row-gap, 0px);
   min-width: 0;
 }
 .rib-row {
@@ -636,7 +637,7 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
    3) drop the priority-block's internal 2px gap for its (usually single) button.
    Custom mode keeps its dragged/scaled width; labeled buttons, dropdowns, and
    the hand-sized zoom steppers keep their own widths. */
-.toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row { gap: 1px; }
+.toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row { gap: var(--dz-rib-btn-gap, 1px); }
 .toolbar.toolbar-ribbon .rib-section:not(.rib-single) .toolbar-priority-block { gap: 0; }
 .toolbar.toolbar-ribbon:not(.toolbar-comfortable):not(.toolbar-custom)
   .rib-section:not(.rib-single) .toolbar-btn:not(.toolbar-btn-labeled):not(.zoom-tb-step) { width: 20px; }

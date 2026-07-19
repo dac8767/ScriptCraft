@@ -93,8 +93,11 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       // Button width/height scale with the compact/comfortable/custom mode, so
       // they're owned by the toolbar mode + its height drag-bar, not here. These
       // are the leaf properties with a single declaration in every mode:
-      { id: 'toolbarSpacing', label: 'Item spacing', unit: 'px', min: 0, max: 32, step: 1, def: 2,
-        store: { get: (s) => s.chromeGapPx.toolbar, set: (v) => useEditorStore.getState().setChromeGap('toolbar', v) } },
+      { id: 'toolbarSpacing', label: 'Section spacing', unit: 'px', min: 0, max: 32, step: 1, def: 2,
+        store: { get: (s) => s.chromeGapPx.toolbar, set: (v) => useEditorStore.getState().setChromeGap('toolbar', v) },
+        hint: 'Gap between sections (and between big buttons).' },
+      { id: 'ribBtnGap', label: 'Button spacing (in section)', cssVar: '--dz-rib-btn-gap', unit: 'px', min: 0, max: 20, step: 1, def: 1 },
+      { id: 'ribRowGap', label: 'Two-row vertical gap', cssVar: '--dz-rib-row-gap', unit: 'px', min: 0, max: 24, step: 1, def: 0 },
       { id: 'toolbarBtnRadius', label: 'Button corner radius', cssVar: '--dz-toolbar-btn-radius', unit: 'px', min: 0, max: 12, step: 1, def: 5 },
       { id: 'toolbarBigIcon', label: 'Big icon size', cssVar: '--dz-toolbar-big-icon', unit: 'px', min: 16, max: 40, step: 1, def: 26 },
       { id: 'toolbarBigLabel', label: 'Big button label font', cssVar: '--dz-toolbar-big-label', unit: 'px', min: 7, max: 16, step: 0.5, def: 10 },
@@ -109,6 +112,7 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'dockEdgeW', label: 'Dock edge grip width', cssVar: '--dz-dock-edge-w', unit: 'px', min: 2, max: 16, step: 1, def: 6 },
       { id: 'toolWinRadius', label: 'Tool window radius', cssVar: '--dz-toolwin-radius', unit: 'px', min: 0, max: 20, step: 1, def: 8 },
       { id: 'toolWinHeaderPad', label: 'Tool window header padding', cssVar: '--dz-toolwin-head-pad', unit: 'px', min: 2, max: 20, step: 1, def: 8 },
+      { id: 'toolWinTitleFont', label: 'Tool window title font', cssVar: '--dz-toolwin-title-font', unit: 'px', min: 9, max: 20, step: 0.5, def: 12 },
     ],
   },
   {
@@ -120,6 +124,8 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'cardFont', label: 'Card body font', cssVar: '--dz-swn-card-font', unit: 'px', min: 9, max: 18, step: 0.5, def: 12 },
       { id: 'cardHeadFont', label: 'Card title font', cssVar: '--dz-swn-card-head-font', unit: 'px', min: 9, max: 16, step: 0.5, def: 11 },
       { id: 'cardDot', label: 'Color dot size', cssVar: '--dz-swn-dot', unit: 'px', min: 6, max: 20, step: 1, def: 12 },
+      { id: 'snippetFont', label: 'Snippet (code) font', cssVar: '--dz-swn-snippet-font', unit: 'px', min: 8, max: 18, step: 0.5, def: 11 },
+      { id: 'genNoteTitleFont', label: 'Script-note title font', cssVar: '--dz-gen-note-title-font', unit: 'px', min: 9, max: 20, step: 0.5, def: 13 },
     ],
   },
   {
@@ -131,6 +137,7 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'nbCellPadY', label: 'Table cell padding — vertical', cssVar: '--dz-nb-cell-pady', unit: 'px', min: 1, max: 14, step: 1, def: 5 },
       { id: 'nbCellFont', label: 'Table cell font', cssVar: '--dz-nb-cell-font', unit: 'px', min: 9, max: 18, step: 0.5, def: 12.5 },
       { id: 'nbTitleFont', label: 'Page title font', cssVar: '--dz-nb-title-font', unit: 'px', min: 12, max: 40, step: 1, def: 20 },
+      { id: 'nbSideHeadFont', label: 'Sidebar heading font', cssVar: '--dz-nb-sidehead-font', unit: 'px', min: 8, max: 18, step: 0.5, def: 11 },
     ],
   },
   {
@@ -143,6 +150,8 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'dialogBodyPad', label: 'Body padding', cssVar: '--dz-dialog-body-pad', unit: 'px', min: 4, max: 40, step: 1, def: 20 },
       { id: 'dialogBtnHeight', label: 'Button height', cssVar: '--dz-dialog-btn-h', unit: 'px', min: 24, max: 48, step: 1, def: 34 },
       { id: 'dialogBtnRadius', label: 'Button corner radius', cssVar: '--dz-dialog-btn-radius', unit: 'px', min: 0, max: 16, step: 1, def: 4 },
+      { id: 'dialogLabelFont', label: 'Field label font', cssVar: '--dz-dialog-label-font', unit: 'px', min: 10, max: 20, step: 0.5, def: 14 },
+      { id: 'dialogInputH', label: 'Input height', cssVar: '--dz-dialog-input-h', unit: 'px', min: 24, max: 48, step: 1, def: 36 },
     ],
   },
   {
@@ -155,14 +164,18 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'beatCardPad', label: 'Beat card padding', cssVar: '--dz-beat-card-pad', unit: 'px', min: 2, max: 24, step: 1, def: 10 },
       { id: 'icRadius', label: 'Index card radius', cssVar: '--dz-ic-radius', unit: 'px', min: 0, max: 16, step: 1, def: 6 },
       { id: 'icHeadingFont', label: 'Index card heading font', cssVar: '--dz-ic-heading-font', unit: 'px', min: 9, max: 18, step: 0.5, def: 12 },
+      { id: 'icBadge', label: 'Index card badge size', cssVar: '--dz-ic-badge', unit: 'px', min: 14, max: 36, step: 1, def: 24 },
+      { id: 'beatColHeadPad', label: 'Column header padding', cssVar: '--dz-beat-col-head-pad', unit: 'px', min: 2, max: 20, step: 1, def: 8 },
     ],
   },
   {
     id: 'navigator',
     label: 'Navigator & Outline',
     tokens: [
+      { id: 'navTitleFont', label: 'Panel title font', cssVar: '--dz-nav-title-font', unit: 'px', min: 10, max: 20, step: 0.5, def: 13 },
       { id: 'navScenePadY', label: 'Scene row padding', cssVar: '--dz-nav-scene-pady', unit: 'px', min: 2, max: 24, step: 1, def: 10 },
       { id: 'navSceneFont', label: 'Scene heading font', cssVar: '--dz-nav-scene-font', unit: 'px', min: 10, max: 20, step: 0.5, def: 14 },
+      { id: 'navSynopsisFont', label: 'Scene synopsis font', cssVar: '--dz-nav-synopsis-font', unit: 'px', min: 8, max: 18, step: 0.5, def: 11 },
       { id: 'navBadge', label: 'Scene number badge size', cssVar: '--dz-nav-badge', unit: 'px', min: 14, max: 32, step: 1, def: 22 },
       { id: 'obPad', label: 'Outline bar padding', cssVar: '--dz-ob-pad', unit: 'px', min: 0, max: 16, step: 1, def: 4 },
       { id: 'obTitleFont', label: 'Outline title font', cssVar: '--dz-ob-title-font', unit: 'px', min: 8, max: 16, step: 0.5, def: 11 },

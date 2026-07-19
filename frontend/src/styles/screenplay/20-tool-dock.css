@@ -293,7 +293,7 @@
 .tool-window-header > .tool-window-popin { margin-right: 10px; }
 .tool-window-header-actions .tool-window-popin { margin-left: 10px; }
 .tool-window-title {
-  font-size: 12px;
+  font-size: var(--dz-toolwin-title-font, 12px);
   font-weight: 700;
   color: var(--fd-text);
 }
