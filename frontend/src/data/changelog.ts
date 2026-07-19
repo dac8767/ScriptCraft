@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.1';
+export const APP_VERSION = '4.2';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.2',
+    date: '2026-07-19',
+    items: [
+      { title: 'Updated app icon, sized for the dock', detail: 'Refreshed the SC icon and gave it the standard transparent margin so it sits at the same size as other macOS dock icons (it was full-bleed and looked oversized).', tags: ['Branding'] },
+    ],
+  },
   {
     version: '4.1',
     date: '2026-07-19',
