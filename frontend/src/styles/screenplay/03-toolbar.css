@@ -13,8 +13,8 @@
 .toolbar-group { display: flex; align-items: center; gap: 1px; }
 .toolbar-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 26px; height: 24px; background: transparent;
-  border: 1px solid transparent; border-radius: 5px;
+  width: var(--dz-toolbar-btn-w, 26px); height: var(--dz-toolbar-btn-h, 24px); background: transparent;
+  border: 1px solid transparent; border-radius: var(--dz-toolbar-btn-radius, 5px);
   color: var(--fd-text); cursor: pointer; font-size: 12px;
   transition: background 0.1s;
 }
@@ -27,7 +27,7 @@
   background: var(--fd-text-muted);
   opacity: 0.55;               /* v0.97: was 1px @ .5 on --fd-border — invisible */
   border-radius: 1px;
-  margin: 0 6px;
+  margin: 0 var(--dz-toolbar-sep-margin, 6px);
 }
 .toolbar.toolbar-comfortable .toolbar-btn { width: 28px; height: 26px; font-size: 13px; }
 .toolbar.toolbar-comfortable .toolbar-separator { height: 20px; margin: 0 6px; }
@@ -534,7 +534,7 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
    which let icons with taller/wider viewBoxes render at different heights). A
    fixed svg height with auto width = every big icon the same height, so the
    whole icon+label button measures the same top-to-bottom. */
-.rib-single .toolbar-btn svg { height: 26px; width: auto; }
+.rib-single .toolbar-btn svg { height: var(--dz-toolbar-big-icon, 26px); width: auto; }
 /* Tall pinned tools/commands: the same big-button format, self-contained. */
 .toolbar-btn.rib-tall-btn {
   height: 80%;
@@ -546,8 +546,8 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   justify-content: center;
   gap: 3px;
 }
-.rib-tall-icon { display: inline-flex; align-items: center; justify-content: center; height: 26px; }
-.rib-tall-icon svg { height: 26px; width: auto; }   /* v3.75: same fixed height as .rib-single */
+.rib-tall-icon { display: inline-flex; align-items: center; justify-content: center; height: var(--dz-toolbar-big-icon, 26px); }
+.rib-tall-icon svg { height: var(--dz-toolbar-big-icon, 26px); width: auto; }   /* v3.75: same fixed height as .rib-single */
 /* v3.99, Derek: the sizing lock now renders as a rib-tall-btn (label inside)
    like the other big buttons, so its icon uses the shared .rib-tall-icon rule.
    Both padlock glyphs are 448×512, so height:auto keeps the two states the same
@@ -594,7 +594,7 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar.toolbar-ribbon [data-key="toggleRightPanel"] svg { transform: scale(1.14); }
 .toolbar.toolbar-ribbon [data-key="trackChanges"] svg { transform: scale(1.18); }
 .toolbar.toolbar-ribbon [data-key="typewriter"] svg { transform: scale(1.18); }
-.rib-tall-label { font-size: 10px; line-height: 1.1; white-space: nowrap; }
+.rib-tall-label { font-size: var(--dz-toolbar-big-label, 10px); line-height: 1.1; white-space: nowrap; }
 /* v2.97: the OPTIONAL line between a section's two rows (click the split
    in the visual editor to toggle it). */
 .rib-row-line {

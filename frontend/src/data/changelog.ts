@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.7';
+export const APP_VERSION = '4.8';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.8',
+    date: '2026-07-19',
+    items: [
+      { title: 'Design panel — live design settings', detail: 'View ▸ Design… opens a floating, draggable panel with a slider for every wired design knob (page margins & font, menu bar, toolbar, panels & windows, note cards, Scrapbook, dialogs, beatboard & index cards, navigator & outline). Drag a slider and the app restyles in real time; changes persist. Each knob has a number box and a reset, plus Reset all and a Copy CSS export so a chosen look can be baked in permanently. This replaces sending a note for every small formatting change.', tags: ['New Feature', 'UI', 'Tools'] },
+    ],
+  },
   {
     version: '4.7',
     date: '2026-07-19',

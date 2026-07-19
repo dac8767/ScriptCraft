@@ -15,7 +15,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 6px;
+  width: var(--dz-dock-edge-w, 6px);
   z-index: 31;
   cursor: move;   /* v2.77: two-axis — width + item size */
   background: transparent;
@@ -266,7 +266,7 @@
   top: 8px;
   background: var(--fd-navigator-bg); /* same scheme as the Sticky Notes pane */
   border: 1px solid var(--fd-border);
-  border-radius: 8px;
+  border-radius: var(--dz-toolwin-radius, 8px);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
@@ -281,7 +281,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: var(--dz-toolwin-head-pad, 8px) 12px;
   border-bottom: 1px solid var(--fd-border);
   flex-shrink: 0;
   user-select: none;

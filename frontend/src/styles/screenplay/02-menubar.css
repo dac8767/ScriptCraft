@@ -2,7 +2,7 @@
 .menu-bar {
   display: flex;
   align-items: center;
-  height: 28px;
+  height: var(--dz-menu-height, 28px);
   background: var(--fd-toolbar-bg);
   border-bottom: none;
   padding: 0 6px;
@@ -17,15 +17,15 @@
   align-items: center;
   gap: 5px;
   position: relative;
-  padding: 4px 10px;
+  padding: var(--dz-menu-item-pady, 4px) var(--dz-menu-item-padx, 10px);
   cursor: default;
-  border-radius: 6px;
+  border-radius: var(--dz-menu-item-radius, 6px);
   transition: background 0.1s;
 }
 .menu-item:hover, .menu-item.active { background: var(--fd-overlay-light); }
 .menu-icon { display: flex; font-size: 10px; color: var(--fd-text-muted); }
 .menu-item:hover .menu-icon, .menu-item.active .menu-icon { color: var(--fd-text); }
-.menu-label { font-size: 12.5px; color: var(--fd-text); font-weight: 450; }
+.menu-label { font-size: var(--dz-menu-label-size, 12.5px); color: var(--fd-text); font-weight: 450; }
 .menu-spacer { flex: 1; }
 
 /* ── "+ Add Item" menu (v0.95) ─────────────────────────────────────────────
@@ -143,14 +143,14 @@
 .menu-bar.chrome-comfortable .menu-icon { font-size: 14px; }
 .menu-bar.chrome-comfortable .menu-item--more { padding: 10px 12px; min-height: 44px; }
 .menu-dropdown {
-  position: fixed; min-width: 260px;
+  position: fixed; min-width: var(--dz-menu-dd-minw, 260px);
   background: var(--fd-dropdown-bg); border: 1px solid var(--fd-border);
   border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.4);
   padding: 4px 0; z-index: 2147483647;
 }
 .menu-dropdown-item {
   display: flex; align-items: center; gap: 8px;
-  padding: 5px 16px; cursor: default; font-size: 13px; color: var(--fd-text);
+  padding: var(--dz-menu-dd-item-pady, 5px) 16px; cursor: default; font-size: var(--dz-menu-dd-item-font, 13px); color: var(--fd-text);
 }
 .menu-dropdown-icon { display: flex; width: 16px; justify-content: center; font-size: 11px; color: var(--fd-text-muted); flex-shrink: 0; }
 /* v3.05, Derek: checkable items get a dedicated left column (macOS style) —

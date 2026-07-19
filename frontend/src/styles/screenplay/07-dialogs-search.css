@@ -146,7 +146,7 @@
    With hidden, the grip is unobstructed and .dialog-body owns the scrolling. */
 .dialog-box {
   background: var(--fd-dropdown-bg); border: 1px solid var(--fd-border);
-  border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,.6);
+  border-radius: var(--dz-dialog-radius, 8px); box-shadow: 0 8px 32px rgba(0,0,0,.6);
   min-width: 320px; width: min(400px, 92vw);
   max-width: 96vw;
   min-height: 140px;
@@ -162,10 +162,10 @@
      corner clear of children so the grip is actually reachable. */
   padding-bottom: 14px;
 }
-.dialog-header { padding: 14px 20px; border-bottom: 1px solid var(--fd-border); font-weight: 600; font-size: 16px; flex-shrink: 0; }
+.dialog-header { padding: var(--dz-dialog-header-pady, 14px) 20px; border-bottom: 1px solid var(--fd-border); font-weight: 600; font-size: var(--dz-dialog-header-font, 16px); flex-shrink: 0; }
 /* min-height:0 lets the body actually shrink inside the flex column, so the
    scrollbar lands on the body rather than the dialog overflowing. */
-.dialog-body { padding: 20px; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+.dialog-body { padding: var(--dz-dialog-body-pad, 20px); overflow-y: auto; flex: 1 1 auto; min-height: 0; }
 .dialog-actions { flex-shrink: 0; }
 .dialog-row { display: flex; flex-direction: column; gap: 8px; }
 .dialog-row label { font-size: 14px; color: var(--fd-text-muted); }
@@ -181,8 +181,8 @@
   flex-shrink: 0;
 }
 .dialog-footer button {
-  height: 34px; padding: 0 18px; background: var(--fd-toolbar-bg); color: var(--fd-text);
-  border: 1px solid var(--fd-border); border-radius: 4px; cursor: pointer; font-size: 14px;
+  height: var(--dz-dialog-btn-h, 34px); padding: 0 18px; background: var(--fd-toolbar-bg); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: var(--dz-dialog-btn-radius, 4px); cursor: pointer; font-size: 14px;
 }
 .dialog-footer button:hover { background: var(--fd-toolbar-hover); }
 .dialog-actions {
@@ -191,8 +191,8 @@
   flex-shrink: 0;
 }
 .dialog-actions button {
-  height: 34px; padding: 0 18px; background: var(--fd-toolbar-bg); color: var(--fd-text);
-  border: 1px solid var(--fd-border); border-radius: 4px; cursor: pointer; font-size: 14px;
+  height: var(--dz-dialog-btn-h, 34px); padding: 0 18px; background: var(--fd-toolbar-bg); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: var(--dz-dialog-btn-radius, 4px); cursor: pointer; font-size: 14px;
 }
 .dialog-actions button:hover { background: var(--fd-menu-hover); }
 /* ── v3.25, Derek (task #135): the header/footer redesign goes APP-WIDE ──
@@ -227,8 +227,8 @@
 .dialog-primary { background: var(--fd-accent) !important; border-color: var(--fd-accent) !important; color: #fff !important; }
 .dialog-primary:hover { opacity: .9; }
 .dialog-btn {
-  height: 34px; padding: 0 18px; background: var(--fd-toolbar-bg); color: var(--fd-text);
-  border: 1px solid var(--fd-border); border-radius: 4px; cursor: pointer; font-size: 14px;
+  height: var(--dz-dialog-btn-h, 34px); padding: 0 18px; background: var(--fd-toolbar-bg); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: var(--dz-dialog-btn-radius, 4px); cursor: pointer; font-size: 14px;
 }
 .dialog-btn:hover { background: var(--fd-toolbar-hover); }
 .dialog-btn-primary {

@@ -31,6 +31,10 @@ interface ViewState {
   scrapbookTreeScale?: number;
   bigBtnInsetPx?: number;
   panelItemScale?: { left: number; right: number };
+  /** v4.8: Design panel overrides — numeric design tokens keyed by token id
+   *  (src/design/designTokens.ts). Each maps to a --dz-* custom property on
+   *  :root; absent keys fall back to the built-in CSS value. */
+  designVars?: Record<string, number>;
   outlineBarRows?: OutlineBarRow[];
   outlineBarLabels?: boolean;
   beatColorAllTabs?: boolean;
@@ -1002,6 +1006,16 @@ interface EditorState {
   /** v2.29: item spacing (flex gap) per bar — see the GapHandle grips. */
   chromeGapPx: { menu: number; toolbar: number; bigbtn: number; scrapbook: number };
   setChromeGap: (bar: 'menu' | 'toolbar' | 'bigbtn' | 'scrapbook', px: number) => void;
+  /** v4.8: the Design panel. `designVars` holds only OVERRIDDEN tokens (keyed
+   *  by token id from src/design/designTokens.ts); absent keys use the CSS
+   *  default. An effect mirrors this map onto :root --dz-* / page vars, so this
+   *  store is the one source the panel writes, the DOM reads, and Copy CSS dumps. */
+  designVars: Record<string, number>;
+  setDesignVar: (id: string, val: number) => void;
+  resetDesignVar: (id: string) => void;
+  resetAllDesign: () => void;
+  designPanelOpen: boolean;
+  setDesignPanelOpen: (v: boolean) => void;
   setPanelSizeMode: (side: 'left' | 'right', mode: 'compact' | 'comfortable' | 'custom' | 'icons') => void;
   panelDividers: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
   setPanelDividers: (d: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[]) => void;
@@ -2561,6 +2575,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ chromeGapPx: next });
     return { chromeGapPx: next };
   }),
+  designVars: (_vs.designVars as Record<string, number>) ?? {},
+  setDesignVar: (id, val) => set((st) => {
+    const next = { ...st.designVars, [id]: val };
+    saveViewState({ designVars: next });
+    return { designVars: next };
+  }),
+  resetDesignVar: (id) => set((st) => {
+    const next = { ...st.designVars };
+    delete next[id];
+    saveViewState({ designVars: next });
+    return { designVars: next };
+  }),
+  resetAllDesign: () => set(() => {
+    saveViewState({ designVars: {} });
+    return { designVars: {} };
+  }),
+  designPanelOpen: false,
+  setDesignPanelOpen: (v) => set({ designPanelOpen: v }),
   setPanelSizeMode: (side, mode) => set((st) => {
     const next = { ...st.panelSizeMode, [side]: mode };
     saveViewState({ panelSizeMode: next });

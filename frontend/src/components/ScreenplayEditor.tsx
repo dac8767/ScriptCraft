@@ -53,6 +53,8 @@ import type { ElementType } from '../stores/editorStore';
 import MenuBar from './MenuBar';
 import Toolbar from './Toolbar';
 import ToolDock, { TempToolWindow } from './ToolDock';
+import DesignPanel from './DesignPanel';
+import { applyDesignVars } from '../design/designTokens';
 import { DoubleChevronIcon } from './uiIcons';
 import { useBookmarkStore, bookmarkScriptKey } from '../stores/bookmarkStore';
 import TitleBar from './TitleBar';
@@ -1677,6 +1679,11 @@ const ScreenplayEditor: React.FC = () => {
   // The cursor position captured when the menu/toolbar triggers image insertion,
   // so the upload's async gap (file dialog) doesn't lose the insertion point.
   const imageInsertPosRef = useRef<number | null>(null);
+  // v4.8: mirror the Design panel's token overrides onto :root whenever they
+  // change (and once on mount, so persisted overrides apply at boot).
+  const designVars = useEditorStore((s) => s.designVars);
+  useEffect(() => { applyDesignVars(designVars); }, [designVars]);
+
   const setImageInsertHandler = useEditorStore((s) => s.setImageInsertHandler);
   useEffect(() => {
     setImageInsertHandler(() => {
@@ -4306,6 +4313,7 @@ const ScreenplayEditor: React.FC = () => {
           <div className="panel-resize-handle" onPointerDown={(e) => handleResizePointerDown('right', e)} style={{ touchAction: 'none' }} />
         )}
         {!isHistoryMode && <TempToolWindow editor={editor} scrollContainer={editorMainRef.current} />}
+        <DesignPanel />
         {!isHistoryMode && shelfOpen && <ToolDock side="right" editor={editor} scrollContainer={editorMainRef.current} />}
         {!isHistoryMode && !shelfOpen && !previewMode && (
           <button

@@ -1,0 +1,124 @@
+/* ─── v4.8, Derek: the Design panel — a floating, draggable control surface for
+   the live design tokens (src/design/designTokens.ts). Portalled to <body>,
+   fixed-positioned, sits above everything so you can watch the app restyle
+   behind it. ────────────────────────────────────────────────────────────── */
+.dz-panel {
+  position: fixed;
+  z-index: 4000;                 /* above dialogs (3000) so it stays reachable */
+  display: flex;
+  flex-direction: column;
+  background: var(--fd-dialog-bg, var(--fd-navigator-bg));
+  border: 1px solid var(--fd-border);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px var(--fd-chrome-shadow, rgba(0, 0, 0, 0.4));
+  color: var(--fd-text);
+  overflow: hidden;
+  user-select: none;
+}
+.dz-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  cursor: grab;
+  background: var(--fd-toolbar-bg);
+  border-bottom: 1px solid var(--fd-border);
+}
+.dz-header:active { cursor: grabbing; }
+.dz-title { font-size: 13px; font-weight: 600; }
+.dz-count {
+  font-size: 10.5px; color: var(--fd-accent);
+  background: var(--fd-overlay-light); border-radius: 10px; padding: 1px 8px;
+}
+.dz-close {
+  margin-left: auto;
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  background: transparent; border: none; border-radius: 5px;
+  color: var(--fd-text-muted); cursor: pointer;
+}
+.dz-close:hover { background: var(--fd-overlay-light); color: var(--fd-text); }
+
+.dz-search {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--fd-border);
+}
+.dz-search-icon { color: var(--fd-text-muted); flex-shrink: 0; }
+.dz-search-input {
+  flex: 1; min-width: 0;
+  background: var(--fd-input-bg, var(--fd-navigator-bg));
+  border: 1px solid var(--fd-border); border-radius: 5px;
+  color: var(--fd-text); font-size: 12px; padding: 4px 8px;
+}
+.dz-search-input:focus { outline: none; border-color: var(--fd-accent); }
+
+.dz-body { flex: 1; overflow-y: auto; padding: 4px 0 8px; }
+
+.dz-group { border-bottom: 1px solid color-mix(in srgb, var(--fd-border) 60%, transparent); }
+.dz-group-head {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%;
+  padding: 7px 10px;
+  background: transparent; border: none;
+  color: var(--fd-text); font-size: 11.5px; font-weight: 600;
+  letter-spacing: 0.02em; text-transform: uppercase;
+  cursor: pointer;
+}
+.dz-group-head:hover { background: var(--fd-overlay-subtle, var(--fd-overlay-light)); }
+.dz-group-head svg { color: var(--fd-text-muted); flex-shrink: 0; }
+
+.dz-row { padding: 6px 12px 8px; }
+.dz-row-on { box-shadow: inset 3px 0 0 var(--fd-accent); }
+.dz-row-top { display: flex; align-items: center; gap: 8px; }
+.dz-row-label {
+  flex: 1; min-width: 0;
+  font-size: 12px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dz-row-num { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+.dz-num {
+  width: 52px;
+  background: var(--fd-input-bg, var(--fd-navigator-bg));
+  border: 1px solid var(--fd-border); border-radius: 4px;
+  color: var(--fd-text); font-size: 11.5px; text-align: right;
+  padding: 2px 4px;
+}
+.dz-num:focus { outline: none; border-color: var(--fd-accent); }
+.dz-unit { font-size: 10.5px; color: var(--fd-text-muted); width: 16px; }
+.dz-reset {
+  display: flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px;
+  background: transparent; border: none; border-radius: 4px;
+  color: var(--fd-text-muted); cursor: pointer; font-size: 12px;
+}
+.dz-reset:hover:not(:disabled) { background: var(--fd-overlay-light); color: var(--fd-text); }
+.dz-reset:disabled { opacity: 0.25; cursor: default; }
+
+.dz-range { width: 100%; margin-top: 6px; accent-color: var(--fd-accent); cursor: pointer; }
+.dz-hint { margin-top: 3px; font-size: 10.5px; color: var(--fd-text-muted); }
+.dz-empty { padding: 20px 12px; font-size: 12px; color: var(--fd-text-muted); text-align: center; }
+
+.dz-footer {
+  display: flex; gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--fd-border);
+  background: var(--fd-toolbar-bg);
+}
+.dz-foot-btn {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 6px 8px;
+  background: var(--fd-btn-bg, var(--fd-overlay-light));
+  border: 1px solid var(--fd-border); border-radius: 5px;
+  color: var(--fd-text); font-size: 11.5px; cursor: pointer;
+}
+.dz-foot-btn:hover:not(:disabled) { background: var(--fd-btn-hover, var(--fd-overlay-medium)); }
+.dz-foot-btn:disabled { opacity: 0.4; cursor: default; }
+
+.dz-resize {
+  position: absolute; right: 0; bottom: 0;
+  width: 16px; height: 16px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--fd-text-muted) 50%, var(--fd-text-muted) 60%, transparent 60%, transparent 72%, var(--fd-text-muted) 72%, var(--fd-text-muted) 82%, transparent 82%);
+  opacity: 0.5;
+}
+.dz-resize:hover { opacity: 0.9; }

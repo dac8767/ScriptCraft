@@ -152,7 +152,7 @@
   display: flex;
   background: var(--fd-dropdown-bg);
   border: 1px solid var(--fd-border);
-  border-radius: 6px;
+  border-radius: var(--dz-ic-radius, 6px);
   overflow: hidden;
   transition: border-color 0.15s;
 }
@@ -198,7 +198,7 @@
 }
 .index-card-heading {
   flex: 1;
-  font-size: 12px;
+  font-size: var(--dz-ic-heading-font, 12px);
   font-family: var(--screenplay-font);
   color: var(--fd-text);
   cursor: pointer;
@@ -312,7 +312,7 @@
 .beat-board-preset option { background: var(--fd-dropdown-bg, var(--fd-bg)); color: var(--fd-text); }
 .beat-board-columns {
   display: flex;
-  gap: 16px;
+  gap: var(--dz-beat-col-gap, 16px);
   padding: 16px 32px 32px 16px;
   overflow-x: auto;
   overflow-y: auto;
@@ -321,7 +321,7 @@
 }
 .beat-column {
   position: relative;
-  min-width: 280px;
+  min-width: var(--dz-beat-col-minw, 280px);
   max-width: 500px;
   flex-shrink: 0;
   background: var(--fd-navigator-bg);
@@ -439,8 +439,8 @@
   position: relative;
   background: var(--fd-dropdown-bg);
   border: 1px solid var(--fd-border);
-  border-radius: 6px;
-  padding: 10px;
+  border-radius: var(--dz-beat-card-radius, 6px);
+  padding: var(--dz-beat-card-pad, 10px);
   display: flex;
   flex-direction: column;
   gap: 6px;

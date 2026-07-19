@@ -1,7 +1,7 @@
 /* ============ SCRIPT NOTES ============ */
 /* ── Script Notes Panel ── */
 .script-notes-panel {
-  width: 300px;
+  width: var(--dz-notes-panel-w, 300px);
   min-width: 200px;
   background: var(--fd-navigator-bg);
   border-left: 1px solid var(--fd-border);

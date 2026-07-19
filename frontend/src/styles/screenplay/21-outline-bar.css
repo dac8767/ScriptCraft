@@ -5,7 +5,7 @@
   gap: 0;
   background: var(--fd-toolbar-bg);
   border-bottom: 1px solid var(--fd-border);
-  padding: 4px 8px;
+  padding: var(--dz-ob-pad, 4px) 8px;
 }
 .fs-ob-side {
   /* v2.49: five buttons, spread evenly over the bar's height. */
@@ -49,7 +49,7 @@
   padding: 0;
 }
 .fs-ob-title {
-  font-size: 11px;
+  font-size: var(--dz-ob-title-font, 11px);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -77,8 +77,8 @@
 .fs-ob-actions .fs-addmenu { flex: 0 0 auto; }
 .fs-ob-actions .fs-addmenu-trigger,
 .fs-ob-actions .fs-ob-iconbtn {
-  width: 26px;
-  height: 26px;
+  width: var(--dz-ob-iconbtn, 26px);
+  height: var(--dz-ob-iconbtn, 26px);
   padding: 0;
   display: inline-flex;
   align-items: center;

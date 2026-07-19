@@ -7,7 +7,7 @@
   min-height: 0;
   display: flex;
   color: var(--fd-text);
-  font-size: 13px;
+  font-size: var(--dz-nb-font, 13px);
 }
 /* v1.96: the tool window IS the tree — a single vertical panel. The
    writing surface lives in the editor area (.fs-nb-takeover below). */
@@ -244,7 +244,7 @@
   /* v3.33: OneNote's layout (rule + date below); v3.34, Derek: back to the
      app's own title font — the light 26px read as a foreign typeface. The
      rule is brightened too (var(--fd-border) was barely visible). */
-  font-size: 20px;
+  font-size: var(--dz-nb-title-font, 20px);
   font-weight: 700;
   padding-bottom: 8px;
   /* v3.42, Derek: the rule under the title runs HALF the width (a gradient
@@ -297,8 +297,8 @@
 .fs-nb-cell {
   min-height: 100%;
   height: 100%;
-  padding: 5px 7px;
-  font-size: 12.5px;
+  padding: var(--dz-nb-cell-pady, 5px) var(--dz-nb-cell-padx, 7px);
+  font-size: var(--dz-nb-cell-font, 12.5px);
   outline: none;
   overflow-wrap: break-word;
 }
