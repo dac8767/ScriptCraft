@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.99';
+export const APP_VERSION = '4.0';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.0',
+    date: '2026-07-19',
+    items: [
+      { title: 'New ScriptCraft app icon', detail: 'The purple "SC" mark is now the app icon (macOS dock + .icns, Windows .ico, the favicon and the loading splash) — replacing the old OpenDraft art.', tags: ['Branding'] },
+    ],
+  },
   {
     version: '3.99',
     date: '2026-07-19',
