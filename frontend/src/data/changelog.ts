@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.12';
+export const APP_VERSION = '4.13';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.13',
+    date: '2026-07-19',
+    items: [
+      { title: 'New app logo', detail: 'Updated the app icon, dock icon, favicon, splash and About-window logo to the new “SC” mark.', tags: ['Branding'] },
+    ],
+  },
   {
     version: '4.12',
     date: '2026-07-19',
