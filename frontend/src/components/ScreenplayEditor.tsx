@@ -4122,23 +4122,25 @@ const ScreenplayEditor: React.FC = () => {
       {<Toolbar editor={editor} />}
         </div>
       </div>
-      {/* v2.31: this line scales the menu bar + toolbar together…
-          v2.55: the sizing lock removes both strips — no dead controls. */}
-      {!uiResizeLocked && (
-        <div
-          className="fs-top-chrome-resize"
-          title="Drag to resize the menu bar and toolbar together"
-          onPointerDown={startBarsResize}
-        />
-      )}
+      {/* v2.31: this strip scales the menu bar + toolbar together.
+          v4.3, Derek: it's ALWAYS in the layout now (a real, grabbable 6px bar),
+          just invisible + inert when locked — so toggling the lock never shifts
+          anything and there's a visible handle on the ribbon's bottom edge to
+          drag its height. (The v3.86 zero-height ::before hit-area couldn't be
+          grabbed.) */}
+      <div
+        className={`fs-top-chrome-resize${uiResizeLocked ? ' locked' : ''}`}
+        title={uiResizeLocked ? undefined : 'Drag to resize the menu bar and toolbar together'}
+        onPointerDown={uiResizeLocked ? undefined : startBarsResize}
+      />
       {/* v1.75: Outline Bar — FD-style outline lanes directly under the toolbar. */}
       {outlineBarShown && <OutlineBar editor={editor} />}
       {/* …and the bottom-most edge scales the outline bar's rows alone. */}
-      {outlineBarShown && !uiResizeLocked && (
+      {outlineBarShown && (
         <div
-          className="fs-top-chrome-resize"
-          title="Drag to resize the outline bar"
-          onPointerDown={startOutlineBarResize}
+          className={`fs-top-chrome-resize${uiResizeLocked ? ' locked' : ''}`}
+          title={uiResizeLocked ? undefined : 'Drag to resize the outline bar'}
+          onPointerDown={uiResizeLocked ? undefined : startOutlineBarResize}
         />
       )}
       </div>

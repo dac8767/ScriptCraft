@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.2';
+export const APP_VERSION = '4.3';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.3',
+    date: '2026-07-19',
+    items: [
+      { title: 'Ribbon height drag-bar is grabbable again', detail: 'The bar on the ribbon\'s bottom edge for dragging its height is a real 6px strip once more — visible and grabbable when unlocked, invisible when locked, and it never shifts the layout on toggle.', tags: ['Fix', 'UI'] },
+      { title: 'Logo in the About window', detail: 'The About dialog now shows the app icon at the top.', tags: ['Branding'] },
+    ],
+  },
   {
     version: '4.2',
     date: '2026-07-19',

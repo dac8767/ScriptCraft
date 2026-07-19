@@ -2574,6 +2574,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         <div className="dialog-box about-dialog" onClick={(e) => e.stopPropagation()}>
           <div className="dialog-header">About ScriptCraft</div>
           <div className="dialog-body about-body">
+            <img className="about-logo" src="/splash-logo.png" alt="ScriptCraft" />
             <div className="about-title">ScriptCraft</div>
             <div className="about-version">
               Version {APP_VERSION}

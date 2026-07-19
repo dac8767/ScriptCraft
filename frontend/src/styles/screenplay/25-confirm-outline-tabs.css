@@ -109,34 +109,30 @@
   position: relative;
   flex-shrink: 0;
 }
-/* v3.86, Derek: this drag strip renders only while UNLOCKED, so a 5px flow
-   height meant unlocking pushed the outline bar / editor down by 5px — an extra
-   gap under the ribbon that vanished when you locked again. It now takes ZERO
-   layout height (a hit area straddling the boundary via ::before), so toggling
-   the lock never shifts anything. */
+/* v4.3, Derek: the ribbon/menu-bar height drag handle. It ALWAYS occupies its
+   6px in the layout (rendered in both lock states), so toggling the lock never
+   shifts anything — earlier versions rendered it only when unlocked (5px in/out
+   = a jump) or gave it zero height (nothing to grab). Visible + grabbable when
+   unlocked; invisible + inert when locked (no dead control, but the space is
+   kept so nothing moves). */
 .fs-top-chrome-resize {
-  height: 0;
-  position: relative;
-  cursor: ns-resize;
-  flex-shrink: 0;
-}
-.fs-top-chrome-resize::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -3px;
   height: 6px;
-  /* v4.1, Derek: a faint always-visible bar (was invisible in v3.86) so the
-     ribbon-size drag handle can be seen and grabbed — still zero flow height,
-     so toggling the lock never shifts the layout. */
+  flex-shrink: 0;
+  cursor: ns-resize;
   background: var(--fd-border);
-  opacity: 0.5;
+  opacity: 0.45;
+  transition: opacity 0.12s ease, background 0.12s ease;
 }
-.fs-top-chrome-resize:hover::before,
-.fs-top-chrome-resize:active::before {
+.fs-top-chrome-resize:hover,
+.fs-top-chrome-resize:active {
   background: var(--fd-accent);
   opacity: 0.7;
+}
+.fs-top-chrome-resize.locked {
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+  cursor: default;
 }
 /* v2.29, Derek: a breath of space between the toolbar and the outline bar.
    v2.38: halved. */

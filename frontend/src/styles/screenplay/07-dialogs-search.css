@@ -285,6 +285,14 @@
 .about-body {
   text-align: center;
 }
+/* v4.3, Derek: the app logo at the top of the About dialog. */
+.about-logo {
+  display: block;
+  width: 88px;
+  height: 88px;
+  margin: 2px auto 12px;
+  object-fit: contain;
+}
 .about-title {
   font-size: 22px;
   font-weight: 700;
