@@ -65,14 +65,14 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.6';
+export const APP_VERSION = '4.7';
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: '4.6',
+    version: '4.7',
     date: '2026-07-19',
     items: [
-      { title: 'Tighter spacing between small ribbon buttons', detail: 'The small (two-row) ribbon buttons sat in wide boxes with a lot of dead air around each icon. Their boxes are narrower now and the gap between them is trimmed, so the icons read as a tighter group. Big buttons are unchanged.', tags: ['UI', 'Polish'] },
+      { title: 'Small ribbon buttons pulled noticeably tighter', detail: 'v4.6\'s trim was too subtle to see. The small (two-row) icon boxes are narrower again (compact 26→20px, comfortable 28→22px), the row gap is pinned to 1px, and the wrapper\'s internal padding is gone — so the icons now read as a tight group. Big buttons are unchanged.', tags: ['UI', 'Polish'] },
     ],
   },
   {
