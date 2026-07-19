@@ -27,12 +27,20 @@
  * note-per-formatting-change.
  */
 
+import { useEditorStore } from '../stores/editorStore';
+
+type EditorStoreState = ReturnType<typeof useEditorStore.getState>;
+
 export interface DesignToken {
   /** stable id, also the persisted key in the store's designVars map */
   id: string;
   label: string;
-  /** the CSS custom property the stylesheet reads */
-  cssVar: string;
+  /** the CSS custom property the stylesheet reads (css-var tokens) */
+  cssVar?: string;
+  /** OR a binding to an existing store field (store-bound tokens). Used for
+   *  chrome dimensions the app already owns (spacing, sizes) so the slider
+   *  drives that ONE system instead of a second, losing CSS variable. */
+  store?: { get: (s: EditorStoreState) => number; set: (v: number) => void };
   /** '' for unitless (line-height) */
   unit: 'px' | 'in' | 'pt' | '';
   min: number;
@@ -67,24 +75,26 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     id: 'menu',
     label: 'Menu Bar',
     tokens: [
-      { id: 'menuHeight', label: 'Bar height', cssVar: '--dz-menu-height', unit: 'px', min: 20, max: 48, step: 1, def: 28 },
-      { id: 'menuItemPadX', label: 'Item padding — horizontal', cssVar: '--dz-menu-item-padx', unit: 'px', min: 2, max: 24, step: 1, def: 10 },
-      { id: 'menuItemPadY', label: 'Item padding — vertical', cssVar: '--dz-menu-item-pady', unit: 'px', min: 0, max: 16, step: 1, def: 4 },
-      { id: 'menuItemRadius', label: 'Item corner radius', cssVar: '--dz-menu-item-radius', unit: 'px', min: 0, max: 16, step: 1, def: 6 },
-      { id: 'menuLabelSize', label: 'Label font size', cssVar: '--dz-menu-label-size', unit: 'px', min: 9, max: 18, step: 0.5, def: 12.5 },
+      // The menu BAR height/padding/label size all have compact/comfortable/
+      // custom variants (and the custom height is set inline from the drag) —
+      // that mode+drag system is their single source, so they live on the bar's
+      // own resize handle and the View ▸ menu size, not here. Item spacing is
+      // the one dimension applied uniformly (inline gap) in every mode, so it's
+      // driven here through that same store field.
+      { id: 'menuSpacing', label: 'Item spacing', unit: 'px', min: 0, max: 32, step: 1, def: 0,
+        store: { get: (s) => s.chromeGapPx.menu, set: (v) => useEditorStore.getState().setChromeGap('menu', v) } },
       { id: 'menuDropdownMinW', label: 'Dropdown min width', cssVar: '--dz-menu-dd-minw', unit: 'px', min: 160, max: 400, step: 5, def: 260 },
-      { id: 'menuDropdownItemPadY', label: 'Dropdown item padding', cssVar: '--dz-menu-dd-item-pady', unit: 'px', min: 2, max: 16, step: 1, def: 5 },
-      { id: 'menuDropdownItemFont', label: 'Dropdown item font', cssVar: '--dz-menu-dd-item-font', unit: 'px', min: 10, max: 18, step: 0.5, def: 13 },
     ],
   },
   {
     id: 'toolbar',
     label: 'Toolbar / Ribbon',
     tokens: [
-      // Ribbon default. The compact ribbon draws small buttons at 20px (22 in
-      // comfortable); the slider drives both. def matches the compact default.
-      { id: 'toolbarBtnW', label: 'Small button width', cssVar: '--dz-toolbar-btn-w', unit: 'px', min: 14, max: 36, step: 1, def: 20 },
-      { id: 'toolbarBtnH', label: 'Small button height', cssVar: '--dz-toolbar-btn-h', unit: 'px', min: 18, max: 36, step: 1, def: 24 },
+      // Button width/height scale with the compact/comfortable/custom mode, so
+      // they're owned by the toolbar mode + its height drag-bar, not here. These
+      // are the leaf properties with a single declaration in every mode:
+      { id: 'toolbarSpacing', label: 'Item spacing', unit: 'px', min: 0, max: 32, step: 1, def: 2,
+        store: { get: (s) => s.chromeGapPx.toolbar, set: (v) => useEditorStore.getState().setChromeGap('toolbar', v) } },
       { id: 'toolbarBtnRadius', label: 'Button corner radius', cssVar: '--dz-toolbar-btn-radius', unit: 'px', min: 0, max: 12, step: 1, def: 5 },
       { id: 'toolbarBigIcon', label: 'Big icon size', cssVar: '--dz-toolbar-big-icon', unit: 'px', min: 16, max: 40, step: 1, def: 26 },
       { id: 'toolbarBigLabel', label: 'Big button label font', cssVar: '--dz-toolbar-big-label', unit: 'px', min: 7, max: 16, step: 0.5, def: 10 },
@@ -94,8 +104,8 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     id: 'panels',
     label: 'Panels & Windows',
     tokens: [
-      { id: 'navigatorW', label: 'Navigator width', cssVar: '--dz-navigator-w', unit: 'px', min: 180, max: 480, step: 5, def: 276 },
-      { id: 'notesPanelW', label: 'Notes panel width', cssVar: '--dz-notes-panel-w', unit: 'px', min: 200, max: 480, step: 5, def: 300 },
+      // Panel WIDTHS are dragged (local state / resize handle) — that handle is
+      // their single source. These are the fixed design details:
       { id: 'dockEdgeW', label: 'Dock edge grip width', cssVar: '--dz-dock-edge-w', unit: 'px', min: 2, max: 16, step: 1, def: 6 },
       { id: 'toolWinRadius', label: 'Tool window radius', cssVar: '--dz-toolwin-radius', unit: 'px', min: 0, max: 20, step: 1, def: 8 },
       { id: 'toolWinHeaderPad', label: 'Tool window header padding', cssVar: '--dz-toolwin-head-pad', unit: 'px', min: 2, max: 20, step: 1, def: 8 },
@@ -184,6 +194,7 @@ export function formatTokenValue(t: DesignToken, val: number): string {
 export function applyDesignVars(vars: Record<string, number>): void {
   const root = document.documentElement;
   for (const t of DESIGN_TOKENS) {
+    if (!t.cssVar) continue; // store-bound tokens drive the store, not :root
     const v = vars[t.id];
     if (v === undefined || v === null || Number.isNaN(v)) {
       root.style.removeProperty(t.cssVar);
@@ -200,7 +211,7 @@ export function applyDesignVars(vars: Record<string, number>): void {
  */
 export function buildOverrideCss(vars: Record<string, number>): string {
   const lines = DESIGN_TOKENS
-    .filter((t) => vars[t.id] !== undefined && vars[t.id] !== t.def)
+    .filter((t) => t.cssVar && vars[t.id] !== undefined && vars[t.id] !== t.def)
     .map((t) => `  ${t.cssVar}: ${formatTokenValue(t, vars[t.id])};`);
   if (!lines.length) return '';
   return `:root {\n${lines.join('\n')}\n}`;

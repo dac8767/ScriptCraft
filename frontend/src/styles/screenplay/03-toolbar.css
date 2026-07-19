@@ -13,7 +13,7 @@
 .toolbar-group { display: flex; align-items: center; gap: 1px; }
 .toolbar-btn {
   display: flex; align-items: center; justify-content: center;
-  width: var(--dz-toolbar-btn-w, 26px); height: var(--dz-toolbar-btn-h, 24px); background: transparent;
+  width: 26px; height: 24px; background: transparent;
   border: 1px solid transparent; border-radius: var(--dz-toolbar-btn-radius, 5px);
   color: var(--fd-text); cursor: pointer; font-size: 12px;
   transition: background 0.1s;
@@ -639,9 +639,9 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row { gap: 1px; }
 .toolbar.toolbar-ribbon .rib-section:not(.rib-single) .toolbar-priority-block { gap: 0; }
 .toolbar.toolbar-ribbon:not(.toolbar-comfortable):not(.toolbar-custom)
-  .rib-section:not(.rib-single) .toolbar-btn:not(.toolbar-btn-labeled):not(.zoom-tb-step) { width: var(--dz-toolbar-btn-w, 20px); }
+  .rib-section:not(.rib-single) .toolbar-btn:not(.toolbar-btn-labeled):not(.zoom-tb-step) { width: 20px; }
 .toolbar.toolbar-ribbon.toolbar-comfortable
-  .rib-section:not(.rib-single) .toolbar-btn:not(.toolbar-btn-labeled):not(.zoom-tb-step) { width: var(--dz-toolbar-btn-w, 22px); }
+  .rib-section:not(.rib-single) .toolbar-btn:not(.toolbar-btn-labeled):not(.zoom-tb-step) { width: 22px; }
 .toolbar.toolbar-ribbon { --rib-itemh: 24px; }
 .toolbar.toolbar-ribbon.toolbar-comfortable { --rib-itemh: 26px; }
 .toolbar.toolbar-ribbon.toolbar-custom {

@@ -22,17 +22,22 @@ function snap(val: number, step: number): number {
 }
 
 function TokenRow({ t }: { t: DesignToken }) {
-  const override = useEditorStore((s) => s.designVars[t.id]);
+  const isStore = !!t.store;
+  // css-var tokens read their override map; store-bound tokens read the store
+  // field live (so external changes — e.g. the drag handle — reflect here too).
+  const cssOverride = useEditorStore((s) => (isStore ? undefined : s.designVars[t.id]));
+  const storeVal = useEditorStore((s) => (t.store ? t.store.get(s) : 0));
   const setDesignVar = useEditorStore((s) => s.setDesignVar);
   const resetDesignVar = useEditorStore((s) => s.resetDesignVar);
-  const value = override ?? t.def;
-  const isOverridden = override !== undefined && override !== t.def;
+  const value = isStore ? storeVal : (cssOverride ?? t.def);
+  const isOverridden = isStore ? storeVal !== t.def : cssOverride !== undefined && cssOverride !== t.def;
 
   const commit = (raw: number) => {
     if (Number.isNaN(raw)) return;
     const clamped = Math.min(t.max, Math.max(t.min, snap(raw, t.step)));
-    setDesignVar(t.id, clamped);
+    if (t.store) t.store.set(clamped); else setDesignVar(t.id, clamped);
   };
+  const reset = () => { if (t.store) t.store.set(t.def); else resetDesignVar(t.id); };
 
   return (
     <div className={`dz-row${isOverridden ? ' dz-row-on' : ''}`}>
@@ -53,7 +58,7 @@ function TokenRow({ t }: { t: DesignToken }) {
             className="dz-reset"
             title={isOverridden ? 'Reset to default' : 'Default'}
             disabled={!isOverridden}
-            onClick={() => resetDesignVar(t.id)}
+            onClick={reset}
           ><LuRotateCcw /></button>
         </div>
       </div>
@@ -171,6 +176,8 @@ export default function DesignPanel() {
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
+
+      <div className="dz-note">A setting only shows an effect while the thing it styles is on screen — open that panel, window, or dialog to watch it change.</div>
 
       <div className="dz-body">
         {groups.map((g) => {

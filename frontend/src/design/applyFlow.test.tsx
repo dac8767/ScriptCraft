@@ -26,11 +26,11 @@ describe('design var apply flow (store → effect → :root)', () => {
     const root = createRoot(container);
     act(() => { root.render(<Harness />); });
 
-    expect(document.documentElement.style.getPropertyValue('--dz-menu-height')).toBe('');
-    act(() => { useEditorStore.getState().setDesignVar('menuHeight', 40); });
-    expect(document.documentElement.style.getPropertyValue('--dz-menu-height')).toBe('40px');
-    act(() => { useEditorStore.getState().resetDesignVar('menuHeight'); });
-    expect(document.documentElement.style.getPropertyValue('--dz-menu-height')).toBe('');
+    expect(document.documentElement.style.getPropertyValue('--dz-editor-main-pad-top')).toBe('');
+    act(() => { useEditorStore.getState().setDesignVar('editorMainPadTop', 48); });
+    expect(document.documentElement.style.getPropertyValue('--dz-editor-main-pad-top')).toBe('48px');
+    act(() => { useEditorStore.getState().resetDesignVar('editorMainPadTop'); });
+    expect(document.documentElement.style.getPropertyValue('--dz-editor-main-pad-top')).toBe('');
     act(() => { root.unmount(); });
   });
 });

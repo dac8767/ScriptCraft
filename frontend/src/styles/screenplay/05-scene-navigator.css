@@ -1,6 +1,6 @@
 /* ============ SCENE NAVIGATOR ============ */
 .scene-navigator {
-  width: var(--dz-navigator-w, 276px); min-width: 180px; background: var(--fd-navigator-bg);
+  width: 276px; min-width: 180px; background: var(--fd-navigator-bg);
   border-right: 1px solid var(--fd-border); display: flex;
   flex-direction: column; overflow: hidden;
 }

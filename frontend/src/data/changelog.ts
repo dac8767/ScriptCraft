@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.9';
+export const APP_VERSION = '4.10';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.10',
+    date: '2026-07-19',
+    items: [
+      { title: 'Design panel — every slider now actually does something', detail: 'The menu/toolbar height, button size and panel width knobs were dead for anyone using a customized bar: those dimensions are owned by the compact/comfortable/custom modes and the drag handles (and set inline), so a styling variable could never win. Those knobs are gone; menu and toolbar “Item spacing” now drive that same system so they work in every mode, and the surviving sliders (radii, icon/label sizes, card/dialog/scrapbook/beatboard/navigator details) were each verified against the running app. A note explains that a setting only shows while the thing it styles is on screen. Chrome sizes still live on the bars’ own resize handles and the size modes; page geometry stays in Page Setup.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '4.9',
     date: '2026-07-19',
