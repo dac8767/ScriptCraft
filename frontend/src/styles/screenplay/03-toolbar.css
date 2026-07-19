@@ -625,6 +625,22 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
    box sizes to icon + label like any other button. */
 .toolbar.toolbar-ribbon .rib-single .toolbar-btn { width: auto; min-width: 30px; height: auto; }
 .toolbar.toolbar-ribbon .toolbar-btn.rib-tall-btn { width: auto; height: 80%; }
+/* v4.6, Derek: tighter SMALL (two-row) ribbon buttons — "reduce the spacing
+   between small buttons." Two levers, both scoped to non-single sections so the
+   big single-row buttons stay exactly as they are:
+   1) trim the row gap by 1px (never below 0) in every mode;
+   2) narrow the icon box in the fixed-size modes (compact 26→22, comfortable
+      28→24) — the ~16px glyph left ~10px of dead air per button, and that box
+      width, not the gap, was most of the space between adjacent icons.
+   Custom mode keeps its dragged/scaled width; labeled buttons, dropdowns, and
+   the hand-sized zoom steppers keep their own widths. */
+.toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row {
+  gap: max(0px, calc(var(--rib-gap, 2px) - 1px));
+}
+.toolbar.toolbar-ribbon:not(.toolbar-comfortable):not(.toolbar-custom)
+  .rib-section:not(.rib-single) .toolbar-btn:not(.toolbar-btn-labeled):not(.zoom-tb-step) { width: 22px; }
+.toolbar.toolbar-ribbon.toolbar-comfortable
+  .rib-section:not(.rib-single) .toolbar-btn:not(.toolbar-btn-labeled):not(.zoom-tb-step) { width: 24px; }
 .toolbar.toolbar-ribbon { --rib-itemh: 24px; }
 .toolbar.toolbar-ribbon.toolbar-comfortable { --rib-itemh: 26px; }
 .toolbar.toolbar-ribbon.toolbar-custom {
