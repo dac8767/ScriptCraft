@@ -489,10 +489,18 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  /* v3.70, Derek: tighter gap between a section's two rows. v4.11: the vertical
-     gap between the two rows of a two-row section is a Design knob. */
-  gap: var(--dz-rib-row-gap, 0px);
+  /* v3.70, Derek: tighter gap between a section's two rows. */
+  gap: 0;
   min-width: 0;
+}
+/* v4.12, Derek: the vertical spacing between a two-row section's two rows is a
+   Design knob. The row BOXES already touch (gap 0); the visible space is each
+   row's height around a smaller button, so the knob is a margin on the second
+   row that can go NEGATIVE to pull the two rows of icons together. Covers both
+   the no-divider case (row + row) and the divider case (line + row). */
+.toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row + .rib-row,
+.toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row-line + .rib-row {
+  margin-top: var(--dz-rib-row-gap, 0px);
 }
 .rib-row {
   display: flex;

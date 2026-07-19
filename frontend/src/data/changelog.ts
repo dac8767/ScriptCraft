@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.11';
+export const APP_VERSION = '4.12';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.12',
+    date: '2026-07-19',
+    items: [
+      { title: 'Two-row vertical gap now actually closes the gap', detail: 'The row boxes already touch, so the space you see between the two rows is each row’s height around a smaller icon — a 0 gap couldn’t remove it. The slider now goes negative to pull the two rows of icons together (and positive to spread them), so you can close that gap completely.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '4.11',
     date: '2026-07-19',
