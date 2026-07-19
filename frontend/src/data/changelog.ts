@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.96';
+export const APP_VERSION = '3.97';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.97',
+    date: '2026-07-19',
+    items: [
+      { title: 'Screenshot icon sized to match', detail: 'The camera icon read smaller than its neighbours (the glyph has more padding); bumped it so the big ribbon icons look the same height.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.96',
     date: '2026-07-19',

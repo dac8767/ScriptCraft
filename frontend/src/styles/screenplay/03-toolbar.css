@@ -548,6 +548,14 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
    the lock no longer resizes the big button and shoves the layout up/down. */
 .rib-tall[data-key="lockResize"] svg,
 .rib-single .toolbar-priority-block[data-key="lockResize"] svg { width: 26px; height: 26px; }
+/* v3.97, Derek: OPTICAL-SIZE corrections for the big (ribbon) icons. Every big
+   icon's svg box is already pinned to 26px, but a few Font Awesome glyphs sit
+   small inside their viewBox (heavy internal padding), so they READ shorter
+   than full-bleed icons like the padlock or wrench. A transform scale bumps the
+   glyph to match WITHOUT changing the layout box — nothing shifts. One line per
+   icon that still looks off; keep it here so there's a single place for them.
+   FaCamera fills ~75% of its viewBox vs ~90% for most, so it needs ~1.2×. */
+.toolbar.toolbar-ribbon [data-key="screenshot"] svg { transform: scale(1.2); }
 .rib-tall-label { font-size: 10px; line-height: 1.1; white-space: nowrap; }
 /* v2.97: the OPTIONAL line between a section's two rows (click the split
    in the visual editor to toggle it). */
