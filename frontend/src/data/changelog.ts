@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.95';
+export const APP_VERSION = '3.96';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.96',
+    date: '2026-07-19',
+    items: [
+      { title: 'Screenshot options drop from the button', detail: 'The Full Screen / Select Area choice now appears as a small dropdown under the Screenshot toolbar button instead of a centered window.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.95',
     date: '2026-07-19',

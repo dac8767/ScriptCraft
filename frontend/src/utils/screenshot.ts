@@ -16,31 +16,38 @@ import { useSettingsStore } from '../stores/settingsStore';
 
 type Rect = { x: number; y: number; width: number; height: number };
 
-/* ── the mode chooser ──────────────────────────────────────────────────── */
+/* ── the mode chooser: a dropdown anchored under the Screenshot button ──── */
 function chooseMode(): Promise<'full' | 'area' | null> {
   return new Promise((resolve) => {
-    const overlay = document.createElement('div');
-    overlay.className = 'fs-shot-overlay';
-    const card = document.createElement('div');
-    card.className = 'fs-shot-card';
-    card.innerHTML = `
-      <div class="fs-shot-title">Screenshot</div>
-      <div class="fs-shot-btns">
-        <button data-mode="full" class="fs-shot-btn">Full Screen</button>
-        <button data-mode="area" class="fs-shot-btn">Select Area</button>
-      </div>
-      <button data-mode="cancel" class="fs-shot-cancel">Cancel</button>`;
-    overlay.appendChild(card);
-    document.body.appendChild(overlay);
-    const done = (v: 'full' | 'area' | null) => { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(v); };
+    const btn = document.querySelector<HTMLElement>('[data-key="screenshot"]');
+    const catcher = document.createElement('div');   // transparent click-away catcher
+    catcher.className = 'fs-shot-catch';
+    const menu = document.createElement('div');
+    menu.className = 'fs-shot-menu';
+    menu.innerHTML = `
+      <button data-mode="full" class="fs-shot-item">Full Screen</button>
+      <button data-mode="area" class="fs-shot-item">Select Area…</button>`;
+    document.body.appendChild(catcher);
+    document.body.appendChild(menu);
+
+    const MENU_W = 176;
+    if (btn) {
+      const r = btn.getBoundingClientRect();
+      menu.style.top = `${r.bottom + 3}px`;
+      menu.style.left = `${Math.max(6, Math.min(r.left, window.innerWidth - MENU_W - 6))}px`;
+    } else {                                          // button not on the bar — center-top
+      menu.style.top = '52px';
+      menu.style.left = `${Math.round(window.innerWidth / 2 - MENU_W / 2)}px`;
+    }
+
+    const done = (v: 'full' | 'area' | null) => { catcher.remove(); menu.remove(); document.removeEventListener('keydown', onKey); resolve(v); };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') done(null); };
     document.addEventListener('keydown', onKey);
-    overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) done(null); });
-    card.addEventListener('click', (e) => {
+    catcher.addEventListener('mousedown', () => done(null));
+    menu.addEventListener('click', (e) => {
       const m = (e.target as HTMLElement).getAttribute('data-mode');
       if (m === 'full') done('full');
       else if (m === 'area') done('area');
-      else if (m === 'cancel') done(null);
     });
   });
 }
