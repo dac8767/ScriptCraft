@@ -603,7 +603,10 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // v3.36, Derek: while the Toolbar tab is open, the REAL ribbon bar becomes
   // the editor (drop surface + handles). Closing the window, or leaving the
   // tab, locks the layout. The store flag drives Toolbar's edit rendering.
-  const editingToolbar = open && activeCat === 'toolbar';
+  // v4.4, Derek: NOT while locked — "Lock All" must freeze layout edits too
+  // (the dialog veils its tabs, but the ribbon bar itself was still editable:
+  // you could add sections and drag items). The lock veil tells you to unlock.
+  const editingToolbar = open && activeCat === 'toolbar' && !uiResizeLocked;
   React.useEffect(() => {
     useEditorStore.getState().setToolbarEditing(editingToolbar);
     return () => { useEditorStore.getState().setToolbarEditing(false); };

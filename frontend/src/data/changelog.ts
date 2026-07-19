@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.3';
+export const APP_VERSION = '4.4';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4',
+    date: '2026-07-19',
+    items: [
+      { title: 'Lock All also freezes ribbon layout edits', detail: 'While locked you could still add sections and drag items on the ribbon; now the toolbar can\'t be edited until you unlock (the Customize dialog already tells you to).', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '4.3',
     date: '2026-07-19',
