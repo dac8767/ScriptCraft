@@ -181,7 +181,15 @@ function EditableTable({ data, onChange, onCellFocus }: {
   const isEmpty = tableIsEmpty(data.rows);
 
   return (
-    <div className={`fs-nb-table-wrap${isEmpty ? ' fs-nb-table-empty' : ''}${data.borderless ? ' fs-nb-table-borderless' : ''}`}>
+    <div
+      className={`fs-nb-table-wrap${isEmpty ? ' fs-nb-table-empty' : ''}${data.borderless ? ' fs-nb-table-borderless' : ''}`}
+      // v3.86, Derek: Table menu > Grid Color / Grid Thickness. The cell borders
+      // read these vars (CSS falls back to the default grid when unset).
+      style={{
+        ...(data.borderColor ? { ['--nb-grid-color' as string]: data.borderColor } : {}),
+        ...(data.borderW ? { ['--nb-grid-w' as string]: `${data.borderW}px` } : {}),
+      } as React.CSSProperties}
+    >
       <table
         className="fs-nb-table"
         style={{ tableLayout: 'fixed', background: data.shading || undefined }}
@@ -191,7 +199,13 @@ function EditableTable({ data, onChange, onCellFocus }: {
           {data.rows.map((row, ri) => (
             <tr key={ri} style={{ height: rowHeights[ri] || 32 }}>
               {row.map((cell, ci) => (
-                <td key={ci} style={{ height: rowHeights[ri] || 32 }}>
+                <td
+                  key={ci}
+                  style={{ height: rowHeights[ri] || 32 }}
+                  // v3.86: right-clicking a cell makes it the active cell so the
+                  // context menu's row/column ops act on the cell you clicked.
+                  onContextMenu={() => onCellFocus?.(ri, ci)}
+                >
                   <Cell
                     value={cell}
                     onCommit={(v) => setCell(ri, ci, v)}
@@ -250,6 +264,70 @@ function useBoxDrag(box: NbBox, onChange: (b: NbBox) => void, onFocus?: () => vo
  *  the moment it mounts, caret at the end, so typing never skips a beat. */
 let pendingTextFocus: string | null = null;
 
+/* ── v3.86, Derek: Scrapbook text-box formatting ───────────────────────────
+   The ribbon's B/I/U, font, size and colour controls act on the focused text
+   box's contentEditable via execCommand while the Scrapbook is open — before,
+   only B/I/U/strike/align were wired and they didn't persist, and font / size /
+   colour weren't wired at all (they hit the empty script editor). We track the
+   last-focused box body and its selection continuously (a toolbar click would
+   otherwise blur it), refocus + restore the range before running the command,
+   then write the result back to the store so it survives a re-render. */
+let sbBody: HTMLDivElement | null = null;
+let sbBoxId: string | null = null;
+let sbRange: Range | null = null;
+
+/** Remember the live selection whenever it sits inside a Scrapbook text box. */
+export function trackScrapbookSelection() {
+  const sel = document.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+  const node = sel.anchorNode;
+  const el = (node && node.nodeType === 3 ? node.parentElement : node) as HTMLElement | null;
+  const body = el?.closest?.('.fs-nb-box-body') as HTMLDivElement | null;
+  if (body) {
+    sbBody = body;
+    sbBoxId = body.dataset.nbBox || null;
+    sbRange = sel.getRangeAt(0).cloneRange();
+  }
+}
+
+/** Apply a formatting command to the focused Scrapbook text box and persist it.
+ *  `command` is an execCommand name, plus a synthetic 'fontSizePx' that sets an
+ *  arbitrary size (execCommand('fontSize') only takes the legacy 1–7 scale). */
+export function applyScrapbookTextFormat(command: string, value?: string): boolean {
+  const el = sbBody;
+  if (!el || !sbBoxId || typeof document.execCommand !== 'function') return false;
+  el.focus();
+  if (sbRange) {
+    const sel = document.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(sbRange);
+  }
+  document.execCommand('styleWithCSS', false, 'true');
+  if (command === 'fontSizePx') {
+    // Tag the run at legacy size 7, then swap each tag for a px-sized span.
+    document.execCommand('styleWithCSS', false, 'false');
+    document.execCommand('fontSize', false, '7');
+    el.querySelectorAll('font[size="7"]').forEach((f) => {
+      const span = document.createElement('span');
+      span.style.fontSize = value || '';
+      while (f.firstChild) span.appendChild(f.firstChild);
+      f.replaceWith(span);
+    });
+  } else {
+    document.execCommand(command, false, value);
+  }
+  // Persist the new HTML so a re-render / page switch keeps the formatting.
+  const store = useNotebookStore.getState();
+  const pid = store.selectedPageId;
+  if (pid) {
+    const page = store.pages[pid];
+    store.updatePage(pid, { boxes: page.boxes.map((b) => (b.id === sbBoxId ? { ...b, html: el.innerHTML } : b)) });
+  }
+  const sel = document.getSelection();
+  if (sel && sel.rangeCount) sbRange = sel.getRangeAt(0).cloneRange();
+  return true;
+}
+
 function TextBox({ box, focused, onChange, onFocusBox, onDelete }: {
   box: NbBox; focused: boolean; onChange: (b: NbBox) => void; onFocusBox: (id: string) => void; onDelete: (id: string) => void;
 }) {
@@ -300,10 +378,13 @@ function TextBox({ box, focused, onChange, onFocusBox, onDelete }: {
       <div
         ref={ref}
         className="fs-nb-box-body"
+        // v3.86: the id lets the toolbar's formatting commands find this box.
+        data-nb-box={box.id}
         style={{ height: box.h }}
         contentEditable
         suppressContentEditableWarning
         onMouseDown={() => onFocusBox(box.id)}
+        onFocus={() => { sbBody = ref.current; sbBoxId = box.id; }}
         onInput={() => onChange({ ...box, html: ref.current?.innerHTML || '' })}
         spellCheck
       />
@@ -374,10 +455,12 @@ export const boxAsTable = (b: NbBox): NbTable => ({
   id: b.id, rows: b.rows || [['', ''], ['', '']],
   colWidths: b.colWidths || [90, 90], rowHeights: b.rowHeights || [32, 32],
   align: b.align || 'left', borderless: b.borderless, shading: b.shading,
+  borderColor: b.borderColor, borderW: b.borderW,
 });
 
-function TableBox({ box, focused, onChange, onFocusBox, onDelete }: {
+function TableBox({ box, focused, onChange, onFocusBox, onDelete, onContext }: {
   box: NbBox; focused: boolean; onChange: (b: NbBox) => void; onFocusBox: (id: string) => void; onDelete: (id: string) => void;
+  onContext?: (x: number, y: number) => void;
 }) {
   const startDrag = useBoxDrag(box, onChange, () => onFocusBox(box.id));
   const [hover, setHover] = useState(false);
@@ -388,6 +471,9 @@ function TableBox({ box, focused, onChange, onFocusBox, onDelete }: {
   return (
     <div className={`fs-nb-tablebox${focused ? ' focused' : ''}`} style={{ left: box.x, top: box.y }}
       onMouseDown={(e) => { e.stopPropagation(); onFocusBox(box.id); }}
+      // v3.86: right-click anywhere on the table → the Table context menu. The
+      // cell under the cursor sets itself active first (its own onContextMenu).
+      onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onFocusBox(box.id); onContext?.(e.clientX, e.clientY); }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -399,8 +485,16 @@ function TableBox({ box, focused, onChange, onFocusBox, onDelete }: {
       )}
       <EditableTable
         data={boxAsTable(box)}
-        onChange={(t) => onChange({ ...box, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: t.align, borderless: t.borderless, shading: t.shading })}
-        onCellFocus={(ri, ci) => useNotebookStore.getState().setFocusedCell({ boxId: box.id, ri, ci })}
+        onChange={(t) => onChange({ ...box, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: t.align, borderless: t.borderless, shading: t.shading, borderColor: t.borderColor, borderW: t.borderW })}
+        onCellFocus={(ri, ci) => {
+          // v3.86, Derek: clicking into a cell also activates the box, so the
+          // bright (accent) table border shows — not only when you click the
+          // box body or its bar. Cell mousedown stops propagation, so the box's
+          // own onFocusBox never fired on a cell click before.
+          const st = useNotebookStore.getState();
+          st.setFocusedCell({ boxId: box.id, ri, ci });
+          st.setFocusedBox(box.id);
+        }}
       />
     </div>
   );
@@ -481,6 +575,8 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
 
   const updateBox = (b: NbBox) => onChangeBoxes(boxes.map((x) => (x.id === b.id ? b : x)));
   const deleteBox = (id: string) => { onChangeBoxes(boxes.filter((x) => x.id !== id)); if (focusedId === id) setFocusedId(null); };
+  // v3.86: the table context menu (right-click) — position + kind of the box.
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; kind: 'table' | 'picture' } | null>(null);
 
   return (
     <div
@@ -534,8 +630,9 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
       )}
       {boxes.map((b) =>
         b.type === 'image' ? <ImageBox key={b.id} box={b} focused={focusedId === b.id} onChange={updateBox} onDelete={deleteBox} onFocusBox={setFocusedId} />
-        : b.type === 'table' ? <TableBox key={b.id} box={b} focused={focusedId === b.id} onChange={updateBox} onDelete={deleteBox} onFocusBox={setFocusedId} />
+        : b.type === 'table' ? <TableBox key={b.id} box={b} focused={focusedId === b.id} onChange={updateBox} onDelete={deleteBox} onFocusBox={setFocusedId} onContext={(x, y) => setCtxMenu({ x, y, kind: 'table' })} />
         : <TextBox key={b.id} box={b} focused={focusedId === b.id} onChange={updateBox} onDelete={deleteBox} onFocusBox={setFocusedId} />)}
+      {ctxMenu && <ScrapbookContextMenu x={ctxMenu.x} y={ctxMenu.y} kind={ctxMenu.kind} onClose={() => setCtxMenu(null)} />}
     </div>
   );
 }
@@ -863,6 +960,14 @@ export function NotebookSurface() {
   const page = useNotebookStore((s) => (s.selectedPageId ? s.pages[s.selectedPageId] : null));
   const { renamePage, updatePage } = useNotebookStore.getState();
 
+  // v3.86: follow the caret/selection so the toolbar's formatting commands know
+  // which text box (and which range) to act on, even after a toolbar click
+  // blurs the box.
+  useEffect(() => {
+    document.addEventListener('selectionchange', trackScrapbookSelection);
+    return () => document.removeEventListener('selectionchange', trackScrapbookSelection);
+  }, []);
+
   return (
     <div className="fs-nb-takeover">
       {/* v2.07: no button row here — the Scrapbook's controls live in the
@@ -991,7 +1096,7 @@ export function useScrapbookMenus(): Array<{
     if (!page || !tableBox) return;
     updatePage(page.id, {
       boxes: page.boxes.map((b) => (b.id === tableBox.id
-        ? { ...b, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: t.align, borderless: t.borderless, shading: t.shading }
+        ? { ...b, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: t.align, borderless: t.borderless, shading: t.shading, borderColor: t.borderColor, borderW: t.borderW }
         : b)),
     });
   };
@@ -1042,7 +1147,8 @@ export function useScrapbookMenus(): Array<{
       { separator: true, label: '' },
       { label: t?.borderless ? '\u2713 Hide Borders' : 'Hide Borders', disabled: noTable, action: mutate((x) => ({ ...x, borderless: !x.borderless })) },
       {
-        label: 'Shading', disabled: noTable,
+        // v3.86, Derek: renamed from "Shading" to match its effect.
+        label: 'Background Color', disabled: noTable,
         children: [
           ...SHADING_COLORS.map(([name, hex]) => ({
             icon: <span className="fs-hl-chip" style={{ background: hex }} />,
@@ -1050,6 +1156,28 @@ export function useScrapbookMenus(): Array<{
             action: mutate((x) => ({ ...x, shading: hex })),
           })),
           { label: 'None', action: mutate((x) => ({ ...x, shading: undefined })) },
+        ],
+      },
+      {
+        // v3.86, Derek: grid (border) line colour.
+        label: 'Grid Color', disabled: noTable,
+        children: [
+          ...BORDER_COLORS.map(([name, hex]) => ({
+            icon: <span className="fs-hl-chip" style={{ background: hex }} />,
+            label: (t?.borderColor || '') === hex ? `\u2713 ${name}` : name,
+            action: mutate((x) => ({ ...x, borderColor: hex })),
+          })),
+          { label: 'Default', action: mutate((x) => ({ ...x, borderColor: undefined })) },
+        ],
+      },
+      {
+        // v3.86, Derek: grid (border) line thickness.
+        label: 'Grid Thickness', disabled: noTable,
+        children: [
+          ...[1, 2, 3, 4].map((w) => ({
+            label: (t?.borderW || 1) === w ? `\u2713 ${w}px` : `${w}px`,
+            action: mutate((x) => ({ ...x, borderW: w })),
+          })),
         ],
       },
       {
@@ -1109,4 +1237,81 @@ export function useScrapbookMenus(): Array<{
   };
 
   return [tableMenu, pictureMenu];
+}
+
+/* ── v3.86, Derek: right-click a table (or image) → the SAME Table / Picture
+   menu as the menu bar, shown as a context menu at the cursor. Driven by
+   useScrapbookMenus, so there's one source for the menu's contents. ── */
+type SbMenuItem = ReturnType<typeof useScrapbookMenus>[number]['items'][number];
+const sbCleanLabel = (l: string) => l.replace(/^✓\s*/, '');
+
+function SbCtxSubItem({ item, onClose }: { item: SbMenuItem; onClose: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div
+      className={`menu-dropdown-item has-children${item.disabled ? ' disabled' : ''}`}
+      style={{ position: 'relative' }}
+      onMouseEnter={() => !item.disabled && setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      {item.icon && <span className="menu-dropdown-icon">{item.icon}</span>}
+      <span>{sbCleanLabel(item.label)}</span>
+      <span className="menu-submenu-arrow">{'▸'}</span>
+      {open && item.children && (
+        <div className="menu-submenu submenu-visible">
+          {item.children.map((c, j) => c.separator ? <div key={j} className="menu-separator" /> : (
+            <div
+              key={`${j}:${c.label}`}
+              className={`menu-dropdown-item${c.disabled ? ' disabled' : ''}`}
+              onClick={(e) => { e.stopPropagation(); if (!c.disabled) { c.action?.(); onClose(); } }}
+            >
+              {c.icon && <span className="menu-dropdown-icon">{c.icon}</span>}
+              <span>{sbCleanLabel(c.label)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ScrapbookContextMenu({ x, y, kind, onClose }: {
+  x: number; y: number; kind: 'table' | 'picture'; onClose: () => void;
+}) {
+  const menus = useScrapbookMenus();
+  useEffect(() => {
+    const close = () => onClose();
+    window.addEventListener('mousedown', close);
+    window.addEventListener('resize', close);
+    window.addEventListener('blur', close);
+    return () => { window.removeEventListener('mousedown', close); window.removeEventListener('resize', close); window.removeEventListener('blur', close); };
+  }, [onClose]);
+  const menu = menus.find((m) => m.label === (kind === 'table' ? 'Table' : 'Picture'));
+  if (!menu) return null;
+  // Drop the leading "Insert Table/Picture…" (redundant on an existing item)
+  // and any separator left dangling at the top.
+  const items = menu.items.filter((it) => it.label !== 'Insert Table' && !it.label.startsWith('Insert Picture'));
+  while (items.length && items[0].separator) items.shift();
+  return createPortal(
+    <div
+      className="menu-dropdown fs-nb-ctxmenu"
+      style={{ top: y, left: x }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      {items.map((it, i) => it.separator ? <div key={i} className="menu-separator" /> : it.children ? (
+        <SbCtxSubItem key={`${i}:${it.label}`} item={it} onClose={onClose} />
+      ) : (
+        <div
+          key={`${i}:${it.label}`}
+          className={`menu-dropdown-item${it.disabled ? ' disabled' : ''}`}
+          onClick={() => { if (!it.disabled) { it.action?.(); onClose(); } }}
+        >
+          {it.icon && <span className="menu-dropdown-icon">{it.icon}</span>}
+          <span>{sbCleanLabel(it.label)}</span>
+        </div>
+      ))}
+    </div>,
+    document.body,
+  );
 }

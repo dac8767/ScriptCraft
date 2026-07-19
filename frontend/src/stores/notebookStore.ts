@@ -19,6 +19,11 @@ export interface NbTable {
   /** v2.13 (Table menu): hide the cell borders / fill the table. */
   borderless?: boolean;
   shading?: string;
+  /** v3.86 (Table menu): grid line colour + thickness. Stored on the box in the
+   *  same borderColor/borderW fields images use (a box is a table OR an image,
+   *  never both, so they can't collide). */
+  borderColor?: string;
+  borderW?: number;
 }
 export interface NbBox {
   id: string;

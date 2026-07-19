@@ -65,9 +65,21 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.85';
+export const APP_VERSION = '3.86';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.86',
+    date: '2026-07-19',
+    items: [
+      { title: 'Scrapbook text formatting works', detail: 'Bold, italic, underline, font, font size and text colour now apply to the selected text in a Scrapbook text box and are saved — before, font/size/colour hit the (empty) script editor and B/I/U changes weren\'t persisted.', tags: ['Fix', 'Tools'] },
+      { title: 'Right-click a table for its menu', detail: 'Right-clicking a Scrapbook table opens the Table menu (insert/delete rows & columns, background & grid colour, sort…) right at the cursor, acting on the cell you clicked.', tags: ['New Feature', 'Tools'] },
+      { title: 'Table background & grid controls', detail: '"Shading" is now "Background Color", and you can set the grid (border) colour and thickness from the Table menu.', tags: ['New Feature', 'Tools'] },
+      { title: 'Clicking into a cell highlights the table', detail: 'The bright table border now appears when you click into a cell, not only when you click the box or its bar.', tags: ['Fix', 'UI'] },
+      { title: 'Return to Editor on one line', detail: 'The Scrapbook ribbon\'s Return to Editor button reads on a single row.', tags: ['UI'] },
+      { title: 'Lock/Unlock no longer nudges the layout', detail: 'The resize strip under the ribbon only existed while unlocked, adding a 5px gap that shifted everything below when you toggled the sizing lock. It no longer takes any layout space.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '3.85',
     date: '2026-07-18',

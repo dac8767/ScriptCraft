@@ -37,7 +37,7 @@ import {
 import { tokenLabel } from './tokenMeta';
 import { buildRibbonPalette } from './ribbonPaletteData';
 import { useNotebookStore } from '../stores/notebookStore';
-import { TableGridPicker, closeNotebook } from './NotebookTool';
+import { TableGridPicker, closeNotebook, applyScrapbookTextFormat } from './NotebookTool';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { confirmDialog } from './ConfirmDialog';
 import { commandDef } from './toolbarCommands';
@@ -795,10 +795,74 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <button
           className="toolbar-btn"
           title={`${BUILTIN_BY_KEY[key]?.label ?? key} (Scrapbook)`}
-          onMouseDown={(e) => { e.preventDefault(); document.execCommand(SCRAPBOOK_EXEC[key]); }}
+          // v3.86: route through the shared helper so it also PERSISTS the
+          // change to the box's stored HTML (execCommand alone left it unsaved).
+          onMouseDown={(e) => { e.preventDefault(); applyScrapbookTextFormat(SCRAPBOOK_EXEC[key]); }}
         >
           {TOOLBAR_ICONS[key]}
         </button>
+      );
+    }
+    // v3.86, Derek: font family / size / colour must also act on the focused
+    // Scrapbook text box (before, only B/I/U/align were wired — these fell
+    // through to the script editor, which has no selection while a box is open).
+    if (scrapbookOpen && key === 'fontFamily') {
+      return (
+        <div className="toolbar-group">
+          <FontPicker
+            value={cursorFont}
+            extraFonts={extraFonts}
+            onChange={(val) => {
+              const entry = FONT_REGISTRY.find((f) => f.name === val);
+              if (entry) loadFont(entry);
+              applyScrapbookTextFormat('fontName', val);
+              if (inOverflow) setOverflowOpen(false);
+            }}
+          />
+        </div>
+      );
+    }
+    if (scrapbookOpen && key === 'fontSize') {
+      return (
+        <select
+          className="font-size-selector"
+          value={cursorSize ?? ''}
+          onChange={(e) => {
+            if (e.target.value === '') return;
+            applyScrapbookTextFormat('fontSizePx', `${Number(e.target.value)}pt`);
+            if (inOverflow) setOverflowOpen(false);
+          }}
+          title="Font Size (Scrapbook)"
+        >
+          {cursorSize === null && <option value="" disabled hidden>—</option>}
+          {(cursorSize !== null && !FONT_SIZES.includes(cursorSize)
+            ? [...FONT_SIZES, cursorSize].sort((a, b) => a - b)
+            : FONT_SIZES
+          ).map((sz) => <option key={sz} value={sz}>{sz}pt</option>)}
+        </select>
+      );
+    }
+    if (scrapbookOpen && key === 'textColor') {
+      return (
+        <div className="toolbar-group" style={{ position: 'relative' }}>
+          <button
+            className="toolbar-btn"
+            title="Text Color (Scrapbook)"
+            onMouseDown={(e) => { e.preventDefault(); setTextColorOpen(!textColorOpen); }}
+          >
+            {TOOLBAR_ICONS.textColor}
+          </button>
+          {showPopups && textColorOpen && (
+            <ColorPicker
+              value=""
+              onChange={(color) => {
+                applyScrapbookTextFormat('foreColor', color || '#000000');
+                setTextColorOpen(false);
+              }}
+              onClose={() => setTextColorOpen(false)}
+            />
+          )}
+        </div>
       );
     }
     /* v2.69, Derek: pasted text can carry a background color with no way to
@@ -1802,7 +1866,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 onClick={() => closeNotebook()}
               >
                 <LuUndo2 className="rib-scrapbook-return-icon" />
-                <span className="rib-scrapbook-return-label">Return to<br />Editor</span>
+                <span className="rib-scrapbook-return-label">Return to Editor</span>
               </button>
             </div>
           </div>

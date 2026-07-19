@@ -287,8 +287,10 @@
   position: relative;   /* the resize grips anchor to the cell */
   /* v3.83, Derek: the grid must stay visible once you type — the old
      --fd-border line was near-invisible in dark themes, so a filled table
-     read as gridless. One always-on grid colour (empty and filled alike). */
-  border: 1px solid color-mix(in srgb, var(--fd-text) 45%, transparent);
+     read as gridless. One always-on grid colour (empty and filled alike).
+     v3.86: the colour and thickness are overridable per table (Grid Color /
+     Grid Thickness) via CSS vars, defaulting to the always-on grid. */
+  border: var(--nb-grid-w, 1px) solid var(--nb-grid-color, color-mix(in srgb, var(--fd-text) 45%, transparent));
   padding: 0;
   vertical-align: top;
 }
@@ -1333,6 +1335,9 @@
 
 /* v2.05/v3.83: images, tables and text boxes all wear the SAME slim head bar,
    floating ABOVE the item's top edge (.fs-nb-box-head-float). */
+/* v3.86, Derek: the table/picture right-click context menu reuses the menu-bar
+   dropdown look; a touch narrower than the 260px menu-bar minimum. */
+.fs-nb-ctxmenu { min-width: 200px; }
 .fs-nb-tablebox {
   background: var(--fd-bg);
   border: 1px solid transparent;

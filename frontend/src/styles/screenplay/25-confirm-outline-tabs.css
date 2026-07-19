@@ -109,13 +109,27 @@
   position: relative;
   flex-shrink: 0;
 }
+/* v3.86, Derek: this drag strip renders only while UNLOCKED, so a 5px flow
+   height meant unlocking pushed the outline bar / editor down by 5px — an extra
+   gap under the ribbon that vanished when you locked again. It now takes ZERO
+   layout height (a hit area straddling the boundary via ::before), so toggling
+   the lock never shifts anything. */
 .fs-top-chrome-resize {
-  height: 5px;
+  height: 0;
+  position: relative;
   cursor: ns-resize;
   flex-shrink: 0;
 }
-.fs-top-chrome-resize:hover,
-.fs-top-chrome-resize:active {
+.fs-top-chrome-resize::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -3px;
+  height: 6px;
+}
+.fs-top-chrome-resize:hover::before,
+.fs-top-chrome-resize:active::before {
   background: var(--fd-accent);
   opacity: 0.5;
 }
