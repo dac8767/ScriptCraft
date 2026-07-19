@@ -13,7 +13,7 @@ to each. Process:
 
 ## Tools
 
-- [~] **Scrapbook** (`notebook`) — *current*
+- [x] **Scrapbook** (`notebook`)
 - [ ] Navigator (`navigator`)
 - [ ] Scenes (`scenes`)
 - [ ] Pages (`pages`)
@@ -57,7 +57,9 @@ to each. Process:
 
 ### Notes / open threads per item
 
-- **Scrapbook** — shipped in this pass so far: split stylesheet (v3.55), header/count,
-  Insert Picture, Return-to-Editor button, pop-out enabled (v3.81), table bar auto-hide,
-  unified text-box border. **Open:** item 2 "restore image/table options in the toolbar"
-  awaiting clarification on which options.
+- **Scrapbook** — DONE (v3.55–v3.95). Highlights: split stylesheet; header/count;
+  panel-bound tool + single Return-to-Editor button; contextual Table/Picture menus
+  (menu bar + right-click) with Background/Grid colour + thickness; working text
+  formatting (bold/italic/underline/font/size/colour); visible table grid; correct
+  row/column insert/delete; image bar floats above; Page Zoom scales the board;
+  Delete key removes the selected item; new Return (undo) icon.

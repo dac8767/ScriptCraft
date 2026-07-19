@@ -151,11 +151,11 @@ function DraftNumberRow({ editor }: { editor: Editor | null }) {
 
 /** v2.83: native folder picker — desktop only (a folder path only means
  *  something where the OS dialog picked it). */
-async function pickFolder(): Promise<string | null> {
+async function pickFolder(title = 'Folder for auto save copies'): Promise<string | null> {
   const { isTauri } = await import('../services/platform');
   if (!isTauri()) { showToast('Choosing a local folder needs the desktop app.', 'info'); return null; }
   const { open } = await import('@tauri-apps/plugin-dialog');
-  const picked = await open({ directory: true, multiple: false, title: 'Folder for auto save copies' });
+  const picked = await open({ directory: true, multiple: false, title });
   return typeof picked === 'string' ? picked : null;
 }
 
@@ -171,6 +171,7 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
     snapToOneDrive, setSnapToOneDrive,
     snapToLocalFolder, setSnapToLocalFolder,
     snapLocalFolder, setSnapLocalFolder,
+    screenshotFolder, setScreenshotFolder,
     gdriveClientId, setGdriveClientId,
     onedriveClientId, setOnedriveClientId,
     collabAuth,
@@ -310,6 +311,38 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
           The local version history (Project → Script History) is always kept.
           Every checked location additionally receives a timestamped copy of
           the script whenever an auto save is taken, manual or automatic.
+        </p>
+      </section>
+
+      <section>
+        <h3>Screenshots</h3>
+        {/* v3.95, Derek: where the Screenshot tool writes PNGs. Empty = the
+            browser's Downloads folder. A chosen folder needs the desktop app. */}
+        <div className="prefs-check-row">
+          <span>
+            Save screenshots to
+            {screenshotFolder
+              ? <code className="prefs-path-chip">{screenshotFolder}</code>
+              : ' Downloads (default)'}
+          </span>
+          <button
+            className="prefs-inline-btn"
+            onClick={async (e) => {
+              e.preventDefault();
+              const folder = await pickFolder('Folder for screenshots');
+              if (folder) setScreenshotFolder(folder);
+            }}
+          >Choose Folder…</button>
+          {screenshotFolder && (
+            <button
+              className="prefs-inline-btn"
+              onClick={(e) => { e.preventDefault(); setScreenshotFolder(''); }}
+            >Reset to Downloads</button>
+          )}
+        </div>
+        <p className="prefs-hint prefs-subhint">
+          The Screenshot toolbar button saves PNGs here. Leave it on Downloads to
+          use the browser's normal download folder.
         </p>
       </section>
 

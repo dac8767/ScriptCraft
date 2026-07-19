@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.94';
+export const APP_VERSION = '3.95';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.95',
+    date: '2026-07-19',
+    items: [
+      { title: 'Screenshot: full screen or a selected area', detail: 'Clicking Screenshot now asks whether to capture the whole screen or to drag out an area to capture.', tags: ['New Feature'] },
+      { title: 'Choose where screenshots save', detail: 'Settings ▸ Save Options ▸ Screenshots lets you pick a folder for screenshot PNGs (desktop app); leave it on Downloads for the default.', tags: ['New Feature', 'Saving'] },
+    ],
+  },
   {
     version: '3.94',
     date: '2026-07-19',

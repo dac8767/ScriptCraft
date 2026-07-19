@@ -118,6 +118,10 @@ interface SettingsState {
   setSnapToLocalFolder: (v: boolean) => void;
   snapLocalFolder: string;
   setSnapLocalFolder: (path: string) => void;
+  /** v3.95: a folder on this device that Screenshot PNGs are written to (desktop
+   *  only). Empty = fall back to the browser download (Downloads folder). */
+  screenshotFolder: string;
+  setScreenshotFolder: (path: string) => void;
   snapToCloud: boolean;
   setSnapToCloud: (v: boolean) => void;
   snapToGDrive: boolean;
@@ -157,6 +161,7 @@ const SL_KEYS = {
   snapCloud: 'opendraft:saveloc:snapToCloud',
   snapLocal: 'opendraft:saveloc:snapToLocalFolder',
   snapLocalFolder: 'opendraft:saveloc:snapLocalFolder',
+  screenshotFolder: 'opendraft:saveloc:screenshotFolder',
   snapGDrive: 'opendraft:saveloc:snapToGDrive',
   snapOneDrive: 'opendraft:saveloc:snapToOneDrive',
   gdriveId: 'opendraft:saveloc:gdriveClientId',
@@ -327,6 +332,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setSnapToLocalFolder: (v) => { try { localStorage.setItem(SL_KEYS.snapLocal, v ? '1' : '0'); } catch { /* ignore */ } set({ snapToLocalFolder: v }); },
   snapLocalFolder: localStorage.getItem(SL_KEYS.snapLocalFolder) || '',
   setSnapLocalFolder: (path) => { try { localStorage.setItem(SL_KEYS.snapLocalFolder, path); } catch { /* ignore */ } set({ snapLocalFolder: path }); },
+  screenshotFolder: localStorage.getItem(SL_KEYS.screenshotFolder) || '',
+  setScreenshotFolder: (path) => { try { localStorage.setItem(SL_KEYS.screenshotFolder, path); } catch { /* ignore */ } set({ screenshotFolder: path }); },
   snapToCloud: localStorage.getItem(SL_KEYS.snapCloud) === '1' || localStorage.getItem(SL_KEYS.snaploc) === 'cloud',
   setSnapToCloud: (v) => { try { localStorage.setItem(SL_KEYS.snapCloud, v ? '1' : '0'); localStorage.removeItem(SL_KEYS.snaploc); } catch { /* ignore */ } set({ snapToCloud: v }); },
   snapToGDrive: localStorage.getItem(SL_KEYS.snapGDrive) === '1' || localStorage.getItem(SL_KEYS.snaploc) === 'gdrive',

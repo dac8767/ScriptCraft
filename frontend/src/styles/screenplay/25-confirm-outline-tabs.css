@@ -547,3 +547,51 @@
 .beat-card-colored .beat-card-resize-handle::after {
   border-color: currentColor;
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   v3.95, Derek: the Screenshot tool — a small mode chooser, then (optionally)
+   a drag-to-select overlay. Both are removed before html2canvas runs so they
+   never appear in the shot.
+   ════════════════════════════════════════════════════════════════════════ */
+.fs-shot-overlay {
+  position: fixed; inset: 0; z-index: 2147483600;
+  background: rgba(0, 0, 0, .45);
+  display: flex; align-items: center; justify-content: center;
+}
+.fs-shot-card {
+  background: var(--fd-dropdown-bg, #26262b);
+  border: 1px solid var(--fd-border, #444);
+  border-radius: 10px;
+  padding: 18px 20px 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .5);
+  text-align: center; min-width: 260px;
+}
+.fs-shot-title { font-size: 14px; font-weight: 600; color: var(--fd-text); margin-bottom: 14px; }
+.fs-shot-btns { display: flex; gap: 10px; justify-content: center; }
+.fs-shot-btn {
+  flex: 1; padding: 10px 12px; border-radius: 7px; cursor: pointer;
+  border: 1px solid var(--fd-border, #444);
+  background: var(--fd-bg, #1e1e1e); color: var(--fd-text);
+  font-size: 12.5px; font-weight: 600;
+}
+.fs-shot-btn:hover { border-color: var(--fd-accent, #4a90d9); }
+.fs-shot-cancel {
+  margin-top: 12px; background: none; border: none; cursor: pointer;
+  color: var(--fd-text-muted); font-size: 11.5px;
+}
+.fs-shot-cancel:hover { color: var(--fd-text); }
+.fs-shot-select {
+  position: fixed; inset: 0; z-index: 2147483600;
+  cursor: crosshair; background: rgba(0, 0, 0, .18);
+}
+.fs-shot-selbox {
+  position: fixed;
+  border: 1.5px solid var(--fd-accent, #4a90d9);
+  background: rgba(74, 144, 217, .12);
+  pointer-events: none;
+}
+.fs-shot-selhint {
+  position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+  background: rgba(0, 0, 0, .7); color: #fff;
+  padding: 6px 12px; border-radius: 6px; font-size: 12px; pointer-events: none;
+}

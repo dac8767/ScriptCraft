@@ -1,52 +1,149 @@
 /**
- * Screenshot (v3.80, Derek; reworked v3.94) — capture the app AS IT LOOKS ON
- * SCREEN and download it as a PNG. Uses html2canvas (a dependency), lazily
- * imported so its weight only loads when the button is used.
+ * Screenshot (v3.80, Derek; reworked v3.94/v3.95) — capture the app as it looks
+ * on screen and save it as a PNG. Uses html2canvas (a dependency), lazily
+ * imported so its weight only loads when used.
  *
- * v3.94: this now grabs the whole window (menus, toolbar, panels, and whatever
- * you're looking at), cropped to the visible viewport — NOT the `.page`, which
- * is the entire multi-page script and rendered top-to-bottom as one tall image.
+ * Two modes (a small chooser appears on click):
+ *   • Full Screen — the whole window, cropped to the visible viewport.
+ *   • Select Area — drag a rectangle; only that region is captured.
  *
- * v3.89: the download anchor is appended to the document before .click() —
- * WebKit (and thus the Tauri app) will not start a download from a detached
- * anchor, which is why the button "did nothing." Errors surface as a toast
- * instead of a silent unhandled rejection.
+ * Where it saves: if a Screenshot folder is set in Settings ▸ Save Options (and
+ * we're in the desktop app) the PNG is written there; otherwise it downloads to
+ * the browser's Downloads folder.
  */
 import { showToast } from '../components/Toast';
+import { useSettingsStore } from '../stores/settingsStore';
 
-export async function captureScreenshot(): Promise<void> {
-  const root = document.body;
-  if (!root) { showToast('Nothing on screen to capture.', 'error'); return; }
-  try {
-    const { default: html2canvas } = await import('html2canvas');
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const bg = getComputedStyle(root).backgroundColor || '#1e1e1e';
-    const canvas = await html2canvas(root, {
-      backgroundColor: bg,
-      scale: window.devicePixelRatio || 2,
-      useCORS: true,
-      logging: false,
-      // Crop to the visible viewport (top-left origin) so it's a picture of the
-      // current screen, not the full scrollable document.
-      x: window.scrollX,
-      y: window.scrollY,
-      width: w,
-      height: h,
-      windowWidth: w,
-      windowHeight: h,
-      scrollX: 0,
-      scrollY: 0,
+type Rect = { x: number; y: number; width: number; height: number };
+
+/* ── the mode chooser ──────────────────────────────────────────────────── */
+function chooseMode(): Promise<'full' | 'area' | null> {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'fs-shot-overlay';
+    const card = document.createElement('div');
+    card.className = 'fs-shot-card';
+    card.innerHTML = `
+      <div class="fs-shot-title">Screenshot</div>
+      <div class="fs-shot-btns">
+        <button data-mode="full" class="fs-shot-btn">Full Screen</button>
+        <button data-mode="area" class="fs-shot-btn">Select Area</button>
+      </div>
+      <button data-mode="cancel" class="fs-shot-cancel">Cancel</button>`;
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    const done = (v: 'full' | 'area' | null) => { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(v); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') done(null); };
+    document.addEventListener('keydown', onKey);
+    overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) done(null); });
+    card.addEventListener('click', (e) => {
+      const m = (e.target as HTMLElement).getAttribute('data-mode');
+      if (m === 'full') done('full');
+      else if (m === 'area') done('area');
+      else if (m === 'cancel') done(null);
     });
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
-    const title = (document.title || 'screen').replace(/[^\w-]+/g, '_').slice(0, 40) || 'screen';
-    link.download = `${title}-screenshot.png`;
-    // WebKit needs the anchor in the document for a programmatic download.
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    showToast('Screenshot saved to Downloads.', 'success');
+  });
+}
+
+/* ── drag-to-select a region ───────────────────────────────────────────── */
+function selectArea(): Promise<Rect | null> {
+  return new Promise((resolve) => {
+    const layer = document.createElement('div');
+    layer.className = 'fs-shot-select';
+    const box = document.createElement('div');
+    box.className = 'fs-shot-selbox';
+    box.style.display = 'none';
+    const hint = document.createElement('div');
+    hint.className = 'fs-shot-selhint';
+    hint.textContent = 'Drag to select an area · Esc to cancel';
+    layer.appendChild(box);
+    layer.appendChild(hint);
+    document.body.appendChild(layer);
+
+    let start: { x: number; y: number } | null = null;
+    const cleanup = () => { layer.remove(); document.removeEventListener('keydown', onKey); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { cleanup(); resolve(null); } };
+    document.addEventListener('keydown', onKey);
+
+    const rectFrom = (a: { x: number; y: number }, b: { x: number; y: number }): Rect => ({
+      x: Math.min(a.x, b.x), y: Math.min(a.y, b.y),
+      width: Math.abs(a.x - b.x), height: Math.abs(a.y - b.y),
+    });
+    const paint = (r: Rect) => {
+      box.style.display = 'block';
+      box.style.left = `${r.x}px`; box.style.top = `${r.y}px`;
+      box.style.width = `${r.width}px`; box.style.height = `${r.height}px`;
+    };
+    layer.addEventListener('mousedown', (e) => { start = { x: e.clientX, y: e.clientY }; hint.style.display = 'none'; });
+    layer.addEventListener('mousemove', (e) => { if (start) paint(rectFrom(start, { x: e.clientX, y: e.clientY })); });
+    layer.addEventListener('mouseup', (e) => {
+      if (!start) { cleanup(); resolve(null); return; }
+      const r = rectFrom(start, { x: e.clientX, y: e.clientY });
+      cleanup();
+      resolve(r.width >= 4 && r.height >= 4 ? r : null);
+    });
+  });
+}
+
+/* ── save the canvas (chosen folder on desktop, else browser download) ──── */
+async function saveCanvas(canvas: HTMLCanvasElement): Promise<void> {
+  const base = (document.title || 'screen').replace(/[^\w-]+/g, '_').slice(0, 40) || 'screen';
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+  const filename = `${base}-${stamp}.png`;
+
+  const folder = useSettingsStore.getState().screenshotFolder;
+  const { isTauri } = await import('../services/platform');
+  if (folder && isTauri()) {
+    const blob: Blob | null = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+    if (!blob) throw new Error('Could not encode the image.');
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const { writeFile } = await import('@tauri-apps/plugin-fs');
+    const sep = folder.endsWith('/') || folder.endsWith('\\') ? '' : '/';
+    await writeFile(`${folder}${sep}${filename}`, bytes);
+    showToast(`Screenshot saved to ${folder}.`, 'success');
+    return;
+  }
+  const link = document.createElement('a');
+  link.href = canvas.toDataURL('image/png');
+  link.download = filename;
+  document.body.appendChild(link); // WebKit needs it in the document to download
+  link.click();
+  link.remove();
+  showToast('Screenshot saved to Downloads.', 'success');
+}
+
+async function render(crop?: Rect): Promise<void> {
+  const { default: html2canvas } = await import('html2canvas');
+  const bg = getComputedStyle(document.body).backgroundColor || '#1e1e1e';
+  const region: Rect = crop ?? { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
+  const canvas = await html2canvas(document.body, {
+    backgroundColor: bg,
+    scale: window.devicePixelRatio || 2,
+    useCORS: true,
+    logging: false,
+    x: region.x + window.scrollX,
+    y: region.y + window.scrollY,
+    width: region.width,
+    height: region.height,
+    windowWidth: window.innerWidth,
+    windowHeight: window.innerHeight,
+    scrollX: 0,
+    scrollY: 0,
+  });
+  await saveCanvas(canvas);
+}
+
+export async function captureScreenshot(mode: 'full' | 'area' | 'choose' = 'choose'): Promise<void> {
+  try {
+    let m: 'full' | 'area' | null = mode === 'choose' ? await chooseMode() : mode;
+    if (!m) return;                       // cancelled
+    let crop: Rect | undefined;
+    if (m === 'area') {
+      const r = await selectArea();
+      if (!r) return;                     // cancelled
+      crop = r;
+    }
+    await render(crop);
   } catch (e) {
     console.error('screenshot failed', e);
     showToast('Could not capture a screenshot of this view.', 'error');
