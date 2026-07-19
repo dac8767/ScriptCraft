@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.90';
+export const APP_VERSION = '3.91';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.91',
+    date: '2026-07-19',
+    items: [
+      { title: 'Page Zoom +/- sizing', detail: 'Split the difference on the +/- stepper size and tucked them in closer to the % readout.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.90',
     date: '2026-07-19',
