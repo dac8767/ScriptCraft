@@ -68,7 +68,7 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'goto', label: 'Go to Page', priority: '2' },
   { key: 'scriptNotes', label: 'Notes' },
   { key: 'tags', label: 'Production Tags' },
-  { key: 'zoom', label: 'Zoom', priority: '1', zoom: true },
+  { key: 'zoom', label: 'Page Zoom', priority: '1', zoom: true },
   { key: 'view', label: 'Editor View', desktopOnly: true },
   /* v2.34's one-click surface toggles. v3.25, Derek: the side-panel pair is
      REMOVED (task #137) — the panel collapse chevrons and View > Toolbars

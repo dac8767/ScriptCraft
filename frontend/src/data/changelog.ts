@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.87';
+export const APP_VERSION = '3.88';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.88',
+    date: '2026-07-19',
+    items: [
+      { title: 'Page Zoom works on the Scrapbook', detail: 'The toolbar\'s zoom now scales the Scrapbook board too — boxes, tables and images zoom in and out, and dragging/resizing stays accurate at any zoom.', tags: ['New Feature', 'Tools'] },
+      { title: 'Zoom control refined', detail: 'Renamed to "Page Zoom", with smaller +/- steppers and a larger, more legible % readout.', tags: ['UI'] },
+      { title: 'Return to Editor text centered', detail: 'The two-line Return to Editor button label is centered.', tags: ['UI'] },
+    ],
+  },
   {
     version: '3.87',
     date: '2026-07-19',

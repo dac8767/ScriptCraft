@@ -832,9 +832,10 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
    itself, and the current-zoom readout drops a size so the group stays
    compact. */
 /* v3.78, Derek: smaller zoom − / + step buttons. */
-.zoom-tb-step { width: 16px; min-width: 16px; padding: 0; }
-.zoom-tb-step svg { width: 9px; height: 9px; }
-.toolbar-btn-text.zoom-tb-value { font-size: 10px; padding: 0 4px; }
+/* v3.88, Derek: smaller +/- steppers, a bigger, more legible % readout. */
+.zoom-tb-step { width: 12px; min-width: 12px; padding: 0; }
+.zoom-tb-step svg { width: 7px; height: 7px; }
+.toolbar-btn-text.zoom-tb-value { font-size: 14px; font-weight: 600; padding: 0 5px; }
 .zoom-menu {
   position: absolute; top: calc(100% + 4px); right: 0;
   z-index: 2147483647;                 /* same as .menu-dropdown */

@@ -139,10 +139,12 @@ export const tableSort = (t: NbTable, ci: number, dir: 'asc' | 'desc'): NbTable 
 export const tableIsEmpty = (rows: string[][]): boolean =>
   rows.every((r) => r.every((c) => !c || !c.trim()));
 
-function EditableTable({ data, onChange, onCellFocus }: {
+function EditableTable({ data, onChange, onCellFocus, zoom = 1 }: {
   data: NbTable; onChange: (t: NbTable) => void;
   /** v2.13: the Table menu acts relative to the last-focused cell. */
   onCellFocus?: (ri: number, ci: number) => void;
+  /** v3.88: the board's Page Zoom — grip drags divide mouse travel by it. */
+  zoom?: number;
 }) {
   const colWidths = data.colWidths;
   const rowHeights = data.rowHeights;
@@ -153,9 +155,10 @@ function EditableTable({ data, onChange, onCellFocus }: {
     e.preventDefault(); e.stopPropagation();
     const startX = e.clientX;
     const startW = colWidths[ci] || 90;
+    const z = zoom || 1;
     const move = (ev: MouseEvent) => {
       const next = colWidths.slice();
-      next[ci] = Math.max(36, startW + (ev.clientX - startX));
+      next[ci] = Math.max(36, startW + (ev.clientX - startX) / z);
       onChange({ ...data, colWidths: next });
     };
     const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
@@ -165,9 +168,10 @@ function EditableTable({ data, onChange, onCellFocus }: {
     e.preventDefault(); e.stopPropagation();
     const startY = e.clientY;
     const startH = rowHeights[ri] || 32;
+    const z = zoom || 1;
     const move = (ev: MouseEvent) => {
       const next = rowHeights.slice();
-      next[ri] = Math.max(24, startH + (ev.clientY - startY));
+      next[ri] = Math.max(24, startH + (ev.clientY - startY) / z);
       onChange({ ...data, rowHeights: next });
     };
     const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
@@ -230,12 +234,15 @@ function EditableTable({ data, onChange, onCellFocus }: {
  *  so the wrapper's focusing mousedown never fires for clicks on the box's
  *  draggable body (the img, the head bar, the grip) — the Picture/Table
  *  menus went dead on reselect without this. */
-function useBoxDrag(box: NbBox, onChange: (b: NbBox) => void, onFocus?: () => void) {
+function useBoxDrag(box: NbBox, onChange: (b: NbBox) => void, onFocus?: () => void, zoom = 1) {
   const dragState = useRef<{ type: 'move' | 'resize'; startX: number; startY: number; origX: number; origY: number; origW: number; origH: number } | null>(null);
   const onMove = useCallback((e: MouseEvent) => {
     const ds = dragState.current;
     if (!ds) return;
-    const dx = e.clientX - ds.startX, dy = e.clientY - ds.startY;
+    // v3.88: the board is scaled by `zoom` (Page Zoom), so a screen-pixel of
+    // mouse travel is 1/zoom board-pixels — divide or the box outruns the cursor.
+    const z = zoom || 1;
+    const dx = (e.clientX - ds.startX) / z, dy = (e.clientY - ds.startY) / z;
     if (ds.type === 'move') onChange({ ...box, x: Math.max(0, ds.origX + dx), y: Math.max(0, ds.origY + dy) });
     else if (box.type === 'image') {
       const aspect = ds.origH > 0 ? ds.origW / ds.origH : 1;
@@ -244,7 +251,7 @@ function useBoxDrag(box: NbBox, onChange: (b: NbBox) => void, onFocus?: () => vo
     } else {
       onChange({ ...box, w: Math.max(80, ds.origW + dx), h: Math.max(40, ds.origH + dy) });
     }
-  }, [box, onChange]);
+  }, [box, onChange, zoom]);
   const onUp = useCallback(() => {
     dragState.current = null;
     window.removeEventListener('mousemove', onMove);
@@ -328,12 +335,12 @@ export function applyScrapbookTextFormat(command: string, value?: string): boole
   return true;
 }
 
-function TextBox({ box, focused, onChange, onFocusBox, onDelete }: {
-  box: NbBox; focused: boolean; onChange: (b: NbBox) => void; onFocusBox: (id: string) => void; onDelete: (id: string) => void;
+function TextBox({ box, focused, onChange, onFocusBox, onDelete, zoom = 1 }: {
+  box: NbBox; focused: boolean; onChange: (b: NbBox) => void; onFocusBox: (id: string) => void; onDelete: (id: string) => void; zoom?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const loaded = useRef(false);
-  const startDrag = useBoxDrag(box, onChange, () => onFocusBox(box.id));
+  const startDrag = useBoxDrag(box, onChange, () => onFocusBox(box.id), zoom);
   useEffect(() => {
     if (ref.current && !loaded.current) {
       ref.current.innerHTML = box.html || '';
@@ -402,10 +409,10 @@ export function rotatedImagePatch(b: { rotate?: number; w: number; h: number }, 
   return { rotate: rot, w: b.h, h: b.w };
 }
 
-function ImageBox({ box, focused, onChange, onFocusBox, onDelete }: {
-  box: NbBox; focused: boolean; onChange: (b: NbBox) => void; onFocusBox: (id: string) => void; onDelete: (id: string) => void;
+function ImageBox({ box, focused, onChange, onFocusBox, onDelete, zoom = 1 }: {
+  box: NbBox; focused: boolean; onChange: (b: NbBox) => void; onFocusBox: (id: string) => void; onDelete: (id: string) => void; zoom?: number;
 }) {
-  const startDrag = useBoxDrag(box, onChange, () => onFocusBox(box.id));
+  const startDrag = useBoxDrag(box, onChange, () => onFocusBox(box.id), zoom);
   const [hover, setHover] = useState(false);
   const show = focused || hover;
   // v2.64: on a quarter turn the FRAME already holds the swapped size; the
@@ -458,11 +465,11 @@ export const boxAsTable = (b: NbBox): NbTable => ({
   borderColor: b.borderColor, borderW: b.borderW,
 });
 
-function TableBox({ box, focused, onChange, onFocusBox, onDelete, onContext }: {
+function TableBox({ box, focused, onChange, onFocusBox, onDelete, onContext, zoom = 1 }: {
   box: NbBox; focused: boolean; onChange: (b: NbBox) => void; onFocusBox: (id: string) => void; onDelete: (id: string) => void;
-  onContext?: (x: number, y: number) => void;
+  onContext?: (x: number, y: number) => void; zoom?: number;
 }) {
-  const startDrag = useBoxDrag(box, onChange, () => onFocusBox(box.id));
+  const startDrag = useBoxDrag(box, onChange, () => onFocusBox(box.id), zoom);
   const [hover, setHover] = useState(false);
   // v3.81, Derek: the head bar hides when you click away from the table; it
   // comes back on hover or when the table is focused/active. (No longer pinned
@@ -485,6 +492,7 @@ function TableBox({ box, focused, onChange, onFocusBox, onDelete, onContext }: {
       )}
       <EditableTable
         data={boxAsTable(box)}
+        zoom={zoom}
         onChange={(t) => onChange({ ...box, rows: t.rows, colWidths: t.colWidths, rowHeights: t.rowHeights, align: t.align, borderless: t.borderless, shading: t.shading, borderColor: t.borderColor, borderW: t.borderW })}
         onCellFocus={(ri, ci) => {
           // v3.86, Derek: clicking into a cell also activates the box, so the
@@ -508,6 +516,9 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
   const focusedId = useNotebookStore((s) => s.focusedBoxId);
   const setFocusedId = useNotebookStore((s) => s.setFocusedBox);
   const canvasRef = useRef<HTMLDivElement>(null);
+  // v3.88, Derek: Page Zoom scales the board too. The content layer is scaled
+  // with CSS zoom; every mouse→board coordinate below divides by it.
+  const zoom = (useEditorStore((s) => s.zoomLevel) || 100) / 100;
 
   // v2.13: click-to-type. Clicking BLANK canvas parks a caret there; the
   // first keystroke turns it into a real text box seeded with what was
@@ -592,9 +603,10 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
         e.preventDefault();
         setFocusedId(null);
         const rect = canvasRef.current.getBoundingClientRect();
+        // Board coords = screen offset (incl. scroll) divided by the zoom scale.
         setCaret({
-          x: e.clientX - rect.left + canvasRef.current.scrollLeft,
-          y: e.clientY - rect.top + canvasRef.current.scrollTop,
+          x: (e.clientX - rect.left + canvasRef.current.scrollLeft) / zoom,
+          y: (e.clientY - rect.top + canvasRef.current.scrollTop) / zoom,
         });
       }}
       onDragOver={(e) => e.preventDefault()}
@@ -603,7 +615,7 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
         if (!canvasRef.current) return;
         const rect = canvasRef.current.getBoundingClientRect();
         const file = e.dataTransfer.files?.[0];
-        if (file) void addImageFromFile(file, e.clientX - rect.left + canvasRef.current.scrollLeft, e.clientY - rect.top + canvasRef.current.scrollTop);
+        if (file) void addImageFromFile(file, (e.clientX - rect.left + canvasRef.current.scrollLeft) / zoom, (e.clientY - rect.top + canvasRef.current.scrollTop) / zoom);
       }}
     >
       <input
@@ -616,22 +628,27 @@ function CanvasSurface({ boxes, onChangeBoxes }: {
       {boxes.length === 0 && !caret && (
         <div className="fs-nb-canvas-hint">Click anywhere and start typing · drag an image in · or use the Scrapbook menus.</div>
       )}
-      {caret && (
-        <div
-          ref={protoRef}
-          className="fs-nb-protocaret"
-          contentEditable
-          suppressContentEditableWarning
-          style={{ left: caret.x, top: caret.y }}
-          onMouseDown={(e) => e.stopPropagation()}
-          onInput={protoTyped}
-          onBlur={() => setCaret(null)}
-        />
-      )}
-      {boxes.map((b) =>
-        b.type === 'image' ? <ImageBox key={b.id} box={b} focused={focusedId === b.id} onChange={updateBox} onDelete={deleteBox} onFocusBox={setFocusedId} />
-        : b.type === 'table' ? <TableBox key={b.id} box={b} focused={focusedId === b.id} onChange={updateBox} onDelete={deleteBox} onFocusBox={setFocusedId} onContext={(x, y) => setCtxMenu({ x, y, kind: 'table' })} />
-        : <TextBox key={b.id} box={b} focused={focusedId === b.id} onChange={updateBox} onDelete={deleteBox} onFocusBox={setFocusedId} />)}
+      {/* v3.88, Derek: the zoomed board. A zero-size positioned layer so its
+          boxes anchor to the canvas origin and blank clicks still fall through
+          to the canvas (which parks the click-to-type caret). */}
+      <div className="fs-nb-canvas-content" style={zoom !== 1 ? { zoom } : undefined}>
+        {caret && (
+          <div
+            ref={protoRef}
+            className="fs-nb-protocaret"
+            contentEditable
+            suppressContentEditableWarning
+            style={{ left: caret.x, top: caret.y }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onInput={protoTyped}
+            onBlur={() => setCaret(null)}
+          />
+        )}
+        {boxes.map((b) =>
+          b.type === 'image' ? <ImageBox key={b.id} box={b} focused={focusedId === b.id} onChange={updateBox} onDelete={deleteBox} onFocusBox={setFocusedId} zoom={zoom} />
+          : b.type === 'table' ? <TableBox key={b.id} box={b} focused={focusedId === b.id} onChange={updateBox} onDelete={deleteBox} onFocusBox={setFocusedId} onContext={(x, y) => setCtxMenu({ x, y, kind: 'table' })} zoom={zoom} />
+          : <TextBox key={b.id} box={b} focused={focusedId === b.id} onChange={updateBox} onDelete={deleteBox} onFocusBox={setFocusedId} zoom={zoom} />)}
+      </div>
       {ctxMenu && <ScrapbookContextMenu x={ctxMenu.x} y={ctxMenu.y} kind={ctxMenu.kind} onClose={() => setCtxMenu(null)} />}
     </div>
   );
