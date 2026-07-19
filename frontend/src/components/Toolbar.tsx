@@ -1472,6 +1472,25 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         </button>
       );
     }
+    // v3.99, Derek: the sizing lock renders like every other big button — ONE
+    // rib-tall-btn with the label INSIDE it — so its hover box wraps the icon
+    // AND the caption (Derek spotted the lock's box was icon-only, the caption
+    // hanging below). Both padlock glyphs are 448×512, so height:auto keeps the
+    // locked/unlocked states identical width — no layout shift, no forced square.
+    if (tall && def.key === 'lockResize') {
+      return (
+        <button
+          key={tok}
+          className={`toolbar-btn rib-tall-btn${uiResizeLocked ? ' active' : ''}`}
+          data-key="lockResize"
+          title={uiResizeLocked ? 'Sizing is locked — click to unlock' : 'Lock all sizing and spacing'}
+          onClick={() => useEditorStore.getState().setUiResizeLocked(!uiResizeLocked)}
+        >
+          <span className="rib-tall-icon">{uiResizeLocked ? TOOLBAR_ICONS.lockResize : TOOLBAR_ICONS.lockResizeOpen}</span>
+          <span className="rib-tall-label">{uiResizeLocked ? 'Locked' : 'Unlocked'}</span>
+        </button>
+      );
+    }
     const showPopups = !def.priority || !isHidden(def.priority);
     const cls = 'toolbar-priority-block'
       + (tall ? ' rib-tall' : '')

@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '3.98';
+export const APP_VERSION = '3.99';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.99',
+    date: '2026-07-19',
+    items: [
+      { title: 'Lock button matches the other big buttons', detail: 'The sizing-lock big button now wraps its icon and caption in one button (its hover box covered only the icon before, with the label hanging below), so it lines up with every other big ribbon button.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '3.98',
     date: '2026-07-19',

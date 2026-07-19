@@ -546,11 +546,10 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 }
 .rib-tall-icon { display: inline-flex; align-items: center; justify-content: center; height: 26px; }
 .rib-tall-icon svg { height: 26px; width: auto; }   /* v3.75: same fixed height as .rib-single */
-/* v3.77, Derek: the sizing-lock icon sits in a fixed SQUARE box so the closed
-   and open padlocks (different proportions) occupy identical space — toggling
-   the lock no longer resizes the big button and shoves the layout up/down. */
-.rib-tall[data-key="lockResize"] svg,
-.rib-single .toolbar-priority-block[data-key="lockResize"] svg { width: 26px; height: 26px; }
+/* v3.99, Derek: the sizing lock now renders as a rib-tall-btn (label inside)
+   like the other big buttons, so its icon uses the shared .rib-tall-icon rule.
+   Both padlock glyphs are 448×512, so height:auto keeps the two states the same
+   size — the old forced-square hack is gone. */
 /* v3.98, Derek: OPTICAL-SIZE corrections for the big (ribbon) icons. Every big
    icon's svg box is already pinned to 26px, but Font Awesome glyphs fill their
    viewBox by different amounts — framed icons (camera, image, chart…) sit small
