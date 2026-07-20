@@ -17,10 +17,9 @@ import { useSettingsStore } from '../stores/settingsStore';
 export const RULER_THICKNESS = 20;
 
 /** Extra px between two pages in Page view — the dark gap band. Matches
- *  ScreenplayEditor's `page-sep-gap` (40) added on top of the two margins. */
+ *  ScreenplayEditor's `page-sep-gap` (40) added on top of the two margins.
+ *  (Continuous view is measured from the real .page-sep-line gaps instead.) */
 const PAGE_GAP_PX = 40;
-/** Continuous view's fixed inter-page gap (mirrors pagination CONTINUOUS_GAP_PX). */
-const CONTINUOUS_GAP_PX = 64;
 
 const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>; continuous?: boolean }> = ({ container, continuous = false }) => {
   const pageLayout = useEditorStore((s) => s.pageLayout);
@@ -123,81 +122,83 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
         ctx.globalAlpha = 1;
       }
 
-      /* ── vertical ruler — the scale restarts at each page top ──
-         v4.22, Derek: the old scale stacked pages contiguously (k × pageHpx),
-         ignoring the gap BETWEEN pages in Page view and the missing margins in
-         Continuous view — so it drifted further off with every page. Now:
-         - Page view: pages are pageHpx APART PLUS the inter-page gap band
-           (PAGE_GAP_PX), and each shows its top/bottom margin zones.
-         - Continuous view: pages have NO margins and a thin fixed gap, so the
-           scale spans only the usable content height and skips the shading. */
+      /* ── vertical ruler ── (v4.22, Derek)
+         The old scale stacked pages by a COMPUTED height, so any mismatch grew
+         page by page — the drift Derek saw. Continuous view is now MEASURED off
+         the real page-break lines (.page-sep-line), so the grey gap sits exactly
+         between the last row of one page and the first row of the next, and the
+         inch scale resets on the real content, never accumulating error. Page
+         view keeps the uniform page stride + the inter-page gap band. */
       {
         const T = RULER_THICKNESS;
         const H2 = Math.max(0, Ht - T);
         const ctx = setup(vc, T, H2);
-        ctx.strokeStyle = text;
-        ctx.fillStyle = text;
         ctx.font = '9px system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         const topMarginIn = pl.topMargin / 72;      // pt → in
         const bottomMarginIn = pl.bottomMargin / 72;
-        // The scale height of ONE page, and the stride to the next page's top.
-        const pageSpan = continuous
-          ? (pl.pageHeight - topMarginIn - bottomMarginIn) * inPx   // content only
-          : pageHpx;                                               // full page
-        const gapPx = (continuous ? CONTINUOUS_GAP_PX : PAGE_GAP_PX) * zoom;
-        const stride = pageSpan + gapPx;
-        // v4.22, Derek: Continuous view keeps the FIRST page's top margin (the
-        // content starts ~1in down), while its per-page scale spans content
-        // only — so the whole scale must start one top-margin below the page
-        // top. Page view's scale already includes the margin in pageSpan.
-        const startY = (y0 - T) + (continuous ? topMarginIn * inPx : 0);
-        // pages visible in [0, H2] (ruler-local y = container y - T)
-        const yPage = (k: number) => startY + k * stride;
-        const firstK = Math.max(0, Math.floor((0 - startY) / stride));
-        const lastK = Math.max(firstK, Math.ceil((H2 - startY) / stride));
         const shade = 'rgba(127,127,127,0.16)';
-        // v4.22, Derek: in Continuous view, grey the leading top-margin band
-        // (page 1's top margin — the blank area above the first content).
-        if (continuous) {
-          ctx.globalAlpha = 1;
-          ctx.fillStyle = shade;
-          ctx.fillRect(0, y0 - T, T, topMarginIn * inPx);
-        }
-        for (let k = firstK; k <= lastK; k++) {
-          const base = yPage(k);
-          ctx.globalAlpha = 1;
-          ctx.fillStyle = shade;
-          if (!continuous) {
-            // Page view: top + bottom margin zones of each page.
-            ctx.fillRect(0, base, T, topMarginIn * inPx);
-            ctx.fillRect(0, base + pageSpan - bottomMarginIn * inPx, T, bottomMarginIn * inPx);
-          } else {
-            // Continuous: grey the blank gap AFTER this page (no numbers there).
-            ctx.fillRect(0, base + pageSpan, T, gapPx);
-          }
+
+        // Inch marks + numbers filling one content region [top, bottom].
+        const drawScale = (top: number, bottom: number) => {
+          if (bottom < -20 || top > H2 + 20) return;   // region off-screen
+          ctx.strokeStyle = text;
           ctx.fillStyle = text;
           ctx.globalAlpha = 0.55;
           ctx.beginPath();
-          const totalUnits = pageSpan / unitPx;
-          for (let u = 0; u <= totalUnits + 0.001; u += 1 / minorSteps) {
-            const y = Math.round(base + u * unitPx) + 0.5;
-            if (y < base - 1 || y > base + pageSpan - unitPx / minorSteps / 2 || y < -10 || y > H2 + 10) continue;
-            const isWhole = Math.abs(u - Math.round(u)) < 0.001;
-            const isHalf = !isWhole && Math.abs(u * 2 - Math.round(u * 2)) < 0.001;
-            if (isWhole) {
-              const n = Math.round(u);
-              if (n > 0) ctx.fillText(String(n), T / 2, y);
-              else { ctx.moveTo(T - 9, y); ctx.lineTo(T - 3, y); }
-            } else {
-              const len = isHalf ? 7 : 4;
-              ctx.moveTo(T - 3 - len, y);
-              ctx.lineTo(T - 3, y);
+          for (let u = 0; ; u += 1 / minorSteps) {
+            const y = Math.round(top + u * unitPx) + 0.5;
+            if (y > bottom + 0.6) break;
+            if (y >= -10 && y <= H2 + 10) {
+              const isWhole = Math.abs(u - Math.round(u)) < 0.001;
+              const isHalf = !isWhole && Math.abs(u * 2 - Math.round(u * 2)) < 0.001;
+              if (isWhole) {
+                const n = Math.round(u);
+                if (n > 0) ctx.fillText(String(n), T / 2, y);
+                else { ctx.moveTo(T - 9, y); ctx.lineTo(T - 3, y); }
+              } else {
+                const len = isHalf ? 7 : 4;
+                ctx.moveTo(T - 3 - len, y);
+                ctx.lineTo(T - 3, y);
+              }
             }
           }
           ctx.stroke();
+          ctx.globalAlpha = 1;
+        };
+
+        if (continuous) {
+          // Measured gaps (ruler-local y). .page-sep-line spans exactly the gap
+          // between the last row of a page and the first row of the next.
+          const gaps = Array.from(el.querySelectorAll<HTMLElement>('.page-sep-line'))
+            .map((s) => s.getBoundingClientRect())
+            .map((r) => ({ top: (r.top - er.top) - T, bottom: (r.bottom - er.top) - T }))
+            .sort((a, b) => a.top - b.top);
+          ctx.fillStyle = shade;
+          ctx.globalAlpha = 1;
+          ctx.fillRect(0, y0 - T, T, topMarginIn * inPx);          // page 1 top margin
+          for (const g of gaps) ctx.fillRect(0, g.top, T, Math.max(0, g.bottom - g.top));
+          // inch scale per content region (between consecutive gaps)
+          let regionTop = (y0 - T) + topMarginIn * inPx;
+          for (const g of gaps) { drawScale(regionTop, g.top); regionTop = g.bottom; }
+          drawScale(regionTop, H2 + 10);
+        } else {
+          // Page view: uniform pages; stride includes the inter-page gap band.
+          const pageSpan = pageHpx;
+          const stride = pageSpan + PAGE_GAP_PX * zoom;
+          const firstK = Math.max(0, Math.floor((0 - (y0 - T)) / stride));
+          const lastK = Math.max(firstK, Math.ceil((H2 - (y0 - T)) / stride));
+          for (let k = firstK; k <= lastK; k++) {
+            const base = (y0 - T) + k * stride;
+            ctx.fillStyle = shade;
+            ctx.globalAlpha = 1;
+            ctx.fillRect(0, base, T, topMarginIn * inPx);
+            ctx.fillRect(0, base + pageSpan - bottomMarginIn * inPx, T, bottomMarginIn * inPx);
+            drawScale(base, base + pageSpan);
+          }
         }
+        ctx.strokeStyle = text;
         ctx.globalAlpha = 0.35;
         ctx.beginPath(); ctx.moveTo(T - 0.5, 0); ctx.lineTo(T - 0.5, H2); ctx.stroke();
         ctx.globalAlpha = 1;
@@ -208,9 +209,11 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
     el.addEventListener('scroll', schedule, { passive: true });
     const ro = new ResizeObserver(schedule);
     ro.observe(el);
-    // Content height changes (typing adds pages) move nothing horizontally,
-    // and the vertical scale is derived per-frame from the sizer rect — the
-    // scroll/resize hooks plus this initial paint cover it.
+    // v4.22, Derek: the continuous ruler reads the real page-break lines, whose
+    // positions shift as typing adds/removes pages — so also watch the sizer,
+    // which grows with the content, and repaint when it changes.
+    const sizerEl = el.querySelector('.page-sizer');
+    if (sizerEl) ro.observe(sizerEl);
     schedule();
     return () => {
       el.removeEventListener('scroll', schedule);
