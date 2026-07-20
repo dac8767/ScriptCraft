@@ -35,8 +35,8 @@ describe('editor views', () => {
   });
 
   it('applies a custom order', () => {
-    useSettingsStore.getState().setEditorViewOrder(['focus', 'page', 'continuous', 'preview']);
-    expect(ids()[0]).toBe('focus');
+    useSettingsStore.getState().setEditorViewOrder(['preview', 'page', 'continuous']);
+    expect(ids()[0]).toBe('preview');
   });
 
   it('reset restores the defaults', () => {
