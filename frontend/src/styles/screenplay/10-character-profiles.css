@@ -18,13 +18,27 @@
   min-width: 0;
   border-left: none;
 }
-/* Fullscreen mode: overlay the entire editor area */
+/* v4.16, Derek: fullscreen is now a Scrapbook-style takeover — the panel fills
+   the .fs-char-takeover flex child of the editor center (which leaves the
+   toolbar & status bar intact and puts "Return to Editor" in the ribbon),
+   instead of a position:fixed overlay that covered the whole window with no way
+   out (the status bar painted over its exit button — user had to hard-quit). */
+.fs-char-takeover {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--fd-bg);
+  color: var(--fd-text);
+}
 .char-profiles-panel.char-profiles-fullscreen {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
+  position: relative;
+  flex: 1;
   width: 100%;
-  min-width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
   border-left: none;
   background: var(--fd-bg);
 }

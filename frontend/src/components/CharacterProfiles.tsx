@@ -5,7 +5,6 @@ import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 import { useEditorStore, type CharacterProfile, type CharacterRelationship } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useAssetStore } from '../stores/assetStore';
-import CharacterConnectionsGraph from './CharacterConnectionsGraph';
 import { api } from '../services/api';
 import { showToast } from './Toast';
 import MiniRichText from './MiniRichText';
@@ -88,12 +87,14 @@ const InlineRelForm: React.FC<{
 interface CharacterProfilesProps {
   /** Render inside a tool window: always visible, no close button/swipe */
   embedded?: boolean;
+  /** v4.16: rendered as the full editor-area takeover (Scrapbook-style). */
+  fullscreen?: boolean;
   editor: Editor | null;
   projectId: string;
   style?: React.CSSProperties;
 }
 
-const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId, style, embedded = false }) => {
+const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId, style, embedded = false, fullscreen = false }) => {
   const {
     characters,
     characterProfiles,
@@ -111,7 +112,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   const currentScriptId = useProjectStore((s) => s.currentScriptId);
   const { assets, setAssets } = useAssetStore();
 
-  const [activeTab, setActiveTab] = useState<'profiles' | 'map' | 'connections'>('profiles');
+  const [activeTab, setActiveTab] = useState<'profiles' | 'map'>('profiles');
   const [addRelFor, setAddRelFor] = useState<string | null>(null); // character name to add rel for
   const [expandedChar, setExpandedChar] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -119,7 +120,19 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   const sortBy = useEditorStore((s) => s.characterSortBy);
   const setSortBy = useEditorStore((s) => s.setCharacterSortBy);
   const [pendingRemoveChar, setPendingRemoveChar] = useState<string | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const isFullscreen = fullscreen;
+  // v4.16: fullscreen is the Scrapbook-style editor takeover (a store flag),
+  // not a fixed overlay that covered the toolbar with no way out. Entering
+  // clears the docked/floating instance so only the takeover renders; the
+  // ribbon's "Return to Editor" button (and this header button) exits.
+  const enterCharFullscreen = () => {
+    const s = useEditorStore.getState();
+    if (s.activeTool === 'characters') s.setActiveTool(null);
+    if (s.activeToolRight === 'characters') s.setActiveToolRight(null);
+    if (s.tempTool === 'characters') s.setTempTool(null);
+    s.setCharFullscreen(true);
+  };
+  const exitCharFullscreen = () => useEditorStore.getState().setCharFullscreen(false);
   const [fsViewMode, setFsViewMode] = useState<'cards' | 'list'>('cards');
   const [modalChar, setModalChar] = useState<string | null>(null);
 
@@ -840,7 +853,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   };
 
   const { shouldRender: gateRender, animationState } = useDelayedUnmount(characterProfilesOpen, 250);
-  const shouldRender = embedded || gateRender;
+  const shouldRender = embedded || fullscreen || gateRender;
   const panelRef = useRef<HTMLDivElement>(null);
   useSwipeDismiss(panelRef, { direction: 'right', onDismiss: toggleCharacterProfiles, enabled: !embedded && shouldRender && !isFullscreen });
 
@@ -867,8 +880,8 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         <span className="char-profiles-count">{allCharacters.length}</span>
         <button
           className="char-profiles-fullscreen-btn"
-          onClick={() => setIsFullscreen(!isFullscreen)}
-          title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+          onClick={() => (isFullscreen ? exitCharFullscreen() : enterCharFullscreen())}
+          title={isFullscreen ? 'Return to editor' : 'Fullscreen'}
         >
           {isFullscreen ? '\u2716' : '\u26F6'}
         </button>
@@ -888,7 +901,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             </button>
           </div>
         )}
-        {!embedded && <button className="char-profiles-close" onClick={() => { setIsFullscreen(false); toggleCharacterProfiles(); }} title="Close">
+        {!embedded && !isFullscreen && <button className="char-profiles-close" onClick={() => { toggleCharacterProfiles(); }} title="Close">
           &times;
         </button>}
       </div>
@@ -907,26 +920,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         >
           Relationship Map
         </button>
-        <button
-          className={`char-profiles-tab${activeTab === 'connections' ? ' active' : ''}`}
-          onClick={() => setActiveTab('connections')}
-        >
-          Connections
-        </button>
       </div>
-
-      {/* Connections tab (v1.86): who shares scenes with whom, as a force graph. */}
-      {activeTab === 'connections' && (
-        <CharacterConnectionsGraph
-          editor={editor}
-          onSelectCharacter={(name) => {
-            setActiveTab('profiles');
-            setSelectedCharacter(name);
-            setExpandedChar(name);
-            setModalChar(name);
-          }}
-        />
-      )}
 
       {/* Relationship Map tab */}
       {activeTab === 'map' && (

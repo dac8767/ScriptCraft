@@ -31,6 +31,7 @@ interface ViewState {
   scrapbookTreeScale?: number;
   bigBtnInsetPx?: number;
   panelItemScale?: { left: number; right: number };
+  mapScrollSpeed?: number;
   /** v4.8: Design panel overrides — numeric design tokens keyed by token id
    *  (src/design/designTokens.ts). Each maps to a --dz-* custom property on
    *  :root; absent keys fall back to the built-in CSS value. */
@@ -1409,6 +1410,13 @@ interface EditorState {
   toggleCharacterProfiles: () => void;
   selectedCharacter: string | null;
   setSelectedCharacter: (name: string | null) => void;
+  /** v4.16: the character tool's fullscreen editor takeover (Scrapbook-style),
+   *  session-only. */
+  charFullscreen: boolean;
+  setCharFullscreen: (v: boolean) => void;
+  /** v4.16: relationship-map scroll-to-zoom speed multiplier (Design panel). */
+  mapScrollSpeed: number;
+  setMapScrollSpeed: (v: number) => void;
 
   // Production tags
   tagCategories: TagCategory[];
@@ -2710,6 +2718,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   toggleCharacterProfiles: () => get().openTool('characters'),
   selectedCharacter: null,
   setSelectedCharacter: (name) => set({ selectedCharacter: name }),
+  charFullscreen: false,
+  setCharFullscreen: (v) => set({ charFullscreen: v }),
+  mapScrollSpeed: (_vs.mapScrollSpeed as number) ?? 1,
+  setMapScrollSpeed: (v) => {
+    const clamped = Math.min(3, Math.max(0.1, v));
+    saveViewState({ mapScrollSpeed: clamped });
+    set({ mapScrollSpeed: clamped });
+  },
 
   // Production tags
   tagCategories: [...DEFAULT_TAG_CATEGORIES],

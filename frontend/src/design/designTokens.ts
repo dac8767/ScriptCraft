@@ -185,6 +185,15 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'obIconBtn', label: 'Outline icon button size', cssVar: '--dz-ob-iconbtn', unit: 'px', min: 18, max: 36, step: 1, def: 26 },
     ],
   },
+  {
+    id: 'behavior',
+    label: 'Behavior',
+    tokens: [
+      { id: 'mapScrollSpeed', label: 'Relationship map scroll speed', unit: '', min: 0.1, max: 3, step: 0.1, def: 1,
+        hint: 'Lower = slower scroll-to-zoom in the character relationship map.',
+        store: { get: (s) => s.mapScrollSpeed, set: (v) => useEditorStore.getState().setMapScrollSpeed(v) } },
+    ],
+  },
 ];
 
 /** Flat list, handy for lookups and apply. */

@@ -114,6 +114,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // no duplicate B/I/U/S anywhere. Declared up here because the responsive
   // overflow measurement (below) also re-measures on this flag (v2.10).
   const scrapbookOpen = useNotebookStore((s) => s.notebookOpen);
+  const charFullscreen = useEditorStore((s) => s.charFullscreen);
   // v2.94: the Insert Table button needs a page to land the table on — the
   // old menu item was disabled without one, and firing the event with no
   // canvas mounted is a silent no-op.
@@ -1894,6 +1895,25 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 className="rib-scrapbook-return"
                 title="Return to Editor"
                 onClick={() => closeNotebook()}
+              >
+                <LuUndo2 className="rib-scrapbook-return-icon" />
+                <span className="rib-scrapbook-return-label">Return to Editor</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+      {/* v4.16, Derek: the Character tool's fullscreen mirrors the Scrapbook —
+          a "Return to Editor" section in the ribbon (same styling). */}
+      {charFullscreen && (
+        <>
+          {leftLive.length > 0 && <div className="toolbar-separator rib-section-sep" />}
+          <div className="rib-section rib-scrapbook-sec">
+            <div className="rib-scrapbook-body">
+              <button
+                className="rib-scrapbook-return"
+                title="Return to Editor"
+                onClick={() => useEditorStore.getState().setCharFullscreen(false)}
               >
                 <LuUndo2 className="rib-scrapbook-return-icon" />
                 <span className="rib-scrapbook-return-label">Return to Editor</span>

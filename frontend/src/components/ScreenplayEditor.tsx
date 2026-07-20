@@ -54,6 +54,7 @@ import MenuBar from './MenuBar';
 import Toolbar from './Toolbar';
 import ToolDock, { TempToolWindow } from './ToolDock';
 import DesignPanel from './DesignPanel';
+import CharacterProfiles from './CharacterProfiles';
 import { applyDesignVars } from '../design/designTokens';
 import { DoubleChevronIcon } from './uiIcons';
 import { useBookmarkStore, bookmarkScriptKey } from '../stores/bookmarkStore';
@@ -310,7 +311,7 @@ const ScreenplayEditor: React.FC = () => {
     setActiveElement, setScenes, setPageCount, setCurrentPage,
     zoomLevel, setZoomLevel, fontFamily, fontSize, pageLayout, tagsVisible, notesVisible,
     sectionsVisible, scriptTodosVisible, markersVisible, viewStyle, previewMode, previewOpts,
-    beatBoardOpen, statisticsOpen,
+    beatBoardOpen, statisticsOpen, charFullscreen,
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
     characterProfilesOpen, tagsPanelOpen, locationDatabaseOpen,
     spellCheckEnabled, spellModalOpen, setSpellModalOpen, spellPanelMounted,
@@ -4170,6 +4171,10 @@ const ScreenplayEditor: React.FC = () => {
               while its panel window is open ("Return to editor" ends it). */}
           {!isHistoryMode && notebookOpen ? (
             <NotebookSurface />
+          ) : !isHistoryMode && charFullscreen ? (
+            <div className="fs-char-takeover">
+              <CharacterProfiles editor={editor} projectId={currentProject?.id || ''} fullscreen />
+            </div>
           ) : !isHistoryMode && statisticsOpen && editor ? (
             <ScriptStatistics editor={editor} />
           ) : !isHistoryMode && beatBoardOpen ? (

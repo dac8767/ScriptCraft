@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.15';
+export const APP_VERSION = '4.16';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.16',
+    date: '2026-07-19',
+    items: [
+      { title: 'Character tool fullscreen works like the Scrapbook', detail: 'Fullscreen was a fixed overlay that covered the whole window — the status bar painted over its exit button, so there was no way out (you had to hard-quit). Now it fills the editor area like the Scrapbook, leaving the toolbar and status bar intact, with a “Return to Editor” button in the ribbon.', tags: ['Fix', 'Tools'] },
+      { title: 'Relationship map scroll-to-zoom speed is adjustable', detail: 'Scroll-to-zoom in the relationship map was way too fast (and worse on a trackpad). It’s calmer now, and there’s a “Relationship map scroll speed” slider in the Design panel’s new Behavior section to tune it.', tags: ['Fix', 'Tools'] },
+      { title: 'Removed the redundant Connections tab', detail: 'The character tool’s Connections tab is gone; Profiles and Relationship Map remain.', tags: ['Tools'] },
+    ],
+  },
   {
     version: '4.15',
     date: '2026-07-19',

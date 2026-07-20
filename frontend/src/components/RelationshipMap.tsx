@@ -286,6 +286,7 @@ export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter }
   const characterRelationships = useEditorStore((s) => s.characterRelationships);
   const upsertCharacterRelationship = useEditorStore((s) => s.upsertCharacterRelationship);
   const deleteCharacterRelationship = useEditorStore((s) => s.deleteCharacterRelationship);
+  const mapScrollSpeed = useEditorStore((s) => s.mapScrollSpeed);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
@@ -509,7 +510,10 @@ export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter }
   // Zoom via scroll wheel
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    const factor = e.deltaY > 0 ? 1.1 : 0.9;
+    // v4.16, Derek: per-tick zoom step scaled by the Design panel's scroll-speed
+    // multiplier (was a hardcoded ±10%, which felt way too fast on a trackpad).
+    const step = 0.06 * (mapScrollSpeed || 1);
+    const factor = e.deltaY > 0 ? 1 + step : 1 - step;
     const svg = containerRef.current?.querySelector('svg');
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
@@ -526,7 +530,7 @@ export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter }
         h: newH,
       };
     });
-  }, []);
+  }, [mapScrollSpeed]);
 
   const handleSaveRel = useCallback((data: Omit<CharacterRelationship, 'id'> & { id?: string }) => {
     const rel: CharacterRelationship = {
