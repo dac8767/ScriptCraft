@@ -11,7 +11,7 @@ import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import Dropcursor from '@tiptap/extension-dropcursor';
 import SmartTypography from '../editor/extensions/SmartTypography';
 import VomitLock from '../editor/extensions/VomitLock';
-import TypewriterScroll from '../editor/extensions/TypewriterScroll';
+import TypewriterScroll, { refreshTypewriterChrome, centerCaretLine } from '../editor/extensions/TypewriterScroll';
 import OutlineBar from './OutlineBar';
 import { NotebookSurface } from './NotebookTool';
 import { useNotebookStore } from '../stores/notebookStore';
@@ -2320,13 +2320,24 @@ const ScreenplayEditor: React.FC = () => {
         .then(({ getCurrentWindow }) => getCurrentWindow().setFullscreen(writingFocus))
         .catch(() => { /* window API unavailable — CSS focus still applies */ });
     }
+    // v4.22, Derek: entering/leaving Extreme focus hides chrome AND asks the OS
+    // to go fullscreen (async, animated), so the editor recenters over several
+    // frames. Reposition the highlight bar / recenter at a few delays that cover
+    // the whole transition — the misalignment was the bar being measured before
+    // the page finished recentering.
+    if (editor && !editor.isDestroyed) {
+      const ed = editor;
+      [0, 60, 250, 550].forEach((d) => setTimeout(() => {
+        if (!ed.isDestroyed) { refreshTypewriterChrome(ed); centerCaretLine(ed); }
+      }, d));
+    }
     if (!writingFocus) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') useEditorStore.getState().setWritingFocus(false);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [writingFocus]);
+  }, [writingFocus, editor]);
 
   // v1.75: Outline Bar visibility (View > Outline Bar).
   const outlineBarOpen = useEditorStore((st) => st.outlineBarOpen);
