@@ -11,6 +11,8 @@ import ScriptFormatPreferencesDialog from './ScriptFormatPreferencesDialog';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
 import SettingsPage from './SettingsPage';
 import { showToast } from './Toast';
+import { downloadBackup, applyBackup, readFileText } from '../utils/settingsBackup';
+import { confirmDialog } from './ConfirmDialog';
 import { spellChecker, BUILTIN_LANGUAGE } from '../editor/spellchecker';
 import { BUILTIN, CATALOG, urlsFor } from '../editor/languageCatalog';
 import { useState as useStateReact, useEffect as useEffectReact } from 'react';
@@ -476,6 +478,29 @@ function GeneralTab() {
     timeFormat, setTimeFormat,
   } = useSettingsStore();
 
+  // v4.22, Derek: Backup & Restore. Dev and a release build load from different
+  // origins, so their localStorage (all settings/customizations) is separate —
+  // export here, import into the other app.
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';               // allow re-picking the same file later
+    if (!file) return;
+    try {
+      const text = await readFileText(file);
+      const ok = await confirmDialog(
+        'This replaces this app\'s current settings and customizations with the ones in the file, then reloads. Your scripts are not affected.',
+        { title: 'Import settings?', confirmLabel: 'Import & Reload', danger: true },
+      );
+      if (!ok) return;
+      const { imported } = applyBackup(text);
+      showToast(`Imported ${imported} settings — reloading…`);
+      setTimeout(() => window.location.reload(), 500);
+    } catch (err) {
+      showToast((err as Error).message || 'Could not import that file.');
+    }
+  };
+
   return (
     <div className="prefs-general">
       <section>
@@ -638,6 +663,37 @@ function GeneralTab() {
       </section>
 
       <LanguageSection />
+
+      <section>
+        <h3>Backup &amp; Restore</h3>
+        <p className="prefs-hint">
+          Settings and customizations live in this app's local storage, which
+          isn't shared between separate installs (for example the development app
+          and a release build load from different origins). Export them to a file
+          here, then import that file in the other app to carry everything over —
+          design tweaks, toolbar and ribbon layout, themes, elements,
+          transitions, shortcuts, the menu system and more.
+        </p>
+        <div className="prefs-check-row">
+          <button className="swn-add-btn" onClick={() => { downloadBackup(); showToast('Settings exported'); }}>
+            Export Settings…
+          </button>
+          <button className="swn-add-btn" onClick={() => fileRef.current?.click()}>
+            Import Settings…
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            style={{ display: 'none' }}
+            onChange={handleImportFile}
+          />
+        </div>
+        <p className="prefs-hint">
+          Sign-in, cloud tokens and this device's identity are left out of the
+          file for safety — sign in once on the other app.
+        </p>
+      </section>
     </div>
   );
 }
