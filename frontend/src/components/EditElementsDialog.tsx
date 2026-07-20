@@ -13,6 +13,7 @@
  * Action would leave a script with no way to type its own body.
  */
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useFormattingTemplateStore, DUAL_DIALOGUE_ID, DEFAULT_TRANSITIONS } from '../stores/formattingTemplateStore';
 import { DndColumns } from './CustomizePanelsDialog';
 
@@ -85,20 +86,29 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
   const addTransition = useFormattingTemplateStore((s) => s.addTransition);
   const removeCustomTransition = useFormattingTemplateStore((s) => s.removeCustomTransition);
   const setTransitionHidden = useFormattingTemplateStore((s) => s.setTransitionHidden);
+  const setTransitionOrder = useFormattingTemplateStore((s) => s.setTransitionOrder);
+  const transitionOrder = useFormattingTemplateStore((s) => s.transitionOrder);
   const resetTransitions = useFormattingTemplateStore((s) => s.resetTransitions);
   const [newTransition, setNewTransition] = useState('');
+  // v4.22, Derek: the inline field read as plain text and confused people — the
+  // "Add Transition" button now opens a small dialog with a clear input.
+  const [addOpen, setAddOpen] = useState(false);
 
   const isDefaultTransition = (t: string) => DEFAULT_TRANSITIONS.includes(t);
-  const shownTransitions = [
-    ...DEFAULT_TRANSITIONS.filter((t) => !hiddenTransitions.includes(t)),
-    ...customTransitions,
-  ];
+  // Re-derived when custom/hidden/order change (all three are subscribed above),
+  // and shares the store's ordering so the list matches the editor's picker.
+  void transitionOrder;
+  const getEffectiveTransitions = useFormattingTemplateStore((s) => s.getEffectiveTransitions);
+  const shownTransitions = getEffectiveTransitions();
+  const allTransitions = [...DEFAULT_TRANSITIONS, ...customTransitions];
   const hiddenShown = DEFAULT_TRANSITIONS.filter((t) => hiddenTransitions.includes(t));
+  const openAddTransition = () => { setNewTransition(''); setAddOpen(true); };
+  const closeAddTransition = () => { setAddOpen(false); setNewTransition(''); };
   const commitNewTransition = () => {
     const t = newTransition.trim();
     if (!t) return;
     addTransition(t);
-    setNewTransition('');
+    closeAddTransition();
   };
 
   const body = (
@@ -171,17 +181,6 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
           own; the built-ins can be hidden but not deleted. Drag between Shown and
           Hidden, or use the + / × buttons.
         </p>
-        <div className="fs-tbzone-adders fs-transition-add">
-          <input
-            type="text"
-            className="fs-transition-input"
-            placeholder="e.g. MATCH CUT TO:"
-            value={newTransition}
-            onChange={(e) => setNewTransition(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitNewTransition(); } }}
-          />
-          <button className="swn-add-btn" onClick={commitNewTransition}>Add Transition</button>
-        </div>
         <DndColumns
           columns={[
             {
@@ -224,19 +223,60 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
           ]}
           onDrop={(src, dst) => {
             const t = src.key;
-            // Only built-ins toggle hidden; a custom dragged to Hidden is removed.
             if (dst.col === 'hidden') {
+              // Only built-ins can be hidden; a custom dragged to Hidden is removed.
               if (isDefaultTransition(t)) setTransitionHidden(t, true);
               else removeCustomTransition(t);
-            } else if (isDefaultTransition(t)) {
-              setTransitionHidden(t, false);
+              return;
             }
+            // Dropped in Shown → reorder there (and un-hide if it came from Hidden).
+            const next = shownTransitions.filter((x) => x !== t);
+            next.splice(Math.min(dst.idx, next.length), 0, t);
+            // Persist the full order (shown first, hidden appended) so hidden
+            // built-ins keep their relative place when shown again.
+            setTransitionOrder([...next, ...allTransitions.filter((x) => !next.includes(x))]);
+            if (isDefaultTransition(t) && hiddenTransitions.includes(t)) setTransitionHidden(t, false);
           }}
         />
         <div className="fs-tbzone-adders fs-adders-equal">
+          <button className="swn-add-btn" onClick={openAddTransition}>Add Transition</button>
           <button className="swn-add-btn" onClick={resetTransitions}>Reset to Default</button>
         </div>
       </section>
+
+      {addOpen && createPortal(
+        <div className="dialog-overlay fs-add-transition-overlay" onClick={closeAddTransition}>
+          <div className="dialog-box fs-add-transition-box" onClick={(e) => e.stopPropagation()}>
+            <div className="dialog-header">
+              Add Transition
+              <button className="fs-dialog-x" onClick={closeAddTransition} title="Close">&times;</button>
+            </div>
+            <div className="fs-add-transition-body">
+              <label className="fs-add-transition-label" htmlFor="fs-add-transition-input">
+                Transition text
+              </label>
+              <input
+                id="fs-add-transition-input"
+                type="text"
+                className="fs-transition-input"
+                placeholder="e.g. MATCH CUT TO:"
+                autoFocus
+                value={newTransition}
+                onChange={(e) => setNewTransition(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.preventDefault(); commitNewTransition(); }
+                  else if (e.key === 'Escape') { e.preventDefault(); closeAddTransition(); }
+                }}
+              />
+            </div>
+            <div className="fs-add-transition-actions">
+              <button className="swn-add-btn" onClick={closeAddTransition}>Cancel</button>
+              <button className="swn-add-btn swn-add-primary" onClick={commitNewTransition} disabled={!newTransition.trim()}>Add</button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 

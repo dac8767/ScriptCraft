@@ -37,20 +37,18 @@ export const DEFAULT_TRANSITIONS = [
   'INTERCUT:', 'CUT TO BLACK:', 'WIPE TO:',
 ];
 const TRANSITION_OVERRIDES_KEY = 'opendraft:transitionOverrides';
-function loadTransitionOverrides(): { custom: string[]; hidden: string[] } {
+function loadTransitionOverrides(): { custom: string[]; hidden: string[]; order: string[] } {
   try {
     const raw = localStorage.getItem(TRANSITION_OVERRIDES_KEY);
     if (raw) {
       const p = JSON.parse(raw);
-      return {
-        custom: Array.isArray(p?.custom) ? p.custom.filter((x: unknown) => typeof x === 'string') : [],
-        hidden: Array.isArray(p?.hidden) ? p.hidden.filter((x: unknown) => typeof x === 'string') : [],
-      };
+      const arr = (v: unknown) => (Array.isArray(v) ? v.filter((x: unknown) => typeof x === 'string') : []);
+      return { custom: arr(p?.custom), hidden: arr(p?.hidden), order: arr(p?.order) };
     }
   } catch { /* ignore */ }
-  return { custom: [], hidden: [] };
+  return { custom: [], hidden: [], order: [] };
 }
-function saveTransitionOverrides(v: { custom: string[]; hidden: string[] }) {
+function saveTransitionOverrides(v: { custom: string[]; hidden: string[]; order: string[] }) {
   try { localStorage.setItem(TRANSITION_OVERRIDES_KEY, JSON.stringify(v)); } catch { /* ignore */ }
 }
 import type { FormattingTemplate } from './formattingTypes';
@@ -108,15 +106,18 @@ interface FormattingTemplateState {
   resetElementOverrides: () => void;
 
   /** v4.22: transition auto-complete customization. `customTransitions` are the
-   *  writer's own; `hiddenTransitions` are built-ins they've hidden. */
+   *  writer's own; `hiddenTransitions` are built-ins they've hidden;
+   *  `transitionOrder` is the drag-sorted order applied over the union. */
   customTransitions: string[];
   hiddenTransitions: string[];
+  transitionOrder: string[];
   addTransition: (text: string) => void;
   removeCustomTransition: (text: string) => void;
   setTransitionHidden: (text: string, hidden: boolean) => void;
+  setTransitionOrder: (order: string[]) => void;
   resetTransitions: () => void;
-  /** The effective transition list the editor's picker shows: built-ins (minus
-   *  hidden) followed by the writer's own. */
+  /** The effective transition list the editor's picker shows: the built-ins and
+   *  the writer's own in the user's drag order, minus any hidden built-ins. */
   getEffectiveTransitions: () => string[];
   /** The active template's rules with the user's overrides applied: hidden
    *  elements disabled, and rule key order following elementOrder. Every
@@ -223,10 +224,11 @@ export const useFormattingTemplateStore = create<FormattingTemplateState>((set, 
 
   customTransitions: loadTransitionOverrides().custom,
   hiddenTransitions: loadTransitionOverrides().hidden,
+  transitionOrder: loadTransitionOverrides().order,
   addTransition: (text) => {
     const t = text.trim();
     if (!t) return;
-    const { customTransitions, hiddenTransitions } = get();
+    const { customTransitions, hiddenTransitions, transitionOrder } = get();
     // Case-insensitive dedupe against both defaults and existing customs.
     const exists = [...DEFAULT_TRANSITIONS, ...customTransitions]
       .some((x) => x.toLowerCase() === t.toLowerCase());
@@ -234,39 +236,48 @@ export const useFormattingTemplateStore = create<FormattingTemplateState>((set, 
     const wasDefault = DEFAULT_TRANSITIONS.find((x) => x.toLowerCase() === t.toLowerCase());
     if (wasDefault) {
       const hidden = hiddenTransitions.filter((x) => x !== wasDefault);
-      saveTransitionOverrides({ custom: customTransitions, hidden });
+      saveTransitionOverrides({ custom: customTransitions, hidden, order: transitionOrder });
       set({ hiddenTransitions: hidden });
       return;
     }
     if (exists) return;
     const custom = [...customTransitions, t];
-    saveTransitionOverrides({ custom, hidden: hiddenTransitions });
+    saveTransitionOverrides({ custom, hidden: hiddenTransitions, order: transitionOrder });
     set({ customTransitions: custom });
   },
   removeCustomTransition: (text) => {
-    const { customTransitions, hiddenTransitions } = get();
+    const { customTransitions, hiddenTransitions, transitionOrder } = get();
     const custom = customTransitions.filter((x) => x !== text);
-    saveTransitionOverrides({ custom, hidden: hiddenTransitions });
-    set({ customTransitions: custom });
+    const order = transitionOrder.filter((x) => x !== text);
+    saveTransitionOverrides({ custom, hidden: hiddenTransitions, order });
+    set({ customTransitions: custom, transitionOrder: order });
   },
   setTransitionHidden: (text, hidden) => {
-    const { customTransitions, hiddenTransitions } = get();
+    const { customTransitions, hiddenTransitions, transitionOrder } = get();
     const next = hidden
       ? [...hiddenTransitions.filter((x) => x !== text), text]
       : hiddenTransitions.filter((x) => x !== text);
-    saveTransitionOverrides({ custom: customTransitions, hidden: next });
+    saveTransitionOverrides({ custom: customTransitions, hidden: next, order: transitionOrder });
     set({ hiddenTransitions: next });
   },
+  setTransitionOrder: (order) => {
+    const { customTransitions, hiddenTransitions } = get();
+    saveTransitionOverrides({ custom: customTransitions, hidden: hiddenTransitions, order });
+    set({ transitionOrder: order });
+  },
   resetTransitions: () => {
-    saveTransitionOverrides({ custom: [], hidden: [] });
-    set({ customTransitions: [], hiddenTransitions: [] });
+    saveTransitionOverrides({ custom: [], hidden: [], order: [] });
+    set({ customTransitions: [], hiddenTransitions: [], transitionOrder: [] });
   },
   getEffectiveTransitions: () => {
-    const { customTransitions, hiddenTransitions } = get();
-    return [
-      ...DEFAULT_TRANSITIONS.filter((t) => !hiddenTransitions.includes(t)),
-      ...customTransitions,
-    ];
+    const { customTransitions, hiddenTransitions, transitionOrder } = get();
+    const all = [...DEFAULT_TRANSITIONS, ...customTransitions];
+    // Apply the user's drag order over the union, then append anything they
+    // haven't explicitly placed (new built-ins, fresh customs), then drop hidden.
+    const ordered = transitionOrder.length
+      ? [...transitionOrder.filter((t) => all.includes(t)), ...all.filter((t) => !transitionOrder.includes(t))]
+      : all;
+    return ordered.filter((t) => !hiddenTransitions.includes(t));
   },
 
   getEffectiveRules: () => {

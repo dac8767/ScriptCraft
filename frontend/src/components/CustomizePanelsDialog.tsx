@@ -753,7 +753,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       // simply stack, and adding an eighth costs no width at all.
       <div className="prefs-layout fs-customize-layout">
         <div className="prefs-tabs fs-customize-tabs">
-          {([['elements', 'Editor'], ['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['qat', 'Quick Access'], ['panels', 'Side Panels'], ['context', 'Context Menu'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const)
+          {([['elements', 'Editor'], ['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['qat', 'Quick Access'], ['context', 'Context Menu'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const)
             .filter(([id]) => !(nativeMenus && id === 'menu'))
             .map(([id, label]) => (
             <button

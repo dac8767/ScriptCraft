@@ -35,17 +35,30 @@
 .fs-tbzone { border: 1px solid var(--fd-border); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; }
 .fs-tbzone-title { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fd-text-muted); margin-bottom: 6px; }
 .fs-tbzone-adders { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
-/* v4.22, Derek: the Transitions "add your own" row. */
-.fs-transition-add { margin-bottom: 10px; }
+/* v4.22, Derek: the "Add Transition" dialog (opened from the button beside
+   Reset to Default). Above the Customize window (which is a .dialog-overlay at
+   z-index 3000). */
+.fs-add-transition-overlay { z-index: 10050; }
+.fs-add-transition-box { width: 380px; max-width: 92vw; }
+.fs-add-transition-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.fs-add-transition-label { font-size: 12px; color: var(--fd-text-muted); }
+.fs-add-transition-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+.swn-add-btn.swn-add-primary { background: var(--fd-accent); color: #fff; border-color: var(--fd-accent); }
+.swn-add-btn.swn-add-primary:disabled { opacity: 0.5; cursor: default; }
 .fs-transition-input {
-  flex: 1 1 auto;
-  height: 28px;
+  width: 100%;
+  height: 30px;
   background: var(--fd-input-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 4px;
   padding: 0 8px;
-  font-size: 12.5px;
+  font-size: 13px;
   text-transform: uppercase;
 }
 .fs-transition-input:focus { outline: none; border-color: var(--fd-accent); }

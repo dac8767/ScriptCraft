@@ -12,7 +12,7 @@ const KEY = 'opendraft:transitionOverrides';
 
 beforeEach(() => {
   localStorage.removeItem(KEY);
-  useFormattingTemplateStore.setState({ customTransitions: [], hiddenTransitions: [] });
+  useFormattingTemplateStore.setState({ customTransitions: [], hiddenTransitions: [], transitionOrder: [] });
 });
 
 describe('transition customization', () => {
@@ -71,6 +71,23 @@ describe('transition customization', () => {
     const eff = useFormattingTemplateStore.getState().getEffectiveTransitions();
     expect(eff[eff.length - 1]).toBe('ZZZ TO:');
     expect(eff.slice(0, DEFAULT_TRANSITIONS.length)).toEqual(DEFAULT_TRANSITIONS);
+  });
+
+  it('applies a drag order over the union', () => {
+    const s = useFormattingTemplateStore.getState();
+    // Move WIPE TO: to the front, keep the rest after it.
+    const rest = DEFAULT_TRANSITIONS.filter((t) => t !== 'WIPE TO:');
+    s.setTransitionOrder(['WIPE TO:', ...rest]);
+    expect(useFormattingTemplateStore.getState().getEffectiveTransitions()[0]).toBe('WIPE TO:');
+  });
+
+  it('a hidden built-in keeps its ordered place when shown again', () => {
+    const s = useFormattingTemplateStore.getState();
+    s.setTransitionOrder(['WIPE TO:', ...DEFAULT_TRANSITIONS.filter((t) => t !== 'WIPE TO:')]);
+    s.setTransitionHidden('WIPE TO:', true);
+    expect(useFormattingTemplateStore.getState().getEffectiveTransitions()).not.toContain('WIPE TO:');
+    s.setTransitionHidden('WIPE TO:', false);
+    expect(useFormattingTemplateStore.getState().getEffectiveTransitions()[0]).toBe('WIPE TO:');
   });
 
   it('reset clears customs and un-hides everything', () => {
