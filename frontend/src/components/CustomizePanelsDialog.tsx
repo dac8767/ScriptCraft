@@ -534,7 +534,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // React ('Rendered more hooks than during the previous render').
   const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones, toolbarZonesSet } = useEditorStore();
   const { panelDividers, setPanelDividers } = useEditorStore();
-  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'qat' | 'panels' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'menu');
+  // v4.22, Derek: default landing is the Editor tab (top of the list).
+  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'qat' | 'panels' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'elements');
 
   // v2.94, Derek: with the native macOS menu bar active there's no in-window
   // menu bar to customize — the tab disappears (revert the menu system in
@@ -542,7 +543,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const menuSystem = useSettingsStore((st) => st.menuSystem);
   const nativeMenus = menuSystem === 'native' && isTauri();
   React.useEffect(() => {
-    if (nativeMenus && activeCat === 'menu') setActiveCat('toolbar');
+    if (nativeMenus && activeCat === 'menu') setActiveCat('elements');
   }, [nativeMenus, activeCat]);
 
   // v0.84: the window forgot any size you gave it and snapped back to the
@@ -589,24 +590,37 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   React.useEffect(() => {
     if (open && category) setActiveCat(category);
   }, [open, category]);
-  // v3.29, Derek: the window OPENS below the toolbar ribbon so the whole bar
-  // stays visible while editing (it's still draggable anywhere after).
-  // Measured per open — the top chrome's height depends on his scaling.
-  const [overlayPadTop, setOverlayPadTop] = React.useState<number | null>(null);
-  React.useEffect(() => {
-    if (!open) { setOverlayPadTop(null); return; }
-    const bar = document.querySelector('.toolbar-stack');
-    const b = bar?.getBoundingClientRect().bottom ?? 0;
-    // v3.42, Derek: sit 10px below the ribbon by default.
-    setOverlayPadTop(b > 0 ? Math.round(b) + 10 : null);
-  }, [open]);
   // v3.36, Derek: while the Toolbar tab is open, the REAL ribbon bar becomes
   // the editor (drop surface + handles). Closing the window, or leaving the
   // tab, locks the layout. The store flag drives Toolbar's edit rendering.
   // v4.4, Derek: NOT while locked — "Lock All" must freeze layout edits too
   // (the dialog veils its tabs, but the ribbon bar itself was still editable:
   // you could add sections and drag items). The lock veil tells you to unlock.
+  // (Declared here — the window-position effect below reads it.)
   const editingToolbar = open && activeCat === 'toolbar' && !uiResizeLocked;
+
+  // v3.29, Derek: the window OPENS below the toolbar ribbon so the whole bar
+  // stays visible while editing (it's still draggable anywhere after).
+  // Measured per open — the top chrome's height depends on his scaling.
+  const [overlayPadTop, setOverlayPadTop] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    if (!open) { setOverlayPadTop(null); return; }
+    // v4.22, Derek: re-measure after the ribbon's height settles — switching to
+    // the Toolbar tab expands the bar into edit mode (taller), and the old
+    // measurement (taken once on open, before that expansion) left the window
+    // riding up over the bar. Measure in rAF so the new layout is painted, and
+    // leave extra room in edit mode where the per-section + buttons hang below
+    // the bar.
+    let raf = 0;
+    const measure = () => {
+      const bar = document.querySelector('.toolbar-stack');
+      const b = bar?.getBoundingClientRect().bottom ?? 0;
+      setOverlayPadTop(b > 0 ? Math.round(b) + (editingToolbar ? 24 : 14) : null);
+    };
+    raf = requestAnimationFrame(measure);
+    window.addEventListener('resize', measure);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', measure); };
+  }, [open, editingToolbar, tbLeftRaw]);
   React.useEffect(() => {
     useEditorStore.getState().setToolbarEditing(editingToolbar);
     return () => { useEditorStore.getState().setToolbarEditing(false); };
@@ -725,7 +739,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       title="Reset every customization to the defaults — sizes, toolbar layout, Quick Access, menu bar, panels, outline bar"
       onClick={async () => {
         if (await confirmDialog(
-          'Reset ALL customizations to their defaults? Sizes and spacing, the toolbar layout, dropdown widths, Quick Access Toolbar, menu bar order, side panels, and the Outline Bar all go back to factory. (Themes, Script Editor and Keyboard Shortcuts have their own resets and are not touched.)',
+          'Reset ALL customizations to their defaults? Sizes and spacing, the toolbar layout, dropdown widths, Quick Access Toolbar, menu bar order, side panels, and the Outline Bar all go back to factory. (Themes, Editor and Keyboard Shortcuts have their own resets and are not touched.)',
           { title: 'Reset All Customizations', confirmLabel: 'Reset Customizations', danger: true, requireText: 'Reset Customizations' },
         )) useEditorStore.getState().resetAllCustomizations();
       }}
@@ -739,7 +753,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       // simply stack, and adding an eighth costs no width at all.
       <div className="prefs-layout fs-customize-layout">
         <div className="prefs-tabs fs-customize-tabs">
-          {([['elements', 'Script Editor'], ['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['qat', 'Quick Access'], ['panels', 'Side Panels'], ['context', 'Context Menu'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const)
+          {([['elements', 'Editor'], ['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['qat', 'Quick Access'], ['panels', 'Side Panels'], ['context', 'Context Menu'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const)
             .filter(([id]) => !(nativeMenus && id === 'menu'))
             .map(([id, label]) => (
             <button

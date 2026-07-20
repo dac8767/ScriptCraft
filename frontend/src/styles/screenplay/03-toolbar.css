@@ -505,7 +505,10 @@
 }
 .toolbar.toolbar-ribbon.toolbar-editing .rib-section {
   flex: 0 0 auto;
-  min-width: auto;
+  /* v4.22, Derek: a small floor so an empty section is still an easy drop
+     target, but no bigger — sections grow with their items (the title field no
+     longer forces them wide, see .rib-edit-sectitle). */
+  min-width: 40px;
 }
 /* the align-split gap collapses when the bar overflows — right-run sections just
    follow the left run and scroll into view. */

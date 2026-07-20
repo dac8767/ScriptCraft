@@ -823,7 +823,12 @@
 .toolbar.toolbar-ribbon.rib-no-titles { min-height: calc(var(--rib-rowh, 28px) * 2 + 7px); }
 .rib-edit-sectitle-wrap { position: relative; display: flex; align-items: center; justify-content: center; gap: 3px; }
 .rib-edit-sectitle {
-  flex: 1 1 auto; min-width: 40px;
+  /* v4.22, Derek: flex-BASIS 0 (was auto) so the input contributes NO intrinsic
+     width to the section — a text input's browser default is ~170px, which was
+     forcing every two-row section that wide no matter how few icons it held. At
+     basis 0 the section sizes to its item rows and the title just stretches to
+     match, so a section starts small and grows only as items are added. */
+  flex: 1 1 0; min-width: 0;
   padding: 0 4px;
   border: 1px dashed color-mix(in srgb, var(--fd-border) 80%, transparent);
   border-radius: 4px;

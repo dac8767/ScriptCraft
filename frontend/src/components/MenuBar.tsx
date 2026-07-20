@@ -1073,7 +1073,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     actualSize: () => setZoomLevel(100),
     fitPage: () => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'fitPage' })),
     fitWidth: () => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'fitWidth' })),
-    customize: () => openCustomize('menu'),
+    // v4.22, Derek: the ribbon Customize button lands on the Editor tab (top of
+    // the list) rather than Menu Bar / Toolbar.
+    customize: () => openCustomize('elements'),
 
     bold: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(),
     italic: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(),
