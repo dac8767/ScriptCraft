@@ -69,32 +69,48 @@ function caretRect(editor: Editor): { top: number; bottom: number } | null {
 /** Their setPadding, on our sizer: pad .page-sizer so the doc's first/last
  *  lines can reach the typewriter line. (v1.79: the "only once reached"
  *  option is gone — the mode always pins, so both ends get padding.) */
+const BOTTOM_SPACER_CLASS = 'fs-tw-botspacer';
+
 function applySizerPadding(scroller: HTMLElement): void {
   const sizer = scroller.querySelector('.page-sizer') as HTMLElement | null;
   if (!sizer) return;
   const s = useEditorStore.getState();
+  let spacer = sizer.querySelector(`.${BOTTOM_SPACER_CLASS}`) as HTMLElement | null;
   if (!s.typewriterEnabled || !s.typewriterMasterEnabled) {
     sizer.style.removeProperty('padding-top');
-    sizer.style.removeProperty('padding-bottom');
+    spacer?.remove();
     return;
   }
   const view = scroller.clientHeight;
   const offset = s.typewriterOffset;
-  // Top: room for the FIRST line to rise to the typewriter line.
+  // Top: room for the FIRST line to rise to the typewriter line. Padding-top on
+  // the sizer works (verified) — it's only the BOTTOM that the flex layout eats.
   const padTop = Math.round(view * offset);
   // Bottom: room for the LAST line to reach the typewriter line. That needs
   // view × (1 − offset) below it, NOT view × offset — the old symmetric value
-  // only reached centre at exactly 50%, so at any other line position (or even
-  // at 50% by a rounding hair) the last line of the script couldn't scroll up
-  // far enough. v4.22, Derek: plus half a page of over-scroll so you can pull
-  // the last line above centre at the very end of the script. The page height
-  // comes from the layout + zoom (not a DOM measure, which can read 0 mid-
-  // relayout and silently drop the over-scroll to nothing).
+  // only reached centre at exactly 50%. v4.22, Derek: plus half a page of
+  // over-scroll so you can pull the last line above centre at the very end of
+  // the script. Page height from layout + zoom (a DOM measure can read 0 mid-
+  // relayout and silently drop the over-scroll).
   const zoom = (s.zoomLevel || 100) / 100;
   const halfPage = s.pageLayout?.pageHeight ? (s.pageLayout.pageHeight * 96 * zoom) / 2 : view * 0.5;
   const padBottom = Math.round(view * (1 - offset) + halfPage);
   sizer.style.paddingTop = `${padTop}px`;
-  sizer.style.paddingBottom = `${padBottom}px`;
+  // CRITICAL (v4.22, Derek — reproduced with puppeteer): .editor-main is a FLEX
+  // container and .page-sizer is a flex item, so padding-BOTTOM on the sizer is
+  // NOT added to the scroll range — the last page couldn't be scrolled past, so
+  // the current line drifted low at the end of the script. A real spacer child
+  // (after .page-container, so React never touches it) IS counted. That's the
+  // over-scroll room.
+  if (!spacer) {
+    spacer = scroller.ownerDocument.createElement('div');
+    spacer.className = BOTTOM_SPACER_CLASS;
+    spacer.setAttribute('aria-hidden', 'true');
+    spacer.style.pointerEvents = 'none';
+    spacer.style.flex = '0 0 auto';
+    sizer.appendChild(spacer);
+  }
+  spacer.style.height = `${padBottom}px`;
 }
 
 /** Hex → translucent rgba for the highlight (the bar multiplies over the
