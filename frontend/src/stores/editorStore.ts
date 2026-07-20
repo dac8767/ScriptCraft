@@ -820,6 +820,9 @@ export const DEFAULT_TAG_CATEGORIES: TagCategory[] = [
 export interface CharacterProfile {
   /** Uppercase canonical character name */
   name: string;
+  /** v4.21: the character's full name (e.g. name "SAM" → fullName "SAM VEDU").
+   *  Auto-filled when a "Referred in Script" name is connected to this character. */
+  fullName?: string;
   /** Rich text description / bio (HTML string; maps to FDX CastMember Description as plain text) */
   description: string;
   /** Highlight color hex (Final Draft CharacterHighlighting) */

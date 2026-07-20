@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.20';
+export const APP_VERSION = '4.21';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.21',
+    date: '2026-07-20',
+    items: [
+      { title: 'Character “Full Name” field', detail: 'Characters now have a Full Name field. When you connect a “Referred in Script” name to an existing character (e.g. SAM VEDU → SAM), that full name is filled in automatically.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '4.20',
     date: '2026-07-20',

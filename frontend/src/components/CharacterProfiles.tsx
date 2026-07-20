@@ -459,8 +459,15 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     if (!val) return;
     if (val === '__location') setReferredTag(name, { kind: 'location' });
     else if (val === '__other') setReferredTag(name, { kind: 'other' });
-    else if (val.startsWith('__char:')) setReferredTag(name, { kind: 'character', character: val.slice('__char:'.length) });
-  }, [setReferredTag]);
+    else if (val.startsWith('__char:')) {
+      const target = val.slice('__char:'.length);
+      setReferredTag(name, { kind: 'character', character: target });
+      // v4.21: the referred name is almost always the full name (SAM VEDU → SAM),
+      // so fill it into the linked character's Full Name (unless one is set).
+      const existing = characterProfiles.find((pr) => pr.name === target);
+      if (!existing?.fullName) upsertCharacterProfile(target, { fullName: name });
+    }
+  }, [setReferredTag, characterProfiles, upsertCharacterProfile]);
 
   // v4.20: the Relationships tab — add a blank relationship to edit inline.
   const handleAddRelationship = useCallback(() => {
@@ -628,6 +635,15 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     const st = charStats.get(charName);
     return (
       <>
+        {/* v4.21: Full name */}
+        <label className="char-profile-label">Full Name</label>
+        <input
+          className="char-profile-input"
+          value={prof.fullName ?? ''}
+          onChange={(e) => upsertCharacterProfile(charName, { fullName: e.target.value })}
+          placeholder="e.g. SAM VEDU"
+        />
+
         {/* Description */}
         <label className="char-profile-label">Description</label>
         <MiniRichText
@@ -1195,6 +1211,14 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                     {/* Top section: Description + Role/Gender/Age and Images (side-by-side in fullscreen) */}
                     <div className="char-profile-detail-top">
                       <div className="char-profile-detail-info">
+                        {/* v4.21: Full name */}
+                        <label className="char-profile-label">Full Name</label>
+                        <input
+                          className="char-profile-input"
+                          value={profile.fullName ?? ''}
+                          onChange={(e) => upsertCharacterProfile(name, { fullName: e.target.value })}
+                          placeholder="e.g. SAM VEDU"
+                        />
                         {/* Description */}
                         <label className="char-profile-label">Description</label>
                         <MiniRichText
