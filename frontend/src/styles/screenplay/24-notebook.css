@@ -566,14 +566,20 @@
 .toolbar-ribbon.toolbar-editing { overflow: visible; }
 .rib-edit-section {
   position: relative;
-  border: 1px dashed color-mix(in srgb, var(--fd-border) 80%, transparent);
+  /* v4.22, Derek: the edit ring is drawn with OUTLINE, not border. A border
+     grows the section's layout box (~2px + padding each way), so single-row
+     sections rendered visibly bigger than they do on the live bar. Outline sits
+     outside the box with zero layout cost, so an edited section is exactly the
+     size it will be once saved. */
+  outline: 1px dashed color-mix(in srgb, var(--fd-border) 80%, transparent);
+  outline-offset: -1px;
   border-radius: 5px;
-  padding: 2px 4px;
+  padding: 0 2px;
   cursor: grab;
   touch-action: none;
   background: color-mix(in srgb, var(--fd-navigator-bg) 40%, transparent);
 }
-.rib-edit-section:hover { border-color: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border)); }
+.rib-edit-section:hover { outline-color: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border)); }
 .rib-edit-item { position: relative; display: inline-flex; }
 /* the cover eats clicks so the real control never fires while editing */
 .rib-edit-cover {
@@ -692,6 +698,32 @@
 }
 .rib-edit-add-plus { font-size: 13px; }
 
+/* v4.22, Derek: the per-section "+" — one on every edit section so items land
+   exactly where you click. Absolute (bottom-right, opposite the close ×) so it
+   adds zero width/height to the section. Faint by default, solid on hover. */
+.rib-edit-secadd {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--fd-accent);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 6;
+  opacity: 0.5;
+}
+.rib-edit-section:hover > .rib-edit-secadd,
+.rib-edit-secadd:hover { opacity: 1; }
+
 .rib-add-backdrop { position: fixed; inset: 0; z-index: 3200; }
 .rib-add-menu {
   position: fixed;
@@ -801,6 +833,15 @@
   outline: none;
 }
 .rib-edit-sectitle:focus { border-color: var(--fd-accent); }
+/* v4.22, Derek: single-row (big-button) sections must render at their NORMAL
+   size in edit mode. Live, a single-row section shows no title band (its tall
+   buttons span the full ribbon height); the always-on edit title field was
+   forcing it both taller (an extra ~15px row) and — via the field's 40px
+   min-width — wider than a lone ~20px icon. Drop the field for single-row
+   sections so they match their saved footprint exactly. (Two-row sections keep
+   their title field: they reserve a title band live anyway.) A section can
+   still be titled — give it a second row first. */
+.rib-edit-section.rib-single .rib-edit-sectitle-wrap { display: none; }
 /* v3.50, Derek: the placeholder ("title") reads faint so an unnamed section's
    field is obviously optional, not an empty label waiting to be filled. */
 .rib-edit-sectitle::placeholder { color: var(--fd-text-muted); opacity: 0.6; }

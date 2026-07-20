@@ -65,9 +65,21 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.21';
+export const APP_VERSION = '4.22';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.22',
+    date: '2026-07-20',
+    items: [
+      { title: 'Faster hover tooltips', detail: 'Button names now appear after a short pause instead of the long OS delay — the app draws its own tooltip from the same labels, so every control shows its name quickly.', tags: ['UI', 'Fix'] },
+      { title: 'Customizable transitions', detail: 'Customize ▸ Script Editor now has a Transitions list: add your own (they appear as you type in a Transition element), and hide built-ins you never use. “WIPE TO:” is now a built-in. Built-ins can be hidden but not deleted; your own can be removed.', tags: ['New Feature', 'Editor'] },
+      { title: 'Elements tab renamed “Script Editor”', detail: 'The Customize “Elements” tab is now “Script Editor” and sits at the top of the list, since it now covers both elements and transitions.', tags: ['UI'] },
+      { title: 'Per-section “+” on the ribbon editor', detail: 'While customizing the toolbar, every section has its own small + to drop an item, divider, spacer or new section exactly there — instead of two boundary buttons that guessed the section (which is why dividers kept landing in the wrong one).', tags: ['UI', 'Fix'] },
+      { title: 'Ribbon editor sizing + divider visibility', detail: 'Single-row sections no longer render larger in the toolbar editor than they do on the saved bar. Inline dividers now use the same color and weight as full-height section dividers, so they’re no longer hard to see.', tags: ['Fix', 'UI'] },
+      { title: 'Typewriter highlight bar fits the page in Extreme focus', detail: 'With “Highlight the current line” and “Extreme focus” both on, the highlight bar was stuck to the left after the layout resized. It now follows the page whenever the window, panels or fullscreen change.', tags: ['Fix', 'Tools'] },
+    ],
+  },
   {
     version: '4.21',
     date: '2026-07-20',

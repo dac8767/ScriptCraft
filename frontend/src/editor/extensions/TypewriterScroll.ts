@@ -249,6 +249,47 @@ const dimKey = new PluginKey('typewriterDim');
 export const TypewriterScroll = Extension.create({
   name: 'typewriterScroll',
 
+  addStorage() {
+    return {
+      reposition: null as null | (() => void),
+      ro: null as null | ResizeObserver,
+    };
+  },
+
+  /* The highlight bar is positioned inline from measured page/scroller rects.
+     Any resize that moves or recenters the page (chrome show/hide, Extreme
+     focus hiding the dock, the Tauri fullscreen transition, panel drags,
+     window resize) leaves the bar at its stale left/top until the next
+     keystroke — so it looks shoved off to one side. v4.22: re-measure on
+     scroller/window resize so the bar follows the page without needing a
+     transaction. (Root cause: repositioning was only ever driven by caret
+     transactions, never by layout changes.) */
+  onCreate() {
+    const editor = this.editor;
+    const reposition = () => {
+      if (editor.isDestroyed) return;
+      if (!useEditorStore.getState().typewriterMasterEnabled) return;
+      const scroller = scrollParentOf(editor.view.dom as HTMLElement);
+      if (scroller) applySizerPadding(scroller);
+      updateHighlightBar(editor);
+    };
+    this.storage.reposition = reposition;
+    window.addEventListener('resize', reposition);
+    const scroller = scrollParentOf(editor.view.dom as HTMLElement);
+    if (scroller && typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => reposition());
+      ro.observe(scroller);
+      this.storage.ro = ro;
+    }
+  },
+
+  onDestroy() {
+    if (this.storage.reposition) {
+      window.removeEventListener('resize', this.storage.reposition);
+    }
+    this.storage.ro?.disconnect();
+  },
+
   addProseMirrorPlugins() {
     return [
       new Plugin({

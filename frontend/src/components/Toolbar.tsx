@@ -30,6 +30,7 @@ import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import {
   startRibbonDrag, ribCloseSection, ribRemoveToken, ribRemoveBreak,
   ribToggleBreakLine, ribRemoveSplit, ribAddSectionAtBoundary, ribAddInlineAtBoundary,
+  ribAddToSection, ribInsertSection,
   ribSetAlignSplit, ribSetSectionTitle, ribRemoveSectionTitle,
   ribSetSpacerWidth, SPACER_MIN_PX, SPACER_MAX_PX,
   ribUndo, ribResetHistory,
@@ -139,7 +140,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
   // v3.37, Derek: the on-bar "+ Add" menu — utilities are added from the bar
   // itself now. { at: section-boundary index, rightSide, x, y for the popup }.
-  const [addMenu, setAddMenu] = useState<{ at: number; rightSide: boolean; x: number; y: number } | null>(null);
+  // v4.22, Derek: `sec` (when set) routes the add menu to a SPECIFIC section —
+  // items/divider/spacer land inside it, sections/split insert right after it —
+  // instead of the old left/right boundary guess. `at`/`rightSide` still drive
+  // the empty-bar bootstrap +Add.
+  const [addMenu, setAddMenu] = useState<{ at: number; rightSide: boolean; x: number; y: number; sec?: number } | null>(null);
   const [addSearch, setAddSearch] = useState('');
   // v3.40, Derek: the +Add menu has two views — the structural utilities up
   // front, and every addable item behind an "Add Item ▸" submenu.
@@ -1767,13 +1772,31 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       <span className="rib-edit-add-label">Add</span>
     </button>
   );
+  /* v4.22, Derek: a small "+" on EVERY section. Opens the same add menu but
+     targeted at this section (`sec: i`), so an item / divider / spacer lands
+     right here instead of the old boundary guess that dropped dividers in the
+     wrong section. Absolutely positioned (see .rib-edit-secadd) so it never
+     widens the section. */
+  const secAddBlock = (i: number) => (
+    <button
+      type="button"
+      className="rib-edit-secadd"
+      title="Add an item, divider, spacer or section here"
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        setAddSearch('');
+        setAddView('main');
+        setAddMenu({ at: i + 1, rightSide: false, x: r.left, y: r.bottom + 4, sec: i });
+      }}
+    >+</button>
+  );
   const editLayout = (
     <>
       {sections.map((s, i) => (
         <React.Fragment key={`esec-${i}`}>
           {ribEdit.secSpot === i && <span className="rib-edit-sec-dropline" />}
-          {/* end of the left-aligned run — the +Add sits just before the gap */}
-          {i === splitAt && addBlock(splitAt, false)}
           {i > 0 && (i === splitAt
             ? (
               <div className="rib-align-gap">
@@ -1784,8 +1807,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               </div>
             )
             : <div className="toolbar-separator rib-section-sep" />)}
-          {/* start of the right-aligned run — the left-most right item */}
-          {i === splitAt && addBlock(splitAt, true)}
           <div
             className={`rib-section rib-edit-section${s.hasBreak ? '' : ' rib-single'}`}
             data-sec={i}
@@ -1835,12 +1856,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               </div>
             )}
             {s.hasBreak && editRow(s, i, 'bottom')}
+            {secAddBlock(i)}
           </div>
         </React.Fragment>
       ))}
       {ribEdit.secSpot === sections.length && <span className="rib-edit-sec-dropline" />}
-      {/* no split → the single left run ends here; empty bar → the only +Add */}
-      {splitAt === null && addBlock(sections.length, false)}
+      {/* empty bar → the only way back in is the bootstrap +Add */}
+      {sections.length === 0 && addBlock(0, false)}
     </>
   );
 
@@ -1971,12 +1993,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         spacer: <span className="rib-util-vis"><span className="ruv-spacer" /></span>,
         split: <span className="rib-util-vis"><span className="ruv-box" /><span className="ruv-splitgap"><span /><span /></span><span className="ruv-box" /></span>,
       };
+      // v4.22: `sec` set ⇒ the + belongs to a section — items/divider/spacer go
+      // INSIDE it, a new section or split lands right AFTER it. Otherwise (the
+      // empty-bar bootstrap) fall back to the old boundary adds.
+      const inSec = addMenu.sec !== undefined;
+      const secI = addMenu.sec ?? 0;
       const structural = [
-        { label: '1 Row Section', vis: vis.single, run: () => ribAddSectionAtBoundary('single', addMenu.at, addMenu.rightSide) },
-        { label: '2 Row Section', vis: vis.double, run: () => ribAddSectionAtBoundary('double', addMenu.at, addMenu.rightSide) },
-        { label: 'Divider', vis: vis.divider, run: () => ribAddInlineAtBoundary(`d:${Date.now()}`, addMenu.at, addMenu.rightSide) },
-        { label: 'Spacer', vis: vis.spacer, run: () => ribAddInlineAtBoundary(`s:${Date.now()}`, addMenu.at, addMenu.rightSide) },
-        ...(splitAt === null ? [{ label: 'Alignment Split', vis: vis.split, run: () => ribSetAlignSplit(addMenu.at) }] : []),
+        { label: '1 Row Section', vis: vis.single, run: () => (inSec ? ribInsertSection('single', secI + 1) : ribAddSectionAtBoundary('single', addMenu.at, addMenu.rightSide)) },
+        { label: '2 Row Section', vis: vis.double, run: () => (inSec ? ribInsertSection('double', secI + 1) : ribAddSectionAtBoundary('double', addMenu.at, addMenu.rightSide)) },
+        { label: 'Divider', vis: vis.divider, run: () => (inSec ? ribAddToSection(`d:${Date.now()}`, secI) : ribAddInlineAtBoundary(`d:${Date.now()}`, addMenu.at, addMenu.rightSide)) },
+        { label: 'Spacer', vis: vis.spacer, run: () => (inSec ? ribAddToSection(`s:${Date.now()}`, secI) : ribAddInlineAtBoundary(`s:${Date.now()}`, addMenu.at, addMenu.rightSide)) },
+        ...(splitAt === null ? [{ label: 'Alignment Split', vis: vis.split, run: () => ribSetAlignSplit(inSec ? secI + 1 : addMenu.at) }] : []),
       ];
       const q = addSearch.trim().toLowerCase();
       const placedSet = new Set(leftTokens.map(stripTall));
@@ -2026,7 +2053,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                         <button
                           key={o.value}
                           className="rib-add-opt"
-                          onClick={() => act(() => ribAddInlineAtBoundary(o.value, addMenu.at, addMenu.rightSide))}
+                          onClick={() => act(() => (inSec ? ribAddToSection(o.value, secI) : ribAddInlineAtBoundary(o.value, addMenu.at, addMenu.rightSide)))}
                         >{o.label}</button>
                       ))}
                     </div>

@@ -157,7 +157,9 @@ const ALL_ELEMENT_TYPES: ElementType[] = [
 // empty element, filtered as you type). Scene prefixes get a trailing space so
 // the location follows immediately.
 const SCENE_PREFIX_OPTIONS = ['INT.', 'EXT.'];
-const TRANSITION_OPTIONS = ['CUT TO:', 'DISSOLVE TO:', 'FADE IN:', 'FADE OUT:', 'FADE TO:', 'INTERCUT:', 'CUT TO BLACK:'];
+// v4.22: the transition list moved into formattingTemplateStore
+// (DEFAULT_TRANSITIONS + getEffectiveTransitions) so it's customizable and read
+// from one place — see Customize ▸ Script Editor ▸ Transitions.
 
 const SAMPLE_CONTENT = {
   type: 'doc',
@@ -2034,7 +2036,8 @@ const ScreenplayEditor: React.FC = () => {
         pool = knownCharacters;
         text = stripCharacterExtension(rawText);
       } else if (mode === 'transition') {
-        pool = TRANSITION_OPTIONS;
+        // v4.22: the customizable list (Customize ▸ Script Editor ▸ Transitions).
+        pool = useFormattingTemplateStore.getState().getEffectiveTransitions();
         text = rawText;
       } else {
         // scene: INT./EXT. first, then — once a prefix is chosen — every

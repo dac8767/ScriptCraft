@@ -452,3 +452,22 @@ body.fs-writing-focus::before {
   transition: opacity 0.2s ease;
 }
 
+/* v4.22, Derek: the fast hover tooltip (HoverTooltip.tsx) that replaces the
+   sluggish native `title` bubble. Portalled to <body>, positioned by measured
+   top/left, above everything. */
+.hover-tip {
+  position: fixed;
+  z-index: 9500;
+  max-width: 320px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: var(--fd-tooltip-bg, #1f1f1f);
+  color: var(--fd-tooltip-text, #f2f2f2);
+  border: 1px solid var(--fd-border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  font-size: 11.5px;
+  line-height: 1.35;
+  white-space: pre-line;
+  pointer-events: none;
+}
+

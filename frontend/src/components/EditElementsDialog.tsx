@@ -12,7 +12,8 @@
  * Core elements can be reordered but not hidden — hiding Scene Heading or
  * Action would leave a script with no way to type its own body.
  */
-import { useFormattingTemplateStore, DUAL_DIALOGUE_ID } from '../stores/formattingTemplateStore';
+import { useState } from 'react';
+import { useFormattingTemplateStore, DUAL_DIALOGUE_ID, DEFAULT_TRANSITIONS } from '../stores/formattingTemplateStore';
 import { DndColumns } from './CustomizePanelsDialog';
 
 /** Elements a script can't function without — reorderable, never hidable. */
@@ -78,6 +79,28 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
   const hideAll = () => setElementHidden(ids.filter((id) => !REQUIRED_IDS.includes(id)));
   const resetDefault = () => resetElementOverrides();
 
+  // ── v4.22, Derek: Transitions customization ──
+  const customTransitions = useFormattingTemplateStore((s) => s.customTransitions);
+  const hiddenTransitions = useFormattingTemplateStore((s) => s.hiddenTransitions);
+  const addTransition = useFormattingTemplateStore((s) => s.addTransition);
+  const removeCustomTransition = useFormattingTemplateStore((s) => s.removeCustomTransition);
+  const setTransitionHidden = useFormattingTemplateStore((s) => s.setTransitionHidden);
+  const resetTransitions = useFormattingTemplateStore((s) => s.resetTransitions);
+  const [newTransition, setNewTransition] = useState('');
+
+  const isDefaultTransition = (t: string) => DEFAULT_TRANSITIONS.includes(t);
+  const shownTransitions = [
+    ...DEFAULT_TRANSITIONS.filter((t) => !hiddenTransitions.includes(t)),
+    ...customTransitions,
+  ];
+  const hiddenShown = DEFAULT_TRANSITIONS.filter((t) => hiddenTransitions.includes(t));
+  const commitNewTransition = () => {
+    const t = newTransition.trim();
+    if (!t) return;
+    addTransition(t);
+    setNewTransition('');
+  };
+
   const body = (
     <div className="fs-customize-body">
       <section>
@@ -138,6 +161,80 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
         <div className="fs-tbzone-adders fs-adders-equal">
           <button className="swn-add-btn" onClick={hideAll}>Hide All</button>
           <button className="swn-add-btn" onClick={resetDefault}>Reset to Default</button>
+        </div>
+      </section>
+
+      <section>
+        <h3>Transitions</h3>
+        <p className="fs-customize-hint">
+          The transitions offered as you type in a Transition element. Add your
+          own; the built-ins can be hidden but not deleted. Drag between Shown and
+          Hidden, or use the + / × buttons.
+        </p>
+        <div className="fs-tbzone-adders fs-transition-add">
+          <input
+            type="text"
+            className="fs-transition-input"
+            placeholder="e.g. MATCH CUT TO:"
+            value={newTransition}
+            onChange={(e) => setNewTransition(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitNewTransition(); } }}
+          />
+          <button className="swn-add-btn" onClick={commitNewTransition}>Add Transition</button>
+        </div>
+        <DndColumns
+          columns={[
+            {
+              id: 'shown', title: 'Shown',
+              sections: [{
+                rows: shownTransitions.map((t) => {
+                  const isDefault = isDefaultTransition(t);
+                  return {
+                    key: t,
+                    content: (
+                      <span className="fs-customize-tool">
+                        {t}
+                        {!isDefault && <span className="fs-dnd-required">(custom)</span>}
+                        <button
+                          className="fs-dnd-rowbtn"
+                          title={isDefault ? 'Hide this transition' : 'Remove this transition'}
+                          onClick={() => (isDefault ? setTransitionHidden(t, true) : removeCustomTransition(t))}
+                        >×</button>
+                      </span>
+                    ),
+                  };
+                }),
+              }],
+            },
+            {
+              id: 'hidden', title: 'Hidden', isHidden: true,
+              sections: [{
+                label: 'Transitions',
+                rows: hiddenShown.map((t) => ({
+                  key: t,
+                  content: (
+                    <span className="fs-customize-tool">
+                      {t}
+                      <button className="fs-dnd-rowbtn" title="Show this transition" onClick={() => setTransitionHidden(t, false)}>+</button>
+                    </span>
+                  ),
+                })),
+              }],
+            },
+          ]}
+          onDrop={(src, dst) => {
+            const t = src.key;
+            // Only built-ins toggle hidden; a custom dragged to Hidden is removed.
+            if (dst.col === 'hidden') {
+              if (isDefaultTransition(t)) setTransitionHidden(t, true);
+              else removeCustomTransition(t);
+            } else if (isDefaultTransition(t)) {
+              setTransitionHidden(t, false);
+            }
+          }}
+        />
+        <div className="fs-tbzone-adders fs-adders-equal">
+          <button className="swn-add-btn" onClick={resetTransitions}>Reset to Default</button>
         </div>
       </section>
     </div>

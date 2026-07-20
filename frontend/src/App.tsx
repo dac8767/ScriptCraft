@@ -8,6 +8,7 @@ import DemoBanner from './components/DemoBanner';
 import AuthGate from './components/AuthGate';
 import AuthBootstrap from './components/AuthBootstrap';
 import StorageFallbackDialog from './components/StorageFallbackDialog';
+import HoverTooltip from './components/HoverTooltip';
 import SaveErrorDialog from './components/SaveErrorDialog';
 import OneDriveWarningDialog from './components/OneDriveWarningDialog';
 import VerifyEmailRoute from './components/VerifyEmailRoute';
@@ -38,6 +39,7 @@ function App() {
         ))}
       </Routes>
       <Toast />
+      <HoverTooltip />
       <ConfirmDialogHost />
       <AuthGate />
       <AuthBootstrap />

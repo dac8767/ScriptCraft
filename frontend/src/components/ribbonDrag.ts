@@ -131,6 +131,25 @@ export const ribAddInlineAtBoundary = (tok: string, at: number, rightSide: boole
   commit(m);
 };
 
+/** v4.22, Derek: the per-section "+" adds a token straight INTO section
+ *  `secIdx` (the old boundary +Add guessed the nearest section, which is how
+ *  dividers kept landing in the wrong one). Appends at the section's end — the
+ *  bottom row of a two-row section, the single row otherwise — and honours the
+ *  right-aligned fill direction past the split. Builtins dedupe; dividers /
+ *  spacers carry a unique id so they never do. */
+export const ribAddToSection = (tok: string, secIdx: number) => {
+  const m = clone(getModel());
+  if (m.sections.length === 0) m.sections.push({ ...EMPTY_SECTION });
+  const sec = Math.max(0, Math.min(secIdx, m.sections.length - 1));
+  removeEverywhere(m, tok);
+  const target = m.sections[sec];
+  const row = target.hasBreak ? target.bottom : target.top;
+  const rightAligned = m.splitAt !== null && sec >= m.splitAt;
+  if (rightAligned) row.unshift(tok); else row.push(tok);
+  lastTouchedSection = sec;
+  commit(m);
+};
+
 export const ribSetAlignSplit = (at: number) => {
   const m = clone(getModel());
   // Clamp ≥1: serializeRibbon only writes boundary tokens after a section.

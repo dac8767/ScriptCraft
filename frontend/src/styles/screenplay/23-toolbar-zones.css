@@ -2,8 +2,12 @@
 .toolbar-user-divider {
   align-self: stretch;
   margin: 4px 6px;
-  width: 1px;
-  background: var(--fd-border);
+  /* v4.22, Derek: was 1px on var(--fd-border) — too faint, and the tall
+     single-row variant vanished among the big buttons. Match the full-height
+     section divider's colour/weight (.toolbar-separator, var(--fd-text-muted))
+     so a divider reads the same whether it sits in a one- or two-row section. */
+  width: 2px;
+  background: var(--fd-text-muted);
 }
 
 .tool-dock-divider {
@@ -31,6 +35,21 @@
 .fs-tbzone { border: 1px solid var(--fd-border); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; }
 .fs-tbzone-title { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fd-text-muted); margin-bottom: 6px; }
 .fs-tbzone-adders { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+/* v4.22, Derek: the Transitions "add your own" row. */
+.fs-transition-add { margin-bottom: 10px; }
+.fs-transition-input {
+  flex: 1 1 auto;
+  height: 28px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 12.5px;
+  text-transform: uppercase;
+}
+.fs-transition-input:focus { outline: none; border-color: var(--fd-accent); }
+.fs-transition-input::placeholder { text-transform: none; color: var(--fd-text-muted); }
 .fs-tbzone-adders select {
   height: 26px;
   background: var(--fd-input-bg);
