@@ -1414,9 +1414,14 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             ],
           },
         ] : []),
-        { separator: true, label: '' },
-        { separator: true, label: '' },
-        { icon: <FaCog />, label: 'Settings…', action: () => setPrefsOpen(true) },
+        // Settings lives in the ScriptCraft app menu under native macOS menus
+        // (the platform convention — see nativeMenuSync). In-window menus have
+        // no app menu, so it stays in File there.
+        ...(nativeMenus ? [] : [
+          { separator: true, label: '' },
+          { separator: true, label: '' },
+          { icon: <FaCog />, label: 'Settings…', action: () => setPrefsOpen(true) },
+        ]),
       ],
     },
     {

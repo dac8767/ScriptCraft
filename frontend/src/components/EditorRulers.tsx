@@ -195,16 +195,16 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
           ctx.globalAlpha = 1;
           ctx.fillRect(0, P1, T, topM);
           // Each page reads 1..10: first text row is "1", content bottom is "10".
-          // The dashed divide sits one row BELOW that "10"; the next page's first
-          // row ("1") sits one row below the divide — a 2-row breather so the two
-          // pages never stack. Page 1 alone also shows 0" at the physical top.
-          const ROW = inPx / 6;                          // one 12pt line = 1/6"
+          // The dashed divide sits 0.25" BELOW that "10"; the next page's first
+          // row ("1") sits 0.25" below the divide — a 0.5" breather so the two
+          // pages never stack. Page 1 reads 0..10.25"; every later page 0.75..10.25".
+          const QUARTER = inPx / 4;                      // 0.25"
           let cTop = P1 + topM;
           let clipTop = P1;
           for (const g of lines) {
-            drawScaleFrom(cTop, 1, clipTop, g.top - ROW); // "10" is one row above the divide
-            cTop = g.top + ROW;                           // next page's first text row
-            clipTop = cTop;                               // no 0" / margin above pages 2+
+            drawScaleFrom(cTop, 1, clipTop, g.top - QUARTER); // "10" is 0.25" above the divide
+            cTop = g.top + QUARTER;                            // next page's first text row
+            clipTop = cTop;                                    // no 0" / margin above pages 2+
           }
           drawScaleFrom(cTop, 1, clipTop, H2 + 10);
         } else {

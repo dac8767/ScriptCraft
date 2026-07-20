@@ -19,11 +19,12 @@ export function setPaginationPrintMode(v: boolean): void {
 /** Continuous view (View > Editor Style): the page MARGINS are removed, but each
  * page is still filled to a uniform height (the whitespace fill stays), so every
  * page is the same size — page 1 is 1" taller only because it keeps its real top
- * margin (from the .page padding). Between pages sits a small 2-row gap: one
- * blank row, the dashed page-divide line, one blank row — enough that the last
- * row of one page and the first row of the next never stack. (v4.22, Derek.)
- * 2 rows × 16px/row = 32px; the .page-sep-line hairline is centered in it. */
-export const CONTINUOUS_GAP_PX = 32;
+ * margin (from the .page padding). Between pages sits a 0.5" divide gap: 0.25"
+ * of blank, the dashed page-divide line, 0.25" of blank — so the last row of one
+ * page and the first row of the next never stack. (v4.22, Derek: 0.25" each
+ * side.) Page 1 reads 0..10.25"; every later page reads 0.75..10.25". The
+ * .page-sep-line hairline is centered in the gap (0.25" below the "10"). */
+export const CONTINUOUS_GAP_PX = 48; // 0.5" = 0.25" each side of the divide
 let continuousMode = false;
 export function setPaginationContinuousMode(v: boolean): void {
   continuousMode = v;
