@@ -2342,6 +2342,12 @@ const ScreenplayEditor: React.FC = () => {
   // v1.75: Outline Bar visibility (View > Outline Bar).
   const outlineBarOpen = useEditorStore((st) => st.outlineBarOpen);
   const rulersVisible = useEditorStore((st) => st.rulersVisible);
+  // v4.22, Derek: a body flag so a popped-out tool window drops below the ruler
+  // when it's on (and shifts back up when off).
+  useEffect(() => {
+    document.body.classList.toggle('fs-rulers-on', rulersVisible);
+    return () => document.body.classList.remove('fs-rulers-on');
+  }, [rulersVisible]);
   const notebookOpen = useNotebookStore((st) => st.notebookOpen);
   // v2.35: the Scrapbook's declutter toggle also drops the outline bar —
   // render-time only, outlineBarOpen itself is never rewritten.

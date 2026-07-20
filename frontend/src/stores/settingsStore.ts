@@ -159,7 +159,6 @@ const STORAGE_KEY_MENUSYS = 'opendraft:menuSystem';
 export const EDITOR_VIEWS: { id: string; label: string }[] = [
   { id: 'page', label: 'Page' },
   { id: 'continuous', label: 'Continuous' },
-  { id: 'focus', label: 'Focus' },
   { id: 'preview', label: 'Preview' },
 ];
 export const EDITOR_VIEW_REQUIRED = ['page'];

@@ -342,6 +342,9 @@
   transform: translateX(-50%);
   z-index: 120;
 }
+/* v4.22, Derek: the horizontal ruler occupies the top of the editor area, so a
+   popped-out tool window drops below it while the ruler is on. */
+body.fs-rulers-on .tool-window-temp { top: 116px; }
 
 /* Analytics tab filtering: hide only the sections that DON'T match the
    active tab, so matching ones keep their natural display (grids, tables). */

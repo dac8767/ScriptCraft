@@ -17,7 +17,7 @@ beforeEach(() => {
 describe('editor views', () => {
   it('defaults to all views in canonical order', () => {
     expect(ids()).toEqual(EDITOR_VIEWS.map((v) => v.id));
-    expect(ids()).toContain('focus');
+    expect(ids()).toContain('page');
   });
 
   it('hides a view and shows it again', () => {

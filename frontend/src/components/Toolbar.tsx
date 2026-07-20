@@ -1445,11 +1445,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           <span className="view-style-label">Editor View</span>
           <select
             className="view-style-selector"
-            value={useEditorStore.getState().writingFocus ? 'focus' : (previewMode ? 'preview' : viewStyle)}
+            value={previewMode ? 'preview' : viewStyle}
             onChange={(e) => {
               const v = e.target.value;
-              // v4.22, Derek: Focus (extreme focus) is a view choice too.
-              if (v === 'focus') { useEditorStore.getState().setWritingFocus(true); return; }
               if (v === 'preview') { useEditorStore.getState().setPreviewMode(true); return; }
               useEditorStore.getState().setPreviewMode(false);
               setViewStyle(v === 'continuous' ? 'continuous' : 'page');
