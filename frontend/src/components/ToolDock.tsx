@@ -91,7 +91,9 @@ export const ALL_TOOLS: ToolDef[] = [
   // precedent); absence from ALL_TOOLS removes it everywhere it showed.
   // v1.74: grew from one toggle to the full option suite — needs the height.
   // v1.77: stays open on editor clicks — its options are tuned while writing.
-  { id: 'typewriter', label: 'Typewriter', icon: <FaKeyboard />, defaultSize: { w: 340, h: 520 }, group: 3, keepOpenOnEditorClick: true },
+  // v4.22, Derek: renamed "Typewriter" → "Focus" (the id stays 'typewriter' —
+  // it's the persisted tool key and ribbon token).
+  { id: 'typewriter', label: 'Focus', icon: <FaKeyboard />, defaultSize: { w: 340, h: 520 }, group: 3, keepOpenOnEditorClick: true },
   // v1.69: the joke. It ships enabled — that's the joke landing.
   { id: 'aiwriter', label: 'AI Writer', icon: <FaRobot />, defaultSize: { w: 300, h: 150 }, group: 3 },
   // v1.96: the Notebook window is ONLY the pages tree — it sits inline in

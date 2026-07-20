@@ -41,7 +41,7 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
   return (
     <div className="fs-typewriter">
       <p className="fs-tool-intro">
-        Typewriter mode keeps the line you're typing on fixed on screen — the
+        Focus mode keeps the line you're typing on fixed on screen — the
         page scrolls, your eyes don't. This window stays open while you write.
       </p>
 
@@ -60,7 +60,7 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
             if (e.target.checked && typewriterEnabled) snapToCenter();
           }}
         />
-        <span>Enable Typewriter tool</span>
+        <span>Enable Focus tool</span>
       </label>
 
       <div className="fs-typewriter-section">Scrolling</div>

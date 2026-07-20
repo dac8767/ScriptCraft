@@ -78,9 +78,27 @@ function applySizerPadding(scroller: HTMLElement): void {
     sizer.style.removeProperty('padding-bottom');
     return;
   }
-  const pad = Math.round(scroller.clientHeight * s.typewriterOffset);
-  sizer.style.paddingTop = `${pad}px`;
-  sizer.style.paddingBottom = `${pad}px`;
+  const view = scroller.clientHeight;
+  const offset = s.typewriterOffset;
+  // Top: room for the FIRST line to rise to the typewriter line.
+  const padTop = Math.round(view * offset);
+  // Bottom: room for the LAST line to reach the typewriter line. That needs
+  // view × (1 − offset) below it, NOT view × offset — the old symmetric value
+  // only reached centre at exactly 50%, so at any other line position (or even
+  // at 50% by a rounding hair) the last line of the script couldn't scroll up
+  // far enough. v4.22, Derek: plus half a page of over-scroll so you can pull
+  // the last line above centre at the very end of the script.
+  const pageContainer = scroller.querySelector('.page-container') as HTMLElement | null;
+  let halfPage = 0;
+  const pw = s.pageLayout?.pageWidth;
+  const ph = s.pageLayout?.pageHeight;
+  if (pageContainer && pw && ph) {
+    const w = pageContainer.getBoundingClientRect().width;   // rendered (post-zoom)
+    if (w > 0) halfPage = (ph * (w / pw)) / 2;               // half a page, rendered px
+  }
+  const padBottom = Math.round(view * (1 - offset) + halfPage);
+  sizer.style.paddingTop = `${padTop}px`;
+  sizer.style.paddingBottom = `${padBottom}px`;
 }
 
 /** Hex → translucent rgba for the highlight (the bar multiplies over the
