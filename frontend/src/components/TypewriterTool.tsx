@@ -128,14 +128,6 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
                 onClick={() => { setTypewriterHighlightColor(c); refreshChrome(); }}
               />
             ))}
-            <input
-              type="color"
-              className="fs-typewriter-swatch-custom"
-              disabled={off || !typewriterHighlightLine}
-              value={typewriterHighlightColor}
-              title="Custom color"
-              onChange={(e) => { setTypewriterHighlightColor(e.target.value); refreshChrome(); }}
-            />
           </span>
         </div>
       </div>
@@ -151,7 +143,7 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
       </label>
       <div className={`fs-typewriter-subgroup${typewriterDimOthers && !off ? '' : ' disabled'}`}>
         <div className="fs-typewriter-offset">
-          <span>Keep bright</span>
+          <span>Keep focus on</span>
           <select
             disabled={off || !typewriterDimOthers}
             value={typewriterDimMode}

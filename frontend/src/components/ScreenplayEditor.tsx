@@ -4210,7 +4210,14 @@ const ScreenplayEditor: React.FC = () => {
                     fontFamily: `'${fontFamily}', 'Courier New', Courier, monospace`,
                     fontSize: `${fontSize}pt`,
                     width: `${pageLayout.pageWidth}in`,
-                    minHeight: `${lastPageEnd + (pageLayout.bottomMargin / 72) * 96}px`,
+                    // v4.22, Derek: in continuous view the white page always
+                    // extends a full window past the content, so white fills
+                    // down to the bottom of the editor — you never scroll into
+                    // the grey below the last page. (Page view keeps discrete
+                    // page heights.)
+                    minHeight: (viewStyle === 'continuous' && !previewMode)
+                      ? `calc(${lastPageEnd}px + 100vh)`
+                      : `${lastPageEnd + (pageLayout.bottomMargin / 72) * 96}px`,
                     paddingTop: `${pageLayout.topMargin}pt`,
                     paddingBottom: `${pageLayout.bottomMargin}pt`,
                     paddingLeft: `${pageLayout.leftMargin}in`,

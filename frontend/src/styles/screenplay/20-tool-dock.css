@@ -734,18 +734,14 @@
   cursor: pointer;
   padding: 0;
 }
-.fs-typewriter-swatch.active { border-color: var(--fd-text); }
-.fs-typewriter-swatch:disabled { opacity: 0.4; cursor: default; }
-.fs-typewriter-swatch-custom {
-  width: 24px;
-  height: 20px;
-  padding: 0;
-  border: 1px solid var(--fd-border);
-  border-radius: 4px;
-  background: none;
-  cursor: pointer;
+/* v4.22, Derek: the active colour is shown by a clear ring around its circle
+   (the separate current-colour bar is gone). */
+.fs-typewriter-swatch.active {
+  border-color: var(--fd-text);
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 2px;
 }
-.fs-typewriter-swatch-custom:disabled { opacity: 0.4; cursor: default; }
+.fs-typewriter-swatch:disabled { opacity: 0.4; cursor: default; }
 .fs-typewriter-offset {
   display: flex;
   align-items: center;
