@@ -1407,17 +1407,21 @@ input.fs-switch:checked::after { left: 15px; }
 
 /* ═══ v0.16 ═══ */
 
-/* Continuous view: thin page-boundary line with a small page label */
+/* Continuous view (v4.22, Derek): the page gap is removed, so this is now a
+   ZERO-height boundary marker sitting exactly between the last row of one page
+   and the first row of the next. The dashed rule straddles that seam; the small
+   "Page N" label rides in the right margin gutter, backed by page-bg so the
+   dash doesn't strike through it. Out of flow (absolute) — it adds no space. */
 .page-sep-line {
   position: absolute;
   left: 0;
   right: 0;
+  height: 0;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 0 12px;
   pointer-events: none;
-  background: var(--fd-page-bg);
 }
 .page-sep-line::before {
   content: '';
@@ -1430,6 +1434,8 @@ input.fs-switch:checked::after { left: 15px; }
   text-transform: uppercase;
   letter-spacing: .06em;
   white-space: nowrap;
+  background: var(--fd-page-bg);
+  padding: 0 4px;
 }
 
 /* Save As: composed file-name preview — footer row, beside the buttons that

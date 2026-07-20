@@ -16,10 +16,13 @@ export function setPaginationPrintMode(v: boolean): void {
   printMode = v;
 }
 
-/** Continuous view (View > Editor Style): instead of the full simulated-page
- * whitespace, page breaks get a thin fixed gap — the editor scrolls as one
- * continuous document with a line marking each page boundary. */
-export const CONTINUOUS_GAP_PX = 64; // line slot plus one blank line above and below
+/** Continuous view (View > Editor Style): the simulated-page whitespace, the
+ * page margins AND the inter-page gap are all removed, so the script flows as
+ * one document — page 2 begins immediately where page 1's text ended. Only a
+ * zero-height hairline (.page-sep-line) marks each boundary. Page 1 keeps its
+ * real top margin (it comes from the .page padding, not from a break gap).
+ * (v4.22, Derek: "cut out the margin and page gap on the page and the ruler".) */
+export const CONTINUOUS_GAP_PX = 0;
 let continuousMode = false;
 export function setPaginationContinuousMode(v: boolean): void {
   continuousMode = v;
