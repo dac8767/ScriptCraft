@@ -51,38 +51,11 @@
   /* v3.42, Derek: tighten the gap between the panel header and the first
      folder — no top padding. */
   padding: 0 6px 2px;
+  /* v4.22, Derek: the tree scales with the SIDE PANEL's item-size control
+     (--dock-scale, dragged on the panel edge) — the dedicated bottom zoom bar
+     was removed as redundant. */
+  --nb-tree-scale: var(--dock-scale, 1);
 }
-/* v2.66: the tree panel's Premiere-style zoom bar — stretch the thumb and
-   the rows above grow with it (text + icons proportional). */
-.fs-nb-zoom {
-  flex: 0 0 auto;
-  padding: 3px 8px 6px;
-}
-.fs-nb-zoom-track {
-  position: relative;
-  height: 14px;
-  border-radius: 7px;
-  background: var(--fd-overlay-subtle);
-}
-.fs-nb-zoom-thumb {
-  position: absolute;
-  top: 0;
-  left: 0;                        /* v2.90: one handle — thumb anchors left */
-  height: 100%;
-  border-radius: 7px;
-  background: var(--fd-border);
-}
-.fs-nb-zoom-handle {
-  position: absolute;
-  top: 2px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--fd-text-muted);
-  cursor: ew-resize;
-}
-.fs-nb-zoom-handle-r { right: 1px; }   /* v2.90: the only handle */
-
 .fs-nb-toplevel-drop {
   flex: 0 0 auto;
   margin: 6px;

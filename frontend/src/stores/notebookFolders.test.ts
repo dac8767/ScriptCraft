@@ -44,22 +44,3 @@ describe('rotated image frame (v2.64)', () => {
     expect(b).toEqual({ rotate: 0, w: 300, h: 200 });
   });
 });
-
-/* v2.66: the tree panel's zoom bar — thumb width maps linearly to row scale
-   and the mapping round-trips. */
-import { treeThumbFrac, treeScaleFromFrac, TREE_SCALE_MIN, TREE_SCALE_MAX } from '../components/NotebookTool';
-
-describe('tree zoom bar mapping (v2.66)', () => {
-  it('min scale = smallest grabbable thumb; max scale = full width', () => {
-    expect(treeThumbFrac(TREE_SCALE_MIN)).toBeCloseTo(0.3);
-    expect(treeThumbFrac(TREE_SCALE_MAX)).toBeCloseTo(1);
-  });
-
-  it('round-trips through the mapping and clamps outside it', () => {
-    for (const s of [0.7, 1, 1.5, 2]) {
-      expect(treeScaleFromFrac(treeThumbFrac(s))).toBeCloseTo(s);
-    }
-    expect(treeScaleFromFrac(0)).toBe(TREE_SCALE_MIN);      // below the min thumb
-    expect(treeScaleFromFrac(2)).toBe(TREE_SCALE_MAX);      // past full width
-  });
-});

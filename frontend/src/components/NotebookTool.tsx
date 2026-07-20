@@ -911,9 +911,6 @@ export default function NotebookTool() {
     return () => { useNotebookStore.getState().setNotebookOpen(false); };
   }, []);
 
-  // v2.66: the bottom zoom bar scales rows + text + icons proportionally.
-  const treeScale = useEditorStore((s) => s.scrapbookTreeScale);
-
   return (
     <div
       className="fs-notebook fs-nb-panel"
@@ -921,7 +918,10 @@ export default function NotebookTool() {
       onDragEndCapture={() => setDragging(false)}
       onDropCapture={() => setDragging(false)}
     >
-      <div className="fs-nb-tree" style={{ ['--nb-tree-scale' as string]: treeScale }}>
+      {/* v4.22, Derek: the tree rows scale with the side panel's item-size
+          control now (see .fs-nb-tree --nb-tree-scale), so the dedicated bottom
+          zoom bar was removed as redundant. */}
+      <div className="fs-nb-tree">
         <TreeNodes nodes={tree} depth={0} />
         {tree.length === 0 && (
           <div className="fs-nb-empty">
@@ -929,7 +929,6 @@ export default function NotebookTool() {
           </div>
         )}
       </div>
-      <ScrapbookTreeZoom />
       {dragging && (
         <div
           className="fs-nb-toplevel-drop"
@@ -944,58 +943,6 @@ export default function NotebookTool() {
           Drop here to move out of all sections
         </div>
       )}
-    </div>
-  );
-}
-
-/** v2.66, Derek: a Premiere-style bar at the panel's bottom. Horizontal, but
- *  it zooms VERTICALLY: stretch the thumb and the tree's rows grow, text and
- *  icons scaling with them; shrink it and they contract. v2.90: ONE round
- *  handle — the thumb anchors left and its right-end circle drags 1:1.
- *  Hidden while the sizing lock is on (v2.55: no dead controls).
- *  The thumb-width ↔ scale mapping is linear; exported for the test. */
-export const TREE_SCALE_MIN = 0.7;
-export const TREE_SCALE_MAX = 2;
-const TREE_THUMB_MIN_FRAC = 0.3;   // thumb never shrinks past 30% — stays grabbable
-export function treeThumbFrac(scale: number): number {
-  const t = (scale - TREE_SCALE_MIN) / (TREE_SCALE_MAX - TREE_SCALE_MIN);
-  return TREE_THUMB_MIN_FRAC + Math.min(1, Math.max(0, t)) * (1 - TREE_THUMB_MIN_FRAC);
-}
-export function treeScaleFromFrac(frac: number): number {
-  const t = (frac - TREE_THUMB_MIN_FRAC) / (1 - TREE_THUMB_MIN_FRAC);
-  return TREE_SCALE_MIN + Math.min(1, Math.max(0, t)) * (TREE_SCALE_MAX - TREE_SCALE_MIN);
-}
-
-function ScrapbookTreeZoom() {
-  const scale = useEditorStore((s) => s.scrapbookTreeScale);
-  const setScale = useEditorStore((s) => s.setScrapbookTreeScale);
-  const locked = useEditorStore((s) => s.uiResizeLocked);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ x: number; frac: number } | null>(null);
-  if (locked) return null;
-
-  const start = (e: React.PointerEvent) => {
-    e.preventDefault(); e.stopPropagation();
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-    drag.current = { x: e.clientX, frac: treeThumbFrac(scale) };
-  };
-  const move = (e: React.PointerEvent) => {
-    const d = drag.current;
-    const w = trackRef.current?.clientWidth || 0;
-    if (!d || w <= 0) return;
-    // Left-anchored thumb, one handle: the circle tracks the mouse 1:1.
-    const frac = d.frac + (e.clientX - d.x) / w;
-    setScale(treeScaleFromFrac(Math.min(1, Math.max(TREE_THUMB_MIN_FRAC, frac))));
-  };
-  const end = () => { drag.current = null; };
-
-  return (
-    <div className="fs-nb-zoom" title="Drag the circle to grow or shrink the tree's rows">
-      <div className="fs-nb-zoom-track" ref={trackRef}>
-        <div className="fs-nb-zoom-thumb" style={{ width: `${treeThumbFrac(scale) * 100}%` }}>
-          <span className="fs-nb-zoom-handle fs-nb-zoom-handle-r" onPointerDown={start} onPointerMove={move} onPointerUp={end} />
-        </div>
-      </div>
     </div>
   );
 }
