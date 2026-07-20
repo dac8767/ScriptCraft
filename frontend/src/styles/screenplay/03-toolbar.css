@@ -471,10 +471,11 @@
   /* v4.1, Derek: extra room in the floor so a section TITLE (a fixed ~15px, not
      scaled with the rows) fits above the two rows instead of clipping at the top. */
   min-height: calc(var(--rib-rowh, 28px) * 2 + 22px);
-  /* v3.98/v4.1, Derek: breathing room above the section titles at the top. */
-  padding-top: 5px;
+  /* v3.98/v4.1, Derek: breathing room above the section titles at the top.
+     v4.15: Design knobs. */
+  padding-top: var(--dz-rib-pad-top, 5px);
   /* v3.44, Derek: a hair of breathing room under the buttons. */
-  padding-bottom: 2px;
+  padding-bottom: var(--dz-rib-pad-bottom, 2px);
   /* v3.10, Derek: the right-aligned tail (Customize) sat flush against the
      window edge. (v3.28 doubled this to 24px, but the real culprit was the
      Customize button's icon-only sizing, fixed in v3.29 — so v3.32 walks it
@@ -713,8 +714,14 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar.toolbar-ribbon .rib-tall[data-key="view"] .view-style-label {
   margin: 0; font-size: 10px; line-height: 1.1;
 }
+.toolbar.toolbar-ribbon .rib-tall[data-key="view"] {
+  /* v4.15, Derek: center the dropdown+label group vertically like every other
+     big button (was flex:1 on the selector, which ate all the free space and
+     pinned the label to the bottom edge instead of centering it). */
+  gap: 3px;
+}
 .toolbar.toolbar-ribbon .rib-tall[data-key="view"] .view-style-selector {
-  flex: 1;
+  flex: 0 0 auto;
   min-height: 0;
 }
 .toolbar.toolbar-ribbon .rib-section-sep {

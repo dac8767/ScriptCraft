@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.14';
+export const APP_VERSION = '4.15';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.15',
+    date: '2026-07-19',
+    items: [
+      { title: 'Editor View button is vertically centered', detail: 'The Editor View big button pinned its “Editor View” label to the bottom of its section instead of centering the dropdown-and-label together like the other big buttons. Now it’s centered like the rest.', tags: ['Fix', 'UI'] },
+      { title: 'Ribbon top & bottom padding in the Design panel', detail: 'Added “Ribbon top padding” and “Ribbon bottom padding” sliders to the Toolbar / Ribbon section of the Design panel.', tags: ['Tools', 'UI'] },
+    ],
+  },
   {
     version: '4.14',
     date: '2026-07-19',

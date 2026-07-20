@@ -99,6 +99,8 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'ribBtnGap', label: 'Button spacing (in section)', cssVar: '--dz-rib-btn-gap', unit: 'px', min: 0, max: 20, step: 1, def: 1 },
       { id: 'ribRowGap', label: 'Two-row vertical gap', cssVar: '--dz-rib-row-gap', unit: 'px', min: -14, max: 24, step: 1, def: 0,
         hint: 'Negative pulls the two rows of icons together.' },
+      { id: 'ribPadTop', label: 'Ribbon top padding', cssVar: '--dz-rib-pad-top', unit: 'px', min: 0, max: 30, step: 1, def: 5 },
+      { id: 'ribPadBottom', label: 'Ribbon bottom padding', cssVar: '--dz-rib-pad-bottom', unit: 'px', min: 0, max: 30, step: 1, def: 2 },
       { id: 'toolbarBtnRadius', label: 'Button corner radius', cssVar: '--dz-toolbar-btn-radius', unit: 'px', min: 0, max: 12, step: 1, def: 5 },
       { id: 'toolbarBigIcon', label: 'Big icon size', cssVar: '--dz-toolbar-big-icon', unit: 'px', min: 16, max: 40, step: 1, def: 26 },
       { id: 'toolbarBigLabel', label: 'Big button label font', cssVar: '--dz-toolbar-big-label', unit: 'px', min: 7, max: 16, step: 0.5, def: 10 },
