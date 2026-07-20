@@ -16,7 +16,13 @@ import { useSettingsStore } from '../stores/settingsStore';
 
 export const RULER_THICKNESS = 20;
 
-const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null> }> = ({ container }) => {
+/** Extra px between two pages in Page view — the dark gap band. Matches
+ *  ScreenplayEditor's `page-sep-gap` (40) added on top of the two margins. */
+const PAGE_GAP_PX = 40;
+/** Continuous view's fixed inter-page gap (mirrors pagination CONTINUOUS_GAP_PX). */
+const CONTINUOUS_GAP_PX = 64;
+
+const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>; continuous?: boolean }> = ({ container, continuous = false }) => {
   const pageLayout = useEditorStore((s) => s.pageLayout);
   const zoomLevel = useEditorStore((s) => s.zoomLevel);
   const units = useSettingsStore((s) => s.units);
@@ -117,7 +123,14 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
         ctx.globalAlpha = 1;
       }
 
-      /* ── vertical ruler — the scale restarts at each page top ── */
+      /* ── vertical ruler — the scale restarts at each page top ──
+         v4.22, Derek: the old scale stacked pages contiguously (k × pageHpx),
+         ignoring the gap BETWEEN pages in Page view and the missing margins in
+         Continuous view — so it drifted further off with every page. Now:
+         - Page view: pages are pageHpx APART PLUS the inter-page gap band
+           (PAGE_GAP_PX), and each shows its top/bottom margin zones.
+         - Continuous view: pages have NO margins and a thin fixed gap, so the
+           scale spans only the usable content height and skips the shading. */
       {
         const T = RULER_THICKNESS;
         const H2 = Math.max(0, Ht - T);
@@ -129,24 +142,32 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
         ctx.textBaseline = 'middle';
         const topMarginIn = pl.topMargin / 72;      // pt → in
         const bottomMarginIn = pl.bottomMargin / 72;
+        // The scale height of ONE page, and the stride to the next page's top.
+        const pageSpan = continuous
+          ? (pl.pageHeight - topMarginIn - bottomMarginIn) * inPx   // content only
+          : pageHpx;                                               // full page
+        const gapPx = (continuous ? CONTINUOUS_GAP_PX : PAGE_GAP_PX) * zoom;
+        const stride = pageSpan + gapPx;
         // pages visible in [0, H2] (ruler-local y = container y - T)
-        const yPage = (k: number) => y0 - T + k * pageHpx;
-        const firstK = Math.max(0, Math.floor((0 - (y0 - T)) / pageHpx));
-        const lastK = Math.max(firstK, Math.ceil((H2 - (y0 - T)) / pageHpx));
+        const yPage = (k: number) => y0 - T + k * stride;
+        const firstK = Math.max(0, Math.floor((0 - (y0 - T)) / stride));
+        const lastK = Math.max(firstK, Math.ceil((H2 - (y0 - T)) / stride));
         for (let k = firstK; k <= lastK; k++) {
           const base = yPage(k);
-          // margin shading
-          ctx.globalAlpha = 1;
-          ctx.fillStyle = 'rgba(127,127,127,0.16)';
-          ctx.fillRect(0, base, T, topMarginIn * inPx);
-          ctx.fillRect(0, base + pageHpx - bottomMarginIn * inPx, T, bottomMarginIn * inPx);
+          // margin shading — Page view only (Continuous has none between pages)
+          if (!continuous) {
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = 'rgba(127,127,127,0.16)';
+            ctx.fillRect(0, base, T, topMarginIn * inPx);
+            ctx.fillRect(0, base + pageSpan - bottomMarginIn * inPx, T, bottomMarginIn * inPx);
+          }
           ctx.fillStyle = text;
           ctx.globalAlpha = 0.55;
           ctx.beginPath();
-          const totalUnits = (pl.pageHeight * inPx) / unitPx;
+          const totalUnits = pageSpan / unitPx;
           for (let u = 0; u <= totalUnits + 0.001; u += 1 / minorSteps) {
             const y = Math.round(base + u * unitPx) + 0.5;
-            if (y < base - 1 || y > base + pageHpx - unitPx / minorSteps / 2 || y < -10 || y > H2 + 10) continue;
+            if (y < base - 1 || y > base + pageSpan - unitPx / minorSteps / 2 || y < -10 || y > H2 + 10) continue;
             const isWhole = Math.abs(u - Math.round(u)) < 0.001;
             const isHalf = !isWhole && Math.abs(u * 2 - Math.round(u * 2)) < 0.001;
             if (isWhole) {
@@ -180,7 +201,7 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
       ro.disconnect();
       cancelAnimationFrame(raf);
     };
-  }, [container, units, pageLayout, zoomLevel]);
+  }, [container, units, pageLayout, zoomLevel, continuous]);
 
   return (
     <div className="fs-rulers-pin" aria-hidden="true">

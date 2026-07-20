@@ -4202,7 +4202,7 @@ const ScreenplayEditor: React.FC = () => {
           ) : (
             <div className="editor-main" ref={editorMainRef}>
               {/* v2.95, Derek: Word-style rulers, toggled in View > Show Rulers */}
-              {rulersVisible && <EditorRulers container={editorMainRef} />}
+              {rulersVisible && <EditorRulers container={editorMainRef} continuous={viewStyle === 'continuous' && !previewMode} />}
               <div
                 className="page-sizer"
                 style={{
