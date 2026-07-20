@@ -107,6 +107,8 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     toggleCharacterProfiles,
     selectedCharacter,
     setSelectedCharacter,
+    referredTags,
+    setReferredTag,
   } = useEditorStore();
 
   const currentScriptId = useProjectStore((s) => s.currentScriptId);
@@ -424,13 +426,16 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         if (words.every((w) => EXCLUDE.has(w.replace(/[.']/g, '')))) continue;
         // Must not already be known
         if (known.has(candidate)) continue;
+        // v4.19: skip names the writer has classified (location / other /
+        // connected to an existing character) — they drop off this list.
+        if (referredTags[candidate]) continue;
         found.add(candidate);
       }
       return true;
     });
 
     return Array.from(found).sort();
-  }, [editor, editor?.state.doc, characters, characterProfiles]);
+  }, [editor, editor?.state.doc, characters, characterProfiles, referredTags]);
 
   const handleAddUnmatched = useCallback(
     (name: string) => {
@@ -439,6 +444,23 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     },
     [characterProfiles, upsertCharacterProfile],
   );
+
+  // v4.19: existing character names to offer under "Connect to character".
+  const existingCharNames = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of characterProfiles) if (p.name) set.add(p.name);
+    for (const c of characters) set.add(c.toUpperCase());
+    return Array.from(set).sort();
+  }, [characterProfiles, characters]);
+
+  // v4.19: classify a referred name so it drops off the list — as a location,
+  // as "other", or connected to an existing character.
+  const handleClassifyReferred = useCallback((name: string, val: string) => {
+    if (!val) return;
+    if (val === '__location') setReferredTag(name, { kind: 'location' });
+    else if (val === '__other') setReferredTag(name, { kind: 'other' });
+    else if (val.startsWith('__char:')) setReferredTag(name, { kind: 'character', character: val.slice('__char:'.length) });
+  }, [setReferredTag]);
 
   // Characters that have a profile but are no longer detected in the script
   // Scan the editor doc directly so we don't depend on the store's `characters` timing
@@ -1400,10 +1422,29 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
               {unmatchedNames.map((name) => (
                 <div key={name} className="char-unmatched-row">
                   <span className="char-unmatched-name">{name}</span>
+                  {/* v4.19: classify — location / other / connect to an existing
+                      character — to file the name away and drop it off this list. */}
+                  <select
+                    className="char-unmatched-classify"
+                    value=""
+                    title="File this away so it leaves the list"
+                    onChange={(e) => { handleClassifyReferred(name, e.target.value); e.target.value = ''; }}
+                  >
+                    <option value="">Classify…</option>
+                    <option value="__location">It's a location</option>
+                    <option value="__other">Other — hide it</option>
+                    {existingCharNames.length > 0 && (
+                      <optgroup label="Connect to character">
+                        {existingCharNames.map((c) => (
+                          <option key={c} value={`__char:${c}`}>{c}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
                   <button
                     className="char-unmatched-add"
                     onClick={() => handleAddUnmatched(name)}
-                    title="Add to character list"
+                    title="Add as a new character"
                   >
                     + Add
                   </button>

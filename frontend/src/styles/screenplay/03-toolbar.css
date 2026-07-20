@@ -494,6 +494,22 @@
   gap: 0;
   min-width: 0;
 }
+/* v4.19, Derek: in Customize (edit) mode the whole bar shows — no overflow menu
+   collapses it — so a crowded bar used to squeeze sections into each other until
+   they overlapped. Instead, stop sections from shrinking and let the bar scroll
+   horizontally, so the spacing between sections stays constant and off-screen
+   sections are reachable by scrolling. */
+.toolbar.toolbar-ribbon.toolbar-editing {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.toolbar.toolbar-ribbon.toolbar-editing .rib-section {
+  flex: 0 0 auto;
+  min-width: auto;
+}
+/* the align-split gap collapses when the bar overflows — right-run sections just
+   follow the left run and scroll into view. */
+.toolbar.toolbar-ribbon.toolbar-editing .rib-align-gap { flex: 0 0 auto; }
 /* v4.12, Derek: the vertical spacing between a two-row section's two rows is a
    Design knob. The row BOXES already touch (gap 0); the visible space is each
    row's height around a smaller button, so the knob is a margin on the second

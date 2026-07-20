@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.18';
+export const APP_VERSION = '4.19';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.19',
+    date: '2026-07-20',
+    items: [
+      { title: 'Customize ribbon scrolls instead of overlapping', detail: 'When the ribbon was too crowded to fit in Customize mode, sections were squeezed into each other until they overlapped. Now sections keep their spacing and the bar scrolls horizontally so you can reach what runs off-screen.', tags: ['Fix', 'UI'] },
+      { title: 'Classify names in “Referred in Script”', detail: 'Each name in the Referred-in-Script list now has a Classify menu: mark it as a location, mark it as other, or connect it to an existing character (e.g. “SAM VEDU” → SAM). Any of these files the name away so it drops off the list. Classifications are saved with the script.', tags: ['New Feature', 'Tools'] },
+    ],
+  },
   {
     version: '4.18',
     date: '2026-07-20',

@@ -406,17 +406,34 @@
 .char-unmatched-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   padding: 4px 8px;
   border-radius: 3px;
 }
 .char-unmatched-row:hover { background: var(--fd-overlay-subtle); }
 .char-unmatched-name {
+  flex: 1;
+  min-width: 0;
   font-size: 11px;
   color: var(--fd-text-muted);
   text-transform: uppercase;
   letter-spacing: .3px;
 }
+/* v4.19: classify dropdown (location / other / connect to character). */
+.char-unmatched-classify {
+  flex: 0 0 auto;
+  height: 24px;
+  max-width: 170px;
+  background: var(--fd-input-bg, #222);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 3px;
+  font-size: 10px;
+  padding: 0 4px;
+  cursor: pointer;
+  outline: none;
+}
+.char-unmatched-classify:focus { border-color: var(--fd-accent); }
 .char-unmatched-add {
   padding: 2px 8px;
   background: transparent;

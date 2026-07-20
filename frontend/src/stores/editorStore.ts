@@ -853,6 +853,14 @@ export interface CharacterRelationship {
   dynamic: string;
 }
 
+/** v4.19: classification of an ALL-CAPS name detected in action lines but not in
+ *  the character list — lets the writer file it away so it drops off the
+ *  "Referred in Script" list. */
+export type ReferredTag =
+  | { kind: 'character'; character: string }
+  | { kind: 'location' }
+  | { kind: 'other' };
+
 export interface BeatColumn {
   id: string;
   title: string;
@@ -1406,6 +1414,13 @@ interface EditorState {
   setCharacterRelationships: (rels: CharacterRelationship[]) => void;
   upsertCharacterRelationship: (rel: CharacterRelationship) => void;
   deleteCharacterRelationship: (id: string) => void;
+  /** v4.19: how the writer classified an ALL-CAPS name found in action lines
+   *  (the "Referred in Script" list). Any tagged name drops out of that list.
+   *  Persisted per-script via collabSync. */
+  referredTags: Record<string, ReferredTag>;
+  setReferredTags: (tags: Record<string, ReferredTag>) => void;
+  setReferredTag: (name: string, tag: ReferredTag) => void;
+  clearReferredTag: (name: string) => void;
   characterProfilesOpen: boolean;
   toggleCharacterProfiles: () => void;
   selectedCharacter: string | null;
@@ -2714,6 +2729,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((s) => ({
       characterRelationships: s.characterRelationships.filter((r) => r.id !== id),
     })),
+  referredTags: {},
+  setReferredTags: (tags) => set({ referredTags: tags }),
+  setReferredTag: (name, tag) => set((s) => ({ referredTags: { ...s.referredTags, [name]: tag } })),
+  clearReferredTag: (name) => set((s) => {
+    const copy = { ...s.referredTags };
+    delete copy[name];
+    return { referredTags: copy };
+  }),
   characterProfilesOpen: _vs.characterProfilesOpen ?? false,
   toggleCharacterProfiles: () => get().openTool('characters'),
   selectedCharacter: null,
