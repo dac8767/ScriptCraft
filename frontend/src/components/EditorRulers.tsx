@@ -184,13 +184,25 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
           for (const g of gaps) { drawScale(regionTop, g.top); regionTop = g.bottom; }
           drawScale(regionTop, H2 + 10);
         } else {
-          // Page view: uniform pages; stride includes the inter-page gap band.
+          // Page view: pages are uniform, but MEASURE the real spacing so a
+          // computed-constant mismatch can't accumulate. Each .page-sep's top is
+          // a page's content-end (bottom-margin start); the largest gap between
+          // consecutive ones is a full-page stride, and the first anchors the
+          // whole run.
           const pageSpan = pageHpx;
-          const stride = pageSpan + PAGE_GAP_PX * zoom;
-          const firstK = Math.max(0, Math.floor((0 - (y0 - T)) / stride));
-          const lastK = Math.max(firstK, Math.ceil((H2 - (y0 - T)) / stride));
+          const sepTops = Array.from(el.querySelectorAll<HTMLElement>('.page-sep'))
+            .map((s) => (s.getBoundingClientRect().top - er.top) - T)
+            .sort((a, b) => a - b);
+          let stride = pageSpan + PAGE_GAP_PX * zoom;   // fallback (single page)
+          let maxD = 0;
+          for (let i = 1; i < sepTops.length; i++) maxD = Math.max(maxD, sepTops[i] - sepTops[i - 1]);
+          if (maxD > pageSpan * 0.5) stride = maxD;
+          // page 1 top = its content-end minus (page height − bottom margin).
+          const page1Top = sepTops.length ? (sepTops[0] - (pageSpan - bottomMarginIn * inPx)) : (y0 - T);
+          const firstK = Math.max(0, Math.floor((0 - page1Top) / stride));
+          const lastK = Math.max(firstK, Math.ceil((H2 - page1Top) / stride));
           for (let k = firstK; k <= lastK; k++) {
-            const base = (y0 - T) + k * stride;
+            const base = page1Top + k * stride;
             ctx.fillStyle = shade;
             ctx.globalAlpha = 1;
             ctx.fillRect(0, base, T, topMarginIn * inPx);
