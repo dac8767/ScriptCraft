@@ -122,13 +122,20 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
         ctx.globalAlpha = 1;
       }
 
-      /* ── vertical ruler ── (v4.22, Derek)
-         The old scale stacked pages by a COMPUTED height, so any mismatch grew
-         page by page — the drift Derek saw. Continuous view is now MEASURED off
-         the real page-break lines (.page-sep-line), so the grey gap sits exactly
-         between the last row of one page and the first row of the next, and the
-         inch scale resets on the real content, never accumulating error. Page
-         view keeps the uniform page stride + the inter-page gap band. */
+      /* ── vertical ruler ── (v4.22, Derek — canonical spec)
+         Every mark is MEASURED off the real page-break separators, so nothing
+         accumulates drift.
+
+         Page view — each page is a full 0..pageHeight" scale with the top and
+         bottom margins shaded ON TOP of that numbering (not added to it). Page
+         tops/bottoms come straight from the .page-sep positions.
+
+         Continuous view — the inter-page margins are compressed to the dashed
+         gap, so the FIRST TEXT ROW of every page sits at the 1" mark: each
+         region is numbered 1,2,3… from its first row down to the next dashed
+         line (~10"). Page 1 is the exception — it renders its real top margin,
+         so it also shows 0" at the physical page top with 0–1" shaded. No other
+         shading in continuous (Derek: keep it clean until numbering is right). */
       {
         const T = RULER_THICKNESS;
         const H2 = Math.max(0, Ht - T);
@@ -136,32 +143,40 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
         ctx.font = '9px system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const topMarginIn = pl.topMargin / 72;      // pt → in
-        const bottomMarginIn = pl.bottomMargin / 72;
+        const topM = (pl.topMargin / 72) * inPx;       // top margin, px
+        const botM = (pl.bottomMargin / 72) * inPx;    // bottom margin, px
         const shade = 'rgba(127,127,127,0.16)';
+        const P1 = y0 - T;                             // physical top of page 1 (ruler-local)
 
-        // Inch marks + numbers filling one content region [top, bottom].
-        const drawScale = (top: number, bottom: number) => {
-          if (bottom < -20 || top > H2 + 20) return;   // region off-screen
+        // Ticks + numbers for the linear map value(y) = valueAtOrigin + (y-originY)/inPx,
+        // clipped to [clipTop, clipBottom]. value 0 draws a tick (no "0" label);
+        // negatives are skipped.
+        const drawScaleFrom = (originY: number, valueAtOrigin: number, clipTop: number, clipBottom: number) => {
+          const lo = Math.max(clipTop, -10);
+          const hi = Math.min(clipBottom, H2 + 10);
+          if (hi < lo - 0.6) return;
           ctx.strokeStyle = text;
           ctx.fillStyle = text;
           ctx.globalAlpha = 0.55;
           ctx.beginPath();
-          for (let u = 0; ; u += 1 / minorSteps) {
-            const y = Math.round(top + u * unitPx) + 0.5;
-            if (y > bottom + 0.6) break;
-            if (y >= -10 && y <= H2 + 10) {
-              const isWhole = Math.abs(u - Math.round(u)) < 0.001;
-              const isHalf = !isWhole && Math.abs(u * 2 - Math.round(u * 2)) < 0.001;
-              if (isWhole) {
-                const n = Math.round(u);
-                if (n > 0) ctx.fillText(String(n), T / 2, y);
-                else { ctx.moveTo(T - 9, y); ctx.lineTo(T - 3, y); }
-              } else {
-                const len = isHalf ? 7 : 4;
-                ctx.moveTo(T - 3 - len, y);
-                ctx.lineTo(T - 3, y);
-              }
+          const step = 1 / minorSteps;
+          let k = Math.ceil(((valueAtOrigin + (lo - originY) / unitPx)) / step - 1e-6);
+          for (; ; k++) {
+            const v = k * step;
+            if (v < -1e-6) continue;                   // no marks above 0
+            const y = Math.round(originY + (v - valueAtOrigin) * unitPx) + 0.5;
+            if (y > hi + 0.6) break;
+            if (y < lo - 0.6) continue;
+            const isWhole = Math.abs(v - Math.round(v)) < 0.001;
+            const isHalf = !isWhole && Math.abs(v * 2 - Math.round(v * 2)) < 0.001;
+            if (isWhole) {
+              const n = Math.round(v);
+              if (n > 0) ctx.fillText(String(n), T / 2, y);
+              else { ctx.moveTo(T - 9, y); ctx.lineTo(T - 3, y); }
+            } else {
+              const len = isHalf ? 7 : 4;
+              ctx.moveTo(T - 3 - len, y);
+              ctx.lineTo(T - 3, y);
             }
           }
           ctx.stroke();
@@ -169,45 +184,48 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
         };
 
         if (continuous) {
-          // Measured gaps (ruler-local y). .page-sep-line spans exactly the gap
-          // between the last row of a page and the first row of the next.
-          const gaps = Array.from(el.querySelectorAll<HTMLElement>('.page-sep-line'))
+          // Dashed page lines (ruler-local). Each .page-sep-line spans the gap
+          // between the last row of one page and the first row of the next.
+          const lines = Array.from(el.querySelectorAll<HTMLElement>('.page-sep-line'))
             .map((s) => s.getBoundingClientRect())
             .map((r) => ({ top: (r.top - er.top) - T, bottom: (r.bottom - er.top) - T }))
             .sort((a, b) => a.top - b.top);
+          // Only page 1's real top margin is shaded.
           ctx.fillStyle = shade;
           ctx.globalAlpha = 1;
-          ctx.fillRect(0, y0 - T, T, topMarginIn * inPx);          // page 1 top margin
-          for (const g of gaps) ctx.fillRect(0, g.top, T, Math.max(0, g.bottom - g.top));
-          // inch scale per content region (between consecutive gaps)
-          let regionTop = (y0 - T) + topMarginIn * inPx;
-          for (const g of gaps) { drawScale(regionTop, g.top); regionTop = g.bottom; }
-          drawScale(regionTop, H2 + 10);
+          ctx.fillRect(0, P1, T, topM);
+          // Region 1: first text row (value 1) is at P1+topM; show 0" up at P1.
+          let cTop = P1 + topM;
+          let clipTop = P1;
+          for (const g of lines) {
+            drawScaleFrom(cTop, 1, clipTop, g.top);    // stop numbering at the dashed line
+            cTop = g.bottom;                           // next page's first text row
+            clipTop = cTop;                            // no 0" / margin above pages 2+
+          }
+          drawScaleFrom(cTop, 1, clipTop, H2 + 10);
         } else {
-          // Page view: pages are uniform, but MEASURE the real spacing so a
-          // computed-constant mismatch can't accumulate. Each .page-sep's top is
-          // a page's content-end (bottom-margin start); the largest gap between
-          // consecutive ones is a full-page stride, and the first anchors the
-          // whole run.
-          const pageSpan = pageHpx;
-          const sepTops = Array.from(el.querySelectorAll<HTMLElement>('.page-sep'))
+          // Page view: page i top = previous page's bottom margin end + gap; its
+          // content-end (bottom-margin start) is the matching .page-sep. Both are
+          // measured, so the 0..pageHeight" scale lands exactly on each page.
+          const gap = PAGE_GAP_PX * zoom;
+          const B = Array.from(el.querySelectorAll<HTMLElement>('.page-sep'))
             .map((s) => (s.getBoundingClientRect().top - er.top) - T)
             .sort((a, b) => a - b);
-          let stride = pageSpan + PAGE_GAP_PX * zoom;   // fallback (single page)
-          let maxD = 0;
-          for (let i = 1; i < sepTops.length; i++) maxD = Math.max(maxD, sepTops[i] - sepTops[i - 1]);
-          if (maxD > pageSpan * 0.5) stride = maxD;
-          // page 1 top = its content-end minus (page height − bottom margin).
-          const page1Top = sepTops.length ? (sepTops[0] - (pageSpan - bottomMarginIn * inPx)) : (y0 - T);
-          const firstK = Math.max(0, Math.floor((0 - page1Top) / stride));
-          const lastK = Math.max(firstK, Math.ceil((H2 - page1Top) / stride));
-          for (let k = firstK; k <= lastK; k++) {
-            const base = page1Top + k * stride;
+          const pageCount = Math.max(1, st.pageCount || 1);
+          let top = P1;
+          for (let i = 0; i < pageCount; i++) {
+            if (i > 0) {
+              if (i - 1 >= B.length) break;            // no measured boundary yet
+              top = B[i - 1] + botM + gap;             // next physical page top
+            }
+            const contentEnd = i < B.length ? B[i] : top + (pageHpx - botM);
+            const bottom = contentEnd + botM;          // physical page bottom
+            if (bottom < -20 || top > H2 + 20) continue;
             ctx.fillStyle = shade;
             ctx.globalAlpha = 1;
-            ctx.fillRect(0, base, T, topMarginIn * inPx);
-            ctx.fillRect(0, base + pageSpan - bottomMarginIn * inPx, T, bottomMarginIn * inPx);
-            drawScale(base, base + pageSpan);
+            ctx.fillRect(0, top, T, topM);             // top margin band
+            ctx.fillRect(0, bottom - botM, T, botM);   // bottom margin band
+            drawScaleFrom(top, 0, top, bottom);        // 0" at page top … pageHeight" at bottom
           }
         }
         ctx.strokeStyle = text;
