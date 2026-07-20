@@ -16,13 +16,14 @@ export function setPaginationPrintMode(v: boolean): void {
   printMode = v;
 }
 
-/** Continuous view (View > Editor Style): the simulated-page whitespace, the
- * page margins AND the inter-page gap are all removed, so the script flows as
- * one document — page 2 begins immediately where page 1's text ended. Only a
- * zero-height hairline (.page-sep-line) marks each boundary. Page 1 keeps its
- * real top margin (it comes from the .page padding, not from a break gap).
- * (v4.22, Derek: "cut out the margin and page gap on the page and the ruler".) */
-export const CONTINUOUS_GAP_PX = 0;
+/** Continuous view (View > Editor Style): the page MARGINS are removed, but each
+ * page is still filled to a uniform height (the whitespace fill stays), so every
+ * page is the same size — page 1 is 1" taller only because it keeps its real top
+ * margin (from the .page padding). Between pages sits a small 2-row gap: one
+ * blank row, the dashed page-divide line, one blank row — enough that the last
+ * row of one page and the first row of the next never stack. (v4.22, Derek.)
+ * 2 rows × 16px/row = 32px; the .page-sep-line hairline is centered in it. */
+export const CONTINUOUS_GAP_PX = 32;
 let continuousMode = false;
 export function setPaginationContinuousMode(v: boolean): void {
   continuousMode = v;
@@ -160,7 +161,9 @@ export function createPaginationPlugin(
           // Dialogue splits need extra space for the CONT'D label on the next page
           const contdPx = brk.isDialogueSplit && showDialogueBreakContd ? lineHeightPx : 0;
           const marginTop = continuousMode
-            ? CONTINUOUS_GAP_PX
+            // Fill the page to a uniform height (whitespacePx), then add the
+            // 2-row divide gap — no page margins. Uniform pages, small breather.
+            ? Math.round(whitespacePx + CONTINUOUS_GAP_PX)
             : Math.round(whitespacePx + sepHeightPx + contdPx);
           decos.push(
             printMode

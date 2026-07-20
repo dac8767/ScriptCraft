@@ -194,17 +194,17 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
           ctx.fillStyle = shade;
           ctx.globalAlpha = 1;
           ctx.fillRect(0, P1, T, topM);
-          // Each page's first text row is the "1" mark; number down through 9 and
-          // STOP just above the seam. The seam itself (a page's "10" = the next
-          // page's first row) is owned by the next region's "1", so the ruler
-          // resets 1 at every boundary (Derek: "immediately repeats 1-10", reset
-          // to 1). Page 1 alone also shows 0" at the physical top.
+          // Each page reads 1..10: first text row is "1", content bottom is "10".
+          // The dashed divide sits one row BELOW that "10"; the next page's first
+          // row ("1") sits one row below the divide — a 2-row breather so the two
+          // pages never stack. Page 1 alone also shows 0" at the physical top.
+          const ROW = inPx / 6;                          // one 12pt line = 1/6"
           let cTop = P1 + topM;
           let clipTop = P1;
           for (const g of lines) {
-            drawScaleFrom(cTop, 1, clipTop, g.top - 1);  // omit the coincident "10"
-            cTop = g.bottom;                             // next page's first text row
-            clipTop = cTop;                              // no 0" / margin above pages 2+
+            drawScaleFrom(cTop, 1, clipTop, g.top - ROW); // "10" is one row above the divide
+            cTop = g.top + ROW;                           // next page's first text row
+            clipTop = cTop;                               // no 0" / margin above pages 2+
           }
           drawScaleFrom(cTop, 1, clipTop, H2 + 10);
         } else {

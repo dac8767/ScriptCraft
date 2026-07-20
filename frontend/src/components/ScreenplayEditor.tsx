@@ -1158,7 +1158,10 @@ const ScreenplayEditor: React.FC = () => {
       // one text-line too high, striking through the previous block.
       const continuous = viewStyleRef.current === 'continuous';
       const contdHeight = !continuous && brk.isDialogueSplit ? lineHeightPx : 0;
-      const sepSpace = continuous ? CONTINUOUS_GAP_PX : m.sepHeightPx;
+      // Continuous: the divide line sits at the MIDDLE of the 2-row gap, so one
+      // blank row falls above it (below the finished page) and one below it
+      // (above the next page). Page view: the sep owns the full margin band.
+      const sepSpace = continuous ? CONTINUOUS_GAP_PX / 2 : m.sepHeightPx;
       const overlayTop = (elRect.top - pageRect.top) / scale - sepSpace - contdHeight;
       newOverlays.push({
         top: overlayTop,
@@ -4264,7 +4267,7 @@ const ScreenplayEditor: React.FC = () => {
                         <div
                           key={ov.pageNumber}
                           className="page-sep page-sep-line"
-                          style={{ top: `${ov.top}px`, height: CONTINUOUS_GAP_PX }}
+                          style={{ top: `${ov.top}px` }}
                         >
                           <span className="page-sep-line-label">Page {ov.pageNumber}</span>
                         </div>
