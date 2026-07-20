@@ -148,18 +148,34 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
           : pageHpx;                                               // full page
         const gapPx = (continuous ? CONTINUOUS_GAP_PX : PAGE_GAP_PX) * zoom;
         const stride = pageSpan + gapPx;
+        // v4.22, Derek: Continuous view keeps the FIRST page's top margin (the
+        // content starts ~1in down), while its per-page scale spans content
+        // only — so the whole scale must start one top-margin below the page
+        // top. Page view's scale already includes the margin in pageSpan.
+        const startY = (y0 - T) + (continuous ? topMarginIn * inPx : 0);
         // pages visible in [0, H2] (ruler-local y = container y - T)
-        const yPage = (k: number) => y0 - T + k * stride;
-        const firstK = Math.max(0, Math.floor((0 - (y0 - T)) / stride));
-        const lastK = Math.max(firstK, Math.ceil((H2 - (y0 - T)) / stride));
+        const yPage = (k: number) => startY + k * stride;
+        const firstK = Math.max(0, Math.floor((0 - startY) / stride));
+        const lastK = Math.max(firstK, Math.ceil((H2 - startY) / stride));
+        const shade = 'rgba(127,127,127,0.16)';
+        // v4.22, Derek: in Continuous view, grey the leading top-margin band
+        // (page 1's top margin — the blank area above the first content).
+        if (continuous) {
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = shade;
+          ctx.fillRect(0, y0 - T, T, topMarginIn * inPx);
+        }
         for (let k = firstK; k <= lastK; k++) {
           const base = yPage(k);
-          // margin shading — Page view only (Continuous has none between pages)
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = shade;
           if (!continuous) {
-            ctx.globalAlpha = 1;
-            ctx.fillStyle = 'rgba(127,127,127,0.16)';
+            // Page view: top + bottom margin zones of each page.
             ctx.fillRect(0, base, T, topMarginIn * inPx);
             ctx.fillRect(0, base + pageSpan - bottomMarginIn * inPx, T, bottomMarginIn * inPx);
+          } else {
+            // Continuous: grey the blank gap AFTER this page (no numbers there).
+            ctx.fillRect(0, base + pageSpan, T, gapPx);
           }
           ctx.fillStyle = text;
           ctx.globalAlpha = 0.55;
