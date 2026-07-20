@@ -52,20 +52,23 @@
 .char-profiles-fullscreen .char-profile-card {
   min-height: 500px;
 }
-/* Fullscreen list mode: print-like document */
+/* v4.20, Derek: the list view matches the app theme (was a hardcoded #d5d5d5
+   "page" that clashed with the dark theme — and leaked onto the Relationship
+   Map tab, which shares this class). */
 .char-profiles-fullscreen.char-fs-list-mode {
-  background: #d5d5d5;
-}
-[data-theme="light"] .char-profiles-fullscreen.char-fs-list-mode {
-  background: #d5d5d5;
+  background: var(--fd-bg);
 }
 .char-profiles-fullscreen.char-fs-list-mode .char-profiles-list {
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  padding: 32px;
-  max-width: 850px;
-  margin: 0 auto;
+  gap: 10px;              /* v4.20: was 32px — tighter so more items fit */
+  padding: 16px;
+  /* v4.20: fill the width up to the cap and center (align-self, not margin:auto,
+     which collapses a flex item to its content width). */
+  width: 100%;
+  max-width: 1275px;      /* was 850px — 50% wider column */
+  align-self: center;
+  box-sizing: border-box;
 }
 /* v4.17, Derek: the fullscreen List view used a hardcoded white "page" (dark
    text, light borders) that clashed with the dark theme. It now uses the theme
@@ -83,14 +86,18 @@
 }
 .char-fs-list-mode .char-profile-card:hover { border-color: transparent; }
 .char-fs-list-mode .char-profile-card.char-orphaned { opacity: 1; border-color: transparent; }
-/* Character header — large title style */
+/* Character header — v4.20: compact bar so more items fit on screen. */
 .char-fs-list-mode .char-profile-row {
-  padding: 24px 32px 16px;
-  border-bottom: 2px solid var(--fd-border);
+  padding: 8px 16px;
   gap: 12px;
 }
+/* only draw the divider under the header when the card is expanded */
+.char-fs-list-mode .char-profile-card.char-profile-expanded .char-profile-row {
+  border-bottom: 2px solid var(--fd-border);
+  padding-bottom: 12px;
+}
 .char-fs-list-mode .char-profile-name {
-  font-size: 20px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 1px;
   color: var(--fd-text);
@@ -100,9 +107,20 @@
   font-size: 11px;
   color: var(--fd-text-muted);
 }
-/* v4.18: keep the chevron in list mode — cards start collapsed and expand on
-   click, so the affordance matters. */
-.char-fs-list-mode .char-profile-enlarge-btn { display: none; }
+/* v4.18/v4.20: the left caret is the expand affordance; hide the old right
+   chevron and the enlarge button in list mode. */
+.char-fs-list-mode .char-profile-enlarge-btn,
+.char-fs-list-mode .char-profile-chevron { display: none; }
+/* v4.20: left toggle caret. */
+.char-profile-caret {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  transition: transform 0.12s ease;
+}
+.char-profile-caret.expanded { transform: rotate(90deg); }
 /* Detail section — generous spacing */
 .char-fs-list-mode .char-profile-detail {
   padding: 20px 32px 28px;
@@ -444,6 +462,34 @@
   cursor: pointer;
 }
 .char-unmatched-add:hover { background: rgba(74,158,255,.1); border-color: var(--fd-accent); }
+/* ── v4.20, Derek: Relationships tab — editable list of every relationship. ── */
+.char-rels-tab { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.char-rels-toolbar { padding: 10px 12px; border-bottom: 1px solid var(--fd-border); flex-shrink: 0; }
+.char-rels-add {
+  padding: 5px 12px;
+  background: transparent; border: 1px solid var(--fd-accent); border-radius: 4px;
+  color: var(--fd-accent); font-size: 12px; cursor: pointer;
+}
+.char-rels-add:hover { background: rgba(74,158,255,.1); }
+.char-rels-list {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+}
+.char-rel-item { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.char-rel-field {
+  height: 28px; background: var(--fd-input-bg, #222); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: 4px; font-size: 12px; padding: 0 6px; outline: none;
+}
+.char-rel-field:focus { border-color: var(--fd-accent); }
+.char-rel-char { flex: 1 1 120px; min-width: 100px; }
+.char-rel-type, .char-rel-dynamic { flex: 0 0 auto; width: 110px; }
+.char-rel-desc { flex: 2 1 160px; min-width: 120px; }
+.char-rel-delete {
+  flex: 0 0 auto; width: 26px; height: 28px;
+  background: transparent; border: 1px solid var(--fd-border); border-radius: 4px;
+  color: var(--fd-text-muted); font-size: 16px; cursor: pointer; line-height: 1;
+}
+.char-rel-delete:hover { color: #e06060; border-color: #e06060; }
 /* List */
 .char-profiles-list {
   flex: 1;

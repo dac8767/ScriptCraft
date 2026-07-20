@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.19';
+export const APP_VERSION = '4.20';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.20',
+    date: '2026-07-20',
+    items: [
+      { title: 'New Relationships tab', detail: 'A “Relationships” tab (between Profiles and Relationship Map) lists every relationship in an editable form — change the characters, type, dynamic and description inline, add new relationships, and delete them.', tags: ['New Feature', 'Tools'] },
+      { title: 'Character List view fixes', detail: 'The list view now uses the app theme instead of a light-gray “page” (which also leaked onto the Relationship Map tab). List items are wider and more compact so more fit on screen, and each has a left caret showing it toggles open. The Relationship Map close X now matches the other windows (it was too thick).', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '4.19',
     date: '2026-07-20',

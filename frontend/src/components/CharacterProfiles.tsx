@@ -114,7 +114,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   const currentScriptId = useProjectStore((s) => s.currentScriptId);
   const { assets, setAssets } = useAssetStore();
 
-  const [activeTab, setActiveTab] = useState<'profiles' | 'map'>('profiles');
+  const [activeTab, setActiveTab] = useState<'profiles' | 'relationships' | 'map'>('profiles');
   const [addRelFor, setAddRelFor] = useState<string | null>(null); // character name to add rel for
   const [expandedChar, setExpandedChar] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -461,6 +461,12 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     else if (val === '__other') setReferredTag(name, { kind: 'other' });
     else if (val.startsWith('__char:')) setReferredTag(name, { kind: 'character', character: val.slice('__char:'.length) });
   }, [setReferredTag]);
+
+  // v4.20: the Relationships tab — add a blank relationship to edit inline.
+  const handleAddRelationship = useCallback(() => {
+    const id = `rel-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+    upsertCharacterRelationship({ id, characterA: '', characterB: '', type: REL_TYPES[0], description: '', dynamic: REL_DYNAMICS[0] });
+  }, [upsertCharacterRelationship]);
 
   // Characters that have a profile but are no longer detected in the script
   // Scan the editor doc directly so we don't depend on the store's `characters` timing
@@ -889,7 +895,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       ? 'panel-open' : animationState === 'exiting' ? 'panel-closing' : '');
 
   return (
-    <div ref={panelRef} className={`char-profiles-panel${embedded ? ' char-profiles-embedded' : ''}${isFullscreen ? ' char-profiles-fullscreen' : ''}${isFullscreen && fsViewMode === 'list' ? ' char-fs-list-mode' : ''} ${panelClass}`} style={isFullscreen ? undefined : style}>
+    <div ref={panelRef} className={`char-profiles-panel${embedded ? ' char-profiles-embedded' : ''}${isFullscreen ? ' char-profiles-fullscreen' : ''}${isFullscreen && activeTab === 'profiles' && fsViewMode === 'list' ? ' char-fs-list-mode' : ''} ${panelClass}`} style={isFullscreen ? undefined : style}>
       {/* Hidden file input for image uploads */}
       <input
         ref={fileInputRef}
@@ -908,6 +914,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         {isFullscreen && (
           <div className="char-fs-header-tabs">
             <button className={`char-profiles-tab${activeTab === 'profiles' ? ' active' : ''}`} onClick={() => setActiveTab('profiles')}>Profiles</button>
+            <button className={`char-profiles-tab${activeTab === 'relationships' ? ' active' : ''}`} onClick={() => setActiveTab('relationships')}>Relationships</button>
             <button className={`char-profiles-tab${activeTab === 'map' ? ' active' : ''}`} onClick={() => setActiveTab('map')}>Relationship Map</button>
           </div>
         )}
@@ -920,7 +927,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
               </div>
             )}
             {activeTab === 'map' && <div className="char-fs-map-actions" ref={setMapHeaderSlot} />}
-            <button className="char-profiles-close" onClick={() => exitCharFullscreen()} title="Return to editor">{'\u2716'}</button>
+            <button className="char-profiles-close" onClick={() => exitCharFullscreen()} title="Return to editor">&times;</button>
           </div>
         )}
         {!isFullscreen && (
@@ -947,11 +954,59 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             Profiles
           </button>
           <button
+            className={`char-profiles-tab${activeTab === 'relationships' ? ' active' : ''}`}
+            onClick={() => setActiveTab('relationships')}
+          >
+            Relationships
+          </button>
+          <button
             className={`char-profiles-tab${activeTab === 'map' ? ' active' : ''}`}
             onClick={() => setActiveTab('map')}
           >
             Relationship Map
           </button>
+        </div>
+      )}
+
+      {/* v4.20: Relationships tab — an editable list of every relationship. */}
+      {activeTab === 'relationships' && (
+        <div className="char-rels-tab">
+          <div className="char-rels-toolbar">
+            <button className="char-rels-add" onClick={handleAddRelationship}>+ Add Relationship</button>
+          </div>
+          <div className="char-rels-list">
+            {characterRelationships.length === 0 ? (
+              <div className="char-profiles-empty">No relationships yet. Add one to get started.</div>
+            ) : (
+              characterRelationships.map((rel) => (
+                <div key={rel.id} className="char-rel-item">
+                  <select className="char-rel-field char-rel-char" value={rel.characterA}
+                    onChange={(e) => upsertCharacterRelationship({ ...rel, characterA: e.target.value })}>
+                    <option value="">Character A…</option>
+                    {existingCharNames.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select className="char-rel-field char-rel-type" value={rel.type}
+                    onChange={(e) => upsertCharacterRelationship({ ...rel, type: e.target.value })}>
+                    {REL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <select className="char-rel-field char-rel-char" value={rel.characterB}
+                    onChange={(e) => upsertCharacterRelationship({ ...rel, characterB: e.target.value })}>
+                    <option value="">Character B…</option>
+                    {existingCharNames.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select className="char-rel-field char-rel-dynamic" value={rel.dynamic}
+                    onChange={(e) => upsertCharacterRelationship({ ...rel, dynamic: e.target.value })}>
+                    {REL_DYNAMICS.map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                  <input className="char-rel-field char-rel-desc" value={rel.description}
+                    placeholder="Description…"
+                    onChange={(e) => upsertCharacterRelationship({ ...rel, description: e.target.value })} />
+                  <button className="char-rel-delete" title="Delete relationship"
+                    onClick={() => deleteCharacterRelationship(rel.id)}>&times;</button>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
 
@@ -1024,7 +1079,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             const primaryImageId = profile.images?.[0];
 
             return (
-              <div key={name} data-char-name={name} className={`char-profile-card${isOrphaned ? ' char-orphaned' : ''}`}>
+              <div key={name} data-char-name={name} className={`char-profile-card${isOrphaned ? ' char-orphaned' : ''}${isExpanded ? ' char-profile-expanded' : ''}`}>
                 {/* Orphaned banner */}
                 {isOrphaned && (
                   <div className="char-orphaned-banner">
@@ -1042,6 +1097,11 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                   className="char-profile-row"
                   onClick={() => setExpandedChar(isExpanded ? null : name)}
                 >
+                  {/* v4.20: left caret makes it clear the row toggles open (not
+                      in Cards mode, where cards are always expanded). */}
+                  {!(isFullscreen && fsViewMode === 'cards') && (
+                    <span className={`char-profile-caret${isExpanded ? ' expanded' : ''}`} aria-hidden>&#9656;</span>
+                  )}
                   {/* Avatar: show primary image or color swatch */}
                   {primaryImageId && projectId ? (
                     <img
