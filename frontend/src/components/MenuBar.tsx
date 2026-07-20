@@ -1502,6 +1502,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           checked: rulersVisible,
           action: () => useEditorStore.getState().setRulersVisible(!rulersVisible),
         },
+        {
+          // v4.22, Derek: moved here from Project; a label toggle.
+          icon: <FaListUl />,
+          label: sceneNumbersVisible ? 'Hide Scene Numbers' : 'Show Scene Numbers',
+          action: () => setSceneNumbersVisible(!sceneNumbersVisible),
+        },
         { separator: true, label: '' },
         /* v3.24 reorg #5: Lock All / Reset All Sizing moved into the
            Customize window (they're customization controls; the per-surface
@@ -1516,34 +1522,30 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
            */
           icon: <FaEye />, label: 'Working Notes',
           children: [
+            // v4.22, Derek: label toggles (Show/Hide …) instead of check items.
             {
               icon: <FaRegStickyNote />,
-              label: 'Notes in Script',
-              checked: notesVisible,
+              label: notesVisible ? 'Hide Notes in Script' : 'Show Notes in Script',
               action: () => setNotesVisible(!notesVisible),
             },
             {
               icon: <FaCheckSquare />,
-              label: 'To-Do Lists in Script',
-              checked: scriptTodosVisible,
+              label: scriptTodosVisible ? 'Hide To-Do Lists in Script' : 'Show To-Do Lists in Script',
               action: () => setScriptTodosVisible(!scriptTodosVisible),
             },
             {
               icon: <FaFlag />,
-              label: 'Markers in Script',
-              checked: markersVisible,
+              label: markersVisible ? 'Hide Markers in Script' : 'Show Markers in Script',
               action: () => setMarkersVisible(!markersVisible),
             },
             {
               icon: <FaListOl />,
-              label: 'Sections in Script',
-              checked: sectionsVisible,
+              label: sectionsVisible ? 'Hide Sections in Script' : 'Show Sections in Script',
               action: () => setSectionsVisible(!sectionsVisible),
             },
             {
               icon: <FaTags />,
-              label: 'Tags in Script',
-              checked: tagsVisible,
+              label: tagsVisible ? 'Hide Tags in Script' : 'Show Tags in Script',
               action: () => setTagsVisible(!tagsVisible),
             },
             { separator: true, label: '' },
@@ -1755,12 +1757,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { icon: <FaFileAlt />, label: 'Title Page', action: () => useEditorStore.getState().openTool('titlepage') },
         { icon: <FaFileSignature />, label: 'Set Draft Number…', action: () => setDraftDialogOpen(true) },
         { separator: true, label: '' },
-        {
-          icon: <FaListUl />,
-          label: 'Scene Numbers',
-          checked: sceneNumbersVisible,
-          action: () => setSceneNumbersVisible(!sceneNumbersVisible),
-        },
         {
           icon: <FaLock />,
           label: 'Lock Scene Numbers',
