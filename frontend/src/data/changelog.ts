@@ -65,9 +65,17 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.16';
+export const APP_VERSION = '4.17';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.17',
+    date: '2026-07-20',
+    items: [
+      { title: 'Relationship dropdowns list every character', detail: 'The Add/Edit Relationship “Character A/B” dropdowns only listed characters scanned from script cues — a character that existed only as a profile or in an existing relationship was missing. They now list every known character.', tags: ['Fix', 'Tools'] },
+      { title: 'Character fullscreen List view follows the theme', detail: 'The fullscreen List view rendered characters as white “pages” with dark text, clashing with the dark theme. It now uses the theme colors like the rest of the app.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '4.16',
     date: '2026-07-19',

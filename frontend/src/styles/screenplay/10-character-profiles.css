@@ -67,16 +67,18 @@
   max-width: 850px;
   margin: 0 auto;
 }
-/* Each character is a white "page" */
+/* v4.17, Derek: the fullscreen List view used a hardcoded white "page" (dark
+   text, light borders) that clashed with the dark theme. It now uses the theme
+   variables like the rest of the app, so it matches whatever theme is active. */
 .char-fs-list-mode .char-profile-card {
   border-radius: 2px;
   border: none;
   margin-bottom: 0;
   min-height: auto;
   overflow: visible;
-  background: #fff;
-  color: #1a1a1a;
-  box-shadow: 0 1px 8px rgba(0,0,0,.15);
+  background: var(--fd-navigator-bg);
+  color: var(--fd-text);
+  box-shadow: 0 1px 8px rgba(0,0,0,.25);
   page-break-inside: avoid;
 }
 .char-fs-list-mode .char-profile-card:hover { border-color: transparent; }
@@ -84,19 +86,19 @@
 /* Character header — large title style */
 .char-fs-list-mode .char-profile-row {
   padding: 24px 32px 16px;
-  border-bottom: 2px solid #222;
+  border-bottom: 2px solid var(--fd-border);
   gap: 12px;
 }
 .char-fs-list-mode .char-profile-name {
   font-size: 20px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: #111;
+  color: var(--fd-text);
 }
-.char-fs-list-mode .char-profile-name:hover { color: #2675d1; }
+.char-fs-list-mode .char-profile-name:hover { color: var(--fd-accent); }
 .char-fs-list-mode .char-profile-stats {
   font-size: 11px;
-  color: #555;
+  color: var(--fd-text-muted);
 }
 .char-fs-list-mode .char-profile-chevron,
 .char-fs-list-mode .char-profile-enlarge-btn { display: none; }
@@ -110,7 +112,7 @@
 }
 .char-fs-list-mode .char-profile-detail-bottom {
   gap: 16px;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--fd-border);
   padding-top: 16px;
   margin-top: 4px;
 }
@@ -118,18 +120,18 @@
 .char-fs-list-mode .char-profile-label {
   font-size: 11px;
   font-weight: 700;
-  color: #333;
+  color: var(--fd-text-muted);
   letter-spacing: .5px;
   text-transform: uppercase;
   margin-bottom: 4px;
 }
 /* Rich text editors — clean look */
 .char-fs-list-mode .mini-rt-wrapper {
-  border: 1px solid #ddd;
-  background: #fafafa;
+  border: 1px solid var(--fd-border);
+  background: var(--fd-input-bg);
 }
 .char-fs-list-mode .mini-rt-editor {
-  color: #1a1a1a;
+  color: var(--fd-text);
   font-size: 13px;
   line-height: 1.6;
   min-height: 40px;
@@ -137,9 +139,9 @@
 /* Inputs and selects */
 .char-fs-list-mode .char-profile-input,
 .char-fs-list-mode .char-profile-select {
-  background: #f5f5f5;
-  color: #1a1a1a;
-  border-color: #ddd;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border-color: var(--fd-border);
 }
 /* Images — full size, no crop */
 .char-fs-list-mode .char-profile-image-main {
@@ -149,20 +151,20 @@
 }
 /* Scene chips */
 .char-fs-list-mode .char-profile-scene-chip {
-  background: #f0f0f0;
-  border-color: #ccc;
-  color: #333;
+  background: var(--fd-overlay-light);
+  border-color: var(--fd-border);
+  color: var(--fd-text-muted);
   font-size: 10px;
   padding: 3px 8px;
 }
 .char-fs-list-mode .char-profile-scene-chip:hover {
-  background: #e0e0f0;
-  border-color: #2675d1;
+  background: var(--fd-overlay-medium);
+  border-color: var(--fd-accent);
 }
 /* Highlight button */
 .char-fs-list-mode .char-profile-highlight-btn {
-  color: #333;
-  border-color: #ccc;
+  color: var(--fd-text-muted);
+  border-color: var(--fd-border);
 }
 /* Orphaned banner */
 .char-fs-list-mode .char-orphaned-banner {

@@ -288,6 +288,18 @@ export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter }
   const deleteCharacterRelationship = useEditorStore((s) => s.deleteCharacterRelationship);
   const mapScrollSpeed = useEditorStore((s) => s.mapScrollSpeed);
 
+  // v4.17, Derek: the Add/Edit Relationship dropdowns must list EVERY character
+  // the writer has — not just the ones scanned from script cues (`characters`).
+  // A character created only as a profile, or referenced only in an existing
+  // relationship, was missing from the dropdown (it showed up on the map but you
+  // couldn't pick it). Union all three sources.
+  const allKnownCharacters = useMemo(() => {
+    const set = new Set<string>(characters);
+    for (const p of characterProfiles) if (p.name) set.add(p.name);
+    for (const r of characterRelationships) { if (r.characterA) set.add(r.characterA); if (r.characterB) set.add(r.characterB); }
+    return Array.from(set).sort();
+  }, [characters, characterProfiles, characterRelationships]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
@@ -744,7 +756,7 @@ export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter }
             <RelForm
               characterName={addingFrom === '__BOTH__' ? '' : (addingFrom || editingRel!.characterA)}
               selectBoth={addingFrom === '__BOTH__'}
-              allCharacters={characters}
+              allCharacters={allKnownCharacters}
               existing={editingRel || undefined}
               onSave={handleSaveRel}
               onCancel={() => { setAddingFrom(null); setEditingRel(null); }}
