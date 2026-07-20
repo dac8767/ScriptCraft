@@ -65,9 +65,16 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.13';
+export const APP_VERSION = '4.14';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.14',
+    date: '2026-07-19',
+    items: [
+      { title: 'Ribbon shifts up when no section has a title', detail: 'The title band was always reserved (so titled and untitled sections line up). When NO section has a title, that blank strip is now removed and the whole ribbon shifts up — about 15px shorter. If any section is titled, the band stays reserved so the rows still align.', tags: ['Fix', 'UI'] },
+    ],
+  },
   {
     version: '4.13',
     date: '2026-07-19',

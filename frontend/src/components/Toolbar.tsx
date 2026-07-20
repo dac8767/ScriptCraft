@@ -1649,6 +1649,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
      the layout — close that section in Customize and the tools vanished.) */
   const leftLive = liveSplitAt === null || liveSplitAt < 0 ? liveSections : liveSections.slice(0, liveSplitAt);
   const rightLive = liveSplitAt === null || liveSplitAt < 0 ? [] : liveSections.slice(liveSplitAt);
+  /* v4.14, Derek: when NOT ONE section carries a title, drop the reserved title
+     band entirely so the ribbon shifts up and loses that blank strip. (When any
+     section IS titled, the band stays reserved in every two-row section so the
+     button rows still line up — the v4.5 alignment.) Not in edit mode: there the
+     title inputs must stay visible so titles can be added. */
+  const anyRibTitle = liveSections.some(({ s }) => !!s.title);
 
   /* v3.42, Derek: ONE renderer for a live section's inner rows (both zones
      read it, so the layout can't drift). A section's title sits ON TOP of its
@@ -1846,7 +1852,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
        button. No spacing grips inside the toolbar (the menu bar keeps its). */
     <div className="toolbar-stack">
     <div
-      className={`toolbar toolbar-ribbon${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}${toolbarMode === 'custom' ? ' toolbar-custom' : ''}${toolbarEditing ? ' toolbar-editing' : ''}`}
+      className={`toolbar toolbar-ribbon${toolbarMode === 'comfortable' ? ' toolbar-comfortable' : ''}${toolbarMode === 'custom' ? ' toolbar-custom' : ''}${toolbarEditing ? ' toolbar-editing' : ''}${!toolbarEditing && !anyRibTitle ? ' rib-no-titles' : ''}`}
       style={{
         ...(toolbarMode === 'custom' ? ({
           ['--chrome-scale' as string]: String(chromeScaleFactor('toolbar', tbCustomH)),

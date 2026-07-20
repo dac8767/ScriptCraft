@@ -783,6 +783,12 @@
 /* v3.73, Derek: when a section HAS a title, nudge its first row of items down a
    few px to give the title more room above them. */
 .rib-sec-title + .rib-row { margin-top: 2px; }
+/* v4.14, Derek: when the WHOLE ribbon has no titles, collapse the reserved band
+   (every section is empty-band here) and drop the title room from the min-height
+   floor, so the rows shift up and the blank strip disappears. */
+.toolbar.toolbar-ribbon.rib-no-titles .rib-sec-title-empty { display: none; }
+.toolbar.toolbar-ribbon.rib-no-titles .rib-sec-title-empty + .rib-row { margin-top: 0; }
+.toolbar.toolbar-ribbon.rib-no-titles { min-height: calc(var(--rib-rowh, 28px) * 2 + 7px); }
 .rib-edit-sectitle-wrap { position: relative; display: flex; align-items: center; justify-content: center; gap: 3px; }
 .rib-edit-sectitle {
   flex: 1 1 auto; min-width: 40px;
