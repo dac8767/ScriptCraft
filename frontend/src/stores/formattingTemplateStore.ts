@@ -226,7 +226,11 @@ export const useFormattingTemplateStore = create<FormattingTemplateState>((set, 
   hiddenTransitions: loadTransitionOverrides().hidden,
   transitionOrder: loadTransitionOverrides().order,
   addTransition: (text) => {
-    const t = text.trim();
+    // v4.22, Derek: transitions are upper-case and end with a colon (CUT TO:).
+    // Normalise on the way in so the stored value — shown in the list and
+    // inserted in the script — matches, not just the input's display styling.
+    let t = text.trim().toUpperCase();
+    if (t && !t.endsWith(':')) t += ':';
     if (!t) return;
     const { customTransitions, hiddenTransitions, transitionOrder } = get();
     // Case-insensitive dedupe against both defaults and existing customs.

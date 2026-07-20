@@ -31,6 +31,14 @@ describe('transition customization', () => {
     expect(raw.custom).toEqual(['MATCH CUT TO:']);
   });
 
+  it('normalises additions to upper-case with a trailing colon', () => {
+    const s = useFormattingTemplateStore.getState();
+    s.addTransition('  match cut to  ');
+    expect(useFormattingTemplateStore.getState().customTransitions).toEqual(['MATCH CUT TO:']);
+    s.addTransition('ripple dissolve:');
+    expect(useFormattingTemplateStore.getState().customTransitions).toEqual(['MATCH CUT TO:', 'RIPPLE DISSOLVE:']);
+  });
+
   it('will not add a duplicate (case-insensitive) of a default or custom', () => {
     const s = useFormattingTemplateStore.getState();
     s.addTransition('cut to:');            // dup of the CUT TO: default

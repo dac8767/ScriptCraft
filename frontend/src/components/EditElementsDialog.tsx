@@ -91,8 +91,10 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
   const resetTransitions = useFormattingTemplateStore((s) => s.resetTransitions);
   const [newTransition, setNewTransition] = useState('');
   // v4.22, Derek: the inline field read as plain text and confused people — the
-  // "Add Transition" button now opens a small dialog with a clear input.
+  // "Add Transition" button now opens a small dialog with a clear input, centered
+  // over the Customize window (not the whole screen).
   const [addOpen, setAddOpen] = useState(false);
+  const [addPos, setAddPos] = useState<{ left: number; top: number } | null>(null);
 
   const isDefaultTransition = (t: string) => DEFAULT_TRANSITIONS.includes(t);
   // Re-derived when custom/hidden/order change (all three are subscribed above),
@@ -102,7 +104,19 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
   const shownTransitions = getEffectiveTransitions();
   const allTransitions = [...DEFAULT_TRANSITIONS, ...customTransitions];
   const hiddenShown = DEFAULT_TRANSITIONS.filter((t) => hiddenTransitions.includes(t));
-  const openAddTransition = () => { setNewTransition(''); setAddOpen(true); };
+  const openAddTransition = () => {
+    setNewTransition('');
+    // Center on the Customize window if it's on screen; else fall back to the
+    // viewport centre (the overlay's default).
+    const dlg = document.querySelector('.fs-customize-dialog') as HTMLElement | null;
+    if (dlg) {
+      const r = dlg.getBoundingClientRect();
+      setAddPos({ left: Math.round(r.left + r.width / 2), top: Math.round(r.top + r.height / 2) });
+    } else {
+      setAddPos(null);
+    }
+    setAddOpen(true);
+  };
   const closeAddTransition = () => { setAddOpen(false); setNewTransition(''); };
   const commitNewTransition = () => {
     const t = newTransition.trim();
@@ -246,7 +260,11 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
 
       {addOpen && createPortal(
         <div className="dialog-overlay fs-add-transition-overlay" onClick={closeAddTransition}>
-          <div className="dialog-box fs-add-transition-box" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="dialog-box fs-add-transition-box"
+            style={addPos ? { position: 'fixed', left: addPos.left, top: addPos.top, transform: 'translate(-50%, -50%)', margin: 0 } : undefined}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="dialog-header">
               Add Transition
               <button className="fs-dialog-x" onClick={closeAddTransition} title="Close">&times;</button>

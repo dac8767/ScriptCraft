@@ -1833,6 +1833,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             <span className="rib-edit-sectitle-wrap">
               <input
                 className="rib-edit-sectitle"
+                /* v4.22, Derek: size=1 drops the input's ~170px default intrinsic
+                   width so a two-row section sizes to its ICONS, not the title
+                   field — it still stretches to fill the section (flex-grow). */
+                size={1}
                 value={s.title ?? ''}
                 placeholder="title"
                 title="Section title — leave blank for none"

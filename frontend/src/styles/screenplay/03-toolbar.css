@@ -629,8 +629,13 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .rib-row-line {
   height: 1px;
   margin: 0 2px;
-  background: var(--fd-border);
+  /* v4.22, Derek: a shown row line matches the vertical dividers' colour. */
+  background: var(--fd-text-muted);
 }
+/* In the editor a HIDDEN break line is just a faint click target ("click to
+   show"); once clicked it goes heavy — the same colour/weight as the section
+   dividers (inherits the base above). */
+.rib-edit-breakline:not(.heavy) { background: var(--fd-border); opacity: 0.55; }
 /* Dividers: section separators run the ribbon's height; a plain d: inside
    a row marks just that row. The extra .toolbar class matters: the legacy
    custom-scale rule (.toolbar.toolbar-custom .toolbar-separator, with its
