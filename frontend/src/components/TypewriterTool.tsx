@@ -63,8 +63,6 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
         <span>Enable Focus tool</span>
       </label>
 
-      <div className="fs-typewriter-section">Scrolling</div>
-
       <label className="fs-typewriter-toggle">
         <input
           type="checkbox"
@@ -106,8 +104,6 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
           <span className="fs-typewriter-offset-val">{Math.round(typewriterOffset * 100)}%</span>
         </div>
       </div>
-
-      <div className="fs-typewriter-section">Focus</div>
 
       <label className="fs-typewriter-toggle">
         <input

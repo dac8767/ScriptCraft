@@ -87,15 +87,11 @@ function applySizerPadding(scroller: HTMLElement): void {
   // only reached centre at exactly 50%, so at any other line position (or even
   // at 50% by a rounding hair) the last line of the script couldn't scroll up
   // far enough. v4.22, Derek: plus half a page of over-scroll so you can pull
-  // the last line above centre at the very end of the script.
-  const pageContainer = scroller.querySelector('.page-container') as HTMLElement | null;
-  let halfPage = 0;
-  const pw = s.pageLayout?.pageWidth;
-  const ph = s.pageLayout?.pageHeight;
-  if (pageContainer && pw && ph) {
-    const w = pageContainer.getBoundingClientRect().width;   // rendered (post-zoom)
-    if (w > 0) halfPage = (ph * (w / pw)) / 2;               // half a page, rendered px
-  }
+  // the last line above centre at the very end of the script. The page height
+  // comes from the layout + zoom (not a DOM measure, which can read 0 mid-
+  // relayout and silently drop the over-scroll to nothing).
+  const zoom = (s.zoomLevel || 100) / 100;
+  const halfPage = s.pageLayout?.pageHeight ? (s.pageLayout.pageHeight * 96 * zoom) / 2 : view * 0.5;
   const padBottom = Math.round(view * (1 - offset) + halfPage);
   sizer.style.paddingTop = `${padTop}px`;
   sizer.style.paddingBottom = `${padBottom}px`;
@@ -369,7 +365,18 @@ export const TypewriterScroll = Extension.create({
       && editor.state.selection.empty;
     if (!transaction.docChanged && !follow) return;
     // After the DOM has painted the new content, so the caret coords are real.
-    requestAnimationFrame(() => centerCaretLine(editor));
+    // v4.22, Derek: center on the next frame, then AGAIN on the frame after.
+    // Typing near the end of the script triggers the pagination plugin, which
+    // reflows the doc a frame later — that reflow changed the page height out
+    // from under the first centering pass, so the last line ended up below
+    // centre with "no room to scroll". The second pass runs on the settled
+    // layout (and re-applies the sizer padding), which is what actually pins
+    // the final line. Idempotent: if nothing moved, the second pass is a no-op.
+    requestAnimationFrame(() => {
+      if (editor.isDestroyed) return;
+      centerCaretLine(editor);
+      requestAnimationFrame(() => { if (!editor.isDestroyed) centerCaretLine(editor); });
+    });
   },
 });
 
