@@ -68,6 +68,14 @@ interface SettingsState {
    *  The in-window system stays fully intact — flipping back IS the revert. */
   menuSystem: 'inWindow' | 'native';
   setMenuSystem: (v: 'inWindow' | 'native') => void;
+  /** v4.22: which Editor View choices appear in the toolbar dropdown, and in
+   *  what order. Customizable in Customize ▸ Editor; 'page' can't be hidden. */
+  editorViewOrder: string[];
+  editorViewHidden: string[];
+  setEditorViewOrder: (ids: string[]) => void;
+  setEditorViewHidden: (ids: string[]) => void;
+  resetEditorViews: () => void;
+  getEffectiveEditorViews: () => { id: string; label: string }[];
   setFollowSystemTheme: (v: boolean) => void;
   /** v2.15 (Settings > Tools): launching the Scrapbook hides every other
    *  sidebar item and its panel window fills the sidebar; Return to editor
@@ -145,6 +153,31 @@ const STORAGE_KEY_SPELLDEF = 'opendraft:spellCheckByDefault';
 const STORAGE_KEY_WINSTART = 'opendraft:windowStartup';
 const STORAGE_KEY_SYSTHEME = 'opendraft:followSystemTheme';
 const STORAGE_KEY_MENUSYS = 'opendraft:menuSystem';
+
+/** v4.22: the Editor View choices — a fixed set of built-in modes, shown/
+ *  ordered by the user in Customize ▸ Editor. */
+export const EDITOR_VIEWS: { id: string; label: string }[] = [
+  { id: 'page', label: 'Page' },
+  { id: 'continuous', label: 'Continuous' },
+  { id: 'focus', label: 'Focus' },
+  { id: 'preview', label: 'Preview' },
+];
+export const EDITOR_VIEW_REQUIRED = ['page'];
+const STORAGE_KEY_EDITORVIEWS = 'opendraft:editorViews';
+function loadEditorViews(): { order: string[]; hidden: string[] } {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_EDITORVIEWS);
+    if (raw) {
+      const p = JSON.parse(raw);
+      const arr = (v: unknown) => (Array.isArray(v) ? v.filter((x: unknown) => typeof x === 'string') : []);
+      return { order: arr(p?.order), hidden: arr(p?.hidden) };
+    }
+  } catch { /* ignore */ }
+  return { order: [], hidden: [] };
+}
+function saveEditorViews(v: { order: string[]; hidden: string[] }) {
+  try { localStorage.setItem(STORAGE_KEY_EDITORVIEWS, JSON.stringify(v)); } catch { /* ignore */ }
+}
 const STORAGE_KEY_SBEXCL = 'opendraft:scrapbookExclusive';
 const STORAGE_KEY_DRAFTDEF = 'opendraft:defaultDraftLabel';
 const STORAGE_KEY_SMARTTYPO = 'opendraft:smartTypography';
@@ -193,7 +226,7 @@ function loadAuth(): CollabAuth {
   return { accessToken: null, refreshToken: null, user: null };
 }
 
-export const useSettingsStore = create<SettingsState>((set) => ({
+export const useSettingsStore = create<SettingsState>((set, get) => ({
   collabServerUrl: localStorage.getItem(STORAGE_KEY_URL) || DEFAULT_COLLAB_URL,
   setCollabServerUrl: (url) => {
     localStorage.setItem(STORAGE_KEY_URL, url);
@@ -265,6 +298,34 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setMenuSystem: (v) => {
     try { localStorage.setItem(STORAGE_KEY_MENUSYS, v); } catch { /* ignore */ }
     set({ menuSystem: v });
+  },
+
+  editorViewOrder: loadEditorViews().order,
+  editorViewHidden: loadEditorViews().hidden,
+  setEditorViewOrder: (ids) => {
+    saveEditorViews({ order: ids, hidden: get().editorViewHidden });
+    set({ editorViewOrder: ids });
+  },
+  setEditorViewHidden: (ids) => {
+    // 'page' is the fallback view — never hidable.
+    const hidden = ids.filter((id) => !EDITOR_VIEW_REQUIRED.includes(id));
+    saveEditorViews({ order: get().editorViewOrder, hidden });
+    set({ editorViewHidden: hidden });
+  },
+  resetEditorViews: () => {
+    saveEditorViews({ order: [], hidden: [] });
+    set({ editorViewOrder: [], editorViewHidden: [] });
+  },
+  getEffectiveEditorViews: () => {
+    const { editorViewOrder: order, editorViewHidden: hidden } = get();
+    const ids = EDITOR_VIEWS.map((v) => v.id);
+    const ordered = order.length
+      ? [...order.filter((id) => ids.includes(id)), ...ids.filter((id) => !order.includes(id))]
+      : ids;
+    return ordered
+      .filter((id) => !hidden.includes(id))
+      .map((id) => EDITOR_VIEWS.find((v) => v.id === id)!)
+      .filter(Boolean);
   },
   followSystemTheme: localStorage.getItem(STORAGE_KEY_SYSTHEME) === '1',
   setFollowSystemTheme: (v) => {

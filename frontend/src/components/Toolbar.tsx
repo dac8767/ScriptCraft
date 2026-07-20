@@ -38,6 +38,7 @@ import {
 import { tokenLabel } from './tokenMeta';
 import { buildRibbonPalette } from './ribbonPaletteData';
 import { useNotebookStore } from '../stores/notebookStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { TableGridPicker, closeNotebook, applyScrapbookTextFormat } from './NotebookTool';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { confirmDialog } from './ConfirmDialog';
@@ -137,6 +138,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   useFormattingTemplateStore((st) => st.elementOrder);
   const isEnforceMode = activeTemplate.mode === 'enforce';
   const isOverrideMode = activeTemplate.mode === 'override';
+
+  // v4.22, Derek: the Editor View dropdown's options are customizable
+  // (Customize ▸ Editor). Subscribe to the order/hidden so the dropdown updates.
+  const evOrder = useSettingsStore((s) => s.editorViewOrder);
+  const evHidden = useSettingsStore((s) => s.editorViewHidden);
+  void evOrder; void evHidden;
+  const editorViews = useSettingsStore.getState().getEffectiveEditorViews();
 
   // v3.37, Derek: the on-bar "+ Add" menu — utilities are added from the bar
   // itself now. { at: section-boundary index, rightSide, x, y for the popup }.
@@ -1448,10 +1456,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             }}
             title="Editor View"
           >
-            <option value="page">Page</option>
-            <option value="continuous">Continuous</option>
-            <option value="focus">Focus</option>
-            <option value="preview">Preview</option>
+            {editorViews.map((v) => (
+              <option key={v.id} value={v.id}>{v.label}</option>
+            ))}
           </select>
         </>
       );

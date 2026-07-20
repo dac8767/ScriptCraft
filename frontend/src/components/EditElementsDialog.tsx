@@ -15,6 +15,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useFormattingTemplateStore, DUAL_DIALOGUE_ID, DEFAULT_TRANSITIONS } from '../stores/formattingTemplateStore';
+import { useSettingsStore, EDITOR_VIEWS, EDITOR_VIEW_REQUIRED } from '../stores/settingsStore';
 import { DndColumns } from './CustomizePanelsDialog';
 
 /** Elements a script can't function without — reorderable, never hidable. */
@@ -123,6 +124,22 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
     if (!t) return;
     addTransition(t);
     closeAddTransition();
+  };
+
+  // ── v4.22, Derek: Editor View list (the toolbar's Editor View dropdown) ──
+  const editorViewOrder = useSettingsStore((s) => s.editorViewOrder);
+  const editorViewHidden = useSettingsStore((s) => s.editorViewHidden);
+  const setEditorViewOrder = useSettingsStore((s) => s.setEditorViewOrder);
+  const setEditorViewHidden = useSettingsStore((s) => s.setEditorViewHidden);
+  const resetEditorViews = useSettingsStore((s) => s.resetEditorViews);
+  void editorViewOrder; void editorViewHidden;
+  const shownViews = useSettingsStore.getState().getEffectiveEditorViews();
+  const hiddenViews = EDITOR_VIEWS.filter((v) => !shownViews.some((s) => s.id === v.id));
+  const setViewShown = (id: string, shown: boolean) => {
+    if (!shown && EDITOR_VIEW_REQUIRED.includes(id)) return;
+    setEditorViewHidden(
+      shown ? editorViewHidden.filter((x) => x !== id) : [...editorViewHidden.filter((x) => x !== id), id],
+    );
   };
 
   const body = (
@@ -255,6 +272,64 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
         <div className="fs-tbzone-adders fs-adders-equal">
           <button className="swn-add-btn" onClick={openAddTransition}>Add Transition</button>
           <button className="swn-add-btn" onClick={resetTransitions}>Reset to Default</button>
+        </div>
+      </section>
+
+      <section>
+        <h3>Editor Views</h3>
+        <p className="fs-customize-hint">
+          Which views appear in the toolbar's Editor View dropdown, and their
+          order. Drag between Shown and Hidden. Page is always available.
+        </p>
+        <DndColumns
+          columns={[
+            {
+              id: 'shown', title: 'Shown',
+              sections: [{
+                rows: shownViews.map((v) => {
+                  const required = EDITOR_VIEW_REQUIRED.includes(v.id);
+                  return {
+                    key: v.id,
+                    content: (
+                      <span className="fs-customize-tool">
+                        {v.label}
+                        {required && <span className="fs-dnd-required">(required)</span>}
+                        {!required && (
+                          <button className="fs-dnd-rowbtn" title="Hide this view" onClick={() => setViewShown(v.id, false)}>×</button>
+                        )}
+                      </span>
+                    ),
+                  };
+                }),
+              }],
+            },
+            {
+              id: 'hidden', title: 'Hidden', isHidden: true,
+              sections: [{
+                label: 'Views',
+                rows: hiddenViews.map((v) => ({
+                  key: v.id,
+                  content: (
+                    <span className="fs-customize-tool">
+                      {v.label}
+                      <button className="fs-dnd-rowbtn" title="Show this view" onClick={() => setViewShown(v.id, true)}>+</button>
+                    </span>
+                  ),
+                })),
+              }],
+            },
+          ]}
+          onDrop={(src, dst) => {
+            const id = src.key;
+            if (dst.col === 'hidden') { setViewShown(id, false); return; }
+            const next = shownViews.map((v) => v.id).filter((x) => x !== id);
+            next.splice(Math.min(dst.idx, next.length), 0, id);
+            setEditorViewOrder([...next, ...EDITOR_VIEWS.map((v) => v.id).filter((x) => !next.includes(x))]);
+            if (editorViewHidden.includes(id)) setViewShown(id, true);
+          }}
+        />
+        <div className="fs-tbzone-adders fs-adders-equal">
+          <button className="swn-add-btn" onClick={resetEditorViews}>Reset to Default</button>
         </div>
       </section>
 
