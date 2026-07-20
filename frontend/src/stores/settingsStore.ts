@@ -250,7 +250,18 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     try { localStorage.setItem(STORAGE_KEY_WINSTART, v); } catch { /* ignore */ }
     set({ windowStartup: v });
   },
-  menuSystem: (localStorage.getItem(STORAGE_KEY_MENUSYS) === 'native' ? 'native' : 'inWindow'),
+  menuSystem: ((): 'inWindow' | 'native' => {
+    const saved = localStorage.getItem(STORAGE_KEY_MENUSYS);
+    if (saved === 'native') return 'native';
+    if (saved === 'inWindow') return 'inWindow';
+    // v4.22, Derek: no saved preference (a fresh install — e.g. a new build's
+    // own storage) → default to the platform norm. macOS expects the native
+    // menu bar; every other platform keeps the in-window menu. (Rendering still
+    // gates on isTauri, so a Mac *web* session falls back to in-window anyway.)
+    const isMac = typeof navigator !== 'undefined'
+      && /Mac/i.test(navigator.platform || navigator.userAgent || '');
+    return isMac ? 'native' : 'inWindow';
+  })(),
   setMenuSystem: (v) => {
     try { localStorage.setItem(STORAGE_KEY_MENUSYS, v); } catch { /* ignore */ }
     set({ menuSystem: v });
