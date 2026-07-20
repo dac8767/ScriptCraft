@@ -15,6 +15,7 @@
  */
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useEditorStore, type CharacterProfile, type CharacterRelationship } from '../stores/editorStore';
 
 /* ════════════════════════════════════════════════════════════════════
@@ -46,6 +47,10 @@ interface Props {
   /** Used to scope localStorage positions and force remount on file switch */
   scriptId?: string;
   onSelectCharacter?: (name: string) => void;
+  /** v4.18: when set, the map's toolbar (Add Relationship / Fit / hint) is
+   *  portalled into this element (the character window header) instead of
+   *  overlaying the map. */
+  headerSlot?: HTMLElement | null;
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -280,7 +285,7 @@ const RelForm: React.FC<RelFormProps> = ({ characterName, allCharacters, selectB
    MAIN COMPONENT
    ════════════════════════════════════════════════════════════════════ */
 
-export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter }) => {
+export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter, headerSlot }) => {
   const characters = useEditorStore((s) => s.characters);
   const characterProfiles = useEditorStore((s) => s.characterProfiles);
   const characterRelationships = useEditorStore((s) => s.characterRelationships);
@@ -694,8 +699,11 @@ export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter }
         })}
       </svg>
 
-      {/* Toolbar overlay */}
-      <div className="rel-map-toolbar">
+      {/* Toolbar: overlays the map, or (v4.18) portals into the character
+          window header when a headerSlot is provided. */}
+      {(() => {
+        const bar = (
+      <div className={`rel-map-toolbar${headerSlot ? ' rel-map-toolbar-in-header' : ''}`}>
         {selectedNode ? (
           <>
             <span className="rel-map-toolbar-label">{selectedNode}</span>
@@ -748,6 +756,9 @@ export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter }
           Fit
         </button>
       </div>
+        );
+        return headerSlot ? createPortal(bar, headerSlot) : bar;
+      })()}
 
       {/* Add/Edit relationship form overlay */}
       {(addingFrom || editingRel) && (

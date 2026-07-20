@@ -100,7 +100,8 @@
   font-size: 11px;
   color: var(--fd-text-muted);
 }
-.char-fs-list-mode .char-profile-chevron,
+/* v4.18: keep the chevron in list mode — cards start collapsed and expand on
+   click, so the affordance matters. */
 .char-fs-list-mode .char-profile-enlarge-btn { display: none; }
 /* Detail section — generous spacing */
 .char-fs-list-mode .char-profile-detail {
@@ -238,6 +239,49 @@
   line-height: 1;
 }
 .char-profiles-fullscreen-btn:hover { color: var(--fd-text); }
+/* ── v4.18, Derek: fullscreen header — one row: title, then Profiles/Map tabs
+   ~50px past it, then the tab's actions and the close X hard right. ────────── */
+.char-fs-header .char-profiles-count { display: none; }
+.char-fs-header-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 42px;   /* + the header's 8px gap ≈ 50px from the title */
+}
+.char-fs-header-tabs .char-profiles-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.char-fs-header-tabs .char-profiles-tab:hover { color: var(--fd-text); }
+.char-fs-header-tabs .char-profiles-tab.active {
+  color: var(--fd-text);
+  border-bottom-color: var(--fd-accent);
+}
+.char-fs-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+/* the Relationship Map's toolbar, portalled into the header — flatten it (no
+   floating box); Fit's inline margin-left:auto collapses in the tight row. */
+.char-fs-map-actions { display: flex; align-items: center; }
+.rel-map-toolbar.rel-map-toolbar-in-header {
+  position: static;
+  inset: auto;
+  padding: 0;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
 .char-profiles-search-input {
   width: 100%;
   height: 28px;
@@ -254,12 +298,25 @@
 /* Toolbar (search + build) */
 .char-profiles-toolbar {
   display: flex;
+  align-items: center;
   gap: 6px;
   padding: 8px 12px;
   border-bottom: 1px solid var(--fd-border);
   flex-shrink: 0;
+  flex-wrap: wrap;   /* v4.18: Sort shares this row; wraps when the panel is narrow */
 }
-.char-profiles-toolbar .char-profiles-search-input { flex: 1; }
+.char-profiles-toolbar .char-profiles-search-input { flex: 1 1 160px; }
+/* v4.18: Sort moved onto the search row (was its own bar). */
+.char-profiles-toolbar .char-profiles-sort {
+  padding: 0;
+  border: none;
+  flex: 0 0 auto;
+}
+.char-profiles-toolbar .char-sort-select {
+  flex: 0 0 auto;
+  width: 150px;
+  height: 28px;
+}
 .char-profiles-build-btn {
   padding: 0 10px;
   height: 28px;

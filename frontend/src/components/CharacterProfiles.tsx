@@ -134,6 +134,8 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   };
   const exitCharFullscreen = () => useEditorStore.getState().setCharFullscreen(false);
   const [fsViewMode, setFsViewMode] = useState<'cards' | 'list'>('cards');
+  // v4.18: portal target in the header for the Relationship Map's toolbar.
+  const [mapHeaderSlot, setMapHeaderSlot] = useState<HTMLElement | null>(null);
   const [modalChar, setModalChar] = useState<string | null>(null);
 
   // Image picker state
@@ -875,58 +877,68 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         onChange={handleFileSelect}
       />
 
-      <div className="char-profiles-header">
+      <div className={`char-profiles-header${isFullscreen ? ' char-fs-header' : ''}`}>
         <span className="char-profiles-title">Characters</span>
         <span className="char-profiles-count">{allCharacters.length}</span>
-        <button
-          className="char-profiles-fullscreen-btn"
-          onClick={() => (isFullscreen ? exitCharFullscreen() : enterCharFullscreen())}
-          title={isFullscreen ? 'Return to editor' : 'Fullscreen'}
-        >
-          {isFullscreen ? '\u2716' : '\u26F6'}
-        </button>
+        {/* v4.18: in fullscreen the Profiles/Map tabs sit on the header row,
+            50px past the title; the right side carries the tab's actions and
+            the close X. */}
         {isFullscreen && (
-          <div className="char-fs-view-toggle">
-            <button
-              className={`char-fs-view-btn${fsViewMode === 'cards' ? ' active' : ''}`}
-              onClick={() => setFsViewMode('cards')}
-            >
-              Cards
-            </button>
-            <button
-              className={`char-fs-view-btn${fsViewMode === 'list' ? ' active' : ''}`}
-              onClick={() => setFsViewMode('list')}
-            >
-              List
-            </button>
+          <div className="char-fs-header-tabs">
+            <button className={`char-profiles-tab${activeTab === 'profiles' ? ' active' : ''}`} onClick={() => setActiveTab('profiles')}>Profiles</button>
+            <button className={`char-profiles-tab${activeTab === 'map' ? ' active' : ''}`} onClick={() => setActiveTab('map')}>Relationship Map</button>
           </div>
+        )}
+        {isFullscreen && (
+          <div className="char-fs-header-actions">
+            {activeTab === 'profiles' && (
+              <div className="char-fs-view-toggle">
+                <button className={`char-fs-view-btn${fsViewMode === 'cards' ? ' active' : ''}`} onClick={() => setFsViewMode('cards')}>Cards</button>
+                <button className={`char-fs-view-btn${fsViewMode === 'list' ? ' active' : ''}`} onClick={() => setFsViewMode('list')}>List</button>
+              </div>
+            )}
+            {activeTab === 'map' && <div className="char-fs-map-actions" ref={setMapHeaderSlot} />}
+            <button className="char-profiles-close" onClick={() => exitCharFullscreen()} title="Return to editor">{'\u2716'}</button>
+          </div>
+        )}
+        {!isFullscreen && (
+          <button
+            className="char-profiles-fullscreen-btn"
+            onClick={() => enterCharFullscreen()}
+            title="Fullscreen"
+          >
+            {'\u26F6'}
+          </button>
         )}
         {!embedded && !isFullscreen && <button className="char-profiles-close" onClick={() => { toggleCharacterProfiles(); }} title="Close">
           &times;
         </button>}
       </div>
 
-      {/* Tabs: Profiles / Relationship Map */}
-      <div className="char-profiles-tabs">
-        <button
-          className={`char-profiles-tab${activeTab === 'profiles' ? ' active' : ''}`}
-          onClick={() => setActiveTab('profiles')}
-        >
-          Profiles
-        </button>
-        <button
-          className={`char-profiles-tab${activeTab === 'map' ? ' active' : ''}`}
-          onClick={() => setActiveTab('map')}
-        >
-          Relationship Map
-        </button>
-      </div>
+      {/* Tabs row \u2014 only when NOT fullscreen (in fullscreen they live in the header) */}
+      {!isFullscreen && (
+        <div className="char-profiles-tabs">
+          <button
+            className={`char-profiles-tab${activeTab === 'profiles' ? ' active' : ''}`}
+            onClick={() => setActiveTab('profiles')}
+          >
+            Profiles
+          </button>
+          <button
+            className={`char-profiles-tab${activeTab === 'map' ? ' active' : ''}`}
+            onClick={() => setActiveTab('map')}
+          >
+            Relationship Map
+          </button>
+        </div>
+      )}
 
       {/* Relationship Map tab */}
       {activeTab === 'map' && (
         <RelationshipMap
           key={currentScriptId || 'no-script'}
           scriptId={currentScriptId || undefined}
+          headerSlot={isFullscreen ? mapHeaderSlot : null}
           onSelectCharacter={(name) => {
             setActiveTab('profiles');
             setSelectedCharacter(name);
@@ -939,7 +951,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       {/* Profiles tab content */}
       {activeTab === 'profiles' && <>
 
-      {/* Toolbar: Search + Build */}
+      {/* Toolbar: Search + Sort + Build (v4.18: Sort moved onto this row). */}
       <div className="char-profiles-toolbar">
         <input
           type="text"
@@ -948,6 +960,20 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           onChange={(e) => setSearchQuery(e.target.value)}
           className="char-profiles-search-input"
         />
+        <div className="char-profiles-sort">
+          <span className="char-sort-label">Sort</span>
+          <select
+            className="char-sort-select"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+          >
+            <option value="name">Name</option>
+            <option value="importance">Importance</option>
+            <option value="scenes">Scenes</option>
+            <option value="dialogues">Dialogues</option>
+            <option value="appearance">Appearance</option>
+          </select>
+        </div>
         <button
           className="char-profiles-build-btn"
           onClick={handleBuildFromScript}
@@ -955,21 +981,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         >
           Build from Script
         </button>
-      </div>
-      {/* Sort bar */}
-      <div className="char-profiles-sort">
-        <span className="char-sort-label">Sort</span>
-        <select
-          className="char-sort-select"
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-        >
-          <option value="name">Name</option>
-          <option value="importance">Importance</option>
-          <option value="scenes">Scenes</option>
-          <option value="dialogues">Dialogues</option>
-          <option value="appearance">Appearance</option>
-        </select>
       </div>
 
       {/* Character list */}
@@ -984,7 +995,9 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           allCharacters.map((name) => {
             const profile = getProfile(name);
             const stats = charStats.get(name);
-            const isExpanded = isFullscreen || expandedChar === name;
+            // v4.18: in fullscreen LIST view, cards start minimized (a bar with
+            // name + key stats) and expand on click; Cards view stays expanded.
+            const isExpanded = (isFullscreen && fsViewMode === 'cards') || expandedChar === name;
             const isOrphaned = orphanedNames.has(name);
             const primaryImageId = profile.images?.[0];
 

@@ -65,9 +65,18 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.17';
+export const APP_VERSION = '4.18';
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.18',
+    date: '2026-07-20',
+    items: [
+      { title: 'Reworked the character fullscreen header', detail: 'The Profiles / Relationship Map tabs now sit on the same row as the “Characters” title (left-aligned, spaced from it). The right side of that row carries the active tab’s controls — Cards/List for Profiles, or Add Relationship / Fit / the scroll hint for the Relationship Map — and the close X is on the far right.', tags: ['UI', 'Tools'] },
+      { title: 'Sort moved onto the search row', detail: 'The character Sort dropdown shares the row with the Search field instead of sitting on its own bar.', tags: ['UI'] },
+      { title: 'List view cards start collapsed', detail: 'In the fullscreen List view each character starts as a compact bar (name + line/scene counts); click it to expand the full profile.', tags: ['UI', 'Tools'] },
+    ],
+  },
   {
     version: '4.17',
     date: '2026-07-20',
