@@ -199,8 +199,31 @@ export function createPaginationPlugin(
   });
 }
 
-function getTextLines(text: string, cpl: number): number {
-  return text.length === 0 ? 1 : Math.ceil(text.length / cpl);
+/**
+ * Wrapped line count for a run of text at `cpl` chars per line.
+ *
+ * v4.22, Derek: this was `ceil(len / cpl)`, which assumes text packs perfectly
+ * across the line. The browser word-wraps — it breaks at spaces, so every line
+ * stops at a word boundary and leaves a ragged right edge. A 141-char dialogue
+ * block that "should" be 4 lines (141/36) actually renders as 5. The estimate
+ * therefore ran a line short on most multi-line blocks, the paginator packed
+ * more onto a page than fit, and the page overflowed past its height. This does
+ * the real greedy wrap instead, so the count matches what renders. A word longer
+ * than the line wraps within itself (rare in screenplay text; over-counting it
+ * only makes a page break a hair early, which the measured fill then tops up).
+ */
+export function getTextLines(text: string, cpl: number): number {
+  if (text.length === 0) return 1;
+  if (cpl <= 0) return 1;
+  let lines = 1;
+  let col = 0;
+  for (const word of text.split(' ')) {
+    const w = word.length;
+    if (col !== 0 && col + 1 + w > cpl) { lines++; col = w; }
+    else { col = col === 0 ? w : col + 1 + w; }
+    while (col > cpl) { lines++; col -= cpl; }
+  }
+  return lines;
 }
 
 /** Title-page blocks span the full printable width (~62 chars at 12pt). */
