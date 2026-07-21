@@ -283,7 +283,11 @@
   max-width: calc(100vw - 200px);
   max-height: calc(100vh - 120px);
   overflow: hidden;
-  z-index: 40;
+  /* v4.22, Derek: was 40, BELOW the editor ruler (z-45), so a popped-out window
+     rendered under it. Floating tool windows now sit above the ruler — matching
+     the temporary windows — so one dragged onto the ruler covers it, not
+     vice-versa. */
+  z-index: 120;
 }
 .tool-window-header {
   display: flex;

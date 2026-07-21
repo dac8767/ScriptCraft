@@ -343,8 +343,11 @@
   z-index: 120;
 }
 /* v4.22, Derek: the horizontal ruler occupies the top of the editor area, so a
-   popped-out tool window drops below it while the ruler is on. */
+   popped-out tool window drops below it while the ruler is on — temp windows are
+   viewport-fixed, docked-and-popped windows are absolute (top:8), so each clears
+   the ruler from its own baseline. */
 body.fs-rulers-on .tool-window-temp { top: 116px; }
+body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 40px; }
 
 /* Analytics tab filtering: hide only the sections that DON'T match the
    active tab, so matching ones keep their natural display (grids, tables). */
