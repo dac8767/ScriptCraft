@@ -64,16 +64,19 @@ const TitleBar: React.FC<{ editor: Editor | null }> = ({ editor }) => {
   const qatItems = useEditorStore((s) => s.qatItems);
   if (!showTitleBar()) return null;
   return (
-    <div className="fs-titlebar" data-tauri-drag-region>
-      {/* left inset clears the traffic lights. v3.72, Derek: the drag attribute
-          has to be on THIS container too — Tauri v2 only drags the element
-          directly under the pointer, not descendants of .fs-titlebar, so the
-          QAT strip (which fills most of the bar) was a dead zone. The buttons
-          are the click target, so they still click rather than drag. */}
-      <div className="fs-titlebar-qat" data-tauri-drag-region>
+    <div className="fs-titlebar">
+      {/* v4.22, Derek: ONE full-bar drag layer behind everything, instead of the
+          per-element drag attributes that left dead zones (buttons, gaps, the
+          strip above/below the centered content) so only a sliver dragged. The
+          QAT/title/balance are pointer-events:none and sit above it, so clicks
+          fall through to this layer and drag anywhere; only the buttons
+          re-enable pointer events and click. Left inset clears the traffic
+          lights. */}
+      <div className="fs-titlebar-drag" data-tauri-drag-region aria-hidden="true" />
+      <div className="fs-titlebar-qat">
         {qatItems.map((id) => {
-          if (isQatDivider(id)) return <span key={id} className="fs-titlebar-sep" data-tauri-drag-region />;
-          if (isQatSpacer(id)) return <span key={id} className="fs-titlebar-spacer" data-tauri-drag-region />;
+          if (isQatDivider(id)) return <span key={id} className="fs-titlebar-sep" />;
+          if (isQatSpacer(id)) return <span key={id} className="fs-titlebar-spacer" />;
           const o = QAT_BY_ID[id];
           if (!o) return null;
           const run = id === 'undo' ? () => smartUndo(editor)
@@ -88,10 +91,10 @@ const TitleBar: React.FC<{ editor: Editor | null }> = ({ editor }) => {
           );
         })}
       </div>
-      <div className="fs-titlebar-title" data-tauri-drag-region>{title}</div>
+      <div className="fs-titlebar-title">{title}</div>
       {/* right counterweight keeps the title centered against the QAT.
           (v3.15: the donate button moved into About ScriptCraft.) */}
-      <div className="fs-titlebar-balance" data-tauri-drag-region />
+      <div className="fs-titlebar-balance" />
     </div>
   );
 };

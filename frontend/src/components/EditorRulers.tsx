@@ -216,6 +216,21 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
             clipTop = cTop;                                    // no 0" / margin above pages 2+
           }
           drawScaleFrom(cTop, 1, clipTop, H2 + 10);
+          // A dotted line across the ruler at each divide (between "10" and "1"),
+          // matching the page-break line in the script. (v4.22, Derek.)
+          ctx.strokeStyle = text;
+          ctx.globalAlpha = 0.5;
+          ctx.setLineDash([1.5, 2]);
+          ctx.beginPath();
+          for (const g of lines) {
+            if (g.top < -2 || g.top > H2 + 2) continue;
+            const y = Math.round(g.top) + 0.5;
+            ctx.moveTo(0, y);
+            ctx.lineTo(T, y);
+          }
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.globalAlpha = 1;
         } else {
           // Page view: page i top = previous page's bottom margin end + gap; its
           // content-end (bottom-margin start) is the matching .page-sep. Both are
