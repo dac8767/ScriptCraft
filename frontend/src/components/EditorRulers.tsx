@@ -272,10 +272,22 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
     // which grows with the content, and repaint when it changes.
     const sizerEl = el.querySelector('.page-sizer');
     if (sizerEl) ro.observe(sizerEl);
+    // Switching Page ⇄ Continuous swaps the separator elements (.page-sep ⇄
+    // .page-sep-line). That isn't a resize, so the ResizeObserver misses it and
+    // the old ruler lingered until the next scroll. Watch the page subtree for
+    // the structural/class change and repaint the instant the new view lands.
+    const mo = new MutationObserver(schedule);
+    if (sizerEl) mo.observe(sizerEl, { childList: true, subtree: true, attributeFilter: ['class'] });
+    // Positions can settle a frame or two after that mutation (pagination
+    // re-measures), so also repaint across a short window after any view/layout
+    // change — cheap, and only fires on these infrequent switches.
+    const bursts = [0, 80, 200, 400].map((ms) => window.setTimeout(schedule, ms));
     schedule();
     return () => {
       el.removeEventListener('scroll', schedule);
       ro.disconnect();
+      mo.disconnect();
+      bursts.forEach(clearTimeout);
       cancelAnimationFrame(raf);
     };
   }, [container, units, pageLayout, zoomLevel, continuous]);
