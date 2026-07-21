@@ -165,9 +165,18 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
             const v = k * step;
             if (v < -1e-6) continue;                   // no marks above 0
             const y = Math.round(originY + (v - valueAtOrigin) * unitPx) + 0.5;
-            if (y > hi + 0.6) break;
-            if (y < lo - 0.6) continue;
             const isWhole = Math.abs(v - Math.round(v)) < 0.001;
+            if (y > hi + 0.6) {
+              // Past the clip: always render the TERMINAL whole-inch label (page
+              // view "11", continuous "10") even when sub-pixel rounding nudges
+              // it a hair past the boundary — but never an extra tick or the next
+              // number, so the last number is ALWAYS shown, every page.
+              if (isWhole && Math.round(v) > 0 && y <= hi + unitPx * 0.4) {
+                ctx.fillText(String(Math.round(v)), T / 2, y);
+              }
+              break;
+            }
+            if (y < lo - 0.6) continue;
             const isHalf = !isWhole && Math.abs(v * 2 - Math.round(v * 2)) < 0.001;
             if (isWhole) {
               const n = Math.round(v);
