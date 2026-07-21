@@ -29,6 +29,18 @@ let continuousMode = false;
 export function setPaginationContinuousMode(v: boolean): void {
   continuousMode = v;
 }
+
+/** v4.22, Derek: MEASURED page fill. The budget estimate (linesPerPage −
+ * linesOnPage) can be a line or two off from what the browser actually
+ * renders, so pages drifted a hair past their real height. After layout,
+ * ScreenplayEditor measures each page's true rendered content height and
+ * supplies the exact whitespace (px) needed to make it exactly one page tall —
+ * keyed by the break's page number (stable across edits, unlike offsets). A key
+ * that doesn't match yet simply misses and falls back to the budget estimate,
+ * then the next measure refreshes it. This makes every page exactly the size
+ * set in Settings, independent of estimator accuracy. */
+let measuredFills: Map<number, number> = new Map();
+export function setMeasuredFills(m: Map<number, number>): void { measuredFills = m; }
 export function isPaginationContinuous(): boolean {
   return continuousMode;
 }
@@ -158,7 +170,12 @@ export function createPaginationPlugin(
         const showDialogueBreakContd = resolveMoresContds(layout).dialogueBreakContd;
         const decos: Decoration[] = [];
         for (const brk of ps.breaks) {
-          const whitespacePx = Math.max(0, linesPerPage - brk.linesOnPage) * lineHeightPx;
+          // Prefer the measured fill; fall back to the line-budget estimate until
+          // the first measurement lands (keyed by page number, set by React).
+          const measured = measuredFills.get(brk.pageNumber);
+          const whitespacePx = measured !== undefined
+            ? measured
+            : Math.max(0, linesPerPage - brk.linesOnPage) * lineHeightPx;
           // Dialogue splits need extra space for the CONT'D label on the next page
           const contdPx = brk.isDialogueSplit && showDialogueBreakContd ? lineHeightPx : 0;
           const marginTop = continuousMode

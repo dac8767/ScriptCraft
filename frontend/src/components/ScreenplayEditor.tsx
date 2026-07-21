@@ -42,7 +42,7 @@ import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { generateTemplateCss, injectTemplateCss } from '../utils/templateCss';
 import { docHasAnyText } from '../utils/docText';
 import { getCurrentElementRule, getLockedFormatting } from '../utils/effectiveFormatting';
-import { setPaginationPrintMode, setPaginationVisibility, setPaginationContinuousMode, CONTINUOUS_GAP_PX, createPaginationPlugin, getPageMetrics } from '../editor/pagination';
+import { setPaginationPrintMode, setPaginationVisibility, setPaginationContinuousMode, CONTINUOUS_GAP_PX, createPaginationPlugin, getPageMetrics, setMeasuredFills } from '../editor/pagination';
 import { createContdCasePlugin } from '../editor/contdCase';
 import { ScreenplayImage } from '../editor/extensions/ScreenplayImage';
 import { insertImageNode } from '../utils/insertImage';
@@ -1119,6 +1119,10 @@ const ScreenplayEditor: React.FC = () => {
   }>({ visible: false, position: { x: 0, y: 0 }, spellInfo: null, grammarInfo: null });
 
   const breaksRef = useRef<import('../editor/pagination').BreakInfo[]>([]);
+  // Editor handle + last-applied measured fills, for the measured-fill pass that
+  // pads each page to its exact rendered height (see measureOverlays).
+  const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
+  const appliedFillsRef = useRef<Map<number, number>>(new Map());
 
   // Measure overlay positions from the actual DOM after decorations are applied
   const measureOverlays = useCallback(() => {
@@ -1172,6 +1176,51 @@ const ScreenplayEditor: React.FC = () => {
       });
     }
     setOverlays(newOverlays);
+
+    // ── Measured page fill (v4.22, Derek) ──────────────────────────────────
+    // The line-budget fill can be a hair off from what the browser actually
+    // renders, leaving pages slightly over/under a full page. Measure each
+    // page's REAL content height and hand the paginator the exact whitespace
+    // to make it precisely one page tall. Keyed by page number (stable across
+    // edits); only re-dispatched when a fill really moved, so it converges in
+    // one pass and never loops. Skipped in Preview (its title page shifts the
+    // geometry and it isn't the editing surface).
+    if (!previewModeRef.current) {
+      const fills = new Map<number, number>();
+      let pageStart = m.contentStartPx;                     // page 1 content top (unscaled)
+      for (const brk of breaks) {
+        const breakEl = children[brk.nodeIndex];
+        // The title region keeps the budget path; just advance the cursor.
+        if (!brk.isTitlePage) {
+          const lastEl = children[brk.nodeIndex - 1];
+          if (lastEl && breakEl) {
+            const contentEnd = (lastEl.getBoundingClientRect().bottom - pageRect.top) / scale;
+            const naturalHeight = contentEnd - pageStart;
+            fills.set(brk.pageNumber, Math.max(0, m.pageContentPx - naturalHeight));
+          }
+        }
+        if (breakEl) pageStart = (breakEl.getBoundingClientRect().top - pageRect.top) / scale;
+      }
+      // Re-dispatch only when a fill really moved. The threshold sits above
+      // sub-pixel getBoundingClientRect noise (which /scale amplifies at low
+      // zoom) so a converged layout can't oscillate; 2px is 0.02", invisible.
+      const prev = appliedFillsRef.current;
+      let changed = fills.size !== prev.size;
+      if (!changed) {
+        for (const [pg, v] of fills) {
+          const pv = prev.get(pg);
+          if (pv === undefined || Math.abs(pv - v) > 2) { changed = true; break; }
+        }
+      }
+      if (changed) {
+        appliedFillsRef.current = fills;
+        setMeasuredFills(fills);
+        const ed = editorRef.current;
+        if (ed) {
+          try { ed.view.dispatch(ed.state.tr.setMeta('forceRepaginate', true)); } catch { /* ignore */ }
+        }
+      }
+    }
   }, []);
 
   const [PaginationExtension] = React.useState(() =>
@@ -2448,6 +2497,9 @@ const ScreenplayEditor: React.FC = () => {
   // --- View > Editor Style: page view vs continuous view ---
   const viewStyleRef = useRef(viewStyle);
   viewStyleRef.current = previewMode ? 'page' : viewStyle;
+  editorRef.current = editor;
+  const previewModeRef = useRef(previewMode);
+  previewModeRef.current = previewMode;
   useEffect(() => {
     // Preview always paginates like Page View — it exists to show the final
     // printed/exported document, so the continuous style is suspended while
