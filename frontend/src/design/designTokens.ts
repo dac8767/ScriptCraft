@@ -116,6 +116,9 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'toolWinRadius', label: 'Tool window radius', cssVar: '--dz-toolwin-radius', unit: 'px', min: 0, max: 20, step: 1, def: 8 },
       { id: 'toolWinHeaderPad', label: 'Tool window header padding', cssVar: '--dz-toolwin-head-pad', unit: 'px', min: 2, max: 20, step: 1, def: 8 },
       { id: 'toolWinTitleFont', label: 'Tool window title font', cssVar: '--dz-toolwin-title-font', unit: 'px', min: 9, max: 20, step: 0.5, def: 12 },
+      // v4.22, Derek: spacing of the character card header's right-side items
+      // (line/scene count, the % ring, the expand button).
+      { id: 'charHeaderGap', label: 'Character header item spacing', cssVar: '--dz-char-header-gap', unit: 'px', min: 0, max: 32, step: 1, def: 8 },
     ],
   },
   {

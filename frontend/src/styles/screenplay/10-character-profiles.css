@@ -543,6 +543,13 @@
   padding: 8px 10px;
   cursor: pointer;
 }
+/* v4.22, Derek: right-side header cluster (lines/scenes, %, expand) — inner
+   spacing is a Design-window knob. */
+.char-profile-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--dz-char-header-gap, 8px);
+}
 .char-profile-color {
   width: 20px;
   height: 20px;

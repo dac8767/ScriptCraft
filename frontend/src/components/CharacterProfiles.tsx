@@ -1417,6 +1417,9 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                       ) : null;
                     })()}
                   </div>
+                  {/* v4.22, Derek: the header's right-side cluster — its inner
+                      spacing is a Design-window knob (--dz-char-header-gap). */}
+                  <div className="char-profile-header-right">
                   <div className="char-profile-stats">
                     {stats && (
                       <>
@@ -1466,6 +1469,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                   >
                     <FaExpandAlt />
                   </button>
+                  </div>
                 </div>
 
                 {/* Expanded detail */}
