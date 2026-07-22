@@ -23,7 +23,7 @@ import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
   FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,
-  FaChevronRight, FaChevronDown, FaKeyboard, FaRobot, FaBook,
+  FaChevronRight, FaChevronDown, FaKeyboard, FaRobot, FaBook, FaSlidersH,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
@@ -37,6 +37,7 @@ import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
 import CharacterProfiles from './CharacterProfiles';
 import { StickyNotesTool, FragmentsTool, TodoTool } from './StickyNotes';
 import HighlightsTool from './HighlightsTool';
+import { DesignPanelDocked } from './DesignPanel';
 import TagsPanel from './TagsPanel';
 import IndexCards from './IndexCards';
 import BeatBoard, { OutlineHeaderControls } from './BeatBoard';
@@ -119,6 +120,10 @@ export const ALL_TOOLS: ToolDef[] = [
   // v0.84: Script History is dockable again — VersionHistory already had an
   // `embedded` mode, it just wasn't registered as a tool.
   { id: 'history', label: 'Script History', icon: <FaHistory />, defaultSize: { w: 420, h: 480 }, group: 3 },
+  // v4.23, Derek: the Design (tokens) surface is dockable now — the same body
+  // the floating window shows (DesignPanelBody), just in a panel column. Opens
+  // FLOATING by default (its sliders want width), but the pop-in button docks it.
+  { id: 'design', label: 'Design', icon: <FaSlidersH />, defaultSize: { w: 360, h: 560 }, group: 3, noPanelFit: true },
 ];
 
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
@@ -217,6 +222,8 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
       return <IndexCards editor={editor} scrollContainer={scrollContainer ?? null} embedded />;
     case 'beatboard':
       return <BeatBoard embedded />;
+    case 'design':
+      return <DesignPanelDocked />;
     default:
       return null;
   }

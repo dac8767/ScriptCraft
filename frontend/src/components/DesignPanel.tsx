@@ -76,17 +76,105 @@ function TokenRow({ t }: { t: DesignToken }) {
   );
 }
 
+/**
+ * The scrollable guts of the Design surface — search, the grouped token rows,
+ * and the Reset/Copy footer. Shared verbatim by the floating window (below) and
+ * the dockable side-panel tool (ToolDock 'design'), so the two entry points can
+ * never drift apart. It carries no chrome and no positioning of its own — the
+ * host provides that.
+ */
+export function DesignPanelBody() {
+  const designVars = useEditorStore((s) => s.designVars);
+  const resetAllDesign = useEditorStore((s) => s.resetAllDesign);
+  const [query, setQuery] = useState('');
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [copied, setCopied] = useState(false);
+
+  const q = query.trim().toLowerCase();
+  const groups = DESIGN_GROUPS
+    .map((g) => ({
+      ...g,
+      tokens: q ? g.tokens.filter((t) => t.label.toLowerCase().includes(q) || g.label.toLowerCase().includes(q)) : g.tokens,
+    }))
+    .filter((g) => g.tokens.length > 0);
+
+  const overrideCount = Object.keys(designVars).filter((k) => designVars[k] !== undefined).length;
+
+  const copyCss = async () => {
+    const css = buildOverrideCss(designVars);
+    if (!css) return;
+    try {
+      await navigator.clipboard.writeText(css);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = css; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch { /* no-op */ }
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  };
+
+  const toggleGroup = (id: string) => setCollapsed((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+
+  return (
+    <>
+      <div className="dz-search">
+        <LuSearch className="dz-search-icon" />
+        <input
+          className="dz-search-input"
+          placeholder="Search settings…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
+
+      <div className="dz-note">A setting only shows an effect while the thing it styles is on screen — open that panel, window, or dialog to watch it change.</div>
+
+      <div className="dz-body">
+        {groups.map((g) => {
+          const isCollapsed = collapsed.has(g.id) && !q;
+          return (
+            <div className="dz-group" key={g.id}>
+              <button className="dz-group-head" onClick={() => toggleGroup(g.id)}>
+                {isCollapsed ? <LuChevronRight /> : <LuChevronDown />}
+                <span>{g.label}</span>
+              </button>
+              {!isCollapsed && g.tokens.map((t) => <TokenRow key={t.id} t={t} />)}
+            </div>
+          );
+        })}
+        {groups.length === 0 && <div className="dz-empty">No settings match “{query}”.</div>}
+      </div>
+
+      <div className="dz-footer">
+        <button className="dz-foot-btn" onClick={resetAllDesign} disabled={overrideCount === 0}>
+          <LuRotateCcw /> Reset all
+        </button>
+        <button className="dz-foot-btn" onClick={copyCss} disabled={overrideCount === 0}>
+          {copied ? <><LuCheck /> Copied</> : <><LuCopy /> Copy CSS</>}
+        </button>
+      </div>
+    </>
+  );
+}
+
+/** The dockable side-panel form of the Design surface (ToolDock 'design'). */
+export function DesignPanelDocked() {
+  return <div className="dz-embedded"><DesignPanelBody /></div>;
+}
+
 export default function DesignPanel() {
   const open = useEditorStore((s) => s.designPanelOpen);
   const setOpen = useEditorStore((s) => s.setDesignPanelOpen);
   const designVars = useEditorStore((s) => s.designVars);
-  const resetAllDesign = useEditorStore((s) => s.resetAllDesign);
 
   const [pos, setPos] = useState<{ x: number; y: number }>({ x: -1, y: 64 });
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 340, h: 560 });
-  const [query, setQuery] = useState('');
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  const [copied, setCopied] = useState(false);
   const drag = useRef<{ dx: number; dy: number } | null>(null);
   const resize = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
 
@@ -128,36 +216,7 @@ export default function DesignPanel() {
     resize.current = { x: e.clientX, y: e.clientY, w: size.w, h: size.h };
   };
 
-  const q = query.trim().toLowerCase();
-  const groups = DESIGN_GROUPS
-    .map((g) => ({
-      ...g,
-      tokens: q ? g.tokens.filter((t) => t.label.toLowerCase().includes(q) || g.label.toLowerCase().includes(q)) : g.tokens,
-    }))
-    .filter((g) => g.tokens.length > 0);
-
   const overrideCount = Object.keys(designVars).filter((k) => designVars[k] !== undefined).length;
-
-  const copyCss = async () => {
-    const css = buildOverrideCss(designVars);
-    if (!css) return;
-    try {
-      await navigator.clipboard.writeText(css);
-    } catch {
-      const ta = document.createElement('textarea');
-      ta.value = css; document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); } catch { /* no-op */ }
-      document.body.removeChild(ta);
-    }
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1400);
-  };
-
-  const toggleGroup = (id: string) => setCollapsed((prev) => {
-    const next = new Set(prev);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    return next;
-  });
 
   return createPortal(
     <div className="dz-panel" style={{ left: pos.x, top: pos.y, width: size.w, height: size.h }}>
@@ -167,42 +226,7 @@ export default function DesignPanel() {
         <button className="dz-close" title="Close" onClick={() => setOpen(false)}><LuX /></button>
       </div>
 
-      <div className="dz-search">
-        <LuSearch className="dz-search-icon" />
-        <input
-          className="dz-search-input"
-          placeholder="Search settings…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </div>
-
-      <div className="dz-note">A setting only shows an effect while the thing it styles is on screen — open that panel, window, or dialog to watch it change.</div>
-
-      <div className="dz-body">
-        {groups.map((g) => {
-          const isCollapsed = collapsed.has(g.id) && !q;
-          return (
-            <div className="dz-group" key={g.id}>
-              <button className="dz-group-head" onClick={() => toggleGroup(g.id)}>
-                {isCollapsed ? <LuChevronRight /> : <LuChevronDown />}
-                <span>{g.label}</span>
-              </button>
-              {!isCollapsed && g.tokens.map((t) => <TokenRow key={t.id} t={t} />)}
-            </div>
-          );
-        })}
-        {groups.length === 0 && <div className="dz-empty">No settings match “{query}”.</div>}
-      </div>
-
-      <div className="dz-footer">
-        <button className="dz-foot-btn" onClick={resetAllDesign} disabled={overrideCount === 0}>
-          <LuRotateCcw /> Reset all
-        </button>
-        <button className="dz-foot-btn" onClick={copyCss} disabled={overrideCount === 0}>
-          {copied ? <><LuCheck /> Copied</> : <><LuCopy /> Copy CSS</>}
-        </button>
-      </div>
+      <DesignPanelBody />
 
       <div className="dz-resize" onPointerDown={startResize} title="Resize" />
     </div>,

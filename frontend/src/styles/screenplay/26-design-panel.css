@@ -37,6 +37,17 @@
 }
 .dz-close:hover { background: var(--fd-overlay-light); color: var(--fd-text); }
 
+/* v4.23, Derek: the same body, docked as a side-panel tool. It fills the tool
+   window (no fixed positioning, no drag header) and lets .dz-body scroll. */
+.dz-embedded {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: var(--fd-text);
+  user-select: none;
+}
+
 .dz-search {
   display: flex; align-items: center; gap: 6px;
   padding: 8px 10px;
