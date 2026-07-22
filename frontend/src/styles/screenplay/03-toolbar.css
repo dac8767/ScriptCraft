@@ -483,8 +483,15 @@
   padding-right: 12px;
   flex: 1;
   min-width: 0;
-  overflow: hidden;   /* collapse measurement reads scrollWidth vs clientWidth */
+  /* v4.23, Derek: a narrow window scrolls the ribbon horizontally instead of
+     squishing sections together (or hiding them into the overflow menu). Same
+     treatment Customize/edit mode has used since v4.19; sections keep their
+     natural width (see .rib-section below) and off-screen ones scroll in. */
+  overflow-x: auto;
+  overflow-y: hidden;
 }
+/* Sections never shrink — constant spacing, scroll to reach the rest. */
+.toolbar.toolbar-ribbon .rib-section { flex: 0 0 auto; }
 /* v2.96: a SECTION — one or two rows of items reading left-to-right. */
 .rib-section {
   display: flex;

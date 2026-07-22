@@ -572,10 +572,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     return () => document.removeEventListener('mousedown', handler);
   }, [overflowOpen]);
 
-  // Hide order: "1" first, then "2" (matches "2" and "2b"), "3", "4", "5" last
-  const HIDE_ORDER = ['1', '2', '3', '4', '5'];
-
-  // Measure toolbar overflow and determine which priority groups to hide
+  // Measure toolbar overflow. v4.23: width overflow now scrolls (see CSS); this
+  // only routes CSS-hidden (mobile-only) sections into the overflow menu.
   useEffect(() => {
     const toolbar = toolbarRef.current;
     if (!toolbar) return;
@@ -594,18 +592,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         if (g.offsetWidth === 0) newHidden.add(g.dataset.priority!);
       }
 
-      // v2.95: the ribbon is a two-row GRID — per-child width sums double-
-      // count stacked columns, so overflow is judged by the layout itself:
-      // hide priority groups until the grid stops overflowing its box.
-      for (const prefix of HIDE_ORDER) {
-        if (toolbar.scrollWidth <= toolbar.clientWidth) break;
-        for (const g of groups) {
-          const key = g.dataset.priority!;
-          if (!key.startsWith(prefix) || newHidden.has(key)) continue;
-          newHidden.add(key);
-          g.style.display = 'none';
-        }
-      }
+      // v4.23, Derek: a narrow window no longer HIDES sections into the overflow
+      // menu (which "squished" the bar as groups vanished). The ribbon scrolls
+      // horizontally instead (see .toolbar-ribbon overflow-x in 03-toolbar.css),
+      // exactly like Customize/edit mode already did — spacing stays constant
+      // and off-screen sections are reached by scrolling. The overflow menu now
+      // only carries CSS-hidden (mobile-only) items, detected above.
 
       setHiddenPriorities(prev => {
         if (prev.size !== newHidden.size) return newHidden;
