@@ -347,9 +347,9 @@
    viewport-fixed, docked-and-popped windows are absolute (top:8), so each clears
    the ruler from its own baseline. */
 body.fs-rulers-on .tool-window-temp { top: 116px; }
-/* Directly below the ruler (20px thick) — its top is measured from the panel
-   wrap, which lines up with the ruler's top, so a hair past the ruler height. */
-body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 24px; }
+/* Flush under the ruler (20px thick) — its top is measured from the panel wrap,
+   which lines up with the ruler's top, so exactly the ruler height, no gap. */
+body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
 
 /* Analytics tab filtering: hide only the sections that DON'T match the
    active tab, so matching ones keep their natural display (grids, tables). */
