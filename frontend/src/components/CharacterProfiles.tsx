@@ -8,7 +8,6 @@ import { useEditorStore, type CharacterProfile, type CharacterRelationship } fro
 import { useProjectStore } from '../stores/projectStore';
 import { useAssetStore } from '../stores/assetStore';
 import { api } from '../services/api';
-import { authedFetch } from '../services/authedFetch';
 import { showToast } from './Toast';
 import MiniRichText from './MiniRichText';
 import { RelationshipMap } from './RelationshipMap';
@@ -109,9 +108,11 @@ const AssetImage: React.FC<{
     setUrl(null); setFailed(false);
     (async () => {
       try {
-        const res = await authedFetch(api.getAssetUrl(projectId, assetId));
-        if (!res.ok) throw new Error(String(res.status));
-        obj = URL.createObjectURL(await res.blob());
+        // Load raw bytes and build a blob URL. This works on every backend;
+        // fetching getAssetUrl directly does not, because on desktop that URL
+        // is an asset:// path the webview can only load via <img src>.
+        const bytes = await api.getAssetBytes(projectId, assetId);
+        obj = URL.createObjectURL(new Blob([bytes as BlobPart]));
         if (!dead) setUrl(obj); else URL.revokeObjectURL(obj);
       } catch {
         if (!dead) setFailed(true);

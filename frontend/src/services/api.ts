@@ -388,6 +388,17 @@ export const api = {
     return `${API_BASE.replace(/\/api$/, '')}/api/projects/${projectId}/assets/${assetId}`;
   },
 
+  // Fetch raw asset bytes. Every backend implements this — the Tauri backends
+  // read the local file, this HTTP one authenticates the download. Callers use
+  // it to build a blob object URL, which works everywhere; fetching getAssetUrl
+  // directly does NOT (on desktop it returns an asset:// URL the webview can
+  // only load via <img src>, not fetch()).
+  getAssetBytes: async (projectId: string, assetId: string): Promise<Uint8Array> => {
+    const res = await authedFetch(api.getAssetUrl(projectId, assetId));
+    if (!res.ok) throw new Error(`Asset fetch failed: ${res.status}`);
+    return new Uint8Array(await res.arrayBuffer());
+  },
+
   fetchLinkPreview: async (url: string): Promise<LinkPreview> => {
     return request<LinkPreview>('/link/preview', {
       method: 'POST',
