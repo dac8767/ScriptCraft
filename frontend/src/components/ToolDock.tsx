@@ -23,7 +23,7 @@ import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
   FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,
-  FaChevronRight, FaChevronDown, FaKeyboard, FaRobot, FaBook, FaSlidersH,
+  FaChevronRight, FaChevronDown, FaKeyboard, FaRobot, FaBook, FaSlidersH, FaColumns,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
@@ -38,6 +38,7 @@ import CharacterProfiles from './CharacterProfiles';
 import { StickyNotesTool, FragmentsTool, TodoTool } from './StickyNotes';
 import HighlightsTool from './HighlightsTool';
 import { DesignPanelDocked } from './DesignPanel';
+import WorkspacesTool from './WorkspacesTool';
 import TagsPanel from './TagsPanel';
 import IndexCards from './IndexCards';
 import BeatBoard, { OutlineHeaderControls } from './BeatBoard';
@@ -124,6 +125,9 @@ export const ALL_TOOLS: ToolDef[] = [
   // the floating window shows (DesignPanelBody), just in a panel column. Opens
   // FLOATING by default (its sliders want width), but the pop-in button docks it.
   { id: 'design', label: 'Design', icon: <FaSlidersH />, defaultSize: { w: 360, h: 560 }, group: 3, noPanelFit: true },
+  // v4.23, Derek: Workspaces (saved layouts) as a dockable tool — same store
+  // API as the View → Workspaces menu; apply/save/rename/delete in a panel.
+  { id: 'workspaces', label: 'Workspaces', icon: <FaColumns />, defaultSize: { w: 300, h: 360 }, group: 3 },
 ];
 
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
@@ -224,6 +228,8 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
       return <BeatBoard embedded />;
     case 'design':
       return <DesignPanelDocked />;
+    case 'workspaces':
+      return <WorkspacesTool />;
     default:
       return null;
   }

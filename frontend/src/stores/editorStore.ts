@@ -539,7 +539,7 @@ export type ToolId =
   | 'indexcards' | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
   | 'spelling' | 'history' | 'titlepage' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
-  | 'notebook' | 'design'
+  | 'notebook' | 'design' | 'workspaces'
   /** legacy — Notes merged back into 'sticky' (Notes > Script tab); kept
    *  in the type so persisted configs still typecheck, remapped on use. */
   | 'scriptnotes';
