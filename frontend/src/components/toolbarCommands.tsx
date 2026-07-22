@@ -41,7 +41,7 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'snapshots', label: 'Auto Saves', icon: <FaHistory />, run: () => emit('snapshots') },
   { id: 'compareSnapshot', label: 'Compare with Auto Save', icon: <FaCodeBranch />, run: () => emit('compareSnapshot') },
   { id: 'trackChanges', label: 'Track Changes', icon: <FaExchangeAlt />, run: () => emit('trackChanges') },
-  { id: 'spellCheck', label: 'Spell Check', icon: <FaSpellCheck />, run: () => emit('spellCheck') },
+  { id: 'spellCheck', label: 'Spelling & Grammar', icon: <FaSpellCheck />, run: () => emit('spellCheck') },
   { id: 'writingSuggestions', label: 'Writing Suggestions', icon: <FaSpellCheck />, run: () => emit('writingSuggestions') },
   // v2.97, Derek: EVERY menu action is ribbon-pinnable. These run through
   // the same 'scriptcraft:command' bus, which falls back to MenuBar's

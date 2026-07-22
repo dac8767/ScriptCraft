@@ -1722,7 +1722,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         // item opens the dockable window (which now has the full feature set);
         // the rest is the extensive submenu it always had.
         {
-          icon: <FaSpellCheck />, label: 'Spell Check',
+          icon: <FaSpellCheck />, label: 'Spelling & Grammar',
           children: [
             { icon: <FaSpellCheck />, label: 'Spell Check Panel', action: () => useEditorStore.getState().openTool('spelling') },
             { separator: true, label: '' },

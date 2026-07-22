@@ -38,7 +38,7 @@ export const QAT_OPTIONS: Array<{ id: string; label: string; icon: React.ReactNo
   { id: 'print', label: 'Print', icon: <FaPrint />, cmd: 'print' },
   { id: 'preview', label: 'Preview', icon: <FaEye />, cmd: 'preview' },
   { id: 'exportPDF', label: 'Export PDF', icon: <FaFilePdf />, cmd: 'exportPDF' },
-  { id: 'spellCheck', label: 'Spell Check', icon: <FaSpellCheck />, cmd: 'spellCheck' },
+  { id: 'spellCheck', label: 'Spelling & Grammar', icon: <FaSpellCheck />, cmd: 'spellCheck' },
   { id: 'find', label: 'Find & Replace', icon: <FaSearch />, cmd: 'find' },
 ];
 export const QAT_BY_ID = Object.fromEntries(QAT_OPTIONS.map((o) => [o.id, o]));
