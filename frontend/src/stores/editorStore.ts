@@ -837,7 +837,10 @@ export interface CharacterProfile {
   /** Structured metadata (Final Draft Character Navigator fields) */
   gender: string;
   age: string;
-  /** Role in the story: Lead, Supporting, Featured, Background, Day Player */
+  /** v4.22: character sexuality (ScriptCraft-only). */
+  sexuality?: string;
+  /** Role in the story: Lead, Supporting, Featured, Background, Day Player.
+   *  v4.22: field removed from the Character tool UI (kept for stored data / FDX). */
   role: string;
   /** Rich text backstory / character history (HTML string; ScriptCraft-only, not in FDX) */
   backstory: string;
@@ -850,6 +853,16 @@ export interface CharacterProfile {
   sampleDialogue: string;
   /** Asset IDs of images associated with this character */
   images: string[];
+  /** v4.22: values for user-defined custom fields, keyed by field id. The field
+   *  DEFINITIONS (id + title) live in `characterCustomFields` and are shared by
+   *  every character. */
+  customFields?: Record<string, string>;
+}
+
+/** v4.22, Derek: a user-defined character field, shown on every character. */
+export interface CharacterCustomField {
+  id: string;
+  label: string;
 }
 
 export interface CharacterRelationship {
@@ -1418,6 +1431,12 @@ interface EditorState {
   setCharacterProfiles: (profiles: CharacterProfile[]) => void;
   upsertCharacterProfile: (name: string, updates: Partial<Omit<CharacterProfile, 'name'>>) => void;
   deleteCharacterProfile: (name: string) => void;
+  /** v4.22: user-defined character fields, shared by every character. */
+  characterCustomFields: CharacterCustomField[];
+  setCharacterCustomFields: (fields: CharacterCustomField[]) => void;
+  addCharacterCustomField: (label: string) => void;
+  renameCharacterCustomField: (id: string, label: string) => void;
+  removeCharacterCustomField: (id: string) => void;
   characterRelationships: CharacterRelationship[];
   setCharacterRelationships: (rels: CharacterRelationship[]) => void;
   upsertCharacterRelationship: (rel: CharacterRelationship) => void;
@@ -2720,6 +2739,30 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   deleteCharacterProfile: (name) =>
     set((s) => ({
       characterProfiles: s.characterProfiles.filter((p) => p.name !== name.toUpperCase()),
+    })),
+  characterCustomFields: [],
+  setCharacterCustomFields: (fields) => set({ characterCustomFields: fields }),
+  addCharacterCustomField: (label) =>
+    set((s) => {
+      const clean = label.trim();
+      if (!clean) return {};
+      const id = `cf-${Date.now()}-${s.characterCustomFields.length}`;
+      return { characterCustomFields: [...s.characterCustomFields, { id, label: clean }] };
+    }),
+  renameCharacterCustomField: (id, label) =>
+    set((s) => ({
+      characterCustomFields: s.characterCustomFields.map((f) => (f.id === id ? { ...f, label } : f)),
+    })),
+  removeCharacterCustomField: (id) =>
+    set((s) => ({
+      characterCustomFields: s.characterCustomFields.filter((f) => f.id !== id),
+      // drop the value off every character too, so nothing is orphaned
+      characterProfiles: s.characterProfiles.map((p) => {
+        if (!p.customFields || !(id in p.customFields)) return p;
+        const cf = { ...p.customFields };
+        delete cf[id];
+        return { ...p, customFields: cf };
+      }),
     })),
   characterRelationships: [],
   setCharacterRelationships: (rels) => set({ characterRelationships: rels }),

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import DOMPurify from 'dompurify';
 import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
@@ -16,9 +17,6 @@ const DEFAULT_HIGHLIGHT_COLORS = [
   '#8b5cf6', '#4f46e5', '#2563eb', '#059669', '#eab308',
   '#f97316', '#ef4444', '#000000',
 ];
-
-// Character roles matching industry standard (Final Draft Character Navigator)
-const CHARACTER_ROLES = ['', 'Lead', 'Supporting', 'Featured', 'Background', 'Day Player'];
 
 /** Strip HTML tags to get plain text (for collapsed preview and FDX export) */
 function stripHtml(html: string): string {
@@ -95,6 +93,52 @@ interface CharacterProfilesProps {
   style?: React.CSSProperties;
 }
 
+/** v4.22, Derek: one "Upload Image" button that opens a menu — local file or the
+ *  Asset Manager. The menu is portalled to <body> and positioned from the button
+ *  (panels clip absolutely-positioned children — see AddMenu). */
+const UploadImageButton: React.FC<{ uploading: boolean; onLocal: () => void; onAssets: () => void }> = ({ uploading, onLocal, onAssets }) => {
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!pos) return;
+    const close = () => setPos(null);
+    window.addEventListener('pointerdown', close);
+    window.addEventListener('resize', close);
+    window.addEventListener('scroll', close, true);
+    return () => {
+      window.removeEventListener('pointerdown', close);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('scroll', close, true);
+    };
+  }, [pos]);
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (pos) { setPos(null); return; }
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 4, left: r.left });
+  };
+  return (
+    <>
+      <button
+        ref={btnRef}
+        className="char-profile-img-btn"
+        disabled={uploading}
+        onClick={toggle}
+        title="Add a character image"
+      >
+        {uploading ? 'Uploading…' : 'Upload Image ▾'}
+      </button>
+      {pos && createPortal(
+        <div className="char-upload-menu" style={{ top: pos.top, left: pos.left }} onPointerDown={(e) => e.stopPropagation()}>
+          <button className="char-upload-menu-item" onClick={() => { setPos(null); onLocal(); }}>From local device…</button>
+          <button className="char-upload-menu-item" onClick={() => { setPos(null); onAssets(); }}>From Asset Manager…</button>
+        </div>,
+        document.body,
+      )}
+    </>
+  );
+};
+
 const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId, style, embedded = false, fullscreen = false }) => {
   const {
     characters,
@@ -104,6 +148,10 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     characterRelationships,
     upsertCharacterRelationship,
     deleteCharacterRelationship,
+    characterCustomFields,
+    addCharacterCustomField,
+    renameCharacterCustomField,
+    removeCharacterCustomField,
     characterProfilesOpen,
     toggleCharacterProfiles,
     selectedCharacter,
@@ -576,44 +624,55 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     return edits.length;
   }, [editor]);
 
-  /** Apply a Last Name edit: rewrite "SAM VEDU" → "SAM PRUSA" in the script (the
-   *  bare cue "SAM" is untouched, since dialogue doesn't use the last name). */
-  const applyLastNameToScript = useCallback((charName: string) => {
-    const prof = getProfile(charName);
-    const oldFull = prof.fullName || '';
-    const newLastCaps = (prof.lastName ?? '').trim().toUpperCase();
-    const newFull = joinName(prof.name, newLastCaps);
-    const n = oldFull && oldFull !== newFull ? replaceInScript(oldFull, newFull) : 0;
-    upsertCharacterProfile(prof.name, {
-      fullName: newLastCaps ? newFull : undefined,
-      lastName: toTitleCaseName(newLastCaps),
-    });
-    showToast(n ? `Updated ${n} name${n > 1 ? 's' : ''} in the script.` : 'Name saved.', 'success');
-  }, [getProfile, replaceInScript, upsertCharacterProfile]);
-
-  /** Apply a First Name edit: rewrite the bare name "SAM" → "SAMUEL" everywhere
-   *  (cues, action, and inside the full name), then rename the profile. */
-  const applyFirstNameToScript = useCallback((charName: string) => {
-    const prof = getProfile(charName);
+  /** Whether the First / Last name fields differ from the script (drives the
+   *  "Update name in script" button). */
+  const nameChanged = useCallback((prof: CharacterProfile) => {
     const oldName = prof.name;
-    const newNameCaps = (prof.firstName ?? '').trim().toUpperCase();
-    if (!newNameCaps || newNameCaps === oldName) return;
-    const n = replaceInScript(oldName, newNameCaps);
-    const lastCaps = lastNameOf(prof.fullName || '');
-    const newFull = lastCaps ? joinName(newNameCaps, lastCaps) : undefined;
-    // Rename the profile, carrying every field over to the new key.
-    const { name: _drop, ...rest } = prof;
-    void _drop;
-    deleteCharacterProfile(oldName);
-    upsertCharacterProfile(newNameCaps, {
-      ...rest,
-      fullName: newFull,
-      firstName: toTitleCaseName(newNameCaps),
-      lastName: rest.lastName ?? (lastCaps ? toTitleCaseName(lastCaps) : undefined),
-    });
-    if (expandedChar === oldName) setExpandedChar(newNameCaps);
-    showToast(n ? `Updated ${n} name${n > 1 ? 's' : ''} in the script.` : 'Name changed.', 'success');
-  }, [getProfile, replaceInScript, upsertCharacterProfile, deleteCharacterProfile, expandedChar]);
+    const oldLastCaps = lastNameOf(prof.fullName || '');
+    const newFirstCaps = (prof.firstName ?? toTitleCaseName(oldName)).trim().toUpperCase();
+    const newLastCaps = (prof.lastName ?? toTitleCaseName(oldLastCaps)).trim().toUpperCase();
+    return { firstChanged: !!newFirstCaps && newFirstCaps !== oldName, lastChanged: newLastCaps !== oldLastCaps };
+  }, []);
+
+  /** Push First / Last name edits back into the script. Last name rewrites the
+   *  full-name phrase ("SAM VEDU" → "SAM PRUSA"); first name rewrites the bare
+   *  name everywhere ("SAM" → "SAMUEL"), including cues and inside the full name.
+   *  Doing last-then-first keeps both correct when they change together. */
+  const applyNameToScript = useCallback((charName: string) => {
+    const prof = getProfile(charName);
+    const oldName = prof.name;                                   // SAM
+    const oldLastCaps = lastNameOf(prof.fullName || '');         // VEDU
+    const newFirstCaps = (prof.firstName ?? toTitleCaseName(oldName)).trim().toUpperCase();  // SAMUEL / SAM
+    const newLastCaps = (prof.lastName ?? toTitleCaseName(oldLastCaps)).trim().toUpperCase(); // PRUSA / VEDU
+    const firstChanged = !!newFirstCaps && newFirstCaps !== oldName;
+    const lastChanged = newLastCaps !== oldLastCaps;
+    if (!firstChanged && !lastChanged) return;
+
+    let n = 0;
+    // 1) Last name: rewrite the full-name phrase, still under the OLD first name.
+    if (lastChanged && oldLastCaps) {
+      n += replaceInScript(joinName(oldName, oldLastCaps), joinName(oldName, newLastCaps));
+    }
+    // 2) First name: rewrite the bare name everywhere (also fixes the phrase's
+    //    first token that step 1 left under the old first name).
+    if (firstChanged) n += replaceInScript(oldName, newFirstCaps);
+
+    const newFull = newLastCaps ? joinName(newFirstCaps, newLastCaps) : undefined;
+    if (firstChanged) {
+      const { name: _drop, ...rest } = prof;
+      void _drop;
+      deleteCharacterProfile(oldName);
+      upsertCharacterProfile(newFirstCaps, {
+        ...rest, fullName: newFull,
+        firstName: toTitleCaseName(newFirstCaps), lastName: toTitleCaseName(newLastCaps),
+      });
+      if (expandedChar === oldName) setExpandedChar(newFirstCaps);
+      if (modalChar === oldName) setModalChar(newFirstCaps);
+    } else {
+      upsertCharacterProfile(oldName, { fullName: newFull, lastName: toTitleCaseName(newLastCaps) });
+    }
+    showToast(n ? `Updated ${n} name${n > 1 ? 's' : ''} in the script.` : 'Name saved.', 'success');
+  }, [getProfile, replaceInScript, upsertCharacterProfile, deleteCharacterProfile, expandedChar, modalChar]);
 
   // Auto-detect a character's full name: the intro "SAM VEDU" in an action line
   // (cue name followed by another all-caps word). Fills the Last Name field.
@@ -735,102 +794,84 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     const scriptLastCaps = lastNameOf(prof.fullName || '');
     const dispFirst = prof.firstName ?? toTitleCaseName(prof.name);
     const dispLast = prof.lastName ?? toTitleCaseName(scriptLastCaps);
-    const firstChanged = dispFirst.trim().toUpperCase() !== prof.name;
-    const lastChanged = dispLast.trim().toUpperCase() !== scriptLastCaps;
+    const { firstChanged, lastChanged } = nameChanged(prof);
+    const changed = firstChanged || lastChanged;
+    // Content-sized so short names stay compact and centered, but a very long
+    // name grows the field outward. (v4.22, Derek.)
+    const sz = (s: string) => Math.min(28, Math.max(7, s.length + 1));
     return (
-      <div className="char-profile-name-row-2">
-        <div className="char-profile-meta-field">
+      <div className="char-profile-name-row">
+        <div className="char-profile-meta-field char-profile-name-cell">
           <label className="char-profile-label">First Name</label>
-          <div className="char-profile-name-field">
-            <input
-              className="char-profile-input"
-              value={dispFirst}
-              onChange={(e) => upsertCharacterProfile(charName, { firstName: e.target.value })}
-            />
-            {firstChanged && (
-              <button
-                className="char-profile-name-update"
-                title="Rewrite this character's first name throughout the script"
-                onClick={() => applyFirstNameToScript(charName)}
-              >Update name in script</button>
-            )}
-          </div>
+          <input
+            className="char-profile-input char-profile-name-input"
+            size={sz(dispFirst)}
+            value={dispFirst}
+            onChange={(e) => upsertCharacterProfile(charName, { firstName: e.target.value })}
+          />
+        </div>
+        <div className="char-profile-meta-field char-profile-name-cell">
+          <label className="char-profile-label">Last Name</label>
+          <input
+            className="char-profile-input char-profile-name-input"
+            size={sz(dispLast)}
+            value={dispLast}
+            onChange={(e) => upsertCharacterProfile(charName, { lastName: e.target.value })}
+          />
+        </div>
+        {changed && (
+          <button
+            className="char-profile-name-update"
+            title="Rewrite this character's name throughout the script"
+            onClick={() => applyNameToScript(charName)}
+          >Update name in script</button>
+        )}
+      </div>
+    );
+  };
+
+  /** Gender / Age / Sexuality — one row, shared by card + modal (v4.22, Derek:
+   *  Role removed; Sexuality added; no placeholder hints). */
+  const renderMetaRow = (charName: string) => {
+    const prof = getProfile(charName);
+    return (
+      <div className="char-profile-meta-row char-profile-meta-row-3">
+        <div className="char-profile-meta-field">
+          <label className="char-profile-label">Gender</label>
+          <input
+            type="text"
+            className="char-profile-input"
+            value={prof.gender}
+            onChange={(e) => upsertCharacterProfile(charName, { gender: e.target.value })}
+          />
         </div>
         <div className="char-profile-meta-field">
-          <label className="char-profile-label">Last Name</label>
-          <div className="char-profile-name-field">
-            <input
-              className="char-profile-input"
-              value={dispLast}
-              onChange={(e) => upsertCharacterProfile(charName, { lastName: e.target.value })}
-            />
-            {lastChanged && (
-              <button
-                className="char-profile-name-update"
-                title="Rewrite this character's full name throughout the script"
-                onClick={() => applyLastNameToScript(charName)}
-              >Update name in script</button>
-            )}
-          </div>
+          <label className="char-profile-label">Age</label>
+          <input
+            type="text"
+            className="char-profile-input"
+            value={prof.age}
+            onChange={(e) => upsertCharacterProfile(charName, { age: e.target.value })}
+          />
+        </div>
+        <div className="char-profile-meta-field">
+          <label className="char-profile-label">Sexuality</label>
+          <input
+            type="text"
+            className="char-profile-input"
+            value={prof.sexuality ?? ''}
+            onChange={(e) => upsertCharacterProfile(charName, { sexuality: e.target.value })}
+          />
         </div>
       </div>
     );
   };
 
-  /** Render character detail fields — used in both card expansion and modal */
-  const renderCharacterFields = (charName: string, isModal: boolean) => {
+  /** Character photo row + a single "Upload Image" button with a menu. Shared. */
+  const renderImageSection = (charName: string) => {
     const prof = getProfile(charName);
-    const st = charStats.get(charName);
     return (
-      <>
-        {renderNameFields(charName)}
-
-        {/* Description */}
-        <label className="char-profile-label">Description</label>
-        <MiniRichText
-          value={prof.description}
-          onChange={(html) => upsertCharacterProfile(charName, { description: html })}
-          placeholder="A weary detective in his 50s, haunted by a cold case..."
-          minHeight={isModal ? 80 : 50}
-        />
-
-        {/* Role / Gender / Age */}
-        <div className="char-profile-meta-row char-profile-meta-row-3">
-          <div className="char-profile-meta-field">
-            <label className="char-profile-label">Role</label>
-            <select
-              className="char-profile-select"
-              value={prof.role}
-              onChange={(e) => upsertCharacterProfile(charName, { role: e.target.value })}
-            >
-              {CHARACTER_ROLES.map((r) => (
-                <option key={r} value={r}>{r || '—'}</option>
-              ))}
-            </select>
-          </div>
-          <div className="char-profile-meta-field">
-            <label className="char-profile-label">Gender</label>
-            <input
-              type="text"
-              className="char-profile-input"
-              value={prof.gender}
-              onChange={(e) => upsertCharacterProfile(charName, { gender: e.target.value })}
-              placeholder="e.g. Male"
-            />
-          </div>
-          <div className="char-profile-meta-field">
-            <label className="char-profile-label">Age</label>
-            <input
-              type="text"
-              className="char-profile-input"
-              value={prof.age}
-              onChange={(e) => upsertCharacterProfile(charName, { age: e.target.value })}
-              placeholder="e.g. 30s"
-            />
-          </div>
-        </div>
-
-        {/* Images */}
+      <div className="char-profile-photo-row">
         {prof.images && prof.images.length > 0 && projectId && (
           <div className="char-profile-images">
             <div className="char-profile-images-primary">
@@ -852,47 +893,94 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                       onClick={() => setLightboxImage({ url: getAssetUrl(imgId), name: charName })}
                     />
                     {idx > 0 && (
-                      <button
-                        className="char-profile-thumb-primary"
-                        onClick={() => handleSetPrimaryImage(charName, imgId)}
-                        title="Set as primary image"
-                      >
-                        &#9733;
-                      </button>
+                      <button className="char-profile-thumb-primary" onClick={() => handleSetPrimaryImage(charName, imgId)} title="Set as primary image">&#9733;</button>
                     )}
-                    <button
-                      className="char-profile-thumb-remove"
-                      onClick={() => handleRemoveImage(charName, imgId)}
-                      title="Remove image"
-                    >
-                      &times;
-                    </button>
+                    <button className="char-profile-thumb-remove" onClick={() => handleRemoveImage(charName, imgId)} title="Remove image">&times;</button>
                   </div>
                 ))}
               </div>
             )}
           </div>
         )}
-
         {projectId && (
           <div className="char-profile-image-actions">
-            <button
-              className="char-profile-img-btn"
-              onClick={() => triggerUpload(charName)}
-              disabled={uploading}
-              title="Upload a new image for this character"
-            >
-              {uploading ? 'Uploading...' : 'Upload Image'}
-            </button>
-            <button
-              className="char-profile-img-btn"
-              onClick={() => { setImagePickerFor(charName); setImagePickerFilter(''); }}
-              title="Associate an existing asset"
-            >
-              From Assets
-            </button>
+            <UploadImageButton
+              uploading={uploading}
+              onLocal={() => triggerUpload(charName)}
+              onAssets={() => { setImagePickerFor(charName); setImagePickerFilter(''); }}
+            />
           </div>
         )}
+      </div>
+    );
+  };
+
+  /** User-defined custom fields (shared definitions, per-character values) plus
+   *  an "+ Add field" control. Shown on every character. (v4.22, Derek.) */
+  const renderCustomFields = (charName: string) => {
+    const prof = getProfile(charName);
+    return (
+      <div className="char-profile-custom-fields">
+        {characterCustomFields.map((f) => (
+          <div className="char-profile-custom-field" key={f.id}>
+            <div className="char-profile-custom-label-row">
+              <input
+                className="char-profile-label char-profile-custom-label"
+                value={f.label}
+                title="Rename this field (applies to every character)"
+                onChange={(e) => renameCharacterCustomField(f.id, e.target.value)}
+              />
+              <button
+                className="char-profile-custom-remove"
+                title="Remove this field from every character"
+                onClick={() => removeCharacterCustomField(f.id)}
+              >&times;</button>
+            </div>
+            <input
+              className="char-profile-input"
+              value={prof.customFields?.[f.id] ?? ''}
+              onChange={(e) => upsertCharacterProfile(charName, {
+                customFields: { ...(prof.customFields ?? {}), [f.id]: e.target.value },
+              })}
+            />
+          </div>
+        ))}
+        <button
+          className="char-profile-add-field"
+          onClick={() => {
+            const label = window.prompt('New field name (added to every character):');
+            if (label && label.trim()) addCharacterCustomField(label.trim());
+          }}
+        >+ Add field</button>
+      </div>
+    );
+  };
+
+  /** Render character detail fields — used in both card expansion and modal */
+  const renderCharacterFields = (charName: string, isModal: boolean) => {
+    const prof = getProfile(charName);
+    const st = charStats.get(charName);
+    return (
+      <>
+        {renderNameFields(charName)}
+
+        {/* Photo row */}
+        {renderImageSection(charName)}
+
+        {/* Description — full width */}
+        <label className="char-profile-label">Description</label>
+        <MiniRichText
+          value={prof.description}
+          onChange={(html) => upsertCharacterProfile(charName, { description: html })}
+          placeholder="A weary detective in his 50s, haunted by a cold case..."
+          minHeight={isModal ? 80 : 50}
+        />
+
+        {/* Gender / Age / Sexuality */}
+        {renderMetaRow(charName)}
+
+        {/* User-defined fields */}
+        {renderCustomFields(charName)}
 
         {/* Backstory */}
         <label className="char-profile-label">Backstory</label>
@@ -1350,121 +1438,21 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                 {isExpanded && (
                   <div className={`char-profile-detail${isFullscreen && fsViewMode === 'cards' ? ' char-profile-detail-fs' : ''}`}>
                     {/* Top section: Description + Role/Gender/Age and Images (side-by-side in fullscreen) */}
-                    <div className="char-profile-detail-top">
-                      <div className="char-profile-detail-info">
-                        {/* v4.22, Derek: First / Last name (shared renderer). */}
-                        {renderNameFields(name)}
-                        {/* Description */}
-                        <label className="char-profile-label">Description</label>
-                        <MiniRichText
-                          value={profile.description}
-                          onChange={(html) => upsertCharacterProfile(name, { description: html })}
-                          placeholder="A weary detective in his 50s, haunted by a cold case..."
-                          minHeight={50}
-                        />
-
-                        {/* Role / Gender / Age */}
-                        <div className="char-profile-meta-row char-profile-meta-row-3">
-                          <div className="char-profile-meta-field">
-                            <label className="char-profile-label">Role</label>
-                            <select
-                              className="char-profile-select"
-                              value={profile.role}
-                              onChange={(e) => upsertCharacterProfile(name, { role: e.target.value })}
-                            >
-                              {CHARACTER_ROLES.map((r) => (
-                                <option key={r} value={r}>{r || '—'}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="char-profile-meta-field">
-                            <label className="char-profile-label">Gender</label>
-                            <input
-                              type="text"
-                              className="char-profile-input"
-                              value={profile.gender}
-                              onChange={(e) => upsertCharacterProfile(name, { gender: e.target.value })}
-                              placeholder="e.g. Male"
-                            />
-                          </div>
-                          <div className="char-profile-meta-field">
-                            <label className="char-profile-label">Age</label>
-                            <input
-                              type="text"
-                              className="char-profile-input"
-                              value={profile.age}
-                              onChange={(e) => upsertCharacterProfile(name, { age: e.target.value })}
-                              placeholder="e.g. 30s"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Images section */}
-                      <div className="char-profile-detail-media">
-                        {profile.images && profile.images.length > 0 && projectId && (
-                          <div className="char-profile-images">
-                            <div className="char-profile-images-primary">
-                              <img
-                                src={getAssetUrl(profile.images[0])}
-                                alt={name}
-                                className="char-profile-image-main"
-                                onClick={() => setLightboxImage({ url: getAssetUrl(profile.images[0]), name })}
-                              />
-                            </div>
-                            {profile.images.length > 1 && (
-                              <div className="char-profile-images-strip">
-                                {profile.images.map((imgId, idx) => (
-                                  <div key={imgId} className={`char-profile-thumb-wrap${idx === 0 ? ' active' : ''}`}>
-                                    <img
-                                      src={getAssetUrl(imgId)}
-                                      alt={`${name} ${idx + 1}`}
-                                      className="char-profile-thumb"
-                                      onClick={() => setLightboxImage({ url: getAssetUrl(imgId), name })}
-                                    />
-                                    {idx > 0 && (
-                                      <button
-                                        className="char-profile-thumb-primary"
-                                        onClick={() => handleSetPrimaryImage(name, imgId)}
-                                        title="Set as primary image"
-                                      >
-                                        &#9733;
-                                      </button>
-                                    )}
-                                    <button
-                                      className="char-profile-thumb-remove"
-                                      onClick={() => handleRemoveImage(name, imgId)}
-                                      title="Remove image"
-                                    >
-                                      &times;
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {projectId && (
-                          <div className="char-profile-image-actions">
-                            <button
-                              className="char-profile-img-btn"
-                              onClick={() => triggerUpload(name)}
-                              disabled={uploading}
-                              title="Upload a new image for this character"
-                            >
-                              {uploading ? 'Uploading...' : 'Upload Image'}
-                            </button>
-                            <button
-                              className="char-profile-img-btn"
-                              onClick={() => { setImagePickerFor(name); setImagePickerFilter(''); }}
-                              title="Associate an existing asset"
-                            >
-                              From Assets
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                    {/* v4.22, Derek: stacked rows — name, photo, description
+                        (full width), gender/age/sexuality, custom fields — all
+                        from the same shared renderers as the modal. */}
+                    <div className="char-profile-detail-top char-profile-detail-stacked">
+                      {renderNameFields(name)}
+                      {renderImageSection(name)}
+                      <label className="char-profile-label">Description</label>
+                      <MiniRichText
+                        value={profile.description}
+                        onChange={(html) => upsertCharacterProfile(name, { description: html })}
+                        placeholder="A weary detective in his 50s, haunted by a cold case..."
+                        minHeight={50}
+                      />
+                      {renderMetaRow(name)}
+                      {renderCustomFields(name)}
                     </div>
 
                     {/* Bottom section: Backstory, Arc, Color/Highlight, Scenes */}

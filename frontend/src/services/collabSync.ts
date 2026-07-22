@@ -14,6 +14,7 @@ import { useEditorStore } from '../stores/editorStore';
 const SYNC_KEYS = [
   'characterProfiles',
   'characterRelationships',
+  'characterCustomFields',
   'referredTags',
   'notes',
   'generalNotes',
@@ -49,6 +50,7 @@ export function startCollabSync(ydoc: Y.Doc, isHost: boolean): void {
     ydoc.transact(() => {
       metaMap!.set('characterProfiles', JSON.stringify(store.characterProfiles));
       metaMap!.set('characterRelationships', JSON.stringify(store.characterRelationships));
+      metaMap!.set('characterCustomFields', JSON.stringify(store.characterCustomFields));
       metaMap!.set('referredTags', JSON.stringify(store.referredTags));
       metaMap!.set('notes', JSON.stringify(store.notes));
       metaMap!.set('generalNotes', JSON.stringify(store.generalNotes));
@@ -109,6 +111,7 @@ function takeSnapshot(): Record<SyncKey, string> {
   return {
     characterProfiles: JSON.stringify(s.characterProfiles),
     characterRelationships: JSON.stringify(s.characterRelationships),
+    characterCustomFields: JSON.stringify(s.characterCustomFields),
     referredTags: JSON.stringify(s.referredTags),
     notes: JSON.stringify(s.notes),
     generalNotes: JSON.stringify(s.generalNotes),
@@ -139,6 +142,11 @@ function applyYjsToStore() {
     const cr = metaMap.get('characterRelationships');
     if (cr) {
       try { store.setCharacterRelationships(JSON.parse(cr)); } catch { /* ignore */ }
+    }
+
+    const ccf = metaMap.get('characterCustomFields');
+    if (ccf) {
+      try { store.setCharacterCustomFields(JSON.parse(ccf)); } catch { /* ignore */ }
     }
 
     const rt = metaMap.get('referredTags');

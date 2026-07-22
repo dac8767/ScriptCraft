@@ -1410,29 +1410,29 @@
   min-width: 0;
 }
 
-/* v4.22, Derek: First / Last name row, each with an "Update name in script"
-   button that appears only when the field differs from the script. */
-.char-profile-name-row-2 {
+/* v4.22, Derek: First / Last name — compact and centered, growing outward for a
+   long name (the input honors its `size`). One "Update name in script" button
+   sits to the right, wrapping to its own line when the row runs out of room. */
+.char-profile-name-row {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 8px;
 }
-.char-profile-name-row-2 .char-profile-meta-field {
-  flex: 1;
-  min-width: 0;
+.char-profile-name-cell {
+  flex: 0 0 auto;
 }
-.char-profile-name-field {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.char-profile-name-field .char-profile-input {
-  flex: 1;
-  min-width: 0;
+.char-profile-name-input {
+  width: auto;          /* honor the `size` attribute so it fits the name */
+  max-width: 260px;
 }
 .char-profile-name-update {
   flex: 0 0 auto;
+  align-self: flex-end;
   height: 26px;
-  padding: 0 8px;
+  padding: 0 10px;
   border: 1px solid var(--fd-accent);
   border-radius: 3px;
   background: transparent;
@@ -1445,6 +1445,94 @@
   background: var(--fd-accent);
   color: #fff;
 }
+
+/* v4.22, Derek: stacked card body — name, photo, description (full width),
+   gender/age/sexuality, custom fields — instead of the old info|media split. */
+.char-profile-detail-stacked {
+  display: block;
+}
+.char-profile-photo-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+/* One "Upload Image" button + portalled menu. */
+.char-upload-menu {
+  position: fixed;
+  z-index: 10060;
+  min-width: 180px;
+  background: var(--fd-navigator-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  padding: 4px;
+}
+.char-upload-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fd-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+.char-upload-menu-item:hover { background: var(--fd-hover-bg); }
+
+/* User-defined custom fields. */
+.char-profile-custom-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 6px;
+}
+.char-profile-custom-label-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.char-profile-custom-label {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 0 4px;
+  margin: 0;
+}
+.char-profile-custom-label:hover,
+.char-profile-custom-label:focus {
+  border-color: var(--fd-border);
+  outline: none;
+}
+.char-profile-custom-remove {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+.char-profile-custom-remove:hover { color: #ef4444; background: var(--fd-hover-bg); }
+.char-profile-add-field {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 4px 10px;
+  border: 1px dashed var(--fd-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+.char-profile-add-field:hover { color: var(--fd-text); border-color: var(--fd-text-muted); }
 
 /* === MiniRichText Editor === */
 .mini-rt-wrapper {
