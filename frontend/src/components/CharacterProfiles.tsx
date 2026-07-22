@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { FaChevronRight, FaChevronDown, FaExpandAlt } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import DOMPurify from 'dompurify';
 import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
@@ -700,6 +701,40 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     }
   }, [detectedFullNames, characterProfiles, upsertCharacterProfile]);
 
+  // v4.22, Derek: characters that share a last name are auto-linked as family.
+  // Each pair is handled once per session (the ref), so deleting an auto link
+  // during the session doesn't make it spring back.
+  const autoFamilyRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const byLast = new Map<string, string[]>();
+    for (const p of characterProfiles) {
+      const last = (p.lastName ?? toTitleCaseName(lastNameOf(p.fullName || ''))).trim().toUpperCase();
+      if (!last) continue;
+      (byLast.get(last) ?? byLast.set(last, []).get(last)!).push(p.name);
+    }
+    for (const names of byLast.values()) {
+      if (names.length < 2) continue;
+      for (let i = 0; i < names.length; i++) {
+        for (let j = i + 1; j < names.length; j++) {
+          const key = [names[i], names[j]].sort().join('|');
+          if (autoFamilyRef.current.has(key)) continue;
+          autoFamilyRef.current.add(key);
+          const a = names[i], b = names[j];
+          const exists = characterRelationships.some(
+            (r) => (r.characterA === a && r.characterB === b) || (r.characterA === b && r.characterB === a),
+          );
+          if (!exists) {
+            upsertCharacterRelationship({
+              id: `rel-fam-${key}-${Date.now()}`,
+              characterA: a, characterB: b,
+              type: 'family', description: 'Shares a last name', dynamic: REL_DYNAMICS[0],
+            });
+          }
+        }
+      }
+    }
+  }, [characterProfiles, characterRelationships, upsertCharacterRelationship]);
+
   /** Calculate profile completeness as percentage + field breakdown */
   const getProfileCompleteness = useCallback((profile: CharacterProfile) => {
     const fields: { label: string; filled: boolean }[] = [
@@ -1345,7 +1380,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                   {/* v4.20: left caret makes it clear the row toggles open (not
                       in Cards mode, where cards are always expanded). */}
                   {!(isFullscreen && fsViewMode === 'cards') && (
-                    <span className={`char-profile-caret${isExpanded ? ' expanded' : ''}`} aria-hidden>&#9656;</span>
+                    <span className="char-profile-caret" aria-hidden>{isExpanded ? <FaChevronDown /> : <FaChevronRight />}</span>
                   )}
                   {/* Avatar: show primary image or color swatch */}
                   {primaryImageId && projectId ? (
@@ -1427,11 +1462,10 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                   <button
                     className="char-profile-enlarge-btn"
                     onClick={(e) => { e.stopPropagation(); setModalChar(name); }}
-                    title="View enlarged"
+                    title="Expand this character into a larger window"
                   >
-                    &#x26F6;
+                    <FaExpandAlt />
                   </button>
-                  <span className={`char-profile-chevron${isExpanded ? ' expanded' : ''}`}>&#9662;</span>
                 </div>
 
                 {/* Expanded detail */}

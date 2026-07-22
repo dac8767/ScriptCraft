@@ -112,15 +112,15 @@
 .char-fs-list-mode .char-profile-enlarge-btn,
 .char-fs-list-mode .char-profile-chevron { display: none; }
 /* v4.20: left toggle caret. */
+/* v4.22, Derek: the same chevron the side panels use (FaChevronRight/Down),
+   swapped rather than rotated. */
 .char-profile-caret {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   color: var(--fd-text-muted);
-  font-size: 11px;
-  transition: transform 0.12s ease;
+  font-size: 10px;
 }
-.char-profile-caret.expanded { transform: rotate(90deg); }
 /* Detail section — generous spacing */
 .char-fs-list-mode .char-profile-detail {
   padding: 20px 32px 28px;
