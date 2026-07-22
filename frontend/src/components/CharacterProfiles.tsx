@@ -641,7 +641,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           className="char-profile-input"
           value={prof.fullName ?? ''}
           onChange={(e) => upsertCharacterProfile(charName, { fullName: e.target.value })}
-          placeholder="e.g. SAM VEDU"
         />
 
         {/* Description */}
