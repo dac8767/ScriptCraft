@@ -600,6 +600,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* v4.23, Derek: scene appearances shown next to the name. */
+.char-profile-appears {
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
+}
 .char-profile-stats {
   display: flex;
   flex-direction: column;

@@ -1450,6 +1450,13 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                     >
                       {name}
                     </span>
+                    {/* v4.23, Derek: scene appearances live next to the name now,
+                        not only in the right-hand stats cluster. */}
+                    {stats && stats.sceneCount > 0 && (
+                      <span className="char-profile-appears" title={`Appears in ${stats.sceneCount} scenes`}>
+                        Appears in {stats.sceneCount} scene{stats.sceneCount === 1 ? '' : 's'}
+                      </span>
+                    )}
                     {profile.description && !isExpanded && (() => {
                       const plain = stripHtml(profile.description);
                       return plain ? (
@@ -1464,10 +1471,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                   <div className="char-profile-header-right">
                   <div className="char-profile-stats">
                     {stats && (
-                      <>
-                        <span title={`${stats.dialogueCount} dialogue lines`}>{stats.dialogueCount} lines</span>
-                        <span title={`In ${stats.sceneCount} scenes`}>{stats.sceneCount} scenes</span>
-                      </>
+                      <span title={`${stats.dialogueCount} dialogue lines`}>{stats.dialogueCount} lines</span>
                     )}
                   </div>
                   {/* Profile completeness indicator */}
