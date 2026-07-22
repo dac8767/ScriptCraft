@@ -464,6 +464,18 @@
 .char-unmatched-add:hover { background: rgba(74,158,255,.1); border-color: var(--fd-accent); }
 /* ── v4.20, Derek: Relationships tab — editable list of every relationship. ── */
 .char-rels-tab { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+/* v4.23, Derek: List/Map toggle inside Relationships (non-fullscreen). Reuses
+   the .char-fs-view-btn styling; the row itself sits above the toolbar/map. */
+.char-rels-view-toggle {
+  display: flex;
+  gap: 2px;
+  align-self: flex-start;
+  margin: 10px 12px 0;
+  background: var(--fd-input-bg);
+  border-radius: 4px;
+  padding: 2px;
+  flex-shrink: 0;
+}
 .char-rels-toolbar { padding: 10px 12px; border-bottom: 1px solid var(--fd-border); flex-shrink: 0; }
 .char-rels-add {
   padding: 5px 12px;

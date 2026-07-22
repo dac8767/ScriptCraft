@@ -195,7 +195,10 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   const currentScriptId = useProjectStore((s) => s.currentScriptId);
   const { assets, setAssets } = useAssetStore();
 
-  const [activeTab, setActiveTab] = useState<'profiles' | 'relationships' | 'map'>('profiles');
+  const [activeTab, setActiveTab] = useState<'profiles' | 'relationships'>('profiles');
+  // v4.23, Derek: the relationship map is no longer its own tab — it's a
+  // List/Map view toggle inside Relationships, mirroring Profiles' Cards/List.
+  const [relViewMode, setRelViewMode] = useState<'list' | 'map'>('list');
   const [addRelFor, setAddRelFor] = useState<string | null>(null); // character name to add rel for
   const [expandedChar, setExpandedChar] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1228,7 +1231,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           <div className="char-fs-header-tabs">
             <button className={`char-profiles-tab${activeTab === 'profiles' ? ' active' : ''}`} onClick={() => setActiveTab('profiles')}>Profiles</button>
             <button className={`char-profiles-tab${activeTab === 'relationships' ? ' active' : ''}`} onClick={() => setActiveTab('relationships')}>Relationships</button>
-            <button className={`char-profiles-tab${activeTab === 'map' ? ' active' : ''}`} onClick={() => setActiveTab('map')}>Relationship Map</button>
           </div>
         )}
         {isFullscreen && (
@@ -1239,7 +1241,13 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                 <button className={`char-fs-view-btn${fsViewMode === 'list' ? ' active' : ''}`} onClick={() => setFsViewMode('list')}>List</button>
               </div>
             )}
-            {activeTab === 'map' && <div className="char-fs-map-actions" ref={setMapHeaderSlot} />}
+            {activeTab === 'relationships' && (
+              <div className="char-fs-view-toggle">
+                <button className={`char-fs-view-btn${relViewMode === 'list' ? ' active' : ''}`} onClick={() => setRelViewMode('list')}>List</button>
+                <button className={`char-fs-view-btn${relViewMode === 'map' ? ' active' : ''}`} onClick={() => setRelViewMode('map')}>Map</button>
+              </div>
+            )}
+            {activeTab === 'relationships' && relViewMode === 'map' && <div className="char-fs-map-actions" ref={setMapHeaderSlot} />}
             <button className="char-profiles-close" onClick={() => exitCharFullscreen()} title="Return to editor">&times;</button>
           </div>
         )}
@@ -1272,18 +1280,35 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           >
             Relationships
           </button>
-          <button
-            className={`char-profiles-tab${activeTab === 'map' ? ' active' : ''}`}
-            onClick={() => setActiveTab('map')}
-          >
-            Relationship Map
-          </button>
         </div>
       )}
 
-      {/* v4.20: Relationships tab — an editable list of every relationship. */}
+      {/* v4.20: Relationships tab — an editable list of every relationship.
+          v4.23: List/Map toggle folds the old "Relationship Map" tab in here. */}
       {activeTab === 'relationships' && (
         <div className="char-rels-tab">
+          {/* Non-fullscreen carries the List/Map toggle here (fullscreen puts it
+              in the header, next to the close X, like Profiles' Cards/List). */}
+          {!isFullscreen && (
+            <div className="char-rels-view-toggle">
+              <button className={`char-fs-view-btn${relViewMode === 'list' ? ' active' : ''}`} onClick={() => setRelViewMode('list')}>List</button>
+              <button className={`char-fs-view-btn${relViewMode === 'map' ? ' active' : ''}`} onClick={() => setRelViewMode('map')}>Map</button>
+            </div>
+          )}
+          {relViewMode === 'map' ? (
+            <RelationshipMap
+              key={currentScriptId || 'no-script'}
+              scriptId={currentScriptId || undefined}
+              headerSlot={isFullscreen ? mapHeaderSlot : null}
+              onSelectCharacter={(name) => {
+                setActiveTab('profiles');
+                setSelectedCharacter(name);
+                setExpandedChar(name);
+                setModalChar(name);
+              }}
+            />
+          ) : (
+          <>
           <div className="char-rels-toolbar">
             <button className="char-rels-add" onClick={handleAddRelationship}>+ Add Relationship</button>
           </div>
@@ -1320,22 +1345,9 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
               ))
             )}
           </div>
+          </>
+          )}
         </div>
-      )}
-
-      {/* Relationship Map tab */}
-      {activeTab === 'map' && (
-        <RelationshipMap
-          key={currentScriptId || 'no-script'}
-          scriptId={currentScriptId || undefined}
-          headerSlot={isFullscreen ? mapHeaderSlot : null}
-          onSelectCharacter={(name) => {
-            setActiveTab('profiles');
-            setSelectedCharacter(name);
-            setExpandedChar(name);
-            setModalChar(name);
-          }}
-        />
       )}
 
       {/* Profiles tab content */}
