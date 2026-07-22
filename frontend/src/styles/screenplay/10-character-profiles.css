@@ -1417,29 +1417,27 @@
   min-width: 0;
 }
 
-/* v4.22, Derek: First / Last name — compact and centered, growing outward for a
-   long name (the input honors its `size`). One "Update name in script" button
-   sits to the right, wrapping to its own line when the row runs out of room. */
+/* v4.22, Derek: First / Last name fields + the "Update name in script" button
+   fill the whole row. The button is always present, greyed out until a name
+   changes. */
 .char-profile-name-row {
   display: flex;
-  flex-wrap: wrap;
   align-items: flex-end;
-  justify-content: center;
   gap: 10px;
   margin-bottom: 8px;
 }
 .char-profile-name-cell {
-  flex: 0 0 auto;
+  flex: 1;
+  min-width: 0;
 }
 .char-profile-name-input {
-  width: auto;          /* honor the `size` attribute so it fits the name */
-  max-width: 260px;
+  width: 100%;
 }
 .char-profile-name-update {
   flex: 0 0 auto;
   align-self: flex-end;
   height: 26px;
-  padding: 0 10px;
+  padding: 0 12px;
   border: 1px solid var(--fd-accent);
   border-radius: 3px;
   background: transparent;
@@ -1448,9 +1446,13 @@
   white-space: nowrap;
   cursor: pointer;
 }
-.char-profile-name-update:hover {
-  background: var(--fd-accent);
-  color: #fff;
+.char-profile-name-update:hover { background: var(--fd-accent); color: #fff; }
+.char-profile-name-update:disabled {
+  opacity: 0.45;
+  cursor: default;
+  border-color: var(--fd-border);
+  color: var(--fd-text-muted);
+  background: transparent;
 }
 
 /* v4.22, Derek: stacked card body — name, photo, description (full width),
@@ -1460,9 +1462,77 @@
 }
 .char-profile-photo-row {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
   margin-bottom: 10px;
+}
+/* Full-width character image with slideshow + delete. */
+.char-profile-image-display {
+  position: relative;
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--fd-input-bg);
+}
+.char-profile-image-display .char-profile-image-main {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  cursor: zoom-in;
+}
+.char-profile-image-loading,
+.char-profile-image-broken {
+  width: 100%;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fd-text-muted);
+  background: var(--fd-input-bg);
+}
+.char-profile-image-del {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.char-profile-image-del:hover { background: #ef4444; }
+.char-profile-image-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 44px;
+  border: none;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.char-profile-image-nav:hover { background: rgba(0, 0, 0, 0.7); }
+.char-profile-image-nav.prev { left: 0; border-radius: 0 6px 6px 0; }
+.char-profile-image-nav.next { right: 0; border-radius: 6px 0 0 6px; }
+.char-profile-image-count {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 10px;
 }
 /* One "Upload Image" button + portalled menu. */
 .char-upload-menu {

@@ -8,6 +8,7 @@ import { useEditorStore, type CharacterProfile, type CharacterRelationship } fro
 import { useProjectStore } from '../stores/projectStore';
 import { useAssetStore } from '../stores/assetStore';
 import { api } from '../services/api';
+import { authedFetch } from '../services/authedFetch';
 import { showToast } from './Toast';
 import MiniRichText from './MiniRichText';
 import { RelationshipMap } from './RelationshipMap';
@@ -93,6 +94,35 @@ interface CharacterProfilesProps {
   projectId: string;
   style?: React.CSSProperties;
 }
+
+/** v4.22, Derek: asset images are served from an AUTHENTICATED endpoint, so a
+ *  plain <img src> gets a 401 and shows the broken-image "?". Fetch the bytes
+ *  with the auth token and hand the <img> a blob URL instead. */
+const AssetImage: React.FC<{
+  projectId: string; assetId: string; className?: string; alt?: string; onClick?: () => void;
+}> = ({ projectId, assetId, className, alt, onClick }) => {
+  const [url, setUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let dead = false;
+    let obj: string | null = null;
+    setUrl(null); setFailed(false);
+    (async () => {
+      try {
+        const res = await authedFetch(api.getAssetUrl(projectId, assetId));
+        if (!res.ok) throw new Error(String(res.status));
+        obj = URL.createObjectURL(await res.blob());
+        if (!dead) setUrl(obj); else URL.revokeObjectURL(obj);
+      } catch {
+        if (!dead) setFailed(true);
+      }
+    })();
+    return () => { dead = true; if (obj) URL.revokeObjectURL(obj); };
+  }, [projectId, assetId]);
+  if (failed) return <div className={`char-profile-image-broken ${className ?? ''}`} title="Image unavailable">!</div>;
+  if (!url) return <div className={`char-profile-image-loading ${className ?? ''}`} />;
+  return <img src={url} className={className} alt={alt} onClick={onClick} />;
+};
 
 /** v4.22, Derek: one "Upload Image" button that opens a menu — local file or the
  *  Asset Manager. The menu is portalled to <body> and positioned from the button
@@ -193,7 +223,9 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   // Image picker state
   const [imagePickerFor, setImagePickerFor] = useState<string | null>(null);
   const [imagePickerFilter, setImagePickerFilter] = useState('');
-  const [lightboxImage, setLightboxImage] = useState<{ url: string; name: string } | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ assetId: string; name: string } | null>(null);
+  // v4.22, Derek: per-character slideshow position.
+  const [imgIdx, setImgIdx] = useState<Record<string, number>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadTargetRef = useRef<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -755,9 +787,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   }, []);
 
   // Image helpers
-  const getAssetUrl = useCallback((assetId: string) => {
-    return api.getAssetUrl(projectId, assetId);
-  }, [projectId]);
 
   const imageAssets = useMemo(() => {
     return assets.filter((a) => a.mime_type.startsWith('image/'));
@@ -799,13 +828,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     upsertCharacterProfile(charName, { images: currentImages.filter((id) => id !== assetId) });
   }, [characterProfiles, upsertCharacterProfile]);
 
-  const handleSetPrimaryImage = useCallback((charName: string, assetId: string) => {
-    const profile = characterProfiles.find((p) => p.name === charName);
-    const currentImages = profile?.images || [];
-    const filtered = currentImages.filter((id) => id !== assetId);
-    upsertCharacterProfile(charName, { images: [assetId, ...filtered] });
-  }, [characterProfiles, upsertCharacterProfile]);
-
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     const charName = uploadTargetRef.current;
@@ -831,16 +853,14 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     const dispLast = prof.lastName ?? toTitleCaseName(scriptLastCaps);
     const { firstChanged, lastChanged } = nameChanged(prof);
     const changed = firstChanged || lastChanged;
-    // Content-sized so short names stay compact and centered, but a very long
-    // name grows the field outward. (v4.22, Derek.)
-    const sz = (s: string) => Math.min(28, Math.max(7, s.length + 1));
+    // v4.22, Derek: fields + button fill the whole row; the button is always
+    // shown, greyed out until a name actually changes.
     return (
       <div className="char-profile-name-row">
         <div className="char-profile-meta-field char-profile-name-cell">
           <label className="char-profile-label">First Name</label>
           <input
             className="char-profile-input char-profile-name-input"
-            size={sz(dispFirst)}
             value={dispFirst}
             onChange={(e) => upsertCharacterProfile(charName, { firstName: e.target.value })}
           />
@@ -849,18 +869,16 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           <label className="char-profile-label">Last Name</label>
           <input
             className="char-profile-input char-profile-name-input"
-            size={sz(dispLast)}
             value={dispLast}
             onChange={(e) => upsertCharacterProfile(charName, { lastName: e.target.value })}
           />
         </div>
-        {changed && (
-          <button
-            className="char-profile-name-update"
-            title="Rewrite this character's name throughout the script"
-            onClick={() => applyNameToScript(charName)}
-          >Update name in script</button>
-        )}
+        <button
+          className="char-profile-name-update"
+          disabled={!changed}
+          title={changed ? "Rewrite this character's name throughout the script" : 'Edit a name to enable'}
+          onClick={() => applyNameToScript(charName)}
+        >Update name in script</button>
       </div>
     );
   };
@@ -903,52 +921,58 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   };
 
   /** Character photo row + a single "Upload Image" button with a menu. Shared. */
-  const renderImageSection = (charName: string) => {
+  /** The upload button alone (goes on the section row). */
+  const renderUploadButton = (charName: string) => (
+    projectId ? (
+      <UploadImageButton
+        uploading={uploading}
+        onLocal={() => triggerUpload(charName)}
+        onAssets={() => { setImagePickerFor(charName); setImagePickerFilter(''); }}
+      />
+    ) : null
+  );
+
+  /** Full-width character image with slideshow arrows and a delete button that
+   *  works even for the only image. (v4.22, Derek.) */
+  const renderImageDisplay = (charName: string) => {
     const prof = getProfile(charName);
+    const imgs = prof.images ?? [];
+    const n = imgs.length;
+    if (!n || !projectId) return null;
+    const idx = Math.min(imgIdx[charName] ?? 0, n - 1);
+    const step = (d: number) => setImgIdx((m) => ({ ...m, [charName]: ((idx + d) % n + n) % n }));
     return (
-      <div className="char-profile-photo-row">
-        {prof.images && prof.images.length > 0 && projectId && (
-          <div className="char-profile-images">
-            <div className="char-profile-images-primary">
-              <img
-                src={getAssetUrl(prof.images[0])}
-                alt={charName}
-                className="char-profile-image-main"
-                onClick={() => setLightboxImage({ url: getAssetUrl(prof.images[0]), name: charName })}
-              />
-            </div>
-            {prof.images.length > 1 && (
-              <div className="char-profile-images-strip">
-                {prof.images.map((imgId, idx) => (
-                  <div key={imgId} className={`char-profile-thumb-wrap${idx === 0 ? ' active' : ''}`}>
-                    <img
-                      src={getAssetUrl(imgId)}
-                      alt={`${charName} ${idx + 1}`}
-                      className="char-profile-thumb"
-                      onClick={() => setLightboxImage({ url: getAssetUrl(imgId), name: charName })}
-                    />
-                    {idx > 0 && (
-                      <button className="char-profile-thumb-primary" onClick={() => handleSetPrimaryImage(charName, imgId)} title="Set as primary image">&#9733;</button>
-                    )}
-                    <button className="char-profile-thumb-remove" onClick={() => handleRemoveImage(charName, imgId)} title="Remove image">&times;</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        {projectId && (
-          <div className="char-profile-image-actions">
-            <UploadImageButton
-              uploading={uploading}
-              onLocal={() => triggerUpload(charName)}
-              onAssets={() => { setImagePickerFor(charName); setImagePickerFilter(''); }}
-            />
-          </div>
+      <div className="char-profile-image-display">
+        <AssetImage
+          projectId={projectId}
+          assetId={imgs[idx]}
+          className="char-profile-image-main"
+          alt={charName}
+          onClick={() => setLightboxImage({ assetId: imgs[idx], name: charName })}
+        />
+        <button
+          className="char-profile-image-del"
+          title="Remove this image"
+          onClick={() => { handleRemoveImage(charName, imgs[idx]); setImgIdx((m) => ({ ...m, [charName]: 0 })); }}
+        >&times;</button>
+        {n > 1 && (
+          <>
+            <button className="char-profile-image-nav prev" title="Previous image" onClick={() => step(-1)}>&#8249;</button>
+            <button className="char-profile-image-nav next" title="Next image" onClick={() => step(1)}>&#8250;</button>
+            <span className="char-profile-image-count">{idx + 1} / {n}</span>
+          </>
         )}
       </div>
     );
   };
+
+  /** Image display + upload button (used where both belong together). */
+  const renderImageSection = (charName: string) => (
+    <div className="char-profile-photo-row">
+      {renderImageDisplay(charName)}
+      <div className="char-profile-image-actions">{renderUploadButton(charName)}</div>
+    </div>
+  );
 
   /** User-defined custom fields (shared definitions, per-character values) plus
    *  an "+ Add field" control. Shown on every character. (v4.22, Derek.) */
@@ -986,7 +1010,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             const label = window.prompt('New field name (added to every character):');
             if (label && label.trim()) addCharacterCustomField(label.trim());
           }}
-        >+ Add field</button>
+        >+ Custom Field</button>
       </div>
     );
   };
@@ -1384,12 +1408,9 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                   )}
                   {/* Avatar: show primary image or color swatch */}
                   {primaryImageId && projectId ? (
-                    <img
-                      src={getAssetUrl(primaryImageId)}
-                      alt={name}
-                      className="char-profile-avatar"
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                    <span onClick={(e) => e.stopPropagation()}>
+                      <AssetImage projectId={projectId} assetId={primaryImageId} alt={name} className="char-profile-avatar" />
+                    </span>
                   ) : (
                     <input
                       type="color"
@@ -1736,7 +1757,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                         onClick={() => !alreadyLinked && handleAssociateAsset(imagePickerFor, asset.id)}
                         title={alreadyLinked ? 'Already associated' : `Associate ${asset.original_name}`}
                       >
-                        <img src={getAssetUrl(asset.id)} alt={asset.original_name} />
+                        {projectId && <AssetImage projectId={projectId} assetId={asset.id} alt={asset.original_name} />}
                         <span className="char-image-picker-name">{asset.original_name}</span>
                         {alreadyLinked && <span className="char-image-picker-linked">Linked</span>}
                       </div>
@@ -1752,7 +1773,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       {lightboxImage && (
         <div className="dialog-overlay char-lightbox-overlay" onClick={() => setLightboxImage(null)}>
           <div className="char-lightbox" onClick={(e) => e.stopPropagation()}>
-            <img src={lightboxImage.url} alt={lightboxImage.name} />
+            {projectId && <AssetImage projectId={projectId} assetId={lightboxImage.assetId} alt={lightboxImage.name} />}
             <button className="char-lightbox-close" onClick={() => setLightboxImage(null)}>&times;</button>
           </div>
         </div>
