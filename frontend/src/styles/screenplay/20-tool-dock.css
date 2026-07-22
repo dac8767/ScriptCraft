@@ -3,7 +3,11 @@
   position: relative;
   display: flex;
   flex-shrink: 0;
-  z-index: 30;
+  /* v4.22, Derek: was 30 — a stacking context BELOW the editor ruler (z-45), so
+     a popped-out window (however high its own z-index) was trapped under the
+     ruler. Lift the panel's context above the ruler; the panel sits to the side
+     and doesn't overlap it, but a window dragged over the ruler now covers it. */
+  z-index: 50;
 }
 
 /* v1.1: grab the panel's outer edge and drag it to the width you want. Sits on
