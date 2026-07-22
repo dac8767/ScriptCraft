@@ -257,16 +257,35 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     }
   }, [selectedCharacter, setSelectedCharacter]);
 
-  // Auto-sync: ensure every detected character has a profile entry
+  // Character cues present in the script RIGHT NOW. Scanned straight from the
+  // doc so we never depend on the store's `characters` timing (updateCharacters
+  // only fires when the cursor leaves a character node, so that list goes stale
+  // the moment a cue is deleted — which is exactly when Remove needs the truth).
+  // This is the single source of "who is in the script" for this panel.
+  const scriptCharacterNames = useMemo(() => {
+    const names = new Set<string>();
+    if (!editor) return names;
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === 'character') {
+        const base = node.textContent.trim().replace(/\s*\([^)]*\)\s*/g, '').toUpperCase();
+        if (base) names.add(base);
+      }
+      return true;
+    });
+    return names;
+  }, [editor, editor?.state.doc]);
+
+  // Auto-sync: ensure every character CURRENTLY in the script has a profile
+  // entry. Driven by scriptCharacterNames (not the stale `characters` store) so
+  // a name the writer just removed can't resurrect its profile after Remove.
   useEffect(() => {
-    for (const name of characters) {
-      const upper = name.toUpperCase();
-      if (!characterProfiles.find((p) => p.name === upper)) {
+    for (const name of scriptCharacterNames) {
+      if (!characterProfiles.find((p) => p.name === name)) {
         const colorIdx = characterProfiles.length % DEFAULT_HIGHLIGHT_COLORS.length;
-        upsertCharacterProfile(upper, { color: DEFAULT_HIGHLIGHT_COLORS[colorIdx] });
+        upsertCharacterProfile(name, { color: DEFAULT_HIGHLIGHT_COLORS[colorIdx] });
       }
     }
-  }, [characters, characterProfiles, upsertCharacterProfile]);
+  }, [scriptCharacterNames, characterProfiles, upsertCharacterProfile]);
 
   /**
    * "Build from Script" — scan the script to extract character info:
@@ -557,21 +576,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     upsertCharacterRelationship({ id, characterA: '', characterB: '', type: REL_TYPES[0], description: '', dynamic: REL_DYNAMICS[0] });
   }, [upsertCharacterRelationship]);
 
-  // Characters that have a profile but are no longer detected in the script
-  // Scan the editor doc directly so we don't depend on the store's `characters` timing
-  const scriptCharacterNames = useMemo(() => {
-    const names = new Set<string>();
-    if (!editor) return names;
-    editor.state.doc.descendants((node) => {
-      if (node.type.name === 'character') {
-        const base = node.textContent.trim().replace(/\s*\([^)]*\)\s*/g, '').toUpperCase();
-        if (base) names.add(base);
-      }
-      return true;
-    });
-    return names;
-  }, [editor, editor?.state.doc]);
-
+  // Characters that have a profile but are no longer detected in the script.
   const orphanedNames = useMemo(() => {
     return new Set(
       characterProfiles
@@ -582,9 +587,12 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
 
   // All characters (from profiles + auto-detected), sorted by selected criteria
   const allCharacters = useMemo(() => {
+    // Union of profiles (which may be orphaned) and the cues present in the
+    // script right now. The stale `characters` store is deliberately NOT a
+    // source here — including it re-added names the writer had just removed,
+    // so Remove appeared to do nothing.
     const nameSet = new Set<string>();
     for (const p of characterProfiles) nameSet.add(p.name);
-    for (const c of characters) nameSet.add(c.toUpperCase());
     for (const name of scriptCharacterNames) nameSet.add(name);
     let list = Array.from(nameSet);
 
@@ -615,7 +623,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     });
 
     return list;
-  }, [characterProfiles, characters, scriptCharacterNames, searchQuery, sortBy, charStats]);
+  }, [characterProfiles, scriptCharacterNames, searchQuery, sortBy, charStats]);
 
   const getProfile = useCallback(
     (name: string): CharacterProfile => {
