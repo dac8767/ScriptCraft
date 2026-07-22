@@ -41,11 +41,16 @@ export default function ThemesTab() {
     const commit = () => {
       if (!editing) return;
       saveCustomTheme({ ...editing, label: editing.label.trim() || 'My Theme' });
+      // v4.22, Derek: if the edited theme is the one currently applied, re-apply
+      // it so the changes land immediately. Without this the DOM keeps the
+      // pre-edit colors until you reselect the theme. setTheme re-reads the
+      // freshly-saved custom themes, so it picks up the new colors.
+      if (theme === editing.id) setTheme(editing.id);
       setEditing(null);
     };
     window.addEventListener('scriptcraft:customize-save', commit);
     return () => window.removeEventListener('scriptcraft:customize-save', commit);
-  }, [editing, saveCustomTheme]);
+  }, [editing, saveCustomTheme, theme, setTheme]);
 
   const ids = allThemeIds();
   const labelOf = (id: string) =>
