@@ -1410,6 +1410,42 @@
   min-width: 0;
 }
 
+/* v4.22, Derek: First / Last name row, each with an "Update name in script"
+   button that appears only when the field differs from the script. */
+.char-profile-name-row-2 {
+  display: flex;
+  gap: 8px;
+}
+.char-profile-name-row-2 .char-profile-meta-field {
+  flex: 1;
+  min-width: 0;
+}
+.char-profile-name-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.char-profile-name-field .char-profile-input {
+  flex: 1;
+  min-width: 0;
+}
+.char-profile-name-update {
+  flex: 0 0 auto;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--fd-accent);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--fd-accent);
+  font-size: 10px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.char-profile-name-update:hover {
+  background: var(--fd-accent);
+  color: #fff;
+}
+
 /* === MiniRichText Editor === */
 .mini-rt-wrapper {
   border: 1px solid transparent;

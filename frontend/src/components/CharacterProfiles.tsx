@@ -9,6 +9,7 @@ import { api } from '../services/api';
 import { showToast } from './Toast';
 import MiniRichText from './MiniRichText';
 import { RelationshipMap } from './RelationshipMap';
+import { toTitleCaseName, lastNameOf, joinName, escapeRegExp } from '../utils/characterNames';
 
 // Default colors for auto-assignment (VIBGYOR palette)
 const DEFAULT_HIGHLIGHT_COLORS = [
@@ -544,6 +545,102 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     [characterProfiles],
   );
 
+  // ── Names: First / Last, and pushing edits back into the script (v4.22) ──
+  // Screenplay names are ALL CAPS; the tool shows Title Case. A first-name edit
+  // rewrites the bare name everywhere (cue + full name); a last-name edit
+  // rewrites only the full-name phrase, leaving the cue.
+
+  /** Replace every whole-word, case-sensitive occurrence of `phrase` with
+   *  `replacement` across the script. Returns how many were changed. */
+  const replaceInScript = useCallback((phrase: string, replacement: string): number => {
+    if (!editor || !phrase || phrase === replacement) return 0;
+    const re = new RegExp('\\b' + escapeRegExp(phrase) + '\\b', 'g'); // case-sensitive: only the CAPS forms
+    const edits: { from: number; to: number }[] = [];
+    editor.state.doc.descendants((node, pos) => {
+      if (!node.isTextblock) return true;
+      const text = node.textContent;
+      re.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(text)) !== null) {
+        const from = pos + 1 + m.index;
+        edits.push({ from, to: from + m[0].length });
+        if (m[0].length === 0) re.lastIndex++;
+      }
+      return false; // handled this block's text; don't descend into inline nodes
+    });
+    if (!edits.length) return 0;
+    edits.sort((a, b) => b.from - a.from); // apply back-to-front so positions stay valid
+    let tr = editor.state.tr;
+    for (const e of edits) tr = tr.insertText(replacement, e.from, e.to);
+    editor.view.dispatch(tr);
+    return edits.length;
+  }, [editor]);
+
+  /** Apply a Last Name edit: rewrite "SAM VEDU" → "SAM PRUSA" in the script (the
+   *  bare cue "SAM" is untouched, since dialogue doesn't use the last name). */
+  const applyLastNameToScript = useCallback((charName: string) => {
+    const prof = getProfile(charName);
+    const oldFull = prof.fullName || '';
+    const newLastCaps = (prof.lastName ?? '').trim().toUpperCase();
+    const newFull = joinName(prof.name, newLastCaps);
+    const n = oldFull && oldFull !== newFull ? replaceInScript(oldFull, newFull) : 0;
+    upsertCharacterProfile(prof.name, {
+      fullName: newLastCaps ? newFull : undefined,
+      lastName: toTitleCaseName(newLastCaps),
+    });
+    showToast(n ? `Updated ${n} name${n > 1 ? 's' : ''} in the script.` : 'Name saved.', 'success');
+  }, [getProfile, replaceInScript, upsertCharacterProfile]);
+
+  /** Apply a First Name edit: rewrite the bare name "SAM" → "SAMUEL" everywhere
+   *  (cues, action, and inside the full name), then rename the profile. */
+  const applyFirstNameToScript = useCallback((charName: string) => {
+    const prof = getProfile(charName);
+    const oldName = prof.name;
+    const newNameCaps = (prof.firstName ?? '').trim().toUpperCase();
+    if (!newNameCaps || newNameCaps === oldName) return;
+    const n = replaceInScript(oldName, newNameCaps);
+    const lastCaps = lastNameOf(prof.fullName || '');
+    const newFull = lastCaps ? joinName(newNameCaps, lastCaps) : undefined;
+    // Rename the profile, carrying every field over to the new key.
+    const { name: _drop, ...rest } = prof;
+    void _drop;
+    deleteCharacterProfile(oldName);
+    upsertCharacterProfile(newNameCaps, {
+      ...rest,
+      fullName: newFull,
+      firstName: toTitleCaseName(newNameCaps),
+      lastName: rest.lastName ?? (lastCaps ? toTitleCaseName(lastCaps) : undefined),
+    });
+    if (expandedChar === oldName) setExpandedChar(newNameCaps);
+    showToast(n ? `Updated ${n} name${n > 1 ? 's' : ''} in the script.` : 'Name changed.', 'success');
+  }, [getProfile, replaceInScript, upsertCharacterProfile, deleteCharacterProfile, expandedChar]);
+
+  // Auto-detect a character's full name: the intro "SAM VEDU" in an action line
+  // (cue name followed by another all-caps word). Fills the Last Name field.
+  const detectedFullNames = useMemo(() => {
+    const map = new Map<string, string>();
+    if (!editor) return map;
+    const parts: string[] = [];
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === 'action' || node.type.name === 'general') parts.push(node.textContent);
+      return true;
+    });
+    const blob = parts.join('\n');
+    for (const cue of scriptCharacterNames) {
+      const m = blob.match(new RegExp('\\b' + escapeRegExp(cue) + "\\s+([A-Z][A-Z'’-]+)\\b"));
+      if (m) map.set(cue, `${cue} ${m[1]}`);
+    }
+    return map;
+  }, [editor, editor?.state.doc, scriptCharacterNames]);
+
+  useEffect(() => {
+    for (const [cue, full] of detectedFullNames) {
+      const prof = characterProfiles.find((p) => p.name === cue);
+      // Only auto-fill when the user hasn't set a full/last name themselves.
+      if (prof && !prof.fullName && !prof.lastName) upsertCharacterProfile(cue, { fullName: full });
+    }
+  }, [detectedFullNames, characterProfiles, upsertCharacterProfile]);
+
   /** Calculate profile completeness as percentage + field breakdown */
   const getProfileCompleteness = useCallback((profile: CharacterProfile) => {
     const fields: { label: string; filled: boolean }[] = [
@@ -629,19 +726,64 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     fileInputRef.current?.click();
   }, []);
 
+  /** v4.22, Derek: First / Last name fields. Shown Title Case (the script is all
+   *  caps); editing either surfaces an "Update name in script" button that pushes
+   *  the change back. ONE renderer, used by both the card expansion and the modal
+   *  so the two never drift. */
+  const renderNameFields = (charName: string) => {
+    const prof = getProfile(charName);
+    const scriptLastCaps = lastNameOf(prof.fullName || '');
+    const dispFirst = prof.firstName ?? toTitleCaseName(prof.name);
+    const dispLast = prof.lastName ?? toTitleCaseName(scriptLastCaps);
+    const firstChanged = dispFirst.trim().toUpperCase() !== prof.name;
+    const lastChanged = dispLast.trim().toUpperCase() !== scriptLastCaps;
+    return (
+      <div className="char-profile-name-row-2">
+        <div className="char-profile-meta-field">
+          <label className="char-profile-label">First Name</label>
+          <div className="char-profile-name-field">
+            <input
+              className="char-profile-input"
+              value={dispFirst}
+              onChange={(e) => upsertCharacterProfile(charName, { firstName: e.target.value })}
+            />
+            {firstChanged && (
+              <button
+                className="char-profile-name-update"
+                title="Rewrite this character's first name throughout the script"
+                onClick={() => applyFirstNameToScript(charName)}
+              >Update name in script</button>
+            )}
+          </div>
+        </div>
+        <div className="char-profile-meta-field">
+          <label className="char-profile-label">Last Name</label>
+          <div className="char-profile-name-field">
+            <input
+              className="char-profile-input"
+              value={dispLast}
+              onChange={(e) => upsertCharacterProfile(charName, { lastName: e.target.value })}
+            />
+            {lastChanged && (
+              <button
+                className="char-profile-name-update"
+                title="Rewrite this character's full name throughout the script"
+                onClick={() => applyLastNameToScript(charName)}
+              >Update name in script</button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   /** Render character detail fields — used in both card expansion and modal */
   const renderCharacterFields = (charName: string, isModal: boolean) => {
     const prof = getProfile(charName);
     const st = charStats.get(charName);
     return (
       <>
-        {/* v4.21: Full name */}
-        <label className="char-profile-label">Full Name</label>
-        <input
-          className="char-profile-input"
-          value={prof.fullName ?? ''}
-          onChange={(e) => upsertCharacterProfile(charName, { fullName: e.target.value })}
-        />
+        {renderNameFields(charName)}
 
         {/* Description */}
         <label className="char-profile-label">Description</label>
@@ -1210,14 +1352,8 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                     {/* Top section: Description + Role/Gender/Age and Images (side-by-side in fullscreen) */}
                     <div className="char-profile-detail-top">
                       <div className="char-profile-detail-info">
-                        {/* v4.21: Full name */}
-                        <label className="char-profile-label">Full Name</label>
-                        <input
-                          className="char-profile-input"
-                          value={profile.fullName ?? ''}
-                          onChange={(e) => upsertCharacterProfile(name, { fullName: e.target.value })}
-                          placeholder="e.g. SAM VEDU"
-                        />
+                        {/* v4.22, Derek: First / Last name (shared renderer). */}
+                        {renderNameFields(name)}
                         {/* Description */}
                         <label className="char-profile-label">Description</label>
                         <MiniRichText

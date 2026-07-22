@@ -823,6 +823,11 @@ export interface CharacterProfile {
   /** v4.21: the character's full name (e.g. name "SAM" → fullName "SAM VEDU").
    *  Auto-filled when a "Referred in Script" name is connected to this character. */
   fullName?: string;
+  /** v4.22: editable Title-Case first / last name shown in the Character tool.
+   *  Unset ⇒ derived from the script (name → first, fullName → last). When a
+   *  value differs from the script the tool offers "Update name in script". */
+  firstName?: string;
+  lastName?: string;
   /** Rich text description / bio (HTML string; maps to FDX CastMember Description as plain text) */
   description: string;
   /** Highlight color hex (Final Draft CharacterHighlighting) */
