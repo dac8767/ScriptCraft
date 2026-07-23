@@ -2,6 +2,7 @@
 import type { JSONContent } from '@tiptap/react';
 import type { CharacterProfile, TagCategory, TagItem, BeatInfo, BeatColumn, PageLayout } from '../stores/editorStore';
 import { CUSTOM_TYPE_TO_FDX } from './fdxParser';
+import { isWorkingNoteNode } from './workingNotes';
 
 const NODE_TO_FDX: Record<string, string> = {
   sceneHeading: 'Scene Heading',
@@ -339,6 +340,8 @@ export function exportFDX(doc: JSONContent, title: string = 'Untitled', characte
     for (const node of doc.content) {
       // FDX has no representation for inserted images — skip them.
       if (node.type === 'screenplayImage') continue;
+      // Working notes (# sections, ⚑ markers, [ ] to-dos) never export — §4.
+      if (isWorkingNoteNode(node)) continue;
       if (node.type === 'dualDialogue') {
         // Wrap in DualDialogue element — flatten columns into paragraphs
         lines.push('    <DualDialogue>');

@@ -158,6 +158,7 @@
         "frontend/src/utils/fdxParser.ts",
         "frontend/src/utils/fountainExporter.ts",
         "frontend/src/utils/fountainParser.ts",
+        "frontend/src/utils/workingNotes.ts",
         "frontend/src/utils/pdfExporter.ts",
         "frontend/src/utils/pdfImporter.ts",
         "frontend/src/utils/pdfClassify.ts",

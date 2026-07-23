@@ -27,6 +27,7 @@ import {
 import type { ISectionOptions } from 'docx';
 import { resolveImageUrl, loadImageBytes } from './imageAsset';
 import type { JSONContent } from '@tiptap/react';
+import { isWorkingNoteNode } from './workingNotes';
 import { DEFAULT_HEADER_CONTENT, DEFAULT_FOOTER_CONTENT } from '../stores/editorStore';
 import type { PageLayout, HeaderFooterContent } from '../stores/editorStore';
 
@@ -362,6 +363,8 @@ export async function exportDocx(
         continue;
       }
       inLeadingRegion = false;
+      // Working notes (# sections, ⚑ markers, [ ] to-dos) never export — §4.
+      if (isWorkingNoteNode(node)) continue;
       bodyNodes.push(node);
     }
   }

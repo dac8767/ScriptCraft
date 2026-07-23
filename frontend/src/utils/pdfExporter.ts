@@ -5,6 +5,7 @@ import type { JSONContent } from '@tiptap/react';
 import { DEFAULT_HEADER_CONTENT, DEFAULT_FOOTER_CONTENT, resolveMoresContds } from '../stores/editorStore';
 import type { PageLayout, HeaderFooterContent } from '../stores/editorStore';
 import { resolveImageUrl, loadImageData } from './imageAsset';
+import { isWorkingNoteNode } from './workingNotes';
 
 // --- Constants matching pagination.ts ---
 
@@ -308,6 +309,8 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
       continue;
     }
     inLeadingRegion = false;
+    // Working notes (# sections, ⚑ markers, [ ] to-dos) never export — §4.
+    if (isWorkingNoteNode(node)) continue;
     const rawRuns = extractRuns(node);
     const runs = applyTypeStyles(rawRuns, typeName);
     nodes.push({

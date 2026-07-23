@@ -1,5 +1,6 @@
 // Fountain format exporter
 import type { JSONContent } from '@tiptap/react';
+import { isWorkingNoteNode } from './workingNotes';
 
 function getTextContent(node: JSONContent): string {
   if (!node.content) return '';
@@ -72,9 +73,9 @@ export function exportFountain(doc: JSONContent): string {
         // writer, not part of the script — they were being written into the
         // exported file verbatim, so a draft you sent out carried your to-do
         // list with it. Ordinary general text still exports.
-        const t = text.trim();
-        const isWorkingNote = /^#+\s/.test(t) || t.startsWith('\u2691') || /^\[[ x]\]/.test(t);
-        if (isWorkingNote) break;
+        // The predicate is shared with the FDX/DOCX/PDF exporters
+        // (utils/workingNotes) so all four export paths agree.
+        if (isWorkingNoteNode(node)) break;
         lines.push(text);
         break;
       }
