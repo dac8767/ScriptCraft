@@ -6,6 +6,7 @@
     "files": [
       "frontend/src/stores/editorStore.ts",
       "frontend/src/stores/viewState.ts",
+      "frontend/src/stores/slices/viewPrefsSlice.ts",
       "frontend/src/components/ScreenplayEditor.tsx",
       "frontend/src/components/ToolDock.tsx",
       "frontend/src/components/uiIcons.tsx",

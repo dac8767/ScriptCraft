@@ -13,6 +13,7 @@ import { createTypewriterSlice, type TypewriterSlice } from './slices/typewriter
 import { createNotesSlice, type NotesSlice } from './slices/notesSlice';
 import { createSceneNavSlice, type SceneNavSlice } from './slices/sceneNavSlice';
 import { createWorkspacesSlice, type WorkspacesSlice } from './slices/workspacesSlice';
+import { createViewPrefsSlice, type ViewPrefsSlice } from './slices/viewPrefsSlice';
 
 export interface SpellingSettings {
   /** When true, capitalized unknown words (likely proper nouns) are flagged. */
@@ -902,7 +903,7 @@ export interface BeatInfo {
 
 export type BeatArrangeMode = 'auto' | 'custom';
 
-export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, TypewriterSlice, NotesSlice, SceneNavSlice, WorkspacesSlice {
+export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, TypewriterSlice, NotesSlice, SceneNavSlice, WorkspacesSlice, ViewPrefsSlice {
   /** Toolbar zones (v0.38). Tokens: g:<group> built-in section, t:<toolId>
    *  pinned tool, c:<commandId> pinned command, d:<n> divider line. The right
    *  zone renders after the flex spacer (far right). Empty arrays mean
@@ -1197,33 +1198,6 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   setVersionLabel: (label: string) => void;
   setDraftLabel: (label: string) => void;
 
-  /** View > Editor: paged (simulated pages) vs continuous (thin page lines) */
-  viewStyle: 'page' | 'continuous';
-  setViewStyle: (v: 'page' | 'continuous') => void;
-
-  /** File > Preview: read-only formatted presentation (markup hidden, chrome minimized) */
-  previewMode: boolean;
-  /** Preview sidebar options (File > Preview) */
-  previewOpts: {
-    sections: boolean; notes: boolean; sceneNumbers: boolean; todos: boolean;
-    doubleSpaceHeaders: boolean; boldHeaders: boolean; underlineHeaders: boolean;
-  };
-  setPreviewOpt: (key: keyof EditorState['previewOpts'], value: boolean) => void;
-  setPreviewMode: (v: boolean) => void;
-
-  /** View > Preview: hide outline sections / script to-do lines in the script */
-  sectionsVisible: boolean;
-  setSectionsVisible: (v: boolean) => void;
-  scriptTodosVisible: boolean;
-  setScriptTodosVisible: (v: boolean) => void;
-  /** v1.4: markers had no switch of their own — they were hidden with sections,
-   *  which meant you couldn't keep your act breaks and drop the flags. */
-  markersVisible: boolean;
-  setMarkersVisible: (v: boolean) => void;
-  sceneNumbersVisible: boolean;
-  setSceneNumbersVisible: (v: boolean) => void;
-  sceneNumbersLocked: boolean;
-  setSceneNumbersLocked: (v: boolean) => void;
 
   // Revision
   revisionMode: boolean;
@@ -1257,21 +1231,6 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   editingTagId: string | null;
   setEditingTagId: (id: string | null) => void;
 
-  // Zoom
-  zoomLevel: number;
-  setZoomLevel: (level: number) => void;
-  zoomPanelOpen: boolean;
-  setZoomPanelOpen: (open: boolean) => void;
-
-  // Font
-  fontFamily: string;
-  setFontFamily: (font: string) => void;
-  fontSize: number;
-  setFontSize: (size: number) => void;
-
-  // Page layout
-  pageLayout: PageLayout;
-  setPageLayout: (layout: PageLayout) => void;
 
   // Theme
   theme: ThemeId;
@@ -1439,6 +1398,7 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   ...createNotesSlice(set, get, api),
   ...createSceneNavSlice(set, get, api),
   ...createWorkspacesSlice(set, get, api),
+  ...createViewPrefsSlice(set, get, api),
   activeElement: 'action',
   setActiveElement: (el) => set({ activeElement: el }),
 
@@ -2189,31 +2149,6 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     saveViewState({ menuBarHidden: safe });
     set({ menuBarHidden: safe });
   },
-  viewStyle: (_vs.viewStyle === 'continuous' ? 'continuous' : 'page') as 'page' | 'continuous',
-  setViewStyle: (v) => {
-    saveViewState({ viewStyle: v });
-    set({ viewStyle: v });
-  },
-  previewMode: false,
-  setPreviewMode: (v) => set({ previewMode: v }),
-  previewOpts: {
-    sections: false, notes: false, sceneNumbers: false, todos: false,
-    doubleSpaceHeaders: false, boldHeaders: true, underlineHeaders: false,
-  },
-  setPreviewOpt: (key, value) => set((s) => ({ previewOpts: { ...s.previewOpts, [key]: value } })),
-  markersVisible: _vs.markersVisible ?? true,
-  setMarkersVisible: (v) => {
-    saveViewState({ markersVisible: v });
-    set({ markersVisible: v });
-  },
-  sectionsVisible: true,
-  setSectionsVisible: (v) => set({ sectionsVisible: v }),
-  scriptTodosVisible: true,
-  setScriptTodosVisible: (v) => set({ scriptTodosVisible: v }),
-  sceneNumbersVisible: false,
-  setSceneNumbersVisible: (v) => set({ sceneNumbersVisible: v }),
-  sceneNumbersLocked: false,
-  setSceneNumbersLocked: (v) => set({ sceneNumbersLocked: v }),
 
   revisionMode: false,
   revisionColor: 'White',
@@ -2250,19 +2185,6 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   setPendingTagSelection: (sel) => set({ pendingTagSelection: sel }),
   editingTagId: null,
   setEditingTagId: (id) => set({ editingTagId: id }),
-
-  zoomLevel: _vs.zoomLevel ?? 100,
-  setZoomLevel: (level) => { const clamped = clamp(level, 50, 300); set({ zoomLevel: clamped }); saveViewState({ zoomLevel: clamped }); },
-  zoomPanelOpen: false,
-  setZoomPanelOpen: (open) => set({ zoomPanelOpen: open }),
-
-  fontFamily: 'Courier Prime',
-  setFontFamily: (font) => set({ fontFamily: font }),
-  fontSize: 12,
-  setFontSize: (size) => set({ fontSize: clamp(size, 8, 24) }),
-
-  pageLayout: DEFAULT_PAGE_LAYOUT,
-  setPageLayout: (layout) => set({ pageLayout: layout }),
 
   theme: (localStorage.getItem('opendraft:theme') as ThemeId) || 'dark',
   setTheme: (t) => {
