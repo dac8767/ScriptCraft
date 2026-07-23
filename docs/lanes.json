@@ -119,6 +119,7 @@
         "frontend/src/components/WorkspacesTool.tsx",
         "frontend/src/components/WorkspaceDialogs.tsx",
         "frontend/src/stores/slices/designSlice.ts",
+        "frontend/src/stores/slices/workspacesSlice.ts",
         "frontend/src/design/designTokens.ts",
         "frontend/src/stores/themeStore.ts",
         "frontend/src/styles/screenplay/23-toolbar-zones.css",
