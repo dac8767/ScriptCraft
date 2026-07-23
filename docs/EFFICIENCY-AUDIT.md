@@ -83,7 +83,7 @@ Confirmed still USED (do **not** remove): `.rel-map-toolbar-label`, `.rel-map-to
 ## Tier 3 — simplify / dedup (single-source-of-truth)
 
 - [ ] One shared `<Modal>` shell — ~30 dialogs hand-roll overlay + Escape + backdrop (34 Escape handlers) — spine/shell
-- [ ] `uuid()` reimplemented 5× → import `utils/uuid` (at least in `formattingTemplateStore`); add a shared `clamp()` (8 inline copies in `editorStore.ts`)
+- [x] `uuid()`: `formattingTemplateStore` now imports `utils/uuid` (its identical local copy removed). The 3 storage-backend copies are intentionally standalone (zero-dep fallback chain) — left as-is. Added a module-local `clamp()` in `editorStore.ts` replacing 12 inline `Math.min/​max` copies.
 - [ ] ~15 scattered color palettes → one `palettes.ts` (incl. scene-color set duplicated verbatim between `SceneNavigator` and `SynopsisModal`) — `scenes`
 - [ ] ~10 hand-rolled positioned popup/context menus → a `<PopupMenu>`/`usePopup` primitive
 - [ ] 4 storage backends share a ~40-method interface (all **live** — SQLite→file→localStorage fallback chain) → extract shared interface/helpers, not deletion

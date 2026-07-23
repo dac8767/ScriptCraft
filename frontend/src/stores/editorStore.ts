@@ -5,6 +5,9 @@ import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { findLanguage, urlsFor } from '../editor/languageCatalog';
 
 // ── View-state persistence helpers ──
+/** Clamp a number to the inclusive range [lo, hi]. */
+const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
+
 const VIEW_STATE_KEY = 'opendraft:viewState';
 interface ViewState {
   navigatorOpen?: boolean;
@@ -1860,7 +1863,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   typewriterOffset: (_vs.typewriterOffset as number) ?? 0.5,
   setTypewriterOffset: (v) => {
-    const clamped = Math.min(0.8, Math.max(0.2, v));
+    const clamped = clamp(v, 0.2, 0.8);
     saveViewState({ typewriterOffset: clamped });
     set({ typewriterOffset: clamped });
   },
@@ -1886,7 +1889,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   typewriterDimOpacity: (_vs.typewriterDimOpacity as number) ?? 0.25,
   setTypewriterDimOpacity: (v) => {
-    const clamped = Math.min(0.7, Math.max(0.05, v));
+    const clamped = clamp(v, 0.05, 0.7);
     saveViewState({ typewriterDimOpacity: clamped });
     set({ typewriterDimOpacity: clamped });
   },
@@ -1929,13 +1932,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   outlineBarRowScale: (_vs.outlineBarRowScale as number) ?? 1,
   setOutlineBarRowScale: (s) => {
-    const clamped = Math.min(2.5, Math.max(0.7, s));
+    const clamped = clamp(s, 0.7, 2.5);
     saveViewState({ outlineBarRowScale: clamped });
     set({ outlineBarRowScale: clamped });
   },
   scrapbookTreeScale: (_vs.scrapbookTreeScale as number) ?? 1,
   setScrapbookTreeScale: (s) => {
-    const clamped = Math.min(2, Math.max(0.7, s));
+    const clamped = clamp(s, 0.7, 2);
     saveViewState({ scrapbookTreeScale: clamped });
     set({ scrapbookTreeScale: clamped });
   },
@@ -2347,7 +2350,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           .filter((b) => b.columnId === columnId && b.id !== beatId)
           .sort((a, b) => a.position - b.position)
           .map((b) => b.id);
-        siblings.splice(Math.max(0, Math.min(index, siblings.length)), 0, beatId);
+        siblings.splice(clamp(index, 0, siblings.length), 0, beatId);
         const pos = new Map(siblings.map((bid, i) => [bid, i]));
         return {
           beats: st.beats.map((b) => (pos.has(b.id)
@@ -2366,7 +2369,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         .filter(([bid, sl]) => sl.columnId === columnId && bid !== beatId)
         .sort((a, b) => a[1].position - b[1].position)
         .map(([bid]) => bid);
-      siblings.splice(Math.max(0, Math.min(index, siblings.length)), 0, beatId);
+      siblings.splice(clamp(index, 0, siblings.length), 0, beatId);
       const movedAcross = slots[beatId] && slots[beatId].columnId !== columnId;
       siblings.forEach((bid, i) => { slots[bid] = { ...slots[bid], columnId, position: i }; });
       // v2.60: entering a different section drops the beat's bar pin.
@@ -2552,13 +2555,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   }),
   bigBtnInsetPx: (_vs.bigBtnInsetPx as number) ?? 16,
   setBigBtnInset: (px) => set(() => {
-    const clamped = Math.min(40, Math.max(0, Math.round(px)));
+    const clamped = clamp(Math.round(px), 0, 40);
     saveViewState({ bigBtnInsetPx: clamped });
     return { bigBtnInsetPx: clamped };
   }),
   panelItemScale: (_vs.panelItemScale as { left: number; right: number }) ?? { left: 1, right: 1 },
   setPanelItemScale: (side, scale) => set((st) => {
-    const clamped = Math.min(1.8, Math.max(0.7, scale));
+    const clamped = clamp(scale, 0.7, 1.8);
     const next = { ...st.panelItemScale, [side]: clamped };
     saveViewState({ panelItemScale: next });
     return { panelItemScale: next };
@@ -2568,7 +2571,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     // v2.35: 'scrapbook' is an OFFSET (how far the Scrapbook menu group sits
     // from the last regular menu), so it gets a wider range than the gaps.
     const max = bar === 'scrapbook' ? 400 : 32;
-    const next = { ...st.chromeGapPx, [bar]: Math.min(max, Math.max(0, Math.round(px))) };
+    const next = { ...st.chromeGapPx, [bar]: clamp(Math.round(px), 0, max) };
     saveViewState({ chromeGapPx: next });
     return { chromeGapPx: next };
   }),
@@ -2732,7 +2735,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setCharFullscreen: (v) => set({ charFullscreen: v }),
   mapScrollSpeed: (_vs.mapScrollSpeed as number) ?? 1,
   setMapScrollSpeed: (v) => {
-    const clamped = Math.min(3, Math.max(0.1, v));
+    const clamped = clamp(v, 0.1, 3);
     saveViewState({ mapScrollSpeed: clamped });
     set({ mapScrollSpeed: clamped });
   },
@@ -2786,14 +2789,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setEditingTagId: (id) => set({ editingTagId: id }),
 
   zoomLevel: _vs.zoomLevel ?? 100,
-  setZoomLevel: (level) => { const clamped = Math.min(300, Math.max(50, level)); set({ zoomLevel: clamped }); saveViewState({ zoomLevel: clamped }); },
+  setZoomLevel: (level) => { const clamped = clamp(level, 50, 300); set({ zoomLevel: clamped }); saveViewState({ zoomLevel: clamped }); },
   zoomPanelOpen: false,
   setZoomPanelOpen: (open) => set({ zoomPanelOpen: open }),
 
   fontFamily: 'Courier Prime',
   setFontFamily: (font) => set({ fontFamily: font }),
   fontSize: 12,
-  setFontSize: (size) => set({ fontSize: Math.min(24, Math.max(8, size)) }),
+  setFontSize: (size) => set({ fontSize: clamp(size, 8, 24) }),
 
   pageLayout: DEFAULT_PAGE_LAYOUT,
   setPageLayout: (layout) => set({ pageLayout: layout }),
