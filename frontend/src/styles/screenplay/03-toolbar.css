@@ -648,7 +648,11 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
    custom-scale rule (.toolbar.toolbar-custom .toolbar-separator, with its
    clamp cap) otherwise outweighs these the moment the edge is dragged —
    v3.11, Derek: section dividers collapsed to one row and stopped scaling. */
-.toolbar.toolbar-ribbon .toolbar-separator { height: calc(var(--rib-rowh, 28px) - 8px); align-self: center; }
+/* v4.23, Derek: separators never shrink. Once sections stopped shrinking (they
+   scroll now, see .rib-section flex: 0 0 auto) ALL the shrink pressure fell on
+   the separators, collapsing them to 0 width so the section dividers vanished
+   on a narrow window. Pin them too — nothing shrinks, the bar scrolls. */
+.toolbar.toolbar-ribbon .toolbar-separator { height: calc(var(--rib-rowh, 28px) - 8px); align-self: center; flex: 0 0 auto; }
 /* v3.25, Derek (tasks #136/#141): dropdowns are ROW ITEMS — same height as
    the buttons beside them, in every mode. --rib-itemh restates the
    .toolbar-btn height rules (base 24 / comfortable 26 / custom clamp) as ONE
