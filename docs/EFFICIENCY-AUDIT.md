@@ -41,11 +41,11 @@ Lane tags (see `docs/AREA-MAP.md`) show which chat should own each item.
 - [ ] **Move `html2canvas` from devDependencies → dependencies** — it's imported by production `utils/screenshot.ts` (real packaging bug)
 
 ### Stale / mis-branded docs & scripts
-- [ ] `docs/desktop-build.md` — describes the defunct Python sidecar build; delete or rewrite
-- [ ] `docs/UPSTREAM-OPENDRAFT-NOTES.md` — self-labeled archived
+- [x] `docs/desktop-build.md` — defunct Python-sidecar build; **deleted**, README link repointed to `DESKTOP-RELEASE.md`
+- [~] `docs/UPSTREAM-OPENDRAFT-NOTES.md` — **kept**: CLAUDE.md intentionally references it as the archived upstream notes
 - [ ] Reconcile `docs/RELEASE.md` (OpenDraft-branded) vs `docs/DESKTOP-RELEASE.md`
-- [ ] `release.sh` — hardcoded `Proteus.../OpenDraft` repo constant
-- [ ] Misleading "backend on port 8000" toast at `ScreenplayEditor.tsx:3437`
+- [x] `release.sh` — repo constant fixed to `dac8767/ScriptCraft`
+- [x] Misleading "backend on port 8000" toast at `ScreenplayEditor.tsx` — genericised
 
 ---
 

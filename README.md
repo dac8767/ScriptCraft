@@ -256,7 +256,7 @@ cd frontend && npm install && cd ..
 # Output: src-tauri/target/release/bundle/
 ```
 
-See [docs/desktop-build.md](docs/desktop-build.md) for detailed desktop build instructions.
+See [docs/DESKTOP-RELEASE.md](docs/DESKTOP-RELEASE.md) for detailed desktop build instructions.
 
 ### Run in Browser (Self-Hosted) — For Developers / Advanced Users
 

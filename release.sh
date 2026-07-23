@@ -10,7 +10,7 @@ set -e
 #   5. Waits for PR merge → links go live only after release is published
 
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
-REPO="Proteus-Technologies-Private-Limited/OpenDraft"
+REPO="dac8767/ScriptCraft"
 
 # ── Parse arguments ──────────────────────────────────────────────────────────
 if [ -z "$1" ]; then

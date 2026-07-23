@@ -3434,7 +3434,7 @@ const ScreenplayEditor: React.FC = () => {
         requestAnimationFrame(() => updateScenes());
       } catch (err) {
         console.error('Failed to open script:', err);
-        showToast('Failed to open script. Make sure the backend server is running on port 8000.', 'error');
+        showToast('Failed to open script. See the console for details.', 'error');
       } finally {
         scriptSwitchingRef.current = false;
       }
