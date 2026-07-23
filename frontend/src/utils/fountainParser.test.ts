@@ -6,6 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { parseFountain, parseFountainTitleBlock } from './fountainParser';
+import { exportFountain } from './fountainExporter';
 
 interface N { type?: string; content?: { type?: string; text?: string }[]; attrs?: Record<string, unknown> }
 const flat = (nodes: N[]) => nodes.map((n) => ({
@@ -84,5 +85,29 @@ describe('parseFountainTitleBlock', () => {
     const noTitle = parseFountain('INT. ROOM - DAY\n\nAction.').content as N[];
     expect(withTitle.length).toBeGreaterThan(noTitle.length);   // title nodes added
     expect(withTitle.some((n) => n.type === 'titlePage')).toBe(true);
+  });
+});
+
+describe('Fountain round-trip (export → parse)', () => {
+  it('recovers the core elements after a save-and-reopen cycle', () => {
+    // The integration guard the separate exporter/parser unit tests can't give:
+    // if the exporter ever emits a shape the parser can't read back, this fails.
+    const el = (type: string, text: string) => ({ type, content: [{ type: 'text', text }] });
+    const original = [
+      el('sceneHeading', 'INT. DINER - DAY'),
+      el('action', 'Sarah sips coffee.'),
+      el('character', 'SARAH'),
+      el('dialogue', 'We should go.'),
+      el('transition', 'CUT TO:'),
+    ];
+    const fountain = exportFountain({ type: 'doc', content: original });
+    const body = parseFountain(fountain).content as N[];
+    expect(flat(body)).toEqual([
+      { type: 'sceneHeading', text: 'INT. DINER - DAY' },
+      { type: 'action', text: 'Sarah sips coffee.' },
+      { type: 'character', text: 'SARAH' },
+      { type: 'dialogue', text: 'We should go.' },
+      { type: 'transition', text: 'CUT TO:' },
+    ]);
   });
 });
