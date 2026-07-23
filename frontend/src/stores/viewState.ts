@@ -1,0 +1,109 @@
+// v4.23: view-state persistence, extracted from editorStore so store SLICES can
+// read their initial defaults (`_vs`) and persist changes (`saveViewState`)
+// without importing editorStore.ts — which would be a circular dependency.
+//
+// The type imports below are type-only (erased at runtime), so this module has
+// NO runtime dependency on editorStore and always evaluates first. `_vs` is
+// therefore ready before editorStore's module-level migrations and create() run.
+import type { ToolConfig, WorkspaceSnapshot, WritingGoal, OutlineBarRow, SpellingSettings } from './editorStore';
+
+const VIEW_STATE_KEY = 'opendraft:viewState';
+
+export interface ViewState {
+  navigatorOpen?: boolean;
+  showUnreleasedTools?: boolean;
+  typewriterMasterEnabled?: boolean;
+  typewriterEnabled?: boolean;
+  typewriterFollowCursor?: boolean;
+  typewriterOffset?: number;
+  typewriterHighlightLine?: boolean;
+  typewriterHighlightColor?: string;
+  typewriterDimOthers?: boolean;
+  typewriterDimMode?: 'elements' | 'sentences';
+  typewriterDimOpacity?: number;
+  typewriterRestoreCursor?: boolean;
+  outlineBarOpen?: boolean;
+  rulersVisible?: boolean;
+  qatItems?: string[];
+  /** v3.34: per-dropdown widths for the ribbon's select fields (px), keyed
+   *  by builtin key — set by dragging a dropdown's edge in the visual
+   *  editor, read by the live bar AND the editor (one source). */
+  toolbarDdWidths?: Record<string, number>;
+  outlineBarZoom?: number;
+  outlineBarRowScale?: number;
+  scrapbookTreeScale?: number;
+  bigBtnInsetPx?: number;
+  panelItemScale?: { left: number; right: number };
+  mapScrollSpeed?: number;
+  /** v4.8: Design panel overrides — numeric design tokens keyed by token id
+   *  (src/design/designTokens.ts). Each maps to a --dz-* custom property on
+   *  :root; absent keys fall back to the built-in CSS value. */
+  designVars?: Record<string, number>;
+  outlineBarRows?: OutlineBarRow[];
+  outlineBarLabels?: boolean;
+  beatColorAllTabs?: boolean;
+  uiResizeLocked?: boolean;
+  highlightColor?: string;
+  indexCardsOpen?: boolean;
+  beatBoardOpen?: boolean;
+  shelfOpen?: boolean;
+  activeTool?: string | null;
+  activeToolRight?: string | null;
+  toolConfig?: Record<string, ToolConfig>;
+  toolOrder?: string[];
+  viewStyle?: string;
+  menuBarOrder?: string[];
+  menuBarHidden?: string[];
+  toolbarLeft?: string[];
+  toolbarRight?: string[];
+  toolbarZonesSet?: boolean;
+  contextMenuHidden?: string[];
+  contextMenuOrder?: string[];
+  noteOrder?: string[];
+  todoOrder?: string[];
+  panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom' | 'icons'; right: 'compact' | 'comfortable' | 'custom' | 'icons' };
+  chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
+  /** v2.29: item spacing (flex gap, px) for the menu bar, toolbar and Big
+   *  Button section — adjusted by the faint drag handles on the bars. */
+  chromeGapPx?: { menu?: number; toolbar?: number; bigbtn?: number; scrapbook?: number };
+  panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
+  workspaces?: Record<string, WorkspaceSnapshot>;
+  workspaceOrder?: string[];
+  activeWorkspace?: string | null;
+  toolbarHiddenItems?: string[];
+  toolbarPinnedTools?: string[];
+  toolSizes?: Record<string, { w: number; h: number }>;
+  writingGoal?: WritingGoal | null;
+  goalsCompleted?: number;
+  shelfTab?: string; // 'notes' | 'todo' | 'snippet' (legacy values migrated on load)
+  notesSubTab?: 'general' | 'script';
+  characterProfilesOpen?: boolean;
+  tagsPanelOpen?: boolean;
+  locationDatabaseOpen?: boolean;
+  notesVisible?: boolean;
+  markersVisible?: boolean;
+  tagsVisible?: boolean;
+  zoomLevel?: number;
+  toolbarMode?: 'compact' | 'comfortable' | 'custom' | 'hidden';
+  menuMode?: 'compact' | 'comfortable' | 'custom' | 'hidden';
+  characterSortBy?: 'name' | 'importance' | 'scenes' | 'dialogues' | 'appearance';
+  grammarRulesEnabled?: Record<string, boolean>;
+  spellingSettings?: SpellingSettings;
+}
+
+export function loadViewState(): ViewState {
+  try {
+    const raw = localStorage.getItem(VIEW_STATE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+export function saveViewState(patch: Partial<ViewState>) {
+  try {
+    const current = loadViewState();
+    localStorage.setItem(VIEW_STATE_KEY, JSON.stringify({ ...current, ...patch }));
+  } catch { /* localStorage unavailable */ }
+}
+
+/** Loaded once at module init; slices read it for their initial defaults. */
+export const _vs = loadViewState();

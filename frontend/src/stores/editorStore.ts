@@ -5,91 +5,10 @@ import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { findLanguage, urlsFor } from '../editor/languageCatalog';
 
 // ── View-state persistence helpers ──
+import { _vs, saveViewState, type ViewState } from './viewState';
+
 /** Clamp a number to the inclusive range [lo, hi]. */
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
-
-const VIEW_STATE_KEY = 'opendraft:viewState';
-interface ViewState {
-  navigatorOpen?: boolean;
-  showUnreleasedTools?: boolean;
-  typewriterMasterEnabled?: boolean;
-  typewriterEnabled?: boolean;
-  typewriterFollowCursor?: boolean;
-  typewriterOffset?: number;
-  typewriterHighlightLine?: boolean;
-  typewriterHighlightColor?: string;
-  typewriterDimOthers?: boolean;
-  typewriterDimMode?: 'elements' | 'sentences';
-  typewriterDimOpacity?: number;
-  typewriterRestoreCursor?: boolean;
-  outlineBarOpen?: boolean;
-  rulersVisible?: boolean;
-  qatItems?: string[];
-  /** v3.34: per-dropdown widths for the ribbon's select fields (px), keyed
-   *  by builtin key — set by dragging a dropdown's edge in the visual
-   *  editor, read by the live bar AND the editor (one source). */
-  toolbarDdWidths?: Record<string, number>;
-  outlineBarZoom?: number;
-  outlineBarRowScale?: number;
-  scrapbookTreeScale?: number;
-  bigBtnInsetPx?: number;
-  panelItemScale?: { left: number; right: number };
-  mapScrollSpeed?: number;
-  /** v4.8: Design panel overrides — numeric design tokens keyed by token id
-   *  (src/design/designTokens.ts). Each maps to a --dz-* custom property on
-   *  :root; absent keys fall back to the built-in CSS value. */
-  designVars?: Record<string, number>;
-  outlineBarRows?: OutlineBarRow[];
-  outlineBarLabels?: boolean;
-  beatColorAllTabs?: boolean;
-  uiResizeLocked?: boolean;
-  highlightColor?: string;
-  indexCardsOpen?: boolean;
-  beatBoardOpen?: boolean;
-  shelfOpen?: boolean;
-  activeTool?: string | null;
-  activeToolRight?: string | null;
-  toolConfig?: Record<string, ToolConfig>;
-  toolOrder?: string[];
-  viewStyle?: string;
-  menuBarOrder?: string[];
-  menuBarHidden?: string[];
-  toolbarLeft?: string[];
-  toolbarRight?: string[];
-  toolbarZonesSet?: boolean;
-  contextMenuHidden?: string[];
-  contextMenuOrder?: string[];
-  noteOrder?: string[];
-  todoOrder?: string[];
-  panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom' | 'icons'; right: 'compact' | 'comfortable' | 'custom' | 'icons' };
-  chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
-  /** v2.29: item spacing (flex gap, px) for the menu bar, toolbar and Big
-   *  Button section — adjusted by the faint drag handles on the bars. */
-  chromeGapPx?: { menu?: number; toolbar?: number; bigbtn?: number; scrapbook?: number };
-  panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
-  workspaces?: Record<string, WorkspaceSnapshot>;
-  workspaceOrder?: string[];
-  activeWorkspace?: string | null;
-  toolbarHiddenItems?: string[];
-  toolbarPinnedTools?: string[];
-  toolSizes?: Record<string, { w: number; h: number }>;
-  writingGoal?: WritingGoal | null;
-  goalsCompleted?: number;
-  shelfTab?: string; // 'notes' | 'todo' | 'snippet' (legacy values migrated on load)
-  notesSubTab?: 'general' | 'script';
-  characterProfilesOpen?: boolean;
-  tagsPanelOpen?: boolean;
-  locationDatabaseOpen?: boolean;
-  notesVisible?: boolean;
-  markersVisible?: boolean;
-  tagsVisible?: boolean;
-  zoomLevel?: number;
-  toolbarMode?: 'compact' | 'comfortable' | 'custom' | 'hidden';
-  menuMode?: 'compact' | 'comfortable' | 'custom' | 'hidden';
-  characterSortBy?: 'name' | 'importance' | 'scenes' | 'dialogues' | 'appearance';
-  grammarRulesEnabled?: Record<string, boolean>;
-  spellingSettings?: SpellingSettings;
-}
 
 export interface SpellingSettings {
   /** When true, capitalized unknown words (likely proper nouns) are flagged. */
@@ -99,19 +18,6 @@ export interface SpellingSettings {
 const DEFAULT_SPELLING_SETTINGS: Required<SpellingSettings> = {
   flagProperNouns: false,
 };
-function loadViewState(): ViewState {
-  try {
-    const raw = localStorage.getItem(VIEW_STATE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch { return {}; }
-}
-function saveViewState(patch: Partial<ViewState>) {
-  try {
-    const current = loadViewState();
-    localStorage.setItem(VIEW_STATE_KEY, JSON.stringify({ ...current, ...patch }));
-  } catch { /* localStorage unavailable */ }
-}
-const _vs = loadViewState();
 // v0.42: toolbar zones are flat per-item token lists; expand any persisted
 // legacy g: group tokens (honoring the retired toolbarHiddenItems checkboxes)
 // so pre-0.42 layouts survive unchanged.
