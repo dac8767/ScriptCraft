@@ -49,12 +49,24 @@ Lane tags (see `docs/AREA-MAP.md`) show which chat should own each item.
 
 ---
 
-## Tier 2 — dead CSS (~3,000 lines, ~15%)
+## Tier 2 — dead CSS (~3,000 lines, ~15%) — DEFERRED, needs a visual pass
 
-**Delete cluster-by-cluster with a build + quick visual check after each** —
-detection is substring-absence (high-confidence but not infallible; e.g. the
-word-vomit feature partly moved into `GoalsTool`/`VomitLock`, so confirm the old
-modal CSS is truly orphaned first).
+**Status: deferred on purpose.** Re-verification during the cleanup run found the
+dead selectors are *interleaved with live ones* inside the flagged ranges — e.g.
+`.drag-handle`, `.delete-btn`, `.color-picker-swatch`, `.sort-select` sit inside the
+"Projects hub" block in `12`, and `.fs-timefield` (the live TimeField) sits inside
+the `fs-vomit` block in `22`. The substring-absence method also had a confirmed
+**false positive**: the `ribed-*` / `rib-edit-*` ribbon-editor cluster was flagged
+dead but has 14–26 live TS/TSX references — it is **live, do not remove**.
+
+Because dead and live rules are interleaved and CSS changes can't be caught by
+`tsc`/`test`, this needs **per-rule removal with a visual check on the running app**
+(the Playwright live-check recipe in `HANDOFF-CONTINUE.md`, or Derek watching a
+build). Do it as its own focused pass; do NOT bulk-delete ranges. Verified-dead
+prefixes so far (0 TS/TSX hits — safe to remove *as individual rules*):
+`script-notes-panel`, `sn-*`, `general-notes-*`, `note-item-*`, `fs-vomit-*`,
+`fs-projects-*`/`fs-project-*`, `project-*`, `props-*`, `source-badge`, `script-card-*`,
+`open-project-group-header`.
 
 - [ ] `12-projects-assets.css` — ~692 lines (old Projects hub) + its **duplicate** in `03-toolbar.css:259-294` + responsive tail in `15-responsive.css` (`importexport`-ish / spine)
 - [ ] `22-tools-extra.css` — ~442 (`fs-vomit-*`, `fs-projects-*`, duplicate `note-item-*`) (`tools`)
