@@ -3,6 +3,7 @@
   "scripts": {
     "tauri": "tauri",
     "desktop": "git pull && npm install --prefix frontend --silent && npm run app",
-    "app": "./frontend/node_modules/.bin/tauri dev --config src-tauri/tauri.conf.json"
+    "app": "./frontend/node_modules/.bin/tauri dev --config src-tauri/tauri.conf.json",
+    "check-lanes": "node scripts/check-lanes.mjs"
   }
 }

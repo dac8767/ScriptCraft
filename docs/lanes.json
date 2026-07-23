@@ -1,0 +1,257 @@
+{
+  "_comment": "Single source of truth for parallel-chat LANE OWNERSHIP. Read by scripts/check-lanes.mjs. Human-readable companion: docs/AREA-MAP.md. When files move, a lane is added, or the editorStore is sliced, update THIS file and the checker stays correct. Paths are repo-relative.",
+  "_storeField": "One of: 'editorStore:<domain>' = state still lives in the shared stores/editorStore.ts, so any two such lanes collide on that file UNTIL it is sliced. 'own:<file>' = has its own store (already independent). 'none' = no store state.",
+  "spine": {
+    "_comment": "Shared files no lane owns. Only one chat edits a spine file at a time; registry edits (ToolId, ALL_TOOLS, uiIcons) stay small and append-only.",
+    "files": [
+      "frontend/src/stores/editorStore.ts",
+      "frontend/src/components/ScreenplayEditor.tsx",
+      "frontend/src/components/ToolDock.tsx",
+      "frontend/src/components/uiIcons.tsx",
+      "frontend/src/services/api.ts",
+      "frontend/src/editor/pagination.ts",
+      "frontend/src/editor/extensions/",
+      "frontend/src/styles/screenplay/01-fonts-base.css",
+      "frontend/src/styles/screenplay/15-responsive.css"
+    ]
+  },
+  "lanes": {
+    "character": {
+      "title": "Character tool",
+      "store": "editorStore:characters",
+      "files": [
+        "frontend/src/components/CharacterProfiles.tsx",
+        "frontend/src/components/RelationshipMap.tsx",
+        "frontend/src/components/CharacterAutocomplete.tsx",
+        "frontend/src/components/CharacterConnectionsGraph.tsx",
+        "frontend/src/utils/characterScan.ts",
+        "frontend/src/utils/characterNames.ts",
+        "frontend/src/styles/screenplay/10-character-profiles.css"
+      ]
+    },
+    "scenes": {
+      "title": "Scenes / Outline / Index Cards",
+      "store": "editorStore:scenes",
+      "files": [
+        "frontend/src/components/SceneNavigator.tsx",
+        "frontend/src/components/NavigatorTool.tsx",
+        "frontend/src/components/OutlineBar.tsx",
+        "frontend/src/components/IndexCards.tsx",
+        "frontend/src/components/SynopsisModal.tsx",
+        "frontend/src/utils/scriptStructure.ts",
+        "frontend/src/stores/outlinePresetStore.ts",
+        "frontend/src/stores/bookmarkStore.ts",
+        "frontend/src/styles/screenplay/05-scene-navigator.css",
+        "frontend/src/styles/screenplay/21-outline-bar.css",
+        "frontend/src/styles/screenplay/08-index-cards-beatboard.css",
+        "frontend/src/styles/screenplay/25-confirm-outline-tabs.css"
+      ]
+    },
+    "beatboard": {
+      "title": "Beat Board",
+      "store": "editorStore:beats",
+      "files": [
+        "frontend/src/components/BeatBoard.tsx",
+        "frontend/src/styles/screenplay/08-index-cards-beatboard.css"
+      ]
+    },
+    "notes": {
+      "title": "Notes / To-Do / Sticky",
+      "store": "editorStore:notes",
+      "files": [
+        "frontend/src/components/ScriptNotes.tsx",
+        "frontend/src/components/StickyNotes.tsx",
+        "frontend/src/components/StickyCard.tsx",
+        "frontend/src/components/ListControls.tsx",
+        "frontend/src/styles/screenplay/09-script-notes.css",
+        "frontend/src/styles/screenplay/19-sticky-notes.css"
+      ]
+    },
+    "notebook": {
+      "title": "Notebook / Scrapbook",
+      "store": "own:notebookStore",
+      "files": [
+        "frontend/src/components/NotebookTool.tsx",
+        "frontend/src/stores/notebookStore.ts",
+        "frontend/src/styles/screenplay/24-notebook.css"
+      ]
+    },
+    "toolbar": {
+      "title": "Toolbar / Ribbon",
+      "store": "editorStore:chrome",
+      "files": [
+        "frontend/src/components/Toolbar.tsx",
+        "frontend/src/components/toolbarCommands.tsx",
+        "frontend/src/components/RibbonPalette.tsx",
+        "frontend/src/components/FontPicker.tsx",
+        "frontend/src/components/ColorPicker.tsx",
+        "frontend/src/components/ZoomPanel.tsx",
+        "frontend/src/components/FormatPanel.tsx",
+        "frontend/src/styles/screenplay/03-toolbar.css",
+        "frontend/src/styles/screenplay/23-toolbar-zones.css"
+      ]
+    },
+    "menus": {
+      "title": "Menus / Shortcuts",
+      "store": "editorStore:chrome",
+      "files": [
+        "frontend/src/components/MenuBar.tsx",
+        "frontend/src/components/ScriptContextMenu.tsx",
+        "frontend/src/components/ContextMenuTab.tsx",
+        "frontend/src/components/AddMenu.tsx",
+        "frontend/src/components/KeyboardShortcutsTab.tsx",
+        "frontend/src/stores/shortcutStore.ts",
+        "frontend/src/styles/screenplay/02-menubar.css"
+      ]
+    },
+    "customize": {
+      "title": "Customize / Design / Themes / Workspaces",
+      "store": "editorStore:chrome",
+      "files": [
+        "frontend/src/components/CustomizePanelsDialog.tsx",
+        "frontend/src/components/DesignPanel.tsx",
+        "frontend/src/components/ThemesTab.tsx",
+        "frontend/src/components/WorkspacesTool.tsx",
+        "frontend/src/components/WorkspaceDialogs.tsx",
+        "frontend/src/design/designTokens.ts",
+        "frontend/src/stores/themeStore.ts",
+        "frontend/src/styles/screenplay/23-toolbar-zones.css",
+        "frontend/src/styles/screenplay/26-design-panel.css"
+      ]
+    },
+    "spelling": {
+      "title": "Spelling / Grammar / Dictionaries",
+      "store": "editorStore:spellGrammar",
+      "files": [
+        "frontend/src/components/SpellCheckModal.tsx",
+        "frontend/src/components/SpellCheckPanel.tsx",
+        "frontend/src/components/SpellCheckContextMenu.tsx",
+        "frontend/src/components/DictionaryConfigPanel.tsx",
+        "frontend/src/components/DictionaryLibrary.tsx",
+        "frontend/src/components/GrammarRulesPanel.tsx",
+        "frontend/src/components/LanguageSelector.tsx",
+        "frontend/src/editor/spellchecker.ts",
+        "frontend/src/editor/languageCatalog.ts",
+        "frontend/src/editor/grammar/retextProvider.ts",
+        "frontend/src/editor/grammar/harperProvider.ts",
+        "frontend/src/editor/grammar/grammarIgnore.ts",
+        "frontend/src/styles/screenplay/11-spell-grammar-history.css"
+      ]
+    },
+    "importexport": {
+      "title": "Import / Export / File formats",
+      "store": "none",
+      "files": [
+        "frontend/src/utils/docxExporter.ts",
+        "frontend/src/utils/docxImporter.ts",
+        "frontend/src/utils/fdxExporter.ts",
+        "frontend/src/utils/fdxParser.ts",
+        "frontend/src/utils/fountainExporter.ts",
+        "frontend/src/utils/fountainParser.ts",
+        "frontend/src/utils/pdfExporter.ts",
+        "frontend/src/utils/pdfImporter.ts",
+        "frontend/src/utils/pdfClassify.ts",
+        "frontend/src/utils/odraftFormat.ts",
+        "frontend/src/utils/applyScriptFormat.ts",
+        "frontend/src/utils/fileOps.ts",
+        "frontend/src/components/OpenFile.tsx",
+        "frontend/src/components/SaveAsDialog.tsx",
+        "frontend/src/components/RenameDialog.tsx",
+        "frontend/src/components/ScriptFormatPickerDialog.tsx",
+        "frontend/src/components/ScriptFormatPreferencesDialog.tsx",
+        "frontend/src/services/saveLocations.ts"
+      ]
+    },
+    "templates": {
+      "title": "Templates / Elements formatting",
+      "store": "own:formattingTemplateStore",
+      "files": [
+        "frontend/src/stores/formattingTemplateStore.ts",
+        "frontend/src/stores/formattingTypes.ts",
+        "frontend/src/stores/industryStandardTemplate.ts",
+        "frontend/src/components/TemplateEditorDialog.tsx",
+        "frontend/src/components/TemplateSelectDialog.tsx",
+        "frontend/src/components/TemplateConflictDialog.tsx",
+        "frontend/src/components/EditElementsDialog.tsx",
+        "frontend/src/components/ElementPicker.tsx",
+        "frontend/src/utils/templateConflicts.ts",
+        "frontend/src/utils/templateCss.ts",
+        "frontend/src/utils/effectiveFormatting.ts",
+        "frontend/src/styles/screenplay/18-elements-templates.css"
+      ]
+    },
+    "tags": {
+      "title": "Production tags / Locations",
+      "store": "editorStore:tags",
+      "files": [
+        "frontend/src/components/TagsPanel.tsx",
+        "frontend/src/components/LocationDatabase.tsx",
+        "frontend/src/styles/screenplay/13-production-tags.css"
+      ]
+    },
+    "titlepage": {
+      "title": "Title page",
+      "store": "none",
+      "files": [
+        "frontend/src/components/TitlePageEditor.tsx",
+        "frontend/src/components/TitlePagePanel.tsx",
+        "frontend/src/utils/titlePageLayout.ts"
+      ]
+    },
+    "stats": {
+      "title": "Stats / History / Diff / Versions",
+      "store": "none",
+      "files": [
+        "frontend/src/components/ScriptStatistics.tsx",
+        "frontend/src/components/AnalyticsTool.tsx",
+        "frontend/src/components/GenderAnalysisTool.tsx",
+        "frontend/src/components/DiffViewer.tsx",
+        "frontend/src/components/ScriptDiffView.tsx",
+        "frontend/src/components/VersionHistory.tsx",
+        "frontend/src/components/CompareVersionPicker.tsx",
+        "frontend/src/utils/scriptDiff.ts",
+        "frontend/src/utils/scriptStatistics.ts",
+        "frontend/src/utils/scriptTiming.ts"
+      ]
+    },
+    "tools": {
+      "title": "Docked utility tools",
+      "store": "editorStore:tools",
+      "files": [
+        "frontend/src/components/GoalsTool.tsx",
+        "frontend/src/components/HighlightsTool.tsx",
+        "frontend/src/components/TypewriterTool.tsx",
+        "frontend/src/components/FeedbackTool.tsx",
+        "frontend/src/components/AiWriterTool.tsx",
+        "frontend/src/data/helpForms.ts",
+        "frontend/src/styles/screenplay/20-tool-dock.css",
+        "frontend/src/styles/screenplay/22-tools-extra.css"
+      ]
+    },
+    "collab": {
+      "title": "Collab / Auth / Cloud / Settings",
+      "store": "own:settingsStore",
+      "files": [
+        "frontend/src/components/AuthBootstrap.tsx",
+        "frontend/src/components/AuthGate.tsx",
+        "frontend/src/components/AuthIndicator.tsx",
+        "frontend/src/components/CollabLoginDialog.tsx",
+        "frontend/src/components/JoinCollabDialog.tsx",
+        "frontend/src/components/ShareDialog.tsx",
+        "frontend/src/components/OAuthCallback.tsx",
+        "frontend/src/components/VerifyEmailDialog.tsx",
+        "frontend/src/components/VerifyEmailRoute.tsx",
+        "frontend/src/components/ResetPasswordRoute.tsx",
+        "frontend/src/components/SettingsPage.tsx",
+        "frontend/src/stores/settingsStore.ts",
+        "frontend/src/services/cloudApi.ts",
+        "frontend/src/services/collabAuth.ts",
+        "frontend/src/services/collabSync.ts",
+        "frontend/src/services/authedFetch.ts",
+        "frontend/src/services/oauthPkce.ts",
+        "frontend/src/services/deviceId.ts",
+        "frontend/src/styles/screenplay/17-settings.css"
+      ]
+    }
+  }
+}
