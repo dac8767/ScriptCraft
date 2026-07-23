@@ -21,8 +21,8 @@ Lane tags (see `docs/AREA-MAP.md`) show which chat should own each item.
 - [ ] `components/SpellCheckContextMenu.tsx` (181) — zero refs (`spelling`)
 - [ ] `components/LanguageSelector.tsx` (81) — zero refs (`spelling`)
 - [ ] `utils/zipExport.ts` + `utils/zipImport.ts` (~175) — zero importers (`importexport`)
-- [ ] `editor/sceneReorder.ts` (127) — zero importers (spine/schema)
-- [ ] `editor/extensions/index.ts` (21) — barrel nothing imports (spine/schema)
+- [x] `editor/sceneReorder.ts` (127) — zero importers (spine/schema)
+- [~] `editor/extensions/index.ts` — NOT dead after all: imported by `ScreenplayEditor.tsx:35` via the directory path `../editor/extensions`. Kept.
 
 ### Dead functions / store actions (~180 lines)
 - [ ] `getEffectiveFormatting` `utils/effectiveFormatting.ts:102` (~64) — `templates`

@@ -23,7 +23,6 @@
         "frontend/src/components/CharacterProfiles.tsx",
         "frontend/src/components/RelationshipMap.tsx",
         "frontend/src/components/CharacterAutocomplete.tsx",
-        "frontend/src/components/CharacterConnectionsGraph.tsx",
         "frontend/src/utils/characterScan.ts",
         "frontend/src/utils/characterNames.ts",
         "frontend/src/styles/screenplay/10-character-profiles.css"
@@ -125,11 +124,9 @@
       "files": [
         "frontend/src/components/SpellCheckModal.tsx",
         "frontend/src/components/SpellCheckPanel.tsx",
-        "frontend/src/components/SpellCheckContextMenu.tsx",
         "frontend/src/components/DictionaryConfigPanel.tsx",
         "frontend/src/components/DictionaryLibrary.tsx",
         "frontend/src/components/GrammarRulesPanel.tsx",
-        "frontend/src/components/LanguageSelector.tsx",
         "frontend/src/editor/spellchecker.ts",
         "frontend/src/editor/languageCatalog.ts",
         "frontend/src/editor/grammar/retextProvider.ts",
