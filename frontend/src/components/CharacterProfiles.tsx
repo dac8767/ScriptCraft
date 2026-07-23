@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { FaChevronRight, FaChevronDown, FaExpandAlt } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import DOMPurify from 'dompurify';
 import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
-import { useEditorStore, type CharacterProfile, type CharacterRelationship } from '../stores/editorStore';
+import { useEditorStore, type CharacterProfile } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useAssetStore } from '../stores/assetStore';
 import { api } from '../services/api';
@@ -13,6 +12,8 @@ import MiniRichText from './MiniRichText';
 import { RelationshipMap } from './RelationshipMap';
 import { toTitleCaseName, lastNameOf, joinName, escapeRegExp } from '../utils/characterNames';
 import { buildScanList, type ScannedCharacter } from '../utils/characterScan';
+import { InlineRelForm, REL_TYPES, REL_DYNAMICS } from './InlineRelForm';
+import { AssetImage, AssetAudio, UploadImageButton } from './CharacterAssetMedia';
 
 // Default colors for auto-assignment (VIBGYOR palette)
 const DEFAULT_HIGHLIGHT_COLORS = [
@@ -26,65 +27,6 @@ function stripHtml(html: string): string {
   return DOMPurify.sanitize(html, { ALLOWED_TAGS: [] }).replace(/\s+/g, ' ').trim();
 }
 
-const REL_TYPES = ['allies', 'rivals', 'family', 'romantic', 'mentor', 'antagonist', 'employer', 'friends'];
-const REL_DYNAMICS = ['Stable', 'Evolving', 'Tense', 'One-sided', 'Supportive', 'Adversarial', 'Complex'];
-
-/** Compact inline form for adding a relationship from within a character profile */
-const InlineRelForm: React.FC<{
-  characterName: string;
-  allCharacters: string[];
-  onSave: (rel: CharacterRelationship) => void;
-  onCancel: () => void;
-}> = ({ characterName, allCharacters, onSave, onCancel }) => {
-  const [otherChar, setOtherChar] = useState('');
-  const [relType, setRelType] = useState('allies');
-  const [dynamic, setDynamic] = useState('Stable');
-  const [desc, setDesc] = useState('');
-
-  const others = allCharacters.filter((c) => c !== characterName);
-
-  return (
-    <div className="char-profile-rel-form">
-      <div className="char-profile-rel-form-row">
-        <select value={otherChar} onChange={(e) => setOtherChar(e.target.value)}>
-          <option value="">Select character...</option>
-          {others.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select value={relType} onChange={(e) => setRelType(e.target.value)}>
-          {REL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <select value={dynamic} onChange={(e) => setDynamic(e.target.value)}>
-          {REL_DYNAMICS.map((d) => <option key={d} value={d}>{d}</option>)}
-        </select>
-      </div>
-      <textarea
-        value={desc}
-        onChange={(e) => setDesc(e.target.value)}
-        placeholder="Describe the relationship..."
-        rows={2}
-        className="char-profile-rel-form-desc"
-      />
-      <div className="char-profile-rel-form-actions">
-        <button className="char-profile-rel-form-btn" onClick={onCancel}>Cancel</button>
-        <button
-          className="char-profile-rel-form-btn char-profile-rel-form-btn-primary"
-          disabled={!otherChar}
-          onClick={() => onSave({
-            id: crypto.randomUUID(),
-            characterA: characterName,
-            characterB: otherChar,
-            type: relType,
-            description: desc,
-            dynamic,
-          })}
-        >
-          Add
-        </button>
-      </div>
-    </div>
-  );
-};
-
 interface CharacterProfilesProps {
   /** Render inside a tool window: always visible, no close button/swipe */
   embedded?: boolean;
@@ -94,109 +36,6 @@ interface CharacterProfilesProps {
   projectId: string;
   style?: React.CSSProperties;
 }
-
-/** v4.22, Derek: asset images are served from an AUTHENTICATED endpoint, so a
- *  plain <img src> gets a 401 and shows the broken-image "?". Fetch the bytes
- *  with the auth token and hand the <img> a blob URL instead. */
-const AssetImage: React.FC<{
-  projectId: string; assetId: string; className?: string; alt?: string; onClick?: () => void;
-}> = ({ projectId, assetId, className, alt, onClick }) => {
-  const [url, setUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-  useEffect(() => {
-    let dead = false;
-    let obj: string | null = null;
-    setUrl(null); setFailed(false);
-    (async () => {
-      try {
-        // Load raw bytes and build a blob URL. This works on every backend;
-        // fetching getAssetUrl directly does not, because on desktop that URL
-        // is an asset:// path the webview can only load via <img src>.
-        const bytes = await api.getAssetBytes(projectId, assetId);
-        obj = URL.createObjectURL(new Blob([bytes as BlobPart]));
-        if (!dead) setUrl(obj); else URL.revokeObjectURL(obj);
-      } catch {
-        if (!dead) setFailed(true);
-      }
-    })();
-    return () => { dead = true; if (obj) URL.revokeObjectURL(obj); };
-  }, [projectId, assetId]);
-  if (failed) return <div className={`char-profile-image-broken ${className ?? ''}`} title="Image unavailable">!</div>;
-  if (!url) return <div className={`char-profile-image-loading ${className ?? ''}`} />;
-  return <img src={url} className={className} alt={alt} onClick={onClick} />;
-};
-
-/** v4.23, Derek: play an uploaded voice-reference clip. Loads bytes → blob URL
- *  (same reason as AssetImage — the desktop asset URL can't be fetched), then
- *  hands it to a native <audio> element. */
-const AssetAudio: React.FC<{ projectId: string; assetId: string }> = ({ projectId, assetId }) => {
-  const [url, setUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-  useEffect(() => {
-    let dead = false;
-    let obj: string | null = null;
-    setUrl(null); setFailed(false);
-    (async () => {
-      try {
-        const bytes = await api.getAssetBytes(projectId, assetId);
-        obj = URL.createObjectURL(new Blob([bytes as BlobPart]));
-        if (!dead) setUrl(obj); else URL.revokeObjectURL(obj);
-      } catch {
-        if (!dead) setFailed(true);
-      }
-    })();
-    return () => { dead = true; if (obj) URL.revokeObjectURL(obj); };
-  }, [projectId, assetId]);
-  if (failed) return <span className="char-profile-voice-broken" title="Audio unavailable">Voice clip unavailable</span>;
-  if (!url) return <span className="char-profile-voice-loading">Loading…</span>;
-  return <audio className="char-profile-voice-audio" src={url} controls preload="none" />;
-};
-
-/** v4.22, Derek: one "Upload Image" button that opens a menu — local file or the
- *  Asset Manager. The menu is portalled to <body> and positioned from the button
- *  (panels clip absolutely-positioned children — see AddMenu). */
-const UploadImageButton: React.FC<{ uploading: boolean; onLocal: () => void; onAssets: () => void }> = ({ uploading, onLocal, onAssets }) => {
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    if (!pos) return;
-    const close = () => setPos(null);
-    window.addEventListener('pointerdown', close);
-    window.addEventListener('resize', close);
-    window.addEventListener('scroll', close, true);
-    return () => {
-      window.removeEventListener('pointerdown', close);
-      window.removeEventListener('resize', close);
-      window.removeEventListener('scroll', close, true);
-    };
-  }, [pos]);
-  const toggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (pos) { setPos(null); return; }
-    const r = btnRef.current?.getBoundingClientRect();
-    if (r) setPos({ top: r.bottom + 4, left: r.left });
-  };
-  return (
-    <>
-      <button
-        ref={btnRef}
-        className="char-profile-img-btn"
-        disabled={uploading}
-        onClick={toggle}
-        title="Add a character image"
-      >
-        {uploading ? 'Uploading…' : 'Upload Image ▾'}
-      </button>
-      {pos && createPortal(
-        <div className="char-upload-menu" style={{ top: pos.top, left: pos.left }} onPointerDown={(e) => e.stopPropagation()}>
-          <button className="char-upload-menu-item" onClick={() => { setPos(null); onLocal(); }}>From local device…</button>
-          <button className="char-upload-menu-item" onClick={() => { setPos(null); onAssets(); }}>From Asset Manager…</button>
-        </div>,
-        document.body,
-      )}
-    </>
-  );
-};
 
 const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId, style, embedded = false, fullscreen = false }) => {
   const {

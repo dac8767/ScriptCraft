@@ -21,6 +21,8 @@
       "store": "editorStore:characters",
       "files": [
         "frontend/src/components/CharacterProfiles.tsx",
+        "frontend/src/components/CharacterAssetMedia.tsx",
+        "frontend/src/components/InlineRelForm.tsx",
         "frontend/src/components/RelationshipMap.tsx",
         "frontend/src/components/CharacterAutocomplete.tsx",
         "frontend/src/utils/characterScan.ts",
