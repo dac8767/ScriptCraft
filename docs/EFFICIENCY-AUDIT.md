@@ -98,7 +98,7 @@ chats (see `docs/AREA-MAP.md`).
 
 - [ ] **`stores/editorStore.ts` (3,099)** → per-domain slices. Start with the 3 fattest/most-independent: **chrome-customization**, **beats/outline**, **spell/grammar**. Then update `docs/lanes.json` (`editorStore:<domain>` → `own:<slice>`) so the checker frees those lanes.
 - [ ] **`components/ScreenplayEditor.tsx` (4,558)** → extract hooks: `useCollaboration`, `useTouchGestures`, `usePanelResize`, `useFileDrop`, `useFileAssociation`; one `<EditorDialogs>` host for the modal cluster
-- [ ] **`data/changelog.ts` (2,783)** → move the data array to `changelog.json` + **lazy-import** only when the Changelog dialog opens (out of source scanning *and* the initial bundle)
+- [x] **`data/changelog.ts` (2,783 → 72)** → data array moved to `changelog.json` (359 versions / 573 items), imported statically; the file is now just types + tag logic + `APP_VERSION`. Source-scanning win done. *(Optional follow-up: make it a lazy `import()` in MenuBar to also drop it from the initial bundle — deferred as it touches the MenuBar spine file.)*
 - [ ] **`components/MenuBar.tsx` (2,824)** → per-menu builder modules + a `menuActions` module + split out Diagnostics
 - [ ] **`components/Toolbar.tsx` (2,078)** → the 32-case render switch → a token→renderer map module
 - [ ] **`components/CharacterProfiles.tsx` (1,931)** → one component per tab + `useCharacterScan` + a shared asset-media module
