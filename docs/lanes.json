@@ -131,6 +131,7 @@
       "title": "Spelling / Grammar / Dictionaries",
       "store": "editorStore:spellGrammar",
       "files": [
+        "frontend/src/stores/slices/spellGrammarSlice.ts",
         "frontend/src/components/SpellCheckModal.tsx",
         "frontend/src/components/SpellCheckPanel.tsx",
         "frontend/src/components/DictionaryConfigPanel.tsx",
