@@ -36,6 +36,7 @@
       "title": "Scenes / Outline / Index Cards",
       "store": "editorStore:scenes",
       "files": [
+        "frontend/src/stores/slices/sceneNavSlice.ts",
         "frontend/src/components/SceneNavigator.tsx",
         "frontend/src/components/NavigatorTool.tsx",
         "frontend/src/components/OutlineBar.tsx",

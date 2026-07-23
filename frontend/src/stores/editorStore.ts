@@ -11,6 +11,7 @@ import { createCharacterSlice, type CharacterSlice } from './slices/characterSli
 import { createTagSlice, type TagSlice } from './slices/tagSlice';
 import { createTypewriterSlice, type TypewriterSlice } from './slices/typewriterSlice';
 import { createNotesSlice, type NotesSlice } from './slices/notesSlice';
+import { createSceneNavSlice, type SceneNavSlice } from './slices/sceneNavSlice';
 
 export interface SpellingSettings {
   /** When true, capitalized unknown words (likely proper nouns) are flagged. */
@@ -900,7 +901,7 @@ export interface BeatInfo {
 
 export type BeatArrangeMode = 'auto' | 'custom';
 
-export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, TypewriterSlice, NotesSlice {
+export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, TypewriterSlice, NotesSlice, SceneNavSlice {
   /** Toolbar zones (v0.38). Tokens: g:<group> built-in section, t:<toolId>
    *  pinned tool, c:<commandId> pinned command, d:<n> divider line. The right
    *  zone renders after the flex spacer (far right). Empty arrays mean
@@ -1104,20 +1105,6 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    *  capture and restore, so they can't drift. */
   captureCustomizations: () => Record<string, unknown>;
   restoreCustomizations: (snap: Record<string, unknown>) => void;
-  /** v1.80: Navigator filter + kind visibility live in the store so the
-   *  window's header (dropdown) and footer (filter field) — which render in
-   *  the shared window chrome — stay in sync with the list body. */
-  navFilter: string;
-  setNavFilter: (v: string) => void;
-  /** v3.54: Scenes tool search / filters / published option lists (ephemeral). */
-  sceneSearch: string;
-  setSceneSearch: (v: string) => void;
-  sceneFilters: SceneFilters;
-  setSceneFilters: (f: SceneFilters) => void;
-  sceneNavData: SceneNavData;
-  setSceneNavData: (d: SceneNavData) => void;
-  navShowKinds: Record<string, boolean>;
-  setNavShowKinds: (v: Record<string, boolean>) => void;
   /** v1.83: the CURRENT text-highlighter color — one source shared by the
    *  toolbar highlighter button and Format > Highlighting. Persisted. */
   highlightColor: string;
@@ -1462,6 +1449,7 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   ...createTagSlice(set, get, api),
   ...createTypewriterSlice(set, get, api),
   ...createNotesSlice(set, get, api),
+  ...createSceneNavSlice(set, get, api),
   activeElement: 'action',
   setActiveElement: (el) => set({ activeElement: el }),
 
@@ -1784,16 +1772,6 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     saveViewState(patch as Partial<ViewState>);
     set(patch as Partial<EditorState>);
   },
-  navFilter: '',
-  setNavFilter: (v) => set({ navFilter: v }),
-  sceneSearch: '',
-  setSceneSearch: (v) => set({ sceneSearch: v }),
-  sceneFilters: EMPTY_SCENE_FILTERS,
-  setSceneFilters: (f) => set({ sceneFilters: f }),
-  sceneNavData: EMPTY_SCENE_NAV_DATA,
-  setSceneNavData: (d) => set({ sceneNavData: d }),
-  navShowKinds: {},
-  setNavShowKinds: (v) => set({ navShowKinds: v }),
   highlightColor: (_vs.highlightColor as string) ?? '#ffff00',
   setHighlightColor: (v) => {
     saveViewState({ highlightColor: v });
