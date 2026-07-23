@@ -186,6 +186,7 @@
       "title": "Production tags / Locations",
       "store": "editorStore:tags",
       "files": [
+        "frontend/src/stores/slices/tagSlice.ts",
         "frontend/src/components/TagsPanel.tsx",
         "frontend/src/components/LocationDatabase.tsx",
         "frontend/src/styles/screenplay/13-production-tags.css"

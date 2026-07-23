@@ -8,6 +8,7 @@ import { findLanguage, urlsFor } from '../editor/languageCatalog';
 import { _vs, saveViewState, type ViewState } from './viewState';
 import { createDesignSlice, type DesignSlice } from './slices/designSlice';
 import { createCharacterSlice, type CharacterSlice } from './slices/characterSlice';
+import { createTagSlice, type TagSlice } from './slices/tagSlice';
 
 /** Clamp a number to the inclusive range [lo, hi]. */
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
@@ -900,7 +901,7 @@ export interface BeatInfo {
 
 export type BeatArrangeMode = 'auto' | 'custom';
 
-export interface EditorState extends DesignSlice, CharacterSlice {
+export interface EditorState extends DesignSlice, CharacterSlice, TagSlice {
   /** Toolbar zones (v0.38). Tokens: g:<group> built-in section, t:<toolId>
    *  pinned tool, c:<commandId> pinned command, d:<n> divider line. The right
    *  zone renders after the flex spacer (far right). Empty arrays mean
@@ -1323,15 +1324,6 @@ export interface EditorState extends DesignSlice, CharacterSlice {
   setMapScrollSpeed: (v: number) => void;
 
   // Production tags
-  tagCategories: TagCategory[];
-  setTagCategories: (cats: TagCategory[]) => void;
-  addTagCategory: (name: string, color: string) => string;
-  deleteTagCategory: (id: string) => void;
-  tags: TagItem[];
-  setTags: (tags: TagItem[]) => void;
-  addTag: (tag: Omit<TagItem, 'id' | 'createdAt' | 'name'> & { name?: string }) => string;
-  updateTag: (id: string, updates: Partial<Pick<TagItem, 'notes' | 'categoryId' | 'name'>>) => void;
-  deleteTag: (id: string) => void;
   tagsVisible: boolean;
   setTagsVisible: (v: boolean) => void;
   tagsPanelOpen: boolean;
@@ -1522,6 +1514,7 @@ const CUSTOMIZATION_FIELDS = [
 export const useEditorStore = create<EditorState>((set, get, api) => ({
   ...createDesignSlice(set, get, api),
   ...createCharacterSlice(set, get, api),
+  ...createTagSlice(set, get, api),
   activeElement: 'action',
   setActiveElement: (el) => set({ activeElement: el }),
 
@@ -2518,36 +2511,6 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     set({ mapScrollSpeed: clamped });
   },
 
-  // Production tags
-  tagCategories: [...DEFAULT_TAG_CATEGORIES],
-  setTagCategories: (cats) => set({ tagCategories: cats }),
-  addTagCategory: (name, color) => {
-    const id = uuid();
-    set((s) => ({
-      tagCategories: [...s.tagCategories, { id, name, color, isBuiltIn: false }],
-    }));
-    return id;
-  },
-  deleteTagCategory: (id) =>
-    set((s) => ({
-      tagCategories: s.tagCategories.filter((c) => c.id !== id),
-      tags: s.tags.filter((t) => t.categoryId !== id),
-    })),
-  tags: [],
-  setTags: (tags) => set({ tags }),
-  addTag: (tag) => {
-    const id = uuid();
-    set((s) => ({
-      tags: [...s.tags, { ...tag, name: tag.name || tag.text, id, createdAt: new Date().toISOString() }],
-    }));
-    return id;
-  },
-  updateTag: (id, updates) =>
-    set((s) => ({
-      tags: s.tags.map((t) => (t.id === id ? { ...t, ...updates } : t)),
-    })),
-  deleteTag: (id) =>
-    set((s) => ({ tags: s.tags.filter((t) => t.id !== id) })),
   tagsVisible: _vs.tagsVisible ?? false,
   setTagsVisible: (v) => {
     saveViewState({ tagsVisible: v });
