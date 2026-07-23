@@ -5,6 +5,7 @@
     "_comment": "Shared files no lane owns. Only one chat edits a spine file at a time; registry edits (ToolId, ALL_TOOLS, uiIcons) stay small and append-only.",
     "files": [
       "frontend/src/stores/editorStore.ts",
+      "frontend/src/stores/viewState.ts",
       "frontend/src/components/ScreenplayEditor.tsx",
       "frontend/src/components/ToolDock.tsx",
       "frontend/src/components/uiIcons.tsx",
@@ -114,6 +115,7 @@
         "frontend/src/components/ThemesTab.tsx",
         "frontend/src/components/WorkspacesTool.tsx",
         "frontend/src/components/WorkspaceDialogs.tsx",
+        "frontend/src/stores/slices/designSlice.ts",
         "frontend/src/design/designTokens.ts",
         "frontend/src/stores/themeStore.ts",
         "frontend/src/styles/screenplay/23-toolbar-zones.css",

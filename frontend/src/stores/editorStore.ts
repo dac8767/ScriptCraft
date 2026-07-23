@@ -6,6 +6,7 @@ import { findLanguage, urlsFor } from '../editor/languageCatalog';
 
 // ── View-state persistence helpers ──
 import { _vs, saveViewState, type ViewState } from './viewState';
+import { createDesignSlice, type DesignSlice } from './slices/designSlice';
 
 /** Clamp a number to the inclusive range [lo, hi]. */
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
@@ -898,7 +899,7 @@ export interface BeatInfo {
 
 export type BeatArrangeMode = 'auto' | 'custom';
 
-interface EditorState {
+export interface EditorState extends DesignSlice {
   /** Toolbar zones (v0.38). Tokens: g:<group> built-in section, t:<toolId>
    *  pinned tool, c:<commandId> pinned command, d:<n> divider line. The right
    *  zone renders after the flex spacer (far right). Empty arrays mean
@@ -947,16 +948,6 @@ interface EditorState {
   /** v2.29: item spacing (flex gap) per bar — see the GapHandle grips. */
   chromeGapPx: { menu: number; toolbar: number; bigbtn: number; scrapbook: number };
   setChromeGap: (bar: 'menu' | 'toolbar' | 'bigbtn' | 'scrapbook', px: number) => void;
-  /** v4.8: the Design panel. `designVars` holds only OVERRIDDEN tokens (keyed
-   *  by token id from src/design/designTokens.ts); absent keys use the CSS
-   *  default. An effect mirrors this map onto :root --dz-* / page vars, so this
-   *  store is the one source the panel writes, the DOM reads, and Copy CSS dumps. */
-  designVars: Record<string, number>;
-  setDesignVar: (id: string, val: number) => void;
-  resetDesignVar: (id: string) => void;
-  resetAllDesign: () => void;
-  designPanelOpen: boolean;
-  setDesignPanelOpen: (v: boolean) => void;
   setPanelSizeMode: (side: 'left' | 'right', mode: 'compact' | 'comfortable' | 'custom' | 'icons') => void;
   panelDividers: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
   setPanelDividers: (d: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[]) => void;
@@ -1548,7 +1539,8 @@ const CUSTOMIZATION_FIELDS = [
   'uiResizeLocked',
 ] as const;
 
-export const useEditorStore = create<EditorState>((set, get) => ({
+export const useEditorStore = create<EditorState>((set, get, api) => ({
+  ...createDesignSlice(set, get, api),
   activeElement: 'action',
   setActiveElement: (el) => set({ activeElement: el }),
 
@@ -2481,24 +2473,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saveViewState({ chromeGapPx: next });
     return { chromeGapPx: next };
   }),
-  designVars: (_vs.designVars as Record<string, number>) ?? {},
-  setDesignVar: (id, val) => set((st) => {
-    const next = { ...st.designVars, [id]: val };
-    saveViewState({ designVars: next });
-    return { designVars: next };
-  }),
-  resetDesignVar: (id) => set((st) => {
-    const next = { ...st.designVars };
-    delete next[id];
-    saveViewState({ designVars: next });
-    return { designVars: next };
-  }),
-  resetAllDesign: () => set(() => {
-    saveViewState({ designVars: {} });
-    return { designVars: {} };
-  }),
-  designPanelOpen: false,
-  setDesignPanelOpen: (v) => set({ designPanelOpen: v }),
   setPanelSizeMode: (side, mode) => set((st) => {
     const next = { ...st.panelSizeMode, [side]: mode };
     saveViewState({ panelSizeMode: next });
