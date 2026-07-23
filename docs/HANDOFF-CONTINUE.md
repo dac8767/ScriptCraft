@@ -56,7 +56,7 @@ the deploy.
 ```bash
 cd frontend
 npx tsc -b        # MUST be 0 errors. It gates the .dmg build; an unused import breaks the release.
-npm test          # 343 tests as of this run, all green
+npm test          # 419 tests as of this run, all green
 npm run build     # tsc -b && vite build — must succeed
 ```
 Bash resets to the repo root each call, so `cd frontend` every time (or chain with `&&`).
@@ -95,50 +95,79 @@ updates to lanes, print copy-paste briefs for worker chats). Run
 
 ---
 
-## 0.6 editorStore slicing — in progress (6 domains done)
+## 0.6 editorStore slicing — DONE (10 domains; chrome deliberately deferred)
 
-`stores/editorStore.ts` is being carved into per-domain Zustand slices so each
-feature lane can own its state in its own file. **The clean, low-dependency
-domains are done; the entangled/fat ones remain.**
+`stores/editorStore.ts` was carved into per-domain Zustand slices. **editorStore
+went 3,099 → 1,699 lines.** Every step was a pure, shape-preserving refactor
+(flat state kept, consumers untouched), gated by tsc/test/build, and pushed as
+its own commit.
 
-**Done (each `stores/slices/<name>Slice.ts`, verified tsc/test/build, pushed):**
-`designSlice`, `characterSlice` (data CRUD; UI-open bits stayed), `tagSlice`
-(data), `typewriterSlice`, `notesSlice`, `sceneNavSlice` (filters). editorStore
-went 3,099 → 2,614.
+**Done (each `stores/slices/<name>Slice.ts`):** `designSlice`, `characterSlice`
+(data CRUD), `tagSlice` (data), `typewriterSlice`, `notesSlice`, `sceneNavSlice`
+(filters), `workspacesSlice` (apply-doesn't-take bug preserved verbatim, NOT
+fixed — investigate in that one file), `viewPrefsSlice` (viewStyle/preview/
+visibility/zoom/font/pageLayout; `theme` stayed — dynamic theme-apply imports),
+`spellGrammarSlice` (took the module-load dictionary/add-targets/language infra
+with it; its import-time `spellChecker.set*` side-effects still run at startup
+because editorStore imports the slice), `beatsOutlineSlice` (beat CRUD +
+outline-tab system + bar-routed edits + the debounced undo/redo engine —
+`_pushBeatSnapshot` became an in-creator closure over `api.setState`, no
+singleton back-reference).
 
 **Shared plumbing (spine):** `stores/viewState.ts` holds `ViewState`,
 `loadViewState`/`saveViewState`, the `_vs` singleton, and `clamp`. Slices import
-`_vs`/`saveViewState`/`clamp` from there — NOT from editorStore (would be circular).
+those from there — NOT from editorStore (would be circular). Types/value-consts
+still exported from editorStore (external importers): import types **type-only**
+in slices; value-consts are safe when only read inside the creator (live binding).
 
-**The recipe** (copy any existing slice, e.g. `designSlice.ts`):
-1. New `slices/<x>Slice.ts`: `export interface XSlice {…}` + `export const
-   createXSlice: StateCreator<EditorState, [], [], XSlice> = (set, get) => ({…})`.
-   Import types **type-only** from `../editorStore` (erased → no runtime cycle);
-   value-consts (e.g. `DEFAULT_TAG_CATEGORIES`) can be value-imported since they're
-   only read inside the creator (ES live binding).
-2. In editorStore: add `XSlice` to `EditorState extends …`, `import` the creator,
-   spread `...createXSlice(set, get, api)` at the top of `create()`, and delete the
-   moved interface fields + impl. `tsc` then proves every field/action still exists.
-3. Gate (tsc/test/build), commit, and add the slice file to its lane in `lanes.json`.
+**chrome-customization is deliberately NOT sliced** (Derek's call): its ~196
+refs are interspersed the whole length of the store — it IS the store's core —
+the marginal win is the smallest, the risk the largest, and slicing it would
+not free the toolbar/menus/customize lanes (same chrome domain either way). If
+ever attempted: it also owns the ~120-line import-time toolbar-zone migration
+chain at the top of the file.
 
-**Remaining domains + their gotchas (the hard 20%):**
-- **view-prefs** (zoom/font/viewStyle/pageLayout/preview/sceneNumbers) — scattered
-  across several interleaved regions; `DEFAULT_PAGE_LAYOUT` value-const; `theme`
-  touches localStorage.
-- **workspaces** — interleaved impl + complex snapshot capture/apply logic. (Known
-  pre-existing bug: applying a workspace doesn't work — investigate separately.)
-- **spell/grammar/dictionaries** — move the module-scope dictionary/language helper
-  infra (`loadInstalledLanguages`, `saveCustomDictionaries`, `_initialDicts`,
-  `DEFAULT_SPELLING_SETTINGS`, `DICTS_KEY`…) first; also uses external
-  `spellChecker`/`findLanguage`/`urlsFor`.
-- **beats/outline** — carries the beat undo/redo engine + outline-tab system + the
-  bar-routed edits. Big, interdependent.
-- **chrome-customization** — the fattest, most cross-referenced (toolbar/menu/
-  context-menu/panels + capture/restore + the migration code).
+---
 
-These are best done one at a time as focused, tested increments (see the
-`editorstore-slice` skill idea + the dispatcher in §0.5). The store behaves
-identically today — nothing is half-migrated.
+## 0.7 Safe-progress phase — coverage + real bugs found (this run's tail)
+
+After the slicing, work switched to "Path A": extract/test pure logic, add
+regression tests to critical untested code. The suite went **343 → 419 tests**.
+What landed:
+
+- **`utils/screenplaySaveContent.ts`** — `composeSaveContent` + `resolveHFFields`
+  lifted from ScreenplayEditor **with tests** (the extras list that once wiped
+  Outline beats when forked is now pinned).
+- **`components/screenplayEditorConstants.ts`** — editor static config lifted;
+  test locks `DEFAULT_NEXT_TYPE` ↔ `ALL_ELEMENT_TYPES` in sync (§3 drift bug).
+- **REAL BUG FOUND & FIXED: working notes leaked into FDX/DOCX/PDF exports.**
+  §4's filter only existed inline in fountainExporter. Now one shared predicate
+  — **`utils/workingNotes.ts`** (`isWorkingNoteNode`) — is routed through by ALL
+  FOUR exporters. Add a new working-note kind there and every path excludes it.
+  Fountain + FDX exclusion is unit-tested; **DOCX/PDF are binary — Derek should
+  manually export a script carrying `#`/`⚑`/`[ ]` lines and eyeball them.**
+- **Round-trip guards:** Fountain export→parse and FDX export→parse both
+  round-trip the core elements under test — catches exporter/parser drift.
+- **Coverage added to previously-untested core logic:** `scriptStatistics`,
+  `scriptTiming`, `scriptStructure`, `fountainParser`, `fdxParser`, `scriptDiff`.
+
+**Flagged for Derek (found while testing, NOT fixed — behavior decisions):**
+- **`scriptDiff` never classifies "modified":** the LCS backtrack emits add
+  before remove, so the remove→add merge heuristic never fires — every edit
+  shows as delete+add, and the word-diff path is unreachable. Pinned by a test
+  with a KNOWN LIMITATION comment; fixing changes DiffViewer behavior.
+- **`stripHtml` drift:** two copies disagree — CharacterProfiles uses DOMPurify
+  (full entity decoding), fdxExporter hand-rolls 6 entities (misses `&mdash;`
+  etc. → exports them literally in FDX cast descriptions). Consolidating means
+  picking one canonical behavior.
+- Pre-existing (earlier runs): workspaces "apply doesn't take"; a few Design
+  panel options never worked.
+
+**Test-writing notes:** any test that (even transitively) imports `editorStore`
+needs `// @vitest-environment jsdom` (the store touches localStorage at import).
+Single-file `npx vitest run <file>` sometimes resolves a cached vitest without
+jsdom and dies with ERR_MODULE_NOT_FOUND — the full `npx vitest run` is
+reliable; re-run before believing a weird worker failure.
 
 ---
 
