@@ -563,6 +563,20 @@ export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter, 
     setAddingFrom(null);
   }, [upsertCharacterRelationship]);
 
+  // Fit the viewBox to contain every node (the "Fit" button + first layout).
+  const fitToView = useCallback(() => {
+    if (positionedNodes.length === 0) return;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const n of positionedNodes) {
+      minX = Math.min(minX, n.x - n.radius - 30);
+      minY = Math.min(minY, n.y - n.radius - 30);
+      maxX = Math.max(maxX, n.x + n.radius + 30);
+      maxY = Math.max(maxY, n.y + n.radius + 30);
+    }
+    const pad = 60;
+    setViewBox({ x: minX - pad, y: minY - pad, w: maxX - minX + pad * 2, h: maxY - minY + pad * 2 });
+  }, [positionedNodes]);
+
   const nodeMap = useMemo(() => new Map(positionedNodes.map((n) => [n.id, n])), [positionedNodes]);
 
   if (nodes.length === 0) {
@@ -699,66 +713,36 @@ export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter, 
         })}
       </svg>
 
-      {/* Toolbar: overlays the map, or (v4.18) portals into the character
-          window header when a headerSlot is provided. */}
+      {/* v4.23, Derek: the map's action bar mirrors the list view's toolbar —
+          Fit sits to the LEFT of "+ Add Relationship", which uses the exact
+          same button style/spot as the list. Portals into the toolbar slot the
+          character window provides (so it lines up with the list's toolbar);
+          falls back to overlaying the map if no slot is given. The pan/zoom
+          hint is NOT here — it lives at the map's bottom-left (below). */}
       {(() => {
         const bar = (
       <div className={`rel-map-toolbar${headerSlot ? ' rel-map-toolbar-in-header' : ''}`}>
-        {selectedNode ? (
-          <>
-            <span className="rel-map-toolbar-label">{selectedNode}</span>
-            <button
-              className="rel-map-btn rel-map-btn-primary"
-              onClick={() => setAddingFrom(selectedNode)}
-            >
-              + Add Relationship
-            </button>
-            {onSelectCharacter && (
-              <button
-                className="rel-map-btn"
-                onClick={() => onSelectCharacter(selectedNode)}
-              >
-                View Profile
-              </button>
-            )}
-          </>
-        ) : (
-          <>
-            <span className="rel-map-toolbar-hint">Scroll to zoom. Drag background to pan.</span>
-            {nodes.length >= 2 && (
-              <button
-                className="rel-map-btn rel-map-btn-primary"
-                onClick={() => setAddingFrom('__BOTH__')}
-              >
-                + Add Relationship
-              </button>
-            )}
-          </>
-        )}
+        <button className="rel-map-fit-btn" onClick={fitToView} title="Fit all characters to screen">Fit</button>
         <button
-          className="rel-map-btn"
-          style={{ marginLeft: 'auto' }}
-          onClick={() => {
-            // Fit viewBox to contain all nodes
-            if (positionedNodes.length === 0) return;
-            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            for (const n of positionedNodes) {
-              minX = Math.min(minX, n.x - n.radius - 30);
-              minY = Math.min(minY, n.y - n.radius - 30);
-              maxX = Math.max(maxX, n.x + n.radius + 30);
-              maxY = Math.max(maxY, n.y + n.radius + 30);
-            }
-            const pad = 60;
-            setViewBox({ x: minX - pad, y: minY - pad, w: maxX - minX + pad * 2, h: maxY - minY + pad * 2 });
-          }}
-          title="Fit all characters to screen"
+          className="char-rels-add"
+          onClick={() => setAddingFrom(selectedNode || '__BOTH__')}
+          disabled={!selectedNode && nodes.length < 2}
+          title={selectedNode ? `Add a relationship from ${selectedNode}` : 'Add a relationship'}
         >
-          Fit
+          + Add Relationship
         </button>
+        {selectedNode && onSelectCharacter && (
+          <button className="rel-map-btn" onClick={() => onSelectCharacter(selectedNode)}>
+            View Profile
+          </button>
+        )}
       </div>
         );
         return headerSlot ? createPortal(bar, headerSlot) : bar;
       })()}
+
+      {/* Pan/zoom hint — bottom-left of the map (v4.23, Derek). */}
+      <div className="rel-map-hint-corner">Scroll to zoom. Drag background to pan.</div>
 
       {/* Add/Edit relationship form overlay */}
       {(addingFrom || editingRel) && (

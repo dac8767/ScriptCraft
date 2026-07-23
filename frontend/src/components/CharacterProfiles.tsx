@@ -221,14 +221,13 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   const currentScriptId = useProjectStore((s) => s.currentScriptId);
   const { assets, setAssets } = useAssetStore();
 
-  const [activeTab, setActiveTab] = useState<'profiles' | 'relationships'>('profiles');
+  const [activeTab, setActiveTab] = useState<'profiles' | 'relationships' | 'setup'>('profiles');
   // v4.23, Derek: the relationship map is no longer its own tab — it's a
   // List/Map view toggle inside Relationships, mirroring Profiles' Cards/List.
   const [relViewMode, setRelViewMode] = useState<'list' | 'map'>('list');
   const [addRelFor, setAddRelFor] = useState<string | null>(null); // character name to add rel for
   const [expandedChar, setExpandedChar] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showReferred, setShowReferred] = useState(false);
   const sortBy = useEditorStore((s) => s.characterSortBy);
   const setSortBy = useEditorStore((s) => s.setCharacterSortBy);
   const [pendingRemoveChar, setPendingRemoveChar] = useState<string | null>(null);
@@ -948,7 +947,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           disabled={!changed}
           title={changed ? "Rewrite this character's name throughout the script" : 'Edit a name to enable'}
           onClick={() => applyNameToScript(charName)}
-        >Update name in script</button>
+        >Update in Script</button>
       </div>
     );
   };
@@ -1338,6 +1337,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           <div className="char-fs-header-tabs">
             <button className={`char-profiles-tab${activeTab === 'profiles' ? ' active' : ''}`} onClick={() => setActiveTab('profiles')}>Profiles</button>
             <button className={`char-profiles-tab${activeTab === 'relationships' ? ' active' : ''}`} onClick={() => setActiveTab('relationships')}>Relationships</button>
+            <button className={`char-profiles-tab${activeTab === 'setup' ? ' active' : ''}`} onClick={() => setActiveTab('setup')}>Setup</button>
           </div>
         )}
         {isFullscreen && (
@@ -1354,7 +1354,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                 <button className={`char-fs-view-btn${relViewMode === 'map' ? ' active' : ''}`} onClick={() => setRelViewMode('map')}>Map</button>
               </div>
             )}
-            {activeTab === 'relationships' && relViewMode === 'map' && <div className="char-fs-map-actions" ref={setMapHeaderSlot} />}
             <button className="char-profiles-close" onClick={() => exitCharFullscreen()} title="Return to editor">&times;</button>
           </div>
         )}
@@ -1387,6 +1386,12 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           >
             Relationships
           </button>
+          <button
+            className={`char-profiles-tab${activeTab === 'setup' ? ' active' : ''}`}
+            onClick={() => setActiveTab('setup')}
+          >
+            Setup
+          </button>
         </div>
       )}
 
@@ -1403,17 +1408,23 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             </div>
           )}
           {relViewMode === 'map' ? (
-            <RelationshipMap
-              key={currentScriptId || 'no-script'}
-              scriptId={currentScriptId || undefined}
-              headerSlot={isFullscreen ? mapHeaderSlot : null}
-              onSelectCharacter={(name) => {
-                setActiveTab('profiles');
-                setSelectedCharacter(name);
-                setExpandedChar(name);
-                setModalChar(name);
-              }}
-            />
+            <>
+              {/* The map's Fit / + Add Relationship buttons portal into this
+                  toolbar — the SAME .char-rels-toolbar the list uses, so the
+                  controls sit in the same place in both views (v4.23). */}
+              <div className="char-rels-toolbar" ref={setMapHeaderSlot} />
+              <RelationshipMap
+                key={currentScriptId || 'no-script'}
+                scriptId={currentScriptId || undefined}
+                headerSlot={mapHeaderSlot}
+                onSelectCharacter={(name) => {
+                  setActiveTab('profiles');
+                  setSelectedCharacter(name);
+                  setExpandedChar(name);
+                  setModalChar(name);
+                }}
+              />
+            </>
           ) : (
           <>
           <div className="char-rels-toolbar">
@@ -1483,13 +1494,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             <option value="appearance">Appearance</option>
           </select>
         </div>
-        <button
-          className="char-profiles-build-btn"
-          onClick={handleBuildFromScript}
-          title="Scan the script for characters and extract descriptions from action lines"
-        >
-          Build from Script
-        </button>
       </div>
 
       {/* Character list */}
@@ -1795,66 +1799,72 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
 
       </div>
 
-      {/* "Referred in Script" button at the bottom */}
-      {unmatchedNames.length > 0 && (
-        <button
-          className="char-referred-btn"
-          onClick={() => setShowReferred(true)}
-        >
-          Referred in Script ({unmatchedNames.length})
-        </button>
-      )}
+      </>}
+      {/* End of profiles tab */}
 
-      {/* Referred in Script overlay panel */}
-      {showReferred && (
-        <div className="char-referred-overlay">
-          <div className="char-referred-panel">
-            <div className="char-referred-header">
-              <span>Referred in Script</span>
-              <button className="char-profiles-close" onClick={() => setShowReferred(false)}>&times;</button>
-            </div>
-            <div className="char-referred-desc">
-              Names found in ALL CAPS in action lines that are not yet in the character list.
-            </div>
-            <div className="char-referred-list">
-              {unmatchedNames.map((name) => (
-                <div key={name} className="char-unmatched-row">
-                  <span className="char-unmatched-name">{name}</span>
-                  {/* v4.19: classify — location / other / connect to an existing
-                      character — to file the name away and drop it off this list. */}
-                  <select
-                    className="char-unmatched-classify"
-                    value=""
-                    title="File this away so it leaves the list"
-                    onChange={(e) => { handleClassifyReferred(name, e.target.value); e.target.value = ''; }}
-                  >
-                    <option value="">Classify…</option>
-                    <option value="__location">It's a location</option>
-                    <option value="__other">Other — hide it</option>
-                    {existingCharNames.length > 0 && (
-                      <optgroup label="Connect to character">
-                        {existingCharNames.map((c) => (
-                          <option key={c} value={`__char:${c}`}>{c}</option>
-                        ))}
-                      </optgroup>
-                    )}
-                  </select>
-                  <button
-                    className="char-unmatched-add"
-                    onClick={() => handleAddUnmatched(name)}
-                    title="Add as a new character"
-                  >
-                    + Add
-                  </button>
-                </div>
-              ))}
-            </div>
+      {/* v4.23, Derek: Setup tab — Build from Script and the "Referred in
+          Script" list, moved out of the Profiles tab into their own home. */}
+      {activeTab === 'setup' && (
+        <div className="char-setup-tab">
+          <div className="char-setup-section">
+            <div className="char-setup-title">Build from Script</div>
+            <p className="char-setup-desc">
+              Scan the script for characters and pull descriptions and ages from the action lines that introduce them.
+            </p>
+            <button
+              className="char-rels-add"
+              onClick={handleBuildFromScript}
+              title="Scan the script for characters and extract descriptions from action lines"
+            >
+              Build from Script
+            </button>
+          </div>
+
+          <div className="char-setup-section">
+            <div className="char-setup-title">Referred in Script{unmatchedNames.length > 0 ? ` (${unmatchedNames.length})` : ''}</div>
+            <p className="char-setup-desc">
+              Names found in ALL CAPS in action lines that aren&rsquo;t yet in the character list. Add one as a character, or classify it to file it away.
+            </p>
+            {unmatchedNames.length === 0 ? (
+              <div className="char-profiles-empty">Nothing referred that isn&rsquo;t already a character.</div>
+            ) : (
+              <div className="char-referred-list">
+                {unmatchedNames.map((name) => (
+                  <div key={name} className="char-unmatched-row">
+                    <span className="char-unmatched-name">{name}</span>
+                    {/* v4.19: classify — location / other / connect to an existing
+                        character — to file the name away and drop it off this list. */}
+                    <select
+                      className="char-unmatched-classify"
+                      value=""
+                      title="File this away so it leaves the list"
+                      onChange={(e) => { handleClassifyReferred(name, e.target.value); e.target.value = ''; }}
+                    >
+                      <option value="">Classify…</option>
+                      <option value="__location">It&rsquo;s a location</option>
+                      <option value="__other">Other — hide it</option>
+                      {existingCharNames.length > 0 && (
+                        <optgroup label="Connect to character">
+                          {existingCharNames.map((c) => (
+                            <option key={c} value={`__char:${c}`}>{c}</option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </select>
+                    <button
+                      className="char-unmatched-add"
+                      onClick={() => handleAddUnmatched(name)}
+                      title="Add as a new character"
+                    >
+                      + Add
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
-
-      </>}
-      {/* End of profiles tab */}
 
       {/* Image Picker Overlay */}
       {imagePickerFor && (
