@@ -62,6 +62,7 @@
       "title": "Notes / To-Do / Sticky",
       "store": "editorStore:notes",
       "files": [
+        "frontend/src/stores/slices/notesSlice.ts",
         "frontend/src/components/ScriptNotes.tsx",
         "frontend/src/components/StickyNotes.tsx",
         "frontend/src/components/StickyCard.tsx",
