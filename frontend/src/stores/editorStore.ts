@@ -5,13 +5,11 @@ import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { findLanguage, urlsFor } from '../editor/languageCatalog';
 
 // ── View-state persistence helpers ──
-import { _vs, saveViewState, type ViewState } from './viewState';
+import { _vs, saveViewState, clamp, type ViewState } from './viewState';
 import { createDesignSlice, type DesignSlice } from './slices/designSlice';
 import { createCharacterSlice, type CharacterSlice } from './slices/characterSlice';
 import { createTagSlice, type TagSlice } from './slices/tagSlice';
-
-/** Clamp a number to the inclusive range [lo, hi]. */
-const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
+import { createTypewriterSlice, type TypewriterSlice } from './slices/typewriterSlice';
 
 export interface SpellingSettings {
   /** When true, capitalized unknown words (likely proper nouns) are flagged. */
@@ -901,7 +899,7 @@ export interface BeatInfo {
 
 export type BeatArrangeMode = 'auto' | 'custom';
 
-export interface EditorState extends DesignSlice, CharacterSlice, TagSlice {
+export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, TypewriterSlice {
   /** Toolbar zones (v0.38). Tokens: g:<group> built-in section, t:<toolId>
    *  pinned tool, c:<commandId> pinned command, d:<n> divider line. The right
    *  zone renders after the flex spacer (far right). Empty arrays mean
@@ -1045,44 +1043,6 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice {
    *  Lock Pages). Off by default; flipped from Help > Developer. */
   showUnreleasedTools: boolean;
   setShowUnreleasedTools: (v: boolean) => void;
-  /** v1.84: the tool's master switch — off silences EVERY Typewriter feature
-   *  while each sub-option keeps its own checked state for next time. */
-  typewriterMasterEnabled: boolean;
-  setTypewriterMasterEnabled: (v: boolean) => void;
-  /** v1.68: Typewriter mode — auto-scroll keeps the active line centered. */
-  typewriterEnabled: boolean;
-  setTypewriterEnabled: (v: boolean) => void;
-  /** v1.70: also recenter when the cursor MOVES (clicks, arrow keys), not
-   *  just when typing. Sub-option — only applies while typewriterEnabled. */
-  typewriterFollowCursor: boolean;
-  setTypewriterFollowCursor: (v: boolean) => void;
-  /** v1.72 (ported from obsidian-typewriter-mode): where the typewriter line
-   *  sits, as a fraction of the viewport from the top (0.5 = center). */
-  typewriterOffset: number;
-  setTypewriterOffset: (v: number) => void;
-  /** v1.72: highlight bar glued to the caret's line (independent toggle). */
-  typewriterHighlightLine: boolean;
-  setTypewriterHighlightLine: (v: boolean) => void;
-  /** v1.78: the bar's color (hex; rendered translucent over the page). */
-  typewriterHighlightColor: string;
-  setTypewriterHighlightColor: (v: string) => void;
-  /** v1.72: dim every element except the one being edited (independent). */
-  typewriterDimOthers: boolean;
-  setTypewriterDimOthers: (v: boolean) => void;
-  /** v1.74: dim whole elements, or everything but the current SENTENCE. */
-  typewriterDimMode: 'elements' | 'sentences';
-  setTypewriterDimMode: (v: 'elements' | 'sentences') => void;
-  /** v1.77: how faint the dimmed text goes (0.05–0.7; 0.25 = plugin default). */
-  typewriterDimOpacity: number;
-  setTypewriterDimOpacity: (v: number) => void;
-  /** v1.74 (control moved to Settings > General in v1.77): reopen a script
-   *  with the cursor where you left it. */
-  typewriterRestoreCursor: boolean;
-  setTypewriterRestoreCursor: (v: boolean) => void;
-  /** v1.74: fullscreen writing focus — hides all chrome, adds a vignette.
-   *  Session-only on purpose: relaunching into fullscreen would be hostile. */
-  writingFocus: boolean;
-  setWritingFocus: (v: boolean) => void;
   /** v1.75: the Outline Bar (Final Draft's Outline Editor) under the toolbar. */
   outlineBarOpen: boolean;
   setOutlineBarOpen: (v: boolean) => void;
@@ -1515,6 +1475,7 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   ...createDesignSlice(set, get, api),
   ...createCharacterSlice(set, get, api),
   ...createTagSlice(set, get, api),
+  ...createTypewriterSlice(set, get, api),
   activeElement: 'action',
   setActiveElement: (el) => set({ activeElement: el }),
 
@@ -1718,60 +1679,6 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     saveViewState({ showUnreleasedTools: v });
     set({ showUnreleasedTools: v });
   },
-  typewriterMasterEnabled: (_vs.typewriterMasterEnabled as boolean) ?? true,
-  setTypewriterMasterEnabled: (v) => {
-    saveViewState({ typewriterMasterEnabled: v });
-    set({ typewriterMasterEnabled: v });
-  },
-  typewriterEnabled: (_vs.typewriterEnabled as boolean) ?? false,
-  setTypewriterEnabled: (v) => {
-    saveViewState({ typewriterEnabled: v });
-    set({ typewriterEnabled: v });
-  },
-  typewriterFollowCursor: (_vs.typewriterFollowCursor as boolean) ?? false,
-  setTypewriterFollowCursor: (v) => {
-    saveViewState({ typewriterFollowCursor: v });
-    set({ typewriterFollowCursor: v });
-  },
-  typewriterOffset: (_vs.typewriterOffset as number) ?? 0.5,
-  setTypewriterOffset: (v) => {
-    const clamped = clamp(v, 0.2, 0.8);
-    saveViewState({ typewriterOffset: clamped });
-    set({ typewriterOffset: clamped });
-  },
-  typewriterHighlightLine: (_vs.typewriterHighlightLine as boolean) ?? false,
-  setTypewriterHighlightLine: (v) => {
-    saveViewState({ typewriterHighlightLine: v });
-    set({ typewriterHighlightLine: v });
-  },
-  typewriterHighlightColor: (_vs.typewriterHighlightColor as string) ?? '#4a9eff',
-  setTypewriterHighlightColor: (v) => {
-    saveViewState({ typewriterHighlightColor: v });
-    set({ typewriterHighlightColor: v });
-  },
-  typewriterDimOthers: (_vs.typewriterDimOthers as boolean) ?? false,
-  setTypewriterDimOthers: (v) => {
-    saveViewState({ typewriterDimOthers: v });
-    set({ typewriterDimOthers: v });
-  },
-  typewriterDimMode: (_vs.typewriterDimMode as 'elements' | 'sentences') ?? 'elements',
-  setTypewriterDimMode: (v) => {
-    saveViewState({ typewriterDimMode: v });
-    set({ typewriterDimMode: v });
-  },
-  typewriterDimOpacity: (_vs.typewriterDimOpacity as number) ?? 0.25,
-  setTypewriterDimOpacity: (v) => {
-    const clamped = clamp(v, 0.05, 0.7);
-    saveViewState({ typewriterDimOpacity: clamped });
-    set({ typewriterDimOpacity: clamped });
-  },
-  typewriterRestoreCursor: (_vs.typewriterRestoreCursor as boolean) ?? false,
-  setTypewriterRestoreCursor: (v) => {
-    saveViewState({ typewriterRestoreCursor: v });
-    set({ typewriterRestoreCursor: v });
-  },
-  writingFocus: false,
-  setWritingFocus: (v) => set({ writingFocus: v }),
   outlineBarOpen: (_vs.outlineBarOpen as boolean) ?? false,
   setOutlineBarOpen: (v) => {
     saveViewState({ outlineBarOpen: v });

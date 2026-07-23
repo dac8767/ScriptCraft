@@ -107,3 +107,6 @@ export function saveViewState(patch: Partial<ViewState>) {
 
 /** Loaded once at module init; slices read it for their initial defaults. */
 export const _vs = loadViewState();
+
+/** Clamp a number to the inclusive range [lo, hi]. Shared by store slices. */
+export const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));

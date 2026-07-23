@@ -224,6 +224,7 @@
         "frontend/src/components/GoalsTool.tsx",
         "frontend/src/components/HighlightsTool.tsx",
         "frontend/src/components/TypewriterTool.tsx",
+        "frontend/src/stores/slices/typewriterSlice.ts",
         "frontend/src/components/FeedbackTool.tsx",
         "frontend/src/components/AiWriterTool.tsx",
         "frontend/src/data/helpForms.ts",
