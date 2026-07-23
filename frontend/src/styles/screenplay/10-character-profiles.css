@@ -425,23 +425,6 @@
   border-bottom: 1px solid var(--fd-border);
   line-height: 1.4;
 }
-.char-referred-list { flex: 1; overflow-y: auto; padding: 6px; }
-.char-unmatched-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  border-radius: 3px;
-}
-.char-unmatched-row:hover { background: var(--fd-overlay-subtle); }
-.char-unmatched-name {
-  flex: 1;
-  min-width: 0;
-  font-size: 11px;
-  color: var(--fd-text-muted);
-  text-transform: uppercase;
-  letter-spacing: .3px;
-}
 /* v4.19: classify dropdown (location / other / connect to character). */
 .char-unmatched-classify {
   flex: 0 0 auto;
@@ -482,12 +465,27 @@
   flex-shrink: 0;
 }
 .char-rels-toolbar { padding: 10px 12px; border-bottom: 1px solid var(--fd-border); flex-shrink: 0; }
-/* v4.23, Derek: Setup tab — Build from Script + Referred in Script. */
+/* v4.23, Derek: "From Script" tab — one "Scan Script" section (Build from Script
+   + Referred in Script folded into a single reviewable scan list). */
 .char-setup-tab { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 18px; }
 .char-setup-section { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .char-setup-title { font-size: 12px; font-weight: 600; color: var(--fd-text); }
 .char-setup-desc { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--fd-text-muted); }
-.char-setup-tab .char-referred-list { align-self: stretch; }
+/* The scanned character list: one row per found character, description wrapping
+   under the name/age/actions line. */
+.char-scan-list { align-self: stretch; display: flex; flex-direction: column; gap: 2px; }
+.char-scan-row { display: flex; flex-direction: column; gap: 3px; padding: 6px 8px; border-radius: 4px; }
+.char-scan-row:hover { background: var(--fd-overlay-subtle); }
+.char-scan-main { display: flex; align-items: center; gap: 8px; }
+.char-scan-name { font-size: 11px; font-weight: 600; color: var(--fd-text); text-transform: uppercase; letter-spacing: .3px; }
+.char-scan-age {
+  flex: 0 0 auto; font-size: 10px; color: var(--fd-text-muted);
+  border: 1px solid var(--fd-border); border-radius: 8px; padding: 0 6px; line-height: 16px;
+}
+.char-scan-tag { flex: 0 0 auto; font-size: 9px; text-transform: uppercase; letter-spacing: .5px; color: var(--fd-text-muted); opacity: .7; }
+.char-scan-spacer { flex: 1; }
+.char-scan-added { flex: 0 0 auto; font-size: 10px; color: var(--fd-text-muted); }
+.char-scan-desc { font-size: 11px; line-height: 1.45; color: var(--fd-text-muted); }
 .char-rels-add {
   padding: 5px 12px;
   background: transparent; border: 1px solid var(--fd-accent); border-radius: 4px;

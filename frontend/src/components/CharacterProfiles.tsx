@@ -12,6 +12,7 @@ import { showToast } from './Toast';
 import MiniRichText from './MiniRichText';
 import { RelationshipMap } from './RelationshipMap';
 import { toTitleCaseName, lastNameOf, joinName, escapeRegExp } from '../utils/characterNames';
+import { buildScanList, type ScannedCharacter } from '../utils/characterScan';
 
 // Default colors for auto-assignment (VIBGYOR palette)
 const DEFAULT_HIGHLIGHT_COLORS = [
@@ -231,6 +232,12 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   const sortBy = useEditorStore((s) => s.characterSortBy);
   const setSortBy = useEditorStore((s) => s.setCharacterSortBy);
   const [pendingRemoveChar, setPendingRemoveChar] = useState<string | null>(null);
+  // v4.23, Derek: "From Script" tab — "Scan Script" is now a discovery step. It
+  // fills this list with every character found in the script (speaking cues +
+  // referred names), each carrying a description/age pulled from the action line
+  // that introduces them. Nothing is created until the writer clicks Add on a
+  // row. null = not scanned yet this session.
+  const [scanResults, setScanResults] = useState<ScannedCharacter[] | null>(null);
   const isFullscreen = fullscreen;
   // v4.16: fullscreen is the Scrapbook-style editor takeover (a store flag),
   // not a fixed overlay that covered the toolbar with no way out. Entering
@@ -320,110 +327,8 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     }
   }, [scriptCharacterNames, characterProfiles, upsertCharacterProfile]);
 
-  /**
-   * "Build from Script" — scan the script to extract character info:
-   * 1. Collect all character names from Character elements
-   * 2. For each character, scan Action lines for their ALL-CAPS name to find
-   *    introductory descriptions (e.g. "SARAH (30s, sharp eyes, worn jacket) enters")
-   * 3. Try to extract age/gender hints from the description
-   */
-  const handleBuildFromScript = useCallback(() => {
-    if (!editor) return;
-    const doc = editor.state.doc;
-
-    // Step 1: collect unique character names
-    const names = new Set<string>();
-    doc.descendants((node) => {
-      if (node.type.name === 'character') {
-        const base = node.textContent.trim().replace(/\s*\([^)]*\)\s*/g, '').toUpperCase();
-        if (base) names.add(base);
-      }
-      return true;
-    });
-
-    // Step 2: for each name, find the first Action line that mentions them in ALL CAPS
-    // Screenwriters introduce characters like: "SARAH CHEN (30s, sharp eyes) sits alone."
-    const descriptions = new Map<string, string>();
-    const ages = new Map<string, string>();
-
-    for (const charName of names) {
-      // Already has a description? Skip.
-      const existing = characterProfiles.find((p) => p.name === charName);
-      if (existing?.description) continue;
-
-      let found = false;
-      doc.descendants((node) => {
-        if (found) return false;
-        if (node.type.name !== 'action') return true;
-        const text = node.textContent;
-        // Look for the character name in ALL CAPS within the action line
-        const idx = text.indexOf(charName);
-        if (idx === -1) return true;
-
-        // Check it's actually an ALL-CAPS word (not part of a lowercase word)
-        const before = idx > 0 ? text[idx - 1] : ' ';
-        const after = idx + charName.length < text.length ? text[idx + charName.length] : ' ';
-        if (/[a-zA-Z]/.test(before) || /[a-z]/.test(after)) return true;
-
-        // Extract the whole sentence containing the character name
-        // Find sentence boundaries
-        let sentStart = idx;
-        while (sentStart > 0 && text[sentStart - 1] !== '.' && text[sentStart - 1] !== '\n') sentStart--;
-        let sentEnd = idx + charName.length;
-        while (sentEnd < text.length && text[sentEnd] !== '.' && text[sentEnd] !== '\n') sentEnd++;
-        if (sentEnd < text.length && text[sentEnd] === '.') sentEnd++;
-
-        const sentence = text.slice(sentStart, sentEnd).trim();
-        if (sentence.length > 10) {
-          descriptions.set(charName, sentence);
-
-          // Try to extract age from parenthetical right after the name
-          // e.g. "SARAH (30s, sharp)" or "MARCUS, 40s,"
-          const afterName = text.slice(idx + charName.length, idx + charName.length + 60);
-          const ageMatch = afterName.match(/\(?(\d{1,2}0?s?|\d{1,2})\)?[,\s]/);
-          if (ageMatch) {
-            ages.set(charName, ageMatch[1]);
-          }
-        }
-
-        found = true;
-        return false;
-      });
-    }
-
-    // Step 3: remove orphaned profiles (characters no longer in script)
-    for (const prof of characterProfiles) {
-      if (!names.has(prof.name)) {
-        deleteCharacterProfile(prof.name);
-      }
-    }
-
-    // Step 4: apply to profiles
-    let colorIdx = characterProfiles.length;
-    for (const charName of names) {
-      const existing = characterProfiles.find((p) => p.name === charName);
-      const updates: Partial<Omit<CharacterProfile, 'name'>> = {};
-
-      if (!existing) {
-        updates.color = DEFAULT_HIGHLIGHT_COLORS[colorIdx % DEFAULT_HIGHLIGHT_COLORS.length];
-        colorIdx++;
-      }
-
-      const desc = descriptions.get(charName);
-      if (desc && !existing?.description) {
-        updates.description = desc;
-      }
-
-      const age = ages.get(charName);
-      if (age && !existing?.age) {
-        updates.age = age;
-      }
-
-      if (Object.keys(updates).length > 0) {
-        upsertCharacterProfile(charName, updates);
-      }
-    }
-  }, [editor, characterProfiles, upsertCharacterProfile, deleteCharacterProfile]);
+  // "Scan Script" (handleScanScript) and applyScanResult live further down, next
+  // to the "referred in script" detection they now fold into one list.
 
   // Compute stats per character: dialogue count, scene appearances, order of appearance
   interface CharStats { dialogueCount: number; sceneCount: number; scenes: string[]; appearanceOrder: number }
@@ -571,14 +476,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     return Array.from(found).sort();
   }, [editor, editor?.state.doc, characters, characterProfiles, referredTags]);
 
-  const handleAddUnmatched = useCallback(
-    (name: string) => {
-      const colorIdx = characterProfiles.length % DEFAULT_HIGHLIGHT_COLORS.length;
-      upsertCharacterProfile(name, { color: DEFAULT_HIGHLIGHT_COLORS[colorIdx] });
-    },
-    [characterProfiles, upsertCharacterProfile],
-  );
-
   // v4.19: existing character names to offer under "Connect to character".
   const existingCharNames = useMemo(() => {
     const set = new Set<string>();
@@ -602,6 +499,54 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       if (!existing?.fullName) upsertCharacterProfile(target, { fullName: name });
     }
   }, [setReferredTag, characterProfiles, upsertCharacterProfile]);
+
+  /**
+   * "Scan Script" — the "From Script" tab's discovery step (replaces the old
+   * "Build from Script", which silently created and deleted profiles). Scans the
+   * script for every character — speaking cues plus the referred ALL-CAPS names
+   * that used to sit in their own "Referred in Script" section — and pulls a
+   * description + age from the action line that introduces each. It only builds a
+   * reviewable list (scanResults); nothing is created until the writer clicks Add.
+   */
+  const handleScanScript = useCallback(() => {
+    if (!editor) return;
+    const actionTexts: string[] = [];
+    const cueNames: string[] = [];
+    const seenCue = new Set<string>();
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === 'action') {
+        actionTexts.push(node.textContent);
+      } else if (node.type.name === 'character') {
+        const base = node.textContent.trim().replace(/\s*\([^)]*\)\s*/g, '').toUpperCase();
+        if (base && !seenCue.has(base)) { seenCue.add(base); cueNames.push(base); }
+      }
+      return true;
+    });
+    setScanResults(buildScanList(actionTexts, cueNames, unmatchedNames));
+  }, [editor, unmatchedNames]);
+
+  // Add one scanned character: create its profile if needed and fill in the
+  // detected description/age — but only into fields the writer hasn't set, so
+  // re-adding never clobbers an edit. New names get a color like any other.
+  const applyScanResult = useCallback((r: ScannedCharacter) => {
+    const existing = characterProfiles.find((p) => p.name === r.name);
+    const updates: Partial<Omit<CharacterProfile, 'name'>> = {};
+    if (!existing) {
+      const colorIdx = characterProfiles.length % DEFAULT_HIGHLIGHT_COLORS.length;
+      updates.color = DEFAULT_HIGHLIGHT_COLORS[colorIdx];
+    }
+    if (r.description && !existing?.description) updates.description = r.description;
+    if (r.age && !existing?.age) updates.age = r.age;
+    upsertCharacterProfile(r.name, updates);
+  }, [characterProfiles, upsertCharacterProfile]);
+
+  // The scan is a snapshot, but a referred name the writer classifies afterwards
+  // (location / other / connected) should still drop off — mirror the old list's
+  // live behavior by filtering the snapshot against referredTags at render time.
+  const visibleScanResults = useMemo(() => {
+    if (!scanResults) return [];
+    return scanResults.filter((r) => !(r.source === 'referred' && referredTags[r.name]));
+  }, [scanResults, referredTags]);
 
   // v4.20: the Relationships tab — add a blank relationship to edit inline.
   const handleAddRelationship = useCallback(() => {
@@ -1337,7 +1282,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           <div className="char-fs-header-tabs">
             <button className={`char-profiles-tab${activeTab === 'profiles' ? ' active' : ''}`} onClick={() => setActiveTab('profiles')}>Profiles</button>
             <button className={`char-profiles-tab${activeTab === 'relationships' ? ' active' : ''}`} onClick={() => setActiveTab('relationships')}>Relationships</button>
-            <button className={`char-profiles-tab${activeTab === 'setup' ? ' active' : ''}`} onClick={() => setActiveTab('setup')}>Setup</button>
+            <button className={`char-profiles-tab${activeTab === 'setup' ? ' active' : ''}`} onClick={() => setActiveTab('setup')}>From Script</button>
           </div>
         )}
         {isFullscreen && (
@@ -1390,7 +1335,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             className={`char-profiles-tab${activeTab === 'setup' ? ' active' : ''}`}
             onClick={() => setActiveTab('setup')}
           >
-            Setup
+            From Script
           </button>
         </div>
       )}
@@ -1802,65 +1747,85 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       </>}
       {/* End of profiles tab */}
 
-      {/* v4.23, Derek: Setup tab — Build from Script and the "Referred in
-          Script" list, moved out of the Profiles tab into their own home. */}
+      {/* v4.23, Derek: "From Script" tab — one "Scan Script" section. The scan
+          lists every character it finds (speaking cues + the ALL-CAPS "referred"
+          names that used to be a separate list) with a description/age pulled from
+          the action line that introduces them; the writer adds the ones they want.
+          It replaces the old auto-creating "Build from Script" and the separate
+          "Referred in Script" section — both are folded in here. */}
       {activeTab === 'setup' && (
         <div className="char-setup-tab">
           <div className="char-setup-section">
-            <div className="char-setup-title">Build from Script</div>
+            <div className="char-setup-title">Scan Script{scanResults ? ` (${visibleScanResults.length})` : ''}</div>
             <p className="char-setup-desc">
-              Scan the script for characters and pull descriptions and ages from the action lines that introduce them.
+              Scan the script for characters and pull descriptions and ages from the action lines that introduce them. Review the list, then add the ones you want.
             </p>
             <button
               className="char-rels-add"
-              onClick={handleBuildFromScript}
-              title="Scan the script for characters and extract descriptions from action lines"
+              onClick={handleScanScript}
+              title="Scan the script for characters and pull descriptions and ages from the action lines that introduce them"
             >
-              Build from Script
+              {scanResults ? 'Re-scan Script' : 'Scan Script'}
             </button>
-          </div>
 
-          <div className="char-setup-section">
-            <div className="char-setup-title">Referred in Script{unmatchedNames.length > 0 ? ` (${unmatchedNames.length})` : ''}</div>
-            <p className="char-setup-desc">
-              Names found in ALL CAPS in action lines that aren&rsquo;t yet in the character list. Add one as a character, or classify it to file it away.
-            </p>
-            {unmatchedNames.length === 0 ? (
-              <div className="char-profiles-empty">Nothing referred that isn&rsquo;t already a character.</div>
-            ) : (
-              <div className="char-referred-list">
-                {unmatchedNames.map((name) => (
-                  <div key={name} className="char-unmatched-row">
-                    <span className="char-unmatched-name">{name}</span>
-                    {/* v4.19: classify — location / other / connect to an existing
-                        character — to file the name away and drop it off this list. */}
-                    <select
-                      className="char-unmatched-classify"
-                      value=""
-                      title="File this away so it leaves the list"
-                      onChange={(e) => { handleClassifyReferred(name, e.target.value); e.target.value = ''; }}
-                    >
-                      <option value="">Classify…</option>
-                      <option value="__location">It&rsquo;s a location</option>
-                      <option value="__other">Other — hide it</option>
-                      {existingCharNames.length > 0 && (
-                        <optgroup label="Connect to character">
-                          {existingCharNames.map((c) => (
-                            <option key={c} value={`__char:${c}`}>{c}</option>
-                          ))}
-                        </optgroup>
-                      )}
-                    </select>
-                    <button
-                      className="char-unmatched-add"
-                      onClick={() => handleAddUnmatched(name)}
-                      title="Add as a new character"
-                    >
-                      + Add
-                    </button>
-                  </div>
-                ))}
-              </div>
+            {scanResults && (
+              visibleScanResults.length === 0 ? (
+                <div className="char-profiles-empty">No characters found in the script.</div>
+              ) : (
+                <div className="char-scan-list">
+                  {visibleScanResults.map((r) => {
+                    const existing = characterProfiles.find((p) => p.name === r.name);
+                    const canApply = !existing
+                      || (!!r.description && !existing.description)
+                      || (!!r.age && !existing.age);
+                    return (
+                      <div key={r.name} className="char-scan-row">
+                        <div className="char-scan-main">
+                          <span className="char-scan-name">{r.name}</span>
+                          {r.age && <span className="char-scan-age">{r.age}</span>}
+                          {r.source === 'referred' && <span className="char-scan-tag">referred</span>}
+                          <span className="char-scan-spacer" />
+                          {canApply ? (
+                            <button
+                              className="char-unmatched-add"
+                              onClick={() => applyScanResult(r)}
+                              title={existing
+                                ? 'Add the detected description and age to this character'
+                                : 'Add as a character with the detected description and age'}
+                            >
+                              + Add
+                            </button>
+                          ) : (
+                            <span className="char-scan-added">Added</span>
+                          )}
+                          {/* v4.19: classify a referred name — location / other /
+                              connect to a character — to file it away. */}
+                          {r.source === 'referred' && (
+                            <select
+                              className="char-unmatched-classify"
+                              value=""
+                              title="File this away so it leaves the list"
+                              onChange={(e) => { handleClassifyReferred(r.name, e.target.value); e.target.value = ''; }}
+                            >
+                              <option value="">Classify…</option>
+                              <option value="__location">It&rsquo;s a location</option>
+                              <option value="__other">Other — hide it</option>
+                              {existingCharNames.length > 0 && (
+                                <optgroup label="Connect to character">
+                                  {existingCharNames.map((c) => (
+                                    <option key={c} value={`__char:${c}`}>{c}</option>
+                                  ))}
+                                </optgroup>
+                              )}
+                            </select>
+                          )}
+                        </div>
+                        {r.description && <div className="char-scan-desc">{r.description}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )
             )}
           </div>
         </div>
