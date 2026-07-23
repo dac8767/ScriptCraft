@@ -8,6 +8,7 @@
       "frontend/src/stores/viewState.ts",
       "frontend/src/stores/slices/viewPrefsSlice.ts",
       "frontend/src/components/ScreenplayEditor.tsx",
+      "frontend/src/components/screenplayEditorConstants.ts",
       "frontend/src/utils/screenplaySaveContent.ts",
       "frontend/src/components/ToolDock.tsx",
       "frontend/src/components/uiIcons.tsx",
