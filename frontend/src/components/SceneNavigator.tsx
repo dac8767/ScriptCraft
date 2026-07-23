@@ -4,6 +4,7 @@ import { Editor } from '@tiptap/react';
 import { useEditorStore, EMPTY_SCENE_FILTERS, type SceneFilters } from '../stores/editorStore';
 import { computeSceneLengths, computePageBlocks, type PageContentInfo } from '../editor/pagination';
 import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../utils/scriptTiming';
+import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
 import SynopsisModal from './SynopsisModal';
 import { FilterIcon } from './uiIcons';
@@ -919,7 +920,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
 // these — rendered outside the tool body — stay in sync with the list. The
 // COLORS list mirrors the old in-body filter panel.
 
-const SCENE_FILTER_COLORS = ['', '#8b5cf6', '#4f46e5', '#2563eb', '#059669', '#eab308', '#f97316', '#ef4444', '#000000', '#ffffff'];
+const SCENE_FILTER_COLORS = ['', ...SCENE_SWATCH_COLORS];
 
 export function SceneHeaderExtra() {
   const data = useEditorStore((s) => s.sceneNavData);

@@ -84,7 +84,7 @@ Confirmed still USED (do **not** remove): `.rel-map-toolbar-label`, `.rel-map-to
 
 - [ ] One shared `<Modal>` shell — ~30 dialogs hand-roll overlay + Escape + backdrop (34 Escape handlers) — spine/shell
 - [x] `uuid()`: `formattingTemplateStore` now imports `utils/uuid` (its identical local copy removed). The 3 storage-backend copies are intentionally standalone (zero-dep fallback chain) — left as-is. Added a module-local `clamp()` in `editorStore.ts` replacing 12 inline `Math.min/​max` copies.
-- [ ] ~15 scattered color palettes → one `palettes.ts` (incl. scene-color set duplicated verbatim between `SceneNavigator` and `SynopsisModal`) — `scenes`
+- [~] Color palettes → `utils/palettes.ts` created; the scene-color set (duplicated between `SceneNavigator` and `SynopsisModal`, differing only in `''` position) is now the shared `SCENE_SWATCH_COLORS`. The broader ~14 palettes are mostly *different* palettes for different purposes (highlight vs note vs beat colors) — consolidate case-by-case as genuinely-shared ones appear.
 - [ ] ~10 hand-rolled positioned popup/context menus → a `<PopupMenu>`/`usePopup` primitive
 - [ ] 4 storage backends share a ~40-method interface (all **live** — SQLite→file→localStorage fallback chain) → extract shared interface/helpers, not deletion
 - [ ] Dormant generic-plugin scaffolding in `plugins/registry.ts` (~130 lines; only the grammar-provider half is live, and this repo has no Pro-plugin split) — confirm intent, then trim to the grammar registry

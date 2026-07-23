@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { formatSceneDuration, getTimingColor } from '../utils/scriptTiming';
+import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 
-// VIBGYOR + black + white + no color (rainbow order)
-const SCENE_COLORS = ['#8b5cf6', '#4f46e5', '#2563eb', '#059669', '#eab308', '#f97316', '#ef4444', '#000000', '#ffffff', ''];
+// scene swatches + "no color" last
+const SCENE_COLORS = [...SCENE_SWATCH_COLORS, ''];
 
 interface SynopsisModalProps {
   sceneHeading: string;
