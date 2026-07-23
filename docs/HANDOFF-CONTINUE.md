@@ -95,6 +95,53 @@ updates to lanes, print copy-paste briefs for worker chats). Run
 
 ---
 
+## 0.6 editorStore slicing — in progress (6 domains done)
+
+`stores/editorStore.ts` is being carved into per-domain Zustand slices so each
+feature lane can own its state in its own file. **The clean, low-dependency
+domains are done; the entangled/fat ones remain.**
+
+**Done (each `stores/slices/<name>Slice.ts`, verified tsc/test/build, pushed):**
+`designSlice`, `characterSlice` (data CRUD; UI-open bits stayed), `tagSlice`
+(data), `typewriterSlice`, `notesSlice`, `sceneNavSlice` (filters). editorStore
+went 3,099 → 2,614.
+
+**Shared plumbing (spine):** `stores/viewState.ts` holds `ViewState`,
+`loadViewState`/`saveViewState`, the `_vs` singleton, and `clamp`. Slices import
+`_vs`/`saveViewState`/`clamp` from there — NOT from editorStore (would be circular).
+
+**The recipe** (copy any existing slice, e.g. `designSlice.ts`):
+1. New `slices/<x>Slice.ts`: `export interface XSlice {…}` + `export const
+   createXSlice: StateCreator<EditorState, [], [], XSlice> = (set, get) => ({…})`.
+   Import types **type-only** from `../editorStore` (erased → no runtime cycle);
+   value-consts (e.g. `DEFAULT_TAG_CATEGORIES`) can be value-imported since they're
+   only read inside the creator (ES live binding).
+2. In editorStore: add `XSlice` to `EditorState extends …`, `import` the creator,
+   spread `...createXSlice(set, get, api)` at the top of `create()`, and delete the
+   moved interface fields + impl. `tsc` then proves every field/action still exists.
+3. Gate (tsc/test/build), commit, and add the slice file to its lane in `lanes.json`.
+
+**Remaining domains + their gotchas (the hard 20%):**
+- **view-prefs** (zoom/font/viewStyle/pageLayout/preview/sceneNumbers) — scattered
+  across several interleaved regions; `DEFAULT_PAGE_LAYOUT` value-const; `theme`
+  touches localStorage.
+- **workspaces** — interleaved impl + complex snapshot capture/apply logic. (Known
+  pre-existing bug: applying a workspace doesn't work — investigate separately.)
+- **spell/grammar/dictionaries** — move the module-scope dictionary/language helper
+  infra (`loadInstalledLanguages`, `saveCustomDictionaries`, `_initialDicts`,
+  `DEFAULT_SPELLING_SETTINGS`, `DICTS_KEY`…) first; also uses external
+  `spellChecker`/`findLanguage`/`urlsFor`.
+- **beats/outline** — carries the beat undo/redo engine + outline-tab system + the
+  bar-routed edits. Big, interdependent.
+- **chrome-customization** — the fattest, most cross-referenced (toolbar/menu/
+  context-menu/panels + capture/restore + the migration code).
+
+These are best done one at a time as focused, tested increments (see the
+`editorstore-slice` skill idea + the dispatcher in §0.5). The store behaves
+identically today — nothing is half-migrated.
+
+---
+
 ## 1. Where we are right now (end of this run)
 
 The whole run was a **Character tool overhaul** plus a set of **dockable side-panel tools**
