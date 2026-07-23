@@ -1079,17 +1079,13 @@ interface EditorState {
   // Panels
   indexCardsOpen: boolean;
   toggleIndexCards: () => void;
-  beatBoardOpen: boolean;
-  toggleBeatBoard: () => void;
-  statisticsOpen: boolean;
+  beatBoardOpen: boolean;  statisticsOpen: boolean;
   setStatisticsOpen: (open: boolean) => void;
   statisticsScrollTo: string | null;
   setStatisticsScrollTo: (id: string | null) => void;
   shelfOpen: boolean;
   toggleShelf: () => void;
-  shelfTab: ShelfTopTab;
-  setShelfTab: (tab: ShelfTopTab) => void;
-  notesSubTab: NotesSubTab;
+  shelfTab: ShelfTopTab;  notesSubTab: NotesSubTab;
   setNotesSubTab: (sub: NotesSubTab) => void;
   /**
    * Switch the Sticky Notes pane to a tab, opening the pane if it's closed.
@@ -1197,9 +1193,7 @@ interface EditorState {
   qatItems: string[];
   /** v3.34: dropdown field widths (px) by builtin key — one source for the
    *  live ribbon and the visual editor. */
-  toolbarDdWidths: Record<string, number>;
-  setToolbarDdWidth: (key: string, px: number) => void;
-  /** v3.36, Derek: the ribbon is edited IN PLACE on the real bar — the
+  toolbarDdWidths: Record<string, number>;  /** v3.36, Derek: the ribbon is edited IN PLACE on the real bar — the
    *  Customize > Toolbar tab shows only the palette; the bar itself becomes
    *  the drop surface while that tab is open, and locks when it closes.
    *  These are EPHEMERAL (not persisted). */
@@ -1273,17 +1267,11 @@ interface EditorState {
   openPreferences: (tab?: 'saveloc') => void;
   closePreferences: () => void;
   /** Toolbar customization: hidden built-in buttons + pinned tool shortcuts */
-  toolbarHiddenItems: string[];
-  setToolbarHiddenItems: (ids: string[]) => void;
-  toolbarPinnedTools: ToolId[];
-  setToolbarPinnedTools: (ids: ToolId[]) => void;
-  /** Active writing goal (words / pages / time), persisted across reloads */
+  toolbarHiddenItems: string[];  toolbarPinnedTools: ToolId[];  /** Active writing goal (words / pages / time), persisted across reloads */
   goal: WritingGoal | null;
   /** Per-destination mirror save status for the status bar (Save Locations). */
   mirrorStatuses: Record<string, 'saving' | 'saved' | 'error'>;
   setMirrorStatus: (name: string, st: 'saving' | 'saved' | 'error') => void;
-  clearMirrorStatuses: () => void;
-
   /** Lifetime count of completed writing goals (Analytics > Overview). */
   goalsCompleted: number;
   incrementGoalsCompleted: () => void;
@@ -1307,10 +1295,6 @@ interface EditorState {
   // General notes (file-level, not anchored to text)
   generalNotes: GeneralNote[];
   setGeneralNotes: (notes: GeneralNote[]) => void;
-  addGeneralNote: (note: Omit<GeneralNote, 'id' | 'createdAt'>) => string;
-  updateGeneralNote: (id: string, updates: Partial<Pick<GeneralNote, 'title' | 'content' | 'color'>>) => void;
-  deleteGeneralNote: (id: string) => void;
-
   // Sticky Notes ("Shelf") — file-level cards: comments, to-dos, snippets
   shelfCards: ShelfCard[];
   setShelfCards: (cards: ShelfCard[]) => void;
@@ -1427,9 +1411,7 @@ interface EditorState {
 
   // Character profiles (Final Draft CastList + CharacterHighlighting)
   characters: string[];
-  setCharacters: (names: string[]) => void;
-  addCharacter: (name: string) => void;
-  characterProfiles: CharacterProfile[];
+  setCharacters: (names: string[]) => void;  characterProfiles: CharacterProfile[];
   setCharacterProfiles: (profiles: CharacterProfile[]) => void;
   upsertCharacterProfile: (name: string, updates: Partial<Omit<CharacterProfile, 'name'>>) => void;
   deleteCharacterProfile: (name: string) => void;
@@ -1448,9 +1430,7 @@ interface EditorState {
    *  Persisted per-script via collabSync. */
   referredTags: Record<string, ReferredTag>;
   setReferredTags: (tags: Record<string, ReferredTag>) => void;
-  setReferredTag: (name: string, tag: ReferredTag) => void;
-  clearReferredTag: (name: string) => void;
-  characterProfilesOpen: boolean;
+  setReferredTag: (name: string, tag: ReferredTag) => void;  characterProfilesOpen: boolean;
   toggleCharacterProfiles: () => void;
   selectedCharacter: string | null;
   setSelectedCharacter: (name: string | null) => void;
@@ -1691,7 +1671,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   indexCardsOpen: _vs.indexCardsOpen ?? false,
   toggleIndexCards: () => get().openTool('indexcards'),
   beatBoardOpen: _vs.beatBoardOpen ?? false,
-  toggleBeatBoard: () => get().openTool('beatboard'),
   statisticsOpen: false,
   setStatisticsOpen: (open) => set({ statisticsOpen: open }),
   statisticsScrollTo: null,
@@ -1705,10 +1684,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // migrate pre-v0.2 persisted tabs: 'comment'/'general'/'script' → 'notes'
   shelfTab: (_vs.shelfTab === 'todo' || _vs.shelfTab === 'snippet')
     ? _vs.shelfTab : 'notes',
-  setShelfTab: (tab) => {
-    saveViewState({ shelfTab: tab });
-    set({ shelfTab: tab });
-  },
   notesSubTab: _vs.notesSubTab ?? (_vs.shelfTab === 'script' ? 'script' : 'general'),
   setNotesSubTab: (sub) => {
     saveViewState({ notesSubTab: sub });
@@ -1940,11 +1915,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   toolbarDdWidths: (_vs.toolbarDdWidths && typeof _vs.toolbarDdWidths === 'object')
     ? (_vs.toolbarDdWidths as Record<string, number>) : {},
-  setToolbarDdWidth: (key, px) => {
-    const next = { ...get().toolbarDdWidths, [key]: Math.max(40, Math.min(360, Math.round(px))) };
-    saveViewState({ toolbarDdWidths: next });
-    set({ toolbarDdWidths: next });
-  },
   toolbarEditing: false,
   setToolbarEditing: (b) => set({
     toolbarEditing: b,
@@ -2108,15 +2078,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     return { tempTool: tool };
   }),
   toolbarHiddenItems: _vs.toolbarHiddenItems ?? [],
-  setToolbarHiddenItems: (ids) => {
-    saveViewState({ toolbarHiddenItems: ids });
-    set({ toolbarHiddenItems: ids });
-  },
   toolbarPinnedTools: (_vs.toolbarPinnedTools as ToolId[]) ?? [],
-  setToolbarPinnedTools: (ids) => {
-    saveViewState({ toolbarPinnedTools: ids });
-    set({ toolbarPinnedTools: ids });
-  },
   goal: _vs.writingGoal ?? null,
   setGoal: (g) => set((s) => {
     const goal = typeof g === 'function' ? g(s.goal) : g;
@@ -2125,7 +2087,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   }),
   mirrorStatuses: {},
   setMirrorStatus: (name, st) => set((s) => ({ mirrorStatuses: { ...s.mirrorStatuses, [name]: st } })),
-  clearMirrorStatuses: () => set({ mirrorStatuses: {} }),
   goalsCompleted: _vs.goalsCompleted ?? 0,
   incrementGoalsCompleted: () => set((s) => {
     const goalsCompleted = (s.goalsCompleted || 0) + 1;
@@ -2177,22 +2138,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // General notes
   generalNotes: [],
   setGeneralNotes: (generalNotes) => set({ generalNotes }),
-  addGeneralNote: (note) => {
-    const id = uuid();
-    set((s) => ({
-      generalNotes: [
-        ...s.generalNotes,
-        { ...note, id, createdAt: new Date().toISOString() },
-      ],
-    }));
-    return id;
-  },
-  updateGeneralNote: (id, updates) =>
-    set((s) => ({
-      generalNotes: s.generalNotes.map((n) => (n.id === id ? { ...n, ...updates } : n)),
-    })),
-  deleteGeneralNote: (id) =>
-    set((s) => ({ generalNotes: s.generalNotes.filter((n) => n.id !== id) })),
 
   // Sticky Notes ("Shelf")
   shelfCards: [],
@@ -2698,12 +2643,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   characters: [],
   setCharacters: (names) => set({ characters: names }),
-  addCharacter: (name) =>
-    set((s) => ({
-      characters: s.characters.includes(name.toUpperCase())
-        ? s.characters
-        : [...s.characters, name.toUpperCase()],
-    })),
   characterProfiles: [],
   setCharacterProfiles: (profiles) => set({ characterProfiles: profiles }),
   upsertCharacterProfile: (name, updates) =>
@@ -2785,11 +2724,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   referredTags: {},
   setReferredTags: (tags) => set({ referredTags: tags }),
   setReferredTag: (name, tag) => set((s) => ({ referredTags: { ...s.referredTags, [name]: tag } })),
-  clearReferredTag: (name) => set((s) => {
-    const copy = { ...s.referredTags };
-    delete copy[name];
-    return { referredTags: copy };
-  }),
   characterProfilesOpen: _vs.characterProfilesOpen ?? false,
   toggleCharacterProfiles: () => get().openTool('characters'),
   selectedCharacter: null,

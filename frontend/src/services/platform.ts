@@ -48,12 +48,6 @@ export function getOS(): 'macos' | 'windows' | 'linux' | 'android' | 'ios' | 'un
   return 'unknown';
 }
 
-/** True when the window uses a custom titlebar (decorations: false).
- *  On Tauri desktop the MenuBar acts as the titlebar with window controls. */
-export function hasCustomTitlebar(): boolean {
-  return isDesktopTauri();
-}
-
 /**
  * Platform-aware fetch that works around Tauri's mixed-content restriction.
  *

@@ -112,10 +112,3 @@ export function urlsFor(lang: CatalogLanguage): { aff: string; dic: string } {
   return { aff: `${base}.aff`, dic: `${base}.dic` };
 }
 
-/** @deprecated use urlsFor(lang) — kept for back-compat with earlier imports. */
-export function jsdelivrUrls(npm: string): { aff: string; dic: string } {
-  return {
-    aff: `https://cdn.jsdelivr.net/npm/${npm}/index.aff`,
-    dic: `https://cdn.jsdelivr.net/npm/${npm}/index.dic`,
-  };
-}

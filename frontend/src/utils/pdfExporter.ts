@@ -751,8 +751,3 @@ function renderElement(
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9_\- ]/g, '') || 'Untitled';
 }
-
-// Convenience download function matching the pattern of other exporters
-export async function downloadPDF(doc: JSONContent, title: string, layout: PageLayout, options?: PDFExportOptions): Promise<void> {
-  await exportPDF(doc, title, layout, options);
-}

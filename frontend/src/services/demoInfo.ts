@@ -41,7 +41,3 @@ export async function initDemoInfo(): Promise<DemoInfo> {
 export function isDemoMode(): boolean {
   return Boolean(cached?.demo);
 }
-
-export function demoMessage(): string | null {
-  return cached?.message ?? null;
-}

@@ -42,9 +42,3 @@ export const useVomitStore = create<VomitState>((set) => ({
   end: () => set({ session: null }),
   bumpBlocked: () => set((s) => ({ blockedTick: s.blockedTick + 1 })),
 }));
-
-/** True while a sprint is running (and its clock hasn't run out). */
-export function vomitLockActive(): boolean {
-  const s = useVomitStore.getState().session;
-  return !!s && (s.endsAt === null || Date.now() < s.endsAt);
-}

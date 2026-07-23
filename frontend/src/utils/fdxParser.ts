@@ -143,10 +143,6 @@ export interface FDXParseResult {
   beatColumns: FDXBeatColumn[];
 }
 
-export function parseFDX(xmlString: string): TipTapNode {
-  return parseFDXFull(xmlString).doc;
-}
-
 export function parseFDXFull(xmlString: string): FDXParseResult {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlString, 'text/xml');

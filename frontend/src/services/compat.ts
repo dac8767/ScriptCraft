@@ -43,11 +43,6 @@ export function setCompat(
   };
 }
 
-/** Look up a single compatibility entry by key. */
-export function getCompat(key: string): CompatEntry | undefined {
-  return entries[key];
-}
-
 /** Return a snapshot of all registered entries (for the About dialog). */
 export function getCompatEntries(): CompatEntry[] {
   return Object.values(entries);

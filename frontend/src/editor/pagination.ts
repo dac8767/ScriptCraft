@@ -41,9 +41,6 @@ export function setPaginationContinuousMode(v: boolean): void {
  * set in Settings, independent of estimator accuracy. */
 let measuredFills: Map<number, number> = new Map();
 export function setMeasuredFills(m: Map<number, number>): void { measuredFills = m; }
-export function isPaginationContinuous(): boolean {
-  return continuousMode;
-}
 
 /** Visibility-aware pagination (v0.29): outline lines hidden via the Preview
  * sidebar (or preview mode defaults) render display:none, so they must count
