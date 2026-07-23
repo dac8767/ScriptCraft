@@ -1837,3 +1837,10 @@ input.fs-switch:checked::after { left: 15px; }
   padding: 4px 8px; font-size: 12.5px;
 }
 .ws-edit-input:focus { outline: none; }
+
+/* ── v4.23, Derek: Feedback dockable tool (FeedbackTool.tsx) ── */
+.feedback-tool { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.feedback-tool-frame {
+  flex: 1; border: none; width: 100%;
+  background: #fff; border-radius: 0 0 8px 8px;
+}

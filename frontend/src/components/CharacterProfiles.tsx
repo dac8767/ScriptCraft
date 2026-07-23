@@ -125,6 +125,32 @@ const AssetImage: React.FC<{
   return <img src={url} className={className} alt={alt} onClick={onClick} />;
 };
 
+/** v4.23, Derek: play an uploaded voice-reference clip. Loads bytes → blob URL
+ *  (same reason as AssetImage — the desktop asset URL can't be fetched), then
+ *  hands it to a native <audio> element. */
+const AssetAudio: React.FC<{ projectId: string; assetId: string }> = ({ projectId, assetId }) => {
+  const [url, setUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let dead = false;
+    let obj: string | null = null;
+    setUrl(null); setFailed(false);
+    (async () => {
+      try {
+        const bytes = await api.getAssetBytes(projectId, assetId);
+        obj = URL.createObjectURL(new Blob([bytes as BlobPart]));
+        if (!dead) setUrl(obj); else URL.revokeObjectURL(obj);
+      } catch {
+        if (!dead) setFailed(true);
+      }
+    })();
+    return () => { dead = true; if (obj) URL.revokeObjectURL(obj); };
+  }, [projectId, assetId]);
+  if (failed) return <span className="char-profile-voice-broken" title="Audio unavailable">Voice clip unavailable</span>;
+  if (!url) return <span className="char-profile-voice-loading">Loading…</span>;
+  return <audio className="char-profile-voice-audio" src={url} controls preload="none" />;
+};
+
 /** v4.22, Derek: one "Upload Image" button that opens a menu — local file or the
  *  Asset Manager. The menu is portalled to <body> and positioned from the button
  *  (panels clip absolutely-positioned children — see AddMenu). */
@@ -233,6 +259,10 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadTargetRef = useRef<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  // v4.23, Derek: Voice Profile — an uploaded audio reference clip per character.
+  const voiceInputRef = useRef<HTMLInputElement>(null);
+  const voiceTargetRef = useRef<string | null>(null);
+  const [voiceUploading, setVoiceUploading] = useState(false);
 
   // Fetch project assets when image picker opens
   const fetchAssets = useCallback(async () => {
@@ -854,6 +884,34 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     fileInputRef.current?.click();
   }, []);
 
+  // ── Voice Profile: upload / replace / remove an audio reference clip ──
+  const handleUploadVoice = useCallback(async (charName: string, file: File) => {
+    if (!projectId) return;
+    setVoiceUploading(true);
+    try {
+      const data = await api.uploadAsset(projectId, file, [`voice:${charName}`]);
+      const assetId = data.id || data.asset?.id;
+      if (assetId) upsertCharacterProfile(charName, { voiceProfile: assetId });
+      showToast('Voice profile uploaded', 'success');
+    } catch (err) {
+      showToast(`Voice upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`, 'error');
+    } finally {
+      setVoiceUploading(false);
+    }
+  }, [projectId, upsertCharacterProfile]);
+
+  const handleVoiceSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const charName = voiceTargetRef.current;
+    if (file && charName) handleUploadVoice(charName, file);
+    e.target.value = '';
+  }, [handleUploadVoice]);
+
+  const triggerVoiceUpload = useCallback((charName: string) => {
+    voiceTargetRef.current = charName;
+    voiceInputRef.current?.click();
+  }, []);
+
   /** v4.22, Derek: First / Last name fields. Shown Title Case (the script is all
    *  caps); editing either surfaces an "Update name in script" button that pushes
    *  the change back. ONE renderer, used by both the card expansion and the modal
@@ -978,12 +1036,53 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     );
   };
 
-  /** Image display + upload button (used where both belong together). */
+  /** Voice Profile: either an upload button or the loaded player + remove. */
+  const renderVoiceButton = (charName: string) => {
+    if (!projectId) return null;
+    const prof = getProfile(charName);
+    const voiceId = prof.voiceProfile;
+    if (voiceId) {
+      return (
+        <div className="char-profile-voice">
+          <AssetAudio projectId={projectId} assetId={voiceId} />
+          <button
+            className="char-profile-voice-replace"
+            title="Replace voice clip"
+            onClick={() => triggerVoiceUpload(charName)}
+          >Replace</button>
+          <button
+            className="char-profile-voice-remove"
+            title="Remove voice profile"
+            onClick={() => upsertCharacterProfile(charName, { voiceProfile: undefined })}
+          >&times;</button>
+        </div>
+      );
+    }
+    return (
+      <button
+        className="char-profile-voice-btn"
+        disabled={voiceUploading}
+        title="Upload a voice-reference audio clip for this character"
+        onClick={() => triggerVoiceUpload(charName)}
+      >
+        {voiceUploading ? 'Uploading…' : 'Voice Profile'}
+      </button>
+    );
+  };
+
+  /** Image display + Upload / Voice Profile row (used where both belong
+   *  together). A divider sets this media block off from the fields above. */
   const renderImageSection = (charName: string) => (
-    <div className="char-profile-photo-row">
-      {renderImageDisplay(charName)}
-      <div className="char-profile-image-actions">{renderUploadButton(charName)}</div>
-    </div>
+    <>
+      <div className="char-profile-section-divider" aria-hidden />
+      <div className="char-profile-photo-row">
+        {renderImageDisplay(charName)}
+        <div className="char-profile-image-actions">
+          {renderUploadButton(charName)}
+          {renderVoiceButton(charName)}
+        </div>
+      </div>
+    </>
   );
 
   /** User-defined custom fields (shared definitions, per-character values) plus
@@ -1219,6 +1318,14 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         accept="image/*"
         style={{ display: 'none' }}
         onChange={handleFileSelect}
+      />
+      {/* Hidden file input for voice-profile audio uploads (v4.23) */}
+      <input
+        ref={voiceInputRef}
+        type="file"
+        accept="audio/*"
+        style={{ display: 'none' }}
+        onChange={handleVoiceSelect}
       />
 
       <div className={`char-profiles-header${isFullscreen ? ' char-fs-header' : ''}`}>

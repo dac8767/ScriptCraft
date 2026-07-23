@@ -84,6 +84,7 @@ import { spellChecker } from '../editor/spellchecker';
 import { openTextFile, openBinaryFile } from '../utils/fileOps';
 import { getCompatEntries } from '../services/compat';
 import { reportSaveError } from '../stores/saveErrorStore';
+import { HELP_FORMS } from '../data/helpForms';
 import type { MenuSection as PluginMenuSection } from '../plugins/registry';
 import {
   FaExternalLinkAlt,
@@ -152,9 +153,6 @@ import {
 
 /** v2.98: the Help-menu form links, shared by the menu items and the
  *  ribbon-pinnable commands — one place for each URL. */
-const HELP_FORMS = {
-  feedback: { title: 'Feedback', url: 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagnRKrWVIbujv2Wf/form' },
-};
 
 /* v3.08, Derek: the donation link at the end of Help. Opens the Buy Me a
  * Coffee page in the DEFAULT browser — the BMC widget script is a remote

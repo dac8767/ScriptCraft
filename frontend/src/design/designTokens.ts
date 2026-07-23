@@ -119,6 +119,9 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       // v4.22, Derek: spacing of the character card header's right-side items
       // (line/scene count, the % ring, the expand button).
       { id: 'charHeaderGap', label: 'Character header item spacing', cssVar: '--dz-char-header-gap', unit: 'px', min: 0, max: 32, step: 1, def: 8 },
+      // v4.23, Derek: vertical gap between a character card's field rows — dial
+      // it down to pack the card into a small window.
+      { id: 'charFieldGap', label: 'Character field row spacing', cssVar: '--dz-char-field-gap', unit: 'px', min: 0, max: 24, step: 1, def: 8 },
     ],
   },
   {

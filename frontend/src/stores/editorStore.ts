@@ -539,7 +539,7 @@ export type ToolId =
   | 'indexcards' | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
   | 'spelling' | 'history' | 'titlepage' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
-  | 'notebook' | 'design' | 'workspaces'
+  | 'notebook' | 'design' | 'workspaces' | 'feedback'
   /** legacy — Notes merged back into 'sticky' (Notes > Script tab); kept
    *  in the type so persisted configs still typecheck, remapped on use. */
   | 'scriptnotes';
@@ -853,6 +853,8 @@ export interface CharacterProfile {
   sampleDialogue: string;
   /** Asset IDs of images associated with this character */
   images: string[];
+  /** v4.23: asset ID of an uploaded voice-reference audio clip (ScriptCraft-only). */
+  voiceProfile?: string;
   /** v4.22: values for user-defined custom fields, keyed by field id. The field
    *  DEFINITIONS (id + title) live in `characterCustomFields` and are shared by
    *  every character. */

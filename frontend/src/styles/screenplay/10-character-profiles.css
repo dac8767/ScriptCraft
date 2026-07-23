@@ -744,13 +744,15 @@
   border-top: 1px solid var(--fd-border);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  /* v4.23, Derek: the vertical gap between a character card's field rows is a
+     Design knob — dial it down to fit more into a small window. */
+  gap: var(--dz-char-field-gap, 8px);
 }
 /* Top section: description+meta and images — stacks in side panel, side-by-side in fullscreen */
-.char-profile-detail-top { display: flex; flex-direction: column; gap: 8px; }
-.char-profile-detail-info { display: flex; flex-direction: column; gap: 8px; }
-.char-profile-detail-media { display: flex; flex-direction: column; gap: 8px; }
-.char-profile-detail-bottom { display: flex; flex-direction: column; gap: 8px; }
+.char-profile-detail-top { display: flex; flex-direction: column; gap: var(--dz-char-field-gap, 8px); }
+.char-profile-detail-info { display: flex; flex-direction: column; gap: var(--dz-char-field-gap, 8px); }
+.char-profile-detail-media { display: flex; flex-direction: column; gap: var(--dz-char-field-gap, 8px); }
+.char-profile-detail-bottom { display: flex; flex-direction: column; gap: var(--dz-char-field-gap, 8px); }
 /* Fullscreen card view: top row is 50/50 side-by-side */
 .char-profile-detail-fs .char-profile-detail-top {
   flex-direction: row;
@@ -1287,7 +1289,57 @@
 .char-profile-image-actions {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
+/* v4.23, Derek: a divider setting the media block (photo + voice) off from the
+   name fields above it. */
+.char-profile-section-divider {
+  height: 1px;
+  background: var(--fd-border);
+  margin: 2px 0;
+}
+/* v4.23, Derek: Voice Profile — an uploaded audio reference clip. The upload
+   button sits beside Upload Image; once set it becomes an inline player. */
+.char-profile-voice-btn {
+  flex: 1;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--fd-border);
+  border-radius: 3px;
+  color: var(--fd-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+.char-profile-voice-btn:hover:not(:disabled) { border-color: var(--fd-accent); color: var(--fd-accent); }
+.char-profile-voice-btn:disabled { opacity: 0.5; cursor: default; }
+.char-profile-voice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.char-profile-voice-audio { flex: 1; min-width: 0; height: 30px; }
+.char-profile-voice-replace {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px solid var(--fd-border);
+  border-radius: 3px;
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+.char-profile-voice-replace:hover { border-color: var(--fd-accent); color: var(--fd-accent); }
+.char-profile-voice-remove {
+  flex-shrink: 0;
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none; border-radius: 4px;
+  color: var(--fd-text-muted); cursor: pointer; font-size: 16px;
+}
+.char-profile-voice-remove:hover { background: var(--fd-overlay-light); color: #e05656; }
+.char-profile-voice-broken { font-size: 11px; color: var(--fd-text-muted); }
+.char-profile-voice-loading { font-size: 11px; color: var(--fd-text-muted); }
 .char-profile-img-btn {
   flex: 1;
   padding: 4px 8px;
