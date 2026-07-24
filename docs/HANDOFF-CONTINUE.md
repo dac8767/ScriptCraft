@@ -150,6 +150,11 @@ What landed:
   round-trip the core elements under test — catches exporter/parser drift.
 - **Coverage added to previously-untested core logic:** `scriptStatistics`,
   `scriptTiming`, `scriptStructure`, `fountainParser`, `fdxParser`, `scriptDiff`.
+- **Coverage fan-out (9 modules, 133 tests, each verified by an independent
+  re-derivation pass):** `odraftFormat` (native-format round-trip), `templateConflicts`,
+  `templateCss`, `effectiveFormatting`, `titlePageLayout`, `dateFormat`,
+  `pdfClassify`, `fonts` (registry↔categories drift-guard), `docxImporter`
+  (in-memory .docx fixture). Suite now 552 tests / 75 files.
 
 **Flagged for Derek (found while testing, NOT fixed — behavior decisions):**
 - **`scriptDiff` never classifies "modified":** the LCS backtrack emits add
@@ -162,6 +167,33 @@ What landed:
   picking one canonical behavior.
 - Pre-existing (earlier runs): workspaces "apply doesn't take"; a few Design
   panel options never worked.
+- **From the coverage fan-out** (each pinned by a KNOWN LIMITATION test in the
+  module's `.test.ts` — that file is the detailed record). User-facing first:
+  - **PDF import misclassifies standard layouts** (`pdfClassify`): `FADE IN:` at
+    the left margin becomes action (transition rule needs indent > 40); `(V.O.)`
+    at character indent becomes a character cue; a second consecutive
+    parenthetical becomes dialogue; right-aligned ordinary text imports as a
+    transition (`docxImporter` has the same right-align rule).
+  - **Title page** (`titlePageLayout`): a lone "based on" credit is dropped when
+    "written by" is empty; when both are set the bottom block lands one rendered
+    line low (the two-line byLine is budgeted as one).
+  - **`.odraft` robustness** (`odraftFormat`): `parseOdraft('null')` throws a raw
+    TypeError instead of the friendly error; no version gate (a future-format
+    file parses silently); parse drops the `themes` array that export writes;
+    title `''` reads back as `'Untitled'` despite the "lossless" header claim.
+  - **Template enforcement can fail to converge** (`templateConflicts`):
+    a disabled element carrying locked marks resolves via replace-only (marks
+    survive), so a second detect finds a fresh violation; the all-disabled
+    fallback replaces into `'action'` even when action isn't in the template.
+  - **`effectiveFormatting`**: docblock promises partial locking under
+    `allowFormatOverride` but the code returns NO_LOCK unconditionally.
+  - **`docxImporter`**: pass-2 dialogue promotion still counts/warns the line as
+    "defaulted to action" (noisy import report); `dc:title` lookup is namespace-
+    prefix-sensitive.
+  - Smaller: `dateFormat.parseISODate` accepts rolled-over dates like
+    `2026-02-30`; `fonts` category typed as bare `string` (drift now caught only
+    by the new test); `templateCss` emits a dead `data-type="undefined"`
+    placeholder selector for a built-in id missing from `ELEMENT_CSS_CLASS`.
 
 **Test-writing notes:** any test that (even transitively) imports `editorStore`
 needs `// @vitest-environment jsdom` (the store touches localStorage at import).
