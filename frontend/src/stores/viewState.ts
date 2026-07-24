@@ -44,7 +44,10 @@ export interface ViewState {
   beatColorAllTabs?: boolean;
   uiResizeLocked?: boolean;
   highlightColor?: string;
+  /** legacy (pre-v4.24): read once to seed scenesViewMode, never written. */
   indexCardsOpen?: boolean;
+  /** v4.24 batch 7: the merged Scenes tool's view — scene list or index cards. */
+  scenesViewMode?: 'list' | 'cards';
   beatBoardOpen?: boolean;
   shelfOpen?: boolean;
   activeTool?: string | null;

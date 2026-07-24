@@ -718,3 +718,31 @@
   font-style: italic;
 }
 
+
+/* v4.24 batch 7: the merged Scenes tool — List (scene list) / Cards (index
+   cards) toggle above whichever view is active. The buttons reuse the
+   .char-fs-view-btn segmented style. */
+.scenes-tool {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.scenes-view-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--fd-border);
+  flex-shrink: 0;
+}
+.scenes-tool-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.scenes-tool-body > * {
+  flex: 1;
+  min-height: 0;
+}

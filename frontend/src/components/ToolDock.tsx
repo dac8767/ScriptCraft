@@ -22,7 +22,7 @@ import SpellCheckPanel from './SpellCheckPanel';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
-  FaTh, FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,
+  FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,
   FaChevronRight, FaChevronDown, FaKeyboard, FaRobot, FaBook, FaSlidersH, FaColumns,
   FaCommentDots,
 } from 'react-icons/fa';
@@ -42,7 +42,7 @@ import { DesignPanelDocked } from './DesignPanel';
 import WorkspacesTool from './WorkspacesTool';
 import FeedbackTool from './FeedbackTool';
 import TagsPanel from './TagsPanel';
-import IndexCards from './IndexCards';
+import { ScenesTool } from './ScenesTool';
 import BeatBoard, { OutlineHeaderControls } from './BeatBoard';
 import TypewriterTool from './TypewriterTool';
 import AiWriterTool from './AiWriterTool';
@@ -78,7 +78,8 @@ export const ALL_TOOLS: ToolDef[] = [
   { id: 'pages', label: 'Pages', icon: <FaRegClone />, defaultSize: { w: 340, h: 348 }, group: 1 },
   { id: 'locations', label: 'Locations', icon: <FaMapMarkerAlt />, defaultSize: { w: 320, h: 324 }, group: 1 },
   { id: 'characters', label: 'Characters', icon: <FaUserFriends />, defaultSize: { w: 420, h: 360 }, group: 1 },
-  { id: 'indexcards', label: 'Index Cards', icon: <FaTh />, defaultSize: { w: 680, h: 372 }, group: 1 },
+  // v4.24 batch 7: 'indexcards' retired — Index Cards is the Scenes tool's
+  // Cards view now (persisted layouts carrying the old id are migrated).
   { id: 'beatboard', label: 'Outline', icon: <FaStream />, defaultSize: { w: 960, h: 372 }, group: 1 },
   { id: 'sticky', label: 'Notes', icon: <FaRegStickyNote />, defaultSize: { w: 300, h: 336 }, group: 2 },
   { id: 'fragments', label: 'Snippets', icon: <FaRegClipboard />, defaultSize: { w: 300, h: 312 }, group: 2 },
@@ -194,6 +195,9 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
     case 'navigator':
       return <NavigatorTool editor={editor} scrollContainer={scrollContainer} />;
     case 'scenes':
+      // v4.24 batch 7: Scenes carries a List/Cards view toggle (Cards is the
+      // old Index Cards tool).
+      return <ScenesTool editor={editor} scrollContainer={scrollContainer ?? null} />;
     case 'pages':
     case 'structure':
     case 'locations':
@@ -228,8 +232,6 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
       return <TodoTool editor={editor} />;
     case 'tags':
       return <TagsPanel editor={editor} embedded />;
-    case 'indexcards':
-      return <IndexCards editor={editor} scrollContainer={scrollContainer ?? null} embedded />;
     case 'beatboard':
       return <BeatBoard embedded />;
     case 'design':

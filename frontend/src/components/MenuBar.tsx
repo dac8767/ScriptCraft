@@ -24,7 +24,8 @@ const PROJECT_MENU_GROUPS: string[][] = [
 ];
 /** Tools menu: story planning / writing aids / production & analysis. */
 const TOOL_MENU_GROUPS: string[][] = [
-  ['beatboard', 'indexcards'],
+  // v4.24 batch 7: 'indexcards' retired — it's the Scenes tool's Cards view.
+  ['beatboard'],
   ['sticky', 'fragments', 'todo', 'highlights'],
   // 'tags' is intentionally absent: Production Tags opens from the
   // Production menu (its conceptual home); the window itself remains a

@@ -10,6 +10,7 @@
 import type { StateCreator } from 'zustand';
 import { _vs, saveViewState } from '../viewState';
 import type { EditorState, WorkspaceSnapshot, ToolId } from '../editorStore';
+import { migrateToolConfig, migrateToolOrder } from '../editorStore';
 
 export interface WorkspacesSlice {
   /** Named saved layouts (View → Workspaces) */
@@ -75,10 +76,24 @@ export const createWorkspacesSlice: StateCreator<EditorState, [], [], Workspaces
   }),
   applyWorkspace: (name) => {
     const s = get();
-    const snap = s.workspaces[name];
-    if (!snap) return;
+    const raw = s.workspaces[name];
+    if (!raw) return;
+    // v4.24 batch 7: snapshots saved before the Scenes / Index Cards merge may
+    // still carry the retired 'indexcards' id — normalize once, then apply.
+    const snap: WorkspaceSnapshot = {
+      ...raw,
+      toolConfig: migrateToolConfig(raw.toolConfig),
+      toolOrder: migrateToolOrder(raw.toolOrder),
+      toolbarPinnedTools: migrateToolOrder((raw.toolbarPinnedTools as string[]) ?? []) as ToolId[],
+      ...(raw.activeTool === 'indexcards' ? { activeTool: 'scenes' as ToolId } : {}),
+      ...(raw.activeToolRight === 'indexcards' ? { activeToolRight: 'scenes' as ToolId } : {}),
+    };
     // v0.12 fields are optional (older snapshots): only restore when captured.
     const extras: Partial<EditorState> = {};
+    // A workspace that had Index Cards showing reopens Scenes in Cards view.
+    if (raw.activeTool === 'indexcards' || raw.activeToolRight === 'indexcards') {
+      extras.scenesViewMode = 'cards';
+    }
     if (snap.toolbarMode !== undefined) extras.toolbarMode = snap.toolbarMode;
     if (snap.activeTool !== undefined) { extras.activeTool = snap.activeTool; extras.tempTool = null; }
     if (snap.activeToolRight !== undefined) extras.activeToolRight = snap.activeToolRight;
@@ -113,6 +128,7 @@ export const createWorkspacesSlice: StateCreator<EditorState, [], [], Workspaces
       ...(snap.activeToolRight !== undefined ? { activeToolRight: snap.activeToolRight } : {}),
       ...(snap.panelSizeMode !== undefined ? { panelSizeMode: snap.panelSizeMode } : {}),
       ...(snap.chromeCustomPx !== undefined ? { chromeCustomPx: snap.chromeCustomPx } : {}),
+      ...(extras.scenesViewMode !== undefined ? { scenesViewMode: extras.scenesViewMode } : {}),
     });
     set({
       activeWorkspace: name,

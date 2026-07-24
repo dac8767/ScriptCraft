@@ -6,14 +6,15 @@ import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../util
 import SynopsisModal from './SynopsisModal';
 
 interface IndexCardsProps {
-  /** Render inside a tool window: skip the open-flag gate, hide close */
-  embedded?: boolean;
   editor: Editor | null;
   scrollContainer: HTMLDivElement | null;
 }
 
-const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer, embedded = false }) => {
-  const { scenes, indexCardsOpen, updateSceneSynopsis, updateSceneColor, toggleIndexCards, pageLayout } = useEditorStore();
+// v4.24 batch 7: embedded-only — Index Cards is the Scenes tool's Cards view.
+// The old standalone overlay (indexCardsOpen gate over the editor) is gone;
+// the ScenesTool wrapper decides when this renders.
+const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
+  const { scenes, updateSceneSynopsis, updateSceneColor, pageLayout } = useEditorStore();
 
   const [fullscreen, setFullscreen] = useState(false);
   const [dragMode, setDragMode] = useState(false);
@@ -551,15 +552,15 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer, embedd
     };
   }, [dragIdx, insertIdx]);
 
-  if (!indexCardsOpen && !embedded) return null;
-
   const containerClass = `index-cards${fullscreen ? ' index-cards-fullscreen' : ''}`;
   const indicatorStyle = getIndicatorStyle();
 
   return (
     <div className={containerClass} ref={containerRef}>
       <div className="index-cards-header">
-        <span className="index-cards-title">Index Cards</span>
+        {/* Docked, the Scenes window frame already names the tool; only the
+            fullscreen overlay needs its own title. */}
+        {fullscreen && <span className="index-cards-title">Scenes — Cards</span>}
         <span className="index-cards-count">{scenes.length} scenes</span>
         <div className="index-cards-actions">
           {dragMode ? (
@@ -627,16 +628,6 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer, embedd
                 <polyline points="5,13 1,13 1,9" /><line x1="6" y1="8" x2="1" y2="13" />
               </svg>
             )}
-          </button>
-          <button
-            className="ic-action-btn ic-close-btn"
-            onClick={() => { if (fullscreen) setFullscreen(false); if (embedded) useEditorStore.getState().setActiveTool(null); else toggleIndexCards(); }}
-            title="Close Index Cards"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <line x1="2" y1="2" x2="12" y2="12" />
-              <line x1="12" y1="2" x2="2" y2="12" />
-            </svg>
           </button>
         </div>
       </div>

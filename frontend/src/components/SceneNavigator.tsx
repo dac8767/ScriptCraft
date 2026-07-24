@@ -927,6 +927,10 @@ export function SceneHeaderExtra() {
   const filters = useEditorStore((s) => s.sceneFilters);
   const setFilters = useEditorStore((s) => s.setSceneFilters);
   const search = useEditorStore((s) => s.sceneSearch);
+  // v4.24 batch 7: in the merged tool's Cards view the filter drives nothing
+  // (it filters the LIST) — showing it there would be a silent no-op. Keep
+  // the count, hide the control.
+  const cardsView = useEditorStore((s) => s.scenesViewMode === 'cards');
   const hasActiveFilter = filters.characters.length > 0 || !!filters.location || !!filters.prefix || !!filters.time || !!filters.color || !!filters.synopsis;
   const patch = (p: Partial<SceneFilters>) => setFilters({ ...filters, ...p });
 
@@ -957,7 +961,7 @@ export function SceneHeaderExtra() {
   return (
     <>
       <span className="scene-count-label">Scenes: <span className="scene-count">{(hasActiveFilter || search) ? `${data.filtered}/` : ''}{data.total}</span></span>
-      <span className="fs-nav-filterctl">
+      {!cardsView && <span className="fs-nav-filterctl">
       <button
         ref={btnRef}
         className={`fs-nav-filterbtn${hasActiveFilter ? ' active' : ''}`}
@@ -1030,7 +1034,7 @@ export function SceneHeaderExtra() {
         </div>,
         document.body,
       )}
-      </span>
+      </span>}
     </>
   );
 }
@@ -1038,6 +1042,10 @@ export function SceneHeaderExtra() {
 export function SceneFooter() {
   const search = useEditorStore((s) => s.sceneSearch);
   const setSearch = useEditorStore((s) => s.setSceneSearch);
+  // v4.24 batch 7: the footer search filters the scene LIST — in the merged
+  // tool's Cards view it drives nothing, so it hides rather than no-op.
+  const cardsView = useEditorStore((s) => s.scenesViewMode === 'cards');
+  if (cardsView) return null;
   return (
     <div className="navigator-search navigator-search--footer">
       <svg className="navigator-search-icon" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.5">

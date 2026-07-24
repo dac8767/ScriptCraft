@@ -363,13 +363,16 @@ export type ShelfCardType = 'comment' | 'todo' | 'snippet';
 /** Tools available in the tool docks (Photoshop-style panel lists). */
 export type ToolId =
   | 'navigator' | 'scenes' | 'pages' | 'structure' | 'locations' | 'characters'
-  | 'indexcards' | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets'
+  | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
   | 'spelling' | 'history' | 'titlepage' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
   | 'notebook' | 'design' | 'workspaces' | 'feedback'
   /** legacy — Notes merged back into 'sticky' (Notes > Script tab); kept
    *  in the type so persisted configs still typecheck, remapped on use. */
-  | 'scriptnotes';
+  | 'scriptnotes'
+  /** legacy — Index Cards merged into 'scenes' as its Cards view (v4.24
+   *  batch 7); persisted layouts are migrated, openTool remaps on use. */
+  | 'indexcards';
 
 export type ToolSide = 'left' | 'right';
 export interface ToolConfig { side: ToolSide; enabled: boolean; }
@@ -524,7 +527,6 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   todo: { side: 'right', enabled: true },
   fragments: { side: 'right', enabled: true },
   beatboard: { side: 'right', enabled: true },
-  indexcards: { side: 'right', enabled: true },
   highlights: { side: 'right', enabled: true },
   goals: { side: 'right', enabled: true },
   typewriter: { side: 'right', enabled: true },
@@ -540,9 +542,31 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
  *  within each panel. 'Reset to Default' restores exactly this. */
 export const DEFAULT_TOOL_ORDER: string[] = [
   'navigator', 'scenes', 'pages', 'titlepage', 'characters', 'locations', 'spelling', 'assets',
-  'sticky', 'todo', 'fragments', 'beatboard', 'indexcards', 'highlights', 'goals', 'typewriter', 'aiwriter', 'notebook', 'analytics',
+  'sticky', 'todo', 'fragments', 'beatboard', 'highlights', 'goals', 'typewriter', 'aiwriter', 'notebook', 'analytics',
   'tags',
 ];
+
+/** v4.24 batch 7: Index Cards merged into the Scenes tool (its Cards view).
+ *  Persisted layouts — viewState and workspace snapshots — may still carry
+ *  the retired 'indexcards' id; map it onto 'scenes' without duplicating.
+ *  (toolOrder also carries 'div:<id>' divider tokens; they pass through.) */
+export function migrateToolOrder(order: string[]): string[] {
+  const out: string[] = [];
+  for (const raw of order) {
+    const id = raw === 'indexcards' ? 'scenes' : raw;
+    if (!out.includes(id)) out.push(id);
+  }
+  return out;
+}
+export function migrateToolConfig(cfg: Record<string, ToolConfig>): Record<string, ToolConfig> {
+  if (!('indexcards' in cfg)) return cfg;
+  const { indexcards, ...rest } = cfg;
+  // If the retired tool was the enabled one, the merged tool inherits that.
+  if (indexcards?.enabled && rest.scenes && !rest.scenes.enabled) {
+    rest.scenes = { ...rest.scenes, enabled: true };
+  }
+  return rest;
+}
 
 /** Single source of truth for a tool's effective config. Used by ToolDock and
  *  the Customize dialog so a tool can never display in one place and be
@@ -897,8 +921,9 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   toggleNavigator: () => void;
 
   // Panels
-  indexCardsOpen: boolean;
-  toggleIndexCards: () => void;
+  /** v4.24 batch 7: the merged Scenes tool's view — scene list or index cards. */
+  scenesViewMode: 'list' | 'cards';
+  setScenesViewMode: (m: 'list' | 'cards') => void;
   beatBoardOpen: boolean;  statisticsOpen: boolean;
   setStatisticsOpen: (open: boolean) => void;
   statisticsScrollTo: string | null;
@@ -1202,8 +1227,14 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     return { navigatorOpen: v };
   }),
 
-  indexCardsOpen: _vs.indexCardsOpen ?? false,
-  toggleIndexCards: () => get().openTool('indexcards'),
+  // v4.24 batch 7: Index Cards merged into Scenes. A layout that had the old
+  // tool open (or active) reopens as Scenes showing the Cards view.
+  scenesViewMode: _vs.scenesViewMode
+    ?? ((_vs.activeTool === 'indexcards' || _vs.activeToolRight === 'indexcards' || _vs.indexCardsOpen) ? 'cards' : 'list'),
+  setScenesViewMode: (m) => {
+    saveViewState({ scenesViewMode: m });
+    set({ scenesViewMode: m });
+  },
   beatBoardOpen: _vs.beatBoardOpen ?? false,
   statisticsOpen: false,
   setStatisticsOpen: (open) => set({ statisticsOpen: open }),
@@ -1238,7 +1269,7 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
       get().openTool('todo');
     }
   },
-  activeTool: (_vs.activeTool as ToolId | null) ?? null,
+  activeTool: (_vs.activeTool === 'indexcards' ? 'scenes' : (_vs.activeTool as ToolId | null)) ?? null,
   setActiveTool: (tool) => {
     saveViewState({ activeTool: tool });
     set({ activeTool: tool });
@@ -1249,17 +1280,17 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     saveViewState({ toolSizes });
     return { toolSizes };
   }),
-  activeToolRight: (_vs.activeToolRight as ToolId | null) ?? null,
+  activeToolRight: (_vs.activeToolRight === 'indexcards' ? 'scenes' : (_vs.activeToolRight as ToolId | null)) ?? null,
   setActiveToolRight: (tool) => {
     saveViewState({ activeToolRight: tool });
     set({ activeToolRight: tool });
   },
-  toolConfig: { ...DEFAULT_TOOL_CONFIG, ...(_vs.toolConfig ?? {}) },
+  toolConfig: migrateToolConfig({ ...DEFAULT_TOOL_CONFIG, ...(_vs.toolConfig ?? {}) }),
   setToolConfig: (cfg) => {
     saveViewState({ toolConfig: cfg });
     set({ toolConfig: cfg });
   },
-  toolOrder: _vs.toolOrder ?? [...DEFAULT_TOOL_ORDER],
+  toolOrder: migrateToolOrder(_vs.toolOrder ?? [...DEFAULT_TOOL_ORDER]),
   setToolOrder: (order) => {
     saveViewState({ toolOrder: order });
     set({ toolOrder: order });
@@ -1413,6 +1444,12 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
       setTimeout(() => set({ notesSubTab: 'script' }), 0);
       tool = 'sticky';
     }
+    if (tool === 'indexcards') {
+      // Legacy id — Index Cards is Scenes' Cards view now (v4.24 batch 7).
+      saveViewState({ scenesViewMode: 'cards' });
+      setTimeout(() => set({ scenesViewMode: 'cards' }), 0);
+      tool = 'scenes';
+    }
     /**
      * v1.10 — ask the SAME question the dock asks.
      *
@@ -1444,7 +1481,7 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     return { tempTool: tool };
   }),
   toolbarHiddenItems: _vs.toolbarHiddenItems ?? [],
-  toolbarPinnedTools: (_vs.toolbarPinnedTools as ToolId[]) ?? [],
+  toolbarPinnedTools: migrateToolOrder((_vs.toolbarPinnedTools as string[]) ?? []) as ToolId[],
   goal: _vs.writingGoal ?? null,
   setGoal: (g) => set((s) => {
     const goal = typeof g === 'function' ? g(s.goal) : g;

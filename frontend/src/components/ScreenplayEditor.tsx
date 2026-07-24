@@ -59,7 +59,6 @@ import { applyDesignVars } from '../design/designTokens';
 import { DoubleChevronIcon } from './uiIcons';
 import { useBookmarkStore, bookmarkScriptKey } from '../stores/bookmarkStore';
 import TitleBar from './TitleBar';
-import IndexCards from './IndexCards';
 import BeatBoard from './BeatBoard';
 import ScriptStatistics from './ScriptStatistics';
 import { makeSnippetCard } from './StickyNotes';
@@ -4075,7 +4074,6 @@ const ScreenplayEditor: React.FC = () => {
           ><DoubleChevronIcon towards="right" /></button>
         )}
         <div className="editor-center">
-          {!isHistoryMode && <IndexCards editor={editor} scrollContainer={editorMainRef.current} />}
           {/* v1.96: the Notebook writing surface takes over the editor area
               while its panel window is open ("Return to editor" ends it). */}
           {!isHistoryMode && notebookOpen ? (
