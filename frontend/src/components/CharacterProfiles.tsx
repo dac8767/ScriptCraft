@@ -1192,7 +1192,11 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
 
       {/* v4.20: Relationships tab — an editable list of every relationship.
           v4.23: List/Map toggle folds the old "Relationship Map" tab in here. */}
+      {/* v4.24 batch 4: every tab's body sits on a shared "surface" layer —
+          the same color as the active tab, so the tab connects to it. The
+          panel behind uses the workspace color; cards are a third layer. */}
       {activeTab === 'relationships' && (
+        <div className="char-tab-surface">
         <CharacterRelationshipsTab
           isFullscreen={isFullscreen}
           relViewMode={relViewMode}
@@ -1209,10 +1213,11 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             setModalChar(name);
           }}
         />
+        </div>
       )}
 
       {/* Profiles tab content */}
-      {activeTab === 'profiles' && <>
+      {activeTab === 'profiles' && <div className="char-tab-surface">
 
       {/* Toolbar: Search + Sort + Build (v4.18: Sort moved onto this row). */}
       <div className="char-profiles-toolbar">
@@ -1409,7 +1414,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
 
       </div>
 
-      </>}
+      </div>}
       {/* End of profiles tab */}
 
       {/* v4.23, Derek: "From Script" tab — one "Scan Script" section. The scan
@@ -1419,6 +1424,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           It replaces the old auto-creating "Build from Script" and the separate
           "Referred in Script" section — both are folded in here. */}
       {activeTab === 'setup' && (
+        <div className="char-tab-surface">
         <CharacterScanTab
           scanResults={scanResults}
           visibleScanResults={visibleScanResults}
@@ -1427,6 +1433,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           onApply={applyScanResult}
           onClassifyReferred={handleClassifyReferred}
         />
+        </div>
       )}
 
       {/* Image Picker Overlay */}

@@ -134,9 +134,15 @@
 [data-theme="light"] .scene-navigator,
 [data-theme="light"] .version-history-panel,
 [data-theme="light"] .tags-panel,
-[data-theme="light"] .script-notes-panel,
-[data-theme="light"] .char-profiles-panel {
+[data-theme="light"] .script-notes-panel {
   background: #f2f2f2;
+  box-shadow: -2px 0 8px #c0c0c0;
+}
+/* v4.24 batch 4: the Characters panel keeps its three-layer scheme in light
+   mode too — layer 1 is the workspace color, not the flat side-panel fill
+   (the surface + active tab supply the #f2f2f2). */
+[data-theme="light"] .char-profiles-panel {
+  background: var(--fd-bg);
   box-shadow: -2px 0 8px #c0c0c0;
 }
 /* Light theme: navigator overlay (matches ≤1100px overlay breakpoint) */
@@ -323,7 +329,10 @@
 }
 [data-theme="light"] .char-profile-card {
   background: #ffffff;
+  /* v4.24 batch 4: distinct outline in light mode too (color-mix falls back
+     to the plain border on older WebKit). */
   border-color: var(--fd-border);
+  border-color: color-mix(in srgb, var(--fd-text-muted) 45%, transparent);
 }
 [data-theme="light"] .char-profile-card:hover {
   border-color: #888;

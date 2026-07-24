@@ -2,12 +2,27 @@
 .char-profiles-panel {
   width: 300px;
   min-width: 200px;
-  background: var(--fd-navigator-bg);
+  /* v4.24 batch 4 (Derek): three-layer scheme. Layer 1 — the panel behind
+     the header/tab track — is the WORKSPACE color, so the surface (layer 2,
+     side-panel color, shared with the active tab) reads as a connected
+     sheet, and the cards (layer 3, menu/dialog color) sit on top of it.
+     All three ride existing theme-editor knobs; no new palette. */
+  background: var(--fd-bg);
   border-left: 1px solid var(--fd-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
+}
+/* Layer 2 — one wrapper around whichever tab's body is showing. Its color
+   matches the active tab exactly (see .char-profiles-tab.active), which is
+   what makes the tab look attached to the sheet below it. */
+.char-tab-surface {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--fd-navigator-bg);
 }
 /* v2.70, Derek: inside a tool window the panel FILLS it — the fixed 300px
    is only for the legacy slide-in overlay. Without this, resizing the
@@ -473,8 +488,15 @@
 .char-setup-desc { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--fd-text-muted); }
 /* The scanned character list: one row per found character, description wrapping
    under the name/age/actions line. */
-.char-scan-list { align-self: stretch; display: flex; flex-direction: column; gap: 2px; }
-.char-scan-row { display: flex; flex-direction: column; gap: 3px; padding: 6px 8px; border-radius: 4px; }
+.char-scan-list { align-self: stretch; display: flex; flex-direction: column; gap: 4px; }
+/* v4.24 batch 4: scan rows are cards too — same third-layer color + outline
+   as the profile cards, so the tabs read as one tool. */
+.char-scan-row {
+  display: flex; flex-direction: column; gap: 3px; padding: 6px 8px; border-radius: 4px;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-color: color-mix(in srgb, var(--fd-text-muted) 45%, transparent);
+}
 .char-scan-row:hover { background: var(--fd-overlay-subtle); }
 .char-scan-main { display: flex; align-items: center; gap: 8px; }
 .char-scan-name { font-size: 11px; font-weight: 600; color: var(--fd-text); text-transform: uppercase; letter-spacing: .3px; }
@@ -526,16 +548,22 @@
   text-align: center;
   line-height: 1.5;
 }
-/* Individual character card */
+/* Individual character card — layer 3 of the scheme: its own color plus a
+   DISTINCT outline (the old --fd-border was near-invisible on the surface).
+   color-mix falls back to the plain border on older WebKit. */
 .char-profile-card {
   background: var(--fd-dropdown-bg);
   border: 1px solid var(--fd-border);
+  border-color: color-mix(in srgb, var(--fd-text-muted) 45%, transparent);
   border-radius: 6px;
   margin-bottom: 4px;
   overflow: hidden;
   transition: border-color .15s;
 }
-.char-profile-card:hover { border-color: #555; }
+.char-profile-card:hover {
+  border-color: #555;
+  border-color: color-mix(in srgb, var(--fd-text-muted) 75%, transparent);
+}
 /* Orphaned character (removed from script) */
 .char-profile-card.char-orphaned { opacity: .7; border-color: #553333; }
 .char-orphaned-banner {
