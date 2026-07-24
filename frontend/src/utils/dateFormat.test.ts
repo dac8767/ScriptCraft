@@ -102,18 +102,13 @@ describe('parseISODate', () => {
     expect(parseISODate('not a date')).toBeNull();
   });
 
-  it('KNOWN LIMITATION: out-of-range month/day pass the regex and roll over', () => {
-    // The regex checks shape only, not ranges, and the Date constructor
-    // normalizes overflow instead of failing. So syntactically-valid nonsense
-    // parses to a real (wrong) date rather than returning null.
-    const rolled = parseISODate('2026-13-45')!;        // month 13, day 45
-    expect(rolled).not.toBeNull();
-    expect([rolled.getFullYear(), rolled.getMonth(), rolled.getDate()]).toEqual([2027, 1, 14]); // Feb 14 2027
-
-    const feb30 = parseISODate('2026-02-30')!;         // Feb has no 30th
-    expect([feb30.getFullYear(), feb30.getMonth(), feb30.getDate()]).toEqual([2026, 2, 2]);     // Mar 2 2026
-
-    const zeros = parseISODate('2026-00-00')!;         // month 0, day 0 → rolls backward
-    expect([zeros.getFullYear(), zeros.getMonth(), zeros.getDate()]).toEqual([2025, 10, 30]);   // Nov 30 2025
+  it('rejects impossible dates instead of letting the Date constructor roll them over', () => {
+    expect(parseISODate('2026-13-45')).toBeNull();   // month 13, day 45
+    expect(parseISODate('2026-02-30')).toBeNull();   // Feb has no 30th
+    expect(parseISODate('2026-00-00')).toBeNull();   // month 0, day 0
+    // Real leap-day still parses; the same day in a non-leap year does not.
+    const leap = parseISODate('2028-02-29')!;
+    expect([leap.getFullYear(), leap.getMonth(), leap.getDate()]).toEqual([2028, 1, 29]);
+    expect(parseISODate('2026-02-29')).toBeNull();
   });
 });

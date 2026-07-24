@@ -185,17 +185,15 @@ describe('generateTemplateCss — skips and empty inputs', () => {
 });
 
 describe('generateTemplateCss — built-in id missing from ELEMENT_CSS_CLASS', () => {
-  it('falls back to the custom selector but leaks data-type="undefined" for the placeholder', () => {
-    // KNOWN LIMITATION: for an isBuiltIn rule whose id is not in
-    // ELEMENT_CSS_CLASS, getSelector falls back to the custom-element attribute
-    // selector, but getPlaceholderSelector does NOT — it interpolates the failed
-    // lookup, emitting a literal data-type="undefined" selector that matches
-    // nothing. The two selectors disagree about which node the rule targets.
+  it('rule AND placeholder both fall back to the custom-element selector (no undefined leak)', () => {
     const ghost = rule('notARealBuiltIn', true, { placeholder: 'hm' });
     const css = generateTemplateCss(template(ghost), LAYOUT);
     expect(css).toContain(
       '.page .screenplay-element.custom-element[data-custom-type="notARealBuiltIn"] {',
     );
-    expect(css).toContain('div[data-type="undefined"].is-empty::before {');
+    expect(css).toContain(
+      'div[data-type="custom-element"][data-custom-type="notARealBuiltIn"].is-empty::before {',
+    );
+    expect(css).not.toContain('data-type="undefined"');
   });
 });

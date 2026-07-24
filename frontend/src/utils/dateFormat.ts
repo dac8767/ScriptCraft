@@ -28,5 +28,9 @@ export function formatAppDate(date: Date, id: DateFormatId): string {
 export function parseISODate(iso: string): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!m) return null;
-  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  // The Date constructor silently rolls impossible dates over (2026-02-30 →
+  // Mar 2) — reject anything that didn't survive the round-trip intact.
+  if (d.getFullYear() !== Number(m[1]) || d.getMonth() !== Number(m[2]) - 1 || d.getDate() !== Number(m[3])) return null;
+  return d;
 }

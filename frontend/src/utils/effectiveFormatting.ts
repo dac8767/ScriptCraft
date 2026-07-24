@@ -49,7 +49,10 @@ const ALL_LOCKED: LockedFormatting = {
  *
  * - If template mode is not 'enforce', nothing is locked.
  * - If allowFormatOverride is false, everything is locked.
- * - If allowFormatOverride is true, only attributes that differ from defaults are locked.
+ * - If allowFormatOverride is true, nothing is locked — the override is
+ *   all-or-nothing. (An earlier version of this comment promised per-attribute
+ *   partial locking that was never implemented; the doc was the lie, not the
+ *   code — see the tests, which pin the all-or-nothing behavior.)
  */
 export function getLockedFormatting(
   rule: FormattingElementRule | null,

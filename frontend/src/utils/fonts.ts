@@ -1,6 +1,10 @@
 export interface FontEntry {
   name: string;
-  category: string;
+  /** Typed against FONT_CATEGORIES so a typo'd or renamed category in the
+   *  registry is a compile error, not a font silently vanishing from the
+   *  picker (getFontsByCategory drops entries whose category matches no
+   *  group) — the §3 two-lists drift-guard, enforced by tsc. */
+  category: (typeof FONT_CATEGORIES)[number];
   scripts: string[];
   source: 'local' | 'system' | 'google';
   direction: 'ltr' | 'rtl';

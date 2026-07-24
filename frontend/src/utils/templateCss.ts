@@ -77,8 +77,12 @@ function getSelector(elementId: string, rule: FormattingElementRule): string {
 function getPlaceholderSelector(elementId: string, rule: FormattingElementRule): string {
   if (rule.isBuiltIn) {
     const cssClass = ELEMENT_CSS_CLASS[elementId];
-    // The data-type uses the CSS class name (hyphenated)
-    return `div[data-type="${cssClass}"].is-empty::before`;
+    // The data-type uses the CSS class name (hyphenated). A built-in id
+    // missing from ELEMENT_CSS_CLASS falls through to the custom-element form
+    // — same fallback as getSelector, so the rule block and its placeholder
+    // always target the same node (this used to emit a dead
+    // div[data-type="undefined"] selector).
+    if (cssClass) return `div[data-type="${cssClass}"].is-empty::before`;
   }
   return `div[data-type="custom-element"][data-custom-type="${elementId}"].is-empty::before`;
 }

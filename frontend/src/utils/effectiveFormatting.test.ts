@@ -67,10 +67,9 @@ describe('getLockedFormatting', () => {
   });
 
   it('locks nothing in enforce mode when the rule allows format override', () => {
-    // KNOWN LIMITATION: the function's doc comment says "If allowFormatOverride
-    // is true, only attributes that differ from defaults are locked", but the
-    // implementation returns the all-false constant unconditionally — no
-    // partial locking exists. Pinning the actual behavior, not the comment.
+    // The override is all-or-nothing by design (the doc comment used to
+    // promise per-attribute partial locking that never existed; the comment
+    // has been corrected to match this pinned behavior).
     const bolded = rule('sceneHeading', { bold: true, textAlign: 'center', allowFormatOverride: true });
     expect(getLockedFormatting(bolded, true)).toEqual(NOTHING_LOCKED);
   });
