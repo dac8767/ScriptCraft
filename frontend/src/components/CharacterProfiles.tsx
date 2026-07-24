@@ -4,6 +4,7 @@ import type { Editor } from '@tiptap/react';
 import { stripHtml } from '../utils/stripHtml';
 import { CharacterScanTab } from './CharacterScanTab';
 import { CharacterRelationshipsTab } from './CharacterRelationshipsTab';
+import { CharacterImagePickerDialog, CharacterLightbox } from './CharacterImageOverlays';
 import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 import { useEditorStore, type CharacterProfile } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -1438,57 +1439,25 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
 
       {/* Image Picker Overlay */}
       {imagePickerFor && (
-        <div className="dialog-overlay" onClick={() => { setImagePickerFor(null); setImagePickerFilter(''); }}>
-          <div className="dialog-box char-image-picker-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="dialog-header">
-              Select Image for {imagePickerFor}
-              <button className="char-profiles-close" onClick={() => { setImagePickerFor(null); setImagePickerFilter(''); }}>&times;</button>
-            </div>
-            <div className="char-image-picker-search">
-              <input
-                type="text"
-                placeholder="Filter by name..."
-                value={imagePickerFilter}
-                onChange={(e) => setImagePickerFilter(e.target.value)}
-                className="char-profiles-search-input"
-                autoFocus
-              />
-            </div>
-            <div className="char-image-picker-grid">
-              {imageAssets.length === 0 ? (
-                <div className="char-profiles-empty">No image assets in this project. Upload images via the Asset Manager or the Upload button on a character.</div>
-              ) : (
-                imageAssets
-                  .filter((a) => !imagePickerFilter || a.original_name.toLowerCase().includes(imagePickerFilter.toLowerCase()))
-                  .map((asset) => {
-                    const alreadyLinked = (characterProfiles.find((p) => p.name === imagePickerFor)?.images || []).includes(asset.id);
-                    return (
-                      <div
-                        key={asset.id}
-                        className={`char-image-picker-item${alreadyLinked ? ' linked' : ''}`}
-                        onClick={() => !alreadyLinked && handleAssociateAsset(imagePickerFor, asset.id)}
-                        title={alreadyLinked ? 'Already associated' : `Associate ${asset.original_name}`}
-                      >
-                        {projectId && <AssetImage projectId={projectId} assetId={asset.id} alt={asset.original_name} />}
-                        <span className="char-image-picker-name">{asset.original_name}</span>
-                        {alreadyLinked && <span className="char-image-picker-linked">Linked</span>}
-                      </div>
-                    );
-                  })
-              )}
-            </div>
-          </div>
-        </div>
+        <CharacterImagePickerDialog
+          forName={imagePickerFor}
+          filter={imagePickerFilter}
+          setFilter={setImagePickerFilter}
+          imageAssets={imageAssets}
+          linkedImageIds={characterProfiles.find((p) => p.name === imagePickerFor)?.images || []}
+          projectId={projectId}
+          onAssociate={(assetId) => handleAssociateAsset(imagePickerFor, assetId)}
+          onClose={() => { setImagePickerFor(null); setImagePickerFilter(''); }}
+        />
       )}
 
       {/* Image Lightbox */}
       {lightboxImage && (
-        <div className="dialog-overlay char-lightbox-overlay" onClick={() => setLightboxImage(null)}>
-          <div className="char-lightbox" onClick={(e) => e.stopPropagation()}>
-            {projectId && <AssetImage projectId={projectId} assetId={lightboxImage.assetId} alt={lightboxImage.name} />}
-            <button className="char-lightbox-close" onClick={() => setLightboxImage(null)}>&times;</button>
-          </div>
-        </div>
+        <CharacterLightbox
+          image={lightboxImage}
+          projectId={projectId}
+          onClose={() => setLightboxImage(null)}
+        />
       )}
 
       {/* Per-character enlarge modal */}
