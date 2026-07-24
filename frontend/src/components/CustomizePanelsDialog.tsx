@@ -554,11 +554,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // v2.94, Derek: with the native macOS menu bar active there's no in-window
   // menu bar to customize — the tab disappears (revert the menu system in
   // Settings > General and it comes back).
+  // v4.26, Derek: the Menu Bar tab no longer hides under native menus — the
+  // menu-system toggle LIVES here now (it used to sit in Preferences >
+  // General, which stranded the way back once the tab vanished). Under native
+  // menus the tab shows the toggle + a note; the in-window-only editors hide.
   const menuSystem = useSettingsStore((st) => st.menuSystem);
+  const setMenuSystem = useSettingsStore((st) => st.setMenuSystem);
   const nativeMenus = menuSystem === 'native' && isTauri();
-  React.useEffect(() => {
-    if (nativeMenus && activeCat === 'menu') setActiveCat('elements');
-  }, [nativeMenus, activeCat]);
 
   // v0.84: the window forgot any size you gave it and snapped back to the
   // default on reopen. CSS `resize` writes inline width/height on the element,
@@ -768,7 +770,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       <div className="prefs-layout fs-customize-layout">
         <div className="prefs-tabs fs-customize-tabs">
           {([['elements', 'Editor'], ['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['qat', 'Quick Access'], ['context', 'Context Menu'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const)
-            .filter(([id]) => !(nativeMenus && id === 'menu'))
             .map(([id, label]) => (
             <button
               key={id}
@@ -799,6 +800,30 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           {activeCat === 'menu' && (<>
           <section>
             <h3>Menus</h3>
+            {/* v4.26, Derek: WHERE the menu bar lives is menu-chrome
+                configuration — moved here from Preferences > General. */}
+            <div className="fs-customize-row">
+              <span className="fs-customize-tool">Menu bar lives in</span>
+              <span className="fs-customize-seg">
+                <select value={menuSystem} onChange={(e) => setMenuSystem(e.target.value as 'inWindow' | 'native')}>
+                  <option value="inWindow">The app window (classic)</option>
+                  <option value="native">The macOS menu bar</option>
+                </select>
+              </span>
+            </div>
+            <p className="fs-customize-hint">
+              Experimental: the same menus, installed in the real menu bar next
+              to the  — the in-window bar hides and the script gains its room.
+              Icons, the table-size grid, and drag-to-reorder stay in-window
+              only. Switching back restores the classic bar instantly.
+            </p>
+            {nativeMenus && (
+              <p className="fs-customize-hint">
+                The options below apply to the in-window bar and are hidden
+                while the macOS menu bar is in charge.
+              </p>
+            )}
+            {!nativeMenus && (<>
             {/* v2.29, Derek: NO sizing options in Customize — sizing is all
                 manual on the main screen (drag the strip under the top bars).
                 v2.31: except a way back to the default size. */}
@@ -885,6 +910,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 onClick={() => { setMenuBarOrder([...MENU_BAR_LABELS]); setMenuBarHidden([]); }}
               >Reset to Default</button>
             </div>
+            </>)}
           </section>
           </>)}
           {activeCat === 'toolbar' && (<>

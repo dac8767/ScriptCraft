@@ -11,6 +11,7 @@ import AddMenu from './AddMenu';
 import ColorPicker from './ColorPicker';
 import { DndColumns } from './CustomizePanelsDialog';
 import { useEditorStore } from '../stores/editorStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { useThemeStore } from '../stores/themeStore';
 import {
   BUILTIN_THEMES, THEME_VARS, isCustomTheme, seedVarsFromBase,
@@ -20,6 +21,10 @@ import {
 export default function ThemesTab() {
   const theme = useEditorStore((s) => s.theme);
   const setTheme = useEditorStore((s) => s.setTheme);
+  // v4.26, Derek: theme POLICY lives with the theme picker — this toggle sat
+  // in Preferences > General, a different surface from the list it overrides.
+  const followSystemTheme = useSettingsStore((st) => st.followSystemTheme);
+  const setFollowSystemTheme = useSettingsStore((st) => st.setFollowSystemTheme);
 
   const customThemes = useThemeStore((s) => s.customThemes);
   const hiddenThemes = useThemeStore((s) => s.hiddenThemes);
@@ -180,6 +185,20 @@ export default function ThemesTab() {
   return (
     <section>
       <h3>Themes</h3>
+      <div className="fs-customize-row">
+        <label className="fs-follow-system-row">
+          <input
+            type="checkbox"
+            checked={followSystemTheme}
+            onChange={(e) => setFollowSystemTheme(e.target.checked)}
+          />
+          <span>Match the system's light or dark appearance</span>
+        </label>
+      </div>
+      <p className="fs-customize-hint">
+        Switches between the Dark and Light themes when macOS does. Picking a
+        theme by hand still works; the next system change follows again.
+      </p>
       <p className="fs-customize-hint">
         Drag themes between Shown and Hidden — where you drop one is its place
         in the View → Theme menu. Built-in themes can be reordered and hidden,

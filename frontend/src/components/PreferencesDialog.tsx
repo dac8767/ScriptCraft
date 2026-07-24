@@ -471,8 +471,6 @@ function GeneralTab() {
     dateFormat, setDateFormat,
     spellCheckByDefault, setSpellCheckByDefault,
     windowStartup, setWindowStartup,
-    followSystemTheme, setFollowSystemTheme,
-    menuSystem, setMenuSystem,
     smartTypography, setSmartTypography,
     units, setUnits,
     timeFormat, setTimeFormat,
@@ -538,38 +536,10 @@ function GeneralTab() {
         </label>
       </section>
 
-      <section>
-        <h3>Appearance</h3>
-        <label className="prefs-check-row">
-          <input
-            type="checkbox"
-            checked={followSystemTheme}
-            onChange={(e) => setFollowSystemTheme(e.target.checked)}
-          />
-          <span>Match the system's light or dark appearance</span>
-        </label>
-        <p className="prefs-hint">
-          Switches between the Dark and Light themes when macOS does. Picking
-          a theme by hand still works; the next system change follows again.
-        </p>
-      </section>
-
-      <section>
-        <h3>Menus</h3>
-        <label className="prefs-field-row">
-          <span>Menu bar lives in:</span>
-          <select value={menuSystem} onChange={(e) => setMenuSystem(e.target.value as 'inWindow' | 'native')}>
-            <option value="inWindow">The app window (classic)</option>
-            <option value="native">The macOS menu bar</option>
-          </select>
-        </label>
-        <p className="prefs-hint">
-          v2.93 (experimental): the same menus, installed in the real menu bar
-          next to the  — the in-window bar hides and the script gains its
-          room. Icons, the table-size grid, and drag-to-reorder stay in-window
-          only. Switching back here restores the classic bar instantly.
-        </p>
-      </section>
+      {/* v4.26, Derek: "Match the system appearance" moved to Customize >
+          Themes (next to the theme picker it overrides); "Menu bar lives in"
+          moved to Customize > Menu Bar (it's menu-chrome configuration, and
+          the way back from native mode was stranded here). */}
 
       <section>
         <h3>Editing</h3>
