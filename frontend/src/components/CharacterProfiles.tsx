@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { FaChevronRight, FaChevronDown, FaExpandAlt } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
-import DOMPurify from 'dompurify';
+import { stripHtml } from '../utils/stripHtml';
 import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 import { useEditorStore, type CharacterProfile } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -21,11 +21,8 @@ const DEFAULT_HIGHLIGHT_COLORS = [
   '#f97316', '#ef4444', '#000000',
 ];
 
-/** Strip HTML tags to get plain text (for collapsed preview and FDX export) */
-function stripHtml(html: string): string {
-  if (!html) return '';
-  return DOMPurify.sanitize(html, { ALLOWED_TAGS: [] }).replace(/\s+/g, ' ').trim();
-}
+// stripHtml moved to utils/stripHtml — one shared copy for the collapsed
+// preview here AND the FDX cast-list export (the two used to drift).
 
 interface CharacterProfilesProps {
   /** Render inside a tool window: always visible, no close button/swipe */

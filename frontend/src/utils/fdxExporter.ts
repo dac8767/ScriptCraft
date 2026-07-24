@@ -3,6 +3,7 @@ import type { JSONContent } from '@tiptap/react';
 import type { CharacterProfile, TagCategory, TagItem, BeatInfo, BeatColumn, PageLayout } from '../stores/editorStore';
 import { CUSTOM_TYPE_TO_FDX } from './fdxParser';
 import { isWorkingNoteNode } from './workingNotes';
+import { stripHtml } from './stripHtml';
 
 const NODE_TO_FDX: Record<string, string> = {
   sceneHeading: 'Scene Heading',
@@ -40,14 +41,9 @@ function esc(str: string): string {
     .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
-/** Strip HTML tags to plain text (for FDX export — CastMember Description is plain text only) */
-function stripHtml(html: string): string {
-  if (!html) return '';
-  return html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
-    .replace(/\s+/g, ' ').trim();
-}
+// stripHtml (CastMember Description is plain text only) is the shared
+// utils/stripHtml — the local regex copy knew only 6 entities, so cast
+// descriptions carrying &mdash; etc. exported them literally.
 
 /**
  * Generate ElementSettings using the document's actual margins.

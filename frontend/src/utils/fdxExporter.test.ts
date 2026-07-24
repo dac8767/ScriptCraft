@@ -42,3 +42,17 @@ describe('exportFDX — working notes never export', () => {
     expect(xml).toContain('Beat.');
   });
 });
+
+describe('exportFDX — cast list descriptions', () => {
+  it('decodes HTML entities instead of exporting them literally (stripHtml consolidation)', () => {
+    const profiles = [{
+      name: 'SARAH',
+      description: '<p>Sharp-eyed &mdash; wary &amp; quick.</p><p>Ex-analyst.</p>',
+    }] as unknown as Parameters<typeof exportFDX>[2];
+    const xml = exportFDX(doc(node('action', 'Beat.')), 'Test', profiles);
+    // &mdash; decodes to the em dash; & re-escapes once as XML's &amp;;
+    // block boundary becomes a space.
+    expect(xml).toContain('<Description>Sharp-eyed — wary &amp; quick. Ex-analyst.</Description>');
+    expect(xml).not.toContain('&mdash;');
+  });
+});
