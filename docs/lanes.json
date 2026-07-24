@@ -108,6 +108,7 @@
       "files": [
         "frontend/src/components/MenuBar.tsx",
         "frontend/src/components/DiagnosticsDialog.tsx",
+        "frontend/src/components/AboutDialog.tsx",
         "frontend/src/components/ScriptContextMenu.tsx",
         "frontend/src/components/ContextMenuTab.tsx",
         "frontend/src/components/AddMenu.tsx",
