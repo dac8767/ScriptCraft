@@ -62,6 +62,8 @@ export interface ViewState {
   noteOrder?: string[];
   todoOrder?: string[];
   panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom' | 'icons'; right: 'compact' | 'comfortable' | 'custom' | 'icons' };
+  /** v4.24, Derek: side-panel display names — Title Case (as authored) or ALL CAPS. */
+  panelNameCase?: 'title' | 'upper';
   chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   /** v2.29: item spacing (flex gap, px) for the menu bar, toolbar and Big
    *  Button section — adjusted by the faint drag handles on the bars. */

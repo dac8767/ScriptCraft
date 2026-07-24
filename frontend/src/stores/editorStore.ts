@@ -849,6 +849,9 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   todoOrder: string[];
   setTodoOrder: (keys: string[]) => void;
   panelSizeMode: { left: 'compact' | 'comfortable' | 'custom' | 'icons'; right: 'compact' | 'comfortable' | 'custom' | 'icons' };
+  /** v4.24, Derek: side-panel display names — Title Case (as authored) or ALL CAPS. */
+  panelNameCase: 'title' | 'upper';
+  setPanelNameCase: (c: 'title' | 'upper') => void;
   /** Custom sizes in px, used when the matching mode is 'custom' (v0.72). */
   chromeCustomPx: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
   setChromeCustomPx: (surface: 'menu' | 'toolbar' | 'panelLeft' | 'panelRight', px: number) => void;
@@ -1537,6 +1540,11 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     set({ todoOrder: keys });
   },
   panelSizeMode: _vs.panelSizeMode ?? { left: 'comfortable', right: 'comfortable' },
+  panelNameCase: (_vs.panelNameCase === 'upper' ? 'upper' : 'title') as 'title' | 'upper',
+  setPanelNameCase: (c) => {
+    saveViewState({ panelNameCase: c });
+    set({ panelNameCase: c });
+  },
   chromeCustomPx: _vs.chromeCustomPx ?? { menu: 36, toolbar: 33, panelLeft: 266, panelRight: 266 },
   setChromeCustomPx: (surface, px) => set((st) => {
     const next = { ...st.chromeCustomPx, [surface]: px };

@@ -996,3 +996,6 @@
   min-width: 150px;
 }
 
+
+/* v4.24, Derek (Customize > Side Panels): panel display names in ALL CAPS. */
+.tool-name-upper { text-transform: uppercase; }

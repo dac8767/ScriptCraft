@@ -247,6 +247,7 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
 export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
   tool: ToolDef; onClose: () => void; temporary?: boolean; side?: ToolSide; children: React.ReactNode;
 }) {
+  const nameUpper = useEditorStore((s) => s.panelNameCase === 'upper');
   const { toolSizes, setToolSize, panelSizeMode, chromeCustomPx } = useEditorStore();
   const windowRef = useRef<HTMLDivElement>(null);
   // Docked windows default to inline (see ToolDock below), so this frame only
@@ -376,7 +377,7 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
         return (
           <div className="tool-window-header" onPointerDown={startDrag}>
             {side !== 'right' && popBtn}
-            <span className="tool-window-title">{tool.label}</span>
+            <span className={`tool-window-title${nameUpper ? ' tool-name-upper' : ''}`}>{tool.label}</span>
             {HeaderExtra && <span className="tool-window-header-extra"><HeaderExtra /></span>}
             <span className="tool-window-header-actions">
               {side === 'right' && popBtn}
@@ -408,6 +409,7 @@ interface ToolDockProps {
 }
 
 export default function ToolDock({ side, editor, scrollContainer }: ToolDockProps) {
+  const nameUpper = useEditorStore((s) => s.panelNameCase === 'upper');
   const {
     activeTool, setActiveTool, activeToolRight, setActiveToolRight, toolConfig,
   } = useEditorStore();
@@ -683,7 +685,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                 {activeId === t.id ? <FaChevronDown /> : <FaChevronRight />}
               </span>
               <span className="tool-dock-icon">{t.icon}</span>
-              <span className="tool-dock-label">{t.label}</span>
+              <span className={`tool-dock-label${nameUpper ? ' tool-name-upper' : ''}`}>{t.label}</span>
             </div>
             {isOpenInline && (
               <div className={`tool-inline${side === 'right' ? ' tool-inline-right' : ''}${solo ? ' tool-inline-solo' : ''}`}>

@@ -397,6 +397,20 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             <button onClick={() => useEditorStore.getState().setPanelSizeMode('right', 'comfortable')}>Reset Right to Default</button>
           </span>
         </div>
+        {/* v4.24, Derek: panel display names — Title Case or ALL CAPS. */}
+        <div className="fs-customize-row fs-size-row">
+          <span className="fs-customize-tool">Panel Name Style</span>
+          <span className="fs-customize-seg">
+            <button
+              className={panelNameCase === 'title' ? 'active' : ''}
+              onClick={() => useEditorStore.getState().setPanelNameCase('title')}
+            >Title Case</button>
+            <button
+              className={panelNameCase === 'upper' ? 'active' : ''}
+              onClick={() => useEditorStore.getState().setPanelNameCase('upper')}
+            >ALL CAPS</button>
+          </span>
+        </div>
         {/* v1.76: Outlook-style — Left Panel, Right Panel, Hidden. Drag
             between the three; the column a tool lands in is its side, and
             drop position is its position. Dividers and spacers dropped on
@@ -533,7 +547,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // ALL hooks must run before this early return — a hook below it crashes
   // React ('Rendered more hooks than during the previous render').
   const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones, toolbarZonesSet } = useEditorStore();
-  const { panelDividers, setPanelDividers } = useEditorStore();
+  const { panelDividers, setPanelDividers, panelNameCase } = useEditorStore();
   // v4.22, Derek: default landing is the Editor tab (top of the list).
   const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'qat' | 'panels' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'elements');
 
