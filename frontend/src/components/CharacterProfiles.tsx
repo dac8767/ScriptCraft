@@ -3,6 +3,7 @@ import { FaChevronRight, FaChevronDown, FaExpandAlt } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import { stripHtml } from '../utils/stripHtml';
 import { CharacterScanTab } from './CharacterScanTab';
+import { CharacterRelationshipsTab } from './CharacterRelationshipsTab';
 import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 import { useEditorStore, type CharacterProfile } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -10,10 +11,9 @@ import { useAssetStore } from '../stores/assetStore';
 import { api } from '../services/api';
 import { showToast } from './Toast';
 import MiniRichText from './MiniRichText';
-import { RelationshipMap } from './RelationshipMap';
 import { toTitleCaseName, lastNameOf, joinName, escapeRegExp } from '../utils/characterNames';
 import { buildScanList, type ScannedCharacter } from '../utils/characterScan';
-import { InlineRelForm, REL_TYPES, REL_DYNAMICS } from './InlineRelForm';
+import { InlineRelForm, REL_DYNAMICS } from './InlineRelForm';
 import { AssetImage, AssetAudio, UploadImageButton } from './CharacterAssetMedia';
 
 // Default colors for auto-assignment (VIBGYOR palette)
@@ -90,7 +90,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   const exitCharFullscreen = () => useEditorStore.getState().setCharFullscreen(false);
   const [fsViewMode, setFsViewMode] = useState<'cards' | 'list'>('cards');
   // v4.18: portal target in the header for the Relationship Map's toolbar.
-  const [mapHeaderSlot, setMapHeaderSlot] = useState<HTMLElement | null>(null);
   const [modalChar, setModalChar] = useState<string | null>(null);
 
   // Image picker state
@@ -384,12 +383,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     if (!scanResults) return [];
     return scanResults.filter((r) => !(r.source === 'referred' && referredTags[r.name]));
   }, [scanResults, referredTags]);
-
-  // v4.20: the Relationships tab — add a blank relationship to edit inline.
-  const handleAddRelationship = useCallback(() => {
-    const id = `rel-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
-    upsertCharacterRelationship({ id, characterA: '', characterB: '', type: REL_TYPES[0], description: '', dynamic: REL_DYNAMICS[0] });
-  }, [upsertCharacterRelationship]);
 
   // Characters that have a profile but are no longer detected in the script.
   const orphanedNames = useMemo(() => {
@@ -1180,74 +1173,22 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       {/* v4.20: Relationships tab — an editable list of every relationship.
           v4.23: List/Map toggle folds the old "Relationship Map" tab in here. */}
       {activeTab === 'relationships' && (
-        <div className="char-rels-tab">
-          {/* Non-fullscreen carries the List/Map toggle here (fullscreen puts it
-              in the header, next to the close X, like Profiles' Cards/List). */}
-          {!isFullscreen && (
-            <div className="char-rels-view-toggle">
-              <button className={`char-fs-view-btn${relViewMode === 'list' ? ' active' : ''}`} onClick={() => setRelViewMode('list')}>List</button>
-              <button className={`char-fs-view-btn${relViewMode === 'map' ? ' active' : ''}`} onClick={() => setRelViewMode('map')}>Map</button>
-            </div>
-          )}
-          {relViewMode === 'map' ? (
-            <>
-              {/* The map's Fit / + Add Relationship buttons portal into this
-                  toolbar — the SAME .char-rels-toolbar the list uses, so the
-                  controls sit in the same place in both views (v4.23). */}
-              <div className="char-rels-toolbar" ref={setMapHeaderSlot} />
-              <RelationshipMap
-                key={currentScriptId || 'no-script'}
-                scriptId={currentScriptId || undefined}
-                headerSlot={mapHeaderSlot}
-                onSelectCharacter={(name) => {
-                  setActiveTab('profiles');
-                  setSelectedCharacter(name);
-                  setExpandedChar(name);
-                  setModalChar(name);
-                }}
-              />
-            </>
-          ) : (
-          <>
-          <div className="char-rels-toolbar">
-            <button className="char-rels-add" onClick={handleAddRelationship}>+ Add Relationship</button>
-          </div>
-          <div className="char-rels-list">
-            {characterRelationships.length === 0 ? (
-              <div className="char-profiles-empty">No relationships yet. Add one to get started.</div>
-            ) : (
-              characterRelationships.map((rel) => (
-                <div key={rel.id} className="char-rel-item">
-                  <select className="char-rel-field char-rel-char" value={rel.characterA}
-                    onChange={(e) => upsertCharacterRelationship({ ...rel, characterA: e.target.value })}>
-                    <option value="">Character A…</option>
-                    {existingCharNames.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <select className="char-rel-field char-rel-type" value={rel.type}
-                    onChange={(e) => upsertCharacterRelationship({ ...rel, type: e.target.value })}>
-                    {REL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <select className="char-rel-field char-rel-char" value={rel.characterB}
-                    onChange={(e) => upsertCharacterRelationship({ ...rel, characterB: e.target.value })}>
-                    <option value="">Character B…</option>
-                    {existingCharNames.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <select className="char-rel-field char-rel-dynamic" value={rel.dynamic}
-                    onChange={(e) => upsertCharacterRelationship({ ...rel, dynamic: e.target.value })}>
-                    {REL_DYNAMICS.map((d) => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                  <input className="char-rel-field char-rel-desc" value={rel.description}
-                    placeholder="Description…"
-                    onChange={(e) => upsertCharacterRelationship({ ...rel, description: e.target.value })} />
-                  <button className="char-rel-delete" title="Delete relationship"
-                    onClick={() => deleteCharacterRelationship(rel.id)}>&times;</button>
-                </div>
-              ))
-            )}
-          </div>
-          </>
-          )}
-        </div>
+        <CharacterRelationshipsTab
+          isFullscreen={isFullscreen}
+          relViewMode={relViewMode}
+          setRelViewMode={setRelViewMode}
+          currentScriptId={currentScriptId}
+          characterRelationships={characterRelationships}
+          upsertCharacterRelationship={upsertCharacterRelationship}
+          deleteCharacterRelationship={deleteCharacterRelationship}
+          existingCharNames={existingCharNames}
+          onSelectCharacter={(name) => {
+            setActiveTab('profiles');
+            setSelectedCharacter(name);
+            setExpandedChar(name);
+            setModalChar(name);
+          }}
+        />
       )}
 
       {/* Profiles tab content */}
