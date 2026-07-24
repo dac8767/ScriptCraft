@@ -262,6 +262,14 @@
   line-height: 1;
 }
 .char-profiles-close:hover { color: var(--fd-text); }
+/* v4.24 batch-v2 #6: the count shown in the tool-window/dock title bar
+   (CharactersHeaderExtra) — same quiet look as the Scenes count. */
+.char-hdr-count {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 .char-profiles-fullscreen-btn {
   background: none;
   border: none;
@@ -275,9 +283,21 @@
 /* ── v4.18, Derek: fullscreen header — one row: title, then Profiles/Map tabs
    ~50px past it, then the tab's actions and the close X hard right. ────────── */
 .char-fs-header .char-profiles-count { display: none; }
+/* v4.25, Derek: no gap between the active tab and the surface below — the tabs
+   sit ON the header's bottom edge, exactly like the docked tab track. The
+   header drops its vertical padding (min-height keeps the row's height, and
+   everything else stays vertically centered) so the tab container can stretch
+   to the bottom border; the tabs' -1px margin then overlaps that border and
+   the active tab's navigator-colored border-bottom masks it. */
+.char-fs-header {
+  padding-top: 0;
+  padding-bottom: 0;
+  min-height: 45px;
+}
 .char-fs-header-tabs {
   display: flex;
-  align-items: center;
+  align-self: stretch;     /* reach the header's bottom edge */
+  align-items: flex-end;   /* tab bottoms sit on it (was: centered pills) */
   gap: 4px;
   margin-left: 42px;   /* + the header's 8px gap ≈ 50px from the title */
 }
@@ -799,14 +819,6 @@
   font-size: 40px;
   border-radius: 6px;
 }
-/* v4.24 batch 3: the card shows essentials only; this opens the full modal. */
-.char-profile-fullinfo-btn {
-  align-self: stretch;
-  padding: 6px 12px;
-  background: transparent; border: 1px solid var(--fd-accent); border-radius: 4px;
-  color: var(--fd-accent); font-size: 12px; cursor: pointer;
-}
-.char-profile-fullinfo-btn:hover { background: rgba(74,158,255,.1); }
 /* Top section: description+meta and images — stacks in side panel, side-by-side in fullscreen */
 .char-profile-detail-top { display: flex; flex-direction: column; gap: var(--dz-char-field-gap, 8px); }
 .char-profile-detail-info { display: flex; flex-direction: column; gap: var(--dz-char-field-gap, 8px); }
@@ -820,6 +832,29 @@
 .char-profile-detail-fs .char-profile-detail-top > * {
   flex: 1;
   min-width: 0;
+}
+/* v4.25, Derek: Cards view — the Description clamps to two display lines so
+   every card stays uniform; clicking in to edit lifts the clamp. Display-only,
+   the stored text is untouched. (.char-profile-detail-fs exists only in
+   fullscreen Cards view, and Description is the only mini-rt on the card.) */
+.char-profile-detail-fs .mini-rt-editor {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  /* -webkit-box clamp paints overflow text into the padding box — swap the
+     bottom padding for margin (margins never paint content) so no ghost
+     third line shows under the ellipsis. */
+  padding-bottom: 0;
+  margin-bottom: 6px;
+}
+.char-profile-detail-fs .mini-rt-wrapper:focus-within .mini-rt-editor {
+  display: block;
+  -webkit-line-clamp: none;
+  overflow-y: auto;
+  /* editing room — the call site passes minHeight 0 so the clamp can size
+     the closed state; this restores the comfortable open height. */
+  min-height: 50px;
 }
 .char-profile-label {
   font-size: 10px;

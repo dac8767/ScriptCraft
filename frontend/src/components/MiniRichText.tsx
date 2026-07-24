@@ -107,7 +107,7 @@ const MiniRichText: React.FC<MiniRichTextProps> = ({
         data-placeholder={placeholder}
         onInput={handleInput}
         onBlur={handleInput}
-        style={{ minHeight }}
+        style={minHeight > 0 ? { minHeight } : undefined}
       />
     </div>
   );

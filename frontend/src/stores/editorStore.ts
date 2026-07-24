@@ -1088,6 +1088,12 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    *  session-only. */
   charFullscreen: boolean;
   setCharFullscreen: (v: boolean) => void;
+  /** v4.24 batch-v2 #6: the character count the panel currently shows —
+   *  published by CharacterProfiles so the tool-window header displays the
+   *  SAME number (search-filtered, profiles ∪ live cues) without recomputing
+   *  it. Not persisted. */
+  charListCount: number;
+  setCharListCount: (n: number) => void;
   /** v4.16: relationship-map scroll-to-zoom speed multiplier (Design panel). */
   mapScrollSpeed: number;
   setMapScrollSpeed: (v: number) => void;
@@ -1642,6 +1648,8 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   setSelectedCharacter: (name) => set({ selectedCharacter: name }),
   charFullscreen: false,
   setCharFullscreen: (v) => set({ charFullscreen: v }),
+  charListCount: 0,
+  setCharListCount: (n) => set((s) => (s.charListCount === n ? {} : { charListCount: n })),
   mapScrollSpeed: (_vs.mapScrollSpeed as number) ?? 1,
   setMapScrollSpeed: (v) => {
     const clamped = clamp(v, 0.1, 3);

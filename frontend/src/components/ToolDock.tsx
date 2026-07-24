@@ -35,7 +35,7 @@ import SceneNavigator, { SceneHeaderExtra, SceneFooter, type NavTab } from './Sc
 import NavigatorTool, { NavigatorHeaderExtra } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
-import CharacterProfiles from './CharacterProfiles';
+import CharacterProfiles, { CharactersHeaderExtra } from './CharacterProfiles';
 import { StickyNotesTool, FragmentsTool, TodoTool } from './StickyNotes';
 import HighlightsTool from './HighlightsTool';
 import { DesignPanelDocked } from './DesignPanel';
@@ -149,6 +149,7 @@ export const TOOL_HEADER_EXTRAS: Partial<Record<ToolId, React.FC>> = {
   notebook: NotebookHeaderExtra,   // v2.05: Pages + create buttons
   beatboard: OutlineHeaderControls, // v2.41: count/Arrangement/Presets/add in the chrome
   scenes: SceneHeaderExtra,        // v3.54: scene count + filter popover
+  characters: CharactersHeaderExtra, // v4.24 #6: count + fullscreen in the ONE title bar
 };
 // v3.54: the Scenes tool's search bar is a true footer.
 export const TOOL_FOOTERS: Partial<Record<ToolId, React.FC>> = {

@@ -36,6 +36,40 @@ interface CharacterProfilesProps {
   style?: React.CSSProperties;
 }
 
+// v4.16: fullscreen is the Scrapbook-style editor takeover (a store flag),
+// not a fixed overlay. Entering clears the docked/floating instance so only
+// the takeover renders. Module-level because BOTH the panel and the window
+// header's CharactersHeaderExtra trigger it — one copy, no drift.
+function enterCharFullscreen() {
+  const s = useEditorStore.getState();
+  if (s.activeTool === 'characters') s.setActiveTool(null);
+  if (s.activeToolRight === 'characters') s.setActiveToolRight(null);
+  if (s.tempTool === 'characters') s.setTempTool(null);
+  s.setCharFullscreen(true);
+}
+
+/** v4.24 batch-v2 #6 (Derek): tool windows show ONE title bar. The frame's
+ *  header carries the count + fullscreen button (registered in
+ *  TOOL_HEADER_EXTRAS); the panel's own header row now renders only in
+ *  fullscreen and the legacy slide-in overlay. The count is published by the
+ *  panel (search-filtered, profiles ∪ live cues) — displayed here, never
+ *  recomputed, so the two can't drift. */
+export function CharactersHeaderExtra() {
+  const count = useEditorStore((s) => s.charListCount);
+  return (
+    <>
+      <span className="char-hdr-count">{count}</span>
+      <button
+        className="char-profiles-fullscreen-btn"
+        onClick={enterCharFullscreen}
+        title="Fullscreen"
+      >
+        {'⛶'}
+      </button>
+    </>
+  );
+}
+
 const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId, style, embedded = false, fullscreen = false }) => {
   const {
     characters,
@@ -78,17 +112,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   // that introduces them. Nothing is created until the writer clicks Add on a
   // row. null = not scanned yet this session.
   const isFullscreen = fullscreen;
-  // v4.16: fullscreen is the Scrapbook-style editor takeover (a store flag),
-  // not a fixed overlay that covered the toolbar with no way out. Entering
-  // clears the docked/floating instance so only the takeover renders; the
-  // ribbon's "Return to Editor" button (and this header button) exits.
-  const enterCharFullscreen = () => {
-    const s = useEditorStore.getState();
-    if (s.activeTool === 'characters') s.setActiveTool(null);
-    if (s.activeToolRight === 'characters') s.setActiveToolRight(null);
-    if (s.tempTool === 'characters') s.setTempTool(null);
-    s.setCharFullscreen(true);
-  };
   const exitCharFullscreen = () => useEditorStore.getState().setCharFullscreen(false);
   const [fsViewMode, setFsViewMode] = useState<'cards' | 'list'>('cards');
   // v4.18: portal target in the header for the Relationship Map's toolbar.
@@ -442,6 +465,12 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
 
     return list;
   }, [characterProfiles, scriptCharacterNames, searchQuery, sortBy, charStats]);
+
+  // v4.24 batch-v2 #6: publish the count the panel shows so the tool-window
+  // header (CharactersHeaderExtra) displays the same number.
+  useEffect(() => {
+    useEditorStore.getState().setCharListCount(allCharacters.length);
+  }, [allCharacters.length]);
 
   const getProfile = useCallback(
     (name: string): CharacterProfile => {
@@ -1123,6 +1152,12 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         onChange={handleVoiceSelect}
       />
 
+      {/* v4.24 batch-v2 #6 (Derek): in a tool window/dock the FRAME's title
+          bar is the only header (it carries the count + fullscreen button via
+          CharactersHeaderExtra) — this row would repeat the tool name, so it
+          renders only in fullscreen (where it IS the single top bar) and the
+          legacy slide-in overlay (which has no frame). */}
+      {(isFullscreen || !embedded) && (
       <div className={`char-profiles-header${isFullscreen ? ' char-fs-header' : ''}`}>
         <span className="char-profiles-title">Characters</span>
         <span className="char-profiles-count">{allCharacters.length}</span>
@@ -1166,6 +1201,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           &times;
         </button>}
       </div>
+      )}
 
       {/* Tabs row \u2014 only when NOT fullscreen (in fullscreen they live in the header) */}
       {!isFullscreen && (
@@ -1259,7 +1295,8 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             const stats = charStats.get(name);
             // v4.18: in fullscreen LIST view, cards start minimized (a bar with
             // name + key stats) and expand on click; Cards view stays expanded.
-            const isExpanded = (isFullscreen && fsViewMode === 'cards') || expandedChar === name;
+            const isCardsView = isFullscreen && fsViewMode === 'cards';
+            const isExpanded = isCardsView || expandedChar === name;
             const isOrphaned = orphanedNames.has(name);
             const primaryImageId = profile.images?.[0];
 
@@ -1284,7 +1321,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                 >
                   {/* v4.20: left caret makes it clear the row toggles open (not
                       in Cards mode, where cards are always expanded). */}
-                  {!(isFullscreen && fsViewMode === 'cards') && (
+                  {!isCardsView && (
                     <span className="char-profile-caret" aria-hidden>{isExpanded ? <FaChevronDown /> : <FaChevronRight />}</span>
                   )}
                   {/* Avatar: show primary image or color swatch */}
@@ -1378,34 +1415,38 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                   </div>
                 </div>
 
-                {/* Expanded detail — ESSENTIALS only (v4.24, Derek batch 3):
-                    name, photo, description, gender/age, and a Full Info
-                    button that opens the enlarge modal (renderCharacterFields,
-                    the one full renderer). The card used to inline a second
-                    copy of every section — backstory, arc, voice, color,
-                    relationships, scenes — which had already drifted from the
-                    modal's renderer; that copy is deleted, not hidden. */}
+                {/* Expanded detail (v4.24 batch 3, reworked v4.25, Derek):
+                    Cards view — always expanded — shows the ESSENTIALS only:
+                    name, photo (footprint reserved), two-line description,
+                    gender/age; the header's enlarge icon opens the full modal.
+                    Toggling the caret in the list contexts (side panel and
+                    fullscreen List) shows the FULL profile inline via
+                    renderCharacterFields — the one shared renderer, also used
+                    by the modal — so the two can never drift. No Full Info
+                    button anywhere; the enlarge icon does that job. */}
                 {isExpanded && (
-                  <div className={`char-profile-detail${isFullscreen && fsViewMode === 'cards' ? ' char-profile-detail-fs' : ''}`}>
-                    <div className="char-profile-detail-top char-profile-detail-stacked">
-                      {renderNameFields(name)}
-                      {renderImageSection(name, isFullscreen && fsViewMode === 'cards')}
-                      <label className="char-profile-label">Description</label>
-                      <MiniRichText
-                        value={profile.description}
-                        onChange={(html) => upsertCharacterProfile(name, { description: html })}
-                        placeholder="A weary detective in his 50s, haunted by a cold case..."
-                        minHeight={50}
-                      />
-                      {renderMetaRow(name, true)}
-                    </div>
-                    <button
-                      className="char-profile-fullinfo-btn"
-                      onClick={() => setModalChar(name)}
-                      title="Open the full profile — backstory, arc, voice, custom fields, relationships, scenes"
-                    >
-                      Full Info
-                    </button>
+                  <div className={`char-profile-detail${isCardsView ? ' char-profile-detail-fs' : ''}`}>
+                    {isCardsView ? (
+                      <div className="char-profile-detail-top char-profile-detail-stacked">
+                        {renderNameFields(name)}
+                        {renderImageSection(name, true)}
+                        <label className="char-profile-label">Description</label>
+                        {/* minHeight 0 = no inline min-height, so the 2-line
+                            clamp (CSS) sizes the box; focus restores editing
+                            room via the :focus-within rule. A fixed 50px here
+                            left a half-clipped third line painting under the
+                            ellipsis. */}
+                        <MiniRichText
+                          value={profile.description}
+                          onChange={(html) => upsertCharacterProfile(name, { description: html })}
+                          placeholder="A weary detective in his 50s, haunted by a cold case..."
+                          minHeight={0}
+                        />
+                        {renderMetaRow(name, true)}
+                      </div>
+                    ) : (
+                      renderCharacterFields(name, false)
+                    )}
                   </div>
                 )}
               </div>
