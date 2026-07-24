@@ -68,9 +68,18 @@ prefixes so far (0 TS/TSX hits — safe to remove *as individual rules*):
 `fs-projects-*`/`fs-project-*`, `project-*`, `props-*`, `source-badge`, `script-card-*`,
 `open-project-group-header`.
 
-- [ ] `12-projects-assets.css` — ~692 lines (old Projects hub) + its **duplicate** in `03-toolbar.css:259-294` + responsive tail in `15-responsive.css` (`importexport`-ish / spine)
-- [ ] `22-tools-extra.css` — ~442 (`fs-vomit-*`, `fs-projects-*`, duplicate `note-item-*`) (`tools`)
-- [ ] `09-script-notes.css` — ~347 (67% of file; old script-notes panel) (`notes`)
+- [x] `12-projects-assets.css` — DONE: 83 rules removed per-rule (1350→854) via the
+  postcss triple-gate filter + live pixel-diff (0 px across 4 surfaces). The
+  `props-field/label/input/textarea` cluster proved LIVE (current properties
+  dialog) and stays — `props-*` was partly live, same lesson as `ribed-*`.
+- [x] `03-toolbar.css` projects part — DONE: 25 rules (the `.fs-pm-embedded`
+  duplicate block + `fs-project-*` chooser), 1256→1218.
+- [x] `15-responsive.css` tail — DONE: 45 rules, 801→714.
+- [x] `22-tools-extra.css` — DONE: 36 rules (1847→1642). `fs-vomit-*` confirmed
+  orphaned: the vomit feature lives in GoalsTool rendering `fs-goal-*` classes.
+  `.fs-timefield` (live) untouched; `note-item-flash`/`note-item-media` proved
+  LIVE and stay.
+- [x] `09-script-notes.css` — DONE: 47 rules (501→229).
 - [ ] `24-notebook.css` — ~313 (old ribbon editor `ribed-*`/`ruv-*`) (`notebook`)
 - [ ] `10-character-profiles.css` — ~203 (`character`)
 - [ ] `03-toolbar.css` — ~182 (mostly the duplicate project block + `zoom-menu-*`) (`toolbar`)

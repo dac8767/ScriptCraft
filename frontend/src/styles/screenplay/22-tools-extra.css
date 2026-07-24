@@ -5,58 +5,6 @@
   flex: 1;
   min-height: 0;
 }
-.fs-vomit-modes {
-  display: inline-flex;
-  border: 1px solid var(--fd-border);
-  border-radius: 6px;
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-.fs-vomit-modes button {
-  background: none;
-  border: none;
-  color: var(--fd-text-muted);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 14px;
-  cursor: pointer;
-}
-.fs-vomit-modes button.active {
-  background: var(--fd-accent, #4a90d9);
-  color: #fff;
-}
-.fs-vomit-presets {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-.fs-vomit-presets button {
-  background: rgba(128, 128, 128, 0.15);
-  border: none;
-  color: var(--fd-text);
-  border-radius: 5px;
-  font-size: 12px;
-  padding: 6px 12px;
-  cursor: pointer;
-}
-.fs-vomit-presets button:hover { background: rgba(128, 128, 128, 0.28); }
-.fs-vomit-custom {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--fd-text);
-}
-.fs-vomit-custom input {
-  width: 64px;
-  background: var(--fd-input-bg);
-  border: 1px solid var(--fd-border);
-  border-radius: 4px;
-  color: var(--fd-text);
-  font-size: 12px;
-  padding: 5px 6px;
-}
 /* Segmented time field (v1.73) — reads as one input, types like a clock. */
 .fs-timefield {
   display: inline-flex;
@@ -92,92 +40,8 @@
 }
 .fs-timefield-half:focus { background: var(--fd-overlay-light); outline: none; }
 .fs-timefield-half.empty { color: var(--fd-text-muted); }
-.fs-vomit-start {
-  background: var(--fd-accent, #4a90d9);
-  border: none;
-  color: #fff;
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 12px;
-  cursor: pointer;
-}
-.fs-vomit-start:disabled { opacity: 0.45; cursor: default; }
-.fs-vomit-hemingway {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--fd-text);
-  cursor: pointer;
-  margin: 12px 0 2px;
-  padding-top: 10px;
-  border-top: 1px solid var(--fd-chrome-separator);
-}
 
 /* running state */
-.fs-vomit-countdown {
-  font-size: 34px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--fd-text);
-  text-align: center;
-  margin: 6px 0 10px;
-}
-.fs-vomit-progress {
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(128, 128, 128, 0.2);
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-.fs-vomit-progress > div {
-  height: 100%;
-  background: var(--fd-accent, #4a90d9);
-  transition: width 1s linear;
-}
-.fs-vomit-until {
-  font-size: 12px;
-  color: var(--fd-text-muted);
-  text-align: center;
-  margin-bottom: 10px;
-}
-.fs-vomit-lockednote {
-  font-size: 12px;
-  color: var(--fd-text-muted);
-  line-height: 1.45;
-  margin: 0 0 12px;
-}
-.fs-vomit-endearly {
-  background: none;
-  border: 1px solid var(--fd-border);
-  color: var(--fd-text-muted);
-  border-radius: 5px;
-  font-size: 11px;
-  padding: 4px 10px;
-  cursor: pointer;
-}
-.fs-vomit-endearly:hover { color: var(--fd-text); }
-.fs-vomit-confirm {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--fd-text);
-}
-.fs-vomit-confirm button {
-  background: rgba(128, 128, 128, 0.15);
-  border: none;
-  color: var(--fd-text);
-  border-radius: 5px;
-  font-size: 12px;
-  padding: 5px 10px;
-  cursor: pointer;
-}
-.fs-vomit-confirm button:first-of-type {
-  background: #c0392b;
-  color: #fff;
-}
 
 /* v1.92: the upper-right pill is gone — the Goals window IS the lock view
    while Vomit Draft runs. The note shakes when a locked edit is rejected. */
@@ -446,7 +310,6 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
   color: var(--fd-text);
   cursor: pointer;
 }
-
 
 /* ═══ v0.7: inline tool windows (open downward inside the dock) ═══ */
 .tool-inline {
@@ -740,7 +603,6 @@ input.fs-switch:checked::after { left: 15px; }
   justify-content: flex-start;
 }
 
-
 /* ═══ v0.9: themes ═══ */
 [data-theme="sepia"] {
   --fd-bg: #efe6d5; --fd-toolbar-bg: #e7dcc7; --fd-menu-bg: #efe6d5;
@@ -801,7 +663,6 @@ input.fs-switch:checked::after { left: 15px; }
   color: var(--fd-text);
 }
 
-
 /* v0.10: reorder controls in Customize Layout */
 .fs-customize-order { display: inline-flex; flex-direction: column; gap: 1px; margin-right: 4px; }
 .fs-customize-order button {
@@ -816,7 +677,6 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .fs-customize-order button:disabled { opacity: 0.3; cursor: default; }
 .fs-customize-order button:not(:disabled):hover { color: var(--fd-text); }
-
 
 /* ═══ v0.11 ═══ */
 
@@ -921,7 +781,6 @@ input.fs-switch:checked::after { left: 15px; }
 .ws-icon-btn.ws-confirm:hover { color: var(--fd-accent); border-color: var(--fd-accent); }
 .ws-confirm-label { font-size: 12.5px; color: #d05050; font-weight: 600; flex-shrink: 0; }
 
-
 /* ═══ v0.12 ═══ */
 
 /* Inline pop-out button. v1.34: upper-RIGHT for every window — matching the
@@ -1019,7 +878,6 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .ws-order button:disabled { opacity: 0.3; cursor: default; }
 .ws-order button:not(:disabled):hover { color: var(--fd-text); }
-
 
 /* ═══ v0.13: Preferences ═══ */
 .prefs-dialog {
@@ -1119,7 +977,6 @@ input.fs-switch:checked::after { left: 15px; }
   .prefs-layout { flex-direction: column; }
   .prefs-tabs { width: 100%; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--fd-border); }
 }
-
 
 /* ═══ v0.15 ═══ */
 
@@ -1281,8 +1138,6 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .note-item.swn-card .note-edit-area { position: relative; }
 /* The old bespoke note chrome is gone — the card provides all of it now. */
-.note-item-preview, .note-item-placeholder, .note-item-actions,
-.note-item-colors, .note-item-delete, .note-item-content { display: none; }
 /* A script note IS a card now — drop the old bespoke note styling that fought it. */
 .note-item.swn-card { border-top: none; }
 .note-item.swn-card .fs-script-link { color: #2c5e98; }
@@ -1409,7 +1264,6 @@ input.fs-switch:checked::after { left: 15px; }
   margin: 0 !important;
 }
 
-
 /* ═══ v0.16 ═══ */
 
 /* Continuous view (v4.22, Derek): the page gap is removed, so this is now a
@@ -1456,7 +1310,6 @@ input.fs-switch:checked::after { left: 15px; }
   text-underline-offset: 3px;
   white-space: nowrap;
 }
-
 
 /* ═══ v0.17 ═══ */
 
@@ -1517,7 +1370,6 @@ input.fs-switch:checked::after { left: 15px; }
   font-size: 12px;
   padding: 0 6px;
 }
-
 
 /* ═══ v0.18 ═══ */
 
@@ -1645,7 +1497,6 @@ input.fs-switch:checked::after { left: 15px; }
   max-width: 560px;
 }
 
-
 /* ═══ v0.21 ═══ */
 
 /* Customize: built-in toolbar items as boxed groups (no labels) */
@@ -1705,70 +1556,16 @@ input.fs-switch:checked::after { left: 15px; }
 .pv-exit-btn:hover { background: var(--fd-menu-hover); }
 .pv-exit-bottom { margin-top: 18px; margin-bottom: 0; }
 
-
 /* ═══ v0.23 ═══ */
 
 /* Project Manager tool */
-.fs-projects-tool { display: flex; flex-direction: column; height: 100%; }
-.fs-projects-list { flex: 1; overflow-y: auto; padding: 8px; }
-.fs-project-row {
-  padding: 8px 10px;
-  border-radius: 5px;
-  font-size: 13px;
-  color: var(--fd-text);
-  cursor: pointer;
-}
-.fs-project-row:hover { background: var(--fd-overlay-subtle); }
-.fs-project-row.active { background: var(--fd-overlay-medium); color: var(--fd-accent); font-weight: 600; }
 
 /* Status bar: per-location save chips */
 .status-item.status-saved { color: #4caf7d; }
 .status-item.status-saving { color: var(--fd-text-muted); }
 .status-item.status-error { color: #d05050; }
 
-
 /* ═══ v0.25 ═══ */
-.fs-projects-crumb {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--fd-border);
-  flex-shrink: 0;
-}
-.fs-projects-back {
-  background: none;
-  border: none;
-  color: var(--fd-accent);
-  font-size: 12.5px;
-  cursor: pointer;
-  padding: 2px 4px;
-  white-space: nowrap;
-}
-.fs-projects-crumb-name {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--fd-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.fs-project-row { display: flex; align-items: center; gap: 8px; }
-.fs-project-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fs-project-chevron { color: var(--fd-text-muted); }
-.fs-project-meta { color: var(--fd-text-muted); font-size: 11px; }
-.fs-projects-add-row { display: flex; gap: 6px; width: 100%; }
-.fs-projects-add-row input {
-  flex: 1;
-  height: 28px;
-  background: var(--fd-input-bg);
-  color: var(--fd-text);
-  border: 1px solid var(--fd-border);
-  border-radius: 4px;
-  padding: 0 8px;
-  font-size: 12.5px;
-}
-
 
 /* v0.30: account row in Save Options */
 .prefs-account-row {
@@ -1780,8 +1577,6 @@ input.fs-switch:checked::after { left: 15px; }
   color: var(--fd-text);
   padding: 4px 0;
 }
-
-
 
 /* ── v4.23, Derek: Workspaces dockable tool (WorkspacesTool.tsx) ── */
 .ws-tool { display: flex; flex-direction: column; height: 100%; min-height: 0; }
