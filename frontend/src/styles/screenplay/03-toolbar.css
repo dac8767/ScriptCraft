@@ -256,38 +256,12 @@
 
 /* ── Project Manager: embedded OpenDraft project pages (v0.52) ── */
 .fs-pm-embedded { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 0; }
-.fs-pm-embedded .project-list-page,
-.fs-pm-embedded .project-view { flex: 1; min-height: 0; height: auto; padding: 14px; overflow-y: auto; }
-.fs-pm-embedded .project-list-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; max-width: none; }
 .dropdown-item.dropdown-item-disabled { opacity: 0.4; cursor: default; }
 /* Compact assets so the grid fits a ~300px side panel with no horizontal
    cutoff (v0.53.1). Expanding the tool window shows more/bigger columns. */
-.fs-pm-embedded .project-list-page { overflow-x: hidden; }
-.fs-pm-embedded .project-list-title { font-size: 18px; letter-spacing: -0.3px; }
-.fs-pm-embedded .project-list-subtitle { font-size: 11px; overflow-wrap: anywhere; }
-.fs-pm-embedded .project-list-header {
-  flex-wrap: wrap; gap: 8px; align-items: flex-start;
-  margin-bottom: 16px; max-width: none;
-}
-.fs-pm-embedded .project-list-controls { flex-wrap: wrap; gap: 6px; }
-.fs-pm-embedded .project-list-controls > * { max-width: 100%; }
 .fs-pm-embedded .sort-select { height: 26px; font-size: 11px; padding: 0 6px; }
-.fs-pm-embedded .project-source-bar { max-width: none; margin-bottom: 12px; }
-.fs-pm-embedded .project-source-tab { padding: 7px 10px; font-size: 12px; }
-.fs-pm-embedded .project-list-grid {
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px;
-}
-.fs-pm-embedded .project-card { padding: 12px; }
-.fs-pm-embedded .project-card-name { font-size: 14px; margin-bottom: 5px; overflow-wrap: anywhere; }
-.fs-pm-embedded .project-card-meta { font-size: 11px; gap: 4px; flex-wrap: wrap; }
-.fs-pm-embedded .project-card-actions { margin-top: 7px; }
-.fs-pm-embedded .project-view-header { flex-wrap: wrap; gap: 8px; }
 
 /* ── Project Manager: project action chooser (v0.50) ── */
-.fs-project-chooser-dialog { max-width: 300px; }
-.fs-project-chooser-body { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
-.fs-project-chooser-body .dialog-btn { width: 100%; height: 32px; }
-.fs-project-chooser-body .dialog-btn:disabled { opacity: 0.4; cursor: default; }
 
 /* ── Customize: 'still reachable via Settings > Layout' warning (v0.47) ── */
 .fs-stuck-warn-overlay { z-index: 10050; }
@@ -1110,18 +1084,6 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .fs-addmenu-item .fs-customize-icon { margin-right: 8px; }
 
 /* ── Project Manager: row actions + delete confirmation (v0.44) ── */
-.fs-project-actions { display: none; align-items: center; gap: 2px; margin-left: auto; }
-.fs-project-row:hover .fs-project-actions { display: inline-flex; }
-.fs-project-actions button {
-  background: transparent; border: none; color: var(--fd-text-muted);
-  cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 4px; line-height: 1;
-}
-.fs-project-actions button:hover { background: var(--fd-overlay-light); color: var(--fd-text); }
-.fs-project-rename-input {
-  flex: 1; min-width: 0; height: 22px; background: var(--fd-input-bg);
-  color: var(--fd-text); border: 1px solid var(--fd-accent); border-radius: 4px;
-  padding: 0 6px; font-size: 12px; outline: none;
-}
 .fs-delete-project-dialog { max-width: 420px; }
 .fs-delete-project-dialog .dialog-body p { margin: 0 0 10px; font-size: 12.5px; line-height: 1.45; }
 .fs-delete-backup-check {

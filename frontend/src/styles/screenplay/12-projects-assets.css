@@ -1,70 +1,12 @@
 /* ============ PROJECT LIST ============ */
-.project-list-page {
-  height: 100%;
-  background: var(--fd-bg);
-  color: var(--fd-text);
-  padding: 40px;
-  overflow-y: auto;
-  box-sizing: border-box;
-}
 /* Top-level scope switch — sits above the title so the user picks "where"
    first, then operates on whatever's inside. */
-.project-source-bar {
-  display: flex;
-  gap: 0;
-  max-width: 1200px;
-  margin: 0 auto 24px;
-  border-bottom: 1px solid var(--fd-border);
-}
-.project-source-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 12px 20px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  color: var(--fd-text-muted);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-}
-.project-source-tab:hover { color: var(--fd-text); }
-.project-source-tab.active {
-  color: var(--fd-accent);
-  border-bottom-color: var(--fd-accent);
-}
 
 /* Secondary action buttons (e.g. Import Project) — visually subordinate to
    the primary "+ New Project" button so the hierarchy reads at a glance. */
-.project-secondary-btn {
-  background: transparent !important;
-  color: var(--fd-text-muted) !important;
-  border: 1px solid var(--fd-border) !important;
-}
-.project-secondary-btn:hover {
-  background: var(--fd-menu-hover) !important;
-  color: var(--fd-text) !important;
-}
 
 /* Source badge on project / script cards. Tells the user where the file
    actually lives at a glance, even when the active tab matches. */
-.source-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  border: 1px solid var(--fd-border);
-  background: var(--fd-bg);
-  color: var(--fd-text-muted);
-}
 .source-badge--cloud {
   color: #5aa9ff;
   border-color: rgba(90, 169, 255, 0.4);
@@ -72,57 +14,6 @@
 }
 .source-badge--local {
   color: var(--fd-text-muted);
-}
-
-.project-list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 40px;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-}
-.project-list-title-area {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.project-list-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--fd-text);
-  letter-spacing: -0.5px;
-}
-.project-list-subtitle {
-  font-size: 14px;
-  color: var(--fd-text-muted);
-}
-.project-new-btn {
-  height: 36px;
-  padding: 0 20px;
-  background: var(--fd-accent);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-.project-new-btn:hover { opacity: 0.85; }
-.project-list-loading,
-.project-list-empty {
-  max-width: 1200px;
-  margin: 80px auto;
-  text-align: center;
-  color: var(--fd-text-muted);
-  font-size: 14px;
-}
-.project-list-empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.5;
 }
 .pinned-section-header,
 .section-header {
@@ -144,85 +35,12 @@
 .pinned-section-header {
   color: #f4d35e;
 }
-.project-list-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-.project-list-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.project-card {
-  background: var(--fd-navigator-bg);
-  border: 1px solid var(--fd-border);
-  border-radius: 8px;
-  padding: 20px;
-  cursor: default;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  position: relative;
-  /* Visible so the actions dropdown can extend past the card. The color
-     stripe carries its own border-radius, so it doesn't need parent clipping. */
-  overflow: visible;
-}
 /* Lift the card whose menu is open above its neighbours; otherwise the
    dropdown can be drawn behind the next card in the grid. */
-.project-card:has(.script-card-dropdown) {
-  z-index: 10;
-}
 /* Anchor the actions dropdown above the project card's actions row so
    it opens upward over the card body. Dropping below would push past the
    bottom of the viewport on the last grid row, and dropping over the
    actions themselves would re-cover the "more" button. */
-.project-card > .script-card-dropdown {
-  top: auto;
-  bottom: 56px;
-  right: 8px;
-  margin-top: 0;
-}
-.project-card:hover {
-  border-color: var(--fd-accent);
-  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.1);
-}
-.project-card.pinned {
-  border-color: rgba(244, 211, 94, 0.4);
-}
-.project-card-color-stripe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  border-radius: 8px 8px 0 0;
-}
-.project-card-body {
-  cursor: pointer;
-}
-.project-card-name {
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--fd-text);
-  margin-bottom: 8px;
-}
-.project-card-meta {
-  font-size: 13px;
-  color: var(--fd-text-muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  line-height: 1.5;
-}
-.project-card-dot {
-  color: var(--fd-text-muted);
-}
-.project-card-actions {
-  display: flex;
-  gap: 4px;
-  margin-top: 10px;
-}
 
 /* ── Shared action buttons & controls ── */
 .drag-handle {
@@ -328,9 +146,6 @@
   flex-shrink: 0;
   align-self: stretch;
 }
-.project-script-item.pinned {
-  border-color: rgba(244, 211, 94, 0.3);
-}
 .script-item-actions {
   display: flex;
   align-items: center;
@@ -351,11 +166,6 @@
   width: 100%;
   outline: none;
   box-sizing: border-box;
-}
-.project-view-title-input {
-  font-size: 20px;
-  font-weight: 700;
-  padding: 4px 8px;
 }
 
 /* ── Script actions dropdown ── */
@@ -450,27 +260,6 @@
 .script-card.pinned {
   border-color: rgba(244, 211, 94, 0.4);
 }
-.script-card-color-stripe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  border-radius: 8px 8px 0 0;
-}
-.script-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
-  gap: 4px;
-}
-.script-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-}
 .card-drag-handle {
   cursor: grab;
   font-size: 14px;
@@ -489,109 +278,9 @@
 .card-drag-handle:active {
   cursor: grabbing;
 }
-.script-card-dropdown {
-  right: 8px;
-  top: auto;
-  bottom: auto;
-  margin-top: 0;
-}
-.script-card-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--fd-text);
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.script-card-preview {
-  font-size: 11px;
-  color: var(--fd-text-muted);
-  line-height: 1.5;
-  flex: 1;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  -webkit-box-orient: vertical;
-  font-family: 'Courier Prime', 'Courier New', monospace;
-  white-space: pre-line;
-}
-.script-card-meta {
-  font-size: 10px;
-  color: var(--fd-text-muted);
-  margin-top: 8px;
-  display: flex;
-  gap: 8px;
-}
 
 /* ============ PROJECT VIEW ============ */
-.project-view {
-  height: 100%;
-  background: var(--fd-bg);
-  color: var(--fd-text);
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-}
-.project-view-loading {
-  padding: 80px 40px;
-  text-align: center;
-  color: var(--fd-text-muted);
-  font-size: 14px;
-}
-.project-view-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px 40px;
-  border-bottom: 1px solid var(--fd-border);
-  background: var(--fd-navigator-bg);
-  flex-shrink: 0;
-}
-.project-back-btn {
-  background: none;
-  border: 1px solid var(--fd-border);
-  color: var(--fd-text-muted);
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-.project-back-btn:hover {
-  border-color: var(--fd-accent);
-  color: var(--fd-accent);
-}
-.project-view-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin: 0;
-}
-.project-view-meta {
-  font-size: 12px;
-  color: var(--fd-text-muted);
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
 /* Project properties dialog */
-.props-dialog {
-  background: var(--fd-dropdown-bg); border: 1px solid var(--fd-border);
-  border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,.6);
-  width: 580px; max-height: 85vh; display: flex; flex-direction: column;
-}
-.props-dialog-body {
-  padding: 16px; overflow-y: auto; flex: 1;
-}
-.props-divider {
-  height: 1px; background: var(--fd-border); margin: 12px 0;
-}
-.props-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;
-}
 .props-field { display: flex; flex-direction: column; gap: 3px; }
 .props-field-wide { grid-column: 1 / -1; }
 .props-label {
@@ -612,190 +301,12 @@
 .props-textarea:focus { border-color: var(--fd-accent); }
 
 /* Collapsible section toggle */
-.props-section-toggle {
-  display: flex; align-items: center; gap: 8px;
-  background: none; border: none; color: var(--fd-text);
-  font-size: 12px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.5px; cursor: pointer; padding: 4px 0;
-  margin-bottom: 10px; width: 100%; text-align: left;
-}
-.props-section-toggle:hover { color: var(--fd-accent); }
-.props-section-arrow {
-  display: inline-block; font-size: 9px; transition: transform 0.15s ease;
-}
-.props-section-arrow.open { transform: rotate(90deg); }
 
 /* Submission log table */
-.props-submissions-table {
-  display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;
-}
-.props-submissions-header {
-  display: grid; grid-template-columns: 110px 1fr 100px 100px 1fr 28px;
-  gap: 6px; font-size: 10px; color: var(--fd-text-muted);
-  text-transform: uppercase; letter-spacing: 0.3px; padding: 0 0 2px;
-}
-.props-submissions-row {
-  display: grid; grid-template-columns: 110px 1fr 100px 100px 1fr 28px;
-  gap: 6px; align-items: center;
-}
-.props-submissions-row .props-input {
-  height: 26px; font-size: 12px;
-}
-.props-submissions-remove {
-  width: 24px; height: 24px; border: none; background: none;
-  color: var(--fd-text-muted); font-size: 16px; cursor: pointer;
-  border-radius: 3px; display: flex; align-items: center; justify-content: center;
-  padding: 0;
-}
-.props-submissions-remove:hover {
-  background: rgba(255,80,80,0.15); color: #f55;
-}
-.props-submissions-add {
-  background: none; border: 1px dashed var(--fd-border); color: var(--fd-text-muted);
-  border-radius: 3px; padding: 5px 12px; font-size: 12px; cursor: pointer;
-  width: 100%;
-}
-.props-submissions-add:hover {
-  border-color: var(--fd-accent); color: var(--fd-accent);
-}
-
-.project-view-tabs {
-  display: flex;
-  gap: 0;
-  padding: 0 40px;
-  border-bottom: 1px solid var(--fd-border);
-  background: var(--fd-navigator-bg);
-  flex-shrink: 0;
-}
-.project-tab {
-  padding: 10px 20px;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--fd-text-muted);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.project-tab:hover {
-  color: var(--fd-text);
-}
-.project-tab.active {
-  color: var(--fd-accent);
-  border-bottom-color: var(--fd-accent);
-}
-.project-view-body {
-  flex: 1;
-  padding: 24px 40px;
-  max-width: 1200px;
-  width: 100%;
-  margin: 0 auto;
-}
-.project-tab-empty {
-  padding: 40px 20px;
-  text-align: center;
-  color: var(--fd-text-muted);
-  font-size: 13px;
-  font-style: italic;
-}
 
 /* Scripts tab */
-.project-scripts-actions {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-.project-action-btn {
-  height: 32px;
-  padding: 0 16px;
-  background: var(--fd-dropdown-bg);
-  color: var(--fd-text);
-  border: 1px solid var(--fd-border);
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.project-action-btn:hover {
-  border-color: var(--fd-accent);
-  color: var(--fd-accent);
-}
-.project-scripts-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.project-script-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--fd-navigator-bg);
-  border: 1px solid var(--fd-border);
-  border-radius: 6px;
-  padding: 16px 20px;
-  transition: border-color 0.15s;
-  position: relative;
-}
-.project-script-item:hover {
-  border-color: var(--fd-accent);
-}
-.project-script-info {
-  flex: 1;
-  cursor: pointer;
-  min-width: 0;
-}
-.project-script-title {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--fd-text);
-  margin-bottom: 4px;
-  line-height: 1.4;
-}
-.project-script-meta {
-  font-size: 13px;
-  color: var(--fd-text-muted);
-}
-.project-script-delete {
-  background: none;
-  border: none;
-  color: var(--fd-text-muted);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 3px;
-  transition: all 0.15s;
-}
-.project-script-delete:hover {
-  color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.1);
-}
 
 /* Versions tab */
-.project-versions-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.project-version-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--fd-navigator-bg);
-  border: 1px solid var(--fd-border);
-  border-radius: 6px;
-  padding: 12px 16px;
-}
-.project-version-message {
-  font-size: 13px;
-  color: var(--fd-text);
-}
-.project-version-time {
-  font-size: 11px;
-  color: var(--fd-text-muted);
-  white-space: nowrap;
-  margin-left: 16px;
-}
 
 /* ============ ASSET MANAGER ============ */
 .asset-manager.dialog {
@@ -1220,13 +731,6 @@
 .open-file-error {
   color: #d77; padding: 20px 16px; text-align: center;
   line-height: 1.5; font-size: 13px;
-}
-
-
-.open-project-group-header {
-  font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
-  color: var(--fd-text-muted); padding: 6px 4px 4px; font-weight: 600;
-  border-bottom: 1px solid var(--fd-border); margin-bottom: 2px;
 }
 .open-project-item {
   display: flex; justify-content: space-between; align-items: center;
