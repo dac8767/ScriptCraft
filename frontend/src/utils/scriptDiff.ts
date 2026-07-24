@@ -145,14 +145,21 @@ export function computeScriptDiff(docA: JSONContent, docB: JSONContent): ScriptD
   while (i > 0) { steps.unshift({ kind: 'remove', aIdx: i - 1, bIdx: -1 }); i--; }
   while (j > 0) { steps.unshift({ kind: 'add', aIdx: -1, bIdx: j - 1 }); j--; }
 
-  // Combine adjacent add/remove pairs of the same element type into modifications
+  // Combine adjacent add/remove pairs of the same element type into
+  // modifications. The LCS backtrack emits a substitution as add-then-remove
+  // (leftover adds unshift ahead of removes), so BOTH orders must merge —
+  // matching remove→add only left the modification path unreachable and every
+  // edit rendered as delete+add with no word diff.
   for (let s = 0; s < steps.length; s++) {
     const step = steps[s];
-    if (step.kind === 'remove' && s + 1 < steps.length) {
+    if (s + 1 < steps.length && (step.kind === 'remove' || step.kind === 'add')) {
       const next = steps[s + 1];
-      if (next.kind === 'add') {
-        const a = aBlocks[step.aIdx];
-        const b = bBlocks[next.bIdx];
+      const pairKind = step.kind === 'remove' ? 'add' : 'remove';
+      if (next.kind === pairKind) {
+        const aIdx = step.kind === 'remove' ? step.aIdx : next.aIdx;
+        const bIdx = step.kind === 'add' ? step.bIdx : next.bIdx;
+        const a = aBlocks[aIdx];
+        const b = bBlocks[bIdx];
         if (a.type === b.type && isLikelyModification(a.text, b.text)) {
           // Track scene context
           if (a.type === 'sceneHeading') currentScene = b.text;
@@ -162,8 +169,8 @@ export function computeScriptDiff(docA: JSONContent, docB: JSONContent): ScriptD
             sceneHeading: currentScene,
             oldText: a.text,
             newText: b.text,
-            oldIndex: step.aIdx,
-            newIndex: next.bIdx,
+            oldIndex: aIdx,
+            newIndex: bIdx,
             wordDiffs: diffWords(a.text, b.text),
           });
           if (currentScene) scenesChanged.add(currentScene);

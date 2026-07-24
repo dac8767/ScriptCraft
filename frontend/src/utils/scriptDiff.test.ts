@@ -40,21 +40,31 @@ describe('computeScriptDiff', () => {
     expect(del).toMatchObject({ elementType: 'action', oldText: 'Y', newText: null, newIndex: -1 });
   });
 
-  it('surfaces a same-type edit — currently as delete+add, NOT a merged modification', () => {
-    // KNOWN LIMITATION (flagged to Derek): the LCS backtrack unshifts leftover
-    // adds ahead of removes, so the remove→add adjacency the modification
-    // heuristic looks for never forms for a simple edit. diffWords /
-    // isLikelyModification are therefore unreached for typical edits, and a small
-    // wording change renders as a full delete+add instead of an inline word diff.
-    // This pins the ACTUAL behavior so a future fix trips the test intentionally.
+  it('merges a similar same-type edit into a modification with a word diff', () => {
+    // Regression guard for the once-unreachable modification path: the LCS
+    // backtrack emits substitutions as add-then-remove, and the merge now
+    // handles both adjacency orders.
     const a = doc(el('action', 'The cat sat on the mat'));
     const b = doc(el('action', 'The cat sat on the rug'));
+    const r = computeScriptDiff(a, b);
+    expect(r.summary.totalModified).toBe(1);
+    expect(r.summary.totalAdded).toBe(0);
+    expect(r.summary.totalDeleted).toBe(0);
+    const mod = r.blocks.find((x) => x.type === 'modified')!;
+    expect(mod.oldText).toBe('The cat sat on the mat');
+    expect(mod.newText).toBe('The cat sat on the rug');
+    expect(mod.wordDiffs!.some((w) => w.kind === 'removed' && w.text === 'mat')).toBe(true);
+    expect(mod.wordDiffs!.some((w) => w.kind === 'added' && w.text === 'rug')).toBe(true);
+    expect(mod.wordDiffs!.some((w) => w.kind === 'same' && w.text === 'cat')).toBe(true);
+  });
+
+  it('a dissimilar same-type replacement stays delete+add (similarity gate holds)', () => {
+    const a = doc(el('action', 'The cat sat on the mat'));
+    const b = doc(el('action', 'Thunder rolls across distant hills'));
     const r = computeScriptDiff(a, b);
     expect(r.summary.totalModified).toBe(0);
     expect(r.summary.totalAdded).toBe(1);
     expect(r.summary.totalDeleted).toBe(1);
-    expect(r.blocks.find((x) => x.type === 'deleted')?.oldText).toBe('The cat sat on the mat');
-    expect(r.blocks.find((x) => x.type === 'added')?.newText).toBe('The cat sat on the rug');
   });
 
   it('rolls dialogue changes up per character', () => {
