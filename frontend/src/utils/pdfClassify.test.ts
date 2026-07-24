@@ -7,12 +7,12 @@
  * threshold tweak can't silently reshuffle imported scripts.
  *
  * Rules under test (indent is pt right of the dominant action margin):
- *   1. sceneHeading  — INT/EXT/EST/I-E prefix AND indent < 40
- *   2. transition    — ALL CAPS, ends TO: / FADE OUT / FADE IN: /
- *                      CUT TO BLACK, AND indent > 40
- *   3. character     — indent in [130, 260], ALL CAPS, length < 45
- *   4. parenthetical — starts "(", indent >= 60, prev character|dialogue
- *   5. dialogue      — indent in [45, 130), prev character|parenthetical|dialogue
+ *   1. sceneHeading  — INT/EXT/EST/I-E prefix (text-identified, ANY indent)
+ *   2. transition    — caps FADE IN: at any indent; otherwise ALL CAPS ending
+ *                      TO: / FADE OUT / CUT TO BLACK AND indent > 40
+ *   3. character     — indent in [130, 260], ALL CAPS, length < 45, no leading "("
+ *   4. parenthetical — starts "(", indent >= 45, prev character|dialogue|parenthetical
+ *   5. dialogue      — non-empty, indent in [45, 130], prev character|parenthetical|dialogue
  *   6. action        — everything else
  */
 import { describe, it, expect } from 'vitest';
@@ -31,15 +31,11 @@ describe('classifyParagraph — scene headings', () => {
     expect(classifyParagraph(0, 'int. house - day', null)).toBe('sceneHeading');
   });
 
-  it('boundary: indent must be < 40 — at exactly 40 a heading degrades to action', () => {
+  it('is identified by TEXT — indent no longer matters, even inside the character band', () => {
     expect(classifyParagraph(39, 'INT. HOUSE - DAY', null)).toBe('sceneHeading');
-    expect(classifyParagraph(40, 'INT. HOUSE - DAY', null)).toBe('action');
-  });
-
-  it('KNOWN LIMITATION: a heading drifted into the character band becomes a character cue', () => {
-    // Rule 1 requires indent < 40, so a caps heading at 158pt (< 45 chars)
-    // falls through to rule 3 and imports as a character name.
-    expect(classifyParagraph(158, 'INT. HOUSE - DAY', null)).toBe('character');
+    expect(classifyParagraph(40, 'INT. HOUSE - DAY', null)).toBe('sceneHeading');
+    // A centered/re-margined heading at 158pt used to import as a character cue.
+    expect(classifyParagraph(158, 'INT. HOUSE - DAY', null)).toBe('sceneHeading');
   });
 });
 
@@ -71,10 +67,11 @@ describe('classifyParagraph — transitions', () => {
     expect(classifyParagraph(158, 'CUT TO:', null)).toBe('transition');
   });
 
-  it('KNOWN LIMITATION: FADE IN: at the left margin imports as action', () => {
-    // FADE IN: conventionally sits at the LEFT margin, but rule 2 requires
-    // indent > 40 — so the standard opening transition is never recognized.
-    expect(classifyParagraph(0, 'FADE IN:', null)).toBe('action');
+  it('FADE IN: is recognized at the LEFT margin — the one left-side classic', () => {
+    expect(classifyParagraph(0, 'FADE IN:', null)).toBe('transition');
+    expect(classifyParagraph(0, 'FADE IN', null)).toBe('transition');   // colon optional
+    expect(classifyParagraph(0, 'fade in:', null)).toBe('action');      // caps still required
+    // Other transitions keep the right-side indent requirement (see boundary above).
   });
 });
 
@@ -119,23 +116,23 @@ describe('classifyParagraph — parentheticals', () => {
     expect(classifyParagraph(108, '(beat)', null)).toBe('action');
   });
 
-  it('boundary + KNOWN LIMITATION: at 59pt it is dialogue, not parenthetical', () => {
-    // Rule 4 requires indent >= 60; one point left, rule 5 claims the line.
+  it('boundary: shares the dialogue band floor — 45 is in, 44 is out', () => {
     expect(classifyParagraph(60, '(beat)', 'character')).toBe('parenthetical');
-    expect(classifyParagraph(59, '(beat)', 'character')).toBe('dialogue');
+    expect(classifyParagraph(59, '(beat)', 'character')).toBe('parenthetical');
+    expect(classifyParagraph(45, '(beat)', 'character')).toBe('parenthetical');
+    expect(classifyParagraph(44, '(beat)', 'character')).toBe('action');
   });
 
-  it('KNOWN LIMITATION: back-to-back parentheticals — the second becomes dialogue', () => {
-    // Rule 4 accepts prev character|dialogue only, never 'parenthetical',
-    // so a second consecutive "(...)" at the standard 108pt indent falls
-    // through to rule 5.
-    expect(classifyParagraph(108, '(beat)', 'parenthetical')).toBe('dialogue');
+  it('back-to-back parentheticals both classify as parenthetical', () => {
+    expect(classifyParagraph(108, '(beat)', 'parenthetical')).toBe('parenthetical');
   });
 
-  it('KNOWN LIMITATION: a caps parenthetical in the character band becomes a character', () => {
-    // "(V.O.)" is all caps with letters, < 45 chars — rule 3 fires before
-    // rule 4 ever sees the leading "(".
-    expect(classifyParagraph(158, '(V.O.)', 'character')).toBe('character');
+  it('a caps parenthetical in the character band is a parenthetical, not a cue', () => {
+    // "(V.O.)" is all caps < 45 chars, but a leading "(" disqualifies the
+    // character rule; with the right predecessor rule 4 claims it.
+    expect(classifyParagraph(158, '(V.O.)', 'character')).toBe('parenthetical');
+    // Without a qualifying predecessor it falls through to action.
+    expect(classifyParagraph(158, '(V.O.)', null)).toBe('action');
   });
 });
 
@@ -151,14 +148,15 @@ describe('classifyParagraph — dialogue', () => {
     expect(classifyParagraph(72, 'Hello there.', null)).toBe('action');
   });
 
-  it('boundaries: 45 is in, 44 is out; 129 is in, 130 is out', () => {
+  it('boundaries: 45 is in, 44 is out; the band closes AT 130 (no dead gap)', () => {
     expect(classifyParagraph(45, 'Hi.', 'character')).toBe('dialogue');
     expect(classifyParagraph(44, 'Hi.', 'character')).toBe('action');
     expect(classifyParagraph(129, 'Hi.', 'character')).toBe('dialogue');
-    // KNOWN LIMITATION: the dialogue band is half-open at 130 while the
-    // character band starts at 130 — non-caps text at exactly 130pt after
-    // a cue is claimed by neither and falls to action.
-    expect(classifyParagraph(130, 'hi.', 'character')).toBe('action');
+    // Non-caps text at exactly 130pt after a cue is dialogue now (caps at 130
+    // is still a character cue — rule 3 runs first).
+    expect(classifyParagraph(130, 'hi.', 'character')).toBe('dialogue');
+    expect(classifyParagraph(131, 'hi.', 'character')).toBe('action');
+    expect(classifyParagraph(130, 'SARAH', 'character')).toBe('character');
   });
 
   it('shouted ALL-CAPS dialogue at dialogue indent is still dialogue', () => {
@@ -178,8 +176,8 @@ describe('classifyParagraph — the action fall-through', () => {
     expect(classifyParagraph(0, '', null)).toBe('action');
   });
 
-  it('KNOWN LIMITATION: an empty paragraph inside the dialogue band inherits dialogue', () => {
-    // Rule 5 has no text requirement — "" at 72pt after dialogue matches it.
-    expect(classifyParagraph(72, '', 'dialogue')).toBe('dialogue');
+  it('an empty paragraph inside the dialogue band falls to action, not dialogue', () => {
+    expect(classifyParagraph(72, '', 'dialogue')).toBe('action');
+    expect(classifyParagraph(72, '   ', 'dialogue')).toBe('action');
   });
 });
