@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { FaChevronRight, FaChevronDown, FaExpandAlt } from 'react-icons/fa';
+import { FaChevronRight, FaChevronDown, FaExpandAlt, FaRegUser } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import { stripHtml } from '../utils/stripHtml';
 import { CharacterScanTab } from './CharacterScanTab';
@@ -737,11 +737,12 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   };
 
   /** Gender / Age / Sexuality — one row, shared by card + modal (v4.22, Derek:
-   *  Role removed; Sexuality added; no placeholder hints). */
-  const renderMetaRow = (charName: string) => {
+   *  Role removed; Sexuality added; no placeholder hints). v4.24 batch 3: the
+   *  card shows only the essentials (gender + age); the modal keeps all three. */
+  const renderMetaRow = (charName: string, essentialsOnly = false) => {
     const prof = getProfile(charName);
     return (
-      <div className="char-profile-meta-row char-profile-meta-row-3">
+      <div className={`char-profile-meta-row${essentialsOnly ? '' : ' char-profile-meta-row-3'}`}>
         <div className="char-profile-meta-field">
           <label className="char-profile-label">Gender</label>
           <input
@@ -760,15 +761,17 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             onChange={(e) => upsertCharacterProfile(charName, { age: e.target.value })}
           />
         </div>
-        <div className="char-profile-meta-field">
-          <label className="char-profile-label">Sexuality</label>
-          <input
-            type="text"
-            className="char-profile-input"
-            value={prof.sexuality ?? ''}
-            onChange={(e) => upsertCharacterProfile(charName, { sexuality: e.target.value })}
-          />
-        </div>
+        {!essentialsOnly && (
+          <div className="char-profile-meta-field">
+            <label className="char-profile-label">Sexuality</label>
+            <input
+              type="text"
+              className="char-profile-input"
+              value={prof.sexuality ?? ''}
+              onChange={(e) => upsertCharacterProfile(charName, { sexuality: e.target.value })}
+            />
+          </div>
+        )}
       </div>
     );
   };
@@ -786,12 +789,20 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   );
 
   /** Full-width character image with slideshow arrows and a delete button that
-   *  works even for the only image. (v4.22, Derek.) */
-  const renderImageDisplay = (charName: string) => {
+   *  works even for the only image. (v4.22, Derek.) v4.24 batch 5: in Cards
+   *  view, a card with no image keeps the same image-field footprint via a
+   *  placeholder box, so the grid stays uniform. */
+  const renderImageDisplay = (charName: string, reserveWhenEmpty = false) => {
     const prof = getProfile(charName);
     const imgs = prof.images ?? [];
     const n = imgs.length;
-    if (!n || !projectId) return null;
+    if (!n || !projectId) {
+      return reserveWhenEmpty ? (
+        <div className="char-profile-image-placeholder" aria-hidden>
+          <FaRegUser />
+        </div>
+      ) : null;
+    }
     const idx = Math.min(imgIdx[charName] ?? 0, n - 1);
     const step = (d: number) => setImgIdx((m) => ({ ...m, [charName]: ((idx + d) % n + n) % n }));
     return (
@@ -855,11 +866,11 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
 
   /** Image display + Upload / Voice Profile row (used where both belong
    *  together). A divider sets this media block off from the fields above. */
-  const renderImageSection = (charName: string) => (
+  const renderImageSection = (charName: string, reserveWhenEmpty = false) => (
     <>
       <div className="char-profile-section-divider" aria-hidden />
       <div className="char-profile-photo-row">
-        {renderImageDisplay(charName)}
+        {renderImageDisplay(charName, reserveWhenEmpty)}
         <div className="char-profile-image-actions">
           {renderUploadButton(charName)}
           {renderVoiceButton(charName)}
@@ -1361,16 +1372,18 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                   </div>
                 </div>
 
-                {/* Expanded detail */}
+                {/* Expanded detail — ESSENTIALS only (v4.24, Derek batch 3):
+                    name, photo, description, gender/age, and a Full Info
+                    button that opens the enlarge modal (renderCharacterFields,
+                    the one full renderer). The card used to inline a second
+                    copy of every section — backstory, arc, voice, color,
+                    relationships, scenes — which had already drifted from the
+                    modal's renderer; that copy is deleted, not hidden. */}
                 {isExpanded && (
                   <div className={`char-profile-detail${isFullscreen && fsViewMode === 'cards' ? ' char-profile-detail-fs' : ''}`}>
-                    {/* Top section: Description + Role/Gender/Age and Images (side-by-side in fullscreen) */}
-                    {/* v4.22, Derek: stacked rows — name, photo, description
-                        (full width), gender/age/sexuality, custom fields — all
-                        from the same shared renderers as the modal. */}
                     <div className="char-profile-detail-top char-profile-detail-stacked">
                       {renderNameFields(name)}
-                      {renderImageSection(name)}
+                      {renderImageSection(name, isFullscreen && fsViewMode === 'cards')}
                       <label className="char-profile-label">Description</label>
                       <MiniRichText
                         value={profile.description}
@@ -1378,150 +1391,15 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                         placeholder="A weary detective in his 50s, haunted by a cold case..."
                         minHeight={50}
                       />
-                      {renderMetaRow(name)}
-                      {renderCustomFields(name)}
+                      {renderMetaRow(name, true)}
                     </div>
-
-                    {/* Bottom section: Backstory, Arc, Color/Highlight, Scenes */}
-                    <div className="char-profile-detail-bottom">
-                      <label className="char-profile-label">Backstory</label>
-                      <MiniRichText
-                        value={profile.backstory}
-                        onChange={(html) => upsertCharacterProfile(name, { backstory: html })}
-                        placeholder="Character history, motivations, secrets..."
-                        minHeight={60}
-                      />
-
-                      <label className="char-profile-label">Character Arc</label>
-                      <MiniRichText
-                        value={profile.arc || ''}
-                        onChange={(html) => upsertCharacterProfile(name, { arc: html })}
-                        placeholder="How does this character change through the story..."
-                        minHeight={50}
-                      />
-
-                      {/* Voice Profile (collapsible) */}
-                      <details className="char-profile-voice-section">
-                        <summary className="char-profile-label char-profile-voice-toggle">Voice Profile</summary>
-                        <div className="char-profile-voice-fields">
-                          <label className="char-profile-label">Speech Pattern</label>
-                          <MiniRichText
-                            value={profile.speechPattern || ''}
-                            onChange={(html) => upsertCharacterProfile(name, { speechPattern: html })}
-                            placeholder="Short sentences, formal tone..."
-                            minHeight={40}
-                          />
-                          <label className="char-profile-label">Vocabulary</label>
-                          <MiniRichText
-                            value={profile.vocabulary || ''}
-                            onChange={(html) => upsertCharacterProfile(name, { vocabulary: html })}
-                            placeholder="Educated, uses legal terms..."
-                            minHeight={40}
-                          />
-                          <label className="char-profile-label">Verbal Tics</label>
-                          <MiniRichText
-                            value={profile.verbalTics || ''}
-                            onChange={(html) => upsertCharacterProfile(name, { verbalTics: html })}
-                            placeholder="Says 'you see' often..."
-                            minHeight={40}
-                          />
-                          <label className="char-profile-label">Sample Dialogue</label>
-                          <MiniRichText
-                            value={profile.sampleDialogue || ''}
-                            onChange={(html) => upsertCharacterProfile(name, { sampleDialogue: html })}
-                            placeholder="3-5 representative lines..."
-                            minHeight={40}
-                          />
-                        </div>
-                      </details>
-
-                      <div className="char-profile-color-highlight">
-                        <label className="char-profile-label">Color</label>
-                        <div className="char-color-swatches">
-                          {['#8b5cf6','#4f46e5','#2563eb','#059669','#eab308','#f97316','#ef4444','#000000','#ffffff'].map(c => (
-                            <button key={c} className={`synopsis-color-swatch${(profile.color || '') === c ? ' active' : ''}`} style={{ background: c }} onClick={() => upsertCharacterProfile(name, { color: c })} />
-                          ))}
-                          <label className="synopsis-color-custom" title="Custom color">
-                            <input type="color" value={profile.color || '#999999'} onChange={(e) => upsertCharacterProfile(name, { color: e.target.value })} />
-                            <span>+</span>
-                          </label>
-                        </div>
-                        <div className="char-profile-highlight-inline">
-                          <label className="char-profile-label" style={{ marginBottom: 0 }}>Highlight</label>
-                          <button
-                            className={`char-profile-highlight-btn${profile.highlighted ? ' active' : ''}`}
-                            onClick={() => upsertCharacterProfile(name, { highlighted: !profile.highlighted })}
-                            style={profile.highlighted ? { background: profile.color || '#999', borderColor: profile.color || '#999' } : undefined}
-                          >
-                            {profile.highlighted ? 'On' : 'Off'}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Relationships (before scenes) */}
-                      {(() => {
-                        const rels = characterRelationships.filter(
-                          (r) => r.characterA === name || r.characterB === name
-                        );
-                        const isAdding = addRelFor === name;
-                        return (
-                          <div className="char-profile-relationships">
-                            <div className="char-profile-rel-header-row">
-                              <label className="char-profile-label" style={{ marginBottom: 0 }}>Relationships</label>
-                              {!isAdding && (
-                                <button className="char-profile-rel-add-btn" onClick={() => setAddRelFor(name)}>+ Add</button>
-                              )}
-                            </div>
-                            {rels.map((r) => {
-                              const other = r.characterA === name ? r.characterB : r.characterA;
-                              return (
-                                <div key={r.id} className="char-profile-rel-item">
-                                  <div className="char-profile-rel-header">
-                                    <span className="char-profile-rel-other">{other}</span>
-                                    <span className="char-profile-rel-type">{r.type}</span>
-                                    {r.dynamic && <span className="char-profile-rel-dynamic">{r.dynamic}</span>}
-                                    <button
-                                      className="char-profile-rel-remove"
-                                      onClick={() => deleteCharacterRelationship(r.id)}
-                                      title="Remove relationship"
-                                    >&times;</button>
-                                  </div>
-                                  {r.description && <div className="char-profile-rel-desc">{r.description}</div>}
-                                </div>
-                              );
-                            })}
-                            {rels.length === 0 && !isAdding && (
-                              <div className="char-profile-rel-empty">No relationships defined yet</div>
-                            )}
-                            {isAdding && (
-                              <InlineRelForm
-                                characterName={name}
-                                allCharacters={allCharacters}
-                                onSave={(rel) => {
-                                  upsertCharacterRelationship(rel);
-                                  setAddRelFor(null);
-                                }}
-                                onCancel={() => setAddRelFor(null)}
-                              />
-                            )}
-                          </div>
-                        );
-                      })()}
-
-                      {/* Scene appearances (collapsed by default) */}
-                      {stats && stats.scenes.length > 0 && (
-                        <details className="char-profile-scenes-collapsible">
-                          <summary className="char-profile-label char-profile-scenes-toggle">
-                            Appears in ({stats.scenes.length} scenes)
-                          </summary>
-                          <div className="char-profile-scene-chips">
-                            {stats.scenes.map((s, i) => (
-                              <span key={i} className="char-profile-scene-chip" onClick={() => handleNavigateToScene(s)} title={`Go to: ${s}`}>{s}</span>
-                            ))}
-                          </div>
-                        </details>
-                      )}
-                    </div>
+                    <button
+                      className="char-profile-fullinfo-btn"
+                      onClick={() => setModalChar(name)}
+                      title="Open the full profile — backstory, arc, voice, custom fields, relationships, scenes"
+                    >
+                      Full Info
+                    </button>
                   </div>
                 )}
               </div>

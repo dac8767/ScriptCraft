@@ -758,6 +758,27 @@
      Design knob — dial it down to fit more into a small window. */
   gap: var(--dz-char-field-gap, 8px);
 }
+/* v4.24 batch 5: no image attached — reserve the same footprint a photo
+   would take, so cards in Cards view keep a uniform layout. */
+.char-profile-image-placeholder {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fd-input-bg);
+  color: var(--fd-text-muted);
+  font-size: 40px;
+  border-radius: 6px;
+}
+/* v4.24 batch 3: the card shows essentials only; this opens the full modal. */
+.char-profile-fullinfo-btn {
+  align-self: stretch;
+  padding: 6px 12px;
+  background: transparent; border: 1px solid var(--fd-accent); border-radius: 4px;
+  color: var(--fd-accent); font-size: 12px; cursor: pointer;
+}
+.char-profile-fullinfo-btn:hover { background: rgba(74,158,255,.1); }
 /* Top section: description+meta and images — stacks in side panel, side-by-side in fullscreen */
 .char-profile-detail-top { display: flex; flex-direction: column; gap: var(--dz-char-field-gap, 8px); }
 .char-profile-detail-info { display: flex; flex-direction: column; gap: var(--dz-char-field-gap, 8px); }
