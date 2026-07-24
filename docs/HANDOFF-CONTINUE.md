@@ -104,8 +104,8 @@ its own commit.
 
 **Done (each `stores/slices/<name>Slice.ts`):** `designSlice`, `characterSlice`
 (data CRUD), `tagSlice` (data), `typewriterSlice`, `notesSlice`, `sceneNavSlice`
-(filters), `workspacesSlice` (apply-doesn't-take bug preserved verbatim, NOT
-fixed — investigate in that one file), `viewPrefsSlice` (viewStyle/preview/
+(filters), `workspacesSlice` (the apply-doesn't-take bug was later ROOT-CAUSED
+and fixed here — see the fix round in §0.7), `viewPrefsSlice` (viewStyle/preview/
 visibility/zoom/font/pageLayout; `theme` stayed — dynamic theme-apply imports),
 `spellGrammarSlice` (took the module-load dictionary/add-targets/language infra
 with it; its import-time `spellChecker.set*` side-effects still run at startup
