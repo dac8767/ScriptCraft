@@ -2,13 +2,11 @@
 // CharacterProfiles (split step 1 of the component-split phase). Purely
 // presentational — the scan itself, apply, and classify live in the parent;
 // the closure variables the JSX used are now explicit props.
-import type { CharacterProfile } from '../stores/editorStore';
 import type { ScannedCharacter } from '../utils/characterScan';
 
 interface CharacterScanTabProps {
   scanResults: ScannedCharacter[] | null;
   visibleScanResults: ScannedCharacter[];
-  characterProfiles: CharacterProfile[];
   existingCharNames: string[];
   onScan: () => void;
   onApply: (r: ScannedCharacter) => void;
@@ -16,7 +14,7 @@ interface CharacterScanTabProps {
 }
 
 export function CharacterScanTab({
-  scanResults, visibleScanResults, characterProfiles, existingCharNames,
+  scanResults, visibleScanResults, existingCharNames,
   onScan, onApply, onClassifyReferred,
 }: CharacterScanTabProps) {
   return (
@@ -24,14 +22,14 @@ export function CharacterScanTab({
       <div className="char-setup-section">
         <div className="char-setup-title">Scan Script{scanResults ? ` (${visibleScanResults.length})` : ''}</div>
         <p className="char-setup-desc">
-          Scan the script for characters and pull descriptions and ages from the action lines that introduce them. Review the list, then add the ones you want.
+          The script is scanned automatically when you open this tab — names that already have a character entry drop off the list. Add the ones you want; classify the rest to file them away.
         </p>
         <button
           className="char-rels-add"
           onClick={onScan}
-          title="Scan the script for characters and pull descriptions and ages from the action lines that introduce them"
+          title="Scan again now (the tab also re-scans every time you open it)"
         >
-          {scanResults ? 'Re-scan Script' : 'Scan Script'}
+          Re-scan Script
         </button>
 
         {scanResults && (
@@ -40,10 +38,6 @@ export function CharacterScanTab({
           ) : (
             <div className="char-scan-list">
               {visibleScanResults.map((r) => {
-                const existing = characterProfiles.find((p) => p.name === r.name);
-                const canApply = !existing
-                  || (!!r.description && !existing.description)
-                  || (!!r.age && !existing.age);
                 return (
                   <div key={r.name} className="char-scan-row">
                     <div className="char-scan-main">
@@ -51,19 +45,13 @@ export function CharacterScanTab({
                       {r.age && <span className="char-scan-age">{r.age}</span>}
                       {r.source === 'referred' && <span className="char-scan-tag">referred</span>}
                       <span className="char-scan-spacer" />
-                      {canApply ? (
-                        <button
-                          className="char-unmatched-add"
-                          onClick={() => onApply(r)}
-                          title={existing
-                            ? 'Add the detected description and age to this character'
-                            : 'Add as a character with the detected description and age'}
-                        >
-                          + Add
-                        </button>
-                      ) : (
-                        <span className="char-scan-added">Added</span>
-                      )}
+                      <button
+                        className="char-unmatched-add"
+                        onClick={() => onApply(r)}
+                        title="Add as a character with the detected description and age"
+                      >
+                        + Add
+                      </button>
                       {/* v4.19: classify a referred name — location / other /
                           connect to a character — to file it away. */}
                       {r.source === 'referred' && (

@@ -12,7 +12,7 @@ import { api } from '../services/api';
 import { showToast } from './Toast';
 import MiniRichText from './MiniRichText';
 import { toTitleCaseName, lastNameOf, joinName, escapeRegExp } from '../utils/characterNames';
-import { buildScanList, type ScannedCharacter } from '../utils/characterScan';
+import { buildScanList, filterScanList, type ScannedCharacter } from '../utils/characterScan';
 import { InlineRelForm, REL_DYNAMICS } from './InlineRelForm';
 import { AssetImage, AssetAudio, UploadImageButton } from './CharacterAssetMedia';
 
@@ -54,6 +54,8 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     setSelectedCharacter,
     referredTags,
     setReferredTag,
+    scanResults,
+    setScanResults,
   } = useEditorStore();
 
   const currentScriptId = useProjectStore((s) => s.currentScriptId);
@@ -74,7 +76,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   // referred names), each carrying a description/age pulled from the action line
   // that introduces them. Nothing is created until the writer clicks Add on a
   // row. null = not scanned yet this session.
-  const [scanResults, setScanResults] = useState<ScannedCharacter[] | null>(null);
   const isFullscreen = fullscreen;
   // v4.16: fullscreen is the Scrapbook-style editor takeover (a store flag),
   // not a fixed overlay that covered the toolbar with no way out. Entering
@@ -379,10 +380,18 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   // The scan is a snapshot, but a referred name the writer classifies afterwards
   // (location / other / connected) should still drop off — mirror the old list's
   // live behavior by filtering the snapshot against referredTags at render time.
+  // v4.24 (Derek): entering the tab scans automatically — the button is now a
+  // manual Re-scan. Runs on tab entry only (not on every doc change) so typing
+  // never churns the list underneath the writer.
+  useEffect(() => {
+    if (activeTab === 'setup' && editor) handleScanScript();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- scan on entry only
+  }, [activeTab, editor]);
+
   const visibleScanResults = useMemo(() => {
-    if (!scanResults) return [];
-    return scanResults.filter((r) => !(r.source === 'referred' && referredTags[r.name]));
-  }, [scanResults, referredTags]);
+    const profileNames = new Set(characterProfiles.map((p) => p.name));
+    return filterScanList(scanResults, referredTags, profileNames);
+  }, [scanResults, referredTags, characterProfiles]);
 
   // Characters that have a profile but are no longer detected in the script.
   const orphanedNames = useMemo(() => {
@@ -1535,7 +1544,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         <CharacterScanTab
           scanResults={scanResults}
           visibleScanResults={visibleScanResults}
-          characterProfiles={characterProfiles}
           existingCharNames={existingCharNames}
           onScan={handleScanScript}
           onApply={applyScanResult}

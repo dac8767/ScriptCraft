@@ -120,7 +120,7 @@ import { reportSaveError } from '../stores/saveErrorStore';
 import { pluginRegistry } from '../plugins/registry';
 import { createTrackChangesPlugin, trackChangesPluginKey } from '../editor/trackChanges';
 import type { VersionInfo } from '../services/api';
-import { resolveHFFields, composeSaveContent } from '../utils/screenplaySaveContent';
+import { resolveHFFields, composeSaveContent, stripSaveExtras } from '../utils/screenplaySaveContent';
 
 import { randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, SCENE_PREFIX_OPTIONS, SAMPLE_CONTENT } from './screenplayEditorConstants';
 
@@ -440,8 +440,7 @@ const ScreenplayEditor: React.FC = () => {
 
       const content = scriptResp.content as Record<string, unknown> | null;
       if (content && typeof content === 'object' && 'type' in content && content.type === 'doc') {
-        const { _notes, _generalNotes, _shelf, _tags, _tagCategories, _characterProfiles, _characterRelationships, _characterCustomFields, _templateId, _pageLayout: _plCollab, ...pmDoc } = content as Record<string, unknown>;
-        collabInitialContent.current = pmDoc;
+        collabInitialContent.current = stripSaveExtras(content as Record<string, unknown>);
       } else if (content && typeof content === 'object' && Object.keys(content).length > 0) {
         collabInitialContent.current = content;
       }
@@ -672,8 +671,7 @@ const ScreenplayEditor: React.FC = () => {
         if (scriptResp) {
           const content = scriptResp.content as Record<string, unknown> | null;
           if (content && typeof content === 'object' && 'type' in content && content.type === 'doc') {
-            const { _notes, _generalNotes, _shelf: _shGuest, _tags, _tagCategories, _characterProfiles, _characterRelationships, _characterCustomFields, _templateId, _pageLayout: _plGuest, ...pmDoc } = content as Record<string, unknown>;
-            collabInitialContent.current = pmDoc;
+            collabInitialContent.current = stripSaveExtras(content as Record<string, unknown>);
           } else if (content && typeof content === 'object' && Object.keys(content).length > 0) {
             collabInitialContent.current = content;
           }
@@ -1528,9 +1526,7 @@ const ScreenplayEditor: React.FC = () => {
     if (!editor || !currentProject || !currentScriptId) return;
 
     // Save current editor content so it can seed the Yjs doc
-    const doc = editor.getJSON();
-    const { _notes, _generalNotes: _gn3, _shelf: _sh3, _tags, _tagCategories, _characterProfiles, _characterRelationships, _characterCustomFields, _beats: _b3, _beatColumns: _bc3, _beatArrangeMode: _bam3, _outlineTabs: _ot3, _outlineViewedTab: _ov3, _outlineBarTab: _ob3, _outlineStash: _os3, _draftLabel: _dl3, _templateId: _tpl3, _pageLayout: _pl3, ...pmDoc } = doc as Record<string, unknown>;
-    collabInitialContent.current = pmDoc;
+    collabInitialContent.current = stripSaveExtras(editor.getJSON() as unknown as Record<string, unknown>);
 
     // The guest invite carries a session_nonce that makes the Yjs room unique
     // per collab session, so stale state from previous sessions is never loaded.
@@ -2132,6 +2128,8 @@ const ScreenplayEditor: React.FC = () => {
         store.setTagCategories([...DEFAULT_TAG_CATEGORIES]);
         store.setCharacterProfiles([]);
         store.setCharacterRelationships([]);
+        store.setReferredTags({});
+        store.setScanResults(null);
         store.setScenes([]);
         store.setPageLayout({ ...DEFAULT_PAGE_LAYOUT });
         lastSavedJsonRef.current = '';
@@ -2713,8 +2711,7 @@ const ScreenplayEditor: React.FC = () => {
         // Strip app metadata keys before feeding to ProseMirror
         let pmDoc: Record<string, unknown> | null = null;
         if (content && typeof content === 'object' && 'type' in content && content.type === 'doc') {
-          const { _notes, _generalNotes: _gn, _shelf: _sh, _tags, _tagCategories, _characterProfiles, _characterRelationships, _characterCustomFields, _beats, _beatColumns, _beatArrangeMode, _outlineTabs: _ot1, _outlineViewedTab: _ov1, _outlineBarTab: _ob1, _outlineStash: _os1, _templateId: _tpl, _ignoredWords: _iw, _ignoredOnce: _io, _customDictWords: _cdw, _enabledGlobalDicts: _egd, _projectDictEnabled: _pde, _enabledLanguages: _elx, _ignoredGrammarRules: _igr, _ignoredGrammarOnce: _igo, _spellCheckEnabled: _sce, _grammarCheckEnabled: _gce, _sceneNumbersVisible: _snv, _sceneNumbersLocked: _snl, _pageLayout: _pl, ...rest } = content as any;
-          pmDoc = rest;
+          pmDoc = stripSaveExtras(content);
         }
 
         try {
@@ -2742,6 +2739,8 @@ const ScreenplayEditor: React.FC = () => {
           // Clear per-screenplay metadata so we don't carry over from a previously opened script
           store.setCharacterProfiles([]);
           store.setCharacterRelationships([]);
+          store.setReferredTags({});
+          store.setScanResults(null);
           store.setNotes([]);
           store.setGeneralNotes([]);
           store.setShelfCards([]);
@@ -2782,6 +2781,14 @@ const ScreenplayEditor: React.FC = () => {
             const rels = parseAttr(c._characterRelationships);
             if (rels.length > 0) {
               store.setCharacterRelationships(rels as import('../stores/editorStore').CharacterRelationship[]);
+            }
+            // v4.24: From Script classifications + scan list ride in the file
+            if (c._referredTags && typeof c._referredTags === 'object' && !Array.isArray(c._referredTags)) {
+              store.setReferredTags(c._referredTags as Record<string, import('../stores/editorStore').ReferredTag>);
+            }
+            const charScan = parseAttr(c._characterScan);
+            if (charScan.length > 0) {
+              store.setScanResults(charScan as import('../utils/characterScan').ScannedCharacter[]);
             }
             const custFields = parseAttr(c._characterCustomFields);
             if (custFields.length > 0) {
@@ -3128,8 +3135,7 @@ const ScreenplayEditor: React.FC = () => {
 
         try {
           if (content && typeof content === 'object' && 'type' in content && content.type === 'doc') {
-            const { _notes, _generalNotes: _gn2, _shelf: _sh2, _tags, _tagCategories, _characterProfiles, _characterRelationships, _characterCustomFields, _beats, _beatColumns, _beatArrangeMode: _bam, _outlineTabs: _ot2, _outlineViewedTab: _ov2, _outlineBarTab: _ob2, _outlineStash: _os2, _draftLabel: _dl2, _templateId: _tpl2, _ignoredWords: _iw2, _ignoredOnce: _io2, _customDictWords: _cdw2, _enabledGlobalDicts: _egd2, _projectDictEnabled: _pde2, _enabledLanguages: _elx2, _ignoredGrammarRules: _igr2, _ignoredGrammarOnce: _igo2, _spellCheckEnabled: _sce2, _grammarCheckEnabled: _gce2, _sceneNumbersVisible: _snv2, _sceneNumbersLocked: _snl2, _pageLayout: _pl2, ...pmDoc } = content as any;
-            editor.commands.setContent(pmDoc);
+            editor.commands.setContent(stripSaveExtras(content as Record<string, unknown>));
           } else if (content && typeof content === 'object' && Object.keys(content).length > 0) {
             editor.commands.setContent(content);
           } else {
@@ -3147,6 +3153,8 @@ const ScreenplayEditor: React.FC = () => {
         // Clear all per-file metadata first
         store.setCharacterProfiles([]);
         store.setCharacterRelationships([]);
+        store.setReferredTags({});
+        store.setScanResults(null);
         store.setNotes([]);
         store.setGeneralNotes([]);
         store.setTags([]);
@@ -3185,6 +3193,14 @@ const ScreenplayEditor: React.FC = () => {
           const rels2 = parseAttr2(c._characterRelationships);
           if (rels2.length > 0) {
             store.setCharacterRelationships(rels2 as import('../stores/editorStore').CharacterRelationship[]);
+          }
+          // v4.24: From Script classifications + scan list ride in the file
+          if (c._referredTags && typeof c._referredTags === 'object' && !Array.isArray(c._referredTags)) {
+            store.setReferredTags(c._referredTags as Record<string, import('../stores/editorStore').ReferredTag>);
+          }
+          const charScan2 = parseAttr2(c._characterScan);
+          if (charScan2.length > 0) {
+            store.setScanResults(charScan2 as import('../utils/characterScan').ScannedCharacter[]);
           }
           const custFields2 = parseAttr2(c._characterCustomFields);
           if (custFields2.length > 0) {

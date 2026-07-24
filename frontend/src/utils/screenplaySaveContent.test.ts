@@ -10,7 +10,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useEditorStore } from '../stores/editorStore';
-import { resolveHFFields, composeSaveContent } from './screenplaySaveContent';
+import { resolveHFFields, composeSaveContent, stripSaveExtras } from './screenplaySaveContent';
 
 const S = () => useEditorStore.getState();
 
@@ -41,6 +41,7 @@ describe('composeSaveContent', () => {
       notes: {}, generalNotes: [], shelfCards: [],
       tags: [], tagCategories: [],
       characterProfiles: [], characterRelationships: [], characterCustomFields: [],
+      referredTags: {}, scanResults: null,
       outlineTabs: [{ id: 'tab-1', name: 'Outline 1', arrangeMode: 'auto' }],
       viewedOutlineTab: 'tab-1', outlineBarTab: 'tab-1', outlineStash: {},
     } as never);
@@ -58,6 +59,7 @@ describe('composeSaveContent', () => {
     for (const key of [
       '_notes', '_generalNotes', '_shelf', '_tags', '_tagCategories',
       '_characterProfiles', '_characterRelationships', '_characterCustomFields',
+      '_referredTags', '_characterScan',
       '_beats', '_beatColumns', '_beatArrangeMode',
       '_outlineTabs', '_outlineViewedTab', '_outlineBarTab', '_outlineStash',
       '_draftLabel', '_templateId',
@@ -89,5 +91,23 @@ describe('composeSaveContent', () => {
     expect((out._outlineTabs as { id: string }[]).map((t) => t.id)).toEqual(['tab-1', 'tab-2']);
     expect(out._outlineStash).toHaveProperty('tab-2');
     expect(out._outlineViewedTab).toBe(S().viewedOutlineTab);
+  });
+});
+
+describe('stripSaveExtras', () => {
+  it('is the exact inverse of composeSaveContent: strips every extra, keeps the doc', () => {
+    const doc = { type: 'doc', content: [{ type: 'action', content: [{ type: 'text', text: 'hi' }] }] };
+    const stripped = stripSaveExtras(composeSaveContent(doc));
+    expect(stripped).toEqual(doc);
+  });
+
+  it('drops any underscore key — including ones invented after this test was written', () => {
+    const stripped = stripSaveExtras({ type: 'doc', content: [], _someFutureExtra: 1, _another: { a: 1 } });
+    expect(stripped).toEqual({ type: 'doc', content: [] });
+  });
+
+  it('leaves non-underscore keys untouched', () => {
+    const stripped = stripSaveExtras({ type: 'doc', attrs: { x: 1 }, content: [] });
+    expect(stripped).toEqual({ type: 'doc', attrs: { x: 1 }, content: [] });
   });
 });

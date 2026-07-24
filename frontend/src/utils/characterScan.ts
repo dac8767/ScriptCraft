@@ -95,3 +95,19 @@ export function buildScanList(
   for (const name of referredNames) add(name, 'referred');
   return results;
 }
+
+/**
+ * v4.24 (Derek): the From Script tab shows only names that still need action —
+ * referred names the writer already classified drop off, and ANY name that has
+ * a character profile drops off (it has an entry; nothing left to add).
+ */
+export function filterScanList(
+  results: ScannedCharacter[] | null,
+  referredTags: Record<string, unknown>,
+  profileNames: ReadonlySet<string>,
+): ScannedCharacter[] {
+  if (!results) return [];
+  return results.filter(
+    (r) => !(r.source === 'referred' && referredTags[r.name]) && !profileNames.has(r.name),
+  );
+}

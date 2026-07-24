@@ -25,6 +25,21 @@ export function resolveHFFields(
 }
 
 /**
+ * Drop every underscore extra from a saved payload, leaving only the
+ * ProseMirror doc. The inverse of composeSaveContent — use this instead of
+ * hand-listing the extras at each load site: five hand-forked destructuring
+ * lists used to exist, each missing different keys, and every new extra
+ * meant updating all of them (or, in practice, none of them).
+ */
+export function stripSaveExtras(content: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(content)) {
+    if (!k.startsWith('_')) out[k] = v;
+  }
+  return out;
+}
+
+/**
  * Compose the FULL save payload: the ProseMirror doc plus every underscore
  * extra (tool data, dictionaries, layout, draft label). This is the ONLY
  * place the extras list may live — every save path (manual save, Save As,
@@ -45,6 +60,12 @@ export function composeSaveContent(doc: Record<string, unknown>): Record<string,
     _characterProfiles: store.characterProfiles,
     _characterRelationships: store.characterRelationships,
     _characterCustomFields: store.characterCustomFields,
+    // v4.24 (Derek batch 1-2): the From Script tab's classifications and scan
+    // list ride in the script file like every other character datum. They were
+    // previously only mirrored through collabSync's Yjs map — Local-only
+    // sessions lost every classification on relaunch.
+    _referredTags: store.referredTags,
+    _characterScan: store.scanResults,
     _beats: store.beats,
     _beatColumns: store.beatColumns,
     _beatArrangeMode: store.beatArrangeMode,

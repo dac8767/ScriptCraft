@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractCharacterIntro, buildScanList } from './characterScan';
+import { extractCharacterIntro, buildScanList, filterScanList } from './characterScan';
 
 describe('extractCharacterIntro', () => {
   it('pulls the introducing sentence and a parenthetical age', () => {
@@ -77,5 +77,33 @@ describe('buildScanList', () => {
   it('keeps found characters even when no intro description exists', () => {
     const list = buildScanList([], ['SARAH'], []);
     expect(list).toEqual([{ name: 'SARAH', source: 'cue', description: '', age: '' }]);
+  });
+});
+
+describe('filterScanList (v4.24 — the From Script visible list)', () => {
+  const results = [
+    { name: 'SARAH', description: 'sharp eyes', age: '30s', source: 'cue' as const },
+    { name: 'MARCUS', description: '', age: '', source: 'cue' as const },
+    { name: 'NIGHTFALL', description: '', age: '', source: 'referred' as const },
+    { name: 'REEVES', description: '', age: '', source: 'referred' as const },
+  ];
+
+  it('drops names that already have a character entry', () => {
+    const out = filterScanList(results, {}, new Set(['SARAH']));
+    expect(out.map((r) => r.name)).toEqual(['MARCUS', 'NIGHTFALL', 'REEVES']);
+  });
+
+  it('drops referred names the writer classified, keeps unclassified ones', () => {
+    const out = filterScanList(results, { NIGHTFALL: { kind: 'other' } }, new Set());
+    expect(out.map((r) => r.name)).toEqual(['SARAH', 'MARCUS', 'REEVES']);
+  });
+
+  it('a classification only hides REFERRED names — a cue name with a stray tag stays', () => {
+    const out = filterScanList(results, { SARAH: { kind: 'other' } }, new Set());
+    expect(out.map((r) => r.name)).toContain('SARAH');
+  });
+
+  it('null results → empty list', () => {
+    expect(filterScanList(null, {}, new Set())).toEqual([]);
   });
 });

@@ -82,7 +82,7 @@ import { scriptApi } from '../services/scriptApi';
 import { mirrorSave, mirrorSnapshot } from '../services/saveLocations';
 import { useSettingsStore } from '../stores/settingsStore';
 import { clearEditorHistory } from '../editor/clearHistory';
-import { spellChecker } from '../editor/spellchecker';
+import { composeSaveContent } from '../utils/screenplaySaveContent';
 import { openTextFile, openBinaryFile } from '../utils/fileOps';
 import { reportSaveError } from '../stores/saveErrorStore';
 import { HELP_FORMS } from '../data/helpForms';
@@ -270,34 +270,15 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     setVersionHistoryOpen,
   } = useProjectStore();
 
-  // Build a saveable content object: editor JSON + store metadata at top level
-  // IMPORTANT: keep in sync with ScreenplayEditor.buildSaveContent — both must
-  // serialize the same set of metadata fields or a manual save will strip data.
+  // Build a saveable content object: editor JSON + store metadata at top level.
+  // v4.24: delegates to composeSaveContent — this used to be a hand-forked
+  // PARTIAL copy of the extras list (no _shelf, no _outlineTabs/_outlineStash,
+  // no spell/grammar prefs), so a manual File > Save stripped the Scrapbook
+  // and Outline tabs from the file until the next autosave healed it. The
+  // extras list lives in exactly one place now; never fork it again.
   const buildSaveContent = useCallback((): Record<string, unknown> | undefined => {
     if (!editor || editor.isDestroyed) return undefined;
-    const store = useEditorStore.getState();
-    const tplStore = useFormattingTemplateStore.getState();
-    const doc = editor.getJSON();
-    return {
-      ...doc,
-      _notes: store.notes,
-      _generalNotes: store.generalNotes,
-      _tags: store.tags,
-      _tagCategories: store.tagCategories,
-      _characterProfiles: store.characterProfiles,
-      _characterRelationships: store.characterRelationships,
-      _characterCustomFields: store.characterCustomFields,
-      _beats: store.beats,
-      _beatColumns: store.beatColumns,
-      _beatArrangeMode: store.beatArrangeMode,
-      _templateId: tplStore.activeTemplateId,
-      _ignoredWords: spellChecker.getIgnoredWords(),
-      _ignoredOnce: spellChecker.getIgnoredOnce(),
-      _sceneNumbersVisible: store.sceneNumbersVisible,
-      _sceneNumbersLocked: store.sceneNumbersLocked,
-      _pageLayout: store.pageLayout,
-      _draftLabel: store.draftLabel,
-    };
+    return composeSaveContent(editor.getJSON());
   }, [editor]);
 
   // ── Save current editor content to backend ──
@@ -698,6 +679,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       store.setTags([]);
       store.setTagCategories([...DEFAULT_TAG_CATEGORIES]);
       store.setCharacterProfiles([]);
+      store.setCharacterRelationships([]);
+      store.setReferredTags({});
+      store.setScanResults(null);
       store.setScenes([]);
 
       let doc;
@@ -794,6 +778,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       store.setTags([]);
       store.setTagCategories([...DEFAULT_TAG_CATEGORIES]);
       store.setCharacterProfiles([]);
+      store.setCharacterRelationships([]);
+      store.setReferredTags({});
+      store.setScanResults(null);
       store.setScenes([]);
 
       editor.commands.setContent(parsed.doc, true);
@@ -857,6 +844,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       store.setTags([]);
       store.setTagCategories([...DEFAULT_TAG_CATEGORIES]);
       store.setCharacterProfiles([]);
+      store.setCharacterRelationships([]);
+      store.setReferredTags({});
+      store.setScanResults(null);
       store.setScenes([]);
 
       editor.commands.setContent(parsed.doc, true);
@@ -914,6 +904,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     store.setTags([]);
     store.setTagCategories([]);
     store.setCharacterProfiles([]);
+    store.setCharacterRelationships([]);
+    store.setReferredTags({});
+    store.setScanResults(null);
     store.setScenes([]);
     store.setPageLayout({ ...DEFAULT_PAGE_LAYOUT });
     if (window.location.pathname !== '/') {

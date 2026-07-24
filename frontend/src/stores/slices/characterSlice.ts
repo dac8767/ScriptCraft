@@ -6,6 +6,7 @@
 // characterSortBy) stay in editorStore for now — they're view/tool-dock state.
 import type { StateCreator } from 'zustand';
 import type { EditorState, CharacterProfile, CharacterCustomField, CharacterRelationship, ReferredTag } from '../editorStore';
+import type { ScannedCharacter } from '../../utils/characterScan';
 
 export interface CharacterSlice {
   // Character profiles (Final Draft CastList + CharacterHighlighting)
@@ -27,10 +28,18 @@ export interface CharacterSlice {
   deleteCharacterRelationship: (id: string) => void;
   /** v4.19: how the writer classified an ALL-CAPS name found in action lines
    *  (the "Referred in Script" list). Any tagged name drops out of that list.
-   *  Persisted per-script via collabSync. */
+   *  v4.24: persisted in the script file (_referredTags in composeSaveContent)
+   *  like every other character datum — it previously rode only on collabSync,
+   *  so Local-only sessions lost every classification on relaunch. */
   referredTags: Record<string, ReferredTag>;
   setReferredTags: (tags: Record<string, ReferredTag>) => void;
   setReferredTag: (name: string, tag: ReferredTag) => void;
+  /** v4.24: the From Script tab's scan list — store-held (survives unmounts)
+   *  and saved in the script file (_characterScan), so it's still there after
+   *  saving/relaunch. The tab re-scans on entry; this keeps the list stable
+   *  in between. */
+  scanResults: ScannedCharacter[] | null;
+  setScanResults: (list: ScannedCharacter[] | null) => void;
 }
 
 export const createCharacterSlice: StateCreator<EditorState, [], [], CharacterSlice> = (set) => ({
@@ -117,4 +126,6 @@ export const createCharacterSlice: StateCreator<EditorState, [], [], CharacterSl
   referredTags: {},
   setReferredTags: (tags) => set({ referredTags: tags }),
   setReferredTag: (name, tag) => set((s) => ({ referredTags: { ...s.referredTags, [name]: tag } })),
+  scanResults: null,
+  setScanResults: (list) => set({ scanResults: list }),
 });
