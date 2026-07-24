@@ -162,44 +162,40 @@ What landed:
   `pdfClassify`, `fonts` (registry↔categories drift-guard), `docxImporter`
   (in-memory .docx fixture). Suite now 552 tests / 75 files.
 
-**Flagged for Derek (found while testing, NOT fixed — behavior decisions):**
-- **`scriptDiff` never classifies "modified":** the LCS backtrack emits add
-  before remove, so the remove→add merge heuristic never fires — every edit
-  shows as delete+add, and the word-diff path is unreachable. Pinned by a test
-  with a KNOWN LIMITATION comment; fixing changes DiffViewer behavior.
-- **`stripHtml` drift:** two copies disagree — CharacterProfiles uses DOMPurify
-  (full entity decoding), fdxExporter hand-rolls 6 entities (misses `&mdash;`
-  etc. → exports them literally in FDX cast descriptions). Consolidating means
-  picking one canonical behavior.
-- Pre-existing (earlier runs): workspaces "apply doesn't take"; a few Design
-  panel options never worked.
-- **From the coverage fan-out** (each pinned by a KNOWN LIMITATION test in the
-  module's `.test.ts` — that file is the detailed record). User-facing first:
-  - **PDF import misclassifies standard layouts** (`pdfClassify`): `FADE IN:` at
-    the left margin becomes action (transition rule needs indent > 40); `(V.O.)`
-    at character indent becomes a character cue; a second consecutive
-    parenthetical becomes dialogue; right-aligned ordinary text imports as a
-    transition (`docxImporter` has the same right-align rule).
-  - **Title page** (`titlePageLayout`): a lone "based on" credit is dropped when
-    "written by" is empty; when both are set the bottom block lands one rendered
-    line low (the two-line byLine is budgeted as one).
-  - **`.odraft` robustness** (`odraftFormat`): `parseOdraft('null')` throws a raw
-    TypeError instead of the friendly error; no version gate (a future-format
-    file parses silently); parse drops the `themes` array that export writes;
-    title `''` reads back as `'Untitled'` despite the "lossless" header claim.
-  - **Template enforcement can fail to converge** (`templateConflicts`):
-    a disabled element carrying locked marks resolves via replace-only (marks
-    survive), so a second detect finds a fresh violation; the all-disabled
-    fallback replaces into `'action'` even when action isn't in the template.
-  - **`effectiveFormatting`**: docblock promises partial locking under
-    `allowFormatOverride` but the code returns NO_LOCK unconditionally.
-  - **`docxImporter`**: pass-2 dialogue promotion still counts/warns the line as
-    "defaulted to action" (noisy import report); `dc:title` lookup is namespace-
-    prefix-sensitive.
-  - Smaller: `dateFormat.parseISODate` accepts rolled-over dates like
-    `2026-02-30`; `fonts` category typed as bare `string` (drift now caught only
-    by the new test); `templateCss` emits a dead `data-type="undefined"`
-    placeholder selector for a built-in id missing from `ELEMENT_CSS_CLASS`.
+**Fix round (2026-07-24, Derek's "continue with suggested"):** every flagged
+finding below was fixed as its own tested commit — the pinned KNOWN LIMITATION
+tests flipped to assert the corrected behavior:
+
+- `.odraft` robustness (null crash → friendly error, version gate, themes
+  returned by parse, `''` title round-trips) — `1f6e575`
+- Title page: lone "based on" credit reaches the page; two-line byLine budget —
+  `64fa6d8`
+- PDF import decision table: text-identified scene headings at any indent,
+  FADE IN: at the left margin, `(V.O.)` → parenthetical, back-to-back
+  parentheticals, band-gap at 130, empty-run guard — `02e9601`
+- scriptDiff "modified" was unreachable (LCS emits add-then-remove; merge now
+  handles both orders — DiffViewer shows inline word diffs) — `b90d4d2`
+- ONE `stripHtml` (utils/stripHtml, DOMPurify + textContent decode): FDX cast
+  descriptions decode entities; block boundaries spaced — `2b4fa5e`
+- Small batch: parseISODate range check, FontEntry.category typed against
+  FONT_CATEGORIES, templateCss placeholder fallback, effectiveFormatting
+  docblock truth-up (behavior unchanged by design) — `4a77b3b`
+- DOCX import: right-align needs transition-shaped text, act-break anchoring,
+  warnings only for lines still ambiguous after pass 2, namespace-safe
+  dc:title — `a724730`
+- Template enforce detect→resolve converges in one pass (replace ops strip the
+  replacement's locked marks; all-disabled fallback declines) — `5b185d5`
+- **Workspaces "apply doesn't take" — ROOT-CAUSED & FIXED** (`bc0dd00`): save
+  captured `panelSizeMode`/`chromeCustomPx`/`theme` but apply never restored
+  them (drifted field lists). Apply now restores everything, theme via
+  setTheme so the DOM actually changes. Live-verified in headless Chromium.
+  Keep save/apply in lockstep — workspacesApply.test.ts guards the round-trip.
+
+**Still open (needs Derek):**
+- The Design-panel options that never worked — need Derek's list of WHICH
+  options, then same root-cause treatment.
+- Minor unfixed nits (deliberate): odraft meta value-type validation,
+  fonts loadFont failure-retry, templateCss selector escaping (UUID ids).
 
 **Test-writing notes:** any test that (even transitively) imports `editorStore`
 needs `// @vitest-environment jsdom` (the store touches localStorage at import).
