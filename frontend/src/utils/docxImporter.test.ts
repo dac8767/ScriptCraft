@@ -90,17 +90,15 @@ describe('parseDocx — text-pattern classification (unstyled, no indents)', () 
     expect(r.scriptTitle).toBe('');
   });
 
-  it('reports the ambiguous fallbacks, including lines later promoted to dialogue', async () => {
+  it('reports only lines STILL ambiguous after pass 2 — promoted dialogue is retracted', async () => {
     const r = await parseDocx(await fixture());
-    // KNOWN LIMITATION: "We should go." is counted and warned as "defaulted to
-    // action" by pass 1, then pass 2 promotes it to dialogue — but the warning
-    // and ambiguousCount are never retracted, so a correctly-imported dialogue
-    // line is still reported to the user as an ambiguous action.
-    expect(r.ambiguousCount).toBe(2);
+    // "We should go." starts as a pass-1 fallback but pass 2 promotes it to
+    // dialogue, so it no longer counts as ambiguous or warns; "Sarah enters."
+    // genuinely stays action and is still reported.
+    expect(r.ambiguousCount).toBe(1);
     expect(r.warnings).toEqual([
-      '2 paragraph(s) auto-classified as Action — review and re-tag any that should be a different element type.',
+      '1 paragraph(s) auto-classified as Action — review and re-tag any that should be a different element type.',
       'Line 2: "Sarah enters." — defaulted to action',
-      'Line 4: "We should go." — defaulted to action',
     ]);
   });
 });
@@ -153,13 +151,13 @@ describe('parseDocx — indent classification (FD layout + page margin)', () => 
     // pgMar left = 1440 twips = 1". Word indents are relative to the text
     // area, so 3600 twips (2.5") + 1" margin = 3.5" absolute → character;
     // 2880 (2") + 1" = 3.0" → parenthetical; 2160 (1.5") + 1" = 2.5" → dialogue.
-    // Right alignment alone is a transition, whatever the text says.
+    // Right alignment counts as a transition only with transition-shaped text.
     const buf = await docxWithBody(
       [
         para('BOB', '<w:ind w:left="3600"/>'),
         para('(soft)', '<w:ind w:left="2880"/>'),
         para('Hello there.', '<w:ind w:left="2160"/>'),
-        para('Back at the ranch', '<w:jc w:val="right"/>'),
+        para('CUT TO:', '<w:jc w:val="right"/>'),
         `<w:sectPr><w:pgMar w:left="1440" w:right="1440"/></w:sectPr>`,
       ].join(''),
     );
@@ -168,10 +166,36 @@ describe('parseDocx — indent classification (FD layout + page margin)', () => 
       { type: 'character', text: 'BOB' },
       { type: 'parenthetical', text: '(soft)' },
       { type: 'dialogue', text: 'Hello there.' },
-      { type: 'transition', text: 'Back at the ranch' },
+      { type: 'transition', text: 'CUT TO:' },
     ]);
     expect(r.ambiguousCount).toBe(0);
     expect(r.warnings).toEqual([]);
+  });
+});
+
+describe('parseDocx — right alignment and act-break anchoring', () => {
+  it('right-aligned ordinary prose is action (with its ambiguity warning), not a transition', async () => {
+    const r = await parseDocx(await docxWithBody(para('Back at the ranch', '<w:jc w:val="right"/>')));
+    expect(flat(body(r))).toEqual([{ type: 'action', text: 'Back at the ranch' }]);
+    expect(r.ambiguousCount).toBe(1);
+  });
+
+  it('right-aligned lowercase "cut to:" still reads as a transition (trailing colon)', async () => {
+    const r = await parseDocx(await docxWithBody(para('cut to:', '<w:jc w:val="right"/>')));
+    expect(flat(body(r))).toEqual([{ type: 'transition', text: 'cut to:' }]);
+  });
+
+  it('act breaks anchor at the START — a caps line merely containing ACT is not one', async () => {
+    // paragraphBold comes from the paragraph-mark rPr inside pPr.
+    const centerBold = '<w:jc w:val="center"/><w:rPr><w:b/></w:rPr>';
+    const r = await parseDocx(await docxWithBody(
+      [
+        para('ACT TWO', centerBold),
+        para('END OF ACT TWO', centerBold),
+        para('THE FINAL ACT', centerBold),
+      ].join(''),
+    ));
+    expect(flat(body(r)).map((n) => n.type)).toEqual(['newAct', 'endOfAct', 'action']);
   });
 });
 
@@ -272,9 +296,9 @@ describe('parseDocx — tables', () => {
       { type: 'character', text: 'ALICE' },
       { type: 'dialogue', text: 'Hello.' },
     ]);
-    // KNOWN LIMITATION: both dialogue lines were pass-1 fallbacks later promoted,
-    // so they still count as ambiguous (same non-retraction as the linear case).
-    expect(r.ambiguousCount).toBe(2);
+    // Both dialogue lines were pass-1 fallbacks later promoted — the retraction
+    // means they no longer count as ambiguous.
+    expect(r.ambiguousCount).toBe(0);
   });
 
   it('flattens a non-2-column table into paragraphs and warns once', async () => {

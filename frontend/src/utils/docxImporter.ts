@@ -419,8 +419,14 @@ function classifyByStyleName(name: string): string | null {
 }
 
 function classifyByIndent(p: ParaInfo): string | null {
-  // Right-aligned at any indent → transition is a strong signal
-  if (p.alignment === 'right') return 'transition';
+  // Right alignment is a strong transition signal only when the TEXT also
+  // reads like one (all caps, or trailing ':' for lowercase "cut to:") —
+  // a right-aligned ordinary sentence used to import as a transition.
+  if (p.alignment === 'right') {
+    const t = p.plainText.trim();
+    if (t && (t === t.toUpperCase() || t.endsWith(':'))) return 'transition';
+    return null;
+  }
   const left = p.indentLeftIn;
   if (left == null) return null;
   if (approxEq(left, FD_LEFT_INDENTS.character)) return 'character';
@@ -440,7 +446,9 @@ function classifyByText(p: ParaInfo): string | null {
   if (RE_TRANSITION_END.test(text) || RE_TRANSITION_START.test(text)) return 'transition';
   if (RE_PAREN_ONLY.test(text) && text.length < 80) return 'parenthetical';
   if (p.alignment === 'center' && p.paragraphBold && text === text.toUpperCase()) {
-    if (/^ACT\b/i.test(text) || /\bACT\b/i.test(text)) {
+    // Anchored: "ACT ONE" / "END OF ACT TWO". The old \bACT\b disjunct made
+    // ANY centered bold caps line containing the word ACT an act break.
+    if (/^(END\s+OF\s+)?ACT\b/i.test(text)) {
       if (/END/i.test(text)) return 'endOfAct';
       return 'newAct';
     }
@@ -576,7 +584,11 @@ export async function parseDocx(buf: ArrayBuffer): Promise<DocxParseResult> {
     try {
       const coreText = await coreFile.async('string');
       const coreXml = parser.parseFromString(coreText, 'application/xml');
+      // Namespace-first: a core.xml that binds Dublin Core to a prefix other
+      // than "dc:" still resolves; the prefix lookups stay as fallbacks for
+      // parsers without NS support.
       const titleEl =
+        coreXml.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'title')[0] ||
         coreXml.getElementsByTagName('dc:title')[0] ||
         coreXml.getElementsByTagName('title')[0];
       if (titleEl?.textContent) scriptTitle = titleEl.textContent.trim();
@@ -629,9 +641,13 @@ export async function parseDocx(buf: ArrayBuffer): Promise<DocxParseResult> {
   for (const b of dualBlocks) dualByLeftStart.set(b.leftStart, b);
   const skipUntil = new Set<number>();
 
-  // First pass: classify every paragraph
+  // First pass: classify every paragraph. Ambiguous lines are only RECORDED
+  // here — the count and per-line warnings are emitted after pass 2, so a
+  // line pass 2 promotes to dialogue is no longer reported as "defaulted to
+  // action" (correctly-imported dialogue used to inflate the import report).
   const types: string[] = new Array(paragraphs.length).fill('action');
   let ambiguousCount = 0;
+  const ambiguousAt = new Map<number, string>();
   for (let i = 0; i < paragraphs.length; i++) {
     if (i < consumed) continue; // title-page paragraphs not classified
     const p = paragraphs[i];
@@ -650,10 +666,7 @@ export async function parseDocx(buf: ArrayBuffer): Promise<DocxParseResult> {
         types[i] = 'character';
       } else {
         types[i] = 'action';
-        ambiguousCount++;
-        if (warnings.length < 10) {
-          warnings.push(`Line ${i + 1}: "${p.plainText.slice(0, 60)}" — defaulted to action`);
-        }
+        ambiguousAt.set(i, p.plainText.slice(0, 60));
       }
     }
   }
@@ -722,6 +735,15 @@ export async function parseDocx(buf: ArrayBuffer): Promise<DocxParseResult> {
           RE_PAREN_ONLY.test(npk.plainText);
         if (!stillBlock) break;
       }
+    }
+  }
+
+  // Emit ambiguity bookkeeping for lines STILL action after pass 2.
+  for (const [i, snippet] of ambiguousAt) {
+    if (types[i] !== 'action') continue;
+    ambiguousCount++;
+    if (warnings.length < 10) {
+      warnings.push(`Line ${i + 1}: "${snippet}" — defaulted to action`);
     }
   }
 
