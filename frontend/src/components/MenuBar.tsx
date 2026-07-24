@@ -43,6 +43,7 @@ import { smartUndo, smartRedo, useEditorStore, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_
 import { useProjectStore } from '../stores/projectStore';
 import { api } from '../services/api';
 import { showToast } from './Toast';
+import { DiagnosticsDialog } from './DiagnosticsDialog';
 import { useBookmarkStore, bookmarkScriptKey } from '../stores/bookmarkStore';
 import { openInBrowser, DONATE_URL } from '../services/external';
 import { parseFountain } from '../utils/fountainParser';
@@ -192,22 +193,6 @@ interface MenuSection {
   label: string;
   items: MenuItem[];
 }
-
-const DiagRow: React.FC<{ label: string; value: string; mono?: boolean }> = ({ label, value, mono }) => (
-  <tr>
-    <td style={{ padding: '4px 8px', color: 'var(--fd-text-secondary)', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-      {label}
-    </td>
-    <td style={{
-      padding: '4px 8px',
-      color: 'var(--fd-text)',
-      fontFamily: mono ? 'ui-monospace, Menlo, Consolas, monospace' : undefined,
-      wordBreak: 'break-word',
-    }}>
-      {value}
-    </td>
-  </tr>
-);
 
 const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, isCollabActive, isCollabGuest }) => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
@@ -469,29 +454,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // ── About / What's New ──
   const [aboutOpen, setAboutOpen] = useState(false);
 
-  // ── Diagnostics (Help menu) ──
+  // ── Diagnostics (Help menu) — the dialog collects its own report on mount.
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
-  const [diagnosticsReport, setDiagnosticsReport] = useState<import('../services/diagnostics').DiagnosticsReport | null>(null);
-  const [diagnosticsCopied, setDiagnosticsCopied] = useState(false);
-
-  const handleOpenDiagnostics = useCallback(async () => {
-    const { collectDiagnostics } = await import('../services/diagnostics');
-    setDiagnosticsReport(await collectDiagnostics());
-    setDiagnosticsCopied(false);
-    setDiagnosticsOpen(true);
-  }, []);
-
-  const handleCopyDiagnostics = useCallback(async () => {
-    if (!diagnosticsReport) return;
-    try {
-      const { formatReport } = await import('../services/diagnostics');
-      await navigator.clipboard.writeText(formatReport(diagnosticsReport));
-      setDiagnosticsCopied(true);
-      setTimeout(() => setDiagnosticsCopied(false), 2000);
-    } catch (err) {
-      showToast('Could not copy to clipboard', 'error');
-    }
-  }, [diagnosticsReport]);
 
   // ── Check in (git commit) ──
   const [changelogOpen, setChangelogOpen] = useState(false);
@@ -1838,7 +1802,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           {
             icon: <FaStethoscope />,
             label: 'Diagnostics',
-            action: () => { void handleOpenDiagnostics(); },
+            action: () => setDiagnosticsOpen(true),
           },
           /* v1.34: the switch for features that exist but aren't finished
            * (Collaboration, Lock Pages). One flag, read wherever an
@@ -2704,70 +2668,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         </div>
       </div>
     )}
-    {diagnosticsOpen && (
-      <div className="dialog-overlay" onClick={() => setDiagnosticsOpen(false)}>
-        <div className="dialog-box about-dialog" onClick={(e) => e.stopPropagation()}>
-          <div className="dialog-header">Diagnostics</div>
-          <div className="dialog-body about-body">
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--fd-text-secondary)' }}>
-              Runtime info to attach to bug reports. Click "Copy" to copy the
-              full report to your clipboard, then paste it into the GitHub issue.
-            </p>
-            {diagnosticsReport ? (
-              <>
-                {diagnosticsReport.oneDriveSuspect && (
-                  <div style={{
-                    marginTop: 12,
-                    padding: '10px 12px',
-                    background: '#fff8e1',
-                    border: '1px solid #ffcc80',
-                    borderRadius: 4,
-                    color: '#8b5a00',
-                    fontSize: 13,
-                    lineHeight: 1.5,
-                  }}>
-                    <strong>OneDrive interference suspected.</strong> Your app
-                    data folder appears to be inside a OneDrive-synced
-                    location. OneDrive can corrupt SQLite WAL files mid-write,
-                    causing silent save failures. To fix this, exclude
-                    ScriptCraft's data folder from OneDrive backup, or move your
-                    Windows AppData folder out of OneDrive sync.
-                  </div>
-                )}
-                <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse', marginTop: 12 }}>
-                  <tbody>
-                    <DiagRow label="Version" value={diagnosticsReport.appVersion} />
-                    <DiagRow label="OS" value={diagnosticsReport.os} />
-                    <DiagRow label="Storage backend" value={diagnosticsReport.storageMode} />
-                    {diagnosticsReport.storageError && (
-                      <DiagRow label="Storage error" value={diagnosticsReport.storageError} mono />
-                    )}
-                    {diagnosticsReport.appDataDir && (
-                      <DiagRow label="App data dir" value={diagnosticsReport.appDataDir} mono />
-                    )}
-                    {diagnosticsReport.sqliteDbPath && (
-                      <DiagRow label="SQLite DB path" value={diagnosticsReport.sqliteDbPath} mono />
-                    )}
-                  </tbody>
-                </table>
-              </>
-            ) : (
-              <div style={{ marginTop: 12, color: 'var(--fd-text-secondary)' }}>Loading…</div>
-            )}
-          </div>
-          <div className="dialog-actions">
-            <button
-              className="dialog-secondary"
-              onClick={handleCopyDiagnostics}
-              disabled={!diagnosticsReport}
-            >
-              {diagnosticsCopied ? 'Copied ✓' : 'Copy Report'}
-            </button>
-            <button className="dialog-primary" onClick={() => setDiagnosticsOpen(false)}>Close</button>
-          </div>
-        </div>
-      </div>
-    )}
+    {diagnosticsOpen && <DiagnosticsDialog onClose={() => setDiagnosticsOpen(false)} />}
     {discardConfirmOpen && (
       <div className="dialog-overlay" onClick={handleDiscardConfirmCancel}>
         <div className="dialog-box" onClick={(e) => e.stopPropagation()}>
