@@ -90,11 +90,16 @@ true`, then `fire_trigger`. Each firing creates a brand-new session in this
 environment with the prompt as its opening message. Useful when work must
 outlive this chat's context or Derek wants independent sessions he can watch.
 
-**What broke on 2026-07-24, first attempt:** two spawns fired simultaneously
-(05:00:06 and 05:00:10) while the Dispatcher's container was active; no session
-did any observable work and none appeared in Derek's session list. A single
-follow-up spawn test (this playbook's protocol) DID return a session id
-immediately. Operating rules derived from that:
+**STATUS: NOT VIABLE in this environment (verdict 2026-07-24).** Two tests,
+both dead: (a) the original two simultaneous spawns (05:00 UTC) produced no
+sessions, no work, no push notifications; (b) a controlled single spawn with a
+minimal heartbeat-only prompt AND the repo's committed permission allowlist
+returned a session id from `fire_trigger` immediately — and then executed
+nothing for 25+ minutes. The session record is created server-side but the
+session never runs. That is a platform-level failure, not a prompt/permission
+problem; nothing in this repo can fix it. Re-test occasionally with the
+heartbeat protocol below; until it passes, use Tier 1 (and Path B when Derek
+wants separate visible sessions). Operating rules if/when it works:
 
 1. **One spawn at a time, staggered** — fire the next only after the previous
    session shows life (its heartbeat commit).
