@@ -20,6 +20,16 @@ import { useEditorStore, type RibDropSpot } from '../stores/editorStore';
 
 type Row = 'top' | 'bottom';
 
+/** v4.25, Derek: the drop spot, extended with VERTICAL intent — "rows emerge
+ *  by dragging". Hovering the upper/lower band of a ONE-ROW section's row
+ *  means "split this section into two rows here": `newRow: 'above'` drops the
+ *  dragged item alone into a new TOP row (existing items move underneath),
+ *  `'below'` alone into a new BOTTOM row. The middle band keeps the plain
+ *  left/right insertion (`row`/`idx` — ignored when `newRow` is set).
+ *  Structurally a RibDropSpot, so it rides the store's ribEdit unchanged;
+ *  this module is the only writer of that field. */
+export interface RibDropSpotEx extends RibDropSpot { newRow?: 'above' | 'below' }
+
 const EMPTY_SECTION: RibbonSection = { top: [], bottom: [], hasBreak: false, breakLine: false };
 
 // The section a double-click quick-add lands in: the one most recently created
@@ -60,53 +70,112 @@ const removeEverywhere = (m: RibbonModel, tok: string) => {
   }
 };
 
+/** The concrete token an ITEM drag payload inserts: `tok:` (an on-bar item
+ *  moving) and `new:` (a palette item) carry it; a dropped utility mints a
+ *  fresh unique id. Null for the structural payloads (`sec:`, alignsplit),
+ *  which never insert a token. */
+const payloadToken = (payload: string): string | null => {
+  if (payload.startsWith('tok:') || payload.startsWith('new:')) return payload.slice(4);
+  if (payload === 'util:spacer') return `s:${Date.now()}`;
+  if (payload === 'util:divider') return `d:${Date.now()}`;
+  return null;
+};
+
 /* ── pure mutations (ported from RibbonEditor) ── */
 
-export const ribApplyDrop = (payload: string, at: RibDropSpot | null) => {
+/** v4.25, Derek: drop `tok` as a NEW ROW of section `sec` (pure — exported
+ *  for testing). 'below' keeps the section's items on top and puts the
+ *  dropped item alone underneath; 'above' puts it alone on top and moves the
+ *  items down. The token is deduped from the whole ribbon first (an on-bar
+ *  item is MOVING). If nothing else remains in the section — the dragged
+ *  item WAS its only content, or it was empty — a break would leave a
+ *  phantom empty row, so it stays one row with just the item. */
+export const dropAsNewRowInModel = (m: RibbonModel, sec: number, tok: string, where: 'above' | 'below'): RibbonModel => {
+  const s = m.sections[sec];
+  if (!s) return m;
+  removeEverywhere(m, tok);            // replaces s.top/s.bottom in place
+  const rest = [...s.top, ...s.bottom];
+  if (rest.length === 0) {
+    m.sections[sec] = { ...s, top: [tok], bottom: [], hasBreak: false };
+  } else {
+    m.sections[sec] = where === 'above'
+      ? { ...s, top: [tok], bottom: rest, hasBreak: true }
+      : { ...s, top: rest, bottom: [tok], hasBreak: true };
+  }
+  return m;
+};
+
+/** v4.25, Derek: drop `tok` into BLANK ribbon space at section boundary `at`
+ *  — a new one-row section holding just that item (pure — exported for
+ *  testing). Same split bookkeeping as ribInsertSection: at or left of the
+ *  align split, the split shifts and the section joins the LEFT run; past
+ *  it, the split stays and the section is right-aligned. */
+export const dropNewSectionInModel = (m: RibbonModel, at: number, tok: string): RibbonModel => {
+  removeEverywhere(m, tok);
+  const i = Math.max(0, Math.min(at, m.sections.length));
+  m.sections.splice(i, 0, { top: [tok], bottom: [], hasBreak: false, breakLine: false });
+  if (m.splitAt !== null && i <= m.splitAt) m.splitAt += 1;
+  return m;
+};
+
+export const ribApplyDrop = (payload: string, at: RibDropSpotEx | null) => {
   if (!payload || !at) return;
   const m = clone(getModel());
   const target = m.sections[at.sec];
   if (!target) return;
-  const rowArr = at.row === 'top' ? target.top : target.bottom;
-  let idx = Math.min(at.idx, rowArr.length);
-  if (payload.startsWith('tok:')) {
-    const tok = payload.slice(4);
-    const before = rowArr.indexOf(tok);
-    if (before >= 0 && before < idx) idx -= 1;
-    removeEverywhere(m, tok);
+  const tok = payloadToken(payload);
+  if (!tok) return;
+  if (at.newRow) {
+    // v4.25: the upper/lower band of a one-row section — split it into two
+    // rows around the dropped item instead of inserting beside the others.
+    dropAsNewRowInModel(m, at.sec, tok, at.newRow);
+  } else {
+    const rowArr = at.row === 'top' ? target.top : target.bottom;
+    let idx = Math.min(at.idx, rowArr.length);
+    if (payload.startsWith('tok:')) {
+      const before = rowArr.indexOf(tok);
+      if (before >= 0 && before < idx) idx -= 1;
+      removeEverywhere(m, tok);
+    }
+    // re-read: removeEverywhere REPLACES the row arrays it filters.
     const arr = at.row === 'top' ? target.top : target.bottom;
     arr.splice(Math.min(idx, arr.length), 0, tok);
-  } else if (payload === 'util:spacer') {
-    rowArr.splice(idx, 0, `s:${Date.now()}`);
-  } else if (payload === 'util:divider') {
-    rowArr.splice(idx, 0, `d:${Date.now()}`);
-  } else if (payload.startsWith('new:')) {
-    rowArr.splice(idx, 0, payload.slice(4));
   }
   lastTouchedSection = at.sec;   // the section just edited is the quick-add target
   commit(m);
 };
 
-export const ribInsertSection = (type: 'single' | 'double', at: number) => {
+/** v4.25, Derek: blank-space drop — the dragged item lands in a NEW one-row
+ *  section at boundary `at` (rows then emerge by dragging above/below). */
+export const ribDropNewSection = (payload: string, at: number | null) => {
+  if (!payload || at === null) return;
+  const tok = payloadToken(payload);
+  if (!tok) return;
   const m = clone(getModel());
-  m.sections.splice(at, 0, { top: [], bottom: [], hasBreak: type === 'double', breakLine: false });
-  if (m.splitAt !== null && at <= m.splitAt) m.splitAt += 1;
-  lastTouchedSection = at;   // a just-made section becomes the quick-add target
+  const i = Math.max(0, Math.min(at, m.sections.length));
+  dropNewSectionInModel(m, i, tok);
+  lastTouchedSection = i;   // the just-made section becomes the quick-add target
   commit(m);
 };
 
-/** Double-clicking a block appends a section at the end. */
-export const ribAppendSection = (type: 'single' | 'double') => {
-  ribInsertSection(type, getModel().sections.length);
+/** v4.25, Derek: sections are born ONE-ROW — a second row emerges by dragging
+ *  an item to the row's upper/lower band, so the old 'single' | 'double'
+ *  choice (and the '2 Row Section' menu entry) is gone. */
+export const ribInsertSection = (at: number) => {
+  const m = clone(getModel());
+  m.sections.splice(at, 0, { top: [], bottom: [], hasBreak: false, breakLine: false });
+  if (m.splitAt !== null && at <= m.splitAt) m.splitAt += 1;
+  lastTouchedSection = at;   // a just-made section becomes the quick-add target
+  commit(m);
 };
 
 /** v3.37, Derek: the on-bar "+ Add" adds a section at a boundary. `rightSide`
  *  picks whether the new section lands LEFT of the split (end of the
  *  left-aligned run) or RIGHT of it (start of the right-aligned run) — the
  *  split index shifts for a left insert but stays for a right one. */
-export const ribAddSectionAtBoundary = (type: 'single' | 'double', at: number, rightSide: boolean) => {
+export const ribAddSectionAtBoundary = (at: number, rightSide: boolean) => {
   const m = clone(getModel());
-  m.sections.splice(at, 0, { top: [], bottom: [], hasBreak: type === 'double', breakLine: false });
+  m.sections.splice(at, 0, { top: [], bottom: [], hasBreak: false, breakLine: false });
   if (m.splitAt !== null && (rightSide ? at < m.splitAt : at <= m.splitAt)) m.splitAt += 1;
   lastTouchedSection = at;   // a just-made section becomes the quick-add target
   commit(m);
@@ -309,8 +378,6 @@ const payloadLabel = (payload: string): string => {
   if (payload === 'util:divider') return 'Divider';
   if (payload === 'util:spacer') return 'Spacer';
   if (payload === 'util:alignsplit') return 'Align Split';
-  if (payload === 'blk:single') return 'Single Row Section';
-  if (payload === 'blk:double') return 'Two Row Section';
   if (payload.startsWith('sec:')) return 'Section';
   return '';
 };
@@ -334,8 +401,16 @@ const rowIdxAt = (rowEl: HTMLElement, x: number): number => {
 /** Drop-spot from a screen point. Resolve the target ROW (directly, or the
  *  nearest row of the section the cursor is over — its padding counts), then
  *  read the index from geometry. Row-first keeps section padding and the row
- *  itself agreeing, so there's no fluttering seam at the section edge. */
-const spotFromPoint = (x: number, y: number): RibDropSpot | null => {
+ *  itself agreeing, so there's no fluttering seam at the section edge.
+ *
+ *  v4.25, Derek: a ONE-ROW section's row gets three vertical bands. The
+ *  middle keeps the left/right insertion; the upper/lower ~30% (everything
+ *  past the row's edges — the title strip, the section padding — included)
+ *  means "new top/bottom row here" (`newRow`). A two-row section keeps the
+ *  plain nearest-row behavior — a section has at most two rows. `payload`
+ *  lets the band check skip a spot that could never split: when the dragged
+ *  item is the section's only content, there'd be nothing for the other row. */
+const spotFromPoint = (x: number, y: number, payload?: string): RibDropSpotEx | null => {
   const el = document.elementFromPoint(x, y) as HTMLElement | null;
   if (!el?.closest('.toolbar-ribbon')) return null;
   let row = el.closest<HTMLElement>('.toolbar-ribbon .rib-row');
@@ -351,7 +426,20 @@ const spotFromPoint = (x: number, y: number): RibDropSpot | null => {
     });
   }
   if (!row.dataset.sec) return null;
-  return { sec: Number(row.dataset.sec), row: row.dataset.row as Row, idx: rowIdxAt(row, x) };
+  const sec = Number(row.dataset.sec);
+  const s = getModel().sections[sec];
+  if (s && !s.hasBreak) {
+    const dragTok = payload && (payload.startsWith('tok:') || payload.startsWith('new:'))
+      ? payload.slice(4) : null;
+    const rest = [...s.top, ...s.bottom].filter((t) => t !== dragTok);
+    if (rest.length > 0) {
+      const r = row.getBoundingClientRect();
+      const band = r.height * 0.3;
+      if (y < r.top + band) return { sec, row: 'top', idx: 0, newRow: 'above' };
+      if (y > r.bottom - band) return { sec, row: 'bottom', idx: 0, newRow: 'below' };
+    }
+  }
+  return { sec, row: row.dataset.row as Row, idx: rowIdxAt(row, x) };
 };
 
 /** Section boundary from a point — how many section midpoints lie left of x
@@ -365,6 +453,17 @@ const secSpotFromPoint = (x: number, y: number): number | null => {
     if (x > r.left + r.width / 2) b += 1;
   }
   return b;
+};
+
+/** v4.25, Derek: boundary index when the cursor is over the ribbon's BLANK
+ *  space — inside the bar but over no section (their padding counts as the
+ *  section; used to be a dead drop). An item released here lands in a NEW
+ *  one-row section at this boundary. */
+const blankSpotFromPoint = (x: number, y: number): number | null => {
+  const el = document.elementFromPoint(x, y) as HTMLElement | null;
+  if (!el?.closest('.toolbar-ribbon')) return null;
+  if (el.closest('.rib-section')) return null;
+  return secSpotFromPoint(x, y);
 };
 
 const overPalette = (x: number, y: number): boolean =>
@@ -381,7 +480,7 @@ export const startRibbonDrag = (e: React.PointerEvent, payload: string) => {
   let ghost: HTMLElement | null = null;
   const setEdit = (p: Partial<{ dragging: boolean; spot: RibDropSpot | null; secSpot: number | null }>) =>
     useEditorStore.getState().setRibEdit(p);
-  const boundaryDrag = payload.startsWith('sec:') || payload.startsWith('blk:') || payload === 'util:alignsplit';
+  const boundaryDrag = payload.startsWith('sec:') || payload === 'util:alignsplit';
 
   const move = (ev: PointerEvent) => {
     if (!active) {
@@ -399,7 +498,13 @@ export const startRibbonDrag = (e: React.PointerEvent, payload: string) => {
     }
     const op = overPalette(ev.clientX, ev.clientY);
     if (boundaryDrag) setEdit({ secSpot: op ? null : secSpotFromPoint(ev.clientX, ev.clientY), spot: null });
-    else setEdit({ spot: op ? null : spotFromPoint(ev.clientX, ev.clientY), secSpot: null });
+    else {
+      // v4.25: an ITEM drag over blank ribbon space previews a NEW section —
+      // the boundary indicator (secSpot) doubles as its full-height drop line.
+      const spot = op ? null : spotFromPoint(ev.clientX, ev.clientY, payload);
+      const blank = op || spot ? null : blankSpotFromPoint(ev.clientX, ev.clientY);
+      setEdit({ spot, secSpot: blank });
+    }
   };
   const up = (ev: PointerEvent) => {
     cleanup();
@@ -411,11 +516,12 @@ export const startRibbonDrag = (e: React.PointerEvent, payload: string) => {
       const to = secSpotFromPoint(ev.clientX, ev.clientY);
       if (to !== null) {
         if (payload === 'util:alignsplit') ribSetAlignSplit(to);
-        else if (payload.startsWith('blk:')) ribInsertSection(payload.slice(4) as 'single' | 'double', to);
         else ribMoveSection(Number(payload.slice(4)), to);
       }
     } else {
-      ribApplyDrop(payload, spotFromPoint(ev.clientX, ev.clientY));
+      const spot = spotFromPoint(ev.clientX, ev.clientY, payload);
+      if (spot) ribApplyDrop(payload, spot);
+      else ribDropNewSection(payload, blankSpotFromPoint(ev.clientX, ev.clientY));
     }
     setEdit({ dragging: false, spot: null, secSpot: null });
   };

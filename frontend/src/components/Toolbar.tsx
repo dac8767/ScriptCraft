@@ -34,6 +34,7 @@ import {
   ribSetAlignSplit, ribSetSectionTitle, ribRemoveSectionTitle,
   ribSetSpacerWidth, SPACER_MIN_PX, SPACER_MAX_PX,
   ribUndo, ribResetHistory,
+  type RibDropSpotEx,
 } from './ribbonDrag';
 import { tokenLabel } from './tokenMeta';
 import { buildRibbonPalette } from './ribbonPaletteData';
@@ -1680,6 +1681,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
      draggable to reorder and closeable. The drop indicators read from the
      store's ribEdit state; drops mutate toolbarLeft via ribbonDrag.ts. */
   const editDropline = <span className="rib-edit-dropline" />;
+  /* v4.25, Derek: the spot with its vertical intent (ribbonDrag is the store
+     field's only writer, so the widening read is safe). `newRow` set ⇒ the
+     drop SPLITS a one-row section into two rows — drawn as a horizontal line
+     where the new row will appear, not as the in-row insertion bar. */
+  const ribSpot = ribEdit.spot as RibDropSpotEx | null;
+  const showHLine = (sec: number, where: 'above' | 'below') =>
+    ribEdit.dragging && ribSpot !== null && ribSpot.sec === sec && ribSpot.newRow === where;
   // v3.67, Derek: drag a spacer's right edge to resize it. The handle sits
   // above the hover cover so it gets the pointer; we resize the .toolbar-spacer
   // element live and commit the new width to its s:<id>:<px> token on release.
@@ -1734,8 +1742,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   );
   const editRow = (s: typeof sections[number], sec: number, row: 'top' | 'bottom') => {
     const items = row === 'top' ? s.top : s.bottom;
-    const showLine = (idx: number) => ribEdit.dragging && ribEdit.spot
-      && ribEdit.spot.sec === sec && ribEdit.spot.row === row && ribEdit.spot.idx === idx;
+    // A newRow spot renders as the horizontal split line instead — never as
+    // an in-row insertion bar (its row/idx are placeholders).
+    const showLine = (idx: number) => ribEdit.dragging && ribSpot && !ribSpot.newRow
+      && ribSpot.sec === sec && ribSpot.row === row && ribSpot.idx === idx;
     return (
       <div className="rib-row" data-sec={sec} data-row={row} data-len={items.length}>
         {items.map((tok, idx) => (
@@ -1744,8 +1754,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             {editItem(tok, sec, row, idx, !s.hasBreak)}
           </React.Fragment>
         ))}
-        {ribEdit.dragging && ribEdit.spot && ribEdit.spot.sec === sec && ribEdit.spot.row === row
-          && ribEdit.spot.idx >= items.length && editDropline}
+        {ribEdit.dragging && ribSpot && !ribSpot.newRow && ribSpot.sec === sec && ribSpot.row === row
+          && ribSpot.idx >= items.length && editDropline}
         {items.length === 0 && <span className="rib-edit-emptyhint">drop here</span>}
       </div>
     );
@@ -1848,6 +1858,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 }}
               />
             </span>
+            {/* v4.25, Derek: horizontal drop lines — a drag in a one-row
+                section's upper/lower band splits it into two rows; the line
+                sits exactly where the new row will appear. */}
+            {showHLine(i, 'above') && <span className="rib-edit-dropline-h" />}
             {editRow(s, i, 'top')}
             {s.hasBreak && (
               <div className="rib-edit-break">
@@ -1860,6 +1874,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               </div>
             )}
             {s.hasBreak && editRow(s, i, 'bottom')}
+            {showHLine(i, 'below') && <span className="rib-edit-dropline-h" />}
             {secAddBlock(i)}
           </div>
         </React.Fragment>
@@ -1992,7 +2007,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       // icon) so its shape reads at a glance.
       const vis = {
         single: <span className="rib-util-vis"><span className="ruv-sec"><span className="ruv-row" /></span></span>,
-        double: <span className="rib-util-vis"><span className="ruv-sec"><span className="ruv-row" /><span className="ruv-row" /></span></span>,
         divider: <span className="rib-util-vis"><span className="ruv-divider" /></span>,
         spacer: <span className="rib-util-vis"><span className="ruv-spacer" /></span>,
         split: <span className="rib-util-vis"><span className="ruv-box" /><span className="ruv-splitgap"><span /><span /></span><span className="ruv-box" /></span>,
@@ -2003,8 +2017,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       const inSec = addMenu.sec !== undefined;
       const secI = addMenu.sec ?? 0;
       const structural = [
-        { label: '1 Row Section', vis: vis.single, run: () => (inSec ? ribInsertSection('single', secI + 1) : ribAddSectionAtBoundary('single', addMenu.at, addMenu.rightSide)) },
-        { label: '2 Row Section', vis: vis.double, run: () => (inSec ? ribInsertSection('double', secI + 1) : ribAddSectionAtBoundary('double', addMenu.at, addMenu.rightSide)) },
+        // v4.25, Derek: ONE 'Section' entry — sections start as one row; a
+        // second row emerges by dragging an item to a row's upper/lower band.
+        { label: 'Section', vis: vis.single, run: () => (inSec ? ribInsertSection(secI + 1) : ribAddSectionAtBoundary(addMenu.at, addMenu.rightSide)) },
         { label: 'Divider', vis: vis.divider, run: () => (inSec ? ribAddToSection(`d:${Date.now()}`, secI) : ribAddInlineAtBoundary(`d:${Date.now()}`, addMenu.at, addMenu.rightSide)) },
         { label: 'Spacer', vis: vis.spacer, run: () => (inSec ? ribAddToSection(`s:${Date.now()}`, secI) : ribAddInlineAtBoundary(`s:${Date.now()}`, addMenu.at, addMenu.rightSide)) },
         ...(splitAt === null ? [{ label: 'Alignment Split', vis: vis.split, run: () => ribSetAlignSplit(inSec ? secI + 1 : addMenu.at) }] : []),

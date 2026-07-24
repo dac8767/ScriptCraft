@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { closeSectionInModel, moveSectionInModel, ribAddSectionAtBoundary, ribQuickAdd, ribSetSpacerWidth, SPACER_MAX_PX, ribUndo, ribResetHistory } from './ribbonDrag';
-import { parseRibbon, type RibbonModel } from './toolbarBuiltins';
+import { closeSectionInModel, moveSectionInModel, dropAsNewRowInModel, dropNewSectionInModel, ribAddSectionAtBoundary, ribQuickAdd, ribSetSpacerWidth, SPACER_MAX_PX, ribUndo, ribResetHistory } from './ribbonDrag';
+import { parseRibbon, serializeRibbon, type RibbonModel } from './toolbarBuiltins';
 import { useEditorStore } from '../stores/editorStore';
 
 // Build a model whose sections each carry one identifiable token, so we can
@@ -66,7 +66,7 @@ describe('ribQuickAdd lands double-clicked items in the section just created/upd
       toolbarLeft: ['b:bold', '2!d:sec-1', 'b:italic', 'a:split-2', 'b:underline'],
       toolbarRight: [],
     });
-    ribAddSectionAtBoundary('single', 1, false); // new empty left section at index 1
+    ribAddSectionAtBoundary(1, false);           // new empty left section at index 1
     ribQuickAdd('b:strike');                     // double-click a palette item
     const m = parseRibbon(useEditorStore.getState().toolbarLeft);
     expect(m.sections[1].top).toContain('b:strike');      // landed in the new section
@@ -106,12 +106,100 @@ describe('moveSectionInModel — only the moved section changes side of the spli
   });
 });
 
+/* v4.25, Derek: rows emerge by DRAGGING — dropping above/below a one-row
+   section's row splits it into two rows around the dragged item. */
+describe('dropAsNewRowInModel — a drop above/below a one-row section grows a second row', () => {
+  const oneRow = (toks: string[]): RibbonModel => ({
+    sections: [{ top: toks, bottom: [], hasBreak: false, breakLine: false }],
+    splitAt: null,
+  });
+
+  it('drop BELOW: existing items stay on top, the dragged item lands alone underneath', () => {
+    const m = dropAsNewRowInModel(oneRow(['b:bold', 'b:italic']), 0, 'b:underline', 'below');
+    expect(m.sections[0].top).toEqual(['b:bold', 'b:italic']);
+    expect(m.sections[0].bottom).toEqual(['b:underline']);
+    expect(m.sections[0].hasBreak).toBe(true);
+  });
+
+  it('drop ABOVE: the dragged item sits alone on top, existing items move to the bottom row', () => {
+    const m = dropAsNewRowInModel(oneRow(['b:bold', 'b:italic']), 0, 'b:underline', 'above');
+    expect(m.sections[0].top).toEqual(['b:underline']);
+    expect(m.sections[0].bottom).toEqual(['b:bold', 'b:italic']);
+    expect(m.sections[0].hasBreak).toBe(true);
+  });
+
+  it('an on-bar item MOVES — deduped from the section it came from', () => {
+    const m: RibbonModel = {
+      sections: [S('find'), { top: ['b:bold', 'b:italic'], bottom: [], hasBreak: false, breakLine: false }],
+      splitAt: null,
+    };
+    const out = dropAsNewRowInModel(m, 1, 'b:find', 'below');
+    expect(out.sections[0].top).toEqual([]);               // left its old section
+    expect(out.sections[1].top).toEqual(['b:bold', 'b:italic']);
+    expect(out.sections[1].bottom).toEqual(['b:find']);
+  });
+
+  it("dropping the section's ONLY item below itself stays one row — no phantom empty row", () => {
+    const m = dropAsNewRowInModel(oneRow(['b:bold']), 0, 'b:bold', 'below');
+    expect(m.sections[0].top).toEqual(['b:bold']);
+    expect(m.sections[0].bottom).toEqual([]);
+    expect(m.sections[0].hasBreak).toBe(false);
+  });
+
+  it('keeps the section title, and round-trips through serialize/parse as a real row break', () => {
+    const src = oneRow(['b:bold', 'b:italic']);
+    src.sections[0].title = 'Style';
+    const rt = parseRibbon(serializeRibbon(dropAsNewRowInModel(src, 0, 'b:underline', 'below')));
+    expect(rt.sections).toHaveLength(1);
+    expect(rt.sections[0].top).toEqual(['b:bold', 'b:italic']);
+    expect(rt.sections[0].bottom).toEqual(['b:underline']);
+    expect(rt.sections[0].hasBreak).toBe(true);
+    expect(rt.sections[0].title).toBe('Style');
+  });
+});
+
+/* v4.25, Derek: dropping an item into BLANK ribbon space creates a new
+   one-row section at that boundary (it used to be a dead drop). */
+describe('dropNewSectionInModel — a blank-space drop makes a new one-row section', () => {
+  it('creates a single-row section holding just the item at the boundary', () => {
+    const m = dropNewSectionInModel(model(['A', 'B'], null), 1, 'b:find');
+    expect(m.sections.map((s) => s.top)).toEqual([['b:A'], ['b:find'], ['b:B']]);
+    expect(m.sections[1].bottom).toEqual([]);
+    expect(m.sections[1].hasBreak).toBe(false);
+  });
+
+  it('dropping in the align gap joins the LEFT run — the split shifts, the right run stays right', () => {
+    const m = dropNewSectionInModel(model(['A', 'B'], 1), 1, 'b:find'); // [A | B], drop between
+    expect(m.splitAt).toBe(2);
+    expect(sides(m).left.map((s) => s.top)).toEqual([['b:A'], ['b:find']]);
+    expect(sides(m).right.map((s) => s.top)).toEqual([['b:B']]);
+  });
+
+  it('past the split, the split stays and the new section is right-aligned', () => {
+    const m = dropNewSectionInModel(model(['A', 'B'], 1), 2, 'b:find'); // after B
+    expect(m.splitAt).toBe(1);
+    expect(sides(m).right.map((s) => s.top)).toEqual([['b:B'], ['b:find']]);
+  });
+
+  it('an on-bar item MOVES into its new section (deduped from the old one)', () => {
+    const m = dropNewSectionInModel(model(['A', 'B'], null), 2, 'b:A');
+    expect(m.sections.map((s) => s.top)).toEqual([[], ['b:B'], ['b:A']]);
+  });
+
+  it('round-trips through serialize/parse as an ordinary section boundary', () => {
+    const rt = parseRibbon(serializeRibbon(dropNewSectionInModel(model(['A', 'B'], null), 2, 'b:find')));
+    expect(rt.sections.map((s) => s.top)).toEqual([['b:A'], ['b:B'], ['b:find']]);
+    expect(rt.sections.every((s) => !s.hasBreak)).toBe(true);
+    expect(rt.splitAt).toBeNull();
+  });
+});
+
 describe('ribUndo reverts the last ribbon edit', () => {
   it('restores the toolbar to its state before an add-section', () => {
     ribResetHistory();
     useEditorStore.setState({ toolbarLeft: ['b:bold', 'a:split-1', 'b:italic'], toolbarRight: [] });
     const before = [...useEditorStore.getState().toolbarLeft];
-    ribAddSectionAtBoundary('single', 1, false);
+    ribAddSectionAtBoundary(1, false);
     expect(useEditorStore.getState().toolbarLeft).not.toEqual(before);
     ribUndo();
     expect(useEditorStore.getState().toolbarLeft).toEqual(before);
