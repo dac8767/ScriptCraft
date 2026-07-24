@@ -73,25 +73,30 @@ number is just cosmetic. Decide with Derek rather than silently bumping.
 
 ---
 
-## 0.5 Parallel-chat lanes, the overlap checker & the Dispatcher chat
+## 0.5 Multi-worker strategy — read `docs/WORKERS.md` (the playbook)
 
-The codebase is mapped into independently-ownable **lanes** so separate chats can
-work in parallel without colliding, and so any one chat loads only its slice.
+**Tier 1 (DEFAULT, proven): in-chat parallel workers.** The Dispatcher (this
+chat) spawns N background subagents via the Agent tool — in ONE message so they
+run concurrently — each with a tight brief on a disjoint lane. Workers never run
+gates (concurrent tsc/vitest clobber shared state) and never commit; the
+Dispatcher reviews diffs, runs the three gates once, live-verifies, commits,
+pushes. Derek talks to one chat.
 
-- **`docs/AREA-MAP.md`** — the lane map, the shared "spine" (files only one chat
-  touches at a time), and which lanes are parallel-ready today vs after the
-  `editorStore` split.
-- **`docs/lanes.json`** — machine-readable source of truth (files → lanes).
-- **`scripts/check-lanes.mjs`** (`npm run check-lanes`) — overlap checker + dispatcher.
-- **`docs/EFFICIENCY-AUDIT.md`** — the dead-code / cleanup backlog (tick items off).
+**Tier 2 (scale-out, use with care): fresh-session Routine spawns** — one at a
+time, heartbeat-first prompts, standalone checkout preamble (fresh clones sit on
+stale `main` with the WRONG CLAUDE.md), permissions via the committed
+`.claude/settings.json`. The 2026-07-24 double-spawn produced two silently dead
+sessions; `docs/WORKERS.md` has the derived operating rules. **Path B** (Derek
+pastes briefs into chats himself) is the always-works fallback.
 
-**Standing instruction:** when Derek proposes **more than one update at once** (or
-asks about running parallel chats), classify each update into a lane and run
-`node scripts/check-lanes.mjs plan <lanes...>` — then report the waves and warn about
-any overlap **before** starting. For a single update, just note its lane and proceed.
-If Derek wants a coordinator, play the **Dispatcher** role in `AREA-MAP.md` (map his
-updates to lanes, print copy-paste briefs for worker chats). Run
-`node scripts/check-lanes.mjs --selftest` after editing `lanes.json`.
+Lane infrastructure (all tiers): `docs/AREA-MAP.md` (lane map + spine),
+`docs/lanes.json` (file→lane truth), `scripts/check-lanes.mjs`
+(`npm run check-lanes`; `plan <lanes...>`; `--selftest` after edits),
+`docs/EFFICIENCY-AUDIT.md` (cleanup backlog).
+
+**Standing instruction:** when Derek queues more than one update, classify each
+into a lane, run the planner, spawn Tier-1 workers for parallel-safe lanes, keep
+spine work in the Dispatcher, and report the wave plan before starting.
 
 ---
 
