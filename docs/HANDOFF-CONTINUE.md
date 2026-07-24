@@ -233,8 +233,51 @@ reliable; re-run before believing a weird worker failure.
 
 ## 1. Where we are right now (end of this run)
 
-The whole run was a **Character tool overhaul** plus a set of **dockable side-panel tools**
-and **toolbar/ruler polish**. Everything below is committed and pushed to `claude/v0_32`.
+### v4.24 — Derek's eight-update batch: ALL SHIPPED (this run's head)
+
+Derek queued eight numbered updates; two spawned worker chats never materialized, so
+the Dispatcher absorbed the whole batch. All eight are on `claude/v0_32`:
+
+1+2. **From Script tab auto-scans on entry; classifications + scan list persist in the
+   script file** (`_referredTags`/`_characterScan` in `composeSaveContent`, restored by
+   both load paths, cleared by every per-script reset). Root cause of the lost
+   classifications: they only rode collabSync's Yjs map, which never runs Local-only.
+   Same commit: **MenuBar's forked partial save-extras list is gone** (manual File>Save
+   was stripping `_shelf`/outline tabs/spell prefs until autosave healed it) — it now
+   delegates to `composeSaveContent`; the five hand-forked strip-destructures are one
+   `stripSaveExtras()`; import/new resets clear relationships/tags/scan too.
+3. **Essentials-only character cards** (name, photo, description, gender, age) + a
+   **Full Info** button opening the enlarge modal — the card's drifted inline copy of
+   every full section is deleted, `renderCharacterFields` is the one full renderer.
+5. **Cards view reserves the image footprint** when a character has no picture
+   (`.char-profile-image-placeholder`, 200px, monotone `FaRegUser`).
+4. **Three-layer color scheme for the Characters tool**: panel = `--fd-bg`, tab surface
+   (`.char-tab-surface`) + active tab = `--fd-navigator-bg`, cards = `--fd-dropdown-bg`
+   with a real outline (`color-mix` of muted text, fallback to `--fd-border`). Two
+   hardcoded light-theme overrides were flattening it — fixed; verified both themes.
+6. **Zoom % readout reserves constant width** (`.zoom-tb-value`, 5ch tabular-nums).
+7. **Scenes + Index Cards merged into ONE Scenes tool** with a persisted List/Cards
+   toggle (`scenesViewMode`; new `ScenesTool.tsx`). `'indexcards'` is a legacy ToolId:
+   `openTool` remaps it, `migrateToolOrder`/`migrateToolConfig` migrate persisted
+   viewState AND workspace snapshots, the old full-editor overlay is deleted, and the
+   scene filter/footer search hide in Cards view (they only drive the list).
+8. **Customize > Side Panels > Panel Name Style** — Title Case / ALL CAPS
+   (`panelNameCase`, both dock labels and window titles).
+
+Everything verified live via the Playwright recipe (§4) — including a full
+save→relaunch→restore round-trip for 1+2 against the localStorage fallback storage —
+plus 582 unit tests, tsc 0, release build green.
+
+> Driver gotcha learned here: after HMR-heavy sessions, `import('/src/...')` in
+> page.evaluate can load a SECOND module instance (the app graph uses `?t=` URLs) — a
+> ghost zustand store that makes reads/writes look broken. Restart vite before trusting
+> store reads from a driver.
+
+---
+
+The previous run was a **Character tool overhaul** plus a set of **dockable side-panel
+tools** and **toolbar/ruler polish**. Everything below is committed and pushed to
+`claude/v0_32`.
 
 ### Shipped this run (newest first)
 - **Character tool — file-tab tabs, Setup tab, clearer Update button, map layout**
