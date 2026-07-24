@@ -45,9 +45,12 @@ export const EMPTY_TITLE_PAGE: TitlePageData = {
 
 /** Derive the rendered credit lines from the structured fields. */
 export function deriveTitleFields(data: TitlePageData) {
-  const byLine = data.tpWrittenBy
-    ? (data.tpBasedOn ? `Written by ${data.tpWrittenBy}\n${data.tpBasedOn}` : `Written by ${data.tpWrittenBy}`)
-    : '';
+  // Each credit part stands on its own: a lone "based on" (no "written by")
+  // still reaches the page — it used to be dropped entirely.
+  const byParts: string[] = [];
+  if (data.tpWrittenBy) byParts.push(`Written by ${data.tpWrittenBy}`);
+  if (data.tpBasedOn) byParts.push(data.tpBasedOn);
+  const byLine = byParts.join('\n');
   const draftLine = (data.tpDraft || data.tpDraftDate) ? [data.tpDraft, data.tpDraftDate].filter(Boolean).join(' - ') : '';
   const copyrightLine = (data.tpCopyright || data.tpWgaRegistration) ? [data.tpCopyright, data.tpWgaRegistration].filter(Boolean).join('\n') : '';
   return { byLine, draftLine, copyrightLine };
@@ -91,7 +94,10 @@ export function titlePageBlockSpecs(data: TitlePageData, aboveLines = 0, belowLi
     blocks.push(text('title2', data.tpTitle2));
     used += titlePageBlockLines(data.tpTitle2, data.tpTitle2FontSize);
   }
-  if (byLine) { blocks.push(blank(), blank(), text('author', byLine)); used += 3; }
+  // 2 blank spacers + the byLine's REAL height (it renders one line per \n
+  // part — a flat +3 under-budgeted the two-line "Written by X\nBased on Y"
+  // case and pushed the bottom block one line past its slot).
+  if (byLine) { blocks.push(blank(), blank(), text('author', byLine)); used += 2 + byLine.split('\n').length; }
 
   const bottom: [string, string][] = [];
   if (draftLine) bottom.push(['draft', draftLine]);

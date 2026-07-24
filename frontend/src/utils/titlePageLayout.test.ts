@@ -62,10 +62,8 @@ describe('deriveTitleFields', () => {
       .toBe('Written by Derek Carl\nBased on a true story');
   });
 
-  it('KNOWN LIMITATION: basedOn without writtenBy is dropped entirely', () => {
-    // The byLine only exists when tpWrittenBy is set, so a lone tpBasedOn
-    // never reaches the page. Pinned as-is.
-    expect(deriveTitleFields(tp({ tpBasedOn: 'Based on a true story' })).byLine).toBe('');
+  it('a lone basedOn (no writtenBy) still reaches the page as the byLine', () => {
+    expect(deriveTitleFields(tp({ tpBasedOn: 'Based on a true story' })).byLine).toBe('Based on a true story');
   });
 
   it('joins draft + date with " - ", and either alone stands by itself', () => {
@@ -106,27 +104,26 @@ describe('titlePageBlockSpecs', () => {
       tpWgaRegistration: 'WGA #123456',
     });
     const blocks = titlePageBlockSpecs(data);
-    // used = 14 spacers + 1 title line + 3 (two blanks + author) = 18.
+    // used = 14 spacers + 1 title line + 2 blanks + 2 author lines (the byLine
+    // renders "Written by …" and the basedOn as TWO lines, and the budget now
+    // counts them) = 19.
     // bottomLines = draft(1) + contact(1) + copyright(2) = 4.
-    // gap = max(2, 50 - 18 - 4 - 0) = 28.
-    // KNOWN LIMITATION: the author budget is a flat +3 even though this
-    // byLine contains a '\n' (basedOn) and renders as TWO lines — the
-    // bottom block is under-budgeted by one line whenever basedOn is set.
+    // gap = max(2, 50 - 19 - 4 - 0) = 27.
     expect(fieldsOf(blocks)).toEqual([
       ...Array(14).fill('blank'),
       'title',
       'blank', 'blank', 'author',
-      ...Array(28).fill('blank'),
+      ...Array(27).fill('blank'),
       'draft', 'contact', 'copyright',
     ]);
-    expect(blocks).toHaveLength(49);
+    expect(blocks).toHaveLength(48);
     expect(blocks[17].text).toBe('Written by Derek Carl\nBased on a true story');
-    expect(blocks[46].text).toBe('First Draft - July 2026');
-    expect(blocks[47].text).toBe('derek@example.com');
-    expect(blocks[48].text).toBe('Copyright 2026 Derek Carl\nWGA #123456');
+    expect(blocks[45].text).toBe('First Draft - July 2026');
+    expect(blocks[46].text).toBe('derek@example.com');
+    expect(blocks[47].text).toBe('Copyright 2026 Derek Carl\nWGA #123456');
     // Non-title blocks carry only their field id.
     expect(blocks[17].attrs).toEqual({ field: 'author' });
-    expect(blocks[46].attrs).toEqual({ field: 'draft' });
+    expect(blocks[45].attrs).toEqual({ field: 'draft' });
   });
 
   it('tpNotes lands in the bottom block under the field id "date"', () => {
