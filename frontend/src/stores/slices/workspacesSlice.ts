@@ -1,8 +1,12 @@
 // v4.23: Workspaces slice — named saved layouts (View → Workspaces). save/apply
 // capture and restore chrome state (toolbar/menu/panels/theme) read through the
-// full state via set/get, so cross-slice reads keep working. Moved VERBATIM: the
-// known "apply doesn't take" bug is preserved here, not fixed, so this stays a
-// pure refactor. Investigate that bug separately in this one file.
+// full state via set/get, so cross-slice reads keep working.
+// v4.24: the "apply doesn't take" bug is FIXED — save captured panelSizeMode /
+// chromeCustomPx / theme but apply never restored them (drifted field lists);
+// apply now restores every captured field, routing theme through setTheme so
+// the DOM theme application actually runs. Keep save and apply in lockstep —
+// a field added to one MUST be added to the other (workspacesApply.test.ts
+// guards the round-trip).
 import type { StateCreator } from 'zustand';
 import { _vs, saveViewState } from '../viewState';
 import type { EditorState, WorkspaceSnapshot, ToolId } from '../editorStore';
@@ -69,9 +73,10 @@ export const createWorkspacesSlice: StateCreator<EditorState, [], [], Workspaces
     saveViewState({ workspaces, workspaceOrder, activeWorkspace: name });
     return { workspaces, workspaceOrder, activeWorkspace: name };
   }),
-  applyWorkspace: (name) => set((s) => {
+  applyWorkspace: (name) => {
+    const s = get();
     const snap = s.workspaces[name];
-    if (!snap) return {};
+    if (!snap) return;
     // v0.12 fields are optional (older snapshots): only restore when captured.
     const extras: Partial<EditorState> = {};
     if (snap.toolbarMode !== undefined) extras.toolbarMode = snap.toolbarMode;
@@ -86,6 +91,12 @@ export const createWorkspacesSlice: StateCreator<EditorState, [], [], Workspaces
     if (snap.menuBarHidden !== undefined) extras.menuBarHidden = snap.menuBarHidden;
     if (snap.menuMode !== undefined) extras.menuMode = snap.menuMode;
     if (snap.panelDividers !== undefined) extras.panelDividers = snap.panelDividers;
+    // THE "apply doesn't take" bug: save captured panelSizeMode, chromeCustomPx
+    // and theme (v0.78: the theme is part of a workspace) but apply never
+    // restored them — the two hand-maintained field lists had drifted, and the
+    // most VISIBLE parts of a workspace stayed put on apply.
+    if (snap.panelSizeMode !== undefined) extras.panelSizeMode = snap.panelSizeMode;
+    if (snap.chromeCustomPx !== undefined) extras.chromeCustomPx = snap.chromeCustomPx;
     saveViewState({
       workspaces: s.workspaces, activeWorkspace: name,
       toolConfig: snap.toolConfig, toolOrder: snap.toolOrder,
@@ -100,16 +111,22 @@ export const createWorkspacesSlice: StateCreator<EditorState, [], [], Workspaces
       ...(snap.toolbarMode !== undefined ? { toolbarMode: snap.toolbarMode } : {}),
       ...(snap.activeTool !== undefined ? { activeTool: snap.activeTool } : {}),
       ...(snap.activeToolRight !== undefined ? { activeToolRight: snap.activeToolRight } : {}),
+      ...(snap.panelSizeMode !== undefined ? { panelSizeMode: snap.panelSizeMode } : {}),
+      ...(snap.chromeCustomPx !== undefined ? { chromeCustomPx: snap.chromeCustomPx } : {}),
     });
-    return {
+    set({
       activeWorkspace: name,
       toolConfig: snap.toolConfig, toolOrder: snap.toolOrder,
       toolbarHiddenItems: snap.toolbarHiddenItems,
       toolbarPinnedTools: snap.toolbarPinnedTools as ToolId[],
       navigatorOpen: snap.navigatorOpen, shelfOpen: snap.shelfOpen, toolSizes: snap.toolSizes,
       ...extras,
-    };
-  }),
+    });
+    // Theme goes through setTheme, not a bare patch: it persists to its own
+    // localStorage key and runs applyThemeToDom (which also clears custom-theme
+    // overrides) — patching the value alone changes nothing on screen.
+    if (snap.theme !== undefined && snap.theme !== get().theme) get().setTheme(snap.theme);
+  },
   deleteWorkspace: (name) => set((s) => {
     const workspaces = { ...s.workspaces };
     delete workspaces[name];
