@@ -691,7 +691,16 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar.toolbar-ribbon .rib-tall[data-key="zoom"] .zoom-tb-caret { display: none; }
 /* v3.48, Derek: the % is edited inline in the bar. */
 .zoom-tb-mid { display: inline-flex; align-items: center; gap: 3px; }
-.zoom-tb-value { cursor: text; }
+/* v4.24, Derek: the % readout reserves the width of its widest value ("300%")
+   so 90% ↔ 100% doesn't reflow everything after the zoom control. tabular-nums
+   keeps the digits themselves equal-width. */
+.zoom-tb-value {
+  cursor: text;
+  display: inline-block;
+  min-width: 5ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
 .zoom-tb-input {
   width: 46px;
   padding: 1px 4px;
