@@ -1,6 +1,6 @@
 {
   "_comment": "Single source of truth for parallel-chat LANE OWNERSHIP. Read by scripts/check-lanes.mjs. Human-readable companion: docs/AREA-MAP.md. When files move, a lane is added, or the editorStore is sliced, update THIS file and the checker stays correct. Paths are repo-relative.",
-  "_storeField": "One of: 'editorStore:<domain>' = state still lives in the shared stores/editorStore.ts, so any two such lanes collide on that file UNTIL it is sliced. 'own:<file>' = has its own store (already independent). 'none' = no store state.",
+  "_storeField": "One of: 'editorStore:<domain>' = state still lives in the shared stores/editorStore.ts (today that is ONLY the chrome domain \u2014 toolbar/menus/customize \u2014 plus the misc 'tools' state), so any two such lanes collide on that file. 'own:<file>' = has its own store/slice (independent; the 10-domain slicing flipped character/scenes/beatboard/notes/tags/spelling to their slice files). 'none' = no store state.",
   "spine": {
     "_comment": "Shared files no lane owns. Only one chat edits a spine file at a time; registry edits (ToolId, ALL_TOOLS, uiIcons) stay small and append-only.",
     "files": [
@@ -22,7 +22,7 @@
   "lanes": {
     "character": {
       "title": "Character tool",
-      "store": "editorStore:characters",
+      "store": "own:stores/slices/characterSlice.ts",
       "files": [
         "frontend/src/components/CharacterProfiles.tsx",
         "frontend/src/components/CharacterScanTab.tsx",
@@ -39,7 +39,7 @@
     },
     "scenes": {
       "title": "Scenes / Outline / Index Cards",
-      "store": "editorStore:scenes",
+      "store": "own:stores/slices/sceneNavSlice.ts",
       "files": [
         "frontend/src/stores/slices/sceneNavSlice.ts",
         "frontend/src/components/SceneNavigator.tsx",
@@ -58,7 +58,7 @@
     },
     "beatboard": {
       "title": "Beat Board",
-      "store": "editorStore:beats",
+      "store": "own:stores/slices/beatsOutlineSlice.ts",
       "files": [
         "frontend/src/stores/slices/beatsOutlineSlice.ts",
         "frontend/src/components/BeatBoard.tsx",
@@ -67,7 +67,7 @@
     },
     "notes": {
       "title": "Notes / To-Do / Sticky",
-      "store": "editorStore:notes",
+      "store": "own:stores/slices/notesSlice.ts",
       "files": [
         "frontend/src/stores/slices/notesSlice.ts",
         "frontend/src/components/ScriptNotes.tsx",
@@ -136,7 +136,7 @@
     },
     "spelling": {
       "title": "Spelling / Grammar / Dictionaries",
-      "store": "editorStore:spellGrammar",
+      "store": "own:stores/slices/spellGrammarSlice.ts",
       "files": [
         "frontend/src/stores/slices/spellGrammarSlice.ts",
         "frontend/src/components/SpellCheckModal.tsx",
@@ -197,7 +197,7 @@
     },
     "tags": {
       "title": "Production tags / Locations",
-      "store": "editorStore:tags",
+      "store": "own:stores/slices/tagSlice.ts",
       "files": [
         "frontend/src/stores/slices/tagSlice.ts",
         "frontend/src/components/TagsPanel.tsx",

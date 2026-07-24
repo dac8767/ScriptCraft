@@ -240,8 +240,8 @@ function selftest(m) {
   assert('an extension file is spine (prefix)', isSpine('frontend/src/editor/extensions/Character.ts', m));
   assert('08 css shared by scenes+beatboard', sharedFiles('scenes', 'beatboard', m).length === 1);
   assert('scenes+beatboard conflict (shared css)', conflictReasons('scenes', 'beatboard', m, false).length > 0);
-  assert('character+notes conflict today (editorStore)', conflictReasons('character', 'notes', m, false).length > 0);
-  assert('character+notes independent once sliced', conflictReasons('character', 'notes', m, true).length === 0);
+  assert('character+notes independent by DEFAULT (their domains are sliced)', conflictReasons('character', 'notes', m, false).length === 0);
+  assert('toolbar+customize still conflict by default (chrome unsliced)', conflictReasons('toolbar', 'customize', m, false).length > 0);
   assert('toolbar+menus conflict even sliced (same chrome domain)', conflictReasons('toolbar', 'menus', m, true).length > 0);
   assert('character+notebook never conflict', conflictReasons('character', 'notebook', m, false).length === 0);
   assert('importexport+stats+collab all independent', conflictReasons('importexport', 'stats', m, false).length === 0 && conflictReasons('stats', 'collab', m, false).length === 0);
