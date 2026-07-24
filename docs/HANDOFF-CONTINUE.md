@@ -144,8 +144,14 @@ What landed:
   §4's filter only existed inline in fountainExporter. Now one shared predicate
   — **`utils/workingNotes.ts`** (`isWorkingNoteNode`) — is routed through by ALL
   FOUR exporters. Add a new working-note kind there and every path excludes it.
-  Fountain + FDX exclusion is unit-tested; **DOCX/PDF are binary — Derek should
-  manually export a script carrying `#`/`⚑`/`[ ]` lines and eyeball them.**
+  Fountain + FDX exclusion is unit-tested. **DOCX/PDF: VERIFIED live** — the real
+  export pipelines were driven in headless Chromium against the Vite dev server
+  (playwright-core, `page.evaluate` dynamic-importing `/src/utils/*.ts`, download
+  capture); the produced `.docx`'s `word/document.xml` and the `.pdf` (read back
+  through the app's own `parsePdfScreenplay`) contain none of the seeded working
+  notes while all real-content controls survived. Same technique works for any
+  "needs the running app" check (e.g. the dead-CSS pass): `npm run dev` +
+  playwright-core with `executablePath: /opt/pw-browsers/chromium`.
 - **Round-trip guards:** Fountain export→parse and FDX export→parse both
   round-trip the core elements under test — catches exporter/parser drift.
 - **Coverage added to previously-untested core logic:** `scriptStatistics`,
