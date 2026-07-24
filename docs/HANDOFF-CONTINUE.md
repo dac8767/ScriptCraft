@@ -191,6 +191,32 @@ tests flipped to assert the corrected behavior:
   setTheme so the DOM actually changes. Live-verified in headless Chromium.
   Keep save/apply in lockstep — workspacesApply.test.ts guards the round-trip.
 
+**Component-split phase (started 2026-07-24, Derek: "start the splits").**
+The verification pattern for EVERY extraction: gates (tsc/test/build) + a live
+smoke in headless Chromium driving the real surface (the recipe in the export
+section above). Four steps landed, each its own commit:
+
+- `CharacterScanTab.tsx` (1e72eec) — the From Script tab out of
+  CharacterProfiles; smoke ran a real scan.
+- `CharacterRelationshipsTab.tsx` (8688334) — List/Map tab; the map-toolbar
+  portal slot state moved with it; smoke added a relationship + mounted the map.
+- `DiagnosticsDialog.tsx` (ac335b0) — owns its collect-on-mount lifecycle;
+  MenuBar keeps only the open flag. NOTE: it lives under Help → Developer ▸.
+- `AboutDialog.tsx` (9a03c5b) — What's New hands off via onShowChangelog.
+
+Running totals: CharacterProfiles 1767 → 1643, MenuBar 2824 → 2599.
+Next in the queue: MenuBar's Changelog dialog (state cluster around
+changelogOpen/clKeyword/clTag), then Toolbar's 32-case render switch — do THAT
+one as thin-out-the-big-cases-first (zoom, fontSize, insertTable each become
+components), NOT a one-shot switch→map move: the cases lean on ~30 closure
+variables and a mega-move invites transcription bugs. ScreenplayEditor hooks
+remain the riskiest; live-smoke each one.
+
+Also verified this run: the Design tool's Menu Bar items (Item spacing,
+Dropdown min width) work end-to-end — store→pixels, panel number inputs, real
+slider drag, reload persistence — could not reproduce Derek's "never worked";
+ask him for exact repro if he still sees it.
+
 **Still open (needs Derek):**
 - The Design-panel options that never worked — need Derek's list of WHICH
   options, then same root-cause treatment.
