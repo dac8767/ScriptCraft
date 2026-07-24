@@ -61,10 +61,13 @@ export async function downloadOdraft(
   await saveFile(text, filename, [{ name: 'ScriptCraft', extensions: ['odraft'] }]);
 }
 
-/** Parse an .odraft JSON string back into meta + content. */
+/** The newest .odraft format revision this build understands. */
+const ODRAFT_VERSION = 1;
+
+/** Parse an .odraft JSON string back into meta + content (+ any bundled themes). */
 export function parseOdraft(
   jsonText: string,
-): { meta: { title: string; author: string; color: string; page_count: number }; content: Record<string, unknown> } {
+): { meta: { title: string; author: string; color: string; page_count: number }; content: Record<string, unknown>; themes?: unknown[] } {
   let data: any;
   try {
     data = JSON.parse(jsonText);
@@ -72,20 +75,37 @@ export function parseOdraft(
     throw new Error('Invalid .odraft file: not valid JSON');
   }
 
+  // `null` is valid JSON — without this guard it used to escape the catch above
+  // and crash on `data.format` with a raw TypeError instead of a friendly toast.
+  if (data === null || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('Invalid .odraft file: unrecognized format');
+  }
   if (data.format !== 'opendraft-script') {
     throw new Error('Invalid .odraft file: unrecognized format');
   }
-  if (typeof data.odraft_version !== 'number') {
+  // Tolerate a hand-edited quoted version ("1"); reject anything non-numeric.
+  const version = typeof data.odraft_version === 'string' && /^\d+$/.test(data.odraft_version)
+    ? Number(data.odraft_version)
+    : data.odraft_version;
+  if (typeof version !== 'number' || !Number.isInteger(version) || version < 1) {
     throw new Error('Invalid .odraft file: missing version');
+  }
+  if (version > ODRAFT_VERSION) {
+    throw new Error('This .odraft file was made by a newer version of ScriptCraft — update the app to open it');
   }
 
   return {
     meta: {
-      title: data.meta?.title || 'Untitled',
+      // `??` not `||`: a deliberately-empty title round-trips as '' (the header
+      // promises lossless round-tripping); only a MISSING title falls back.
+      title: data.meta?.title ?? 'Untitled',
       author: data.meta?.author || '',
       color: data.meta?.color || '',
       page_count: data.meta?.page_count || 0,
     },
     content: data.content || {},
+    // v0.82 travel-with-file themes: export writes them, so parse must hand
+    // them back (ThemesTab used to re-parse the raw JSON to get at them).
+    ...(Array.isArray(data.themes) && data.themes.length ? { themes: data.themes } : {}),
   };
 }

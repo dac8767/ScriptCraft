@@ -133,24 +133,22 @@ describe('exportOdraft -> parseOdraft round-trip', () => {
     expect(parseOdraft(text).meta.page_count).toBe(0);
   });
 
-  // KNOWN LIMITATION: parseOdraft uses `|| 'Untitled'`, so a script whose title is
-  // the empty string does NOT round-trip — export writes "" and parse reads back
-  // 'Untitled'. The module header's "lossless round-tripping" claim has this hole.
-  it('turns an empty-string title into "Untitled" (lossy, pinned as-is)', async () => {
+  it('round-trips an empty-string title losslessly (?? fallback fires only when MISSING)', async () => {
     const text = await exportOdraft(meta({ title: '' }), CONTENT).text();
-    expect(parseOdraft(text).meta.title).toBe('Untitled');
-    // ...while empty author/color survive, because their fallbacks are also ''.
+    expect(parseOdraft(text).meta.title).toBe('');
+    // A file with no title at all still gets the friendly default.
+    expect(parseOdraft('{"format":"opendraft-script","odraft_version":1}').meta.title).toBe('Untitled');
+    // Empty author/color survive as before.
     const text2 = await exportOdraft(meta({ author: '', color: '' }), CONTENT).text();
     expect(parseOdraft(text2).meta).toEqual({ title: 'Cold Open', author: '', color: '', page_count: 12 });
   });
 
-  // KNOWN LIMITATION: exportOdraft writes themes into the file, but parseOdraft
-  // never returns them — the import-themes flow must re-parse the JSON itself.
-  it('drops themes on parse even though export wrote them', async () => {
+  it('hands bundled themes back on parse (v0.82 travel-with-file round-trip)', async () => {
     const text = await exportOdraft(meta(), CONTENT, [{ name: 'Noir' }]).text();
-    const result = parseOdraft(text);
-    expect('themes' in result).toBe(false);
-    expect(Object.keys(result)).toEqual(['meta', 'content']);
+    expect(parseOdraft(text).themes).toEqual([{ name: 'Noir' }]);
+    // No themes in the file → no themes key in the result.
+    const bare = await exportOdraft(meta(), CONTENT).text();
+    expect('themes' in parseOdraft(bare)).toBe(false);
   });
 });
 
@@ -160,10 +158,8 @@ describe('parseOdraft on malformed / legacy input', () => {
     expect(() => parseOdraft('')).toThrow('Invalid .odraft file: not valid JSON');
   });
 
-  // KNOWN LIMITATION: `null` IS valid JSON, so it survives JSON.parse — then
-  // `data.format` crashes with a raw TypeError instead of the friendly error.
-  it('crashes with a TypeError on the JSON literal null (pinned as-is)', () => {
-    expect(() => parseOdraft('null')).toThrow(TypeError);
+  it('rejects the JSON literal null with the friendly error (used to raw-TypeError)', () => {
+    expect(() => parseOdraft('null')).toThrow('Invalid .odraft file: unrecognized format');
   });
 
   it('rejects valid JSON that is not an opendraft-script envelope', () => {
@@ -179,21 +175,25 @@ describe('parseOdraft on malformed / legacy input', () => {
     }
   });
 
-  it('rejects a missing or non-numeric version (format check runs first)', () => {
+  it('rejects a missing or non-numeric version, but tolerates a hand-quoted "1"', () => {
     expect(() => parseOdraft('{"format":"opendraft-script"}')).toThrow('Invalid .odraft file: missing version');
-    // A hand-edited file with a STRING version is treated as missing.
-    expect(() => parseOdraft('{"format":"opendraft-script","odraft_version":"1"}')).toThrow(
+    // A hand-edited file with a quoted integer version is coerced, not rejected.
+    expect(parseOdraft('{"format":"opendraft-script","odraft_version":"1","content":{"a":1}}').content).toEqual({ a: 1 });
+    // Non-integer strings are still rejected.
+    expect(() => parseOdraft('{"format":"opendraft-script","odraft_version":"one"}')).toThrow(
       'Invalid .odraft file: missing version',
     );
   });
 
-  // KNOWN LIMITATION: there is no known-version gate — ANY number passes, so a
-  // future v999 file (or a nonsense v0) parses silently instead of warning.
-  it('accepts any numeric odraft_version, including 999 and 0', () => {
-    for (const v of [999, 0]) {
-      const result = parseOdraft(JSON.stringify({ format: 'opendraft-script', odraft_version: v, content: { a: 1 } }));
-      expect(result.content).toEqual({ a: 1 });
-    }
+  it('gates unknown versions: v0 is invalid, a future version asks for an app update', () => {
+    expect(() => parseOdraft('{"format":"opendraft-script","odraft_version":0}')).toThrow(
+      'Invalid .odraft file: missing version',
+    );
+    expect(() => parseOdraft('{"format":"opendraft-script","odraft_version":999}')).toThrow(
+      /newer version of ScriptCraft/,
+    );
+    // The current version still parses.
+    expect(parseOdraft('{"format":"opendraft-script","odraft_version":1,"content":{"a":1}}').content).toEqual({ a: 1 });
   });
 
   it('defaults every field when meta and content are missing entirely', () => {
