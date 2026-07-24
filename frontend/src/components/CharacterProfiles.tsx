@@ -1159,11 +1159,10 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           legacy slide-in overlay (which has no frame). */}
       {(isFullscreen || !embedded) && (
       <div className={`char-profiles-header${isFullscreen ? ' char-fs-header' : ''}`}>
-        <span className="char-profiles-title">Characters</span>
-        <span className="char-profiles-count">{allCharacters.length}</span>
-        {/* v4.18: in fullscreen the Profiles/Map tabs sit on the header row,
-            50px past the title; the right side carries the tab's actions and
-            the close X. */}
+        {/* v4.24 batch-v3 #7 (Derek): fullscreen header — tabs on the LEFT,
+            "CHARACTERS" centered, actions right (3-zone flex; see the
+            .char-fs-header rules). The Cards/List toggle moved down to the
+            Profiles toolbar row (#5). */}
         {isFullscreen && (
           <div className="char-fs-header-tabs">
             <button className={`char-profiles-tab${activeTab === 'profiles' ? ' active' : ''}`} onClick={() => setActiveTab('profiles')}>Profiles</button>
@@ -1171,14 +1170,10 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             <button className={`char-profiles-tab${activeTab === 'setup' ? ' active' : ''}`} onClick={() => setActiveTab('setup')}>From Script</button>
           </div>
         )}
+        <span className="char-profiles-title">Characters</span>
+        <span className="char-profiles-count">{allCharacters.length}</span>
         {isFullscreen && (
           <div className="char-fs-header-actions">
-            {activeTab === 'profiles' && (
-              <div className="char-fs-view-toggle">
-                <button className={`char-fs-view-btn${fsViewMode === 'cards' ? ' active' : ''}`} onClick={() => setFsViewMode('cards')}>Cards</button>
-                <button className={`char-fs-view-btn${fsViewMode === 'list' ? ' active' : ''}`} onClick={() => setFsViewMode('list')}>List</button>
-              </div>
-            )}
             {activeTab === 'relationships' && (
               <div className="char-fs-view-toggle">
                 <button className={`char-fs-view-btn${relViewMode === 'list' ? ' active' : ''}`} onClick={() => setRelViewMode('list')}>List</button>
@@ -1279,6 +1274,14 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             <option value="appearance">Appearance</option>
           </select>
         </div>
+        {/* v4.24 batch-v3 #5 (Derek): the Cards/List toggle lives on this row
+            now, far right — it left the fullscreen header. */}
+        {isFullscreen && (
+          <div className="char-fs-view-toggle char-toolbar-view-toggle">
+            <button className={`char-fs-view-btn${fsViewMode === 'cards' ? ' active' : ''}`} onClick={() => setFsViewMode('cards')}>Cards</button>
+            <button className={`char-fs-view-btn${fsViewMode === 'list' ? ' active' : ''}`} onClick={() => setFsViewMode('list')}>List</button>
+          </div>
+        )}
       </div>
 
       {/* Character list */}

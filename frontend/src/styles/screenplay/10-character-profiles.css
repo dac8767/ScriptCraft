@@ -270,6 +270,17 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
+/* v4.25 batch-v3 #1, Derek: Characters' header extras (count + fullscreen)
+   sit at the RIGHT of the window/dock title bar, against the close button.
+   Scoped by :has so other tools' extras keep their places. */
+.tool-window-header-extra:has(.char-hdr-count),
+.tool-inline-header-extra:has(.char-hdr-count) {
+  margin-left: auto;
+  display: inline-flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
 .char-profiles-fullscreen-btn {
   background: none;
   border: none;
@@ -294,13 +305,17 @@
   padding-bottom: 0;
   min-height: 45px;
 }
+/* v4.25 batch-v3 #7, Derek: 3-zone header — tabs LEFT (this zone), title
+   centered between the two equal flex zones, actions right. */
 .char-fs-header-tabs {
   display: flex;
+  flex: 1 1 0;
+  min-width: 0;
   align-self: stretch;     /* reach the header's bottom edge */
   align-items: flex-end;   /* tab bottoms sit on it (was: centered pills) */
   gap: 4px;
-  margin-left: 42px;   /* + the header's 8px gap ≈ 50px from the title */
 }
+.char-fs-header .char-profiles-title { flex: 0 0 auto; }
 /* v4.23, Derek: same file-tab shape in the fullscreen header. */
 .char-fs-header-tabs .char-profiles-tab {
   background: var(--fd-overlay-light, rgba(255, 255, 255, 0.04));
@@ -323,8 +338,10 @@
   border-bottom: 1px solid var(--fd-navigator-bg);
 }
 .char-fs-header-actions {
-  margin-left: auto;
+  flex: 1 1 0;            /* the right zone of the 3-zone header (batch-v3 #7) */
+  min-width: 0;
   display: flex;
+  justify-content: flex-end;
   align-items: center;
   gap: 12px;
 }
@@ -375,6 +392,9 @@
   width: 150px;
   height: 28px;
 }
+/* v4.25 batch-v3 #6, Derek: double the sort dropdown in fullscreen (the side
+   panel keeps 150px — a 300px control wouldn't fit its 300px width). */
+.char-profiles-fullscreen .char-profiles-toolbar .char-sort-select { width: 300px; }
 .char-profiles-build-btn {
   padding: 0 10px;
   height: 28px;
@@ -1653,6 +1673,12 @@
    gender/age/sexuality, custom fields — instead of the old info|media split. */
 .char-profile-detail-stacked {
   display: block;
+}
+/* v4.25 batch-v3 #3, Derek: display:block spaces the stacked rows by ad-hoc
+   margins, and the description box had NONE — it sat flush against the
+   gender/age row while other blocks get ~10px. Match the photo-row rhythm. */
+.char-profile-detail-stacked .mini-rt-wrapper {
+  margin-bottom: 10px;
 }
 .char-profile-photo-row {
   display: flex;
