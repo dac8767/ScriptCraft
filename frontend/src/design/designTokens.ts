@@ -116,12 +116,48 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'toolWinRadius', label: 'Tool window radius', cssVar: '--dz-toolwin-radius', unit: 'px', min: 0, max: 20, step: 1, def: 8 },
       { id: 'toolWinHeaderPad', label: 'Tool window header padding', cssVar: '--dz-toolwin-head-pad', unit: 'px', min: 2, max: 20, step: 1, def: 8 },
       { id: 'toolWinTitleFont', label: 'Tool window title font', cssVar: '--dz-toolwin-title-font', unit: 'px', min: 9, max: 20, step: 0.5, def: 12 },
+    ],
+  },
+  {
+    // v4.26, Derek: "as many formatting options from the character window as
+    // possible" — the character tool's dimensions get their own group. The two
+    // v4.22/v4.23 knobs moved here from Panels & Windows; their ids and cssVars
+    // are persisted keys (designVars / users' saved overrides) and stayed
+    // IDENTICAL — only the grouping and label wording changed.
+    id: 'characters',
+    label: 'Characters',
+    tokens: [
+      { id: 'charCardRadius', label: 'Card corner radius', cssVar: '--dz-char-card-radius', unit: 'px', min: 0, max: 20, step: 1, def: 6 },
+      { id: 'charCardBorder', label: 'Card outline width', cssVar: '--dz-char-card-border', unit: 'px', min: 0, max: 6, step: 1, def: 1 },
       // v4.22, Derek: spacing of the character card header's right-side items
       // (line/scene count, the % ring, the expand button).
-      { id: 'charHeaderGap', label: 'Character header item spacing', cssVar: '--dz-char-header-gap', unit: 'px', min: 0, max: 32, step: 1, def: 8 },
+      { id: 'charHeaderGap', label: 'Header item spacing', cssVar: '--dz-char-header-gap', unit: 'px', min: 0, max: 32, step: 1, def: 8 },
       // v4.23, Derek: vertical gap between a character card's field rows — dial
       // it down to pack the card into a small window.
-      { id: 'charFieldGap', label: 'Character field row spacing', cssVar: '--dz-char-field-gap', unit: 'px', min: 0, max: 24, step: 1, def: 8 },
+      { id: 'charFieldGap', label: 'Field row spacing', cssVar: '--dz-char-field-gap', unit: 'px', min: 0, max: 24, step: 1, def: 8 },
+      { id: 'charDetailPad', label: 'Card detail padding', cssVar: '--dz-char-detail-pad', unit: 'px', min: 0, max: 24, step: 1, def: 8,
+        hint: 'Around the expanded card body — sides/bottom keep their +2/+4px rhythm.' },
+      { id: 'charInputH', label: 'Input field height', cssVar: '--dz-char-input-h', unit: 'px', min: 20, max: 40, step: 1, def: 28,
+        hint: 'Each field keeps its own built-in height until this moves; then all match.' },
+      // Drives the no-photo slot exactly AND caps the photo max-heights (the
+      // stacked-layout photo falls back to its own 360px until the knob moves).
+      { id: 'charImageH', label: 'Image slot height', cssVar: '--dz-char-image-h', unit: 'px', min: 60, max: 480, step: 5, def: 200 },
+      { id: 'charCardMinW', label: 'Cards view — min card width', cssVar: '--dz-char-card-minw', unit: 'px', min: 240, max: 520, step: 10, def: 320 },
+      { id: 'charCardMinH', label: 'Cards view — min card height', cssVar: '--dz-char-card-minh', unit: 'px', min: 200, max: 800, step: 10, def: 500 },
+      { id: 'charDescLines', label: 'Cards view — description lines', cssVar: '--dz-char-desc-lines', unit: '', min: 1, max: 6, step: 1, def: 2,
+        hint: 'Lines the description shows before clamping; clicking in still lifts it.' },
+      // Store-bound (menuSpacing precedent): the size the Characters window
+      // opens at, riding the SAME toolSizes entry the window's own resize drag
+      // persists — one system, no second source. 420×360 mirrors ALL_TOOLS'
+      // defaultSize for 'characters' (a test greps ToolDock.tsx to keep them
+      // equal). Setting one dimension carries the other over unchanged.
+      { id: 'charWinW', label: 'Window default width', unit: 'px', min: 280, max: 900, step: 10, def: 420,
+        hint: 'Dragging the window edge updates this too.',
+        store: { get: (s) => s.toolSizes.characters?.w ?? 420,
+                 set: (v) => { const st = useEditorStore.getState(); st.setToolSize('characters', v, st.toolSizes.characters?.h ?? 360); } } },
+      { id: 'charWinH', label: 'Window default height', unit: 'px', min: 240, max: 800, step: 10, def: 360,
+        store: { get: (s) => s.toolSizes.characters?.h ?? 360,
+                 set: (v) => { const st = useEditorStore.getState(); st.setToolSize('characters', st.toolSizes.characters?.w ?? 420, v); } } },
     ],
   },
   {

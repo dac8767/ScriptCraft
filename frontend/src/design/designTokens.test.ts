@@ -7,7 +7,9 @@ import {
   DESIGN_TOKENS,
   applyDesignVars,
   buildOverrideCss,
+  designToken,
 } from './designTokens';
+import { useEditorStore } from '../stores/editorStore';
 
 // Concatenate every screenplay stylesheet once — the source of truth for what
 // the running app actually consumes.
@@ -131,5 +133,69 @@ describe('groups', () => {
   it('flattened tokens equal the sum of group tokens', () => {
     const summed = DESIGN_GROUPS.reduce((n, g) => n + g.tokens.length, 0);
     expect(DESIGN_TOKENS.length).toBe(summed);
+  });
+});
+
+// v4.26: the Characters group — the character tool's formatting knobs.
+// (The generic suites above already cover these tokens' uniqueness, live
+// consumption, and fallback==default; here we pin the character-specific
+// contracts that those can't see.)
+describe('characters group', () => {
+  const group = DESIGN_GROUPS.find((g) => g.id === 'characters');
+
+  it('exists and carries the expected knobs', () => {
+    expect(group).toBeTruthy();
+    expect(group!.tokens.map((t) => t.id)).toEqual([
+      'charCardRadius', 'charCardBorder', 'charHeaderGap', 'charFieldGap',
+      'charDetailPad', 'charInputH', 'charImageH', 'charCardMinW',
+      'charCardMinH', 'charDescLines', 'charWinW', 'charWinH',
+    ]);
+  });
+
+  // charHeaderGap/charFieldGap moved here from Panels & Windows (v4.22/v4.23
+  // origins). Their ids are users' persisted designVars keys and their cssVars
+  // are what the stylesheet reads — BOTH must survive any future regrouping,
+  // or saved overrides silently orphan.
+  it('kept the moved tokens’ ids and cssVars identical', () => {
+    expect(designToken('charFieldGap')?.cssVar).toBe('--dz-char-field-gap');
+    expect(designToken('charHeaderGap')?.cssVar).toBe('--dz-char-header-gap');
+  });
+
+  it('description clamp is unitless — -webkit-line-clamp takes a bare number', () => {
+    const t = designToken('charDescLines')!;
+    expect(t.unit).toBe('');
+    applyDesignVars({ charDescLines: 4 });
+    expect(document.documentElement.style.getPropertyValue('--dz-char-desc-lines')).toBe('4');
+    applyDesignVars({});
+  });
+
+  // The window-size defaults must equal ALL_TOOLS' defaultSize for
+  // 'characters', or the sliders' reset target drifts from what the window
+  // actually opens at. Pinned by grepping the ToolDock SOURCE — importing the
+  // component would drag the whole UI graph into this unit test.
+  it('window-size defaults match the characters defaultSize in ToolDock', () => {
+    const src = readFileSync(join(__dirname, '..', 'components', 'ToolDock.tsx'), 'utf8');
+    const m = src.match(/id:\s*'characters'[\s\S]*?defaultSize:\s*\{\s*w:\s*(\d+),\s*h:\s*(\d+)\s*\}/);
+    expect(m, "ALL_TOOLS entry for 'characters' not found in ToolDock.tsx").toBeTruthy();
+    expect(designToken('charWinW')!.def).toBe(parseInt(m![1], 10));
+    expect(designToken('charWinH')!.def).toBe(parseInt(m![2], 10));
+  });
+
+  // Store-bound window tokens: with no stored size they read the built-in
+  // default; setting one dimension writes through setToolSize and carries the
+  // other dimension over unchanged (the same entry the resize drag persists).
+  it('window tokens read the store and write through setToolSize', () => {
+    const winW = designToken('charWinW')!;
+    const winH = designToken('charWinH')!;
+    expect(useEditorStore.getState().toolSizes.characters).toBeUndefined();
+    expect(winW.store!.get(useEditorStore.getState())).toBe(winW.def);
+    expect(winH.store!.get(useEditorStore.getState())).toBe(winH.def);
+
+    winW.store!.set(500);
+    expect(useEditorStore.getState().toolSizes.characters).toEqual({ w: 500, h: winH.def });
+    winH.store!.set(480);
+    expect(useEditorStore.getState().toolSizes.characters).toEqual({ w: 500, h: 480 });
+    expect(winW.store!.get(useEditorStore.getState())).toBe(500);
+    expect(winH.store!.get(useEditorStore.getState())).toBe(480);
   });
 });

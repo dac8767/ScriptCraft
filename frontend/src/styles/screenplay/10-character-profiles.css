@@ -59,13 +59,14 @@
 }
 .char-profiles-fullscreen .char-profiles-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  /* v4.26: Cards-view min card width/height are Design knobs */
+  grid-template-columns: repeat(auto-fill, minmax(var(--dz-char-card-minw, 320px), 1fr));
   gap: 8px;
   align-content: start;
   padding: 12px;
 }
 .char-profiles-fullscreen .char-profile-card {
-  min-height: 500px;
+  min-height: var(--dz-char-card-minh, 500px);
 }
 /* v4.20, Derek: the list view matches the app theme (was a hardcoded #d5d5d5
    "page" that clashed with the dark theme — and leaked onto the Relationship
@@ -359,7 +360,7 @@
 }
 .char-profiles-search-input {
   width: 100%;
-  height: 28px;
+  height: var(--dz-char-input-h, 28px); /* v4.26: shares the toolbar row with Sort — must track it */
   background: #222;
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
@@ -390,7 +391,7 @@
 .char-profiles-toolbar .char-sort-select {
   flex: 0 0 auto;
   width: 150px;
-  height: 28px;
+  height: var(--dz-char-input-h, 28px); /* v4.26: field-height Design knob */
 }
 /* v4.25 batch-v3 #6, Derek: double the sort dropdown in fullscreen (the side
    panel keeps 150px — a 300px control wouldn't fit its 300px width). */
@@ -425,7 +426,7 @@
 }
 .char-sort-select {
   flex: 1;
-  height: 22px;
+  height: var(--dz-char-input-h, 22px); /* v4.26: field-height Design knob */
   background: #222;
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
@@ -561,7 +562,9 @@
 }
 .char-rel-item { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .char-rel-field {
-  height: 28px; background: var(--fd-input-bg, #222); color: var(--fd-text);
+  /* v4.26: field-height Design knob — the Relationships tab is part of the
+     character tool, so its fields follow the same height as the card inputs */
+  height: var(--dz-char-input-h, 28px); background: var(--fd-input-bg, #222); color: var(--fd-text);
   border: 1px solid var(--fd-border); border-radius: 4px; font-size: 12px; padding: 0 6px; outline: none;
 }
 .char-rel-field:focus { border-color: var(--fd-accent); }
@@ -593,9 +596,11 @@
    color-mix falls back to the plain border on older WebKit. */
 .char-profile-card {
   background: var(--fd-dropdown-bg);
-  border: 1px solid var(--fd-border);
+  /* v4.26: outline width + corner radius are Design knobs (the border-color
+     override below only touches color — the shorthand's var width holds). */
+  border: var(--dz-char-card-border, 1px) solid var(--fd-border);
   border-color: color-mix(in srgb, var(--fd-text-muted) 45%, transparent);
-  border-radius: 6px;
+  border-radius: var(--dz-char-card-radius, 6px);
   margin-bottom: 4px;
   overflow: hidden;
   transition: border-color .15s;
@@ -818,7 +823,12 @@
 }
 /* Expanded detail panel */
 .char-profile-detail {
-  padding: 8px 10px 12px;
+  /* v4.26: ONE Design knob scales the detail padding; the +2/+4 offsets keep
+     the original 8/10/12 top/sides/bottom rhythm at every value (a single var
+     couldn't otherwise preserve today's asymmetric padding at its default). */
+  padding: var(--dz-char-detail-pad, 8px)
+           calc(var(--dz-char-detail-pad, 8px) + 2px)
+           calc(var(--dz-char-detail-pad, 8px) + 4px);
   border-top: 1px solid var(--fd-border);
   display: flex;
   flex-direction: column;
@@ -827,10 +837,12 @@
   gap: var(--dz-char-field-gap, 8px);
 }
 /* v4.24 batch 5: no image attached — reserve the same footprint a photo
-   would take, so cards in Cards view keep a uniform layout. */
+   would take, so cards in Cards view keep a uniform layout.
+   v4.26: the slot height is a Design knob (--dz-char-image-h); the photo
+   max-height rules read the SAME var, so slot and photo track together. */
 .char-profile-image-placeholder {
   width: 100%;
-  height: 200px;
+  height: var(--dz-char-image-h, 200px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -860,7 +872,9 @@
 .char-profile-detail-fs .mini-rt-editor {
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  /* v4.26: clamp line count is a Design knob — -webkit-line-clamp takes a bare
+     number, so the token is unitless. */
+  -webkit-line-clamp: var(--dz-char-desc-lines, 2);
   overflow: hidden;
   /* -webkit-box clamp paints overflow text into the padding box — swap the
      bottom padding for margin (margins never paint content) so no ghost
@@ -909,7 +923,11 @@
   flex-direction: column;
 }
 .char-profile-input {
-  height: 26px;
+  /* v4.26: every character-tool field height rides ONE Design knob
+     (--dz-char-input-h). Each spot keeps its own built-in fallback (26 here,
+     28 toolbar search/sort + relationship fields, 22 legacy sort bar) so
+     nothing shifts until the slider moves — then they all match. */
+  height: var(--dz-char-input-h, 26px);
   background: var(--fd-input-bg);
   color: var(--fd-text);
   border: 1px solid transparent;
@@ -1341,7 +1359,7 @@
 }
 .char-profile-image-main {
   width: 100%;
-  max-height: 200px;
+  max-height: var(--dz-char-image-h, 200px); /* v4.26: image-slot Design knob */
   object-fit: cover;
   display: block;
   cursor: pointer;
@@ -1604,7 +1622,9 @@
 
 /* === Role select === */
 .char-profile-select {
-  height: 26px;
+  /* v4.26: rides the shared field-height knob — it sits in the same meta rows
+     as .char-profile-input, so the two must track or the row misaligns. */
+  height: var(--dz-char-input-h, 26px);
   background: var(--fd-input-bg);
   color: var(--fd-text);
   border: 1px solid transparent;
@@ -1698,7 +1718,11 @@
 .char-profile-image-display .char-profile-image-main {
   display: block;
   width: 100%;
-  max-height: 360px;
+  /* v4.26: this rule SHADOWS the base .char-profile-image-main max-height in
+     the stacked layout (higher specificity), so it must read the same Design
+     knob or the slider would be a dead no-op for actual photos. Its own 360px
+     fallback keeps today's roomier stacked look until the knob moves. */
+  max-height: var(--dz-char-image-h, 360px);
   object-fit: contain;
   cursor: zoom-in;
 }
