@@ -146,8 +146,9 @@ export function detectTemplateConflicts(
     const typeId = getElementTypeId(node);
     if (!typeId) return;
 
-    // Check 1: disabled element type
-    if (disabledSet.has(typeId) || (!template.rules[typeId] && node.type.name !== 'doc')) {
+    // Check 1: disabled element type (getElementTypeId already returns null
+    // for the doc node, so no doc guard is needed here)
+    if (disabledSet.has(typeId) || !template.rules[typeId]) {
       // Element type is disabled or not in template at all
       const existing = disabledCounts.get(typeId);
       const label = template.rules[typeId]?.label
@@ -235,10 +236,16 @@ export function resolveTemplateConflicts(
   const { tr } = editor.state;
   const isEnforce = template.mode === 'enforce';
 
-  // Build lookup maps
+  // Build lookup maps. A replacement target that is not an ENABLED rule is
+  // skipped: with an all-disabled template the detect fallback degrades to
+  // 'action' even though action isn't in the template, and replacing into it
+  // would just re-flag on the next detect — churning forever instead of
+  // honestly leaving the conflict for the dialog to report.
   const replacementMap = new Map<string, string>();
   for (const c of conflicts.disabledElements) {
-    replacementMap.set(c.elementType, c.replacementType);
+    if (template.rules[c.replacementType]?.enabled) {
+      replacementMap.set(c.elementType, c.replacementType);
+    }
   }
 
   const reformatSet = new Set<string>();
@@ -307,9 +314,14 @@ export function resolveTemplateConflicts(
       }
     }
 
-    // Pass 2: Mark removal
-    if (op.action === 'reformat' || op.action === 'both') {
-      const effectiveTypeId = (op.action === 'both') ? op.replacementType! : op.typeId;
+    // Pass 2: Mark removal. Plain 'replace' ops run it too, against the
+    // REPLACEMENT type's locks: detect skips mark-scanning on disabled
+    // elements (and the user can change the replacement in the dialog), so
+    // this is the only place that can guarantee the retyped node actually
+    // conforms — without it, a disabled element carrying locked marks
+    // resolved into a fresh violation on the next detect, forever.
+    {
+      const effectiveTypeId = (op.action === 'replace' || op.action === 'both') ? op.replacementType! : op.typeId;
       const locked = lockedMap.get(effectiveTypeId);
       if (!locked) continue;
 

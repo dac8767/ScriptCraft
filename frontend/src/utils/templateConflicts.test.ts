@@ -10,8 +10,9 @@
  *    violations (allowFormatOverride:false locks everything; formatOverride
  *    marks are ALWAYS flagged, even on free-formatting elements).
  *  - detect → resolve as a pair: replaced nodes, stripped marks, and that a
- *    second detect comes back clean — plus the one case where it does NOT
- *    (see KNOWN LIMITATION below).
+ *    second detect always comes back clean — including replacement into a
+ *    locked type (resolve strips the replacement's locked marks itself) and
+ *    the degenerate all-disabled template (resolve declines, no churn).
  *
  * No DOM needed: the functions only touch editor.state / editor.schema /
  * editor.view.dispatch, so a real ProseMirror doc behind a tiny fake Editor
@@ -203,18 +204,20 @@ describe('detectTemplateConflicts — replacement fallbacks', () => {
     ]);
   });
 
-  it("falls back to 'action' when no rule is enabled, even though action is not in the template", () => {
-    // KNOWN LIMITATION: with zero enabled rules the replacement is the
-    // hardcoded 'action', which this template does not even contain — a
-    // resolve would convert lyrics into an element the template still
-    // treats as unknown. Degenerate templates (nothing enabled) never
-    // converge. Pinning actual behavior.
+  it("falls back to 'action' when no rule is enabled — and resolve declines it as a no-op", () => {
+    // With zero enabled rules the detect fallback degrades to the hardcoded
+    // 'action', which this template does not even contain. resolve now skips
+    // replacements whose target is not an enabled rule, so the degenerate
+    // all-disabled template reports its conflicts but no longer churns the
+    // doc into an element the template still treats as unknown.
     const tpl = template('override', [rule('lyrics', 'Lyrics', { enabled: false })]);
     const editor = makeEditor([block('lyrics', 'hum')]);
     const conflicts = detectTemplateConflicts(editor, tpl);
     expect(conflicts.disabledElements).toEqual([
       { elementType: 'lyrics', elementLabel: 'Lyrics', nodeCount: 1, replacementType: 'action' },
     ]);
+    resolveTemplateConflicts(editor, tpl, conflicts);
+    expect(editor.state.doc.child(0).type.name).toBe('lyrics');   // untouched
   });
 });
 
@@ -332,18 +335,16 @@ describe('resolveTemplateConflicts — custom-element replacement', () => {
 });
 
 describe('resolveTemplateConflicts — replacement into a locked type', () => {
-  // KNOWN LIMITATION: detect skips the formatting scan on disabled elements,
-  // and resolve only strips marks for 'reformat'/'both' ops — a plain
-  // 'replace' keeps the node's inline marks. So replacing a disabled node
-  // into a fully-locked type carries the conflicting marks along, and a
-  // second detect finds a brand-new violation. detect → resolve is NOT
-  // guaranteed to converge in one pass. Pinning actual behavior.
+  // detect skips the formatting scan on disabled elements (and the user can
+  // change the replacement in the dialog), so resolve strips the REPLACEMENT
+  // type's locked marks on plain 'replace' ops too — the retyped node lands
+  // conforming and detect → resolve converges in one pass.
   const tpl = template('enforce', [
     rule('action', 'Action', { allowFormatOverride: false }),
     rule('lyrics', 'Lyrics', { enabled: false }),
   ]);
 
-  it('keeps the old marks on the replaced node, so a second detect still conflicts', () => {
+  it('strips the replacement type\'s locked marks, so a second detect is clean', () => {
     const editor = makeEditor([block('lyrics', 'LOUD', ['bold'])]);
     const first = detectTemplateConflicts(editor, tpl);
     // dialogue (lyrics' default) is absent → falls back to action, the only
@@ -356,19 +357,21 @@ describe('resolveTemplateConflicts — replacement into a locked type', () => {
     resolveTemplateConflicts(editor, tpl, first);
     const node = editor.state.doc.child(0);
     expect(node.type.name).toBe('action');
-    expect(node.firstChild!.marks.map((m) => m.type.name)).toEqual(['bold']); // survived
+    expect(node.firstChild!.marks).toHaveLength(0);   // bold stripped with the retype
 
-    const second = detectTemplateConflicts(editor, tpl);
-    expect(second.hasConflicts).toBe(true);
-    expect(second.formattingViolations).toEqual([
-      {
-        elementType: 'action',
-        elementLabel: 'Action',
-        conflictingMarks: ['Bold'],
-        nodeCount: 1,
-        shouldReformat: true,
-      },
+    expect(detectTemplateConflicts(editor, tpl).hasConflicts).toBe(false);
+  });
+
+  it('a replacement that allows format override keeps the marks', () => {
+    const free = template('enforce', [
+      rule('action', 'Action', { allowFormatOverride: true }),
+      rule('lyrics', 'Lyrics', { enabled: false }),
     ]);
+    const editor = makeEditor([block('lyrics', 'LOUD', ['bold'])]);
+    resolveTemplateConflicts(editor, free, detectTemplateConflicts(editor, free));
+    const node = editor.state.doc.child(0);
+    expect(node.type.name).toBe('action');
+    expect(node.firstChild!.marks.map((m) => m.type.name)).toEqual(['bold']); // override → unlocked
   });
 
   it("a hand-built 'both' op does strip marks after replacing", () => {
