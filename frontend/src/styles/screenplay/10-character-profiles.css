@@ -137,16 +137,18 @@
   color: var(--fd-text-muted);
   font-size: 10px;
 }
-/* Detail section — generous spacing */
+/* Detail section — generous spacing. v4.26 batch-v5 #1: these hardcoded
+   gaps made the Design knob a dead slider in fullscreen List — every spacing
+   site reads it now (per-site fallbacks keep today's look untouched). */
 .char-fs-list-mode .char-profile-detail {
   padding: 20px 32px 28px;
-  gap: 16px;
+  gap: var(--dz-char-field-gap, 16px);
 }
 .char-fs-list-mode .char-profile-detail-top {
-  gap: 16px;
+  gap: var(--dz-char-field-gap, 16px);
 }
 .char-fs-list-mode .char-profile-detail-bottom {
-  gap: 16px;
+  gap: var(--dz-char-field-gap, 16px);
   border-top: 1px solid var(--fd-border);
   padding-top: 16px;
   margin-top: 4px;
@@ -861,6 +863,16 @@
   font-size: 40px;
   border-radius: 6px;
 }
+/* v4.26 batch-v5 #3: the image/placeholder IS the upload control. */
+.char-img-clickable { cursor: pointer; }
+.char-profile-image-placeholder.char-img-clickable:hover {
+  color: var(--fd-text);
+  outline: 1px solid var(--fd-border);
+}
+.char-profile-image-uploading {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+}
 /* Top section: description+meta and images — stacks in side panel, side-by-side in fullscreen */
 .char-profile-detail-top { display: flex; flex-direction: column; gap: var(--dz-char-field-gap, 8px); }
 .char-profile-detail-info { display: flex; flex-direction: column; gap: var(--dz-char-field-gap, 8px); }
@@ -869,7 +881,7 @@
 /* Fullscreen card view: top row is 50/50 side-by-side */
 .char-profile-detail-fs .char-profile-detail-top {
   flex-direction: row;
-  gap: 16px;
+  gap: var(--dz-char-field-gap, 16px);
 }
 .char-profile-detail-fs .char-profile-detail-top > * {
   flex: 1;
@@ -961,17 +973,8 @@
   border-color: var(--fd-accent);
   color: var(--fd-accent);
 }
-.char-profile-voice-section {
-  margin: 4px 0;
-}
-.char-profile-voice-toggle {
-  cursor: pointer;
-  user-select: none;
-  color: var(--fd-text-muted, #888);
-}
-.char-profile-voice-toggle:hover {
-  color: var(--fd-text);
-}
+/* v4.26 batch-v5 #4: the Voice Profile <details> is gone — it's a photo-row
+   toggle now; its old -section/-toggle rules left with it. */
 .char-profile-voice-fields {
   padding-top: 4px;
 }
@@ -1587,39 +1590,7 @@
   border-radius: 2px;
 }
 
-/* === Lightbox === */
-.char-lightbox-overlay {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.char-lightbox {
-  position: relative;
-  max-width: 90vw;
-  max-height: 90vh;
-}
-.char-lightbox img {
-  max-width: 90vw;
-  max-height: 85vh;
-  border-radius: 6px;
-  box-shadow: 0 8px 32px rgba(0,0,0,.8);
-}
-.char-lightbox-close {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 28px;
-  height: 28px;
-  background: rgba(0,0,0,.8);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  font-size: 16px;
-  line-height: 28px;
-  text-align: center;
-  cursor: pointer;
-}
-.char-lightbox-close:hover { background: #e74c3c; }
+/* v4.26 batch-v5 #3: lightbox removed — image-click opens the source menu. */
 
 /* Scrollbar */
 .char-profiles-list::-webkit-scrollbar { width: 6px; }
@@ -1687,12 +1658,14 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 .char-profile-name-update:hover:not(:disabled) { filter: brightness(1.08); }
+/* v4.26 batch-v5 #2, Derek: the disabled state blended into the input
+   fields and read as flat text — keep it visibly a (sleeping) button. */
 .char-profile-name-update:disabled {
   cursor: default;
   border-color: var(--fd-border);
   color: var(--fd-text-muted);
-  background: var(--fd-input-bg);
-  box-shadow: none;
+  background: var(--fd-overlay-light, rgba(255, 255, 255, 0.06));
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.25);
 }
 
 /* v4.22, Derek: stacked card body — name, photo, description (full width),
@@ -1704,14 +1677,14 @@
    margins, and the description box had NONE — it sat flush against the
    gender/age row while other blocks get ~10px. Match the photo-row rhythm. */
 .char-profile-detail-stacked .mini-rt-wrapper {
-  margin-bottom: 10px;
+  margin-bottom: var(--dz-char-field-gap, 10px);
 }
 .char-profile-photo-row {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: var(--dz-char-field-gap, 8px);
+  margin-bottom: var(--dz-char-field-gap, 10px);
 }
 /* Full-width character image with slideshow + delete. */
 .char-profile-image-display {
@@ -1730,7 +1703,8 @@
      fallback keeps today's roomier stacked look until the knob moves. */
   max-height: var(--dz-char-image-h, 360px);
   object-fit: contain;
-  cursor: zoom-in;
+  /* v4.26 batch-v5 #3: clicking opens the source menu, not the zoom lightbox */
+  cursor: pointer;
 }
 .char-profile-image-loading,
 .char-profile-image-broken {
@@ -1742,21 +1716,8 @@
   color: var(--fd-text-muted);
   background: var(--fd-input-bg);
 }
-.char-profile-image-del {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-}
-.char-profile-image-del:hover { background: #ef4444; }
+/* v4.26 batch-v5 #3: the corner × is gone — Remove Image lives in the
+   click-the-image source menu now. */
 .char-profile-image-nav {
   position: absolute;
   top: 50%;

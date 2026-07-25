@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../services/api';
 
@@ -6,7 +6,8 @@ import { api } from '../services/api';
  *  plain <img src> gets a 401 and shows the broken-image "?". Fetch the bytes
  *  with the auth token and hand the <img> a blob URL instead. */
 export const AssetImage: React.FC<{
-  projectId: string; assetId: string; className?: string; alt?: string; onClick?: () => void;
+  projectId: string; assetId: string; className?: string; alt?: string;
+  onClick?: (e: React.MouseEvent) => void;
 }> = ({ projectId, assetId, className, alt, onClick }) => {
   const [url, setUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -59,48 +60,44 @@ export const AssetAudio: React.FC<{ projectId: string; assetId: string }> = ({ p
   return <audio className="char-profile-voice-audio" src={url} controls preload="none" />;
 };
 
-/** v4.22, Derek: one "Upload Image" button that opens a menu — local file or the
- *  Asset Manager. The menu is portalled to <body> and positioned from the button
- *  (panels clip absolutely-positioned children — see AddMenu). */
-export const UploadImageButton: React.FC<{ uploading: boolean; onLocal: () => void; onAssets: () => void }> = ({ uploading, onLocal, onAssets }) => {
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
+/** v4.26 batch-v5 #3, Derek: the image (or its placeholder) IS the upload
+ *  control now — this is the shared source menu it opens, portalled to <body>
+ *  and positioned by the caller from the clicked element (panels clip
+ *  absolutely-positioned children — see AddMenu). With an image present the
+ *  caller passes onRemove and the menu gains "Remove Image". Replaces the
+ *  v4.22 "Upload Image ▾" row button. */
+export const ImageSourceMenu: React.FC<{
+  pos: { top: number; left: number };
+  onLocal: () => void;
+  onAssets: () => void;
+  onRemove?: () => void;
+  onClose: () => void;
+}> = ({ pos, onLocal, onAssets, onRemove, onClose }) => {
   useEffect(() => {
-    if (!pos) return;
-    const close = () => setPos(null);
+    // The opening click can itself emit a scroll a frame later (focus scroll /
+    // scroll anchoring in the character list) — without a grace window that
+    // closed the menu the same frame it opened. Genuine user scrolling still
+    // dismisses it.
+    const openedAt = performance.now();
+    const close = () => onClose();
+    const closeOnScroll = () => { if (performance.now() - openedAt > 150) onClose(); };
     window.addEventListener('pointerdown', close);
     window.addEventListener('resize', close);
-    window.addEventListener('scroll', close, true);
+    window.addEventListener('scroll', closeOnScroll, true);
     return () => {
       window.removeEventListener('pointerdown', close);
       window.removeEventListener('resize', close);
-      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('scroll', closeOnScroll, true);
     };
-  }, [pos]);
-  const toggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (pos) { setPos(null); return; }
-    const r = btnRef.current?.getBoundingClientRect();
-    if (r) setPos({ top: r.bottom + 4, left: r.left });
-  };
-  return (
-    <>
-      <button
-        ref={btnRef}
-        className="char-profile-img-btn"
-        disabled={uploading}
-        onClick={toggle}
-        title="Add a character image"
-      >
-        {uploading ? 'Uploading…' : 'Upload Image ▾'}
-      </button>
-      {pos && createPortal(
-        <div className="char-upload-menu" style={{ top: pos.top, left: pos.left }} onPointerDown={(e) => e.stopPropagation()}>
-          <button className="char-upload-menu-item" onClick={() => { setPos(null); onLocal(); }}>From local device…</button>
-          <button className="char-upload-menu-item" onClick={() => { setPos(null); onAssets(); }}>From Asset Manager…</button>
-        </div>,
-        document.body,
+  }, [onClose]);
+  return createPortal(
+    <div className="char-upload-menu" style={{ top: pos.top, left: pos.left }} onPointerDown={(e) => e.stopPropagation()}>
+      <button className="char-upload-menu-item" onClick={() => { onClose(); onLocal(); }}>From local device…</button>
+      <button className="char-upload-menu-item" onClick={() => { onClose(); onAssets(); }}>From Asset Manager…</button>
+      {onRemove && (
+        <button className="char-upload-menu-item" onClick={() => { onClose(); onRemove(); }}>Remove Image</button>
       )}
-    </>
+    </div>,
+    document.body,
   );
 };

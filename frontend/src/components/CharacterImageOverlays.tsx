@@ -67,20 +67,3 @@ export function CharacterImagePickerDialog({
     </div>
   );
 }
-
-interface CharacterLightboxProps {
-  image: { assetId: string; name: string };
-  projectId: string;
-  onClose: () => void;
-}
-
-export function CharacterLightbox({ image, projectId, onClose }: CharacterLightboxProps) {
-  return (
-    <div className="dialog-overlay char-lightbox-overlay" onClick={onClose}>
-      <div className="char-lightbox" onClick={(e) => e.stopPropagation()}>
-        {projectId && <AssetImage projectId={projectId} assetId={image.assetId} alt={image.name} />}
-        <button className="char-lightbox-close" onClick={onClose}>&times;</button>
-      </div>
-    </div>
-  );
-}

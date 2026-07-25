@@ -4,7 +4,7 @@ import type { Editor } from '@tiptap/react';
 import { stripHtml } from '../utils/stripHtml';
 import { CharacterScanTab } from './CharacterScanTab';
 import { CharacterRelationshipsTab } from './CharacterRelationshipsTab';
-import { CharacterImagePickerDialog, CharacterLightbox } from './CharacterImageOverlays';
+import { CharacterImagePickerDialog } from './CharacterImageOverlays';
 import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 import { useEditorStore, type CharacterProfile } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -15,7 +15,8 @@ import MiniRichText from './MiniRichText';
 import { toTitleCaseName, lastNameOf, joinName, escapeRegExp } from '../utils/characterNames';
 import { buildScanList, filterScanList, type ScannedCharacter } from '../utils/characterScan';
 import { InlineRelForm, REL_DYNAMICS } from './InlineRelForm';
-import { AssetImage, AssetAudio, UploadImageButton } from './CharacterAssetMedia';
+import { AssetImage, AssetAudio, ImageSourceMenu } from './CharacterAssetMedia';
+import { promptDialog } from './ConfirmDialog';
 
 // Default colors for auto-assignment (VIBGYOR palette)
 const DEFAULT_HIGHLIGHT_COLORS = [
@@ -121,11 +122,17 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   // expanded list card can't fight over one flag.
   const [openRels, setOpenRels] = useState<Record<string, boolean>>({});
   const [openScenes, setOpenScenes] = useState<Record<string, boolean>>({});
+  // v4.26 batch-v5 #4: Voice Profile is a photo-row toggle like the other two.
+  const [openVoice, setOpenVoice] = useState<Record<string, boolean>>({});
+  // v4.26 batch-v5 #3: the image/placeholder opens the source menu; with an
+  // image present, removeAssetId enables its "Remove Image" item.
+  const [imgMenu, setImgMenu] = useState<{
+    charName: string; pos: { top: number; left: number }; removeAssetId?: string;
+  } | null>(null);
 
   // Image picker state
   const [imagePickerFor, setImagePickerFor] = useState<string | null>(null);
   const [imagePickerFilter, setImagePickerFilter] = useState('');
-  const [lightboxImage, setLightboxImage] = useState<{ assetId: string; name: string } | null>(null);
   // v4.22, Derek: per-character slideshow position.
   const [imgIdx, setImgIdx] = useState<Record<string, number>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -811,30 +818,34 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     );
   };
 
-  /** Character photo row + a single "Upload Image" button with a menu. Shared. */
-  /** The upload button alone (goes on the section row). */
-  const renderUploadButton = (charName: string) => (
-    projectId ? (
-      <UploadImageButton
-        uploading={uploading}
-        onLocal={() => triggerUpload(charName)}
-        onAssets={() => { setImagePickerFor(charName); setImagePickerFilter(''); }}
-      />
-    ) : null
-  );
-
   /** Full-width character image with slideshow arrows and a delete button that
    *  works even for the only image. (v4.22, Derek.) v4.24 batch 5: in Cards
    *  view, a card with no image keeps the same image-field footprint via a
    *  placeholder box, so the grid stays uniform. */
+  /** v4.26 batch-v5 #3, Derek: the image AND its empty placeholder are the
+   *  upload control — clicking either opens the source menu (local device /
+   *  Asset Manager, plus Remove Image when a photo is showing). The old
+   *  "Upload Image ▾" row button and the corner × are gone (one control, one
+   *  menu); image-click no longer opens the zoom lightbox. */
+  const openImgMenu = (e: React.MouseEvent, charName: string, removeAssetId?: string) => {
+    e.stopPropagation();
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setImgMenu({ charName, pos: { top: r.top + Math.min(r.height, 48), left: r.left + 12 }, removeAssetId });
+  };
   const renderImageDisplay = (charName: string, reserveWhenEmpty = false) => {
     const prof = getProfile(charName);
     const imgs = prof.images ?? [];
     const n = imgs.length;
     if (!n || !projectId) {
       return reserveWhenEmpty ? (
-        <div className="char-profile-image-placeholder" aria-hidden>
-          <FaRegUser />
+        <div
+          className={`char-profile-image-placeholder${projectId ? ' char-img-clickable' : ''}`}
+          role={projectId ? 'button' : undefined}
+          aria-label={projectId ? 'Add a character image' : undefined}
+          title={projectId ? 'Add a character image' : undefined}
+          onClick={projectId ? (e) => openImgMenu(e, charName) : undefined}
+        >
+          {uploading ? <span className="char-profile-image-uploading">Uploading…</span> : <FaRegUser />}
         </div>
       ) : null;
     }
@@ -845,15 +856,10 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         <AssetImage
           projectId={projectId}
           assetId={imgs[idx]}
-          className="char-profile-image-main"
+          className="char-profile-image-main char-img-clickable"
           alt={charName}
-          onClick={() => setLightboxImage({ assetId: imgs[idx], name: charName })}
+          onClick={(e) => openImgMenu(e, charName, imgs[idx])}
         />
-        <button
-          className="char-profile-image-del"
-          title="Remove this image"
-          onClick={() => { handleRemoveImage(charName, imgs[idx]); setImgIdx((m) => ({ ...m, [charName]: 0 })); }}
-        >&times;</button>
         {n > 1 && (
           <>
             <button className="char-profile-image-nav prev" title="Previous image" onClick={() => step(-1)}>&#8249;</button>
@@ -919,7 +925,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       <div className="char-profile-photo-row">
         {renderImageDisplay(charName, reserveWhenEmpty)}
         <div className="char-profile-image-actions">
-          {renderUploadButton(charName)}
           {withSections && (
             <>
               <button
@@ -938,6 +943,14 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                   Appears in ({st.scenes.length})
                 </button>
               )}
+              {/* v4.26 batch-v5 #4: Voice Profile joins the row */}
+              <button
+                className={`char-profile-voice-btn${openVoice[charName] ? ' active' : ''}`}
+                title="Show this character's voice profile"
+                onClick={() => setOpenVoice((m) => ({ ...m, [charName]: !m[charName] }))}
+              >
+                Voice Profile
+              </button>
             </>
           )}
         </div>
@@ -978,8 +991,12 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         ))}
         <button
           className="char-profile-add-field"
-          onClick={() => {
-            const label = window.prompt('New field name (added to every character):');
+          onClick={async () => {
+            // v4.26 batch-v5 #5: window.prompt returns null in Tauri's
+            // WKWebView (the documented ConfirmDialog hazard) — the button
+            // silently did nothing in the app. promptDialog is the in-app
+            // replacement every other prompt already uses.
+            const label = await promptDialog('New field name (added to every character):', '', { title: 'New Custom Field', confirmLabel: 'Add' });
             if (label && label.trim()) addCharacterCustomField(label.trim());
           }}
         >+ Custom Field</button>
@@ -1063,6 +1080,39 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         {renderImageSection(charName, true, true)}
         {openRels[charName] && renderRelationshipsBlock(charName)}
         {openScenes[charName] && renderScenesBlock(charName)}
+        {openVoice[charName] && (
+          <div className="char-profile-voice-fields">
+            {renderVoiceButton(charName)}
+            <label className="char-profile-label">Speech Pattern</label>
+            <MiniRichText
+              value={prof.speechPattern || ''}
+              onChange={(html) => upsertCharacterProfile(charName, { speechPattern: html })}
+              placeholder="Short sentences, formal tone, uses contractions..."
+              minHeight={40}
+            />
+            <label className="char-profile-label">Vocabulary</label>
+            <MiniRichText
+              value={prof.vocabulary || ''}
+              onChange={(html) => upsertCharacterProfile(charName, { vocabulary: html })}
+              placeholder="Educated, uses legal terms, street slang..."
+              minHeight={40}
+            />
+            <label className="char-profile-label">Verbal Tics</label>
+            <MiniRichText
+              value={prof.verbalTics || ''}
+              onChange={(html) => upsertCharacterProfile(charName, { verbalTics: html })}
+              placeholder="Says 'you see' often, clears throat before lying..."
+              minHeight={40}
+            />
+            <label className="char-profile-label">Sample Dialogue</label>
+            <MiniRichText
+              value={prof.sampleDialogue || ''}
+              onChange={(html) => upsertCharacterProfile(charName, { sampleDialogue: html })}
+              placeholder="3-5 representative lines from the script..."
+              minHeight={40}
+            />
+          </div>
+        )}
 
         {/* Age / Gender / Sexuality — above Description (batch-v4 #2) */}
         {renderMetaRow(charName)}
@@ -1097,43 +1147,8 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         {/* User-defined fields — below Character Arc (batch-v4 #3) */}
         {renderCustomFields(charName)}
 
-        {/* Voice Profile (collapsible) — also home to the voice CLIP control
-            (batch-v4 #5: it left the photo row, where a second "Voice
-            Profile" label was confusing) */}
-        <details className="char-profile-voice-section">
-          <summary className="char-profile-label char-profile-voice-toggle">Voice Profile</summary>
-          <div className="char-profile-voice-fields">
-            {renderVoiceButton(charName)}
-            <label className="char-profile-label">Speech Pattern</label>
-            <MiniRichText
-              value={prof.speechPattern || ''}
-              onChange={(html) => upsertCharacterProfile(charName, { speechPattern: html })}
-              placeholder="Short sentences, formal tone, uses contractions..."
-              minHeight={40}
-            />
-            <label className="char-profile-label">Vocabulary</label>
-            <MiniRichText
-              value={prof.vocabulary || ''}
-              onChange={(html) => upsertCharacterProfile(charName, { vocabulary: html })}
-              placeholder="Educated, uses legal terms, street slang..."
-              minHeight={40}
-            />
-            <label className="char-profile-label">Verbal Tics</label>
-            <MiniRichText
-              value={prof.verbalTics || ''}
-              onChange={(html) => upsertCharacterProfile(charName, { verbalTics: html })}
-              placeholder="Says 'you see' often, clears throat before lying..."
-              minHeight={40}
-            />
-            <label className="char-profile-label">Sample Dialogue</label>
-            <MiniRichText
-              value={prof.sampleDialogue || ''}
-              onChange={(html) => upsertCharacterProfile(charName, { sampleDialogue: html })}
-              placeholder="3-5 representative lines from the script..."
-              minHeight={40}
-            />
-          </div>
-        </details>
+        {/* Voice Profile moved to a photo-row toggle (batch-v5 #4); its
+            fields render under the photo with the other section blocks. */}
 
         {/* Color + Highlight */}
         <div className="char-profile-color-highlight">
@@ -1539,11 +1554,18 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       )}
 
       {/* Image Lightbox */}
-      {lightboxImage && (
-        <CharacterLightbox
-          image={lightboxImage}
-          projectId={projectId}
-          onClose={() => setLightboxImage(null)}
+      {/* v4.26 batch-v5 #3: the image/placeholder opens this source menu
+          (the zoom lightbox left with the old image-click behavior). */}
+      {imgMenu && (
+        <ImageSourceMenu
+          pos={imgMenu.pos}
+          onLocal={() => triggerUpload(imgMenu.charName)}
+          onAssets={() => { setImagePickerFor(imgMenu.charName); setImagePickerFilter(''); }}
+          onRemove={imgMenu.removeAssetId ? () => {
+            handleRemoveImage(imgMenu.charName, imgMenu.removeAssetId!);
+            setImgIdx((m) => ({ ...m, [imgMenu.charName]: 0 }));
+          } : undefined}
+          onClose={() => setImgMenu(null)}
         />
       )}
 
