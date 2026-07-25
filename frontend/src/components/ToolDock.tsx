@@ -140,9 +140,10 @@ export const ALL_TOOLS: ToolDef[] = [
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
 
 /** v1.80 — per-tool window chrome slots. A tool listed here gets its control
- *  rendered IN the window header (next to the title) and/or a true footer bar
- *  under the body — docked inline and floating alike. One registry, so both
- *  chrome paths render the same thing. */
+ *  rendered IN the window chrome — docked inline and floating alike. One
+ *  registry, so both chrome paths render the same thing.
+ *  v4.27: LEGACY slot. These render in row 2's right cluster until each tool
+ *  migrates to a TOOL_CHROME entry below; new tools go straight to TOOL_CHROME. */
 export const TOOL_HEADER_EXTRAS: Partial<Record<ToolId, React.FC>> = {
   navigator: NavigatorHeaderExtra,
   goals: GoalsHeaderExtra,
@@ -155,6 +156,26 @@ export const TOOL_HEADER_EXTRAS: Partial<Record<ToolId, React.FC>> = {
 export const TOOL_FOOTERS: Partial<Record<ToolId, React.FC>> = {
   scenes: SceneFooter,
 };
+
+/** v4.27, Derek's universal window template (his schematic). Every tool window:
+ *    row 1 — pop-in | centered tool name | window actions · pop-out · close
+ *    row 2 — tabs (left) | Filter / Sort / View / Search cluster (right)
+ *  A tool declares its slots here; the floating frame renders both rows, and
+ *  the dock compresses the same template (the accordion row IS row 1 — the
+ *  open tool's TitleExtra/WindowActions join it — and .tool-inline-header is
+ *  row 2). Controls should be composed from ToolControls primitives
+ *  (ControlDropdown / ControlSearch) so every window's cluster matches. */
+export interface ToolChrome {
+  /** Beside the centered row-1 title — e.g. the "· 12" count. */
+  TitleExtra?: React.FC;
+  /** Row-1 right cluster, left of pop-out/close — e.g. fullscreen. */
+  WindowActions?: React.FC;
+  /** Row-2 left: the tab strip. */
+  Tabs?: React.FC;
+  /** Row-2 right: the Filter / Sort / View / Search cluster, in that order. */
+  Controls?: React.FC;
+}
+export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {};
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
 export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'titlepage', 'history'];
@@ -364,9 +385,15 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
         * the panel it returns to — far left for the left panel, far right for
         * the right — pointing at that panel.
         * v1.94: every window keeps × in the upper right (v1.80 dropped it
-        * from popped-out windows; Derek wants it back). */}
+        * from popped-out windows; Derek wants it back).
+        * v4.27, Derek's window template: row 1 is three zones so the title is
+        * truly CENTERED (pop-in | title + count | actions), and tabs/controls
+        * live on a second row — tabs left, Filter/Sort/View/Search right.
+        * Tools not yet migrated to TOOL_CHROME keep their legacy header extra,
+        * rendered in row 2's right cluster. */}
       {(() => {
         const HeaderExtra = TOOL_HEADER_EXTRAS[tool.id];
+        const chrome = TOOL_CHROME[tool.id];
         // v2.06: an icon-rail panel has no inline shape to return to — no
         // pop-in on windows opened from it.
         const iconsMode = side ? panelSizeMode[side] === 'icons' : false;
@@ -377,16 +404,33 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
             onClick={() => setToolSize(tool.id, popInW, size.h)}
           ><DoubleChevronIcon towards={chevronTowards('popin', side === 'right' ? 'right' : 'left')} /></button>
         ) : null;
+        const hasRow2 = !!(chrome?.Tabs || chrome?.Controls || HeaderExtra);
         return (
-          <div className="tool-window-header" onPointerDown={startDrag}>
-            {side !== 'right' && popBtn}
-            <span className={`tool-window-title${nameUpper ? ' tool-name-upper' : ''}`}>{tool.label}</span>
-            {HeaderExtra && <span className="tool-window-header-extra"><HeaderExtra /></span>}
-            <span className="tool-window-header-actions">
-              {side === 'right' && popBtn}
-              <button className="tool-window-close" onClick={onClose} title="Close">×</button>
-            </span>
-          </div>
+          <>
+            <div className="tool-window-header" onPointerDown={startDrag}>
+              <span className="tool-window-zone tool-window-zone-l">
+                {side !== 'right' && popBtn}
+              </span>
+              <span className="tool-window-zone tool-window-zone-c">
+                <span className={`tool-window-title${nameUpper ? ' tool-name-upper' : ''}`}>{tool.label}</span>
+                {chrome?.TitleExtra && <chrome.TitleExtra />}
+              </span>
+              <span className="tool-window-zone tool-window-zone-r tool-window-header-actions">
+                {chrome?.WindowActions && <chrome.WindowActions />}
+                {side === 'right' && popBtn}
+                <button className="tool-window-close" onClick={onClose} title="Close">×</button>
+              </span>
+            </div>
+            {hasRow2 && (
+              <div className="tool-chrome-row2">
+                {chrome?.Tabs && <span className="tool-chrome-tabs"><chrome.Tabs /></span>}
+                <span className="tool-chrome-controls">
+                  {chrome?.Controls && <chrome.Controls />}
+                  {HeaderExtra && <span className="tool-window-header-extra"><HeaderExtra /></span>}
+                </span>
+              </div>
+            )}
+          </>
         );
       })()}
       <div className={`tool-window-body${side === 'right' ? ' tool-window-body-right' : ''}`}>{children}</div>
@@ -645,6 +689,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
           const t = entry.tool;
           const isOpenInline = inline && active && active.id === t.id;
           const HeaderExtra = TOOL_HEADER_EXTRAS[t.id];
+          const chrome = TOOL_CHROME[t.id];
           const Footer = TOOL_FOOTERS[t.id];
           /* v2.00: the pop-out button lives in the window's HEADER — the row
              INSIDE the window, below the dock button (Derek's terminology) —
@@ -669,13 +714,13 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               tabIndex={0}
               className={'tool-dock-item' + (activeId === t.id ? ' active' : '') + (isOpenInline ? ' tool-dock-item-header' : '')}
               onClick={(e) => {
-                // Header controls (dropdowns etc.) act, they don't toggle.
-                if ((e.target as HTMLElement).closest('select, input, .tool-dock-popout')) return;
+                // Header controls (dropdowns, chrome buttons) act, they don't toggle.
+                if ((e.target as HTMLElement).closest('select, input, button, .tool-dock-popout')) return;
                 setActive(activeId === t.id ? null : t.id);
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
-                  if ((e.target as HTMLElement).closest('select, input, .tool-dock-popout')) return;
+                  if ((e.target as HTMLElement).closest('select, input, button, .tool-dock-popout')) return;
                   e.preventDefault();
                   setActive(activeId === t.id ? null : t.id);
                 }
@@ -689,16 +734,27 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               </span>
               <span className="tool-dock-icon">{t.icon}</span>
               <span className={`tool-dock-label${nameUpper ? ' tool-name-upper' : ''}`}>{t.label}</span>
+              {/* v4.27 window template, dock-compressed: the accordion row IS
+                  row 1, so the open tool's title extra (count) and window
+                  actions (fullscreen…) ride on it. */}
+              {isOpenInline && chrome?.TitleExtra && <chrome.TitleExtra />}
+              {isOpenInline && chrome?.WindowActions && (
+                <span className="tool-dock-item-actions"><chrome.WindowActions /></span>
+              )}
             </div>
             {isOpenInline && (
               <div className={`tool-inline${side === 'right' ? ' tool-inline-right' : ''}${solo ? ' tool-inline-solo' : ''}`}>
                 {/* v2.00: the window HEADER — controls + pop-out live here,
-                    not on the dock button row. */}
+                    not on the dock button row. v4.27: this is the template's
+                    row 2 — tabs left, Filter/Sort/View/Search cluster right
+                    (legacy header extras keep their old span until migrated). */}
                 <div className="tool-inline-header">
                   {side === 'right' && popOutBtn}
+                  {chrome?.Tabs && <span className="tool-chrome-tabs"><chrome.Tabs /></span>}
                   <span className="tool-inline-header-extra">
                     {HeaderExtra && <HeaderExtra />}
                   </span>
+                  {chrome?.Controls && <span className="tool-chrome-controls"><chrome.Controls /></span>}
                   {side !== 'right' && popOutBtn}
                 </div>
                 <div className="tool-inline-body" style={solo ? undefined : { height: activeSize!.h }}>

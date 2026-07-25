@@ -305,14 +305,139 @@
 }
 .tool-window-header:active { cursor: grabbing; }
 .tool-window-header-actions { display: flex; align-items: center; gap: 6px; }
-/* v2.00: air between the pop in/out button and the nearest header text. */
-.tool-window-header > .tool-window-popin { margin-right: 10px; }
-.tool-window-header-actions .tool-window-popin { margin-left: 10px; }
+/* v4.27, Derek's window template: row 1 is three zones — pop-in | centered
+   title (+ count) | actions — the side zones flex equally so the title is
+   truly centered no matter which side holds buttons. */
+.tool-window-zone { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.tool-window-zone-l { flex: 1 1 0; justify-content: flex-start; }
+.tool-window-zone-c { flex: 0 1 auto; }
+.tool-window-zone-r { flex: 1 1 0; justify-content: flex-end; }
 .tool-window-title {
   font-size: var(--dz-toolwin-title-font, 12px);
   font-weight: 700;
   color: var(--fd-text);
 }
+
+/* v4.27: row 2 of the template — tabs on the left, the Filter / Sort / View /
+   Search cluster on the right. Rendered only when the tool declares tabs or
+   controls (or still carries a legacy header extra). Same surface as the
+   dock's .tool-inline-header so floating and docked read identically. */
+.tool-chrome-row2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--fd-border);
+  background: var(--fd-navigator-bg);
+  flex-shrink: 0;
+}
+.tool-chrome-tabs { display: inline-flex; align-items: center; gap: 2px; min-width: 0; }
+.tool-chrome-controls {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+/* The legacy extra span keeps its old identity; inside the cluster it must
+   not stretch (22-tools-extra.css gives the bare span flex: 1). */
+.tool-chrome-controls .tool-window-header-extra { flex: 0 1 auto; margin: 0; }
+/* Dock-compressed row 1: the open accordion row carries the window actions
+   (fullscreen…) at its right edge. */
+.tool-dock-item-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* v4.27: the shared control primitives (ToolControls.tsx) — quiet
+   Airtable-style text buttons for Filter / Sort / View, and the expanding
+   Search. One place; every window's cluster reads the same. */
+.tool-ctl {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 3px 7px;
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tool-ctl:hover, .tool-ctl.open { background: var(--fd-menu-hover); color: var(--fd-text); }
+.tool-ctl-icon { display: inline-flex; font-size: 13px; }
+.tool-ctl-current { color: var(--fd-text); font-weight: 600; }
+.tool-ctl-chip {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.tool-ctl-chev { font-size: 11px; opacity: 0.7; }
+.tool-ctl-menu {
+  position: fixed;
+  z-index: 10060;
+  min-width: 160px;
+  background: var(--fd-navigator-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  padding: 4px;
+}
+.tool-ctl-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fd-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+.tool-ctl-menu-item:hover { background: var(--fd-hover-bg); }
+.tool-ctl-menu-item.active { color: var(--fd-accent, #4a90d9); font-weight: 600; }
+.tool-ctl-search-btn { padding: 3px 6px; font-size: 13px; }
+.tool-ctl-search-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 6px;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  background: var(--fd-input-bg, var(--fd-navigator-bg));
+}
+.tool-ctl-search-glass { font-size: 12px; color: var(--fd-text-muted); flex-shrink: 0; }
+.tool-ctl-search-field input {
+  border: none;
+  background: none;
+  outline: none;
+  color: var(--fd-text);
+  font-size: 12px;
+  width: 130px;
+  padding: 2px 0;
+}
+.tool-ctl-search-close {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  padding: 1px;
+  font-size: 12px;
+}
+.tool-ctl-search-close:hover { color: var(--fd-text); }
 .tool-window-close {
   background: none;
   border: none;

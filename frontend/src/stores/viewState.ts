@@ -48,6 +48,9 @@ export interface ViewState {
   indexCardsOpen?: boolean;
   /** v4.24 batch 7: the merged Scenes tool's view — scene list or index cards. */
   scenesViewMode?: 'list' | 'cards';
+  /** v4.27 window template: Characters' persisted view choices. */
+  charViewMode?: 'cards' | 'list';
+  relViewMode?: 'list' | 'map';
   beatBoardOpen?: boolean;
   shelfOpen?: boolean;
   activeTool?: string | null;

@@ -1094,6 +1094,18 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    *  it. Not persisted. */
   charListCount: number;
   setCharListCount: (n: number) => void;
+  /** v4.27 window template: the frame's row-2 chrome (tabs + the
+   *  Filter/Sort/View/Search cluster) renders OUTSIDE CharacterProfiles, so
+   *  the states it drives live here. Tab is session-only; the view modes
+   *  persist like scenesViewMode; search is session-only. */
+  charActiveTab: 'profiles' | 'relationships' | 'setup';
+  setCharActiveTab: (t: 'profiles' | 'relationships' | 'setup') => void;
+  charViewMode: 'cards' | 'list';
+  setCharViewMode: (m: 'cards' | 'list') => void;
+  relViewMode: 'list' | 'map';
+  setRelViewMode: (m: 'list' | 'map') => void;
+  charSearchQuery: string;
+  setCharSearchQuery: (q: string) => void;
   /** v4.16: relationship-map scroll-to-zoom speed multiplier (Design panel). */
   mapScrollSpeed: number;
   setMapScrollSpeed: (v: number) => void;
@@ -1650,6 +1662,14 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   setCharFullscreen: (v) => set({ charFullscreen: v }),
   charListCount: 0,
   setCharListCount: (n) => set((s) => (s.charListCount === n ? {} : { charListCount: n })),
+  charActiveTab: 'profiles',
+  setCharActiveTab: (t) => set({ charActiveTab: t }),
+  charViewMode: (_vs.charViewMode as 'cards' | 'list') ?? 'cards',
+  setCharViewMode: (m) => { saveViewState({ charViewMode: m }); set({ charViewMode: m }); },
+  relViewMode: (_vs.relViewMode as 'list' | 'map') ?? 'list',
+  setRelViewMode: (m) => { saveViewState({ relViewMode: m }); set({ relViewMode: m }); },
+  charSearchQuery: '',
+  setCharSearchQuery: (q) => set({ charSearchQuery: q }),
   mapScrollSpeed: (_vs.mapScrollSpeed as number) ?? 1,
   setMapScrollSpeed: (v) => {
     const clamped = clamp(v, 0.1, 3);
