@@ -10,7 +10,7 @@ import React, { useState, useCallback } from 'react';
 import {
   FaBold, FaItalic, FaUnderline, FaStrikethrough,
   FaAlignLeft, FaAlignCenter, FaAlignRight, FaAlignJustify,
-  FaPlus, FaTrash,
+  FaRegTrashAlt,
 } from 'react-icons/fa';
 import type { FormattingTemplate, FormattingElementRule } from '../stores/formattingTypes';
 import { createDefaultRule } from '../stores/formattingTypes';
@@ -160,7 +160,7 @@ const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
                 onClick={addCustomElement}
                 title="Add custom element"
               >
-                <FaPlus />
+                +
               </button>
             </div>
             <div className="template-editor-elements-list">
@@ -186,7 +186,7 @@ const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
                       onClick={(e) => { e.stopPropagation(); removeElement(rule.id); }}
                       title="Remove element"
                     >
-                      <FaTrash />
+                      <FaRegTrashAlt />
                     </button>
                   )}
                 </div>

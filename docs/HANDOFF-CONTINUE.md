@@ -238,7 +238,21 @@ reliable; re-run before believing a weird worker failure.
 
 ## 1. Where we are right now (end of this run)
 
-### v4.30 — batch v7 (HEAD)
+### v4.31 — icon unification (HEAD)
+
+Derek answered the audit with picks for all 18 groups — recorded at the TOP
+of docs/ICON-AUDIT.md ("DECIDED"), applied app-wide in two commits
+(registries/chrome by the dispatcher, 23 leaf files by a worker). New shared
+faces: `FullscreenIcon`/`ExitFullscreenIcon` in uiIcons (group 1-C) — use
+them for any future fullscreen control; UTILITY_ICONS now carries the QAT
+pair. Scope judgements (also in the audit doc): destroy-data actions wear
+FaRegTrashAlt while hide/cancel ×'s stay ×; "Scale to Fit/Max" kept the
+magnifier (fit ≠ zoom); the Design tool kept FaSlidersH as its identity;
+"✓ " STRING prefixes in menu labels stayed text. Emoji swept from
+NavigatorTool/AssetManager/StickyCard. When adding icons: check the audit
+doc's decided list first — one icon per verb is now the standing rule.
+
+### v4.30 — batch v7
 
 Derek's fixes after living with the template: (1) AssetImage keeps the
 previous image up while the next loads (slideshow flash gone — revoke the

@@ -9,7 +9,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaRegEye, FaRegEyeSlash } from 'react-icons/fa';
 import { collabAuthApi } from '../services/collabAuth';
 import { showToast } from './Toast';
 
@@ -119,7 +119,7 @@ const ResetPasswordRoute: React.FC = () => {
                   tabIndex={-1}
                   aria-label={showPw ? 'Hide password' : 'Show password'}
                 >
-                  {showPw ? <FaEyeSlash /> : <FaEye />}
+                  {showPw ? <FaRegEyeSlash /> : <FaRegEye />}
                 </button>
               </div>
             </div>
@@ -141,7 +141,7 @@ const ResetPasswordRoute: React.FC = () => {
                   tabIndex={-1}
                   aria-label={showConfirm ? 'Hide password' : 'Show password'}
                 >
-                  {showConfirm ? <FaEyeSlash /> : <FaEye />}
+                  {showConfirm ? <FaRegEyeSlash /> : <FaRegEye />}
                 </button>
               </div>
             </div>

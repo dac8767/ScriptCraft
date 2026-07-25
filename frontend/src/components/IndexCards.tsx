@@ -1,5 +1,7 @@
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { Editor } from '@tiptap/react';
+import { FaUndo, FaRedo } from 'react-icons/fa';
+import { FullscreenIcon, ExitFullscreenIcon } from './uiIcons';
 import { useEditorStore, type SceneInfo } from '../stores/editorStore';
 import { computeSceneLengths } from '../editor/pagination';
 import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../utils/scriptTiming';
@@ -571,10 +573,7 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
                 disabled={!canUndo}
                 title="Undo (Ctrl+Z)"
               >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 7h7a4 4 0 0 1 0 8H7" />
-                  <path d="M6 4L3 7l3 3" />
-                </svg>
+                <FaUndo />
               </button>
               <button
                 className="ic-action-btn ic-undo-redo-btn"
@@ -582,10 +581,7 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
                 disabled={!canRedo}
                 title="Redo (Ctrl+Shift+Z)"
               >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M13 7H6a4 4 0 0 0 0 8h3" />
-                  <path d="M10 4l3 3-3 3" />
-                </svg>
+                <FaRedo />
               </button>
               <button
                 className="ic-action-btn"
@@ -617,17 +613,7 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
             onClick={() => setFullscreen(!fullscreen)}
             title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
           >
-            {fullscreen ? (
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <polyline points="9,1 9,5 13,5" /><line x1="13" y1="1" x2="9" y2="5" />
-                <polyline points="5,13 5,9 1,9" /><line x1="1" y1="13" x2="5" y2="9" />
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <polyline points="9,1 13,1 13,5" /><line x1="8" y1="6" x2="13" y2="1" />
-                <polyline points="5,13 1,13 1,9" /><line x1="6" y1="8" x2="1" y2="13" />
-              </svg>
-            )}
+            {fullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
           </button>
         </div>
       </div>
@@ -715,12 +701,7 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
                         title="Expand synopsis"
                         disabled={dragMode}
                       >
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3">
-                          <polyline points="7,1 11,1 11,5" />
-                          <line x1="11" y1="1" x2="6.5" y2="5.5" />
-                          <polyline points="5,11 1,11 1,7" />
-                          <line x1="1" y1="11" x2="5.5" y2="6.5" />
-                        </svg>
+                        <FullscreenIcon size={12} />
                       </button>
                     </div>
                   </div>

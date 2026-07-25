@@ -363,7 +363,7 @@ const SearchReplace: React.FC<SearchReplaceProps> = ({ editor }) => {
           onClick={() => setSearchOpen(false)}
           aria-label="Close find and replace"
         >
-          ✕
+          ×
         </button>
       </div>
       <div className="search-replace-body">
@@ -432,14 +432,14 @@ const SearchReplace: React.FC<SearchReplaceProps> = ({ editor }) => {
             disabled={!searchTerm || matches.length === 0}
             aria-label="Find previous match"
           >
-            ◀ Prev
+            ← Prev
           </button>
           <button
             onClick={findNext}
             disabled={!searchTerm || matches.length === 0}
             aria-label="Find next match"
           >
-            Next ▶
+            Next →
           </button>
           <button
             onClick={replaceOne}

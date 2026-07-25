@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FaColumns, FaPencilAlt, FaTrash, FaCheck, FaTimes, FaChevronUp, FaChevronDown } from 'react-icons/fa';
+import { FaColumns, FaEdit, FaRegTrashAlt, FaCheck, FaChevronUp, FaChevronDown } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -184,7 +184,7 @@ export function EditWorkspacesDialog({ open, onClose }: { open: boolean; onClose
                           <FaCheck />
                         </button>
                         <button className="ws-icon-btn" title="Cancel" onClick={cancelRename}>
-                          <FaTimes />
+                          ×
                         </button>
                       </>
                     ) : (
@@ -204,20 +204,20 @@ export function EditWorkspacesDialog({ open, onClose }: { open: boolean; onClose
                               <FaCheck />
                             </button>
                             <button className="ws-icon-btn" title="Keep it" onClick={() => setConfirmDelete(null)}>
-                              <FaTimes />
+                              ×
                             </button>
                           </>
                         ) : (
                           <>
                             <button className="ws-icon-btn" title="Rename" onClick={() => startRename(n)}>
-                              <FaPencilAlt />
+                              <FaEdit />
                             </button>
                             <button
                               className="ws-icon-btn ws-danger"
                               title="Delete"
                               onClick={() => { setRenaming(null); setConfirmDelete(n); }}
                             >
-                              <FaTrash />
+                              <FaRegTrashAlt />
                             </button>
                           </>
                         )}

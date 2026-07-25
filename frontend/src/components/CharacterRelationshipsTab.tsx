@@ -4,6 +4,7 @@
 // v4.27: the List/Map choice is the window chrome's View dropdown now
 // (CharControls, store-held) — this tab just renders whichever view is set.
 import { useState } from 'react';
+import { FaRegTrashAlt } from 'react-icons/fa';
 import type { CharacterRelationship } from '../stores/editorStore';
 import { RelationshipMap } from './RelationshipMap';
 import { REL_TYPES, REL_DYNAMICS } from './InlineRelForm';
@@ -80,7 +81,7 @@ export function CharacterRelationshipsTab({
                 placeholder="Description…"
                 onChange={(e) => upsertCharacterRelationship({ ...rel, description: e.target.value })} />
               <button className="char-rel-delete" title="Delete relationship"
-                onClick={() => deleteCharacterRelationship(rel.id)}>&times;</button>
+                onClick={() => deleteCharacterRelationship(rel.id)}><FaRegTrashAlt /></button>
             </div>
           ))
         )}

@@ -1,5 +1,26 @@
 [
   {
+    "version": "4.31",
+    "date": "2026-07-25",
+    "items": [
+      {
+        "title": "One icon per action, everywhere",
+        "detail": "Every function that wore two or more different icons now wears one, per the icon audit picks: one fullscreen face (the diagonal arrows), × to close, one magnifier for search, plain + to add, an outline trash can for anything that deletes, one chevron family for carets and submenus, one pencil for Rename, the wrench for Settings/Customize, one checkmark, one copy icon, outline eyes for show/hide, matching undo/redo arrows, one reset arrow, the circled ± for zoom, one drag-handle pattern, the outline help circle, ← for back, and one Divider/Spacer pair in Customize.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "No more emoji in the chrome",
+        "detail": "The Navigator's note rows, the Asset Manager's file-type and upload/download markers, and the note-card placeholders now use monotone icons and plain text instead of emoji.",
+        "tags": [
+          "UI",
+          "Fix"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.30",
     "date": "2026-07-25",
     "items": [

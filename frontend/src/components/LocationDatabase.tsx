@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { LuRotateCcw } from 'react-icons/lu';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -205,7 +206,7 @@ const LocationDatabase: React.FC<Props> = ({ editor, style }) => {
           disabled={loading}
           title="Scan scripts and auto-create location entries"
         >
-          {loading ? 'Scanning…' : '⟳ Discover'}
+          {loading ? 'Scanning…' : <><LuRotateCcw /> Discover</>}
         </button>
         <button className="location-db-close" onClick={toggleLocationDatabase} title="Close">×</button>
       </div>

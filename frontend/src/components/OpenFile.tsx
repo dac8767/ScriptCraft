@@ -17,7 +17,8 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { FaCloud, FaDesktop, FaSearch } from 'react-icons/fa';
+import { FaCloud, FaDesktop } from 'react-icons/fa';
+import { LuSearch } from 'react-icons/lu';
 import { api } from '../services/api';
 import { cloudApi } from '../services/cloudApi';
 import { isWeb } from '../services/platform';
@@ -195,7 +196,7 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
 
           <div className="open-file-search-row">
             <div className="open-file-search">
-              <FaSearch className="open-file-search-icon" aria-hidden="true" />
+              <LuSearch className="open-file-search-icon" aria-hidden="true" />
               <input
                 type="text"
                 value={query}

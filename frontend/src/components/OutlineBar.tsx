@@ -502,7 +502,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
       >
         {/* v3.06, Derek: order is add → outline window → choose → insert → fit. */}
         <AddMenu
-          label="＋"
+          label="+"
           title="Add a section or a beat"
           center
           onPick={addFromMenu}
@@ -636,7 +636,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
                       />
                     </div>
                   ))}
-                  {acts.length === 0 && <span className="fs-ob-empty">No sections yet — ＋ adds one</span>}
+                  {acts.length === 0 && <span className="fs-ob-empty">No sections yet — + adds one</span>}
                 </div>
               );
             }

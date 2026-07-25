@@ -8,6 +8,7 @@
  * bottom so nothing was lost in the move.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { FaRegTrashAlt } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 
@@ -129,7 +130,7 @@ export default function HighlightsTool({ editor, scrollContainer }: Props) {
               className="fs-highlight-remove"
               title="Remove this highlight"
               onClick={(e) => { e.stopPropagation(); removeHighlight(h); }}
-            >×</button>
+            ><FaRegTrashAlt /></button>
           </div>
         ))}
       </div>

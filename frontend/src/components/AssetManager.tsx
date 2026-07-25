@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  FaRegImage, FaMusic, FaFilm, FaRegFileAlt, FaRegFile, FaRegFolder,
+  FaUpload, FaDownload, FaRegTrashAlt,
+} from 'react-icons/fa';
 import { useAssetStore } from '../stores/assetStore';
 import type { Asset } from '../stores/assetStore';
 import AssetViewer from './AssetViewer';
@@ -159,13 +163,13 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
     return nameMatch && tagMatch;
   });
 
-  const getMimeIcon = (mime: string): string => {
-    if (mime.startsWith('image/')) return '\ud83d\uddbc';
-    if (mime.startsWith('audio/')) return '\ud83c\udfb5';
-    if (mime.startsWith('video/')) return '\ud83c\udfac';
-    if (mime === 'application/pdf') return '\ud83d\udcc4';
-    if (mime.startsWith('text/')) return '\ud83d\udcdd';
-    return '\ud83d\udcc1';
+  const getMimeIcon = (mime: string): React.ReactNode => {
+    if (mime.startsWith('image/')) return <FaRegImage />;
+    if (mime.startsWith('audio/')) return <FaMusic />;
+    if (mime.startsWith('video/')) return <FaFilm />;
+    if (mime === 'application/pdf') return <FaRegFileAlt />;
+    if (mime.startsWith('text/')) return <FaRegFile />;
+    return <FaRegFolder />;
   };
 
   const formatSize = (bytes: number): string => {
@@ -191,7 +195,9 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
           style={{ display: 'none' }}
           onChange={(e) => handleUpload(e.target.files)}
         />
-        <div className="asset-upload-icon">{uploading ? '\u23f3' : '\u2b06'}</div>
+        {/* while uploading, the text line below says so \u2014 the icon slot
+            keeps the (dimmed) glyph rather than repeating the word */}
+        <div className="asset-upload-icon" style={uploading ? { opacity: 0.5 } : undefined}><FaUpload /></div>
         <div className="asset-upload-text">
           {uploading ? 'Uploading...' : 'Drop files here or click to upload'}
         </div>
@@ -308,7 +314,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
                       title="Download"
                       disabled={deletingId === asset.id}
                     >
-                      &#x2B07;
+                      <FaDownload />
                     </button>
                     <button
                       className="asset-action-btn asset-action-delete"
@@ -316,7 +322,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
                       title="Delete"
                       disabled={deletingId === asset.id}
                     >
-                      {deletingId === asset.id ? '\u23f3' : '\u2715'}
+                      {deletingId === asset.id ? 'Deleting\u2026' : <FaRegTrashAlt />}
                     </button>
                   </td>
                 </tr>

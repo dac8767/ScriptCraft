@@ -11,6 +11,7 @@
  * needs ScriptNotes. formatDate lives here now, so nothing imports backwards.
  */
 import React, { useState } from 'react';
+import { FaCopy, FaRegTrashAlt } from 'react-icons/fa';
 import type { ShelfCard, ShelfCardType } from '../stores/editorStore';
 import { SHELF_COLORS, SHELF_DEFAULT_COLOR } from '../stores/editorStore';
 
@@ -28,9 +29,9 @@ export const formatDate = (iso: string) => {
 // v1.2: the title is an editable field, and "Note" / "To-Do" read like a label
 // for the card rather than an invitation to type. The ellipsis says "your turn".
 export const CARD_PLACEHOLDERS: Record<ShelfCardType, string> = {
-  comment: '💬 Note Title...',
+  comment: 'Note Title...',
   todo: '✓ List Title...',
-  snippet: '📄 Snippet',
+  snippet: 'Snippet',
 };
 
 export function ColorDots({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: Partial<ShelfCard>) => void }) {
@@ -90,7 +91,7 @@ interface StickyCardProps {
 }
 
 export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere, onUpdate, onRemove, anchor, children }: StickyCardProps) {
-  // Header: ⠿ grip drags; the type name is placeholder text in an editable title
+  // Header: ⋮⋮ grip drags; the type name is placeholder text in an editable title
   const head = (extra?: React.ReactNode) => (
     <h5 className="swn-card-head">
       <span
@@ -99,7 +100,7 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         title="Drag to reorder"
-      >⠿</span>
+      >⋮⋮</span>
       <input
         className="swn-card-title"
         value={card.title || ''}
@@ -109,7 +110,7 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
       <span className="swn-card-actions">
         <ColorDots card={card} onUpdate={onUpdate} />
         {extra}
-        <button className="swn-x" title="Delete" onClick={onRemove}>✕</button>
+        <button className="swn-x" title="Delete" onClick={onRemove}><FaRegTrashAlt /></button>
       </span>
     </h5>
   );
@@ -203,7 +204,7 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
           className="swn-x"
           title="Copy to clipboard"
           onClick={() => { if (navigator.clipboard) navigator.clipboard.writeText(card.text || ''); }}
-        >⧉</button>
+        ><FaCopy /></button>
       ))}
       <div className="swn-snippet">{card.text}</div>
     </>);

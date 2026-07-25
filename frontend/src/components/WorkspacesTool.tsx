@@ -7,7 +7,7 @@
  * deleteWorkspace), so the two entry points can never drift apart.
  */
 import { useState } from 'react';
-import { FaColumns, FaPencilAlt, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaColumns, FaEdit, FaRegTrashAlt, FaCheck } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 
 export default function WorkspacesTool() {
@@ -73,7 +73,7 @@ export default function WorkspacesTool() {
                     onKeyDown={(e) => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditing(null); }}
                   />
                   <button className="ws-icon-btn" title="Save name" onClick={commitEdit}><FaCheck /></button>
-                  <button className="ws-icon-btn" title="Cancel" onClick={() => setEditing(null)}><FaTimes /></button>
+                  <button className="ws-icon-btn" title="Cancel" onClick={() => setEditing(null)}>×</button>
                 </div>
               );
             }
@@ -86,12 +86,12 @@ export default function WorkspacesTool() {
                 {confirmDelete === name ? (
                   <>
                     <button className="ws-icon-btn ws-danger" title="Confirm delete" onClick={() => { deleteWorkspace(name); setConfirmDelete(null); }}><FaCheck /></button>
-                    <button className="ws-icon-btn" title="Cancel" onClick={() => setConfirmDelete(null)}><FaTimes /></button>
+                    <button className="ws-icon-btn" title="Cancel" onClick={() => setConfirmDelete(null)}>×</button>
                   </>
                 ) : (
                   <>
-                    <button className="ws-icon-btn" title="Rename" onClick={() => startEdit(name)}><FaPencilAlt /></button>
-                    <button className="ws-icon-btn" title="Delete" onClick={() => setConfirmDelete(name)}><FaTrash /></button>
+                    <button className="ws-icon-btn" title="Rename" onClick={() => startEdit(name)}><FaEdit /></button>
+                    <button className="ws-icon-btn" title="Delete" onClick={() => setConfirmDelete(name)}><FaRegTrashAlt /></button>
                   </>
                 )}
               </div>

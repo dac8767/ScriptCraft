@@ -4,7 +4,7 @@ import { collabAuthApi, handleAuthResponse, isDeviceChallenge } from '../service
 import type { CollabServerConfig } from '../services/collabAuth';
 import { initDemoInfo, isDemoMode } from '../services/demoInfo';
 import { showToast } from './Toast';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaRegEye, FaRegEyeSlash } from 'react-icons/fa';
 
 interface CollabLoginDialogProps {
   onClose: () => void;
@@ -378,7 +378,7 @@ const CollabLoginDialog: React.FC<CollabLoginDialogProps> = ({ onClose, onSucces
                     tabIndex={-1}
                     aria-label={showLoginPw ? 'Hide password' : 'Show password'}
                   >
-                    {showLoginPw ? <FaEyeSlash /> : <FaEye />}
+                    {showLoginPw ? <FaRegEyeSlash /> : <FaRegEye />}
                   </button>
                 </div>
                 <button
@@ -443,7 +443,7 @@ const CollabLoginDialog: React.FC<CollabLoginDialogProps> = ({ onClose, onSucces
                     tabIndex={-1}
                     aria-label={showRegPw ? 'Hide password' : 'Show password'}
                   >
-                    {showRegPw ? <FaEyeSlash /> : <FaEye />}
+                    {showRegPw ? <FaRegEyeSlash /> : <FaRegEye />}
                   </button>
                 </div>
               </div>
@@ -464,7 +464,7 @@ const CollabLoginDialog: React.FC<CollabLoginDialogProps> = ({ onClose, onSucces
                     tabIndex={-1}
                     aria-label={showRegConfirm ? 'Hide password' : 'Show password'}
                   >
-                    {showRegConfirm ? <FaEyeSlash /> : <FaEye />}
+                    {showRegConfirm ? <FaRegEyeSlash /> : <FaRegEye />}
                   </button>
                 </div>
               </div>

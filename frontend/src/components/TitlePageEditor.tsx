@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { FaRegTrashAlt } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { TitlePageAttrs } from '../editor/extensions/TitlePage';
@@ -558,7 +559,7 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
                         <option value="right">Right</option>
                       </select>
                       <button type="button" className="tp-sync-btn" style={{ marginTop: 0 }} onClick={() => removeImg(row.above, row.idx)}>
-                        ✕
+                        <FaRegTrashAlt />
                       </button>
                     </div>
                   ))}

@@ -6,6 +6,7 @@
  * Sticky Notes pane; there is no default export anymore.
  */
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { FaRegTrashAlt } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import {
   useEditorStore,
@@ -533,7 +534,7 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
             onDragStart={dp.grip.onDragStart}
             onDragEnd={dp.grip.onDragEnd}
             title={sort === 'manual' ? 'Drag to reorder' : 'Set Sort to Manual to reorder by hand'}
-          >⠿</span>
+          >⋮⋮</span>
           <input
             className="swn-card-title"
             value={note.title || ''}
@@ -549,7 +550,7 @@ export const ScriptNotesContent: React.FC<ScriptNotesContentProps> = ({ editor }
                 if (patch.color) handleColorChange(note.id, noteColorForShelfHex(patch.color));
               }}
             />
-            <button className="swn-x" title="Delete" onClick={() => handleDeleteRequest(note.id)}>✕</button>
+            <button className="swn-x" title="Delete" onClick={() => handleDeleteRequest(note.id)}><FaRegTrashAlt /></button>
           </span>
         </h5>
 

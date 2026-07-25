@@ -23,7 +23,9 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
-import { FaRegCircle, FaDotCircle, FaLink, FaPaperclip, FaRegQuestionCircle } from 'react-icons/fa';
+import { FaRegCircle, FaDotCircle, FaLink, FaPaperclip, FaRegQuestionCircle, FaRegTrashAlt } from 'react-icons/fa';
+import { LuRotateCcw } from 'react-icons/lu';
+import { FullscreenIcon, ExitFullscreenIcon } from './uiIcons';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 import { confirmDialog, promptDialog } from './ConfirmDialog';
@@ -242,7 +244,7 @@ const LinkPreviewCard: React.FC<{
       className="beat-link-preview-remove"
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(); }}
       title="Remove preview"
-    >&times;</button>
+    ><FaRegTrashAlt /></button>
   </a>
 );
 
@@ -499,7 +501,7 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
   /* v2.46: ONE header row — it used to be pasted into both layout branches. */
   const headerRow = (
     <div className="beat-card-top">
-      <span className="beat-drag-icon" {...(dragHandleProps || {})} style={{ touchAction: 'none' }}>&#x2630;</span>
+      <span className="beat-drag-icon" {...(dragHandleProps || {})} style={{ touchAction: 'none' }}>⋮⋮</span>
       <input
         className="beat-card-title"
         value={beat.title}
@@ -510,7 +512,7 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
         {headExtra}
         <button ref={colorBtnRef} className="beat-toolbar-btn" onClick={toggleColorPicker} title="Card color">&#9679;</button>
         <button className="beat-toolbar-btn" onClick={() => fileInputRef.current?.click()} title="Attach image"><FaPaperclip /></button>
-        <button className="beat-card-delete" onClick={() => onDelete(beat.id)} title="Delete beat">&times;</button>
+        <button className="beat-card-delete" onClick={() => onDelete(beat.id)} title="Delete beat"><FaRegTrashAlt /></button>
       </span>
       {showColorPicker && pickerPos && createPortal(
         <div className="beat-color-picker beat-color-picker-fixed" style={{ top: pickerPos.top, left: pickerPos.left }}>
@@ -533,7 +535,7 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
     <div className={`beat-card${isImgFull ? ' beat-card-img-full' : ''}${wholeColor ? ' beat-card-colored' : ''}`} style={cardStyle}>
       {/* Floating drag handle over image */}
       {beat.imageUrl && (
-        <span className="beat-drag-icon beat-drag-icon-floating" {...(dragHandleProps || {})} style={{ touchAction: 'none' }}>&#x2630;</span>
+        <span className="beat-drag-icon beat-drag-icon-floating" {...(dragHandleProps || {})} style={{ touchAction: 'none' }}>⋮⋮</span>
       )}
       {beat.imageUrl && (
         <>
@@ -552,13 +554,13 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
                       className="beat-card-image-action-btn"
                       onClick={() => onUpdate(beat.id, { imageHeight: 0 })}
                       title="Reset image size"
-                    >&#8634;</button>
+                    ><LuRotateCcw /></button>
                   )}
                   <button
                     className="beat-card-image-remove"
                     onClick={() => onUpdate(beat.id, { imageUrl: '', imageHeight: 0 })}
                     title="Remove image"
-                  >&times;</button>
+                  ><FaRegTrashAlt /></button>
                 </div>
                 <div
                   className="beat-card-image-resize-handle"
@@ -579,7 +581,7 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
                 className="beat-card-image-remove"
                 onClick={() => onUpdate(beat.id, { imageUrl: '', imageHeight: 0 })}
                 title="Remove image"
-              >&times;</button>
+              ><FaRegTrashAlt /></button>
             </div>
           )}
         </>
@@ -830,7 +832,7 @@ const FreeBeatCard: React.FC<FreeBeatCardProps & {
 /* ─── DragOverlay card ─── */
 const BeatCardOverlay: React.FC<{ beat: BeatInfo }> = ({ beat }) => (
   <div className="beat-card beat-card-overlay" style={beat.color ? { background: beat.color, color: readableTextOn(beat.color) } : {}}>
-    <div className="beat-card-top"><span className="beat-drag-icon">&#x2630;</span><input className="beat-card-title" value={beat.title} readOnly /></div>
+    <div className="beat-card-top"><span className="beat-drag-icon">⋮⋮</span><input className="beat-card-title" value={beat.title} readOnly /></div>
   </div>
 );
 
@@ -1376,7 +1378,7 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
             )}
           </div>
         ))}
-        <button className="beat-tab-add" title="New outline variation" onClick={() => addOutlineTab()}>＋</button>
+        <button className="beat-tab-add" title="New outline variation" onClick={() => addOutlineTab()}>+</button>
         {/* v2.48, Derek: Presets + the add button live on this row now,
             hugging the window's right edge. */}
         <OutlineTabActions />
@@ -1499,9 +1501,9 @@ const BeatColumnView: React.FC<BeatColumnViewProps> = ({
             className="beat-column-maximize"
             onClick={onToggleMaximize}
             title={isMaximized ? 'Restore section' : 'Maximize section'}
-          >{isMaximized ? '\u29C9' : '\u2922'}</button>
+          >{isMaximized ? <ExitFullscreenIcon /> : <FullscreenIcon />}</button>
         )}
-        <button className="beat-column-delete" onClick={() => onDeleteColumn(col.id)} title="Delete section">&times;</button>
+        <button className="beat-column-delete" onClick={() => onDeleteColumn(col.id)} title="Delete section"><FaRegTrashAlt /></button>
       </div>
       <SortableContext items={colBeats.map((b) => b.id)} strategy={verticalListSortingStrategy}>
         <div ref={setDropRef} className={`beat-column-cards${isSingleColumn ? ' beat-column-cards-wrap' : ''}`}>

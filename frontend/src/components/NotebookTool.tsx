@@ -25,9 +25,10 @@ import {
 } from '../stores/notebookStore';
 import { useEditorStore } from '../stores/editorStore';
 import {
-  FaChevronRight, FaChevronDown, FaRegFileAlt, FaRegFolder, FaRegFolderOpen,
+  FaRegFileAlt, FaRegFolder, FaRegFolderOpen,
   FaFolderPlus, FaRegEdit, FaRegTrashAlt, FaRegEye, FaRegEyeSlash,
 } from 'react-icons/fa';
+import { LuChevronRight, LuChevronDown } from 'react-icons/lu';
 import { useSettingsStore } from '../stores/settingsStore';
 import { showToast } from './Toast';
 import { confirmDialog } from './ConfirmDialog';
@@ -382,7 +383,7 @@ function TextBox({ box, focused, onChange, onFocusBox, onDelete, zoom = 1 }: {
         // Delete removes the whole box instead of editing its text.
         <div className="fs-nb-box-head fs-nb-box-head-float" onMouseDown={(e) => { (document.activeElement as HTMLElement | null)?.blur?.(); onFocusBox(box.id); startDrag(e, 'move'); }}>
           <span>⋮⋮</span>
-          <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}>✕</button>
+          <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}><FaRegTrashAlt /></button>
         </div>
       )}
       <div
@@ -437,7 +438,7 @@ function ImageBox({ box, focused, onChange, onFocusBox, onDelete, zoom = 1 }: {
       {show && (
         <div className="fs-nb-box-head fs-nb-box-head-float" onMouseDown={(e) => { e.stopPropagation(); startDrag(e, 'move'); }}>
           <span>⋮⋮</span>
-          <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}>✕</button>
+          <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}><FaRegTrashAlt /></button>
         </div>
       )}
       <img
@@ -491,7 +492,7 @@ function TableBox({ box, focused, onChange, onFocusBox, onDelete, onContext, zoo
       {showHead && (
         <div className="fs-nb-box-head fs-nb-box-head-float" onMouseDown={(e) => { e.stopPropagation(); startDrag(e, 'move'); }}>
           <span>⋮⋮</span>
-          <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}>✕</button>
+          <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(box.id); }}><FaRegTrashAlt /></button>
         </div>
       )}
       <EditableTable
@@ -807,7 +808,7 @@ function SectionRow({ node, depth, orderIndex }: { node: Extract<NbNode, { type:
       >
         {/* v2.08: the same caret the side-panel dock items wear. */}
         <button className="fs-nb-collapse" onClick={() => toggleSection(node.id)}>
-          {node.collapsed ? <FaChevronRight /> : <FaChevronDown />}
+          {node.collapsed ? <LuChevronRight /> : <LuChevronDown />}
         </button>
         <span className="fs-nb-grabber">⋮⋮</span>
         <span className="fs-nb-pageicon" style={{ color: folderColor(node, orderIndex, depth) }}>
@@ -1255,7 +1256,7 @@ function SbCtxSubItem({ item, onClose }: { item: SbMenuItem; onClose: () => void
     >
       {item.icon && <span className="menu-dropdown-icon">{item.icon}</span>}
       <span>{sbCleanLabel(item.label)}</span>
-      <span className="menu-submenu-arrow">{'▸'}</span>
+      <span className="menu-submenu-arrow"><LuChevronRight /></span>
       {open && item.children && (
         <div className="menu-submenu submenu-visible">
           {item.children.map((c, j) => c.separator ? <div key={j} className="menu-separator" /> : (

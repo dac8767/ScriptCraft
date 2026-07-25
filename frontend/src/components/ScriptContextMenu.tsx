@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { LuChevronRight } from 'react-icons/lu';
 import type { Editor } from '@tiptap/react';
 import { ELEMENT_LABELS, NOTE_COLORS, type ElementType } from '../stores/editorStore';
 import { uuid } from '../utils/uuid';
@@ -862,7 +863,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
             >
               <span>Add to Dictionary{multipleTargets ? '…' : ''}</span>
               {multipleTargets && (
-                <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--fd-text-muted)' }}>▸</span>
+                <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--fd-text-muted)' }}><LuChevronRight /></span>
               )}
               {multipleTargets && addDictSubOpen && (
                 <div className="ctx-submenu" style={{ left: '100%', top: 0 }}>

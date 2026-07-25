@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaSearchPlus, FaSearchMinus, FaTimes } from 'react-icons/fa';
+import { CirclePlusIcon, CircleMinusIcon } from './uiIcons';
 import { useEditorStore } from '../stores/editorStore';
 
 const ZoomPanel: React.FC = () => {
@@ -29,7 +29,7 @@ const ZoomPanel: React.FC = () => {
         onClick={() => setZoomLevel(zoomLevel - 10)}
         disabled={zoomLevel <= 50}
       >
-        <FaSearchMinus />
+        <CircleMinusIcon />
       </button>
       <div className="zoom-panel-input-wrap">
         <input
@@ -52,14 +52,14 @@ const ZoomPanel: React.FC = () => {
         onClick={() => setZoomLevel(zoomLevel + 10)}
         disabled={zoomLevel >= 300}
       >
-        <FaSearchPlus />
+        <CirclePlusIcon />
       </button>
       <button
         className="zoom-panel-close"
         onClick={() => setZoomPanelOpen(false)}
         title="Close"
       >
-        <FaTimes />
+        ×
       </button>
     </div>
   );

@@ -21,7 +21,7 @@ import { api } from '../services/api';
 import { showToast } from './Toast';
 import {
   FaBold, FaItalic, FaUnderline, FaListUl, FaListOl,
-  FaQuoteLeft, FaArrowLeft, FaSave,
+  FaQuoteLeft, FaSave,
 } from 'react-icons/fa';
 
 /**
@@ -160,7 +160,7 @@ const TreatmentEditor: React.FC = () => {
           onClick={handleBack}
           title="Back to project"
         >
-          <FaArrowLeft />
+          ←
         </button>
         <input
           type="text"

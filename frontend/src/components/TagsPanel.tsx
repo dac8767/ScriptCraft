@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { FaRegEye, FaRegEyeSlash, FaRegTrashAlt } from 'react-icons/fa';
+import { LuChevronUp, LuChevronDown } from 'react-icons/lu';
 import type { Editor } from '@tiptap/react';
 import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 import { useEditorStore } from '../stores/editorStore';
@@ -416,11 +418,7 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style, embedded = false }
           title={tagsVisible ? 'Hide tag highlights' : 'Show tag highlights'}
           aria-label={tagsVisible ? 'Hide tag highlights' : 'Show tag highlights'}
         >
-          {tagsVisible ? (
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 3C4.36 3 1.26 5.28 0 8.5c1.26 3.22 4.36 5.5 8 5.5s6.74-2.28 8-5.5C14.74 5.28 11.64 3 8 3zm0 9.17c-1.84 0-3.33-1.49-3.33-3.33S6.16 5.5 8 5.5s3.33 1.49 3.33 3.33S9.84 12.17 8 12.17zm0-5.34a2 2 0 100 4 2 2 0 000-4z"/></svg>
-          ) : (
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.36 11.35l2.06 2.06-.71.71L.65 0.06l.71-.71 2.68 2.68C5.19 1.38 6.55 1 8 1c3.64 0 6.74 2.28 8 5.5a9.77 9.77 0 01-2.64 3.85zM8 3.5c-1.1 0-2.12.53-2.75 1.4l1.18 1.18A2 2 0 018 4.83a2 2 0 012 2c0 .23-.04.44-.1.65l1.18 1.18c.87-.63 1.4-1.65 1.4-2.75A3.33 3.33 0 008 3.5zm-4.65.82L5.12 6.1a3.33 3.33 0 004.28 4.28l1.25 1.25C9.56 12.22 8.82 12.5 8 12.5c-3.64 0-6.74-2.28-8-5.5a9.77 9.77 0 013.35-3.68z"/></svg>
-          )}
+          {tagsVisible ? <FaRegEye /> : <FaRegEyeSlash />}
         </button>
         {!embedded && <button
           className="tags-panel-close"
@@ -509,7 +507,7 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style, embedded = false }
                                   title={isViewExpanded ? 'Hide occurrences' : 'Show occurrences'}
                                   aria-label={isViewExpanded ? `Hide occurrences for ${entity.name}` : `Show occurrences for ${entity.name}`}
                                 >
-                                  {isViewExpanded ? '\u25B4' : '\u25BE'}
+                                  {isViewExpanded ? <LuChevronUp /> : <LuChevronDown />}
                                 </button>
                               )}
                             </div>
@@ -684,7 +682,7 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style, embedded = false }
                           title="Delete custom category"
                           aria-label={`Delete custom category ${cat.name}`}
                         >
-                          &times;
+                          <FaRegTrashAlt />
                         </button>
                       )}
                       {entities.length > 0 && (
@@ -720,7 +718,7 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style, embedded = false }
                                   title="Delete entity and all occurrences"
                                   aria-label={`Delete entity ${entity.name} and all occurrences`}
                                 >
-                                  &times;
+                                  <FaRegTrashAlt />
                                 </button>
                               </div>
 
@@ -765,7 +763,7 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style, embedded = false }
                                             title="Remove this occurrence"
                                             aria-label={`Remove occurrence of ${entity.name}`}
                                           >
-                                            &times;
+                                            <FaRegTrashAlt />
                                           </button>
                                         </div>
                                       ))}
