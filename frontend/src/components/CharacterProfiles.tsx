@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { FaRegUser, FaRegTrashAlt } from 'react-icons/fa';
-import { LuChevronRight, LuChevronDown } from 'react-icons/lu';
+import { FaRegUser, FaRegTrashAlt, FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import { FullscreenIcon } from './uiIcons';
 import { LuLayoutGrid, LuList, LuWaypoints } from 'react-icons/lu';
 import { ControlDropdown, ControlSearch, ChromeTabs, ChromeRow2, type ToolChromeTab } from './ToolControls';
@@ -54,6 +53,7 @@ function enterCharFullscreen() {
   // v4.30 batch-v7 #6: takeovers are exclusive — lower the Scrapbook surface
   // (it also owns a ribbon "Return to Editor"; two takeovers meant two).
   closeNotebook();
+  s.setScenesFullscreen(false);
   s.setCharFullscreen(true);
 }
 
@@ -1455,7 +1455,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                   {/* v4.20: left caret makes it clear the row toggles open (not
                       in Cards mode, where cards are always expanded). */}
                   {!isCardsView && (
-                    <span className="char-profile-caret" aria-hidden>{isExpanded ? <LuChevronDown /> : <LuChevronRight />}</span>
+                    <span className="char-profile-caret" aria-hidden>{isExpanded ? <FaChevronDown /> : <FaChevronRight />}</span>
                   )}
                   {/* Avatar: show primary image or color swatch */}
                   {primaryImageId && projectId ? (

@@ -51,6 +51,9 @@ export interface ViewState {
   /** v4.27 window template: Characters' persisted view choices. */
   charViewMode?: 'cards' | 'list';
   relViewMode?: 'list' | 'map';
+  /** v4.32 batch-v8: Navigator scene numbers + Design collapsed groups. */
+  navShowSceneNumbers?: boolean;
+  designCollapsedGroups?: string[];
   beatBoardOpen?: boolean;
   shelfOpen?: boolean;
   activeTool?: string | null;
@@ -83,8 +86,6 @@ export interface ViewState {
   toolSizes?: Record<string, { w: number; h: number }>;
   writingGoal?: WritingGoal | null;
   goalsCompleted?: number;
-  shelfTab?: string; // 'notes' | 'todo' | 'snippet' (legacy values migrated on load)
-  notesSubTab?: 'general' | 'script';
   characterProfilesOpen?: boolean;
   tagsPanelOpen?: boolean;
   locationDatabaseOpen?: boolean;

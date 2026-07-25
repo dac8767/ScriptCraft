@@ -215,12 +215,14 @@
   padding: 1px 6px;
   border-radius: 8px;
 }
+/* v4.32 batch-v8 #1: Fa chevrons (right = collapsed, down = expanded) — the
+   icon states are explicit, no rotation transform. */
 .tags-category-chevron {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--fd-text-muted);
-  transition: transform .15s;
+  display: inline-flex;
+  align-items: center;
 }
-.tags-category-chevron.expanded { transform: rotate(180deg); }
 /* Tag items */
 .tags-category-items { padding: 2px 0 6px; }
 .tags-item {

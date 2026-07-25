@@ -3,7 +3,8 @@
 > ## DECIDED (Derek, 2026-07-25) — applied in v4.31
 > 1 fullscreen: **C** (now `FullscreenIcon`/`ExitFullscreenIcon` in uiIcons) ·
 > 2 close: **A** (×) · 3 search: **B** (LuSearch) · 4 add: **B** (ASCII +) ·
-> 5 delete: **B** (FaRegTrashAlt) · 6 caret: **B** (Lu chevrons) ·
+> 5 delete: **B** (FaRegTrashAlt) · 6 caret: ~~B~~ **A** (Fa chevrons — Derek
+> revised in v4.32: "use the larger caret in all places") ·
 > 7 rename: **B** (FaEdit) · 8 settings: **B** (FaWrench) · 9 check: **A**
 > (FaCheck) · 10 copy: **A** (FaCopy) · 11 visibility: **B** (outline eyes) ·
 > 12 undo: **A** (FaUndo/FaRedo) · 13 reset: **B** (LuRotateCcw) ·

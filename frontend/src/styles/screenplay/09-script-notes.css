@@ -81,23 +81,8 @@
   text-align: center;
   line-height: 1.5;
 }
-/* ── Individual note card ── */
-/* Script notes render as sticky cards (background set inline per note color;
-   a thin top bar keeps the note's saturated highlight color visible). */
-.note-item {
-  border: none;
-  border-top: 3px solid var(--fd-accent);
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-  color: #333;
-  padding: 8px 10px 10px;
-  margin: 0 12px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-/* ── Context label (character name, scene heading, etc.) ── */
-/* ── Anchor text (the quoted text the note is attached to) ── */
+/* (v4.33: the .note-item window card is gone — script notes edit in the
+   .fs-note-popover on their highlight, defined at the end of this file.) */
 /* ── Edit area with @asset dropdown ── */
 .note-edit-area { position: relative; }
 /* ── Note preview (rendered view with media + @refs) ── */
@@ -226,3 +211,31 @@
 .script-notes-list::-webkit-scrollbar-track { background: transparent; }
 .script-notes-list::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
+
+/* ── v4.33: the script-note edit popover ─────────────────────────────────
+   THE editing surface for a note anchored in the script (the Notes window is
+   general-only now). Portalled to body, seated under the highlight span by
+   measured top/left — never bottom-anchored (WebKit collapses those). Wears
+   the same sticky-card face the window card had, so nothing looks new. */
+.fs-note-popover {
+  position: fixed;
+  z-index: 3200;
+  border: 1px solid var(--fd-border);
+  border-top: 3px solid transparent;   /* note-color strip via inline style */
+  border-radius: 6px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35);
+  padding: 8px 10px 10px;
+  color: #333;                          /* sticky pastels are always light */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: min(60vh, 480px);
+  overflow-y: auto;
+}
+.fs-note-popover .swn-card-head { margin: 0; }
+.fs-note-popover .swn-comment-input {
+  min-height: 72px;
+  resize: vertical;
+}
+.fs-note-popover .fs-notepop-close { font-size: 15px; }
+.fs-note-popover .swn-card-foot { margin-top: 2px; }

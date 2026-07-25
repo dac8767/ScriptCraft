@@ -1,17 +1,21 @@
 /**
  * StickyNotes — the ScriptCraft sticky-card system, now split into three
  * right-dock tools:
- *   - StickyNotesTool ("Sticky Notes"): General / Script sub-tabs — General is
- *     free-form sticky cards, Script is OpenDraft's anchored notes. The 🔍
- *     search spans both sub-views.
+ *   - StickyNotesTool ("Notes"): general note cards.
  *   - FragmentsTool ("Snippets"): text sent from the
  *     editor via ⌥⌘X (cut) / ⌥⌘C (copy) — bound in ScreenplayEditor.
- *   - TodoTool ("To-Do"): to-do lists, each showing where in the script it lives.
+ *   - TodoTool ("To-Do"): general to-do list cards.
+ * v4.33, Derek: both Notes and To-Do hold ONLY non-script items now. Script
+ * notes and script [ ] to-do lists live in the Navigator (which jumps to
+ * them); note text is edited in the popover on the highlight itself.
  * Cards keep sticky colors, drag-reorder, editable title headers (type name
  * as placeholder), and creation dates. Data persists per script as the
  * `_shelf` key of the saved content JSON and syncs in collab via collabSync.
+ * v4.32 batch-v8 #12: Notes and To-Do wear the window template — the "· N"
+ * count and the Sort dropdown live in the chrome (the slots at the
+ * bottom of this file), not in the list bodies.
  */
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import type { Editor } from '@tiptap/react';
 import {
   useEditorStore,
@@ -23,15 +27,16 @@ import { ScriptNotesContent } from './ScriptNotes';
 import React from 'react';
 import { StickyCard } from './StickyCard';
 import {
-  ListToolbar, arrangeEntries, reorderKeys, entryDragProps,
-  type ListEntry, type ListFilter, type ListSort,
+  arrangeEntries, reorderKeys, entryDragProps, SORT_LABEL,
+  type ListEntry, type ListSort,
 } from './ListControls';
+import { ControlDropdown } from './ToolControls';
 import { uuid } from '../utils/uuid';
 
 
 const EMPTY_HINTS: Record<ShelfCardType, string> = {
   comment: 'Notes to self, research links, themes to keep present. Hit + Add below.',
-  todo: 'To-do lists. Ones added to the script show the scene they’re in. Hit + Add below.',
+  todo: 'To-do lists for anything outside the script. Hit + Add below.',
   snippet: 'Select text in the Editor and press ⌥⌘X to cut it here, or ⌥⌘C to copy it over.',
 };
 
@@ -156,14 +161,14 @@ interface EditorToolProps {
  * character it's anchored to (and the text it's attached to), while a standalone
  * note shows nothing there. Blank is the signal.
  */
-export function StickyNotesTool({ editor }: EditorToolProps) {
+export function StickyNotesTool(_props: EditorToolProps) {
   const { add } = useCardOps();
   return (
     <div className="fs-sticky-tool">
-      {/* v1.0: ScriptNotesContent now renders BOTH kinds of note in one list,
-          with the Filter / Sort bar at the top. No more separate sections. */}
+      {/* v4.33: general note cards only — script notes live in the Navigator
+          and edit on their highlight. Sort sits in the window chrome. */}
       <div className="fs-notes-list">
-        <ScriptNotesContent editor={editor} />
+        <ScriptNotesContent />
       </div>
       <div className="swn-add-row">
         <button className="swn-add-btn" onClick={() => add('comment')}>+ Add</button>
@@ -185,194 +190,62 @@ export function FragmentsTool(_props: EditorToolProps) {
 /* ═══════════ Tool: To-Do ═══════════ */
 
 /**
- * v0.92 — ONE list, no sub-types.
- *
- * There used to be two kinds of to-do (General cards vs Script checklist lines)
- * split across sub-tabs, which forced you to know which bucket a thing was in
- * before you could find it. The distinction that actually matters isn't a type —
- * it's WHERE the to-do lives. So there's now a single list, and each row carries
- * a Location: the scene it sits in for a to-do added to the script, blank for one
- * that only exists in this window.
- *
- * Both are still real things (a script to-do is a [ ] line in the document, so it
- * travels with the script; a standalone one doesn't) — that difference is now
- * shown rather than filed away in tabs.
+ * v4.33, Derek — general to-do cards ONLY. Script [ ] lists left this window:
+ * they live in the script itself (edit them there) and in the Navigator
+ * (tick them there, click to jump). No Location column, no filter — nothing
+ * here has a script location any more.
  */
-export function TodoTool({ editor }: EditorToolProps) {
+export function TodoTool(_props: EditorToolProps) {
   const { add } = useCardOps();
   const { shelfCards, setShelfCards, todoOrder, setTodoOrder } = useEditorStore();
-  const [docTick, setDocTick] = useState(0);
-  const [filter, setFilter] = useState<ListFilter>('all');
-  const [sort, setSort] = useState<ListSort>('manual');
+  // v4.32 batch-v8 #12: sort lives in the STORE (todoSort) so the window
+  // chrome's row-2 cluster (TodoControls) drives it — the in-body bar is
+  // gone. A drag still snaps Sort back to Manual.
+  const sort = useEditorStore((s) => s.todoSort);
+  const setSort = useEditorStore((s) => s.setTodoSort);
   const [dragKey, setDragKey] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!editor) return;
-    const onUpdate = () => setDocTick((t) => t + 1);
-    editor.on('update', onUpdate);
-    return () => { editor.off('update', onUpdate); };
-  }, [editor]);
-
-  /**
-   * To-do lists living in the script. Consecutive [ ] lines are ONE list (what
-   * Enter builds), so they surface as one card — the same card a list made in
-   * this window gets. Title and colour ride on the first line's attrs.
-   */
-  const scriptLists = useMemo(() => {
-    type Line = { text: string; done: boolean };
-    const out: Array<{
-      id: string; start: number; end: number; lines: Line[];
-      title: string; color: string | null; scene: string;
-    }> = [];
-    if (editor) {
-      // v1.3.1: the link names the scene NUMBER — a locked production number if
-      // the heading carries one, otherwise its position in the script.
-      let scene = 'Linked to Script';
-      let ordinal = 0;
-      let run: (typeof out)[number] | null = null;
-      editor.state.doc.descendants((node, pos) => {
-        if (node.type.name === 'sceneHeading') {
-          ordinal += 1;
-          const num = (node.attrs as { sceneNumber?: number | string | null })?.sceneNumber;
-          scene = `Linked to Scene ${num ?? ordinal}`;
-          run = null;
-          return true;
-        }
-        if (node.type.name === 'general') {
-          const text = node.textContent || '';
-          if (/^\[[ x]\]/.test(text)) {
-            const line: Line = { text: text.slice(3).trim(), done: text[1] === 'x' };
-            if (run && run.end === pos) {
-              run.lines.push(line);
-              run.end = pos + node.nodeSize;
-            } else {
-              run = {
-                id: (node.attrs.todoId as string) || `at:${pos}`,
-                start: pos, end: pos + node.nodeSize, lines: [line],
-                title: (node.attrs.todoTitle as string) || '',
-                color: (node.attrs.todoColor as string) || null,
-                scene,
-              };
-              out.push(run);
-            }
-            return true;
-          }
-        }
-        run = null;
-        return true;
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    return out;
-  }, [editor, docTick]);
-
-  /** Rewrite a run from its items — one transaction, so undo is one step. */
-  const writeLines = (
-    list: { start: number; end: number; id: string; title: string; color: string | null },
-    lines: Array<{ text: string; done: boolean }>,
-    attrs?: { todoTitle?: string | null; todoColor?: string | null },
-  ) => {
-    if (!editor) return;
-    const { schema } = editor.state;
-    const nodes = lines.map((l, i) => schema.nodes.general.create(
-      i === 0
-        ? {
-            todoId: list.id.startsWith('at:') ? uuid() : list.id,
-            todoTitle: attrs?.todoTitle !== undefined ? attrs.todoTitle : (list.title || null),
-            todoColor: attrs?.todoColor !== undefined ? attrs.todoColor : list.color,
-          }
-        : {},
-      schema.text(`[${l.done ? 'x' : ' '}] ${l.text || ''}`),
-    ));
-    editor.view.dispatch(editor.state.tr.replaceWith(list.start, list.end, nodes));
-  };
-
-  const removeList = (list: { start: number; end: number }) => {
-    if (!editor) return;
-    editor.view.dispatch(editor.state.tr.delete(list.start, list.end));
-  };
-
-  const jumpTo = (pos: number) => {
-    if (!editor) return;
-    editor.chain().focus().setTextSelection(pos + 1).run();
-  };
-
-  const entries: ListEntry[] = [
-    ...scriptLists.map((list) => ({
-      key: `todo:${list.id}`,
-      linked: true,
-      pos: list.start,
-      render: () => {
-        const card: ShelfCard = {
-          id: `todo:${list.id}`,
-          type: 'todo',
-          color: list.color || SHELF_DEFAULT_COLOR,
-          title: list.title,
-          items: list.lines.map((l) => ({ text: l.text, done: l.done })),
-        };
-        const dp = entryDragProps(`todo:${list.id}`, sort === 'manual', dragKey, setDragKey, onDropKey);
-        return (
-          <div {...dp.card}>
-            <StickyCard
-              card={card}
-              dragging={dragKey === `todo:${list.id}`}
-              onDragStart={dp.grip.onDragStart}
-              onDragEnd={dp.grip.onDragEnd}
-              onDropHere={() => {}}
-              anchor={{ label: list.scene, onClick: () => jumpTo(list.start) }}
-              onUpdate={(patch) => writeLines(list, patch.items ?? card.items ?? [], {
-                ...(patch.title !== undefined ? { todoTitle: patch.title || null } : {}),
-                ...(patch.color !== undefined ? { todoColor: patch.color || null } : {}),
-              })}
-              onRemove={() => removeList(list)}
-            />
-          </div>
-        );
-      },
-    })),
-    ...shelfCards.filter((c) => c.type === 'todo').map((card) => ({
-      key: `card:${card.id}`,
-      linked: false,
-      createdAt: card.createdAt,
-      render: () => {
-        const dp = entryDragProps(`card:${card.id}`, sort === 'manual', dragKey, setDragKey, onDropKey);
-        return (
-          <div {...dp.card}>
-            <StickyCard
-              card={card}
-              dragging={dragKey === `card:${card.id}`}
-              onDragStart={dp.grip.onDragStart}
-              onDragEnd={dp.grip.onDragEnd}
-              onDropHere={() => {}}
-              anchor={{ label: 'General' }}
-              onUpdate={(patch) => setShelfCards(shelfCards.map((c) => (c.id === card.id ? { ...c, ...patch } : c)))}
-              onRemove={() => setShelfCards(shelfCards.filter((c) => c.id !== card.id))}
-            />
-          </div>
-        );
-      },
-    })),
-  ];
+  const entries: ListEntry[] = shelfCards.filter((c) => c.type === 'todo').map((card) => ({
+    key: `card:${card.id}`,
+    createdAt: card.createdAt,
+    render: () => {
+      const dp = entryDragProps(`card:${card.id}`, sort === 'manual', dragKey, setDragKey, onDropKey);
+      return (
+        <div {...dp.card}>
+          <StickyCard
+            card={card}
+            dragging={dragKey === `card:${card.id}`}
+            onDragStart={dp.grip.onDragStart}
+            onDragEnd={dp.grip.onDragEnd}
+            onDropHere={() => {}}
+            onUpdate={(patch) => setShelfCards(shelfCards.map((c) => (c.id === card.id ? { ...c, ...patch } : c)))}
+            onRemove={() => setShelfCards(shelfCards.filter((c) => c.id !== card.id))}
+          />
+        </div>
+      );
+    },
+  }));
   const allKeys = entries.map((e) => e.key);
   function onDropKey(from: string, to: string) {
     setSort('manual');
     setTodoOrder(reorderKeys(todoOrder, allKeys, from, to));
   }
-  const visible = arrangeEntries(entries, filter, sort, todoOrder);
+  const visible = arrangeEntries(entries, sort, todoOrder);
+
+  // v4.32: publish the count this list is showing so the window chrome's
+  // title (TodoTitleExtra) displays the same number — displayed there,
+  // never recomputed (charListCount's no-drift rule).
+  useEffect(() => {
+    useEditorStore.getState().setToolCount('todo', visible.length);
+  }, [visible.length]);
 
   return (
     <div className="fs-sticky-tool">
-      <ListToolbar
-        filter={filter} setFilter={setFilter}
-        sort={sort} setSort={setSort}
-        count={visible.length} noun="to-do"
-      />
       <div className="fs-todo-list">
         {visible.length === 0 ? (
           <div className="fs-nav-empty fs-todo-hint">
-            {entries.length === 0
-              ? <>Add a to-do below, or use <strong>Insert → To-Do List</strong> to add one in the script.</>
-              : 'No to-dos match this filter.'}
+            Add a to-do below. (To-do lists IN the script live in the
+            Navigator — use Insert → To-Do List to add one there.)
           </div>
         ) : (
           visible.map((e) => <React.Fragment key={e.key}>{e.render()}</React.Fragment>)
@@ -383,5 +256,59 @@ export function TodoTool({ editor }: EditorToolProps) {
       </div>
     </div>
   );
+}
+
+/* ═══════════ Window chrome (v4.32, Derek's window template) ═══════════ */
+
+/** TOOL_CHROME slots for Notes and To-Do, wired in ToolDock: the "· N" count
+ *  beside the centered row-1 title, and the row-2 Filter / Sort cluster.
+ *  Counts are published by the list bodies (setToolCount) — displayed here,
+ *  never recomputed — and filter/sort live in the store, so the chrome and
+ *  the lists can't drift. */
+export function StickyTitleExtra() {
+  const count = useEditorStore((s) => s.toolCounts['sticky'] ?? 0);
+  return <span className="tool-title-count">· {count}</span>;
+}
+
+export function TodoTitleExtra() {
+  const count = useEditorStore((s) => s.toolCounts['todo'] ?? 0);
+  return <span className="tool-title-count">· {count}</span>;
+}
+
+/** Snippets' count comes straight off the store list — the body (CardList)
+ *  shows every snippet card, no filter, so there's nothing to publish. */
+export function SnippetsTitleExtra() {
+  const count = useEditorStore((s) => s.shelfCards.filter((c) => c.type === 'snippet').length);
+  return <span className="tool-title-count">· {count}</span>;
+}
+
+/** The cluster both windows share, differing only in which store pair it
+ *  drives. v4.33: Sort only — the General/In-Script filter died when script
+ *  items left these windows. Option labels come from ListControls' map so
+ *  the two windows can't drift apart. */
+function ListChromeControls({ sort, setSort }: {
+  sort: ListSort; setSort: (s: ListSort) => void;
+}) {
+  return (
+    <ControlDropdown
+      label="Sort"
+      title="Manual lets you drag items into any order you like"
+      items={(['manual', 'created'] as ListSort[]).map((v) => ({
+        label: SORT_LABEL[v], active: sort === v, onSelect: () => setSort(v),
+      }))}
+    />
+  );
+}
+
+export function StickyControls() {
+  const sort = useEditorStore((s) => s.notesSort);
+  const setSort = useEditorStore((s) => s.setNotesSort);
+  return <ListChromeControls sort={sort} setSort={setSort} />;
+}
+
+export function TodoControls() {
+  const sort = useEditorStore((s) => s.todoSort);
+  const setSort = useEditorStore((s) => s.setTodoSort);
+  return <ListChromeControls sort={sort} setSort={setSort} />;
 }
 

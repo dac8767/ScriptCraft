@@ -9,6 +9,9 @@ import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../
 import SynopsisModal from './SynopsisModal';
 import { ControlDropdown, ControlSearch } from './ToolControls';
 import { LuLayoutGrid, LuList } from 'react-icons/lu';
+import { FullscreenIcon } from './uiIcons';
+import { closeNotebook } from './NotebookTool';
+import { FaChevronRight, FaChevronDown } from 'react-icons/fa';
 
 interface SceneNavigatorProps {
   editor: Editor | null;
@@ -513,6 +516,18 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     });
   }, [activeTab, filteredIndices.length, scenes.length, allCharacters, allLocations, allPrefixes, allTimes, setSceneNavData]);
 
+  // v4.32 batch-v8 #11/#12: the Pages / Locations / Structure windows carry
+  // their count beside the window title now (the template's TitleExtra slot,
+  // reading toolCounts) — their in-body title rows are gone.
+  useEffect(() => {
+    const s = useEditorStore.getState();
+    if (activeTab === 'locations') s.setToolCount('locations', locations.length);
+    else if (activeTab === 'pages') s.setToolCount('pages', pageContent.length);
+    else if (activeTab === 'structure') {
+      s.setToolCount('structure', structure.acts.filter((a) => a.actNumber > 0).length);
+    }
+  }, [activeTab, locations.length, pageContent.length, structure]);
+
   // ── Navigate to a scene by index ──
 
   const goToScene = useCallback(
@@ -747,14 +762,11 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
       )}
 
       {/* ── Structure tab ────────────────────────────────────────────── */}
+      {/* v4.32 batch-v8 #11/#12: the in-body title rows are gone — the window
+          title carries the count (StructureTitleExtra / LocationsTitleExtra,
+          published via setToolCount below). */}
       {activeTab === 'structure' && (
         <>
-          <div className="navigator-header">
-            <span className="navigator-title">Structure</span>
-            <span className="scene-count">
-              {structure.acts.filter((a) => a.actNumber > 0).length || '—'} acts
-            </span>
-          </div>
           <div className="navigator-list">
             {structure.acts.length === 0 ? (
               <div className="navigator-empty">
@@ -772,7 +784,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                       className="structure-act-header"
                       onClick={() => toggleAct(act.actNumber)}
                     >
-                      <span className={`structure-chevron${isCollapsed ? '' : ' expanded'}`}>&#9662;</span>
+                      <span className="structure-chevron">{isCollapsed ? <FaChevronRight /> : <FaChevronDown />}</span>
                       <span className="structure-act-name">{displayName}</span>
                       <span className="structure-act-count">{act.scenes.length}</span>
                     </div>
@@ -786,7 +798,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                                 className="structure-sequence-header"
                                 onClick={() => toggleSequence(seq.id)}
                               >
-                                <span className={`structure-chevron${seqCollapsed ? '' : ' expanded'}`}>&#9662;</span>
+                                <span className="structure-chevron">{seqCollapsed ? <FaChevronRight /> : <FaChevronDown />}</span>
                                 <span className="structure-sequence-dot" style={{ background: seq.color }} />
                                 <span className="structure-sequence-name">{seq.name}</span>
                                 <span className="structure-sequence-count">{seq.scenes.length}</span>
@@ -835,10 +847,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
       {/* ── Locations tab ────────────────────────────────────────────── */}
       {activeTab === 'locations' && (
         <>
-          <div className="navigator-header">
-            <span className="navigator-title">Locations</span>
-            <span className="scene-count">{locations.length}</span>
-          </div>
           <div className="navigator-list">
             {locations.length === 0 ? (
               <div className="navigator-empty">
@@ -855,7 +863,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                     <div className="location-header" onClick={() => setExpandedLocation(isExpanded ? null : key)}>
                       <span className="location-name">{loc.name}</span>
                       <span className="location-scene-count">{loc.sceneIndices.length}</span>
-                      <span className={`location-chevron${isExpanded ? ' expanded' : ''}`}>&#9662;</span>
+                      <span className="location-chevron">{isExpanded ? <FaChevronDown /> : <FaChevronRight />}</span>
                     </div>
                     {isExpanded && (
                       <div className="location-detail">
@@ -933,13 +941,84 @@ function countActiveFilters(f: SceneFilters): number {
     (f.time ? 1 : 0) + (f.color ? 1 : 0) + (f.synopsis ? 1 : 0);
 }
 
-/** v4.27 template TitleExtra slot: the scene count beside the window title. */
+/** v4.27 template TitleExtra slot: the scene count beside the window title.
+ *  v4.32: the filtered/total fraction is list-view-only — filters and search
+ *  don't narrow the card wall, so showing "3/9" over 9 cards would lie. */
 export function SceneTitleExtra() {
   const data = useEditorStore((s) => s.sceneNavData);
   const filters = useEditorStore((s) => s.sceneFilters);
   const search = useEditorStore((s) => s.sceneSearch);
-  const hasActiveFilter = countActiveFilters(filters) > 0;
-  return <span className="tool-title-count">· {(hasActiveFilter || search) ? `${data.filtered}/` : ''}{data.total}</span>;
+  const mode = useEditorStore((s) => s.scenesViewMode);
+  const narrowed = mode !== 'cards' && (countActiveFilters(filters) > 0 || !!search);
+  return <span className="tool-title-count">· {narrowed ? `${data.filtered}/` : ''}{data.total}</span>;
+}
+
+// v4.32 batch-v8 #2/#8: Scenes fullscreen is now an editor-area takeover (the
+// char-fullscreen pattern), replacing the old position:fixed overlay that
+// covered the whole app with no reachable close. Entering clears the
+// docked/floating instance so only the takeover renders, and lowers the other
+// takeovers — they are mutually exclusive (one "Return to Editor" at a time).
+function enterScenesFullscreen() {
+  const s = useEditorStore.getState();
+  if (s.activeTool === 'scenes') s.setActiveTool(null);
+  if (s.activeToolRight === 'scenes') s.setActiveToolRight(null);
+  if (s.tempTool === 'scenes') s.setTempTool(null);
+  closeNotebook();
+  s.setCharFullscreen(false);
+  s.setScenesFullscreen(true);
+}
+
+/** v4.32 batch-v8 #11/#12: Pages / Locations / Structure counts beside the
+ *  window title (the body publishes via setToolCount — same house pattern as
+ *  Notes/To-Do). Structure counts ACTS, the others their list length. */
+export function PagesTitleExtra() {
+  const count = useEditorStore((s) => s.toolCounts['pages'] ?? 0);
+  return <span className="tool-title-count">· {count}</span>;
+}
+export function LocationsTitleExtra() {
+  const count = useEditorStore((s) => s.toolCounts['locations'] ?? 0);
+  return <span className="tool-title-count">· {count}</span>;
+}
+export function StructureTitleExtra() {
+  const count = useEditorStore((s) => s.toolCounts['structure'] ?? 0);
+  return <span className="tool-title-count">· {count}</span>;
+}
+
+/** v4.32 batch-v8 #9: the Reorder toggle — ONE control shared by the window's
+ *  row-2 cluster and the fullscreen takeover header, so the two can't drift.
+ *  Flipping it off without Apply cancels (IndexCards drops the pending
+ *  snapshot when the flag clears). */
+export function ScenesReorderControl() {
+  const reorder = useEditorStore((s) => s.scenesReorderMode);
+  const setReorder = useEditorStore((s) => s.setScenesReorderMode);
+  return (
+    <button
+      className={`tool-ctl${reorder ? ' active' : ''}`}
+      title={reorder ? 'Exit reorder mode (discards unapplied order)' : 'Drag cards to reorder scenes'}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={() => setReorder(!reorder)}
+    >
+      <span className="tool-ctl-label">Reorder</span>
+    </button>
+  );
+}
+
+/** v4.32 batch-v8 #8: the fullscreen button, moved from the deleted in-body
+ *  count row to the row-1 window actions zone (the template slot). Cards view
+ *  only — the takeover shows the card wall, same scope the old in-cards
+ *  button had. */
+export function ScenesWindowActions() {
+  const mode = useEditorStore((s) => s.scenesViewMode);
+  if (mode !== 'cards') return null;
+  return (
+    <button
+      className="char-profiles-fullscreen-btn"
+      onClick={enterScenesFullscreen}
+      title="Fullscreen"
+    >
+      <FullscreenIcon />
+    </button>
+  );
 }
 
 /** v4.27 template Controls slot: the row-2 Filter / View / Search cluster. */
@@ -1059,6 +1138,10 @@ export function SceneControls() {
         document.body,
       )}
       </>}
+      {/* v4.32 batch-v8 #9: Reorder lives in the row-2 cluster now (the old
+          in-body count row is gone), LEFT of View. Cards only — reordering IS
+          the card wall's drag mode. */}
+      {cardsView && <ScenesReorderControl />}
       <ControlDropdown
         title="View"
         current={cardsView ? 'Cards' : 'List'}

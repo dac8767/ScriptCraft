@@ -12,12 +12,16 @@
  */
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { LuChevronDown, LuSearch } from 'react-icons/lu';
+import { LuSearch } from 'react-icons/lu';
+import { FaChevronDown } from 'react-icons/fa';
 
 export interface ControlDropdownItem {
   label: string;
   active?: boolean;
   onSelect: () => void;
+  /** v4.32: multi-toggle menus (Navigator's Filter) stay open on select —
+   *  the item re-renders with its new active state instead of closing. */
+  keepOpen?: boolean;
 }
 
 /** One tab of a window's row-2 strip (TOOL_CHROME.useTabs). */
@@ -25,6 +29,10 @@ export interface ToolChromeTab {
   label: string;
   active: boolean;
   onSelect: () => void;
+  /** v4.32: attention dot on the tab (e.g. Tags' Manage tab while a selection
+   *  is waiting to be tagged). Strip mode only — the collapsed dropdown drops
+   *  it (opening the menu is the same gesture the dot invites). */
+  badge?: boolean;
 }
 
 export const ControlDropdown: React.FC<{
@@ -76,7 +84,7 @@ export const ControlDropdown: React.FC<{
         {label && <span className="tool-ctl-label">{label}</span>}
         {current && <span className="tool-ctl-current">{current}</span>}
         {chip !== undefined && chip > 0 && <span className="tool-ctl-chip">{chip}</span>}
-        <LuChevronDown className="tool-ctl-chev" aria-hidden />
+        <FaChevronDown className="tool-ctl-chev" aria-hidden />
       </button>
       {pos && createPortal(
         <div className="tool-ctl-menu" style={{ top: pos.top, left: pos.left }} onPointerDown={(e) => e.stopPropagation()}>
@@ -84,7 +92,7 @@ export const ControlDropdown: React.FC<{
             <button
               key={it.label}
               className={`tool-ctl-menu-item${it.active ? ' active' : ''}`}
-              onClick={() => { setPos(null); it.onSelect(); }}
+              onClick={() => { if (!it.keepOpen) setPos(null); it.onSelect(); }}
             >
               {it.label}
             </button>
@@ -117,7 +125,10 @@ export const ChromeTabs: React.FC<{ tabs: ToolChromeTab[]; collapsed?: boolean }
           key={t.label}
           className={`tool-chrome-tab${t.active ? ' active' : ''}`}
           onClick={t.onSelect}
-        >{t.label}</button>
+        >
+          {t.label}
+          {t.badge && <span className="tool-chrome-tab-dot" />}
+        </button>
       ))}
     </>
   );

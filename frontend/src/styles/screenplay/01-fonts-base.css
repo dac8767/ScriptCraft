@@ -319,14 +319,7 @@
 [data-theme="light"] .beat-link-preview {
   background: rgba(0, 0, 0, 0.03);
 }
-/* Light theme: note cards / profile cards */
-[data-theme="light"] .note-item {
-  background: #ffffff;
-  border-color: var(--fd-border);
-}
-[data-theme="light"] .note-item:hover {
-  border-color: #888;
-}
+/* Light theme: profile cards */
 [data-theme="light"] .char-profile-card {
   background: #ffffff;
   /* v4.24 batch 4: distinct outline in light mode too (color-mix falls back

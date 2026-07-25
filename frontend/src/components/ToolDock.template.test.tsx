@@ -11,7 +11,9 @@ import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
 import { ToolWindowFrame, ALL_TOOLS, TOOL_CHROME } from './ToolDock';
 
-const todoDef = ALL_TOOLS.find((t) => t.id === 'todo')!;
+// v4.33: 'workspaces' is the chrome-less fixture — Notes/To-Do grew real
+// TOOL_CHROME entries, so injecting fake chrome onto them would collide.
+const wsDef = ALL_TOOLS.find((t) => t.id === 'workspaces')!;
 
 let host: HTMLElement;
 let root: Root;
@@ -26,12 +28,12 @@ afterEach(() => {
   act(() => root.unmount());
   host.remove();
   // tests inject registry entries for a tool that has none — always undo
-  delete TOOL_CHROME.todo;
+  delete TOOL_CHROME.workspaces;
 });
 
 const renderFrame = () => act(() => {
   root.render(
-    <ToolWindowFrame tool={todoDef} side="left" onClose={() => {}}>
+    <ToolWindowFrame tool={wsDef} side="left" onClose={() => {}}>
       <div>body</div>
     </ToolWindowFrame>,
   );
@@ -45,14 +47,14 @@ describe('window template rows (v4.27)', () => {
     const zones = Array.from(header.children).filter((c) => c.classList.contains('tool-window-zone'));
     expect(zones.length).toBe(3);
     expect(zones[0].classList.contains('tool-window-zone-l')).toBe(true);
-    expect(zones[1].querySelector('.tool-window-title')?.textContent).toBe('To-Do');
+    expect(zones[1].querySelector('.tool-window-title')?.textContent).toBe('Workspaces');
     expect(zones[2].querySelector('.tool-window-close')).toBeTruthy();
     // no declared chrome and no legacy extra → no empty row 2 strip
     expect(host.querySelector('.tool-chrome-row2')).toBeNull();
   });
 
   it('TOOL_CHROME slots land in their zones: TitleExtra centre, WindowActions before close, tabs + controls on row 2', () => {
-    TOOL_CHROME.todo = {
+    TOOL_CHROME.workspaces = {
       TitleExtra: () => <span data-testid="tx">· 3</span>,
       WindowActions: () => <button data-testid="wa">fs</button>,
       useTabs: () => [
@@ -81,7 +83,7 @@ describe('window template rows (v4.27)', () => {
   });
 
   it('a Controls-only tool gets row 2 with the cluster and no tab strip', () => {
-    TOOL_CHROME.todo = { Controls: () => <span data-testid="ctl-only">ctl</span> };
+    TOOL_CHROME.workspaces = { Controls: () => <span data-testid="ctl-only">ctl</span> };
     renderFrame();
     expect(host.querySelector('.tool-window-header [data-testid="ctl-only"]')).toBeNull();
     const row2 = host.querySelector('.tool-chrome-row2')!;

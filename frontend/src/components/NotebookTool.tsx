@@ -27,8 +27,8 @@ import { useEditorStore } from '../stores/editorStore';
 import {
   FaRegFileAlt, FaRegFolder, FaRegFolderOpen,
   FaFolderPlus, FaRegEdit, FaRegTrashAlt, FaRegEye, FaRegEyeSlash,
+  FaChevronRight, FaChevronDown,
 } from 'react-icons/fa';
-import { LuChevronRight, LuChevronDown } from 'react-icons/lu';
 import { useSettingsStore } from '../stores/settingsStore';
 import { showToast } from './Toast';
 import { confirmDialog } from './ConfirmDialog';
@@ -808,7 +808,7 @@ function SectionRow({ node, depth, orderIndex }: { node: Extract<NbNode, { type:
       >
         {/* v2.08: the same caret the side-panel dock items wear. */}
         <button className="fs-nb-collapse" onClick={() => toggleSection(node.id)}>
-          {node.collapsed ? <LuChevronRight /> : <LuChevronDown />}
+          {node.collapsed ? <FaChevronRight /> : <FaChevronDown />}
         </button>
         <span className="fs-nb-grabber">⋮⋮</span>
         <span className="fs-nb-pageicon" style={{ color: folderColor(node, orderIndex, depth) }}>
@@ -911,9 +911,10 @@ export default function NotebookTool() {
     // v4.30 batch-v7 #6, Derek: takeovers are EXCLUSIVE. The Scrapbook surface
     // and the Characters fullscreen both claim the editor area, and each puts
     // a "Return to Editor" in the ribbon — with both flags up the ribbon
-    // showed two of them. Raising this surface lowers the other takeover
-    // (enterCharFullscreen does the reverse).
+    // showed two of them. Raising this surface lowers the other takeovers
+    // (enterCharFullscreen / enterScenesFullscreen do the reverse).
     useEditorStore.getState().setCharFullscreen(false);
+    useEditorStore.getState().setScenesFullscreen(false);
     useNotebookStore.getState().setNotebookOpen(true);
     return () => { useNotebookStore.getState().setNotebookOpen(false); };
   }, []);
@@ -1256,7 +1257,7 @@ function SbCtxSubItem({ item, onClose }: { item: SbMenuItem; onClose: () => void
     >
       {item.icon && <span className="menu-dropdown-icon">{item.icon}</span>}
       <span>{sbCleanLabel(item.label)}</span>
-      <span className="menu-submenu-arrow"><LuChevronRight /></span>
+      <span className="menu-submenu-arrow"><FaChevronRight /></span>
       {open && item.children && (
         <div className="menu-submenu submenu-visible">
           {item.children.map((c, j) => c.separator ? <div key={j} className="menu-separator" /> : (

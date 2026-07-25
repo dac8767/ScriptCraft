@@ -1,5 +1,5 @@
+import { FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import React, { useEffect, useState } from 'react';
-import { LuChevronRight, LuChevronDown } from 'react-icons/lu';
 import { useEditorStore } from '../stores/editorStore';
 import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { BUILTIN, CATALOG, findLanguage } from '../editor/languageCatalog';
@@ -341,7 +341,7 @@ const LanguageInstallerDialog: React.FC<{ onClose: () => void }> = ({ onClose })
                 fontSize: 13,
               }}
             >
-              {customOpen ? <LuChevronDown /> : <LuChevronRight />} Install from custom URL (e.g. Hindi, Tamil, etc.)
+              {customOpen ? <FaChevronDown /> : <FaChevronRight />} Install from custom URL (e.g. Hindi, Tamil, etc.)
             </button>
             {customOpen && (
               <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>

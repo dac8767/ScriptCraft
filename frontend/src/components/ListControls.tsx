@@ -1,103 +1,46 @@
 /**
- * ListControls (v1.0) — the Filter / Sort bar and the ordering rules shared by
- * Notes and To-Do.
+ * ListControls (v1.0) — the ordering rules and option labels shared by Notes
+ * and To-Do.
  *
- * Both lists now hold script-anchored items and window items TOGETHER, so both
- * need the same three questions answered the same way: what am I looking at
- * (filter), in what order (sort), and — when sort is blank — where did I drag
- * this (manual order). Written once so the two windows can't answer them
- * differently.
+ * v4.33, Derek: both windows hold ONLY general (non-script) items now — script
+ * notes and script to-do lists live in the Navigator, and note text is edited
+ * in a popover on the highlight itself. The filter (All/General/In Script) and
+ * the Scene # sort died with the split: with one kind of item there is nothing
+ * to filter, and nothing here has a script position to sort by. What remains —
+ * sort rules and drag plumbing — is still written once so the two windows
+ * can't answer "in what order" differently.
  */
 import React from 'react';
-import AddMenu from './AddMenu';
-import { FilterIcon } from './uiIcons';
 
-export type ListFilter = 'all' | 'script' | 'general';
-export type ListSort = 'manual' | 'created' | 'script';
+export type ListSort = 'manual' | 'created';
 
 /** One row in either list, whatever it actually is underneath. */
 export interface ListEntry {
-  /** Stable key, also the manual-order key: note:<id> | card:<id> | todo:<id> */
+  /** Stable key, also the manual-order key: card:<id> */
   key: string;
-  /** Anchored in the script, or living only in the window? */
-  linked: boolean;
-  /** Document position — sorts by where it falls in the script. */
-  pos?: number;
   createdAt?: string;
   render: () => React.ReactNode;
 }
 
-const FILTER_LABEL: Record<ListFilter, string> = {
-  all: 'All',
-  general: 'General',
-  script: 'In Script',
-};
-const SORT_LABEL: Record<ListSort, string> = {
+export const SORT_LABEL: Record<ListSort, string> = {
   manual: 'Manual',
   created: 'Date Created',
-  script: 'Scene #',
 };
 
-export function ListToolbar({ filter, setFilter, sort, setSort, count, noun }: {
-  filter: ListFilter; setFilter: (f: ListFilter) => void;
-  sort: ListSort; setSort: (s: ListSort) => void;
-  count: number; noun: string;
-}) {
-  return (
-    <div className="fs-list-toolbar">
-      <span className="fs-list-count">{count} {noun}{count === 1 ? '' : 's'}</span>
-      <AddMenu
-        label={<><FilterIcon size={12} filled={filter !== 'all'} /> {`Filter: ${FILTER_LABEL[filter]}`}</>}
-        title="Show only script-linked items, only general ones, or everything"
-        onPick={(v) => setFilter(v as ListFilter)}
-        groups={[{
-          label: 'Show',
-          options: (['all', 'general', 'script'] as ListFilter[])
-            .map((f) => ({ value: f, label: FILTER_LABEL[f] })),
-        }]}
-      />
-      <AddMenu
-        label={`Sort: ${SORT_LABEL[sort]}`}
-        title="Manual lets you drag items into any order you like"
-        onPick={(v) => setSort(v as ListSort)}
-        groups={[{
-          label: 'Sort by',
-          options: (['manual', 'created', 'script'] as ListSort[])
-            .map((s) => ({ value: s, label: SORT_LABEL[s] })),
-        }]}
-      />
-    </div>
-  );
-}
-
-/** Filter, then order. Manual order is only honoured when Sort is Manual. */
+/** Order the list. Manual order is only honoured when Sort is Manual. */
 export function arrangeEntries(
   entries: ListEntry[],
-  filter: ListFilter,
   sort: ListSort,
   manualOrder: string[],
 ): ListEntry[] {
-  const visible = entries.filter((e) =>
-    filter === 'all' ? true : filter === 'script' ? e.linked : !e.linked);
-
   if (sort === 'created') {
-    return [...visible].sort((a, b) =>
+    return [...entries].sort((a, b) =>
       (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));   // newest first
-  }
-  if (sort === 'script') {
-    // By position in the script. Items with no place in it have no page number,
-    // so they fall to the bottom rather than being given a fake one.
-    return [...visible].sort((a, b) => {
-      if (a.pos == null && b.pos == null) return (b.createdAt ?? '').localeCompare(a.createdAt ?? '');
-      if (a.pos == null) return 1;
-      if (b.pos == null) return -1;
-      return a.pos - b.pos;
-    });
   }
   // Manual: the user's order, with anything they haven't touched (a brand-new
   // note, say) kept in its natural place at the end rather than vanishing.
   const rank = new Map(manualOrder.map((k, i) => [k, i]));
-  return [...visible].sort((a, b) => {
+  return [...entries].sort((a, b) => {
     const ra = rank.has(a.key) ? rank.get(a.key)! : Number.MAX_SAFE_INTEGER;
     const rb = rank.has(b.key) ? rank.get(b.key)! : Number.MAX_SAFE_INTEGER;
     return ra - rb;

@@ -1,7 +1,8 @@
+import { FaChevronRight } from 'react-icons/fa';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { LuChevronRight } from 'react-icons/lu';
 import type { Editor } from '@tiptap/react';
-import { ELEMENT_LABELS, NOTE_COLORS, type ElementType } from '../stores/editorStore';
+import { ELEMENT_LABELS, type ElementType } from '../stores/editorStore';
+import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
 import { uuid } from '../utils/uuid';
 import { showToast } from './Toast';
 import { useEditorStore } from '../stores/editorStore';
@@ -128,7 +129,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
 
   const {
     revisionMode, setRevisionMode, revisionColor, setRevisionColor,
-    openShelfTab, addNote, deleteNote, setNoteFilter, addShelfCard,
+    setNotePopoverId, deleteNote, addShelfCard,
     toggleCharacterProfiles, characterProfilesOpen,
     deleteTag, setPendingTagSelection, setEditingTagId,
   } = useEditorStore();
@@ -384,93 +385,20 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
     onClose();
   };
 
-  /** Derive a meaningful context label from the element under cursor */
-  const deriveContextLabel = (): string => {
-    const text = $from.parent.textContent.trim();
-    switch (currentNodeType) {
-      case 'character':
-        // Strip extensions like (CONT'D), (V.O.) etc.
-        return text.replace(/\s*\([^)]*\)\s*/g, '').trim();
-      case 'sceneHeading':
-        return text;
-      case 'dialogue':
-      case 'parenthetical': {
-        // Walk backwards to find the owning character name
-        let charName = '';
-        const doc = editor.state.doc;
-        const pos = $from.before($from.depth);
-        doc.nodesBetween(0, pos, (node) => {
-          if (node.type.name === 'character') {
-            charName = node.textContent.trim().replace(/\s*\([^)]*\)\s*/g, '').trim();
-          }
-          return true;
-        });
-        return charName || text.slice(0, 40);
-      }
-      default:
-        return text.slice(0, 60);
-    }
-  };
-
+  // v4.33: create-note logic lives in utils/scriptNoteActions (one copy,
+  // shared with the toolbar Note button); the note is then edited in the
+  // popover on its highlight — the Notes window is general-only now.
   const handleAddScriptNote = () => {
-    const { from, to } = savedSelection.current;
-    const anchorText = hasSelection
-      ? editor.state.doc.textBetween(from, to, ' ')
-      : editor.state.doc.textBetween(
-          $from.start(),
-          $from.end(),
-          ' ',
-        );
-
-    // Determine which scene this text belongs to (find nearest sceneHeading above)
-    let sceneId: string | null = null;
-    let sceneIdx = 0;
-    editor.state.doc.nodesBetween(0, from, (node) => {
-      if (node.type.name === 'sceneHeading') {
-        sceneId = `scene-${sceneIdx}`;
-        sceneIdx++;
-      }
-      return true;
-    });
-
-    const contextLabel = deriveContextLabel();
-    const defaultColor = NOTE_COLORS[0];
-    const noteId = addNote({
-      content: '',
-      anchorText: anchorText.slice(0, 120),
-      elementType: currentNodeType,
-      contextLabel,
-      color: defaultColor.name,
-      sceneId,
-    });
-
-    // Apply the note highlight mark using chain (editor should still have valid state
-    // since context menu is open and editor hasn't been blurred by a panel)
-    const markFrom = hasSelection ? from : $from.start();
-    const markTo = hasSelection ? to : $from.end();
-    editor.chain().focus()
-      .setTextSelection({ from: markFrom, to: markTo })
-      .setMark('scriptNote', { noteId, color: defaultColor.hex })
-      .run();
-
-    // Filter to the newly created note
-    setNoteFilter({ elementType: null, contextLabel: null, color: null, noteId });
-
-    // Open the Sticky Notes pane on the Script tab
-    openShelfTab('script');
+    const noteId = createScriptNoteAtSelection(
+      editor,
+      hasSelection ? savedSelection.current : undefined,
+    );
+    if (noteId) setNotePopoverId(noteId);
     onClose();
   };
 
   const handleEditScriptNote = () => {
-    if (existingNoteId) {
-      setNoteFilter({
-        elementType: null,
-        contextLabel: null,
-        color: null,
-        noteId: existingNoteId,
-      });
-    }
-    openShelfTab('script');
+    if (existingNoteId) setNotePopoverId(existingNoteId);
     onClose();
   };
 
@@ -863,7 +791,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
             >
               <span>Add to Dictionary{multipleTargets ? '…' : ''}</span>
               {multipleTargets && (
-                <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--fd-text-muted)' }}><LuChevronRight /></span>
+                <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--fd-text-muted)' }}><FaChevronRight /></span>
               )}
               {multipleTargets && addDictSubOpen && (
                 <div className="ctx-submenu" style={{ left: '100%', top: 0 }}>

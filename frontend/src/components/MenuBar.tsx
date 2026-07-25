@@ -67,10 +67,10 @@ import { applyScriptFormat } from '../utils/applyScriptFormat';
 import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
 import { getCurrentElementRule, getLockedFormatting } from '../utils/effectiveFormatting';
 import { pluginRegistry } from '../plugins/registry';
-import { LuSearch, LuChevronDown, LuChevronRight } from 'react-icons/lu';
+import { LuSearch } from 'react-icons/lu';
 import { MENU_ICONS, CirclePlusIcon, CircleMinusIcon } from './uiIcons';
 import { useScrapbookMenus } from './NotebookTool';
-import { FaTable, FaImage as FaImageIcon } from 'react-icons/fa';
+import { FaTable, FaImage as FaImageIcon, FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import GapHandle from './GapHandle';
 import { syncNativeMenu, uninstallNativeMenu } from '../menu/nativeMenuSync';
@@ -83,6 +83,7 @@ import { scriptApi } from '../services/scriptApi';
 import { mirrorSave, mirrorSnapshot } from '../services/saveLocations';
 import { useSettingsStore } from '../stores/settingsStore';
 import { clearEditorHistory } from '../editor/clearHistory';
+import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
 import { composeSaveContent } from '../utils/screenplaySaveContent';
 import { openTextFile, openBinaryFile } from '../utils/fileOps';
 import { reportSaveError } from '../stores/saveErrorStore';
@@ -1589,7 +1590,14 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { separator: true, label: '' },
         { icon: <FaListOl />, label: 'Section', action: () => insertOutlineLine('# ') },
         { icon: <FaListOl />, label: 'Marker', action: () => insertOutlineLine('⚑ ') },
-        { icon: <FaRegStickyNote />, label: 'Note', action: () => useEditorStore.getState().openShelfTab('script') },
+        // v4.33: creates the note on the current selection/element and opens
+        // its highlight popover (the Notes window is general-only now).
+        { icon: <FaRegStickyNote />, label: 'Note', action: () => {
+          if (!editor) return;
+          const noteId = createScriptNoteAtSelection(editor);
+          if (noteId) useEditorStore.getState().setNotePopoverId(noteId);
+          else useEditorStore.getState().openTool('sticky');
+        } },
         { icon: <FaCheckSquare />, label: 'To-Do List', action: () => insertOutlineLine('[ ] ') },
         { separator: true, label: '' },
         // v3.25, Derek: moved here from Project (ex-Production menu).
@@ -2242,7 +2250,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               {hasChecks(activeMenuData.items) && <span className="menu-check" />}
               {item.icon && <span className="menu-dropdown-icon">{item.icon}</span>}
               <span>{item.label}</span>
-              <span className="menu-submenu-arrow">{openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? <LuChevronDown /> : <LuChevronRight />}</span>
+              <span className="menu-submenu-arrow">{openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? <FaChevronDown /> : <FaChevronRight />}</span>
               <div
                 className={`menu-submenu ${openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? 'submenu-visible' : ''}`}
                 ref={(el) => {

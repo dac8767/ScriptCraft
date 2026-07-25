@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.28 — the universal window template era)
+# ScriptCraft — continuation brief (current as of v4.33 — the window-standard sweep + Notes/Navigator split)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -238,7 +238,87 @@ reliable; re-run before believing a weird worker failure.
 
 ## 1. Where we are right now (end of this run)
 
-### v4.31 — icon unification (HEAD)
+### v4.33 — Notes/To-Do are general-only; script notes edit on the highlight (HEAD)
+
+Derek (mid-batch): "remove the functionality in both Notes and To-Do that
+links an item to a note or to-do list in the script. those are accessible
+from the navigator." Asked (AskUserQuestion) what happens to a script note's
+typed text — his pick: **popover on the highlight**.
+
+- **The model now**: window = general cards only; Navigator = everything in
+  the script (scenes, acts, notes, script [ ] to-dos — note click JUMPS to
+  the highlight and opens its popover; to-dos tick in the Navigator).
+- **ScriptNotePopover.tsx** (new) is THE editing surface for script notes:
+  sticky-card face, title/text, @asset autocomplete, media preview, color
+  dots that recolor the mark, delete-with-mark-removal + confirm. Portalled,
+  seated by measured top/left from the `.script-note-highlight[data-note-id]`
+  span, re-measured on scroll/resize, closes if the span vanishes. Opened by:
+  editor highlight click, context menu Add/Edit Note, toolbar Note button,
+  Insert → Note, Navigator note click — ALL via `notePopoverId` in
+  notesSlice.
+- **utils/scriptNoteActions.ts** (new): `createScriptNoteAtSelection` — the
+  ONE create-note flow (Toolbar and ScriptContextMenu carried near-identical
+  private copies; both now call it) — and `findNotePos`.
+- **Deleted**: noteFilter/NoteFilter, openShelfTab/shelfTab/notesSubTab (the
+  whole shelf-tab router — last caller became `openTool('fragments')`),
+  ListToolbar's FILTER_LABEL/ListFilter, the 'script' (Scene #) sort,
+  notesFilter/todoFilter store fields, StickyCard's `anchor` foot
+  (fs-script-link/fs-general-tag CSS too), TodoTool's script-list scan.
+  `notesSort`/`todoSort` remain ('manual' | 'created').
+- Sort is the windows' only cluster control now. Counts count general cards.
+- **Not touched**: the `scriptNote` mark name, note storage, exporter/print
+  filtering of working notes.
+
+### v4.32 — batch v8 (items 1-13)
+
+1. Caret pick REVISED: Fa chevrons everywhere (ICON-AUDIT.md updated —
+   ~~B~~ → A). Structure/Locations/Tags rows' text ▾ glyphs included
+   (explicit right/down icons, no CSS rotation).
+2. **Scenes fullscreen = editor-area takeover** (`.fs-scenes-takeover`,
+   ScenesTool.tsx `ScenesFullscreen`), replacing the position:fixed inset-0
+   z-3500 overlay that covered the whole app with no way out. Same pattern
+   as Characters: `scenesFullscreen` store flag, ribbon "Return to Editor"
+   (one ever renders — guard chain), StatusBar takeover gate, mutual
+   exclusivity with scrapbook/charFullscreen both directions.
+   `enterScenesFullscreen()` in SceneNavigator.tsx clears the tool slots.
+   IndexCards' goToScene exits the takeover FIRST, then focuses/scrolls in
+   double-rAF (the editor is unmounted while the takeover is up — the old
+   order silently no-opped; scroll container re-queried by class).
+3. Relationship map: `fitted` gate — viewBox computed (incl. from saved
+   positions) before the svg becomes visible; no oversized first paint.
+4. Design window: all sections collapsed by default; `designCollapsedGroups`
+   (null = untouched) persisted via viewState.
+5-7. Navigator: `navShowSceneNumbers` toggle (# button, `.tool-ctl-lead`,
+   numbers before names, assigned sceneNumber ?? ordinal), standard Filter
+   dropdown (keepOpen kind toggles), standard search.
+8-10. Scenes chrome: fullscreen button in the window actions slot
+   (cards-only), Reorder in the row-2 cluster left of View
+   (`ScenesReorderControl`, shared with the takeover header; flag-driven
+   snapshot effect in IndexCards, unmount = cancel), count row DELETED
+   (count lives in the title; IndexCards keeps sceneNavData.total live in
+   cards view; the filtered/ fraction only shows in list view).
+11-12. Standard-format sweep: Locations/Structure in-body title rows gone,
+   counts to TitleExtra via `toolCounts` (`setToolCount`, no-op-if-same);
+   Pages/Snippets/Highlights got counts; Highlights' add button moved to
+   the bottom `.swn-add-row` (stays in-body — it tracks the live selection,
+   which chrome can't); **Tags fully migrated** (tagsPanelTab lifted to the
+   store, count + eye + View/Manage tabs in chrome — `badge?: boolean` added
+   to ToolChromeTab for the pending-selection dot; legacy slide-in overlay
+   keeps its own header). Remaining windows (Analytics, Focus, AI Writer,
+   Title Page, Assets, Spelling, History, Design, Workspaces, Feedback) had
+   NO redundant in-body title/controls to migrate — nothing deferred beyond
+   "no change needed".
+13. Scrapbook `.fs-nb-rowdel`: had no color property at all → UA ButtonText
+   (black); now `var(--fd-text)`.
+
+Driver: scratchpad/driver/batchv8-check.js — all probes green, zero page
+errors. Watch-outs it caught: sidebar tools open INLINE (`.tool-inline`,
+no `.tool-window-header`); the View dropdown's visible label is its CURRENT
+value (match `[title="View"]`); `.tool-chrome-tab` matches the hidden
+measurer copies too; editor clicks minimize docked tools; global chrome
+probes catch OTHER open windows' controls — scope to the window root.
+
+### v4.31 — icon unification
 
 Derek answered the audit with picks for all 18 groups — recorded at the TOP
 of docs/ICON-AUDIT.md ("DECIDED"), applied app-wide in two commits

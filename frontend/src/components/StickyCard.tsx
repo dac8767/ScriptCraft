@@ -79,18 +79,14 @@ interface StickyCardProps {
   onDropHere: () => void;
   onUpdate: (p: Partial<ShelfCard>) => void;
   onRemove: () => void;
-  /**
-   * v1.0: the field at the foot of every card. A card anchored in the script
-   * shows the scene it sits under, as a link. One that isn't shows "General
-   * Note" / "General To-Do" — inert, and the ABSENCE of a link is the signal.
-   */
-  anchor?: { label: string; onClick?: () => void };
-  /** Replace the card's body while keeping the identical shell (used by script
-   *  notes, whose editor does @asset references the plain body can't). */
+  /** Replace the card's body while keeping the identical shell. */
   children?: React.ReactNode;
 }
 
-export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere, onUpdate, onRemove, anchor, children }: StickyCardProps) {
+// v4.33: the `anchor` foot ("Linked to Scene 14" / "General") is gone — every
+// card in these windows is general now, so there was nothing left to
+// distinguish. Script notes/to-dos live in the Navigator instead.
+export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere, onUpdate, onRemove, children }: StickyCardProps) {
   // Header: ⋮⋮ grip drags; the type name is placeholder text in an editable title
   const head = (extra?: React.ReactNode) => (
     <h5 className="swn-card-head">
@@ -123,21 +119,9 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
       onDrop={onDropHere}
     >
       {inner}
-      {/* v1.2: the foot of the card is ONE row — the link on the left, the date
-          on the right, sharing a baseline. They were stacked, which left the link
-          floating in the middle of nowhere. */}
+      {/* v1.2: the foot of the card is ONE row, date on the right. */}
       <div className="swn-card-foot">
-        {anchor ? (
-          anchor.onClick ? (
-            <button
-              className="fs-script-link"
-              onClick={anchor.onClick}
-              title="Go to this in the script"
-            >{anchor.label}</button>
-          ) : (
-            <span className="fs-general-tag">{anchor.label}</span>
-          )
-        ) : <span />}
+        <span />
         {card.createdAt && <span className="swn-card-date">{formatDate(card.createdAt)}</span>}
       </div>
     </div>

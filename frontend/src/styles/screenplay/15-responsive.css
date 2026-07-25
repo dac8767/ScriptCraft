@@ -323,8 +323,8 @@
 
   /* Project view: compact */
 
-  /* Index cards fullscreen: auto-fill with min 250px */
-  .index-cards-fullscreen .index-cards-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+  /* Scenes fullscreen takeover: auto-fill with min 250px */
+  .fs-scenes-takeover .index-cards-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
 
   /* Collab banner: larger touch targets */
   .collab-banner-btn {
@@ -508,8 +508,7 @@
 
   /* Index cards: always single column */
   .index-cards-grid { grid-template-columns: 1fr !important; }
-  .index-cards-fullscreen .index-cards-grid { grid-template-columns: 1fr !important; padding: 12px; gap: 10px; }
-  .index-cards-header { padding: 8px 12px; }
+  .fs-scenes-takeover .index-cards-grid { padding: 12px; gap: 10px; }
   .ic-action-btn { padding: 6px 10px; min-height: 32px; }
 
   /* Beat board: mobile-optimized */
@@ -615,7 +614,7 @@
 @media (hover: none) and (pointer: coarse) {
   /* Larger close buttons on panels */
   .navigator-close, .script-notes-close, .version-history-close, .search-close-btn,
-  .asset-manager-close, .format-panel-close, .ic-close-btn {
+  .asset-manager-close, .format-panel-close {
     min-width: 44px;
     min-height: 44px;
     display: flex;

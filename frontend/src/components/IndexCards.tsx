@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { Editor } from '@tiptap/react';
 import { FaUndo, FaRedo } from 'react-icons/fa';
-import { FullscreenIcon, ExitFullscreenIcon } from './uiIcons';
+import { FullscreenIcon } from './uiIcons';
 import { useEditorStore, type SceneInfo } from '../stores/editorStore';
 import { computeSceneLengths } from '../editor/pagination';
 import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../utils/scriptTiming';
@@ -18,8 +18,13 @@ interface IndexCardsProps {
 const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
   const { scenes, updateSceneSynopsis, updateSceneColor, pageLayout } = useEditorStore();
 
-  const [fullscreen, setFullscreen] = useState(false);
-  const [dragMode, setDragMode] = useState(false);
+  // v4.32 batch-v8: both lifted to the store — fullscreen is an editor-area
+  // takeover driven from the window chrome (#2/#8), and reorder mode is the
+  // chrome cluster's Reorder control (#9).
+  const fullscreen = useEditorStore((s) => s.scenesFullscreen);
+  const setFullscreen = useEditorStore((s) => s.setScenesFullscreen);
+  const dragMode = useEditorStore((s) => s.scenesReorderMode);
+  const setDragMode = useEditorStore((s) => s.setScenesReorderMode);
 
   // Deferred reorder state: pending changes are visual-only until Apply
   const [pendingScenes, setPendingScenes] = useState<SceneInfo[] | null>(null);
@@ -131,6 +136,16 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
   // The cards to display: pending order during reorder mode, otherwise live scenes
   const displayScenes = pendingScenes ?? scenes;
 
+  // v4.32 batch-v8: the window/takeover title count reads sceneNavData, which
+  // the LIST view publishes — keep `total` live while only the cards are
+  // mounted (filtered stays stale, but cards view never shows the fraction).
+  useEffect(() => {
+    const s = useEditorStore.getState();
+    if (s.sceneNavData.total !== scenes.length) {
+      s.setSceneNavData({ ...s.sceneNavData, total: scenes.length });
+    }
+  }, [scenes.length]);
+
   // Whether there are pending changes to apply
   const hasChanges = pendingScenes && originalScenes &&
     pendingScenes.some((s, i) => s.id !== originalScenes[i]?.id);
@@ -201,21 +216,27 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
         return true;
       });
 
-      editor.chain().focus().setTextSelection(targetPos + 1).run();
+      // v4.32 batch-v8 #2: exit the takeover BEFORE focusing — while it is up
+      // the editor surface (and the scroll container) is unmounted, so a
+      // focus/scroll fired first would land on a detached view and silently
+      // do nothing. The rAFs run after React has re-committed the editor.
+      if (fullscreen) setFullscreen(false);
 
       requestAnimationFrame(() => {
-        const coords = editor.view.coordsAtPos(targetPos + 1);
-        if (scrollContainer) {
-          const containerRect = scrollContainer.getBoundingClientRect();
+        editor.chain().focus().setTextSelection(targetPos + 1).run();
+        requestAnimationFrame(() => {
+          // The prop is captured null while the takeover renders — re-query.
+          const container = scrollContainer ?? (document.querySelector('.editor-main') as HTMLDivElement | null);
+          if (!container) return;
+          const coords = editor.view.coordsAtPos(targetPos + 1);
+          const containerRect = container.getBoundingClientRect();
           const scrollTo =
-            scrollContainer.scrollTop + (coords.top - containerRect.top) - 60;
-          scrollContainer.scrollTo({ top: scrollTo, behavior: 'smooth' });
-        }
+            container.scrollTop + (coords.top - containerRect.top) - 60;
+          container.scrollTo({ top: scrollTo, behavior: 'smooth' });
+        });
       });
-
-      if (fullscreen) setFullscreen(false);
     },
-    [editor, scrollContainer, fullscreen],
+    [editor, scrollContainer, fullscreen, setFullscreen],
   );
 
   // ── Get document ranges for each scene ──
@@ -245,19 +266,29 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
 
   // ── Enter / Cancel / Apply reorder mode ──
 
-  const enterReorderMode = useCallback(() => {
-    const snapshot = [...scenes];
-    setPendingScenes(snapshot);
-    setOriginalScenes(snapshot);
-    // Build original index map
-    const map = new Map<string, number>();
-    snapshot.forEach((s, i) => map.set(s.id, i + 1));
-    originalIndexMap.current = map;
-    // Initialize history with the original state
-    historyRef.current = { stack: [snapshot], pointer: 0 };
-    setHistoryVersion(0);
-    setDragMode(true);
-  }, [scenes]);
+  // The chrome's Reorder control just flips the store flag — the snapshot
+  // rides this effect, so every entry path (chrome or shortcut) initializes
+  // the same way, and flipping the flag off from outside cancels cleanly.
+  useEffect(() => {
+    if (dragMode && pendingScenes === null) {
+      const snapshot = [...scenes];
+      setPendingScenes(snapshot);
+      setOriginalScenes(snapshot);
+      const map = new Map<string, number>();
+      snapshot.forEach((s, i) => map.set(s.id, i + 1));
+      originalIndexMap.current = map;
+      historyRef.current = { stack: [snapshot], pointer: 0 };
+      setHistoryVersion(0);
+    } else if (!dragMode && pendingScenes !== null) {
+      setPendingScenes(null);
+      setOriginalScenes(null);
+      originalIndexMap.current = new Map();
+      historyRef.current = { stack: [], pointer: -1 };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- snapshot on flag flip only
+  }, [dragMode, pendingScenes]);
+  // Leaving the board (view switch, tool close) mid-reorder = cancel.
+  useEffect(() => () => { useEditorStore.getState().setScenesReorderMode(false); }, []);
 
   const cancelReorder = useCallback(() => {
     setPendingScenes(null);
@@ -554,69 +585,50 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
     };
   }, [dragIdx, insertIdx]);
 
-  const containerClass = `index-cards${fullscreen ? ' index-cards-fullscreen' : ''}`;
+  const containerClass = 'index-cards';
   const indicatorStyle = getIndicatorStyle();
 
   return (
     <div className={containerClass} ref={containerRef}>
-      <div className="index-cards-header">
-        {/* Docked, the Scenes window frame already names the tool; only the
-            fullscreen overlay needs its own title. */}
-        {fullscreen && <span className="index-cards-title">Scenes — Cards</span>}
-        <span className="index-cards-count">{scenes.length} scenes</span>
-        <div className="index-cards-actions">
-          {dragMode ? (
-            <>
-              <button
-                className="ic-action-btn ic-undo-redo-btn"
-                onClick={undo}
-                disabled={!canUndo}
-                title="Undo (Ctrl+Z)"
-              >
-                <FaUndo />
-              </button>
-              <button
-                className="ic-action-btn ic-undo-redo-btn"
-                onClick={redo}
-                disabled={!canRedo}
-                title="Redo (Ctrl+Shift+Z)"
-              >
-                <FaRedo />
-              </button>
-              <button
-                className="ic-action-btn"
-                onClick={cancelReorder}
-                title="Cancel reorder"
-              >
-                Cancel
-              </button>
-              <button
-                className={`ic-action-btn ic-apply-btn${hasChanges ? ' active' : ''}`}
-                onClick={applyReorder}
-                title={hasChanges ? 'Apply scene reorder to script' : 'No changes to apply'}
-                disabled={!hasChanges}
-              >
-                Apply
-              </button>
-            </>
-          ) : (
-            <button
-              className="ic-action-btn"
-              onClick={enterReorderMode}
-              title="Enter drag-drop mode"
-            >
-              Reorder
-            </button>
-          )}
+      {/* v4.32 batch-v8 #10: the count/actions header row is gone — the
+          window title carries the count, Reorder lives in the row-2 cluster
+          and fullscreen in row 1. Only the reorder CONTEXT bar remains,
+          shown while a reorder is in progress. */}
+      {dragMode && (
+        <div className="ic-reorder-bar">
           <button
-            className="ic-action-btn ic-fullscreen-btn"
-            onClick={() => setFullscreen(!fullscreen)}
-            title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+            className="ic-action-btn ic-undo-redo-btn"
+            onClick={undo}
+            disabled={!canUndo}
+            title="Undo (Ctrl+Z)"
           >
-            {fullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
+            <FaUndo />
+          </button>
+          <button
+            className="ic-action-btn ic-undo-redo-btn"
+            onClick={redo}
+            disabled={!canRedo}
+            title="Redo (Ctrl+Shift+Z)"
+          >
+            <FaRedo />
+          </button>
+          <button
+            className="ic-action-btn"
+            onClick={cancelReorder}
+            title="Cancel reorder"
+          >
+            Cancel
+          </button>
+          <button
+            className={`ic-action-btn ic-apply-btn${hasChanges ? ' active' : ''}`}
+            onClick={applyReorder}
+            title={hasChanges ? 'Apply scene reorder to script' : 'No changes to apply'}
+            disabled={!hasChanges}
+          >
+            Apply
           </button>
         </div>
-      </div>
+      )}
       <div className="index-cards-grid" ref={gridRef} style={{ position: 'relative' }}>
         {displayScenes.length === 0 ? (
           <div className="index-cards-empty">

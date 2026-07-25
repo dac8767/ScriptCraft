@@ -66,6 +66,12 @@ export default function HighlightsTool({ editor, scrollContainer }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, docTick]);
 
+  // v4.32 batch-v8 #12: publish the count for the window title
+  // (HighlightsTitleExtra) — the house setToolCount pattern.
+  useEffect(() => {
+    useEditorStore.getState().setToolCount('highlights', highlights.length);
+  }, [highlights.length]);
+
   const jumpTo = (entry: HighlightEntry) => {
     if (!editor) return;
     editor.chain().focus().setTextSelection({ from: entry.from, to: entry.to }).run();
@@ -99,18 +105,11 @@ export default function HighlightsTool({ editor, scrollContainer }: Props) {
 
   return (
     <div className="fs-sticky-tool fs-highlights-tool">
-      <div className="fs-sticky-toolbar">
-        <span className="swn-group-label" style={{ padding: 0, flex: 1 }}>
-          {highlights.length} highlight{highlights.length === 1 ? '' : 's'}
-        </span>
-        <button
-          className="swn-add-btn"
-          disabled={!hasSelection}
-          title={hasSelection ? 'Highlight the selected text' : 'Select text in the script first'}
-          onClick={addHighlight}
-        >+ Highlight Selection</button>
-      </div>
-
+      {/* v4.32 batch-v8 #12: the in-body count row is gone — the window title
+          carries the count (HighlightsTitleExtra); the add action sits in the
+          bottom row like Notes/To-Do. (The button stays in the body rather
+          than the chrome cluster because it tracks the live editor selection,
+          which the chrome has no handle on.) */}
       <div className="fs-highlight-list">
         {highlights.length === 0 && (
           <div className="fs-nav-empty">
@@ -145,6 +144,21 @@ export default function HighlightsTool({ editor, scrollContainer }: Props) {
           <span>Show tag highlights</span>
         </label>
       </div>
+      <div className="swn-add-row">
+        <button
+          className="swn-add-btn"
+          disabled={!hasSelection}
+          title={hasSelection ? 'Highlight the selected text' : 'Select text in the script first'}
+          onClick={addHighlight}
+        >+ Highlight Selection</button>
+      </div>
     </div>
   );
+}
+
+/** v4.32 batch-v8 #12 template TitleExtra: the count beside the window title
+ *  (the body publishes via setToolCount — it derives the list from the doc). */
+export function HighlightsTitleExtra() {
+  const count = useEditorStore((s) => s.toolCounts['highlights'] ?? 0);
+  return <span className="tool-title-count">· {count}</span>;
 }

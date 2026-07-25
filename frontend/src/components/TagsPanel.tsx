@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { FaRegEye, FaRegEyeSlash, FaRegTrashAlt } from 'react-icons/fa';
-import { LuChevronUp, LuChevronDown } from 'react-icons/lu';
+import { FaRegEye, FaRegEyeSlash, FaRegTrashAlt, FaChevronDown, FaChevronUp, FaChevronRight } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 import { useEditorStore } from '../stores/editorStore';
+import type { ToolChromeTab } from './ToolControls';
 
 interface TagsPanelProps {
   /** Render inside a tool window: always visible, no close/swipe */
@@ -42,7 +42,10 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style, embedded = false }
     setEditingTagId,
   } = useEditorStore();
 
-  const [activeTab, setActiveTab] = useState<'view' | 'manage'>('view');
+  // v4.32 batch-v8 #12: tab state lives in the store — the embedded window's
+  // tabs render in the WINDOW CHROME (TOOL_CHROME.tags), outside this body.
+  const activeTab = useEditorStore((s) => s.tagsPanelTab);
+  const setActiveTab = useEditorStore((s) => s.setTagsPanelTab);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [expandedTagId, setExpandedTagId] = useState<string | null>(null);
   const tagItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -409,43 +412,49 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style, embedded = false }
 
   return (
     <div ref={panelRef} className={`tags-panel ${panelClass}`} style={style}>
-      <div className="tags-panel-header">
-        <span className="tags-panel-title">Production Tags</span>
-        <span className="tags-panel-count">{tags.length}</span>
-        <button
-          className={`tags-visibility-btn${tagsVisible ? ' active' : ''}`}
-          onClick={() => setTagsVisible(!tagsVisible)}
-          title={tagsVisible ? 'Hide tag highlights' : 'Show tag highlights'}
-          aria-label={tagsVisible ? 'Hide tag highlights' : 'Show tag highlights'}
-        >
-          {tagsVisible ? <FaRegEye /> : <FaRegEyeSlash />}
-        </button>
-        {!embedded && <button
-          className="tags-panel-close"
-          onClick={toggleTagsPanel}
-          title="Close"
-          aria-label="Close production tags panel"
-        >
-          &times;
-        </button>}
-      </div>
-
-      {/* ── Tab bar ──────────────────────────────────────────────────── */}
-      <div className="tags-tab-bar">
-        <button
-          className={`tags-tab${activeTab === 'view' ? ' tags-tab-active' : ''}`}
-          onClick={() => setActiveTab('view')}
-        >
-          View
-        </button>
-        <button
-          className={`tags-tab${activeTab === 'manage' ? ' tags-tab-active' : ''}`}
-          onClick={() => setActiveTab('manage')}
-        >
-          Manage
-          {pendingTagSelection && <span className="tags-tab-dot" />}
-        </button>
-      </div>
+      {/* v4.32 batch-v8 #12: the embedded window renders NEITHER row — the
+          frame provides title + count (TagsTitleExtra), the eye toggle
+          (TagsWindowActions) and the View/Manage tabs (useTagsTabs). Only the
+          legacy slide-in overlay keeps its own header + tab bar. */}
+      {!embedded && (
+        <>
+          <div className="tags-panel-header">
+            <span className="tags-panel-title">Production Tags</span>
+            <span className="tags-panel-count">{tags.length}</span>
+            <button
+              className={`tags-visibility-btn${tagsVisible ? ' active' : ''}`}
+              onClick={() => setTagsVisible(!tagsVisible)}
+              title={tagsVisible ? 'Hide tag highlights' : 'Show tag highlights'}
+              aria-label={tagsVisible ? 'Hide tag highlights' : 'Show tag highlights'}
+            >
+              {tagsVisible ? <FaRegEye /> : <FaRegEyeSlash />}
+            </button>
+            <button
+              className="tags-panel-close"
+              onClick={toggleTagsPanel}
+              title="Close"
+              aria-label="Close production tags panel"
+            >
+              &times;
+            </button>
+          </div>
+          <div className="tags-tab-bar">
+            <button
+              className={`tags-tab${activeTab === 'view' ? ' tags-tab-active' : ''}`}
+              onClick={() => setActiveTab('view')}
+            >
+              View
+            </button>
+            <button
+              className={`tags-tab${activeTab === 'manage' ? ' tags-tab-active' : ''}`}
+              onClick={() => setActiveTab('manage')}
+            >
+              Manage
+              {pendingTagSelection && <span className="tags-tab-dot" />}
+            </button>
+          </div>
+        </>
+      )}
 
 
       {/* ════════════════════════════════════════════════════════════════
@@ -476,7 +485,7 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style, embedded = false }
                     <span className="tags-category-count" title={`${entities.length} entities, ${totalOccs} occurrences`}>
                       {entities.length}
                     </span>
-                    <span className={`tags-category-chevron${isExpanded ? ' expanded' : ''}`}>&#9662;</span>
+                    <span className="tags-category-chevron">{isExpanded ? <FaChevronDown /> : <FaChevronRight />}</span>
                   </div>
 
                   {isExpanded && (
@@ -507,7 +516,7 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style, embedded = false }
                                   title={isViewExpanded ? 'Hide occurrences' : 'Show occurrences'}
                                   aria-label={isViewExpanded ? `Hide occurrences for ${entity.name}` : `Show occurrences for ${entity.name}`}
                                 >
-                                  {isViewExpanded ? <LuChevronUp /> : <LuChevronDown />}
+                                  {isViewExpanded ? <FaChevronUp /> : <FaChevronDown />}
                                 </button>
                               )}
                             </div>
@@ -686,7 +695,7 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style, embedded = false }
                         </button>
                       )}
                       {entities.length > 0 && (
-                        <span className={`tags-category-chevron${isExpanded ? ' expanded' : ''}`}>&#9662;</span>
+                        <span className="tags-category-chevron">{isExpanded ? <FaChevronDown /> : <FaChevronRight />}</span>
                       )}
                     </div>
 
@@ -815,5 +824,41 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style, embedded = false }
     </div>
   );
 };
+
+// ── Window-chrome slots (v4.32 batch-v8 #12, Derek's window template) ────
+// TOOL_CHROME.tags wires these: count beside the centered title, the
+// highlight-visibility eye as the row-1 window action, View/Manage as row-2
+// tabs (the Manage tab carries the pending-selection dot as a badge). All
+// state is store-held, so chrome and body can't drift.
+
+export function TagsTitleExtra() {
+  const count = useEditorStore((s) => s.tags.length);
+  return <span className="tool-title-count">· {count}</span>;
+}
+
+export function TagsWindowActions() {
+  const tagsVisible = useEditorStore((s) => s.tagsVisible);
+  const setTagsVisible = useEditorStore((s) => s.setTagsVisible);
+  return (
+    <button
+      className={`tags-visibility-btn${tagsVisible ? ' active' : ''}`}
+      onClick={() => setTagsVisible(!tagsVisible)}
+      title={tagsVisible ? 'Hide tag highlights' : 'Show tag highlights'}
+      aria-label={tagsVisible ? 'Hide tag highlights' : 'Show tag highlights'}
+    >
+      {tagsVisible ? <FaRegEye /> : <FaRegEyeSlash />}
+    </button>
+  );
+}
+
+export function useTagsTabs(): ToolChromeTab[] {
+  const activeTab = useEditorStore((s) => s.tagsPanelTab);
+  const setActiveTab = useEditorStore((s) => s.setTagsPanelTab);
+  const pending = useEditorStore((s) => s.pendingTagSelection);
+  return [
+    { label: 'View', active: activeTab === 'view', onSelect: () => setActiveTab('view') },
+    { label: 'Manage', active: activeTab === 'manage', onSelect: () => setActiveTab('manage'), badge: !!pending },
+  ];
+}
 
 export default TagsPanel;

@@ -14,6 +14,8 @@ import VomitLock from '../editor/extensions/VomitLock';
 import TypewriterScroll, { refreshTypewriterChrome, centerCaretLine } from '../editor/extensions/TypewriterScroll';
 import OutlineBar from './OutlineBar';
 import { NotebookSurface } from './NotebookTool';
+import { ScenesFullscreen } from './ScenesTool';
+import ScriptNotePopover from './ScriptNotePopover';
 import { useNotebookStore } from '../stores/notebookStore';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import TextAlign from '@tiptap/extension-text-align';
@@ -145,7 +147,7 @@ const ScreenplayEditor: React.FC = () => {
     setActiveElement, setScenes, setPageCount, setCurrentPage,
     zoomLevel, setZoomLevel, fontFamily, fontSize, pageLayout, tagsVisible, notesVisible,
     sectionsVisible, scriptTodosVisible, markersVisible, viewStyle, previewMode, previewOpts,
-    beatBoardOpen, statisticsOpen, charFullscreen,
+    beatBoardOpen, statisticsOpen, charFullscreen, scenesFullscreen,
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
     characterProfilesOpen, tagsPanelOpen, locationDatabaseOpen,
     spellCheckEnabled, spellModalOpen, setSpellModalOpen, spellPanelMounted,
@@ -2476,7 +2478,7 @@ const ScreenplayEditor: React.FC = () => {
       e.preventDefault();
       const store = useEditorStore.getState();
       store.addShelfCard(makeSnippetCard(text));
-      store.openShelfTab('snippet');
+      store.openTool('fragments');
       if (e.code === 'KeyX' && editor.isEditable) {
         editor.chain().focus().deleteSelection().run();
       }
@@ -3688,14 +3690,15 @@ const ScreenplayEditor: React.FC = () => {
     charAutoDismissedRef.current = true;
   }, []);
 
-  // --- Click on script note highlight → auto-filter notes panel ---
-  // Only opens the panel when note highlights are visible (notesVisible).
-  // When highlights are off, clicks pass through as normal editing.
+  // --- Click on script note highlight → open its edit popover (v4.33) ---
+  // The popover on the highlight is where note text lives now (the Notes
+  // window is general-only). Only intercepts when note highlights are
+  // visible (notesVisible); when they're off, clicks pass through as normal
+  // editing.
   useEffect(() => {
     if (!editor) return;
     const handleClick = (e: MouseEvent) => {
       const store = useEditorStore.getState();
-      // Only intercept clicks when highlights are visible
       if (!store.notesVisible) return;
 
       const target = e.target as HTMLElement;
@@ -3708,16 +3711,7 @@ const ScreenplayEditor: React.FC = () => {
       const note = store.notes.find((n) => n.id === noteId);
       if (!note) return;
 
-      // Filter to this specific note
-      store.setNoteFilter({
-        elementType: null,
-        contextLabel: null,
-        color: null,
-        noteId: noteId,
-      });
-
-      // Open the Sticky Notes pane on the Script tab if not already there
-      store.openShelfTab('script');
+      store.setNotePopoverId(noteId);
     };
 
     const editorEl = editor.view.dom;
@@ -4082,6 +4076,8 @@ const ScreenplayEditor: React.FC = () => {
             <div className="fs-char-takeover">
               <CharacterProfiles editor={editor} projectId={currentProject?.id || ''} fullscreen />
             </div>
+          ) : !isHistoryMode && scenesFullscreen ? (
+            <ScenesFullscreen editor={editor} scrollContainer={editorMainRef.current} />
           ) : !isHistoryMode && statisticsOpen && editor ? (
             <ScriptStatistics editor={editor} />
           ) : !isHistoryMode && beatBoardOpen ? (
@@ -4232,6 +4228,9 @@ const ScreenplayEditor: React.FC = () => {
           <div className="panel-resize-handle" onPointerDown={(e) => handleResizePointerDown('right', e)} style={{ touchAction: 'none' }} />
         )}
         {!isHistoryMode && <TempToolWindow editor={editor} scrollContainer={editorMainRef.current} />}
+        {/* v4.33: the script-note edit popover, anchored on its highlight
+            (portalled — renders nothing until notePopoverId is set). */}
+        {!isHistoryMode && <ScriptNotePopover editor={editor} />}
         <DesignPanel />
         {!isHistoryMode && shelfOpen && <ToolDock side="right" editor={editor} scrollContainer={editorMainRef.current} />}
         {!isHistoryMode && !shelfOpen && !previewMode && (

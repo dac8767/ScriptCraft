@@ -24,26 +24,26 @@ import {
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
   FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,
   FaKeyboard, FaRobot, FaBook, FaSlidersH, FaColumns,
-  FaCommentDots,
+  FaCommentDots, FaChevronRight, FaChevronDown,
 } from 'react-icons/fa';
-import { LuChevronRight, LuChevronDown } from 'react-icons/lu';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { DoubleChevronIcon, chevronTowards } from './uiIcons';
 import { useProjectStore } from '../stores/projectStore';
-import SceneNavigator, { SceneTitleExtra, SceneControls, type NavTab } from './SceneNavigator';
-import NavigatorTool, { NavigatorHeaderExtra } from './NavigatorTool';
+import SceneNavigator, { SceneTitleExtra, SceneControls, ScenesWindowActions, PagesTitleExtra, LocationsTitleExtra, StructureTitleExtra, type NavTab } from './SceneNavigator';
+import NavigatorTool, { NavigatorControls } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
 import CharacterProfiles, { CharTitleExtra, CharWindowActions, useCharTabs, CharControls } from './CharacterProfiles';
 import { ChromeRow2, type ToolChromeTab } from './ToolControls';
-import { StickyNotesTool, FragmentsTool, TodoTool } from './StickyNotes';
+import { StickyNotesTool, FragmentsTool, TodoTool, StickyTitleExtra, StickyControls, TodoTitleExtra, TodoControls, SnippetsTitleExtra } from './StickyNotes';
+import { HighlightsTitleExtra } from './HighlightsTool';
 import HighlightsTool from './HighlightsTool';
 import { DesignPanelDocked } from './DesignPanel';
 import WorkspacesTool from './WorkspacesTool';
 import FeedbackTool from './FeedbackTool';
-import TagsPanel from './TagsPanel';
+import TagsPanel, { TagsTitleExtra, TagsWindowActions, useTagsTabs } from './TagsPanel';
 import { ScenesTool } from './ScenesTool';
 import BeatBoard, { OutlineHeaderControls } from './BeatBoard';
 import TypewriterTool from './TypewriterTool';
@@ -184,10 +184,28 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   characters: { TitleExtra: CharTitleExtra, WindowActions: CharWindowActions, useTabs: useCharTabs, Controls: CharControls },
   // v4.27 phase 3: Scenes — count beside the title; Filter/View/Search
   // (the old header filter popover, the List/Cards toggle, the footer search).
-  scenes: { TitleExtra: SceneTitleExtra, Controls: SceneControls },
+  // v4.32 batch-v8 #8/#9: fullscreen moved to the row-1 actions zone,
+  // Reorder into the row-2 cluster — the in-body count row is gone.
+  scenes: { TitleExtra: SceneTitleExtra, WindowActions: ScenesWindowActions, Controls: SceneControls },
   // v4.27 phase 4: the remaining tools' control bars, in the same row-2 slot
   // (their internal layouts are unchanged — the cluster lets them span).
-  navigator: { Controls: NavigatorHeaderExtra },
+  // v4.32: numbers toggle (left) + Filter dropdown + search (batch-v8 5-7)
+  navigator: { Controls: NavigatorControls },
+  // v4.32 batch-v8 #12: Notes + To-Do — count beside the title, Sort as a
+  // row-2 dropdown (ListToolbar deleted; v4.33: general-only, filter gone).
+  sticky: { TitleExtra: StickyTitleExtra, Controls: StickyControls },
+  todo: { TitleExtra: TodoTitleExtra, Controls: TodoControls },
+  // v4.32 batch-v8 #12: Snippets + Highlights — count beside the title.
+  fragments: { TitleExtra: SnippetsTitleExtra },
+  highlights: { TitleExtra: HighlightsTitleExtra },
+  // v4.32 batch-v8 #11/#12: counts beside the title; their in-body title
+  // rows are gone (Structure counts acts).
+  pages: { TitleExtra: PagesTitleExtra },
+  locations: { TitleExtra: LocationsTitleExtra },
+  structure: { TitleExtra: StructureTitleExtra },
+  // v4.32 batch-v8 #12: Production Tags — count, eye toggle as the window
+  // action, View/Manage tabs (Manage carries the pending-selection dot).
+  tags: { TitleExtra: TagsTitleExtra, WindowActions: TagsWindowActions, useTabs: useTagsTabs },
   goals: { Controls: GoalsHeaderExtra },
   notebook: { Controls: NotebookHeaderExtra },   // v2.05: declutter + create buttons
   beatboard: { Controls: OutlineHeaderControls }, // v2.41: count/Arrangement/help
@@ -740,7 +758,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               {/* v1.34: Premiere-style caret — a SINGLE chevron (the double one
                 * means pop-in/out): right when closed, down when open. */}
               <span className="tool-dock-caret">
-                {activeId === t.id ? <LuChevronDown /> : <LuChevronRight />}
+                {activeId === t.id ? <FaChevronDown /> : <FaChevronRight />}
               </span>
               <span className="tool-dock-icon">{t.icon}</span>
               <span className={`tool-dock-label${nameUpper ? ' tool-name-upper' : ''}`}>{t.label}</span>

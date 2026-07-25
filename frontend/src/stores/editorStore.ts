@@ -327,15 +327,6 @@ export interface NoteInfo {
   sceneId: string | null;
 }
 
-/** Filter state that can be set externally (e.g. from context menu) */
-export interface NoteFilter {
-  elementType: string | null;
-  contextLabel: string | null;
-  color: NoteColor | null;
-  /** If set, show only this specific note */
-  noteId: string | null;
-}
-
 /** A general note attached to the script file (not anchored to any text) */
 export interface GeneralNote {
   id: string;
@@ -594,10 +585,6 @@ export type BuiltInThemeId =
 /** Built-in id, or 'custom:<n>' for a user-created theme (v0.78). */
 export type ThemeId = BuiltInThemeId | (string & {});
 
-export type ShelfTopTab = 'notes' | 'todo' | 'snippet';
-export type NotesSubTab = 'general' | 'script';
-/** Accepted by openShelfTab: sub-tab names route into the Notes tab. */
-export type ShelfTab = ShelfTopTab | NotesSubTab;
 
 export interface ShelfTodoItem {
   text: string;
@@ -924,19 +911,41 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   /** v4.24 batch 7: the merged Scenes tool's view — scene list or index cards. */
   scenesViewMode: 'list' | 'cards';
   setScenesViewMode: (m: 'list' | 'cards') => void;
+  /** v4.32 batch-v8 #2/#8: the Cards board's fullscreen is an editor-area
+   *  takeover now (like charFullscreen) — never past the editor space, close
+   *  always in its header. */
+  scenesFullscreen: boolean;
+  setScenesFullscreen: (v: boolean) => void;
+  /** v4.32 batch-v8 #9: the Cards board's reorder (drag) mode — lifted so the
+   *  window chrome's Reorder control drives it. Session-only. */
+  scenesReorderMode: boolean;
+  setScenesReorderMode: (v: boolean) => void;
+  /** v4.32 batch-v8 #5: Navigator list shows scene numbers before names. */
+  navShowSceneNumbers: boolean;
+  setNavShowSceneNumbers: (v: boolean) => void;
+  /** v4.32 batch-v8 #4: Design window collapsed groups — ALL collapsed by
+   *  default; remembered across close/reopen. null = never touched (all). */
+  designCollapsedGroups: string[] | null;
+  setDesignCollapsedGroups: (ids: string[]) => void;
+  /** v4.32 batch-v8 #12: Notes / To-Do list sort, lifted so the window
+   *  chrome's cluster drives it (session-only, like the old local state).
+   *  v4.33: filters removed — the windows hold only general items now (script
+   *  notes/to-dos live in the Navigator), so there is nothing to filter and
+   *  no script position to sort by. */
+  notesSort: 'manual' | 'created';
+  setNotesSort: (v: 'manual' | 'created') => void;
+  todoSort: 'manual' | 'created';
+  setTodoSort: (v: 'manual' | 'created') => void;
+  /** v4.32: generic list-count publisher — the body publishes, the window
+   *  title's count (TitleExtra) displays. Same no-drift rule as charListCount. */
+  toolCounts: Record<string, number>;
+  setToolCount: (id: string, n: number) => void;
   beatBoardOpen: boolean;  statisticsOpen: boolean;
   setStatisticsOpen: (open: boolean) => void;
   statisticsScrollTo: string | null;
   setStatisticsScrollTo: (id: string | null) => void;
   shelfOpen: boolean;
   toggleShelf: () => void;
-  shelfTab: ShelfTopTab;  notesSubTab: NotesSubTab;
-  setNotesSubTab: (sub: NotesSubTab) => void;
-  /**
-   * Switch the Sticky Notes pane to a tab, opening the pane if it's closed.
-   * 'general' and 'script' land on the Notes tab with that sub-view active.
-   */
-  openShelfTab: (tab: ShelfTab) => void;
   /** Which tool window is open in the left dock (null = none) */
   activeTool: ToolId | null;
   setActiveTool: (tool: ToolId | null) => void;
@@ -1123,6 +1132,10 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   /** When set, the Tags panel auto-expands this tag for editing */
   editingTagId: string | null;
   setEditingTagId: (id: string | null) => void;
+  /** v4.32 batch-v8 #12: the Tags window's View/Manage tab — store-held so the
+   *  window chrome (TOOL_CHROME.tags tabs) can drive it from outside the body. */
+  tagsPanelTab: 'view' | 'manage';
+  setTagsPanelTab: (t: 'view' | 'manage') => void;
 
 
   // Theme
@@ -1253,6 +1266,26 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     saveViewState({ scenesViewMode: m });
     set({ scenesViewMode: m });
   },
+  scenesFullscreen: false,
+  setScenesFullscreen: (v) => set({ scenesFullscreen: v }),
+  scenesReorderMode: false,
+  setScenesReorderMode: (v) => set({ scenesReorderMode: v }),
+  navShowSceneNumbers: _vs.navShowSceneNumbers ?? false,
+  setNavShowSceneNumbers: (v) => {
+    saveViewState({ navShowSceneNumbers: v });
+    set({ navShowSceneNumbers: v });
+  },
+  designCollapsedGroups: _vs.designCollapsedGroups ?? null,
+  setDesignCollapsedGroups: (ids) => {
+    saveViewState({ designCollapsedGroups: ids });
+    set({ designCollapsedGroups: ids });
+  },
+  notesSort: 'manual',
+  setNotesSort: (v) => set({ notesSort: v }),
+  todoSort: 'manual',
+  setTodoSort: (v) => set({ todoSort: v }),
+  toolCounts: {},
+  setToolCount: (id, n) => set((st) => (st.toolCounts[id] === n ? st : { toolCounts: { ...st.toolCounts, [id]: n } })),
   beatBoardOpen: _vs.beatBoardOpen ?? false,
   statisticsOpen: false,
   setStatisticsOpen: (open) => set({ statisticsOpen: open }),
@@ -1264,29 +1297,10 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     saveViewState({ shelfOpen: v });
     return { shelfOpen: v };
   }),
-  // migrate pre-v0.2 persisted tabs: 'comment'/'general'/'script' → 'notes'
-  shelfTab: (_vs.shelfTab === 'todo' || _vs.shelfTab === 'snippet')
-    ? _vs.shelfTab : 'notes',
-  notesSubTab: _vs.notesSubTab ?? (_vs.shelfTab === 'script' ? 'script' : 'general'),
-  setNotesSubTab: (sub) => {
-    saveViewState({ notesSubTab: sub });
-    set({ notesSubTab: sub });
-  },
-  openShelfTab: (tab) => {
-    // Compatibility router for the merged tools (v0.15): Notes and To-Do each
-    // have General/Script sub-tabs again.
-    if (tab === 'script') {
-      get().setNotesSubTab('script');
-      get().openTool('sticky');
-    } else if (tab === 'general') {
-      get().setNotesSubTab('general');
-      get().openTool('sticky');
-    } else if (tab === 'snippet') {
-      get().openTool('fragments');
-    } else {
-      get().openTool('todo');
-    }
-  },
+  // v4.33: the shelf-tab router (openShelfTab / notesSubTab / shelfTab) is
+  // gone — Notes holds only general notes now, so there is no Script sub-view
+  // to route into. Callers open tools directly (openTool) and script-note
+  // editing goes through the highlight popover (notePopoverId).
   activeTool: (_vs.activeTool === 'indexcards' ? 'scenes' : (_vs.activeTool as ToolId | null)) ?? null,
   setActiveTool: (tool) => {
     saveViewState({ activeTool: tool });
@@ -1457,9 +1471,7 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     // window is the only shape it actually works in.
     if (ALWAYS_FLOAT.includes(tool)) return { tempTool: tool };
     if (tool === 'scriptnotes') {
-      // Legacy id — Notes lives inside Notes again (v0.15).
-      saveViewState({ notesSubTab: 'script' });
-      setTimeout(() => set({ notesSubTab: 'script' }), 0);
+      // Legacy id — remapped to the Notes window (v0.15; sub-tabs gone v4.33).
       tool = 'sticky';
     }
     if (tool === 'indexcards') {
@@ -1694,6 +1706,8 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   setPendingTagSelection: (sel) => set({ pendingTagSelection: sel }),
   editingTagId: null,
   setEditingTagId: (id) => set({ editingTagId: id }),
+  tagsPanelTab: 'view',
+  setTagsPanelTab: (t) => set({ tagsPanelTab: t }),
 
   theme: (localStorage.getItem('opendraft:theme') as ThemeId) || 'dark',
   setTheme: (t) => {

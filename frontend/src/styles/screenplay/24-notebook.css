@@ -134,6 +134,10 @@
 .fs-nb-rowdel {
   background: none;
   border: none;
+  /* v4.32 batch-v8 #13, Derek: no color set left the trash on the UA's black —
+     invisible on the dark tree. Theme text, like .fs-nb-side-btns; the row's
+     .7 → 1 opacity ramp below is the hover brightening to full strength. */
+  color: var(--fd-text);
   font-size: calc(11px * var(--nb-tree-scale, 1));   /* v2.66: zoom bar scale */
   padding: 1px 3px;
   border-radius: 4px;

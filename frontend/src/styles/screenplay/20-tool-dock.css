@@ -424,6 +424,17 @@
 .tool-chrome-tab:hover { color: var(--fd-text); }
 /* slimmer shoulders in the 300px dock column */
 .tool-inline-header .tool-chrome-tab { padding: 6px 10px; }
+/* v4.32: attention dot on a tab (ToolChromeTab.badge — e.g. Tags' Manage
+   tab while a selection waits). Same look as the old .tags-tab-dot. */
+.tool-chrome-tab-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--fd-accent);
+  border-radius: 50%;
+  margin-left: 5px;
+  vertical-align: middle;
+}
 .tool-chrome-tab.active {
   background: var(--fd-navigator-bg);
   color: var(--fd-text);
@@ -648,18 +659,8 @@
 .fs-nav-item.todo { padding-left: 18px; }
 .fs-nav-item span { overflow: hidden; text-overflow: ellipsis; }
 .fs-nav-done { text-decoration: line-through; opacity: 0.6; }
-.fs-nav-filter {
-  margin: 8px;
-  padding: 6px 8px;
-  font-size: 12px;
-  background: transparent;
-  color: var(--fd-text);
-  border: 1px solid var(--fd-border);
-  border-radius: 5px;
-  outline: none;
-  flex-shrink: 0;
-}
-.fs-nav-filter:focus { border-color: var(--fd-accent, #4a90d9); }
+/* (v4.32: the in-body .fs-nav-filter keyword box is gone — the Navigator
+   uses the standard row-2 search now.) */
 
 /* ── Shared tool bits ── */
 .fs-tool-intro {

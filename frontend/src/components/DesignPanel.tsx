@@ -9,10 +9,10 @@
  * behind it. "Copy CSS" dumps the current overrides as a :root block so a chosen
  * look can be baked into the stylesheet permanently.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { LuRotateCcw, LuSearch, LuChevronDown, LuChevronRight } from 'react-icons/lu';
-import { FaCopy, FaCheck } from 'react-icons/fa';
+import { LuRotateCcw, LuSearch } from 'react-icons/lu';
+import { FaCopy, FaCheck, FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { DESIGN_GROUPS, buildOverrideCss, type DesignToken } from '../design/designTokens';
 
@@ -88,7 +88,15 @@ export function DesignPanelBody() {
   const designVars = useEditorStore((s) => s.designVars);
   const resetAllDesign = useEditorStore((s) => s.resetAllDesign);
   const [query, setQuery] = useState('');
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  // v4.32 batch-v8 #4, Derek: sections start COLLAPSED and the state is
+  // remembered across close/reopen (store-persisted; null = untouched, which
+  // now means every group folded rather than every group open).
+  const collapsedIds = useEditorStore((s) => s.designCollapsedGroups);
+  const setCollapsedIds = useEditorStore((s) => s.setDesignCollapsedGroups);
+  const collapsed = useMemo(
+    () => new Set(collapsedIds ?? DESIGN_GROUPS.map((g) => g.id)),
+    [collapsedIds],
+  );
   const [copied, setCopied] = useState(false);
 
   const q = query.trim().toLowerCase();
@@ -116,11 +124,11 @@ export function DesignPanelBody() {
     window.setTimeout(() => setCopied(false), 1400);
   };
 
-  const toggleGroup = (id: string) => setCollapsed((prev) => {
-    const next = new Set(prev);
+  const toggleGroup = (id: string) => {
+    const next = new Set<string>(collapsed);
     if (next.has(id)) next.delete(id); else next.add(id);
-    return next;
-  });
+    setCollapsedIds([...next]);
+  };
 
   return (
     <>
@@ -142,7 +150,7 @@ export function DesignPanelBody() {
           return (
             <div className="dz-group" key={g.id}>
               <button className="dz-group-head" onClick={() => toggleGroup(g.id)}>
-                {isCollapsed ? <LuChevronRight /> : <LuChevronDown />}
+                {isCollapsed ? <FaChevronRight /> : <FaChevronDown />}
                 <span>{g.label}</span>
               </button>
               {!isCollapsed && g.tokens.map((t) => <TokenRow key={t.id} t={t} />)}

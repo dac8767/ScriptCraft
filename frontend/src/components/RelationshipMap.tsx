@@ -346,6 +346,10 @@ export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter, 
   // Pan & zoom state
   const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: 600, h: 400 });
   const [isPanning, setIsPanning] = useState(false);
+  // v4.32 batch-v8 #3, Derek: the first paint used the default 600x400
+  // viewBox before the measure/fit effects ran — one frame of giant nodes
+  // that then snapped down. The svg stays hidden until the first real fit.
+  const [fitted, setFitted] = useState(false);
 
   // Measure container
   useEffect(() => {
@@ -416,6 +420,7 @@ export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter, 
   // Run layout — uses viewBox area, not pixel dimensions
   useEffect(() => {
     if (nodes.length === 0) return;
+    if (dimensions.width === 0) return;   // wait for the first real measure (#3)
     const w = Math.max(dimensions.width, 500);
     const h = Math.max(dimensions.height, 400);
     const layoutNodes = nodes.map((n) => {
@@ -439,7 +444,20 @@ export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter, 
       }
       const pad = 60;
       setViewBox({ x: minX - pad, y: minY - pad, w: maxX - minX + pad * 2, h: maxY - minY + pad * 2 });
+    } else if (!fitted) {
+      // Saved positions: nothing laid out, but the view must still FIT them
+      // once — otherwise the default box shows them at the wrong zoom (#3).
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const n of layoutNodes) {
+        minX = Math.min(minX, n.x - n.radius - 30);
+        minY = Math.min(minY, n.y - n.radius - 30);
+        maxX = Math.max(maxX, n.x + n.radius + 30);
+        maxY = Math.max(maxY, n.y + n.radius + 30);
+      }
+      const pad = 60;
+      setViewBox({ x: minX - pad, y: minY - pad, w: maxX - minX + pad * 2, h: maxY - minY + pad * 2 });
     }
+    setFitted(true);
   }, [nodes.length, edges.length, dimensions.width, dimensions.height]);
 
   // Render nodes with current positions
@@ -595,7 +613,10 @@ export const RelationshipMap: React.FC<Props> = ({ scriptId, onSelectCharacter, 
       <svg
         viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
         className="rel-map-svg"
-        style={{ cursor: isPanning ? 'grabbing' : 'default' }}
+        style={{
+          cursor: isPanning ? 'grabbing' : 'default',
+          visibility: fitted || nodes.length === 0 ? undefined : 'hidden',
+        }}
         onClick={() => { setSelectedNode(null); setAddingFrom(null); }}
         onPointerDown={handleSvgPointerDown}
       >

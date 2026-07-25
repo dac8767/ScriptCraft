@@ -20,9 +20,9 @@ import {
   FaEllipsisV,
   FaHashtag,
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
-  FaExchangeAlt,
+  FaExchangeAlt, FaChevronDown,
 } from 'react-icons/fa';
-import { LuUndo2, LuSearch, LuChevronDown } from 'react-icons/lu';
+import { LuUndo2, LuSearch } from 'react-icons/lu';
 import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import {
@@ -43,7 +43,8 @@ import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { confirmDialog } from './ConfirmDialog';
 import { commandDef } from './toolbarCommands';
 import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, stripTall, parseRibbon } from './toolbarBuiltins';
-import { smartUndo, smartRedo, useEditorStore, NOTE_COLORS } from '../stores/editorStore';
+import { smartUndo, smartRedo, useEditorStore } from '../stores/editorStore';
+import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { BUILT_IN_ELEMENT_IDS } from '../stores/formattingTypes';
@@ -92,13 +93,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     setSearchOpen,
     setGoToPageOpen,
     activeToolRight,
-    setActiveToolRight,
-    openShelfTab,
     toolbarPinnedTools,
     previewMode,
     openTool,
-    addNote,
-    setNoteFilter,
     tagsPanelOpen,
     toggleTagsPanel,
     setPendingTagSelection,
@@ -116,6 +113,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // overflow measurement (below) also re-measures on this flag (v2.10).
   const scrapbookOpen = useNotebookStore((s) => s.notebookOpen);
   const charFullscreen = useEditorStore((s) => s.charFullscreen);
+  const scenesFullscreen = useEditorStore((s) => s.scenesFullscreen);
   // v2.94: the Insert Table button needs a page to land the table on — the
   // old menu item was disabled without one, and firing the event with no
   // canvas mounted is a silent no-op.
@@ -628,10 +626,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   const hasOverflow = hiddenPriorities.size > 0;
 
   // ── Notes handler (shared between inline and overflow) ──
+  // v4.33: a script note is edited in the POPOVER on its highlight now (the
+  // Notes window is general-only). On a noted range the button opens that
+  // popover; on other text it creates the note (utils/scriptNoteActions —
+  // one copy, shared with the context menu) and opens the popover; with
+  // nothing to anchor to it opens the Notes window.
   const handleNotesClick = useCallback((e: React.PointerEvent | React.MouseEvent) => {
     e.preventDefault();
-    const scriptTabShowing = activeToolRight === 'scriptnotes';
-    if (!editor) { if (scriptTabShowing) setActiveToolRight(null); else openShelfTab('script'); return; }
+    const store = useEditorStore.getState();
+    if (!editor) { store.openTool('sticky'); return; }
 
     // Detect if cursor is on an existing note
     const noteMarkType = editor.schema.marks.scriptNote;
@@ -643,70 +646,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         if (node?.marks) noteMark = node.marks.find((m) => m.type === noteMarkType);
       }
       if (noteMark) {
-        setNoteFilter({ elementType: null, contextLabel: null, color: null, noteId: noteMark.attrs.noteId as string });
-        openShelfTab('script');
+        store.setNotePopoverId(noteMark.attrs.noteId as string);
         return;
       }
     }
 
-    const { from, to, empty } = editor.state.selection;
-    const $from = editor.state.selection.$from;
-    const selFrom = empty ? $from.start() : from;
-    const selTo = empty ? $from.end() : to;
-    const text = editor.state.doc.textBetween(selFrom, selTo, ' ');
-
-    if (text.trim()) {
-      const currentNodeType = $from.parent.type.name;
-      const nodeText = $from.parent.textContent.trim();
-      let contextLabel = nodeText.slice(0, 60);
-      if (currentNodeType === 'character') {
-        contextLabel = nodeText.replace(/\s*\([^)]*\)\s*/g, '').trim();
-      } else if (currentNodeType === 'sceneHeading') {
-        contextLabel = nodeText;
-      } else if (currentNodeType === 'dialogue' || currentNodeType === 'parenthetical') {
-        let charName = '';
-        editor.state.doc.nodesBetween(0, selFrom, (node) => {
-          if (node.type.name === 'character') {
-            charName = node.textContent.trim().replace(/\s*\([^)]*\)\s*/g, '').trim();
-          }
-          return true;
-        });
-        if (charName) contextLabel = charName;
-      }
-
-      let sceneId: string | null = null;
-      let sceneIdx = 0;
-      editor.state.doc.nodesBetween(0, selFrom, (node) => {
-        if (node.type.name === 'sceneHeading') { sceneId = `scene-${sceneIdx}`; sceneIdx++; }
-        return true;
-      });
-
-      const defaultColor = NOTE_COLORS[0];
-      const noteId = addNote({
-        content: '',
-        anchorText: text.slice(0, 120),
-        elementType: currentNodeType,
-        contextLabel,
-        color: defaultColor.name,
-        sceneId,
-      });
-
-      const { tr } = editor.state;
-      const markType = editor.schema.marks.scriptNote;
-      if (markType) {
-        tr.addMark(selFrom, selTo, markType.create({ noteId, color: defaultColor.hex }));
-        editor.view.dispatch(tr);
-        editor.emit('update', { editor, transaction: tr });
-      }
-
-      setNoteFilter({ elementType: null, contextLabel: null, color: null, noteId });
-      openShelfTab('script');
-    } else if (scriptTabShowing) {
-      setActiveToolRight(null);
-    } else {
-      openShelfTab('script');
-    }
-  }, [editor, activeToolRight, setActiveToolRight, openShelfTab, addNote, setNoteFilter]);
+    const noteId = createScriptNoteAtSelection(editor);
+    if (noteId) store.setNotePopoverId(noteId);
+    else store.openTool('sticky');
+  }, [editor]);
 
   // ── Tags handler (shared between inline and overflow) ──
   const handleTagsClick = useCallback((e: React.PointerEvent | React.MouseEvent) => {
@@ -973,7 +921,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <button
           className="toolbar-btn"
           title="Insert Note"
-          onClick={() => useEditorStore.getState().openShelfTab('script')}
+          onClick={handleNotesClick}
         >
           <FaRegStickyNote />
         </button>
@@ -1270,9 +1218,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           <FaHashtag />
         </button>
       );
+      // v4.33: no active state — the button opens the note popover on the
+      // highlight (or creates the note there), not a persistent window.
       case 'scriptNotes': return (
         <button
-          className={`toolbar-btn${activeToolRight === 'scriptnotes' ? ' active' : ''}`}
+          className="toolbar-btn"
           title="Notes"
           onPointerDown={handleNotesClick}
         >
@@ -1329,7 +1279,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               className="zoom-tb-caret"
               title="Zoom options"
               onClick={() => setZoomMenuOpen((o) => !o)}
-            ><LuChevronDown /></button>
+            ><FaChevronDown /></button>
           </span>
           <button
             className="toolbar-btn zoom-tb-step"
@@ -1956,6 +1906,25 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 className="rib-scrapbook-return"
                 title="Return to Editor"
                 onClick={() => useEditorStore.getState().setCharFullscreen(false)}
+              >
+                <LuUndo2 className="rib-scrapbook-return-icon" />
+                <span className="rib-scrapbook-return-label">Return to Editor</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+      {/* v4.32 batch-v8 #2: the Scenes fullscreen takeover's Return — same
+          guard chain, one button ever renders. */}
+      {scenesFullscreen && !scrapbookOpen && !charFullscreen && (
+        <>
+          {leftLive.length > 0 && <div className="toolbar-separator rib-section-sep" />}
+          <div className="rib-section rib-scrapbook-sec">
+            <div className="rib-scrapbook-body">
+              <button
+                className="rib-scrapbook-return"
+                title="Return to Editor"
+                onClick={() => useEditorStore.getState().setScenesFullscreen(false)}
               >
                 <LuUndo2 className="rib-scrapbook-return-icon" />
                 <span className="rib-scrapbook-return-label">Return to Editor</span>

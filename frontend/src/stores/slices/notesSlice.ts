@@ -2,7 +2,7 @@
 // view-state. Anchored notes, file-level general notes, and shelf cards.
 import type { StateCreator } from 'zustand';
 import { uuid } from '../../utils/uuid';
-import type { EditorState, NoteInfo, NoteFilter, GeneralNote, ShelfCard } from '../editorStore';
+import type { EditorState, NoteInfo, GeneralNote, ShelfCard } from '../editorStore';
 
 export interface NotesSlice {
   // Notes
@@ -11,8 +11,11 @@ export interface NotesSlice {
   addNote: (note: Omit<NoteInfo, 'id' | 'createdAt'>) => string;
   updateNote: (id: string, updates: Partial<Pick<NoteInfo, 'content' | 'color' | 'title'>>) => void;
   deleteNote: (id: string) => void;
-  noteFilter: NoteFilter;
-  setNoteFilter: (filter: NoteFilter) => void;
+  /** v4.33: the note whose edit POPOVER is open, anchored on its highlight in
+   *  the script — the only place note text is read/edited now (the Notes
+   *  window holds general notes only; the Navigator lists + jumps). */
+  notePopoverId: string | null;
+  setNotePopoverId: (id: string | null) => void;
 
   // General notes (file-level, not anchored to text)
   generalNotes: GeneralNote[];
@@ -47,8 +50,8 @@ export const createNotesSlice: StateCreator<EditorState, [], [], NotesSlice> = (
     })),
   deleteNote: (id) =>
     set((s) => ({ notes: s.notes.filter((n) => n.id !== id) })),
-  noteFilter: { elementType: null, contextLabel: null, color: null, noteId: null },
-  setNoteFilter: (filter) => set({ noteFilter: filter }),
+  notePopoverId: null,
+  setNotePopoverId: (id) => set({ notePopoverId: id }),
 
   // General notes
   generalNotes: [],

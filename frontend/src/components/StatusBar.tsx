@@ -49,7 +49,8 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
   // info stays. (v4.30 batch-v7 #4: used to check only the Scrapbook.)
   const scrapbookActive = useNotebookStore((s) => s.notebookOpen);
   const charFullscreenActive = useEditorStore((s) => s.charFullscreen);
-  const takeoverActive = scrapbookActive || charFullscreenActive;
+  const scenesFullscreenActive = useEditorStore((s) => s.scenesFullscreen);
+  const takeoverActive = scrapbookActive || charFullscreenActive || scenesFullscreenActive;
 
   const elementLabel = useMemo(() => {
     const builtIn = (ELEMENT_LABELS as Record<string, string>)[activeElement as BuiltInElementType];

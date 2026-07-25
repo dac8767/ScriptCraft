@@ -15,49 +15,22 @@
   overflow-y: auto;
   flex-shrink: 0;
 }
-/* ── Fullscreen mode ── */
-.index-cards-fullscreen {
-  position: fixed;
-  inset: 0;
-  z-index: 3500;
-  max-height: none;
-  overflow-y: auto;
-  background: var(--fd-bg);
-}
-.index-cards-fullscreen .index-cards-header {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--fd-bg);
-}
-.index-cards-fullscreen .index-cards-grid {
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  padding: 16px 24px;
-  gap: 16px;
-  align-content: start;
-}
-.index-cards-header {
+/* v4.32 batch-v8 #2/#10: the old position:fixed inset:0 z-3500 fullscreen
+   overlay is GONE (it covered the toolbar and every way out — the trap Derek
+   hit), and so is the in-body count/actions header row. Fullscreen is now the
+   .fs-scenes-takeover editor-area surface (05-scene-navigator.css); the only
+   in-body chrome left is the reorder context bar. */
+.ic-reorder-bar {
   display: flex;
   align-items: center;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--fd-border);
-  gap: 8px;
-}
-.index-cards-title {
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--fd-text-muted);
-}
-.index-cards-count {
-  font-size: 11px;
-  color: var(--fd-text-muted);
-  margin-right: auto;
-}
-.index-cards-actions {
-  display: flex;
+  justify-content: flex-end;
   gap: 4px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--fd-border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--fd-navigator-bg);
 }
 .ic-action-btn {
   padding: 3px 10px;
@@ -74,8 +47,6 @@
 .ic-action-btn:disabled:hover { border-color: var(--fd-border); color: var(--fd-text-muted); }
 .ic-apply-btn.active { background: #2d8a4e; border-color: #2d8a4e; }
 .ic-undo-redo-btn { display: flex; align-items: center; justify-content: center; padding: 3px 6px; }
-.ic-fullscreen-btn { display: flex; align-items: center; justify-content: center; padding: 3px 6px; }
-.ic-close-btn { display: flex; align-items: center; justify-content: center; padding: 3px 6px; }
 /* v0.64: fit as many whole cards per row as the CONTAINER allows and wrap the
    rest, instead of squeezing 3 columns into a narrow panel. The old fixed
    repeat(3,1fr) + viewport media queries shrank cards to unreadable slivers
@@ -86,10 +57,6 @@
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 12px;
   padding: 12px 16px;
-}
-/* Fullscreen keeps roomier cards. */
-.index-cards-fullscreen .index-cards-grid {
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 }
 /* ── Drag-drop styles ── */
 .ic-draggable { cursor: grab; }

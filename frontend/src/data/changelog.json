@@ -1,5 +1,91 @@
 [
   {
+    "version": "4.33",
+    "date": "2026-07-25",
+    "items": [
+      {
+        "title": "Notes and To-Do are for non-script items only",
+        "detail": "Script-anchored notes and script [ ] to-do lists no longer appear in the Notes and To-Do windows — those live in the Navigator, which lists them and jumps to them (to-dos tick right in the Navigator, and in the script itself). The windows hold only general cards now, so their In-Script/General filter and Scene # sort are gone; Sort keeps Manual and Date Created.",
+        "tags": [
+          "Notes",
+          "To-Do",
+          "Navigator"
+        ]
+      },
+      {
+        "title": "Script notes edit in a popover on the highlight",
+        "detail": "A note anchored in the script opens right where it lives: click its highlight (or right-click → Edit Note, or the toolbar/Insert Note actions) and a sticky-card popover appears on the spot — title, text with @asset references and media previews, color dots that recolor the highlight, and delete. Clicking a note in the Navigator jumps to the highlight and opens the same popover.",
+        "tags": [
+          "Notes",
+          "Editor"
+        ]
+      }
+    ]
+  },
+  {
+    "version": "4.32",
+    "date": "2026-07-25",
+    "items": [
+      {
+        "title": "Scenes fullscreen no longer traps you",
+        "detail": "Fullscreen from the Scenes cards view is now an editor-area takeover like Characters: the toolbar, side rails, and status bar stay put, a Return to Editor button sits in the ribbon, and the takeover header carries its own ×. The old fullscreen covered the entire app with no way out.",
+        "tags": [
+          "Scenes"
+        ]
+      },
+      {
+        "title": "Scenes window wears the standard chrome",
+        "detail": "The in-body count row is gone: the scene count sits beside the window title, the fullscreen button moved to the top row, and Reorder moved up beside the View control (cards view). While reordering, an Undo/Redo/Cancel/Apply bar appears above the cards.",
+        "tags": [
+          "Scenes",
+          "UI"
+        ]
+      },
+      {
+        "title": "Navigator: scene numbers, standard Filter, and search",
+        "detail": "A # toggle on the left of the second row shows or hides scene numbers before each scene name. The old funnel popover is now the standard text Filter dropdown (per-kind show/hide), and the row gains the standard search to narrow by keyword.",
+        "tags": [
+          "Navigator"
+        ]
+      },
+      {
+        "title": "Design window remembers what you collapsed",
+        "detail": "All Design sections start minimized, and the open/closed state you leave behind survives closing the window (and the app).",
+        "tags": [
+          "Design"
+        ]
+      },
+      {
+        "title": "Relationship map opens at the right size",
+        "detail": "The map no longer flashes oversized icons before shrinking to fit — it computes its frame before first paint, including when saved node positions exist.",
+        "tags": [
+          "Characters"
+        ]
+      },
+      {
+        "title": "The larger carets, everywhere",
+        "detail": "Revised icon-audit pick: every caret and disclosure chevron now uses the larger (Fa) chevron family — dropdown triggers, dock accordions, tree and group disclosure arrows, Structure/Locations/Tags category rows included.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "More windows on the standard format",
+        "detail": "Locations, Structure, Pages, Production Tags, Notes, To-Do, Snippets, and Highlights now follow the window template: the count sits beside the window title (Structure counts acts), in-body title rows are gone, Tags' eye toggle and View/Manage tabs moved into the window chrome, and Highlights' add button joined the bottom row like Notes and To-Do.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "Scrapbook delete buttons match the theme",
+        "detail": "The page and section delete buttons in the Scrapbook side panel were black regardless of theme; they now use the theme text color like every neighboring control.",
+        "tags": [
+          "Scrapbook"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.31",
     "date": "2026-07-25",
     "items": [

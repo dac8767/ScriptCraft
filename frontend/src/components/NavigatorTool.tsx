@@ -3,16 +3,17 @@
  * Navigator. Lists every jumpable landmark in the script:
  *   - Scenes:       scene headings (click to jump)
  *   - Acts:         new act / end of act markers (click to jump)
- *   - Notes: anchored notes (click opens Notes → Script focused on it)
- *   - To-Dos:       sticky To-Do items (tick here; click opens the To-Do tab)
- * Show/hide per kind via the dropdown; the filter box narrows by text.
+ *   - Notes:        anchored notes (click jumps to the highlight; its popover
+ *                   opens there — v4.33, the Notes window is general-only)
+ *   - To-Dos:       script [ ] lines (tick here; click to jump)
+ * Show/hide per kind via the Filter dropdown; Search narrows by text.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useMemo, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
-import { FaRegStickyNote } from 'react-icons/fa';
-import { FilterIcon } from './uiIcons';
+import { FaHashtag, FaRegStickyNote } from 'react-icons/fa';
+import { ControlDropdown, ControlSearch } from './ToolControls';
+import { findNotePos } from '../utils/scriptNoteActions';
 
 const KINDS = ['scene', 'act', 'section', 'marker', 'note', 'todo'] as const;
 type Kind = typeof KINDS[number];
@@ -24,6 +25,10 @@ const LABEL: Record<Kind, string> = {
 interface Item {
   kind: Kind;
   text: string;
+  /** v4.32 batch-v8 #5: scene rows only — the scene's number (the assigned
+   *  sceneNumber attr when there is one, else its 1-based position among
+   *  scenes — the same rule the Scenes list and note locations use). */
+  num?: string;
   /** doc position for jumpable kinds */
   pos?: number;
   /** note id for script notes */
@@ -39,94 +44,56 @@ interface NavigatorToolProps {
   scrollContainer?: HTMLDivElement | null;
 }
 
-/** v1.80: header/footer state lives in the store (navFilter / navShowKinds)
- *  because the dropdown and filter field render in the WINDOW CHROME (header
- *  and footer slots), outside this component. Missing kind = shown. */
+/** v1.80: header state lives in the store (navFilter / navShowKinds /
+ *  navShowSceneNumbers) because the controls render in the WINDOW CHROME
+ *  (the row-2 cluster), outside this component. Missing kind = shown. */
 const kindShown = (show: Record<string, boolean>, k: Kind) => show[k] !== false;
 
-/** The Navigator's ONE filter control (v2.03): a single funnel button,
- *  right-aligned in the window header. Clicking it opens a portalled
- *  popover (AddMenu lesson: body portal, top/left only) holding the
- *  keyword filter AND the element-type show/hide checkboxes. */
-export function NavigatorHeaderExtra() {
+/** v4.32 batch-v8 #5–#7, Derek's window template: the Navigator's row-2
+ *  cluster, composed from the ToolControls primitives (replaces the v2.03
+ *  funnel popover — same store state, standard chrome):
+ *    - scene-number toggle, seated LEFT via .tool-ctl-lead
+ *    - Filter: kind show/hide as a keepOpen multi-toggle menu (the chip
+ *      counts HIDDEN kinds)
+ *    - Search: the keyword filter (narrows the list by text) */
+export function NavigatorControls() {
+  const showNums = useEditorStore((s) => s.navShowSceneNumbers);
+  const setShowNums = useEditorStore((s) => s.setNavShowSceneNumbers);
   const navShowKinds = useEditorStore((s) => s.navShowKinds);
   const setNavShowKinds = useEditorStore((s) => s.setNavShowKinds);
   const navFilter = useEditorStore((s) => s.navFilter);
   const setNavFilter = useEditorStore((s) => s.setNavFilter);
-  const anyHidden = KINDS.some((k) => !kindShown(navShowKinds, k));
-  const [open, setOpen] = useState(false);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: PointerEvent) => {
-      const t = e.target as HTMLElement;
-      if (!t.closest('.fs-nav-filterpop') && t !== btnRef.current && !btnRef.current?.contains(t)) setOpen(false);
-    };
-    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('pointerdown', close);
-    document.addEventListener('keydown', key);
-    return () => {
-      document.removeEventListener('pointerdown', close);
-      document.removeEventListener('keydown', key);
-    };
-  }, [open]);
-
-  const toggle = () => {
-    if (!open && btnRef.current) {
-      const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 6, left: Math.max(8, Math.min(r.right - 220, window.innerWidth - 236)) });
-    }
-    setOpen((v) => !v);
-  };
-
+  const hiddenCount = KINDS.filter((k) => !kindShown(navShowKinds, k)).length;
   return (
-    <span className="fs-nav-filterctl">
+    <>
       <button
-        ref={btnRef}
-        className="fs-nav-filterbtn"
-        title="Filter by keyword or element type"
+        className={'tool-ctl tool-ctl-lead' + (showNums ? ' active' : '')}
+        title={showNums ? 'Hide scene numbers' : 'Show scene numbers'}
         onPointerDown={(e) => e.stopPropagation()}
-        onClick={toggle}
+        onClick={() => setShowNums(!showNums)}
       >
-        <FilterIcon filled={anyHidden || !!navFilter} />
+        <FaHashtag aria-hidden />
       </button>
-      {open && pos && createPortal(
-        <div className="fs-nav-filterpop" style={{ top: pos.top, left: pos.left }}>
-          <input
-            autoFocus
-            className="fs-nav-filter"
-            placeholder="Filter by keyword"
-            value={navFilter}
-            onChange={(e) => setNavFilter(e.target.value)}
-          />
-          <div className="fs-nav-filterpop-title">Show element types</div>
-          {KINDS.map((k) => (
-            <label key={k} className="fs-nav-filterpop-kind">
-              <input
-                type="checkbox"
-                checked={kindShown(navShowKinds, k)}
-                onChange={() => setNavShowKinds({ ...navShowKinds, [k]: !kindShown(navShowKinds, k) })}
-              />
-              <span>{LABEL[k]}</span>
-            </label>
-          ))}
-          <div className="fs-nav-filterpop-actions">
-            <button onClick={() => setNavShowKinds({})}>Show All</button>
-            <button onClick={() => setNavShowKinds(Object.fromEntries(KINDS.map((x) => [x, false])))}>Hide All</button>
-          </div>
-        </div>,
-        document.body,
-      )}
-    </span>
+      <ControlDropdown
+        label="Filter"
+        chip={hiddenCount}
+        items={KINDS.map((k) => ({
+          label: LABEL[k],
+          active: kindShown(navShowKinds, k),
+          keepOpen: true,
+          onSelect: () => setNavShowKinds({ ...navShowKinds, [k]: !kindShown(navShowKinds, k) }),
+        }))}
+      />
+      <ControlSearch value={navFilter} onChange={setNavFilter} placeholder="Filter by keyword" />
+    </>
   );
 }
 
 export default function NavigatorTool({ editor, scrollContainer }: NavigatorToolProps) {
-  const { notes, setNoteFilter, openShelfTab } = useEditorStore();
+  const { notes, setNotePopoverId } = useEditorStore();
   const filter = useEditorStore((s) => s.navFilter);
   const show = useEditorStore((s) => s.navShowKinds);
+  const showNums = useEditorStore((s) => s.navShowSceneNumbers);
   const [docTick, setDocTick] = useState(0);
 
   // Re-scan the outline when the document changes (throttled by rAF batching)
@@ -140,11 +107,21 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [];
     if (editor) {
+      let sceneOrdinal = 0; // 1-based scene count — the fallback number
       editor.state.doc.descendants((node, pos) => {
         if (node.type.name === 'sceneHeading') {
+          sceneOrdinal += 1;
+          // v4.32 batch-v8 #5: assigned sceneNumber attr ?? doc order — the
+          // same rule ScriptNotes/StickyNotes use for scene locations.
+          const assigned = (node.attrs as { sceneNumber?: number | string | null }).sceneNumber;
           // v2.32: the editor RENDERS headings uppercase via CSS whatever the
           // typed case — the Navigator must match what the page shows.
-          out.push({ kind: 'scene', text: (node.textContent || '(untitled scene)').toUpperCase(), pos });
+          out.push({
+            kind: 'scene',
+            text: (node.textContent || '(untitled scene)').toUpperCase(),
+            num: String(assigned ?? sceneOrdinal),
+            pos,
+          });
         } else if (node.type.name === 'newAct' || node.type.name === 'endOfAct') {
           out.push({ kind: 'act', text: node.textContent || '(act)', pos });
         } else if (node.type.name === 'general') {
@@ -190,9 +167,12 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
 
   const handleClick = (it: Item) => {
     if (it.pos !== undefined) jumpTo(it.pos);
-    else if (it.kind === 'note' && it.noteId) {
-      setNoteFilter({ elementType: null, contextLabel: null, color: null, noteId: it.noteId });
-      openShelfTab('script');
+    else if (it.kind === 'note' && it.noteId && editor) {
+      // v4.33: jump to the note's highlight and open its popover there —
+      // the Notes window no longer holds script notes.
+      const pos = findNotePos(editor, it.noteId);
+      if (pos !== null) jumpTo(pos);
+      setNotePopoverId(it.noteId);
     }
   };
 
@@ -229,6 +209,11 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
                 onChange={() => toggleTodo(it)}
                 onClick={(e) => e.stopPropagation()}
               />
+            )}
+            {/* v4.32 batch-v8 #5: scene number before the name (toggle in
+                the window's row-2 cluster) — scene rows only */}
+            {showNums && it.kind === 'scene' && it.num !== undefined && (
+              <span className="fs-nav-scene-num">{it.num}</span>
             )}
             <span className={it.done ? 'fs-nav-done' : ''}>
               {it.kind === 'note' ? <FaRegStickyNote className="fs-nav-kind-icon" /> : it.kind === 'act' ? '§ ' : it.kind === 'marker' ? '⚑ ' : it.kind === 'section' ? '# ' : ''}
