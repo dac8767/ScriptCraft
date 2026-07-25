@@ -97,26 +97,28 @@
   flex: 1;
   min-height: 0;
 }
+/* v4.35 batch-v9 #6: the Goals-style segmented look, app-wide. */
 .fs-analytics-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 8px 10px 0;
-  border-bottom: 1px solid var(--fd-border);
+  display: inline-flex;
+  align-self: flex-start;
+  margin: 8px 10px;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  overflow: hidden;
   flex-shrink: 0;
 }
 .fs-analytics-tabs button {
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
   color: var(--fd-text-muted);
   font-size: 11.5px;
   font-weight: 600;
-  padding: 6px 10px 7px;
+  padding: 5px 12px;
   cursor: pointer;
 }
 .fs-analytics-tabs button.active {
-  color: var(--fd-text);
-  border-bottom-color: var(--fd-accent, #4a90d9);
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
 }
 .fs-analytics-stats {
   flex: 1;
@@ -158,14 +160,6 @@
 }
 .tool-dock-item.active {
   border-color: var(--fd-accent, #4a90d9);
-}
-.fs-analytics-tabs button,
-.fs-goal-kinds button,
-.fs-analytics-tabs { flex-wrap: wrap; gap: 4px; }
-.fs-analytics-tabs button.active {
-  border-color: var(--fd-accent, #4a90d9);
-  background: color-mix(in srgb, var(--fd-accent, #4a90d9) 14%, transparent);
-  color: var(--fd-text);
 }
 .fs-goal-kinds { border: none; gap: 4px; }
 .fs-goal-kinds button { background: rgba(128, 128, 128, 0.06); }
@@ -1491,9 +1485,102 @@ input.fs-switch:checked::after { left: 15px; }
    the scene row's 600. */
 .fs-nav-scene-num {
   flex: 0 0 auto;
+  /* v4.35 batch-v9 #3, Derek: the number sits at the row's RIGHT edge now */
+  margin-left: auto;
   min-width: 2.5ch;
   text-align: right;
   font-size: 11px;
   font-weight: 400;
   color: var(--fd-text-muted);
+}
+
+/* ── v4.35, Derek batch 9: Focus tool master row + off-state (TypewriterTool.tsx) ── */
+/* The master toggle row: label left, "?" helper right. The divider that used
+   to sit on the label itself (21-outline-bar.css .fs-typewriter-master) moves
+   up to the row so the help button sits inside it. */
+.fs-typewriter-masterrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--fd-chrome-separator);
+  margin-bottom: 4px;
+}
+.fs-typewriter-masterrow .fs-typewriter-master {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+  margin-bottom: 0;
+}
+/* Master off: the whole block below the master row reads AND acts disabled —
+   pointer-events catches what the per-input disabled= can't (labels, the
+   swatch/slider chrome). */
+.fs-typewriter-rest { margin-top: 8px; }
+.fs-typewriter-rest.disabled { opacity: .45; pointer-events: none; }
+
+/* v4.35 workspaces actions */
+/* The View → Workspaces menu's actions, mirrored below the list — full-width
+   button column on the .fs-customize-globals button surface. */
+.ws-actions {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-top: 1px solid var(--fd-border);
+}
+.ws-action-btn {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  cursor: pointer;
+}
+.ws-action-btn:hover:not(:disabled) { background: var(--fd-hover-bg); }
+.ws-action-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* v4.35 feedback preload host */
+/* The ONE persistent Airtable embed (FeedbackFrameHost, mounted in App.tsx).
+   The Feedback window body is a placeholder that streams its viewport rect
+   here; this fixed container adopts it (inline top/left/width/height). Hidden
+   = visibility + offscreen transform — NOT display:none and never unmounted,
+   so the form loads once at app start and reopening is instant.
+   z-index 130: just above the floating and temp tool windows (both 120 —
+   20-tool-dock.css .tool-window / .tool-window-temp above) so the frame
+   covers its own window's body, and below everything that must beat a tool
+   window — menu dropdowns, the dialog overlay (3000), popovers, toasts.
+   Known tradeoff: ANOTHER tool window dragged over the Feedback window
+   paints under the iframe. */
+.feedback-frame-host {
+  position: fixed;
+  z-index: 130;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  /* Bottom-right 16×16 notch = .tool-window-resize's footprint. clip-path
+     drops it from paint AND hit-testing, so the floating window's resize
+     grip stays visible and grabbable under the overlay. */
+  clip-path: polygon(
+    0 0, 100% 0,
+    100% calc(100% - 16px), calc(100% - 16px) calc(100% - 16px),
+    calc(100% - 16px) 100%, 0 100%
+  );
+}
+.feedback-frame-host.hidden {
+  visibility: hidden;
+  pointer-events: none;
+  /* Parked offscreen at the tool's default size (ALL_TOOLS: 460×620) so the
+     form lays out and loads while hidden. */
+  top: 0;
+  left: 0;
+  width: 460px;
+  height: 620px;
+  transform: translate(-200vw, 0);
 }

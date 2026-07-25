@@ -3,6 +3,7 @@ import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migra
 
 // ── View-state persistence helpers ──
 import { _vs, saveViewState, clamp, type ViewState } from './viewState';
+import { useNotebookStore } from './notebookStore';
 import { createDesignSlice, type DesignSlice } from './slices/designSlice';
 import { createCharacterSlice, type CharacterSlice } from './slices/characterSlice';
 import { createTagSlice, type TagSlice } from './slices/tagSlice';
@@ -320,8 +321,10 @@ export interface NoteInfo {
   elementType: string;
   /** Contextual label — e.g. character name, scene heading text */
   contextLabel: string;
-  /** Note color for categorization */
-  color: NoteColor;
+  /** Note color: one of the six NOTE_COLORS names, or (v4.35 batch-v9 #5) an
+   *  arbitrary '#rrggbb' hex from the custom picker. Persisted — readers must
+   *  accept both forms forever. */
+  color: NoteColor | string;
   createdAt: string;
   /** Optional scene context */
   sceneId: string | null;
@@ -332,7 +335,7 @@ export interface GeneralNote {
   id: string;
   title: string;
   content: string;
-  color: NoteColor;
+  color: NoteColor | string;
   createdAt: string;
 }
 
@@ -912,12 +915,11 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   scenesViewMode: 'list' | 'cards';
   setScenesViewMode: (m: 'list' | 'cards') => void;
   /** v4.32 batch-v8 #2/#8: the Cards board's fullscreen is an editor-area
-   *  takeover now (like charFullscreen) — never past the editor space, close
-   *  always in its header. */
-  scenesFullscreen: boolean;
-  setScenesFullscreen: (v: boolean) => void;
-  /** v4.32 batch-v8 #9: the Cards board's reorder (drag) mode — lifted so the
-   *  window chrome's Reorder control drives it. Session-only. */
+   *  takeover now — never past the editor space, close always in its header.
+   *  v4.35: folded into the generic fullscreenTool field. */
+  /** v4.32 batch-v8 #9: the scene reorder (drag) mode — lifted so the
+   *  window chrome's Reorder control drives it. v4.35 batch-v9 #2: drives
+   *  BOTH views (card drag / list row drag). Session-only. */
   scenesReorderMode: boolean;
   setScenesReorderMode: (v: boolean) => void;
   /** v4.32 batch-v8 #5: Navigator list shows scene numbers before names. */
@@ -1093,10 +1095,15 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   toggleCharacterProfiles: () => void;
   selectedCharacter: string | null;
   setSelectedCharacter: (name: string | null) => void;
-  /** v4.16: the character tool's fullscreen editor takeover (Scrapbook-style),
-   *  session-only. */
-  charFullscreen: boolean;
-  setCharFullscreen: (v: boolean) => void;
+  /** v4.35 batch-v9 #4: ONE fullscreen takeover for every side-panel window —
+   *  which tool currently owns the editor area (null = the editor). Replaces
+   *  the per-tool charFullscreen/scenesFullscreen flags; a single field makes
+   *  the takeovers mutually exclusive by construction. Session-only. */
+  fullscreenTool: ToolId | null;
+  setFullscreenTool: (id: ToolId | null) => void;
+  /** Clears the tool's docked/floating slot and raises its takeover (also
+   *  lowers the Scrapbook surface — that's the other editor-area owner). */
+  enterToolFullscreen: (id: ToolId) => void;
   /** v4.24 batch-v2 #6: the character count the panel currently shows —
    *  published by CharacterProfiles so the tool-window header displays the
    *  SAME number (search-filtered, profiles ∪ live cues) without recomputing
@@ -1266,8 +1273,6 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     saveViewState({ scenesViewMode: m });
     set({ scenesViewMode: m });
   },
-  scenesFullscreen: false,
-  setScenesFullscreen: (v) => set({ scenesFullscreen: v }),
   scenesReorderMode: false,
   setScenesReorderMode: (v) => set({ scenesReorderMode: v }),
   navShowSceneNumbers: _vs.navShowSceneNumbers ?? false,
@@ -1670,8 +1675,22 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   toggleCharacterProfiles: () => get().openTool('characters'),
   selectedCharacter: null,
   setSelectedCharacter: (name) => set({ selectedCharacter: name }),
-  charFullscreen: false,
-  setCharFullscreen: (v) => set({ charFullscreen: v }),
+  fullscreenTool: null,
+  setFullscreenTool: (id) => set({ fullscreenTool: id }),
+  enterToolFullscreen: (id) => {
+    const s = get();
+    if (s.activeTool === id) s.setActiveTool(null);
+    if (s.activeToolRight === id) s.setActiveToolRight(null);
+    if (s.tempTool === id) s.setTempTool(null);
+    // The Scrapbook surface is the other editor-area owner — lower it. Its
+    // dock slots clear too, matching closeNotebook() (which lives component-
+    // side and can't be imported here without a cycle).
+    useNotebookStore.getState().setNotebookOpen(false);
+    if (s.activeTool === 'notebook') s.setActiveTool(null);
+    if (s.activeToolRight === 'notebook') s.setActiveToolRight(null);
+    if (s.tempTool === 'notebook') s.setTempTool(null);
+    set({ fullscreenTool: id });
+  },
   charListCount: 0,
   setCharListCount: (n) => set((s) => (s.charListCount === n ? {} : { charListCount: n })),
   charActiveTab: 'profiles',

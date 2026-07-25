@@ -112,8 +112,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // no duplicate B/I/U/S anywhere. Declared up here because the responsive
   // overflow measurement (below) also re-measures on this flag (v2.10).
   const scrapbookOpen = useNotebookStore((s) => s.notebookOpen);
-  const charFullscreen = useEditorStore((s) => s.charFullscreen);
-  const scenesFullscreen = useEditorStore((s) => s.scenesFullscreen);
+  const fullscreenTool = useEditorStore((s) => s.fullscreenTool);
   // v2.94: the Insert Table button needs a page to land the table on — the
   // old menu item was disabled without one, and firing the event with no
   // canvas mounted is a silent no-op.
@@ -1892,12 +1891,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           </div>
         </>
       )}
-      {/* v4.16, Derek: the Character tool's fullscreen mirrors the Scrapbook —
-          a "Return to Editor" section in the ribbon (same styling).
-          v4.30 #6: the takeovers are mutually exclusive at the store level
-          now, but never render two Return buttons even if a stale state
-          slips through — the Scrapbook's wins. */}
-      {charFullscreen && !scrapbookOpen && (
+      {/* v4.35 batch-v9 #4: ONE Return-to-Editor for whichever tool owns the
+          fullscreen takeover (fullscreenTool is a single field, so the
+          takeovers are exclusive by construction; the Scrapbook's still wins
+          if a stale state slips through). */}
+      {fullscreenTool && !scrapbookOpen && (
         <>
           {leftLive.length > 0 && <div className="toolbar-separator rib-section-sep" />}
           <div className="rib-section rib-scrapbook-sec">
@@ -1905,26 +1903,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               <button
                 className="rib-scrapbook-return"
                 title="Return to Editor"
-                onClick={() => useEditorStore.getState().setCharFullscreen(false)}
-              >
-                <LuUndo2 className="rib-scrapbook-return-icon" />
-                <span className="rib-scrapbook-return-label">Return to Editor</span>
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-      {/* v4.32 batch-v8 #2: the Scenes fullscreen takeover's Return — same
-          guard chain, one button ever renders. */}
-      {scenesFullscreen && !scrapbookOpen && !charFullscreen && (
-        <>
-          {leftLive.length > 0 && <div className="toolbar-separator rib-section-sep" />}
-          <div className="rib-section rib-scrapbook-sec">
-            <div className="rib-scrapbook-body">
-              <button
-                className="rib-scrapbook-return"
-                title="Return to Editor"
-                onClick={() => useEditorStore.getState().setScenesFullscreen(false)}
+                onClick={() => useEditorStore.getState().setFullscreenTool(null)}
               >
                 <LuUndo2 className="rib-scrapbook-return-icon" />
                 <span className="rib-scrapbook-return-label">Return to Editor</span>

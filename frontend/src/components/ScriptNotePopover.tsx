@@ -23,7 +23,7 @@ import type { Editor } from '@tiptap/react';
 import { useEditorStore, type NoteColor, type ShelfCard } from '../stores/editorStore';
 import { ColorDots, CARD_PLACEHOLDERS, formatDate } from './StickyCard';
 import {
-  NoteContentDisplay, NOTE_STICKY_BG, hasRichContent,
+  NoteContentDisplay, noteStickyBg, hasRichContent,
   shelfHexForNote, noteColorForShelfHex, getNoteColorHex,
 } from './ScriptNotes';
 import { useAssetStore, type Asset } from '../stores/assetStore';
@@ -130,7 +130,9 @@ export default function ScriptNotePopover({ editor }: { editor: Editor | null })
     if (noteId && !note) close();
   }, [noteId, note, close]);
 
-  const handleColorChange = useCallback((color: NoteColor) => {
+  // Accepts a name OR a custom '#rrggbb' — the highlight mark always gets the
+  // resolved hex either way, so a custom pick recolors the script too.
+  const handleColorChange = useCallback((color: NoteColor | string) => {
     if (!note) return;
     updateNote(note.id, { color });
     if (editor) {
@@ -245,7 +247,7 @@ export default function ScriptNotePopover({ editor }: { editor: Editor | null })
           top: pos.top,
           left: pos.left,
           width: POPOVER_WIDTH,
-          background: NOTE_STICKY_BG[note.color] || NOTE_STICKY_BG.Yellow,
+          background: noteStickyBg(note.color),
           borderTopColor: hex,
         }}
         onPointerDown={(e) => e.stopPropagation()}

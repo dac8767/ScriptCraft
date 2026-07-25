@@ -301,3 +301,40 @@
 }
 .swn-add-btn:hover { background: var(--fd-hover-bg, rgba(128, 128, 128, 0.15)); }
 
+/* v4.35 (batch-v9 #5): custom color pick — the Characters-row dashed swatch
+   (.synopsis-color-custom, 05-scene-navigator.css) rebuilt at swn-dot size:
+   the 28px original cannot drop into the 12px .swn-color-pop row. The hidden
+   <input type=color> must keep covering the whole circle — it alone opens the
+   native picker. Hardcoded darks match the pop's fixed white background. */
+.swn-color-custom {
+  position: relative;
+  width: var(--dz-swn-dot, 12px);
+  height: var(--dz-swn-dot, 12px);
+  box-sizing: border-box;
+  border: 1px dashed rgba(0, 0, 0, 0.45);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.swn-color-custom input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  padding: 0;
+  border: none;
+}
+.swn-color-custom span {
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  color: #777;
+  pointer-events: none;
+}
+

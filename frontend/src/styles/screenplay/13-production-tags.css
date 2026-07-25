@@ -136,29 +136,32 @@
 }
 .tags-panel-close:hover { color: var(--fd-text); }
 /* Tab bar */
+/* v4.35 batch-v9 #6: segmented (the Goals look) — legacy overlay only. */
 .tags-tab-bar {
-  display: flex;
-  border-bottom: 1px solid var(--fd-border);
+  display: inline-flex;
+  align-self: flex-start;
+  margin: 6px 10px;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  overflow: hidden;
   flex-shrink: 0;
 }
 .tags-tab {
-  flex: 1;
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
   color: var(--fd-text-muted);
   font-size: 12px;
   font-weight: 500;
-  padding: 8px 0;
+  padding: 6px 14px;
   cursor: pointer;
   text-align: center;
   position: relative;
-  transition: color .15s, border-color .15s;
+  transition: color .15s, background .15s;
 }
 .tags-tab:hover { color: var(--fd-text); }
 .tags-tab-active {
-  color: var(--fd-accent);
-  border-bottom-color: var(--fd-accent);
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
 }
 .tags-tab-dot {
   display: inline-block;

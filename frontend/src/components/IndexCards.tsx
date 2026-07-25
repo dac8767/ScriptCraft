@@ -2,14 +2,65 @@ import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
 import { Editor } from '@tiptap/react';
 import { FaUndo, FaRedo } from 'react-icons/fa';
 import { FullscreenIcon } from './uiIcons';
-import { useEditorStore, type SceneInfo } from '../stores/editorStore';
+import { useEditorStore } from '../stores/editorStore';
 import { computeSceneLengths } from '../editor/pagination';
 import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../utils/scriptTiming';
+import { computeSceneFilterDetails, filterSceneIndices, sceneFilterOptions, countActiveSceneFilters } from '../utils/sceneFilters';
+import { useSceneReorder, type SceneReorder } from '../utils/useSceneReorder';
 import SynopsisModal from './SynopsisModal';
 
 interface IndexCardsProps {
   editor: Editor | null;
   scrollContainer: HTMLDivElement | null;
+}
+
+/** The reorder context bar — Undo / Redo / Cancel / Apply — ONE component for
+ *  the card wall and the scene list (do not fork it). v4.35 batch-v9 #2:
+ *  filters/search are suspended while reordering (the pending list must hold
+ *  every scene — Apply rewrites the whole document order), and when they're
+ *  set the bar says so instead of silently ignoring them. */
+export function SceneReorderBar({ r }: { r: SceneReorder }) {
+  const filters = useEditorStore((s) => s.sceneFilters);
+  const search = useEditorStore((s) => s.sceneSearch);
+  const narrowed = countActiveSceneFilters(filters) > 0 || !!search;
+  return (
+    <div className="ic-reorder-bar">
+      {narrowed && (
+        <span className="ic-reorder-note">showing all scenes while reordering</span>
+      )}
+      <button
+        className="ic-action-btn ic-undo-redo-btn"
+        onClick={r.undo}
+        disabled={!r.canUndo}
+        title="Undo (Ctrl+Z)"
+      >
+        <FaUndo />
+      </button>
+      <button
+        className="ic-action-btn ic-undo-redo-btn"
+        onClick={r.redo}
+        disabled={!r.canRedo}
+        title="Redo (Ctrl+Shift+Z)"
+      >
+        <FaRedo />
+      </button>
+      <button
+        className="ic-action-btn"
+        onClick={r.cancel}
+        title="Cancel reorder"
+      >
+        Cancel
+      </button>
+      <button
+        className={`ic-action-btn ic-apply-btn${r.hasChanges ? ' active' : ''}`}
+        onClick={r.apply}
+        title={r.hasChanges ? 'Apply scene reorder to script' : 'No changes to apply'}
+        disabled={!r.hasChanges}
+      >
+        Apply
+      </button>
+    </div>
+  );
 }
 
 // v4.24 batch 7: embedded-only — Index Cards is the Scenes tool's Cards view.
@@ -18,73 +69,62 @@ interface IndexCardsProps {
 const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
   const { scenes, updateSceneSynopsis, updateSceneColor, pageLayout } = useEditorStore();
 
-  // v4.32 batch-v8: both lifted to the store — fullscreen is an editor-area
-  // takeover driven from the window chrome (#2/#8), and reorder mode is the
-  // chrome cluster's Reorder control (#9).
-  const fullscreen = useEditorStore((s) => s.scenesFullscreen);
-  const setFullscreen = useEditorStore((s) => s.setScenesFullscreen);
-  const dragMode = useEditorStore((s) => s.scenesReorderMode);
-  const setDragMode = useEditorStore((s) => s.setScenesReorderMode);
+  // v4.35 batch-v9 #4: fullscreen is the generic per-tool takeover now.
+  const fullscreen = useEditorStore((s) => s.fullscreenTool === 'scenes');
+  const setFullscreenTool = useEditorStore((s) => s.setFullscreenTool);
 
-  // Deferred reorder state: pending changes are visual-only until Apply
-  const [pendingScenes, setPendingScenes] = useState<SceneInfo[] | null>(null);
-  const [originalScenes, setOriginalScenes] = useState<SceneInfo[] | null>(null);
+  // v4.35 batch-v9 #2: the deferred-reorder machinery is the shared hook —
+  // the same snapshot/undo/apply drives the list view's row drag.
+  const reorder = useSceneReorder(editor);
+  const { dragMode, displayScenes } = reorder;
 
-  // Undo/redo history for reorder operations
-  const historyRef = useRef<{ stack: SceneInfo[][]; pointer: number }>({ stack: [], pointer: -1 });
-  const [, setHistoryVersion] = useState(0); // trigger re-renders on undo/redo
+  // v4.35 batch-v9 #2: cards obey Filter + Search (same predicate as the
+  // list). The store's SceneInfo has heading/synopsis/color; the character/
+  // location/prefix/time details come from the shared doc walk.
+  const sceneFilters = useEditorStore((s) => s.sceneFilters);
+  const sceneSearch = useEditorStore((s) => s.sceneSearch);
 
-  const canUndo = dragMode && historyRef.current.pointer > 0;
-  const canRedo = dragMode && historyRef.current.pointer < historyRef.current.stack.length - 1;
+  const filterDetails = useMemo(
+    () => (editor ? computeSceneFilterDetails(editor.state.doc) : []),
+    [editor, scenes],
+  );
 
-  const pushHistory = useCallback((state: SceneInfo[]) => {
-    const h = historyRef.current;
-    // Truncate any redo states
-    h.stack = h.stack.slice(0, h.pointer + 1);
-    h.stack.push(state);
-    h.pointer = h.stack.length - 1;
-    setHistoryVersion(v => v + 1);
-  }, []);
+  const filteredIndices = useMemo(
+    () => filterSceneIndices(scenes, filterDetails, sceneFilters, sceneSearch),
+    [scenes, filterDetails, sceneFilters, sceneSearch],
+  );
 
-  const undo = useCallback(() => {
-    const h = historyRef.current;
-    if (h.pointer <= 0) return;
-    h.pointer--;
-    setPendingScenes(h.stack[h.pointer]);
-    setHistoryVersion(v => v + 1);
-  }, []);
+  // While reordering, filtering is SUSPENDED and every scene shows — the
+  // pending list must be complete (Apply rewrites the whole document order;
+  // a filtered apply would eat the hidden scenes). `idx` is the index the
+  // card's handlers use: the pending position during reorder (drag/move/
+  // badges), the live scene index otherwise (jump, lengths, timings).
+  const visibleScenes = useMemo(
+    () =>
+      dragMode
+        ? displayScenes.map((scene, i) => ({ scene, idx: i }))
+        : filteredIndices.map((i) => ({ scene: scenes[i], idx: i })),
+    [dragMode, displayScenes, filteredIndices, scenes],
+  );
 
-  const redo = useCallback(() => {
-    const h = historyRef.current;
-    if (h.pointer >= h.stack.length - 1) return;
-    h.pointer++;
-    setPendingScenes(h.stack[h.pointer]);
-    setHistoryVersion(v => v + 1);
-  }, []);
+  const narrowed = countActiveSceneFilters(sceneFilters) > 0 || !!sceneSearch;
 
-  // Keyboard shortcuts for undo/redo in reorder mode
+  // v4.35 batch-v9 #2/#3: publish the counts AND the filter option lists while
+  // the wall is mounted — the window chrome (SceneTitleExtra fraction, the
+  // Filter popover's dropdowns) reads sceneNavData, and in cards view this
+  // body is the only one alive to keep it current. Same derivation as the
+  // list's (shared sceneFilterOptions), so the two views can't drift.
+  const navData = useMemo(
+    () => ({
+      filtered: filteredIndices.length,
+      total: scenes.length,
+      ...sceneFilterOptions(filterDetails),
+    }),
+    [filteredIndices.length, scenes.length, filterDetails],
+  );
   useEffect(() => {
-    if (!dragMode) return;
-    const handleKey = (e: KeyboardEvent) => {
-      const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        undo();
-      } else if (mod && e.key === 'z' && e.shiftKey) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        redo();
-      } else if (mod && e.key === 'y') {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        redo();
-      }
-    };
-    // Capture phase fires before ProseMirror's editor keymap handlers
-    window.addEventListener('keydown', handleKey, true);
-    return () => window.removeEventListener('keydown', handleKey, true);
-  }, [dragMode, undo, redo]);
+    useEditorStore.getState().setSceneNavData(navData);
+  }, [navData]);
 
   // Custom drag state
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -133,23 +173,6 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
     [synopsisModal, editor, updateSceneSynopsis],
   );
 
-  // The cards to display: pending order during reorder mode, otherwise live scenes
-  const displayScenes = pendingScenes ?? scenes;
-
-  // v4.32 batch-v8: the window/takeover title count reads sceneNavData, which
-  // the LIST view publishes — keep `total` live while only the cards are
-  // mounted (filtered stays stale, but cards view never shows the fraction).
-  useEffect(() => {
-    const s = useEditorStore.getState();
-    if (s.sceneNavData.total !== scenes.length) {
-      s.setSceneNavData({ ...s.sceneNavData, total: scenes.length });
-    }
-  }, [scenes.length]);
-
-  // Whether there are pending changes to apply
-  const hasChanges = pendingScenes && originalScenes &&
-    pendingScenes.some((s, i) => s.id !== originalScenes[i]?.id);
-
   // Scene page lengths and timing
   const sceneLengths = useMemo(() => {
     if (!editor) return [];
@@ -160,9 +183,6 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
     if (!editor) return [];
     try { return computeSceneTiming(editor.getJSON()).scenes; } catch { return []; }
   }, [editor, scenes]);
-
-  // Map from scene ID to its original 1-based position (for showing "was #N")
-  const originalIndexMap = useRef(new Map<string, number>());
 
   // Update synopsis on the sceneHeading node attribute so it persists in the document
   const updateSynopsisAttr = useCallback(
@@ -220,7 +240,7 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
       // the editor surface (and the scroll container) is unmounted, so a
       // focus/scroll fired first would land on a detached view and silently
       // do nothing. The rAFs run after React has re-committed the editor.
-      if (fullscreen) setFullscreen(false);
+      if (fullscreen) setFullscreenTool(null);
 
       requestAnimationFrame(() => {
         editor.chain().focus().setTextSelection(targetPos + 1).run();
@@ -236,117 +256,8 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
         });
       });
     },
-    [editor, scrollContainer, fullscreen, setFullscreen],
+    [editor, scrollContainer, fullscreen, setFullscreenTool],
   );
-
-  // ── Get document ranges for each scene ──
-
-  const getSceneRanges = useCallback(() => {
-    if (!editor) return [];
-    const { doc } = editor.state;
-    const headingPositions: number[] = [];
-
-    doc.descendants((node, pos) => {
-      if (node.type.name === 'sceneHeading') {
-        headingPositions.push(pos);
-      }
-    });
-
-    const ranges: Array<{ from: number; to: number }> = [];
-    for (let i = 0; i < headingPositions.length; i++) {
-      const from = headingPositions[i];
-      const to =
-        i + 1 < headingPositions.length
-          ? headingPositions[i + 1]
-          : doc.content.size;
-      ranges.push({ from, to });
-    }
-    return ranges;
-  }, [editor]);
-
-  // ── Enter / Cancel / Apply reorder mode ──
-
-  // The chrome's Reorder control just flips the store flag — the snapshot
-  // rides this effect, so every entry path (chrome or shortcut) initializes
-  // the same way, and flipping the flag off from outside cancels cleanly.
-  useEffect(() => {
-    if (dragMode && pendingScenes === null) {
-      const snapshot = [...scenes];
-      setPendingScenes(snapshot);
-      setOriginalScenes(snapshot);
-      const map = new Map<string, number>();
-      snapshot.forEach((s, i) => map.set(s.id, i + 1));
-      originalIndexMap.current = map;
-      historyRef.current = { stack: [snapshot], pointer: 0 };
-      setHistoryVersion(0);
-    } else if (!dragMode && pendingScenes !== null) {
-      setPendingScenes(null);
-      setOriginalScenes(null);
-      originalIndexMap.current = new Map();
-      historyRef.current = { stack: [], pointer: -1 };
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- snapshot on flag flip only
-  }, [dragMode, pendingScenes]);
-  // Leaving the board (view switch, tool close) mid-reorder = cancel.
-  useEffect(() => () => { useEditorStore.getState().setScenesReorderMode(false); }, []);
-
-  const cancelReorder = useCallback(() => {
-    setPendingScenes(null);
-    setOriginalScenes(null);
-    originalIndexMap.current = new Map();
-    historyRef.current = { stack: [], pointer: -1 };
-    setDragMode(false);
-  }, []);
-
-  const applyReorder = useCallback(() => {
-    if (!editor || !pendingScenes || !originalScenes) {
-      cancelReorder();
-      return;
-    }
-
-    // Check if order actually changed
-    const changed = pendingScenes.some((s, i) => s.id !== originalScenes[i]?.id);
-    if (!changed) {
-      cancelReorder();
-      return;
-    }
-
-    const ranges = getSceneRanges();
-    if (ranges.length === 0 || ranges.length !== originalScenes.length) {
-      cancelReorder();
-      return;
-    }
-
-    const { doc, tr } = editor.state;
-    const sceneStart = ranges[0].from;
-    const sceneEnd = ranges[ranges.length - 1].to;
-
-    // Map original scene ID → original index in the document
-    const idToOrigIdx = new Map<string, number>();
-    originalScenes.forEach((s, i) => idToOrigIdx.set(s.id, i));
-
-    // Extract slices for each scene from the document
-    const sliceContents = ranges.map(r => doc.slice(r.from, r.to).content);
-
-    // Build new order: for each scene in pendingScenes, get the original doc content
-    const nodes: any[] = [];
-    for (const scene of pendingScenes) {
-      const origIdx = idToOrigIdx.get(scene.id);
-      if (origIdx === undefined) continue;
-      sliceContents[origIdx].forEach((node: any) => nodes.push(node));
-    }
-
-    // Replace the scene portion of the document
-    tr.replaceWith(sceneStart, sceneEnd, nodes);
-    editor.view.dispatch(tr);
-
-    // Clean up
-    setPendingScenes(null);
-    setOriginalScenes(null);
-    originalIndexMap.current = new Map();
-    historyRef.current = { stack: [], pointer: -1 };
-    setDragMode(false);
-  }, [editor, pendingScenes, originalScenes, getSceneRanges, cancelReorder]);
 
   // ── Compute insertion index from mouse position ──
 
@@ -423,10 +334,10 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
   // Use refs so pointer event listeners always call the latest function versions
   const calcInsertIndexRef = useRef(calcInsertIndex);
   calcInsertIndexRef.current = calcInsertIndex;
-  const pendingScenesRef = useRef(pendingScenes);
-  pendingScenesRef.current = pendingScenes;
-  const pushHistoryRef = useRef(pushHistory);
-  pushHistoryRef.current = pushHistory;
+  const moveRef = useRef(reorder.move);
+  moveRef.current = reorder.move;
+  const pendingCountRef = useRef(0);
+  pendingCountRef.current = reorder.pending?.length ?? 0;
 
   const handleDragHandleDown = useCallback(
     (e: React.PointerEvent, index: number) => {
@@ -509,17 +420,12 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
         const gap = calcInsertIndexRef.current(ev.clientX, ev.clientY);
         cleanup();
 
-        if (gap !== null && pendingScenesRef.current) {
+        const total = pendingCountRef.current;
+        if (gap !== null && total > 0) {
           let toIndex = gap;
-          if (index < gap && gap <= pendingScenesRef.current.length - 1) toIndex--;
-          if (toIndex !== index) {
-            // Reorder pendingScenes locally — no editor changes yet
-            const updated = [...pendingScenesRef.current];
-            const [moved] = updated.splice(index, 1);
-            updated.splice(toIndex, 0, moved);
-            setPendingScenes(updated);
-            pushHistoryRef.current(updated);
-          }
+          if (index < gap && gap <= total - 1) toIndex--;
+          // Reorder the pending order locally — no editor changes yet
+          if (toIndex !== index) moveRef.current(index, toIndex);
         }
       };
 
@@ -535,7 +441,7 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
 
   const getIndicatorStyle = useCallback((): React.CSSProperties | null => {
     if (dragIdx === null || insertIdx === null || !gridRef.current) return null;
-    const totalScenes = (pendingScenesRef.current ?? []).length;
+    const totalScenes = pendingCountRef.current;
     const effectiveTo = (dragIdx < insertIdx && insertIdx <= totalScenes - 1)
       ? insertIdx - 1
       : insertIdx;
@@ -594,51 +500,19 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
           window title carries the count, Reorder lives in the row-2 cluster
           and fullscreen in row 1. Only the reorder CONTEXT bar remains,
           shown while a reorder is in progress. */}
-      {dragMode && (
-        <div className="ic-reorder-bar">
-          <button
-            className="ic-action-btn ic-undo-redo-btn"
-            onClick={undo}
-            disabled={!canUndo}
-            title="Undo (Ctrl+Z)"
-          >
-            <FaUndo />
-          </button>
-          <button
-            className="ic-action-btn ic-undo-redo-btn"
-            onClick={redo}
-            disabled={!canRedo}
-            title="Redo (Ctrl+Shift+Z)"
-          >
-            <FaRedo />
-          </button>
-          <button
-            className="ic-action-btn"
-            onClick={cancelReorder}
-            title="Cancel reorder"
-          >
-            Cancel
-          </button>
-          <button
-            className={`ic-action-btn ic-apply-btn${hasChanges ? ' active' : ''}`}
-            onClick={applyReorder}
-            title={hasChanges ? 'Apply scene reorder to script' : 'No changes to apply'}
-            disabled={!hasChanges}
-          >
-            Apply
-          </button>
-        </div>
-      )}
+      {dragMode && <SceneReorderBar r={reorder} />}
       <div className="index-cards-grid" ref={gridRef} style={{ position: 'relative' }}>
-        {displayScenes.length === 0 ? (
+        {visibleScenes.length === 0 ? (
           <div className="index-cards-empty">
-            No scenes yet. Write a scene heading to see index cards here.
+            {narrowed
+              ? 'No scenes match the current filters.'
+              : 'No scenes yet. Write a scene heading to see index cards here.'}
           </div>
         ) : (
           <>
-            {displayScenes.map((scene, index) => {
-              const origNum = originalIndexMap.current.get(scene.id);
-              const newNum = index + 1;
+            {visibleScenes.map(({ scene, idx }) => {
+              const origNum = reorder.originalIndexOf(scene.id);
+              const newNum = idx + 1;
               const movedUp = dragMode && origNum !== undefined && newNum < origNum;
               const movedDown = dragMode && origNum !== undefined && newNum > origNum;
 
@@ -648,7 +522,7 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
                   className={
                     `index-card` +
                     (dragMode ? ' ic-draggable' : '') +
-                    (dragIdx === index ? ' ic-dragging' : '') +
+                    (dragIdx === idx ? ' ic-dragging' : '') +
                     (movedUp ? ' ic-moved-up' : '') +
                     (movedDown ? ' ic-moved-down' : '')
                   }
@@ -657,7 +531,7 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
                     <div
                       className="ic-drag-handle"
                       title="Drag to reorder"
-                      onPointerDown={(e) => handleDragHandleDown(e, index)}
+                      onPointerDown={(e) => handleDragHandleDown(e, idx)}
                     >
                       &#8942;&#8942;
                     </div>
@@ -677,19 +551,19 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
                       </span>
                       <div
                         className="index-card-heading"
-                        onClick={() => !dragMode && goToScene(index)}
+                        onClick={() => !dragMode && goToScene(idx)}
                         title={dragMode ? undefined : 'Click to navigate to scene'}
                       >
                         {scene.heading}
                       </div>
-                      {(sceneLengths[index] > 0 || sceneTimings[index]?.finalSeconds > 0) && (
+                      {(sceneLengths[idx] > 0 || sceneTimings[idx]?.finalSeconds > 0) && (
                         <div className="index-card-meta">
-                          {sceneLengths[index] > 0 && (
-                            <span className="ic-meta-item">{Number(sceneLengths[index].toFixed(1))}p</span>
+                          {sceneLengths[idx] > 0 && (
+                            <span className="ic-meta-item">{Number(sceneLengths[idx].toFixed(1))}p</span>
                           )}
-                          {sceneTimings[index]?.finalSeconds > 0 && (
-                            <span className="ic-meta-item" style={{ color: getTimingColor(sceneTimings[index].finalSeconds) }}>
-                              {formatSceneDuration(sceneTimings[index].finalSeconds)}
+                          {sceneTimings[idx]?.finalSeconds > 0 && (
+                            <span className="ic-meta-item" style={{ color: getTimingColor(sceneTimings[idx].finalSeconds) }}>
+                              {formatSceneDuration(sceneTimings[idx].finalSeconds)}
                             </span>
                           )}
                         </div>
@@ -709,7 +583,7 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
                       />
                       <button
                         className="ic-synopsis-expand"
-                        onClick={() => setSynopsisModal({ sceneIdx: index, id: scene.id, heading: scene.heading, synopsis: scene.synopsis, color: scene.color })}
+                        onClick={() => setSynopsisModal({ sceneIdx: idx, id: scene.id, heading: scene.heading, synopsis: scene.synopsis, color: scene.color })}
                         title="Expand synopsis"
                         disabled={dragMode}
                       >

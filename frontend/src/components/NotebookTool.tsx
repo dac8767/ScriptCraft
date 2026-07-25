@@ -911,10 +911,9 @@ export default function NotebookTool() {
     // v4.30 batch-v7 #6, Derek: takeovers are EXCLUSIVE. The Scrapbook surface
     // and the Characters fullscreen both claim the editor area, and each puts
     // a "Return to Editor" in the ribbon — with both flags up the ribbon
-    // showed two of them. Raising this surface lowers the other takeovers
-    // (enterCharFullscreen / enterScenesFullscreen do the reverse).
-    useEditorStore.getState().setCharFullscreen(false);
-    useEditorStore.getState().setScenesFullscreen(false);
+    // showed two of them. Raising this surface lowers the other takeover
+    // (enterToolFullscreen does the reverse).
+    useEditorStore.getState().setFullscreenTool(null);
     useNotebookStore.getState().setNotebookOpen(true);
     return () => { useNotebookStore.getState().setNotebookOpen(false); };
   }, []);

@@ -14,6 +14,7 @@ import OneDriveWarningDialog from './components/OneDriveWarningDialog';
 import VerifyEmailRoute from './components/VerifyEmailRoute';
 import ResetPasswordRoute from './components/ResetPasswordRoute';
 import OAuthCallback from './components/OAuthCallback';
+import { FeedbackFrameHost } from './components/FeedbackTool';
 import { pluginRegistry } from './plugins/registry';
 import './styles/screenplay.css';
 import './styles/avScript.css';
@@ -46,6 +47,11 @@ function App() {
       <StorageFallbackDialog />
       <SaveErrorDialog />
       <OneDriveWarningDialog />
+      {/* v4.35: the ONE preloaded Feedback iframe — lives for the app's whole
+          run so the form is already loaded when the Feedback window (which
+          only publishes a rect for it to fill) opens. Outside the Routes so
+          navigation can't unmount it. */}
+      <FeedbackFrameHost />
     </>
   );
 }

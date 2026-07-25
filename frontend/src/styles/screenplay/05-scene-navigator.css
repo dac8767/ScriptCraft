@@ -697,41 +697,69 @@
   min-height: 0;
 }
 
-/* v4.32 batch-v8 #2: the Scenes fullscreen TAKEOVER — fills the editor area
-   only (toolbar + status bar stay, "Return to Editor" in the ribbon), same
-   shape as .fs-char-takeover. Replaces the old position:fixed inset:0 z-3500
-   overlay that covered the whole app with no reachable close. */
-.fs-scenes-takeover {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--fd-bg);
-  color: var(--fd-text);
-}
-/* Inside the takeover the card wall gets the room the old fullscreen had:
-   no docked max-height clamp, roomier columns, its own scroll. */
-.fs-scenes-takeover .index-cards {
+/* v4.32/v4.35: inside the (now generic) fullscreen takeover the card wall
+   gets the room the old fullscreen had: no docked max-height clamp, roomier
+   columns, its own scroll. The takeover shell itself is .fs-tool-takeover
+   (20-tool-dock.css). */
+.fs-tool-takeover .index-cards {
   flex: 1;
   min-height: 0;
   max-height: none;
   border-bottom: none;
   background: var(--fd-bg);
 }
-.fs-scenes-takeover .index-cards-grid {
+.fs-tool-takeover .index-cards-grid {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   padding: 16px 24px;
   gap: 16px;
   align-content: start;
 }
-.fs-scenes-takeover .ic-reorder-bar {
+.fs-tool-takeover .ic-reorder-bar {
   background: var(--fd-bg);
 }
 /* v4.34: the takeover hosts the full ScenesTool body (View switches between
    list and cards inside fullscreen). The list keeps the takeover background;
    its fill/width comes from the shared .scene-navigator-embed rule in
    20-tool-dock.css. */
-.fs-scenes-takeover .scene-navigator {
+.fs-tool-takeover .scene-navigator {
   background: var(--fd-bg);
 }
+
+/* ── v4.35 batch-v9 #2: LIST-view reorder mode ──────────────────────────
+   Rows mirror the card wall's conventions: green = moved earlier, orange =
+   moved later (same hues as .ic-moved-up/.ic-moved-down), a grip column to
+   drag, and the number badge widens into a pill to fit "old → new".
+   Appended after the base .navigator-scene rules so the moved tints beat
+   the :hover accent at equal specificity. */
+.navigator-scene.nav-reorder-row { cursor: default; }
+.nav-row-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  margin-right: 2px;
+  flex-shrink: 0;
+  color: var(--fd-text-muted);
+  font-size: 15px;
+  letter-spacing: -3px;
+  cursor: grab;
+  user-select: none;
+}
+.nav-row-grip:hover { color: var(--fd-text); }
+.nav-row-grip:active { cursor: grabbing; }
+.navigator-scene.nav-row-dragging { opacity: 0.35; }
+.navigator-scene.nav-moved-up { border-left-color: #2d8a4e; background: rgba(45, 138, 78, 0.08); }
+.navigator-scene.nav-moved-down { border-left-color: #d97706; background: rgba(217, 119, 6, 0.08); }
+/* Same precedence as the cards: a scene's own color (inline style) still
+   wins on the badge; uncolored badges take the moved hue. */
+.nav-moved-up .scene-number-badge { background: #2d8a4e; }
+.nav-moved-down .scene-number-badge { background: #d97706; }
+/* The fixed 22px circle can't fit "5 → 7" — widen into a pill in reorder. */
+.nav-reorder-row .scene-number-badge {
+  width: auto;
+  min-width: var(--dz-nav-badge, 22px);
+  padding: 0 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.nav-orig-num { text-decoration: line-through; opacity: 0.6; }

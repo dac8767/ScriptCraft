@@ -34,19 +34,25 @@ import { openInBrowser } from '../services/external';
  * a note stores a NoteColor name. Both palettes are the same six colours in the
  * same order, so they bridge by LABEL — not by comparing hexes, which would
  * silently pick the wrong one the day either palette is retuned.
+ * v4.35 (batch-v9 #5): a note may instead carry an arbitrary '#rrggbb' from the
+ * custom picker — persisted, so every bridge must pass a hex through untouched.
  */
-export const shelfHexForNote = (name: NoteColor): string => {
-  const i = NOTE_COLORS.findIndex((c) => c.name === name);
+export const shelfHexForNote = (color: NoteColor | string): string => {
+  if (color.startsWith('#')) return color;
+  const i = NOTE_COLORS.findIndex((c) => c.name === color);
   return SHELF_COLORS[i >= 0 ? i : 0][0];
 };
-export const noteColorForShelfHex = (hex: string): NoteColor => {
+export const noteColorForShelfHex = (hex: string): NoteColor | string => {
   const i = SHELF_COLORS.findIndex(([h]) => h === hex);
-  return NOTE_COLORS[i >= 0 ? i : 0].name;
+  // Unknown hex = a custom pick: keep it verbatim. Yellow was only ever the
+  // fallback for the fixed palette, never a snap target.
+  return i >= 0 ? NOTE_COLORS[i].name : hex;
 };
 
-/** Resolve a NoteColor name to its hex value. */
-export const getNoteColorHex = (colorName: NoteColor): string => {
-  const c = NOTE_COLORS.find((nc) => nc.name === colorName);
+/** Resolve a note color (name or '#rrggbb') to its full-strength hex. */
+export const getNoteColorHex = (color: NoteColor | string): string => {
+  if (color.startsWith('#')) return color;
+  const c = NOTE_COLORS.find((nc) => nc.name === color);
   return c ? c.hex : NOTE_COLORS[0].hex;
 };
 
@@ -54,6 +60,20 @@ export const getNoteColorHex = (colorName: NoteColor): string => {
 export const NOTE_STICKY_BG: Record<NoteColor, string> = {
   Yellow: '#fff9c4', Red: '#ffd9e7', Blue: '#d6ecff',
   Green: '#dcf5dc', Orange: '#ffe4c4', Purple: '#e9defa',
+};
+
+/** Sticky background for ANY note color. Names keep the exact NOTE_STICKY_BG
+ *  values (saved scripts must not shift); a custom hex gets a pastel of the
+ *  same weight computed per channel — blended 78% toward white, emitted as a
+ *  plain '#rrggbb' so it works in inline styles with no color-mix(). */
+export const noteStickyBg = (color: NoteColor | string): string => {
+  if (!color.startsWith('#')) return NOTE_STICKY_BG[color as NoteColor] || NOTE_STICKY_BG.Yellow;
+  const n = parseInt(color.slice(1, 7), 16);
+  const tint = (c: number) => Math.round(c + (255 - c) * 0.78);
+  const r = tint((n >> 16) & 255);
+  const g = tint((n >> 8) & 255);
+  const b = tint(n & 255);
+  return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
 };
 
 /** Check if a string looks like an image URL */

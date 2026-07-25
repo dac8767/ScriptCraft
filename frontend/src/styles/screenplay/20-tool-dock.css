@@ -360,10 +360,9 @@
    loads after this file). */
 .tool-chrome-row2.tool-chrome-row2-tabbed,
 .tool-inline-header.tool-chrome-row2-tabbed {
-  background: var(--fd-bg);
-  padding-top: 0;
-  padding-bottom: 0;
-  align-items: stretch;
+  /* v4.35 #6: segmented tabs sit centered like any control — no sheet tint,
+     no bottom-seating (that was the file-tab "attached" illusion) */
+  align-items: center;
   /* v4.28 batch-v6 #4, Derek: a tabbed row NEVER wraps. ChromeRow2 collapses
      the strip into a dropdown first; if even that overflows, the row scrolls
      sideways — items keep their size and stay on ONE line. */
@@ -375,18 +374,9 @@
 .tool-chrome-row2-tabbed::-webkit-scrollbar { height: 4px; }
 .tool-chrome-row2-tabbed::-webkit-scrollbar-thumb { background: var(--fd-border); border-radius: 2px; }
 .tool-chrome-row2-tabbed .tool-chrome-tabs {
-  align-items: flex-end;
-  padding-top: 5px;
-  gap: 3px;
   /* never shrink below the tab labels — shrink meant buttons overflowed the
      span and painted over the controls */
   flex-shrink: 0;
-}
-/* collapsed strip = one dropdown — a centered control, not a bottom-seated tab */
-.tool-chrome-row2-tabbed .tool-chrome-tabs.tool-chrome-tabs-dd {
-  align-self: center;
-  align-items: center;
-  padding-top: 0;
 }
 /* ChromeRow2's natural-width measurer — out of flow, invisible, inert. */
 .tool-chrome-tabs-measure {
@@ -403,27 +393,41 @@
   gap: 2px;
 }
 
-/* The tab strip's file-tab look (one source — the dock/window rows, the
-   Characters fullscreen header and the legacy overlay all render
-   .tool-chrome-tab via ChromeTabs). Active tab fills to the surface color
-   below and masks the track line, so it reads as attached to the sheet. */
+/* v4.35 batch-v9 #6, Derek: tabs are the Goals-style SEGMENTED control now
+   (joined buttons in one bordered pill, active = solid accent) — the file-tab
+   look is retired. One source: the dock/window rows and the legacy overlay
+   all render .tool-chrome-tab via ChromeTabs inside a .tool-chrome-tabs
+   group. */
+.tool-chrome-tabs {
+  display: inline-flex;
+  align-self: center;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+/* no tabs (or the collapsed dropdown) → no empty pill border */
+.tool-chrome-tabs:empty,
+.tool-chrome-tabs.tool-chrome-tabs-dd { border: none; border-radius: 0; overflow: visible; }
 .tool-chrome-tab {
-  padding: 6px 16px;
+  padding: 5px 12px;
   font-size: 12px;
   font-weight: 500;
-  background: var(--fd-overlay-light, rgba(255, 255, 255, 0.04));
+  background: none;
   color: var(--fd-text-muted);
-  border: 1px solid var(--fd-border);
-  border-bottom: none;
-  border-radius: 8px 8px 0 0;
+  border: none;
+  border-radius: 0;
   cursor: pointer;
-  margin-bottom: -1px;   /* overlap the track's bottom border */
   white-space: nowrap;
   transition: background 0.1s, color 0.1s;
 }
 .tool-chrome-tab:hover { color: var(--fd-text); }
+.tool-chrome-tab.active {
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+  font-weight: 600;
+}
 /* slimmer shoulders in the 300px dock column */
-.tool-inline-header .tool-chrome-tab { padding: 6px 10px; }
+.tool-inline-header .tool-chrome-tab { padding: 5px 9px; }
 /* v4.32: attention dot on a tab (ToolChromeTab.badge — e.g. Tags' Manage
    tab while a selection waits). Same look as the old .tags-tab-dot. */
 .tool-chrome-tab-dot {
@@ -434,12 +438,6 @@
   border-radius: 50%;
   margin-left: 5px;
   vertical-align: middle;
-}
-.tool-chrome-tab.active {
-  background: var(--fd-navigator-bg);
-  color: var(--fd-text);
-  font-weight: 600;
-  border-bottom: 1px solid var(--fd-navigator-bg);
 }
 .tool-chrome-row2-tabbed .tool-chrome-controls,
 .tool-chrome-row2-tabbed .tool-dock-popout { align-self: center; }
@@ -578,13 +576,36 @@
 }
 .tool-window-resize:hover { opacity: 1; }
 
+/* v4.35 batch-v9 #4: the ONE fullscreen takeover every side-panel window
+   shares — fills the editor area only (toolbar + status bar stay, "Return to
+   Editor" in the ribbon), same shape the Characters/Scenes takeovers had. */
+.fs-tool-takeover {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--fd-bg);
+  color: var(--fd-text);
+}
+.fs-tool-takeover-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.fs-tool-takeover-body > * { flex: 1; min-height: 0; }
+/* Windows whose floating shape is a fixed-ish card (Goals, AI Writer) read
+   better with room than stretched — their bodies still flex; fine. */
+
 /* Embedded former left-panel views fill the window — floating AND inline
-   (and the Scenes fullscreen takeover, which hosts the same body — v4.34),
-   so the scene list grows with the body when the tool is resized taller
+   (and the fullscreen takeover, which hosts the same body), so the scene
+   list grows with the body when the tool is resized taller
    (rather than sitting at content height and leaving dead space). */
 .tool-window .scene-navigator-embed,
 .tool-inline-body .scene-navigator-embed,
-.fs-scenes-takeover .scene-navigator-embed {
+.fs-tool-takeover .scene-navigator-embed {
   display: flex;
   flex-direction: column;
   flex: 1;

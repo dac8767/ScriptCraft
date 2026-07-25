@@ -210,15 +210,15 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
                 onClick={(e) => e.stopPropagation()}
               />
             )}
-            {/* v4.32 batch-v8 #5: scene number before the name (toggle in
-                the window's row-2 cluster) — scene rows only */}
-            {showNums && it.kind === 'scene' && it.num !== undefined && (
-              <span className="fs-nav-scene-num">{it.num}</span>
-            )}
             <span className={it.done ? 'fs-nav-done' : ''}>
               {it.kind === 'note' ? <FaRegStickyNote className="fs-nav-kind-icon" /> : it.kind === 'act' ? '§ ' : it.kind === 'marker' ? '⚑ ' : it.kind === 'section' ? '# ' : ''}
               {it.text.length > 80 ? it.text.slice(0, 80) + '…' : it.text || '(untitled)'}
             </span>
+            {/* v4.32 batch-v8 #5 / v4.35 batch-v9 #3: scene number at the
+                RIGHT edge of the row (toggle in the row-2 cluster) */}
+            {showNums && it.kind === 'scene' && it.num !== undefined && (
+              <span className="fs-nav-scene-num">{it.num}</span>
+            )}
           </div>
         ))}
       </div>

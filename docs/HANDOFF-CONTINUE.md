@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.34 — the window-standard sweep + Notes/Navigator split)
+# ScriptCraft — continuation brief (current as of v4.35 — generic fullscreen + segmented tabs)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -238,7 +238,69 @@ reliable; re-run before believing a weird worker failure.
 
 ## 1. Where we are right now (end of this run)
 
-### v4.34 — Scenes fullscreen carries the full View cluster (HEAD)
+> **STANDING RULE — start EVERY turn with `git fetch origin claude/v0_32 &&
+> git log --oneline -1 origin/claude/v0_32`, and if local HEAD differs,
+> `git reset --hard origin/claude/v0_32` BEFORE reading or editing anything.**
+> The sandbox has now rolled back to a stale snapshot TWICE mid-session
+> (v4.28-era files reappearing while origin was fine). Symptom: a file shows
+> long-deleted code. The remote is the truth; pushes always survived.
+
+### v4.35 — batch v9 (HEAD)
+
+Nine items, three worker lanes + dispatcher. The architecture piece:
+**`fullscreenTool: ToolId | null`** replaced charFullscreen/scenesFullscreen —
+ONE store field, `enterToolFullscreen(id)` (clears the tool's slots + lowers
+the Scrapbook) / `setFullscreenTool(null)`. `ToolFullscreenTakeover` in
+ToolDock renders ANY tool fullscreen from TOOL_CHROME + ToolContent (row-1
+header, row-2 tabs/controls, body). The frame + accordion render ONE generic
+fullscreen button per tool (`NO_FULLSCREEN = ['notebook', 'titlepage']`);
+per-tool WindowActions fullscreen buttons are gone (Tags' eye remains a
+WindowActions). CharacterProfiles derives `isFullscreen` from the store
+(`embedded && fullscreenTool === 'characters'`) and keeps emitting
+char-profiles-fullscreen/char-fs-list-mode for its 27 layout rules; its
+in-component fullscreen header rows are deleted. Toolbar has ONE ribbon
+Return section; StatusBar gates on `fullscreenTool !== null`.
+
+Scenes view parity: `utils/sceneFilters.ts` (shared predicate/details/options)
++ `utils/useSceneReorder.ts` (the reorder state machine, `active` param so the
+Pages/Locations/Structure instances of SceneNavigator don't cancel a Scenes
+reorder). Cards obey filter/search; the list has drag-reorder (WebKit
+setData rule); reorder suspends filtering in BOTH views (Apply rewrites the
+whole doc — a filtered pending list would eat scenes); `SceneReorderBar`
+exported from IndexCards.
+
+Note colors: NoteInfo/GeneralNote `.color` is `NoteColor | string` (hex).
+Bridges in ScriptNotes are hex-safe; `noteStickyBg()` computes a 78%-white
+pastel for hex; ColorDots grew the dashed custom `<input type=color>` swatch
+(`.swn-color-custom`, 19-sticky-notes.css). Custom shelf-card colors stay
+RAW (only note surfaces pastelize) — flagged to Derek.
+
+Tabs: segmented Goals look app-wide — `.tool-chrome-tabs` is the bordered
+group (empty/dd variants excluded), active = solid accent; analytics/tags/
+char-overlay strips converted; Outline's `.beat-tabs` (user-created board
+tabs, closable, scrollable) deliberately NOT converted — different animal.
+Characters bg: layers 1-2 of the batch-4 three-layer scheme reverted
+(uniform --fd-navigator-bg; `.char-tab-surface` transparent; cards keep
+their face).
+
+Misc: View menu — native Maximize dropped (macOS calls it "Zoom" = the
+duplicate), no separator before Minimize/Fullscreen so page-Zoom sits in
+that final section (nativeMenuSync.ts). Navigator numbers right-aligned
+(margin-left auto). Focus: masterrow + ? popover (Goals pattern), rest dims
+when off. Workspaces window: four menu actions below the list;
+`utils/workspaceImport.ts` is the ONE import implementation (MenuBar calls
+it too). Feedback: `FeedbackFrameHost` mounted in App.tsx — persistent
+preloaded iframe positioned over the window body by a rAF rect publisher
+(z-index 130 — measured: windows are z:120, dialogs 3000; a window dragged
+OVER Feedback paints under the iframe, accepted; resize grip kept clickable
+via clip-path notch).
+
+Driver: scratchpad/driver/batchv9-check.js (probe gotchas: the fullscreen
+button selector must be SCOPED to the open window — every open tool has one
+now; the docked tab strip legitimately collapses to a dropdown at 300px —
+measure segmented styling in a takeover; Focus master defaults ON).
+
+### v4.34 — Scenes fullscreen carries the full View cluster
 
 Derek: "the full screen version of Scenes does not display the view
 options." The takeover's row 2 is now the SAME SceneControls the window has

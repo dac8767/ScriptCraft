@@ -84,6 +84,7 @@ import { mirrorSave, mirrorSnapshot } from '../services/saveLocations';
 import { useSettingsStore } from '../stores/settingsStore';
 import { clearEditorHistory } from '../editor/clearHistory';
 import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
+import { importWorkspacesFromFile } from '../utils/workspaceImport';
 import { composeSaveContent } from '../utils/screenplaySaveContent';
 import { openTextFile, openBinaryFile } from '../utils/fileOps';
 import { reportSaveError } from '../stores/saveErrorStore';
@@ -1210,47 +1211,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     }
   }, [editor, documentTitle]);
 
-  /** Import workspaces from another project's exported .odraft file (or a
-   *  workspaces JSON). Workspaces live in view state, not in the script, so an
-   *  .odraft carries them only if it was exported with them; we accept either
-   *  shape and merge without overwriting existing names. */
-  const handleImportWorkspaces = useCallback(async () => {
-    try {
-      const result = await openTextFile([
-        { name: 'ScriptCraft Project or Workspaces', extensions: ['odraft', 'json'] },
-      ]);
-      if (!result) return;
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(result.content);
-      } catch {
-        showToast('That file isn\u2019t valid JSON.', 'error');
-        return;
-      }
-      const obj = parsed as Record<string, unknown>;
-      // Accept: { workspaces: {...} } (view-state / .odraft export) or a bare
-      // { name: snapshot } map.
-      const candidate = (obj?.workspaces ?? obj?._workspaces ?? obj) as Record<string, unknown>;
-      const entries = Object.entries(candidate ?? {}).filter(
-        ([, v]) => v && typeof v === 'object' && ('toolConfig' in (v as object) || 'toolbarMode' in (v as object)),
-      );
-      if (entries.length === 0) {
-        showToast('No workspaces found in that file.', 'error');
-        return;
-      }
-      const added = useEditorStore.getState().importWorkspaces(
-        Object.fromEntries(entries) as Record<string, import('../stores/editorStore').WorkspaceSnapshot>,
-      );
-      showToast(
-        added.length === 1
-          ? `Imported workspace \u201c${added[0]}\u201d`
-          : `Imported ${added.length} workspaces`,
-        'success',
-      );
-    } catch (err) {
-      showToast(`Import failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
-    }
-  }, []);
+  // v4.35 batch-v9 #8: the import flow moved to utils/workspaceImport so the
+  // Workspaces WINDOW offers it too \u2014 one implementation, two entry points.
+  const handleImportWorkspaces = importWorkspacesFromFile;
 
   const handleMenuClick = (label: string) => {
     setActiveMenu((prev) => (prev === label ? null : label));

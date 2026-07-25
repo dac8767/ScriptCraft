@@ -14,7 +14,6 @@ import VomitLock from '../editor/extensions/VomitLock';
 import TypewriterScroll, { refreshTypewriterChrome, centerCaretLine } from '../editor/extensions/TypewriterScroll';
 import OutlineBar from './OutlineBar';
 import { NotebookSurface } from './NotebookTool';
-import { ScenesFullscreen } from './ScenesTool';
 import ScriptNotePopover from './ScriptNotePopover';
 import { useNotebookStore } from '../stores/notebookStore';
 import Gapcursor from '@tiptap/extension-gapcursor';
@@ -54,9 +53,8 @@ import { useEditorStore, migratePageLayout, DEFAULT_HEADER_CONTENT, DEFAULT_FOOT
 import type { ElementType } from '../stores/editorStore';
 import MenuBar from './MenuBar';
 import Toolbar from './Toolbar';
-import ToolDock, { TempToolWindow } from './ToolDock';
+import ToolDock, { TempToolWindow, ToolFullscreenTakeover } from './ToolDock';
 import DesignPanel from './DesignPanel';
-import CharacterProfiles from './CharacterProfiles';
 import { applyDesignVars } from '../design/designTokens';
 import { DoubleChevronIcon } from './uiIcons';
 import { useBookmarkStore, bookmarkScriptKey } from '../stores/bookmarkStore';
@@ -147,7 +145,7 @@ const ScreenplayEditor: React.FC = () => {
     setActiveElement, setScenes, setPageCount, setCurrentPage,
     zoomLevel, setZoomLevel, fontFamily, fontSize, pageLayout, tagsVisible, notesVisible,
     sectionsVisible, scriptTodosVisible, markersVisible, viewStyle, previewMode, previewOpts,
-    beatBoardOpen, statisticsOpen, charFullscreen, scenesFullscreen,
+    beatBoardOpen, statisticsOpen, fullscreenTool,
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
     characterProfilesOpen, tagsPanelOpen, locationDatabaseOpen,
     spellCheckEnabled, spellModalOpen, setSpellModalOpen, spellPanelMounted,
@@ -4072,12 +4070,10 @@ const ScreenplayEditor: React.FC = () => {
               while its panel window is open ("Return to editor" ends it). */}
           {!isHistoryMode && notebookOpen ? (
             <NotebookSurface />
-          ) : !isHistoryMode && charFullscreen ? (
-            <div className="fs-char-takeover">
-              <CharacterProfiles editor={editor} projectId={currentProject?.id || ''} fullscreen />
-            </div>
-          ) : !isHistoryMode && scenesFullscreen ? (
-            <ScenesFullscreen editor={editor} scrollContainer={editorMainRef.current} />
+          ) : !isHistoryMode && fullscreenTool ? (
+            /* v4.35 batch-v9 #4: ONE takeover for every tool — same chrome
+               registry, same body renderer as the window (ToolDock). */
+            <ToolFullscreenTakeover editor={editor} scrollContainer={editorMainRef.current} />
           ) : !isHistoryMode && statisticsOpen && editor ? (
             <ScriptStatistics editor={editor} />
           ) : !isHistoryMode && beatBoardOpen ? (

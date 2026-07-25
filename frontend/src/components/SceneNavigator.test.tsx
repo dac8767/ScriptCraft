@@ -98,13 +98,13 @@ describe('SceneControls (row-2 cluster)', () => {
     expect(useEditorStore.getState().scenesViewMode).toBe('cards');
   });
 
-  it('cards view hides Filter and Search (they only drive the list — no silent no-ops)', () => {
+  it('cards view offers the SAME cluster as list — Filter, Reorder, View, Search (v4.35 batch-v9 #2)', () => {
     act(() => { useEditorStore.setState({ scenesViewMode: 'cards' }); });
     act(() => root.render(<SceneControls />));
     const labels = Array.from(host.querySelectorAll('button.tool-ctl')).map((b) => b.textContent);
-    expect(labels.some((t) => t?.includes('Filter'))).toBe(false);
-    expect(host.querySelector('.tool-ctl-search-btn')).toBeNull();
-    expect(host.querySelector('.tool-ctl-search-field')).toBeNull();
+    expect(labels.some((t) => t?.includes('Filter'))).toBe(true);
+    expect(labels.some((t) => t?.includes('Reorder'))).toBe(true);
+    expect(host.querySelector('.tool-ctl-search-btn, .tool-ctl-search-field')).not.toBeNull();
     // View survives — it's how you get back to List.
     expect(labels.some((t) => t?.includes('Cards'))).toBe(true);
   });

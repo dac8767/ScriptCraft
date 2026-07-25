@@ -18,7 +18,7 @@
 /* v4.32 batch-v8 #2/#10: the old position:fixed inset:0 z-3500 fullscreen
    overlay is GONE (it covered the toolbar and every way out — the trap Derek
    hit), and so is the in-body count/actions header row. Fullscreen is now the
-   .fs-scenes-takeover editor-area surface (05-scene-navigator.css); the only
+   .fs-tool-takeover editor-area surface (20-tool-dock.css); the only
    in-body chrome left is the reorder context bar. */
 .ic-reorder-bar {
   display: flex;
@@ -969,3 +969,19 @@
 .beat-custom-canvas::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
 .beat-custom-canvas::-webkit-scrollbar-thumb:hover { background: #666; }
 
+
+/* ── v4.35 batch-v9 #2: reorder-bar note ────────────────────────────────
+   Filters/search are suspended while reordering — the pending list must
+   hold EVERY scene, since Apply rewrites the whole document order — so the
+   bar says so instead of silently ignoring them. Sits left of the buttons
+   (the bar is justify-content: flex-end; the auto margin pushes it left). */
+.ic-reorder-note {
+  margin-right: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--fd-text-muted);
+}

@@ -48,9 +48,8 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
   // page count, acts, runtime, revision, goal) don't apply. File + account
   // info stays. (v4.30 batch-v7 #4: used to check only the Scrapbook.)
   const scrapbookActive = useNotebookStore((s) => s.notebookOpen);
-  const charFullscreenActive = useEditorStore((s) => s.charFullscreen);
-  const scenesFullscreenActive = useEditorStore((s) => s.scenesFullscreen);
-  const takeoverActive = scrapbookActive || charFullscreenActive || scenesFullscreenActive;
+  const fullscreenToolActive = useEditorStore((s) => s.fullscreenTool !== null);
+  const takeoverActive = scrapbookActive || fullscreenToolActive;
 
   const elementLabel = useMemo(() => {
     const builtIn = (ELEMENT_LABELS as Record<string, string>)[activeElement as BuiltInElementType];

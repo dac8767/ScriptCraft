@@ -6,11 +6,12 @@ import { computeSceneLengths, computePageBlocks, type PageContentInfo } from '..
 import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../utils/scriptTiming';
 import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
+import { parseHeading, computeSceneFilterDetails, sceneFilterOptions, filterSceneIndices, countActiveSceneFilters, type SceneFilterDetail } from '../utils/sceneFilters';
+import { useSceneReorder } from '../utils/useSceneReorder';
 import SynopsisModal from './SynopsisModal';
 import { ControlDropdown, ControlSearch } from './ToolControls';
+import { SceneReorderBar } from './IndexCards';
 import { LuLayoutGrid, LuList } from 'react-icons/lu';
-import { FullscreenIcon } from './uiIcons';
-import { closeNotebook } from './NotebookTool';
 import { FaChevronRight, FaChevronDown } from 'react-icons/fa';
 
 interface SceneNavigatorProps {
@@ -22,54 +23,8 @@ interface SceneNavigatorProps {
 
 export type NavTab = 'scenes' | 'pages' | 'locations' | 'structure';
 
-// ── Scene heading parser ────────────────────────────────────────────────
-
-interface ParsedHeading {
-  preamble: string;
-  prefix: string;
-  location: string;
-  timeOfDay: string;
-  raw: string;
-}
-
-const TIME_WORDS = 'DAY|NIGHT|DAWN|DUSK|MORNING|AFTERNOON|EVENING|SUNSET|SUNRISE|LATER|CONTINUOUS|SAME TIME|MOMENTS LATER|SAME|MAGIC HOUR';
-const PREFIX_RE = /(INT\.?\/?EXT\.?|EXT\.?\/?INT\.?|INT\.?|EXT\.?|I\/E\.?)\s+/i;
-
-function normalisePrefix(raw: string): string {
-  let p = raw.toUpperCase();
-  if (p === 'INT/EXT' || p === 'INT/EXT.' || p === 'EXT/INT' || p === 'EXT/INT.' || p === 'I/E' || p === 'I/E.') return 'INT./EXT.';
-  if (!p.endsWith('.')) p += '.';
-  return p;
-}
-
-function parseHeading(raw: string): ParsedHeading {
-  let rest = raw.trim();
-  let preamble = '';
-  let prefix = '';
-  let timeOfDay = '';
-
-  const prefixMatch = rest.match(PREFIX_RE);
-  if (prefixMatch && prefixMatch.index !== undefined) {
-    preamble = rest.slice(0, prefixMatch.index);
-    prefix = normalisePrefix(prefixMatch[1]);
-    rest = rest.slice(prefixMatch.index + prefixMatch[0].length);
-  }
-
-  const dashTime = rest.match(new RegExp(`\\s+-\\s+(${TIME_WORDS})\\.?$`, 'i'));
-  if (dashTime) {
-    timeOfDay = dashTime[1].toUpperCase();
-    rest = rest.slice(0, -dashTime[0].length);
-  } else {
-    const dotTime = rest.match(new RegExp(`\\.\\s*(${TIME_WORDS})\\.?$`, 'i'));
-    if (dotTime) {
-      timeOfDay = dotTime[1].toUpperCase();
-      rest = rest.slice(0, -dotTime[0].length);
-    }
-  }
-
-  const location = rest.replace(/^[\s.]+|[\s.]+$/g, '');
-  return { preamble, prefix, location, timeOfDay, raw };
-}
+// The scene heading parser lives in utils/sceneFilters.ts now (v4.35
+// batch-v9 #2) — the Cards view's filter predicate needs the same parse.
 
 // ── Location grouping ───────────────────────────────────────────────────
 
@@ -121,11 +76,9 @@ function highlightText(text: string, query: string): React.ReactNode {
 
 // ── Scene detail helpers ────────────────────────────────────────────────
 
-interface SceneDetail {
-  characters: string[];
-  location: string;
-  prefix: string;
-  timeOfDay: string;
+/** The shared filter detail (utils/sceneFilters.ts) plus the list-only
+ *  page length. */
+interface SceneDetail extends SceneFilterDetail {
   pageLength: number;
 }
 
@@ -217,7 +170,14 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const searchQuery = useEditorStore((s) => s.sceneSearch);
   const sceneFilters = useEditorStore((s) => s.sceneFilters);
   const setSceneNavData = useEditorStore((s) => s.setSceneNavData);
-  const { characters: filterCharacters, location: filterLocation, prefix: filterPrefix, time: filterTime, color: filterColor, synopsis: filterSynopsis } = sceneFilters;
+
+  // v4.35 batch-v9 #2: reorder works in the LIST too — the same deferred
+  // snapshot machinery as the card wall (shared hook), the same context bar.
+  // Only the scenes view owns the flag: Pages/Locations/Structure share this
+  // component and must not cancel a reorder on their unmount.
+  const reorder = useSceneReorder(editor, view === 'scenes');
+  // HTML5-DnD state for the reorder rows (scene id being dragged)
+  const [dragRowId, setDragRowId] = useState<string | null>(null);
 
   // Page preview state
   const pageGridRef = useRef<HTMLDivElement>(null);
@@ -266,49 +226,14 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   }, [renamingLocation]);
 
   // ── Compute scene details (characters, location, length) ──
+  // The doc walk is the shared computeSceneFilterDetails (the predicate's
+  // input, same one the Cards view builds); only pageLength is list-only.
 
   const sceneDetails = useMemo((): SceneDetail[] => {
     if (!editor) return [];
     const doc = editor.state.doc;
     const lengths = computeSceneLengths(doc, pageLayout);
-    const details: SceneDetail[] = [];
-    let currentChars = new Set<string>();
-    let currentHeading = '';
-    let inScene = false;
-
-    doc.forEach((node) => {
-      if (node.type.name === 'sceneHeading') {
-        if (inScene) {
-          const parsed = parseHeading(currentHeading);
-          details.push({
-            characters: Array.from(currentChars),
-            location: parsed.location,
-            prefix: parsed.prefix,
-            timeOfDay: parsed.timeOfDay,
-            pageLength: lengths[details.length] || 0,
-          });
-        }
-        currentHeading = node.textContent || '';
-        currentChars = new Set();
-        inScene = true;
-      } else if (node.type.name === 'character' && inScene) {
-        const raw = node.textContent.trim().toUpperCase();
-        const base = raw.replace(/\s*\([^)]*\)\s*/g, '').trim();
-        if (base) currentChars.add(base);
-      }
-    });
-
-    if (inScene) {
-      const parsed = parseHeading(currentHeading);
-      details.push({
-        characters: Array.from(currentChars),
-        location: parsed.location,
-        prefix: parsed.prefix,
-        timeOfDay: parsed.timeOfDay,
-        pageLength: lengths[details.length] || 0,
-      });
-    }
-    return details;
+    return computeSceneFilterDetails(doc).map((d, i) => ({ ...d, pageLength: lengths[i] || 0 }));
   }, [editor, scenes, pageLayout]);
 
   // ── Compute scene timing ──
@@ -446,59 +371,18 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
 
   // ── Filter dropdown options ──
 
-  const allCharacters = useMemo(() => {
-    const chars = new Set<string>();
-    sceneDetails.forEach(d => d.characters.forEach(c => chars.add(c)));
-    return Array.from(chars).sort();
-  }, [sceneDetails]);
-
-  const allLocations = useMemo(() => {
-    const locs = new Set<string>();
-    sceneDetails.forEach(d => { if (d.location) locs.add(d.location.toUpperCase()); });
-    return Array.from(locs).sort();
-  }, [sceneDetails]);
-
-  const allPrefixes = useMemo(() => {
-    const p = new Set<string>();
-    sceneDetails.forEach(d => { if (d.prefix) p.add(d.prefix); });
-    return Array.from(p).sort();
-  }, [sceneDetails]);
-
-  const allTimes = useMemo(() => {
-    const t = new Set<string>();
-    sceneDetails.forEach(d => { if (d.timeOfDay) t.add(d.timeOfDay); });
-    return Array.from(t).sort();
-  }, [sceneDetails]);
+  const filterOptions = useMemo(() => sceneFilterOptions(sceneDetails), [sceneDetails]);
 
   // ── Filtered scene indices ──
+  // The predicate itself lives in utils/sceneFilters.ts — the ONE filter both
+  // the list and the Cards view apply (v4.35 batch-v9 #2).
 
-  const hasActiveFilter = filterCharacters.length > 0 || !!filterLocation || !!filterPrefix || !!filterTime || !!filterColor || !!filterSynopsis;
+  const hasActiveFilter = countActiveSceneFilters(sceneFilters) > 0;
 
-  const filteredIndices = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    const synopsisPhrase = filterSynopsis.trim().toLowerCase();
-    const noFilters = !hasActiveFilter && !query;
-    if (noFilters) return scenes.map((_, i) => i);
-    return scenes.reduce((acc, scene, idx) => {
-      const detail = sceneDetails[idx];
-      if (!detail) return acc;
-      // Search bar — matches heading or synopsis
-      if (query) {
-        const headingMatch = scene.heading.toLowerCase().includes(query);
-        const synopsisMatch = (scene.synopsis || '').toLowerCase().includes(query);
-        if (!headingMatch && !synopsisMatch) return acc;
-      }
-      // Filter panel filters
-      if (filterCharacters.length > 0 && !filterCharacters.every(c => detail.characters.includes(c))) return acc;
-      if (filterLocation && detail.location.toUpperCase() !== filterLocation) return acc;
-      if (filterPrefix && detail.prefix !== filterPrefix) return acc;
-      if (filterTime && detail.timeOfDay !== filterTime) return acc;
-      if (filterColor && (scene.color || '') !== filterColor) return acc;
-      if (synopsisPhrase && !(scene.synopsis || '').toLowerCase().includes(synopsisPhrase)) return acc;
-      acc.push(idx);
-      return acc;
-    }, [] as number[]);
-  }, [scenes, sceneDetails, searchQuery, filterCharacters, filterLocation, filterPrefix, filterTime, filterColor, filterSynopsis, hasActiveFilter]);
+  const filteredIndices = useMemo(
+    () => filterSceneIndices(scenes, sceneDetails, sceneFilters, searchQuery),
+    [scenes, sceneDetails, sceneFilters, searchQuery],
+  );
 
   // v3.54: publish the count + filter option lists for the window chrome
   // (SceneTitleExtra / SceneControls), which renders outside this body. Scenes
@@ -509,12 +393,9 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     setSceneNavData({
       filtered: filteredIndices.length,
       total: scenes.length,
-      characters: allCharacters,
-      locations: allLocations,
-      prefixes: allPrefixes,
-      times: allTimes,
+      ...filterOptions,
     });
-  }, [activeTab, filteredIndices.length, scenes.length, allCharacters, allLocations, allPrefixes, allTimes, setSceneNavData]);
+  }, [activeTab, filteredIndices.length, scenes.length, filterOptions, setSceneNavData]);
 
   // v4.32 batch-v8 #11/#12: the Pages / Locations / Structure windows carry
   // their count beside the window title now (the template's TitleExtra slot,
@@ -639,9 +520,79 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
 
       {/* ── Scenes tab ───────────────────────────────────────────────── */}
       {/* v4.27, Derek: the count sits beside the window title
-          (SceneTitleExtra) and filter/view/search in the row-2 cluster
+          (SceneTitleExtra) and the controls in the row-2 cluster
           (SceneControls). The body is just the list. */}
-      {activeTab === 'scenes' && (
+      {/* v4.35 batch-v9 #2: reorder mode — the list renders the PENDING order
+          (ALL scenes; filters/search are suspended because Apply rewrites the
+          whole document and a filtered pending list would eat scenes). Rows
+          drag by their grip via HTML5 DnD — the setData call is what makes
+          WebKit start the drag — and drop on a row to take its place.
+          Click-to-jump and expand are off while reordering. */}
+      {activeTab === 'scenes' && reorder.dragMode && (
+        <>
+          <SceneReorderBar r={reorder} />
+          <div className="navigator-list">
+            {reorder.displayScenes.map((scene, idx) => {
+              const origNum = reorder.originalIndexOf(scene.id);
+              const newNum = idx + 1;
+              const movedUp = origNum !== undefined && newNum < origNum;
+              const movedDown = origNum !== undefined && newNum > origNum;
+              return (
+                <div
+                  key={scene.id}
+                  className={
+                    'navigator-scene nav-reorder-row' +
+                    (movedUp ? ' nav-moved-up' : '') +
+                    (movedDown ? ' nav-moved-down' : '') +
+                    (dragRowId === scene.id ? ' nav-row-dragging' : '')
+                  }
+                  onDragOver={(e) => { if (dragRowId) e.preventDefault(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (dragRowId && dragRowId !== scene.id) {
+                      const from = reorder.displayScenes.findIndex((s) => s.id === dragRowId);
+                      if (from >= 0) reorder.move(from, idx);
+                    }
+                    setDragRowId(null);
+                  }}
+                >
+                  <div
+                    className="nav-row-grip"
+                    title="Drag to reorder"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', scene.id);   // required by WebKit
+                      e.dataTransfer.effectAllowed = 'move';
+                      setDragRowId(scene.id);
+                    }}
+                    onDragEnd={() => setDragRowId(null)}
+                  >
+                    &#8942;&#8942;
+                  </div>
+                  <div className="scene-info">
+                    <div className="scene-heading-row">
+                      <div className="scene-heading-text">
+                        <span className="scene-number-badge" style={scene.color ? { background: scene.color } : undefined}>
+                          {(movedUp || movedDown) ? (
+                            <><span className="nav-orig-num">{origNum}</span> → {newNum}</>
+                          ) : (
+                            scene.sceneNumber ?? newNum
+                          )}
+                        </span>
+                        <span className="scene-heading-label">{scene.heading}</span>
+                      </div>
+                    </div>
+                    {scene.synopsis && (
+                      <div className="scene-synopsis-preview">{scene.synopsis.split('\n')[0]}</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+      {activeTab === 'scenes' && !reorder.dragMode && (
           <div className="navigator-list">
             {filteredIndices.length === 0 ? (
               <div className="navigator-empty">
@@ -927,45 +878,25 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
 // ── Window-chrome slots (v4.27, Derek's window template) ────────────────
 // TOOL_CHROME (ToolDock) wires these two: SceneTitleExtra fills the
 // TitleExtra slot (count beside the centered row-1 title) and SceneControls
-// the Controls slot (row-2 Filter / View / Search cluster). State lives in
-// the store so these — rendered outside the tool body — stay in sync with
-// the list. The COLORS list mirrors the old in-body filter panel.
+// the Controls slot (row-2 Filter / Reorder / View / Search cluster). State
+// lives in the store so these — rendered outside the tool body — stay in
+// sync with the list. The COLORS list mirrors the old in-body filter panel.
+// (The chip's dimension count is the shared countActiveSceneFilters — same
+// source as the predicate in utils/sceneFilters.ts.)
 
 const SCENE_FILTER_COLORS = ['', ...SCENE_SWATCH_COLORS];
 
-// One source for "how many filter dimensions are set" — the Filter chip shows
-// the number; the title count and Clear All only care that it's non-zero.
-// Each picked character counts individually.
-function countActiveFilters(f: SceneFilters): number {
-  return f.characters.length + (f.location ? 1 : 0) + (f.prefix ? 1 : 0) +
-    (f.time ? 1 : 0) + (f.color ? 1 : 0) + (f.synopsis ? 1 : 0);
-}
-
 /** v4.27 template TitleExtra slot: the scene count beside the window title.
- *  v4.32: the filtered/total fraction is list-view-only — filters and search
- *  don't narrow the card wall, so showing "3/9" over 9 cards would lie. */
+ *  v4.35 batch-v9 #2/#3: BOTH views obey filter/search now, so both show the
+ *  filtered/total fraction when narrowed — except during reorder, when
+ *  filtering is suspended and every scene shows (the fraction would lie). */
 export function SceneTitleExtra() {
   const data = useEditorStore((s) => s.sceneNavData);
   const filters = useEditorStore((s) => s.sceneFilters);
   const search = useEditorStore((s) => s.sceneSearch);
-  const mode = useEditorStore((s) => s.scenesViewMode);
-  const narrowed = mode !== 'cards' && (countActiveFilters(filters) > 0 || !!search);
+  const reorderMode = useEditorStore((s) => s.scenesReorderMode);
+  const narrowed = !reorderMode && (countActiveSceneFilters(filters) > 0 || !!search);
   return <span className="tool-title-count">· {narrowed ? `${data.filtered}/` : ''}{data.total}</span>;
-}
-
-// v4.32 batch-v8 #2/#8: Scenes fullscreen is now an editor-area takeover (the
-// char-fullscreen pattern), replacing the old position:fixed overlay that
-// covered the whole app with no reachable close. Entering clears the
-// docked/floating instance so only the takeover renders, and lowers the other
-// takeovers — they are mutually exclusive (one "Return to Editor" at a time).
-function enterScenesFullscreen() {
-  const s = useEditorStore.getState();
-  if (s.activeTool === 'scenes') s.setActiveTool(null);
-  if (s.activeToolRight === 'scenes') s.setActiveToolRight(null);
-  if (s.tempTool === 'scenes') s.setTempTool(null);
-  closeNotebook();
-  s.setCharFullscreen(false);
-  s.setScenesFullscreen(true);
 }
 
 /** v4.32 batch-v8 #11/#12: Pages / Locations / Structure counts beside the
@@ -986,15 +917,15 @@ export function StructureTitleExtra() {
 
 /** v4.32 batch-v8 #9: the Reorder toggle — ONE control shared by the window's
  *  row-2 cluster and the fullscreen takeover header, so the two can't drift.
- *  Flipping it off without Apply cancels (IndexCards drops the pending
- *  snapshot when the flag clears). */
+ *  Flipping it off without Apply cancels (useSceneReorder drops the pending
+ *  snapshot when the flag clears). v4.35 batch-v9 #2: drives BOTH views. */
 export function ScenesReorderControl() {
   const reorder = useEditorStore((s) => s.scenesReorderMode);
   const setReorder = useEditorStore((s) => s.setScenesReorderMode);
   return (
     <button
       className={`tool-ctl${reorder ? ' active' : ''}`}
-      title={reorder ? 'Exit reorder mode (discards unapplied order)' : 'Drag cards to reorder scenes'}
+      title={reorder ? 'Exit reorder mode (discards unapplied order)' : 'Drag scenes into a new order'}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={() => setReorder(!reorder)}
     >
@@ -1003,23 +934,10 @@ export function ScenesReorderControl() {
   );
 }
 
-/** v4.32 batch-v8 #8: the fullscreen button, moved from the deleted in-body
- *  count row to the row-1 window actions zone (the template slot).
- *  v4.34: available in BOTH views — the takeover hosts the full ScenesTool
- *  body with the View switch, so fullscreen from the list opens the list. */
-export function ScenesWindowActions() {
-  return (
-    <button
-      className="char-profiles-fullscreen-btn"
-      onClick={enterScenesFullscreen}
-      title="Fullscreen"
-    >
-      <FullscreenIcon />
-    </button>
-  );
-}
-
-/** v4.27 template Controls slot: the row-2 Filter / View / Search cluster. */
+/** v4.27 template Controls slot: the row-2 cluster. v4.35 batch-v9 #2: all
+ *  four controls — Filter, Reorder, View, Search — render in BOTH views;
+ *  filter/search narrow the card wall too and reorder drags list rows as
+ *  well as cards, so nothing here is a silent no-op anymore. */
 export function SceneControls() {
   const data = useEditorStore((s) => s.sceneNavData);
   const filters = useEditorStore((s) => s.sceneFilters);
@@ -1028,10 +946,8 @@ export function SceneControls() {
   const setSearch = useEditorStore((s) => s.setSceneSearch);
   const mode = useEditorStore((s) => s.scenesViewMode);
   const setMode = useEditorStore((s) => s.setScenesViewMode);
-  // Filter + search drive the scene LIST — in Cards view they'd be silent
-  // no-ops, so they hide. Only View survives the switch.
   const cardsView = mode === 'cards';
-  const activeCount = countActiveFilters(filters);
+  const activeCount = countActiveSceneFilters(filters);
   const hasActiveFilter = activeCount > 0;
   const patch = (p: Partial<SceneFilters>) => setFilters({ ...filters, ...p });
 
@@ -1061,7 +977,6 @@ export function SceneControls() {
 
   return (
     <>
-      {!cardsView && <>
       <button
         ref={btnRef}
         className={`tool-ctl${open ? ' open' : ''}`}
@@ -1135,11 +1050,8 @@ export function SceneControls() {
         </div>,
         document.body,
       )}
-      </>}
-      {/* v4.32 batch-v8 #9: Reorder lives in the row-2 cluster now (the old
-          in-body count row is gone), LEFT of View. Cards only — reordering IS
-          the card wall's drag mode. */}
-      {cardsView && <ScenesReorderControl />}
+      {/* v4.32 batch-v8 #9: Reorder lives in the row-2 cluster, LEFT of View. */}
+      <ScenesReorderControl />
       <ControlDropdown
         title="View"
         current={cardsView ? 'Cards' : 'List'}
@@ -1149,7 +1061,7 @@ export function SceneControls() {
           { label: 'Cards', active: cardsView, onSelect: () => setMode('cards') },
         ]}
       />
-      {!cardsView && <ControlSearch value={search} onChange={setSearch} placeholder="Search headings & synopses..." />}
+      <ControlSearch value={search} onChange={setSearch} placeholder="Search headings & synopses..." />
     </>
   );
 }

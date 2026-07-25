@@ -6,8 +6,10 @@
      the header/tab track — is the WORKSPACE color, so the surface (layer 2,
      side-panel color, shared with the active tab) reads as a connected
      sheet, and the cards (layer 3, menu/dialog color) sit on top of it.
-     All three ride existing theme-editor knobs; no new palette. */
-  background: var(--fd-bg);
+     v4.35 batch-v9 #6, Derek: with the file-tab style retired (segmented
+     tabs now), layers 1-2 revert to the ONE side-panel surface color every
+     other window wears; the cards keep their own face. */
+  background: var(--fd-navigator-bg);
   border-left: 1px solid var(--fd-border);
   display: flex;
   flex-direction: column;
@@ -22,7 +24,6 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: var(--fd-navigator-bg);
 }
 /* v2.70, Derek: inside a tool window the panel FILLS it — the fixed 300px
    is only for the legacy slide-in overlay. Without this, resizing the
@@ -33,20 +34,9 @@
   min-width: 0;
   border-left: none;
 }
-/* v4.16, Derek: fullscreen is now a Scrapbook-style takeover — the panel fills
-   the .fs-char-takeover flex child of the editor center (which leaves the
-   toolbar & status bar intact and puts "Return to Editor" in the ribbon),
-   instead of a position:fixed overlay that covered the whole window with no way
-   out (the status bar painted over its exit button — user had to hard-quit). */
-.fs-char-takeover {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--fd-bg);
-  color: var(--fd-text);
-}
+/* v4.16/v4.35: fullscreen is the generic .fs-tool-takeover (20-tool-dock.css)
+   now — the embedded panel below rides inside it and keeps emitting the
+   char-profiles-fullscreen / char-fs-list-mode layout classes. */
 .char-profiles-panel.char-profiles-fullscreen {
   position: relative;
   flex: 1;
@@ -1169,12 +1159,15 @@
   margin-top: 12px;
 }
 /* Tabs row of the legacy slide-in overlay. The tab buttons themselves are the
-   shared .tool-chrome-tab (20-tool-dock.css) — one file-tab look everywhere. */
+   shared .tool-chrome-tab; ChromeTabs renders them bare here, so this
+   container IS the segmented group (v4.35 #6 — the Goals look). */
 .char-profiles-tabs {
-  display: flex;
-  gap: 3px;
-  padding: 6px 8px 0;
-  border-bottom: 1px solid var(--fd-border);
+  display: inline-flex;
+  align-self: flex-start;
+  margin: 6px 8px;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  overflow: hidden;
   flex-shrink: 0;
 }
 

@@ -29,13 +29,13 @@ import {
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
-import { DoubleChevronIcon, chevronTowards } from './uiIcons';
+import { DoubleChevronIcon, chevronTowards, FullscreenIcon } from './uiIcons';
 import { useProjectStore } from '../stores/projectStore';
-import SceneNavigator, { SceneTitleExtra, SceneControls, ScenesWindowActions, PagesTitleExtra, LocationsTitleExtra, StructureTitleExtra, type NavTab } from './SceneNavigator';
+import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, LocationsTitleExtra, StructureTitleExtra, type NavTab } from './SceneNavigator';
 import NavigatorTool, { NavigatorControls } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
-import CharacterProfiles, { CharTitleExtra, CharWindowActions, useCharTabs, CharControls } from './CharacterProfiles';
+import CharacterProfiles, { CharTitleExtra, useCharTabs, CharControls } from './CharacterProfiles';
 import { ChromeRow2, type ToolChromeTab } from './ToolControls';
 import { StickyNotesTool, FragmentsTool, TodoTool, StickyTitleExtra, StickyControls, TodoTitleExtra, TodoControls, SnippetsTitleExtra } from './StickyNotes';
 import { HighlightsTitleExtra } from './HighlightsTool';
@@ -179,14 +179,13 @@ function TabbedRow2({ chrome, className, before, after }: {
   );
 }
 export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
-  // v4.27 phase 2: Characters — count beside the title, fullscreen as a
-  // window action, Profiles/Relationships/From Script tabs, Sort/View/Search.
-  characters: { TitleExtra: CharTitleExtra, WindowActions: CharWindowActions, useTabs: useCharTabs, Controls: CharControls },
-  // v4.27 phase 3: Scenes — count beside the title; Filter/View/Search
-  // (the old header filter popover, the List/Cards toggle, the footer search).
-  // v4.32 batch-v8 #8/#9: fullscreen moved to the row-1 actions zone,
-  // Reorder into the row-2 cluster — the in-body count row is gone.
-  scenes: { TitleExtra: SceneTitleExtra, WindowActions: ScenesWindowActions, Controls: SceneControls },
+  // v4.27 phase 2: Characters — count beside the title,
+  // Profiles/Relationships/From Script tabs, Sort/View/Search.
+  // v4.35 batch-v9 #4: per-tool fullscreen WindowActions are gone — the frame
+  // renders ONE generic fullscreen button for every non-excluded tool.
+  characters: { TitleExtra: CharTitleExtra, useTabs: useCharTabs, Controls: CharControls },
+  // v4.27 phase 3: Scenes — count beside the title; Filter/Reorder/View/Search.
+  scenes: { TitleExtra: SceneTitleExtra, Controls: SceneControls },
   // v4.27 phase 4: the remaining tools' control bars, in the same row-2 slot
   // (their internal layouts are unchanged — the cluster lets them span).
   // v4.32: numbers toggle (left) + Filter dropdown + search (batch-v8 5-7)
@@ -214,6 +213,69 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
 export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'titlepage', 'history'];
 export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
+
+/** v4.35 batch-v9 #4, Derek: EVERY side-panel window gets a fullscreen button
+ *  — one generic control the frame renders, not per-tool WindowActions.
+ *  Excluded: the Scrapbook (its surface IS a forced takeover) and the Title
+ *  Page (a fixed-size card; fullscreening a fixed card is a no-op). */
+const NO_FULLSCREEN: ToolId[] = ['notebook', 'titlepage'];
+
+function ToolFullscreenButton({ id }: { id: ToolId }) {
+  if (NO_FULLSCREEN.includes(id)) return null;
+  return (
+    <button
+      className="char-profiles-fullscreen-btn"
+      title="Fullscreen"
+      onClick={() => useEditorStore.getState().enterToolFullscreen(id)}
+    >
+      <FullscreenIcon />
+    </button>
+  );
+}
+
+/** The editor-area takeover for whichever tool owns fullscreenTool: the
+ *  template's row-1 header (centered title + count, window actions, ×), the
+ *  tool's own row-2 chrome (tabs + control cluster — the SAME registry the
+ *  window frame reads), and the SAME ToolContent body. ScreenplayEditor swaps
+ *  it in for the editor; toolbar/status bar stay, "Return to Editor" rides
+ *  the ribbon. Replaces the bespoke Characters/Scenes takeovers. */
+export function ToolFullscreenTakeover({ editor, scrollContainer }: {
+  editor: Editor | null;
+  scrollContainer?: HTMLDivElement | null;
+}) {
+  const id = useEditorStore((s) => s.fullscreenTool);
+  const def = ALL_TOOLS.find((t) => t.id === id);
+  if (!id || !def) return null;
+  const chrome = TOOL_CHROME[id];
+  const close = () => useEditorStore.getState().setFullscreenTool(null);
+  return (
+    <div className={`fs-tool-takeover fs-tool-takeover-${id}`}>
+      <div className="char-profiles-header char-fs-header">
+        <span className="tool-window-zone tool-window-zone-l" />
+        <span className="tool-window-zone tool-window-zone-c">
+          <span className="char-profiles-title">{def.label}</span>
+          {chrome?.TitleExtra && <chrome.TitleExtra />}
+        </span>
+        <span className="tool-window-zone tool-window-zone-r">
+          {chrome?.WindowActions && <chrome.WindowActions />}
+          <button className="char-profiles-close" onClick={close} title="Return to editor">&times;</button>
+        </span>
+      </div>
+      {(chrome?.useTabs || chrome?.Controls) && (chrome?.useTabs ? (
+        <TabbedRow2 chrome={chrome} className="tool-chrome-row2" />
+      ) : (
+        <div className="tool-chrome-row2">
+          <span className="tool-chrome-controls">
+            {chrome?.Controls && <chrome.Controls />}
+          </span>
+        </div>
+      ))}
+      <div className="fs-tool-takeover-body">
+        <ToolContent id={id} editor={editor} scrollContainer={scrollContainer} onClose={close} />
+      </div>
+    </div>
+  );
+}
 
 /** v3.73, Derek: tools that are NOT offered as side-panel tools and never
  *  render in a dock — they open from the Tools menu / as their own windows.
@@ -448,6 +510,7 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
               </span>
               <span className="tool-window-zone tool-window-zone-r tool-window-header-actions">
                 {chrome?.WindowActions && <chrome.WindowActions />}
+                <ToolFullscreenButton id={tool.id} />
                 {side === 'right' && popBtn}
                 <button className="tool-window-close" onClick={onClose} title="Close">×</button>
               </span>
@@ -766,8 +829,11 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                   row 1, so the open tool's title extra (count) and window
                   actions (fullscreen…) ride on it. */}
               {isOpenInline && chrome?.TitleExtra && <chrome.TitleExtra />}
-              {isOpenInline && chrome?.WindowActions && (
-                <span className="tool-dock-item-actions"><chrome.WindowActions /></span>
+              {isOpenInline && (
+                <span className="tool-dock-item-actions">
+                  {chrome?.WindowActions && <chrome.WindowActions />}
+                  <ToolFullscreenButton id={t.id} />
+                </span>
               )}
             </div>
             {isOpenInline && (

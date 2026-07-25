@@ -10,7 +10,7 @@
  * It also breaks an import cycle: ScriptNotes needs the card, and StickyNotes
  * needs ScriptNotes. formatDate lives here now, so nothing imports backwards.
  */
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { FaCopy, FaRegTrashAlt } from 'react-icons/fa';
 import type { ShelfCard, ShelfCardType } from '../stores/editorStore';
 import { SHELF_COLORS, SHELF_DEFAULT_COLOR } from '../stores/editorStore';
@@ -36,10 +36,15 @@ export const CARD_PLACEHOLDERS: Record<ShelfCardType, string> = {
 
 export function ColorDots({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: Partial<ShelfCard>) => void }) {
   const [open, setOpen] = useState(false);
+  // v4.35 (batch-v9 #5): while the NATIVE color panel is up the pointer is off
+  // the row — the pop must not close under it, or the <input> unmounts and
+  // every pick lands in the void. Blur (next click anywhere) closes instead.
+  const picking = useRef(false);
   const cur = card.color || SHELF_DEFAULT_COLOR;
-  // when open, the trigger dot joins the row: the current color sits rightmost,
-  // exactly where the single circle was, and the rest fan out to the LEFT so
-  // the row always stays inside the pane
+  const isPreset = SHELF_COLORS.some(([c]) => c === cur);
+  // the pop is right-anchored, so the row fans out to the LEFT of the trigger
+  // and always stays inside the pane; the current preset keeps the slot next
+  // to the custom swatch, nearest where the single circle was
   const ordered = [...SHELF_COLORS.filter(([c]) => c !== cur), ...SHELF_COLORS.filter(([c]) => c === cur)];
   return (
     <span
@@ -55,7 +60,7 @@ export function ColorDots({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: P
         onClick={() => setOpen(true)}
       />
       {open && (
-        <span className="swn-color-pop" onMouseLeave={() => setOpen(false)}>
+        <span className="swn-color-pop" onMouseLeave={() => { if (!picking.current) setOpen(false); }}>
           {ordered.map(([c, name]) => (
             <span
               key={c}
@@ -65,6 +70,22 @@ export function ColorDots({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: P
               onClick={() => { onUpdate({ color: c }); setOpen(false); }}
             />
           ))}
+          {/* Custom color — the Characters-row dashed swatch, dot-sized. When
+              the current color is a custom hex it shows here as the fill. */}
+          <label
+            className="swn-color-custom"
+            title="Custom color"
+            style={isPreset ? undefined : { background: cur, outline: '2px solid #666' }}
+          >
+            <input
+              type="color"
+              value={cur}
+              onFocus={() => { picking.current = true; }}
+              onBlur={() => { picking.current = false; setOpen(false); }}
+              onChange={(e) => onUpdate({ color: e.target.value })}
+            />
+            {isPreset && <span>+</span>}
+          </label>
         </span>
       )}
     </span>

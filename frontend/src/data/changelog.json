@@ -1,5 +1,74 @@
 [
   {
+    "version": "4.35",
+    "date": "2026-07-25",
+    "items": [
+      {
+        "title": "Every side-panel window can go fullscreen",
+        "detail": "One fullscreen button in every window's top row (and dock accordion) takes that tool over the editor area — same chrome rows, same body, with Return to Editor in the ribbon and a × in the header. One takeover at a time by construction. Excluded: the Scrapbook (its surface is already a takeover) and the fixed-size Title Page.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "Scenes: List and Cards offer the same four controls",
+        "detail": "Filter, Reorder, View, and Search now all work in both views. The card wall obeys the filter and search (count shows the fraction); the list gains the same drag-reorder mode as the cards — grips, was→now badges, and the Undo/Redo/Cancel/Apply bar. While reordering, every scene shows regardless of filters (applying rewrites the whole script order).",
+        "tags": [
+          "Scenes"
+        ]
+      },
+      {
+        "title": "Any color for notes",
+        "detail": "The note color dots gain a custom swatch — the same wide-open color picker the Characters window uses. Works on general note cards and on script-note popovers (the highlight recolors to match); card backgrounds get a soft pastel of whatever you pick. The six classic colors are unchanged.",
+        "tags": [
+          "Notes"
+        ]
+      },
+      {
+        "title": "One tab style: the Goals look",
+        "detail": "The file-tab style is retired. All side-panel window tabs — Characters, Production Tags, Analytics, and the shared window chrome — are now the segmented control from Goals, with the active tab filled blue. The Characters window background returns to the single side-panel color it had before the file-tab experiment.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "View menu: one Zoom, seated with the window controls",
+        "detail": "The native window-menu item macOS labels \"Zoom\" (maximize) is gone — it read as a duplicate of the page-zoom submenu. Zoom, Minimize, and Toggle Full Screen now sit together as View's final section.",
+        "tags": [
+          "Menus"
+        ]
+      },
+      {
+        "title": "Navigator scene numbers moved to the right",
+        "detail": "With the toggle on, the number sits at the right edge of each scene row instead of before the heading.",
+        "tags": [
+          "Navigator"
+        ]
+      },
+      {
+        "title": "Focus window: cleaner enable flow",
+        "detail": "\"Enable Focus Tool\" (capital T), the explainer text lives behind a ? button now, and everything below the master switch dims and locks while the tool is off.",
+        "tags": [
+          "Focus"
+        ]
+      },
+      {
+        "title": "Workspaces window carries the full menu",
+        "detail": "Save Changes to this Workspace, Reset to Saved Layout, Edit Workspaces…, and Import Workspaces from a Project… now sit below the workspace list — the same actions the View → Workspaces menu offers, one implementation behind both.",
+        "tags": [
+          "Workspaces"
+        ]
+      },
+      {
+        "title": "Feedback form loads instantly",
+        "detail": "The form loads once at app start and stays alive in the background, so opening the Feedback window shows it immediately instead of a blank frame.",
+        "tags": [
+          "Feedback"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.34",
     "date": "2026-07-25",
     "items": [

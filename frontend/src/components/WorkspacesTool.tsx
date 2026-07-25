@@ -5,10 +5,16 @@
  * place. It reads and writes the SAME store API the menu and the Workspace
  * dialogs use (workspaces / applyWorkspace / saveWorkspace / renameWorkspace /
  * deleteWorkspace), so the two entry points can never drift apart.
+ * v4.35: the menu's remaining actions live here too — save-changes, reset,
+ * Edit Workspaces… and Import Workspaces from a Project… (the save-as row at
+ * the top already covers "Save as New Workspace…").
  */
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { FaColumns, FaEdit, FaRegTrashAlt, FaCheck } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
+import { EditWorkspacesDialog } from './WorkspaceDialogs';
+import { importWorkspacesFromFile } from '../utils/workspaceImport';
 
 export default function WorkspacesTool() {
   const workspaces = useEditorStore((s) => s.workspaces);
@@ -23,6 +29,7 @@ export default function WorkspacesTool() {
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const names = workspaceOrder.filter((n) => workspaces[n]);
   const trimmed = newName.trim();
@@ -99,6 +106,40 @@ export default function WorkspacesTool() {
           })
         )}
       </div>
+
+      {/* v4.35: the View → Workspaces menu's actions, mirrored. */}
+      <div className="ws-actions">
+        <button
+          className="ws-action-btn"
+          disabled={!activeWorkspace}
+          title={activeWorkspace ? `Overwrite “${activeWorkspace}” with the current layout` : 'Apply a workspace first'}
+          onClick={() => { if (activeWorkspace) saveWorkspace(activeWorkspace); }}
+        >
+          Save Changes to this Workspace
+        </button>
+        <button
+          className="ws-action-btn"
+          disabled={!activeWorkspace}
+          title={activeWorkspace ? `Reapply the saved “${activeWorkspace}” layout` : 'Apply a workspace first'}
+          onClick={() => { if (activeWorkspace) applyWorkspace(activeWorkspace); }}
+        >
+          Reset to Saved Layout
+        </button>
+        <button className="ws-action-btn" onClick={() => setEditDialogOpen(true)}>
+          Edit Workspaces…
+        </button>
+        <button className="ws-action-btn" onClick={() => { void importWorkspacesFromFile(); }}>
+          Import Workspaces from a Project…
+        </button>
+      </div>
+
+      {/* Portalled: as a temp window this tool sits under a transform
+          (.tool-window-temp), which would hijack the overlay's fixed
+          positioning — from document.body it covers the viewport. */}
+      {createPortal(
+        <EditWorkspacesDialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} />,
+        document.body,
+      )}
     </div>
   );
 }

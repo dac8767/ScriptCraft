@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { FaRegUser, FaRegTrashAlt, FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import { FullscreenIcon } from './uiIcons';
 import { LuLayoutGrid, LuList, LuWaypoints } from 'react-icons/lu';
-import { ControlDropdown, ControlSearch, ChromeTabs, ChromeRow2, type ToolChromeTab } from './ToolControls';
+import { ControlDropdown, ControlSearch, ChromeTabs, type ToolChromeTab } from './ToolControls';
 import type { Editor } from '@tiptap/react';
 import { stripHtml } from '../utils/stripHtml';
 import { CharacterScanTab } from './CharacterScanTab';
@@ -19,7 +19,6 @@ import { toTitleCaseName, lastNameOf, joinName, escapeRegExp } from '../utils/ch
 import { buildScanList, filterScanList, type ScannedCharacter } from '../utils/characterScan';
 import { InlineRelForm, REL_DYNAMICS } from './InlineRelForm';
 import { AssetImage, AssetAudio, ImageSourceMenu } from './CharacterAssetMedia';
-import { closeNotebook } from './NotebookTool';
 import { promptDialog } from './ConfirmDialog';
 
 // Default colors for auto-assignment (VIBGYOR palette)
@@ -35,27 +34,14 @@ interface CharacterProfilesProps {
   /** Render inside a tool window: always visible, no close button/swipe */
   embedded?: boolean;
   /** v4.16: rendered as the full editor-area takeover (Scrapbook-style). */
-  fullscreen?: boolean;
   editor: Editor | null;
   projectId: string;
   style?: React.CSSProperties;
 }
 
-// v4.16: fullscreen is the Scrapbook-style editor takeover (a store flag),
-// not a fixed overlay. Entering clears the docked/floating instance so only
-// the takeover renders. Module-level because BOTH the panel and the window
-// header's CharactersHeaderExtra trigger it — one copy, no drift.
-function enterCharFullscreen() {
-  const s = useEditorStore.getState();
-  if (s.activeTool === 'characters') s.setActiveTool(null);
-  if (s.activeToolRight === 'characters') s.setActiveToolRight(null);
-  if (s.tempTool === 'characters') s.setTempTool(null);
-  // v4.30 batch-v7 #6: takeovers are exclusive — lower the Scrapbook surface
-  // (it also owns a ribbon "Return to Editor"; two takeovers meant two).
-  closeNotebook();
-  s.setScenesFullscreen(false);
-  s.setCharFullscreen(true);
-}
+// v4.35 batch-v9 #4: the per-tool fullscreen plumbing (enterCharFullscreen /
+// CharWindowActions) is gone — the frame's generic button and the store's
+// enterToolFullscreen own it now.
 
 /** v4.27, Derek's window template — Characters' chrome slots, registered in
  *  ToolDock's TOOL_CHROME. The count rides beside the centered title (row 1),
@@ -69,17 +55,6 @@ export function CharTitleExtra() {
   return <span className="tool-title-count">· {count}</span>;
 }
 
-export function CharWindowActions() {
-  return (
-    <button
-      className="char-profiles-fullscreen-btn"
-      onClick={enterCharFullscreen}
-      title="Fullscreen"
-    >
-      <FullscreenIcon />
-    </button>
-  );
-}
 
 /** Tab DATA for the chrome (TOOL_CHROME.useTabs) — ChromeTabs/ChromeRow2
  *  render it as a strip or, when the row is too narrow, a dropdown. */
@@ -145,7 +120,7 @@ export function CharControls() {
   );
 }
 
-const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId, style, embedded = false, fullscreen = false }) => {
+const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId, style, embedded = false }) => {
   const {
     characters,
     characterProfiles,
@@ -194,8 +169,10 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   // referred names), each carrying a description/age pulled from the action line
   // that introduces them. Nothing is created until the writer clicks Add on a
   // row. null = not scanned yet this session.
-  const isFullscreen = fullscreen;
-  const exitCharFullscreen = () => useEditorStore.getState().setCharFullscreen(false);
+  // v4.35: the generic takeover renders this SAME embedded body — the panel
+  // knows it's the fullscreen instance from the store, and keeps emitting the
+  // char-profiles-fullscreen / char-fs-list-mode layout classes CSS relies on.
+  const isFullscreen = useEditorStore((s) => embedded && s.fullscreenTool === 'characters');
   // v4.27: Cards/List applies EVERYWHERE now (window, dock, fullscreen) — it's
   // the cluster's View dropdown, persisted. Was fullscreen-only local state.
   const viewMode = useEditorStore((s) => s.charViewMode);
@@ -1279,7 +1256,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   };
 
   const { shouldRender: gateRender, animationState } = useDelayedUnmount(characterProfilesOpen, 250);
-  const shouldRender = embedded || fullscreen || gateRender;
+  const shouldRender = embedded || gateRender;
   const panelRef = useRef<HTMLDivElement>(null);
   useSwipeDismiss(panelRef, { direction: 'right', onDismiss: toggleCharacterProfiles, enabled: !embedded && shouldRender && !isFullscreen });
 
@@ -1309,30 +1286,8 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         onChange={handleVoiceSelect}
       />
 
-      {/* v4.27, Derek's window template: the fullscreen takeover renders the
-          SAME two chrome rows the tool window gets from its frame — row 1
-          (three zones, centered title + count, close right) and row 2 (tabs
-          left, Sort/View/Search cluster right) — built from the same CharTabs /
-          CharControls the TOOL_CHROME registry serves, so the surfaces can't
-          drift. Embedded windows render NEITHER row: the frame provides both. */}
-      {isFullscreen && (
-        <>
-          <div className="char-profiles-header char-fs-header">
-            <span className="tool-window-zone tool-window-zone-l" />
-            <span className="tool-window-zone tool-window-zone-c">
-              <span className="char-profiles-title">Characters</span>
-              <CharTitleExtra />
-            </span>
-            <span className="tool-window-zone tool-window-zone-r">
-              <button className="char-profiles-close" onClick={() => exitCharFullscreen()} title="Return to editor">&times;</button>
-            </span>
-          </div>
-          <ChromeRow2 tabs={charTabs} className="tool-chrome-row2">
-            <CharControls />
-          </ChromeRow2>
-        </>
-      )}
-
+      {/* (v4.35: the fullscreen header rows are gone — the generic
+          ToolFullscreenTakeover provides row 1 and row 2 for every tool.) */}
       {/* Legacy slide-in overlay (context menu → Character Profile...): no
           window frame, so it keeps its own header + tabs (+ toolbar below). */}
       {!isFullscreen && !embedded && (
@@ -1342,7 +1297,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             <span className="char-profiles-count">{allCharacters.length}</span>
             <button
               className="char-profiles-fullscreen-btn"
-              onClick={() => enterCharFullscreen()}
+              onClick={() => useEditorStore.getState().enterToolFullscreen('characters')}
               title="Fullscreen"
             >
               <FullscreenIcon />
