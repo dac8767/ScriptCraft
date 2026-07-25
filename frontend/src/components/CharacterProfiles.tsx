@@ -116,6 +116,11 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   const [fsViewMode, setFsViewMode] = useState<'cards' | 'list'>('cards');
   // v4.18: portal target in the header for the Relationship Map's toolbar.
   const [modalChar, setModalChar] = useState<string | null>(null);
+  // v4.26 batch-v4 #4: the full view's Relationships / Appears-in sections
+  // open from buttons on the photo row; per-character so the modal and an
+  // expanded list card can't fight over one flag.
+  const [openRels, setOpenRels] = useState<Record<string, boolean>>({});
+  const [openScenes, setOpenScenes] = useState<Record<string, boolean>>({});
 
   // Image picker state
   const [imagePickerFor, setImagePickerFor] = useState<string | null>(null);
@@ -769,10 +774,21 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   /** Gender / Age / Sexuality — one row, shared by card + modal (v4.22, Derek:
    *  Role removed; Sexuality added; no placeholder hints). v4.24 batch 3: the
    *  card shows only the essentials (gender + age); the modal keeps all three. */
-  const renderMetaRow = (charName: string, essentialsOnly = false) => {
+  /** v4.26 batch-v4 #2, Derek: one meta row everywhere — Age, Gender,
+   *  Sexuality, in that order (the essentials/full split is gone). */
+  const renderMetaRow = (charName: string) => {
     const prof = getProfile(charName);
     return (
-      <div className={`char-profile-meta-row${essentialsOnly ? '' : ' char-profile-meta-row-3'}`}>
+      <div className="char-profile-meta-row char-profile-meta-row-3">
+        <div className="char-profile-meta-field">
+          <label className="char-profile-label">Age</label>
+          <input
+            type="text"
+            className="char-profile-input"
+            value={prof.age}
+            onChange={(e) => upsertCharacterProfile(charName, { age: e.target.value })}
+          />
+        </div>
         <div className="char-profile-meta-field">
           <label className="char-profile-label">Gender</label>
           <input
@@ -783,25 +799,14 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           />
         </div>
         <div className="char-profile-meta-field">
-          <label className="char-profile-label">Age</label>
+          <label className="char-profile-label">Sexuality</label>
           <input
             type="text"
             className="char-profile-input"
-            value={prof.age}
-            onChange={(e) => upsertCharacterProfile(charName, { age: e.target.value })}
+            value={prof.sexuality ?? ''}
+            onChange={(e) => upsertCharacterProfile(charName, { sexuality: e.target.value })}
           />
         </div>
-        {!essentialsOnly && (
-          <div className="char-profile-meta-field">
-            <label className="char-profile-label">Sexuality</label>
-            <input
-              type="text"
-              className="char-profile-input"
-              value={prof.sexuality ?? ''}
-              onChange={(e) => upsertCharacterProfile(charName, { sexuality: e.target.value })}
-            />
-          </div>
-        )}
       </div>
     );
   };
@@ -889,25 +894,57 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         title="Upload a voice-reference audio clip for this character"
         onClick={() => triggerVoiceUpload(charName)}
       >
-        {voiceUploading ? 'Uploading…' : 'Voice Profile'}
+        {/* v4.26 batch-v4 #5: this control lives INSIDE the Voice Profile
+            section now — labeling it "Voice Profile" there would be the
+            duplicate Derek flagged. */}
+        {voiceUploading ? 'Uploading…' : 'Upload Voice Clip'}
       </button>
     );
   };
 
-  /** Image display + Upload / Voice Profile row (used where both belong
-   *  together). A divider sets this media block off from the fields above. */
-  const renderImageSection = (charName: string, reserveWhenEmpty = false) => (
+  /** Image display + actions row. A divider sets this media block off from
+   *  the fields above. v4.26 batch-v4 #4/#5: the voice-clip control moved
+   *  into the Voice Profile section; in the FULL view (withSections) the row
+   *  instead carries Relationships / Appears-in toggles whose content opens
+   *  right below the photo. */
+  const renderImageSection = (charName: string, reserveWhenEmpty = false, withSections = false) => {
+    const st = charStats.get(charName);
+    const nameUpper = charName.toUpperCase();
+    const relCount = characterRelationships.filter(
+      (r) => r.characterA === nameUpper || r.characterB === nameUpper
+    ).length;
+    return (
     <>
       <div className="char-profile-section-divider" aria-hidden />
       <div className="char-profile-photo-row">
         {renderImageDisplay(charName, reserveWhenEmpty)}
         <div className="char-profile-image-actions">
           {renderUploadButton(charName)}
-          {renderVoiceButton(charName)}
+          {withSections && (
+            <>
+              <button
+                className={`char-profile-voice-btn${openRels[charName] ? ' active' : ''}`}
+                title="Show this character's relationships"
+                onClick={() => setOpenRels((m) => ({ ...m, [charName]: !m[charName] }))}
+              >
+                Relationships{relCount > 0 ? ` (${relCount})` : ''}
+              </button>
+              {st && st.scenes.length > 0 && (
+                <button
+                  className={`char-profile-voice-btn${openScenes[charName] ? ' active' : ''}`}
+                  title="Show the scenes this character appears in"
+                  onClick={() => setOpenScenes((m) => ({ ...m, [charName]: !m[charName] }))}
+                >
+                  Appears in ({st.scenes.length})
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
     </>
-  );
+    );
+  };
 
   /** User-defined custom fields (shared definitions, per-character values) plus
    *  an "+ Add field" control. Shown on every character. (v4.22, Derek.) */
@@ -951,15 +988,84 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   };
 
   /** Render character detail fields — used in both card expansion and modal */
+  /** Relationships block — opened from the photo row's toggle (batch-v4 #4). */
+  const renderRelationshipsBlock = (charName: string) => {
+    const nameUpper = charName.toUpperCase();
+    const rels = characterRelationships.filter(
+      (r) => r.characterA === nameUpper || r.characterB === nameUpper
+    );
+    const isAdding = addRelFor === nameUpper;
+    return (
+      <div className="char-profile-relationships">
+        <div className="char-profile-rel-header-row">
+          <label className="char-profile-label" style={{ marginBottom: 0 }}>Relationships</label>
+          {!isAdding && (
+            <button className="char-profile-rel-add-btn" onClick={() => setAddRelFor(nameUpper)}>+ Add</button>
+          )}
+        </div>
+        {rels.map((r) => {
+          const other = r.characterA === nameUpper ? r.characterB : r.characterA;
+          return (
+            <div key={r.id} className="char-profile-rel-item">
+              <div className="char-profile-rel-header">
+                <span className="char-profile-rel-other">{other}</span>
+                <span className="char-profile-rel-type">{r.type}</span>
+                {r.dynamic && <span className="char-profile-rel-dynamic">{r.dynamic}</span>}
+                <button
+                  className="char-profile-rel-remove"
+                  onClick={() => deleteCharacterRelationship(r.id)}
+                  title="Remove relationship"
+                >&times;</button>
+              </div>
+              {r.description && <div className="char-profile-rel-desc">{r.description}</div>}
+            </div>
+          );
+        })}
+        {rels.length === 0 && !isAdding && (
+          <div className="char-profile-rel-empty">No relationships defined yet</div>
+        )}
+        {isAdding && (
+          <InlineRelForm
+            characterName={nameUpper}
+            allCharacters={allCharacters}
+            onSave={(rel) => {
+              upsertCharacterRelationship(rel);
+              setAddRelFor(null);
+            }}
+            onCancel={() => setAddRelFor(null)}
+          />
+        )}
+      </div>
+    );
+  };
+
+  /** Scene appearances — opened from the photo row's toggle (batch-v4 #4). */
+  const renderScenesBlock = (charName: string) => {
+    const st = charStats.get(charName);
+    if (!st || st.scenes.length === 0) return null;
+    return (
+      <div className="char-profile-scene-chips">
+        {st.scenes.map((s, i) => (
+          <span key={i} className="char-profile-scene-chip" onClick={() => handleNavigateToScene(s)} title={`Go to: ${s}`}>{s}</span>
+        ))}
+      </div>
+    );
+  };
+
   const renderCharacterFields = (charName: string, isModal: boolean) => {
     const prof = getProfile(charName);
-    const st = charStats.get(charName);
     return (
       <>
         {renderNameFields(charName)}
 
-        {/* Photo row */}
-        {renderImageSection(charName)}
+        {/* Photo row — reserved placeholder (batch-v4 #6) + the
+            Relationships / Appears-in toggles (batch-v4 #4) */}
+        {renderImageSection(charName, true, true)}
+        {openRels[charName] && renderRelationshipsBlock(charName)}
+        {openScenes[charName] && renderScenesBlock(charName)}
+
+        {/* Age / Gender / Sexuality — above Description (batch-v4 #2) */}
+        {renderMetaRow(charName)}
 
         {/* Description — full width */}
         <label className="char-profile-label">Description</label>
@@ -969,12 +1075,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           placeholder="A weary detective in his 50s, haunted by a cold case..."
           minHeight={isModal ? 80 : 50}
         />
-
-        {/* Gender / Age / Sexuality */}
-        {renderMetaRow(charName)}
-
-        {/* User-defined fields */}
-        {renderCustomFields(charName)}
 
         {/* Backstory */}
         <label className="char-profile-label">Backstory</label>
@@ -994,10 +1094,16 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           minHeight={isModal ? 80 : 50}
         />
 
-        {/* Voice Profile (collapsible) */}
+        {/* User-defined fields — below Character Arc (batch-v4 #3) */}
+        {renderCustomFields(charName)}
+
+        {/* Voice Profile (collapsible) — also home to the voice CLIP control
+            (batch-v4 #5: it left the photo row, where a second "Voice
+            Profile" label was confusing) */}
         <details className="char-profile-voice-section">
           <summary className="char-profile-label char-profile-voice-toggle">Voice Profile</summary>
           <div className="char-profile-voice-fields">
+            {renderVoiceButton(charName)}
             <label className="char-profile-label">Speech Pattern</label>
             <MiniRichText
               value={prof.speechPattern || ''}
@@ -1053,70 +1159,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           </div>
         </div>
 
-        {/* Relationships (before scenes) */}
-        {(() => {
-          const nameUpper = charName.toUpperCase();
-          const rels = characterRelationships.filter(
-            (r) => r.characterA === nameUpper || r.characterB === nameUpper
-          );
-          const isAdding = addRelFor === nameUpper;
-          return (
-            <div className="char-profile-relationships">
-              <div className="char-profile-rel-header-row">
-                <label className="char-profile-label" style={{ marginBottom: 0 }}>Relationships</label>
-                {!isAdding && (
-                  <button className="char-profile-rel-add-btn" onClick={() => setAddRelFor(nameUpper)}>+ Add</button>
-                )}
-              </div>
-              {rels.map((r) => {
-                const other = r.characterA === nameUpper ? r.characterB : r.characterA;
-                return (
-                  <div key={r.id} className="char-profile-rel-item">
-                    <div className="char-profile-rel-header">
-                      <span className="char-profile-rel-other">{other}</span>
-                      <span className="char-profile-rel-type">{r.type}</span>
-                      {r.dynamic && <span className="char-profile-rel-dynamic">{r.dynamic}</span>}
-                      <button
-                        className="char-profile-rel-remove"
-                        onClick={() => deleteCharacterRelationship(r.id)}
-                        title="Remove relationship"
-                      >&times;</button>
-                    </div>
-                    {r.description && <div className="char-profile-rel-desc">{r.description}</div>}
-                  </div>
-                );
-              })}
-              {rels.length === 0 && !isAdding && (
-                <div className="char-profile-rel-empty">No relationships defined yet</div>
-              )}
-              {isAdding && (
-                <InlineRelForm
-                  characterName={nameUpper}
-                  allCharacters={allCharacters}
-                  onSave={(rel) => {
-                    upsertCharacterRelationship(rel);
-                    setAddRelFor(null);
-                  }}
-                  onCancel={() => setAddRelFor(null)}
-                />
-              )}
-            </div>
-          );
-        })()}
-
-        {/* Scene appearances (collapsed by default) */}
-        {st && st.scenes.length > 0 && (
-          <details className="char-profile-scenes-collapsible">
-            <summary className="char-profile-label char-profile-scenes-toggle">
-              Appears in ({st.scenes.length} scenes)
-            </summary>
-            <div className="char-profile-scene-chips">
-              {st.scenes.map((s, i) => (
-                <span key={i} className="char-profile-scene-chip" onClick={() => handleNavigateToScene(s)} title={`Go to: ${s}`}>{s}</span>
-              ))}
-            </div>
-          </details>
-        )}
       </>
     );
   };
@@ -1433,6 +1475,8 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                       <div className="char-profile-detail-top char-profile-detail-stacked">
                         {renderNameFields(name)}
                         {renderImageSection(name, true)}
+                        {/* v4.26 batch-v4 #2: meta row ABOVE Description */}
+                        {renderMetaRow(name)}
                         <label className="char-profile-label">Description</label>
                         {/* minHeight 0 = no inline min-height, so the 2-line
                             clamp (CSS) sizes the box; focus restores editing
@@ -1445,7 +1489,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                           placeholder="A weary detective in his 50s, haunted by a cold case..."
                           minHeight={0}
                         />
-                        {renderMetaRow(name, true)}
                       </div>
                     ) : (
                       renderCharacterFields(name, false)

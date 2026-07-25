@@ -380,8 +380,18 @@
   border-bottom: 1px solid var(--fd-border);
   flex-shrink: 0;
   flex-wrap: wrap;   /* v4.18: Sort shares this row; wraps when the panel is narrow */
+  /* v4.26 batch-v4 #1: rows without the search's auto margin (i.e. wrapped
+     Sort/toggle rows on a narrow window) pack to the RIGHT, where those
+     controls live when everything fits on one row. */
+  justify-content: flex-end;
 }
-.char-profiles-toolbar .char-profiles-search-input { flex: 1 1 160px; }
+/* v4.26 batch-v4 #1, Derek: the search field takes 60% of the row (was
+   fill-all); left aligned, and the auto margin keeps Sort + the Cards/List
+   toggle parked at the far right. */
+.char-profiles-toolbar .char-profiles-search-input {
+  flex: 0 1 60%;
+  margin-right: auto;
+}
 /* v4.18: Sort moved onto the search row (was its own bar). */
 .char-profiles-toolbar .char-profiles-sort {
   padding: 0;
@@ -944,16 +954,12 @@
   align-items: center;
   justify-content: space-between;
 }
-.char-profile-scenes-collapsible {
-  margin: 4px 0;
-}
-.char-profile-scenes-toggle {
-  cursor: pointer;
-  user-select: none;
-  color: var(--fd-text-muted, #888);
-}
-.char-profile-scenes-toggle:hover {
-  color: var(--fd-text);
+/* v4.26 batch-v4 #4: the scenes <details> is gone — "Appears in (N)" is a
+   photo-row toggle now; its chips render as a plain block. The old
+   .char-profile-scenes-collapsible/-toggle rules left with it. */
+.char-profile-voice-btn.active {
+  border-color: var(--fd-accent);
+  color: var(--fd-accent);
 }
 .char-profile-voice-section {
   margin: 4px 0;
