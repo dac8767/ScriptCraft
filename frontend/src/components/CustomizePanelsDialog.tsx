@@ -24,14 +24,13 @@ import { buildRibbonPalette } from './ribbonPaletteData';
 import EditElementsDialog from './EditElementsDialog';
 import MoresContdsDialog from './MoresContdsDialog';
 import { showToast } from './Toast';
-import KeyboardShortcutsTab from './KeyboardShortcutsTab';
 import ThemesTab from './ThemesTab';
 import ContextMenuTab from './ContextMenuTab';
 import { QAT_OPTIONS, QAT_BY_ID, isQatDivider, isQatSpacer } from './TitleBar';
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
-  category?: 'toolbar' | 'panels' | 'elements' | 'keys' | 'themes' | 'context';
+  category?: 'toolbar' | 'panels' | 'elements' | 'themes' | 'context';
   open: boolean;
   onClose: () => void;
   /** Render only the content (no overlay/box) — used inside Preferences. */
@@ -548,7 +547,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // v4.22, Derek: default landing is the Editor tab (top of the list).
   // v4.28, Derek: the Menu Bar tab is GONE — the menus always live in the
   // macOS menu bar now; there is nothing to place or reorder in-window.
-  const [activeCat, setActiveCat] = React.useState<'toolbar' | 'qat' | 'panels' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'elements');
+  const [activeCat, setActiveCat] = React.useState<'toolbar' | 'qat' | 'panels' | 'elements' | 'themes' | 'context'>(category ?? 'elements');
 
   // v0.84: the window forgot any size you gave it and snapped back to the
   // default on reopen. CSS `resize` writes inline width/height on the element,
@@ -748,7 +747,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       // simply stack, and adding an eighth costs no width at all.
       <div className="prefs-layout fs-customize-layout">
         <div className="prefs-tabs fs-customize-tabs">
-          {([['elements', 'Editor'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['qat', 'Quick Access'], ['context', 'Context Menu'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const)
+          {([['elements', 'Editor'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['qat', 'Quick Access'], ['context', 'Context Menu'], ['themes', 'Themes']] as const)
             .map(([id, label]) => (
             <button
               key={id}
@@ -906,7 +905,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               <MoresContdsDialog embedded onClose={() => showToast('Mores & Continueds applied', 'success')} />
             </section>
           </>)}
-          {activeCat === 'keys' && <KeyboardShortcutsTab />}
           {activeCat === 'themes' && <ThemesTab />}
           {activeCat === 'context' && <ContextMenuTab />}
           {activeCat === 'panels' && renderPanelsTab()}

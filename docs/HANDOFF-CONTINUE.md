@@ -238,7 +238,25 @@ reliable; re-run before believing a weird worker failure.
 
 ## 1. Where we are right now (end of this run)
 
-### v4.29 — batch v6 on top of the template (HEAD)
+### v4.30 — batch v7 (HEAD)
+
+Derek's fixes after living with the template: (1) AssetImage keeps the
+previous image up while the next loads (slideshow flash gone — revoke the
+old blob only after the swap); (2) .char-fs-header 45→34px; (3) Keyboard
+Shortcuts tab moved Customize→Settings (openPreferences('keys');
+'customizeShortcuts' command rerouted); (4) StatusBar: "Local System -
+Saved" only renders on ERROR, and the editor readouts gate on ANY takeover
+(scrapbook OR charFullscreen — was scrapbook-only, Derek's screenshot);
+(5) HoverTooltip suppresses the tip when the element's visible text already
+contains the title (native title still stripped) — one rule, app-wide;
+(6) takeovers are mutually exclusive: NotebookTool mount lowers
+charFullscreen, enterCharFullscreen calls closeNotebook(), and the ribbon
+renders at most one "Return to Editor" (that was Derek's unreproducible
+double-button). GHOST-STORE REMINDER proved again this run: after editing
+store files, RESTART VITE before driver store access — a probe read a
+ghost editorStore and looked like a real regression.
+
+### v4.29 — batch v6 on top of the template
 
 Derek's follow-ups after seeing the template: (1) the Design field-gap knob
 now also drives the seam above Description (the stacked meta/name rows had

@@ -1,34 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../services/api';
 
 /** v4.22, Derek: asset images are served from an AUTHENTICATED endpoint, so a
  *  plain <img src> gets a 401 and shows the broken-image "?". Fetch the bytes
- *  with the auth token and hand the <img> a blob URL instead. */
+ *  with the auth token and hand the <img> a blob URL instead.
+ *  v4.30 batch-v7 #1, Derek: stepping a slideshow used to clear the url while
+ *  the next image loaded — one frame of grey placeholder, with the 1/2 count
+ *  flashing in the middle. The PREVIOUS image now stays up until the new one
+ *  is ready; the old blob URL is revoked only after the swap. */
 export const AssetImage: React.FC<{
   projectId: string; assetId: string; className?: string; alt?: string;
   onClick?: (e: React.MouseEvent) => void;
 }> = ({ projectId, assetId, className, alt, onClick }) => {
   const [url, setUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const objRef = useRef<string | null>(null);
   useEffect(() => {
     let dead = false;
-    let obj: string | null = null;
-    setUrl(null); setFailed(false);
+    setFailed(false);
     (async () => {
       try {
         // Load raw bytes and build a blob URL. This works on every backend;
         // fetching getAssetUrl directly does not, because on desktop that URL
         // is an asset:// path the webview can only load via <img src>.
         const bytes = await api.getAssetBytes(projectId, assetId);
-        obj = URL.createObjectURL(new Blob([bytes as BlobPart]));
-        if (!dead) setUrl(obj); else URL.revokeObjectURL(obj);
+        const obj = URL.createObjectURL(new Blob([bytes as BlobPart]));
+        if (dead) { URL.revokeObjectURL(obj); return; }
+        if (objRef.current) URL.revokeObjectURL(objRef.current);
+        objRef.current = obj;
+        setUrl(obj);
       } catch {
         if (!dead) setFailed(true);
       }
     })();
-    return () => { dead = true; if (obj) URL.revokeObjectURL(obj); };
+    return () => { dead = true; };
   }, [projectId, assetId]);
+  // Revoke the last blob URL only when the component leaves for good.
+  useEffect(() => () => { if (objRef.current) URL.revokeObjectURL(objRef.current); }, []);
   if (failed) return <div className={`char-profile-image-broken ${className ?? ''}`} title="Image unavailable">!</div>;
   if (!url) return <div className={`char-profile-image-loading ${className ?? ''}`} />;
   return <img src={url} className={className} alt={alt} onClick={onClick} />;

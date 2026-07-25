@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
-import { FaSlidersH, FaColumns, FaFileAlt, FaRulerCombined, FaCog, FaCloudUploadAlt } from 'react-icons/fa';
+import { FaSlidersH, FaColumns, FaFileAlt, FaRulerCombined, FaCog, FaCloudUploadAlt, FaKeyboard } from 'react-icons/fa';
 import { applyDraftNumber } from './SetDraftDialog';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -10,6 +10,7 @@ import ScriptFormatPreferencesDialog from './ScriptFormatPreferencesDialog';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
 import SettingsPage from './SettingsPage';
 import { showToast } from './Toast';
+import KeyboardShortcutsTab from './KeyboardShortcutsTab';
 import { downloadBackup, applyBackup, readFileText } from '../utils/settingsBackup';
 import { confirmDialog } from './ConfirmDialog';
 import { spellChecker, BUILTIN_LANGUAGE } from '../editor/spellchecker';
@@ -35,7 +36,7 @@ import { redirectUri } from '../services/oauthPkce';
    points (where they still exist) edit exactly the same state.
    ───────────────────────────────────────────────────────────────────────── */
 
-type PrefTab = 'general' | 'layout' | 'formats' | 'page' | 'saveloc' | 'system';
+type PrefTab = 'general' | 'layout' | 'formats' | 'page' | 'keys' | 'saveloc' | 'system';
 
 const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   // App-wide first, then writing setup, then data, then system.
@@ -44,6 +45,9 @@ const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   { id: 'layout', label: 'Customize', icon: <FaColumns /> },
   { id: 'formats', label: 'Templates', icon: <FaFileAlt /> },
   { id: 'page', label: 'Page Setup', icon: <FaRulerCombined /> },
+  /* v4.30 batch-v7 #3, Derek: hotkeys are behavior, not workspace layout —
+     moved here from Customize. */
+  { id: 'keys', label: 'Keyboard Shortcuts', icon: <FaKeyboard /> },
   { id: 'system', label: 'System', icon: <FaCog /> },
 ];
 
@@ -717,6 +721,7 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
             {tab === 'page' && (
               <PageSetupDialog embedded onClose={() => showToast('Page setup applied', 'success')} />
             )}
+            {tab === 'keys' && <KeyboardShortcutsTab />}
             {tab === 'saveloc' && <SaveLocationsTab editor={editor ?? null} />}
             {tab === 'system' && <SettingsPage embedded />}
           </div>

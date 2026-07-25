@@ -43,10 +43,13 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
   const getActiveTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate);
 
   const saveDisplay = SAVE_STATUS_DISPLAY[saveStatus] || SAVE_STATUS_DISPLAY.idle;
-  // With the Scrapbook open, the editor surface is the notebook — not the
-  // script — so the script-specific readouts (current element, page count,
-  // acts, runtime, revision, goal) don't apply. File + account info stays.
+  // With a takeover surface up (Scrapbook, Characters fullscreen) the editor
+  // isn't what's on screen — the script-specific readouts (current element,
+  // page count, acts, runtime, revision, goal) don't apply. File + account
+  // info stays. (v4.30 batch-v7 #4: used to check only the Scrapbook.)
   const scrapbookActive = useNotebookStore((s) => s.notebookOpen);
+  const charFullscreenActive = useEditorStore((s) => s.charFullscreen);
+  const takeoverActive = scrapbookActive || charFullscreenActive;
 
   const elementLabel = useMemo(() => {
     const builtIn = (ELEMENT_LABELS as Record<string, string>)[activeElement as BuiltInElementType];
@@ -105,7 +108,10 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
           {documentTitle || 'Untitled'}
           {draftLabel && <span className="status-draft"> - {draftLabel}</span>}
         </span>
-        {saveDisplay.label && (
+        {/* v4.30 batch-v7 #4, Derek: no "Local System - Saved" chatter — saving
+            is the normal state. A FAILURE still shows (hiding that would be a
+            silent no-op); mirror chips below are other locations and stay. */}
+        {saveStatus === 'error' && saveDisplay.label && (
           <>
             <span className="status-sep">&middot;</span>
             <span className={`status-item ${saveDisplay.className}`} title="Home save location">
@@ -126,14 +132,14 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
         ))}
       </div>
       <div className="status-center">
-        {!scrapbookActive && (
+        {!takeoverActive && (
         <span className="status-item status-element">
           {elementLabel}
         </span>
         )}
       </div>
       <div className="status-right">
-        {!scrapbookActive && <>
+        {!takeoverActive && <>
         {goal && goalProgress && (
           <button
             className={`status-item status-goal${goalProgress.done ? ' done' : ''}`}

@@ -78,6 +78,13 @@ export default function HoverTooltip() {
       activeRef.current = el;
       el.setAttribute(STASH_ATTR, text);
       el.removeAttribute('title');
+      // v4.30 batch-v7 #5, Derek: when the control already SPELLS OUT its
+      // title (a dock row reading "Characters", any labeled button), a
+      // tooltip repeating it is noise — the native title is still stripped
+      // (above), we just never show our tip for it. One rule, app-wide.
+      const visible = (el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      const wanted = text.replace(/\s+/g, ' ').trim().toLowerCase();
+      if (visible && wanted && visible.includes(wanted)) return;
       timerRef.current = setTimeout(() => {
         // The node may have left the DOM while we waited.
         if (activeRef.current === el && el.isConnected) show(el, text);

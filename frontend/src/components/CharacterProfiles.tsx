@@ -18,6 +18,7 @@ import { toTitleCaseName, lastNameOf, joinName, escapeRegExp } from '../utils/ch
 import { buildScanList, filterScanList, type ScannedCharacter } from '../utils/characterScan';
 import { InlineRelForm, REL_DYNAMICS } from './InlineRelForm';
 import { AssetImage, AssetAudio, ImageSourceMenu } from './CharacterAssetMedia';
+import { closeNotebook } from './NotebookTool';
 import { promptDialog } from './ConfirmDialog';
 
 // Default colors for auto-assignment (VIBGYOR palette)
@@ -48,6 +49,9 @@ function enterCharFullscreen() {
   if (s.activeTool === 'characters') s.setActiveTool(null);
   if (s.activeToolRight === 'characters') s.setActiveToolRight(null);
   if (s.tempTool === 'characters') s.setTempTool(null);
+  // v4.30 batch-v7 #6: takeovers are exclusive — lower the Scrapbook surface
+  // (it also owns a ribbon "Return to Editor"; two takeovers meant two).
+  closeNotebook();
   s.setCharFullscreen(true);
 }
 

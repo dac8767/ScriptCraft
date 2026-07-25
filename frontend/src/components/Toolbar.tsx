@@ -1945,8 +1945,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         </>
       )}
       {/* v4.16, Derek: the Character tool's fullscreen mirrors the Scrapbook —
-          a "Return to Editor" section in the ribbon (same styling). */}
-      {charFullscreen && (
+          a "Return to Editor" section in the ribbon (same styling).
+          v4.30 #6: the takeovers are mutually exclusive at the store level
+          now, but never render two Return buttons even if a stale state
+          slips through — the Scrapbook's wins. */}
+      {charFullscreen && !scrapbookOpen && (
         <>
           {leftLive.length > 0 && <div className="toolbar-separator rib-section-sep" />}
           <div className="rib-section rib-scrapbook-sec">

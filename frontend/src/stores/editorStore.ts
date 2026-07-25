@@ -1043,8 +1043,8 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    *  Words/Pages/Time tabs render in the window HEADER (chrome slot). */
   goalKind: 'words' | 'pages' | 'time';
   setGoalKind: (v: 'words' | 'pages' | 'time') => void;
-  preferencesRequest: { open: boolean; tab?: 'saveloc' };
-  openPreferences: (tab?: 'saveloc') => void;
+  preferencesRequest: { open: boolean; tab?: 'saveloc' | 'keys' };
+  openPreferences: (tab?: 'saveloc' | 'keys') => void;
   closePreferences: () => void;
   /** Toolbar customization: hidden built-in buttons + pinned tool shortcuts */
   toolbarHiddenItems: string[];  toolbarPinnedTools: ToolId[];  /** Active writing goal (words / pages / time), persisted across reloads */

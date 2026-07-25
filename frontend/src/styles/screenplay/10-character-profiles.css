@@ -265,7 +265,8 @@
 .char-fs-header {
   padding-top: 0;
   padding-bottom: 0;
-  min-height: 45px;
+  /* v4.30 batch-v7 #2, Derek: 45px left too much air above the tabs row */
+  min-height: 34px;
 }
 /* the Relationship Map's toolbar, portalled into the rels toolbar slot —
    flatten it (no floating box). */

@@ -393,7 +393,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const [pageSetupOpen, setPageSetupOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [customizeTab, setCustomizeTab] =
-    useState<'toolbar' | 'panels' | 'elements' | 'keys' | 'themes' | 'context'>('elements');
+    useState<'toolbar' | 'panels' | 'elements' | 'themes' | 'context'>('elements');
   const openCustomize = (tab: typeof customizeTab) => {
     setCustomizeTab(tab);
     setCustomizeOpen(true);
@@ -578,7 +578,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       switch (id) {
         case 'customize': openCustomize('elements'); break;
         case 'customizeContextMenu': openCustomize('context'); break;
-        case 'customizeShortcuts': openCustomize('keys'); break;
+        // v4.30 #3: hotkeys live in Settings now
+        case 'customizeShortcuts': useEditorStore.getState().openPreferences('keys'); break;
         case 'setDraft': setDraftDialogOpen(true); break;
         case 'rename': setRenameOpen(true); break;
         case 'takeSnapshot': handleCheckinOpen(); break;

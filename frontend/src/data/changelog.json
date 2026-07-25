@@ -1,5 +1,47 @@
 [
   {
+    "version": "4.30",
+    "date": "2026-07-25",
+    "items": [
+      {
+        "title": "Smooth image slideshow",
+        "detail": "Stepping through a character's images no longer flashes — the current picture stays up until the next one is ready.",
+        "tags": [
+          "Fix"
+        ]
+      },
+      {
+        "title": "Quieter footer",
+        "detail": "The status bar no longer announces “Local System - Saved” (a save failure still shows). The current element, runtime and page readouts appear only while the editor itself is on screen — not under the Scrapbook or Characters fullscreen.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "Keyboard Shortcuts moved to Settings",
+        "detail": "Editing hotkeys now lives in Settings > Keyboard Shortcuts (it left Customize). The Help window's shortcut list links straight to it.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "No redundant tooltips",
+        "detail": "Controls that already spell out their name (like the side-panel tool rows) no longer pop a tooltip repeating it. Icon-only buttons keep theirs.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "One takeover at a time",
+        "detail": "Opening the Scrapbook now closes Characters fullscreen and vice versa — the ribbon can no longer end up with two “Return to Editor” buttons. The Characters fullscreen title bar is also tighter above the tabs.",
+        "tags": [
+          "Fix",
+          "UI"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.29",
     "date": "2026-07-25",
     "items": [

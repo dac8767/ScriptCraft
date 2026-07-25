@@ -141,15 +141,16 @@ export default function HelpReferenceDialog({ kind, open, onClose }: Props) {
         </div>
         {kind === 'shortcuts' && (
           <div className="dialog-footer">
-            {/* This window LISTS the shortcuts; changing them lives in Customize
-                (v0.85). Sends the user straight to the right tab. */}
+            {/* This window LISTS the shortcuts; changing them lives in
+                Settings (v4.30 — moved out of Customize). Sends the user
+                straight to the right tab. */}
             <button
               className="dialog-btn-primary"
               onClick={() => {
                 window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customizeShortcuts' }));
                 onClose();
               }}
-            >Customize Keyboard Shortcuts...</button>
+            >Edit Keyboard Shortcuts...</button>
           </div>
         )}
       </div>
