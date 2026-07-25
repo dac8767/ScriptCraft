@@ -728,3 +728,10 @@
 .fs-scenes-takeover .ic-reorder-bar {
   background: var(--fd-bg);
 }
+/* v4.34: the takeover hosts the full ScenesTool body (View switches between
+   list and cards inside fullscreen). The list keeps the takeover background;
+   its fill/width comes from the shared .scene-navigator-embed rule in
+   20-tool-dock.css. */
+.fs-scenes-takeover .scene-navigator {
+  background: var(--fd-bg);
+}

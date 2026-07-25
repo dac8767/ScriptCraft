@@ -1004,12 +1004,10 @@ export function ScenesReorderControl() {
 }
 
 /** v4.32 batch-v8 #8: the fullscreen button, moved from the deleted in-body
- *  count row to the row-1 window actions zone (the template slot). Cards view
- *  only — the takeover shows the card wall, same scope the old in-cards
- *  button had. */
+ *  count row to the row-1 window actions zone (the template slot).
+ *  v4.34: available in BOTH views — the takeover hosts the full ScenesTool
+ *  body with the View switch, so fullscreen from the list opens the list. */
 export function ScenesWindowActions() {
-  const mode = useEditorStore((s) => s.scenesViewMode);
-  if (mode !== 'cards') return null;
   return (
     <button
       className="char-profiles-fullscreen-btn"

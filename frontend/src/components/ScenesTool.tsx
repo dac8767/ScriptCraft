@@ -6,7 +6,7 @@
 // is just the body.
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
-import SceneNavigator, { SceneTitleExtra, ScenesReorderControl } from './SceneNavigator';
+import SceneNavigator, { SceneTitleExtra, SceneControls } from './SceneNavigator';
 import IndexCards from './IndexCards';
 import { ChromeRow2 } from './ToolControls';
 
@@ -33,10 +33,11 @@ export function ScenesTool({ editor, scrollContainer }: {
  *  button and all) with no way out. Like the Characters takeover it fills
  *  ONLY the editor area (`.editor-center` swaps it in), so the toolbar's
  *  "Return to Editor" stays reachable, and its own header carries a close ×.
- *  The header reuses the window template rows: title + count (the same
- *  SceneTitleExtra the window renders) and the Reorder control — one source
- *  for each, no drift. Fullscreen is definitionally the card wall, so there
- *  is no View switch here. */
+ *  v4.34, Derek: the row-2 cluster is the SAME SceneControls the window has
+ *  (Filter / Reorder / View / Search) over the SAME ScenesTool body — the
+ *  takeover is simply the window's content given the whole editor area, so
+ *  you can switch views, filter, and search without leaving fullscreen.
+ *  One source for every piece, no drift. */
 export function ScenesFullscreen({ editor, scrollContainer }: {
   editor: Editor | null;
   scrollContainer?: HTMLDivElement | null;
@@ -55,9 +56,9 @@ export function ScenesFullscreen({ editor, scrollContainer }: {
         </span>
       </div>
       <ChromeRow2 tabs={[]} className="tool-chrome-row2">
-        <ScenesReorderControl />
+        <SceneControls />
       </ChromeRow2>
-      <IndexCards editor={editor} scrollContainer={scrollContainer ?? null} />
+      <ScenesTool editor={editor} scrollContainer={scrollContainer} />
     </div>
   );
 }

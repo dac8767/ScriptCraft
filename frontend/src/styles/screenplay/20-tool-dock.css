@@ -578,11 +578,13 @@
 }
 .tool-window-resize:hover { opacity: 1; }
 
-/* Embedded former left-panel views fill the window — floating AND inline, so
-   the scene list grows with the body when the tool is resized taller (rather
-   than sitting at content height and leaving dead space above the footer). */
+/* Embedded former left-panel views fill the window — floating AND inline
+   (and the Scenes fullscreen takeover, which hosts the same body — v4.34),
+   so the scene list grows with the body when the tool is resized taller
+   (rather than sitting at content height and leaving dead space). */
 .tool-window .scene-navigator-embed,
-.tool-inline-body .scene-navigator-embed {
+.tool-inline-body .scene-navigator-embed,
+.fs-scenes-takeover .scene-navigator-embed {
   display: flex;
   flex-direction: column;
   flex: 1;

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.33 — the window-standard sweep + Notes/Navigator split)
+# ScriptCraft — continuation brief (current as of v4.34 — the window-standard sweep + Notes/Navigator split)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -237,6 +237,28 @@ reliable; re-run before believing a weird worker failure.
 ---
 
 ## 1. Where we are right now (end of this run)
+
+### v4.34 — Scenes fullscreen carries the full View cluster (HEAD)
+
+Derek: "the full screen version of Scenes does not display the view
+options." The takeover's row 2 is now the SAME SceneControls the window has
+(Filter / Reorder / View / Search) over the SAME ScenesTool body — switch
+List/Cards, filter, and search inside fullscreen; ScenesWindowActions lost
+its cards-only gate (fullscreen opens from either view, showing that view).
+CSS: `.fs-scenes-takeover .scene-navigator-embed` joined the embed-fill rule
+in 20-tool-dock.css. My v4.32 assumption that "fullscreen is definitionally
+the card wall" was wrong — the takeover is the window's content given the
+whole editor area, nothing less.
+
+**Sandbox-rollback incident (know this):** this session's sandbox was
+restored from an old filesystem snapshot mid-run — local HEAD, files, and
+the task list silently rewound to v4.28-era while origin still had
+everything. Symptom: a file read showing long-deleted code. Fix: `git fetch`
+to see the TRUE remote, then `git reset --hard origin/claude/v0_32` (plain
+fast-forward semantics — no force-push needed, nothing was lost upstream).
+If a file ever looks impossibly old, check `git log origin/claude/v0_32`
+BEFORE editing anything.
+
 
 ### v4.33 — Notes/To-Do are general-only; script notes edit on the highlight (HEAD)
 

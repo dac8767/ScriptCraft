@@ -1,5 +1,18 @@
 [
   {
+    "version": "4.34",
+    "date": "2026-07-25",
+    "items": [
+      {
+        "title": "Scenes fullscreen shows the View options",
+        "detail": "The fullscreen takeover now carries the same control cluster as the Scenes window — Filter, Reorder, View, and Search — over the same body, so you can switch between List and Cards (and filter or search the list) without leaving fullscreen. The fullscreen button is available from both views now, not just Cards.",
+        "tags": [
+          "Scenes"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.33",
     "date": "2026-07-25",
     "items": [
