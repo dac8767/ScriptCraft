@@ -7,7 +7,8 @@ import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../util
 import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
 import SynopsisModal from './SynopsisModal';
-import { FilterIcon } from './uiIcons';
+import { ControlDropdown, ControlSearch } from './ToolControls';
+import { LuLayoutGrid, LuList } from 'react-icons/lu';
 
 interface SceneNavigatorProps {
   editor: Editor | null;
@@ -206,10 +207,10 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   // Expanded scene (shows synopsis inline)
   const [expandedSceneIdx, setExpandedSceneIdx] = useState<number | null>(null);
 
-  // v3.54, Derek: the search + filters now live in the store — the window's
-  // header popover (count + filters) and its footer (search) render them
-  // outside this body. The body just reads them and publishes the derived
-  // option lists + count back (setSceneNavData) for the header to show.
+  // v3.54, Derek: the search + filters live in the store — the window chrome
+  // (SceneTitleExtra count, SceneControls cluster) renders them outside this
+  // body. The body just reads them and publishes the derived option lists +
+  // count back (setSceneNavData) for the chrome to show.
   const searchQuery = useEditorStore((s) => s.sceneSearch);
   const sceneFilters = useEditorStore((s) => s.sceneFilters);
   const setSceneNavData = useEditorStore((s) => s.setSceneNavData);
@@ -496,9 +497,10 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     }, [] as number[]);
   }, [scenes, sceneDetails, searchQuery, filterCharacters, filterLocation, filterPrefix, filterTime, filterColor, filterSynopsis, hasActiveFilter]);
 
-  // v3.54: publish the count + filter option lists for the window's header
-  // popover, which renders outside this body. Scenes view only (the Pages /
-  // Locations tools share this component but have no such header).
+  // v3.54: publish the count + filter option lists for the window chrome
+  // (SceneTitleExtra / SceneControls), which renders outside this body. Scenes
+  // view only (the Pages / Locations tools share this component but have no
+  // such chrome).
   useEffect(() => {
     if (activeTab !== 'scenes') return;
     setSceneNavData({
@@ -621,9 +623,9 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     <div className="scene-navigator scene-navigator-embed">
 
       {/* ── Scenes tab ───────────────────────────────────────────────── */}
-      {/* v3.54, Derek: the title/count/filter now live in the window HEADER
-          (SceneHeaderExtra) and the search in the FOOTER (SceneFooter). The
-          body is just the list. */}
+      {/* v4.27, Derek: the count sits beside the window title
+          (SceneTitleExtra) and filter/view/search in the row-2 cluster
+          (SceneControls). The body is just the list. */}
       {activeTab === 'scenes' && (
           <div className="navigator-list">
             {filteredIndices.length === 0 ? (
@@ -914,24 +916,46 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   );
 };
 
-// ── Window-chrome slots (v3.54, Derek) ──────────────────────────────────
-// The Scenes tool's count + filter render in the window HEADER and its search
-// in the FOOTER, matching the other tool windows. State lives in the store so
-// these — rendered outside the tool body — stay in sync with the list. The
-// COLORS list mirrors the old in-body filter panel.
+// ── Window-chrome slots (v4.27, Derek's window template) ────────────────
+// TOOL_CHROME (ToolDock) wires these two: SceneTitleExtra fills the
+// TitleExtra slot (count beside the centered row-1 title) and SceneControls
+// the Controls slot (row-2 Filter / View / Search cluster). State lives in
+// the store so these — rendered outside the tool body — stay in sync with
+// the list. The COLORS list mirrors the old in-body filter panel.
 
 const SCENE_FILTER_COLORS = ['', ...SCENE_SWATCH_COLORS];
 
-export function SceneHeaderExtra() {
+// One source for "how many filter dimensions are set" — the Filter chip shows
+// the number; the title count and Clear All only care that it's non-zero.
+// Each picked character counts individually.
+function countActiveFilters(f: SceneFilters): number {
+  return f.characters.length + (f.location ? 1 : 0) + (f.prefix ? 1 : 0) +
+    (f.time ? 1 : 0) + (f.color ? 1 : 0) + (f.synopsis ? 1 : 0);
+}
+
+/** v4.27 template TitleExtra slot: the scene count beside the window title. */
+export function SceneTitleExtra() {
+  const data = useEditorStore((s) => s.sceneNavData);
+  const filters = useEditorStore((s) => s.sceneFilters);
+  const search = useEditorStore((s) => s.sceneSearch);
+  const hasActiveFilter = countActiveFilters(filters) > 0;
+  return <span className="tool-title-count">· {(hasActiveFilter || search) ? `${data.filtered}/` : ''}{data.total}</span>;
+}
+
+/** v4.27 template Controls slot: the row-2 Filter / View / Search cluster. */
+export function SceneControls() {
   const data = useEditorStore((s) => s.sceneNavData);
   const filters = useEditorStore((s) => s.sceneFilters);
   const setFilters = useEditorStore((s) => s.setSceneFilters);
   const search = useEditorStore((s) => s.sceneSearch);
-  // v4.24 batch 7: in the merged tool's Cards view the filter drives nothing
-  // (it filters the LIST) — showing it there would be a silent no-op. Keep
-  // the count, hide the control.
-  const cardsView = useEditorStore((s) => s.scenesViewMode === 'cards');
-  const hasActiveFilter = filters.characters.length > 0 || !!filters.location || !!filters.prefix || !!filters.time || !!filters.color || !!filters.synopsis;
+  const setSearch = useEditorStore((s) => s.setSceneSearch);
+  const mode = useEditorStore((s) => s.scenesViewMode);
+  const setMode = useEditorStore((s) => s.setScenesViewMode);
+  // Filter + search drive the scene LIST — in Cards view they'd be silent
+  // no-ops, so they hide. Only View survives the switch.
+  const cardsView = mode === 'cards';
+  const activeCount = countActiveFilters(filters);
+  const hasActiveFilter = activeCount > 0;
   const patch = (p: Partial<SceneFilters>) => setFilters({ ...filters, ...p });
 
   const [open, setOpen] = useState(false);
@@ -960,16 +984,16 @@ export function SceneHeaderExtra() {
 
   return (
     <>
-      <span className="scene-count-label">Scenes: <span className="scene-count">{(hasActiveFilter || search) ? `${data.filtered}/` : ''}{data.total}</span></span>
-      {!cardsView && <span className="fs-nav-filterctl">
+      {!cardsView && <>
       <button
         ref={btnRef}
-        className={`fs-nav-filterbtn${hasActiveFilter ? ' active' : ''}`}
-        title="Filter scenes"
+        className={`tool-ctl${open ? ' open' : ''}`}
+        title="Filter"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={toggle}
       >
-        <FilterIcon filled={hasActiveFilter} />
+        <span className="tool-ctl-label">Filter</span>
+        {activeCount > 0 && <span className="tool-ctl-chip">{activeCount}</span>}
       </button>
       {open && pos && createPortal(
         <div className="fs-scene-filterpop scene-filters" style={{ top: pos.top, left: pos.left }}>
@@ -1034,32 +1058,18 @@ export function SceneHeaderExtra() {
         </div>,
         document.body,
       )}
-      </span>}
-    </>
-  );
-}
-
-export function SceneFooter() {
-  const search = useEditorStore((s) => s.sceneSearch);
-  const setSearch = useEditorStore((s) => s.setSceneSearch);
-  // v4.24 batch 7: the footer search filters the scene LIST — in the merged
-  // tool's Cards view it drives nothing, so it hides rather than no-op.
-  const cardsView = useEditorStore((s) => s.scenesViewMode === 'cards');
-  if (cardsView) return null;
-  return (
-    <div className="navigator-search navigator-search--footer">
-      <svg className="navigator-search-icon" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <circle cx="6.5" cy="6.5" r="5" /><line x1="10" y1="10" x2="14.5" y2="14.5" />
-      </svg>
-      <input
-        className="navigator-search-input"
-        type="text"
-        placeholder="Search headings & synopses..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
+      </>}
+      <ControlDropdown
+        title="View"
+        current={cardsView ? 'Cards' : 'List'}
+        icon={cardsView ? <LuLayoutGrid /> : <LuList />}
+        items={[
+          { label: 'List', active: !cardsView, onSelect: () => setMode('list') },
+          { label: 'Cards', active: cardsView, onSelect: () => setMode('cards') },
+        ]}
       />
-      {search && <button className="navigator-search-clear" onClick={() => setSearch('')}>×</button>}
-    </div>
+      {!cardsView && <ControlSearch value={search} onChange={setSearch} placeholder="Search headings & synopses..." />}
+    </>
   );
 }
 

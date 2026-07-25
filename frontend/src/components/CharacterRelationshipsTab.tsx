@@ -1,17 +1,15 @@
 // v4.24: the Character tool's Relationships tab (List/Map), extracted from
 // CharacterProfiles (component split step 2). Owns its map-toolbar portal slot
-// (used nowhere else); the relationship data actions come in as props. The
-// List/Map toggle STATE stays in the parent — the fullscreen header renders its
-// own copy of the toggle next to the close X.
+// (used nowhere else); the relationship data actions come in as props.
+// v4.27: the List/Map choice is the window chrome's View dropdown now
+// (CharControls, store-held) — this tab just renders whichever view is set.
 import { useState } from 'react';
 import type { CharacterRelationship } from '../stores/editorStore';
 import { RelationshipMap } from './RelationshipMap';
 import { REL_TYPES, REL_DYNAMICS } from './InlineRelForm';
 
 interface CharacterRelationshipsTabProps {
-  isFullscreen: boolean;
   relViewMode: 'list' | 'map';
-  setRelViewMode: (m: 'list' | 'map') => void;
   currentScriptId: string | null;
   characterRelationships: CharacterRelationship[];
   upsertCharacterRelationship: (rel: CharacterRelationship) => void;
@@ -22,7 +20,7 @@ interface CharacterRelationshipsTabProps {
 }
 
 export function CharacterRelationshipsTab({
-  isFullscreen, relViewMode, setRelViewMode, currentScriptId,
+  relViewMode, currentScriptId,
   characterRelationships, upsertCharacterRelationship, deleteCharacterRelationship,
   existingCharNames, onSelectCharacter,
 }: CharacterRelationshipsTabProps) {
@@ -36,14 +34,6 @@ export function CharacterRelationshipsTab({
 
   return (
     <div className="char-rels-tab">
-      {/* Non-fullscreen carries the List/Map toggle here (fullscreen puts it
-          in the header, next to the close X, like Profiles' Cards/List). */}
-      {!isFullscreen && (
-        <div className="char-rels-view-toggle">
-          <button className={`char-fs-view-btn${relViewMode === 'list' ? ' active' : ''}`} onClick={() => setRelViewMode('list')}>List</button>
-          <button className={`char-fs-view-btn${relViewMode === 'map' ? ' active' : ''}`} onClick={() => setRelViewMode('map')}>Map</button>
-        </div>
-      )}
       {relViewMode === 'map' ? (
         <>
           {/* The map's Fit / + Add Relationship buttons portal into this

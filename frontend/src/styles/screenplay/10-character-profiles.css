@@ -214,27 +214,8 @@
 .char-fs-list-mode .char-profile-scene-chip {
   max-width: none;
 }
-/* Cards/List view toggle */
-.char-fs-view-toggle {
-  display: flex;
-  gap: 2px;
-  background: var(--fd-input-bg);
-  border-radius: 4px;
-  padding: 2px;
-}
-.char-fs-view-btn {
-  padding: 3px 10px;
-  background: transparent;
-  border: none;
-  border-radius: 3px;
-  color: var(--fd-text-muted);
-  font-size: 11px;
-  cursor: pointer;
-}
-.char-fs-view-btn.active {
-  background: var(--fd-accent);
-  color: #fff;
-}
+/* (v4.27: the Cards/List and List/Map segmented toggles are gone — every
+   view choice is the chrome cluster's View dropdown now.) */
 .char-profiles-header {
   display: flex;
   align-items: center;
@@ -265,25 +246,8 @@
   line-height: 1;
 }
 .char-profiles-close:hover { color: var(--fd-text); }
-/* v4.24 batch-v2 #6: the count shown in the tool-window/dock title bar
-   (CharactersHeaderExtra) — same quiet look as the Scenes count. */
-.char-hdr-count {
-  font-size: 12px;
-  color: var(--fd-text-muted);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-/* v4.25 batch-v3 #1, Derek: Characters' header extras (count + fullscreen)
-   sit at the RIGHT of the window/dock title bar, against the close button.
-   Scoped by :has so other tools' extras keep their places. */
-.tool-window-header-extra:has(.char-hdr-count),
-.tool-inline-header-extra:has(.char-hdr-count) {
-  margin-left: auto;
-  display: inline-flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 6px;
-}
+/* (v4.27: .char-hdr-count and its :has() right-align rules are gone — the
+   count is the shared .tool-title-count beside the centered title now.) */
 .char-profiles-fullscreen-btn {
   background: none;
   border: none;
@@ -294,63 +258,17 @@
   line-height: 1;
 }
 .char-profiles-fullscreen-btn:hover { color: var(--fd-text); }
-/* ── v4.18, Derek: fullscreen header — one row: title, then Profiles/Map tabs
-   ~50px past it, then the tab's actions and the close X hard right. ────────── */
-.char-fs-header .char-profiles-count { display: none; }
-/* v4.25, Derek: no gap between the active tab and the surface below — the tabs
-   sit ON the header's bottom edge, exactly like the docked tab track. The
-   header drops its vertical padding (min-height keeps the row's height, and
-   everything else stays vertically centered) so the tab container can stretch
-   to the bottom border; the tabs' -1px margin then overlaps that border and
-   the active tab's navigator-colored border-bottom masks it. */
+/* ── v4.27, Derek's window template: the fullscreen header is row 1 of the
+   template — three .tool-window-zone spans (20-tool-dock.css), title + count
+   centered, close right. Tabs left it for row 2 (.tool-chrome-row2-tabbed,
+   shared with the tool-window frame). ────────────────────────────────────── */
 .char-fs-header {
   padding-top: 0;
   padding-bottom: 0;
   min-height: 45px;
 }
-/* v4.25 batch-v3 #7, Derek: 3-zone header — tabs LEFT (this zone), title
-   centered between the two equal flex zones, actions right. */
-.char-fs-header-tabs {
-  display: flex;
-  flex: 1 1 0;
-  min-width: 0;
-  align-self: stretch;     /* reach the header's bottom edge */
-  align-items: flex-end;   /* tab bottoms sit on it (was: centered pills) */
-  gap: 4px;
-}
-.char-fs-header .char-profiles-title { flex: 0 0 auto; }
-/* v4.23, Derek: same file-tab shape in the fullscreen header. */
-.char-fs-header-tabs .char-profiles-tab {
-  background: var(--fd-overlay-light, rgba(255, 255, 255, 0.04));
-  color: var(--fd-text-muted);
-  border: 1px solid var(--fd-border);
-  border-bottom: none;
-  border-radius: 8px 8px 0 0;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 5px 14px;
-  cursor: pointer;
-  white-space: nowrap;
-  margin-bottom: -1px;
-}
-.char-fs-header-tabs .char-profiles-tab:hover { color: var(--fd-text); }
-.char-fs-header-tabs .char-profiles-tab.active {
-  background: var(--fd-navigator-bg);
-  color: var(--fd-text);
-  font-weight: 600;
-  border-bottom: 1px solid var(--fd-navigator-bg);
-}
-.char-fs-header-actions {
-  flex: 1 1 0;            /* the right zone of the 3-zone header (batch-v3 #7) */
-  min-width: 0;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 12px;
-}
-/* the Relationship Map's toolbar, portalled into the header — flatten it (no
-   floating box); Fit's inline margin-left:auto collapses in the tight row. */
-.char-fs-map-actions { display: flex; align-items: center; }
+/* the Relationship Map's toolbar, portalled into the rels toolbar slot —
+   flatten it (no floating box). */
 .rel-map-toolbar.rel-map-toolbar-in-header {
   position: static;
   inset: auto;
@@ -405,9 +323,8 @@
   width: 150px;
   height: var(--dz-char-input-h, 28px); /* v4.26: field-height Design knob */
 }
-/* v4.25 batch-v3 #6, Derek: double the sort dropdown in fullscreen (the side
-   panel keeps 150px — a 300px control wouldn't fit its 300px width). */
-.char-profiles-fullscreen .char-profiles-toolbar .char-sort-select { width: 300px; }
+/* (v4.25's 300px fullscreen sort select is gone — fullscreen sorts via the
+   cluster's Sort dropdown now; this toolbar only renders in the overlay.) */
 .char-profiles-build-btn {
   padding: 0 10px;
   height: 28px;
@@ -520,18 +437,6 @@
 .char-unmatched-add:hover { background: rgba(74,158,255,.1); border-color: var(--fd-accent); }
 /* ── v4.20, Derek: Relationships tab — editable list of every relationship. ── */
 .char-rels-tab { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
-/* v4.23, Derek: List/Map toggle inside Relationships (non-fullscreen). Reuses
-   the .char-fs-view-btn styling; the row itself sits above the toolbar/map. */
-.char-rels-view-toggle {
-  display: flex;
-  gap: 2px;
-  align-self: flex-start;
-  margin: 10px 12px 0;
-  background: var(--fd-input-bg);
-  border-radius: 4px;
-  padding: 2px;
-  flex-shrink: 0;
-}
 .char-rels-toolbar { padding: 10px 12px; border-bottom: 1px solid var(--fd-border); flex-shrink: 0; }
 /* v4.23, Derek: "From Script" tab — one "Scan Script" section (Build from Script
    + Referred in Script folded into a single reviewable scan list). */
@@ -1277,9 +1182,13 @@
   border-radius: 8px 8px 0 0;
   cursor: pointer;
   margin-bottom: -1px;   /* overlap the track's bottom border */
+  white-space: nowrap;   /* v4.27: tabs live in flexible chrome rows now */
   transition: background 0.1s, color 0.1s;
 }
 .char-profiles-tab:hover { color: var(--fd-text); }
+/* v4.27: in the 300px dock column the three tabs need slimmer shoulders to
+   fit the inline header's width (floating/fullscreen keep the roomy 16px). */
+.tool-inline-header .char-profiles-tab { padding: 6px 10px; }
 .char-profiles-tab.active {
   background: var(--fd-navigator-bg);
   color: var(--fd-text);

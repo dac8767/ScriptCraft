@@ -871,7 +871,7 @@ export function closeNotebook() {
 }
 
 /** v2.05: "Pages" + the create buttons live in the window's HEADER (the
- *  chrome's TOOL_HEADER_EXTRAS slot), not in the panel body. */
+ *  chrome's TOOL_CHROME Controls slot), not in the panel body. */
 export function NotebookHeaderExtra() {
   const { addPage, addSection } = useNotebookStore.getState();
   // v2.35, Derek: the declutter toggle lives HERE now, not in Settings.

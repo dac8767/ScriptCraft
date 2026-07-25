@@ -11,39 +11,12 @@
 }
 .navigator-title { font-weight: 700; font-size: var(--dz-nav-title-font, 13px); text-transform: uppercase; letter-spacing: .5px; color: var(--fd-text); }
 .scene-count { font-size: 12px; color: var(--fd-text-secondary, var(--fd-text)); opacity: 0.7; }
-/* Scenes tool window header: "Scenes: N" sits at the LEFT edge; the filter
-   funnel stays right-aligned (it lives in the flex:1 .fs-nav-filterctl beside
-   this label). The label owns the dimming so the count reads at one weight. */
-.scene-count-label { font-size: 12px; color: var(--fd-text-secondary, var(--fd-text)); opacity: 0.7; white-space: nowrap; flex-shrink: 0; }
-.scene-count-label .scene-count { opacity: 1; }
 /* (The header/content top strip is gone app-wide now — see .tool-inline-body
    in 22-tools-extra.css — so the Scenes-only override that lived here is no
    longer needed.) */
-/* Search bar — inside scroll area; scrolls away on scroll-down, pins on scroll-up */
-.navigator-search {
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 14px; border-bottom: 1px solid var(--fd-border);
-}
-.navigator-search--pinned {
-  position: sticky; top: 0; z-index: 2;
-  background: var(--fd-navigator-bg);
-}
-.navigator-search-icon {
-  flex-shrink: 0; opacity: 0.4;
-}
-.navigator-search-input {
-  flex: 1; min-width: 0;
-  background: transparent; border: none; outline: none;
-  color: var(--fd-text); font-size: 13px;
-  padding: 4px 0;
-}
-.navigator-search-input::placeholder { color: var(--fd-text-muted); opacity: 0.6; }
-.navigator-search-clear {
-  background: none; border: none; color: var(--fd-text-muted); cursor: pointer;
-  font-size: 16px; line-height: 1; padding: 0 2px; opacity: 0.6;
-}
-.navigator-search-clear:hover { opacity: 1; color: var(--fd-text); }
-/* Search highlight */
+/* (v4.27: the .scene-count-label and .navigator-search bar are gone — the
+   Scenes count is the title's .tool-title-count and search is the chrome
+   cluster's expanding field. Only the match highlight below survives.) */
 .navigator-search-highlight {
   background: rgba(234, 179, 8, 0.3); border-radius: 2px; padding: 0 1px;
 }
@@ -458,24 +431,6 @@
 .structure-chevron.expanded { transform: rotate(0deg); }
 
 /* ── Scene filter ── */
-.scene-filter-btn {
-  background: none;
-  border: none;
-  color: var(--fd-text-muted);
-  cursor: pointer;
-  padding: 6px;
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  transition: color 0.15s;
-  min-width: 32px;
-  min-height: 32px;
-  justify-content: center;
-}
-.scene-filter-btn:hover,
-.scene-filter-btn.active {
-  color: var(--fd-accent);
-}
 .scene-filters {
   padding: 8px 14px 10px;
   border-bottom: 1px solid var(--fd-border);
@@ -720,20 +675,13 @@
 
 
 /* v4.24 batch 7: the merged Scenes tool — List (scene list) / Cards (index
-   cards) toggle above whichever view is active. The buttons reuse the
-   .char-fs-view-btn segmented style. */
+   cards). v4.27: the in-body toggle is gone (the window's View control
+   switches views); these just host whichever view is active. */
 .scenes-tool {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-}
-.scenes-view-toggle {
-  display: flex;
-  gap: 2px;
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--fd-border);
-  flex-shrink: 0;
 }
 .scenes-tool-body {
   flex: 1;

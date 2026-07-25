@@ -999,7 +999,7 @@ const beatCollisionDetection: CollisionDetection = (args) => {
 
 /* ─── Outline header controls (v2.41) ───
    Beat count, Arrangement toggle, ? help, Presets and the add button — ONE
-   component, rendered in the tool WINDOW'S chrome header (TOOL_HEADER_EXTRAS)
+   component, rendered in the tool window's chrome (TOOL_CHROME Controls slot)
    and in the takeover view's own row. Everything reads the store directly. */
 /* v2.48, Derek: Presets and the add button live in the TABS row now,
    right-aligned — this component renders them there, in both arrangements. */
@@ -1325,7 +1325,7 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   return (
     <div className="beat-board" ref={boardRef}>
       {/* v2.41, Derek: the controls live in the WINDOW HEADER (chrome) when
-          this board is the docked/popped Outline window — TOOL_HEADER_EXTRAS
+          this board is the docked/popped Outline window — TOOL_CHROME
           hosts OutlineHeaderControls there. The takeover view has no chrome,
           so it keeps its own row, same component. */}
       {!embedded && (

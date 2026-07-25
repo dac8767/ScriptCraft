@@ -332,16 +332,53 @@
   flex-shrink: 0;
 }
 .tool-chrome-tabs { display: inline-flex; align-items: center; gap: 2px; min-width: 0; }
+/* The cluster SPANS the remaining row and right-aligns its content — so a
+   quiet Filter/Sort/View/Search group packs right, while a spanning control
+   bar (Outline's flex:1 header, the Scrapbook's space-between head) fills it
+   and keeps its own layout. In the dock it doubles as the spacer that keeps
+   the pop-out at the editor-facing end. */
 .tool-chrome-controls {
-  margin-left: auto;
+  flex: 1 1 auto;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 2px;
+}
+/* The item count riding beside a centered window title ("Characters · 12") —
+   published by the tool, rendered by its TitleExtra slot. */
+.tool-title-count {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  white-space: nowrap;
   flex-shrink: 0;
 }
-/* The legacy extra span keeps its old identity; inside the cluster it must
-   not stretch (22-tools-extra.css gives the bare span flex: 1). */
-.tool-chrome-controls .tool-window-header-extra { flex: 0 1 auto; margin: 0; }
+/* Rows that carry TABS read as a tab track, not a toolbar: workspace-layer
+   background, zero vertical padding so the tabs' -1px overlap reaches the
+   track's bottom border, tabs bottom-aligned, everything else centered.
+   Doubled selector so it also beats .tool-inline-header (22-tools-extra.css
+   loads after this file). */
+.tool-chrome-row2.tool-chrome-row2-tabbed,
+.tool-inline-header.tool-chrome-row2-tabbed {
+  background: var(--fd-bg);
+  padding-top: 0;
+  padding-bottom: 0;
+  align-items: stretch;
+  /* Narrow hosts (the 300px dock): the controls cluster drops to its own
+     line under the tabs instead of painting over them. Inert when it fits. */
+  flex-wrap: wrap;
+}
+.tool-chrome-row2-tabbed .tool-chrome-tabs {
+  align-items: flex-end;
+  padding-top: 5px;
+  gap: 3px;
+  /* never shrink below the tab labels — shrink meant buttons overflowed the
+     span and painted over the controls; wrapping is the narrow-case answer */
+  flex-shrink: 0;
+}
+.tool-chrome-row2-tabbed .tool-chrome-controls { min-width: max-content; }
+.tool-chrome-row2-tabbed .tool-chrome-controls,
+.tool-chrome-row2-tabbed .tool-dock-popout { align-self: center; }
 /* Dock-compressed row 1: the open accordion row carries the window actions
    (fullscreen…) at its right edge. */
 .tool-dock-item-actions {

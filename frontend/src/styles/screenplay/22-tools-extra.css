@@ -450,8 +450,10 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
 }
 
 /* v2.00: the window HEADER — the row inside the window, under the dock
-   button. Holds the tool's header controls and the pop-out, with real
-   breathing room between the pop button and the nearest text. */
+   button. v4.27: this is the template's row 2 — tabs + the control cluster
+   (.tool-chrome-tabs / .tool-chrome-controls, 20-tool-dock.css) + pop-out.
+   (The old .tool-inline-header-extra span and the v1.80 .tool-window-footer
+   are gone with TOOL_HEADER_EXTRAS/TOOL_FOOTERS.) */
 .tool-inline-header {
   display: flex;
   align-items: center;
@@ -461,28 +463,8 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
   background: var(--fd-navigator-bg);
   flex-shrink: 0;
 }
-.tool-inline-header-extra {
-  flex: 1;
-  min-width: 0;
-  display: inline-flex;
-  align-items: center;
-}
 .tool-inline-header .tool-dock-popout { flex-shrink: 0; }
 
-/* v1.80: true footer bar under a tool window's body (docked and floating). */
-.tool-window-footer {
-  flex-shrink: 0;
-  border-top: 1px solid var(--fd-border);
-  background: var(--fd-navigator-bg);
-  padding: 6px 8px;
-  display: flex;
-}
-/* v3.54, Derek: the Scenes tool's search lives in the window footer bar; the
-   footer already owns the border + padding, so the search strips its own. */
-.tool-window-footer .navigator-search--footer {
-  flex: 1; min-width: 0;
-  padding: 0; border-bottom: none;
-}
 /* v3.54: the Scenes filter popover — a floating shell (portalled to body,
    positioned by top/left) wrapping the same .scene-filters rows the tool body
    used to hold inline. */
@@ -593,15 +575,8 @@ input.fs-switch:checked::after { left: 15px; }
   cursor: pointer;
 }
 .fs-nav-filterpop-actions button:hover { background: var(--fd-menu-hover); }
-/* (Scenes/Pages/Locations' .scene-filter-btn already right-aligns via its
-   own margin-left: auto — every filter icon lives at the right edge.) */
-.tool-window-header-extra {
-  display: inline-flex;
-  align-items: center;
-  margin: 0 8px;
-  flex: 1;
-  justify-content: flex-start;
-}
+/* (v4.27: .tool-window-header-extra is gone — every tool's controls render
+   via TOOL_CHROME in the row-2 cluster now.) */
 
 /* ═══ v0.9: themes ═══ */
 [data-theme="sepia"] {

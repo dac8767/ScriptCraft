@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { FaChevronRight, FaChevronDown, FaExpandAlt, FaRegUser } from 'react-icons/fa';
+import { LuLayoutGrid, LuList, LuWaypoints } from 'react-icons/lu';
+import { ControlDropdown, ControlSearch } from './ToolControls';
 import type { Editor } from '@tiptap/react';
 import { stripHtml } from '../utils/stripHtml';
 import { CharacterScanTab } from './CharacterScanTab';
@@ -49,24 +51,90 @@ function enterCharFullscreen() {
   s.setCharFullscreen(true);
 }
 
-/** v4.24 batch-v2 #6 (Derek): tool windows show ONE title bar. The frame's
- *  header carries the count + fullscreen button (registered in
- *  TOOL_HEADER_EXTRAS); the panel's own header row now renders only in
- *  fullscreen and the legacy slide-in overlay. The count is published by the
- *  panel (search-filtered, profiles ∪ live cues) — displayed here, never
- *  recomputed, so the two can't drift. */
-export function CharactersHeaderExtra() {
+/** v4.27, Derek's window template — Characters' chrome slots, registered in
+ *  ToolDock's TOOL_CHROME. The count rides beside the centered title (row 1),
+ *  fullscreen is a row-1 window action, and tabs + the Sort/View/Search
+ *  cluster are row 2. The fullscreen takeover header renders the SAME
+ *  CharTabs/CharControls, so window, dock and fullscreen stay one source.
+ *  The count is published by the panel (search-filtered, profiles ∪ live
+ *  cues) — displayed here, never recomputed, so the two can't drift. */
+export function CharTitleExtra() {
   const count = useEditorStore((s) => s.charListCount);
+  return <span className="tool-title-count">· {count}</span>;
+}
+
+export function CharWindowActions() {
+  return (
+    <button
+      className="char-profiles-fullscreen-btn"
+      onClick={enterCharFullscreen}
+      title="Fullscreen"
+    >
+      {'⛶'}
+    </button>
+  );
+}
+
+export function CharTabs() {
+  const activeTab = useEditorStore((s) => s.charActiveTab);
+  const setActiveTab = useEditorStore((s) => s.setCharActiveTab);
   return (
     <>
-      <span className="char-hdr-count">{count}</span>
-      <button
-        className="char-profiles-fullscreen-btn"
-        onClick={enterCharFullscreen}
-        title="Fullscreen"
-      >
-        {'⛶'}
-      </button>
+      <button className={`char-profiles-tab${activeTab === 'profiles' ? ' active' : ''}`} onClick={() => setActiveTab('profiles')}>Profiles</button>
+      <button className={`char-profiles-tab${activeTab === 'relationships' ? ' active' : ''}`} onClick={() => setActiveTab('relationships')}>Relationships</button>
+      <button className={`char-profiles-tab${activeTab === 'setup' ? ' active' : ''}`} onClick={() => setActiveTab('setup')}>From Script</button>
+    </>
+  );
+}
+
+const CHAR_SORTS = [
+  ['name', 'Name'],
+  ['importance', 'Importance'],
+  ['scenes', 'Scenes'],
+  ['dialogues', 'Dialogues'],
+  ['appearance', 'Appearance'],
+] as const;
+
+export function CharControls() {
+  const activeTab = useEditorStore((s) => s.charActiveTab);
+  const sortBy = useEditorStore((s) => s.characterSortBy);
+  const setSortBy = useEditorStore((s) => s.setCharacterSortBy);
+  const viewMode = useEditorStore((s) => s.charViewMode);
+  const setViewMode = useEditorStore((s) => s.setCharViewMode);
+  const relView = useEditorStore((s) => s.relViewMode);
+  const setRelView = useEditorStore((s) => s.setRelViewMode);
+  const search = useEditorStore((s) => s.charSearchQuery);
+  const setSearch = useEditorStore((s) => s.setCharSearchQuery);
+  if (activeTab === 'setup') return null; // From Script has no list to control
+  if (activeTab === 'relationships') {
+    return (
+      <ControlDropdown
+        title="View"
+        icon={relView === 'map' ? <LuWaypoints /> : <LuList />}
+        current={relView === 'map' ? 'Map' : 'List'}
+        items={[
+          { label: 'List', active: relView === 'list', onSelect: () => setRelView('list') },
+          { label: 'Map', active: relView === 'map', onSelect: () => setRelView('map') },
+        ]}
+      />
+    );
+  }
+  return (
+    <>
+      <ControlDropdown
+        label="Sort"
+        items={CHAR_SORTS.map(([id, label]) => ({ label, active: sortBy === id, onSelect: () => setSortBy(id) }))}
+      />
+      <ControlDropdown
+        title="View"
+        icon={viewMode === 'cards' ? <LuLayoutGrid /> : <LuList />}
+        current={viewMode === 'cards' ? 'Cards' : 'List'}
+        items={[
+          { label: 'Cards', active: viewMode === 'cards', onSelect: () => setViewMode('cards') },
+          { label: 'List', active: viewMode === 'list', onSelect: () => setViewMode('list') },
+        ]}
+      />
+      <ControlSearch value={search} onChange={setSearch} placeholder="Search characters..." />
     </>
   );
 }
@@ -97,13 +165,18 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   const currentScriptId = useProjectStore((s) => s.currentScriptId);
   const { assets, setAssets } = useAssetStore();
 
-  const [activeTab, setActiveTab] = useState<'profiles' | 'relationships' | 'setup'>('profiles');
+  // v4.27 window template: tab, view modes and search are STORE state now —
+  // the window chrome (frame row 2, dock accordion, fullscreen header) drives
+  // them from outside the panel body. One source; chrome and body can't drift.
+  const activeTab = useEditorStore((s) => s.charActiveTab);
+  const setActiveTab = useEditorStore((s) => s.setCharActiveTab);
   // v4.23, Derek: the relationship map is no longer its own tab — it's a
-  // List/Map view toggle inside Relationships, mirroring Profiles' Cards/List.
-  const [relViewMode, setRelViewMode] = useState<'list' | 'map'>('list');
+  // List/Map view choice inside Relationships, mirroring Profiles' Cards/List.
+  const relViewMode = useEditorStore((s) => s.relViewMode);
   const [addRelFor, setAddRelFor] = useState<string | null>(null); // character name to add rel for
   const [expandedChar, setExpandedChar] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchQuery = useEditorStore((s) => s.charSearchQuery);
+  const setSearchQuery = useEditorStore((s) => s.setCharSearchQuery);
   const sortBy = useEditorStore((s) => s.characterSortBy);
   const setSortBy = useEditorStore((s) => s.setCharacterSortBy);
   const [pendingRemoveChar, setPendingRemoveChar] = useState<string | null>(null);
@@ -114,7 +187,9 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   // row. null = not scanned yet this session.
   const isFullscreen = fullscreen;
   const exitCharFullscreen = () => useEditorStore.getState().setCharFullscreen(false);
-  const [fsViewMode, setFsViewMode] = useState<'cards' | 'list'>('cards');
+  // v4.27: Cards/List applies EVERYWHERE now (window, dock, fullscreen) — it's
+  // the cluster's View dropdown, persisted. Was fullscreen-only local state.
+  const viewMode = useEditorStore((s) => s.charViewMode);
   // v4.18: portal target in the header for the Relationship Map's toolbar.
   const [modalChar, setModalChar] = useState<string | null>(null);
   // v4.26 batch-v4 #4: the full view's Relationships / Appears-in sections
@@ -478,8 +553,8 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     return list;
   }, [characterProfiles, scriptCharacterNames, searchQuery, sortBy, charStats]);
 
-  // v4.24 batch-v2 #6: publish the count the panel shows so the tool-window
-  // header (CharactersHeaderExtra) displays the same number.
+  // v4.24 batch-v2 #6: publish the count the panel shows so the window
+  // chrome's title (CharTitleExtra) displays the same number.
   useEffect(() => {
     useEditorStore.getState().setCharListCount(allCharacters.length);
   }, [allCharacters.length]);
@@ -1191,7 +1266,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       ? 'panel-open' : animationState === 'exiting' ? 'panel-closing' : '');
 
   return (
-    <div ref={panelRef} className={`char-profiles-panel${embedded ? ' char-profiles-embedded' : ''}${isFullscreen ? ' char-profiles-fullscreen' : ''}${isFullscreen && activeTab === 'profiles' && fsViewMode === 'list' ? ' char-fs-list-mode' : ''} ${panelClass}`} style={isFullscreen ? undefined : style}>
+    <div ref={panelRef} className={`char-profiles-panel${embedded ? ' char-profiles-embedded' : ''}${isFullscreen ? ' char-profiles-fullscreen' : ''}${isFullscreen && activeTab === 'profiles' && viewMode === 'list' ? ' char-fs-list-mode' : ''} ${panelClass}`} style={isFullscreen ? undefined : style}>
       {/* Hidden file input for image uploads */}
       <input
         ref={fileInputRef}
@@ -1209,74 +1284,53 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         onChange={handleVoiceSelect}
       />
 
-      {/* v4.24 batch-v2 #6 (Derek): in a tool window/dock the FRAME's title
-          bar is the only header (it carries the count + fullscreen button via
-          CharactersHeaderExtra) — this row would repeat the tool name, so it
-          renders only in fullscreen (where it IS the single top bar) and the
-          legacy slide-in overlay (which has no frame). */}
-      {(isFullscreen || !embedded) && (
-      <div className={`char-profiles-header${isFullscreen ? ' char-fs-header' : ''}`}>
-        {/* v4.24 batch-v3 #7 (Derek): fullscreen header — tabs on the LEFT,
-            "CHARACTERS" centered, actions right (3-zone flex; see the
-            .char-fs-header rules). The Cards/List toggle moved down to the
-            Profiles toolbar row (#5). */}
-        {isFullscreen && (
-          <div className="char-fs-header-tabs">
-            <button className={`char-profiles-tab${activeTab === 'profiles' ? ' active' : ''}`} onClick={() => setActiveTab('profiles')}>Profiles</button>
-            <button className={`char-profiles-tab${activeTab === 'relationships' ? ' active' : ''}`} onClick={() => setActiveTab('relationships')}>Relationships</button>
-            <button className={`char-profiles-tab${activeTab === 'setup' ? ' active' : ''}`} onClick={() => setActiveTab('setup')}>From Script</button>
+      {/* v4.27, Derek's window template: the fullscreen takeover renders the
+          SAME two chrome rows the tool window gets from its frame — row 1
+          (three zones, centered title + count, close right) and row 2 (tabs
+          left, Sort/View/Search cluster right) — built from the same CharTabs /
+          CharControls the TOOL_CHROME registry serves, so the surfaces can't
+          drift. Embedded windows render NEITHER row: the frame provides both. */}
+      {isFullscreen && (
+        <>
+          <div className="char-profiles-header char-fs-header">
+            <span className="tool-window-zone tool-window-zone-l" />
+            <span className="tool-window-zone tool-window-zone-c">
+              <span className="char-profiles-title">Characters</span>
+              <CharTitleExtra />
+            </span>
+            <span className="tool-window-zone tool-window-zone-r">
+              <button className="char-profiles-close" onClick={() => exitCharFullscreen()} title="Return to editor">&times;</button>
+            </span>
           </div>
-        )}
-        <span className="char-profiles-title">Characters</span>
-        <span className="char-profiles-count">{allCharacters.length}</span>
-        {isFullscreen && (
-          <div className="char-fs-header-actions">
-            {activeTab === 'relationships' && (
-              <div className="char-fs-view-toggle">
-                <button className={`char-fs-view-btn${relViewMode === 'list' ? ' active' : ''}`} onClick={() => setRelViewMode('list')}>List</button>
-                <button className={`char-fs-view-btn${relViewMode === 'map' ? ' active' : ''}`} onClick={() => setRelViewMode('map')}>Map</button>
-              </div>
-            )}
-            <button className="char-profiles-close" onClick={() => exitCharFullscreen()} title="Return to editor">&times;</button>
+          <div className="tool-chrome-row2 tool-chrome-row2-tabbed">
+            <span className="tool-chrome-tabs"><CharTabs /></span>
+            <span className="tool-chrome-controls"><CharControls /></span>
           </div>
-        )}
-        {!isFullscreen && (
-          <button
-            className="char-profiles-fullscreen-btn"
-            onClick={() => enterCharFullscreen()}
-            title="Fullscreen"
-          >
-            {'\u26F6'}
-          </button>
-        )}
-        {!embedded && !isFullscreen && <button className="char-profiles-close" onClick={() => { toggleCharacterProfiles(); }} title="Close">
-          &times;
-        </button>}
-      </div>
+        </>
       )}
 
-      {/* Tabs row \u2014 only when NOT fullscreen (in fullscreen they live in the header) */}
-      {!isFullscreen && (
-        <div className="char-profiles-tabs">
-          <button
-            className={`char-profiles-tab${activeTab === 'profiles' ? ' active' : ''}`}
-            onClick={() => setActiveTab('profiles')}
-          >
-            Profiles
-          </button>
-          <button
-            className={`char-profiles-tab${activeTab === 'relationships' ? ' active' : ''}`}
-            onClick={() => setActiveTab('relationships')}
-          >
-            Relationships
-          </button>
-          <button
-            className={`char-profiles-tab${activeTab === 'setup' ? ' active' : ''}`}
-            onClick={() => setActiveTab('setup')}
-          >
-            From Script
-          </button>
-        </div>
+      {/* Legacy slide-in overlay (context menu → Character Profile...): no
+          window frame, so it keeps its own header + tabs (+ toolbar below). */}
+      {!isFullscreen && !embedded && (
+        <>
+          <div className="char-profiles-header">
+            <span className="char-profiles-title">Characters</span>
+            <span className="char-profiles-count">{allCharacters.length}</span>
+            <button
+              className="char-profiles-fullscreen-btn"
+              onClick={() => enterCharFullscreen()}
+              title="Fullscreen"
+            >
+              {'\u26F6'}
+            </button>
+            <button className="char-profiles-close" onClick={() => { toggleCharacterProfiles(); }} title="Close">
+              &times;
+            </button>
+          </div>
+          <div className="char-profiles-tabs">
+            <CharTabs />
+          </div>
+        </>
       )}
 
       {/* v4.20: Relationships tab — an editable list of every relationship.
@@ -1287,9 +1341,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       {activeTab === 'relationships' && (
         <div className="char-tab-surface">
         <CharacterRelationshipsTab
-          isFullscreen={isFullscreen}
           relViewMode={relViewMode}
-          setRelViewMode={setRelViewMode}
           currentScriptId={currentScriptId}
           characterRelationships={characterRelationships}
           upsertCharacterRelationship={upsertCharacterRelationship}
@@ -1308,7 +1360,10 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       {/* Profiles tab content */}
       {activeTab === 'profiles' && <div className="char-tab-surface">
 
-      {/* Toolbar: Search + Sort + Build (v4.18: Sort moved onto this row). */}
+      {/* v4.27: search/sort/view live in the row-2 cluster now (frame or
+          fullscreen header) — this toolbar remains only for the frameless
+          legacy overlay. */}
+      {!embedded && !isFullscreen && (
       <div className="char-profiles-toolbar">
         <input
           type="text"
@@ -1331,15 +1386,8 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             <option value="appearance">Appearance</option>
           </select>
         </div>
-        {/* v4.24 batch-v3 #5 (Derek): the Cards/List toggle lives on this row
-            now, far right — it left the fullscreen header. */}
-        {isFullscreen && (
-          <div className="char-fs-view-toggle char-toolbar-view-toggle">
-            <button className={`char-fs-view-btn${fsViewMode === 'cards' ? ' active' : ''}`} onClick={() => setFsViewMode('cards')}>Cards</button>
-            <button className={`char-fs-view-btn${fsViewMode === 'list' ? ' active' : ''}`} onClick={() => setFsViewMode('list')}>List</button>
-          </div>
-        )}
       </div>
+      )}
 
       {/* Character list */}
       <div className="char-profiles-list">
@@ -1353,9 +1401,10 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           allCharacters.map((name) => {
             const profile = getProfile(name);
             const stats = charStats.get(name);
-            // v4.18: in fullscreen LIST view, cards start minimized (a bar with
-            // name + key stats) and expand on click; Cards view stays expanded.
-            const isCardsView = isFullscreen && fsViewMode === 'cards';
+            // v4.18: in LIST view, cards start minimized (a bar with name +
+            // key stats) and expand on click; Cards view stays expanded.
+            // v4.27: the View choice applies everywhere, not just fullscreen.
+            const isCardsView = viewMode === 'cards';
             const isExpanded = isCardsView || expandedChar === name;
             const isOrphaned = orphanedNames.has(name);
             const primaryImageId = profile.images?.[0];

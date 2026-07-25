@@ -4,13 +4,12 @@
  * Row 1 must be three zones (pop-in | centered title | actions) and the
  * TOOL_CHROME slots must land where the schematic puts them: TitleExtra
  * beside the title, WindowActions left of close, Tabs and the
- * Filter/Sort/View/Search cluster on row 2. Legacy TOOL_HEADER_EXTRAS
- * controls ride row 2's right cluster until each tool migrates.
+ * Filter/Sort/View/Search cluster on row 2.
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import { ToolWindowFrame, ALL_TOOLS, TOOL_CHROME, TOOL_HEADER_EXTRAS } from './ToolDock';
+import { ToolWindowFrame, ALL_TOOLS, TOOL_CHROME } from './ToolDock';
 
 const todoDef = ALL_TOOLS.find((t) => t.id === 'todo')!;
 
@@ -28,7 +27,6 @@ afterEach(() => {
   host.remove();
   // tests inject registry entries for a tool that has none — always undo
   delete TOOL_CHROME.todo;
-  delete TOOL_HEADER_EXTRAS.todo;
 });
 
 const renderFrame = () => act(() => {
@@ -73,12 +71,13 @@ describe('window template rows (v4.27)', () => {
     expect(row2.querySelector('.tool-chrome-controls [data-testid="ctl"]')).toBeTruthy();
   });
 
-  it('a legacy TOOL_HEADER_EXTRAS control rides row 2’s right cluster, not row 1', () => {
-    TOOL_HEADER_EXTRAS.todo = () => <span data-testid="legacy">legacy</span>;
+  it('a Controls-only tool gets row 2 with the cluster and no tab strip', () => {
+    TOOL_CHROME.todo = { Controls: () => <span data-testid="ctl-only">ctl</span> };
     renderFrame();
-    expect(host.querySelector('.tool-window-header [data-testid="legacy"]')).toBeNull();
-    expect(host.querySelector(
-      '.tool-chrome-row2 .tool-chrome-controls .tool-window-header-extra [data-testid="legacy"]',
-    )).toBeTruthy();
+    expect(host.querySelector('.tool-window-header [data-testid="ctl-only"]')).toBeNull();
+    const row2 = host.querySelector('.tool-chrome-row2')!;
+    expect(row2.classList.contains('tool-chrome-row2-tabbed')).toBe(false);
+    expect(row2.querySelector('.tool-chrome-tabs')).toBeNull();
+    expect(row2.querySelector('.tool-chrome-controls [data-testid="ctl-only"]')).toBeTruthy();
   });
 });

@@ -93,7 +93,7 @@ export function useGoalProgress(words: number, pages: number) {
 
 
 /** v1.85: the window-header controls — the Words/Pages/Time tabs and the ?
- *  helper. Rendered by the chrome (TOOL_HEADER_EXTRAS), so the state lives
+ *  helper. Rendered by the chrome (TOOL_CHROME Controls slot), so the state lives
  *  in the store (goalKind). The helper popover PORTALS to document.body and
  *  positions from the button — a child of the header row could never escape
  *  the panel's overflow (the AddMenu lesson). */

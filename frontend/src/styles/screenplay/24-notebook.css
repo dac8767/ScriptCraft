@@ -15,7 +15,7 @@
   flex-direction: column;
   height: 100%;
 }
-/* v2.05: lives in the window HEADER (TOOL_HEADER_EXTRAS), not the panel. */
+/* v2.05: lives in the window chrome (TOOL_CHROME Controls slot), not the panel. */
 .fs-nb-side-head {
   flex: 1;
   min-width: 0;
