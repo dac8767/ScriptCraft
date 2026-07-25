@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
-import { FaSlidersH, FaColumns, FaFileAlt, FaRulerCombined, FaCog, FaCloudUploadAlt, FaKeyboard } from 'react-icons/fa';
+import { FaWrench, FaColumns, FaFileAlt, FaRulerCombined, FaCloudUploadAlt, FaKeyboard } from 'react-icons/fa';
 import { applyDraftNumber } from './SetDraftDialog';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -40,7 +40,7 @@ type PrefTab = 'general' | 'layout' | 'formats' | 'page' | 'keys' | 'saveloc' | 
 
 const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   // App-wide first, then writing setup, then data, then system.
-  { id: 'general', label: 'General', icon: <FaSlidersH /> },
+  { id: 'general', label: 'General', icon: <FaWrench /> },
   { id: 'saveloc', label: 'Save Options', icon: <FaCloudUploadAlt /> },
   { id: 'layout', label: 'Customize', icon: <FaColumns /> },
   { id: 'formats', label: 'Templates', icon: <FaFileAlt /> },
@@ -48,7 +48,7 @@ const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   /* v4.30 batch-v7 #3, Derek: hotkeys are behavior, not workspace layout —
      moved here from Customize. */
   { id: 'keys', label: 'Keyboard Shortcuts', icon: <FaKeyboard /> },
-  { id: 'system', label: 'System', icon: <FaCog /> },
+  { id: 'system', label: 'System', icon: <FaWrench /> },
 ];
 
 function LanguageSection() {

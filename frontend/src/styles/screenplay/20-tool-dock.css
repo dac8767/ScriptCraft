@@ -617,6 +617,8 @@
   min-height: 0;
   padding: 4px 0;
 }
+/* v4.31 (icon audit): the note-row kind icon — was the memo emoji. */
+.fs-nav-kind-icon { margin-right: 4px; vertical-align: -1px; font-size: 11px; }
 .fs-nav-empty {
   padding: 10px 12px;
   font-size: 12px;

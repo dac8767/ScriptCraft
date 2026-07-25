@@ -11,7 +11,8 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { LuX, LuRotateCcw, LuSearch, LuChevronDown, LuChevronRight, LuCopy, LuCheck } from 'react-icons/lu';
+import { LuRotateCcw, LuSearch, LuChevronDown, LuChevronRight } from 'react-icons/lu';
+import { FaCopy, FaCheck } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { DESIGN_GROUPS, buildOverrideCss, type DesignToken } from '../design/designTokens';
 
@@ -156,7 +157,7 @@ export function DesignPanelBody() {
           <LuRotateCcw /> Reset all
         </button>
         <button className="dz-foot-btn" onClick={copyCss} disabled={overrideCount === 0}>
-          {copied ? <><LuCheck /> Copied</> : <><LuCopy /> Copy CSS</>}
+          {copied ? <><FaCheck /> Copied</> : <><FaCopy /> Copy CSS</>}
         </button>
       </div>
     </>
@@ -223,7 +224,7 @@ export default function DesignPanel() {
       <div className="dz-header" onPointerDown={startDrag}>
         <span className="dz-title">Design</span>
         {overrideCount > 0 && <span className="dz-count">{overrideCount} changed</span>}
-        <button className="dz-close" title="Close" onClick={() => setOpen(false)}><LuX /></button>
+        <button className="dz-close" title="Close" onClick={() => setOpen(false)}>&times;</button>
       </div>
 
       <DesignPanelBody />

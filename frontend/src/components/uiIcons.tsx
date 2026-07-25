@@ -11,23 +11,41 @@
  */
 import React from 'react';
 import {
-  FaFile, FaPencilAlt, FaPalette, FaClipboardList, FaEye, FaWrench, FaPlus,
-  FaColumns, FaQuestionCircle, FaStream,
+  FaFile, FaPencilAlt, FaPalette, FaClipboardList, FaRegEye, FaWrench,
+  FaColumns, FaRegQuestionCircle, FaStream,
   FaUndo, FaRedo, FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
   FaBold, FaItalic, FaUnderline, FaStrikethrough, FaSubscript, FaSuperscript,
   FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
-  FaAlignJustify, FaSearch, FaHashtag, FaStickyNote, FaTags, FaSearchPlus,
-  FaFont, FaTextHeight, FaDesktop, FaMinus, FaArrowsAltV,
+  FaAlignJustify, FaHashtag, FaStickyNote, FaTags,
+  FaFont, FaTextHeight, FaDesktop, FaGripLinesVertical, FaArrowsAltH,
   FaLock, FaUnlock, FaTable,
 } from 'react-icons/fa';
-import { FiRefreshCw } from 'react-icons/fi';
+import { LuSearch, LuRotateCcw } from 'react-icons/lu';
 
 /** Customize's utility rows (v1.33) — one icon per concept, read by BOTH the
- *  Panels tab and the Toolbar tab so the two lists can't drift. */
+ *  Panels tab and the Toolbar tab so the two lists can't drift.
+ *  v4.31 (Derek's icon-audit pick, group 18-B): the Quick Access tab's pair
+ *  is the standard now, and it reads THIS registry too. */
 export const UTILITY_ICONS: Record<'divider' | 'spacer', React.ReactNode> = {
-  divider: <FaMinus />,
-  spacer: <FaArrowsAltV />,
+  divider: <FaGripLinesVertical />,
+  spacer: <FaArrowsAltH />,
 };
+
+/** v4.31 (Derek's icon-audit pick, group 1-C): THE fullscreen faces — the
+ *  diagonal-arrows pair from the Cards board, promoted here so every
+ *  enter/exit-fullscreen control draws the same one. */
+export const FullscreenIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <polyline points="9,1 13,1 13,5" /><line x1="8" y1="6" x2="13" y2="1" />
+    <polyline points="5,13 1,13 1,9" /><line x1="6" y1="8" x2="1" y2="13" />
+  </svg>
+);
+export const ExitFullscreenIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <polyline points="9,1 9,5 13,5" /><line x1="13" y1="1" x2="9" y2="5" />
+    <polyline points="5,13 5,9 1,9" /><line x1="1" y1="13" x2="5" y2="9" />
+  </svg>
+);
 
 /**
  * v1.32: the double-chevron (») for the side-panel pop-out / pop-in buttons.
@@ -148,11 +166,13 @@ export const MENU_ICONS: Record<string, React.ReactNode> = {
   Edit: <FaPencilAlt />,
   Format: <FaPalette />,
   Production: <FaClipboardList />,
-  View: <FaEye />,
+  // v4.31 icon unification (Derek's audit picks): eye = outline (11-B),
+  // add = the ASCII + everywhere (4-B), help = outline circle (16-B).
+  View: <FaRegEye />,
   Tools: <FaWrench />,
-  Insert: <FaPlus />,
+  Insert: <span className="menu-txt-icon" aria-hidden="true">+</span>,
   Project: <FaColumns />,
-  Help: <FaQuestionCircle />,
+  Help: <FaRegQuestionCircle />,
 };
 
 /** Toolbar built-ins, by key — the same icon each button shows. */
@@ -181,11 +201,11 @@ export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
   alignCenter: <FaAlignCenter />,
   alignRight: <FaAlignRight />,
   alignJustify: <FaAlignJustify />,
-  find: <FaSearch />,
+  find: <LuSearch />,   // v4.31: search = the Lu magnifier (3-B)
   goto: <FaHashtag />,
   scriptNotes: <FaStickyNote />,
   tags: <FaTags />,
-  zoom: <FaSearchPlus />,
+  zoom: <CirclePlusIcon />,   // v4.31: zoom = the circled steppers (14-B)
   view: <FaDesktop />,
   // v2.34: surface toggles. The right panel is the left icon mirrored —
   // one glyph, two directions.
@@ -194,8 +214,8 @@ export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
   lockResize: <FaLock />,
   lockResizeOpen: <FaUnlock />,
   // v2.67: reset every adjustable size/spacing back to defaults.
-  // v2.87, Derek: the circular-arrows reset, per his reference image.
-  resetSizes: <FiRefreshCw />,
+  // v4.31 (audit 13-B): the counter-clockwise rotate is THE reset icon now.
+  resetSizes: <LuRotateCcw />,
   // v2.94: the Scrapbook's insert-table grid, promoted to toolbar row 2 —
   // it can't live in a native menu (macOS menus can't host the grid picker).
   insertTable: <FaTable />,

@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
+import { FaRegStickyNote } from 'react-icons/fa';
 import { FilterIcon } from './uiIcons';
 
 const KINDS = ['scene', 'act', 'section', 'marker', 'note', 'todo'] as const;
@@ -230,7 +231,7 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
               />
             )}
             <span className={it.done ? 'fs-nav-done' : ''}>
-              {it.kind === 'note' ? '📝 ' : it.kind === 'act' ? '§ ' : it.kind === 'marker' ? '⚑ ' : it.kind === 'section' ? '# ' : ''}
+              {it.kind === 'note' ? <FaRegStickyNote className="fs-nav-kind-icon" /> : it.kind === 'act' ? '§ ' : it.kind === 'marker' ? '⚑ ' : it.kind === 'section' ? '# ' : ''}
               {it.text.length > 80 ? it.text.slice(0, 80) + '…' : it.text || '(untitled)'}
             </span>
           </div>

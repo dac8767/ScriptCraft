@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { FaChevronRight, FaChevronDown, FaExpandAlt, FaRegUser } from 'react-icons/fa';
+import { FaRegUser, FaRegTrashAlt } from 'react-icons/fa';
+import { LuChevronRight, LuChevronDown } from 'react-icons/lu';
+import { FullscreenIcon } from './uiIcons';
 import { LuLayoutGrid, LuList, LuWaypoints } from 'react-icons/lu';
 import { ControlDropdown, ControlSearch, ChromeTabs, ChromeRow2, type ToolChromeTab } from './ToolControls';
 import type { Editor } from '@tiptap/react';
@@ -74,7 +76,7 @@ export function CharWindowActions() {
       onClick={enterCharFullscreen}
       title="Fullscreen"
     >
-      {'⛶'}
+      <FullscreenIcon />
     </button>
   );
 }
@@ -987,7 +989,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             className="char-profile-voice-remove"
             title="Remove voice profile"
             onClick={() => upsertCharacterProfile(charName, { voiceProfile: undefined })}
-          >&times;</button>
+          ><FaRegTrashAlt /></button>
         </div>
       );
     }
@@ -1076,7 +1078,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                 className="char-profile-custom-remove"
                 title="Remove this field from every character"
                 onClick={() => removeCharacterCustomField(f.id)}
-              >&times;</button>
+              ><FaRegTrashAlt /></button>
             </div>
             <input
               className="char-profile-input"
@@ -1130,7 +1132,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                   className="char-profile-rel-remove"
                   onClick={() => deleteCharacterRelationship(r.id)}
                   title="Remove relationship"
-                >&times;</button>
+                ><FaRegTrashAlt /></button>
               </div>
               {r.description && <div className="char-profile-rel-desc">{r.description}</div>}
             </div>
@@ -1343,7 +1345,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
               onClick={() => enterCharFullscreen()}
               title="Fullscreen"
             >
-              {'\u26F6'}
+              <FullscreenIcon />
             </button>
             <button className="char-profiles-close" onClick={() => { toggleCharacterProfiles(); }} title="Close">
               &times;
@@ -1453,7 +1455,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                   {/* v4.20: left caret makes it clear the row toggles open (not
                       in Cards mode, where cards are always expanded). */}
                   {!isCardsView && (
-                    <span className="char-profile-caret" aria-hidden>{isExpanded ? <FaChevronDown /> : <FaChevronRight />}</span>
+                    <span className="char-profile-caret" aria-hidden>{isExpanded ? <LuChevronDown /> : <LuChevronRight />}</span>
                   )}
                   {/* Avatar: show primary image or color swatch */}
                   {primaryImageId && projectId ? (
@@ -1541,7 +1543,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                     onClick={(e) => { e.stopPropagation(); setModalChar(name); }}
                     title="Expand this character into a larger window"
                   >
-                    <FaExpandAlt />
+                    <FullscreenIcon />
                   </button>
                   </div>
                 </div>

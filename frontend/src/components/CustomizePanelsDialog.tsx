@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaRegQuestionCircle, FaGripLinesVertical, FaArrowsAltH } from 'react-icons/fa';
+import { FaRegQuestionCircle } from 'react-icons/fa';
 import { UTILITY_ICONS } from './uiIcons';
 /**
  * CustomizePanelsDialog — View → Customize Layout.
@@ -233,7 +233,7 @@ export function DndColumns({ columns, onDrop }: {
                         className={`fs-dnd-row${drag?.key === row.key && drag.col === col.id ? ' dragging' : ''}${row.locked ? ' locked' : ''}`}
                         {...rowProps(col, row, flatIdx)}
                       >
-                        {!row.locked && <span className="fs-customize-drag" title="Drag to move">⠿</span>}
+                        {!row.locked && <span className="fs-customize-drag" title="Drag to move">⋮⋮</span>}
                         {row.content}
                       </div>
                     );
@@ -832,8 +832,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                       key: id,
                       content: (
                         <span className="fs-customize-tool">
-                          {isQatDivider(id) ? <>{iconSlot(<FaGripLinesVertical />)}<em>Divider</em></>
-                            : isQatSpacer(id) ? <>{iconSlot(<FaArrowsAltH />)}<em>Spacer</em></>
+                          {isQatDivider(id) ? <>{iconSlot(UTILITY_ICONS.divider)}<em>Divider</em></>
+                            : isQatSpacer(id) ? <>{iconSlot(UTILITY_ICONS.spacer)}<em>Spacer</em></>
                             : <>{iconSlot(QAT_BY_ID[id].icon)}{QAT_BY_ID[id].label}</>}
                           <button
                             className="fs-dnd-rowbtn"

@@ -9,11 +9,11 @@ import React from 'react';
 import {
   FaFileAlt, FaFileSignature, FaEdit, FaListUl, FaLock, FaToggleOn,
   FaUpload, FaHistory, FaExchangeAlt, FaSpellCheck, FaTags, FaCodeBranch,
-  FaFile, FaFolderOpen, FaFileImport, FaSave, FaRegSave, FaPrint, FaEye,
-  FaFilePdf, FaFileExport, FaFileWord, FaCog, FaCut, FaCopy, FaPaste,
+  FaFile, FaFolderOpen, FaFileImport, FaSave, FaRegSave, FaPrint,
+  FaFilePdf, FaFileExport, FaFileWord, FaCut, FaCopy, FaPaste,
   FaMousePointer, FaColumns, FaImage, FaFlag, FaSearchPlus, FaSearchMinus,
   FaRulerHorizontal, FaInfoCircle, FaKeyboard, FaExternalLinkAlt,
-  FaPencilAlt, FaCamera,
+  FaPencilAlt, FaCamera, FaWrench, FaRegEye,
 } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 
@@ -52,12 +52,12 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'save', label: 'Save', icon: <FaSave />, run: () => emit('save') },
   { id: 'saveAs', label: 'Save As', icon: <FaRegSave />, run: () => emit('saveAs') },
   { id: 'print', label: 'Print', icon: <FaPrint />, run: () => emit('print') },
-  { id: 'preview', label: 'Preview', icon: <FaEye />, run: () => emit('preview') },
+  { id: 'preview', label: 'Preview', icon: <FaRegEye />, run: () => emit('preview') },
   { id: 'exportPDF', label: 'Export PDF', icon: <FaFilePdf />, run: () => emit('exportPDF') },
   { id: 'exportFDX', label: 'Export FDX', icon: <FaFileExport />, run: () => emit('exportFDX') },
   { id: 'exportFountain', label: 'Export Fountain', icon: <FaFileAlt />, run: () => emit('exportFountain') },
   { id: 'exportDocx', label: 'Export Word (.docx)', icon: <FaFileWord />, run: () => emit('exportDocx') },
-  { id: 'settings', label: 'Settings', icon: <FaCog />, run: () => emit('settings') },
+  { id: 'settings', label: 'Settings', icon: <FaWrench />, run: () => emit('settings') },
   // v3.42, Derek: show/hide the side panels from the ribbon (same toggles the
   // panel edge strips use).
   { id: 'toggleLeftPanel', label: 'Toggle Left Panel', icon: <FaColumns />, run: () => useEditorStore.getState().toggleNavigator() },

@@ -12,7 +12,7 @@
  */
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { LuChevronDown, LuSearch, LuX } from 'react-icons/lu';
+import { LuChevronDown, LuSearch } from 'react-icons/lu';
 
 export interface ControlDropdownItem {
   label: string;
@@ -223,7 +223,7 @@ export const ControlSearch: React.FC<{
         title="Close search"
         onClick={() => { onChange(''); setOpen(false); }}
       >
-        <LuX aria-hidden />
+        ×
       </button>
     </span>
   );

@@ -1,5 +1,29 @@
 # ICON-AUDIT — every function served by two or more different icons
 
+> ## DECIDED (Derek, 2026-07-25) — applied in v4.31
+> 1 fullscreen: **C** (now `FullscreenIcon`/`ExitFullscreenIcon` in uiIcons) ·
+> 2 close: **A** (×) · 3 search: **B** (LuSearch) · 4 add: **B** (ASCII +) ·
+> 5 delete: **B** (FaRegTrashAlt) · 6 caret: **B** (Lu chevrons) ·
+> 7 rename: **B** (FaEdit) · 8 settings: **B** (FaWrench) · 9 check: **A**
+> (FaCheck) · 10 copy: **A** (FaCopy) · 11 visibility: **B** (outline eyes) ·
+> 12 undo: **A** (FaUndo/FaRedo) · 13 reset: **B** (LuRotateCcw) ·
+> 14 zoom: **B** (circled ±) · 15 grip: **B** (⋮⋮) · 16 help: **B**
+> (FaRegQuestionCircle) · 17 back: **B** (←) · 18 utility: **B** (via the
+> UTILITY_ICONS registry).
+>
+> Scope judgements made while applying (flag if wrong):
+> - **delete**: only actions that DESTROY data got the trash; ×/✕ that merely
+>   hide, cancel a pending state, or deselect a filter chip stayed × — that
+>   preserves the close-vs-delete distinction the audit flagged.
+> - **check**: icon checkmarks unified on FaCheck; "✓ " STRING prefixes inside
+>   menu labels stayed text (they're label content, not control faces).
+> - **settings**: the whole settings/customize family wears FaWrench now
+>   (File > Settings, View > Customize, tab icons); the Design TOOL keeps
+>   FaSlidersH — it's the tool's identity, not a settings entry.
+> - **zoom**: in/out/percent controls wear the circled ±; "Scale to Fit/Max
+>   Width/Actual Size" kept FaSearchPlus/Minus — fit is a different verb.
+> - **back**: ‹/◀ became ←, and their paired forward twins became →.
+
 > Companion to **`docs/icon-audit.html`** (open it in a browser — it renders every
 > candidate side by side at 16px/28px on app-dark tiles; reply with e.g.
 > "fullscreen: B" per group).

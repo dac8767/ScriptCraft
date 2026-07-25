@@ -67,7 +67,8 @@ import { applyScriptFormat } from '../utils/applyScriptFormat';
 import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
 import { getCurrentElementRule, getLockedFormatting } from '../utils/effectiveFormatting';
 import { pluginRegistry } from '../plugins/registry';
-import { MENU_ICONS } from './uiIcons';
+import { LuSearch, LuChevronDown, LuChevronRight } from 'react-icons/lu';
+import { MENU_ICONS, CirclePlusIcon, CircleMinusIcon } from './uiIcons';
 import { useScrapbookMenus } from './NotebookTool';
 import { FaTable, FaImage as FaImageIcon } from 'react-icons/fa';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
@@ -92,8 +93,6 @@ import {
   FaRegStickyNote,
   FaCheckSquare,
   FaFile,
-  FaPlus,
-  FaEye,
   FaFileImport,
   FaFolderOpen,
   FaSave,
@@ -102,7 +101,6 @@ import {
   FaFilePdf,
   FaFileWord,
   FaCodeBranch,
-  FaCog,
   FaPrint,
   FaUndo,
   FaRedo,
@@ -110,11 +108,9 @@ import {
   FaCopy,
   FaPaste,
   FaMousePointer,
-  FaSearch,
   FaTextHeight,
   FaHashtag,
   FaSpellCheck,
-  FaSlidersH,
   FaPalette,
   FaListOl,
   FaBold,
@@ -136,7 +132,6 @@ import {
   FaKeyboard,
   FaStethoscope,
   FaSearchPlus,
-  FaSearchMinus,
   FaUpload,
   FaHistory,
   FaExchangeAlt,
@@ -146,7 +141,7 @@ import {
   FaFileSignature,
   FaRegClone, FaStream,   FaEdit,
   FaTags,
-  FaFlag, FaEyeSlash,
+  FaFlag, FaRegEyeSlash, FaRegEye, FaCheck, FaWrench,
   FaBug,
   FaRulerHorizontal,
   FaPencilAlt, FaCoffee,
@@ -1301,7 +1296,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       label: 'File',
       items: [
         {
-          icon: <FaPlus />,
+          icon: <span className="menu-txt-icon" aria-hidden="true">+</span>,
           label: 'New Script…',
           shortcut: sc('newScreenplay'),
           disabled: isCollabGuest,
@@ -1371,7 +1366,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         ...(nativeMenus ? [] : [
           { separator: true, label: '' },
           { separator: true, label: '' },
-          { icon: <FaCog />, label: 'Settings…', action: () => setPrefsOpen(true) },
+          { icon: <FaWrench />, label: 'Settings…', action: () => setPrefsOpen(true) },
         ]),
       ],
     },
@@ -1387,7 +1382,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { icon: <FaPaste />, label: 'Paste', shortcut: sc('paste'), action: () => document.execCommand('paste') },
         { icon: <FaMousePointer />, label: 'Select All', shortcut: sc('selectAll'), action: () => editor?.chain().focus().selectAll().run() },
         { separator: true, label: '' },
-        { icon: <FaSearch />, label: 'Find & Replace…', shortcut: sc('find'), action: () => setSearchOpen(true) },
+        { icon: <LuSearch />, label: 'Find & Replace…', shortcut: sc('find'), action: () => setSearchOpen(true) },
         /* v3.25: bookmarks removed (markers cover them); Last Edit Location
            survives here — it's navigation, like Go to Page. */
         { icon: <FaHashtag />, label: 'Go to Page…', shortcut: sc('goToPage'), action: () => setGoToPageOpen(true) },
@@ -1400,7 +1395,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         /* v3.25, Derek: Customize leads the View menu. */
         // v2.58, Derek: the Customize window straight from View.
         {
-          icon: <FaSlidersH />,
+          icon: <FaWrench />,
           label: 'Customize…',
           action: () => openCustomize('elements'),
         },
@@ -1438,7 +1433,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           children: [
             { icon: <FaRegClone />, label: !previewMode && viewStyle === 'page' ? '\u2713 Page' : 'Page', action: () => { useEditorStore.getState().setPreviewMode(false); setViewStyle('page'); } },
             { icon: <FaStream />, label: !previewMode && viewStyle === 'continuous' ? '\u2713 Continuous' : 'Continuous', action: () => { useEditorStore.getState().setPreviewMode(false); setViewStyle('continuous'); } },
-            { icon: <FaEye />, label: previewMode ? '\u2713 Preview' : 'Preview', action: () => useEditorStore.getState().setPreviewMode(true) },
+            { icon: <FaRegEye />, label: previewMode ? '\u2713 Preview' : 'Preview', action: () => useEditorStore.getState().setPreviewMode(true) },
           ],
         },
         // v3.16, Derek: the surface toggles group under one Toolbars submenu
@@ -1476,7 +1471,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
            * item with a stable label — the check column shows the state.
            * None of these ever reach Preview, print or export.
            */
-          icon: <FaEye />, label: 'Working Notes',
+          icon: <FaRegEye />, label: 'Working Notes',
           children: [
             // v4.22, Derek: label toggles (Show/Hide …) instead of check items.
             {
@@ -1506,7 +1501,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             },
             { separator: true, label: '' },
             {
-              icon: <FaEye />,
+              icon: <FaRegEye />,
               label: 'Show All in Script',
               action: () => {
                 setNotesVisible(true); setScriptTodosVisible(true);
@@ -1514,7 +1509,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               },
             },
             {
-              icon: <FaEyeSlash />,
+              icon: <FaRegEyeSlash />,
               label: 'Hide All in Script',
               action: () => {
                 setNotesVisible(false); setScriptTodosVisible(false);
@@ -1534,27 +1529,27 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               action: () => setTheme(id),
             })),
             { separator: true, label: '' },
-            { icon: <FaSlidersH />, label: 'Customize Themes…', action: () => openCustomize('themes') },
+            { icon: <FaWrench />, label: 'Customize Themes…', action: () => openCustomize('themes') },
           ],
         },
         { separator: true, label: '' },
         {
-          icon: <FaSearchPlus />, label: `Zoom (${zoomLevel}%)`,
+          icon: <CirclePlusIcon />, label: `Zoom (${zoomLevel}%)`,
           children: [
-            { icon: <FaSearchPlus />, label: 'Zoom In', shortcut: sc('zoomIn'), action: () => setZoomLevel(Math.min(300, zoomLevel + 10)) },
-            { icon: <FaSearchMinus />, label: 'Zoom Out', shortcut: sc('zoomOut'), action: () => setZoomLevel(Math.max(50, zoomLevel - 10)) },
+            { icon: <CirclePlusIcon />, label: 'Zoom In', shortcut: sc('zoomIn'), action: () => setZoomLevel(Math.min(300, zoomLevel + 10)) },
+            { icon: <CircleMinusIcon />, label: 'Zoom Out', shortcut: sc('zoomOut'), action: () => setZoomLevel(Math.max(50, zoomLevel - 10)) },
             // v2.57, Derek: as big as the page can get in the current editor
             // width (the sidebars decide how much room there is). The
             // measurement lives in the Toolbar; the command event reaches it.
             { icon: <FaSearchPlus />, label: 'Scale to Max Width', shortcut: sc('fitWidth'), action: () => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'fitWidth' })) },
             { separator: true, label: '' },
-            { icon: <FaSearch />, label: zoomLevel === 50 ? '\u2713 50%' : '50%', action: () => setZoomLevel(50) },
-            { icon: <FaSearch />, label: zoomLevel === 75 ? '\u2713 75%' : '75%', action: () => setZoomLevel(75) },
-            { icon: <FaSearch />, label: zoomLevel === 100 ? '\u2713 100%' : '100%', action: () => setZoomLevel(100) },
-            { icon: <FaSearch />, label: zoomLevel === 125 ? '\u2713 125%' : '125%', action: () => setZoomLevel(125) },
-            { icon: <FaSearch />, label: zoomLevel === 150 ? '\u2713 150%' : '150%', action: () => setZoomLevel(150) },
-            { icon: <FaSearch />, label: zoomLevel === 200 ? '\u2713 200%' : '200%', action: () => setZoomLevel(200) },
-            { icon: <FaSearch />, label: zoomLevel === 300 ? '\u2713 300%' : '300%', action: () => setZoomLevel(300) },
+            { icon: <CirclePlusIcon />, label: zoomLevel === 50 ? '\u2713 50%' : '50%', action: () => setZoomLevel(50) },
+            { icon: <CirclePlusIcon />, label: zoomLevel === 75 ? '\u2713 75%' : '75%', action: () => setZoomLevel(75) },
+            { icon: <CirclePlusIcon />, label: zoomLevel === 100 ? '\u2713 100%' : '100%', action: () => setZoomLevel(100) },
+            { icon: <CirclePlusIcon />, label: zoomLevel === 125 ? '\u2713 125%' : '125%', action: () => setZoomLevel(125) },
+            { icon: <CirclePlusIcon />, label: zoomLevel === 150 ? '\u2713 150%' : '150%', action: () => setZoomLevel(150) },
+            { icon: <CirclePlusIcon />, label: zoomLevel === 200 ? '\u2713 200%' : '200%', action: () => setZoomLevel(200) },
+            { icon: <CirclePlusIcon />, label: zoomLevel === 300 ? '\u2713 300%' : '300%', action: () => setZoomLevel(300) },
           ],
         },
       ],
@@ -1587,7 +1582,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                 return [{ icon: <FaTextHeight />, label: r.label, shortcut: shortcuts[r.id], action: () => setElement(r.id as any) }];
               }),
             { separator: true, label: '' },
-            { icon: <FaSlidersH />, label: 'Customize Elements…', action: () => openCustomize('elements') },
+            { icon: <FaWrench />, label: 'Customize Elements…', action: () => openCustomize('elements') },
           ],
         },
         { icon: <FaImage />, label: 'Insert Image…', action: () => useEditorStore.getState().imageInsertHandler?.() },
@@ -2247,7 +2242,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               {hasChecks(activeMenuData.items) && <span className="menu-check" />}
               {item.icon && <span className="menu-dropdown-icon">{item.icon}</span>}
               <span>{item.label}</span>
-              <span className="menu-submenu-arrow">{openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? '\u25BE' : '\u25B8'}</span>
+              <span className="menu-submenu-arrow">{openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? <LuChevronDown /> : <LuChevronRight />}</span>
               <div
                 className={`menu-submenu ${openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? 'submenu-visible' : ''}`}
                 ref={(el) => {
@@ -2276,7 +2271,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                       onTouchEnd={(e) => e.stopPropagation()}
                       onClick={(e) => handleItemClick(child, e)}
                     >
-                      {hasChecks(item.children) && <span className="menu-check">{child.checked ? '✓' : ''}</span>}
+                      {hasChecks(item.children) && <span className="menu-check">{child.checked ? <FaCheck /> : ''}</span>}
                       {child.icon && <span className="menu-dropdown-icon">{child.icon}</span>}
                       <span>{child.label}</span>
                       {child.shortcut && (
@@ -2294,7 +2289,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               onPointerEnter={handleItemPointerEnter}
               onClick={(e) => handleItemClick(item, e)}
             >
-              {hasChecks(activeMenuData.items) && <span className="menu-check">{item.checked ? '✓' : ''}</span>}
+              {hasChecks(activeMenuData.items) && <span className="menu-check">{item.checked ? <FaCheck /> : ''}</span>}
               {item.icon && <span className="menu-dropdown-icon">{item.icon}</span>}
               <span>{item.label}</span>
               {item.shortcut && (

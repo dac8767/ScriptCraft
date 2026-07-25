@@ -14,8 +14,6 @@ import {
   FaAlignJustify,
   FaUndo,
   FaRedo,
-  FaSearchPlus,
-  FaSearch,
   FaStickyNote,
   FaTags,
   FaHighlighter,
@@ -24,7 +22,7 @@ import {
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
   FaExchangeAlt,
 } from 'react-icons/fa';
-import { LuUndo2 } from 'react-icons/lu';
+import { LuUndo2, LuSearch, LuChevronDown } from 'react-icons/lu';
 import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import {
@@ -1260,7 +1258,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           title="Find & Replace (⌘F)"
           onClick={() => { setSearchOpen(true); if (inOverflow) setOverflowOpen(false); }}
         >
-          <FaSearch />
+          <LuSearch />
         </button>
       );
       case 'goto': return (
@@ -1302,7 +1300,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             onClick={() => setZoomLevel(Math.max(ZOOM_MIN, zoomLevel - 10))}
           ><CircleMinusIcon /></button>
           <span className="zoom-tb-mid">
-            <FaSearchPlus className="zoom-tb-icon" />
+            <span className="zoom-tb-icon"><CirclePlusIcon /></span>
             {zoomEditing ? (
               <input
                 ref={zoomInputRef}
@@ -1331,7 +1329,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               className="zoom-tb-caret"
               title="Zoom options"
               onClick={() => setZoomMenuOpen((o) => !o)}
-            >▾</button>
+            ><LuChevronDown /></button>
           </span>
           <button
             className="toolbar-btn zoom-tb-step"
@@ -1529,7 +1527,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               title="Zoom"
               onClick={() => setZoomPanelOpen(!zoomPanelOpen)}
             >
-              <FaSearchPlus />
+              <CirclePlusIcon />
             </button>
           </div>
         )}
@@ -2058,7 +2056,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               </div>
             ) : (
               <>
-                <button className="rib-add-back" onClick={() => setAddView('main')}>‹ Back</button>
+                <button className="rib-add-back" onClick={() => setAddView('main')}>← Back</button>
                 <input
                   className="rib-add-search"
                   autoFocus

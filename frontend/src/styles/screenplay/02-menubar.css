@@ -258,6 +258,17 @@
 .menu-dropdown-item.has-children { position: relative; cursor: default; }
 .menu-dropdown-item.has-children > .menu-submenu-arrow {
   margin-left: auto; font-size: 10px; color: var(--fd-text-muted); padding-left: 8px;
+  display: inline-flex; align-items: center;   /* v4.31: Lu chevron, not ▸ text */
+}
+/* v4.31 (icon audit 4-B): the "+" menu icon is TEXT — size it like the
+   react-icons beside it so the Insert menu's glyph lines up. */
+.menu-txt-icon {
+  display: inline-flex;
+  width: 1em;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
 }
 .menu-dropdown-item.has-children:hover > .menu-submenu-arrow { color: var(--fd-text); }
 .menu-submenu {

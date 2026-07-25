@@ -23,9 +23,10 @@ import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
   FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,
-  FaChevronRight, FaChevronDown, FaKeyboard, FaRobot, FaBook, FaSlidersH, FaColumns,
+  FaKeyboard, FaRobot, FaBook, FaSlidersH, FaColumns,
   FaCommentDots,
 } from 'react-icons/fa';
+import { LuChevronRight, LuChevronDown } from 'react-icons/lu';
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -739,7 +740,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               {/* v1.34: Premiere-style caret — a SINGLE chevron (the double one
                 * means pop-in/out): right when closed, down when open. */}
               <span className="tool-dock-caret">
-                {activeId === t.id ? <FaChevronDown /> : <FaChevronRight />}
+                {activeId === t.id ? <LuChevronDown /> : <LuChevronRight />}
               </span>
               <span className="tool-dock-icon">{t.icon}</span>
               <span className={`tool-dock-label${nameUpper ? ' tool-name-upper' : ''}`}>{t.label}</span>
