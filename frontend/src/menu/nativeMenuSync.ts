@@ -146,10 +146,24 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
     };
   };
 
+  // v4.28 batch-v6 #6, Derek: no Window menu — its three items (Minimize /
+  // Zoom / Fullscreen) live at the END of View now. They're macOS
+  // PredefinedMenuItems, so they're appended natively here rather than riding
+  // MenuBar's section data (the in-window browser fallback has no OS window
+  // to minimize — adding them there would be dead controls).
+  const windowItems = async () => [
+    await PredefinedMenuItem.new({ item: 'Separator' }),
+    await PredefinedMenuItem.new({ item: 'Minimize' }),
+    await PredefinedMenuItem.new({ item: 'Maximize' }),
+    await PredefinedMenuItem.new({ item: 'Fullscreen' }),
+  ];
   const submenus = await Promise.all(sections.map(widenSection).map(async (s, si) =>
     Submenu.new({
       text: s.label,
-      items: (await Promise.all(s.items.map((it, ii) => buildItem(it, [si, ii], s.label === 'Edit')))) as never[],
+      items: ([
+        ...(await Promise.all(s.items.map((it, ii) => buildItem(it, [si, ii], s.label === 'Edit')))),
+        ...(s.label === 'View' ? await windowItems() : []),
+      ]) as never[],
     })));
 
   // The application menu (first slot on macOS): the standard block.
@@ -181,23 +195,8 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
     ] as never[],
   });
 
-  // A standard Window menu keeps Minimize/Zoom behavior.
-  const windowMenu = await Submenu.new({
-    text: 'Window',
-    items: [
-      await PredefinedMenuItem.new({ item: 'Minimize' }),
-      await PredefinedMenuItem.new({ item: 'Maximize' }),
-      await PredefinedMenuItem.new({ item: 'Fullscreen' }),
-    ] as never[],
-  });
-
-  // v3.03, Derek: Window sits BEFORE Help (the macOS convention) — it used
-  // to trail the whole bar because it's appended after the synced sections.
-  const helpIdx = sections.findIndex((s) => s.label === 'Help');
-  const ordered = helpIdx === -1
-    ? [...submenus, windowMenu]
-    : [...submenus.slice(0, helpIdx), windowMenu, ...submenus.slice(helpIdx)];
-  const menu = await Menu.new({ items: [appMenu, ...ordered] as never[] });
+  // (v4.28: the standalone Window menu is gone — see windowItems above.)
+  const menu = await Menu.new({ items: [appMenu, ...submenus] as never[] });
   await menu.setAsAppMenu();
   installed = true;
 }

@@ -10,13 +10,20 @@
  * - ControlSearch: a magnifier that expands into an inline field, pushing the
  *   sibling controls left; ✕ or Escape collapses it.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LuChevronDown, LuSearch, LuX } from 'react-icons/lu';
 
 export interface ControlDropdownItem {
   label: string;
   active?: boolean;
+  onSelect: () => void;
+}
+
+/** One tab of a window's row-2 strip (TOOL_CHROME.useTabs). */
+export interface ToolChromeTab {
+  label: string;
+  active: boolean;
   onSelect: () => void;
 }
 
@@ -89,6 +96,95 @@ export const ControlDropdown: React.FC<{
   );
 };
 
+/** The tab strip — file tabs, or (collapsed) one dropdown showing the active
+ *  tab. ChromeRow2 decides which; the fullscreen/overlay headers render the
+ *  strip directly. */
+export const ChromeTabs: React.FC<{ tabs: ToolChromeTab[]; collapsed?: boolean }> = ({ tabs, collapsed }) => {
+  if (collapsed) {
+    const active = tabs.find((t) => t.active) ?? tabs[0];
+    return (
+      <ControlDropdown
+        title="Section"
+        current={active?.label}
+        items={tabs.map((t) => ({ label: t.label, active: t.active, onSelect: t.onSelect }))}
+      />
+    );
+  }
+  return (
+    <>
+      {tabs.map((t) => (
+        <button
+          key={t.label}
+          className={`tool-chrome-tab${t.active ? ' active' : ''}`}
+          onClick={t.onSelect}
+        >{t.label}</button>
+      ))}
+    </>
+  );
+};
+
+/** v4.28 batch-v6 #4, Derek: a tabbed row 2 NEVER wraps. When the full strip
+ *  doesn't fit beside the controls, the tabs collapse into a dropdown; if
+ *  even that overflows, the row scrolls horizontally (CSS overflow-x). A
+ *  hidden fixed-position copy of the strip supplies its natural width and the
+ *  controls' natural width comes from an inner span — so the visible row's
+ *  own flexing never feeds back into the decision (no flip-flopping). */
+export const ChromeRow2: React.FC<{
+  tabs: ToolChromeTab[];
+  /** The host row's base classes ('tool-chrome-row2' or 'tool-inline-header'). */
+  className: string;
+  /** Pop-out button when the dock hosts the row (right panel = before). */
+  before?: React.ReactNode;
+  after?: React.ReactNode;
+  /** The Filter/Sort/View/Search cluster content. */
+  children?: React.ReactNode;
+}> = ({ tabs, className, before, after, children }) => {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const ctlRef = useRef<HTMLSpanElement>(null);
+  const [collapsed, setCollapsed] = useState(false);
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    if (!row) return;
+    const decide = () => {
+      if (!row.clientWidth) return;            // unmeasurable (jsdom / hidden)
+      const stripW = measureRef.current?.offsetWidth ?? 0;
+      const ctlW = ctlRef.current?.offsetWidth ?? 0;
+      const cs = getComputedStyle(row);
+      const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+      const gap = parseFloat(cs.columnGap || cs.gap) || 0;
+      let fixed = pad + gap;                   // strip↔controls gap
+      row.querySelectorAll(':scope > .tool-dock-popout').forEach((el) => {
+        fixed += (el as HTMLElement).offsetWidth + gap;
+      });
+      setCollapsed(stripW + ctlW + fixed + 4 > row.clientWidth);
+    };
+    decide();
+    if (typeof ResizeObserver === 'undefined') return;   // jsdom
+    const ro = new ResizeObserver(decide);
+    ro.observe(row);
+    if (measureRef.current) ro.observe(measureRef.current);
+    if (ctlRef.current) ro.observe(ctlRef.current);
+    return () => ro.disconnect();
+  }, [tabs.length]);
+  return (
+    <div ref={rowRef} className={`${className} tool-chrome-row2-tabbed`}>
+      {before}
+      <span className={`tool-chrome-tabs${collapsed ? ' tool-chrome-tabs-dd' : ''}`}>
+        <ChromeTabs tabs={tabs} collapsed={collapsed} />
+      </span>
+      {/* natural-width measurer — never visible, never interactive */}
+      <span className="tool-chrome-tabs tool-chrome-tabs-measure" ref={measureRef} aria-hidden>
+        <ChromeTabs tabs={tabs} />
+      </span>
+      <span className="tool-chrome-controls">
+        <span className="tool-chrome-controls-inner" ref={ctlRef}>{children}</span>
+      </span>
+      {after}
+    </div>
+  );
+};
+
 export const ControlSearch: React.FC<{
   value: string;
   onChange: (q: string) => void;
@@ -118,6 +214,9 @@ export const ControlSearch: React.FC<{
         placeholder={placeholder ?? 'Search...'}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Escape') { onChange(''); setOpen(false); } }}
+        // v4.28 batch-v6 #2, Derek: clicking away from an EMPTY search folds it
+        // back to the magnifier; with text in it, it stays (the ✕ clears).
+        onBlur={() => { if (!value) setOpen(false); }}
       />
       <button
         className="tool-ctl-search-close"

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { FaChevronRight, FaChevronDown, FaExpandAlt, FaRegUser } from 'react-icons/fa';
 import { LuLayoutGrid, LuList, LuWaypoints } from 'react-icons/lu';
-import { ControlDropdown, ControlSearch } from './ToolControls';
+import { ControlDropdown, ControlSearch, ChromeTabs, ChromeRow2, type ToolChromeTab } from './ToolControls';
 import type { Editor } from '@tiptap/react';
 import { stripHtml } from '../utils/stripHtml';
 import { CharacterScanTab } from './CharacterScanTab';
@@ -75,16 +75,16 @@ export function CharWindowActions() {
   );
 }
 
-export function CharTabs() {
+/** Tab DATA for the chrome (TOOL_CHROME.useTabs) — ChromeTabs/ChromeRow2
+ *  render it as a strip or, when the row is too narrow, a dropdown. */
+export function useCharTabs(): ToolChromeTab[] {
   const activeTab = useEditorStore((s) => s.charActiveTab);
   const setActiveTab = useEditorStore((s) => s.setCharActiveTab);
-  return (
-    <>
-      <button className={`char-profiles-tab${activeTab === 'profiles' ? ' active' : ''}`} onClick={() => setActiveTab('profiles')}>Profiles</button>
-      <button className={`char-profiles-tab${activeTab === 'relationships' ? ' active' : ''}`} onClick={() => setActiveTab('relationships')}>Relationships</button>
-      <button className={`char-profiles-tab${activeTab === 'setup' ? ' active' : ''}`} onClick={() => setActiveTab('setup')}>From Script</button>
-    </>
-  );
+  return [
+    { label: 'Profiles', active: activeTab === 'profiles', onSelect: () => setActiveTab('profiles') },
+    { label: 'Relationships', active: activeTab === 'relationships', onSelect: () => setActiveTab('relationships') },
+    { label: 'From Script', active: activeTab === 'setup', onSelect: () => setActiveTab('setup') },
+  ];
 }
 
 const CHAR_SORTS = [
@@ -170,6 +170,9 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   // them from outside the panel body. One source; chrome and body can't drift.
   const activeTab = useEditorStore((s) => s.charActiveTab);
   const setActiveTab = useEditorStore((s) => s.setCharActiveTab);
+  // Tab data for the fullscreen header + the legacy overlay's tab row (the
+  // dock/window get the same list via TOOL_CHROME.useTabs).
+  const charTabs = useCharTabs();
   // v4.23, Derek: the relationship map is no longer its own tab — it's a
   // List/Map view choice inside Relationships, mirroring Profiles' Cards/List.
   const relViewMode = useEditorStore((s) => s.relViewMode);
@@ -491,12 +494,22 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   // The scan is a snapshot, but a referred name the writer classifies afterwards
   // (location / other / connected) should still drop off — mirror the old list's
   // live behavior by filtering the snapshot against referredTags at render time.
-  // v4.24 (Derek): entering the tab scans automatically — the button is now a
-  // manual Re-scan. Runs on tab entry only (not on every doc change) so typing
-  // never churns the list underneath the writer.
+  // v4.24 (Derek): entering the tab scans automatically.
+  // v4.28 batch-v6 #5 (Derek): no button at all — while the tab is open the
+  // list also FOLLOWS the script: doc changes re-scan after a quiet second,
+  // so typing doesn't churn the list mid-keystroke but it's never stale.
+  const scanRef = useRef(handleScanScript);
+  scanRef.current = handleScanScript;
   useEffect(() => {
-    if (activeTab === 'setup' && editor) handleScanScript();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- scan on entry only
+    if (activeTab !== 'setup' || !editor) return;
+    scanRef.current();
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const onDocChange = () => {
+      clearTimeout(t);
+      t = setTimeout(() => scanRef.current(), 1000);
+    };
+    editor.on('update', onDocChange);
+    return () => { clearTimeout(t); editor.off('update', onDocChange); };
   }, [activeTab, editor]);
 
   const visibleScanResults = useMemo(() => {
@@ -920,7 +933,13 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           title={projectId ? 'Add a character image' : undefined}
           onClick={projectId ? (e) => openImgMenu(e, charName) : undefined}
         >
-          {uploading ? <span className="char-profile-image-uploading">Uploading…</span> : <FaRegUser />}
+          {uploading ? <span className="char-profile-image-uploading">Uploading…</span> : (
+            <>
+              <FaRegUser />
+              {/* v4.28 batch-v6 #3, Derek: say what clicking does. */}
+              {projectId && <span className="char-profile-image-add-label">+ Add Image</span>}
+            </>
+          )}
         </div>
       ) : null;
     }
@@ -1302,10 +1321,9 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
               <button className="char-profiles-close" onClick={() => exitCharFullscreen()} title="Return to editor">&times;</button>
             </span>
           </div>
-          <div className="tool-chrome-row2 tool-chrome-row2-tabbed">
-            <span className="tool-chrome-tabs"><CharTabs /></span>
-            <span className="tool-chrome-controls"><CharControls /></span>
-          </div>
+          <ChromeRow2 tabs={charTabs} className="tool-chrome-row2">
+            <CharControls />
+          </ChromeRow2>
         </>
       )}
 
@@ -1328,7 +1346,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             </button>
           </div>
           <div className="char-profiles-tabs">
-            <CharTabs />
+            <ChromeTabs tabs={charTabs} />
           </div>
         </>
       )}
@@ -1581,7 +1599,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           scanResults={scanResults}
           visibleScanResults={visibleScanResults}
           existingCharNames={existingCharNames}
-          onScan={handleScanScript}
           onApply={applyScanResult}
           onClassifyReferred={handleClassifyReferred}
         />

@@ -35,7 +35,8 @@ import SceneNavigator, { SceneTitleExtra, SceneControls, type NavTab } from './S
 import NavigatorTool, { NavigatorHeaderExtra } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
-import CharacterProfiles, { CharTitleExtra, CharWindowActions, CharTabs, CharControls } from './CharacterProfiles';
+import CharacterProfiles, { CharTitleExtra, CharWindowActions, useCharTabs, CharControls } from './CharacterProfiles';
+import { ChromeRow2, type ToolChromeTab } from './ToolControls';
 import { StickyNotesTool, FragmentsTool, TodoTool } from './StickyNotes';
 import HighlightsTool from './HighlightsTool';
 import { DesignPanelDocked } from './DesignPanel';
@@ -153,17 +154,33 @@ export interface ToolChrome {
   TitleExtra?: React.FC;
   /** Row-1 right cluster, left of pop-out/close — e.g. fullscreen. */
   WindowActions?: React.FC;
-  /** Row-2 left: the tab strip. */
-  Tabs?: React.FC;
+  /** Row-2 left: the tab DATA (a hook — it may read stores). ChromeRow2
+   *  renders it as a file-tab strip when it fits, a dropdown when it
+   *  doesn't, and the row scrolls sideways as the last resort — a tabbed
+   *  row never wraps (Derek, batch-v6 #4). */
+  useTabs?: () => ToolChromeTab[];
   /** Row-2 right: the Filter / Sort / View / Search cluster, in that order.
    *  The cluster spans the row and right-aligns its content, so a spanning
    *  control bar (Outline, Scrapbook) lays out inside it unchanged. */
   Controls?: React.FC;
 }
+
+/** Hook-calling wrapper so useTabs runs in a component of its own — the
+ *  frame/dock render it conditionally, which a bare hook call couldn't be. */
+function TabbedRow2({ chrome, className, before, after }: {
+  chrome: ToolChrome; className: string; before?: React.ReactNode; after?: React.ReactNode;
+}) {
+  const tabs = chrome.useTabs!();
+  return (
+    <ChromeRow2 tabs={tabs} className={className} before={before} after={after}>
+      {chrome.Controls && <chrome.Controls />}
+    </ChromeRow2>
+  );
+}
 export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   // v4.27 phase 2: Characters — count beside the title, fullscreen as a
   // window action, Profiles/Relationships/From Script tabs, Sort/View/Search.
-  characters: { TitleExtra: CharTitleExtra, WindowActions: CharWindowActions, Tabs: CharTabs, Controls: CharControls },
+  characters: { TitleExtra: CharTitleExtra, WindowActions: CharWindowActions, useTabs: useCharTabs, Controls: CharControls },
   // v4.27 phase 3: Scenes — count beside the title; Filter/View/Search
   // (the old header filter popover, the List/Cards toggle, the footer search).
   scenes: { TitleExtra: SceneTitleExtra, Controls: SceneControls },
@@ -399,7 +416,7 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
             onClick={() => setToolSize(tool.id, popInW, size.h)}
           ><DoubleChevronIcon towards={chevronTowards('popin', side === 'right' ? 'right' : 'left')} /></button>
         ) : null;
-        const hasRow2 = !!(chrome?.Tabs || chrome?.Controls);
+        const hasRow2 = !!(chrome?.useTabs || chrome?.Controls);
         return (
           <>
             <div className="tool-window-header" onPointerDown={startDrag}>
@@ -416,16 +433,18 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
                 <button className="tool-window-close" onClick={onClose} title="Close">×</button>
               </span>
             </div>
-            {hasRow2 && (
+            {hasRow2 && (chrome?.useTabs ? (
               /* tabbed rows drop the surface tint + bottom-align the tabs so
-                 the active tab connects to the body below (three-layer scheme) */
-              <div className={`tool-chrome-row2${chrome?.Tabs ? ' tool-chrome-row2-tabbed' : ''}`}>
-                {chrome?.Tabs && <span className="tool-chrome-tabs"><chrome.Tabs /></span>}
+                 the active tab connects to the body below; ChromeRow2 owns
+                 the never-wrap behavior (collapse to dropdown, then scroll) */
+              <TabbedRow2 chrome={chrome} className="tool-chrome-row2" />
+            ) : (
+              <div className="tool-chrome-row2">
                 <span className="tool-chrome-controls">
                   {chrome?.Controls && <chrome.Controls />}
                 </span>
               </div>
-            )}
+            ))}
           </>
         );
       })()}
@@ -739,14 +758,22 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                     row 2 — tabs left, Filter/Sort/View/Search cluster right.
                     The controls span always renders: it's also the flex
                     spacer that keeps the pop-out at the editor-facing end. */}
-                <div className={`tool-inline-header${chrome?.Tabs ? ' tool-chrome-row2-tabbed' : ''}`}>
-                  {side === 'right' && popOutBtn}
-                  {chrome?.Tabs && <span className="tool-chrome-tabs"><chrome.Tabs /></span>}
-                  <span className="tool-chrome-controls">
-                    {chrome?.Controls && <chrome.Controls />}
-                  </span>
-                  {side !== 'right' && popOutBtn}
-                </div>
+                {chrome?.useTabs ? (
+                  <TabbedRow2
+                    chrome={chrome}
+                    className="tool-inline-header"
+                    before={side === 'right' ? popOutBtn : undefined}
+                    after={side !== 'right' ? popOutBtn : undefined}
+                  />
+                ) : (
+                  <div className="tool-inline-header">
+                    {side === 'right' && popOutBtn}
+                    <span className="tool-chrome-controls">
+                      {chrome?.Controls && <chrome.Controls />}
+                    </span>
+                    {side !== 'right' && popOutBtn}
+                  </div>
+                )}
                 <div className="tool-inline-body" style={solo ? undefined : { height: activeSize!.h }}>
                   <ToolContent id={active!.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />
                 </div>

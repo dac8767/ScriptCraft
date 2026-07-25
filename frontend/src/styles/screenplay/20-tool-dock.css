@@ -364,19 +364,72 @@
   padding-top: 0;
   padding-bottom: 0;
   align-items: stretch;
-  /* Narrow hosts (the 300px dock): the controls cluster drops to its own
-     line under the tabs instead of painting over them. Inert when it fits. */
-  flex-wrap: wrap;
+  /* v4.28 batch-v6 #4, Derek: a tabbed row NEVER wraps. ChromeRow2 collapses
+     the strip into a dropdown first; if even that overflows, the row scrolls
+     sideways — items keep their size and stay on ONE line. */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
 }
+.tool-chrome-row2-tabbed::-webkit-scrollbar { height: 4px; }
+.tool-chrome-row2-tabbed::-webkit-scrollbar-thumb { background: var(--fd-border); border-radius: 2px; }
 .tool-chrome-row2-tabbed .tool-chrome-tabs {
   align-items: flex-end;
   padding-top: 5px;
   gap: 3px;
   /* never shrink below the tab labels — shrink meant buttons overflowed the
-     span and painted over the controls; wrapping is the narrow-case answer */
+     span and painted over the controls */
   flex-shrink: 0;
 }
+/* collapsed strip = one dropdown — a centered control, not a bottom-seated tab */
+.tool-chrome-row2-tabbed .tool-chrome-tabs.tool-chrome-tabs-dd {
+  align-self: center;
+  align-items: center;
+  padding-top: 0;
+}
+/* ChromeRow2's natural-width measurer — out of flow, invisible, inert. */
+.tool-chrome-tabs-measure {
+  position: fixed;
+  top: -9999px;
+  left: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
 .tool-chrome-row2-tabbed .tool-chrome-controls { min-width: max-content; }
+.tool-chrome-controls-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* The tab strip's file-tab look (one source — the dock/window rows, the
+   Characters fullscreen header and the legacy overlay all render
+   .tool-chrome-tab via ChromeTabs). Active tab fills to the surface color
+   below and masks the track line, so it reads as attached to the sheet. */
+.tool-chrome-tab {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--fd-overlay-light, rgba(255, 255, 255, 0.04));
+  color: var(--fd-text-muted);
+  border: 1px solid var(--fd-border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  margin-bottom: -1px;   /* overlap the track's bottom border */
+  white-space: nowrap;
+  transition: background 0.1s, color 0.1s;
+}
+.tool-chrome-tab:hover { color: var(--fd-text); }
+/* slimmer shoulders in the 300px dock column */
+.tool-inline-header .tool-chrome-tab { padding: 6px 10px; }
+.tool-chrome-tab.active {
+  background: var(--fd-navigator-bg);
+  color: var(--fd-text);
+  font-weight: 600;
+  border-bottom: 1px solid var(--fd-navigator-bg);
+}
 .tool-chrome-row2-tabbed .tool-chrome-controls,
 .tool-chrome-row2-tabbed .tool-dock-popout { align-self: center; }
 /* Dock-compressed row 1: the open accordion row carries the window actions

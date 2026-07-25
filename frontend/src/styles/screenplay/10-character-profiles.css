@@ -15,7 +15,7 @@
   position: relative;
 }
 /* Layer 2 — one wrapper around whichever tab's body is showing. Its color
-   matches the active tab exactly (see .char-profiles-tab.active), which is
+   matches the active tab exactly (see .tool-chrome-tab.active), which is
    what makes the tab look attached to the sheet below it. */
 .char-tab-surface {
   flex: 1;
@@ -761,12 +761,19 @@
   width: 100%;
   height: var(--dz-char-image-h, 200px);
   display: flex;
+  flex-direction: column;   /* v4.28 batch-v6 #3: icon over the add label */
+  gap: 10px;
   align-items: center;
   justify-content: center;
   background: var(--fd-input-bg);
   color: var(--fd-text-muted);
   font-size: 40px;
   border-radius: 6px;
+}
+.char-profile-image-add-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .2px;
 }
 /* v4.26 batch-v5 #3: the image/placeholder IS the upload control. */
 .char-img-clickable { cursor: pointer; }
@@ -1160,41 +1167,14 @@
   gap: 6px;
   margin-top: 12px;
 }
-/* Tabs in character profiles panel */
-/* v4.23, Derek: real file-tab shape — rounded-top tabs sitting on a track, the
-   active one filled to the content colour so it reads as connected to the panel
-   below (the inactive ones sit behind it). */
+/* Tabs row of the legacy slide-in overlay. The tab buttons themselves are the
+   shared .tool-chrome-tab (20-tool-dock.css) — one file-tab look everywhere. */
 .char-profiles-tabs {
   display: flex;
   gap: 3px;
   padding: 6px 8px 0;
   border-bottom: 1px solid var(--fd-border);
   flex-shrink: 0;
-}
-.char-profiles-tab {
-  padding: 6px 16px;
-  font-size: 12px;
-  font-weight: 500;
-  background: var(--fd-overlay-light, rgba(255, 255, 255, 0.04));
-  color: var(--fd-text-muted);
-  border: 1px solid var(--fd-border);
-  border-bottom: none;
-  border-radius: 8px 8px 0 0;
-  cursor: pointer;
-  margin-bottom: -1px;   /* overlap the track's bottom border */
-  white-space: nowrap;   /* v4.27: tabs live in flexible chrome rows now */
-  transition: background 0.1s, color 0.1s;
-}
-.char-profiles-tab:hover { color: var(--fd-text); }
-/* v4.27: in the 300px dock column the three tabs need slimmer shoulders to
-   fit the inline header's width (floating/fullscreen keep the roomy 16px). */
-.tool-inline-header .char-profiles-tab { padding: 6px 10px; }
-.char-profiles-tab.active {
-  background: var(--fd-navigator-bg);
-  color: var(--fd-text);
-  font-weight: 600;
-  /* mask the track line under the active tab so it merges with the content */
-  border-bottom: 1px solid var(--fd-navigator-bg);
 }
 
 .char-profile-color-highlight {
@@ -1587,6 +1567,15 @@
    gender/age row while other blocks get ~10px. Match the photo-row rhythm. */
 .char-profile-detail-stacked .mini-rt-wrapper {
   margin-bottom: var(--dz-char-field-gap, 10px);
+}
+/* v4.28 batch-v6 #1, Derek: the seam ABOVE Description (the meta row's bottom
+   edge) had no margin at all in the stacked layout, so the Design field-gap
+   knob moved every row EXCEPT that one. Every stacked seam rides it now. */
+.char-profile-detail-stacked .char-profile-meta-row-3 {
+  margin-bottom: var(--dz-char-field-gap, 10px);
+}
+.char-profile-detail-stacked .char-profile-name-row {
+  margin-bottom: var(--dz-char-field-gap, 8px);
 }
 .char-profile-photo-row {
   display: flex;

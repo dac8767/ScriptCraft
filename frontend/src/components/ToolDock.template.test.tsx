@@ -55,7 +55,10 @@ describe('window template rows (v4.27)', () => {
     TOOL_CHROME.todo = {
       TitleExtra: () => <span data-testid="tx">· 3</span>,
       WindowActions: () => <button data-testid="wa">fs</button>,
-      Tabs: () => <span data-testid="tabs">tabs</span>,
+      useTabs: () => [
+        { label: 'Alpha', active: true, onSelect: () => {} },
+        { label: 'Beta', active: false, onSelect: () => {} },
+      ],
       Controls: () => <span data-testid="ctl">ctl</span>,
     };
     renderFrame();
@@ -67,7 +70,13 @@ describe('window template rows (v4.27)', () => {
     expect(kids.indexOf(wa)).toBeGreaterThan(-1);
     expect(kids.indexOf(wa)).toBeLessThan(kids.indexOf(close));
     const row2 = host.querySelector('.tool-chrome-row2')!;
-    expect(row2.querySelector('.tool-chrome-tabs [data-testid="tabs"]')).toBeTruthy();
+    expect(row2.classList.contains('tool-chrome-row2-tabbed')).toBe(true);
+    // strip mode: real tab buttons in the visible strip (the hidden measurer
+    // duplicates them — scope to the non-measure span)
+    const strip = row2.querySelector('.tool-chrome-tabs:not(.tool-chrome-tabs-measure)')!;
+    const tabLabels = Array.from(strip.querySelectorAll('.tool-chrome-tab')).map((b) => b.textContent);
+    expect(tabLabels).toEqual(['Alpha', 'Beta']);
+    expect(strip.querySelector('.tool-chrome-tab.active')?.textContent).toBe('Alpha');
     expect(row2.querySelector('.tool-chrome-controls [data-testid="ctl"]')).toBeTruthy();
   });
 

@@ -8,29 +8,23 @@ interface CharacterScanTabProps {
   scanResults: ScannedCharacter[] | null;
   visibleScanResults: ScannedCharacter[];
   existingCharNames: string[];
-  onScan: () => void;
   onApply: (r: ScannedCharacter) => void;
   onClassifyReferred: (name: string, value: string) => void;
 }
 
 export function CharacterScanTab({
   scanResults, visibleScanResults, existingCharNames,
-  onScan, onApply, onClassifyReferred,
+  onApply, onClassifyReferred,
 }: CharacterScanTabProps) {
   return (
     <div className="char-setup-tab">
       <div className="char-setup-section">
         <div className="char-setup-title">Scan Script{scanResults ? ` (${visibleScanResults.length})` : ''}</div>
+        {/* v4.28 batch-v6 #5, Derek: no Re-scan button — the list tracks the
+            script by itself (rescans on tab entry AND as the script changes). */}
         <p className="char-setup-desc">
-          The script is scanned automatically when you open this tab — names that already have a character entry drop off the list. Add the ones you want; classify the rest to file them away.
+          The list updates from the script automatically — names that already have a character entry drop off. Add the ones you want; classify the rest to file them away.
         </p>
-        <button
-          className="char-rels-add"
-          onClick={onScan}
-          title="Scan again now (the tab also re-scans every time you open it)"
-        >
-          Re-scan Script
-        </button>
 
         {scanResults && (
           visibleScanResults.length === 0 ? (
