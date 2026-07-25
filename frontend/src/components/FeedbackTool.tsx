@@ -71,7 +71,10 @@ export function FeedbackFrameHost() {
       <iframe
         className="feedback-tool-frame"
         src={HELP_FORMS.feedback.url}
-        title={HELP_FORMS.feedback.title}
+        /* v4.36 batch-v10 #1: aria-label, NOT title — the app's HoverTooltip
+           renders every [title] as a tooltip, and hovering the form popped a
+           pointless "Feedback" bubble. The accessible name stays. */
+        aria-label={HELP_FORMS.feedback.title}
       />
     </div>
   );

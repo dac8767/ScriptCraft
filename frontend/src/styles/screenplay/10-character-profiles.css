@@ -230,7 +230,8 @@
   background: none;
   border: none;
   color: var(--fd-text-muted);
-  font-size: 18px;
+  /* v4.36 batch-v10 #4: same ~10px ink target as .tool-window-close */
+  font-size: 21px;
   cursor: pointer;
   padding: 0 4px;
   line-height: 1;

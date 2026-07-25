@@ -165,7 +165,7 @@ export const ChromeRow2: React.FC<{
       const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
       const gap = parseFloat(cs.columnGap || cs.gap) || 0;
       let fixed = pad + gap;                   // strip↔controls gap
-      row.querySelectorAll(':scope > .tool-dock-popout').forEach((el) => {
+      row.querySelectorAll(':scope > .tool-dock-popout, :scope > .char-profiles-fullscreen-btn').forEach((el) => {
         fixed += (el as HTMLElement).offsetWidth + gap;
       });
       setCollapsed(stripW + ctlW + fixed + 4 > row.clientWidth);

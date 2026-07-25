@@ -43,9 +43,28 @@ export function ColorDots({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: P
   const cur = card.color || SHELF_DEFAULT_COLOR;
   const isPreset = SHELF_COLORS.some(([c]) => c === cur);
   // the pop is right-anchored, so the row fans out to the LEFT of the trigger
-  // and always stays inside the pane; the current preset keeps the slot next
-  // to the custom swatch, nearest where the single circle was
+  // and always stays inside the pane. v4.36 batch-v10 #3, Derek: whatever
+  // shows the CURRENT color sits RIGHTMOST — exactly over the closed dot's
+  // spot, so opening the pop never moves it — and the custom + swatch takes
+  // the FAR (left) end. When the current color IS a custom hex, the custom
+  // swatch is the current-color slot and stays rightmost instead.
   const ordered = [...SHELF_COLORS.filter(([c]) => c !== cur), ...SHELF_COLORS.filter(([c]) => c === cur)];
+  const customSwatch = (
+    <label
+      className="swn-color-custom"
+      title="Custom color"
+      style={isPreset ? undefined : { background: cur, outline: '2px solid #666' }}
+    >
+      <input
+        type="color"
+        value={cur}
+        onFocus={() => { picking.current = true; }}
+        onBlur={() => { picking.current = false; setOpen(false); }}
+        onChange={(e) => onUpdate({ color: e.target.value })}
+      />
+      {isPreset && <span>+</span>}
+    </label>
+  );
   return (
     <span
       className="swn-color-pick"
@@ -61,6 +80,7 @@ export function ColorDots({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: P
       />
       {open && (
         <span className="swn-color-pop" onMouseLeave={() => { if (!picking.current) setOpen(false); }}>
+          {isPreset && customSwatch}
           {ordered.map(([c, name]) => (
             <span
               key={c}
@@ -70,22 +90,7 @@ export function ColorDots({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: P
               onClick={() => { onUpdate({ color: c }); setOpen(false); }}
             />
           ))}
-          {/* Custom color — the Characters-row dashed swatch, dot-sized. When
-              the current color is a custom hex it shows here as the fill. */}
-          <label
-            className="swn-color-custom"
-            title="Custom color"
-            style={isPreset ? undefined : { background: cur, outline: '2px solid #666' }}
-          >
-            <input
-              type="color"
-              value={cur}
-              onFocus={() => { picking.current = true; }}
-              onBlur={() => { picking.current = false; setOpen(false); }}
-              onChange={(e) => onUpdate({ color: e.target.value })}
-            />
-            {isPreset && <span>+</span>}
-          </label>
+          {!isPreset && customSwatch}
         </span>
       )}
     </span>

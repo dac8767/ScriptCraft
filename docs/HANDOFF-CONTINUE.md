@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.35 — generic fullscreen + segmented tabs)
+# ScriptCraft — continuation brief (current as of v4.36 — chrome polish)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,23 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.35 — batch v9 (HEAD)
+### v4.36 — batch v10 (HEAD)
+
+Four small chrome fixes: (1) Feedback iframe `title` → `aria-label` (the
+HoverTooltip renders every [title]; the a11y name survives). (2) The generic
+fullscreen button sits on the EDITOR-FACING side everywhere: floating frames
+zone-L for right-panel windows / zone-R for left; inline dock rows carry it
+in the row-2 header beside the pop-out (which keeps the extreme edge) — and
+ChromeRow2's never-wrap math now counts it among fixed row children.
+(3) ColorDots: custom + swatch first (far end), current color LAST, and the
+pop's right/top offsets compensate padding+border so the current color sits
+pixel-exactly over the closed dot (dx=dy=0, driver-verified). When the
+current color IS custom, the custom swatch takes the rightmost slot instead.
+(4) Icon ink normalized to the pop-out chevron (~10px): Fullscreen/Exit
+icons default 14→11, .tool-window-close and .char-profiles-close 16/18→21px
+(the × glyph inks ~0.47em).
+
+### v4.35 — batch v9
 
 Nine items, three worker lanes + dispatcher. The architecture piece:
 **`fullscreenTool: ToolId | null`** replaced charFullscreen/scenesFullscreen —

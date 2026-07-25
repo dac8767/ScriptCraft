@@ -1,5 +1,26 @@
 [
   {
+    "version": "4.36",
+    "date": "2026-07-25",
+    "items": [
+      {
+        "title": "Window chrome polish",
+        "detail": "The Feedback form no longer pops a redundant \"Feedback\" tooltip on hover. The fullscreen button always sits on the editor-facing side of a window's bar (right side in the left panel, left side in the right panel, beside the pop-out). And the header icons are one height now — the × grew and the fullscreen arrows shrank to match the pop-out chevron.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "Note colors: the current color never moves",
+        "detail": "Opening the color row on a note or to-do keeps the current color exactly where the dot was — the custom + swatch sits at the far end instead of displacing it.",
+        "tags": [
+          "Notes",
+          "To-Do"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.35",
     "date": "2026-07-25",
     "items": [

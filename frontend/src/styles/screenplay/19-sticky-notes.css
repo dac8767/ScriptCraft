@@ -222,8 +222,10 @@
 }
 .swn-color-pop {
   position: absolute;
-  right: 0;
-  top: -2px;
+  /* v4.36 batch-v10 #3: offset by padding+border so the LAST item (the
+     current color) sits pixel-exactly over the closed dot's spot. */
+  right: -5px;
+  top: -3px;
   display: inline-flex;
   gap: 5px;
   padding: 2px 4px;

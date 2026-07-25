@@ -502,6 +502,11 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
           <>
             <div className="tool-window-header" onPointerDown={startDrag}>
               <span className="tool-window-zone tool-window-zone-l">
+                {/* v4.36 batch-v10 #2, Derek: the fullscreen button sits on
+                    the INNER (editor-facing) side — zone-L for right-panel
+                    windows, zone-R for left-panel ones. The pop-in keeps the
+                    outer edge. */}
+                {side === 'right' && <ToolFullscreenButton id={tool.id} />}
                 {side !== 'right' && popBtn}
               </span>
               <span className="tool-window-zone tool-window-zone-c">
@@ -510,7 +515,7 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
               </span>
               <span className="tool-window-zone tool-window-zone-r tool-window-header-actions">
                 {chrome?.WindowActions && <chrome.WindowActions />}
-                <ToolFullscreenButton id={tool.id} />
+                {side !== 'right' && <ToolFullscreenButton id={tool.id} />}
                 {side === 'right' && popBtn}
                 <button className="tool-window-close" onClick={onClose} title="Close">×</button>
               </span>
@@ -829,11 +834,8 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                   row 1, so the open tool's title extra (count) and window
                   actions (fullscreen…) ride on it. */}
               {isOpenInline && chrome?.TitleExtra && <chrome.TitleExtra />}
-              {isOpenInline && (
-                <span className="tool-dock-item-actions">
-                  {chrome?.WindowActions && <chrome.WindowActions />}
-                  <ToolFullscreenButton id={t.id} />
-                </span>
+              {isOpenInline && chrome?.WindowActions && (
+                <span className="tool-dock-item-actions"><chrome.WindowActions /></span>
               )}
             </div>
             {isOpenInline && (
@@ -843,20 +845,23 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                     row 2 — tabs left, Filter/Sort/View/Search cluster right.
                     The controls span always renders: it's also the flex
                     spacer that keeps the pop-out at the editor-facing end. */}
+                {/* v4.36 batch-v10 #2: the fullscreen button rides the
+                    editor-facing end of this row, beside the pop-out (which
+                    keeps the extreme edge — its established home). */}
                 {chrome?.useTabs ? (
                   <TabbedRow2
                     chrome={chrome}
                     className="tool-inline-header"
-                    before={side === 'right' ? popOutBtn : undefined}
-                    after={side !== 'right' ? popOutBtn : undefined}
+                    before={side === 'right' ? <>{popOutBtn}<ToolFullscreenButton id={t.id} /></> : undefined}
+                    after={side !== 'right' ? <><ToolFullscreenButton id={t.id} />{popOutBtn}</> : undefined}
                   />
                 ) : (
                   <div className="tool-inline-header">
-                    {side === 'right' && popOutBtn}
+                    {side === 'right' && <>{popOutBtn}<ToolFullscreenButton id={t.id} /></>}
                     <span className="tool-chrome-controls">
                       {chrome?.Controls && <chrome.Controls />}
                     </span>
-                    {side !== 'right' && popOutBtn}
+                    {side !== 'right' && <><ToolFullscreenButton id={t.id} />{popOutBtn}</>}
                   </div>
                 )}
                 <div className="tool-inline-body" style={solo ? undefined : { height: activeSize!.h }}>

@@ -34,13 +34,13 @@ export const UTILITY_ICONS: Record<'divider' | 'spacer', React.ReactNode> = {
 /** v4.31 (Derek's icon-audit pick, group 1-C): THE fullscreen faces — the
  *  diagonal-arrows pair from the Cards board, promoted here so every
  *  enter/exit-fullscreen control draws the same one. */
-export const FullscreenIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
+export const FullscreenIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (
   <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.5">
     <polyline points="9,1 13,1 13,5" /><line x1="8" y1="6" x2="13" y2="1" />
     <polyline points="5,13 1,13 1,9" /><line x1="6" y1="8" x2="1" y2="13" />
   </svg>
 );
-export const ExitFullscreenIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
+export const ExitFullscreenIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (
   <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.5">
     <polyline points="9,1 9,5 13,5" /><line x1="13" y1="1" x2="9" y2="5" />
     <polyline points="5,13 5,9 1,9" /><line x1="1" y1="13" x2="5" y2="9" />
