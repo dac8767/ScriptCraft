@@ -1,5 +1,40 @@
 [
   {
+    "version": "4.29",
+    "date": "2026-07-25",
+    "items": [
+      {
+        "title": "Window rows never wrap",
+        "detail": "When a tool window gets too narrow for its tabs and controls, the tabs collapse into a single dropdown first; if space is still short, the row scrolls sideways instead of stacking onto extra lines.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "From Script updates itself",
+        "detail": "The Characters > From Script list now follows the script — it refreshes about a second after you stop typing. The Re-scan button is gone.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "Character card fixes",
+        "detail": "The Design window's field-row spacing knob now also moves the gap above Description; the empty image slot reads “+ Add Image”; an opened-but-empty search folds back to its magnifier when you click away.",
+        "tags": [
+          "Fix",
+          "UI"
+        ]
+      },
+      {
+        "title": "Window menu folded into View",
+        "detail": "Minimize, Zoom and Fullscreen now sit at the end of the View menu; the separate Window menu is gone.",
+        "tags": [
+          "UI"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.28",
     "date": "2026-07-25",
     "items": [

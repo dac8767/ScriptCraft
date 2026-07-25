@@ -238,6 +238,28 @@ reliable; re-run before believing a weird worker failure.
 
 ## 1. Where we are right now (end of this run)
 
+### v4.29 — batch v6 on top of the template (HEAD)
+
+Derek's follow-ups after seeing the template: (1) the Design field-gap knob
+now also drives the seam above Description (the stacked meta/name rows had
+fixed margins); (2) an empty expanded cluster search folds on blur; (3) the
+image slot says "+ Add Image"; (4) **tabbed chrome rows never wrap** —
+`TOOL_CHROME.Tabs` became `useTabs` (tab DATA), and `ChromeRow2`
+(ToolControls) measures the row: full strip when it fits, ONE dropdown when
+it doesn't, horizontal scroll as the last resort (the shared tab look is
+`.tool-chrome-tab` in 20-tool-dock.css now); (5) From Script auto-rescans
+(debounced 1s) while open — Re-scan button deleted; note the v4.x auto-sync
+means speaking cues get profiles on panel mount, so the scan list surfaces
+REFERRED names; (6) the native Window menu merged into View (nativeMenuSync
+appends Minimize/Zoom/Fullscreen there; browser fallback unchanged); (7)
+**icon audit** delivered — `docs/icon-audit.html` (self-contained visual
+picker, 18 duplicate-function groups) + `docs/ICON-AUDIT.md`; Derek replies
+"fullscreen: B"-style picks, THEN unify the winners app-wide (also fix the
+emoji violations it found: NavigatorTool 📝, AssetManager file-type emoji,
+StickyCard placeholder).
+
+---
+
 ### v4.27–v4.28 — Derek's universal window template + two Customize moves (HEAD)
 
 Derek supplied a schematic: EVERY tool window is row 1 (pop-in | centered tool
