@@ -1,11 +1,10 @@
 import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
-import { FaSlidersH, FaColumns, FaFileAlt, FaRulerCombined, FaCommentDots, FaCog, FaCloudUploadAlt } from 'react-icons/fa';
+import { FaSlidersH, FaColumns, FaFileAlt, FaRulerCombined, FaCog, FaCloudUploadAlt } from 'react-icons/fa';
 import { applyDraftNumber } from './SetDraftDialog';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { DATE_FORMATS, type DateFormatId } from '../utils/dateFormat';
-import MoresContdsDialog from './MoresContdsDialog';
 import PageSetupDialog from './PageSetupDialog';
 import ScriptFormatPreferencesDialog from './ScriptFormatPreferencesDialog';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
@@ -30,13 +29,13 @@ import { redirectUri } from '../services/oauthPkce';
    - Customize Layout   — same live settings as View → Customize Layout
    - Script Formats     — formerly Format → Script Format Preferences…
    - Page Setup         — formerly File → Page Setup…
-   - Mores & Continueds — formerly Format → Mores & Continueds…
 
-   The last four embed the existing dialogs in `embedded` mode, so both entry
+   (v4.28: Mores & Continueds moved to Customize > Editor.)
+   The remaining embeds use the existing dialogs in `embedded` mode, so both entry
    points (where they still exist) edit exactly the same state.
    ───────────────────────────────────────────────────────────────────────── */
 
-type PrefTab = 'general' | 'layout' | 'formats' | 'page' | 'mores' | 'saveloc' | 'system';
+type PrefTab = 'general' | 'layout' | 'formats' | 'page' | 'saveloc' | 'system';
 
 const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   // App-wide first, then writing setup, then data, then system.
@@ -45,7 +44,6 @@ const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   { id: 'layout', label: 'Customize', icon: <FaColumns /> },
   { id: 'formats', label: 'Templates', icon: <FaFileAlt /> },
   { id: 'page', label: 'Page Setup', icon: <FaRulerCombined /> },
-  { id: 'mores', label: 'Mores & Continueds', icon: <FaCommentDots /> },
   { id: 'system', label: 'System', icon: <FaCog /> },
 ];
 
@@ -718,9 +716,6 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
             )}
             {tab === 'page' && (
               <PageSetupDialog embedded onClose={() => showToast('Page setup applied', 'success')} />
-            )}
-            {tab === 'mores' && (
-              <MoresContdsDialog embedded onClose={() => showToast('Mores & Continueds applied', 'success')} />
             )}
             {tab === 'saveloc' && <SaveLocationsTab editor={editor ?? null} />}
             {tab === 'system' && <SettingsPage embedded />}

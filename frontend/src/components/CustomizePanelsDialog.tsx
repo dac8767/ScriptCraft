@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaRegQuestionCircle, FaGripLinesVertical, FaArrowsAltH } from 'react-icons/fa';
-import { MENU_ICONS, UTILITY_ICONS } from './uiIcons';
+import { UTILITY_ICONS } from './uiIcons';
 /**
  * CustomizePanelsDialog — View → Customize Layout.
  *
@@ -15,15 +15,15 @@ import { MENU_ICONS, UTILITY_ICONS } from './uiIcons';
  * checkboxes (a ScriptCraft v5.5 holdover) are gone; hidden items are re-added
  * from the Add dropdown. Item registry: toolbarBuiltins.ts.
  */
-import { MENU_BAR_LABELS, useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
+import { useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS, PANEL_EXCLUDED_IDS } from './ToolDock';
 import { confirmDialog, saveDialog } from './ConfirmDialog';
 import { DEFAULT_TOOLBAR_LEFT, stripTall } from './toolbarBuiltins';
 import RibbonPalette from './RibbonPalette';
 import { buildRibbonPalette } from './ribbonPaletteData';
-import { useSettingsStore } from '../stores/settingsStore';
-import { isTauri } from '../services/platform';
 import EditElementsDialog from './EditElementsDialog';
+import MoresContdsDialog from './MoresContdsDialog';
+import { showToast } from './Toast';
 import KeyboardShortcutsTab from './KeyboardShortcutsTab';
 import ThemesTab from './ThemesTab';
 import ContextMenuTab from './ContextMenuTab';
@@ -31,7 +31,7 @@ import { QAT_OPTIONS, QAT_BY_ID, isQatDivider, isQatSpacer } from './TitleBar';
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
-  category?: 'menu' | 'toolbar' | 'panels' | 'elements' | 'keys' | 'themes' | 'context';
+  category?: 'toolbar' | 'panels' | 'elements' | 'keys' | 'themes' | 'context';
   open: boolean;
   onClose: () => void;
   /** Render only the content (no overlay/box) — used inside Preferences. */
@@ -75,7 +75,6 @@ function TabInfo({ children }: { children: React.ReactNode }) {
   );
 }
 const TAB_HINTS: Record<string, React.ReactNode> = {
-  menu: <>Drag menus between Shown and Hidden — where you drop one is where it sits on the bar. File always stays visible.</>,
   toolbar: <>Your toolbar above is now the editor. While this tab is open the real ribbon is live: drag items from the palette straight onto it, drag a section by its body to move it, hover an item or section for its ×. Use a faint “+ Add” block on the bar to insert a section, divider, spacer, alignment split or any item. Drag an item off the bar to remove it. Close this window to lock the layout.</>,
   qat: <>The buttons beside the traffic lights in the titlebar. Drag between Shown and Hidden — where you drop one is where it sits. Add dividers and spacers to group them.</>,
   panels: <>Drag tools between Left Panel, Right Panel and Hidden — where you drop one is where it sits. The Show/Hide in a list’s header controls the whole panel (drag a panel’s inner edge in the app to resize it). Divider labels are edited here only.</>,
@@ -255,8 +254,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const {
     toolConfig, setToolConfig,
     toolbarPinnedTools,
-    menuBarOrder, setMenuBarOrder,
-    menuBarHidden, setMenuBarHidden,
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
     toolOrder, setToolOrder,
     toolbarMode, setToolbarMode,
@@ -549,18 +546,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones, toolbarZonesSet } = useEditorStore();
   const { panelDividers, setPanelDividers, panelNameCase } = useEditorStore();
   // v4.22, Derek: default landing is the Editor tab (top of the list).
-  const [activeCat, setActiveCat] = React.useState<'menu' | 'toolbar' | 'qat' | 'panels' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'elements');
-
-  // v2.94, Derek: with the native macOS menu bar active there's no in-window
-  // menu bar to customize — the tab disappears (revert the menu system in
-  // Settings > General and it comes back).
-  // v4.26, Derek: the Menu Bar tab no longer hides under native menus — the
-  // menu-system toggle LIVES here now (it used to sit in Preferences >
-  // General, which stranded the way back once the tab vanished). Under native
-  // menus the tab shows the toggle + a note; the in-window-only editors hide.
-  const menuSystem = useSettingsStore((st) => st.menuSystem);
-  const setMenuSystem = useSettingsStore((st) => st.setMenuSystem);
-  const nativeMenus = menuSystem === 'native' && isTauri();
+  // v4.28, Derek: the Menu Bar tab is GONE — the menus always live in the
+  // macOS menu bar now; there is nothing to place or reorder in-window.
+  const [activeCat, setActiveCat] = React.useState<'toolbar' | 'qat' | 'panels' | 'elements' | 'keys' | 'themes' | 'context'>(category ?? 'elements');
 
   // v0.84: the window forgot any size you gave it and snapped back to the
   // default on reopen. CSS `resize` writes inline width/height on the element,
@@ -705,15 +693,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const setTool = (id: ToolId, patch: Partial<ToolConfig>) =>
     setToolConfig({ ...toolConfig, [id]: { ...cfgOf(id), ...patch } });
 
-  const menuIdx = (l: string) => {
-    const i = menuBarOrder.indexOf(l);
-    return i === -1 ? 100 + MENU_BAR_LABELS.indexOf(l) : i;
-  };
-  const orderedMenuLabels = [...MENU_BAR_LABELS].sort((a, b) => menuIdx(a) - menuIdx(b));
-
-  /** Menus still ON the bar. Hidden ones leave the list and live in + Add Item. */
-  const visibleMenuLabels = orderedMenuLabels.filter((l) => !menuBarHidden.includes(l));
-
   const tbReady = toolbarZonesSet;
   // v2.95: the ribbon is ONE sequence (tbLeft); the right zone is retired but
   // anything a stale profile still stores there is treated as placed.
@@ -769,7 +748,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       // simply stack, and adding an eighth costs no width at all.
       <div className="prefs-layout fs-customize-layout">
         <div className="prefs-tabs fs-customize-tabs">
-          {([['elements', 'Editor'], ['menu', 'Menu Bar'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['qat', 'Quick Access'], ['context', 'Context Menu'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const)
+          {([['elements', 'Editor'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['qat', 'Quick Access'], ['context', 'Context Menu'], ['themes', 'Themes'], ['keys', 'Keyboard Shortcuts']] as const)
             .map(([id, label]) => (
             <button
               key={id}
@@ -797,122 +776,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               Customizations are locked — click “Customizations Locked” to unlock.
             </div>
           )}
-          {activeCat === 'menu' && (<>
-          <section>
-            <h3>Menus</h3>
-            {/* v4.26, Derek: WHERE the menu bar lives is menu-chrome
-                configuration — moved here from Preferences > General. */}
-            <div className="fs-customize-row">
-              <span className="fs-customize-tool">Menu bar lives in</span>
-              <span className="fs-customize-seg">
-                <select value={menuSystem} onChange={(e) => setMenuSystem(e.target.value as 'inWindow' | 'native')}>
-                  <option value="inWindow">The app window (classic)</option>
-                  <option value="native">The macOS menu bar</option>
-                </select>
-              </span>
-            </div>
-            <p className="fs-customize-hint">
-              Experimental: the same menus, installed in the real menu bar next
-              to the  — the in-window bar hides and the script gains its room.
-              Icons, the table-size grid, and drag-to-reorder stay in-window
-              only. Switching back restores the classic bar instantly.
-            </p>
-            {nativeMenus && (
-              <p className="fs-customize-hint">
-                The options below apply to the in-window bar and are hidden
-                while the macOS menu bar is in charge.
-              </p>
-            )}
-            {!nativeMenus && (<>
-            {/* v2.29, Derek: NO sizing options in Customize — sizing is all
-                manual on the main screen (drag the strip under the top bars).
-                v2.31: except a way back to the default size. */}
-            <div className="fs-customize-row fs-size-row">
-              <span className="fs-customize-tool">Menu Bar</span>
-              <span className="fs-customize-seg">
-                <button onClick={() => {
-                  const st = useEditorStore.getState();
-                  st.setMenuMode('compact');
-                  st.setChromeGap('menu', 0);
-                }}>Reset to Default Size</button>
-              </span>
-            </div>
-            {/* v1.76: Outlook-style — Shown on the left, Hidden on the right,
-                drag between them; drop position IS the menu's position. */}
-            <DndColumns
-              columns={[
-                {
-                  id: 'shown', title: 'Shown',
-                  sections: [{
-                    rows: visibleMenuLabels.map((label) => ({
-                      key: label,
-                      locked: label === 'File',
-                      content: (
-                        <span className="fs-customize-tool">
-                          {iconSlot(MENU_ICONS[label] ?? null)}
-                          {label}
-                          {label === 'File' && <span className="fs-dnd-required">(required)</span>}
-                          {label !== 'File' && (
-                            <button
-                              className="fs-dnd-rowbtn"
-                              title="Hide this menu"
-                              onClick={() => setMenuBarHidden([...menuBarHidden, label])}
-                            >×</button>
-                          )}
-                        </span>
-                      ),
-                    })),
-                  }],
-                },
-                {
-                  id: 'hidden', title: 'Hidden', isHidden: true,
-                  sections: [{
-                    label: 'Menus',
-                    rows: orderedMenuLabels.filter((l) => menuBarHidden.includes(l)).map((label) => ({
-                      key: label,
-                      content: (
-                        <span className="fs-customize-tool">
-                          {iconSlot(MENU_ICONS[label] ?? null)}
-                          {label}
-                          <button
-                            className="fs-dnd-rowbtn"
-                            title="Show this menu"
-                            onClick={() => setMenuBarHidden(menuBarHidden.filter((l) => l !== label))}
-                          >+</button>
-                        </span>
-                      ),
-                    })),
-                  }],
-                },
-              ]}
-              onDrop={(src, dst) => {
-                const label = src.key;
-                if (dst.col === 'hidden') {
-                  if (label === 'File' || menuBarHidden.includes(label)) return;
-                  setMenuBarHidden([...menuBarHidden, label]);
-                  return;
-                }
-                const next = visibleMenuLabels.filter((l) => l !== label);
-                next.splice(Math.min(dst.idx, next.length), 0, label);
-                setMenuBarOrder([...next, ...orderedMenuLabels.filter((l) => menuBarHidden.includes(l) && l !== label)]);
-                if (menuBarHidden.includes(label)) setMenuBarHidden(menuBarHidden.filter((l) => l !== label));
-              }}
-            />
-            <div className="fs-tbzone-adders fs-adders-equal">
-              <button
-                className="swn-add-btn"
-                title="Remove every menu except File"
-                onClick={() => setMenuBarHidden(MENU_BAR_LABELS.filter((l) => l !== 'File'))}
-              >Hide All</button>
-              <button
-                className="swn-add-btn"
-                title="Restore the default menu bar: all menus, default order"
-                onClick={() => { setMenuBarOrder([...MENU_BAR_LABELS]); setMenuBarHidden([]); }}
-              >Reset to Default</button>
-            </div>
-            </>)}
-          </section>
-          </>)}
           {activeCat === 'toolbar' && (<>
           <section>
             <h3>Toolbar Layout</h3>
@@ -1034,7 +897,15 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             </div>
           </section>
           </>)}
-          {activeCat === 'elements' && <EditElementsDialog embedded />}
+          {activeCat === 'elements' && (<>
+            <EditElementsDialog embedded />
+            {/* v4.28, Derek: moved out of Settings — dialogue continuation
+                markers are editor composition. Per-document, like Final Draft. */}
+            <section>
+              <h3>Mores &amp; Continueds</h3>
+              <MoresContdsDialog embedded onClose={() => showToast('Mores & Continueds applied', 'success')} />
+            </section>
+          </>)}
           {activeCat === 'keys' && <KeyboardShortcutsTab />}
           {activeCat === 'themes' && <ThemesTab />}
           {activeCat === 'context' && <ContextMenuTab />}

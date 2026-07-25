@@ -1,5 +1,47 @@
 [
   {
+    "version": "4.28",
+    "date": "2026-07-25",
+    "items": [
+      {
+        "title": "One layout for every tool window",
+        "detail": "Every tool window now follows the same template: a title bar with the tool name and item count centered (pop-in on the left; fullscreen, pop-out and close on the right), and a second row with tabs on the left and quiet Filter / Sort / View / Search controls on the right. The same layout compresses into the side panels — the panel row carries the count and fullscreen button, and the row below it holds the tabs and controls.",
+        "tags": [
+          "UI",
+          "New Feature"
+        ]
+      },
+      {
+        "title": "Airtable-style window controls",
+        "detail": "Filter shows a count chip and opens its options in a dropdown; Sort and View open dropdowns (View shows the current view's icon and name); Search is a magnifier that expands into an inline field and collapses with Escape. Characters uses Sort / View / Search (View switches Cards/List in Profiles and List/Map in Relationships); Scenes uses Filter / View / Search — its footer search bar is gone.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "Characters: view choice works everywhere",
+        "detail": "Cards/List now applies in the side panel and floating window too, not just fullscreen, and the choice is remembered. Cards shows the essentials card; List shows compact bars that expand to full info.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "Mores & Continueds moved to Customize",
+        "detail": "The dialogue continuation markers now live in Customize > Editor, next to the element and transition lists. They left Settings.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "Menus always in the macOS menu bar",
+        "detail": "The menus now always live in the real macOS menu bar. The in-window menu option and the Customize > Menu Bar tab are gone.",
+        "tags": [
+          "UI"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.22",
     "date": "2026-07-20",
     "items": [

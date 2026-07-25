@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of the v4.22–v4.23 character-tool era)
+# ScriptCraft — continuation brief (current as of v4.28 — the universal window template era)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -48,7 +48,7 @@ the deploy.
 - **Model identity:** never put the model id in commits, code, changelog, or PR bodies —
   chat replies only. Commit trailers:
   ```
-  Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+  Co-Authored-By: <the model trailer your environment instructions give>
   Claude-Session: https://claude.ai/code/session_...
   ```
 
@@ -56,7 +56,7 @@ the deploy.
 ```bash
 cd frontend
 npx tsc -b        # MUST be 0 errors. It gates the .dmg build; an unused import breaks the release.
-npm test          # 419 tests as of this run, all green
+npm test          # 605 tests as of this run, all green
 npm run build     # tsc -b && vite build — must succeed
 ```
 Bash resets to the repo root each call, so `cd frontend` every time (or chain with `&&`).
@@ -237,6 +237,55 @@ reliable; re-run before believing a weird worker failure.
 ---
 
 ## 1. Where we are right now (end of this run)
+
+### v4.27–v4.28 — Derek's universal window template + two Customize moves (HEAD)
+
+Derek supplied a schematic: EVERY tool window is row 1 (pop-in | centered tool
+name + count | window actions · pop-out · close) over row 2 (tabs left |
+Filter / Sort / View / Search cluster right, Airtable-style quiet controls).
+Shipped in four phases, all on `claude/v0_32`:
+
+- **`ToolControls.tsx`** — the shared primitives: `ControlDropdown` (portalled
+  menu, 150ms scroll-grace) and `ControlSearch` (magnifier ⇄ inline field,
+  Escape collapses). Styled once as `.tool-ctl*` in `20-tool-dock.css`.
+- **`TOOL_CHROME` registry in ToolDock** ({TitleExtra, WindowActions, Tabs,
+  Controls}) — REPLACES `TOOL_HEADER_EXTRAS`/`TOOL_FOOTERS` (both deleted).
+  The floating frame renders 3-zone row 1 + row 2; the dock compresses the
+  same template: the accordion row IS row 1 (open tool's count + fullscreen
+  ride on it), `.tool-inline-header` is row 2. `.tool-chrome-row2-tabbed`
+  rows read as a tab track (workspace bg, -1px tab overlap) and WRAP in the
+  300px dock (tabs line, then controls line). The controls span is flex:1 +
+  justify-end so spanning bars (Outline, Scrapbook) keep their layout.
+- **Characters migrated** (tabs/sort/view/search now STORE state:
+  `charActiveTab`, `charViewMode` (persisted), `relViewMode` (persisted),
+  `charSearchQuery`, reusing `characterSortBy`). The in-body tabs/toolbar
+  rows are GONE in embedded mode (the frame provides them); the fullscreen
+  takeover renders the same `CharTabs`/`CharControls` in its own two rows;
+  the legacy context-menu overlay keeps its private header/tabs/toolbar.
+  **View (Cards/List) now applies EVERYWHERE, default Cards** — the dock used
+  to be list-only; flip the View dropdown if Derek prefers the old look.
+  The Relationships tab's List/Map toggle is the cluster's View dropdown.
+- **Scenes migrated** (worker): count → title suffix, filter popover behind a
+  quiet "Filter" + active-dimension chip, List/Cards → View dropdown, the
+  footer search → the cluster's expanding search (`TOOL_FOOTERS` retired).
+  Filter/Search hide in Cards view (they only drive the list).
+- **Sweep**: navigator/goals/notebook/beatboard control bars re-registered as
+  `TOOL_CHROME.Controls` — same row-2 slot, internal layouts unchanged.
+- **v4.28 moves**: "Mores & Continueds" left Settings for **Customize >
+  Editor** (embedded `MoresContdsDialog`), and the **Customize > Menu Bar tab
+  is GONE** — menus are ALWAYS native macOS now (`nativeMenus = isTauriEnv()`
+  in MenuBar; `menuSystem`/`setMenuSystem` deleted from settingsStore; the
+  in-window bar remains only as the non-Tauri browser fallback). Stored
+  `menuBarOrder`/`menuBarHidden` still shape the native bar; their editor UI
+  is gone. `opendraft:menuSystem` localStorage key is orphaned on purpose.
+
+Verified live end-to-end (template-check.js / moves2-check.js in the driver
+scratchpad): dock inline, popped-out floating, fullscreen, sort/view/search
+store writes, scenes filter chip + cards-view hiding, sweep smoke on the four
+re-registered tools — zero page errors; 605 unit tests, tsc 0, build green.
+`APP_VERSION` and the changelog are at **4.28**.
+
+---
 
 ### v4.24 — Derek's eight-update batch: ALL SHIPPED (this run's head)
 

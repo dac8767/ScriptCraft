@@ -197,11 +197,11 @@ interface MenuSection {
 const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, isCollabActive, isCollabGuest }) => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
-  // v3.15: read early — the Help menu's contents depend on it (About moves
-  // to the native app menu when that menu exists). v3.16: so does the
-  // Bookmarks submenu's removal item.
-  const menuSystem = useSettingsStore((st) => st.menuSystem);
-  const nativeMenus = menuSystem === 'native' && isTauriEnv();
+  // v4.28, Derek: the menus ALWAYS live in the macOS menu bar on desktop —
+  // the in-window menu system and its setting are gone; there is no other
+  // option. A plain-browser session (dev) still renders the in-window bar,
+  // because there is no native bar for it to live in.
+  const nativeMenus = isTauriEnv();
   const menuRef = useRef<HTMLDivElement>(null);
   // Platform-aware modifier key symbol for shortcut labels
   const mod = /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl+';
@@ -393,7 +393,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const [pageSetupOpen, setPageSetupOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [customizeTab, setCustomizeTab] =
-    useState<'menu' | 'toolbar' | 'panels' | 'elements' | 'keys' | 'themes' | 'context'>('menu');
+    useState<'toolbar' | 'panels' | 'elements' | 'keys' | 'themes' | 'context'>('elements');
   const openCustomize = (tab: typeof customizeTab) => {
     setCustomizeTab(tab);
     setCustomizeOpen(true);
@@ -576,7 +576,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     const onCmd = (e: Event) => {
       const id = (e as CustomEvent).detail as string;
       switch (id) {
-        case 'customize': openCustomize('menu'); break;
+        case 'customize': openCustomize('elements'); break;
         case 'customizeContextMenu': openCustomize('context'); break;
         case 'customizeShortcuts': openCustomize('keys'); break;
         case 'setDraft': setDraftDialogOpen(true); break;
@@ -1401,7 +1401,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {
           icon: <FaSlidersH />,
           label: 'Customize…',
-          action: () => openCustomize('menu'),
+          action: () => openCustomize('elements'),
         },
         {
           icon: <FaPalette />,
@@ -1751,7 +1751,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       /* v3.15, Derek: About lives in the ScriptCraft app menu, not Help —
          but ONLY native mode has an app menu, so the in-window Help keeps
          it (removing it there would leave About unreachable). */
-      ...(menuSystem === 'native' && isTauriEnv() ? [] : [{
+      ...(nativeMenus ? [] : [{
         icon: <FaInfoCircle />,
         label: 'About ScriptCraft',
         action: () => setAboutOpen(true),

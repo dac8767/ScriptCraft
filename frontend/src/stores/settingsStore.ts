@@ -63,11 +63,10 @@ interface SettingsState {
   setWindowStartup: (v: 'maximized' | 'remember') => void;
   /** Theme follows the OS light/dark appearance. */
   followSystemTheme: boolean;
-  /** v2.93: where the menus live. 'native' installs them in the real macOS
-   *  menu bar and hides the in-window bar; 'inWindow' is the classic bar.
-   *  The in-window system stays fully intact — flipping back IS the revert. */
-  menuSystem: 'inWindow' | 'native';
-  setMenuSystem: (v: 'inWindow' | 'native') => void;
+  /* (v4.28, Derek: menuSystem is GONE — on desktop the menus always live in
+   *  the macOS menu bar; there is no other option. The in-window bar remains
+   *  only as the browser fallback, gated on isTauri alone. The old
+   *  'opendraft:menuSystem' localStorage key is simply no longer read.) */
   /** v4.22: which Editor View choices appear in the toolbar dropdown, and in
    *  what order. Customizable in Customize ▸ Editor; 'page' can't be hidden. */
   editorViewOrder: string[];
@@ -152,7 +151,6 @@ const STORAGE_KEY_DATEFMT = 'opendraft:dateFormat';
 const STORAGE_KEY_SPELLDEF = 'opendraft:spellCheckByDefault';
 const STORAGE_KEY_WINSTART = 'opendraft:windowStartup';
 const STORAGE_KEY_SYSTHEME = 'opendraft:followSystemTheme';
-const STORAGE_KEY_MENUSYS = 'opendraft:menuSystem';
 
 /** v4.22: the Editor View choices — a fixed set of built-in modes, shown/
  *  ordered by the user in Customize ▸ Editor. */
@@ -282,23 +280,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try { localStorage.setItem(STORAGE_KEY_WINSTART, v); } catch { /* ignore */ }
     set({ windowStartup: v });
   },
-  menuSystem: ((): 'inWindow' | 'native' => {
-    const saved = localStorage.getItem(STORAGE_KEY_MENUSYS);
-    if (saved === 'native') return 'native';
-    if (saved === 'inWindow') return 'inWindow';
-    // v4.22, Derek: no saved preference (a fresh install — e.g. a new build's
-    // own storage) → default to the platform norm. macOS expects the native
-    // menu bar; every other platform keeps the in-window menu. (Rendering still
-    // gates on isTauri, so a Mac *web* session falls back to in-window anyway.)
-    const isMac = typeof navigator !== 'undefined'
-      && /Mac/i.test(navigator.platform || navigator.userAgent || '');
-    return isMac ? 'native' : 'inWindow';
-  })(),
-  setMenuSystem: (v) => {
-    try { localStorage.setItem(STORAGE_KEY_MENUSYS, v); } catch { /* ignore */ }
-    set({ menuSystem: v });
-  },
-
   editorViewOrder: loadEditorViews().order,
   editorViewHidden: loadEditorViews().hidden,
   setEditorViewOrder: (ids) => {
