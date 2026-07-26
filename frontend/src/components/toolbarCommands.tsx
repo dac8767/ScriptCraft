@@ -16,13 +16,18 @@ import {
   FaPencilAlt, FaCamera, FaWrench, FaRegEye,
 } from 'react-icons/fa';
 import { PanelLeftIcon, PanelRightIcon } from './uiIcons';
-import { useEditorStore } from '../stores/editorStore';
+import { useEditorStore, type EditorState } from '../stores/editorStore';
 
 export interface ToolbarCommand {
   id: string;
   label: string;
   icon: React.ReactNode;
   run: () => void;
+  /** v4.71, Derek: commands that TOGGLE something report their on-state so the
+   *  ribbon button can highlight while it's on (same .active treatment the
+   *  formatting builtins use). A zustand SELECTOR, not a hook — the button
+   *  subscribes through it. Omit for one-shot actions. */
+  active?: (s: EditorState) => boolean;
 }
 
 const emit = (id: string) =>
@@ -34,14 +39,14 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'rename', label: 'Rename', icon: <FaEdit />, run: () => emit('rename') },
   // v3.78, Derek: ONE toggle instead of separate Add / Remove — shows or hides
   // scene numbers from whatever state you're in.
-  { id: 'sceneNumbers', label: 'Scene Numbers', icon: <FaListUl />, run: () => { const s = useEditorStore.getState(); s.setSceneNumbersVisible(!s.sceneNumbersVisible); } },
-  { id: 'lockSceneNumbers', label: 'Lock Scene Numbers', icon: <FaLock />, run: () => { const s = useEditorStore.getState(); s.setSceneNumbersLocked(!s.sceneNumbersLocked); } },
-  { id: 'revisionMode', label: 'Revision Mode', icon: <FaToggleOn />, run: () => { const s = useEditorStore.getState(); s.setRevisionMode(!s.revisionMode); } },
+  { id: 'sceneNumbers', label: 'Scene Numbers', icon: <FaListUl />, run: () => { const s = useEditorStore.getState(); s.setSceneNumbersVisible(!s.sceneNumbersVisible); }, active: (s) => s.sceneNumbersVisible },
+  { id: 'lockSceneNumbers', label: 'Lock Scene Numbers', icon: <FaLock />, run: () => { const s = useEditorStore.getState(); s.setSceneNumbersLocked(!s.sceneNumbersLocked); }, active: (s) => s.sceneNumbersLocked },
+  { id: 'revisionMode', label: 'Revision Mode', icon: <FaToggleOn />, run: () => { const s = useEditorStore.getState(); s.setRevisionMode(!s.revisionMode); }, active: (s) => s.revisionMode },
   { id: 'productionTags', label: 'Production Tags', icon: <FaTags />, run: () => useEditorStore.getState().openTool('tags') },
   { id: 'takeSnapshot', label: 'Take Auto Save', icon: <FaUpload />, run: () => emit('takeSnapshot') },
   { id: 'snapshots', label: 'Auto Saves', icon: <FaHistory />, run: () => emit('snapshots') },
   { id: 'compareSnapshot', label: 'Compare with Auto Save', icon: <FaCodeBranch />, run: () => emit('compareSnapshot') },
-  { id: 'trackChanges', label: 'Track Changes', icon: <FaExchangeAlt />, run: () => emit('trackChanges') },
+  { id: 'trackChanges', label: 'Track Changes', icon: <FaExchangeAlt />, run: () => emit('trackChanges'), active: (s) => s.trackChangesEnabled },
   { id: 'spellCheck', label: 'Spelling & Grammar', icon: <FaSpellCheck />, run: () => emit('spellCheck') },
   { id: 'writingSuggestions', label: 'Writing Suggestions', icon: <FaSpellCheck />, run: () => emit('writingSuggestions') },
   // v2.97, Derek: EVERY menu action is ribbon-pinnable. These run through
@@ -62,8 +67,8 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   // v3.42, Derek: show/hide the side panels from the ribbon (same toggles the
   // panel edge strips use).
   // v4.53, Derek: distinct icons — the filled side is the panel it toggles.
-  { id: 'toggleLeftPanel', label: 'Toggle Left Panel', icon: <PanelLeftIcon />, run: () => useEditorStore.getState().toggleNavigator() },
-  { id: 'toggleRightPanel', label: 'Toggle Right Panel', icon: <PanelRightIcon />, run: () => useEditorStore.getState().toggleShelf() },
+  { id: 'toggleLeftPanel', label: 'Toggle Left Panel', icon: <PanelLeftIcon />, run: () => useEditorStore.getState().toggleNavigator(), active: (s) => s.navigatorOpen },
+  { id: 'toggleRightPanel', label: 'Toggle Right Panel', icon: <PanelRightIcon />, run: () => useEditorStore.getState().toggleShelf(), active: (s) => s.shelfOpen },
   { id: 'cut', label: 'Cut', icon: <FaCut />, run: () => emit('cut') },
   { id: 'copy', label: 'Copy', icon: <FaCopy />, run: () => emit('copy') },
   { id: 'paste', label: 'Paste', icon: <FaPaste />, run: () => emit('paste') },
@@ -80,7 +85,7 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'fitPage', label: 'Scale to Fit Page', icon: <FaSearchPlus />, run: () => emit('fitPage') },
   { id: 'fitWidth', label: 'Scale to Max Width', icon: <FaSearchPlus />, run: () => emit('fitWidth') },
   { id: 'actualSize', label: 'Actual Size (100%)', icon: <FaSearchMinus />, run: () => emit('actualSize') },
-  { id: 'showRulers', label: 'Show/Hide Rulers', icon: <FaRulerHorizontal />, run: () => emit('showRulers') },
+  { id: 'showRulers', label: 'Show/Hide Rulers', icon: <FaRulerHorizontal />, run: () => emit('showRulers'), active: (s) => s.rulersVisible },
   // v3.80, Derek: capture the page you're looking at as a PNG (html2canvas is
   // loaded lazily inside the util so it only costs weight when used).
   { id: 'screenshot', label: 'Screenshot', icon: <FaCamera />, run: () => { void import('../utils/screenshot').then((m) => m.captureScreenshot()); } },

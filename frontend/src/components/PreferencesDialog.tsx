@@ -13,6 +13,7 @@ import SettingsPage from './SettingsPage';
 import { showToast } from './Toast';
 import KeyboardShortcutsTab from './KeyboardShortcutsTab';
 import { downloadBackup, applyBackup, readFileText } from '../utils/settingsBackup';
+import { useWindowTabMemory } from '../utils/windowTabMemory';
 import { confirmDialog } from './ConfirmDialog';
 import { spellChecker, BUILTIN_LANGUAGE } from '../editor/spellchecker';
 import { BUILTIN, CATALOG, urlsFor } from '../editor/languageCatalog';
@@ -66,6 +67,13 @@ const CUSTOMIZE_TABS: Array<{ id: CustomizeCat; label: string; icon: React.React
   { id: 'qat', label: 'Quick Access', icon: <FaBolt /> },
   { id: 'context', label: 'Context Menu', icon: <FaMousePointer /> },
   { id: 'themes', label: 'Themes', icon: <FaPalette /> },
+];
+
+/* v4.71: every openable tab id, for the last-used-tab memory's validity
+   check — derived from the two arrays above so it can't drift. */
+const ALL_PREF_TAB_IDS: readonly PrefTab[] = [
+  ...TABS.map((t) => t.id),
+  ...CUSTOMIZE_TABS.map((t) => `cz-${t.id}` as PrefTab),
 ];
 
 /* v4.65, Derek: every reset in one place. The per-tab Reset sections stay;
@@ -529,6 +537,7 @@ function GeneralTab() {
     smartTypography, setSmartTypography,
     units, setUnits,
     timeFormat, setTimeFormat,
+    openToLastTab, setOpenToLastTab,
   } = useSettingsStore();
 
   // v4.22, Derek: Backup & Restore. Dev and a release build load from different
@@ -589,6 +598,19 @@ function GeneralTab() {
             <option value="remember">Remember last size and position</option>
           </select>
         </label>
+        <label className="prefs-check-row">
+          <input
+            type="checkbox"
+            checked={openToLastTab}
+            onChange={(e) => setOpenToLastTab(e.target.checked)}
+          />
+          <span>Reopen windows on their last used tab</span>
+        </label>
+        <p className="prefs-hint">
+          Applies to every window with tabs — this Settings window (including
+          the Customize tabs), Characters, Production Tags. When off, they
+          always open on their first tab.
+        </p>
       </section>
 
       {/* v4.26, Derek: "Match the system appearance" moved to Customize >
@@ -731,6 +753,11 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
   openTab?: PrefTab;
 }) {
   const [tab, setTab] = useState<PrefTab>('general');
+
+  // v4.71, Derek: reopen on the last-used tab (Settings ▸ General toggle).
+  // Runs on the open edge, BEFORE the openTab effect below — a targeted open
+  // still lands where it was sent.
+  useWindowTabMemory('settings', tab, setTab, 'general', ALL_PREF_TAB_IDS, open);
 
   // v1.21: land ON the tab you were sent to. Scrolling alone was useless if Settings
   // happened to be sitting on a different tab — the section wasn't even rendered.

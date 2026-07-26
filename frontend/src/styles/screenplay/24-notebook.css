@@ -768,19 +768,25 @@
    live bar it's small centred text; while editing it's an inline input with an
    × to remove. */
 .rib-sec-title {
-  /* v3.73, Derek: centred (was left). */
-  text-align: center;
+  /* v3.73, Derek: centred (was left). v4.71: alignment is a Design knob. */
+  text-align: var(--dz-rib-title-align, center);
   /* v4.5, Derek: FIXED height (was line-height:1.1, auto height). Every two-row
      section renders this band — titled or not — so the band height must be
      deterministic even when the element is empty, otherwise a title-less
      section reserves 0px and its button row rides up above the titled ones.
      Explicit height + matching line-height reserves the exact same band
-     whether or not there's text in it. */
-  font-size: 9.5px; line-height: 11px; font-weight: 600;
-  height: 11px;
-  color: var(--fd-text);
+     whether or not there's text in it.
+     v4.71: size and padding are Design knobs; the band height DERIVES from the
+     font var (font + 1.5px = the original 9.5 → 11px) so every section — with
+     or without a title — still reserves the identical strip at any size. */
+  font-size: var(--dz-rib-title-font, 9.5px);
+  line-height: calc(var(--dz-rib-title-font, 9.5px) + 1.5px);
+  font-weight: 600;
+  height: calc(var(--dz-rib-title-font, 9.5px) + 1.5px);
+  /* v4.71, Derek: gray, not full text color. */
+  color: var(--fd-text-muted);
   /* v4.1: trimmed bottom padding so the title needs less vertical room. */
-  padding: 0 2px 3px;
+  padding: 0 2px var(--dz-rib-title-pad, 3px);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
 /* v4.5, Derek: a section with no title still renders the band (kept invisible)

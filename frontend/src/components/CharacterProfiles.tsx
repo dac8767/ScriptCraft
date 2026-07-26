@@ -17,6 +17,7 @@ import { showToast } from './Toast';
 import MiniRichText from './MiniRichText';
 import { toTitleCaseName, lastNameOf, joinName, escapeRegExp } from '../utils/characterNames';
 import { buildScanList, filterScanList, type ScannedCharacter } from '../utils/characterScan';
+import { useWindowTabMemory } from '../utils/windowTabMemory';
 import { InlineRelForm, REL_DYNAMICS } from './InlineRelForm';
 import { AssetImage, AssetAudio, ImageSourceMenu } from './CharacterAssetMedia';
 import { promptDialog } from './ConfirmDialog';
@@ -153,6 +154,12 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   // them from outside the panel body. One source; chrome and body can't drift.
   const activeTab = useEditorStore((s) => s.charActiveTab);
   const setActiveTab = useEditorStore((s) => s.setCharActiveTab);
+  // v4.71, Derek: opening the window restores its last-used tab (or resets to
+  // Profiles when the Settings toggle is off). Embedded tool hosts mount per
+  // open; the floating overlay instance stays mounted and gates on
+  // characterProfilesOpen — that flag is its open edge.
+  useWindowTabMemory('characters', activeTab, setActiveTab, 'profiles',
+    ['profiles', 'relationships', 'setup'] as const, embedded || characterProfilesOpen);
   // Tab data for the fullscreen header + the legacy overlay's tab row (the
   // dock/window get the same list via TOOL_CHROME.useTabs).
   const charTabs = useCharTabs();

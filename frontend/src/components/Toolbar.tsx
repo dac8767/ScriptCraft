@@ -41,7 +41,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { TableGridPicker, closeNotebook, applyScrapbookTextFormat } from './NotebookTool';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { confirmDialog } from './ConfirmDialog';
-import { commandDef } from './toolbarCommands';
+import { commandDef, type ToolbarCommand } from './toolbarCommands';
 import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, stripTall, parseRibbon } from './toolbarBuiltins';
 import { smartUndo, smartRedo, useEditorStore } from '../stores/editorStore';
 import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
@@ -67,6 +67,28 @@ const ZOOM_MAX = 300;
 
 interface ToolbarProps {
   editor: Editor | null;
+}
+
+/** A pinned command as a ribbon cell. Its own component so TOGGLE commands can
+ *  SUBSCRIBE to their on-state (v4.71, Derek: active toggles highlight, with
+ *  the same .active class the formatting builtins use). Every instance calls
+ *  the one hook — commands without an active selector just never light up. */
+const NEVER_ACTIVE = () => false;
+function RibbonCommandButton({ cmd, tall }: { cmd: ToolbarCommand; tall: boolean }) {
+  const active = useEditorStore(cmd.active ?? NEVER_ACTIVE);
+  // v3.48, Derek: blur after running so a command button (e.g. Fit) doesn't
+  // keep the focus ring lit blue — it's a one-shot action, not a toggle.
+  const runCmd = (e: React.MouseEvent) => { cmd.run(); (e.currentTarget as HTMLElement).blur(); };
+  return tall ? (
+    <button className={`toolbar-btn rib-tall rib-tall-btn${active ? ' active' : ''}`} title={cmd.label} data-key={cmd.id} onClick={runCmd}>
+      <span className="rib-tall-icon">{cmd.icon}</span>
+      <span className="rib-tall-label">{cmd.label}</span>
+    </button>
+  ) : (
+    <button className={`toolbar-btn${active ? ' active' : ''}`} title={cmd.label} data-key={cmd.id} onClick={runCmd}>
+      {cmd.icon}
+    </button>
+  );
 }
 
 const FONT_SIZES = [8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72, 96];
@@ -1563,19 +1585,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     if (tok.startsWith('c:')) {
       const c = commandDef(tok.slice(2));
       if (!c) return null;
-      // v3.48, Derek: blur after running so a command button (e.g. Fit) doesn't
-      // keep the focus ring lit blue — it's a one-shot action, not a toggle.
-      const runCmd = (e: React.MouseEvent) => { c.run(); (e.currentTarget as HTMLElement).blur(); };
-      return tall ? (
-        <button key={tok} className="toolbar-btn rib-tall rib-tall-btn" title={c.label} data-key={c.id} onClick={runCmd}>
-          <span className="rib-tall-icon">{c.icon}</span>
-          <span className="rib-tall-label">{c.label}</span>
-        </button>
-      ) : (
-        <button key={tok} className="toolbar-btn" title={c.label} data-key={c.id} onClick={runCmd}>
-          {c.icon}
-        </button>
-      );
+      return <RibbonCommandButton key={tok} cmd={c} tall={tall} />;
     }
     if (tok.startsWith('b:')) return renderBuiltinToken(tok, tall);
     return null;

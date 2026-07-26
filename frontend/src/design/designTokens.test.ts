@@ -67,11 +67,32 @@ describe('design token registry', () => {
   it('--dz-* defaults are a real fallback somewhere in the CSS', () => {
     for (const t of CSS_TOKENS) {
       if (!t.cssVar!.startsWith('--dz-')) continue;
+      if (t.choices) {
+        // v4.71: choice tokens fall back to a KEYWORD — it must be the css of
+        // the default choice, or reset renders something the knob never shows.
+        const defCss = t.choices.find((c) => c.value === t.def)!.css;
+        const re = new RegExp(`var\\(${t.cssVar},\\s*([a-z-]+)\\)`, 'g');
+        const fallbacks = [...ALL_CSS.matchAll(re)].map((m) => m[1]);
+        expect(fallbacks.length, `${t.id} has no var() usage with a keyword fallback`).toBeGreaterThan(0);
+        expect(fallbacks, `${t.id} default '${defCss}' is not a fallback anywhere`).toContain(defCss);
+        continue;
+      }
       const re = new RegExp(`var\\(${t.cssVar},\\s*([0-9.]+)(px|in|pt)?\\)`, 'g');
       const fallbacks = [...ALL_CSS.matchAll(re)].map((m) => parseFloat(m[1]));
       expect(fallbacks.length, `${t.id} has no var() usage with a numeric fallback`).toBeGreaterThan(0);
       expect(fallbacks, `${t.id} default ${t.def} is not a fallback anywhere`).toContain(t.def);
     }
+  });
+
+  // v4.71: the choice mechanism itself — the mirror writes the option's css
+  // keyword, and Copy CSS dumps the same thing.
+  it('choice tokens format as their css keyword', () => {
+    const align = designToken('ribTitleAlign')!;
+    applyDesignVars({ ribTitleAlign: 0 });
+    expect(document.documentElement.style.getPropertyValue('--dz-rib-title-align')).toBe('left');
+    expect(buildOverrideCss({ ribTitleAlign: 2 })).toContain('--dz-rib-title-align: right;');
+    applyDesignVars({});
+    expect(align.choices!.map((c) => c.value)).toEqual([0, 1, 2]);
   });
 });
 

@@ -81,6 +81,14 @@ interface SettingsState {
    *  restores the sidebars (render-time only — nothing is rewritten). */
   scrapbookExclusive: boolean;
   setScrapbookExclusive: (v: boolean) => void;
+  /** v4.71 (Settings > General): tabbed windows reopen on their last-used tab;
+   *  off = they always open on their first tab. */
+  openToLastTab: boolean;
+  setOpenToLastTab: (v: boolean) => void;
+  /** last-used tab per tabbed window (window id → tab id); recorded always,
+   *  APPLIED only while openToLastTab is on (useWindowTabMemory). */
+  lastWindowTabs: Record<string, string>;
+  rememberWindowTab: (win: string, tab: string) => void;
   /** What the Draft field starts as on a new script. */
   defaultDraftLabel: string;
   setDefaultDraftLabel: (v: string) => void;
@@ -176,6 +184,20 @@ function saveEditorViews(v: { order: string[]; hidden: string[] }) {
   try { localStorage.setItem(STORAGE_KEY_EDITORVIEWS, JSON.stringify(v)); } catch { /* ignore */ }
 }
 const STORAGE_KEY_SBEXCL = 'opendraft:scrapbookExclusive';
+/* v4.71, Derek: tabbed windows reopen on their last-used tab (or always the
+   first tab, when the setting is off). One map for every tabbed window —
+   Settings/Customize, Characters, Tags — keyed by a stable window id. */
+const STORAGE_KEY_OPENLASTTAB = 'opendraft:openToLastTab';
+const STORAGE_KEY_LASTTABS = 'opendraft:lastWindowTabs';
+function loadLastWindowTabs(): Record<string, string> {
+  try {
+    const p = JSON.parse(localStorage.getItem(STORAGE_KEY_LASTTABS) || '{}');
+    if (p && typeof p === 'object' && !Array.isArray(p)) {
+      return Object.fromEntries(Object.entries(p).filter(([, v]) => typeof v === 'string')) as Record<string, string>;
+    }
+  } catch { /* ignore */ }
+  return {};
+}
 const STORAGE_KEY_DRAFTDEF = 'opendraft:defaultDraftLabel';
 const STORAGE_KEY_SMARTTYPO = 'opendraft:smartTypography';
 const STORAGE_KEY_UNITS = 'opendraft:units';
@@ -317,6 +339,20 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try { localStorage.setItem(STORAGE_KEY_SBEXCL, v ? '1' : '0'); } catch { /* ignore */ }
     set({ scrapbookExclusive: v });
   },
+  // ON unless explicitly turned off — Derek asked for last-tab reopening
+  // first and for the switch second, so remembering is the default.
+  openToLastTab: localStorage.getItem(STORAGE_KEY_OPENLASTTAB) !== '0',
+  setOpenToLastTab: (v) => {
+    try { localStorage.setItem(STORAGE_KEY_OPENLASTTAB, v ? '1' : '0'); } catch { /* ignore */ }
+    set({ openToLastTab: v });
+  },
+  lastWindowTabs: loadLastWindowTabs(),
+  rememberWindowTab: (win, tab) => set((s) => {
+    if (s.lastWindowTabs[win] === tab) return s;
+    const next = { ...s.lastWindowTabs, [win]: tab };
+    try { localStorage.setItem(STORAGE_KEY_LASTTABS, JSON.stringify(next)); } catch { /* ignore */ }
+    return { lastWindowTabs: next };
+  }),
   // ON unless explicitly turned off — the standard default in writing apps.
   smartTypography: localStorage.getItem(STORAGE_KEY_SMARTTYPO) !== '0',
   setSmartTypography: (v) => {

@@ -45,16 +45,20 @@ function TokenRow({ t }: { t: DesignToken }) {
       <div className="dz-row-top">
         <span className="dz-row-label" title={t.label}>{t.label}</span>
         <div className="dz-row-num">
-          <input
-            type="number"
-            className="dz-num"
-            value={value}
-            min={t.min}
-            max={t.max}
-            step={t.step}
-            onChange={(e) => commit(parseFloat(e.target.value))}
-          />
-          {t.unit && <span className="dz-unit">{t.unit}</span>}
+          {!t.choices && (
+            <>
+              <input
+                type="number"
+                className="dz-num"
+                value={value}
+                min={t.min}
+                max={t.max}
+                step={t.step}
+                onChange={(e) => commit(parseFloat(e.target.value))}
+              />
+              {t.unit && <span className="dz-unit">{t.unit}</span>}
+            </>
+          )}
           <button
             className="dz-reset"
             title={isOverridden ? 'Reset to default' : 'Default'}
@@ -63,15 +67,28 @@ function TokenRow({ t }: { t: DesignToken }) {
           ><LuRotateCcw /></button>
         </div>
       </div>
-      <input
-        type="range"
-        className="dz-range"
-        value={value}
-        min={t.min}
-        max={t.max}
-        step={t.step}
-        onChange={(e) => commit(parseFloat(e.target.value))}
-      />
+      {t.choices ? (
+        /* v4.71: enumerated token — a segmented row, not a slider */
+        <div className="dz-choices">
+          {t.choices.map((c) => (
+            <button
+              key={c.value}
+              className={`dz-choice${value === c.value ? ' on' : ''}`}
+              onClick={() => commit(c.value)}
+            >{c.label}</button>
+          ))}
+        </div>
+      ) : (
+        <input
+          type="range"
+          className="dz-range"
+          value={value}
+          min={t.min}
+          max={t.max}
+          step={t.step}
+          onChange={(e) => commit(parseFloat(e.target.value))}
+        />
+      )}
       {t.hint && <div className="dz-hint">{t.hint}</div>}
     </div>
   );

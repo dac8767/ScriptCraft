@@ -1,9 +1,13 @@
-# ScriptCraft — continuation brief (current as of v4.70 — Feedback screenshot chip)
+# ScriptCraft — continuation brief (current as of v4.71 — ribbon toggles + tab memory)
 
 > QUEUE (Derek-approved, not yet landed), in order:
-> 1. Ribbon toolbar (two fresh Derek requests): (a) highlight the toggle
->    options that are active (his screenshot: rulers + panel toggles
->    cluster); (b) make the ribbon's section titles gray.
+> 1. PAGE-NUMBER POSITION CHECK (Derek's margin diagram, two messages):
+>    margins L 1.5" / R 1" / T 1" / B 1"; the top AND right margins are
+>    split in half — the number's BASELINE sits on the line 0.5" from the
+>    top, and it is horizontally CENTERED between the lines 1" and 0.5"
+>    from the right page edge (center at 0.75" from the right). The guide
+>    lines are demonstration only — never render them. Verify editor
+>    pagination, Preview, print, and PDF export all match; fix what doesn't.
 > 2. Title Page batch: (a) "Sync Title from Project" above the Title/Title
 >    Size row; drop the duplicated "Title Page" caption row (keep the
 >    header one); replace "PLACE IMAGE"+dropdown with a character-tool
@@ -261,7 +265,39 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.70 — Feedback screenshot chip + html2canvas-pro (HEAD)
+### v4.71 — ribbon toggle highlights, gray titles, title knobs, tab memory (HEAD)
+
+Four Derek requests in one chrome batch:
+- **Toggle highlight**: ToolbarCommand grew `active?: (s: EditorState) =>
+  boolean` (a zustand SELECTOR); the c: branch of renderToken became
+  `RibbonCommandButton`, which always calls
+  `useEditorStore(cmd.active ?? NEVER_ACTIVE)` (stable hook count) and
+  adds the same `.active` class the formatting builtins use. Wired:
+  sceneNumbers/lock, revisionMode, trackChanges, both panel toggles,
+  showRulers (state: sceneNumbersVisible/sceneNumbersLocked/revisionMode/
+  trackChangesEnabled/navigatorOpen/shelfOpen/rulersVisible). Driver v49
+  (seeded `st:View` section): buttons light with live state both ways.
+- **Gray titles**: `.rib-sec-title` color → var(--fd-text-muted).
+- **Design knobs** (Toolbar/Ribbon group): ribTitleFont (7–16, def 9.5),
+  ribTitleAlign (CHOICE token — new `choices` field on DesignToken;
+  numeric value persists, `css` keyword mirrors; TokenRow renders a
+  segmented `.dz-choices` row; formatTokenValue + the fallback guard
+  test learned the variant), ribTitlePad (0–12, def 3). Band height =
+  calc(font + 1.5px) keeps the v4.5 deterministic-band rule at any size.
+- **Tab memory**: settingsStore `openToLastTab` (default ON) +
+  `lastWindowTabs` map (both localStorage-persisted);
+  utils/windowTabMemory.ts `useWindowTabMemory(win, current, apply,
+  first, valid, open)` — restore-on-open-edge when on, reset-to-first
+  when off, record always. Wired: PreferencesDialog ('settings', open
+  prop as edge, BEFORE the openTab effect so targeted opens win — incl.
+  all cz-* Customize tabs), CharacterProfiles ('characters', open =
+  embedded || characterProfilesOpen — the overlay instance stays
+  mounted), TagsPanel ('tags'). Settings ▸ General checkbox. Driver
+  burn: `evaluate(input.click())` does NOT drive a React controlled
+  checkbox — use a real Playwright click. Unit tests pin
+  restore/reset/record/edge (windowTabMemory.test.tsx, 5 tests).
+
+### v4.70 — Feedback screenshot chip + html2canvas-pro
 
 - Derek: "screenshot buttons in the feedback window header that auto-
   upload to the form's attachment field." The form is a CROSS-ORIGIN

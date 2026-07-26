@@ -3,6 +3,7 @@ import { FaRegEye, FaRegEyeSlash, FaRegTrashAlt, FaChevronDown, FaChevronUp, FaC
 import type { Editor } from '@tiptap/react';
 import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 import { useEditorStore } from '../stores/editorStore';
+import { useWindowTabMemory } from '../utils/windowTabMemory';
 import type { ToolChromeTab } from './ToolControls';
 
 interface TagsPanelProps {
@@ -46,6 +47,9 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ editor, style, embedded = false }
   // tabs render in the WINDOW CHROME (TOOL_CHROME.tags), outside this body.
   const activeTab = useEditorStore((s) => s.tagsPanelTab);
   const setActiveTab = useEditorStore((s) => s.setTagsPanelTab);
+  // v4.71, Derek: opening the window restores its last-used tab (or resets to
+  // View when the Settings toggle is off). Mount = the window opening.
+  useWindowTabMemory('tags', activeTab, setActiveTab, 'view', ['view', 'manage'] as const);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [expandedTagId, setExpandedTagId] = useState<string | null>(null);
   const tagItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());

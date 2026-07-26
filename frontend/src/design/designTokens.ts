@@ -50,6 +50,11 @@ export interface DesignToken {
   def: number;
   /** optional one-line hint shown under the control */
   hint?: string;
+  /** v4.71: enumerated tokens (e.g. alignment). The panel renders these as a
+   *  segmented row instead of a slider; the numeric `value` is what persists
+   *  in designVars, and `css` is what the mirror writes to the custom
+   *  property. min/max/step still bound the stored number. */
+  choices?: { value: number; label: string; css: string }[];
 }
 
 export interface DesignGroup {
@@ -104,6 +109,19 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'toolbarBtnRadius', label: 'Button corner radius', cssVar: '--dz-toolbar-btn-radius', unit: 'px', min: 0, max: 12, step: 1, def: 5 },
       { id: 'toolbarBigIcon', label: 'Big icon size', cssVar: '--dz-toolbar-big-icon', unit: 'px', min: 16, max: 40, step: 1, def: 26 },
       { id: 'toolbarBigLabel', label: 'Big button label font', cssVar: '--dz-toolbar-big-label', unit: 'px', min: 7, max: 16, step: 0.5, def: 10 },
+      // v4.71, Derek: the section-title band (.rib-sec-title). The band's
+      // height tracks the font (font + 1.5px) so titled and untitled sections
+      // keep reserving the identical strip — the v4.5 determinism rule.
+      { id: 'ribTitleFont', label: 'Section title font', cssVar: '--dz-rib-title-font', unit: 'px', min: 7, max: 16, step: 0.5, def: 9.5,
+        hint: 'The title band grows with the font so rows stay aligned.' },
+      { id: 'ribTitleAlign', label: 'Section title alignment', cssVar: '--dz-rib-title-align', unit: '', min: 0, max: 2, step: 1, def: 1,
+        choices: [
+          { value: 0, label: 'Left', css: 'left' },
+          { value: 1, label: 'Center', css: 'center' },
+          { value: 2, label: 'Right', css: 'right' },
+        ] },
+      { id: 'ribTitlePad', label: 'Section title padding', cssVar: '--dz-rib-title-pad', unit: 'px', min: 0, max: 12, step: 1, def: 3,
+        hint: 'Room between the title and its buttons.' },
     ],
   },
   {
@@ -265,8 +283,13 @@ export function designToken(id: string): DesignToken | undefined {
   return BY_ID[id];
 }
 
-/** Format a numeric value with its unit for a CSS declaration. */
+/** Format a numeric value with its unit for a CSS declaration. Choice tokens
+ *  emit the selected option's css keyword (falling back to the default's). */
 export function formatTokenValue(t: DesignToken, val: number): string {
+  if (t.choices) {
+    return (t.choices.find((c) => c.value === val) ??
+      t.choices.find((c) => c.value === t.def) ?? t.choices[0]).css;
+  }
   return `${val}${t.unit}`;
 }
 
