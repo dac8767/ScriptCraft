@@ -10,7 +10,7 @@
  * Open and Import USED to sit as small links on the manual window; they live
  * here now, so that window is purely "name this script".
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FaBoxOpen, FaFileImport, FaFolderOpen, FaMagic, FaRegFileAlt } from 'react-icons/fa';
 
 export type LauncherChoice = 'manual' | 'guided' | 'open' | 'import';
@@ -55,6 +55,15 @@ export default function NewScriptLauncher({ open, onChoose, onClose }: {
   /** Absent = this launcher is the app's landing screen and can't be dismissed. */
   onClose?: () => void;
 }) {
+  // Escape dismisses, like every other dialog in the app (v4.81 — it was the
+  // one window you could only leave with the mouse).
+  useEffect(() => {
+    if (!open || !onClose) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
     <div

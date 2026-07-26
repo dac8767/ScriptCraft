@@ -26,7 +26,7 @@ import {
   FaKeyboard, FaRobot, FaBook, FaSlidersH, FaColumns,
   FaCommentDots, FaChevronRight, FaChevronDown,
 } from 'react-icons/fa';
-import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
+import { useEditorStore, toolConfigFor, NO_FULLSCREEN_TOOLS, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { FullscreenIcon, CloseIcon, RestoreIcon } from './uiIcons';
@@ -326,9 +326,9 @@ export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 
 /** v4.35 batch-v9 #4, Derek: EVERY side-panel window gets a fullscreen button
  *  — one generic control the frame renders, not per-tool WindowActions.
- *  Excluded: the Scrapbook (its surface IS a forced takeover) and the Title
- *  Page (a fixed-size card; fullscreening a fixed card is a no-op). */
-const NO_FULLSCREEN: ToolId[] = ['notebook', 'titlepage'];
+ *  The exclusion list lives in editorStore (v4.81) so openTool's
+ *  remembered-shape branch and this button can't disagree. */
+const NO_FULLSCREEN = NO_FULLSCREEN_TOOLS;
 
 function ToolFullscreenButton({ id }: { id: ToolId }) {
   if (NO_FULLSCREEN.includes(id)) return null;
@@ -1015,12 +1015,16 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                 if ((e.target as HTMLElement).closest('select, input, button')) return;
                 // A drag just happened — the release must not re-toggle.
                 if (draggedOutRef.current) { draggedOutRef.current = false; return; }
+                // v4.81: opening from the dock row means DOCKED — that's the
+                // shape it will reopen in until the user moves it again.
+                if (activeId !== t.id && !t.neverDock) setToolMode(t.id, 'docked');
                 setActive(activeId === t.id ? null : t.id);
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   if ((e.target as HTMLElement).closest('select, input, button')) return;
                   e.preventDefault();
+                  if (activeId !== t.id && !t.neverDock) setToolMode(t.id, 'docked');
                   setActive(activeId === t.id ? null : t.id);
                 }
               }}

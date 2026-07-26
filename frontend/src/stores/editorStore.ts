@@ -506,6 +506,12 @@ function migrateNotebookInline(
 /** Tools that never dock — they always open as a floating window. */
 export const ALWAYS_FLOAT: ToolId[] = ['analytics'];
 
+/** v4.35: tools with NO fullscreen button — the Scrapbook (its surface IS a
+ *  forced takeover) and the Title Page (a fixed-size card; fullscreening it
+ *  is a no-op). v4.81: moved here from ToolDock so openTool's remembered-mode
+ *  branch and the button read the SAME list. */
+export const NO_FULLSCREEN_TOOLS: ToolId[] = ['notebook', 'titlepage'];
+
 export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   // v0.68: the default panel layout. LEFT = script-structure windows;
   // RIGHT = writing tools. Production Tags is hidden by default (it opens from
@@ -962,8 +968,12 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    *  window narrow no longer pops it back into the panel (the retired
    *  width<=dock rule). Absent key = the tool's default home (noPanelFit
    *  tools float, everything else docks). */
-  toolMode: Record<string, 'docked' | 'floating'>;
-  setToolMode: (tool: ToolId, mode: 'docked' | 'floating') => void;
+  /** v4.81, Derek: a tool reopens in the SHAPE it was last used —
+   *  side panel, floating window, or fullscreen. Written by every
+   *  transition (dock click, drag-out, fullscreen button, shrink button)
+   *  and honored by openTool. */
+  toolMode: Record<string, 'docked' | 'floating' | 'fullscreen'>;
+  setToolMode: (tool: ToolId, mode: 'docked' | 'floating' | 'fullscreen') => void;
   /** Which tool window is open in the RIGHT dock (null = none) */
   activeToolRight: ToolId | null;
   setActiveToolRight: (tool: ToolId | null) => void;
@@ -1344,7 +1354,7 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   }),
   // First run after v4.52 derives each tool's home from the stored width the
   // retired rule used to read, so every window keeps its current home.
-  toolMode: (_vs.toolMode as Record<string, 'docked' | 'floating'>) ?? Object.fromEntries(
+  toolMode: (_vs.toolMode as Record<string, 'docked' | 'floating' | 'fullscreen'>) ?? Object.fromEntries(
     Object.entries((_vs.toolSizes ?? {}) as Record<string, { w: number }>)
       .filter(([, sz]) => sz && sz.w > 300)
       .map(([id]) => [id, 'floating' as const]),
@@ -1536,6 +1546,19 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     // tool re-lands on the dock. Without this, every open path floated a
     // second copy on top of the tool's own fullscreen view.
     if (s.fullscreenTool === tool) return {};
+    // v4.81, Derek: a tool remembered as FULLSCREEN reopens fullscreen. The
+    // takeover is exclusive (one fullscreenTool), so this also clears any
+    // panel/temp slots the tool held — the same clean-up
+    // enterToolFullscreen does, run here because that action can't be
+    // called from inside this set().
+    if (s.toolMode[tool] === 'fullscreen' && !NO_FULLSCREEN_TOOLS.includes(tool)) {
+      useNotebookStore.getState().setNotebookOpen(false);
+      const patch: Partial<EditorState> = { fullscreenTool: tool };
+      if (s.activeTool === tool || s.activeTool === 'notebook') patch.activeTool = null;
+      if (s.activeToolRight === tool || s.activeToolRight === 'notebook') patch.activeToolRight = null;
+      if (s.tempTool === tool || s.tempTool === 'notebook') patch.tempTool = null;
+      return patch;
+    }
     // v1.2: Analytics always opens as its own window. It's far taller than a
     // panel, so docking it just meant a cramped column you had to scroll — the
     // window is the only shape it actually works in.
@@ -1734,6 +1757,9 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   setFullscreenTool: (id) => set({ fullscreenTool: id }),
   enterToolFullscreen: (id) => {
     const s = get();
+    // v4.81: fullscreen is a remembered SHAPE — record it before the
+    // clean-up below, which clears the tool's panel/temp slots.
+    s.setToolMode(id, 'fullscreen');
     if (s.activeTool === id) s.setActiveTool(null);
     if (s.activeToolRight === id) s.setActiveToolRight(null);
     if (s.tempTool === id) s.setTempTool(null);

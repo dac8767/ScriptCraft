@@ -91,7 +91,8 @@ export interface ViewState {
   toolbarPinnedTools?: string[];
   toolSizes?: Record<string, { w: number; h: number }>;
   /** v4.52: EXPLICIT docked/floating per tool — replaces the width<=dock rule. */
-  toolMode?: Record<string, 'docked' | 'floating'>;
+  /** v4.81: 'fullscreen' joined — a tool reopens in its last-used shape. */
+  toolMode?: Record<string, 'docked' | 'floating' | 'fullscreen'>;
   writingGoal?: WritingGoal | null;
   goalsCompleted?: number;
   characterProfilesOpen?: boolean;

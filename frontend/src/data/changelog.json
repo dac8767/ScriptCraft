@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.81",
+    "date": "2026-07-26",
+    "changes": [
+      "Tools reopen in the shape you last used them — side panel, floating window, or fullscreen",
+      "The Start a Script window closes with Escape like every other dialog"
+    ]
+  },
+  {
     "version": "4.80",
     "date": "2026-07-26",
     "changes": [

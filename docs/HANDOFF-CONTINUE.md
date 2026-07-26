@@ -1,9 +1,11 @@
-# ScriptCraft — continuation brief (current as of v4.80 — launcher + Guided Setup)
+# ScriptCraft — continuation brief (current as of v4.81 — window-shape memory)
 
 > QUEUE (Derek-approved, not yet landed), in order:
-> 0. NEXT UP — window-mode memory incl. fullscreen (task #44), then the
->    audit items (#38). Derek's open question from v4.78 still unanswered:
->    which extra Guided Setup steps he wants (page layout, autosave/backup,
+> 0. NEXT UP — the audit items (task #38): rescans gated on tool-open
+>    (live while open / refresh on open / idle when closed), react-router
+>    major bump, Tauri fs $HOME scope narrowing, CSP decision documented.
+>    Derek's open question from v4.78 is still unanswered: which extra
+>    Guided Setup steps he wants (page layout, autosave/backup,
 >    theme-with-preview, template preview, start-from-existing-script).
 > 1. NEW-SCRIPT LAUNCHER + GUIDED SETUP WIZARD (Derek's big feature,
 >    late v4.78 session — his spec verbatim in the chat): a first window
@@ -294,7 +296,25 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.80 — new-script launcher + Guided Setup wizard (HEAD)
+### v4.81 — a tool reopens in its last-used shape (HEAD)
+
+- `toolMode` gained `'fullscreen'` (editorStore + viewState types). Every
+  transition writes it: dock-row open → 'docked', drag-out/dock-drop →
+  'floating'/'docked', enterToolFullscreen → 'fullscreen', the v4.78
+  shrink → 'floating'.
+- `openTool` honors it: a remembered-fullscreen tool reopens INTO the
+  takeover, clearing its panel/temp slots inline (it can't call
+  enterToolFullscreen from inside set()). Guarded by NO_FULLSCREEN_TOOLS,
+  which MOVED to editorStore so ToolDock's button and this branch read the
+  same list — the classic two-lists bug, pre-empted.
+- fullscreenTool itself is still session-only, so a relaunch never opens
+  straight into a takeover; the memory applies when you OPEN the tool.
+- Escape now closes the Start a Script launcher (it was the one dialog
+  you could only leave with the mouse).
+- Tests: toolModeMemory.test.ts — each shape, the no-double-open
+  invariant, and the NO_FULLSCREEN exemption.
+
+### v4.80 — new-script launcher + Guided Setup wizard
 
 - **NewScriptLauncher.tsx** fronts every New Script entry (File ▸ New
   Script, the newScreenplay command, and the launch-with-nothing-to-open
