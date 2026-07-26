@@ -62,16 +62,16 @@ describe('ElementPicker ordering', () => {
     expect(labels()[0]).toBe('Action');
   });
 
-  it('never shows a plain "Character" label — the name line is "Dialogue (character)"', () => {
+  it('never shows a plain "Character" label — the name line is "Dialogue (Name)"', () => {
     render({});
     expect(labels()).not.toContain('Character');
-    expect(labels()).toContain('Dialogue (character)');
+    expect(labels()).toContain('Dialogue (Name)');
   });
 
   // v4.58/61: grammar filter by the element above the line being chosen.
-  it('after a scene heading: exactly Action, Dialogue (character), Dual Dialogue', () => {
+  it('after a scene heading: exactly Action, Dialogue (Name), Dual Dialogue', () => {
     render({ prevScriptType: 'sceneHeading' });
-    expect(labels().sort()).toEqual(['Action', 'Dialogue (character)', 'Dual Dialogue']);
+    expect(labels().sort()).toEqual(['Action', 'Dialogue (Name)', 'Dual Dialogue']);
   });
 
   it('after a name line: Parenthetical (leading) and plain Dialogue', () => {

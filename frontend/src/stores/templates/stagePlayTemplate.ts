@@ -48,7 +48,7 @@ export const STAGE_PLAY_TEMPLATE: FormattingTemplate = {
       nextOnEnter: 'character',
       placeholder: 'Action description...',
     }),
-    character: rule('character', 'Dialogue (character)', true, {
+    character: rule('character', 'Dialogue (Name)', true, {
       bold: true,
       textTransform: 'uppercase',
       textAlign: 'center',

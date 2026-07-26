@@ -65,7 +65,7 @@ export const AV_SCRIPT_TEMPLATE: FormattingTemplate = {
       nextOnEnter: 'action',
       placeholder: 'Pre-roll text...',
     }),
-    character: disabled('character', 'Dialogue (character)'),
+    character: disabled('character', 'Dialogue (Name)'),
     dialogue: disabled('dialogue', 'Dialogue'),
     parenthetical: disabled('parenthetical', 'Parenthetical'),
     transition: rule('transition', 'Transition', true, {

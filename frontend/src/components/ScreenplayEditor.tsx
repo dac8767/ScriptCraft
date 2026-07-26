@@ -1402,7 +1402,7 @@ const ScreenplayEditor: React.FC = () => {
 
             // v4.57, Derek: Tab on an empty far-left line (a fresh action /
             // general row) starts a dialogue at the character-name prompt
-            // ("Dialogue (character)"), moving the caret over to the indent.
+            // ("Dialogue (Name)"), moving the caret over to the indent.
             if (
               (currentType === 'action' || currentType === 'general')
               && currentNode.textContent.trim() === ''

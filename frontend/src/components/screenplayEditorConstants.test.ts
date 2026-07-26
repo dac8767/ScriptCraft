@@ -38,7 +38,7 @@ describe('element-type maps stay in sync', () => {
 /**
  * v4.59 — Derek's full follows-what grammar table, keyed on the element
  * above the line being chosen. v4.61: stored VERBATIM — `character` is one
- * of the three dialogue options, labeled "Dialogue (character)".
+ * of the three dialogue options, labeled "Dialogue (Name)".
  */
 describe('allowedElementsAfter', () => {
   const CANDIDATES = ['action', 'character', 'dialogue', 'dualDialogue', 'sceneHeading', 'transition', 'parenthetical', 'general', 'shot', 'lyrics', 'showEpisode'];

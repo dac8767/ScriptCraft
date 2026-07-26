@@ -1,5 +1,14 @@
 [
   {
+    "version": "4.63",
+    "date": "2026-07-26",
+    "changes": [
+      "\"Dialogue (character)\" is now \"Dialogue (Name)\" everywhere",
+      "The Element Suggestions rules are a real table — one row per element, one check cell per allowed follower",
+      "Customize > Editor: Mores & Continueds moved to the top of the tab"
+    ]
+  },
+  {
     "version": "4.62",
     "date": "2026-07-26",
     "changes": [

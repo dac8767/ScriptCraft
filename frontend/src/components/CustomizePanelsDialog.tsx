@@ -898,6 +898,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           </section>
           </>)}
           {activeCat === 'elements' && (<>
+            {/* v4.63, Derek: Mores & Continueds leads the Editor tab. */}
+            <section>
+              <h3>Mores &amp; Continueds</h3>
+              <MoresContdsDialog embedded onClose={() => showToast('Mores & Continueds applied', 'success')} />
+            </section>
             <EditElementsDialog embedded />
             {/* v4.59, Derek: what the Enter-key suggestion list may offer,
                 keyed on the element above — his follows-what table is the
@@ -905,12 +910,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             <section>
               <h3>Element Suggestions</h3>
               <SuggestionRulesEditor />
-            </section>
-            {/* v4.28, Derek: moved out of Settings — dialogue continuation
-                markers are editor composition. Per-document, like Final Draft. */}
-            <section>
-              <h3>Mores &amp; Continueds</h3>
-              <MoresContdsDialog embedded onClose={() => showToast('Mores & Continueds applied', 'success')} />
             </section>
           </>)}
           {activeCat === 'themes' && <ThemesTab />}

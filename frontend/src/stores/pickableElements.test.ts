@@ -3,7 +3,7 @@
  * The canonical pickable-element list (v0.84) — invariants.
  *
  * v4.61, Derek: `character` IS pickable again — it is one of the three
- * dialogue options, labeled "Dialogue (character)" (ELEMENT_LABELS), never
+ * dialogue options, labeled "Dialogue (Name)" (ELEMENT_LABELS), never
  * plain "Character" in any list.
  */
 import { describe, it, expect } from 'vitest';
@@ -13,10 +13,10 @@ import { ELEMENT_LABELS } from './editorStore';
 describe('getPickableElements', () => {
   const ids = () => useFormattingTemplateStore.getState().getPickableElements().map((r) => r.id);
 
-  it('offers character, labeled "Dialogue (character)"', () => {
+  it('offers character, labeled "Dialogue (Name)"', () => {
     expect(ids()).toContain('character');
     expect(NON_PICKABLE).not.toContain('character');
-    expect(ELEMENT_LABELS['character']).toBe('Dialogue (character)');
+    expect(ELEMENT_LABELS['character']).toBe('Dialogue (Name)');
   });
 
   it('offers dialogue too, and the character rule survives', () => {

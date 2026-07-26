@@ -366,7 +366,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       return;
     }
 
-    // v4.61: picks apply directly — "Dialogue (character)" IS the character
+    // v4.61: picks apply directly — "Dialogue (Name)" IS the character
     // element, so there is no implicit conversion any more.
     const type = picked;
 

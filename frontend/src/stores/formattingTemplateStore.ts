@@ -144,7 +144,7 @@ interface FormattingTemplateState {
  * Exported so every list — including Customize > Elements — filters identically.
  */
 // v4.61, Derek: `character` is back in the pick lists as one of the three
-// dialogue options — labeled "Dialogue (character)" (ELEMENT_LABELS), never
+// dialogue options — labeled "Dialogue (Name)" (ELEMENT_LABELS), never
 // plain "Character". (v4.54 had removed it in favor of an implicit
 // Dialogue→character conversion; explicit labeled options replaced that.)
 export const NON_PICKABLE = ['newAct', 'endOfAct', 'castList'];

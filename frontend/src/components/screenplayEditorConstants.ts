@@ -44,16 +44,16 @@ export const ALL_ELEMENT_TYPES: ElementType[] = [
 // final document).
 //
 // There are three dialogue options in every list (v4.61, Derek): plain
-// "Dialogue" (the speech), "Dialogue (character)" (the `character` id — the
+// "Dialogue" (the speech), "Dialogue (Name)" (the `character` id — the
 // name line; the label lives in ELEMENT_LABELS), and "Dual Dialogue". Picks
 // apply their element directly — nothing is silently converted (the v4.54
 // implicit Dialogue→character resolver is retired).
 //
-//   Scene Heading → Action, Dialogue (character), Dual Dialogue
-//   Action        → Action, Dialogue (character), Dual Dialogue, Scene Heading, Transition
-//   Dialogue (character) → Dialogue, Parenthetical
+//   Scene Heading → Action, Dialogue (Name), Dual Dialogue
+//   Action        → Action, Dialogue (Name), Dual Dialogue, Scene Heading, Transition
+//   Dialogue (Name) → Dialogue, Parenthetical
 //   Parenthetical → Dialogue
-//   Dialogue      → Dialogue (character), Action, Scene Heading, Dual Dialogue, Transition
+//   Dialogue      → Dialogue (Name), Action, Scene Heading, Dual Dialogue, Transition
 //   Transition    → Scene Heading, Action
 //
 // A dual-dialogue block ends in dialogue, so it uses the Dialogue row.

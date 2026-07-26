@@ -287,9 +287,8 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
   color: var(--fd-text);
   background: color-mix(in srgb, var(--fd-accent, #4a90d9) 14%, transparent);
 }
-/* v4.59: Customize ▸ Editor ▸ Element Suggestions — the follows-what rules.
-   One row per previous element; a chip per allowed next element (chips share
-   the seg-button look). */
+/* v4.59: Customize ▸ Editor ▸ Element Suggestions. v4.63: a real TABLE —
+   row = the element above, column = candidate, check cell = allowed. */
 .fs-sugg-mode { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .fs-sugg-reset {
   border: 1px solid var(--fd-border);
@@ -300,28 +299,47 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
   padding: 3px 10px;
   cursor: pointer;
 }
-.fs-sugg-rules { display: flex; flex-direction: column; gap: 6px; }
-.fs-sugg-row { display: flex; align-items: baseline; gap: 10px; }
-.fs-sugg-prev {
-  flex: 0 0 110px;
+.fs-sugg-tablewrap { overflow-x: auto; max-width: 100%; }
+.fs-sugg-table { border-collapse: collapse; }
+.fs-sugg-table th[scope="col"] {
+  padding: 4px 5px 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--fd-text-muted);
+  text-align: center;
+  vertical-align: bottom;
+  max-width: 74px;
+  line-height: 1.15;
+}
+.fs-sugg-table th.fs-sugg-corner { text-align: right; color: var(--fd-text-muted); font-weight: 500; padding-right: 10px; white-space: nowrap; }
+.fs-sugg-table th[scope="row"] {
+  padding: 5px 10px 5px 0;
   font-size: 12px;
+  font-weight: 600;
   color: var(--fd-text);
   text-align: right;
+  white-space: nowrap;
 }
-.fs-sugg-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.fs-sugg-chip {
+.fs-sugg-table tbody tr { border-top: var(--fd-hairline-w, 1px) solid var(--fd-hairline); }
+.fs-sugg-table tbody tr:nth-child(odd) { background: rgba(128, 128, 128, 0.05); }
+.fs-sugg-table td { text-align: center; padding: 3px 4px; }
+.fs-sugg-cell {
+  width: 24px;
+  height: 20px;
   border: 1px solid var(--fd-border);
-  border-radius: 10px;
+  border-radius: 4px;
   background: rgba(128, 128, 128, 0.06);
   color: var(--fd-text-muted);
-  font-size: 11px;
-  padding: 2px 9px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
-.fs-sugg-chip.active {
+.fs-sugg-cell.active {
   border-color: var(--fd-accent, #4a90d9);
   color: var(--fd-text);
-  background: color-mix(in srgb, var(--fd-accent, #4a90d9) 14%, transparent);
+  background: color-mix(in srgb, var(--fd-accent, #4a90d9) 18%, transparent);
 }
 .fs-customize-checks {
   display: grid;

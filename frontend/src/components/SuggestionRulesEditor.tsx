@@ -1,14 +1,13 @@
 /**
- * Customize ▸ Editor ▸ Element Suggestions (v4.59, Derek).
+ * Customize ▸ Editor ▸ Element Suggestions (v4.59, Derek; table form v4.63).
  *
  * Mode toggle: Script-Aware (the follows-what grammar filters the Enter-key
- * suggestion list) vs All Elements (no filtering). Below it, the rules
- * themselves: one row per previous element, a chip per allowed next element.
- * Derek's table is the default; edits are stored whole in editorStore
- * (`suggestionRules`), Reset returns to the default. "Dialogue" here is the
- * couplet cue — on an empty line it starts at the character name — so there
- * is no separate Character column, and a dual-dialogue block above uses the
- * Dialogue row.
+ * suggestion list) vs All Elements (no filtering). Below it, the rules as a
+ * TABLE — one row per previous element, one column per candidate, a check
+ * cell where the candidate is allowed to follow. Derek's table is the
+ * default; edits are stored whole in editorStore (`suggestionRules`), Reset
+ * returns to the default. "Dialogue (Name)" is the `character` id (the name
+ * line); a dual-dialogue block above uses the Dialogue row.
  */
 import React from 'react';
 import { ELEMENT_LABELS, useEditorStore } from '../stores/editorStore';
@@ -18,6 +17,12 @@ const label = (id: string): string =>
   id === 'dualDialogue' ? 'Dual Dialogue' : (ELEMENT_LABELS[id] ?? id);
 
 const ROWS = Object.keys(DEFAULT_SUGGESTION_RULES);
+
+const CheckIcon: React.FC = () => (
+  <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+    <polyline points="2,6.5 5,9.5 10,2.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 const SuggestionRulesEditor: React.FC = () => {
   const mode = useEditorStore((s) => s.suggestionMode);
@@ -57,21 +62,37 @@ const SuggestionRulesEditor: React.FC = () => {
         )}
       </div>
       {mode !== 'all' && (
-        <div className="fs-sugg-rules">
-          {ROWS.map((row) => (
-            <div className="fs-sugg-row" key={row}>
-              <span className="fs-sugg-prev">{label(row)}</span>
-              <span className="fs-sugg-chips">
-                {SUGGESTION_RULE_CANDIDATES.map((id) => (
-                  <button
-                    key={id}
-                    className={`fs-sugg-chip${(effective[row] ?? []).includes(id) ? ' active' : ''}`}
-                    onClick={() => toggle(row, id)}
-                  >{label(id)}</button>
+        <div className="fs-sugg-tablewrap">
+          <table className="fs-sugg-table">
+            <thead>
+              <tr>
+                <th scope="col" className="fs-sugg-corner">After element…</th>
+                {SUGGESTION_RULE_CANDIDATES.map((c) => (
+                  <th scope="col" key={c}>{label(c)}</th>
                 ))}
-              </span>
-            </div>
-          ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ROWS.map((row) => (
+                <tr key={row}>
+                  <th scope="row">{label(row)}</th>
+                  {SUGGESTION_RULE_CANDIDATES.map((c) => {
+                    const on = (effective[row] ?? []).includes(c);
+                    return (
+                      <td key={c}>
+                        <button
+                          className={`fs-sugg-cell${on ? ' active' : ''}`}
+                          title={`${label(c)} ${on ? 'can' : 'cannot'} follow ${label(row)}`}
+                          aria-pressed={on}
+                          onClick={() => toggle(row, c)}
+                        >{on && <CheckIcon />}</button>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

@@ -1,4 +1,11 @@
-# ScriptCraft — continuation brief (current as of v4.62 — audit pass: deps, error boundary)
+# ScriptCraft — continuation brief (current as of v4.63 — Dialogue (Name), rules table)
+
+> IN FLIGHT (approved, not yet landed): Derek approved the v4.62 audit items —
+> react-router major bump; scene/character rescans gated on tool-open (live
+> while open, refresh on open, idle when closed — his refinement); Tauri fs
+> scope narrowing; CSP = document the decision. ALSO queued: flatten Settings —
+> no "Customize" tab; all settings tabs, divider, "Customize" section title,
+> then the customize tabs (kills one submenu level).
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +252,20 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.62 — speed/efficiency/security/stability audit (HEAD)
+### v4.63 — Dialogue (Name), rules table, M&C on top (HEAD)
+
+- **"Dialogue (character)" → "Dialogue (Name)"** — sed across
+  ELEMENT_LABELS, all six template rule labels, constants comments, tests.
+- **SuggestionRulesEditor is a TABLE** (Derek's screenshot ask): thead =
+  candidates, row th = the element above, `.fs-sugg-cell` check buttons
+  (inline SVG check — no font glyphs), zebra rows + hairline row borders,
+  `.fs-sugg-tablewrap` overflow-x. Driver v39: 18 default active cells
+  (= table row sums), toggle → 19 + Reset appears, picker under heading
+  gains Shot immediately.
+- **Mores & Continueds moved to the TOP** of Customize ▸ Editor (order:
+  M&C, Transitions, Elements, Element Suggestions).
+
+### v4.62 — speed/efficiency/security/stability audit
 
 - **docs/AUDIT-2026-07-26.md** is the full report (delta on the v0.54
   security audit + the T1–T7 efficiency backlog, both largely landed).

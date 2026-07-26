@@ -52,7 +52,7 @@ export const ONE_HOUR_DRAMA_TEMPLATE: FormattingTemplate = {
       nextOnTab: 'character',
       placeholder: 'Action...',
     }),
-    character: rule('character', 'Dialogue (character)', true, {
+    character: rule('character', 'Dialogue (Name)', true, {
       textTransform: 'uppercase',
       marginTop: 12,
       leftIndent: 3.50,
