@@ -67,7 +67,9 @@ export const DEFAULT_SUGGESTION_RULES: Record<string, readonly string[]> = {
   action: ['action', 'character', 'dualDialogue', 'sceneHeading', 'transition'],
   character: ['dialogue', 'parenthetical'],
   parenthetical: ['dialogue'],
-  dialogue: ['character', 'action', 'sceneHeading', 'dualDialogue', 'transition'],
+  // v4.68, Derek: Parenthetical joined the dialogue row — a "(beat)" is
+  // allowed between dialogue lines (and typing "(" in dialogue starts one).
+  dialogue: ['character', 'action', 'sceneHeading', 'dualDialogue', 'transition', 'parenthetical'],
   transition: ['sceneHeading', 'action'],
 };
 

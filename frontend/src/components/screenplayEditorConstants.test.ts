@@ -50,7 +50,8 @@ describe('allowedElementsAfter', () => {
     expect(allowedSet('action')).toEqual(['action', 'character', 'dualDialogue', 'sceneHeading', 'transition']);
     expect(allowedSet('character')).toEqual(['dialogue', 'parenthetical']);
     expect(allowedSet('parenthetical')).toEqual(['dialogue']);
-    expect(allowedSet('dialogue')).toEqual(['action', 'character', 'dualDialogue', 'sceneHeading', 'transition']);
+    // v4.68: parenthetical is allowed after dialogue (mid-speech beats).
+    expect(allowedSet('dialogue')).toEqual(['action', 'character', 'dualDialogue', 'parenthetical', 'sceneHeading', 'transition']);
     expect(allowedSet('transition')).toEqual(['action', 'sceneHeading']);
   });
 

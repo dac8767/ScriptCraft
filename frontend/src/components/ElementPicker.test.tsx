@@ -79,10 +79,13 @@ describe('ElementPicker ordering', () => {
     expect(labels()).toEqual(['Parenthetical', 'Dialogue']);
   });
 
-  it('parenthetical appears only when the previous element is a character', () => {
+  it('parenthetical appears after a name line or dialogue, not elsewhere', () => {
     render({ prevScriptType: 'character', suggestType: 'parenthetical' as never });
     expect(labels()[0]).toBe('Parenthetical');
+    // v4.68: mid-speech beats — parenthetical follows dialogue too.
     render({ prevScriptType: 'dialogue' });
+    expect(labels()).toContain('Parenthetical');
+    render({ prevScriptType: 'action' });
     expect(labels()).not.toContain('Parenthetical');
   });
 

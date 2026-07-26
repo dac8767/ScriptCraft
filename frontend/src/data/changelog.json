@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.68",
+    "date": "2026-07-26",
+    "changes": [
+      "Parenthetical is allowed after dialogue in the default suggestions — a (beat) can sit between dialogue lines",
+      "Typing ( while writing dialogue starts a parenthetical: on the next line at the end of a written line, in place on an empty one; mid-text it stays a normal character"
+    ]
+  },
+  {
     "version": "4.67",
     "date": "2026-07-26",
     "changes": [
