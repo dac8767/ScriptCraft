@@ -1,5 +1,12 @@
 [
   {
+    "version": "4.62",
+    "date": "2026-07-26",
+    "changes": [
+      "Stability and security pass: dependency security fixes, a crash-recovery screen with a Reload button instead of a white screen, and a cleaner build (see docs/AUDIT-2026-07-26.md)"
+    ]
+  },
+  {
     "version": "4.61",
     "date": "2026-07-26",
     "changes": [

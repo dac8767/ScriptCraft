@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.61 — three explicit dialogue options)
+# ScriptCraft — continuation brief (current as of v4.62 — audit pass: deps, error boundary)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,23 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.61 — three explicit dialogue options (HEAD)
+### v4.62 — speed/efficiency/security/stability audit (HEAD)
+
+- **docs/AUDIT-2026-07-26.md** is the full report (delta on the v0.54
+  security audit + the T1–T7 efficiency backlog, both largely landed).
+  APPLIED (safe): `npm audit fix` (prod vulns 6→2 — ws/linkify-it/
+  markdown-it/dompurify patched; lockfile-only, suite+smoke green);
+  `AppErrorBoundary` at the root in main.tsx (render crash → readable
+  panel + Reload, was a white screen); saveLocations' odraftFormat import
+  made static (kills the every-build INEFFECTIVE_DYNAMIC_IMPORT warning).
+  AWAITING DEREK'S APPROVAL: react-router major bump (last 2 high
+  advisories), debouncing the per-keystroke updateScenes/updateCharacters
+  full-doc walks (~300ms trailing), Tauri fs scope ($HOME/** breadth) and
+  CSP tightening, pip-audit on his Mac. Verified healthy: S1/S2 fixed,
+  all localStorage parses guarded, listener add/remove balanced, no
+  eval, innerHTML sites sanitized/known.
+
+### v4.61 — three explicit dialogue options
 
 - **"Dialogue (character)" (Derek)**: every element list offers THREE
   dialogue options — Dialogue, Dialogue (character) (= the `character`

@@ -17,6 +17,10 @@
 import { useSettingsStore } from '../stores/settingsStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useEditorStore } from '../stores/editorStore';
+// Static on purpose: MenuBar/ScreenplayEditor already import odraftFormat
+// statically, so a dynamic import here could never split a chunk — it only
+// produced a build warning on every run (v4.62 audit).
+import { exportOdraft } from '../utils/odraftFormat';
 import { cloudApi } from './cloudApi';
 import { reportSaveError } from '../stores/saveErrorStore';
 import { errText } from '../utils/errText';
@@ -306,7 +310,6 @@ export async function mirrorSnapshot(args: {
         // the folder path only exists where a native dialog picked it).
         const { isTauri } = await import('./platform');
         if (!isTauri()) throw new Error('Local folder auto saves need the desktop app.');
-        const { exportOdraft } = await import('../utils/odraftFormat');
         const blob = exportOdraft({
           id: '', title: args.title, author: '', format: 'json',
           created_at: '', updated_at: '', page_count: 0,
