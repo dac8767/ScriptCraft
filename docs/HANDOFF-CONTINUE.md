@@ -1,4 +1,14 @@
-# ScriptCraft — continuation brief (current as of v4.82 — gated rescans + react-router v8)
+# ScriptCraft — continuation brief (current as of v4.84 — element revert + shape-memory fix)
+
+> READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
+> shape-memory was written correctly and then OVERWRITTEN by the dock-row
+> click handler (`setToolMode(id,'docked')` on every open), so the
+> commonest way to reopen a tool erased the memory. My driver had tested
+> the Tools MENU path and passed; Derek hit the panel-row path. When a
+> feature has several entry points, drive the one the user actually
+> uses — the rule now lives in ToolDock's `openFromRow`: opening READS
+> the mode, only explicit gestures WRITE it.
+
 
 > QUEUE — Derek's approved list is CLEAR as of v4.82. What's left:
 > 1. **Tauri fs scope** — the one audit item deliberately NOT shipped.
@@ -300,7 +310,40 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.82 — gated rescans + react-router v8 (HEAD)
+### v4.84 — element revert, shape-memory fix, chrome items (HEAD)
+
+- **BUG (Derek): "none of the windows are remembering the correct
+  position."** v4.81's dock-row handler forced `setToolMode('docked')` on
+  every open. Replaced by `openFromRow(t)` in ToolDock: clicking an open
+  tool closes it; otherwise it reads `toolMode` and either
+  `enterToolFullscreen` (fullscreen) or `setActive` (docked/floating —
+  the frame picks the shape). NOTHING in an open path writes the mode.
+  toolModeMemory.test.ts pins that contract.
+- **"Dialogue (Name)" REMOVED** (Derek reverting v4.61/v4.63):
+  `character` is back in NON_PICKABLE, its label is 'Character' again in
+  ELEMENT_LABELS and all six template rules, and
+  `resolvePickedElement(picked, prevType)` is BACK in
+  screenplayEditorConstants — picking Dialogue gives the name line
+  UNLESS the previous block is character/parenthetical/dualDialogue
+  (where a second name would be nonsense). Used by the picker AND the
+  toolbar dropdown, so they can't drift. `allowedElementsAfter` maps a
+  row that allows 'character' to also allow 'dialogue' — the rules
+  table still speaks in name-line terms, which is correct: that IS the
+  grammar's concept. Driver: picker shows Action/Dialogue/Dual Dialogue;
+  Dialogue → character node → Enter → dialogue.
+- **Focus "keep focus on current element"**: a speech (character +
+  parentheticals + dialogue) is ONE focused unit — the name no longer
+  dims while writing the line (TypewriterScroll.dimDecorations).
+- Editor View select: `text-align`/`text-align-last: center` (options
+  stay left — a centered list is hard to scan).
+- Design ▸ Toolbar: `ribTitleGap` → `--dz-rib-title-gap` (the
+  title→buttons margin; `ribTitlePad` remains the padding INSIDE the band).
+- Presets panel: Workspaces row (export writes _workspaces.json; import
+  accepts our export, a bare map, or another project's .odraft via the
+  store's own `importWorkspaces`).
+- Native View menu: Minimize removed (nativeMenuSync `windowItems`).
+
+### v4.82 — gated rescans + react-router v8
 
 - **Rescans** (ScreenplayEditor): `openToolKey` = activeTool |
   activeToolRight | tempTool | fullscreenTool → `toolIsOpen(id)`.

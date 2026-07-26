@@ -144,10 +144,14 @@ interface FormattingTemplateState {
  * Exported so every list — including Customize > Elements — filters identically.
  */
 // v4.61, Derek: `character` is back in the pick lists as one of the three
-// dialogue options — labeled "Dialogue (Name)" (ELEMENT_LABELS), never
+// v4.84: the name line is labeled "Character" again and is NOT pickable —
 // plain "Character". (v4.54 had removed it in favor of an implicit
 // Dialogue→character conversion; explicit labeled options replaced that.)
-export const NON_PICKABLE = ['newAct', 'endOfAct', 'castList'];
+// v4.84, Derek: 'character' is NOT offered as its own element again — the
+// "Dialogue" option starts by prompting for the name (resolvePickedElement in
+// screenplayEditorConstants). It remains a real schema node and a real
+// template rule; it just isn't something you pick.
+export const NON_PICKABLE = ['newAct', 'endOfAct', 'castList', 'character'];
 
 /** Dual Dialogue is a structure rather than a paragraph type, so it has no
  *  template rule — but it IS offered in every element list. */

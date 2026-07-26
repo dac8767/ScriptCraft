@@ -62,7 +62,7 @@ export const INDUSTRY_STANDARD_TEMPLATE: FormattingTemplate = {
       nextOnTab: 'character',
       placeholder: 'Action...',
     }),
-    character: rule('character', 'Dialogue (Name)', {
+    character: rule('character', 'Character', {
       textTransform: 'uppercase',
       marginTop: 12,
       leftIndent: 3.50,

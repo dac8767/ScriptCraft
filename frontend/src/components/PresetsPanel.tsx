@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { FaFileExport, FaFileImport } from 'react-icons/fa';
 import { useThemeStore } from '../stores/themeStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
+import { useEditorStore } from '../stores/editorStore';
 import {
   buildCustomizeExport, applyCustomizeExport,
   buildFullPreset, applyFullPreset,
@@ -67,6 +68,7 @@ interface RowSpec {
 export default function PresetsPanel({ showImports = true }: { showImports?: boolean }) {
   const customThemes = useThemeStore((s) => s.customThemes);
   const outlinePresets = useOutlinePresetStore((s) => s.presets);
+  const workspaceNames = Object.keys(useEditorStore((s) => s.workspaces));
   // Bump to re-render after an import changes store-backed counts.
   const [, bump] = useState(0);
 
@@ -154,6 +156,41 @@ export default function PresetsPanel({ showImports = true }: { showImports?: boo
           const th = useThemeStore.getState();
           for (const t of found) th.saveCustomTheme(t);
           showToast(`Imported ${found.length} theme${found.length === 1 ? '' : 's'}.`, 'success');
+          bump((v) => v + 1);
+        } catch (err) {
+          showToast(err instanceof Error ? err.message : 'Could not read that file.', 'error');
+        }
+      },
+    },
+    {
+      key: 'workspaces',
+      label: 'Workspaces',
+      desc: workspaceNames.length
+        ? `Your ${workspaceNames.length} saved layout${workspaceNames.length === 1 ? '' : 's'} — which tools are open, where, and how big.`
+        : 'Saved layouts — which tools are open, where, and how big. None saved yet; save one from View ▸ Workspaces.',
+      exportDisabled: workspaceNames.length ? undefined : 'No workspaces to export',
+      onExport: async () => {
+        const st = useEditorStore.getState();
+        const payload = {
+          app: 'ScriptCraft', kind: 'workspaces-export', version: 1,
+          workspaces: st.workspaces, workspaceOrder: st.workspaceOrder,
+        };
+        if (await saveFile(JSON.stringify(payload, null, 2), typedExportName('scriptcraft', 'workspaces'), JSON_FILTER)) {
+          showToast(`Exported ${workspaceNames.length} workspace${workspaceNames.length === 1 ? '' : 's'}.`, 'success');
+        }
+      },
+      onImport: async () => {
+        // Accepts our export, a raw workspaces map, or another project's
+        // .odraft — the same shapes View ▸ Workspaces ▸ Import accepts, since
+        // importWorkspaces does the merging either way.
+        const file = await openTextFile([{ name: 'ScriptCraft Workspaces or Script', extensions: ['json', 'odraft'] }]);
+        if (!file) return;
+        try {
+          const doc = JSON.parse(file.content) as Record<string, unknown>;
+          const map = (doc.workspaces ?? (doc.content as Record<string, unknown> | undefined)?._workspaces ?? doc) as Record<string, never>;
+          if (!map || typeof map !== 'object' || Array.isArray(map)) { showToast('No workspaces found in that file.', 'info'); return; }
+          const added = useEditorStore.getState().importWorkspaces(map);
+          showToast(added.length ? `Imported ${added.length} workspace${added.length === 1 ? '' : 's'}.` : 'No workspaces found in that file.', added.length ? 'success' : 'info');
           bump((v) => v + 1);
         } catch (err) {
           showToast(err instanceof Error ? err.message : 'Could not read that file.', 'error');

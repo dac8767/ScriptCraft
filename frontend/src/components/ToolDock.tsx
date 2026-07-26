@@ -757,6 +757,25 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   // the flag existed must not pull them inline.
   const inline = !iconsMode && !!(active && activeSize && activeMode === 'docked' && !active.neverDock);
 
+  /** v4.84, Derek: "none of the windows are remembering the correct position."
+   *  The v4.81 row handler FORCED 'docked' on every open, so reopening from
+   *  the panel list always snapped a floated or fullscreen tool back into the
+   *  panel — the memory was written correctly and then immediately overwritten
+   *  by the commonest way to reopen a tool. The row is just the tool's list
+   *  entry: it opens the tool in whatever shape it was left in, and only the
+   *  explicit gestures (drag out, drop in, fullscreen, shrink) change that. */
+  const openFromRow = (t: ToolDef) => {
+    if (activeId === t.id) { setActive(null); return; }   // clicking an open tool closes it
+    const mode = toolMode[t.id] ?? (t.noPanelFit ? 'floating' : 'docked');
+    if (mode === 'fullscreen' && !NO_FULLSCREEN.includes(t.id)) {
+      useEditorStore.getState().enterToolFullscreen(t.id);
+      return;
+    }
+    // 'docked' and 'floating' are both just "active" — the frame below picks
+    // the shape from toolMode, so nothing needs to be written here.
+    setActive(t.id);
+  };
+
   const startInlineResize = (e: React.PointerEvent) => {
     if (!active || !activeSize) return;
     e.preventDefault();
@@ -1015,17 +1034,13 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                 if ((e.target as HTMLElement).closest('select, input, button')) return;
                 // A drag just happened — the release must not re-toggle.
                 if (draggedOutRef.current) { draggedOutRef.current = false; return; }
-                // v4.81: opening from the dock row means DOCKED — that's the
-                // shape it will reopen in until the user moves it again.
-                if (activeId !== t.id && !t.neverDock) setToolMode(t.id, 'docked');
-                setActive(activeId === t.id ? null : t.id);
+                openFromRow(t);
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   if ((e.target as HTMLElement).closest('select, input, button')) return;
                   e.preventDefault();
-                  if (activeId !== t.id && !t.neverDock) setToolMode(t.id, 'docked');
-                  setActive(activeId === t.id ? null : t.id);
+                  openFromRow(t);
                 }
               }}
               // v4.78, Derek: closed rows drag out too — a tool doesn't need

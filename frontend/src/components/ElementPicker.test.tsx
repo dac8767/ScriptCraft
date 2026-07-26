@@ -62,16 +62,19 @@ describe('ElementPicker ordering', () => {
     expect(labels()[0]).toBe('Action');
   });
 
-  it('never shows a plain "Character" label — the name line is "Dialogue (Name)"', () => {
+  // v4.84, Derek: the name line is NOT offered as its own element again —
+  // "Dialogue" starts at the name (resolvePickedElement).
+  it('offers no name-line element at all — just Dialogue', () => {
     render({});
     expect(labels()).not.toContain('Character');
-    expect(labels()).toContain('Dialogue (Name)');
+    expect(labels()).not.toContain('Dialogue (Name)');
+    expect(labels()).toContain('Dialogue');
   });
 
   // v4.58/61: grammar filter by the element above the line being chosen.
-  it('after a scene heading: exactly Action, Dialogue (Name), Dual Dialogue', () => {
+  it('after a scene heading: exactly Action, Dialogue, Dual Dialogue', () => {
     render({ prevScriptType: 'sceneHeading' });
-    expect(labels().sort()).toEqual(['Action', 'Dialogue (Name)', 'Dual Dialogue']);
+    expect(labels().sort()).toEqual(['Action', 'Dialogue', 'Dual Dialogue']);
   });
 
   it('after a name line: Parenthetical (leading) and plain Dialogue', () => {

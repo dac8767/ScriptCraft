@@ -64,7 +64,7 @@ export const MULTICAM_SITCOM_TEMPLATE: FormattingTemplate = {
       nextOnTab: 'character',
       placeholder: 'ENTER/EXIT/CROSS...',
     }),
-    character: rule('character', 'Dialogue (Name)', true, {
+    character: rule('character', 'Character', true, {
       bold: true,
       textTransform: 'uppercase',
       marginTop: 24,

@@ -42,6 +42,7 @@ import { TableGridPicker, closeNotebook, applyScrapbookTextFormat } from './Note
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { confirmDialog } from './ConfirmDialog';
 import { commandDef, type ToolbarCommand } from './toolbarCommands';
+import { resolvePickedElement } from './screenplayEditorConstants';
 import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, stripTall, parseRibbon } from './toolbarBuiltins';
 import { smartUndo, smartRedo, useEditorStore } from '../stores/editorStore';
 import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
@@ -388,9 +389,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       return;
     }
 
-    // v4.61: picks apply directly — "Dialogue (Name)" IS the character
-    // element, so there is no implicit conversion any more.
-    const type = picked;
+    // v4.84, Derek: "Dialogue" starts at the character name — the SAME
+    // resolver the element picker and the Insert menu use, so one pick means
+    // one thing everywhere.
+    const { $from } = editor.state.selection;
+    const prevNode = $from.depth > 0 && $from.index($from.depth - 1) > 0
+      ? $from.node($from.depth - 1).child($from.index($from.depth - 1) - 1)
+      : null;
+    const type = resolvePickedElement(picked, prevNode?.type.name ?? null);
 
     setActiveElement(type as ElementType);
     // Three cases:

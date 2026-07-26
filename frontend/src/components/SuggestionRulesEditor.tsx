@@ -6,7 +6,7 @@
  * TABLE — one row per previous element, one column per candidate, a check
  * cell where the candidate is allowed to follow. Derek's table is the
  * default; edits are stored whole in editorStore (`suggestionRules`), Reset
- * returns to the default. "Dialogue (Name)" is the `character` id (the name
+ * returns to the default. "Character" is the name-line id (the row/column
  * line); a dual-dialogue block above uses the Dialogue row.
  */
 import React from 'react';

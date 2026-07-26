@@ -173,10 +173,11 @@ export const ELEMENT_LABELS: Record<string, string> = {
   sceneHeading: 'Scene Heading',
   action: 'Action',
   // v4.61, Derek: the name line is one of the THREE dialogue options
-  // (Dialogue, Dialogue (Name), Dual Dialogue) — never plain
+  // v4.84: 'character' is the NAME line — not offered as its own element;
+  // picking "Dialogue" starts here. Label is 'Character' again.
   // "Character" in any list. The internal id stays `character` (persisted
   // in every saved script).
-  character: 'Dialogue (Name)',
+  character: 'Character',
   dialogue: 'Dialogue',
   parenthetical: 'Parenthetical',
   transition: 'Transition',

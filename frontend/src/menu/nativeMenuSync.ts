@@ -151,11 +151,11 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
   // here rather than riding MenuBar's section data (the in-window browser
   // fallback has no OS window to minimize — adding them there would be dead
   // controls). v4.35 batch-v9 #1: Maximize is GONE (macOS labels it "Zoom",
-  // which read as a duplicate of the page-zoom submenu), and no separator —
-  // the page-zoom submenu, Minimize and Toggle Full Screen sit in ONE
-  // section as View's tail.
+  // which read as a duplicate of the page-zoom submenu). v4.84, Derek:
+  // Minimize is gone too — it's a window-management verb, not a view of the
+  // script, and macOS already offers it on the yellow traffic light and
+  // Cmd-M. Toggle Full Screen stays as View's tail.
   const windowItems = async () => [
-    await PredefinedMenuItem.new({ item: 'Minimize' }),
     await PredefinedMenuItem.new({ item: 'Fullscreen' }),
   ];
   const submenus = await Promise.all(sections.map(widenSection).map(async (s, si) =>

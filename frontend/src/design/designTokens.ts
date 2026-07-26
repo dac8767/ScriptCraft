@@ -121,7 +121,11 @@ export const DESIGN_GROUPS: DesignGroup[] = [
           { value: 2, label: 'Right', css: 'right' },
         ] },
       { id: 'ribTitlePad', label: 'Section title padding', cssVar: '--dz-rib-title-pad', unit: 'px', min: 0, max: 12, step: 1, def: 3,
-        hint: 'Room between the title and its buttons.' },
+        hint: 'Padding inside the title band itself.' },
+      // v4.84, Derek: the gap BETWEEN the title band and the section's first
+      // row of buttons — distinct from the padding inside the band above.
+      { id: 'ribTitleGap', label: 'Space below section title', cssVar: '--dz-rib-title-gap', unit: 'px', min: 0, max: 20, step: 1, def: 2,
+        hint: 'Distance from the title to the buttons under it.' },
     ],
   },
   {

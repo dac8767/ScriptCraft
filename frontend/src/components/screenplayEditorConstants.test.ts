@@ -9,7 +9,7 @@
  * catch it at test time instead of as a dead Enter key in the running app.
  */
 import { describe, it, expect } from 'vitest';
-import { COLLAB_COLORS, randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, allowedElementsAfter } from './screenplayEditorConstants';
+import { COLLAB_COLORS, randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, allowedElementsAfter, resolvePickedElement } from './screenplayEditorConstants';
 
 describe('element-type maps stay in sync', () => {
   it('every built-in element type has an Enter → next-type mapping', () => {
@@ -45,14 +45,31 @@ describe('allowedElementsAfter', () => {
   const allowedSet = (prev: string | null) =>
     CANDIDATES.filter((id) => allowedElementsAfter(prev)(id)).sort();
 
+  // v4.84, Derek: 'character' is no longer OFFERED, but it is still the
+  // grammar's name-line concept — so a row that allows a name line also
+  // allows 'dialogue', which starts at the name. Both appear here because
+  // CANDIDATES asks about every id, not just the pickable ones.
   it("matches Derek's table row for row", () => {
-    expect(allowedSet('sceneHeading')).toEqual(['action', 'character', 'dualDialogue']);
-    expect(allowedSet('action')).toEqual(['action', 'character', 'dualDialogue', 'sceneHeading', 'transition']);
+    expect(allowedSet('sceneHeading')).toEqual(['action', 'character', 'dialogue', 'dualDialogue']);
+    expect(allowedSet('action')).toEqual(['action', 'character', 'dialogue', 'dualDialogue', 'sceneHeading', 'transition']);
     expect(allowedSet('character')).toEqual(['dialogue', 'parenthetical']);
     expect(allowedSet('parenthetical')).toEqual(['dialogue']);
     // v4.68: parenthetical is allowed after dialogue (mid-speech beats).
-    expect(allowedSet('dialogue')).toEqual(['action', 'character', 'dualDialogue', 'parenthetical', 'sceneHeading', 'transition']);
+    expect(allowedSet('dialogue')).toEqual(['action', 'character', 'dialogue', 'dualDialogue', 'parenthetical', 'sceneHeading', 'transition']);
     expect(allowedSet('transition')).toEqual(['action', 'sceneHeading']);
+  });
+
+  // The resolver that makes "Dialogue" mean the name line at the top of a
+  // speech and the speech itself underneath one.
+  it('resolvePickedElement: Dialogue starts at the name, except under a name', () => {
+    expect(resolvePickedElement('dialogue', 'sceneHeading')).toBe('character');
+    expect(resolvePickedElement('dialogue', 'action')).toBe('character');
+    expect(resolvePickedElement('dialogue', null)).toBe('character');
+    expect(resolvePickedElement('dialogue', 'character')).toBe('dialogue');
+    expect(resolvePickedElement('dialogue', 'parenthetical')).toBe('dialogue');
+    // everything else passes straight through
+    expect(resolvePickedElement('action', 'character')).toBe('action');
+    expect(resolvePickedElement('transition', null)).toBe('transition');
   });
 
   it('a dual-dialogue block behaves like dialogue', () => {

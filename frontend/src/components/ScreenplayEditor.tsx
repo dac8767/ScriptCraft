@@ -121,7 +121,7 @@ import { createTrackChangesPlugin, trackChangesPluginKey } from '../editor/track
 import type { VersionInfo } from '../services/api';
 import { resolveHFFields, composeSaveContent, stripSaveExtras, resolveSpellCheckOnLoad } from '../utils/screenplaySaveContent';
 
-import { randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, SCENE_PREFIX_OPTIONS, SAMPLE_CONTENT } from './screenplayEditorConstants';
+import { randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, SCENE_PREFIX_OPTIONS, SAMPLE_CONTENT, resolvePickedElement } from './screenplayEditorConstants';
 import { isWorkingNoteText } from '../utils/workingNotes';
 
 interface OverlayInfo {
@@ -3208,8 +3208,16 @@ const ScreenplayEditor: React.FC = () => {
     return () => registerAvCellPicker(null);
   }, []);
 
-  const handlePickerSelect = useCallback((type: ElementType) => {
+  const handlePickerSelect = useCallback((picked: ElementType) => {
     if (!editor) return;
+    // v4.84: "Dialogue" starts at the character name unless a name is already
+    // above the caret — one shared resolver, so the picker, the toolbar
+    // dropdown and the Insert menu all behave identically.
+    const { $from } = editor.state.selection;
+    const prevNode = $from.depth > 0 && $from.index($from.depth - 1) > 0
+      ? $from.node($from.depth - 1).child($from.index($from.depth - 1) - 1)
+      : null;
+    const type = resolvePickedElement(picked, prevNode?.type.name ?? null) as ElementType;
     // Dual Dialogue is a structure, not a paragraph type — run its command
     // instead of trying to setNode a type that doesn't exist as a block (v0.84).
     if ((type as string) === 'dualDialogue') {

@@ -1,5 +1,18 @@
 [
   {
+    "version": "4.84",
+    "date": "2026-07-26",
+    "changes": [
+      "Fix: reopening a tool from the side panel list forced it back into the panel, so no window ever remembered being popped out or fullscreen — the list now opens each tool in the shape you left it",
+      "\"Dialogue (Name)\" is gone as its own element: the element list offers Dialogue and Dual Dialogue, and choosing Dialogue starts at the character name — Enter carries you into the speech",
+      "Focus ▸ keep focus on current element treats a whole speech as one element, so the character name no longer dims while you write their line",
+      "The Editor View value is centered in its dropdown",
+      "Design ▸ Toolbar / Ribbon: a new \"Space below section title\" knob for the gap between a section's title and its buttons",
+      "Presets: Workspaces can be exported and imported like the other presets",
+      "View menu: Minimize is gone — it is window management, not a view of the script, and the yellow traffic light and Cmd-M still do it"
+    ]
+  },
+  {
     "version": "4.83",
     "date": "2026-07-26",
     "changes": [

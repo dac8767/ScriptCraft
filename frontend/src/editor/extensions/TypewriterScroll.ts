@@ -207,12 +207,25 @@ function dimDecorations(state: EditorState): DecorationSet {
   const { from, to, $head } = state.selection;
   const mode = useEditorStore.getState().typewriterDimMode;
   const decos: Decoration[] = [];
-  state.doc.forEach((node, pos) => {
-    const end = pos + node.nodeSize;
-    const touchesSelection = from < end && to > pos;
-    if (!touchesSelection) {
-      decos.push(Decoration.node(pos, end, { class: 'fs-dimmed' }));
-    }
+  /* v4.84, Derek: "include the character name as part of the dialogue
+     element". A speech is a NAME, optional parentheticals, and the lines
+     under them — dimming the name while the writer types the speech reads
+     as though the speaker vanished. So the focused block extends over its
+     whole speech block: from the name line down through the dialogue and
+     any parentheticals between. */
+  const SPEECH = new Set(['character', 'parenthetical', 'dialogue']);
+  const blocks: { pos: number; end: number; type: string }[] = [];
+  state.doc.forEach((node, pos) => blocks.push({ pos, end: pos + node.nodeSize, type: node.type.name }));
+  const focusedIdx = blocks.findIndex((b) => from < b.end && to > b.pos);
+  let lo = focusedIdx, hi = focusedIdx;
+  if (focusedIdx >= 0 && SPEECH.has(blocks[focusedIdx].type)) {
+    // Walk up to the name that owns this speech, and down to its last line.
+    while (lo > 0 && SPEECH.has(blocks[lo - 1].type) && blocks[lo].type !== 'character') lo--;
+    while (hi < blocks.length - 1 && SPEECH.has(blocks[hi + 1].type) && blocks[hi + 1].type !== 'character') hi++;
+  }
+  blocks.forEach((b, i) => {
+    const focused = focusedIdx >= 0 && i >= lo && i <= hi;
+    if (!focused) decos.push(Decoration.node(b.pos, b.end, { class: 'fs-dimmed' }));
   });
   if (mode === 'sentences' && $head.parent.isTextblock && state.selection.empty) {
     const blockStart = $head.start();

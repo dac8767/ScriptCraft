@@ -676,7 +676,16 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar.toolbar-ribbon .view-style-selector {
   height: var(--rib-itemh);
   font-size: clamp(11px, calc(11.5px * var(--chrome-scale, 1)), 16px);
+  /* v4.84, Derek: the value reads CENTERED in the field. text-align on a
+     <select> is honored by WebKit (the app's engine) and Chromium; the
+     text-align-last pair covers the closed-field rendering in Firefox/Gecko
+     too, so the value never sits left in one browser and centered in
+     another. The option list keeps its own left alignment — a centered
+     dropdown LIST is hard to scan. */
+  text-align: center;
+  text-align-last: center;
 }
+.toolbar.toolbar-ribbon .view-style-selector option { text-align: left; }
 /* v3.34, Derek: user-set dropdown widths, dragged in the visual editor.
    --ddw-* vars come from the store via the ribbon container; unset, each
    field keeps its usual min-width behavior. */

@@ -43,17 +43,17 @@ export const ALL_ELEMENT_TYPES: ElementType[] = [
 // being chosen (working-note lines don't count; they take no space in the
 // final document).
 //
-// There are three dialogue options in every list (v4.61, Derek): plain
-// "Dialogue" (the speech), "Dialogue (Name)" (the `character` id — the
-// name line; the label lives in ELEMENT_LABELS), and "Dual Dialogue". Picks
-// apply their element directly — nothing is silently converted (the v4.54
-// implicit Dialogue→character resolver is retired).
+// v4.84, Derek: TWO dialogue options are offered — "Dialogue" and "Dual
+// Dialogue". The `character` id (the name line) is no longer pickable;
+// choosing "Dialogue" starts at the name and Enter carries you into the
+// speech (resolvePickedElement below). The rules table below still speaks in
+// terms of `character`, because that IS the grammar's name-line concept.
 //
-//   Scene Heading → Action, Dialogue (Name), Dual Dialogue
-//   Action        → Action, Dialogue (Name), Dual Dialogue, Scene Heading, Transition
-//   Dialogue (Name) → Dialogue, Parenthetical
+//   Scene Heading → Action, Character, Dual Dialogue
+//   Action        → Action, Character, Dual Dialogue, Scene Heading, Transition
+//   Character     → Dialogue, Parenthetical
 //   Parenthetical → Dialogue
-//   Dialogue      → Dialogue (Name), Action, Scene Heading, Dual Dialogue, Transition
+//   Dialogue      → Character, Action, Scene Heading, Dual Dialogue, Transition
 //   Transition    → Scene Heading, Action
 //
 // A dual-dialogue block ends in dialogue, so it uses the Dialogue row.
@@ -91,8 +91,29 @@ export function allowedElementsAfter(
   const row = prevType
     ? (rules[prevType] ?? (prevType === 'dualDialogue' ? rules['dialogue'] : undefined))
     : undefined;
-  if (row) return (id) => row.includes(id);
+  // v4.84: 'character' is no longer an offered element — the rules table still
+  // speaks in terms of it (it IS the grammar's name-line concept), so a row
+  // that allows a name line allows "Dialogue", which starts at the name.
+  if (row) return (id) => row.includes(id) || (id === 'dialogue' && row.includes('character'));
   return (id) => id !== 'parenthetical' && id !== 'transition';
+}
+
+/**
+ * v4.84, Derek: "remove the Dialogue (Name) element type. revert to just
+ * having the dialogue option which starts by triggering the character name
+ * field."
+ *
+ * So picking Dialogue gives the NAME prompt — except directly under a name
+ * (or inside a dual-dialogue column), where the name already exists and what
+ * the writer wants is the speech itself. ONE resolver, used by every place an
+ * element can be applied (picker, toolbar dropdown, Insert menu), so the
+ * three can't drift — the v4.61 mistake was deleting exactly this and
+ * teaching each caller its own rule.
+ */
+export function resolvePickedElement(picked: string, prevType?: string | null): string {
+  if (picked !== 'dialogue') return picked;
+  if (prevType === 'character' || prevType === 'parenthetical' || prevType === 'dualDialogue') return 'dialogue';
+  return 'character';
 }
 
 // v3.44, Derek: element autofill option lists (shown as soon as you're in an

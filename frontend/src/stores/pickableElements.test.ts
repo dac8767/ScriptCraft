@@ -13,10 +13,11 @@ import { ELEMENT_LABELS } from './editorStore';
 describe('getPickableElements', () => {
   const ids = () => useFormattingTemplateStore.getState().getPickableElements().map((r) => r.id);
 
-  it('offers character, labeled "Dialogue (Name)"', () => {
-    expect(ids()).toContain('character');
-    expect(NON_PICKABLE).not.toContain('character');
-    expect(ELEMENT_LABELS['character']).toBe('Dialogue (Name)');
+  // v4.84, Derek: the name line is not pickable — "Dialogue" starts there.
+  it('does NOT offer the name line as its own element', () => {
+    expect(ids()).not.toContain('character');
+    expect(NON_PICKABLE).toContain('character');
+    expect(ELEMENT_LABELS['character']).toBe('Character');
   });
 
   it('offers dialogue too, and the character rule survives', () => {
