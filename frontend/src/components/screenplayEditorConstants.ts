@@ -55,6 +55,28 @@ export function resolvePickedElement(
   return picked;
 }
 
+// v4.58, Derek: the Enter-key suggestions follow script grammar — the list is
+// filtered by the element ABOVE the line being chosen (working-note lines
+// don't count; they take no space in the final document):
+//   scene heading → only Action, Dialogue, Dual Dialogue can follow
+//   parenthetical → offered only right after a character name
+//   transition    → offered only after action or dialogue (dual or single)
+// `prevType` null means there is no previous script element (top of script).
+// Deliberate conversion surfaces (toolbar dropdown, Insert menu, right-click)
+// stay unfiltered — they fix existing lines rather than suggest the next one.
+export function allowedElementsAfter(prevType: string | null): (id: string) => boolean {
+  if (prevType === 'sceneHeading') {
+    return (id) => id === 'action' || id === 'dialogue' || id === 'dualDialogue';
+  }
+  return (id) => {
+    if (id === 'parenthetical') return prevType === 'character';
+    if (id === 'transition') {
+      return prevType === 'action' || prevType === 'dialogue' || prevType === 'dualDialogue';
+    }
+    return true;
+  };
+}
+
 // v3.44, Derek: element autofill option lists (shown as soon as you're in an
 // empty element, filtered as you type). Scene prefixes get a trailing space so
 // the location follows immediately.

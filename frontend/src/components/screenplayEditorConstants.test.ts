@@ -9,7 +9,7 @@
  * catch it at test time instead of as a dead Enter key in the running app.
  */
 import { describe, it, expect } from 'vitest';
-import { COLLAB_COLORS, randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, resolvePickedElement } from './screenplayEditorConstants';
+import { COLLAB_COLORS, randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, resolvePickedElement, allowedElementsAfter } from './screenplayEditorConstants';
 
 describe('element-type maps stay in sync', () => {
   it('every built-in element type has an Enter → next-type mapping', () => {
@@ -60,6 +60,47 @@ describe('resolvePickedElement', () => {
       if (t === 'dialogue') continue;
       expect(resolvePickedElement(t, 'action', true)).toBe(t);
       expect(resolvePickedElement(t, 'action', false)).toBe(t);
+    }
+  });
+});
+
+/**
+ * v4.58, Derek: the Enter-key suggestions follow script grammar, keyed on the
+ * element above the line being chosen.
+ */
+describe('allowedElementsAfter', () => {
+  const after = (prev: string | null, id: string) => allowedElementsAfter(prev)(id);
+
+  it('after a scene heading only Action, Dialogue, Dual Dialogue remain', () => {
+    for (const id of ['action', 'dialogue', 'dualDialogue']) {
+      expect(after('sceneHeading', id), id).toBe(true);
+    }
+    for (const id of ['transition', 'parenthetical', 'general', 'shot', 'sceneHeading', 'lyrics']) {
+      expect(after('sceneHeading', id), id).toBe(false);
+    }
+  });
+
+  it('parenthetical is offered only right after a character name', () => {
+    expect(after('character', 'parenthetical')).toBe(true);
+    for (const prev of ['action', 'dialogue', 'dualDialogue', 'parenthetical', 'transition', null]) {
+      expect(after(prev, 'parenthetical'), String(prev)).toBe(false);
+    }
+  });
+
+  it('transition is offered only after action or dialogue (dual or single)', () => {
+    for (const prev of ['action', 'dialogue', 'dualDialogue']) {
+      expect(after(prev, 'transition'), prev).toBe(true);
+    }
+    for (const prev of ['character', 'parenthetical', 'transition', 'shot', null]) {
+      expect(after(prev, 'transition'), String(prev)).toBe(false);
+    }
+  });
+
+  it('everything else passes through outside the scene-heading rule', () => {
+    for (const prev of ['action', 'dialogue', 'character', null]) {
+      for (const id of ['action', 'dialogue', 'dualDialogue', 'general', 'shot', 'sceneHeading']) {
+        expect(after(prev, id), `${prev} → ${id}`).toBe(true);
+      }
     }
   });
 });

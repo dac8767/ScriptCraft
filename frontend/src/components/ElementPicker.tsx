@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { ELEMENT_LABELS, type ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
+import { allowedElementsAfter } from './screenplayEditorConstants';
 
 // Context-aware element ordering: most likely choices first per current type
 const ELEMENT_ORDER: Record<string, ElementType[]> = {
@@ -33,12 +34,16 @@ interface ElementPickerProps {
    *  dialogue under a character name leads with Parenthetical). Wins over
    *  the ELEMENT_ORDER-derived suggestion when it's in the enabled list. */
   suggestType?: ElementType;
+  /** v4.58: the script element ABOVE the line being chosen (null = top of
+   *  script). When provided, the list is grammar-filtered via
+   *  allowedElementsAfter. Omit to show the unfiltered list. */
+  prevScriptType?: string | null;
   onSelect: (type: ElementType) => void;
   onDismiss: () => void;
 }
 
 const ElementPicker: React.FC<ElementPickerProps> = ({
-  position, defaultType, availableTypes, suggestType, onSelect, onDismiss,
+  position, defaultType, availableTypes, suggestType, prevScriptType, onSelect, onDismiss,
 }) => {
   const activeTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate());
   // v0.81: read the EFFECTIVE rules (template + the user's Customize > Elements
@@ -58,7 +63,12 @@ const ElementPicker: React.FC<ElementPickerProps> = ({
     () => {
       // Caller-supplied list (e.g. AV cell context) wins outright.
       if (availableTypes && availableTypes.length > 0) return availableTypes;
-      const enabled = pickable.map((r) => r.id as ElementType);
+      let enabled = pickable.map((r) => r.id as ElementType);
+      // v4.58: grammar filter — what can actually follow the element above.
+      if (prevScriptType !== undefined) {
+        const allow = allowedElementsAfter(prevScriptType);
+        enabled = enabled.filter((t) => allow(t));
+      }
 
       // v0.88 — the picker's whole order used to come from ELEMENT_ORDER, a
       // context-aware table (after a Character, Dialogue leads; after a
@@ -76,7 +86,7 @@ const ElementPicker: React.FC<ElementPickerProps> = ({
       if (!suggestion) return enabled;
       return [suggestion, ...enabled.filter((t) => t !== suggestion)];
     },
-    [defaultType, pickable, availableTypes, suggestType],
+    [defaultType, pickable, availableTypes, suggestType, prevScriptType],
   );
 
   // Resolve a display label: built-in label first, then template-rule label,

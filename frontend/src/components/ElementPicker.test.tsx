@@ -65,4 +65,26 @@ describe('ElementPicker ordering', () => {
     render({ suggestType: 'parenthetical' as never });
     expect(labels()).not.toContain('Character');
   });
+
+  // v4.58: grammar filter by the element above the line being chosen.
+  it('after a scene heading the list is exactly Action, Dialogue, Dual Dialogue', () => {
+    render({ prevScriptType: 'sceneHeading' });
+    expect(labels().sort()).toEqual(['Action', 'Dialogue', 'Dual Dialogue']);
+  });
+
+  it('parenthetical appears only when the previous element is a character', () => {
+    render({ prevScriptType: 'character', suggestType: 'parenthetical' as never });
+    expect(labels()[0]).toBe('Parenthetical');
+    render({ prevScriptType: 'dialogue' });
+    expect(labels()).not.toContain('Parenthetical');
+  });
+
+  it('transition appears after dialogue but not after a character or at the top', () => {
+    render({ prevScriptType: 'dialogue' });
+    expect(labels()).toContain('Transition');
+    render({ prevScriptType: 'character' });
+    expect(labels()).not.toContain('Transition');
+    render({ prevScriptType: null });
+    expect(labels()).not.toContain('Transition');
+  });
 });

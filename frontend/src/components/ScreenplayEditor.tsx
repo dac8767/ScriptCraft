@@ -122,6 +122,7 @@ import type { VersionInfo } from '../services/api';
 import { resolveHFFields, composeSaveContent, stripSaveExtras } from '../utils/screenplaySaveContent';
 
 import { randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, SCENE_PREFIX_OPTIONS, SAMPLE_CONTENT, resolvePickedElement } from './screenplayEditorConstants';
+import { isWorkingNoteText } from '../utils/workingNotes';
 
 interface OverlayInfo {
   top: number;
@@ -922,9 +923,10 @@ const ScreenplayEditor: React.FC = () => {
     defaultType: ElementType;
     availableTypes?: ElementType[];
     suggestType?: ElementType;
+    prevScriptType?: string | null;
   }>({ visible: false, position: { top: 0, left: 0 }, defaultType: 'action' });
 
-  const showPickerRef = useRef<(defaultType: ElementType, availableTypes?: ElementType[], suggestType?: ElementType) => void>(() => {});
+  const showPickerRef = useRef<(defaultType: ElementType, availableTypes?: ElementType[], suggestType?: ElementType, prevScriptType?: string | null) => void>(() => {});
 
   // Character autocomplete state. v3.44, Derek: the same dropdown also serves
   // scene headings (INT./EXT.) and transitions — `mode` picks how a pick is
@@ -1220,15 +1222,32 @@ const ScreenplayEditor: React.FC = () => {
                 }
               }
               // Normal blank line: show element picker.
+              // v4.58, Derek: the picker is grammar-filtered by the element
+              // ABOVE this line. Working-note lines (sections, markers,
+              // to-dos) don't count — they take no space in the final
+              // document — so walk back past them to the real script element.
+              let prevScriptType: string | null = null;
+              {
+                let pos = $from.before($from.depth);
+                for (;;) {
+                  const n = editor.state.doc.resolve(pos).nodeBefore;
+                  if (!n) break;
+                  if (n.type.name === 'general' && isWorkingNoteText(n.textContent)) {
+                    pos -= n.nodeSize;
+                    continue;
+                  }
+                  prevScriptType = n.type.name;
+                  break;
+                }
+              }
               // v4.56, Derek: an empty dialogue right under a character name
               // leads with Parenthetical — the natural next insertion in the
               // couplet, since the dialogue itself is already the caret's home.
-              let suggest: ElementType | undefined;
-              if (currentType === 'dialogue') {
-                const $before = editor.state.doc.resolve($from.before($from.depth));
-                if ($before.nodeBefore?.type.name === 'character') suggest = 'parenthetical';
-              }
-              showPickerRef.current(currentType as ElementType, undefined, suggest);
+              const suggest: ElementType | undefined =
+                currentType === 'dialogue' && prevScriptType === 'character'
+                  ? 'parenthetical'
+                  : undefined;
+              showPickerRef.current(currentType as ElementType, undefined, suggest, prevScriptType);
               return true;
             }
 
@@ -1269,7 +1288,8 @@ const ScreenplayEditor: React.FC = () => {
               }
               if (!inDual) {
                 editor.chain().splitBlock().setNode('action').run();
-                showPickerRef.current('action');
+                // The element above the fresh line is the dialogue just written.
+                showPickerRef.current('action', undefined, undefined, 'dialogue');
                 return true;
               }
             }
@@ -3109,7 +3129,7 @@ const ScreenplayEditor: React.FC = () => {
   }, [overlays]);
 
   // Wire up the picker trigger
-  showPickerRef.current = useCallback((defaultType: ElementType, availableTypes?: ElementType[], suggestType?: ElementType) => {
+  showPickerRef.current = useCallback((defaultType: ElementType, availableTypes?: ElementType[], suggestType?: ElementType, prevScriptType?: string | null) => {
     if (!editor) return;
     // Use requestAnimationFrame so the DOM has settled after the split
     requestAnimationFrame(() => {
@@ -3122,6 +3142,7 @@ const ScreenplayEditor: React.FC = () => {
         defaultType,
         availableTypes,
         suggestType,
+        prevScriptType,
       });
     });
   }, [editor]);
@@ -4348,6 +4369,7 @@ const ScreenplayEditor: React.FC = () => {
           defaultType={pickerState.defaultType}
           availableTypes={pickerState.availableTypes}
           suggestType={pickerState.suggestType}
+          prevScriptType={pickerState.prevScriptType}
           onSelect={handlePickerSelect}
           onDismiss={handlePickerDismiss}
         />

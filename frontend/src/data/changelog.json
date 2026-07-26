@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.58",
+    "date": "2026-07-26",
+    "changes": [
+      "The element suggestions now follow script grammar: after a scene heading only Action, Dialogue and Dual Dialogue are offered; Parenthetical only right after a character name; Transition only after action or dialogue (dual or single)",
+      "Working-note lines (sections, markers, to-dos) are skipped when reading that context — the suggestions key on the real script element above"
+    ]
+  },
+  {
     "version": "4.57",
     "date": "2026-07-26",
     "changes": [

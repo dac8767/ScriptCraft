@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.57 — dialogue Enter offers options, Tab starts dialogue)
+# ScriptCraft — continuation brief (current as of v4.58 — grammar-filtered element suggestions)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,28 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.57 — dialogue Enter offers options, Tab starts dialogue (HEAD)
+### v4.58 — grammar-filtered element suggestions (HEAD)
+
+- **The Enter-key picker follows script grammar (Derek)**:
+  `allowedElementsAfter(prevType)` in screenplayEditorConstants is the
+  single rule source — after `sceneHeading` ONLY action/dialogue/
+  dualDialogue; `parenthetical` only when prev is `character`;
+  `transition` only when prev ∈ {action, dialogue, dualDialogue}; null
+  prev (top of script) excludes both. EnterHandler walks BACK past
+  working-note general lines (isWorkingNoteText) to find the real
+  script element and passes it as `prevScriptType` through showPickerRef
+  → pickerState → ElementPicker, which filters the enabled list before
+  the suggestion lift; the v4.56 parenthetical-lead now keys on the same
+  prevScriptType. The v4.57 after-dialogue picker passes 'dialogue'.
+  DELIBERATE conversion surfaces (toolbar dropdown, Insert menu,
+  right-click) stay unfiltered — they fix lines, not suggest them.
+  Driver v33 matrix: under heading → exactly 3; via a "# note" between →
+  same 3; after action/dialogue → Transition in, Parenthetical out;
+  under a name → Parenthetical first, Transition out. Tests:
+  screenplayEditorConstants.test.ts (allowedElementsAfter),
+  ElementPicker.test.tsx (filter cases).
+
+### v4.57 — dialogue Enter offers options, Tab starts dialogue
 
 - **Enter after a written dialogue line (Derek)**: at the END of a
   non-empty dialogue (not mid-line, not at start, not in a dual column),
