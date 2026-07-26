@@ -17,13 +17,14 @@ import { UTILITY_ICONS } from './uiIcons';
  */
 import { useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS, PANEL_EXCLUDED_IDS } from './ToolDock';
-import { confirmDialog, saveDialog } from './ConfirmDialog';
+import { saveDialog } from './ConfirmDialog';
 import { DEFAULT_TOOLBAR_LEFT, stripTall } from './toolbarBuiltins';
 import RibbonPalette from './RibbonPalette';
 import { buildRibbonPalette } from './ribbonPaletteData';
 import EditElementsDialog from './EditElementsDialog';
 import SuggestionRulesEditor from './SuggestionRulesEditor';
 import MoresContdsDialog from './MoresContdsDialog';
+import { ResetSection, type CustomizeTabId } from './customizeResets';
 import { showToast } from './Toast';
 import ThemesTab from './ThemesTab';
 import ContextMenuTab from './ContextMenuTab';
@@ -361,18 +362,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         setTool(id, { enabled: true, side: homeSide(id) });
       }
     };
-    const resetPanels = () => {
-      // Restore the canonical default layout (DEFAULT_TOOL_CONFIG /
-      // DEFAULT_TOOL_ORDER) rather than re-deriving one here — a second,
-      // divergent definition of "default" is how the v0.63 mismatch happened.
-      const next: Record<string, ToolConfig> = {};
-      ALL_TOOLS.forEach((t) => {
-        next[t.id] = { ...(DEFAULT_TOOL_CONFIG[t.id] ?? { side: 'right', enabled: true }) };
-      });
-      setToolConfig(next);
-      setPanelDividers([]);
-      setToolOrder([...DEFAULT_TOOL_ORDER]);
-    };
+    // v4.65: the panels reset lives in customizeResets (the Reset section).
     const removeAll = () => {
       const next = { ...toolConfig };
       ALL_TOOLS.forEach((t) => {
@@ -389,14 +379,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         <h3>Panel Items</h3>
         {/* v2.29, Derek: the per-side size rows are gone — panel width is
             all manual (drag the panel's inner edge; drag it small enough
-            and it snaps into the icon rail). v2.31: plus a way back. */}
-        <div className="fs-customize-row fs-size-row">
-          <span className="fs-customize-tool">Panel Size</span>
-          <span className="fs-customize-seg">
-            <button onClick={() => useEditorStore.getState().setPanelSizeMode('left', 'comfortable')}>Reset Left to Default</button>
-            <button onClick={() => useEditorStore.getState().setPanelSizeMode('right', 'comfortable')}>Reset Right to Default</button>
-          </span>
-        </div>
+            and it snaps into the icon rail). v4.65: the way back moved to
+            the Reset section at the bottom (Reset Size covers width AND the
+            vertical tool scaling — the old buttons missed the scaling). */}
         {/* v4.24, Derek: panel display names — Title Case or ALL CAPS. */}
         <div className="fs-customize-row fs-size-row">
           <span className="fs-customize-tool">Panel Name Style</span>
@@ -534,11 +519,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             title="Hide everything in both panels (re-add items from the dropdown)"
             onClick={removeAll}
           >Hide All</button>
-          <button
-            className="swn-add-btn"
-            title="Restore the defaults: all Project windows left, all tool and production items right"
-            onClick={resetPanels}
-          >Reset to Default</button>
+          {/* v4.65: Reset moved to the Reset section at the bottom. */}
         </div>
       </section>
     );
@@ -728,6 +709,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // v3.52, Derek: Lock All / Reset All — ONE definition, placed in the modal's
   // footer (left of Cancel/Save) for the window, and kept in the tab rail for
   // the embedded (Settings) view, which has no footer.
+  // v4.65, Derek: Reset All MOVED to Settings ▸ Defaults (customizeResets'
+  // ResetAllButton) — only the lock lives here now.
   const globalsButtons = (<>
     <button
       className={uiResizeLocked ? 'active' : ''}
@@ -736,15 +719,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         : 'Freeze every customization: sizing, spacing, and layout edits'}
       onClick={() => useEditorStore.getState().setUiResizeLocked(!uiResizeLocked)}
     >{uiResizeLocked ? 'Locked' : 'Lock All'}</button>
-    <button
-      title="Reset every customization to the defaults — sizes, toolbar layout, Quick Access, menu bar, panels, outline bar"
-      onClick={async () => {
-        if (await confirmDialog(
-          'Reset ALL customizations to their defaults? Sizes and spacing, the toolbar layout, dropdown widths, Quick Access Toolbar, menu bar order, side panels, and the Outline Bar all go back to factory. (Themes, Editor and Keyboard Shortcuts have their own resets and are not touched.)',
-          { title: 'Reset All Customizations', confirmLabel: 'Reset Customizations', danger: true, requireText: 'Reset Customizations' },
-        )) useEditorStore.getState().resetAllCustomizations();
-      }}
-    >Reset All</button>
   </>);
 
   const body = (
@@ -810,27 +784,15 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                     onClick={() => setToolbarMode('hidden')}
                   >Hide</button>
                 </span>
-                {/* v2.31: the way back after manual resizing. */}
-                <span className="fs-customize-seg">
-                  <button onClick={() => {
-                    const st = useEditorStore.getState();
-                    st.setToolbarMode('compact');
-                    st.setChromeGap('toolbar', 2);
-                  }}>Reset to Default Size</button>
-                </span>
               </>}
             />
+            {/* v4.65: the size + layout resets moved to the Reset section. */}
             <div className="fs-tbzone-adders fs-adders-equal">
               <button
                 className="swn-add-btn"
                 title="Hide every toolbar item (re-add items from the palette)"
                 onClick={() => setToolbarZones([], [])}
               >Hide All</button>
-              <button
-                className="swn-add-btn"
-                title="Restore the default ribbon: all sections in default order"
-                onClick={() => setToolbarZones([...DEFAULT_TOOLBAR_LEFT], [])}
-              >Reset to Default</button>
             </div>
           </section>
           </>)}
@@ -904,11 +866,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 title="Add a spacer (blank gap) to the end — drag it into place"
                 onClick={() => setQatItems([...qatItems, `qsp:${Date.now().toString(36)}`])}
               >Add Spacer</button>
-              <button
-                className="swn-add-btn"
-                title="Restore the default Quick Access buttons: Save, Undo, Redo"
-                onClick={() => setQatItems(['save', 'undo', 'redo'])}
-              >Reset to Default</button>
+              {/* v4.65: Reset moved to the Reset section at the bottom. */}
             </div>
           </section>
           </>)}
@@ -930,6 +888,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           {activeCat === 'themes' && <ThemesTab />}
           {activeCat === 'context' && <ContextMenuTab />}
           {activeCat === 'panels' && renderPanelsTab()}
+          {/* v4.65, Derek: every tab ends in its Reset section (one registry —
+              customizeResets — also compiled by Settings ▸ Defaults). */}
+          <ResetSection tab={activeCat as CustomizeTabId} />
           {/* Solo mode has no rail to host the global controls — they close
               the tab's content instead. */}
           {soloCategory && (

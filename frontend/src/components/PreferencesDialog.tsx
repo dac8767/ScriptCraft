@@ -1,6 +1,7 @@
 import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
-import { FaWrench, FaColumns, FaFileAlt, FaRulerCombined, FaCloudUploadAlt, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette } from 'react-icons/fa';
+import { FaWrench, FaColumns, FaFileAlt, FaRulerCombined, FaCloudUploadAlt, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo } from 'react-icons/fa';
+import { CUSTOMIZE_RESETS, ResetAllButton, type CustomizeTabId } from './customizeResets';
 import { applyDraftNumber } from './SetDraftDialog';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -37,7 +38,7 @@ import { redirectUri } from '../services/oauthPkce';
    ───────────────────────────────────────────────────────────────────────── */
 
 type CustomizeCat = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'themes';
-type PrefTab = 'general' | 'formats' | 'page' | 'keys' | 'saveloc' | 'system' | `cz-${CustomizeCat}`;
+type PrefTab = 'general' | 'formats' | 'page' | 'keys' | 'saveloc' | 'system' | 'defaults' | `cz-${CustomizeCat}`;
 
 const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   // App-wide first, then writing setup, then data, then system.
@@ -49,6 +50,9 @@ const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
      moved here from Customize. */
   { id: 'keys', label: 'Keyboard Shortcuts', icon: <FaKeyboard /> },
   { id: 'system', label: 'System', icon: <FaWrench /> },
+  /* v4.65, Derek: every reset in one place — plus Reset All (moved here
+     from the Customize globals). */
+  { id: 'defaults', label: 'Defaults', icon: <FaUndo /> },
 ];
 
 /* v4.64, Derek: the Customize tabs are first-class entries in THIS sidebar —
@@ -63,6 +67,45 @@ const CUSTOMIZE_TABS: Array<{ id: CustomizeCat; label: string; icon: React.React
   { id: 'context', label: 'Context Menu', icon: <FaMousePointer /> },
   { id: 'themes', label: 'Themes', icon: <FaPalette /> },
 ];
+
+/* v4.65, Derek: every reset in one place. The per-tab Reset sections stay;
+   this tab COMPILES them (one registry — customizeResets) and hosts the
+   Reset All button, moved here from the Customize globals. */
+function DefaultsTab() {
+  const groups = CUSTOMIZE_TABS
+    .map((t) => ({ ...t, actions: CUSTOMIZE_RESETS.filter((a) => a.tab === (t.id as CustomizeTabId)) }))
+    .filter((g) => g.actions.length > 0);
+  return (
+    <div className="fs-defaults-tab">
+      <p className="prefs-hint">
+        Every reset in one place. Each button restores one area to its factory
+        defaults — the same buttons also live at the bottom of their own tabs.
+      </p>
+      {groups.map((g) => (
+        <section key={g.id}>
+          <h3>{g.label}</h3>
+          <div className="fs-reset-row">
+            {g.actions.map((a) => (
+              <button
+                key={a.id}
+                className="swn-add-btn"
+                onClick={() => { a.run(); showToast(`${a.label} — done`, 'success'); }}
+              >{a.label}</button>
+            ))}
+          </div>
+        </section>
+      ))}
+      <section>
+        <h3>Everything</h3>
+        <p className="prefs-hint">
+          Resets sizes, spacing and layouts app-wide. Themes, the Editor tab's
+          content and Keyboard Shortcuts keep their own resets above.
+        </p>
+        <ResetAllButton />
+      </section>
+    </div>
+  );
+}
 
 function LanguageSection() {
   const [enabled, setEnabled] = useStateReact<string[]>(() => spellChecker.getEnabledLanguages());
@@ -752,6 +795,7 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
             {tab === 'keys' && <KeyboardShortcutsTab />}
             {tab === 'saveloc' && <SaveLocationsTab editor={editor ?? null} />}
             {tab === 'system' && <SettingsPage embedded />}
+            {tab === 'defaults' && <DefaultsTab />}
           </div>
         </div>
       </div>

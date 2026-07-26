@@ -65,11 +65,7 @@ const SuggestionRulesEditor: React.FC = () => {
             onClick={() => setMode('all')}
           >All Elements</button>
         </span>
-        {rules && (
-          <button className="fs-sugg-reset" onClick={() => setRules(null)}>
-            Reset to Default
-          </button>
-        )}
+        {/* v4.65: Reset moved to the tab's Reset section (customizeResets). */}
       </div>
       {mode !== 'all' && (
         <div className="fs-sugg-tablewrap">

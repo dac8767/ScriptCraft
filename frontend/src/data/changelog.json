@@ -1,5 +1,16 @@
 [
   {
+    "version": "4.65",
+    "date": "2026-07-26",
+    "changes": [
+      "Every Customize tab ends in a Reset to Default section (Reset Size / Reset Items, plus the content resets in Editor); the scattered reset buttons moved there",
+      "Fixed: resetting the side panels now restores the panel width AND the vertical tool scaling",
+      "New Settings > Defaults tab compiling every reset in one place — Reset All moved there from the Customize globals",
+      "Enter at the end of a dialogue line no longer auto-opens the element suggestions — the new Action line just waits; a second Enter brings them up",
+      "Tab on an empty line converts it in place — no more stray blank row between a character name and the parenthetical Tab creates"
+    ]
+  },
+  {
     "version": "4.64",
     "date": "2026-07-26",
     "changes": [

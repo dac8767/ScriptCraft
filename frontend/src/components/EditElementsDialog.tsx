@@ -42,7 +42,6 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
   const elementOrder = useFormattingTemplateStore((s) => s.elementOrder);
   const setElementHidden = useFormattingTemplateStore((s) => s.setElementHidden);
   const setElementOrder = useFormattingTemplateStore((s) => s.setElementOrder);
-  const resetElementOverrides = useFormattingTemplateStore((s) => s.resetElementOverrides);
 
   // Re-derived whenever overrides change, so the list reflects every edit.
   void elementOrder; void elementHidden;
@@ -85,7 +84,6 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
   };
 
   const hideAll = () => setElementHidden(ids.filter((id) => !REQUIRED_IDS.includes(id)));
-  const resetDefault = () => resetElementOverrides();
 
   // ── v4.22, Derek: Transitions customization ──
   const customTransitions = useFormattingTemplateStore((s) => s.customTransitions);
@@ -95,7 +93,6 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
   const setTransitionHidden = useFormattingTemplateStore((s) => s.setTransitionHidden);
   const setTransitionOrder = useFormattingTemplateStore((s) => s.setTransitionOrder);
   const transitionOrder = useFormattingTemplateStore((s) => s.transitionOrder);
-  const resetTransitions = useFormattingTemplateStore((s) => s.resetTransitions);
   const [newTransition, setNewTransition] = useState('');
   // v4.22, Derek: the inline field read as plain text and confused people — the
   // "Add Transition" button now opens a small dialog with a clear input, centered
@@ -200,7 +197,7 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
         />
         <div className="fs-tbzone-adders fs-adders-equal">
           <button className="swn-add-btn" onClick={openAddTransition}>Add Transition</button>
-          <button className="swn-add-btn" onClick={resetTransitions}>Reset to Default</button>
+          {/* v4.65: Reset moved to the tab's Reset section (customizeResets). */}
         </div>
       </section>
 
@@ -261,7 +258,7 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
         />
         <div className="fs-tbzone-adders fs-adders-equal">
           <button className="swn-add-btn" onClick={hideAll}>Hide All</button>
-          <button className="swn-add-btn" onClick={resetDefault}>Reset to Default</button>
+          {/* v4.65: Reset moved to the tab's Reset section (customizeResets). */}
         </div>
       </section>
 

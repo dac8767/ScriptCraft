@@ -291,6 +291,20 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
    row = the element above, column = candidate, check cell = allowed. */
 .fs-sugg-mode { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .fs-sugg-mode-label { font-size: 12px; color: var(--fd-text-muted); }
+
+/* v4.65: every Customize tab ends in a Reset section; Settings ▸ Defaults
+   compiles them (same registry, customizeResets). */
+.fs-reset-section { margin-top: 18px; }
+.fs-reset-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.fs-reset-all-btn {
+  border: 1px solid #c0564f;
+  border-radius: 5px;
+  background: color-mix(in srgb, #c0564f 12%, transparent);
+  color: var(--fd-text);
+  font-size: 12px;
+  padding: 5px 14px;
+  cursor: pointer;
+}
 .fs-sugg-reset {
   border: 1px solid var(--fd-border);
   border-radius: 5px;

@@ -1277,10 +1277,11 @@ const ScreenplayEditor: React.FC = () => {
             }
 
             // v4.57, Derek: Enter at the END of a written dialogue line skips
-            // a line (the fresh element is an action, whose space-before is
-            // the blank line) and immediately offers the element options.
-            // Mid-line and start-of-line Enter keep the generic behavior;
-            // dual-dialogue columns keep theirs.
+            // a line — the fresh element is an action ("Action..." hint),
+            // whose space-before is the blank line. v4.65: the picker does
+            // NOT auto-open here — a second Enter on the now-empty line
+            // brings it up, like everywhere else. Mid-line and start-of-line
+            // Enter keep the generic behavior; dual-dialogue columns theirs.
             if (currentType === 'dialogue' && $from.parentOffset === currentNode.content.size) {
               let inDual = false;
               for (let d = $from.depth; d >= 0; d--) {
@@ -1288,8 +1289,6 @@ const ScreenplayEditor: React.FC = () => {
               }
               if (!inDual) {
                 editor.chain().splitBlock().setNode('action').run();
-                // The element above the fresh line is the dialogue just written.
-                showPickerRef.current('action', undefined, undefined, 'dialogue');
                 return true;
               }
             }
@@ -1442,13 +1441,21 @@ const ScreenplayEditor: React.FC = () => {
               }).focus(after + 1).run();
             }
 
+            // v4.65, Derek: an EMPTY line converts IN PLACE — splitting it
+            // left the empty source row behind (Tab in a blank dialogue put
+            // a blank line between the name and its new parenthetical).
+            const inPlace = currentNode.textContent.trim() === '';
             if (isBuiltIn) {
-              return editor.chain().splitBlock().setNode(nextId).run();
+              const chain = editor.chain();
+              if (!inPlace) chain.splitBlock();
+              return chain.setNode(nextId).run();
             } else {
               // Custom element
               const nextRule = activeTemplate.rules[nextId];
               if (nextRule) {
-                return editor.chain().splitBlock().setNode('customElement', {
+                const chain = editor.chain();
+                if (!inPlace) chain.splitBlock();
+                return chain.setNode('customElement', {
                   customTypeId: nextId,
                   customLabel: nextRule.label,
                 }).run();

@@ -1,17 +1,20 @@
-# ScriptCraft — continuation brief (current as of v4.64 — flattened Settings)
+# ScriptCraft — continuation brief (current as of v4.65 — reset sections + Defaults tab)
 
 > QUEUE (Derek-approved, not yet landed), in order:
-> 1. v4.65: per-customize-tab bottom Reset sections ("Reset Size" +
->    "Reset Items"), FIX Customize ▸ Side Panels reset (must also reset
->    panel width AND the vertical tool scaling — panelItemScale), plus a
->    new Settings "Defaults" tab compiling every reset (keep the per-tab
->    buttons) with the "Reset All" button moved there.
+> 1. Shown/Hidden tables (all Customize tabs): "Hide All" right-aligned IN
+>    the Shown column's header row; "Show All" right-aligned in the Hidden
+>    column's header row — create whichever doesn't exist. (DndColumns
+>    header actions; panels has TWO shown columns — Left+Right each?)
 > 2. Window-tab collapse (v4.53 HeaderTabs): the condensed dropdown must
 >    keep the blue active-tab pill styling, and widening the window must
 >    automatically restore the full tab strip (Derek says it sticks).
-> 3. Feedback window: screenshot buttons in its header that auto-attach
+> 3. Window headers: REPLACE the vertical divider — everything right of it
+>    (fullscreen, close) becomes distinct bordered buttons like classic
+>    Windows title-bar buttons; scale the × so its drawn size matches the
+>    fullscreen square's height.
+> 4. Feedback window: screenshot buttons in its header that auto-attach
 >    the capture to the form's attachment field.
-> 4. Audit items: rescans gated on tool-open (live open / refresh on open /
+> 5. Audit items: rescans gated on tool-open (live open / refresh on open /
 >    idle closed); react-router major bump; Tauri fs $HOME scope narrowing;
 >    CSP decision documented.
 
@@ -260,7 +263,33 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.64 — flattened Settings + five Customize refinements (HEAD)
+### v4.65 — reset sections, Defaults tab, tab-in-place, no auto-picker (HEAD)
+
+- **customizeResets.tsx** — ONE registry (CUSTOMIZE_RESETS) + ResetSection
+  (bottom of every Customize tab) + ResetAllButton. Every scattered reset
+  moved there: Elements/Transitions/Suggestions/M&C (Editor tab), toolbar
+  size+items (+ddWidths), panels size+items, QAT items, context items.
+  **Panels "Reset Size" FIXES Derek's bug**: width mode alone read as
+  broken when only the vertical scaling was dragged — now resets BOTH
+  sides' width modes AND panelItemScale. panels "Reset Items" mirrors the
+  old resetPanels incl. setPanelDividers([]).
+- **Settings ▸ Defaults tab** — compiles the registry per tab + hosts
+  Reset All (REMOVED from the Customize globals; only Lock All remains
+  there). Driver v42 lists all 10 buttons + Reset All.
+- **M&C embedded**: whole actions row is modal-only now; an external
+  reset syncs into the staged fields via per-field guards (typing,
+  incl. un-trimmed trailing spaces, is never clobbered).
+- **Enter after dialogue does NOT auto-open the picker** (v4.65 refine of
+  v4.57): fresh Action line waits; second Enter opens the picker.
+- **Tab converts an EMPTY line in place** (central TabHandler): splitting
+  left a blank row behind (blank dialogue + Tab put a stray line between
+  the name and its parenthetical — Derek's screenshot). Non-empty Tab
+  still splits (mid-speech parentheticals unchanged). Driver v43: EJEJ /
+  "()" adjacent; non-empty flow intact.
+- NOTE: another mid-turn rollback hit during this batch (task list
+  rewound too); origin + reset recovered everything as always.
+
+### v4.64 — flattened Settings + five Customize refinements
 
 - **Settings sidebar hosts the Customize tabs** (Derek: one less submenu
   level): TABS minus the old 'layout' entry, then `.prefs-tab-divider` +

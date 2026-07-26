@@ -45,6 +45,26 @@ const MoresContdsDialog: React.FC<Props> = ({ onClose, embedded = false }) => {
     onClose();
   }, [pageLayout, setPageLayout, characterContd, dialogueBreakContd, contdText, moreText, onClose]);
 
+  // v4.65: an EXTERNAL reset (the tab's Reset section writes the store
+  // directly) must show up in these staged fields. Each field only syncs when
+  // the store value differs from what the field would COMMIT — so typing
+  // (including a not-yet-trimmed trailing space) is never clobbered.
+  React.useEffect(() => {
+    if (!embedded) return;
+    const cur = resolveMoresContds(pageLayout);
+    if (cur.characterContd !== characterContd) setCharacterContd(cur.characterContd);
+    if (cur.dialogueBreakContd !== dialogueBreakContd) setDialogueBreakContd(cur.dialogueBreakContd);
+    if (cur.contdText !== (contdText.trim() || DEFAULT_MORES_CONTDS.contdText)) {
+      setContdText(cur.contdText);
+      setContdCustom(!CONTD_PRESETS.includes(cur.contdText));
+    }
+    if (cur.moreText !== (moreText.trim() || DEFAULT_MORES_CONTDS.moreText)) {
+      setMoreText(cur.moreText);
+      setMoreCustom(!MORE_PRESETS.includes(cur.moreText));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [embedded, pageLayout]);
+
   // v4.64, Derek: in Customize the Apply button is gone — every change
   // commits LIVE, like the rest of the Customize controls (Save just closes).
   // The guard keeps the mount from dispatching a no-op setPageLayout (which
@@ -156,12 +176,15 @@ const MoresContdsDialog: React.FC<Props> = ({ onClose, embedded = false }) => {
             )}
           </div>
         </div>
-        <div className="dialog-actions" style={embedded ? { border: 'none', padding: '14px 0 0' } : undefined}>
-          <button onClick={handleReset} style={{ marginRight: 'auto' }}>Reset to defaults</button>
-          {!embedded && <button onClick={onClose}>Cancel</button>}
-          {/* v4.64, Derek: embedded changes apply live — no Apply button. */}
-          {!embedded && <button className="dialog-primary" onClick={handleApply}>Apply</button>}
-        </div>
+        {/* v4.64: embedded changes apply live (no Apply); v4.65: its Reset
+            moved to the tab's Reset section — the whole row is modal-only. */}
+        {!embedded && (
+          <div className="dialog-actions">
+            <button onClick={handleReset} style={{ marginRight: 'auto' }}>Reset to defaults</button>
+            <button onClick={onClose}>Cancel</button>
+            <button className="dialog-primary" onClick={handleApply}>Apply</button>
+          </div>
+        )}
     </>
   );
 
