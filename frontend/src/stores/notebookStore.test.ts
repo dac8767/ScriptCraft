@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   reconcileTree, removeNode, insertNode, isAncestor, pageIdsInTree,
-  migrateFlowPage, useNotebookStore, type NbNode, type NotebookPage,
+  migrateFlowPage, loadNotebook, useNotebookStore, type NbNode, type NotebookPage,
 } from './notebookStore';
 
 const sec = (id: string, children: NbNode[] = [], name = id): NbNode =>
@@ -47,6 +47,38 @@ describe('notebook tree helpers', () => {
     expect(isAncestor(tree, 's1', 'deep')).toBe(true);
     expect(isAncestor(tree, 's2', 'deep')).toBe(true);
     expect(isAncestor(tree, 's1', 'side')).toBe(false);
+  });
+});
+
+describe('first-run seed (v4.86, Derek)', () => {
+  beforeEach(() => { localStorage.clear(); });
+
+  it('a never-used Scrapbook opens with one section holding one page', () => {
+    const s = loadNotebook();
+    expect(s.tree).toHaveLength(1);
+    const only = s.tree[0];
+    expect(only.type).toBe('section');
+    const section = only as Extract<NbNode, { type: 'section' }>;
+    expect(section.children).toHaveLength(1);
+    expect(section.children[0].type).toBe('page');
+    const pageId = section.children[0].id;
+    expect(Object.keys(s.pages)).toEqual([pageId]);
+    expect(s.selectedPageId).toBe(pageId);            // and it's open, ready to write
+  });
+
+  it('a Scrapbook the user emptied stays empty — deleted content never returns', () => {
+    localStorage.setItem('opendraft:notebook', JSON.stringify({ pages: {}, tree: [], selectedPageId: null }));
+    const s = loadNotebook();
+    expect(s.tree).toEqual([]);
+    expect(s.pages).toEqual({});
+    expect(s.selectedPageId).toBeNull();
+  });
+
+  it('corrupt storage still starts empty, not seeded', () => {
+    localStorage.setItem('opendraft:notebook', '{not json');
+    const s = loadNotebook();
+    expect(s.tree).toEqual([]);
+    expect(s.pages).toEqual({});
   });
 });
 

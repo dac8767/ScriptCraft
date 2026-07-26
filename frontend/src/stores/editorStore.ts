@@ -1585,24 +1585,46 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
      */
     const cfg = toolConfigFor(s.toolConfig, tool);
     if (cfg && cfg.enabled) {
-      if (cfg.side === 'left') {
-        saveViewState({ activeTool: tool });
-        const patch: Partial<EditorState> = { activeTool: tool, tempTool: null };
-        if (!s.navigatorOpen) { patch.navigatorOpen = true; saveViewState({ navigatorOpen: true }); }
+      const left = cfg.side === 'left';
+      /**
+       * v4.86, Derek: "when a side panel is hidden, clicking on a tool in the
+       * ribbon bar should not open the panel again. just open the window
+       * without the side panel."
+       *
+       * A hidden panel is a decision, not an accident — opening a tool must
+       * not undo it. So a tool whose home panel is hidden opens as a FLOATING
+       * window instead. Its remembered mode is left alone (v4.81's rule:
+       * opening READS the mode, only an explicit gesture writes it), so
+       * un-hiding the panel puts it back in the dock where it belongs.
+       *
+       * The panel slot is cleared on the way out: leaving the tool assigned to
+       * a hidden panel AND floating is how you end up with two copies the
+       * moment the panel comes back (v4.37's "open twice").
+       */
+      if (left ? !s.navigatorOpen : !s.shelfOpen) {
+        const patch: Partial<EditorState> = { tempTool: tool };
+        if (s.activeTool === tool) { patch.activeTool = null; saveViewState({ activeTool: null }); }
+        if (s.activeToolRight === tool) { patch.activeToolRight = null; saveViewState({ activeToolRight: null }); }
         return patch;
       }
+      if (left) {
+        saveViewState({ activeTool: tool });
+        return { activeTool: tool, tempTool: null };
+      }
       saveViewState({ activeToolRight: tool });
-      const patch: Partial<EditorState> = { activeToolRight: tool, tempTool: null };
-      if (!s.shelfOpen) { patch.shelfOpen = true; saveViewState({ shelfOpen: true }); }
-      return patch;
+      return { activeToolRight: tool, tempTool: null };
     }
     return { tempTool: tool };
   }),
   toggleTool: (tool) => {
     const s2 = get();
-    // "Open" means open in ANY shape: panel slot, temp/floating window, or
-    // the fullscreen takeover.
-    const open = s2.activeTool === tool || s2.activeToolRight === tool
+    // "Open" means open in any shape you can actually SEE: a slot in a panel
+    // that is showing, a floating window, or the fullscreen takeover. v4.86:
+    // the panel checks matter — a tool sitting in a HIDDEN panel is not open,
+    // and treating it as open made the ribbon button a silent no-op (it
+    // cleared an invisible slot and nothing appeared).
+    const open = (s2.activeTool === tool && s2.navigatorOpen)
+      || (s2.activeToolRight === tool && s2.shelfOpen)
       || s2.tempTool === tool || s2.fullscreenTool === tool;
     if (!open) { s2.openTool(tool); return; }
     if (s2.fullscreenTool === tool) s2.setFullscreenTool(null);

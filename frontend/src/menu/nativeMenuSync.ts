@@ -44,6 +44,18 @@ const PREDEFINED_EDIT: Record<string, 'Copy' | 'Cut' | 'Paste' | 'SelectAll'> = 
   Cut: 'Cut', Copy: 'Copy', Paste: 'Paste', 'Select All': 'SelectAll',
 };
 
+/** v4.86, Derek ("Spelling  Grammar" in the Project menu): muda reads `&` in
+ *  a menu label as a MNEMONIC marker and strips it, so every label with an
+ *  ampersand lost it natively — "Spelling & Grammar" came out as "Spelling
+ *  Grammar", "Find & Replace…" as "Find Replace…". `&&` is muda's escape for
+ *  a literal ampersand.
+ *
+ *  Fixed HERE rather than in the labels, because the labels are also what the
+ *  in-window menu bar renders (where `&` is just an ampersand) — doubling them
+ *  at the source would break the other half of the one-source menu data. Every
+ *  native `text:` that comes from menu data goes through this. */
+export const nativeText = (s: string) => s.replace(/&/g, '&&');
+
 /** formatCombo's display string → a muda accelerator ("⌘⇧S" → "Cmd+Shift+S"). */
 export function displayShortcutToAccelerator(s?: string): string | undefined {
   if (!s) return undefined;
@@ -96,18 +108,18 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
   const buildItem = async (it: NativeItemData, path: number[], inEdit: boolean): Promise<unknown> => {
     if (it.separator) return PredefinedMenuItem.new({ item: 'Separator' });
     if (inEdit && PREDEFINED_EDIT[it.label]) {
-      return PredefinedMenuItem.new({ text: it.label, item: PREDEFINED_EDIT[it.label] });
+      return PredefinedMenuItem.new({ text: nativeText(it.label), item: PREDEFINED_EDIT[it.label] });
     }
     if (it.children && it.children.length > 0) {
       const kids = await Promise.all(it.children.map((c, i) => buildItem(c, [...path, i], false)));
-      return Submenu.new({ text: it.label, enabled: !it.disabled, items: kids as never[] });
+      return Submenu.new({ text: nativeText(it.label), enabled: !it.disabled, items: kids as never[] });
     }
     // v3.05: checkable items are real CheckMenuItems, so macOS draws the
     // checkmark in its own gutter. The signature includes checked state,
     // so a toggle rebuilds the menu with the mark in the right place.
     if (it.checked !== undefined) {
       return CheckMenuItem.new({
-        text: it.label,
+        text: nativeText(it.label),
         checked: it.checked,
         enabled: !it.disabled && !!it.action,
         accelerator: displayShortcutToAccelerator(it.shortcut),
@@ -115,7 +127,7 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
       });
     }
     return MenuItem.new({
-      text: it.label,
+      text: nativeText(it.label),
       enabled: !it.disabled && !!(it.action || it.render),
       accelerator: displayShortcutToAccelerator(it.shortcut),
       action: () => { actionAt(path)?.(); },
@@ -160,7 +172,7 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
   ];
   const submenus = await Promise.all(sections.map(widenSection).map(async (s, si) =>
     Submenu.new({
-      text: s.label,
+      text: nativeText(s.label),
       items: ([
         ...(await Promise.all(s.items.map((it, ii) => buildItem(it, [si, ii], s.label === 'Edit')))),
         ...(s.label === 'View' ? await windowItems() : []),

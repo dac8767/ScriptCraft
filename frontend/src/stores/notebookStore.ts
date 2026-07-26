@@ -227,9 +227,32 @@ interface NotebookState {
   moveNode: (draggedId: string, target: NbDropTarget) => void;
 }
 
-function load(): Pick<NotebookState, 'pages' | 'tree' | 'selectedPageId'> {
+/** v4.86, Derek: a brand-new Scrapbook opens with one section holding one
+ *  page, so the first thing you see is somewhere to write rather than an
+ *  empty tree and two buttons to work out.
+ *
+ *  Seeded ONLY on a genuine first run — when no `opendraft:notebook` key
+ *  exists at all. A notebook that has been used and then emptied stays empty:
+ *  re-seeding there would resurrect content the user deliberately deleted,
+ *  which is the silent-no-op sin pointed the other way. That case is what the
+ *  "No items. / Create a page or section to begin." empty state is for. */
+export function seedFirstRun(): Pick<NotebookState, 'pages' | 'tree' | 'selectedPageId'> {
+  const pageId = nbUid();
+  const page: NotebookPage = {
+    id: pageId, title: 'Untitled', mode: 'canvas', html: '', tables: [], boxes: [], createdAt: Date.now(),
+  };
+  return {
+    pages: { [pageId]: page },
+    tree: [{ type: 'section', id: nbUid(), name: 'New Section', collapsed: false, children: [{ type: 'page', id: pageId }] }],
+    selectedPageId: pageId,
+  };
+}
+
+export function loadNotebook(): Pick<NotebookState, 'pages' | 'tree' | 'selectedPageId'> {
   try {
-    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === null) return seedFirstRun();
+    const raw = JSON.parse(stored || 'null');
     if (raw && typeof raw === 'object') {
       const rawPages: Record<string, NotebookPage> = raw.pages && typeof raw.pages === 'object' ? raw.pages : {};
       const pages = Object.fromEntries(
@@ -256,7 +279,7 @@ function persist(get: () => NotebookState) {
 }
 
 export const useNotebookStore = create<NotebookState>((set, get) => ({
-  ...load(),
+  ...loadNotebook(),
 
   notebookOpen: false,
   setNotebookOpen: (open) => set({ notebookOpen: open }),

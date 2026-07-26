@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.85 — ribbon groups + window toggles)
+# ScriptCraft — continuation brief (current as of v4.86 — menu check items, hidden panels, header buttons)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,40 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.85 — ribbon title groups, tool toggles, Scrapbook close (HEAD)
+### v4.86 — menu check items, hidden panels, header buttons (HEAD)
+
+- **Scrapbook first run**: `seedFirstRun()` in notebookStore gives a
+  never-used Scrapbook one section holding one page, selected. Seeded ONLY
+  when `localStorage.getItem('opendraft:notebook')` is `null` — a notebook
+  the user EMPTIED stays empty (re-seeding there resurrects deleted work).
+  `load` is exported as `loadNotebook` so the branch is unit-tested.
+- **Menu Show/Hide → check items** (Derek): Scene Numbers + all five
+  Working Notes items keep a stable "Show …" label and carry `checked`,
+  matching Show Rulers. v4.22 had gone the other way; the rule for anything
+  added to those menus is stable label + `checked`, never a flipping label.
+- **View menu loses Customize… and Design…** — both are tools with their
+  own buttons; View is about what you're looking at.
+- **Native menu ampersands** (root cause): muda reads `&` as a mnemonic and
+  strips it, so "Spelling & Grammar" rendered as "Spelling  Grammar".
+  `nativeText()` in nativeMenuSync doubles `&` on EVERY native `text:` —
+  fixed at the sync boundary, not in the labels, because the same labels
+  feed the in-window menu bar where `&` is just an ampersand.
+- **A hidden side panel stays hidden** (Derek): `openTool` floats a tool
+  whose home panel is hidden instead of re-opening the panel, clearing the
+  stale panel slot so the tool can't end up open twice. It does NOT write
+  `toolMode` (v4.81's rule), so the tool docks again once the panel returns.
+  `toggleTool`'s "open" test now requires the panel to be SHOWING — a tool
+  stranded in a hidden panel was making the ribbon button a silent no-op.
+- **Window action buttons** are full-height plates on their own background
+  (`align-self: stretch` + negative margins over the header padding, 30px
+  wide, color-mixed off `--fd-navigator-bg`). Scoped to fullscreen/shrink/
+  close ONLY — Derek's explicit line is that filter/sort/view/search stay
+  small centered controls. `.fs-nb-close` opts back out (no header there).
+- **Popped-out windows get a visible edge**: `.tool-window` border is a
+  0.5px line mixed from `--fd-text`, since the window and the editor behind
+  it share `--fd-bg` and `--fd-border` was invisible between them.
+
+### v4.85 — ribbon title groups, tool toggles, Scrapbook close
 
 - **Title spans a joined block** (Derek): sections separated by a REMOVED
   divider (v4.75 `nd:`) render as one `.rib-group` — a single title band

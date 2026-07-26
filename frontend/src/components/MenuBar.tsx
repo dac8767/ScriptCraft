@@ -116,7 +116,6 @@ import {
   FaTextHeight,
   FaHashtag,
   FaSpellCheck,
-  FaPalette,
   FaListOl,
   FaBold,
   FaItalic,
@@ -1371,19 +1370,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     {
       label: 'View',
       items: [
-        /* v3.25, Derek: Customize leads the View menu. */
-        // v2.58, Derek: the Customize window straight from View.
-        {
-          icon: <FaWrench />,
-          label: 'Customize…',
-          action: () => openCustomize('elements'),
-        },
-        {
-          icon: <FaPalette />,
-          label: 'Design…',
-          action: () => useEditorStore.getState().setDesignPanelOpen(true),
-        },
-        { separator: true, label: '' },
+        /* v4.86, Derek: Customize… and Design… are GONE from View. Both are
+           tools with their own buttons (Customize on the ribbon, Design in
+           the Tools list), and View is about what you're looking at, not the
+           windows that reshape the app. (They led View from v2.58/v3.25.) */
         {
           icon: <FaColumns />, label: 'Workspaces',
           children: [
@@ -1433,9 +1423,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           action: () => useEditorStore.getState().setRulersVisible(!rulersVisible),
         },
         {
-          // v4.22, Derek: moved here from Project; a label toggle.
+          // v4.22, Derek: moved here from Project. v4.86: a CHECK item, like
+          // Show Rulers above it — see the note on Working Notes below.
           icon: <FaListUl />,
-          label: sceneNumbersVisible ? 'Hide Scene Numbers' : 'Show Scene Numbers',
+          label: 'Show Scene Numbers',
+          checked: sceneNumbersVisible,
           action: () => setSceneNumbersVisible(!sceneNumbersVisible),
         },
         { separator: true, label: '' },
@@ -1452,30 +1444,41 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
            */
           icon: <FaRegEye />, label: 'Working Notes',
           children: [
-            // v4.22, Derek: label toggles (Show/Hide …) instead of check items.
+            /* v4.86, Derek: back to CHECK items — a stable "Show …" label with
+               a checkmark when it's on, the shape Show Rulers already had.
+               (v4.22 had swapped these to Show/Hide label toggles; a label that
+               rewrites itself makes you read the menu to learn the state, and
+               the two styles sat side by side in the same menu.) The rule for
+               anything added here: stable label + `checked`, never a label that
+               flips between Show and Hide. */
             {
               icon: <FaRegStickyNote />,
-              label: notesVisible ? 'Hide Notes in Script' : 'Show Notes in Script',
+              label: 'Show Notes in Script',
+              checked: notesVisible,
               action: () => setNotesVisible(!notesVisible),
             },
             {
               icon: <FaCheckSquare />,
-              label: scriptTodosVisible ? 'Hide To-Do Lists in Script' : 'Show To-Do Lists in Script',
+              label: 'Show To-Do Lists in Script',
+              checked: scriptTodosVisible,
               action: () => setScriptTodosVisible(!scriptTodosVisible),
             },
             {
               icon: <FaFlag />,
-              label: markersVisible ? 'Hide Markers in Script' : 'Show Markers in Script',
+              label: 'Show Markers in Script',
+              checked: markersVisible,
               action: () => setMarkersVisible(!markersVisible),
             },
             {
               icon: <FaListOl />,
-              label: sectionsVisible ? 'Hide Sections in Script' : 'Show Sections in Script',
+              label: 'Show Sections in Script',
+              checked: sectionsVisible,
               action: () => setSectionsVisible(!sectionsVisible),
             },
             {
               icon: <FaTags />,
-              label: tagsVisible ? 'Hide Tags in Script' : 'Show Tags in Script',
+              label: 'Show Tags in Script',
+              checked: tagsVisible,
               action: () => setTagsVisible(!tagsVisible),
             },
             { separator: true, label: '' },

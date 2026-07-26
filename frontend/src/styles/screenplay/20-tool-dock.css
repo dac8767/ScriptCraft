@@ -341,7 +341,13 @@ body.fs-tool-dragging { cursor: grabbing; }
   /* v4.44, Derek: window bodies wear the EDITOR AREA color (--fd-bg), in
      every shape — floating, docked and fullscreen alike. */
   background: var(--fd-bg);
-  border: 1px solid var(--fd-border);
+  /* v4.86, Derek: a popped-out window wears the SAME --fd-bg as the editor
+     area behind it, so with --fd-border (a near-invisible hairline) its edge
+     simply disappeared — you could not see where the window ended. The edge
+     line is mixed from --fd-text instead of a fixed grey, so it reads light
+     on a dark theme and dark on a light one. 0.5px = one device pixel on a
+     Retina display: present, never heavy. */
+  border: 0.5px solid color-mix(in srgb, var(--fd-text) 32%, transparent);
   border-radius: var(--dz-toolwin-radius, 8px);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
   display: flex;
@@ -595,28 +601,65 @@ body.fs-tool-dragging { cursor: grabbing; }
 /* v4.69, Derek: fullscreen and close are DISTINCT bordered buttons (classic
    title-bar style) — the divider that used to separate them is gone. Same
    20×20 geometry as before (the v4.43 alignment guarantee). */
+/* v4.86, Derek: the WINDOW ACTIONS — fullscreen · shrink · close — are
+   full-height header buttons on their own background, the classic title-bar
+   shape. Two parts:
+     · height — they stretch to the header's full height and their negative
+       margins reach over its padding, so the whole strip from the top edge to
+       the dividing line is clickable (a 20x20 ink target inside a 32px bar
+       meant most of the bar did nothing);
+     · color  — a plate distinctly lighter than the header itself, so they
+       read as buttons rather than as glyphs printed on the bar.
+   Scoped to the actions ONLY. Filter/sort/view/search stay centered small
+   controls (.tool-chrome-controls), which is Derek's explicit line. */
 .tool-window-close,
 .tool-window-minimize,
 .tool-window-header .char-profiles-fullscreen-btn,
 .tool-inline-header .char-profiles-fullscreen-btn {
-  background: rgba(128, 128, 128, 0.06);
-  border: 1px solid var(--fd-border);
-  border-radius: 4px;
+  background: color-mix(in srgb, var(--fd-navigator-bg) 84%, var(--fd-text) 16%);
+  border: none;
+  border-radius: 0;
   color: var(--fd-text-muted);
   cursor: pointer;
-  width: 20px;
-  height: 20px;
+  width: 30px;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
+  /* Fill the header line, then cover its vertical padding. `height: auto` is
+     required — a fixed height would beat align-self: stretch. */
+  align-self: stretch;
+  height: auto;
+  margin-top: calc(-1 * var(--dz-toolwin-pad-top, 6px));
+  margin-bottom: calc(-1 * var(--dz-toolwin-pad-bottom, 6px));
+}
+/* The cluster has to span the line for its children to stretch inside it,
+   while its OWN contents (the controls) stay vertically centered. */
+.tool-chrome-right { align-self: stretch; }
+/* The docked strip's padding knobs differ from the floating window's — same
+   rule, its own defaults (see .tool-inline-header in 22-tools-extra.css). */
+.tool-inline-header .tool-window-close,
+.tool-inline-header .tool-window-minimize,
+.tool-inline-header .char-profiles-fullscreen-btn {
+  margin-top: calc(-1 * var(--dz-toolwin-pad-top, 4px));
+  margin-bottom: calc(-1 * var(--dz-toolwin-pad-bottom, 4px));
+}
+/* The Scrapbook's × floats over a surface with no header at all — it keeps
+   the old free-standing button shape (v4.85). */
+.tool-window-close.fs-nb-close {
+  width: 20px;
+  height: 20px;
+  align-self: auto;
+  margin: 0;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
 }
 .tool-window-header .char-profiles-fullscreen-btn:hover,
 .tool-inline-header .char-profiles-fullscreen-btn:hover,
 .tool-window-minimize:hover {
   color: var(--fd-text);
-  background: var(--fd-hover-bg);
+  background: color-mix(in srgb, var(--fd-navigator-bg) 68%, var(--fd-text) 32%);
 }
 .tool-window-close:hover {
   color: #fff;

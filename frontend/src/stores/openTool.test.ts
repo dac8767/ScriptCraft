@@ -25,20 +25,20 @@ describe('openTool — the menu opens a tool where it actually lives', () => {
   });
 
   it('a tool docked RIGHT opens in the right panel, not a window', () => {
+    useEditorStore.setState({ shelfOpen: true });
     store().openTool('goals');
     expect(store().activeToolRight).toBe('goals');
     expect(store().tempTool).toBeNull();          // no floating window
-    expect(store().shelfOpen).toBe(true);         // and the panel opens to show it
   });
 
   it('a tool docked LEFT opens in the left panel', () => {
     useEditorStore.setState({
       toolConfig: { ...store().toolConfig, goals: { side: 'left', enabled: true } },
+      navigatorOpen: true,
     });
     store().openTool('goals');
     expect(store().activeTool).toBe('goals');
     expect(store().tempTool).toBeNull();
-    expect(store().navigatorOpen).toBe(true);
   });
 
   it('...but a tool REMOVED from the sidebar floats a window, as Derek asked', () => {
@@ -58,10 +58,63 @@ describe('openTool — the menu opens a tool where it actually lives', () => {
   it('the same verdict as the dock: openTool and toolConfigFor agree', async () => {
     const { toolConfigFor } = await import('./editorStore');
     const cfg = toolConfigFor(store().toolConfig, 'goals');
+    useEditorStore.setState({ shelfOpen: true });
     store().openTool('goals');
     // If the dock says it's enabled on a side, the menu must dock it there.
     expect(cfg.enabled).toBe(true);
     expect(store().activeToolRight).toBe('goals');
+  });
+});
+
+/**
+ * v4.86, Derek: "when a side panel is hidden, clicking on a tool in the ribbon
+ * bar should not open the panel again. just open the window without the side
+ * panel." A hidden panel is a decision; no open path may undo it.
+ */
+describe('a hidden side panel stays hidden', () => {
+  beforeEach(() => {
+    useEditorStore.setState({
+      toolConfig: { ...DEFAULT_TOOL_CONFIG },
+      activeTool: null, activeToolRight: null, tempTool: null, fullscreenTool: null,
+      shelfOpen: false, navigatorOpen: false, toolMode: {},
+    });
+  });
+
+  it('a right-docked tool floats when the right panel is hidden', () => {
+    store().openTool('goals');
+    expect(store().tempTool).toBe('goals');
+    expect(store().shelfOpen).toBe(false);        // the panel is NOT reopened
+    expect(store().activeToolRight).toBeNull();   // and no phantom slot behind it
+  });
+
+  it('a left-docked tool floats when the left panel is hidden', () => {
+    useEditorStore.setState({
+      toolConfig: { ...store().toolConfig, goals: { side: 'left', enabled: true } },
+    });
+    store().openTool('goals');
+    expect(store().tempTool).toBe('goals');
+    expect(store().navigatorOpen).toBe(false);
+    expect(store().activeTool).toBeNull();
+  });
+
+  it('floating it this way does NOT rewrite the remembered mode — it docks again later', () => {
+    store().openTool('goals');
+    expect(store().toolMode.goals).toBeUndefined();
+  });
+
+  it('the ribbon button OPENS a tool stranded in a hidden panel (it was a silent no-op)', () => {
+    // The slot still points at the tool from before the panel was hidden.
+    useEditorStore.setState({ activeToolRight: 'goals', shelfOpen: false });
+    store().toggleTool('goals');
+    expect(store().tempTool).toBe('goals');       // something visible happens
+  });
+
+  it('…and a second click closes it again', () => {
+    useEditorStore.setState({ shelfOpen: false });
+    store().toggleTool('goals');
+    expect(store().tempTool).toBe('goals');
+    store().toggleTool('goals');
+    expect(store().tempTool).toBeNull();
   });
 });
 

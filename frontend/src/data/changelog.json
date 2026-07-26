@@ -1,5 +1,19 @@
 [
   {
+    "version": "4.86",
+    "date": "2026-07-26",
+    "changes": [
+      "A brand-new Scrapbook starts with one section holding one page, ready to write in — a Scrapbook you emptied yourself stays empty",
+      "Menus: \"Show …\" items keep a stable label and carry a checkmark when they are on, instead of flipping between Show and Hide (Scene Numbers and all five Working Notes items now match Show Rulers)",
+      "View menu: Customize… and Design… are gone — Customize is on the ribbon and Design is in the Tools list",
+      "Fix: ampersands vanished from the native menu bar — \"Spelling & Grammar\" read as \"Spelling  Grammar\", \"Find & Replace…\" as \"Find Replace…\". Every menu label with an & is correct now",
+      "A hidden side panel stays hidden: opening a tool that lives there floats it as a window instead of re-opening the panel, and it docks again once the panel is back",
+      "Fix: clicking a ribbon tool button whose panel was hidden did nothing at all — it now opens the tool",
+      "Window headers: fullscreen, shrink and close are full-height buttons on their own background — the whole strip is clickable, not a small square in the middle",
+      "Popped-out windows have a visible hairline edge, so you can see where the window ends and the editor behind it begins"
+    ]
+  },
+  {
     "version": "4.85",
     "date": "2026-07-26",
     "changes": [
