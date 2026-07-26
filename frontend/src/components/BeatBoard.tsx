@@ -25,7 +25,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
 import { FaRegCircle, FaDotCircle, FaLink, FaPaperclip, FaRegQuestionCircle, FaRegTrashAlt } from 'react-icons/fa';
 import { LuRotateCcw } from 'react-icons/lu';
-import { FullscreenIcon, ExitFullscreenIcon } from './uiIcons';
+import { ExpandIcon, ShrinkIcon } from './uiIcons';
 import { readableTextOn } from '../utils/palettes';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
@@ -1493,7 +1493,7 @@ const BeatColumnView: React.FC<BeatColumnViewProps> = ({
             className="beat-column-maximize"
             onClick={onToggleMaximize}
             title={isMaximized ? 'Restore section' : 'Maximize section'}
-          >{isMaximized ? <ExitFullscreenIcon /> : <FullscreenIcon />}</button>
+          >{isMaximized ? <ShrinkIcon /> : <ExpandIcon />}</button>
         )}
         <button className="beat-column-delete" onClick={() => onDeleteColumn(col.id)} title="Delete section"><FaRegTrashAlt /></button>
       </div>

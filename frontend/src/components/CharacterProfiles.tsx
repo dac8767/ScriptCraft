@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { FaRegUser, FaRegTrashAlt, FaChevronRight, FaChevronDown } from 'react-icons/fa';
-import { FullscreenIcon } from './uiIcons';
+import { FullscreenIcon, ExpandIcon } from './uiIcons';
 import { LuLayoutGrid, LuList, LuWaypoints } from 'react-icons/lu';
 import { ControlDropdown, ControlSearch, ChromeTabs, type ToolChromeTab } from './ToolControls';
 import type { Editor } from '@tiptap/react';
@@ -1498,7 +1498,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                     onClick={(e) => { e.stopPropagation(); setModalChar(name); }}
                     title="Expand this character into a larger window"
                   >
-                    <FullscreenIcon />
+                    <ExpandIcon />
                   </button>
                   </div>
                 </div>

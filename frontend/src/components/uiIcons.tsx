@@ -31,16 +31,29 @@ export const UTILITY_ICONS: Record<'divider' | 'spacer', React.ReactNode> = {
   spacer: <FaArrowsAltH />,
 };
 
-/** v4.31 (Derek's icon-audit pick, group 1-C): THE fullscreen faces — the
- *  diagonal-arrows pair from the Cards board, promoted here so every
- *  enter/exit-fullscreen control draws the same one. */
+/** v4.38, Derek: TWO verbs, TWO faces — so a window's fullscreen button can
+ *  never be confused with a control that merely enlarges a piece of content.
+ *
+ *  FullscreenIcon — the SQUARE (the icon-audit's option A, the former ⛶
+ *  four-corners face): takes the whole TOOL fullscreen over the editor area.
+ *  ExpandIcon / ShrinkIcon — the diagonal-arrows pair (the v4.31 pick, now
+ *  scoped down): expand/restore ONE thing — a character card into its modal,
+ *  a synopsis, an Outline section. */
 export const FullscreenIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (
+  <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <polyline points="1,4 1,1 4,1" />
+    <polyline points="10,1 13,1 13,4" />
+    <polyline points="13,10 13,13 10,13" />
+    <polyline points="4,13 1,13 1,10" />
+  </svg>
+);
+export const ExpandIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (
   <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.5">
     <polyline points="9,1 13,1 13,5" /><line x1="8" y1="6" x2="13" y2="1" />
     <polyline points="5,13 1,13 1,9" /><line x1="6" y1="8" x2="1" y2="13" />
   </svg>
 );
-export const ExitFullscreenIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (
+export const ShrinkIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (
   <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.5">
     <polyline points="9,1 9,5 13,5" /><line x1="13" y1="1" x2="9" y2="5" />
     <polyline points="5,13 5,9 1,9" /><line x1="1" y1="13" x2="5" y2="9" />

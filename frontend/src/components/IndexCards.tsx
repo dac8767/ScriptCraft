@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { Editor } from '@tiptap/react';
 import { FaUndo, FaRedo } from 'react-icons/fa';
-import { FullscreenIcon } from './uiIcons';
+import { ExpandIcon } from './uiIcons';
 import { useEditorStore } from '../stores/editorStore';
 import { computeSceneLengths } from '../editor/pagination';
 import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../utils/scriptTiming';
@@ -587,7 +587,7 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
                         title="Expand synopsis"
                         disabled={dragMode}
                       >
-                        <FullscreenIcon size={12} />
+                        <ExpandIcon size={12} />
                       </button>
                     </div>
                   </div>

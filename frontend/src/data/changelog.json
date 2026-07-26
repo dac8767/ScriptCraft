@@ -1,5 +1,19 @@
 [
   {
+    "version": "4.38",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "Fullscreen is a square; expand is arrows",
+        "detail": "The fullscreen button in every window and dock header now wears the square four-corners icon (the audit's former option), while the diagonal arrows are reserved for controls that enlarge one piece of content — expanding a character card, a synopsis, or an Outline section. Two different verbs, two different faces.",
+        "tags": [
+          "Icons",
+          "UI"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.37",
     "date": "2026-07-26",
     "items": [

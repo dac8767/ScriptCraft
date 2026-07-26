@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.37 — window color/dup/picker batch)
+# ScriptCraft — continuation brief (current as of v4.38 — fullscreen □ vs expand ⤢)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,21 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.37 — batch v11 (HEAD)
+### v4.38 — fullscreen □ vs expand ⤢ (HEAD)
+
+Derek: "make it clear what the difference is between an expand button and a
+full screen button." The uiIcons registry now encodes TWO verbs:
+`FullscreenIcon` = the SQUARE four-corners face (the icon-audit's option A,
+the former ⛶) on everything that takes a TOOL fullscreen (ToolFullscreenButton
+in every frame/dock row, the legacy Characters overlay header); new
+`ExpandIcon`/`ShrinkIcon` = the diagonal-arrows pair (the old v4.31 pick) on
+everything that enlarges ONE thing (character card → modal, synopsis modal,
+Outline section maximize/restore). `ExitFullscreenIcon` is deleted (its only
+consumer was the Outline pair, which is expand-semantic). When adding a
+fullscreen or enlarge control, pick by VERB from the registry — don't draw ad
+hoc arrows.
+
+### v4.37 — batch v11
 
 Nine mid-turn items, dispatcher-only (no workers — mostly small, heavily
 cross-window):
