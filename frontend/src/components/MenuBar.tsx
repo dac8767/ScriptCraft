@@ -887,6 +887,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     store.setDocumentTitle(meta?.name || 'Untitled Script');
     store.setDraftLabel(meta?.draft || useSettingsStore.getState().defaultDraftLabel);
     store.setSpellCheckEnabled(useSettingsStore.getState().spellCheckByDefault);   // v1.60
+    store.setSpellCheckChoice(null);   // v4.77: a new script starts unchosen
     store.setVersionLabel(meta?.version || '');
     store.setBeats([]);
     store.setBeatColumns([]);

@@ -109,6 +109,14 @@ export interface SpellGrammarSlice {
   spellCheckEnabled: boolean;
   toggleSpellCheck: () => void;
   setSpellCheckEnabled: (v: boolean) => void;
+  /** v4.77, Derek: squiggles are the DEFAULT now. This is the user's explicit
+   *  per-script choice — null means they never toggled, so the script follows
+   *  Settings ▸ "Check spelling as you type". toggleSpellCheck (both UI
+   *  surfaces) records it; loads restore it; saves persist it. The legacy
+   *  boolean _spellCheckEnabled=false in old saves is NOISE (every save
+   *  stamped the then-default), which is why it can't be trusted as a choice. */
+  spellCheckChoice: 'on' | 'off' | null;
+  setSpellCheckChoice: (v: 'on' | 'off' | null) => void;
   spellModalOpen: boolean;
   /** True while the docked Spelling & Grammar panel is mounted — suppresses the
    *  global floating SpellCheckModal so only one instance ever renders. */
@@ -167,13 +175,19 @@ export interface SpellGrammarSlice {
 }
 
 export const createSpellGrammarSlice: StateCreator<EditorState, [], [], SpellGrammarSlice> = (set) => ({
-  // Spell & grammar check are per-document, not global. Default off; when the
-  // user enables them for a doc, the preference is saved alongside the
-  // script content (_spellCheckEnabled / _grammarCheckEnabled) and restored
-  // on next open.
+  // Spell check as you type is ON by default (v4.77, Derek: "like all text
+  // editors"). A user toggle records an explicit per-script choice
+  // (_spellCheckChoice) that wins over the Settings default on load; grammar
+  // stays opt-in per document (_grammarCheckEnabled).
   spellCheckEnabled: false,
-  toggleSpellCheck: () => set((s) => ({ spellCheckEnabled: !s.spellCheckEnabled })),
+  // The UI toggle = the user CHOOSING — record the choice with the flip.
+  toggleSpellCheck: () => set((s) => ({
+    spellCheckEnabled: !s.spellCheckEnabled,
+    spellCheckChoice: !s.spellCheckEnabled ? 'on' : 'off',
+  })),
   setSpellCheckEnabled: (v) => set({ spellCheckEnabled: v }),
+  spellCheckChoice: null,
+  setSpellCheckChoice: (v) => set({ spellCheckChoice: v }),
   spellModalOpen: false,
   setSpellModalOpen: (open) => set({ spellModalOpen: open }),
   spellPanelMounted: false,

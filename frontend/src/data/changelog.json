@@ -1,5 +1,14 @@
 [
   {
+    "version": "4.77",
+    "date": "2026-07-26",
+    "changes": [
+      "Spelling: misspelled words get the standard red squiggly underline as you type, ON by default — turn it off per script (Tools ▸ Spell Check) or app-wide (Settings ▸ General)",
+      "Spelling: words in ALL CAPS — character names, scene headings, locations — are never spell-checked",
+      "Fix: opening a script from a local file ignored the app-wide spell-check default; both open paths now follow one rule"
+    ]
+  },
+  {
     "version": "4.76",
     "date": "2026-07-26",
     "changes": [

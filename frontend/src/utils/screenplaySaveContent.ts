@@ -88,9 +88,30 @@ export function composeSaveContent(doc: Record<string, unknown>): Record<string,
     _ignoredGrammarRules: grammarIgnore.getIgnoredRules(),
     _ignoredGrammarOnce: grammarIgnore.getIgnoredOnce(),
     _spellCheckEnabled: store.spellCheckEnabled,
+    // v4.77: the user's EXPLICIT as-you-type choice (null = never toggled —
+    // the script follows the Settings default). _spellCheckEnabled above
+    // stays for older builds, but it stamps the current STATE on every save,
+    // which is exactly why it can't be read back as a choice.
+    _spellCheckChoice: store.spellCheckChoice,
     _grammarCheckEnabled: store.grammarCheckEnabled,
     _sceneNumbersVisible: store.sceneNumbersVisible,
     _sceneNumbersLocked: store.sceneNumbersLocked,
     _pageLayout: store.pageLayout,
   };
+}
+
+/** v4.77 — ONE rule for restoring as-you-type spell check on load (both the
+ *  cloud and local-file paths read this; they used to disagree). An explicit
+ *  stored choice wins; a legacy `_spellCheckEnabled: true` was necessarily
+ *  deliberate (the old default was off) so it counts as ON; anything else —
+ *  absent, or the stamped-on-every-save legacy `false` — follows the
+ *  Settings ▸ "Check spelling as you type" default. */
+export function resolveSpellCheckOnLoad(
+  c: Record<string, unknown>,
+  settingDefault: boolean,
+): { enabled: boolean; choice: 'on' | 'off' | null } {
+  if (c._spellCheckChoice === 'on') return { enabled: true, choice: 'on' };
+  if (c._spellCheckChoice === 'off') return { enabled: false, choice: 'off' };
+  if (c._spellCheckEnabled === true) return { enabled: true, choice: null };
+  return { enabled: settingDefault, choice: null };
 }

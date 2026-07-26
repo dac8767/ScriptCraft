@@ -626,10 +626,13 @@ function GeneralTab() {
             checked={spellCheckByDefault}
             onChange={(e) => setSpellCheckByDefault(e.target.checked)}
           />
-          <span>Check spelling as you type in new scripts</span>
+          <span>Check spelling as you type</span>
         </label>
         <p className="prefs-hint">
-          Each script's own Tools → Spell Check toggle still wins once set.
+          Misspellings get the red squiggle. Applies to every script that
+          hasn't made its own choice; a script's Tools → Spell Check toggle
+          still wins once set. Names and anything typed in ALL CAPS are never
+          checked.
         </p>
         {/* v3.24, Derek's menu reorg #6: the rules panel opens from HERE now
             (it left the Project > Spell Check submenu — it's configuration).

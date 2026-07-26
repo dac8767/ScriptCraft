@@ -119,7 +119,7 @@ import { reportSaveError } from '../stores/saveErrorStore';
 import { pluginRegistry } from '../plugins/registry';
 import { createTrackChangesPlugin, trackChangesPluginKey } from '../editor/trackChanges';
 import type { VersionInfo } from '../services/api';
-import { resolveHFFields, composeSaveContent, stripSaveExtras } from '../utils/screenplaySaveContent';
+import { resolveHFFields, composeSaveContent, stripSaveExtras, resolveSpellCheckOnLoad } from '../utils/screenplaySaveContent';
 
 import { randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, SCENE_PREFIX_OPTIONS, SAMPLE_CONTENT } from './screenplayEditorConstants';
 import { isWorkingNoteText } from '../utils/workingNotes';
@@ -2373,8 +2373,9 @@ const ScreenplayEditor: React.FC = () => {
       // or no remembered doc — starts at the New Script prompt instead of a
       // bare editor (whose doc may lack a seeded action element + hint).
       // v1.60: a fresh session starts with the user's spell-check default;
-      // documents that carry their own _spellCheckEnabled override it on load.
+      // documents that carry their own choice override it on load (v4.77).
       useEditorStore.getState().setSpellCheckEnabled(useSettingsStore.getState().spellCheckByDefault);
+      useEditorStore.getState().setSpellCheckChoice(null);
       const askForNewScript = () => useEditorStore.getState().setNewScriptPromptRequest(true);
       if (!useSettingsStore.getState().autoLoadLastScript) { askForNewScript(); return; }
       const raw = localStorage.getItem('opendraft:lastOpenedScript');
@@ -2983,12 +2984,13 @@ const ScreenplayEditor: React.FC = () => {
             grammarIgnore.setIgnoredRules(grammarRules as string[]);
             const grammarOnce = parseAttr(c._ignoredGrammarOnce);
             grammarIgnore.setIgnoredOnce(grammarOnce as string[]);
-            // Restore per-document spell/grammar check toggles (default off)
-            store.setSpellCheckEnabled(
-              typeof c._spellCheckEnabled === 'boolean'
-                ? c._spellCheckEnabled
-                : useSettingsStore.getState().spellCheckByDefault,   // v1.60
-            );
+            // Restore per-document spell/grammar toggles — v4.77: one shared
+            // rule (explicit choice > legacy true > Settings default).
+            {
+              const sc = resolveSpellCheckOnLoad(c as Record<string, unknown>, useSettingsStore.getState().spellCheckByDefault);
+              store.setSpellCheckEnabled(sc.enabled);
+              store.setSpellCheckChoice(sc.choice);
+            }
             store.setGrammarCheckEnabled(c._grammarCheckEnabled === true);
             // Restore per-document page layout (header/footer, margins)
             if (c._pageLayout && typeof c._pageLayout === 'object') {
@@ -3338,8 +3340,13 @@ const ScreenplayEditor: React.FC = () => {
             store.setPageLayout(migratePageLayout({ ...DEFAULT_PAGE_LAYOUT, ...(c._pageLayout as Record<string, unknown>) } as PageLayout));
             store.setDraftLabel(typeof (c as any)._draftLabel === 'string' && (c as any)._draftLabel ? (c as any)._draftLabel as string : 'First Draft');
           }
-          // Restore per-document spell/grammar check toggles
-          store.setSpellCheckEnabled(c._spellCheckEnabled === true);
+          // Restore per-document spell/grammar toggles — v4.77: the SAME rule
+          // as the cloud path (this one used to ignore the Settings default).
+          {
+            const sc = resolveSpellCheckOnLoad(c as Record<string, unknown>, useSettingsStore.getState().spellCheckByDefault);
+            store.setSpellCheckEnabled(sc.enabled);
+            store.setSpellCheckChoice(sc.choice);
+          }
           store.setGrammarCheckEnabled(c._grammarCheckEnabled === true);
           // Per-script project-dictionary toggle (default on).
           spellChecker.setProjectDictionaryEnabled(

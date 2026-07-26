@@ -292,7 +292,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try { localStorage.setItem(STORAGE_KEY_FORMATS_INIT, v ? '1' : '0'); } catch { /* ignore */ }
     set({ formatPreferencesInitialized: v });
   },
-  spellCheckByDefault: localStorage.getItem(STORAGE_KEY_SPELLDEF) === '1',
+  // v4.77, Derek: ON unless explicitly turned off — squiggles are the
+  // standard text-editor baseline. ('0' = a real opt-out; the old '1'-only
+  // read made OFF the default.)
+  spellCheckByDefault: localStorage.getItem(STORAGE_KEY_SPELLDEF) !== '0',
   setSpellCheckByDefault: (v) => {
     try { localStorage.setItem(STORAGE_KEY_SPELLDEF, v ? '1' : '0'); } catch { /* ignore */ }
     set({ spellCheckByDefault: v });
