@@ -1,5 +1,14 @@
 [
   {
+    "version": "4.55",
+    "date": "2026-07-26",
+    "changes": [
+      "Deleting either paren of a parenthetical now removes the whole row (typing over the selected row still re-wraps, and undo restores the row in one step)",
+      "Backspace at the start of the line below a parenthetical no longer merges it into the row — the boundary is locked",
+      "Fixed: the character-name autofill did not appear when Dialogue was chosen from the Enter-key element picker (the opening click was dismissing it instantly)"
+    ]
+  },
+  {
     "version": "4.54",
     "date": "2026-07-26",
     "changes": [

@@ -77,15 +77,25 @@ const CharacterAutocomplete: React.FC<CharacterAutocompleteProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [handleKeyDown]);
 
-  // Click outside to dismiss
+  // Click outside to dismiss. Attached a tick late (v4.55): when a CLICK
+  // opens this dropdown (picking Dialogue in the element picker fires on
+  // mousedown, which mounts us mid-dispatch), that same mousedown is still
+  // bubbling to document — an immediately-attached listener sees it, reads
+  // its target as "outside" and dismisses the dropdown it just opened,
+  // latching the dismissed flag so it never comes back.
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         onDismiss();
       }
     };
-    document.addEventListener('mousedown', handleMouseDown);
-    return () => document.removeEventListener('mousedown', handleMouseDown);
+    const t = window.setTimeout(
+      () => document.addEventListener('mousedown', handleMouseDown), 0,
+    );
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener('mousedown', handleMouseDown);
+    };
   }, [onDismiss]);
 
   if (suggestions.length === 0) return null;

@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 /**
- * Parenthetical paren lock (v4.54, Derek).
+ * Parenthetical paren behavior (v4.54 lock, v4.55 delete-to-remove).
  *
- * The parens are ALWAYS the first and last characters of the row: deleting an
- * edge paren repairs in place, the caret is clamped between them so typing
- * can never land outside — and emptying the row entirely still works, so the
- * element stays deletable (the v3.44 auto-"()" seed is also covered here).
+ * The parens are ALWAYS the first and last characters of the row while it
+ * exists, and the caret is clamped between them. DELETING an edge paren
+ * removes the whole row (v4.55, Derek — that's how you get rid of one);
+ * INSERTION-caused missing parens (converting a line, replacing the row's
+ * text) still wrap; a backspace-join from the next line is normalized back.
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { Editor } from '@tiptap/core';
@@ -23,6 +24,13 @@ const Dialogue = Node.create({
   parseHTML: () => [{ tag: 'div[data-type="dialogue"]' }],
   renderHTML: () => ['div', { 'data-type': 'dialogue' }, 0],
 });
+const Action = Node.create({
+  name: 'action',
+  group: 'block',
+  content: 'text*',
+  parseHTML: () => [{ tag: 'div[data-type="action"]' }],
+  renderHTML: () => ['div', { 'data-type': 'action' }, 0],
+});
 
 let editor: Editor | null = null;
 let host: HTMLElement | null = null;
@@ -32,16 +40,28 @@ function makeEditor(content: object) {
   document.body.appendChild(host);
   editor = new Editor({
     element: host,
-    extensions: [Document, Text, Dialogue, Parenthetical],
+    extensions: [Document, Text, Dialogue, Action, Parenthetical],
     content,
   });
   return editor;
 }
 
-const paren = (text: string) => ({
+/** dialogue("hi") + parenthetical(text) + dialogue("bye") */
+const sandwich = (text: string) => ({
   type: 'doc',
-  content: [{ type: 'parenthetical', content: text ? [{ type: 'text', text }] : [] }],
+  content: [
+    { type: 'dialogue', content: [{ type: 'text', text: 'hi' }] },
+    { type: 'parenthetical', content: text ? [{ type: 'text', text }] : [] },
+    { type: 'dialogue', content: [{ type: 'text', text: 'bye' }] },
+  ],
 });
+const PAREN_START = 5;          // content start of the parenthetical ("hi" node is size 4)
+
+const types = (ed: Editor) => {
+  const out: string[] = [];
+  ed.state.doc.forEach((n) => out.push(n.type.name));
+  return out;
+};
 
 afterEach(() => {
   editor?.destroy();
@@ -50,64 +70,76 @@ afterEach(() => {
   host = null;
 });
 
-describe('parenthetical paren lock', () => {
+describe('parenthetical parens', () => {
   it('entering an empty parenthetical seeds "()" with the caret inside', () => {
-    // The seed fires on moving INTO an empty parenthetical from elsewhere —
-    // so start the caret in a dialogue sibling, then click into the row.
-    const ed = makeEditor({
-      type: 'doc',
-      content: [
-        { type: 'dialogue', content: [{ type: 'text', text: 'hi' }] },
-        { type: 'parenthetical' },
-      ],
-    });
-    const parenStart = 1 + 'hi'.length + 2;   // inside start of the parenthetical
-    ed.view.dispatch(ed.state.tr.setSelection(TextSelection.create(ed.state.doc, parenStart)));
-    expect(ed.state.doc.lastChild!.textContent).toBe('()');
-    expect(ed.state.selection.from).toBe(parenStart + 1); // between the parens
+    const ed = makeEditor(sandwich(''));
+    ed.view.dispatch(ed.state.tr.setSelection(TextSelection.create(ed.state.doc, PAREN_START)));
+    expect(ed.state.doc.child(1).textContent).toBe('()');
+    expect(ed.state.selection.from).toBe(PAREN_START + 1);
   });
 
-  it('deleting the closing paren repairs it (locked)', () => {
-    const ed = makeEditor(paren('(beat)'));
-    const end = 1 + '(beat)'.length;          // after ")"
-    ed.view.dispatch(ed.state.tr.delete(end - 1, end)); // simulate Delete on ")"
-    expect(ed.state.doc.firstChild!.textContent).toBe('(beat)');
+  it('deleting the closing paren removes the whole row', () => {
+    const ed = makeEditor(sandwich('(beat)'));
+    const end = PAREN_START + '(beat)'.length;
+    // caret inside, then Delete on ")"
+    ed.view.dispatch(ed.state.tr.setSelection(TextSelection.create(ed.state.doc, end - 1)));
+    ed.view.dispatch(ed.state.tr.delete(end - 1, end));
+    expect(types(ed)).toEqual(['dialogue', 'dialogue']);
   });
 
-  it('deleting the opening paren repairs it and keeps the caret inside', () => {
-    const ed = makeEditor(paren('(beat)'));
-    ed.view.dispatch(ed.state.tr.delete(1, 2)); // simulate Backspace on "("
-    expect(ed.state.doc.firstChild!.textContent).toBe('(beat)');
-    const sel = ed.state.selection.from;
-    expect(sel).toBeGreaterThanOrEqual(2);                  // inside the parens
-    expect(sel).toBeLessThanOrEqual(1 + '(beat)'.length - 1);
+  it('deleting the opening paren removes the whole row, caret lands before it', () => {
+    const ed = makeEditor(sandwich('(beat)'));
+    ed.view.dispatch(ed.state.tr.setSelection(TextSelection.create(ed.state.doc, PAREN_START + 1)));
+    ed.view.dispatch(ed.state.tr.delete(PAREN_START, PAREN_START + 1)); // Backspace on "("
+    expect(types(ed)).toEqual(['dialogue', 'dialogue']);
+    expect(ed.state.selection.from).toBeLessThanOrEqual(PAREN_START);
   });
 
-  it('replacing the whole row with typed text re-wraps it in parens', () => {
-    const ed = makeEditor(paren('(beat)'));
-    ed.view.dispatch(ed.state.tr.insertText('x', 1, 1 + '(beat)'.length));
-    expect(ed.state.doc.firstChild!.textContent).toBe('(x)');
+  it('deleting ALL the text including parens removes the row', () => {
+    const ed = makeEditor(sandwich('(beat)'));
+    ed.view.dispatch(ed.state.tr.setSelection(TextSelection.create(ed.state.doc, PAREN_START + 2)));
+    ed.view.dispatch(ed.state.tr.delete(PAREN_START, PAREN_START + '(beat)'.length));
+    expect(types(ed)).toEqual(['dialogue', 'dialogue']);
   });
 
-  it('a caret placed before "(" is clamped inside', () => {
-    const ed = makeEditor(paren('(beat)'));
-    ed.view.dispatch(ed.state.tr.setSelection(TextSelection.create(ed.state.doc, 1)));
-    expect(ed.state.selection.from).toBe(2);
+  it('replacing the whole row with typed text re-wraps it in parens (insertion)', () => {
+    const ed = makeEditor(sandwich('(beat)'));
+    const end = PAREN_START + '(beat)'.length;
+    // select the row's text (as a user would), then type over it
+    ed.view.dispatch(ed.state.tr.setSelection(TextSelection.create(ed.state.doc, PAREN_START, end)));
+    ed.view.dispatch(ed.state.tr.insertText('x', PAREN_START, end));
+    expect(ed.state.doc.child(1).textContent).toBe('(x)');
+    expect(types(ed)).toEqual(['dialogue', 'parenthetical', 'dialogue']);
   });
 
-  it('a caret placed after ")" is clamped inside', () => {
-    const ed = makeEditor(paren('(beat)'));
-    const end = 1 + '(beat)'.length;
+  it('a backspace-join from the next line is split back out (boundary locked)', () => {
+    const ed = makeEditor(sandwich('(beat)'));
+    const parenNodeStart = PAREN_START - 1;
+    const boundary = parenNodeStart + ed.state.doc.child(1).nodeSize;
+    // caret at the start of "bye" (where Backspace fires), then the join it does
+    ed.view.dispatch(ed.state.tr.setSelection(TextSelection.create(ed.state.doc, boundary + 1)));
+    ed.view.dispatch(ed.state.tr.join(boundary));
+    expect(types(ed)).toEqual(['dialogue', 'parenthetical', 'dialogue']);
+    expect(ed.state.doc.child(1).textContent).toBe('(beat)');
+    expect(ed.state.doc.child(2).textContent).toBe('bye');
+    // caret back at the start of the (restored) next line — reads as a no-op
+    expect(ed.state.selection.from).toBe(boundary + 1);
+  });
+
+  it('a caret placed before "(" or after ")" is clamped inside', () => {
+    const ed = makeEditor(sandwich('(beat)'));
+    ed.view.dispatch(ed.state.tr.setSelection(TextSelection.create(ed.state.doc, PAREN_START)));
+    expect(ed.state.selection.from).toBe(PAREN_START + 1);
+    const end = PAREN_START + '(beat)'.length;
     ed.view.dispatch(ed.state.tr.setSelection(TextSelection.create(ed.state.doc, end)));
     expect(ed.state.selection.from).toBe(end - 1);
   });
 
-  it('emptying the row entirely still works (stays deletable)', () => {
-    const ed = makeEditor(paren('(beat)'));
-    // Caret inside first (so the seed's "just entered" guard is not tripped)…
-    ed.view.dispatch(ed.state.tr.setSelection(TextSelection.create(ed.state.doc, 3)));
-    // …then delete ALL the text including both parens.
-    ed.view.dispatch(ed.state.tr.delete(1, 1 + '(beat)'.length));
-    expect(ed.state.doc.firstChild!.textContent).toBe('');
+  it('deleting inner text only keeps the row (parens intact)', () => {
+    const ed = makeEditor(sandwich('(beat)'));
+    ed.view.dispatch(ed.state.tr.setSelection(TextSelection.create(ed.state.doc, PAREN_START + 2)));
+    ed.view.dispatch(ed.state.tr.delete(PAREN_START + 1, PAREN_START + 5)); // "beat"
+    expect(ed.state.doc.child(1).textContent).toBe('()');
+    expect(types(ed)).toEqual(['dialogue', 'parenthetical', 'dialogue']);
   });
 });

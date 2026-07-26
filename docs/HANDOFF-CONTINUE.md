@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.54 — parenthetical lock, Dialogue-initiated names, ruler note bands)
+# ScriptCraft — continuation brief (current as of v4.55 — paren delete-to-remove, picker-autofill fix)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,43 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.54 — parenthetical lock, Dialogue-initiated names, ruler note bands (HEAD)
+### v4.55 — paren delete-to-remove, picker-autofill fix (HEAD)
+
+- **Deleting a paren removes the row (Derek)**: v4.54's repair-on-delete
+  made parens undeletable; Derek's rule is "delete either paren → the
+  whole parenthetical row goes". Parenthetical.ts plugin now: inverse-maps
+  the row's content start through the transactions to read its OLD text
+  (`Mapping` from @tiptap/pm/transform), and classifies — pure DELETION
+  that lost an edge paren the old text had → `removeRow` (delete node,
+  `TextSelection.near` biased backward for "(" / forward for ")");
+  emptied-including-parens → row removed too; INSERTION present
+  (conversion, replacing the selected row with typed text) → wrap-repair
+  as in v4.54; a pure-deletion JOIN (Backspace at the start of the next
+  line — text grew past the old ")" with `newText.startsWith(oldText)`) →
+  split back at oldText.length and restore the joined node's type/attrs —
+  the boundary reads as locked, caret back where it was. removeRow is
+  try/caught: sole-block-in-doc/column falls back to converting the row
+  to an empty action, then to null (never crash dispatch). No
+  addToHistory meta on removals → undo restores the row in ONE step
+  (verified live). Tests: Parenthetical.test.ts (8; note the harness must
+  SET the selection at the gesture's seam before dispatching raw trs —
+  the plugin only acts when the caret is in the row, and two tests
+  failed exactly that way first).
+- **Picker→autofill fix (Derek)**: choosing Dialogue in the Enter-key
+  element picker presented the character field but no name autofill.
+  Debug taps showed onUpdate DID fire 'show:SARAH' — then dismissedRef.
+  Root cause: ElementPicker items select on MOUSEDOWN; the same
+  mousedown was still bubbling to document when React mounted
+  CharacterAutocomplete and attached its click-outside listener, which
+  read the event's target as outside and dismissed it instantly,
+  latching charAutoDismissedRef (mode never leaves 'character', so it
+  never resets — autofill dead for the whole couplet). Fix: attach the
+  click-outside listener in a `setTimeout(0)` (CharacterAutocomplete) so
+  it can never observe the event that mounted it. Ctrl+3/Ctrl+4/toolbar
+  paths were already fine (no bubbling mousedown after mount) — driver
+  v29 matrix now shows all four paths popping ['SARAH'].
+
+### v4.54 — parenthetical lock, Dialogue-initiated names, ruler note bands
 
 - **Parenthetical row is locked (Derek)**: the parens are ALWAYS the first
   and last characters. `Parenthetical.ts` plugin (extends the v3.44 "()"
