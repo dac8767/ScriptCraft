@@ -166,7 +166,7 @@
 .fs-goal-kinds button.active { border-color: var(--fd-accent, #4a90d9); }
 
 /* Right-side dock: window opens to the LEFT of the dock */
-.tool-dock-right .tool-dock { border-right: none; border-left: 1px solid var(--fd-border); }
+.tool-dock-right .tool-dock { border-right: none; border-left: 1px solid var(--fd-hairline); }
 .tool-dock-right .tool-window { left: auto; right: 308px; }
 
 /* Sticky tools */
@@ -372,7 +372,7 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
    dragging the row out of the panel floats the window. */
 .tool-inline { position: relative; }
 .tool-dock-item-header {
-  border-bottom: 1px solid var(--fd-border);
+  border-bottom: 1px solid var(--fd-hairline);
   background: rgba(128, 128, 128, 0.22);
 }
 /* v2.15: Scrapbook solo mode (Settings > Tools) — while the Scrapbook is
@@ -429,8 +429,24 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
   margin: 3px 0;
 }
 
-/* (v4.39: .tool-inline-header is gone — the open dock row carries the whole
-   single-row header now; see .tool-dock-item-header above.) */
+/* v4.40: the docked window's own header strip is BACK (Derek: the v4.39
+   merged accordion row looked wrong in the panels) — tabs left, controls
+   right, fullscreen at the editor-facing end where the pop-out used to sit.
+   One difference from its v4.27-v4.38 life: when the column is narrow the
+   strip WRAPS (Derek's overflow-to-second-row rule) instead of collapsing
+   the tabs into a dropdown. */
+.tool-inline-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--fd-hairline);
+  background: var(--fd-navigator-bg);
+  flex-shrink: 0;
+}
+/* the controls span doubles as the flex spacer — packs right, fills the row */
+.tool-inline-header .tool-chrome-controls { flex: 1 1 auto; }
 
 /* v3.54: the Scenes filter popover — a floating shell (portalled to body,
    positioned by top/left) wrapping the same .scene-filters rows the tool body

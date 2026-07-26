@@ -1,5 +1,35 @@
 [
   {
+    "version": "4.40",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "Side-panel windows look like themselves again",
+        "detail": "The v4.39 merged header cramped everything onto the accordion row in the panels — docked windows are back to the compact row (name and count) with tabs and controls on their own strip inside the window. The strip wraps when the column is narrow. Floating windows and fullscreen keep the new single-row header.",
+        "tags": [
+          "Windows",
+          "UI"
+        ]
+      },
+      {
+        "title": "Undocking takes a real drag now",
+        "detail": "A docked window only pops out when you drag its header all the way into the editor area — a small tug does nothing and it stays in the panel. Dropping a floating window on a panel still docks it.",
+        "tags": [
+          "Windows",
+          "UI"
+        ]
+      },
+      {
+        "title": "The faint lines are actually visible",
+        "detail": "The sidebar's outer edge and the line between a window's header and its body were drawn in a border color nearly identical to the surfaces — invisible. They now use a hairline derived from each theme's text color, so the seams read faintly in every theme, Airtable-style. Also: more space between the window name and the tabs, and between the controls and the fullscreen/close buttons.",
+        "tags": [
+          "UI",
+          "Fix"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.39",
     "date": "2026-07-26",
     "items": [

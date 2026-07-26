@@ -226,7 +226,7 @@
   width: 300px; /* same footprint as the original right panel */
   flex-shrink: 0;
   background: var(--fd-navigator-bg); /* same scheme as the Sticky Notes pane */
-  border-right: 1px solid var(--fd-border);
+  border-right: 1px solid var(--fd-hairline);   /* v4.40: visible faint edge */
   display: flex;
   flex-direction: column;
   padding: 8px 0;
@@ -261,18 +261,21 @@
   background: rgba(128, 128, 128, 0.22);
   color: var(--fd-accent, #4a90d9);
 }
-/* v4.39: the open row IS the window's single-row header — tabs/controls wrap
-   onto a second line in the narrow column; grab it to pull the window out. */
-.tool-dock-item.tool-dock-item-header {
-  flex-wrap: wrap;
-  row-gap: 2px;
-  cursor: grab;
-}
-.tool-dock-item.tool-dock-item-header:active { cursor: grabbing; }
+/* v4.40: back to the compact pre-v4.39 row (Derek) — no wrap, click cursor;
+   the tabs/controls live on .tool-inline-header inside the window again.
+   The row is still the drag-out handle (pull it into the editor area). */
 /* v4.39: a floating window dragged over this panel docks on release. */
 .tool-dock.tool-dock-drop-target {
   outline: 2px solid var(--fd-accent, #4a90d9);
   outline-offset: -2px;
+}
+/* Dock-compressed row 1: the open accordion row carries the window actions
+   (Tags' eye…) at its right edge. */
+.tool-dock-item-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .tool-dock-icon {
   width: calc(18px * var(--dock-scale, 1));
@@ -323,14 +326,15 @@
   row-gap: 2px;
   column-gap: 8px;
   padding: var(--dz-toolwin-head-pad, 6px) 10px;
-  border-bottom: 1px solid var(--fd-border);
+  border-bottom: 1px solid var(--fd-hairline);
   background: var(--fd-bg);
   flex-shrink: 0;
   user-select: none;
   cursor: grab; /* v1.33: grab the header to move the window (drop on a panel to dock) */
 }
 .tool-window-header:active { cursor: grabbing; }
-.tool-header-title { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+/* v4.40, Derek: clear air between the window name and the tabs. */
+.tool-header-title { display: inline-flex; align-items: center; gap: 6px; min-width: 0; margin-right: 10px; }
 .tool-window-title {
   font-size: var(--dz-toolwin-title-font, 12px);
   font-weight: 700;
@@ -360,8 +364,9 @@
 .tool-chrome-sep {
   width: 1px;
   height: 16px;
-  background: var(--fd-border);
-  margin: 0 4px;
+  background: var(--fd-hairline);
+  /* v4.40, Derek: more air between the controls and the fullscreen/close pair */
+  margin: 0 9px;
   flex: none;
 }
 /* The item count riding beside the window title ("Characters · 12") —

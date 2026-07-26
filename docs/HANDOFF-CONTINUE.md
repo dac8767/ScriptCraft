@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.39 — single-row headers + drag docking)
+# ScriptCraft — continuation brief (current as of v4.40 — docked look restored, drag-to-editor undock, hairlines)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,40 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.39 — single-row window headers + drag docking (HEAD)
+### v4.40 — docked look restored + drag-to-editor threshold + hairlines (HEAD)
+
+Three Derek corrections to v4.39, same day:
+
+- **Docked windows look pre-v4.39 again**: compact accordion row (label ·
+  count · WindowActions in `.tool-dock-item-actions`), with tabs + controls
+  on a restored `.tool-inline-header` strip inside the window (fullscreen at
+  the editor-facing end where the pop-out sat). ONE difference from its old
+  life: the strip WRAPS when narrow (Derek's overflow rule) — the dropdown
+  collapse stays dead. No close × docked (row click toggles, as always).
+  Floating windows + the takeover KEEP the v4.39 single-row header.
+- **Drag-out needs the editor**: `startDockDragOut` pops the window out only
+  when the pointer crosses into `.editor-center`'s rect; released short of
+  it, nothing happens. `armSwallow()` (flag + setTimeout-0 reset — click
+  dispatches before timers) keeps any real drag from reading as an
+  accordion toggle without ever eating a later unrelated click.
+- **`--fd-hairline`** (01-fonts-base.css :root):
+  `color-mix(in srgb, var(--fd-text) 18%, transparent)` — the inner var()
+  resolves at use-site, so every theme retunes it. Applied to the dock's
+  outer edges, `.tool-window-header` / `.tool-inline-header` /
+  `.tool-dock-item-header` bottom dividers, and `.tool-chrome-sep`. Reason:
+  `--fd-border` (#2a2a2a dark) is invisible against #252525/#2b2b2b — Derek
+  saw NO lines. Plus spacing: `.tool-header-title` margin-right 10px,
+  `.tool-chrome-sep` margin 0 9px.
+- Driver-verified (driver/batchv14-check.js): 32px compact row, strip tabs +
+  controls + fullscreen, short drag stays docked, editor drag floats,
+  drag-in docks, hairline rgba(text,.18) computed on all seams.
+
+> NOTE: the sandbox rolled back AGAIN mid-v4.40 (local → 27382d3 with the
+> task list; origin held v4.39). The standing rule §1 caught it — reset,
+> nothing lost. It can strike MID-TURN, not just between turns: an Edit
+> failing with "string not found" on code you just wrote is the tell.
+
+### v4.39 — single-row window headers + drag docking
 
 Derek's structural rework, all windows (frame, open dock item, fullscreen
 takeover):

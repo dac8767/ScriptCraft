@@ -658,26 +658,45 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     document.addEventListener('pointerup', onUp);
   };
 
-  // v4.39: pull a docked window out by its header — once the pointer travels
-  // ~10px the tool pops out to a floating window (the same width-write the
-  // pop-out button used to do). The ref swallows the click that would
-  // otherwise fire on release and immediately re-minimize the tool.
+  // v4.40, Derek: pulling a docked window out requires dragging it ALL THE
+  // WAY into the editor area — the v4.39 ~10px tug popped windows out far
+  // too eagerly. The pointer crossing into .editor-center is the trigger
+  // (the same width-write the pop-out button used to do); released anywhere
+  // short of it, the tool stays docked. The ref swallows the release click
+  // in both cases so a drag can never read as an accordion toggle.
   const draggedOutRef = useRef(false);
   const startDockDragOut = (t: ToolDef, h: number) => (e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest('button, select, input')) return;
+    const editorEl = document.querySelector('.editor-center');
+    if (!editorEl) return;
     const startX = e.clientX;
     const startY = e.clientY;
+    let moved = false;
+    // The click this gesture ends with dispatches BEFORE timers run, so the
+    // flag reliably swallows it — and the timeout guarantees the flag never
+    // survives to eat a later, unrelated click (a drag released off the row
+    // produces no click at all).
+    const armSwallow = () => {
+      draggedOutRef.current = true;
+      setTimeout(() => { draggedOutRef.current = false; }, 0);
+    };
     const cleanup = () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
     };
     const onMove = (ev: PointerEvent) => {
-      if (Math.abs(ev.clientX - startX) < 10 && Math.abs(ev.clientY - startY) < 10) return;
+      if (Math.abs(ev.clientX - startX) >= 4 || Math.abs(ev.clientY - startY) >= 4) moved = true;
+      const r = editorEl.getBoundingClientRect();
+      if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) return;
       cleanup();
-      draggedOutRef.current = true;
+      armSwallow();
       setToolSize(t.id, dockW + 140, h);
     };
-    const onUp = () => cleanup();
+    const onUp = () => {
+      // a real drag that fell short of the editor must not toggle the row
+      if (moved) armSwallow();
+      cleanup();
+    };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
   };
@@ -835,12 +854,12 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
           <React.Fragment key={t.id}>
             {/* a div, not a button: the header row can CONTAIN buttons and
                 dropdowns (chrome controls, show/hide), and buttons can't nest.
-                v4.39: the accordion row IS the window's whole single-row
-                header when open — name · count · tabs, then the controls ·
-                divider · fullscreen · close cluster; excess wraps to a second
-                line. Grab it and pull ~10px to float the window (the pop-out
-                button is gone). The Scrapbook stays panel-bound (v3.83), so
-                its drag-out is suppressed. */}
+                v4.40, Derek: the docked look is the PRE-v4.39 one again — a
+                compact accordion row (count + window actions ride it), with
+                tabs + controls on their own strip inside the window below.
+                Only the MECHANICS kept v4.39: no pop buttons; drag the row
+                all the way into the editor area to float the window. The
+                Scrapbook stays panel-bound (v3.83), so no drag-out on it. */}
             <div
               role="button"
               tabIndex={0}
@@ -848,7 +867,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               onClick={(e) => {
                 // Header controls (dropdowns, chrome buttons) act, they don't toggle.
                 if ((e.target as HTMLElement).closest('select, input, button')) return;
-                // A drag-out just happened — the release must not re-toggle.
+                // A drag just happened — the release must not re-toggle.
                 if (draggedOutRef.current) { draggedOutRef.current = false; return; }
                 setActive(activeId === t.id ? null : t.id);
               }}
@@ -872,13 +891,23 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               <span className="tool-dock-icon">{t.icon}</span>
               <span className={`tool-dock-label${nameUpper ? ' tool-name-upper' : ''}`}>{t.label}</span>
               {isOpenInline && chrome?.TitleExtra && <chrome.TitleExtra />}
-              {isOpenInline && chrome?.useTabs && <HeaderTabs chrome={chrome} />}
-              {isOpenInline && (
-                <HeaderRightCluster id={t.id} chrome={chrome} onClose={() => setActive(null)} />
+              {isOpenInline && chrome?.WindowActions && (
+                <span className="tool-dock-item-actions"><chrome.WindowActions /></span>
               )}
             </div>
             {isOpenInline && (
               <div className={`tool-inline${side === 'right' ? ' tool-inline-right' : ''}${solo ? ' tool-inline-solo' : ''}`}>
+                {/* The window's own header strip — tabs left, controls right,
+                    the fullscreen button at the editor-facing end (where the
+                    pop-out used to sit). Wraps when the column is narrow. */}
+                <div className="tool-inline-header">
+                  {side === 'right' && <ToolFullscreenButton id={t.id} />}
+                  {chrome?.useTabs && <HeaderTabs chrome={chrome} />}
+                  <span className="tool-chrome-controls">
+                    {chrome?.Controls && <chrome.Controls />}
+                  </span>
+                  {side !== 'right' && <ToolFullscreenButton id={t.id} />}
+                </div>
                 <div className="tool-inline-body" style={solo ? undefined : { height: activeSize!.h }}>
                   <ToolContent id={active!.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />
                 </div>
