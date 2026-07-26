@@ -1,11 +1,7 @@
-# ScriptCraft — continuation brief (current as of v4.65 — reset sections + Defaults tab)
+# ScriptCraft — continuation brief (current as of v4.66 — Show/Hide All in table headers)
 
 > QUEUE (Derek-approved, not yet landed), in order:
-> 1. Shown/Hidden tables (all Customize tabs): "Hide All" right-aligned IN
->    the Shown column's header row; "Show All" right-aligned in the Hidden
->    column's header row — create whichever doesn't exist. (DndColumns
->    header actions; panels has TWO shown columns — Left+Right each?)
-> 2. Window-tab collapse (v4.53 HeaderTabs): the condensed dropdown must
+> 1. Window-tab collapse (v4.53 HeaderTabs): the condensed dropdown must
 >    keep the blue active-tab pill styling, and widening the window must
 >    automatically restore the full tab strip (Derek says it sticks).
 > 3. Window headers: REPLACE the vertical divider — everything right of it
@@ -263,7 +259,21 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.65 — reset sections, Defaults tab, tab-in-place, no auto-picker (HEAD)
+### v4.66 — Show All / Hide All in the Shown/Hidden headers (HEAD)
+
+- DndColumns headerExtra hosts them (`.fs-dnd-headbtn`, right-aligned by
+  the head's space-between): Elements + Transitions (EditElementsDialog),
+  QAT + Panels-Hidden (CustomizePanelsDialog), Context Menu tab. SWAPPED
+  per Derek's correction: Show All sits with Shown, Hide All with Hidden.
+  Panels' Left/Right keep their visibility toggles only (no single
+  sensible "show all into which side"); its Hidden header carries Hide
+  All (the old adders button — removed). Context Menu's in-tab Reset
+  deleted (duplicate of the tab's Reset section). Transitions Show/Hide
+  All act on the BUILT-INS (customs are delete-only by design). Driver
+  v44: all five tables show the right buttons; Elements Hide All → 4
+  required left, Show All → 11/0.
+
+### v4.65 — reset sections, Defaults tab, tab-in-place, no auto-picker
 
 - **customizeResets.tsx** — ONE registry (CUSTOMIZE_RESETS) + ResetSection
   (bottom of every Customize tab) + ResetAllButton. Every scattered reset

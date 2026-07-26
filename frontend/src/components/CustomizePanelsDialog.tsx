@@ -474,7 +474,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                   id: 'right', title: 'Right Panel', headerExtra: panelHeaderExtra('right'),
                   sections: [{ rows: rightRows.map((r) => ({ key: orderTokenOf(r), content: rowContent(r) })) }],
                 },
-                { id: 'hidden', title: 'Hidden', isHidden: true, sections: hiddenGroups },
+                {
+                  id: 'hidden', title: 'Hidden', isHidden: true,
+                  headerExtra: (
+                    <button className="fs-dnd-headbtn" title="Hide everything in both panels" onClick={removeAll}>Hide All</button>
+                  ),
+                  sections: hiddenGroups,
+                },
               ]}
               onDrop={(src, dst) => {
                 const tok = src.key;   // tool id, or 'div:<id>'
@@ -514,12 +520,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             title="Add a spacer to the left panel"
             onClick={() => onAdd('spacer')}
           >+ Spacer</button>
-          <button
-            className="swn-add-btn"
-            title="Hide everything in both panels (re-add items from the dropdown)"
-            onClick={removeAll}
-          >Hide All</button>
-          {/* v4.65: Reset moved to the Reset section at the bottom. */}
+          {/* v4.66: Hide All moved into the Hidden column header. */}
         </div>
       </section>
     );
@@ -803,6 +804,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               columns={[
                 {
                   id: 'shown', title: 'Shown',
+                  headerExtra: (
+                    <button
+                      className="fs-dnd-headbtn"
+                      title="Show every Quick Access button"
+                      onClick={() => setQatItems([...qatItems, ...QAT_OPTIONS.map((o) => o.id).filter((id) => !qatItems.includes(id))])}
+                    >Show All</button>
+                  ),
                   sections: [{
                     // v3.39: divider/spacer ids ride here too — they carry no
                     // QAT_BY_ID entry, so render them as their own chips.
@@ -825,6 +833,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 },
                 {
                   id: 'hidden', title: 'Hidden', isHidden: true,
+                  headerExtra: (
+                    <button className="fs-dnd-headbtn" title="Hide every Quick Access button" onClick={() => setQatItems([])}>Hide All</button>
+                  ),
                   sections: [{
                     label: 'Available',
                     rows: QAT_OPTIONS.filter((o) => !qatItems.includes(o.id)).map((o) => ({

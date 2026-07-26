@@ -57,6 +57,9 @@ export default function ContextMenuTab() {
         columns={[
           {
             id: 'shown', title: 'Shown',
+            headerExtra: (
+              <button className="fs-dnd-headbtn" title="Show every item" onClick={() => setContextMenuHidden([])}>Show All</button>
+            ),
             sections: [{
               rows: shown.map((id) => ({
                 key: id,
@@ -71,6 +74,9 @@ export default function ContextMenuTab() {
           },
           {
             id: 'hidden', title: 'Hidden', isHidden: true,
+            headerExtra: (
+              <button className="fs-dnd-headbtn" title="Hide every item" onClick={() => setContextMenuHidden(known)}>Hide All</button>
+            ),
             sections: CONTEXT_MENU_GROUPS.map((g) => ({
               label: g,
               rows: hiddenIn(g).map((id) => ({
@@ -98,18 +104,8 @@ export default function ContextMenuTab() {
         }}
       />
 
-      <div className="fs-tbzone-adders fs-adders-equal">
-        <button
-          className="swn-add-btn"
-          title="Hide every item"
-          onClick={() => setContextMenuHidden(known)}
-        >Hide All</button>
-        <button
-          className="swn-add-btn"
-          title="Restore the default items and order"
-          onClick={() => { setContextMenuHidden([]); setContextMenuOrder([]); }}
-        >Reset to Default</button>
-      </div>
+      {/* v4.66: Show All / Hide All live in the column headers; Reset is in
+          the tab's Reset section. */}
     </section>
   );
 }

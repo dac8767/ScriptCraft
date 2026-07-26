@@ -1,5 +1,12 @@
 [
   {
+    "version": "4.66",
+    "date": "2026-07-26",
+    "changes": [
+      "Every Shown/Hidden table in Customize: Show All sits right-aligned in the Shown header, Hide All in the Hidden header (created where they were missing; the old standalone buttons moved up)"
+    ]
+  },
+  {
     "version": "4.65",
     "date": "2026-07-26",
     "changes": [

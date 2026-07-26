@@ -142,6 +142,13 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
           columns={[
             {
               id: 'shown', title: 'Shown',
+              headerExtra: (
+                <button
+                  className="fs-dnd-headbtn"
+                  title="Show every built-in transition"
+                  onClick={() => DEFAULT_TRANSITIONS.forEach((t) => setTransitionHidden(t, false))}
+                >Show All</button>
+              ),
               sections: [{
                 rows: shownTransitions.map((t) => {
                   const isDefault = isDefaultTransition(t);
@@ -164,6 +171,13 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
             },
             {
               id: 'hidden', title: 'Hidden', isHidden: true,
+              headerExtra: (
+                <button
+                  className="fs-dnd-headbtn"
+                  title="Hide every built-in transition (custom ones stay)"
+                  onClick={() => DEFAULT_TRANSITIONS.forEach((t) => setTransitionHidden(t, true))}
+                >Hide All</button>
+              ),
               sections: [{
                 label: 'Transitions',
                 rows: hiddenShown.map((t) => ({
@@ -213,6 +227,9 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
           columns={[
             {
               id: 'shown', title: 'Shown',
+              headerExtra: (
+                <button className="fs-dnd-headbtn" title="Show every element" onClick={() => setElementHidden([])}>Show All</button>
+              ),
               sections: [{
                 rows: visibleIds.map((id) => {
                   const required = REQUIRED_IDS.includes(id);
@@ -233,6 +250,9 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
             },
             {
               id: 'hidden', title: 'Hidden', isHidden: true,
+              headerExtra: (
+                <button className="fs-dnd-headbtn" title="Hide every non-required element" onClick={hideAll}>Hide All</button>
+              ),
               sections: [{
                 label: 'Elements',
                 rows: hiddenIds.map((id) => ({
@@ -256,10 +276,7 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
             if (hiddenIds.includes(id)) setEnabled(id, true);
           }}
         />
-        <div className="fs-tbzone-adders fs-adders-equal">
-          <button className="swn-add-btn" onClick={hideAll}>Hide All</button>
-          {/* v4.65: Reset moved to the tab's Reset section (customizeResets). */}
-        </div>
+        {/* v4.66: Show All / Hide All live in the column headers. */}
       </section>
 
       {addOpen && createPortal(
