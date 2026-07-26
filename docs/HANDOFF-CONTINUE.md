@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.41 — drag ghost, shape-consistent Characters, ribbon hairlines)
+# ScriptCraft — continuation brief (current as of v4.42 — header = ribbon surface, centered fullscreen icon)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,14 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.41 — visible drag-out + shape-consistent Characters + ribbon hairlines (HEAD)
+### v4.42 — header polish (HEAD)
+
+Two-liner: `.char-profiles-fullscreen-btn` is inline-flex centered (the SVG
+rode the text baseline — a hair low beside the ×; driver-measured delta now
+0px), and `.tool-window-header` bg is `--fd-toolbar-bg` (matches the ribbon;
+was --fd-bg from v4.37).
+
+### v4.41 — visible drag-out + shape-consistent Characters + ribbon hairlines
 
 - **Drag-out is a visible gesture**: ~6px of motion spawns a `.tool-drag-ghost`
   (mini title bar, fixed, pointer-events none, z-300) that rides the cursor;

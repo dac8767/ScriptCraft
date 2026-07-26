@@ -1,5 +1,19 @@
 [
   {
+    "version": "4.42",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "Header polish",
+        "detail": "The fullscreen button's icon sat on the text baseline, a hair low next to the close button — it's flex-centered now, dead level with the ×. And window headers wear the same surface color as the ribbon toolbar.",
+        "tags": [
+          "UI",
+          "Fix"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.41",
     "date": "2026-07-26",
     "items": [

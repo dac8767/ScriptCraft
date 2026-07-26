@@ -359,7 +359,8 @@ body.fs-tool-dragging { cursor: grabbing; }
   column-gap: 8px;
   padding: var(--dz-toolwin-head-pad, 6px) 10px;
   border-bottom: 1px solid var(--fd-hairline);
-  background: var(--fd-bg);
+  /* v4.42, Derek: the window header matches the ribbon toolbar's surface. */
+  background: var(--fd-toolbar-bg);
   flex-shrink: 0;
   user-select: none;
   cursor: grab; /* v1.33: grab the header to move the window (drop on a panel to dock) */

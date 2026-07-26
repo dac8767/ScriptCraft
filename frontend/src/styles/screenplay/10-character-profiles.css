@@ -91,6 +91,12 @@
   cursor: pointer;
   padding: 0 4px;
   line-height: 1;
+  /* v4.42, Derek: the inline SVG rode the text BASELINE, seating the square
+     a hair low next to the × — flex-center the icon in the button box. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
 }
 .char-profiles-fullscreen-btn:hover { color: var(--fd-text); }
 /* (v4.39: .char-fs-header is gone — the fullscreen takeover renders the same
