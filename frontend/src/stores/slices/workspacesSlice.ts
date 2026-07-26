@@ -132,6 +132,10 @@ export const createWorkspacesSlice: StateCreator<EditorState, [], [], Workspaces
     });
     set({
       activeWorkspace: name,
+      // v4.37: a workspace is a whole layout — any fullscreen takeover belongs
+      // to the layout being replaced, and restoring that tool into a slot with
+      // the takeover still up would show the same window twice.
+      fullscreenTool: null,
       toolConfig: snap.toolConfig, toolOrder: snap.toolOrder,
       toolbarHiddenItems: snap.toolbarHiddenItems,
       toolbarPinnedTools: snap.toolbarPinnedTools as ToolId[],

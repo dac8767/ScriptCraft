@@ -1309,7 +1309,10 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   activeTool: (_vs.activeTool === 'indexcards' ? 'scenes' : (_vs.activeTool as ToolId | null)) ?? null,
   setActiveTool: (tool) => {
     saveViewState({ activeTool: tool });
-    set({ activeTool: tool });
+    // v4.37, Derek: a tool lives in exactly ONE place. Seating it in a slot
+    // takes it out of the fullscreen takeover — otherwise the same window is
+    // open twice (enterToolFullscreen enforces the same invariant in reverse).
+    set((s) => ({ activeTool: tool, ...(tool && s.fullscreenTool === tool ? { fullscreenTool: null } : {}) }));
   },
   toolSizes: migrateNotebookInline(migrateTypewriterSize(migrateSpellingSize(migrateNavigatorInline(_vs.toolSizes ?? {})))),
   setToolSize: (tool, w, h) => set((s) => {
@@ -1320,7 +1323,8 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   activeToolRight: (_vs.activeToolRight === 'indexcards' ? 'scenes' : (_vs.activeToolRight as ToolId | null)) ?? null,
   setActiveToolRight: (tool) => {
     saveViewState({ activeToolRight: tool });
-    set({ activeToolRight: tool });
+    // v4.37: same one-place invariant as setActiveTool.
+    set((s) => ({ activeToolRight: tool, ...(tool && s.fullscreenTool === tool ? { fullscreenTool: null } : {}) }));
   },
   toolConfig: migrateToolConfig({ ...DEFAULT_TOOL_CONFIG, ...(_vs.toolConfig ?? {}) }),
   setToolConfig: (cfg) => {
@@ -1333,7 +1337,8 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     set({ toolOrder: order });
   },
   tempTool: null,
-  setTempTool: (tool) => set({ tempTool: tool }),
+  // v4.37: same one-place invariant as setActiveTool.
+  setTempTool: (tool) => set((s) => ({ tempTool: tool, ...(tool && s.fullscreenTool === tool ? { fullscreenTool: null } : {}) })),
   newScriptPromptRequest: false,
   setNewScriptPromptRequest: (v) => set({ newScriptPromptRequest: v }),
   showUnreleasedTools: (_vs.showUnreleasedTools as boolean) ?? false,
@@ -1471,10 +1476,6 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   openPreferences: (tab) => set({ preferencesRequest: { open: true, tab } }),
   closePreferences: () => set({ preferencesRequest: { open: false } }),
   openTool: (tool) => set((s) => {
-    // v1.2: Analytics always opens as its own window. It's far taller than a
-    // panel, so docking it just meant a cramped column you had to scroll — the
-    // window is the only shape it actually works in.
-    if (ALWAYS_FLOAT.includes(tool)) return { tempTool: tool };
     if (tool === 'scriptnotes') {
       // Legacy id — remapped to the Notes window (v0.15; sub-tabs gone v4.33).
       tool = 'sticky';
@@ -1485,6 +1486,16 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
       setTimeout(() => set({ scenesViewMode: 'cards' }), 0);
       tool = 'scenes';
     }
+    // v4.37, Derek: "I should not be able to have a window open twice." If the
+    // tool already owns the fullscreen takeover it IS open — opening it again
+    // is satisfied by the takeover, exactly as re-opening an already-docked
+    // tool re-lands on the dock. Without this, every open path floated a
+    // second copy on top of the tool's own fullscreen view.
+    if (s.fullscreenTool === tool) return {};
+    // v1.2: Analytics always opens as its own window. It's far taller than a
+    // panel, so docking it just meant a cramped column you had to scroll — the
+    // window is the only shape it actually works in.
+    if (ALWAYS_FLOAT.includes(tool)) return { tempTool: tool };
     /**
      * v1.10 — ask the SAME question the dock asks.
      *

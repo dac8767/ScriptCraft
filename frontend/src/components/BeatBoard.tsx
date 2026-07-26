@@ -26,6 +26,7 @@ import { createPortal } from 'react-dom';
 import { FaRegCircle, FaDotCircle, FaLink, FaPaperclip, FaRegQuestionCircle, FaRegTrashAlt } from 'react-icons/fa';
 import { LuRotateCcw } from 'react-icons/lu';
 import { FullscreenIcon, ExitFullscreenIcon } from './uiIcons';
+import { readableTextOn } from '../utils/palettes';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 import { confirmDialog, promptDialog } from './ConfirmDialog';
@@ -301,15 +302,6 @@ const BeatPagesField: React.FC<{
   </label>
 );
 
-/** v2.44: the color fills the WHOLE card now — pick black or white text
- *  by the background's luminance so titles stay readable. */
-export function readableTextOn(bg: string): string {
-  const m = /^#([0-9a-f]{6})$/i.exec(bg);
-  if (!m) return '';
-  const n = parseInt(m[1], 16);
-  const lum = 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
-  return lum > 150 ? '#111111' : '#ffffff';
-}
 
 /* ─── Beat Card Resize Handle (pointer events for mouse + touch) ─── */
 const useResizeHandle = (

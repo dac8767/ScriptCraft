@@ -111,7 +111,10 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, onClose }) =
         />
         <button
           className="color-picker-apply"
-          onClick={() => onChange(customColor)}
+          // v4.37, Derek: Apply commits the custom color AND closes the
+          // popover — it's the "I'm done here" button, unlike the preset
+          // swatches, which stay open for live try-outs.
+          onClick={() => { onChange(customColor); onClose(); }}
         >
           Apply
         </button>

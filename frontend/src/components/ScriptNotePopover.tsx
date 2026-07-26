@@ -262,6 +262,7 @@ export default function ScriptNotePopover({ editor }: { editor: Editor | null })
           <span className="swn-card-actions">
             <ColorDots
               card={{ id: note.id, type: 'comment', color: shelfHexForNote(note.color) } as ShelfCard}
+              surface={noteStickyBg(note.color)}
               onUpdate={(patch) => {
                 if (patch.color) handleColorChange(noteColorForShelfHex(patch.color));
               }}

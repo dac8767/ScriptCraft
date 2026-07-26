@@ -1,5 +1,64 @@
 [
   {
+    "version": "4.37",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "The note color picker is readable on any card",
+        "detail": "The little color circle used to vanish on dark note cards (a dark fill on a dark background). It now wears a contrast ring picked by the same dark/light system the Outline's cards use for their text: white outline on a dark surface, near-black on a light one. The script-note popover's picker gets the same treatment.",
+        "tags": [
+          "Notes",
+          "UI"
+        ]
+      },
+      {
+        "title": "Note card foot: date left, resize grabber right",
+        "detail": "The created date moved to the left end of the card's foot and a proper resize grabber sits at the right end — drag it to make the writing area taller. The grabber paints the shared corner-stripes indicator, inked black or white to stay visible on whatever color the card is.",
+        "tags": [
+          "Notes",
+          "UI"
+        ]
+      },
+      {
+        "title": "One color scheme for every window shape",
+        "detail": "A window now looks the same docked, popped out, and fullscreen: the title row is the darker app shade and everything below it sits on the panel shade. Before, the fullscreen takeover's body went darker than the same tool's window, and the windowed title bar didn't have the fullscreen header's contrast.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "A window can never be open twice",
+        "detail": "Opening a tool that already owns the fullscreen view no longer floats a second copy of it — the open lands on the fullscreen it already has. Explicitly seating that tool in a side panel brings it out of fullscreen instead of duplicating it, and applying a workspace always returns to the regular layout first.",
+        "tags": [
+          "Windows",
+          "Fix"
+        ]
+      },
+      {
+        "title": "Quieter, brighter window toolbars",
+        "detail": "The ⌄ carets are gone from the in-window dropdown triggers (Sort, Filter, View, Cards…), and the toolbar controls and tabs now use the full text color for each theme instead of the muted gray.",
+        "tags": [
+          "UI"
+        ]
+      },
+      {
+        "title": "Apply closes the theme color picker",
+        "detail": "In Customize Themes, clicking Apply commits the custom color and closes the picker popover in one go. The preset swatches still keep it open so colors can be tried live.",
+        "tags": [
+          "Themes",
+          "UI"
+        ]
+      },
+      {
+        "title": "No gap between the ribbon and the side panels",
+        "detail": "The 6px strip under the toolbar (the drag handle for resizing the menu bar and toolbar together) no longer takes up a band of its own — it overlays the top edge of the panels, so they sit flush under the ribbon and the handle is still grabbable when unlocked.",
+        "tags": [
+          "UI"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.36",
     "date": "2026-07-25",
     "items": [

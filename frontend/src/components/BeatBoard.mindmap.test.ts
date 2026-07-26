@@ -5,7 +5,8 @@
  * cycler was removed with the shape feature in v2.44.
  */
 import { describe, it, expect } from 'vitest';
-import { toggleMindLink, mindTitleSize, readableTextOn, BEAT_COLORS, freeformAutoLayout } from './BeatBoard';
+import { toggleMindLink, mindTitleSize, BEAT_COLORS, freeformAutoLayout } from './BeatBoard';
+import { readableTextOn } from '../utils/palettes';
 import type { BeatInfo } from '../stores/editorStore';
 
 describe('mind map helpers', () => {

@@ -14,6 +14,7 @@ import React, { useRef, useState } from 'react';
 import { FaCopy, FaRegTrashAlt } from 'react-icons/fa';
 import type { ShelfCard, ShelfCardType } from '../stores/editorStore';
 import { SHELF_COLORS, SHELF_DEFAULT_COLOR } from '../stores/editorStore';
+import { readableTextOn } from '../utils/palettes';
 
 /** Shared date formatter for card headers. */
 export const formatDate = (iso: string) => {
@@ -34,7 +35,7 @@ export const CARD_PLACEHOLDERS: Record<ShelfCardType, string> = {
   snippet: 'Snippet',
 };
 
-export function ColorDots({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: Partial<ShelfCard>) => void }) {
+export function ColorDots({ card, onUpdate, surface }: { card: ShelfCard; onUpdate: (p: Partial<ShelfCard>) => void; surface?: string }) {
   const [open, setOpen] = useState(false);
   // v4.35 (batch-v9 #5): while the NATIVE color panel is up the pointer is off
   // the row — the pop must not close under it, or the <input> unmounts and
@@ -42,6 +43,11 @@ export function ColorDots({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: P
   const picking = useRef(false);
   const cur = card.color || SHELF_DEFAULT_COLOR;
   const isPreset = SHELF_COLORS.some(([c]) => c === cur);
+  // v4.37: the closed trigger circle is painted the card's own color and sits
+  // ON the card — on a dark card it vanishes. Ring it with the black-or-white
+  // that readableTextOn picks for ink on that surface (the card face itself,
+  // or whatever surface the caller says the dot is sitting on).
+  const ring = readableTextOn(surface || cur);
   // the pop is right-anchored, so the row fans out to the LEFT of the trigger
   // and always stays inside the pane. v4.36 batch-v10 #3, Derek: whatever
   // shows the CURRENT color sits RIGHTMOST — exactly over the closed dot's
@@ -74,7 +80,11 @@ export function ColorDots({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: P
     >
       <span
         className="swn-dot"
-        style={{ background: cur, visibility: open ? 'hidden' : 'visible' }}
+        style={{
+          background: cur,
+          visibility: open ? 'hidden' : 'visible',
+          ...(ring ? { borderColor: ring } : {}),
+        }}
         title="Sticky color"
         onClick={() => setOpen(true)}
       />
@@ -113,6 +123,28 @@ interface StickyCardProps {
 // card in these windows is general now, so there was nothing left to
 // distinguish. Script notes/to-dos live in the Navigator instead.
 export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere, onUpdate, onRemove, children }: StickyCardProps) {
+  // v4.37, Derek: the resize grabber lives in the foot's right corner now, so
+  // the textarea's native corner handle is off (19-sticky-notes.css) and this
+  // pointer-drag adjusts its height instead. Height is an inline style, same
+  // as the native handle wrote, so persistence semantics are unchanged.
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  const startResize = (e: React.PointerEvent) => {
+    const ta = taRef.current;
+    if (!ta) return;
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = ta.offsetHeight;
+    const onMove = (ev: PointerEvent) => {
+      ta.style.height = Math.max(64, startH + (ev.clientY - startY)) + 'px';
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
+
   // Header: ⋮⋮ grip drags; the type name is placeholder text in an editable title
   const head = (extra?: React.ReactNode) => (
     <h5 className="swn-card-head">
@@ -137,7 +169,7 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
     </h5>
   );
 
-  const wrap = (inner: React.ReactNode) => (
+  const wrap = (inner: React.ReactNode, resizable = false) => (
     <div
       className={'swn-card' + (dragging ? ' dragging' : '')}
       style={{ background: card.color || SHELF_DEFAULT_COLOR }}
@@ -145,10 +177,21 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
       onDrop={onDropHere}
     >
       {inner}
-      {/* v1.2: the foot of the card is ONE row, date on the right. */}
+      {/* v4.37, Derek: foot is ONE row — date on the LEFT, resize grabber
+          (comment cards) on the RIGHT. */}
       <div className="swn-card-foot">
-        <span />
         {card.createdAt && <span className="swn-card-date">{formatDate(card.createdAt)}</span>}
+        {resizable && (
+          <span
+            className="swn-card-resize"
+            title="Drag to resize"
+            // The shared stripe gradient inks with --fd-text-muted (a THEME
+            // color); this grip sits on a USER color, so re-point the var at
+            // the card's luminance ink — same system as the dot ring above.
+            style={{ '--fd-text-muted': readableTextOn(card.color || SHELF_DEFAULT_COLOR) || '#333' } as React.CSSProperties}
+            onPointerDown={startResize}
+          />
+        )}
       </div>
     </div>
   );
@@ -162,12 +205,13 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
     return wrap(<>
       {head()}
       <textarea
+        ref={taRef}
         className="swn-comment-input"
         value={card.text || ''}
         placeholder="Research links, themes to keep present, notes to self…"
         onChange={(e) => onUpdate({ text: e.target.value })}
       />
-    </>);
+    </>, true);
   }
 
   if (card.type === 'todo') {

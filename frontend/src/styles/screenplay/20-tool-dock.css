@@ -299,6 +299,10 @@
   justify-content: space-between;
   padding: var(--dz-toolwin-head-pad, 8px) 12px;
   border-bottom: 1px solid var(--fd-border);
+  /* v4.37, Derek: row 1 darker than row 2, exactly like the fullscreen
+     takeover — its shell is --fd-bg and its row 2 paints --fd-navigator-bg,
+     so the windowed frame uses the same pair. */
+  background: var(--fd-bg);
   flex-shrink: 0;
   user-select: none;
   cursor: grab; /* v1.33: grab the header to move the window */
@@ -413,14 +417,15 @@
   font-size: 12px;
   font-weight: 500;
   background: none;
-  color: var(--fd-text-muted);
+  color: var(--fd-text);   /* v4.37: full text color, like .tool-ctl */
   border: none;
   border-radius: 0;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.1s, color 0.1s;
 }
-.tool-chrome-tab:hover { color: var(--fd-text); }
+/* hover-brighten died with the muted resting color — bg hover like .tool-ctl */
+.tool-chrome-tab:hover:not(.active) { background: var(--fd-menu-hover); }
 .tool-chrome-tab.active {
   background: var(--fd-accent, #4a90d9);
   color: #fff;
@@ -462,7 +467,9 @@
   border-radius: 4px;
   padding: 3px 7px;
   font-size: 12px;
-  color: var(--fd-text-muted);
+  /* v4.37, Derek: full text color, not muted — these are the window's working
+     controls, not secondary chrome. (Same for the tabs below.) */
+  color: var(--fd-text);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -482,7 +489,8 @@
   align-items: center;
   justify-content: center;
 }
-.tool-ctl-chev { font-size: 11px; opacity: 0.7; }
+/* (v4.37: .tool-ctl-chev is gone — Derek dropped the ⌄ carets from the
+   dropdown triggers; the control's label alone is the trigger.) */
 .tool-ctl-menu {
   position: fixed;
   z-index: 10060;
@@ -563,6 +571,7 @@
    stripes. Add new grips HERE, don't invent another triangle. */
 .tool-window-resize,
 .fs-nb-box-grip,
+.swn-card-resize,
 .beat-card-resize-handle::after {
   background:
     linear-gradient(135deg, transparent 50%, var(--fd-text-muted) 50%, var(--fd-text-muted) 55%,
@@ -597,6 +606,12 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* v4.37, Derek: one color scheme in every presentation. The window frame's
+     body is --fd-navigator-bg, so the takeover's body is too — before this,
+     tools whose content doesn't paint its own background went darker in
+     fullscreen (they showed the shell's --fd-bg). Row 1 keeps --fd-bg in
+     both shapes; rows 2+body keep --fd-navigator-bg in both. */
+  background: var(--fd-navigator-bg);
 }
 .fs-tool-takeover-body > * { flex: 1; min-height: 0; }
 /* Windows whose floating shape is a fixed-ish card (Goals, AI Writer) read

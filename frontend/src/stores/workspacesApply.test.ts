@@ -62,4 +62,11 @@ describe('applyWorkspace', () => {
     S().applyWorkspace('does-not-exist');
     expect(S().activeWorkspace).toBe(before);
   });
+
+  it('exits any fullscreen takeover — a layout switch must not leave the old one up (v4.37)', () => {
+    S().saveWorkspace('C');
+    useEditorStore.setState({ fullscreenTool: 'characters' });
+    S().applyWorkspace('C');
+    expect(S().fullscreenTool).toBeNull();
+  });
 });

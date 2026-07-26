@@ -13,7 +13,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LuSearch } from 'react-icons/lu';
-import { FaChevronDown } from 'react-icons/fa';
 
 export interface ControlDropdownItem {
   label: string;
@@ -84,7 +83,6 @@ export const ControlDropdown: React.FC<{
         {label && <span className="tool-ctl-label">{label}</span>}
         {current && <span className="tool-ctl-current">{current}</span>}
         {chip !== undefined && chip > 0 && <span className="tool-ctl-chip">{chip}</span>}
-        <FaChevronDown className="tool-ctl-chev" aria-hidden />
       </button>
       {pos && createPortal(
         <div className="tool-ctl-menu" style={{ top: pos.top, left: pos.left }} onPointerDown={(e) => e.stopPropagation()}>

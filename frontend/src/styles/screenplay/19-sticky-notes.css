@@ -242,7 +242,11 @@
   min-height: 64px;
   border: none;
   outline: none;
-  resize: vertical;
+  /* v4.37: resizing moved to the .swn-card-resize grabber in the card foot —
+     the native corner handle would be a second, differently-placed way to do
+     the same thing. (The script-note popover keeps the native handle; its
+     scoped rule in 09-script-notes.css re-enables it.) */
+  resize: none;
   background: transparent;
   color: #333;
   font-size: 12px;

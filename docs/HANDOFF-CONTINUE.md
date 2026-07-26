@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.36 — chrome polish)
+# ScriptCraft — continuation brief (current as of v4.37 — window color/dup/picker batch)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,59 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.36 — batch v10 (HEAD)
+### v4.37 — batch v11 (HEAD)
+
+Nine mid-turn items, dispatcher-only (no workers — mostly small, heavily
+cross-window):
+
+1. **Luminance ring on ColorDots** — `readableTextOn` MOVED from BeatBoard to
+   `utils/palettes.ts` (THE dark/light system: YIQ > 150 → `#111111`, else
+   `#ffffff`, `''` for non-hex). The closed trigger dot's border-color = the
+   ink for the surface it sits on; `ColorDots` grew `surface?: string`
+   (defaults to the card's own color; ScriptNotePopover passes
+   `noteStickyBg(note.color)` because its dot sits on the tint, not the hex).
+2. **Card foot** — date LEFT, `.swn-card-resize` grabber RIGHT (comment cards
+   only): pointer-drag sets the textarea height (min 64px, inline style, same
+   persistence semantics as the native handle it replaces — the base
+   `.swn-comment-input` is `resize: none` now; the popover's scoped rule keeps
+   its native vertical handle). The grabber joins the SHARED corner-stripes
+   selector list (20-tool-dock.css) and re-points `--fd-text-muted` at the
+   card's luminance ink inline, so the stripes stay visible on any user color.
+3. **One scheme, every shape** — `.tool-window-header` bg = `--fd-bg` (the
+   fullscreen takeover's row-1 relationship, now on the windowed frame) and
+   `.fs-tool-takeover-body` bg = `--fd-navigator-bg` (tools whose content
+   paints no bg no longer go darker in fullscreen). Row 2 was already
+   navigator-bg in both.
+4. **"I should not be able to have a window open twice"** — the one-place
+   invariant is enforced IN THE STORE: `openTool(x)` while `fullscreenTool===x`
+   is a no-op (the takeover satisfies it — same idempotence as re-opening a
+   docked tool; the check sits AFTER the legacy remaps and BEFORE
+   ALWAYS_FLOAT); `setActiveTool/setActiveToolRight/setTempTool(x)` clear
+   `fullscreenTool` when it === x (explicit placement wins); `applyWorkspace`
+   always exits the takeover. Pinned in `openTool.test.ts` (6 tests) +
+   `workspacesApply.test.ts` (1).
+5. **Carets gone** from in-window dropdown triggers — the single
+   `<FaChevronDown className="tool-ctl-chev">` in ToolControls.tsx deleted
+   (+ its CSS rule; SceneNavigator's tree chevrons are expand/collapse
+   indicators and stay).
+6. **Full text color for window toolbars** — `.tool-ctl` and
+   `.tool-chrome-tab` resting color `--fd-text-muted` → `--fd-text`; the tab's
+   now-no-op hover-brighten became a `--fd-menu-hover` bg hover.
+7. **ColorPicker Apply closes the popover** (commit + onClose; preset swatches
+   still stay open for live try-outs) — `ColorPicker.test.tsx`.
+8. **Ribbon↔panel gap removed** — `.fs-top-chrome-resize` keeps its 6px hit
+   area but `margin-bottom: -6px; position: relative; z-index: 60` OVERLAYS
+   the panels' top edge: no band, lock-toggle still shifts nothing (the v4.3
+   constraint), still grabbable.
+9. All of it driver-verified on a fresh profile (`driver/batchv11-check.js`):
+   ring rgb(17,17,17) on pastel / rgb(255,255,255) on `#3d1a5b`, foot order +
+   50px drag, row1 #2b2b2b vs row2 #252525 on the popped frame, fullscreen
+   Characters + Project>Characters again → still ONE instance, takeover body
+   = navigator-bg, 0 carets, panels flush at the strip's own top edge.
+   Suite 614 tests / 83 files. Menus for drivers: `.menu-item`>`.menu-label`,
+   items `.menu-dropdown-item`; Characters lives under **Project**, not Tools.
+
+### v4.36 — batch v10
 
 Four small chrome fixes: (1) Feedback iframe `title` → `aria-label` (the
 HoverTooltip renders every [title]; the a11y name survives). (2) The generic

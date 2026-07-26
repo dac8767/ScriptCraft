@@ -926,15 +926,24 @@ input.fs-switch:checked::after { left: 15px; }
    is gone with them. */
 .fs-todo-list { flex: 1; overflow-y: auto; padding: 8px; min-height: 0; }
 
-/* v1.2: the foot of a card is one row — date bottom-right. */
+/* v4.37, Derek: the foot of a card is one row — date on the LEFT, resize
+   grabber on the RIGHT (comment cards; it drags the textarea's height). */
 .swn-card-foot {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   margin-top: 6px;
 }
 .swn-card-foot .swn-card-date { margin: 0; white-space: nowrap; }
+.swn-card-resize {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  margin-left: auto;   /* stays right even when it's the only child */
+  cursor: ns-resize;
+  touch-action: none;
+}
 
 /* (v4.32 batch-v8 #12: the .fs-list-toolbar Filter / Sort bar Notes and To-Do
    carried in-body is gone — the window chrome's row-2 cluster took over.) */

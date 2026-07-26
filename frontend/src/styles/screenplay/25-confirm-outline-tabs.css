@@ -122,6 +122,14 @@
   background: var(--fd-border);
   opacity: 0.45;
   transition: opacity 0.12s ease, background 0.12s ease;
+  /* v4.37, Derek: no gap between the ribbon and the side panels. The 6px hit
+     area stays (zero height was ungrabbable — the v3.86 lesson), but it now
+     OVERLAYS the top edge of whatever follows instead of occupying a strip of
+     its own. Net flow height is 0 in both lock states, so toggling the lock
+     still shifts nothing. */
+  margin-bottom: -6px;
+  position: relative;
+  z-index: 60;
 }
 .fs-top-chrome-resize:hover,
 .fs-top-chrome-resize:active {
