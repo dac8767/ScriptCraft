@@ -11,11 +11,17 @@
  *
  * Core elements can be reordered but not hidden — hiding Scene Heading or
  * Action would leave a script with no way to type its own body.
+ *
+ * v4.60, Derek: the Editor Views section (which views the toolbar's Editor
+ * View dropdown offers) was REMOVED from this dialog — the store keys
+ * (settingsStore editorViewOrder/editorViewHidden) survive and the dropdown
+ * still reads them; there is just no customization UI for them any more.
+ * Section order is Transitions, then Elements, so Elements sits beside the
+ * Element Suggestions section that follows in Customize ▸ Editor.
  */
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useFormattingTemplateStore, DUAL_DIALOGUE_ID, DEFAULT_TRANSITIONS } from '../stores/formattingTemplateStore';
-import { useSettingsStore, EDITOR_VIEWS, EDITOR_VIEW_REQUIRED } from '../stores/settingsStore';
 import { DndColumns } from './CustomizePanelsDialog';
 
 /** Elements a script can't function without — reorderable, never hidable. */
@@ -126,85 +132,8 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
     closeAddTransition();
   };
 
-  // ── v4.22, Derek: Editor View list (the toolbar's Editor View dropdown) ──
-  const editorViewOrder = useSettingsStore((s) => s.editorViewOrder);
-  const editorViewHidden = useSettingsStore((s) => s.editorViewHidden);
-  const setEditorViewOrder = useSettingsStore((s) => s.setEditorViewOrder);
-  const setEditorViewHidden = useSettingsStore((s) => s.setEditorViewHidden);
-  const resetEditorViews = useSettingsStore((s) => s.resetEditorViews);
-  void editorViewOrder; void editorViewHidden;
-  const shownViews = useSettingsStore.getState().getEffectiveEditorViews();
-  const hiddenViews = EDITOR_VIEWS.filter((v) => !shownViews.some((s) => s.id === v.id));
-  const setViewShown = (id: string, shown: boolean) => {
-    if (!shown && EDITOR_VIEW_REQUIRED.includes(id)) return;
-    setEditorViewHidden(
-      shown ? editorViewHidden.filter((x) => x !== id) : [...editorViewHidden.filter((x) => x !== id), id],
-    );
-  };
-
   const body = (
     <div className="fs-customize-body">
-      <section>
-        <h3>Elements</h3>
-        <p className="fs-customize-hint">
-          Drag elements between Shown and Hidden — where you drop one is its
-          place in the Element dropdown and the Insert menu. Core elements
-          (Scene Heading, Action, Character, Dialogue) can be reordered but
-          not hidden.
-        </p>
-        <DndColumns
-          columns={[
-            {
-              id: 'shown', title: 'Shown',
-              sections: [{
-                rows: visibleIds.map((id) => {
-                  const required = REQUIRED_IDS.includes(id);
-                  return {
-                    key: id,
-                    content: (
-                      <span className="fs-customize-tool">
-                        {labelOf(id)}
-                        {required && <span className="fs-dnd-required">(required)</span>}
-                        {!required && (
-                          <button className="fs-dnd-rowbtn" title="Hide this element" onClick={() => setEnabled(id, false)}>×</button>
-                        )}
-                      </span>
-                    ),
-                  };
-                }),
-              }],
-            },
-            {
-              id: 'hidden', title: 'Hidden', isHidden: true,
-              sections: [{
-                label: 'Elements',
-                rows: hiddenIds.map((id) => ({
-                  key: id,
-                  content: (
-                    <span className="fs-customize-tool">
-                      {labelOf(id)}
-                      <button className="fs-dnd-rowbtn" title="Show this element" onClick={() => setEnabled(id, true)}>+</button>
-                    </span>
-                  ),
-                })),
-              }],
-            },
-          ]}
-          onDrop={(src2, dst) => {
-            const id = src2.key;
-            if (dst.col === 'hidden') { setEnabled(id, false); return; }
-            const next = visibleIds.filter((x) => x !== id);
-            next.splice(Math.min(dst.idx, next.length), 0, id);
-            setElementOrder([...next, ...ids.filter((x) => !next.includes(x))]);
-            if (hiddenIds.includes(id)) setEnabled(id, true);
-          }}
-        />
-        <div className="fs-tbzone-adders fs-adders-equal">
-          <button className="swn-add-btn" onClick={hideAll}>Hide All</button>
-          <button className="swn-add-btn" onClick={resetDefault}>Reset to Default</button>
-        </div>
-      </section>
-
       <section>
         <h3>Transitions</h3>
         <p className="fs-customize-hint">
@@ -276,26 +205,28 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
       </section>
 
       <section>
-        <h3>Editor Views</h3>
+        <h3>Elements</h3>
         <p className="fs-customize-hint">
-          Which views appear in the toolbar's Editor View dropdown, and their
-          order. Drag between Shown and Hidden. Page is always available.
+          Drag elements between Shown and Hidden — where you drop one is its
+          place in the Element dropdown and the Insert menu. Core elements
+          (Scene Heading, Action, Character, Dialogue) can be reordered but
+          not hidden.
         </p>
         <DndColumns
           columns={[
             {
               id: 'shown', title: 'Shown',
               sections: [{
-                rows: shownViews.map((v) => {
-                  const required = EDITOR_VIEW_REQUIRED.includes(v.id);
+                rows: visibleIds.map((id) => {
+                  const required = REQUIRED_IDS.includes(id);
                   return {
-                    key: v.id,
+                    key: id,
                     content: (
                       <span className="fs-customize-tool">
-                        {v.label}
+                        {labelOf(id)}
                         {required && <span className="fs-dnd-required">(required)</span>}
                         {!required && (
-                          <button className="fs-dnd-rowbtn" title="Hide this view" onClick={() => setViewShown(v.id, false)}>×</button>
+                          <button className="fs-dnd-rowbtn" title="Hide this element" onClick={() => setEnabled(id, false)}>×</button>
                         )}
                       </span>
                     ),
@@ -306,30 +237,31 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
             {
               id: 'hidden', title: 'Hidden', isHidden: true,
               sections: [{
-                label: 'Views',
-                rows: hiddenViews.map((v) => ({
-                  key: v.id,
+                label: 'Elements',
+                rows: hiddenIds.map((id) => ({
+                  key: id,
                   content: (
                     <span className="fs-customize-tool">
-                      {v.label}
-                      <button className="fs-dnd-rowbtn" title="Show this view" onClick={() => setViewShown(v.id, true)}>+</button>
+                      {labelOf(id)}
+                      <button className="fs-dnd-rowbtn" title="Show this element" onClick={() => setEnabled(id, true)}>+</button>
                     </span>
                   ),
                 })),
               }],
             },
           ]}
-          onDrop={(src, dst) => {
-            const id = src.key;
-            if (dst.col === 'hidden') { setViewShown(id, false); return; }
-            const next = shownViews.map((v) => v.id).filter((x) => x !== id);
+          onDrop={(src2, dst) => {
+            const id = src2.key;
+            if (dst.col === 'hidden') { setEnabled(id, false); return; }
+            const next = visibleIds.filter((x) => x !== id);
             next.splice(Math.min(dst.idx, next.length), 0, id);
-            setEditorViewOrder([...next, ...EDITOR_VIEWS.map((v) => v.id).filter((x) => !next.includes(x))]);
-            if (editorViewHidden.includes(id)) setViewShown(id, true);
+            setElementOrder([...next, ...ids.filter((x) => !next.includes(x))]);
+            if (hiddenIds.includes(id)) setEnabled(id, true);
           }}
         />
         <div className="fs-tbzone-adders fs-adders-equal">
-          <button className="swn-add-btn" onClick={resetEditorViews}>Reset to Default</button>
+          <button className="swn-add-btn" onClick={hideAll}>Hide All</button>
+          <button className="swn-add-btn" onClick={resetDefault}>Reset to Default</button>
         </div>
       </section>
 

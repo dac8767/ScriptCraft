@@ -1,5 +1,12 @@
 [
   {
+    "version": "4.60",
+    "date": "2026-07-26",
+    "changes": [
+      "Customize > Editor: the Editor Views section is removed, and the Elements section moved into its place — the two element sections now sit together"
+    ]
+  },
+  {
     "version": "4.59",
     "date": "2026-07-26",
     "changes": [

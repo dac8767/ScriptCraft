@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.59 — user-editable follows-what grammar)
+# ScriptCraft — continuation brief (current as of v4.60 — Customize ▸ Editor reordered)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,21 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.59 — Derek's full follows-what table, user-editable (HEAD)
+### v4.60 — Customize ▸ Editor reordered (HEAD)
+
+- **Editor Views section REMOVED (Derek)** from EditElementsDialog — the
+  settingsStore keys (editorViewOrder/editorViewHidden,
+  getEffectiveEditorViews) survive and Toolbar.tsx still reads them; only
+  the customization UI is gone. **Elements section moved** into its old
+  slot, so the tab reads Transitions → Elements → Element Suggestions →
+  Mores & Continueds (the two element sections adjacent — driver v36
+  confirms order + adjacency). NOTE: another mid-turn sandbox rollback hit
+  right before this change (local at 27382d3 while origin held v4.59) —
+  `git reset --hard origin/claude/v0_32` recovered; it also KILLS the Vite
+  dev server, so restart it (`npx vite --port 5199 --strictPort`, bg)
+  before driving.
+
+### v4.59 — Derek's full follows-what table, user-editable
 
 - **The complete grammar table (Derek)**: `DEFAULT_SUGGESTION_RULES` in
   screenplayEditorConstants — sceneHeading→[action,dialogue,dualDialogue];
