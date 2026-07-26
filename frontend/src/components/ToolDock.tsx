@@ -29,7 +29,7 @@ import {
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
-import { FullscreenIcon } from './uiIcons';
+import { FullscreenIcon, CloseIcon } from './uiIcons';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, LocationsTitleExtra, StructureTitleExtra, type NavTab } from './SceneNavigator';
 import NavigatorTool, { NavigatorControls } from './NavigatorTool';
@@ -194,7 +194,7 @@ function HeaderRightCluster({ id, chrome, onClose, closeTitle, fullscreenBtn = t
         className="tool-window-close"
         onClick={(e) => { e.stopPropagation(); onClose(); }}
         title={closeTitle ?? 'Close'}
-      >×</button>
+      ><CloseIcon /></button>
     </span>
   );
 }

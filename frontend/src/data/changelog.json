@@ -1,5 +1,19 @@
 [
   {
+    "version": "4.43",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "Fullscreen and close, finally level",
+        "detail": "The close button was a font glyph seated by the system font's baseline — beside the geometric fullscreen square it drifted a hair on the Mac no matter how the boxes lined up. It's an SVG twin of the × now, and both buttons share one fixed 20×20 box with the icon dead-centered: pure geometry, identical on every platform, with a matching honest hit area.",
+        "tags": [
+          "UI",
+          "Fix"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.42",
     "date": "2026-07-26",
     "items": [

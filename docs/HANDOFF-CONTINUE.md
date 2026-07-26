@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.42 — header = ribbon surface, centered fullscreen icon)
+# ScriptCraft — continuation brief (current as of v4.43 — SVG close, geometry-only header buttons)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,19 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.42 — header polish (HEAD)
+### v4.43 — geometry-only header buttons (HEAD)
+
+Derek: "the full screen button is still misaligned." Root cause was MIXING a
+font glyph (×, seated by baseline/ascent metrics that differ per platform)
+with a geometric SVG in one row — box alignment was already 0px in Chromium
+but the ink drifted on his Mac's SF font. Fix: `CloseIcon` in uiIcons (SVG
+twin of the ×, same 14-box/1.5-stroke as FullscreenIcon), rendered by
+HeaderRightCluster; `.tool-window-close` and the header's
+`.char-profiles-fullscreen-btn` share ONE fixed 20×20 inline-flex box.
+Driver: both boxes 20×20, both SVGs 11px, midY delta 0. LESSON: never seat a
+font glyph next to an SVG icon in aligned chrome — SVG-ize it.
+
+### v4.42 — header polish
 
 Two-liner: `.char-profiles-fullscreen-btn` is inline-flex centered (the SVG
 rode the text baseline — a hair low beside the ×; driver-measured delta now

@@ -552,17 +552,25 @@ body.fs-tool-dragging { cursor: grabbing; }
   font-size: 12px;
 }
 .tool-ctl-search-close:hover { color: var(--fd-text); }
-.tool-window-close {
+/* v4.43, Derek: the close is an SVG twin of the × glyph now (uiIcons
+   CloseIcon) and BOTH header buttons share one fixed 20×20 box with the
+   11px icon geometrically centered — no font metrics anywhere, so the pair
+   sits dead level on every platform (the glyph version was seated by the
+   system font's baseline and drifted a hair on macOS). The 20×20 box also
+   gives each icon the same, honest hit area. */
+.tool-window-close,
+.tool-window-header .char-profiles-fullscreen-btn {
   background: none;
   border: none;
   color: var(--fd-text-muted);
-  /* v4.36 batch-v10 #4: the × glyph's ink is only ~0.47em — 21px puts its
-     drawn height at ~10px, matching the pop-out chevron (13px box, ~10px
-     ink) and the resized FullscreenIcon (11px box). */
-  font-size: 21px;
   cursor: pointer;
-  padding: 0 2px;
-  line-height: 1;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
 }
 .tool-window-close:hover { color: var(--fd-text); }
 .tool-window-body {

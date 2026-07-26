@@ -47,6 +47,17 @@ export const FullscreenIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (
     <polyline points="4,13 1,13 1,10" />
   </svg>
 );
+/** v4.43, Derek: the window-header close is an SVG twin of the × glyph. A
+ *  font glyph is seated by FONT metrics (baseline/ascent), which differ per
+ *  platform — beside a geometric SVG icon it sat a hair off on his Mac no
+ *  matter how the boxes aligned. Same 14-box, same 1.5 stroke as
+ *  FullscreenIcon, so the pair centers identically everywhere. */
+export const CloseIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (
+  <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <line x1="2.5" y1="2.5" x2="11.5" y2="11.5" />
+    <line x1="11.5" y1="2.5" x2="2.5" y2="11.5" />
+  </svg>
+);
 export const ExpandIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (
   <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.5">
     <polyline points="9,1 13,1 13,5" /><line x1="8" y1="6" x2="13" y2="1" />
