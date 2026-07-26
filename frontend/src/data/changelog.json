@@ -1,5 +1,12 @@
 [
   {
+    "version": "4.73",
+    "date": "2026-07-26",
+    "changes": [
+      "Fix: opening Help ▸ What's New crashed the app — every entry written since v4.53 was in a newer list format the window didn't understand; it now reads both formats"
+    ]
+  },
+  {
     "version": "4.72",
     "date": "2026-07-26",
     "changes": [

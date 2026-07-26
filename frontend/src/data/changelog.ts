@@ -67,6 +67,38 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.72';
+export const APP_VERSION = '4.73';
 
-export const CHANGELOG = CHANGELOG_DATA as unknown as ChangelogEntry[];
+/* v4.73 — THE "What's New" CRASH (Derek's screenshot, ChangelogDialog map).
+   changelog.json holds TWO shapes: the curated era uses
+   `items: [{title, detail}]`, while every entry since v4.53 was appended as
+   `changes: ["one string", …]`. The old export was a blind cast, so the
+   dialog's `entry.items.filter` threw on the first changes-shaped entry the
+   moment the window opened. Normalize BOTH shapes here — the dialog keeps
+   one contract, and future entries may use either. A changes string splits
+   into title — detail at its first ": " (or " — ") so the list still reads
+   scannable; no split point means the whole line is the title. */
+interface RawEntry {
+  version: string;
+  date?: string;
+  items?: ChangelogItem[];
+  changes?: string[];
+}
+
+function itemFromString(s: string): ChangelogItem {
+  const colon = s.indexOf(': ');
+  if (colon > 0 && colon <= 48) {
+    return { title: s.slice(0, colon), detail: s.slice(colon + 2) };
+  }
+  const dash = s.indexOf(' — ');
+  if (dash > 0 && dash <= 64) {
+    return { title: s.slice(0, dash), detail: s.slice(dash + 3) };
+  }
+  return { title: s, detail: '' };
+}
+
+export const CHANGELOG: ChangelogEntry[] = (CHANGELOG_DATA as unknown as RawEntry[]).map((e) => ({
+  version: e.version,
+  date: e.date,
+  items: e.items ?? (e.changes ?? []).map(itemFromString),
+}));
