@@ -28,6 +28,7 @@ import { ResetSection, type CustomizeTabId } from './customizeResets';
 import { showToast } from './Toast';
 import ThemesTab from './ThemesTab';
 import ContextMenuTab from './ContextMenuTab';
+import { exportCustomizationsFlow, importCustomizationsFlow } from './PresetsPanel';
 import { QAT_OPTIONS, QAT_BY_ID, isQatDivider, isQatSpacer } from './TitleBar';
 
 interface Props {
@@ -720,6 +721,18 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         : 'Freeze every customization: sizing, spacing, and layout edits'}
       onClick={() => useEditorStore.getState().setUiResizeLocked(!uiResizeLocked)}
     >{uiResizeLocked ? 'Locked' : 'Lock All'}</button>
+    {/* v4.79, Derek: carry these choices between installs or scripts. Both
+        run the shared preset flows (PresetsPanel), so the Customize footer,
+        the Presets window and Settings ▸ Presets can never drift. Import
+        confirms first — it overrides everything here. */}
+    <button
+      title="Save every customization choice to a file"
+      onClick={() => { void exportCustomizationsFlow(); }}
+    >Export…</button>
+    <button
+      title="Load customization choices from a file — this replaces your current ones"
+      onClick={() => { void importCustomizationsFlow(); }}
+    >Import…</button>
   </>);
 
   const body = (

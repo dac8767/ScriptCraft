@@ -3,6 +3,7 @@ import CustomizePanelsDialog from './CustomizePanelsDialog';
 import EditElementsDialog from './EditElementsDialog';
 import { SaveWorkspaceDialog, EditWorkspacesDialog } from './WorkspaceDialogs';
 import PreferencesDialog from './PreferencesDialog';
+import { PresetsDialog } from './PresetsPanel';
 import SetDraftDialog from './SetDraftDialog';
 import NewScriptDialog, { type NewScriptMeta } from './NewScriptDialog';
 import RenameDialog from './RenameDialog';
@@ -146,7 +147,7 @@ import {
   FaFlag, FaRegEyeSlash, FaRegEye, FaCheck, FaWrench,
   FaBug,
   FaRulerHorizontal,
-  FaPencilAlt, FaCoffee,
+  FaPencilAlt, FaCoffee, FaBoxOpen,
 } from 'react-icons/fa';
 
 /** v2.98: the Help-menu form links, shared by the menu items and the
@@ -389,6 +390,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   // ── Page Setup ──
   const [pageSetupOpen, setPageSetupOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  // v4.79: the Presets window (File ▸ Import/Export ▸ Presets…).
+  const [presetsOpen, setPresetsOpen] = useState(false);
   const [customizeTab, setCustomizeTab] =
     useState<'toolbar' | 'panels' | 'elements' | 'themes' | 'context'>('elements');
   const openCustomize = (tab: typeof customizeTab) => {
@@ -1268,20 +1271,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           action: handleNewScreenplay,
         },
         { separator: true, label: '' },
+        /* v4.79, Derek: Open has NO submenu — it opens the Open window
+           directly, and that window carries "Browse This Computer…" for a
+           file on disk (the old Local File child). */
         {
-          icon: <FaFileImport />, label: 'Import',
-          children: [
-            { icon: <FaFileCode />, label: 'Final Draft / Fountain / ScriptCraft…', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
-            { icon: <FaFileWord />, label: 'Microsoft Word (.docx)…', action: handleImportDocx, disabled: isCollabGuest },
-            { icon: <FaFilePdf />, label: 'PDF (.pdf)…', action: handleImportPdf, disabled: isCollabGuest },
-          ],
-        },
-        {
-          icon: <FaFolderOpen />, label: 'Open',
-          children: [
-            { icon: <FaFolderOpen />, label: 'From Library / Cloud…', action: () => confirmOrRun(() => setOpenFileOpen(true)), disabled: isCollabGuest },
-            { icon: <FaFileImport />, label: 'Local File…', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
-          ],
+          icon: <FaFolderOpen />, label: 'Open…', shortcut: sc('openFile'),
+          action: () => confirmOrRun(() => setOpenFileOpen(true)), disabled: isCollabGuest,
         },
         { separator: true, label: '' },
         { icon: <FaSave />, label: 'Save', shortcut: sc('save'), action: handleSave, disabled: isCollabGuest },
@@ -1302,6 +1297,17 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         { separator: true, label: '' },
         /* v3.24 reorg #4: Preview left File — it duplicates
            View > Editor > Preview; view modes belong to View. */
+        /* v4.79, Derek: Import sits NEXT TO Export (it lived up by New/Open),
+           and both submenus gain Presets… — one combined window. */
+        {
+          icon: <FaFileImport />, label: 'Import',
+          children: [
+            { icon: <FaFileCode />, label: 'Final Draft / Fountain / ScriptCraft…', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
+            { icon: <FaFileWord />, label: 'Microsoft Word (.docx)…', action: handleImportDocx, disabled: isCollabGuest },
+            { icon: <FaFilePdf />, label: 'PDF (.pdf)…', action: handleImportPdf, disabled: isCollabGuest },
+            { icon: <FaBoxOpen />, label: 'Presets…', action: () => setPresetsOpen(true) },
+          ],
+        },
         {
           icon: <FaFileExport />, label: 'Export',
           children: [
@@ -1310,6 +1316,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaFilePdf />, label: 'PDF…', action: handleExportPDF },
             { icon: <FaFileWord />, label: 'Microsoft Word (.docx)…', action: handleExportDocx },
             { icon: <FaFile />, label: 'ScriptCraft (.odraft)…', action: handleExportOdraft, disabled: isCollabGuest },
+            { icon: <FaBoxOpen />, label: 'Presets…', action: () => setPresetsOpen(true) },
           ],
         },
         { icon: <FaPrint />, label: 'Print…', shortcut: sc('print'), action: () => setTimeout(() => window.print(), 60) },
@@ -2338,6 +2345,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       </div>
     )}
     <CustomizePanelsDialog open={customizeOpen} category={customizeTab} onClose={() => setCustomizeOpen(false)} />
+    <PresetsDialog open={presetsOpen} onClose={() => setPresetsOpen(false)} />
     <SaveWorkspaceDialog open={saveWorkspaceOpen} onClose={() => setSaveWorkspaceOpen(false)} />
     <EditWorkspacesDialog open={editWorkspacesOpen} onClose={() => setEditWorkspacesOpen(false)} />
     <PreferencesDialog

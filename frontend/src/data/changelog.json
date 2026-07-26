@@ -1,5 +1,16 @@
 [
   {
+    "version": "4.79",
+    "date": "2026-07-26",
+    "changes": [
+      "New Presets window (File ▸ Export ▸ Presets… and File ▸ Import ▸ Presets…) and a matching Settings ▸ Presets tab: export or import a Full Preset (everything the app remembers), Customizations, Settings, Themes, and Outline Presets",
+      "Customize footer: Export… and Import… buttons — the import warns first, because it replaces every current customization choice",
+      "Every preset export names its type at the end of the file — _preset, _customize, _settings, _theme, _themes, _outline-presets",
+      "File ▸ Open no longer has a submenu: it opens the Open window, which gained a \"Browse This Computer…\" button; Import and Export now sit next to each other",
+      "Fix: the Customize window's Cancel silently kept context-menu, element-suggestion, panel-scale and panel-name changes — its revert list had drifted behind the tabs"
+    ]
+  },
+  {
     "version": "4.78",
     "date": "2026-07-26",
     "changes": [

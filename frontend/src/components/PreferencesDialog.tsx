@@ -1,6 +1,7 @@
 import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
-import { FaWrench, FaColumns, FaFileAlt, FaRulerCombined, FaCloudUploadAlt, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo } from 'react-icons/fa';
+import { FaWrench, FaColumns, FaFileAlt, FaRulerCombined, FaCloudUploadAlt, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo, FaBoxOpen } from 'react-icons/fa';
+import PresetsPanel from './PresetsPanel';
 import { CUSTOMIZE_RESETS, ResetAllButton, type CustomizeTabId } from './customizeResets';
 import { applyDraftNumber } from './SetDraftDialog';
 import { useEditorStore } from '../stores/editorStore';
@@ -39,7 +40,7 @@ import { redirectUri } from '../services/oauthPkce';
    ───────────────────────────────────────────────────────────────────────── */
 
 type CustomizeCat = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'themes';
-type PrefTab = 'general' | 'formats' | 'page' | 'keys' | 'saveloc' | 'system' | 'defaults' | `cz-${CustomizeCat}`;
+type PrefTab = 'general' | 'formats' | 'page' | 'keys' | 'saveloc' | 'system' | 'presets' | 'defaults' | `cz-${CustomizeCat}`;
 
 const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   // App-wide first, then writing setup, then data, then system.
@@ -51,6 +52,9 @@ const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
      moved here from Customize. */
   { id: 'keys', label: 'Keyboard Shortcuts', icon: <FaKeyboard /> },
   { id: 'system', label: 'System', icon: <FaWrench /> },
+  /* v4.79, Derek: every preset-type export AND import — the same panel the
+     File ▸ Import/Export ▸ Presets… window shows. */
+  { id: 'presets', label: 'Presets', icon: <FaBoxOpen /> },
   /* v4.65, Derek: every reset in one place — plus Reset All (moved here
      from the Customize globals). */
   { id: 'defaults', label: 'Defaults', icon: <FaUndo /> },
@@ -825,6 +829,16 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
             {tab === 'keys' && <KeyboardShortcutsTab />}
             {tab === 'saveloc' && <SaveLocationsTab editor={editor ?? null} />}
             {tab === 'system' && <SettingsPage embedded />}
+            {tab === 'presets' && (
+              <div className="prefs-section">
+                <h3>Presets</h3>
+                <p className="prefs-hint">
+                  Export any of these to a file, or import one — the file type
+                  is spelled out at the end of every filename.
+                </p>
+                <PresetsPanel />
+              </div>
+            )}
             {tab === 'defaults' && <DefaultsTab />}
           </div>
         </div>

@@ -4438,6 +4438,10 @@ const ScreenplayEditor: React.FC = () => {
         <OpenFile
           onOpen={handleOpenFile}
           onClose={() => setOpenFileOpen(false)}
+          /* v4.79: "Browse This Computer…" runs the SAME importer the menu's
+             Local File item used to — through the command bus MenuBar owns,
+             so there's one import path, not a copy. */
+          onBrowseLocal={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'importLocal' }))}
         />
       )}
       {!isHistoryMode && showWelcome && <WelcomeDialog onChoice={handleWelcomeChoice} />}

@@ -1,6 +1,11 @@
-# ScriptCraft — continuation brief (current as of v4.78 — fullscreen shrink + closed-row drag-out)
+# ScriptCraft — continuation brief (current as of v4.79 — presets export/import)
 
 > QUEUE (Derek-approved, not yet landed), in order:
+> 0. NEXT UP — the new-script launcher (task #42) then the Guided Setup
+>    wizard (task #43). v4.79 already built the pieces both need:
+>    utils/presets.ts (customize + full-preset build/apply, validated) and
+>    PresetsPanel's exported flows — the setups' "customize from file"
+>    must call applyCustomizeExport, never a second copy.
 > 1. NEW-SCRIPT LAUNCHER + GUIDED SETUP WIZARD (Derek's big feature,
 >    late v4.78 session — his spec verbatim in the chat): a first window
 >    with four options — New Script (Manual Setup) / New Script (Guided
@@ -289,6 +294,36 @@ reliable; re-run before believing a weird worker failure.
 > The sandbox has now rolled back to a stale snapshot TWICE mid-session
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
+
+### v4.79 — presets: export/import everything (HEAD)
+
+- **utils/presets.ts** is the core: `buildCustomizeExport` /
+  `applyCustomizeExport` (chrome via capture/restoreCustomizations +
+  themes + element/transition visibility & order + Mores & Continueds),
+  `buildFullPreset` / `applyFullPreset` (gatherSettings — so it can
+  never under-collect, and credentials are excluded BY CONSTRUCTION),
+  and `typedExportName(base, type)` — the ONE filename builder.
+- **Filename rule (Derek)**: every preset export ends `_<type>.json` —
+  _preset, _customize, _settings, _theme, _themes, _outline-presets.
+  Swept: settingsBackup.downloadBackup, ThemesTab.exportThemes,
+  BeatBoard outline presets, and everything new.
+- **PresetsPanel.tsx** renders the rows; three hosts, zero copies:
+  File ▸ Import/Export ▸ Presets… (PresetsDialog), Settings ▸ Presets
+  (new tab), and the Customize footer's Export…/Import… (which call the
+  exported `exportCustomizationsFlow` / `importCustomizationsFlow`).
+  Import always confirms first (Derek's override warning).
+- **BUG FOUND BY THE ROUND-TRIP TEST**: `CUSTOMIZATION_FIELDS` (the list
+  Customize's Cancel reverts) had drifted — contextMenuHidden,
+  suggestionRules, suggestionMode, panelItemScale, panelNameCase were
+  all missing, so Cancel quietly KEPT those edits. Added. Anything a
+  new Customize tab persists MUST join that list.
+- **File menu** (Derek): Open has no submenu — it opens the Open window,
+  which gained "Browse This Computer…" (dispatches the `importLocal`
+  command MenuBar already owns — one import path). Import moved down
+  beside Export; both carry Presets….
+- Tests: presets.test.ts — filename convention, full customize
+  round-trip (export → clobber → import → identical), M&C carry,
+  foreign-file refusal, credential exclusion.
 
 ### v4.73–v4.78 — the crash hotfix and the rest of Derek's stream
 

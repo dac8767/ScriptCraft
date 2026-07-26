@@ -1015,7 +1015,8 @@ export function OutlineTabActions() {
     }
     if (value === '__export') {
       try {
-        const ok = await saveFile(store.exportJson(), 'outline-presets.json', [{ name: 'Outline Presets', extensions: ['json'] }]);
+        // v4.79, Derek: the export type rides the END of the filename.
+        const ok = await saveFile(store.exportJson(), 'scriptcraft_outline-presets.json', [{ name: 'Outline Presets', extensions: ['json'] }]);
         if (ok) showToast(`Exported ${store.presets.length} preset${store.presets.length === 1 ? '' : 's'}.`, 'success');
       } catch (err) {
         showToast(`Export failed: ${err instanceof Error ? err.message : String(err)}`, 'error');

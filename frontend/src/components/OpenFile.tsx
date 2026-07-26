@@ -17,7 +17,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { FaCloud, FaDesktop } from 'react-icons/fa';
+import { FaCloud, FaDesktop, FaFolderOpen } from 'react-icons/fa';
 import { LuSearch } from 'react-icons/lu';
 import { api } from '../services/api';
 import { cloudApi } from '../services/cloudApi';
@@ -42,6 +42,10 @@ interface OpenFileProps {
     source: OpenSource,
   ) => void;
   onClose: () => void;
+  /** v4.79, Derek: File ▸ Open has no submenu any more — it opens THIS window,
+   *  so browsing the computer for a file has to live here. Runs the same
+   *  importer File ▸ Import ▸ Local File used to. */
+  onBrowseLocal?: () => void;
 }
 
 type SortKey =
@@ -78,7 +82,7 @@ function compareScripts(a: ScriptMeta, b: ScriptMeta, sort: SortKey): number {
 /** Web is always cloud. Desktop/mobile apps let the user pick. */
 const WEB_ONLY_CLOUD = isWeb();
 
-const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
+const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose, onBrowseLocal }) => {
   // Only treat the user as signed in once the token has been verified against
   // the server this session. A stale localStorage token shouldn't let us hit
   // the cloud API — the request would fail anyway.
@@ -237,7 +241,7 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
                 ? `No files match “${query}”.`
                 : source === 'cloud'
                   ? 'No cloud files yet. Use File › Save As… and pick ScriptCraft Cloud to upload.'
-                  : 'No scripts yet. Use File › New Script, or File › Open › Local File to import one.'}
+                  : 'No scripts yet. Use File › New Script, or browse this computer for a file.'}
             </div>
           ) : (
             visibleScripts.map(({ script, project }) => (
@@ -267,6 +271,17 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
         </div>
 
         <div className="dialog-actions">
+          {/* v4.79, Derek: browsing the computer lives IN this window now —
+              left, opposite Cancel, the way Delete sits on the Title Page. */}
+          {onBrowseLocal && (
+            <button
+              style={{ marginRight: 'auto' }}
+              onClick={() => { onClose(); onBrowseLocal(); }}
+            >
+              <FaFolderOpen aria-hidden style={{ marginRight: 6, verticalAlign: '-1px' }} />
+              Browse This Computer…
+            </button>
+          )}
           <button onClick={onClose}>Cancel</button>
         </div>
       </div>

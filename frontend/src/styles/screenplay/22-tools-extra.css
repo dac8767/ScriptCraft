@@ -294,6 +294,45 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
 
 /* v4.65: every Customize tab ends in a Reset section; Settings ▸ Defaults
    compiles them (same registry, customizeResets). */
+/* v4.79, Derek: the Presets surface — File ▸ Import/Export ▸ Presets… and
+   Settings ▸ Presets render the SAME panel (PresetsPanel.tsx). One row per
+   preset type: name + what it covers on the left, Export/Import right. */
+.fs-presets { display: flex; flex-direction: column; gap: 2px; }
+.fs-presets-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--fd-chrome-separator, var(--fd-border));
+}
+.fs-presets-row:last-child { border-bottom: none; }
+.fs-presets-meta { flex: 1; min-width: 0; }
+.fs-presets-label { font-size: 12.5px; font-weight: 600; color: var(--fd-text); }
+.fs-presets-desc {
+  margin-top: 2px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--fd-text-muted);
+}
+.fs-presets-actions { flex: 0 0 auto; display: flex; gap: 6px; padding-top: 2px; }
+.fs-presets-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-size: 12px;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fs-presets-btn:hover:not(:disabled) { border-color: var(--fd-accent); color: var(--fd-accent); }
+.fs-presets-btn:disabled { opacity: .4; cursor: default; }
+.fs-presets-dialog { width: 620px; max-width: 94vw; }
+.fs-presets-dialog .dialog-body { max-height: 66vh; overflow: auto; padding: 4px 16px 16px; }
+
 .fs-reset-section { margin-top: 18px; }
 .fs-reset-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .fs-reset-all-btn {

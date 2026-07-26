@@ -359,9 +359,10 @@ export default function ThemesTab() {
     const chosen = customThemes.filter((t) => ids.includes(t.id));
     if (chosen.length === 0) return;
     const payload = { kind: 'scriptcraft-themes', version: 1, themes: chosen };
+    // v4.79, Derek: the export type is spelled out at the END of the name.
     const name = chosen.length === 1
-      ? `${safeName(chosen[0].label)}.scriptcraft-theme.json`
-      : 'scriptcraft-themes.json';
+      ? `${safeName(chosen[0].label)}_theme.json`
+      : 'scriptcraft-all_themes.json';
     // saveFile opens the real save dialog on desktop, so the user picks WHERE
     // it goes rather than it landing silently in Downloads.
     const { saveFile } = await import('../utils/fileOps');
@@ -442,9 +443,10 @@ const safeName = (s: string) => s.replace(/[^\w-]+/g, '_').slice(0, 40) || 'them
  * Pull custom themes out of a parsed file. Accepts an exported theme file, a
  * single bare theme object, or another project's export that happens to carry a
  * themes array — so "import from another project" and "import a theme file" are
- * the same action for the user.
+ * the same action for the user. (v4.79: exported — the Presets panel imports
+ * theme files through this same reader.)
  */
-function extractThemes(data: unknown): CustomTheme[] {
+export function extractThemes(data: unknown): CustomTheme[] {
   const looksLikeTheme = (v: unknown): v is CustomTheme =>
     !!v && typeof v === 'object'
     && typeof (v as CustomTheme).label === 'string'

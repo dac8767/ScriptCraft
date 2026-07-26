@@ -99,7 +99,9 @@ export function downloadBackup(): void {
   const a = document.createElement('a');
   a.href = url;
   const stamp = new Date().toISOString().slice(0, 10);
-  a.download = `scriptcraft-settings-${stamp}.json`;
+  // v4.79, Derek: the export TYPE must be readable off the filename — every
+  // preset-type export ends in _<type>.json (see utils/presets).
+  a.download = `scriptcraft-${stamp}_settings.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();

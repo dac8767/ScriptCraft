@@ -1242,6 +1242,10 @@ const CUSTOMIZATION_FIELDS = [
   'chromeCustomPx', 'chromeGapPx',
   'outlineBarRows', 'outlineBarZoom', 'outlineBarLabels', 'outlineBarRowScale',
   'uiResizeLocked',
+  // v4.79: fields Customize grew since v3.49 that had DRIFTED out of this
+  // list — Cancel wasn't reverting them, and the customize export needs them.
+  'contextMenuHidden', 'suggestionRules', 'suggestionMode',
+  'panelItemScale', 'panelNameCase',
 ] as const;
 
 export const useEditorStore = create<EditorState>((set, get, api) => ({
