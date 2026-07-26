@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.50 — content-sized character cards)
+# ScriptCraft — continuation brief (current as of v4.51 — Scenes cards fill their host)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,17 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.50 — content-sized character cards + scroll (HEAD)
+### v4.51 — Scenes cards fill their host (HEAD)
+
+Derek: dead space between the Scenes cards area and the window edge. Root
+cause: `.index-cards { max-height: 50vh; flex-shrink: 0 }` — the old
+above-the-editor strip sizing, still capping the embed inside windows.
+ScenesTool is the ONLY render site now, so the BASE rule became
+`flex: 1 1 0; min-height: 0; max-height: none` (fills window body / dock /
+takeover, scrolls inside; the strip-era border-bottom went too).
+Driver-verified: index-cards 475→695px == its flex parent.
+
+### v4.50 — content-sized character cards + scroll
 
 Derek: fullscreen cards were FIXED-size, fitted to the editor window, no
 scroll. Root cause (driver-bisected): the `.char-view-cards` GRID's auto

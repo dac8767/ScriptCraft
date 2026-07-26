@@ -1,5 +1,19 @@
 [
   {
+    "version": "4.51",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "Scenes cards fill the window",
+        "detail": "The cards area was capped at half the screen height — a relic of the old cards-strip-above-the-editor layout — leaving dead space between the content and the window's edge. It now fills whatever hosts it (window, dock, or fullscreen) exactly, scrolling inside.",
+        "tags": [
+          "Scenes",
+          "Fix"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.50",
     "date": "2026-07-26",
     "items": [

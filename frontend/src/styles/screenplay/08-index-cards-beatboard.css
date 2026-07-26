@@ -8,12 +8,15 @@
 }
 
 /* ============ INDEX CARDS ============ */
+/* v4.51, Derek: the cards area FILLS whatever hosts it (window body, dock,
+   takeover) and scrolls inside — the 50vh cap and bottom border were relics
+   of the old above-the-editor strip, and left dead space between the content
+   and the window's edge. ScenesTool is the only render site now. */
 .index-cards {
   background: var(--fd-navigator-bg);
-  border-bottom: 1px solid var(--fd-border);
-  max-height: 50vh;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
-  flex-shrink: 0;
 }
 /* v4.32 batch-v8 #2/#10: the old position:fixed inset:0 z-3500 fullscreen
    overlay is GONE (it covered the toolbar and every way out — the trap Derek
