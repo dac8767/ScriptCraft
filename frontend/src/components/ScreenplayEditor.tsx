@@ -921,9 +921,10 @@ const ScreenplayEditor: React.FC = () => {
     position: { top: number; left: number };
     defaultType: ElementType;
     availableTypes?: ElementType[];
+    suggestType?: ElementType;
   }>({ visible: false, position: { top: 0, left: 0 }, defaultType: 'action' });
 
-  const showPickerRef = useRef<(defaultType: ElementType, availableTypes?: ElementType[]) => void>(() => {});
+  const showPickerRef = useRef<(defaultType: ElementType, availableTypes?: ElementType[], suggestType?: ElementType) => void>(() => {});
 
   // Character autocomplete state. v3.44, Derek: the same dropdown also serves
   // scene headings (INT./EXT.) and transitions — `mode` picks how a pick is
@@ -1218,8 +1219,16 @@ const ScreenplayEditor: React.FC = () => {
                   return true;
                 }
               }
-              // Normal blank line: show element picker
-              showPickerRef.current(currentType as ElementType);
+              // Normal blank line: show element picker.
+              // v4.56, Derek: an empty dialogue right under a character name
+              // leads with Parenthetical — the natural next insertion in the
+              // couplet, since the dialogue itself is already the caret's home.
+              let suggest: ElementType | undefined;
+              if (currentType === 'dialogue') {
+                const $before = editor.state.doc.resolve($from.before($from.depth));
+                if ($before.nodeBefore?.type.name === 'character') suggest = 'parenthetical';
+              }
+              showPickerRef.current(currentType as ElementType, undefined, suggest);
               return true;
             }
 
@@ -3071,7 +3080,7 @@ const ScreenplayEditor: React.FC = () => {
   }, [overlays]);
 
   // Wire up the picker trigger
-  showPickerRef.current = useCallback((defaultType: ElementType, availableTypes?: ElementType[]) => {
+  showPickerRef.current = useCallback((defaultType: ElementType, availableTypes?: ElementType[], suggestType?: ElementType) => {
     if (!editor) return;
     // Use requestAnimationFrame so the DOM has settled after the split
     requestAnimationFrame(() => {
@@ -3083,6 +3092,7 @@ const ScreenplayEditor: React.FC = () => {
         position: { top: coords.bottom + 4, left: coords.left },
         defaultType,
         availableTypes,
+        suggestType,
       });
     });
   }, [editor]);
@@ -4308,6 +4318,7 @@ const ScreenplayEditor: React.FC = () => {
           position={pickerState.position}
           defaultType={pickerState.defaultType}
           availableTypes={pickerState.availableTypes}
+          suggestType={pickerState.suggestType}
           onSelect={handlePickerSelect}
           onDismiss={handlePickerDismiss}
         />

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.55 — paren delete-to-remove, picker-autofill fix)
+# ScriptCraft — continuation brief (current as of v4.56 — parenthetical leads the picker under a name)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,24 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.55 — paren delete-to-remove, picker-autofill fix (HEAD)
+### v4.56 — parenthetical leads the picker under a name (HEAD)
+
+- **Context-aware picker suggestion (Derek)**: an empty DIALOGUE whose
+  previous sibling is a CHARACTER (the couplet: name above, caret in the
+  dialogue) shows the Enter-key picker with **Parenthetical** first and
+  pre-selected; everywhere else the v0.88 suggestion (Action for
+  dialogue) is unchanged. Plumbing: `showPickerRef(defaultType,
+  availableTypes?, suggestType?)` → pickerState.suggestType →
+  ElementPicker's `suggestType` prop, which wins over the
+  ELEMENT_ORDER-derived pick when it's in the enabled list. The sibling
+  check is `$from.before(depth)` → `resolve().nodeBefore` (works inside
+  dual-dialogue columns too). Tests: ElementPicker.test.tsx (3 — NOTE:
+  jsdom lacks scrollIntoView; the test stubs
+  `Element.prototype.scrollIntoView`). Driver v31: under FLIGMA the
+  picker reads Parenthetical/Scene Heading/Action with Parenthetical
+  selected; a plain empty dialogue still leads with Action.
+
+### v4.55 — paren delete-to-remove, picker-autofill fix
 
 - **Deleting a paren removes the row (Derek)**: v4.54's repair-on-delete
   made parens undeletable; Derek's rule is "delete either paren → the

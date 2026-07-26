@@ -29,12 +29,16 @@ interface ElementPickerProps {
   defaultType: ElementType;
   /** When provided, overrides the template-derived element list (used inside AV cells). */
   availableTypes?: ElementType[];
+  /** v4.56: caller-supplied context-aware lead suggestion (e.g. an empty
+   *  dialogue under a character name leads with Parenthetical). Wins over
+   *  the ELEMENT_ORDER-derived suggestion when it's in the enabled list. */
+  suggestType?: ElementType;
   onSelect: (type: ElementType) => void;
   onDismiss: () => void;
 }
 
 const ElementPicker: React.FC<ElementPickerProps> = ({
-  position, defaultType, availableTypes, onSelect, onDismiss,
+  position, defaultType, availableTypes, suggestType, onSelect, onDismiss,
 }) => {
   const activeTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate());
   // v0.81: read the EFFECTIVE rules (template + the user's Customize > Elements
@@ -66,12 +70,13 @@ const ElementPicker: React.FC<ElementPickerProps> = ({
       // single likeliest element for the current line lifted to the top — where
       // the caret already is, so Enter-Enter still lands on the obvious choice.
       // Everything below it reads exactly like the other menus.
-      const suggestion = (ELEMENT_ORDER[defaultType] || DEFAULT_ORDER)
-        .find((t) => enabled.includes(t));
+      const suggestion = (suggestType && enabled.includes(suggestType))
+        ? suggestType
+        : (ELEMENT_ORDER[defaultType] || DEFAULT_ORDER).find((t) => enabled.includes(t));
       if (!suggestion) return enabled;
       return [suggestion, ...enabled.filter((t) => t !== suggestion)];
     },
-    [defaultType, pickable, availableTypes],
+    [defaultType, pickable, availableTypes, suggestType],
   );
 
   // Resolve a display label: built-in label first, then template-rule label,

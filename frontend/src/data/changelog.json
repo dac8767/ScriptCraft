@@ -1,5 +1,12 @@
 [
   {
+    "version": "4.56",
+    "date": "2026-07-26",
+    "changes": [
+      "When the caret is in an empty dialogue line right under a character name, the Enter-key element list leads with Parenthetical"
+    ]
+  },
+  {
     "version": "4.55",
     "date": "2026-07-26",
     "changes": [
