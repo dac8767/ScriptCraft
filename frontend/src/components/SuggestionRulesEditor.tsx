@@ -11,6 +11,7 @@
  */
 import React from 'react';
 import { ELEMENT_LABELS, useEditorStore } from '../stores/editorStore';
+import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { DEFAULT_SUGGESTION_RULES, SUGGESTION_RULE_CANDIDATES } from './screenplayEditorConstants';
 
 const label = (id: string): string =>
@@ -30,6 +31,14 @@ const SuggestionRulesEditor: React.FC = () => {
   const rules = useEditorStore((s) => s.suggestionRules);
   const setRules = useEditorStore((s) => s.setSuggestionRules);
   const effective = rules ?? DEFAULT_SUGGESTION_RULES;
+  // v4.64, Derek: elements hidden in the Elements section above have no
+  // column here — the picker can never offer them anyway (its grammar filter
+  // intersects with the pickable list). Their stored rule values survive, so
+  // un-hiding an element brings its column back exactly as it was.
+  const pickable = useFormattingTemplateStore((s) => s.getPickableElements)();
+  useFormattingTemplateStore((s) => s.elementHidden);   // re-render on change
+  const visibleIds = new Set(pickable.map((r) => r.id));
+  const cols = SUGGESTION_RULE_CANDIDATES.filter((c) => visibleIds.has(c));
 
   const toggle = (row: string, id: string) => {
     const next: Record<string, string[]> = Object.fromEntries(
@@ -45,6 +54,7 @@ const SuggestionRulesEditor: React.FC = () => {
   return (
     <div className="fs-sugg-editor">
       <div className="fs-sugg-mode">
+        <span className="fs-sugg-mode-label">Show:</span>
         <span className="fs-customize-seg">
           <button
             className={mode !== 'all' ? 'active' : ''}
@@ -67,7 +77,7 @@ const SuggestionRulesEditor: React.FC = () => {
             <thead>
               <tr>
                 <th scope="col" className="fs-sugg-corner">After element…</th>
-                {SUGGESTION_RULE_CANDIDATES.map((c) => (
+                {cols.map((c) => (
                   <th scope="col" key={c}>{label(c)}</th>
                 ))}
               </tr>
@@ -76,7 +86,7 @@ const SuggestionRulesEditor: React.FC = () => {
               {ROWS.map((row) => (
                 <tr key={row}>
                   <th scope="row">{label(row)}</th>
-                  {SUGGESTION_RULE_CANDIDATES.map((c) => {
+                  {cols.map((c) => {
                     const on = (effective[row] ?? []).includes(c);
                     return (
                       <td key={c}>

@@ -290,6 +290,7 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
 /* v4.59: Customize ▸ Editor ▸ Element Suggestions. v4.63: a real TABLE —
    row = the element above, column = candidate, check cell = allowed. */
 .fs-sugg-mode { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.fs-sugg-mode-label { font-size: 12px; color: var(--fd-text-muted); }
 .fs-sugg-reset {
   border: 1px solid var(--fd-border);
   border-radius: 5px;
@@ -845,6 +846,24 @@ input.fs-switch:checked::after { left: 15px; }
   flex: 1;
   min-height: 0;
 }
+/* v4.64, Derek: the Customize tabs live in Settings' OWN sidebar — a divider
+   and a section caption separate them from the settings tabs; solo mode
+   renders one customize tab's content with no inner rail. */
+.prefs-tab-divider {
+  border-top: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
+  margin: 8px 12px;
+}
+.prefs-tab-caption {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fd-text-muted);
+  padding: 2px 14px 4px;
+}
+.fs-customize-solo { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.fs-customize-solo > .fs-customize-body { flex: 1; min-height: 0; }
+.fs-customize-globals-solo { margin-top: 18px; }
 .prefs-tabs {
   width: 190px;
   flex-shrink: 0;

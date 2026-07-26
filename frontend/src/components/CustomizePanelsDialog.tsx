@@ -36,6 +36,9 @@ interface Props {
   onClose: () => void;
   /** Render only the content (no overlay/box) — used inside Preferences. */
   embedded?: boolean;
+  /** v4.64: render ONE tab's content with no inner tab rail — Settings lists
+   *  the customize tabs in its own sidebar now. Implies embedded. */
+  soloCategory?: 'toolbar' | 'qat' | 'panels' | 'elements' | 'themes' | 'context';
 }
 
 /** Default spacer sizes — match the CSS so an unsized spacer doesn't jump when
@@ -250,7 +253,7 @@ export function DndColumns({ columns, onDrop }: {
   );
 }
 
-export default function CustomizePanelsDialog({ open, onClose, embedded = false, category }: Props) {
+export default function CustomizePanelsDialog({ open, onClose, embedded = false, category, soloCategory }: Props) {
   const {
     toolConfig, setToolConfig,
     toolbarPinnedTools,
@@ -548,7 +551,10 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // v4.22, Derek: default landing is the Editor tab (top of the list).
   // v4.28, Derek: the Menu Bar tab is GONE — the menus always live in the
   // macOS menu bar now; there is nothing to place or reorder in-window.
-  const [activeCat, setActiveCat] = React.useState<'toolbar' | 'qat' | 'panels' | 'elements' | 'themes' | 'context'>(category ?? 'elements');
+  const [activeCatState, setActiveCat] = React.useState<'toolbar' | 'qat' | 'panels' | 'elements' | 'themes' | 'context'>(category ?? 'elements');
+  // v4.64, Derek: Settings lists the customize tabs directly in ITS sidebar
+  // (no inner tab rail) — soloCategory pins this instance to one tab.
+  const activeCat = soloCategory ?? activeCatState;
 
   // v0.84: the window forgot any size you gave it and snapped back to the
   // default on reopen. CSS `resize` writes inline width/height on the element,
@@ -746,7 +752,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       // (.prefs-layout + .prefs-tabs). Across the top, seven tabs couldn't fit
       // the default width and forced a horizontal scrollbar; down the side they
       // simply stack, and adding an eighth costs no width at all.
-      <div className="prefs-layout fs-customize-layout">
+      // v4.64, Derek: with soloCategory the rail is GONE — Settings' own
+      // sidebar picks the tab, so this renders just the one tab's content
+      // (globals row at the end instead of in the rail).
+      <div className={soloCategory ? 'fs-customize-solo' : 'prefs-layout fs-customize-layout'}>
+        {!soloCategory && (
         <div className="prefs-tabs fs-customize-tabs">
           {([['elements', 'Editor'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['qat', 'Quick Access'], ['context', 'Context Menu'], ['themes', 'Themes']] as const)
             .map(([id, label]) => (
@@ -764,7 +774,12 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             <div className="fs-customize-globals fs-customize-globals-row">{globalsButtons}</div>
           )}
         </div>
-        <div className="dialog-body fs-customize-body">
+        )}
+        {/* v4.64, Derek: the lock must hold BELOW the fold too — the veil is
+            absolute in a scrolling body, so content past the first viewport
+            (e.g. the Element Suggestions table) scrolled out from under it.
+            The locked class kills pointer events on everything but the veil. */}
+        <div className={`dialog-body fs-customize-body${uiResizeLocked ? ' fs-customize-locked' : ''}`}>
           {/* v3.39, Derek: the tab's helper text, one ?-in-a-circle pinned to
               the upper-right corner. Keyed by tab so it re-closes on switch. */}
           {TAB_HINTS[activeCat] && <TabInfo key={activeCat}>{TAB_HINTS[activeCat]}</TabInfo>}
@@ -915,6 +930,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           {activeCat === 'themes' && <ThemesTab />}
           {activeCat === 'context' && <ContextMenuTab />}
           {activeCat === 'panels' && renderPanelsTab()}
+          {/* Solo mode has no rail to host the global controls — they close
+              the tab's content instead. */}
+          {soloCategory && (
+            <div className="fs-customize-globals fs-customize-globals-row fs-customize-globals-solo">{globalsButtons}</div>
+          )}
         </div>
       </div>
   );

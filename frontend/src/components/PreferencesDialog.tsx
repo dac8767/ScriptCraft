@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
-import { FaWrench, FaColumns, FaFileAlt, FaRulerCombined, FaCloudUploadAlt, FaKeyboard } from 'react-icons/fa';
+import { FaWrench, FaColumns, FaFileAlt, FaRulerCombined, FaCloudUploadAlt, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette } from 'react-icons/fa';
 import { applyDraftNumber } from './SetDraftDialog';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -36,19 +36,32 @@ import { redirectUri } from '../services/oauthPkce';
    points (where they still exist) edit exactly the same state.
    ───────────────────────────────────────────────────────────────────────── */
 
-type PrefTab = 'general' | 'layout' | 'formats' | 'page' | 'keys' | 'saveloc' | 'system';
+type CustomizeCat = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'themes';
+type PrefTab = 'general' | 'formats' | 'page' | 'keys' | 'saveloc' | 'system' | `cz-${CustomizeCat}`;
 
 const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   // App-wide first, then writing setup, then data, then system.
   { id: 'general', label: 'General', icon: <FaWrench /> },
   { id: 'saveloc', label: 'Save Options', icon: <FaCloudUploadAlt /> },
-  { id: 'layout', label: 'Customize', icon: <FaColumns /> },
   { id: 'formats', label: 'Templates', icon: <FaFileAlt /> },
   { id: 'page', label: 'Page Setup', icon: <FaRulerCombined /> },
   /* v4.30 batch-v7 #3, Derek: hotkeys are behavior, not workspace layout —
      moved here from Customize. */
   { id: 'keys', label: 'Keyboard Shortcuts', icon: <FaKeyboard /> },
   { id: 'system', label: 'System', icon: <FaWrench /> },
+];
+
+/* v4.64, Derek: the Customize tabs are first-class entries in THIS sidebar —
+   the old "Customize" tab wrapped its own inner tab rail, a submenu level
+   deeper than it needed to be. Each entry renders CustomizePanelsDialog
+   pinned to one tab (soloCategory). */
+const CUSTOMIZE_TABS: Array<{ id: CustomizeCat; label: string; icon: React.ReactNode }> = [
+  { id: 'elements', label: 'Editor', icon: <FaEdit /> },
+  { id: 'toolbar', label: 'Toolbar', icon: <FaGripHorizontal /> },
+  { id: 'panels', label: 'Side Panels', icon: <FaColumns /> },
+  { id: 'qat', label: 'Quick Access', icon: <FaBolt /> },
+  { id: 'context', label: 'Context Menu', icon: <FaMousePointer /> },
+  { id: 'themes', label: 'Themes', icon: <FaPalette /> },
 ];
 
 function LanguageSection() {
@@ -109,9 +122,6 @@ function LanguageSection() {
 
 
 
-function LayoutTab() {
-  return <CustomizePanelsDialog open embedded onClose={() => {}} />;
-}
 
 function DraftNumberRow({ editor }: { editor: Editor | null }) {
   const draftLabel = useEditorStore((s) => s.draftLabel);
@@ -706,11 +716,29 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
                 <span>{t.label}</span>
               </button>
             ))}
+            {/* v4.64, Derek: the Customize tabs sit right here, one level up. */}
+            <div className="prefs-tab-divider" aria-hidden />
+            <div className="prefs-tab-caption">Customize</div>
+            {CUSTOMIZE_TABS.map((t) => (
+              <button
+                key={t.id}
+                className={`prefs-tab${tab === `cz-${t.id}` ? ' active' : ''}`}
+                onClick={() => setTab(`cz-${t.id}`)}
+              >
+                <span className="prefs-tab-icon">{t.icon}</span>
+                <span>{t.label}</span>
+              </button>
+            ))}
           </div>
           <div className="prefs-content">
             {tab === 'general' && <GeneralTab />}
-            {tab === 'layout' && (
-              <LayoutTab />
+            {tab.startsWith('cz-') && (
+              <CustomizePanelsDialog
+                open
+                embedded
+                soloCategory={tab.slice(3) as CustomizeCat}
+                onClose={() => {}}
+              />
             )}
             {tab === 'formats' && (
               <ScriptFormatPreferencesDialog

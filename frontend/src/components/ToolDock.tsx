@@ -441,12 +441,6 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
   }
 }
 
-/** v4.41: where a drag-out gesture dropped — the next frame MOUNT for this
- *  tool seats the window there (header near the cursor) instead of at the
- *  panel-anchored default. One-shot, module-local: set by startDockDragOut
- *  the instant before the size write that makes the frame render. */
-let windowSpawnAt: { id: ToolId; x: number; y: number } | null = null;
-
 /** Resizable window chrome shared by docked and temporary tool windows. */
 export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
   tool: ToolDef; onClose: () => void; temporary?: boolean; side?: ToolSide; children: React.ReactNode;
@@ -455,20 +449,10 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
   const { toolSizes, setToolSize, panelSizeMode, chromeCustomPx } = useEditorStore();
   const windowRef = useRef<HTMLDivElement>(null);
 
-  // v4.41: a window born from a drag-out gesture lands where it was dropped —
-  // header seated near the cursor — instead of snapping to the panel anchor.
-  useLayoutEffect(() => {
-    const el = windowRef.current;
-    if (!el || !windowSpawnAt || windowSpawnAt.id !== tool.id) return;
-    const parent = el.offsetParent?.getBoundingClientRect() ?? ({ left: 0, top: 0 } as DOMRect);
-    const clientLeft = Math.max(8, windowSpawnAt.x - 60);
-    const clientTop = Math.max(8, windowSpawnAt.y - 14);
-    el.style.left = `${clientLeft - parent.left}px`;
-    el.style.right = 'auto';
-    el.style.top = `${clientTop - parent.top}px`;
-    windowSpawnAt = null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
-  }, []);
+  // v4.64, Derek: a window born from a drag-out gesture SNAPS to the classic
+  // popped position — touching the side panel edge (the frame's CSS-anchored
+  // default), exactly where the old pop-out button placed it. (v4.41 seated
+  // it at the drop point; that mechanism — windowSpawnAt — is gone.)
   // Docked windows default to inline (see ToolDock below), so this frame only
   // renders windows the user has explicitly sized/popped out, plus temporary
   // Tools-menu windows — both of which should keep their own size.
@@ -762,13 +746,14 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   // v4.41, Derek: the drag-out is a VISIBLE gesture now. Grabbing the open
   // row (or the window's header strip) and moving ~6px spawns a title-bar
   // ghost that rides the cursor; while it's over the editor area the ghost
-  // arms (accent border), and RELEASING there undocks the window and lands
-  // it at the drop point (windowSpawnAt, consumed by ToolWindowFrame on
-  // mount). Released anywhere short of the editor, the ghost vanishes and
-  // nothing changes. While a ghost is up, body.fs-tool-dragging suppresses
-  // text selection app-wide — WebKit anchors a selection in whatever
-  // selectable content the pointer crosses, user-select on the row alone
-  // wasn't enough (Derek was painting selections across the panel).
+  // arms (accent border), and RELEASING there undocks the window — which
+  // SNAPS to the classic popped position touching the panel edge (v4.64,
+  // Derek; it used to land at the drop point). Released anywhere short of
+  // the editor, the ghost vanishes and nothing changes. While a ghost is
+  // up, body.fs-tool-dragging suppresses text selection app-wide — WebKit
+  // anchors a selection in whatever selectable content the pointer crosses,
+  // user-select on the row alone wasn't enough (Derek was painting
+  // selections across the panel).
   const draggedOutRef = useRef(false);
   const startDockDragOut = (t: ToolDef, h: number) => (e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest('button, select, input')) return;
@@ -815,7 +800,6 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
       if (!dragged) return;
       armSwallow();   // a real drag must never read as an accordion toggle
       if (inEditor(ev.clientX, ev.clientY)) {
-        windowSpawnAt = { id: t.id, x: ev.clientX, y: ev.clientY };
         setToolMode(t.id, 'floating');
         setToolSize(t.id, dockW + 140, h);
       }

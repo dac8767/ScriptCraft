@@ -1,5 +1,16 @@
 [
   {
+    "version": "4.64",
+    "date": "2026-07-26",
+    "changes": [
+      "Settings: the Customize tabs are listed directly in the sidebar under a Customize heading — one less submenu level (the old Customize tab is gone)",
+      "Element Suggestions: hidden elements lose their table column; a Show: label fronts the Script-Aware / All Elements toggle",
+      "Customize > Editor: Mores & Continueds changes apply live — the Apply button is gone",
+      "Locking customizations now also locks content below the fold (the Element Suggestions table included)",
+      "Dragging a tool out of the side panel snaps it to the classic popped position, touching the panel edge"
+    ]
+  },
+  {
     "version": "4.63",
     "date": "2026-07-26",
     "changes": [

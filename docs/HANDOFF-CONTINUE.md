@@ -1,11 +1,19 @@
-# ScriptCraft — continuation brief (current as of v4.63 — Dialogue (Name), rules table)
+# ScriptCraft — continuation brief (current as of v4.64 — flattened Settings)
 
-> IN FLIGHT (approved, not yet landed): Derek approved the v4.62 audit items —
-> react-router major bump; scene/character rescans gated on tool-open (live
-> while open, refresh on open, idle when closed — his refinement); Tauri fs
-> scope narrowing; CSP = document the decision. ALSO queued: flatten Settings —
-> no "Customize" tab; all settings tabs, divider, "Customize" section title,
-> then the customize tabs (kills one submenu level).
+> QUEUE (Derek-approved, not yet landed), in order:
+> 1. v4.65: per-customize-tab bottom Reset sections ("Reset Size" +
+>    "Reset Items"), FIX Customize ▸ Side Panels reset (must also reset
+>    panel width AND the vertical tool scaling — panelItemScale), plus a
+>    new Settings "Defaults" tab compiling every reset (keep the per-tab
+>    buttons) with the "Reset All" button moved there.
+> 2. Window-tab collapse (v4.53 HeaderTabs): the condensed dropdown must
+>    keep the blue active-tab pill styling, and widening the window must
+>    automatically restore the full tab strip (Derek says it sticks).
+> 3. Feedback window: screenshot buttons in its header that auto-attach
+>    the capture to the form's attachment field.
+> 4. Audit items: rescans gated on tool-open (live open / refresh on open /
+>    idle closed); react-router major bump; Tauri fs $HOME scope narrowing;
+>    CSP decision documented.
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -252,7 +260,31 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.63 — Dialogue (Name), rules table, M&C on top (HEAD)
+### v4.64 — flattened Settings + five Customize refinements (HEAD)
+
+- **Settings sidebar hosts the Customize tabs** (Derek: one less submenu
+  level): TABS minus the old 'layout' entry, then `.prefs-tab-divider` +
+  `.prefs-tab-caption` "Customize", then CUSTOMIZE_TABS (`cz-*` PrefTab
+  ids). Each renders `CustomizePanelsDialog soloCategory=…` — new prop:
+  no inner rail, `activeCat = soloCategory ?? state`, globals row at the
+  content end (`.fs-customize-globals-solo`). LayoutTab deleted; deep
+  links only ever used 'saveloc'/'keys' ✓.
+- **Suggestion table columns follow element visibility**: cols =
+  SUGGESTION_RULE_CANDIDATES ∩ getPickableElements (hidden values kept in
+  the stored rules, so un-hiding restores the column). Driver v40: hiding
+  Shot removes its column live.
+- **M&C applies LIVE in Customize** (Apply removed there; the modal keeps
+  it): embedded effect commits on change with an equality guard so
+  opening the tab doesn't dispatch a no-op repagination.
+- **"Show:" label** fronts the Script-Aware/All Elements seg.
+- **Lock below the fold**: `.fs-customize-locked > *:not(veil)` kills
+  pointer events — the absolute veil scrolls with the body and content
+  past the first viewport (the suggestions table) escaped it.
+- **Drag-out SNAPS to the classic popped position** (touching the panel
+  edge — the frame's CSS anchor): the v4.41 windowSpawnAt drop-point
+  seat is deleted. Driver v41: window right edge 8px off the dock.
+
+### v4.63 — Dialogue (Name), rules table, M&C on top
 
 - **"Dialogue (character)" → "Dialogue (Name)"** — sed across
   ELEMENT_LABELS, all six template rule labels, constants comments, tests.

@@ -179,6 +179,12 @@
 /* v3.34: the lock veil — blocks every tab's editors while customizations
    are locked; the rail (with the unlock button) stays reachable. */
 .fs-customize-body { position: relative; }
+/* v4.64: while locked, every control in the tab is inert — including content
+   below the fold that the absolute veil can't cover in a scrolling body. */
+.fs-customize-locked > *:not(.fs-customize-lockveil) {
+  pointer-events: none;
+  opacity: 0.55;
+}
 .fs-customize-lockveil {
   position: absolute;
   inset: 0;

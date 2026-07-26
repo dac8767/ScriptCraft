@@ -45,6 +45,33 @@ const MoresContdsDialog: React.FC<Props> = ({ onClose, embedded = false }) => {
     onClose();
   }, [pageLayout, setPageLayout, characterContd, dialogueBreakContd, contdText, moreText, onClose]);
 
+  // v4.64, Derek: in Customize the Apply button is gone — every change
+  // commits LIVE, like the rest of the Customize controls (Save just closes).
+  // The guard keeps the mount from dispatching a no-op setPageLayout (which
+  // would trigger a pointless repagination on opening the tab).
+  React.useEffect(() => {
+    if (!embedded) return;
+    const cur = resolveMoresContds(pageLayout);
+    const nextContd = contdText.trim() || DEFAULT_MORES_CONTDS.contdText;
+    const nextMore = moreText.trim() || DEFAULT_MORES_CONTDS.moreText;
+    if (
+      cur.characterContd === characterContd
+      && cur.dialogueBreakContd === dialogueBreakContd
+      && cur.contdText === nextContd
+      && cur.moreText === nextMore
+    ) return;
+    setPageLayout({
+      ...pageLayout,
+      moresContds: {
+        characterContd,
+        dialogueBreakContd,
+        contdText: nextContd,
+        moreText: nextMore,
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [embedded, characterContd, dialogueBreakContd, contdText, moreText]);
+
   const handleReset = useCallback(() => {
     setCharacterContd(DEFAULT_MORES_CONTDS.characterContd);
     setDialogueBreakContd(DEFAULT_MORES_CONTDS.dialogueBreakContd);
@@ -132,7 +159,8 @@ const MoresContdsDialog: React.FC<Props> = ({ onClose, embedded = false }) => {
         <div className="dialog-actions" style={embedded ? { border: 'none', padding: '14px 0 0' } : undefined}>
           <button onClick={handleReset} style={{ marginRight: 'auto' }}>Reset to defaults</button>
           {!embedded && <button onClick={onClose}>Cancel</button>}
-          <button className="dialog-primary" onClick={handleApply}>Apply</button>
+          {/* v4.64, Derek: embedded changes apply live — no Apply button. */}
+          {!embedded && <button className="dialog-primary" onClick={handleApply}>Apply</button>}
         </div>
     </>
   );
