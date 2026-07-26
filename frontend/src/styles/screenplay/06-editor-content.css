@@ -287,35 +287,52 @@
 }
 .tp-sync-btn:hover { border-color: var(--fd-accent); color: var(--fd-accent); }
 
-/* Title Page Live Preview */
+/* Title Page Live Preview — v4.73, Derek: TO SCALE. A real 8.5×11in page
+   (same specs Apply inserts) scaled down by the zoom, in a scrollable well.
+   The old approximate mock (.tp-preview-*) is gone with it. */
 .tp-editor-preview {
   display: flex; align-items: center; justify-content: center;
   background: var(--fd-input-bg, #111); border-radius: 6px; padding: 12px;
 }
-.tp-preview-page {
-  width: 100%; max-width: 280px; aspect-ratio: 8.5 / 11;
-  background: #fff; color: #111; font-family: 'Courier New', Courier, monospace;
-  font-size: 9px; padding: 24px 16px; display: flex; flex-direction: column;
-  border-radius: 2px; box-shadow: 0 2px 12px rgba(0,0,0,.3);
-  position: relative;
+.tp-editor-preview-scale {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px;
+  min-width: 0;
 }
-.tp-preview-title {
-  text-align: center; font-size: 12px; font-weight: bold;
-  text-transform: uppercase; margin-top: 35%; letter-spacing: 0.5px;
+.tp-preview-zoom {
+  display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+  flex: 0 0 auto;
 }
-.tp-preview-author {
-  text-align: center; margin-top: 16px; line-height: 1.5;
+.tp-preview-zoom button {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 24px; height: 22px; padding: 0 6px;
+  border: 1px solid var(--fd-border); border-radius: 4px;
+  background: var(--fd-toolbar-bg); color: var(--fd-text-muted);
+  font-size: 11px; cursor: pointer;
 }
-.tp-preview-credit { margin-bottom: 2px; }
-.tp-preview-basedon { font-size: 8px; margin-top: 2px; font-style: italic; }
-.tp-preview-bottom {
-  margin-top: auto; display: flex; justify-content: space-between;
-  align-items: flex-end; gap: 8px;
+.tp-preview-zoom button:hover { background: var(--fd-hover-bg); color: var(--fd-text); }
+.tp-preview-scroll { flex: 1; min-height: 0; overflow: auto; }
+.tp-scale-page {
+  position: absolute; top: 0; left: 0;
+  width: 8.5in; height: 11in;
+  transform-origin: top left;
+  background: #fff; color: #000;
+  font-family: var(--screenplay-font);
+  font-size: 12pt; line-height: 12pt;
+  padding: 1in 1in 0 1.5in;
+  box-sizing: border-box;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, .3);
+  border-radius: 2px;
+  overflow: hidden;
 }
-.tp-preview-bottom-left { text-align: left; line-height: 1.4; font-size: 8px; }
-.tp-preview-bottom-right { text-align: right; line-height: 1.4; font-size: 8px; }
-.tp-preview-contact { margin-bottom: 4px; }
-.tp-preview-notes { margin-top: 4px; font-style: italic; }
+/* v4.73: the title-page image control reuses the character placeholder but at
+   a form-friendly height. */
+.tp-image-ph { height: 110px; font-size: 30px; }
+/* Docked/floating tool window: the frame's own header already says
+   "Title Page" — the embedded dialog's caption row would say it twice. */
+.fs-modal-as-panel .tp-editor-dialog > .dialog-header { display: none; }
 
 /* Title Page dialog — mobile: stack form above preview, single-column fields,
    so it fits the screen without horizontal scroll. */
@@ -325,7 +342,6 @@
   .tp-editor-form { grid-template-columns: 1fr; }
   /* Narrow screens: let the size select drop below its text field again. */
   .tp-field-row { flex-direction: column; align-items: stretch; }
-  .tp-preview-page { max-width: 240px; }
 }
 
 /* ============ RTL SUPPORT FOR MULTI-LINGUAL DIALOGUE ============ */

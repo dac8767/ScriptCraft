@@ -1,22 +1,27 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { FaRegTrashAlt } from 'react-icons/fa';
+import { FaRegTrashAlt, FaRegImage, FaSearchMinus, FaSearchPlus } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { TitlePageAttrs } from '../editor/extensions/TitlePage';
 import { useEditorStore } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
+import { useAssetStore } from '../stores/assetStore';
+import { ImageSourceMenu } from './CharacterAssetMedia';
+import { CharacterImagePickerDialog } from './CharacterImageOverlays';
 import { api } from '../services/api';
 import { resolveImageUrl } from '../utils/imageAsset';
 import { authedFetch } from '../services/authedFetch';
 import { isTauri } from '../services/platform';
 import { showToast } from './Toast';
 import { confirmDialog } from './ConfirmDialog';
-import { deriveTitleFields, titlePageBlockSpecs } from '../utils/titlePageLayout';
+import { titlePageBlockSpecs } from '../utils/titlePageLayout';
 
 /** Small auth-aware image thumbnail for the title-page preview/list. Uses the
- *  same blob-fetch path as the editor NodeView so it loads reliably. */
-const TpImageThumb: React.FC<{ attrs: Record<string, unknown>; align?: boolean }> = ({ attrs, align }) => {
+ *  same blob-fetch path as the editor NodeView so it loads reliably.
+ *  `fill` (v4.73): size to the parent's block instead of the 70px list thumb —
+ *  the to-scale preview gives each image its real line-budget box. */
+const TpImageThumb: React.FC<{ attrs: Record<string, unknown>; align?: boolean; fill?: boolean }> = ({ attrs, align, fill }) => {
   const resolved = useMemo(() => resolveImageUrl(attrs) || '', [attrs]);
   // data: URLs and Tauri asset:// load directly; web asset URLs need an authed fetch.
   const directUrl = useMemo(() => (resolved.startsWith('data:') || isTauri() ? resolved : ''), [resolved]);
@@ -39,8 +44,10 @@ const TpImageThumb: React.FC<{ attrs: Record<string, unknown>; align?: boolean }
   const url = directUrl || blobUrl;
   if (!url) return null;
   const a = align ? ((attrs.align as string) || 'center') : 'center';
-  const margin = a === 'left' ? '3px auto 3px 0' : a === 'right' ? '3px 0 3px auto' : '3px auto';
-  return <img src={url} alt="" style={{ maxWidth: '70%', maxHeight: 70, display: 'block', margin }} />;
+  const margin = fill
+    ? (a === 'left' ? '0 auto 0 0' : a === 'right' ? '0 0 0 auto' : '0 auto')
+    : (a === 'left' ? '3px auto 3px 0' : a === 'right' ? '3px 0 3px auto' : '3px auto');
+  return <img src={url} alt="" style={{ maxWidth: '70%', maxHeight: fill ? '100%' : 70, display: 'block', margin }} />;
 };
 
 interface Props {
@@ -65,6 +72,10 @@ const EMPTY_ATTRS: Omit<TitlePageAttrs, 'field'> = {
 
 // Title font-size choices (pt). Matches the editor's font-size dropdowns.
 const TITLE_FONT_SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72, 96];
+/** v4.73, Derek: both size dropdowns lead with "Default". Picking it APPLIES
+ *  this size, so the select then reads as the number ("12 pt") — the option
+ *  is a shortcut back to the built-in size, not a sticky display state. */
+const DEFAULT_TITLE_SIZE = 12;
 
 /** Find the first titlePage node with field='title' and return its attributes + position. */
 function findTitlePageNode(editor: Editor): { pos: number; attrs: TitlePageAttrs } | null {
@@ -123,11 +134,10 @@ function readTitlePageData(editor: Editor): Omit<TitlePageAttrs, 'field'> {
 
 type TpData = Omit<TitlePageAttrs, 'field'>;
 
-/* v2.25: deriveTitleFields + the classic layout live in
-   utils/titlePageLayout.ts — ONE builder shared with the FDX and Fountain
-   importers, so an imported title page is the same title page this dialog
-   builds. */
-const deriveFields = deriveTitleFields;
+/* v2.25: the classic layout lives in utils/titlePageLayout.ts — ONE builder
+   shared with the FDX and Fountain importers, so an imported title page is
+   the same title page this dialog builds. v4.73: the preview renders from
+   the same builder's specs, so it can't drift either. */
 
 /** Title-page images split by whether they sit above or below the title. */
 function classifyTitleImages(editor: Editor): { imagesAbove: Record<string, unknown>[]; imagesBelow: Record<string, unknown>[] } {
@@ -233,18 +243,31 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
   const handleApply = useCallback(() => applyTitlePage(false), [applyTitlePage]);
   const handlePreview = useCallback(() => applyTitlePage(true), [applyTitlePage]);
 
-  // --- Title-page image: upload and insert a screenplayImage node at the chosen
-  // position within the title page (free-flow: exporters render it in order). ---
+  // --- Title-page image (v4.73, Derek): the character tool's control, shared —
+  // the "+ Add Image" placeholder opens the same ImageSourceMenu (local device /
+  // Asset Manager). New images land ABOVE the title; once an image exists its
+  // row's Top/Bottom select is the placement control. ---
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const [imagePosition, setImagePosition] = useState<'above' | 'below'>('above');
   const handleAddImage = useCallback(() => imageInputRef.current?.click(), []);
+  const [imgMenu, setImgMenu] = useState<{ top: number; left: number } | null>(null);
+  const [assetPickerOpen, setAssetPickerOpen] = useState(false);
+  const [assetFilter, setAssetFilter] = useState('');
+  const { assets, setAssets } = useAssetStore();
+  const currentProject = useProjectStore((s) => s.currentProject);
+  const imageAssets = useMemo(() => assets.filter((a) => a.mime_type.startsWith('image/')), [assets]);
+  const openAssetPicker = useCallback(async () => {
+    if (!currentProject) return;
+    setAssetFilter('');
+    setAssetPickerOpen(true);
+    try { setAssets(await api.listAssets(currentProject.id)); } catch { /* stale list still renders */ }
+  }, [currentProject, setAssets]);
 
   const handleImageChosen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
     if (!file.type.startsWith('image/')) { showToast('Please choose an image file', 'error'); return; }
-    const placement = imagePosition;
+    const placement = 'above';
     try {
       const currentProject = useProjectStore.getState().currentProject;
       let attrs: Record<string, unknown>;
@@ -273,7 +296,7 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
     } catch (err) {
       showToast(`Failed to add image: ${err instanceof Error ? err.message : String(err)}`, 'error');
     }
-  }, [editor, imagePosition, data]);
+  }, [editor, data]);
 
   const handleSyncFromProject = useCallback(() => {
     const { documentTitle } = useEditorStore.getState();
@@ -303,12 +326,52 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
     return () => { editor.off('update', onUpdate); };
   }, [editor]);
 
-  // Preview = the classic layout from the LIVE fields + the current images
-  // (classified above/below the title), so it matches what Apply produces.
-  const { byLine, draftLine, copyrightLine } = deriveFields(data);
+  // Preview (v4.73, Derek: TO SCALE) — a real 8.5×11in page rendered from the
+  // SAME titlePageBlockSpecs Apply inserts (one builder, so the preview can't
+  // drift from the document), scaled down with zoom controls.
   const { imagesAbove, imagesBelow } = classifyTitleImages(editor);
-  const titlePx = `${Math.max(8, Math.round(data.tpTitleFontSize * 0.85))}px`;
-  const bottomRight = [data.tpContact, copyrightLine].filter(Boolean).join('\n');
+  const previewImgLines = (a: Record<string, unknown>) => Math.max(1, Number(a.heightLines) || 8);
+  const previewSpecs = titlePageBlockSpecs(
+    data,
+    imagesAbove.reduce((s, a) => s + previewImgLines(a), 0),
+    imagesBelow.reduce((s, a) => s + previewImgLines(a), 0),
+  );
+  const [tpZoom, setTpZoom] = useState<number | 'fit'>('fit');
+  const previewBoxRef = useRef<HTMLDivElement>(null);
+  const [fitScale, setFitScale] = useState(0.28);
+  useEffect(() => {
+    const el = previewBoxRef.current;
+    if (!el) return;
+    const compute = () => setFitScale(Math.max(0.1, (el.clientWidth - 20) / (8.5 * 96)));
+    compute();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const tpScale = tpZoom === 'fit' ? fitScale : tpZoom;
+  /** One title-page block, at page geometry: 12pt line grid; enlarged titles
+   *  occupy ceil(size/12) grid lines per wrapped line — the paginator's math. */
+  const renderSpecLine = (s: { field: string; text: string }, i: number) => {
+    if (s.field === 'title' || s.field === 'title2') {
+      const size = s.field === 'title' ? data.tpTitleFontSize : data.tpTitle2FontSize;
+      const slot = Math.ceil(size / 12) * 12;
+      return (
+        <div key={i} style={{ textAlign: 'center', fontWeight: 700, textTransform: 'uppercase', fontSize: `${size}pt`, lineHeight: `${slot}pt`, whiteSpace: 'pre-wrap' }}>
+          {s.text || (s.field === 'title' ? 'UNTITLED' : '')}
+        </div>
+      );
+    }
+    const align = s.field === 'author' || s.field === 'date' ? 'center'
+      : s.field === 'draft' ? 'left'
+      : s.field === 'contact' || s.field === 'copyright' ? 'right'
+      : 'left';
+    return (
+      <div key={i} style={{ textAlign: align, whiteSpace: 'pre-wrap', minHeight: '12pt' }}>
+        {s.text || ' '}
+      </div>
+    );
+  };
 
   // Rebuild the whole title page (classic layout) from the live fields + the
   // given image groups, so every image operation updates the page immediately.
@@ -335,6 +398,17 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
     const arr = above ? a : b;
     if (arr[idx]) arr[idx] = { ...arr[idx], align };
   });
+  // Asset Manager pick (v4.73) — same association the character tool makes,
+  // landed above the title; the row's Top/Bottom select moves it after.
+  const handleAssetPicked = (assetId: string) => {
+    if (!currentProject) return;
+    const picked = assets.find((x) => x.id === assetId);
+    editImages((a) => {
+      a.push({ assetId, projectId: currentProject.id, filename: picked?.filename ?? picked?.original_name, align: 'center' });
+    });
+    setAssetPickerOpen(false);
+    showToast('Image added to title page', 'success');
+  };
 
   // v2.24: confirmDialog, never window.confirm — the Tauri shim made this
   // exact button take down the whole app ("dialog.confirm not allowed").
@@ -358,6 +432,14 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
         <div className="dialog-header">Title Page</div>
         <div className="tp-editor-body">
           <div className="tp-editor-form">
+            {/* v4.73, Derek: Sync sits ABOVE the Title row it fills. */}
+            <button
+              className="tp-sync-btn"
+              onClick={handleSyncFromProject}
+              type="button"
+            >
+              Sync Title from Project
+            </button>
             {showField('tpTitle') && (
             <div className="props-field-wide tp-field-row">
               <div className="props-field tp-field-grow">
@@ -375,8 +457,12 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
                 <select
                   className="props-input"
                   value={data.tpTitleFontSize}
-                  onChange={(e) => setData((prev) => ({ ...prev, tpTitleFontSize: Number(e.target.value) }))}
+                  onChange={(e) => setData((prev) => ({
+                    ...prev,
+                    tpTitleFontSize: e.target.value === 'default' ? DEFAULT_TITLE_SIZE : Number(e.target.value),
+                  }))}
                 >
+                  <option value="default">Default</option>
                   {TITLE_FONT_SIZES.map((s) => <option key={s} value={s}>{s} pt</option>)}
                 </select>
               </div>
@@ -399,8 +485,12 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
                 <select
                   className="props-input"
                   value={data.tpTitle2FontSize}
-                  onChange={(e) => setData((prev) => ({ ...prev, tpTitle2FontSize: Number(e.target.value) }))}
+                  onChange={(e) => setData((prev) => ({
+                    ...prev,
+                    tpTitle2FontSize: e.target.value === 'default' ? DEFAULT_TITLE_SIZE : Number(e.target.value),
+                  }))}
                 >
+                  <option value="default">Default</option>
                   {TITLE_FONT_SIZES.map((s) => <option key={s} value={s}>{s} pt</option>)}
                 </select>
               </div>
@@ -496,28 +586,24 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
               />
             </div>
             )}
-            <button
-              className="tp-sync-btn"
-              onClick={handleSyncFromProject}
-              type="button"
-            >
-              Sync Title from Project
-            </button>
-            <div className="props-field props-field-wide" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <label className="props-label" style={{ marginTop: 0 }}>Place image</label>
-              <select
-                className="props-input"
-                value={imagePosition}
-                onChange={(e) => setImagePosition(e.target.value as 'above' | 'below')}
-                style={{ flex: 1 }}
-                title="Where the next image goes"
+            {/* v4.73, Derek: the character tool's image control, verbatim —
+                the placeholder IS the upload control; clicking opens the
+                shared source menu. Placement (Top / Bottom) appears on each
+                image's row below once it exists. */}
+            <div className="props-field props-field-wide">
+              <div
+                className="char-profile-image-placeholder char-img-clickable tp-image-ph"
+                role="button"
+                aria-label="Add an image to the title page"
+                title="Add an image to the title page"
+                onClick={(e) => {
+                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setImgMenu({ top: r.top + Math.min(r.height, 48), left: r.left + 12 });
+                }}
               >
-                <option value="above">Top of page (above title)</option>
-                <option value="below">Bottom of page (below all)</option>
-              </select>
-              <button className="tp-sync-btn" onClick={handleAddImage} type="button" style={{ marginTop: 0 }}>
-                Add Image…
-              </button>
+                <FaRegImage />
+                <span className="char-profile-image-add-label">+ Add Image</span>
+              </div>
             </div>
             <input
               ref={imageInputRef}
@@ -568,28 +654,54 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
             )}
           </div>
 
-          {/* Live preview — the classic layout from the live fields + images,
-              exactly as Apply / the PDF & DOCX exports produce it. */}
-          <div className="tp-editor-preview">
-            <div className="tp-preview-page" style={{ display: 'flex', flexDirection: 'column', padding: '7% 9%' }}>
-              {imagesAbove.map((a, i) => <TpImageThumb key={`a${i}`} attrs={a} align />)}
-              <div style={{ marginTop: '20%', textAlign: 'center' }}>
-                <div style={{ fontWeight: 700, textTransform: 'uppercase', fontSize: titlePx }}>{data.tpTitle || 'UNTITLED'}</div>
-                {data.tpTitle2 && (
-                  <div style={{ fontWeight: 700, textTransform: 'uppercase', fontSize: `${Math.max(8, Math.round(data.tpTitle2FontSize * 0.85))}px` }}>
-                    {data.tpTitle2}
-                  </div>
-                )}
-                {byLine && <div style={{ marginTop: 8, whiteSpace: 'pre-wrap' }}>{byLine}</div>}
+          {/* Live preview (v4.73, Derek: TO SCALE) — a real 8.5×11in page
+              rendered from the same specs Apply inserts, scaled down; the
+              zoom buttons magnify, Fit re-fits the column. */}
+          <div className="tp-editor-preview tp-editor-preview-scale" ref={previewBoxRef}>
+            <div className="tp-preview-zoom">
+              <button type="button" title="Zoom out" onClick={() => setTpZoom(Math.max(0.12, Math.round((tpScale / 1.25) * 1000) / 1000))}><FaSearchMinus /></button>
+              <button type="button" className="tp-preview-zoom-fit" title="Fit the preview column" onClick={() => setTpZoom('fit')}>Fit</button>
+              <button type="button" title="Zoom in" onClick={() => setTpZoom(Math.min(1.6, Math.round((tpScale * 1.25) * 1000) / 1000))}><FaSearchPlus /></button>
+            </div>
+            <div className="tp-preview-scroll">
+              <div style={{ width: 8.5 * 96 * tpScale, height: 11 * 96 * tpScale, position: 'relative', margin: '0 auto', flex: '0 0 auto' }}>
+                <div className="tp-scale-page" style={{ transform: `scale(${tpScale})` }}>
+                  {imagesAbove.map((a, i) => (
+                    <div key={`a${i}`} style={{ height: `${previewImgLines(a) * 12}pt`, overflow: 'hidden' }}>
+                      <TpImageThumb attrs={a} align fill />
+                    </div>
+                  ))}
+                  {previewSpecs.map(renderSpecLine)}
+                  {imagesBelow.map((a, i) => (
+                    <div key={`b${i}`} style={{ height: `${previewImgLines(a) * 12}pt`, overflow: 'hidden' }}>
+                      <TpImageThumb attrs={a} align fill />
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', fontSize: 9, gap: 8 }}>
-                <div style={{ textAlign: 'left', whiteSpace: 'pre-wrap' }}>{draftLine}</div>
-                <div style={{ textAlign: 'right', whiteSpace: 'pre-wrap' }}>{bottomRight}</div>
-              </div>
-              {imagesBelow.map((a, i) => <TpImageThumb key={`b${i}`} attrs={a} align />)}
             </div>
           </div>
         </div>
+        {imgMenu && (
+          <ImageSourceMenu
+            pos={imgMenu}
+            onLocal={handleAddImage}
+            onAssets={currentProject ? () => { void openAssetPicker(); } : undefined}
+            onClose={() => setImgMenu(null)}
+          />
+        )}
+        {assetPickerOpen && currentProject && (
+          <CharacterImagePickerDialog
+            forName="the Title Page"
+            filter={assetFilter}
+            setFilter={setAssetFilter}
+            imageAssets={imageAssets}
+            linkedImageIds={[]}
+            projectId={currentProject.id}
+            onAssociate={handleAssetPicked}
+            onClose={() => setAssetPickerOpen(false)}
+          />
+        )}
         <div className="dialog-actions">
           <button onClick={handleDeleteTitlePage} style={{ marginRight: 'auto', color: '#c0392b', background: 'rgba(192, 57, 43, 0.14)', borderColor: 'rgba(192, 57, 43, 0.45)' }}>
             Delete Title Page

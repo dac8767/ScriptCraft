@@ -78,7 +78,9 @@ export const AssetAudio: React.FC<{ projectId: string; assetId: string }> = ({ p
 export const ImageSourceMenu: React.FC<{
   pos: { top: number; left: number };
   onLocal: () => void;
-  onAssets: () => void;
+  /** v4.73: optional — the Title Page offers assets only when a project is
+   *  open; absent hides the row rather than shipping a dead menu item. */
+  onAssets?: () => void;
   onRemove?: () => void;
   onClose: () => void;
 }> = ({ pos, onLocal, onAssets, onRemove, onClose }) => {
@@ -102,7 +104,9 @@ export const ImageSourceMenu: React.FC<{
   return createPortal(
     <div className="char-upload-menu" style={{ top: pos.top, left: pos.left }} onPointerDown={(e) => e.stopPropagation()}>
       <button className="char-upload-menu-item" onClick={() => { onClose(); onLocal(); }}>From local device…</button>
-      <button className="char-upload-menu-item" onClick={() => { onClose(); onAssets(); }}>From Asset Manager…</button>
+      {onAssets && (
+        <button className="char-upload-menu-item" onClick={() => { onClose(); onAssets(); }}>From Asset Manager…</button>
+      )}
       {onRemove && (
         <button className="char-upload-menu-item" onClick={() => { onClose(); onRemove(); }}>Remove Image</button>
       )}

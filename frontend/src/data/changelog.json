@@ -1,5 +1,15 @@
 [
   {
+    "version": "4.74",
+    "date": "2026-07-26",
+    "changes": [
+      "Title Page: \"Sync Title from Project\" sits above the Title row, and the duplicated \"Title Page\" caption inside the window is gone (the window's own header keeps the name)",
+      "Title Page: the PLACE IMAGE row is replaced by the character tool's \"+ Add Image\" box — clicking offers the same sources (local device, and Asset Manager when a project is open); each image's Top/Bottom placement appears once it exists",
+      "Title Page: both Title Size menus lead with \"Default\", which applies the built-in size and then reads as the number",
+      "Title Page: the preview is TO SCALE now — a real 8.5×11 page built from the exact blocks Apply inserts — with zoom in/out and Fit buttons"
+    ]
+  },
+  {
     "version": "4.73",
     "date": "2026-07-26",
     "changes": [
