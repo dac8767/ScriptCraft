@@ -64,7 +64,9 @@ export function useCharTabs(): ToolChromeTab[] {
   return [
     { label: 'Profiles', active: activeTab === 'profiles', onSelect: () => setActiveTab('profiles') },
     { label: 'Relationships', active: activeTab === 'relationships', onSelect: () => setActiveTab('relationships') },
-    { label: 'From Script', active: activeTab === 'setup', onSelect: () => setActiveTab('setup') },
+    // v4.52, Derek: renamed "From Script" -> "Script" (label only; the
+    // 'setup' tab id persists in view state).
+    { label: 'Script', active: activeTab === 'setup', onSelect: () => setActiveTab('setup') },
   ];
 }
 

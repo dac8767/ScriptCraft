@@ -84,6 +84,8 @@ export interface ViewState {
   toolbarHiddenItems?: string[];
   toolbarPinnedTools?: string[];
   toolSizes?: Record<string, { w: number; h: number }>;
+  /** v4.52: EXPLICIT docked/floating per tool — replaces the width<=dock rule. */
+  toolMode?: Record<string, 'docked' | 'floating'>;
   writingGoal?: WritingGoal | null;
   goalsCompleted?: number;
   characterProfilesOpen?: boolean;

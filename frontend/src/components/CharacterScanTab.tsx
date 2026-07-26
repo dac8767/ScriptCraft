@@ -19,9 +19,10 @@ export function CharacterScanTab({
   return (
     <div className="char-setup-tab">
       <div className="char-setup-section">
-        <div className="char-setup-title">Scan Script{scanResults ? ` (${visibleScanResults.length})` : ''}</div>
-        {/* v4.28 batch-v6 #5, Derek: no Re-scan button — the list tracks the
-            script by itself (rescans on tab entry AND as the script changes). */}
+        {/* v4.52, Derek: the "Scan Script (n)" heading line is gone — the tab
+            IS the scan; the explainer below carries the context.
+            v4.28 batch-v6 #5: no Re-scan button — the list tracks the script
+            by itself (rescans on tab entry AND as the script changes). */}
         <p className="char-setup-desc">
           The list updates from the script automatically — names that already have a character entry drop off. Add the ones you want; classify the rest to file them away.
         </p>

@@ -477,6 +477,7 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
     // Clear every slot first so openTool's placement is the only one left.
     if (st.activeTool === tool.id) st.setActiveTool(null);
     if (st.activeToolRight === tool.id) st.setActiveToolRight(null);
+    st.setToolMode(tool.id, 'docked');
     st.setToolSize(tool.id, w, size.h);
     st.openTool(tool.id);
   };
@@ -629,7 +630,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   const activeId = side === 'left' ? activeTool : activeToolRight;
   const setActive = side === 'left' ? setActiveTool : setActiveToolRight;
   const active = tools.find((t) => t.id === activeId) || null;
-  const { toolSizes, setToolSize, panelSizeMode, chromeCustomPx, setChromeCustomPx, setPanelSizeMode, uiResizeLocked, panelItemScale } = useEditorStore();
+  const { toolSizes, setToolSize, toolMode, setToolMode, panelSizeMode, chromeCustomPx, setChromeCustomPx, setPanelSizeMode, uiResizeLocked, panelItemScale } = useEditorStore();
   const dockW = dockWidthFor(side, panelSizeMode[side], chromeCustomPx[side === 'left' ? 'panelLeft' : 'panelRight']);
   // v0.66: by DEFAULT every window opens INSIDE its side panel (inline),
   // pushing the dock's remaining items down — so nothing floats over the
@@ -647,6 +648,11 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     : null;
   // v2.06: the icon rail never hosts inline windows — everything floats.
   const iconsMode = panelSizeMode[side] === 'icons';
+  // v4.52, Derek: docked-vs-floating is EXPLICIT state now. The old rule —
+  // inline whenever the stored width fit the dock — meant resizing a floating
+  // window narrow silently popped it back into the panel. A tool with no
+  // stored mode gets its default home: noPanelFit tools float, the rest dock.
+  const activeMode = active ? (toolMode[active.id] ?? (active.noPanelFit ? 'floating' : 'docked')) : null;
   // v2.15 (Settings > Tools): Scrapbook solo mode — while it's open, every
   // other sidebar item hides and its window fills the panel. Render-time
   // only: Return to editor restores the sidebars exactly, nothing rewritten.
@@ -658,7 +664,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   const scrapbookSolo = scrapbookOpenForSolo && scrapbookExclusive;
   // neverDock tools float regardless — even a stale small toolSize from before
   // the flag existed must not pull them inline.
-  const inline = !iconsMode && !!(active && activeSize && activeSize.w <= dockW && !active.neverDock);
+  const inline = !iconsMode && !!(active && activeSize && activeMode === 'docked' && !active.neverDock);
 
   const startInlineResize = (e: React.PointerEvent) => {
     if (!active || !activeSize) return;
@@ -740,6 +746,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
       armSwallow();   // a real drag must never read as an accordion toggle
       if (inEditor(ev.clientX, ev.clientY)) {
         windowSpawnAt = { id: t.id, x: ev.clientX, y: ev.clientY };
+        setToolMode(t.id, 'floating');
         setToolSize(t.id, dockW + 140, h);
       }
     };

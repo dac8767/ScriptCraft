@@ -954,6 +954,12 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   /** Per-tool remembered window size; a resize becomes that tool's default */
   toolSizes: Record<string, { w: number; h: number }>;
   setToolSize: (tool: ToolId, w: number, h: number) => void;
+  /** v4.52, Derek: where a tool LIVES is explicit state — resizing a floating
+   *  window narrow no longer pops it back into the panel (the retired
+   *  width<=dock rule). Absent key = the tool's default home (noPanelFit
+   *  tools float, everything else docks). */
+  toolMode: Record<string, 'docked' | 'floating'>;
+  setToolMode: (tool: ToolId, mode: 'docked' | 'floating') => void;
   /** Which tool window is open in the RIGHT dock (null = none) */
   activeToolRight: ToolId | null;
   setActiveToolRight: (tool: ToolId | null) => void;
@@ -1319,6 +1325,18 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     const toolSizes = { ...s.toolSizes, [tool]: { w, h } };
     saveViewState({ toolSizes });
     return { toolSizes };
+  }),
+  // First run after v4.52 derives each tool's home from the stored width the
+  // retired rule used to read, so every window keeps its current home.
+  toolMode: (_vs.toolMode as Record<string, 'docked' | 'floating'>) ?? Object.fromEntries(
+    Object.entries((_vs.toolSizes ?? {}) as Record<string, { w: number }>)
+      .filter(([, sz]) => sz && sz.w > 300)
+      .map(([id]) => [id, 'floating' as const]),
+  ),
+  setToolMode: (tool, mode) => set((s) => {
+    const toolMode = { ...s.toolMode, [tool]: mode };
+    saveViewState({ toolMode });
+    return { toolMode };
   }),
   activeToolRight: (_vs.activeToolRight === 'indexcards' ? 'scenes' : (_vs.activeToolRight as ToolId | null)) ?? null,
   setActiveToolRight: (tool) => {

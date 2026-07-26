@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.51 — Scenes cards fill their host)
+# ScriptCraft — continuation brief (current as of v4.52 — transparent embeds, explicit tool homes)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,29 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.51 — Scenes cards fill their host (HEAD)
+### v4.52 — transparent embeds, centered rows, explicit tool homes (HEAD)
+
+- **Shape-color parity, systemically**: driver matrix (driver/v25-matrix.js)
+  sampled the painted bg per tool per shape — Pages/Scenes/Locations painted
+  navigator-bg in windows vs fd-bg fullscreen. Fix:
+  `.scene-navigator-embed { background: transparent }` and `.index-cards`
+  bg → transparent — THE WINDOW BODY IS THE SURFACE, embeds paint nothing.
+  (Matrix rows reading "none"/ancestor = already transparent = fine;
+  Characters/Goals rows were sample-point artifacts hitting inputs/chips.)
+- **`.navigator-scene` rows**: align-items center (min-height 40 made
+  flex-start read top-hung); `.expanded` reverts to flex-start. Verified
+  badge-midline delta 0. NOTE for drivers: the Scenes list needs REAL
+  scene-heading elements — press Ctrl+1 before typing the heading, plain
+  typed text stays Action and the list shows the empty state.
+- **Width auto-dock RETIRED (Derek)**: `toolMode: Record<ToolId,
+  'docked'|'floating'>` in editorStore (persisted; init derives from stored
+  widths >300 so homes survive the upgrade; default = noPanelFit ? floating
+  : docked). `inline` reads the mode, drag-out writes 'floating', dockInto
+  writes 'docked'. Resizing a float to 240px: stays floating (verified).
+- Characters tab label 'From Script' → 'Script' (tab id 'setup' persists);
+  the "Scan Script (n)" `.char-setup-title` line removed.
+
+### v4.51 — Scenes cards fill their host
 
 Derek: dead space between the Scenes cards area and the window edge. Root
 cause: `.index-cards { max-height: 50vh; flex-shrink: 0 }` — the old

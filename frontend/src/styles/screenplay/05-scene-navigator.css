@@ -1,6 +1,7 @@
 /* ============ SCENE NAVIGATOR ============ */
 .scene-navigator {
   width: 276px; min-width: 180px; background: var(--fd-navigator-bg);
+  /* (embed variant below goes transparent — v4.52) */
   border-right: 1px solid var(--fd-border); display: flex;
   flex-direction: column; overflow: hidden;
 }
@@ -27,10 +28,13 @@
 .navigator-list { flex: 1; overflow-y: scroll; padding: 0 0 4px; }
 .navigator-empty { padding: 24px 16px; color: var(--fd-text-secondary, var(--fd-text)); opacity: 0.7; font-size: 13px; font-style: italic; text-align: center; }
 .navigator-scene {
-  display: flex; align-items: flex-start; padding: var(--dz-nav-scene-pady, 10px) 14px;
+  /* v4.52, Derek: content CENTERS in the row (min-height made flex-start
+     read top-hung). Expanded rows revert so the badge hugs the heading. */
+  display: flex; align-items: center; padding: var(--dz-nav-scene-pady, 10px) 14px;
   cursor: pointer; border-left: 3px solid transparent;
   min-height: 40px;
 }
+.navigator-scene.expanded { align-items: flex-start; }
 .navigator-scene:hover { background: var(--fd-overlay-subtle); border-left-color: var(--fd-accent); }
 .navigator-scene:active { background: rgba(74, 158, 255, 0.12); }
 .navigator-scene.expanded { background: var(--fd-overlay-subtle); border-left-color: var(--fd-accent); }
@@ -763,3 +767,9 @@
   white-space: nowrap;
 }
 .nav-orig-num { text-decoration: line-through; opacity: 0.6; }
+
+/* v4.52, Derek: inside window chrome the embed paints NOTHING of its own —
+   the body surface (--fd-bg) is the one background in every shape (docked,
+   floating, fullscreen). The opaque panel bg above is only for the legacy
+   overlay presentation. */
+.scene-navigator-embed { background: transparent; }

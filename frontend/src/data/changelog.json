@@ -1,5 +1,42 @@
 [
   {
+    "version": "4.52",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "One color scheme in every shape — for real this time",
+        "detail": "The Scenes family (Scenes, Pages, Locations) painted the side-panel shade inside windows while fullscreen showed the body shade. Tool embeds paint nothing of their own now — the window body's surface is the one background docked, popped out, and fullscreen. A full tool-by-shape audit drove the fix.",
+        "tags": [
+          "Windows",
+          "Fix"
+        ]
+      },
+      {
+        "title": "Scene rows center their content",
+        "detail": "The scene number and heading were hugging the top of the row's highlight; they sit dead-center now (expanded rows keep the badge beside the heading).",
+        "tags": [
+          "Scenes",
+          "UI"
+        ]
+      },
+      {
+        "title": "Narrow windows stay floating",
+        "detail": "The old rule that popped a floating window back into the side panel whenever it was resized narrow enough is retired. Where a window lives is explicit now — it only docks when you drop it on a panel, and only floats when you pull it out. Existing windows keep their current homes.",
+        "tags": [
+          "Windows"
+        ]
+      },
+      {
+        "title": "Characters: 'Script' tab",
+        "detail": "The 'From Script' tab is named 'Script' now, and the redundant 'Scan Script (0)' heading line is gone — the explainer text carries the context.",
+        "tags": [
+          "Characters",
+          "UI"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.51",
     "date": "2026-07-26",
     "items": [
