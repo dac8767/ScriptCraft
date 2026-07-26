@@ -60,6 +60,15 @@ export const CloseIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (
     <line x1="13" y1="1" x2="1" y2="13" />
   </svg>
 );
+/** v4.78, Derek: the fullscreen header's minimize/shrink — back to a floating
+ *  window. Windows-restore shape (two offset outline squares), same 14-box /
+ *  1.5 stroke / 1→13 ink family as FullscreenIcon and CloseIcon. */
+export const RestoreIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (
+  <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <rect x="1" y="4.5" width="8.5" height="8.5" />
+    <polyline points="4.5,4.5 4.5,1 13,1 13,9.5 9.5,9.5" />
+  </svg>
+);
 export const ExpandIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (
   <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.5">
     <polyline points="9,1 13,1 13,5" /><line x1="8" y1="6" x2="13" y2="1" />

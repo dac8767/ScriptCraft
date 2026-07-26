@@ -29,7 +29,7 @@ import {
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
-import { FullscreenIcon, CloseIcon } from './uiIcons';
+import { FullscreenIcon, CloseIcon, RestoreIcon } from './uiIcons';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, LocationsTitleExtra, StructureTitleExtra, type NavTab } from './SceneNavigator';
 import NavigatorTool, { NavigatorControls } from './NavigatorTool';
@@ -252,10 +252,13 @@ function HeaderTabs({ chrome }: { chrome: ToolChrome }) {
  *  controls cluster (+ window actions) · fullscreen · close.
  *  v4.69, Derek: the divider is GONE — fullscreen and close are distinct
  *  bordered buttons (classic title-bar style), which is separation enough. */
-function HeaderRightCluster({ id, chrome, onClose, closeTitle, fullscreenBtn = true }: {
+function HeaderRightCluster({ id, chrome, onClose, closeTitle, fullscreenBtn = true, onMinimize }: {
   id: ToolId; chrome?: ToolChrome; onClose: () => void; closeTitle?: string;
   /** false on the fullscreen takeover — it IS fullscreen. */
   fullscreenBtn?: boolean;
+  /** v4.78, Derek: the fullscreen takeover's shrink — LEFT of close, converts
+   *  back to a floating "popped out" window. */
+  onMinimize?: () => void;
 }) {
   const hasCluster = !!(chrome?.Controls || chrome?.WindowActions);
   return (
@@ -267,6 +270,13 @@ function HeaderRightCluster({ id, chrome, onClose, closeTitle, fullscreenBtn = t
         </span>
       )}
       {fullscreenBtn && <ToolFullscreenButton id={id} />}
+      {onMinimize && (
+        <button
+          className="tool-window-minimize"
+          onClick={(e) => { e.stopPropagation(); onMinimize(); }}
+          title="Shrink to a floating window"
+        ><RestoreIcon /></button>
+      )}
       <button
         className="tool-window-close"
         onClick={(e) => { e.stopPropagation(); onClose(); }}
@@ -356,7 +366,21 @@ export function ToolFullscreenTakeover({ editor, scrollContainer }: {
           {chrome?.TitleExtra && <chrome.TitleExtra />}
         </span>
         {chrome?.useTabs && <HeaderTabs chrome={chrome} />}
-        <HeaderRightCluster id={id} chrome={chrome} onClose={close} closeTitle="Return to editor" fullscreenBtn={false} />
+        <HeaderRightCluster
+          id={id}
+          chrome={chrome}
+          onClose={close}
+          closeTitle="Return to editor"
+          fullscreenBtn={false}
+          /* v4.78, Derek: shrink (left of ×) — leave fullscreen INTO a
+             floating window; openTool re-activates it wherever it lives. */
+          onMinimize={() => {
+            const st = useEditorStore.getState();
+            st.setFullscreenTool(null);
+            st.setToolMode(id, 'floating');
+            st.openTool(id);
+          }}
+        />
       </div>
       <div className="fs-tool-takeover-body">
         <ToolContent id={id} editor={editor} scrollContainer={scrollContainer} onClose={close} />
@@ -815,6 +839,8 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
       if (inEditor(ev.clientX, ev.clientY)) {
         setToolMode(t.id, 'floating');
         setToolSize(t.id, dockW + 140, h);
+        // v4.78, Derek: a CLOSED row drags out too — floating means open.
+        setActive(t.id);
       }
     };
     document.addEventListener('pointermove', onMove);
@@ -998,8 +1024,11 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                   setActive(activeId === t.id ? null : t.id);
                 }
               }}
-              onPointerDown={isOpenInline && !t.neverDock && t.id !== 'notebook'
-                ? startDockDragOut(t, activeSize!.h)
+              // v4.78, Derek: closed rows drag out too — a tool doesn't need
+              // to be open to be pulled into a floating window. Height comes
+              // from its remembered (or default) size when it isn't open.
+              onPointerDown={!t.neverDock && t.id !== 'notebook'
+                ? startDockDragOut(t, isOpenInline ? activeSize!.h : (toolSizes[t.id]?.h ?? t.defaultSize.h))
                 : undefined}
               title={t.label}
             >

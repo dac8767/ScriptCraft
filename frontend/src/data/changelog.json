@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.78",
+    "date": "2026-07-26",
+    "changes": [
+      "Fullscreen tool windows have a shrink button (left of the ×, title-bar style) that drops them back to a floating window",
+      "A closed tool can be dragged straight out of the side panel into a floating window — it no longer needs to be open first"
+    ]
+  },
+  {
     "version": "4.77",
     "date": "2026-07-26",
     "changes": [

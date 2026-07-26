@@ -1,29 +1,49 @@
-# ScriptCraft — continuation brief (current as of v4.72 — page-number position + ruler tail)
+# ScriptCraft — continuation brief (current as of v4.78 — fullscreen shrink + closed-row drag-out)
 
 > QUEUE (Derek-approved, not yet landed), in order:
-> 1. Title Page batch: (a) "Sync Title from Project" above the Title/Title
->    Size row; drop the duplicated "Title Page" caption row (keep the
->    header one); replace "PLACE IMAGE"+dropdown with a character-tool
->    style "+ Add Image" placeholder (same options); show top/bottom
->    placement only once an image exists. (b) Both Title Size dropdowns
->    get a top option "Default" that applies the default size but then
->    DISPLAYS as the numeric size (e.g. 16 pt). (c) The tool's title-page
->    display must be TO SCALE (match Preview) with zoom buttons.
-> 2. Ribbon dividers (Derek, mid-v4.72): the vertical divider between a
->    two-row section and a one-row section must be REMOVABLE (default
->    stays: dividers appear as they do now), and the + menu gains "add a
->    single-row divider" and "add a double-row divider" options — so
->    mixed-height sections can sit flush next to each other.
-> 3. Spelling squiggles (Derek, mid-v4.72): misspelled words get the
->    standard red squiggly underline in the editor; NEVER spell-check
->    all-caps words (character names, locations/scene headings).
-> 4. Audit items: rescans gated on tool-open (live open / refresh on open /
+> 1. NEW-SCRIPT LAUNCHER + GUIDED SETUP WIZARD (Derek's big feature,
+>    late v4.78 session — his spec verbatim in the chat): a first window
+>    with four options — New Script (Manual Setup) / New Script (Guided
+>    Setup) / Open Script / Import File. Manual = the current new-script
+>    window PLUS a save-locations field defaulting to the most recently
+>    updated script's locations; Open/Import leave that window (they
+>    live on the launcher now). Guided = a wizard: Project Naming, Save
+>    locations & options, Format options, then a friendly page per
+>    Customize tab (NOT the raw tabs — explanation text, user-friendly),
+>    each with Next and "Skip for now", plus a persistent note "all of
+>    these options can be changed at a later time". MUST stay in sync
+>    with Customize (single source — read the same stores/registries,
+>    never copies). Claude suggested additions pending Derek's pick (see
+>    the v4.78 delivery message): a page-layout step, autosave/backup
+>    step, theme step, template preview, an "import settings from
+>    another script" step.
+>    PLUS (Derek, same session): Customize window footer gains Import /
+>    Export Customizations — export writes a file of every customization
+>    choice; import applies it after a warning ("this will override all
+>    of your current customization settings"). Both Manual and Guided
+>    setup offer "customize from file": pick a customize file OR an
+>    existing ScriptCraft file and copy its customization settings.
+>    Foundations: utils/settingsBackup (v4.22 whole-settings export) and
+>    the workspaces customize snapshot — scope a CUSTOMIZATIONS-only
+>    subset of that, one schema shared by Customize footer + both setups.
+> 2. Window-mode memory incl. FULLSCREEN (deferred from v4.78, reason:
+>    touches openTool/dock/persist semantics across many flows — needs
+>    fresh-session care): every tool reopens in its last shape — side
+>    panel / floating / fullscreen. v4.78 already shipped the fullscreen
+>    header's shrink button (left of ×, → floating) and closed-row
+>    drag-out; what remains is persisting 'fullscreen' as a remembered
+>    mode and honoring it in openTool/dock clicks.
+> 3. Audit items: rescans gated on tool-open (live open / refresh on open /
 >    idle closed); react-router major bump; Tauri fs $HOME scope narrowing;
 >    CSP decision documented.
-> FINDING to relay when relevant: File ▸ Print is window.print() and
->    16-print.css hides every .page-sep overlay — printed output has NO
->    page numbers/headers/footers at all. PDF export is the numbered
->    path. Fixing print = its own project (print pagination fidelity).
+> FINDINGS standing: (a) File ▸ Print is window.print() and 16-print.css
+>    hides every .page-sep overlay — printed output has NO page numbers/
+>    headers/footers; PDF export is the numbered path. Fixing print = its
+>    own project. (b) About ▸ Compatibility = runtime capability probes
+>    (services/compat.ts): UUID/SubtleCrypto/Clipboard are always
+>    "Latest" in the desktop app; the Storage row is the only
+>    informative one. Recommended: fold into a Diagnostics surface or
+>    trim — awaiting Derek's call.
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -270,7 +290,55 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.72 — page-number position (Derek's margin diagram) + ruler tail (HEAD)
+### v4.73–v4.78 — the crash hotfix and the rest of Derek's stream
+
+- **v4.73 (HOTFIX)** — What's New CRASHED (Derek's screenshot): every
+  changelog entry since v4.53 was appended as `changes: [strings]` while
+  the dialog's contract is `items: [{title, detail}]`, and the export
+  was a blind cast. data/changelog.ts now normalizes BOTH shapes
+  (strings split at first ': ' or ' — '); changelog.test.ts walks the
+  whole JSON so one malformed entry can never take the window down
+  again. Ship rule burned in: the WIP TitlePageEditor was `git stash`ed
+  so the hotfix went out alone.
+- **v4.74 Title Page batch** — Sync above the Title row; embedded
+  caption dedup (.fs-modal-as-panel .tp-editor-dialog > .dialog-header
+  hidden); PLACE IMAGE row → char-tool "+ Add Image" placeholder
+  opening the SHARED ImageSourceMenu (onAssets optional now — hidden
+  without a project, never dead) + CharacterImagePickerDialog reuse;
+  per-image Top/Bottom = the placement UI; both size selects lead with
+  "Default" (applies 12 then reads numeric); preview is TO SCALE — a
+  real 8.5×11in .tp-scale-page rendered from the SAME
+  titlePageBlockSpecs Apply inserts, scaled, with −/Fit/+ zoom.
+  DRIVER BURN: never .remove() a React-portalled node (crashed React on
+  unmount) — close menus with a real outside pointerdown.
+- **v4.75 ribbon dividers** — boundary dividers removable: new `nd:`
+  boundary token (parse/serialize round-trip, clone carries
+  noSepBefore — clone is field-by-field, new fields MUST be added
+  there); live zones skip the sep; edit mode: hover-× on the sep /
+  dashed ghost restores; + menu: "Divider — one row" (d:) and
+  "Divider — two rows" (2!d:).
+- **v4.76 About** — links route through openInBrowser (raw
+  target=_blank stalled in the WebView; Rust open_url exists); credits
+  audited: html2canvas-pro + pdf.js added, everything else verified
+  live; CLAUDE.md standing rule: dependency changes update the list in
+  the same change.
+- **v4.77 spell squiggles by default** — the wavy red underline and the
+  ALL-CAPS skip already existed (SpellCheck.ts shouldSkipWord) but
+  spellCheckByDefault defaulted OFF and every save stamped
+  _spellCheckEnabled:false into the doc. Now: default ON ('0' =
+  opt-out); explicit user choice persisted as _spellCheckChoice
+  ('on'/'off', recorded ONLY by toggleSpellCheck); loads use ONE rule —
+  resolveSpellCheckOnLoad (choice > legacy true > setting default;
+  legacy false = stamp noise) — on BOTH load paths (the local-file path
+  used to ignore the setting). spellCheckResolve.test.ts pins the
+  matrix.
+- **v4.78** — fullscreen header gains a shrink button (RestoreIcon,
+  bordered 20×20 family, LEFT of ×) → setFullscreenTool(null) +
+  setToolMode('floating') + openTool; closed dock rows drag out
+  (startDockDragOut attached regardless of open, height from stored/
+  default size, release also setActive).
+
+### v4.72 — page-number position (Derek's margin diagram) + ruler tail
 
 - Derek's diagram: margins L1.5/R1/T1/B1; the TOP and RIGHT margins split
   in half; the page number rests ON the 0.5"-from-top line, horizontally

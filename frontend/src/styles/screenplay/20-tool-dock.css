@@ -596,6 +596,7 @@ body.fs-tool-dragging { cursor: grabbing; }
    title-bar style) — the divider that used to separate them is gone. Same
    20×20 geometry as before (the v4.43 alignment guarantee). */
 .tool-window-close,
+.tool-window-minimize,
 .tool-window-header .char-profiles-fullscreen-btn,
 .tool-inline-header .char-profiles-fullscreen-btn {
   background: rgba(128, 128, 128, 0.06);
@@ -612,7 +613,8 @@ body.fs-tool-dragging { cursor: grabbing; }
   flex: none;
 }
 .tool-window-header .char-profiles-fullscreen-btn:hover,
-.tool-inline-header .char-profiles-fullscreen-btn:hover {
+.tool-inline-header .char-profiles-fullscreen-btn:hover,
+.tool-window-minimize:hover {
   color: var(--fd-text);
   background: var(--fd-hover-bg);
 }
