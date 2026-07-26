@@ -165,6 +165,21 @@ export const VomitIcon: React.FC<{ size?: number | string }> = ({ size = '1em' }
   </svg>
 );
 
+/** v4.53, Derek: the two panel toggles were the SAME FaColumns glyph — now a
+ *  pair with the FILLED side naming the panel each one toggles. */
+export const PanelLeftIcon: React.FC<{ size?: number }> = ({ size = 13 }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+    <rect x="1.25" y="2.25" width="13.5" height="11.5" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    <rect x="3.2" y="4.2" width="3.4" height="7.6" rx="0.8" fill="currentColor" />
+  </svg>
+);
+export const PanelRightIcon: React.FC<{ size?: number }> = ({ size = 13 }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+    <rect x="1.25" y="2.25" width="13.5" height="11.5" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    <rect x="9.4" y="4.2" width="3.4" height="7.6" rx="0.8" fill="currentColor" />
+  </svg>
+);
+
 /* (v4.39: chevronTowards is gone with the pop-in/pop-out buttons — windows
    dock and undock by drag now. DoubleChevronIcon stays: the collapsed-panel
    expand strips still point with it.) */

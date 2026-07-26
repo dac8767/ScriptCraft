@@ -1,5 +1,14 @@
 [
   {
+    "version": "4.53",
+    "date": "2026-07-26",
+    "changes": [
+      "Tool-specific controls now lead the window control cluster — Scenes reads Reorder, Filter, View, Search",
+      "Two-stage header overflow: tabs condense into a dropdown first, and the row only wraps to a second line if it is still too crowded",
+      "Distinct Toggle Left Panel / Toggle Right Panel icons (filled-side pair) so the two are no longer identical"
+    ]
+  },
+  {
     "version": "4.52",
     "date": "2026-07-26",
     "items": [

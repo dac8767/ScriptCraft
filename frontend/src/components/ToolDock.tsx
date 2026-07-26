@@ -12,7 +12,7 @@
  * stays). Tools disabled in both panels open as a temporary centered window
  * via the Tools menu (TempToolWindow, mounted once in ScreenplayEditor).
  */
-import React, { useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { CHROME_SCALES, chromePx, ICON_RAIL_W } from './chromeSizes';
 import AssetManager from './AssetManager';
@@ -36,7 +36,7 @@ import NavigatorTool, { NavigatorControls } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
 import CharacterProfiles, { CharTitleExtra, useCharTabs, CharControls } from './CharacterProfiles';
-import { ChromeTabs, type ToolChromeTab } from './ToolControls';
+import { ChromeTabs, ControlDropdown, type ToolChromeTab } from './ToolControls';
 import { StickyNotesTool, FragmentsTool, TodoTool, StickyTitleExtra, StickyControls, TodoTitleExtra, TodoControls, SnippetsTitleExtra } from './StickyNotes';
 import { HighlightsTitleExtra } from './HighlightsTool';
 import HighlightsTool from './HighlightsTool';
@@ -165,10 +165,80 @@ export interface ToolChrome {
 }
 
 /** Hook-calling wrapper so useTabs runs in a component of its own — the
- *  header renders it conditionally, which a bare hook call couldn't be. */
+ *  header renders it conditionally, which a bare hook call couldn't be.
+ *
+ *  v4.53, Derek's two-stage overflow: when the header row is too crowded the
+ *  tabs COLLAPSE into a dropdown first; only if even that can't fit on one
+ *  line does the row wrap (the flex-wrap from v4.39). The decision compares
+ *  the row's width against the NATURAL single-line widths — a hidden copy of
+ *  the full strip, plus each sibling's unwrapped content width — so the
+ *  row's own wrapping never feeds back into the decision. */
+function naturalWidth(el: HTMLElement): number {
+  // flex-wrap containers report their wrapped box — sum their children the
+  // same way to get the single-line width they WANT.
+  const cs = getComputedStyle(el);
+  if (cs.flexWrap === 'wrap' && el.children.length > 0) {
+    const gap = parseFloat(cs.columnGap) || 0;
+    let w = 0;
+    for (const c of el.children) w += naturalWidth(c as HTMLElement);
+    return w + gap * Math.max(0, el.children.length - 1)
+      + (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0)
+      + (parseFloat(cs.marginLeft) || 0);
+  }
+  return el.offsetWidth + (parseFloat(cs.marginLeft) || 0);
+}
+
 function HeaderTabs({ chrome }: { chrome: ToolChrome }) {
   const tabs = chrome.useTabs!();
-  return <span className="tool-chrome-tabs"><ChromeTabs tabs={tabs} /></span>;
+  const hostRef = useRef<HTMLSpanElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const [collapsed, setCollapsed] = useState(false);
+  useLayoutEffect(() => {
+    const host = hostRef.current;
+    const row = host?.parentElement;
+    if (!host || !row) return;
+    const decide = () => {
+      if (!row.clientWidth) return;            // unmeasurable (jsdom / hidden)
+      const stripW = measureRef.current?.offsetWidth ?? 0;
+      const cs = getComputedStyle(row);
+      const gap = parseFloat(cs.columnGap) || 0;
+      let need = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0) + stripW;
+      let n = 1;
+      for (const el of row.children) {
+        if (el === host || el === measureRef.current) continue;
+        need += naturalWidth(el as HTMLElement);
+        n++;
+      }
+      need += gap * Math.max(0, n - 1);
+      setCollapsed(need + 4 > row.clientWidth);
+    };
+    decide();
+    if (typeof ResizeObserver === 'undefined') return;   // jsdom
+    const ro = new ResizeObserver(decide);
+    ro.observe(row);
+    if (measureRef.current) ro.observe(measureRef.current);
+    return () => ro.disconnect();
+  }, [tabs.length]);
+  const active = tabs.find((t) => t.active) ?? tabs[0];
+  return (
+    <>
+      <span ref={hostRef} className={`tool-chrome-tabs${collapsed ? ' tool-chrome-tabs-dd' : ''}`}>
+        {collapsed ? (
+          <ControlDropdown
+            title="Section"
+            current={active?.label}
+            items={tabs.map((t) => ({ label: t.label, active: t.active, onSelect: t.onSelect }))}
+          />
+        ) : (
+          <ChromeTabs tabs={tabs} />
+        )}
+      </span>
+      {/* natural-width measurer — never visible, never interactive */}
+      <span ref={measureRef} className="tool-chrome-tabs tool-chrome-tabs-measure" aria-hidden>
+        <ChromeTabs tabs={tabs} />
+      </span>
+    </>
+  );
 }
 
 /** The right end of the single-row header, in Derek's fixed order:

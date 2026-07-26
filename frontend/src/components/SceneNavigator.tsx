@@ -977,6 +977,9 @@ export function SceneControls() {
 
   return (
     <>
+      {/* v4.53, Derek: TOOL-SPECIFIC controls lead the cluster — Reorder
+          first, then the standard Filter / View / Search. */}
+      <ScenesReorderControl />
       <button
         ref={btnRef}
         className={`tool-ctl${open ? ' open' : ''}`}
@@ -1050,8 +1053,6 @@ export function SceneControls() {
         </div>,
         document.body,
       )}
-      {/* v4.32 batch-v8 #9: Reorder lives in the row-2 cluster, LEFT of View. */}
-      <ScenesReorderControl />
       <ControlDropdown
         title="View"
         current={cardsView ? 'Cards' : 'List'}

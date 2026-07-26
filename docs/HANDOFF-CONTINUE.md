@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.52 — transparent embeds, explicit tool homes)
+# ScriptCraft — continuation brief (current as of v4.53 — two-stage header overflow, leading tool controls)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,29 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.52 — transparent embeds, centered rows, explicit tool homes (HEAD)
+### v4.53 — two-stage header overflow, leading tool controls, panel icons (HEAD)
+
+- **Tool-specific controls lead the right cluster (Derek)**: in Scenes the
+  order is now Reorder, Filter, View, Search (`SceneControls` in
+  SceneNavigator.tsx — `<ScenesReorderControl />` first). Pattern: any
+  tool-specific control goes BEFORE the standard Filter/View/Search set.
+- **Two-stage header overflow**: `HeaderTabs` (ToolDock.tsx) measures a
+  hidden clone of the full tab strip (`.tool-chrome-tabs-measure`, fixed
+  offscreen) plus the natural widths of its header siblings
+  (`naturalWidth()` — flex-wrap containers sum children+gaps+padding, so
+  the measurement is immune to the row's own wrapping feedback). If the
+  full strip doesn't fit, tabs render as a `ControlDropdown` titled
+  "Section" (`.tool-chrome-tabs-dd`); flex-wrap to a second line engages
+  only if even the collapsed content still overflows. ResizeObserver on
+  row + measurer; deps `[tabs.length]`. Driver v27: docked Characters
+  strip 29px single line (was 83px wrapped), 0 collapse flip-flops over
+  1.2s, dropdown selects tabs, wide fullscreen keeps the full strip.
+- **Distinct panel-toggle icons**: `PanelLeftIcon`/`PanelRightIcon` in
+  uiIcons.tsx (16-box outline rect + filled side rect), wired in
+  toolbarCommands.tsx toggleLeftPanel/toggleRightPanel (both were
+  FaColumns). `chevronTowards` deleted with its test.
+
+### v4.52 — transparent embeds, centered rows, explicit tool homes
 
 - **Shape-color parity, systemically**: driver matrix (driver/v25-matrix.js)
   sampled the painted bg per tool per shape — Pages/Scenes/Locations painted

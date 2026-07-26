@@ -15,6 +15,7 @@ import {
   FaRulerHorizontal, FaInfoCircle, FaKeyboard, FaExternalLinkAlt,
   FaPencilAlt, FaCamera, FaWrench, FaRegEye,
 } from 'react-icons/fa';
+import { PanelLeftIcon, PanelRightIcon } from './uiIcons';
 import { useEditorStore } from '../stores/editorStore';
 
 export interface ToolbarCommand {
@@ -60,8 +61,9 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'settings', label: 'Settings', icon: <FaWrench />, run: () => emit('settings') },
   // v3.42, Derek: show/hide the side panels from the ribbon (same toggles the
   // panel edge strips use).
-  { id: 'toggleLeftPanel', label: 'Toggle Left Panel', icon: <FaColumns />, run: () => useEditorStore.getState().toggleNavigator() },
-  { id: 'toggleRightPanel', label: 'Toggle Right Panel', icon: <FaColumns />, run: () => useEditorStore.getState().toggleShelf() },
+  // v4.53, Derek: distinct icons — the filled side is the panel it toggles.
+  { id: 'toggleLeftPanel', label: 'Toggle Left Panel', icon: <PanelLeftIcon />, run: () => useEditorStore.getState().toggleNavigator() },
+  { id: 'toggleRightPanel', label: 'Toggle Right Panel', icon: <PanelRightIcon />, run: () => useEditorStore.getState().toggleShelf() },
   { id: 'cut', label: 'Cut', icon: <FaCut />, run: () => emit('cut') },
   { id: 'copy', label: 'Copy', icon: <FaCopy />, run: () => emit('copy') },
   { id: 'paste', label: 'Paste', icon: <FaPaste />, run: () => emit('paste') },
