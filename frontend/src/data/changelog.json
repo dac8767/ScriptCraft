@@ -1,5 +1,26 @@
 [
   {
+    "version": "4.44",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "Fullscreen sits flush",
+        "detail": "The gaps beside and above a fullscreened window are gone: the panels' 6px breathing margin (there for the editor's scrollbar and grab edge) is suspended while a tool owns the editor area, and the menu/toolbar resize strip no longer paints its faint band across the top — it's invisible until hovered, with the same grab area.",
+        "tags": [
+          "Windows",
+          "UI"
+        ]
+      },
+      {
+        "title": "Window bodies match the editor area",
+        "detail": "Window backgrounds moved from the side-panel shade (#252525 in the dark theme) to the editor area's shade (#2b2b2b) — in fullscreen, popped out, and docked alike, so all three shapes stay identical.",
+        "tags": [
+          "UI"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.43",
     "date": "2026-07-26",
     "items": [

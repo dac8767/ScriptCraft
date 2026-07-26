@@ -119,7 +119,10 @@
   height: 6px;
   flex-shrink: 0;
   cursor: ns-resize;
-  background: var(--fd-border);
+  /* v4.44, Derek: transparent at rest — since v4.40 it OVERLAYS the content
+     below, and its always-on 45% band read as a gap above a fullscreen
+     window. Hover/active still paint it; the 6px hit area is unchanged. */
+  background: transparent;
   opacity: 0.45;
   transition: opacity 0.12s ease, background 0.12s ease;
   /* v4.37, Derek: no gap between the ribbon and the side panels. The 6px hit

@@ -8,8 +8,9 @@
      sheet, and the cards (layer 3, menu/dialog color) sit on top of it.
      v4.35 batch-v9 #6, Derek: with the file-tab style retired (segmented
      tabs now), layers 1-2 revert to the ONE side-panel surface color every
-     other window wears; the cards keep their own face. */
-  background: var(--fd-navigator-bg);
+     other window wears; the cards keep their own face.
+     v4.44, Derek: that one surface is the editor-area color now. */
+  background: var(--fd-bg);
   border-left: 1px solid var(--fd-border);
   display: flex;
   flex-direction: column;

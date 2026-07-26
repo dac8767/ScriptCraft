@@ -4053,7 +4053,7 @@ const ScreenplayEditor: React.FC = () => {
       )}
       </div>
       )}
-      <div className={`editor-layout${previewMode ? " preview-mode" : " hide-title-page"}`}>
+      <div className={`editor-layout${previewMode ? " preview-mode" : " hide-title-page"}${!isHistoryMode && fullscreenTool ? " editor-layout-fs" : ""}`}>
       {previewMode && <PreviewSidebar editor={editor} />}
         {!isHistoryMode && navigatorOpen && <ToolDock side="left" editor={editor} scrollContainer={editorMainRef.current} />}
         {/* v3.07, Derek: the collapsed panel leaves a slim expand strip at its

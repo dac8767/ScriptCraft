@@ -28,6 +28,11 @@
 .tool-dock-edge-right { left: 0; }    /* right panel grows leftwards */
 .tool-dock-wrap.tool-dock-right { margin-left: 6px; }
 .tool-dock-wrap.tool-dock-left  { margin-right: 6px; }
+/* v4.44, Derek: while a tool owns the editor area, the takeover sits FLUSH
+   against the panels — the 6px scrollbar/grab-edge breathing gap is for the
+   editor canvas, and reads as a hole beside a fullscreen window. */
+.editor-layout-fs .tool-dock-wrap.tool-dock-right { margin-left: 0; }
+.editor-layout-fs .tool-dock-wrap.tool-dock-left  { margin-right: 0; }
 .tool-dock-edge:hover { background: var(--fd-accent); opacity: .35; }
 .tool-dock-edge:active { background: var(--fd-accent); opacity: .6; }
 
@@ -327,7 +332,9 @@ body.fs-tool-dragging { cursor: grabbing; }
   position: absolute;
   left: 308px;
   top: 8px;
-  background: var(--fd-navigator-bg); /* same scheme as the Sticky Notes pane */
+  /* v4.44, Derek: window bodies wear the EDITOR AREA color (--fd-bg), in
+     every shape — floating, docked and fullscreen alike. */
+  background: var(--fd-bg);
   border: 1px solid var(--fd-border);
   border-radius: var(--dz-toolwin-radius, 8px);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
@@ -621,12 +628,10 @@ body.fs-tool-dragging { cursor: grabbing; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* v4.37, Derek: one color scheme in every presentation. The window frame's
-     body is --fd-navigator-bg, so the takeover's body is too — before this,
-     tools whose content doesn't paint its own background went darker in
-     fullscreen (they showed the shell's --fd-bg). Row 1 keeps --fd-bg in
-     both shapes; rows 2+body keep --fd-navigator-bg in both. */
-  background: var(--fd-navigator-bg);
+  /* v4.37: one color scheme in every presentation. v4.44, Derek: that ONE
+     color is the editor-area's --fd-bg now (was --fd-navigator-bg) — the
+     window frame and docked body match. */
+  background: var(--fd-bg);
 }
 .fs-tool-takeover-body > * { flex: 1; min-height: 0; }
 /* Windows whose floating shape is a fixed-ish card (Goals, AI Writer) read

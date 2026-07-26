@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.43 — SVG close, geometry-only header buttons)
+# ScriptCraft — continuation brief (current as of v4.44 — flush fullscreen, fd-bg window bodies)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,22 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.43 — geometry-only header buttons (HEAD)
+### v4.44 — flush fullscreen + fd-bg window bodies (HEAD)
+
+- **Flush takeover**: `.editor-layout` gains `editor-layout-fs` while
+  `fullscreenTool` is set (ScreenplayEditor) → the `.tool-dock-wrap` 6px
+  margins zero out (that gap is scrollbar/grab-edge room for the editor
+  canvas, a hole beside a takeover). The `fs-top-chrome-resize` strip is
+  TRANSPARENT at rest now (hover/active still paint it; 6px hit area
+  unchanged) — its always-on 45% band was Derek's "gap on top" (it overlays
+  content since v4.40; my locked-strip driver never showed it).
+- **Window bodies = `--fd-bg`** in all three shapes: `.tool-window`,
+  `.tool-inline`, `.fs-tool-takeover-body`, and `.char-profiles-panel`
+  (Characters paints its own bg over the body). The dock LIST stays
+  `--fd-navigator-bg` — panels and window bodies are distinct surfaces now.
+- Driver: leftGap 6→0, topGap 0, takeover body rgb(43,43,43).
+
+### v4.43 — geometry-only header buttons
 
 Derek: "the full screen button is still misaligned." Root cause was MIXING a
 font glyph (×, seated by baseline/ascent metrics that differ per platform)

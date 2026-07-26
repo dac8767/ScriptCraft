@@ -370,7 +370,7 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
    controls · divider · fullscreen · close) — the separator below divides it
    from the body, per Derek's Airtable reference. The pop-out button is gone;
    dragging the row out of the panel floats the window. */
-.tool-inline { position: relative; }
+.tool-inline { position: relative; background: var(--fd-bg); }   /* v4.44: window body = editor-area color */
 .tool-dock-item-header {
   border-bottom: 1px solid var(--fd-hairline);
   background: rgba(128, 128, 128, 0.22);
