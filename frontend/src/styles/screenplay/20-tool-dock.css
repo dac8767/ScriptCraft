@@ -438,6 +438,20 @@ body.fs-tool-dragging { cursor: grabbing; }
   border-radius: 5px;
   overflow: hidden;
 }
+/* v4.67, Derek: the condensed tabs dropdown reads as the ACTIVE TAB pill —
+   same blue, same weight — showing the active tab's name. */
+.tool-chrome-tabs-dd .tool-ctl {
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 5px;
+}
+.tool-chrome-tabs-dd .tool-ctl:hover {
+  background: var(--fd-accent, #4a90d9);
+  color: #fff;
+  opacity: 0.92;
+}
+.tool-chrome-tabs-dd .tool-ctl .tool-ctl-current { color: #fff; }
 /* no tabs (or the collapsed dropdown) → no empty pill border */
 .tool-chrome-tabs:empty,
 .tool-chrome-tabs.tool-chrome-tabs-dd { border: none; border-radius: 0; overflow: visible; }

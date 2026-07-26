@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.67",
+    "date": "2026-07-26",
+    "changes": [
+      "The condensed tab dropdown now wears the same blue active-tab pill, showing the active tab's name",
+      "Widening a window or panel reliably restores the full tab strip (the width watcher could get orphaned by a header re-render)"
+    ]
+  },
+  {
     "version": "4.66",
     "date": "2026-07-26",
     "changes": [

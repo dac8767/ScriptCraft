@@ -217,8 +217,15 @@ function HeaderTabs({ chrome }: { chrome: ToolChrome }) {
     const ro = new ResizeObserver(decide);
     ro.observe(row);
     if (measureRef.current) ro.observe(measureRef.current);
-    return () => ro.disconnect();
-  }, [tabs.length]);
+    // v4.67, Derek ("expanding doesn't bring the tabs back"): a header
+    // re-render can REPLACE the row element while this component survives —
+    // the observer then watches a detached node and never fires again.
+    // Re-binding on every collapse flip re-captures the live parent, and the
+    // window listener catches whole-app resizes the orphaned observer missed.
+    window.addEventListener('resize', decide);
+    return () => { ro.disconnect(); window.removeEventListener('resize', decide); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabs.length, collapsed]);
   const active = tabs.find((t) => t.active) ?? tabs[0];
   return (
     <>

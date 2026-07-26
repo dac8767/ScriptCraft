@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.66 — Show/Hide All in table headers)
+# ScriptCraft — continuation brief (current as of v4.67 — collapse pill + auto-expand hardening)
 
 > QUEUE (Derek-approved, not yet landed), in order:
 > 1. Window-tab collapse (v4.53 HeaderTabs): the condensed dropdown must
@@ -259,7 +259,21 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.66 — Show All / Hide All in the Shown/Hidden headers (HEAD)
+### v4.67 — collapse pill + auto-expand hardening (HEAD)
+
+- **Pill**: `.tool-chrome-tabs-dd .tool-ctl` = accent bg, white, 600 —
+  the condensed dropdown reads as the active tab (shows its name).
+- **Auto-expand**: v45d proved decide() correct (force-widened row →
+  strip restored). The real stick risk found in code: HeaderTabs' RO
+  binds `host.parentElement` ONCE — a header re-render that replaces the
+  row node leaves the observer watching a detached element. Effect now
+  re-binds on every collapse flip + a window resize listener as belt and
+  braces. NOTE for drivers: Characters' floating shape is its own
+  char-profiles panel (drag-out probes returned null .tool-window);
+  synthetic panel-edge drags did not engage the resize handler — force
+  widths via style injection instead (v45d pattern).
+
+### v4.66 — Show All / Hide All in the Shown/Hidden headers
 
 - DndColumns headerExtra hosts them (`.fs-dnd-headbtn`, right-aligned by
   the head's space-between): Elements + Transitions (EditElementsDialog),
