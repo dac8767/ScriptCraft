@@ -4230,6 +4230,9 @@ const ScreenplayEditor: React.FC = () => {
                     ...{ '--pr': `${pageLayout.rightMargin}in` } as React.CSSProperties,
                     ...{ '--pw': `${pageLayout.pageWidth}in` } as React.CSSProperties,
                     ...{ '--ptop': `${pageLayout.topMargin}pt` } as React.CSSProperties,
+                    /* v4.72: the header line (half the top margin) — the page
+                       number's resting line, read by .page-sep-header. */
+                    ...{ '--phm': `${pageLayout.headerMargin ?? 36}pt` } as React.CSSProperties,
                   }}
                 >
                   {/* Page break separators — absolutely positioned, full page width */}

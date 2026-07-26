@@ -1,14 +1,7 @@
-# ScriptCraft — continuation brief (current as of v4.71 — ribbon toggles + tab memory)
+# ScriptCraft — continuation brief (current as of v4.72 — page-number position + ruler tail)
 
 > QUEUE (Derek-approved, not yet landed), in order:
-> 1. PAGE-NUMBER POSITION CHECK (Derek's margin diagram, two messages):
->    margins L 1.5" / R 1" / T 1" / B 1"; the top AND right margins are
->    split in half — the number's BASELINE sits on the line 0.5" from the
->    top, and it is horizontally CENTERED between the lines 1" and 0.5"
->    from the right page edge (center at 0.75" from the right). The guide
->    lines are demonstration only — never render them. Verify editor
->    pagination, Preview, print, and PDF export all match; fix what doesn't.
-> 2. Title Page batch: (a) "Sync Title from Project" above the Title/Title
+> 1. Title Page batch: (a) "Sync Title from Project" above the Title/Title
 >    Size row; drop the duplicated "Title Page" caption row (keep the
 >    header one); replace "PLACE IMAGE"+dropdown with a character-tool
 >    style "+ Add Image" placeholder (same options); show top/bottom
@@ -16,9 +9,21 @@
 >    get a top option "Default" that applies the default size but then
 >    DISPLAYS as the numeric size (e.g. 16 pt). (c) The tool's title-page
 >    display must be TO SCALE (match Preview) with zoom buttons.
-> 3. Audit items: rescans gated on tool-open (live open / refresh on open /
+> 2. Ribbon dividers (Derek, mid-v4.72): the vertical divider between a
+>    two-row section and a one-row section must be REMOVABLE (default
+>    stays: dividers appear as they do now), and the + menu gains "add a
+>    single-row divider" and "add a double-row divider" options — so
+>    mixed-height sections can sit flush next to each other.
+> 3. Spelling squiggles (Derek, mid-v4.72): misspelled words get the
+>    standard red squiggly underline in the editor; NEVER spell-check
+>    all-caps words (character names, locations/scene headings).
+> 4. Audit items: rescans gated on tool-open (live open / refresh on open /
 >    idle closed); react-router major bump; Tauri fs $HOME scope narrowing;
 >    CSP decision documented.
+> FINDING to relay when relevant: File ▸ Print is window.print() and
+>    16-print.css hides every .page-sep overlay — printed output has NO
+>    page numbers/headers/footers at all. PDF export is the numbered
+>    path. Fixing print = its own project (print pagination fidelity).
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -265,7 +270,40 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.71 — ribbon toggle highlights, gray titles, title knobs, tab memory (HEAD)
+### v4.72 — page-number position (Derek's margin diagram) + ruler tail (HEAD)
+
+- Derek's diagram: margins L1.5/R1/T1/B1; the TOP and RIGHT margins split
+  in half; the page number rests ON the 0.5"-from-top line, horizontally
+  CENTERED between the right-margin line and the 0.5"-from-right line
+  (center 0.75" from the edge). Guides are demonstration-only.
+- WAS WRONG on both axes everywhere: editor header top-anchored at
+  0.25in (baseline ≈0.38"), right field ended AT a STALE margin var
+  (--page-margin-right: 1.25in from 01-fonts-base — not the live layout);
+  PDF put the baseline at headerMargin+12 = 0.667" (jsPDF y IS the
+  baseline; the +12 treated it as top) and right-aligned to the margin.
+- Fix, single rule both renderers: baseline line = layout.headerMargin
+  (36pt default). Editor: page box exports --phm; .page-sep-header
+  top: calc(var(--phm) - 1em) (text-box bottom ON the line; digits rest
+  on it with only the font's descent below the baseline). Fields are
+  absolute now (left 0 / center 50% translateX / right = a band from
+  the margin line to 0.5in-from-edge, text-align center, min-width
+  max-content) — the flex row could not hang the right field into the
+  margin without breaking center. Containers use live --pl/--pr. Dead
+  .page-sep-number block deleted. PDF: headerY = layout.headerMargin;
+  right x = pageWidth − (rightMargin+0.5)/2 inches − half width.
+  Driver v50-geom: box bottom 0.500in, center 0.750in exactly.
+- Ruler tail (Derek's screenshot: whitespace counting 12,13,14…):
+  EditorRulers' continuous branch now continues VIRTUAL divides after
+  the last real .page-sep-line at the measured real-page span (≥2 lines:
+  divide-to-divide minus the 0.25" breather; 1 line: page-1 span; 0:
+  layout content height + breather), numbering restarts at each, same
+  dotted mark (virtual divides join the dash pass). 400-iteration guard;
+  span floored at 1". Driver v50b: tail reads …9, 10, ┄, 1, 2…
+- PRINT FINDING (not fixed — report): File ▸ Print = window.print() and
+  16-print.css does `.page-sep { display:none !important }` — print has
+  NO page numbers/headers/footers. PDF export is the numbered output.
+
+### v4.71 — ribbon toggle highlights, gray titles, title knobs, tab memory
 
 Four Derek requests in one chrome batch:
 - **Toggle highlight**: ToolbarCommand grew `active?: (s: EditorState) =>

@@ -662,7 +662,11 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
     pdf.setPage(p);
     // Header
     if (p >= hStart && (hContent.left || hContent.center || hContent.right)) {
-      const headerY = layout.headerMargin + 12;
+      // v4.72, Derek's margin diagram: jsPDF's y is the BASELINE, and the
+      // page number sits ON the header line (headerMargin — half the top
+      // margin, 0.5in by default). The old +12 treated y as the text top and
+      // pushed the number 12pt below the line.
+      const headerY = layout.headerMargin;
       renderHFLine(pdf, hContent, p, totalPages, docTitle, revColor, headerY, layout, charSpace);
     }
     // Footer
@@ -709,11 +713,16 @@ function renderHFLine(
     pdf.text(centerText, centerPt - cWidth / 2, y, { charSpace });
   }
 
-  // Right
+  // Right — the page-number slot. v4.72, Derek's diagram: the right margin
+  // splits in half too; the field is CENTERED between the margin line and
+  // the line 0.5in from the page edge (0.75in from the edge at the default
+  // 1in margin). Same rule as .page-sep-hf-right in the editor.
   const rightText = resolveFields(content.right, pageNum, totalPages, title, revisionColor);
   if (rightText) {
     const rWidth = rightText.length * FD_CHAR_WIDTH_PT;
-    pdf.text(rightText, rightMarginPt - rWidth, y, { charSpace });
+    const pageWidthPt = layout.pageWidth * PTS_PER_INCH;
+    const bandCenter = pageWidthPt - ((layout.rightMargin + 0.5) / 2) * PTS_PER_INCH;
+    pdf.text(rightText, bandCenter - rWidth / 2, y, { charSpace });
   }
 }
 

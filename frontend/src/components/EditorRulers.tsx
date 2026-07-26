@@ -264,14 +264,42 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
             cTop = g.top + QUARTER;                            // next page's first text row
             clipTop = cTop;                                    // no 0" / margin above pages 2+
           }
-          drawScaleFrom(cTop, 1, clipTop, H2 + 10);
+          // v4.73, Derek: the tail after the LAST real divide used to number
+          // straight to the canvas bottom, so trailing whitespace counted 12,
+          // 13, 14… without ever resetting. The tail keeps the page rhythm
+          // instead: virtual divides continue at the span the real pages show
+          // (first row to divide, measured; a document with no divides yet
+          // falls back to the layout's content height), and the numbering
+          // restarts at each one exactly like a real page.
+          const contentPx = pl.pageHeight * inPx - topM - botM;
+          const span = lines.length >= 2
+            ? lines[lines.length - 1].top - (lines[lines.length - 2].top + QUARTER)
+            : lines.length === 1
+              ? lines[0].top - (P1 + topM)
+              : contentPx + QUARTER;
+          const END = H2 + 10;
+          const virtualDivides: number[] = [];
+          let vOrigin = cTop;
+          let vClip = clipTop;
+          for (let guard = 0; guard < 400 && vOrigin < END; guard++) {
+            const vDivide = vOrigin + Math.max(span, inPx);  // never tighter than 1"
+            if (vDivide - QUARTER >= END) {
+              drawScaleFrom(vOrigin, 1, vClip, END);
+              break;
+            }
+            drawScaleFrom(vOrigin, 1, vClip, vDivide - QUARTER);
+            virtualDivides.push(vDivide);
+            vOrigin = vDivide + QUARTER;
+            vClip = vOrigin;
+          }
           // A dotted line across the ruler at each divide (between "10" and "1"),
-          // matching the page-break line in the script. (v4.22, Derek.)
+          // matching the page-break line in the script. (v4.22, Derek.) Virtual
+          // divides in the tail get the same mark — the reset needs its cue.
           ctx.strokeStyle = text;
           ctx.globalAlpha = 0.5;
           ctx.setLineDash([1.5, 2]);
           ctx.beginPath();
-          for (const g of lines) {
+          for (const g of [...lines, ...virtualDivides.map((top) => ({ top }))]) {
             if (g.top < -2 || g.top > H2 + 2) continue;
             const y = Math.round(g.top) + 0.5;
             ctx.moveTo(0, y);

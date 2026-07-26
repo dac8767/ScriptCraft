@@ -1,5 +1,15 @@
 [
   {
+    "version": "4.72",
+    "date": "2026-07-26",
+    "changes": [
+      "Page numbers sit exactly where the margin diagram says: resting on the line half an inch from the top of the page, centered between the right margin line and the half-inch line (0.75\" from the right page edge)",
+      "PDF export places the page number on those same lines (it was 12 points low and hugged the margin line)",
+      "Header and footer lines follow the live Page Setup margins — they were anchored to a stale fixed-layout value",
+      "Continuous view: the ruler's numbering now resets each page-length through the trailing white space after the script's last line, with the same dotted divide, instead of counting up forever"
+    ]
+  },
+  {
     "version": "4.71",
     "date": "2026-07-26",
     "changes": [

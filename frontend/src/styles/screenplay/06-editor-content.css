@@ -419,47 +419,55 @@ div[data-type="lyrics"].is-empty::before { font-style: italic; }
   position: relative;
 }
 
-/* Page number (legacy, kept for compatibility) */
-.page-sep-number {
-  position: absolute;
-  top: 0.25in;
-  right: var(--page-margin-right);
-  font-family: var(--screenplay-font);
-  font-size: 12pt;
-  color: #000;
-  line-height: 1;
-}
-
-/* Header/Footer containers */
+/* Header/Footer containers.
+   v4.72, Derek's margin diagram: these anchor to the LIVE page vars the page
+   box sets inline (--pl/--pr/--phm) — the static --page-margin-* tokens they
+   used before were the old fixed layout and drifted from Page Setup. */
 .page-sep-header,
 .page-sep-footer {
   position: absolute;
-  left: var(--page-margin-left, 1.5in);
-  right: var(--page-margin-right, 0.76in);
-  display: flex;
-  align-items: baseline;
+  left: var(--pl, 1.5in);
+  right: var(--pr, 1in);
   font-family: var(--screenplay-font);
   font-size: 12pt;
   color: #000;
   line-height: 1;
 }
 .page-sep-header {
-  top: 0.25in;
+  /* The top margin splits in half and the page number SITS ON the halfway
+     line (--phm, the layout's headerMargin — 0.5in by default): the 1em text
+     box ends exactly on that line, so at line-height 1 the digits rest on it
+     with only the font's descent allowance below the baseline. */
+  top: calc(var(--phm, 0.5in) - 1em);
 }
 .page-sep-footer {
   bottom: 0.1in;
 }
+/* The three fields position independently so each obeys its own rule: left
+   on the left margin, center on the CONTENT center, and the right field —
+   the default page-number slot — CENTERED between the right margin line and
+   the line 0.5in from the page edge (0.75in from the edge at the default 1in
+   margin). max-content keeps a long field readable if margins go degenerate. */
 .page-sep-hf-left {
-  flex: 1;
+  position: absolute;
+  left: 0;
+  top: 0;
   text-align: left;
 }
 .page-sep-hf-center {
-  flex: 1;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
   text-align: center;
 }
 .page-sep-hf-right {
-  flex: 1;
-  text-align: right;
+  position: absolute;
+  right: calc(0.5in - var(--pr, 1in));
+  width: calc(var(--pr, 1in) - 0.5in);
+  min-width: max-content;
+  top: 0;
+  text-align: center;
 }
 
 /* (MORE) marker — positioned inside the bottom margin area of the page */
