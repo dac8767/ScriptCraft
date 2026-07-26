@@ -231,7 +231,7 @@
   width: 300px; /* same footprint as the original right panel */
   flex-shrink: 0;
   background: var(--fd-navigator-bg); /* same scheme as the Sticky Notes pane */
-  border-right: 1px solid var(--fd-hairline);   /* v4.40: visible faint edge */
+  border-right: var(--fd-hairline-w, 1px) solid var(--fd-hairline);   /* v4.40: visible faint edge */
   display: flex;
   flex-direction: column;
   padding: 8px 0;
@@ -280,7 +280,7 @@
   pointer-events: none;
   padding: 5px 12px;
   background: var(--fd-bg);
-  border: 1px solid var(--fd-hairline);
+  border: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
   border-radius: 6px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   color: var(--fd-text);
@@ -364,8 +364,8 @@ body.fs-tool-dragging { cursor: grabbing; }
   flex-wrap: wrap;
   row-gap: 2px;
   column-gap: 8px;
-  padding: var(--dz-toolwin-head-pad, 6px) 10px;
-  border-bottom: 1px solid var(--fd-hairline);
+  padding: var(--dz-toolwin-pad-top, 6px) var(--dz-toolwin-pad-right, 10px) var(--dz-toolwin-pad-bottom, 6px) var(--dz-toolwin-pad-left, 10px);
+  border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
   /* v4.42, Derek: the window header matches the ribbon toolbar's surface. */
   background: var(--fd-toolbar-bg);
   flex-shrink: 0;
@@ -402,7 +402,7 @@ body.fs-tool-dragging { cursor: grabbing; }
 }
 /* The divider between the controls cluster and the fullscreen/close pair. */
 .tool-chrome-sep {
-  width: 1px;
+  width: var(--fd-hairline-w, 1px);
   height: 16px;
   background: var(--fd-hairline);
   /* v4.40, Derek: more air between the controls and the fullscreen/close pair */

@@ -166,7 +166,7 @@
 .fs-goal-kinds button.active { border-color: var(--fd-accent, #4a90d9); }
 
 /* Right-side dock: window opens to the LEFT of the dock */
-.tool-dock-right .tool-dock { border-right: none; border-left: 1px solid var(--fd-hairline); }
+.tool-dock-right .tool-dock { border-right: none; border-left: var(--fd-hairline-w, 1px) solid var(--fd-hairline); }
 .tool-dock-right .tool-window { left: auto; right: 308px; }
 
 /* Sticky tools */
@@ -373,7 +373,7 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
 .tool-inline { position: relative; background: var(--fd-bg); }   /* v4.44: window body = editor-area color */
 .tool-inline-body { padding-top: var(--dz-toolwin-body-gap, 0px); }   /* v4.45: Design knob */
 .tool-dock-item-header {
-  border-bottom: 1px solid var(--fd-hairline);
+  border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
   background: rgba(128, 128, 128, 0.22);
 }
 /* v2.15: Scrapbook solo mode (Settings > Tools) — while the Scrapbook is
@@ -443,9 +443,10 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
   -webkit-user-select: none;   /* v4.41: it's a drag handle */
   flex-wrap: wrap;
   gap: 4px 10px;
-  /* v4.45: vertical padding rides the SAME Design knob as the window header */
-  padding: var(--dz-toolwin-head-pad, 4px) 8px;
-  border-bottom: 1px solid var(--fd-hairline);
+  /* v4.45/v4.46: rides the SAME per-side Design knobs as the window header,
+     with the strip's own tighter defaults. */
+  padding: var(--dz-toolwin-pad-top, 4px) var(--dz-toolwin-pad-right, 8px) var(--dz-toolwin-pad-bottom, 4px) var(--dz-toolwin-pad-left, 8px);
+  border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
   background: var(--fd-navigator-bg);
   flex-shrink: 0;
 }

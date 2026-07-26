@@ -23,8 +23,17 @@ export interface DesignSlice {
   setDesignPanelOpen: (v: boolean) => void;
 }
 
+/** v4.46: toolWinHeaderPad split into four per-side knobs — a saved override
+ *  seeds top+bottom so a tuned header keeps its height (idempotent; persisted
+ *  on the next designVars write). Explicit per-side values always win. */
+export const migrateDesignVars = (vars: Record<string, number>): Record<string, number> => {
+  if (vars.toolWinHeaderPad === undefined) return vars;
+  const { toolWinHeaderPad, ...rest } = vars;
+  return { toolWinPadTop: toolWinHeaderPad, toolWinPadBottom: toolWinHeaderPad, ...rest };
+};
+
 export const createDesignSlice: StateCreator<EditorState, [], [], DesignSlice> = (set) => ({
-  designVars: (_vs.designVars as Record<string, number>) ?? {},
+  designVars: migrateDesignVars((_vs.designVars as Record<string, number>) ?? {}),
   setDesignVar: (id, val) => set((st) => {
     const next = { ...st.designVars, [id]: val };
     saveViewState({ designVars: next });

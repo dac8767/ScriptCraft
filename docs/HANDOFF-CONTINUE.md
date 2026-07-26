@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.45 — window-chrome Design knobs, docked divider)
+# ScriptCraft — continuation brief (current as of v4.46 — per-side header padding, 0.5px hairlines)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,22 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.45 — window-chrome Design knobs + docked divider (HEAD)
+### v4.46 — per-side header padding knobs + 0.5px hairlines (HEAD)
+
+- `toolWinHeaderPad` RETIRED → four knobs: `toolWinPadTop/Bottom` (def 6) and
+  `toolWinPadLeft/Right` (def 10), vars `--dz-toolwin-pad-*`. The frame/
+  takeover header and the docked strip read all four (strip fallbacks stay
+  4/8). `migrateDesignVars` (designSlice, EXPORTED + designMigrate.test.ts,
+  3 cases) seeds top+bottom from a saved single-knob override — explicit
+  per-side values win; idempotent, persisted on the next write.
+- `--fd-hairline-w: 0.5px` (:root, 01-fonts-base) — every hairline border +
+  the `.tool-chrome-sep`/ghost use `var(--fd-hairline-w, 1px)`. NOTE:
+  headless Chromium REPORTS 0.5px borders as 1px (used-value snapping even
+  at dsf 2 — probed with a literal) — don't chase that in drivers; WebKit
+  on Derek's Retina renders true half-pixel lines.
+- Driver: per-side pads move independently (top 4→14, left 8→20).
+
+### v4.45 — window-chrome Design knobs + docked divider
 
 - New Panels & Windows knobs: `toolWinBodyGap` (`--dz-toolwin-body-gap`,
   def 0 — padding-top on .tool-window-body/.tool-inline-body/

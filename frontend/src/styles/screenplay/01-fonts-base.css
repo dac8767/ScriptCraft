@@ -53,6 +53,9 @@
      Used for the sidebar's outer edge, the window header/body divider, and
      the header's control divider. */
   --fd-hairline: color-mix(in srgb, var(--fd-text) 18%, transparent);
+  /* v4.46, Derek: hairlines are HALF a CSS pixel — one device pixel on
+     Retina. Non-Retina displays round it up to a single device pixel. */
+  --fd-hairline-w: 0.5px;
   --fd-chrome-separator: rgba(255,255,255,0.06);
   --fd-chrome-shadow: 0 1px 3px rgba(0,0,0,0.2);
   --fd-text: #e0e0e0;

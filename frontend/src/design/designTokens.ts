@@ -114,8 +114,14 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       // their single source. These are the fixed design details:
       { id: 'dockEdgeW', label: 'Dock edge grip width', cssVar: '--dz-dock-edge-w', unit: 'px', min: 2, max: 16, step: 1, def: 6 },
       { id: 'toolWinRadius', label: 'Tool window radius', cssVar: '--dz-toolwin-radius', unit: 'px', min: 0, max: 20, step: 1, def: 8 },
-      // v4.39: single-row header — tighter default (the row carries tabs + controls now)
-      { id: 'toolWinHeaderPad', label: 'Tool window header padding', cssVar: '--dz-toolwin-head-pad', unit: 'px', min: 2, max: 20, step: 1, def: 6 },
+      // v4.46, Derek: header padding is FOUR per-side knobs now (was one
+      // vertical-only toolWinHeaderPad — a saved override migrates into
+      // top+bottom in designSlice). The docked strip rides the same vars
+      // with its own tighter fallbacks (4/8 vs the frame's 6/10).
+      { id: 'toolWinPadTop', label: 'Header padding — top', cssVar: '--dz-toolwin-pad-top', unit: 'px', min: 0, max: 20, step: 1, def: 6 },
+      { id: 'toolWinPadBottom', label: 'Header padding — bottom', cssVar: '--dz-toolwin-pad-bottom', unit: 'px', min: 0, max: 20, step: 1, def: 6 },
+      { id: 'toolWinPadLeft', label: 'Header padding — left', cssVar: '--dz-toolwin-pad-left', unit: 'px', min: 0, max: 28, step: 1, def: 10 },
+      { id: 'toolWinPadRight', label: 'Header padding — right', cssVar: '--dz-toolwin-pad-right', unit: 'px', min: 0, max: 28, step: 1, def: 10 },
       { id: 'toolWinTitleFont', label: 'Tool window title font', cssVar: '--dz-toolwin-title-font', unit: 'px', min: 9, max: 20, step: 0.5, def: 12 },
       // v4.45, Derek: header-bar tuning — the bar's control/tab type size and
       // the air between the header and the window's content, every shape.
