@@ -28,7 +28,7 @@ import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import {
   startRibbonDrag, ribCloseSection, ribRemoveToken, ribRemoveBreak,
   ribToggleBreakLine, ribRemoveSplit, ribAddSectionAtBoundary, ribAddInlineAtBoundary,
-  ribAddToSection, ribInsertSection,
+  ribAddToSection, ribInsertSection, ribToggleSectionSep,
   ribSetAlignSplit, ribSetSectionTitle, ribRemoveSectionTitle,
   ribSetSpacerWidth, SPACER_MIN_PX, SPACER_MAX_PX,
   ribUndo, ribResetHistory,
@@ -1777,7 +1777,28 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 </span>
               </div>
             )
-            : <div className="toolbar-separator rib-section-sep" />)}
+            /* v4.75, Derek: the boundary divider is REMOVABLE — × hides the
+               line (the sections stay separate); a hidden one shows as a
+               dashed ghost that clicks back on. */
+            : s.noSepBefore ? (
+              <button
+                type="button"
+                className="rib-edit-sep-ghost"
+                title="Show the divider between these sections"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => ribToggleSectionSep(i)}
+              />
+            ) : (
+              <span className="rib-edit-sepwrap">
+                <div className="toolbar-separator rib-section-sep" />
+                <button
+                  className="rib-edit-x rib-edit-sep-x"
+                  title="Remove this divider — the sections sit flush"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => ribToggleSectionSep(i)}
+                >×</button>
+              </span>
+            ))}
           <div
             className={`rib-section rib-edit-section${s.hasBreak ? '' : ' rib-single'}`}
             data-sec={i}
@@ -1874,8 +1895,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       {leftLive.map(({ s, orig }, i) => (
         <React.Fragment key={`sec-${orig}`}>
           {/* v3.25: dividers only BETWEEN rendered sections — empty ones are
-              skipped above, so nothing paints at the outer edges. */}
-          {i > 0 && <div className="toolbar-separator rib-section-sep" />}
+              skipped above, so nothing paints at the outer edges.
+              v4.75, Derek: a boundary whose divider was removed stays a
+              boundary — the sections just sit flush. */}
+          {i > 0 && !s.noSepBefore && <div className="toolbar-separator rib-section-sep" />}
           <div className={`rib-section${s.hasBreak ? '' : ' rib-single'}`}>
             {liveSectionInner(s)}
           </div>
@@ -1931,7 +1954,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       {rightLive.length > 0 && <div className="rib-align-gap" />}
       {rightLive.map(({ s, orig }, i) => (
         <React.Fragment key={`sec-${orig}`}>
-          {i > 0 && <div className="toolbar-separator rib-section-sep" />}
+          {i > 0 && !s.noSepBefore && <div className="toolbar-separator rib-section-sep" />}
           <div className={`rib-section${s.hasBreak ? '' : ' rib-single'}`}>
             {liveSectionInner(s)}
           </div>
@@ -1970,7 +1993,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       // icon) so its shape reads at a glance.
       const vis = {
         single: <span className="rib-util-vis"><span className="ruv-sec"><span className="ruv-row" /></span></span>,
-        divider: <span className="rib-util-vis"><span className="ruv-divider" /></span>,
+        divider: <span className="rib-util-vis"><span className="ruv-divider ruv-divider-short" /></span>,
+        divider2: <span className="rib-util-vis"><span className="ruv-divider" /></span>,
         spacer: <span className="rib-util-vis"><span className="ruv-spacer" /></span>,
         split: <span className="rib-util-vis"><span className="ruv-box" /><span className="ruv-splitgap"><span /><span /></span><span className="ruv-box" /></span>,
       };
@@ -1983,7 +2007,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         // v4.25, Derek: ONE 'Section' entry — sections start as one row; a
         // second row emerges by dragging an item to a row's upper/lower band.
         { label: 'Section', vis: vis.single, run: () => (inSec ? ribInsertSection(secI + 1) : ribAddSectionAtBoundary(addMenu.at, addMenu.rightSide)) },
-        { label: 'Divider', vis: vis.divider, run: () => (inSec ? ribAddToSection(`d:${Date.now()}`, secI) : ribAddInlineAtBoundary(`d:${Date.now()}`, addMenu.at, addMenu.rightSide)) },
+        // v4.75, Derek: two divider heights. Single-row = the in-section rule
+        // (its row's height); double-row = a full-height 2!d: section divider
+        // (inside a section it splits there — that's what full-height means).
+        { label: 'Divider — one row', vis: vis.divider, run: () => (inSec ? ribAddToSection(`d:${Date.now()}`, secI) : ribAddInlineAtBoundary(`d:${Date.now()}`, addMenu.at, addMenu.rightSide)) },
+        { label: 'Divider — two rows', vis: vis.divider2, run: () => (inSec ? ribAddToSection(`2!d:${Date.now()}`, secI) : ribAddInlineAtBoundary(`2!d:${Date.now()}`, addMenu.at, addMenu.rightSide)) },
         { label: 'Spacer', vis: vis.spacer, run: () => (inSec ? ribAddToSection(`s:${Date.now()}`, secI) : ribAddInlineAtBoundary(`s:${Date.now()}`, addMenu.at, addMenu.rightSide)) },
         ...(splitAt === null ? [{ label: 'Alignment Split', vis: vis.split, run: () => ribSetAlignSplit(inSec ? secI + 1 : addMenu.at) }] : []),
       ];

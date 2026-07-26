@@ -39,7 +39,9 @@ const EMPTY_SECTION: RibbonSection = { top: [], bottom: [], hasBreak: false, bre
 let lastTouchedSection: number | null = null;
 
 const clone = (m: RibbonModel): RibbonModel => ({
-  sections: m.sections.map((s) => ({ top: [...s.top], bottom: [...s.bottom], hasBreak: s.hasBreak, breakLine: s.breakLine, title: s.title })),
+  // Field-by-field on purpose — but EVERY RibbonSection field must ride along,
+  // or an unrelated edit silently strips it (v4.75: noSepBefore joined).
+  sections: m.sections.map((s) => ({ top: [...s.top], bottom: [...s.bottom], hasBreak: s.hasBreak, breakLine: s.breakLine, title: s.title, noSepBefore: s.noSepBefore })),
   splitAt: m.splitAt,
 });
 
@@ -280,6 +282,16 @@ export const closeSectionInModel = (m: RibbonModel, i: number): RibbonModel => {
 
 export const ribCloseSection = (i: number) => {
   commit(closeSectionInModel(clone(getModel()), i));
+};
+
+/** v4.75, Derek: show/hide the divider LINE at section i's leading boundary —
+ *  the sections stay separate either way (nd: vs 2!d: on serialize). */
+export const ribToggleSectionSep = (i: number) => {
+  const m = clone(getModel());
+  const s = m.sections[i];
+  if (!s || i === 0) return;
+  s.noSepBefore = !s.noSepBefore;
+  commit(m);
 };
 
 export const ribRemoveToken = (tok: string) => {

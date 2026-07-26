@@ -139,3 +139,25 @@ describe('normalizeToolbarZones under the ribbon (v2.95)', () => {
     expect(z.left).toEqual(['b:bold', 'b:customize']);
   });
 });
+
+// v4.75, Derek: removable boundary dividers — a naked nd: boundary keeps the
+// sections separate but marks the follower noSepBefore, and the round trip
+// preserves it (serialize emits nd: back, not 2!d:).
+describe('naked section boundaries (v4.75)', () => {
+  it('nd: parses as a boundary with noSepBefore on the following section', () => {
+    const m = parseRibbon(['b:bold', 'nd:sec-1', 'b:undo']);
+    expect(m.sections.length).toBe(2);
+    expect(m.sections[0].noSepBefore ?? false).toBe(false);
+    expect(m.sections[1].noSepBefore).toBe(true);
+  });
+
+  it('round-trips: serialize keeps nd: for suppressed boundaries and 2!d: for normal ones', () => {
+    const tokens = ['b:bold', 'nd:sec-1', 'b:undo', '2!d:sec-2', 'b:redo'];
+    const out = serializeRibbon(parseRibbon(tokens));
+    expect(out.filter((t) => t.startsWith('nd:')).length).toBe(1);
+    expect(out.filter((t) => t.startsWith('2!d:')).length).toBe(1);
+    // and parsing the serialized form lands in the same shape
+    const again = parseRibbon(out);
+    expect(again.sections.map((s) => !!s.noSepBefore)).toEqual([false, true, false]);
+  });
+});

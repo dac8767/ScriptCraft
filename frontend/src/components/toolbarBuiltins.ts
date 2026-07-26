@@ -187,6 +187,10 @@ export const makeTall = (tok: string) => (isTall(tok) ? tok : TALL_PREFIX + tok)
 
 /** Section divider: a full-height d: token. */
 export const isSectionDivider = (tok: string) => isTall(tok) && stripTall(tok).startsWith('d:');
+/** v4.75, Derek: a NAKED section boundary — sections stay separate but NO
+ *  divider line paints between them (a two-row and a one-row section can sit
+ *  flush). Serialized when a boundary's divider is removed in edit mode. */
+export const isNakedDivider = (tok: string) => tok.startsWith('nd:');
 /** Row break: the v2.96 utility that starts a section's second row.
  *  v2.97: `rl:` is a break whose line SHOWS in the toolbar; plain `r:`
  *  splits invisibly. */
@@ -206,7 +210,11 @@ export const isTitleRowEnd = (tok: string) => tok.startsWith('tre:');
  *  rows; true ⇒ `top` row above `bottom` row. `breakLine` ⇒ the split
  *  draws a visible line between the rows. `title` ⇒ a label on top of the
  *  section's rows (v3.42). */
-export interface RibbonSection { top: string[]; bottom: string[]; hasBreak: boolean; breakLine: boolean; title?: string }
+export interface RibbonSection {
+  top: string[]; bottom: string[]; hasBreak: boolean; breakLine: boolean; title?: string;
+  /** v4.75: this section's LEADING boundary paints no divider line. */
+  noSepBefore?: boolean;
+}
 
 /** The whole ribbon: its sections, plus the index of the first section in
  *  the RIGHT-aligned group (null ⇒ everything left-aligned). */
@@ -236,6 +244,7 @@ export function parseRibbon(tokens: string[]): RibbonModel {
       continue;
     }
     if (isSectionDivider(raw)) { push(); continue; }
+    if (isNakedDivider(raw)) { push(); cur.noSepBefore = true; continue; }
     if (isTitleRowEnd(raw)) continue;             // stray marker — ignore
     if (isSectionTitle(raw)) { cur.title = raw.slice(3); continue; }
     if (isRowBreak(raw)) {
@@ -255,7 +264,7 @@ export function serializeRibbon(model: RibbonModel): string[] {
   const { sections, splitAt } = model;
   const out: string[] = [];
   sections.forEach((s, i) => {
-    if (i > 0) out.push(i === splitAt ? `a:split-${i}` : `2!d:sec-${i}`);
+    if (i > 0) out.push(i === splitAt ? `a:split-${i}` : s.noSepBefore ? `nd:sec-${i}` : `2!d:sec-${i}`);
     // v3.42: a section title rides at the section head, on top of its rows.
     // Emit even an empty one (defined ⇒ present) so the editable field stays.
     if (s.title !== undefined) out.push(`st:${s.title}`);

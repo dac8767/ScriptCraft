@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.75",
+    "date": "2026-07-26",
+    "changes": [
+      "Ribbon: the vertical divider between sections is removable (edit mode: hover it, click the ×) — a two-row and a one-row section can sit flush; a dashed ghost in edit mode brings the divider back",
+      "Ribbon + menu: \"Divider — one row\" and \"Divider — two rows\" replace the single Divider entry"
+    ]
+  },
+  {
     "version": "4.74",
     "date": "2026-07-26",
     "changes": [

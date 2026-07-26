@@ -588,6 +588,22 @@
 .rib-edit-section:hover > .rib-edit-secclose,
 .rib-edit-break:hover > .rib-edit-x,
 .rib-edit-alignsplit:hover > .rib-edit-x { opacity: 1; }
+/* v4.75, Derek: removable boundary dividers. In edit mode each visible
+   section divider wears an × (hover, like items); a removed one leaves a
+   dashed ghost strip that clicks the line back on. */
+.rib-edit-sepwrap { position: relative; display: flex; align-items: stretch; }
+.rib-edit-sepwrap .rib-edit-sep-x { top: -7px; left: 50%; right: auto; transform: translateX(-50%); z-index: 6; }
+.rib-edit-sepwrap:hover .rib-edit-sep-x { opacity: 1; }
+.rib-edit-sep-ghost {
+  width: 8px;
+  align-self: stretch;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  background: repeating-linear-gradient(180deg, var(--fd-border) 0 4px, transparent 4px 8px) center / 1px 100% no-repeat;
+  opacity: .55;
+}
+.rib-edit-sep-ghost:hover { opacity: 1; }
 /* v3.38, Derek: the section-close moves to the section's top-LEFT corner.
    Item removal ×s all sit at their item's top-right, so a right-anchored
    section × collided with the LAST item's × — top-left keeps them apart. */
@@ -859,6 +875,8 @@
 .ruv-sec-sm { width: 34px; height: 16px; }
 .ruv-row { height: 5px; border-radius: 2px; background: currentColor; opacity: .7; }
 .ruv-divider { width: 2px; height: 26px; background: currentColor; border-radius: 1px; }
+/* v4.75: the one-row divider's menu visual — same line, half the height. */
+.ruv-divider-short { height: 13px; }
 .ruv-spacer {
   width: 34px; height: 12px; border-radius: 3px;
   background: repeating-linear-gradient(90deg, transparent 0 4px, currentColor 4px 5px);
