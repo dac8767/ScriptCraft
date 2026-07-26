@@ -1545,11 +1545,62 @@ input.fs-switch:checked::after { left: 15px; }
 .ws-edit-input:focus { outline: none; }
 
 /* ── v4.23, Derek: Feedback dockable tool (FeedbackTool.tsx) ── */
-.feedback-tool { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.feedback-tool-wrap { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.feedback-tool { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .feedback-tool-frame {
   flex: 1; border: none; width: 100%;
   background: #fff; border-radius: 0 0 8px 8px;
 }
+
+/* v4.70, Derek: header screenshot buttons + the capture chip.
+   The chip sits ABOVE the form placeholder — the iframe host adopts the
+   placeholder's rect, so the form shrinks under the chip on its own. */
+.feedback-shot-btns { display: inline-flex; align-items: center; gap: 2px; }
+.feedback-shot-chip {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid var(--fd-border);
+  background: var(--fd-toolbar-bg);
+}
+.feedback-shot-thumb {
+  flex-shrink: 0;
+  width: 56px; height: 42px;
+  object-fit: cover;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  cursor: grab;
+  background: #fff;
+}
+.feedback-shot-thumb:active { cursor: grabbing; }
+.feedback-shot-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.feedback-shot-name {
+  font-size: 11px; font-weight: 600; color: var(--fd-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.feedback-shot-hint { font-size: 10.5px; line-height: 1.35; color: var(--fd-text-muted); }
+.feedback-shot-act {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: none;
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+.feedback-shot-act:hover { background: var(--fd-hover-bg); color: var(--fd-text); }
+
+/* While a Feedback capture runs: hide the Feedback window (floating, docked,
+   fullscreen takeover) AND the iframe overlay, so the shot shows the app
+   underneath — not the tool that took it. visibility keeps layout. */
+body.fs-shot-veil-feedback .feedback-frame-host,
+body.fs-shot-veil-feedback .tool-window[data-tool="feedback"],
+body.fs-shot-veil-feedback .tool-inline[data-tool="feedback"],
+body.fs-shot-veil-feedback .fs-tool-takeover-feedback { visibility: hidden !important; }
 
 /* ── v4.32 navigator: window-template controls + scene numbers (NavigatorTool.tsx) ── */
 /* A leading chrome control: the cluster right-aligns its content, so

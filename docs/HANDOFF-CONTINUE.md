@@ -1,8 +1,9 @@
-# ScriptCraft — continuation brief (current as of v4.69 — title-bar-style window buttons)
+# ScriptCraft — continuation brief (current as of v4.70 — Feedback screenshot chip)
 
 > QUEUE (Derek-approved, not yet landed), in order:
-> 1. Feedback window: screenshot buttons in its header that auto-attach
->    the capture to the form's attachment field.
+> 1. Ribbon toolbar (two fresh Derek requests): (a) highlight the toggle
+>    options that are active (his screenshot: rulers + panel toggles
+>    cluster); (b) make the ribbon's section titles gray.
 > 2. Title Page batch: (a) "Sync Title from Project" above the Title/Title
 >    Size row; drop the duplicated "Title Page" caption row (keep the
 >    header one); replace "PLACE IMAGE"+dropdown with a character-tool
@@ -260,7 +261,40 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.69 — title-bar-style window buttons (HEAD)
+### v4.70 — Feedback screenshot chip + html2canvas-pro (HEAD)
+
+- Derek: "screenshot buttons in the feedback window header that auto-
+  upload to the form's attachment field." The form is a CROSS-ORIGIN
+  Airtable iframe — nothing on our side can write into its attachment
+  field. The honest nearest thing shipped: header buttons (camera =
+  full, crop = area, TOOL_CHROME.feedback Controls) capture WITHOUT
+  saving; the capture becomes a chip ABOVE the form whose thumbnail is
+  DRAGGABLE — dragstart carries the PNG as a real File (setData first,
+  WebKit footgun, then items.add(file)), so dropping on the form's
+  attachment dropzone uploads it. Save (screenshot folder/Downloads)
+  and Discard ride the chip. Chip state is module-level in
+  FeedbackTool.tsx (survives window close; header + body components
+  share it). The chip sits OUTSIDE the rect-streamed placeholder, so
+  the preloaded iframe host shrinks under it automatically (hostTop 0
+  in driver v48).
+- body.fs-shot-veil-feedback hides the Feedback window + iframe host
+  for the WHOLE capture interaction (select + render) — the shot shows
+  the app, not the tool that took it. `.tool-window`/`.tool-inline` now
+  carry data-tool="<id>" for that veil (and for drivers).
+- screenshot.ts: renderToCanvas()/captureToCanvas(mode, veilClass)/
+  saveScreenshotCanvas()/screenshotFilename() exported; QAT path
+  unchanged on top of them.
+- ROOT CAUSE FOUND BY DRIVER v48: html2canvas 1.4.1 throws
+  "unsupported color function color()" on this app's color-mix()-heavy
+  styles (57 usages) — EVERY capture was failing, including the
+  existing toolbar Screenshot button. Dependency swapped to
+  html2canvas-pro 2.3.1 (maintained, modern-color-capable, API-
+  compatible; prod audit unchanged). npm install runs on Derek's next
+  `npm run desktop` (deps changed).
+- Tests: FeedbackTool.test.tsx (4) — chip lifecycle, drag payload
+  (setData + items.add pinned), discard, header buttons.
+
+### v4.69 — title-bar-style window buttons
 
 - Derek: replace the header's vertical divider — everything right of it
   becomes distinct bordered buttons like classic Windows title-bar

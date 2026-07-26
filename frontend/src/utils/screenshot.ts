@@ -1,6 +1,6 @@
 /**
  * Screenshot (v3.80, Derek; reworked v3.94/v3.95) — capture the app as it looks
- * on screen and save it as a PNG. Uses html2canvas (a dependency), lazily
+ * on screen and save it as a PNG. Uses html2canvas-pro (a dependency), lazily
  * imported so its weight only loads when used.
  *
  * Two modes (a small chooser appears on click):
@@ -92,11 +92,17 @@ function selectArea(): Promise<Rect | null> {
   });
 }
 
-/* ── save the canvas (chosen folder on desktop, else browser download) ──── */
-async function saveCanvas(canvas: HTMLCanvasElement): Promise<void> {
+/** One name for every capture, wherever it ends up (disk, Downloads, or the
+ *  Feedback attachment chip) — app title + timestamp. */
+export function screenshotFilename(): string {
   const base = (document.title || 'screen').replace(/[^\w-]+/g, '_').slice(0, 40) || 'screen';
   const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
-  const filename = `${base}-${stamp}.png`;
+  return `${base}-${stamp}.png`;
+}
+
+/* ── save the canvas (chosen folder on desktop, else browser download) ──── */
+export async function saveScreenshotCanvas(canvas: HTMLCanvasElement): Promise<void> {
+  const filename = screenshotFilename();
 
   const folder = useSettingsStore.getState().screenshotFolder;
   const { isTauri } = await import('../services/platform');
@@ -119,8 +125,12 @@ async function saveCanvas(canvas: HTMLCanvasElement): Promise<void> {
   showToast('Screenshot saved to Downloads.', 'success');
 }
 
-async function render(crop?: Rect): Promise<void> {
-  const { default: html2canvas } = await import('html2canvas');
+async function renderToCanvas(crop?: Rect): Promise<HTMLCanvasElement> {
+  // v4.70: html2canvas-pro, not html2canvas — the original is unmaintained and
+  // throws "unsupported color function" on the modern color() / color-mix()
+  // values this app's styles lean on (the capture button was dead because of
+  // it). The fork is API-compatible; same lazy import, same options.
+  const { default: html2canvas } = await import('html2canvas-pro');
   const bg = getComputedStyle(document.body).backgroundColor || '#1e1e1e';
   const dpr = window.devicePixelRatio || 2;
   // v4.1: capture the whole window with MINIMAL options (the crop/window options
@@ -138,9 +148,32 @@ async function render(crop?: Rect): Promise<void> {
   out.width = Math.max(1, Math.round(region.width * dpr));
   out.height = Math.max(1, Math.round(region.height * dpr));
   const ctx = out.getContext('2d');
-  if (!ctx) { await saveCanvas(full); return; }
+  if (!ctx) return full;
   ctx.drawImage(full, Math.round(region.x * dpr), Math.round(region.y * dpr), out.width, out.height, 0, 0, out.width, out.height);
-  await saveCanvas(out);
+  return out;
+}
+
+/** v4.70, Derek: capture WITHOUT saving — the Feedback window turns the canvas
+ *  into an attachable file instead. Runs the mode's UI (the area drag for
+ *  'area'); `veilClass` goes on <body> for the WHOLE interaction so CSS can
+ *  hide the caller's own window — the shot shows the app, not the tool that
+ *  took it. Returns null when the user cancels. Errors propagate. */
+export async function captureToCanvas(
+  mode: 'full' | 'area',
+  veilClass?: string,
+): Promise<HTMLCanvasElement | null> {
+  if (veilClass) document.body.classList.add(veilClass);
+  try {
+    let crop: Rect | undefined;
+    if (mode === 'area') {
+      const r = await selectArea();
+      if (!r) return null;                  // cancelled
+      crop = r;
+    }
+    return await renderToCanvas(crop);
+  } finally {
+    if (veilClass) document.body.classList.remove(veilClass);
+  }
 }
 
 export async function captureScreenshot(mode: 'full' | 'area' | 'choose' = 'choose'): Promise<void> {
@@ -153,7 +186,7 @@ export async function captureScreenshot(mode: 'full' | 'area' | 'choose' = 'choo
       if (!r) return;                     // cancelled
       crop = r;
     }
-    await render(crop);
+    await saveScreenshotCanvas(await renderToCanvas(crop));
   } catch (e) {
     console.error('screenshot failed', e);
     showToast('Could not capture a screenshot of this view.', 'error');

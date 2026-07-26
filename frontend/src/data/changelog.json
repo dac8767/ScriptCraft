@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.70",
+    "date": "2026-07-26",
+    "changes": [
+      "Feedback window: screenshot buttons in its header — the capture appears as a chip above the form, and dragging its thumbnail into the form's attachment field uploads it (the form is an embedded page, so that one drag is the direct path in); Save keeps the PNG as a fallback",
+      "Screenshots work again everywhere: the capture library couldn't read the app's modern CSS colors and every capture failed — replaced with a maintained fork"
+    ]
+  },
+  {
     "version": "4.69",
     "date": "2026-07-26",
     "changes": [

@@ -42,7 +42,7 @@ import { HighlightsTitleExtra } from './HighlightsTool';
 import HighlightsTool from './HighlightsTool';
 import { DesignPanelDocked } from './DesignPanel';
 import WorkspacesTool from './WorkspacesTool';
-import FeedbackTool from './FeedbackTool';
+import FeedbackTool, { FeedbackShotControls } from './FeedbackTool';
 import TagsPanel, { TagsTitleExtra, TagsWindowActions, useTagsTabs } from './TagsPanel';
 import { ScenesTool } from './ScenesTool';
 import BeatBoard, { OutlineHeaderControls } from './BeatBoard';
@@ -305,6 +305,9 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   goals: { Controls: GoalsHeaderExtra },
   notebook: { Controls: NotebookHeaderExtra },   // v2.05: declutter + create buttons
   beatboard: { Controls: OutlineHeaderControls }, // v2.41: count/Arrangement/help
+  // v4.70, Derek: screenshot buttons in the Feedback header — the capture
+  // lands as a draggable chip above the form (FeedbackTool.tsx).
+  feedback: { Controls: FeedbackShotControls },
 };
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
@@ -607,6 +610,9 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
     <div
       ref={windowRef}
       className={`tool-window${temporary ? ' tool-window-temp' : ''}${tool.fixedSize ? ' tool-window-fixed' : ''}`}
+      // v4.70: which tool this frame holds — read by CSS (the feedback
+      // screenshot veil) and by drivers; presentation-free otherwise.
+      data-tool={tool.id}
       // A fixed window takes its size from its content (CSS max-content), so no
       // width/height is imposed here and there's nothing to drag.
       // v2.15: anchored to the panel's REAL edge — the CSS 308px was the
@@ -1010,7 +1016,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               )}
             </div>
             {isOpenInline && (
-              <div className={`tool-inline${side === 'right' ? ' tool-inline-right' : ''}${solo ? ' tool-inline-solo' : ''}`}>
+              <div className={`tool-inline${side === 'right' ? ' tool-inline-right' : ''}${solo ? ' tool-inline-solo' : ''}`} data-tool={t.id}>
                 {/* The window's own header strip — tabs left, controls right,
                     the fullscreen button at the editor-facing end (where the
                     pop-out used to sit). Wraps when the column is narrow. */}
