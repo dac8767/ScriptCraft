@@ -1,10 +1,51 @@
 import { Node, mergeAttributes } from '@tiptap/core';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import type { Node as PMNode } from '@tiptap/pm/model';
+import { workingNoteKind } from '../../utils/workingNotes';
 
 export const General = Node.create({
   name: 'general',
   group: 'block',
   content: 'text*',
   defining: true,
+
+  /**
+   * Outline-line classification (Insert > Section / Marker / To-Do List) so
+   * View > Preview can hide each kind, themes can style them, and the ruler
+   * can skip them (v4.54).
+   *
+   * v4.54: this used to be stamped in renderHTML — which ProseMirror does NOT
+   * re-run when only a node's TEXT changes, so a hand-typed "# " kept a stale
+   * (missing) class until the node happened to re-render. A decoration is
+   * recomputed on every doc change, so the class always tracks the text; the
+   * classification itself lives in utils/workingNotes, the same predicate the
+   * exporters and the paginator use.
+   */
+  addProseMirrorPlugins() {
+    const build = (doc: PMNode) => {
+      const decos: Decoration[] = [];
+      doc.descendants((node, pos) => {
+        if (node.type.name !== 'general') return;
+        const kind = workingNoteKind(node.textContent || '');
+        if (kind) decos.push(Decoration.node(pos, pos + node.nodeSize, { class: `ol-${kind}` }));
+        return false;                             // generals hold no block children
+      });
+      return DecorationSet.create(doc, decos);
+    };
+    return [
+      new Plugin({
+        key: new PluginKey('generalOutlineClass'),
+        state: {
+          init: (_config, state) => build(state.doc),
+          apply: (tr, old) => (tr.docChanged ? build(tr.doc) : old),
+        },
+        props: {
+          decorations(state) { return this.getState(state); },
+        },
+      }),
+    ];
+  },
 
   /**
    * v0.96 — a to-do added in the script must render as the SAME card as one added
@@ -45,19 +86,14 @@ export const General = Node.create({
     return [{ tag: 'div[data-type="general"]' }];
   },
 
-  renderHTML({ node, HTMLAttributes }) {
-    // Outline-line classification (Insert > Section / Marker / To-Do List)
-    // so View > Preview can hide each kind, and themes can style them.
-    const text = node.textContent || '';
-    let olClass = '';
-    if (/^#+\s/.test(text)) olClass = ' ol-section';
-    else if (text.startsWith('\u2691')) olClass = ' ol-marker';
-    else if (/^\[[ x]\]/.test(text)) olClass = ' ol-todo';
+  renderHTML({ HTMLAttributes }) {
+    // The ol- outline class is applied by the decoration plugin above, NOT
+    // here \u2014 renderHTML output goes stale the moment the text changes.
     return [
       'div',
       mergeAttributes(HTMLAttributes, {
         'data-type': 'general',
-        class: 'screenplay-element general' + olClass,
+        class: 'screenplay-element general',
       }),
       0,
     ];

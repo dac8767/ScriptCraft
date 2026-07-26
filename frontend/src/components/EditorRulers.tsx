@@ -148,10 +148,35 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
         const shade = 'rgba(127,127,127,0.16)';
         const P1 = y0 - T;                             // physical top of page 1 (ruler-local)
 
+        // v4.54, Derek: sections (# …), markers (⚑ …) and to-do lines ([ ] …)
+        // take NO space in the final document (print/Preview/export drop
+        // them), so the ruler numbers skip the screen space they occupy: the
+        // band reads grayed out, the count pauses over it and resumes right
+        // where it left off beneath. Note highlights are inline on script
+        // text that DOES print, so they create no band; a line hidden by a
+        // View toggle is display:none (zero rect) and drops out on its own.
+        // Each band starts at the previous element's bottom edge so the
+        // leading gap the note line adds is skipped along with it.
+        const noteBands: { top: number; bottom: number }[] = [];
+        el.querySelectorAll<HTMLElement>('.ol-section, .ol-marker, .ol-todo').forEach((n) => {
+          const r = n.getBoundingClientRect();
+          if (r.height < 1) return;                    // hidden via View toggles
+          let bTop = (r.top - er.top) - T;
+          const prevEl = n.previousElementSibling;
+          if (prevEl) {
+            const pb = (prevEl.getBoundingClientRect().bottom - er.top) - T;
+            if (pb < bTop) bTop = pb;
+          }
+          const bBottom = (r.bottom - er.top) - T;
+          const last = noteBands[noteBands.length - 1];
+          if (last && bTop <= last.bottom + 1) last.bottom = Math.max(last.bottom, bBottom);
+          else noteBands.push({ top: bTop, bottom: bBottom });
+        });
+
         // Ticks + numbers for the linear map value(y) = valueAtOrigin + (y-originY)/inPx,
         // clipped to [clipTop, clipBottom]. value 0 draws a tick (no "0" label);
         // negatives are skipped.
-        const drawScaleFrom = (originY: number, valueAtOrigin: number, clipTop: number, clipBottom: number) => {
+        const drawTicks = (originY: number, valueAtOrigin: number, clipTop: number, clipBottom: number, terminal: boolean) => {
           const lo = Math.max(clipTop, -10);
           const hi = Math.min(clipBottom, H2 + 10);
           if (hi < lo - 0.6) return;
@@ -171,7 +196,9 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
               // view "11", continuous "10") even when sub-pixel rounding nudges
               // it a hair past the boundary — but never an extra tick or the next
               // number, so the last number is ALWAYS shown, every page.
-              if (isWhole && Math.round(v) > 0 && y <= hi + unitPx * 0.4) {
+              // (Only for the region's last segment — with skipped note bands
+              // the region ends mid-inch and there is no terminal label.)
+              if (terminal && isWhole && Math.round(v) > 0 && y <= hi + unitPx * 0.4) {
                 ctx.fillText(String(Math.round(v)), T / 2, y);
               }
               break;
@@ -190,6 +217,28 @@ const EditorRulers: React.FC<{ container: React.RefObject<HTMLDivElement | null>
           }
           ctx.stroke();
           ctx.globalAlpha = 1;
+        };
+
+        // The band-aware scale: gray each note band, pause the count over it,
+        // resume beneath with the value it left off at.
+        const drawScaleFrom = (originY: number, valueAtOrigin: number, clipTop: number, clipBottom: number) => {
+          const bands = noteBands.filter((b) => b.bottom > originY && b.top < clipBottom);
+          let segY = originY;
+          let segV = valueAtOrigin;
+          for (const b of bands) {
+            const bTop = Math.max(b.top, segY);
+            const bBot = Math.min(b.bottom, clipBottom);
+            drawTicks(segY, segV, Math.max(clipTop, segY), bTop, false);
+            segV += Math.max(0, bTop - segY) / unitPx;
+            const gTop = Math.max(bTop, clipTop);
+            if (bBot > gTop) {
+              ctx.fillStyle = shade;
+              ctx.globalAlpha = 1;
+              ctx.fillRect(0, gTop, T, bBot - gTop);
+            }
+            segY = Math.max(segY, bBot);
+          }
+          drawTicks(segY, segV, Math.max(clipTop, segY), clipBottom, bands.length === 0);
         };
 
         if (continuous) {

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.53 — two-stage header overflow, leading tool controls)
+# ScriptCraft — continuation brief (current as of v4.54 — parenthetical lock, Dialogue-initiated names, ruler note bands)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,52 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.53 — two-stage header overflow, leading tool controls, panel icons (HEAD)
+### v4.54 — parenthetical lock, Dialogue-initiated names, ruler note bands (HEAD)
+
+- **Parenthetical row is locked (Derek)**: the parens are ALWAYS the first
+  and last characters. `Parenthetical.ts` plugin (extends the v3.44 "()"
+  seed): repairs a missing edge paren in place (repair joins the
+  keystroke's undo step — no addToHistory:false, or undo doubles the
+  paren), clamps an empty caret between the parens so typing can't land
+  outside; emptying the row entirely still works (stays deletable).
+  Enter (EnterHandler in ScreenplayEditor) and Tab (BOTH the central
+  TabHandlerExtension and Parenthetical's own fallback) never split the
+  row — they insert the next element (nextOnEnter/nextOnTab, dialogue by
+  default) AFTER it via `insertContentAt($from.after(depth))` +
+  `focus(after+1)`. Driver v28f: Tab and mid-row Enter both leave
+  "(beat)" intact with typed text landing in the dialogue below.
+  Unit tests: `Parenthetical.test.ts` (7 cases).
+- **Character is not pickable; Dialogue initiates the name (Derek)**:
+  `NON_PICKABLE` += 'character' (the RULE survives — Customize still
+  edits its formatting, scripts keep their character elements).
+  `resolvePickedElement(picked, currentType, isLineEmpty)` in
+  screenplayEditorConstants is the ONE resolver: dialogue picked on an
+  empty line → 'character' (unless already dialogue); non-empty →
+  dialogue directly. Routed through ALL pick surfaces: Toolbar select
+  (which also DISPLAYS a character line as "Dialogue"), MenuBar
+  setElement, ScriptContextMenu, handlePickerSelect, Mod-4. Mod-3 still
+  sets character directly (in-script muscle memory unchanged — drivers
+  rely on it too).
+- **Ruler skips working-note lines (Derek)**: sections/markers/to-dos
+  take no space in the final document, so EditorRulers collects
+  `.ol-section/.ol-marker/.ol-todo` rects into merged `noteBands`
+  (band top extends to the previous element's bottom so the leading gap
+  goes too; display:none → zero rect → drops out), grays each band
+  (margin shade) and pauses the inch count over it — `drawScaleFrom` is
+  now band-aware piecewise segments over `drawTicks`; the forced
+  terminal "10"/"11" label only renders for band-free regions. Verified:
+  1→2 inch gap measured 96px + band height, later gaps back to 96px.
+  Note highlights are inline marks on text that DOES print — no band.
+- **ol- classes are decorations now**: renderHTML stamped them at create
+  time and ProseMirror never re-runs it on text edits, so hand-typed
+  "# " lines kept stale classes (driver v28d caught it). General.ts
+  plugin rebuilds Decoration.node classes per doc change from
+  `workingNoteKind()` (new in utils/workingNotes — single classification
+  for exporters + paginator + editor + ruler; pagination.ts regexes
+  replaced with it). `General.test.ts` types into a live editor and
+  reads the class back.
+
+### v4.53 — two-stage header overflow, leading tool controls, panel icons
 
 - **Tool-specific controls lead the right cluster (Derek)**: in Scenes the
   order is now Reorder, Filter, View, Search (`SceneControls` in

@@ -10,15 +10,25 @@
 import type { JSONContent } from '@tiptap/react';
 
 /**
- * True if `text` is a working-note line. Works on the raw element text — the
+ * Which kind of working-note line `text` is, or null for ordinary text. The
  * leading token is what matters:
  *   "# ..."  outline section (one or more #, then whitespace)
  *   "⚑ ..."  marker (U+2691)
  *   "[ ] .." / "[x] .."  script to-do line
+ * v4.54: split out of isWorkingNoteText so the editor's ol- line classes and
+ * the paginator's skip logic read the SAME classification the exporters use.
  */
-export function isWorkingNoteText(text: string): boolean {
+export function workingNoteKind(text: string): 'section' | 'marker' | 'todo' | null {
   const t = text.trim();
-  return /^#+\s/.test(t) || t.startsWith('⚑') || /^\[[ x]\]/.test(t);
+  if (/^#+\s/.test(t)) return 'section';
+  if (t.startsWith('⚑')) return 'marker';
+  if (/^\[[ x]\]/.test(t)) return 'todo';
+  return null;
+}
+
+/** True if `text` is a working-note line (any kind). */
+export function isWorkingNoteText(text: string): boolean {
+  return workingNoteKind(text) !== null;
 }
 
 /** Raw concatenated text of a node's direct text children (no mark wrappers). */

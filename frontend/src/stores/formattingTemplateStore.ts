@@ -143,7 +143,11 @@ interface FormattingTemplateState {
  * inserted from their own menu commands, not chosen as a paragraph type.
  * Exported so every list — including Customize > Elements — filters identically.
  */
-export const NON_PICKABLE = ['newAct', 'endOfAct', 'castList'];
+// v4.54, Derek: `character` is out of the pick lists — the name is initiated
+// by choosing Dialogue instead (a name always precedes its dialogue; see
+// resolvePickedElement in screenplayEditorConstants). The character ELEMENT
+// itself is untouched: it still renders, formats and edits in every script.
+export const NON_PICKABLE = ['newAct', 'endOfAct', 'castList', 'character'];
 
 /** Dual Dialogue is a structure rather than a paragraph type, so it has no
  *  template rule — but it IS offered in every element list. */

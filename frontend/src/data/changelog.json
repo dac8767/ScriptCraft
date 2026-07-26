@@ -1,5 +1,15 @@
 [
   {
+    "version": "4.54",
+    "date": "2026-07-26",
+    "changes": [
+      "Parenthetical rows keep their parens as the first and last characters — Enter (and Tab) now drop straight into a fresh dialogue line below instead of dragging the closing paren down; deleting an edge paren repairs it in place",
+      "Character is no longer an element option: choosing Dialogue on an empty line starts at the character-name prompt (a name always precedes its dialogue) — the in-script flow is unchanged",
+      "The ruler grays out sections, markers and to-do lines (they take no space in the final document) and resumes its numbering right where it left off beneath them",
+      "Section / marker / to-do line styling now updates live as you type the token (was stale until the line re-rendered)"
+    ]
+  },
+  {
     "version": "4.53",
     "date": "2026-07-26",
     "changes": [

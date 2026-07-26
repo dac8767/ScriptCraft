@@ -38,6 +38,23 @@ export const ALL_ELEMENT_TYPES: ElementType[] = [
   'showEpisode', 'castList',
 ];
 
+// v4.54, Derek: Character is no longer offered in the element lists — a name
+// always sits above its dialogue, so picking Dialogue on an EMPTY line starts
+// the couplet at the name prompt (the character element); the in-script flow
+// (Enter walks name → dialogue) is unchanged. A NON-EMPTY line picked as
+// Dialogue converts directly — its text is spoken words, not a name — and a
+// line that is already dialogue stays dialogue. Every pick surface (Element
+// dropdown, Insert menu, Enter-key picker, right-click menu, Mod-4) routes
+// through here so the rule lives once.
+export function resolvePickedElement(
+  picked: string,
+  currentType: string,
+  isLineEmpty: boolean,
+): string {
+  if (picked === 'dialogue' && isLineEmpty && currentType !== 'dialogue') return 'character';
+  return picked;
+}
+
 // v3.44, Derek: element autofill option lists (shown as soon as you're in an
 // empty element, filtered as you type). Scene prefixes get a trailing space so
 // the location follows immediately.

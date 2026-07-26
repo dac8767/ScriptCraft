@@ -3,6 +3,7 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { Node as PmNode } from '@tiptap/pm/model';
 import type { PageLayout } from '../stores/editorStore';
 import { resolveMoresContds } from '../stores/editorStore';
+import { workingNoteKind } from '../utils/workingNotes';
 
 export const paginationPluginKey = new PluginKey('pagination');
 
@@ -281,9 +282,10 @@ function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = E
     // Outline lines hidden by the Preview options render display:none — they
     // occupy zero lines and contribute no leading space.
     if (typeName === 'general') {
-      const text = node.textContent || '';
-      const isSectionish = /^#+\s/.test(text) || text.startsWith('\u2691');
-      const isTodo = /^\[[ x]\]/.test(text);
+      // Same classification the exporters and the editor's ol- classes use.
+      const kind = workingNoteKind(node.textContent || '');
+      const isSectionish = kind === 'section' || kind === 'marker';
+      const isTodo = kind === 'todo';
       if ((visibilityOpts.hideSections && isSectionish) || (visibilityOpts.hideTodos && isTodo)) {
         fixedLines = 0;
         sb = 0;

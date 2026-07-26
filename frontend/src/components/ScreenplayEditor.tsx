@@ -121,7 +121,7 @@ import { createTrackChangesPlugin, trackChangesPluginKey } from '../editor/track
 import type { VersionInfo } from '../services/api';
 import { resolveHFFields, composeSaveContent, stripSaveExtras } from '../utils/screenplaySaveContent';
 
-import { randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, SCENE_PREFIX_OPTIONS, SAMPLE_CONTENT } from './screenplayEditorConstants';
+import { randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, SCENE_PREFIX_OPTIONS, SAMPLE_CONTENT, resolvePickedElement } from './screenplayEditorConstants';
 
 interface OverlayInfo {
   top: number;
@@ -1223,6 +1223,31 @@ const ScreenplayEditor: React.FC = () => {
               return true;
             }
 
+            // v4.54, Derek: Enter in a parenthetical never splits the row —
+            // the parens stay the first and last characters and the caret
+            // drops into a fresh line below (the template's nextOnEnter,
+            // dialogue by default), wherever it sat in the row.
+            if (currentType === 'parenthetical') {
+              const tplStore = useFormattingTemplateStore.getState();
+              const tpl = tplStore.getActiveTemplate();
+              const next = tpl.rules['parenthetical']?.nextOnEnter
+                || DEFAULT_NEXT_TYPE['parenthetical'] || 'dialogue';
+              const after = $from.after($from.depth);
+              const chain = editor.chain();
+              if (editor.schema.nodes[next]) {
+                chain.insertContentAt(after, { type: next });
+              } else {
+                const nextRule = tpl.rules[next];
+                if (!nextRule) return false;
+                chain.insertContentAt(after, {
+                  type: 'customElement',
+                  attrs: { customTypeId: next, customLabel: nextRule.label },
+                });
+              }
+              chain.focus(after + 1).run();
+              return true;
+            }
+
             // Check if cursor is at the very beginning of the block
             const atBlockStart = $from.parentOffset === 0;
 
@@ -1308,7 +1333,12 @@ const ScreenplayEditor: React.FC = () => {
         types.forEach((type, i) => {
           shortcuts[`Mod-${i + 1}`] = ({ editor }: { editor: any }) => {
             if (!editor.schema.nodes[type]) return false;
-            editor.chain().focus().setNode(type).run();
+            // v4.54: Mod-4 (Dialogue) on an empty line starts at the character
+            // name, same as every other pick surface. Mod-3 stays character.
+            const { $from } = editor.state.selection;
+            editor.chain().focus().setNode(resolvePickedElement(
+              type, $from.parent.type.name, $from.parent.textContent.trim() === '',
+            )).run();
             return true;
           };
         });
@@ -1343,6 +1373,22 @@ const ScreenplayEditor: React.FC = () => {
             const nextId = rule.nextOnTab;
             // Check if next type is a built-in or custom element
             const isBuiltIn = ALL_ELEMENT_TYPES.includes(nextId as ElementType);
+
+            // v4.54: a parenthetical never splits — the parens stay the first
+            // and last characters of the row; Tab, like Enter, drops into a
+            // fresh next element below.
+            if (currentType === 'parenthetical') {
+              const after = $from.after($from.depth);
+              if (isBuiltIn) {
+                return editor.chain().insertContentAt(after, { type: nextId }).focus(after + 1).run();
+              }
+              const nextRule = activeTemplate.rules[nextId];
+              if (!nextRule) return false;
+              return editor.chain().insertContentAt(after, {
+                type: 'customElement',
+                attrs: { customTypeId: nextId, customLabel: nextRule.label },
+              }).focus(after + 1).run();
+            }
 
             if (isBuiltIn) {
               return editor.chain().splitBlock().setNode(nextId).run();
@@ -3060,17 +3106,22 @@ const ScreenplayEditor: React.FC = () => {
       setPickerState((st) => ({ ...st, visible: false }));
       return;
     }
+    // v4.54: Dialogue picked on an empty line starts at the character name.
+    const { $from } = editor.state.selection;
+    const resolved = resolvePickedElement(
+      type, $from.parent.type.name, $from.parent.textContent.trim() === '',
+    ) as ElementType;
     // setNode works for any real schema node (built-in script elements as
     // well as the AV inner types avPara/avShot/avDirection). Custom-id elements
     // declared only in template rules go through the customElement wrapper.
-    if (editor.schema.nodes[type]) {
-      editor.chain().focus().setNode(type).run();
+    if (editor.schema.nodes[resolved]) {
+      editor.chain().focus().setNode(resolved).run();
     } else {
       const tpl = useFormattingTemplateStore.getState().getActiveTemplate();
-      const rule = tpl.rules[type];
+      const rule = tpl.rules[resolved];
       if (rule) {
         editor.chain().focus().setNode('customElement', {
-          customTypeId: type,
+          customTypeId: resolved,
           customLabel: rule.label,
         }).run();
       }

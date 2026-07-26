@@ -45,6 +45,7 @@ import { commandDef } from './toolbarCommands';
 import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, stripTall, parseRibbon } from './toolbarBuiltins';
 import { smartUndo, smartRedo, useEditorStore } from '../stores/editorStore';
 import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
+import { resolvePickedElement } from './screenplayEditorConstants';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { BUILT_IN_ELEMENT_IDS } from '../stores/formattingTypes';
@@ -355,16 +356,20 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   }, [editor]);
 
   const handleElementChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const type = e.target.value;
+    const picked = e.target.value;
     if (!editor) return;
 
     // Dual Dialogue is a structure, not a paragraph type — it runs its command
     // rather than setting a node type (v0.84).
-    if (type === 'dualDialogue') {
+    if (picked === 'dualDialogue') {
       (editor as unknown as { commands: { toggleDualDialogue: () => boolean } })
         .commands.toggleDualDialogue();
       return;
     }
+
+    // v4.54: Dialogue picked on an empty line starts at the character name.
+    const { $from } = editor.state.selection;
+    const type = resolvePickedElement(picked, $from.parent.type.name, $from.parent.textContent.trim() === '');
 
     setActiveElement(type as ElementType);
     // Three cases:
@@ -894,7 +899,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       case 'element': return (
         <select
           className="element-selector"
-          value={activeElement}
+          // v4.54: a character line reads as "Dialogue" — the name row is the
+          // start of the dialogue couplet, and Character is no longer listed.
+          value={activeElement === 'character' ? 'dialogue' : activeElement}
           onChange={handleElementChange}
           title="Element"
         >

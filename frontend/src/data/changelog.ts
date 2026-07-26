@@ -67,6 +67,6 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '4.53';
+export const APP_VERSION = '4.54';
 
 export const CHANGELOG = CHANGELOG_DATA as unknown as ChangelogEntry[];
