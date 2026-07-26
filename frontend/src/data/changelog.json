@@ -1,5 +1,16 @@
 [
   {
+    "version": "4.80",
+    "date": "2026-07-26",
+    "changes": [
+      "New Script now starts with a chooser: New Script (Manual Setup), New Script (Guided Setup), Open Script, or Import File",
+      "Guided Setup walks you through naming, save locations, format, and one friendly page per Customize tab — with Next or \"Skip for now\" on every step, and a reminder that all of it can be changed later",
+      "The Guided Setup's customize pages show the REAL Customize controls under plain-language explanations, so anything you change in Customize appears here automatically",
+      "Manual Setup gained a \"Save to\" field (pre-filled with the destinations your last script used) and lost the Open/Import buttons — those live on the chooser now",
+      "Both setups can copy a look and layout from a customizations preset file"
+    ]
+  },
+  {
     "version": "4.79",
     "date": "2026-07-26",
     "changes": [

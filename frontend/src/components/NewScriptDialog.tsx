@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 import { SYSTEM_TEMPLATE_LIST } from '../stores/formattingTemplateStore';
 import { formatAppDate } from '../utils/dateFormat';
+import { SaveLocationsField, CustomizeFromFileField } from './setupFields';
 
 /*
  * NewScriptDialog (v1.50) — File > New Script…
@@ -36,13 +37,12 @@ function formatOptions() {
   return enabled.length > 0 ? enabled : SYSTEM_TEMPLATE_LIST;
 }
 
-export default function NewScriptDialog({ open, onClose, onCreate, onOpenScript, onImport }: {
+export default function NewScriptDialog({ open, onClose, onCreate, onBack }: {
   open: boolean;
   onClose: () => void;
   onCreate: (meta: NewScriptMeta) => void;
-  /** v1.54: escape hatches — the user came here but wants an existing script. */
-  onOpenScript?: () => void;
-  onImport?: () => void;
+  /** v4.80: back to the launcher, which now owns Open Script / Import File. */
+  onBack?: () => void;
 }) {
   // v1.59: the Version autofill follows Settings > General > Date format
   // (default Short = MM/DD/YY, the historical behavior).
@@ -136,14 +136,22 @@ export default function NewScriptDialog({ open, onClose, onCreate, onOpenScript,
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
+
+          {/* v4.80, Derek: where it saves, chosen here. These ARE the Save
+              Options settings — which is also what the most recently saved
+              script used, so they open pre-filled with exactly that. */}
+          <label>Save to:</label>
+          <SaveLocationsField />
+        </div>
+
+        <div className="fs-newscript-extra">
+          <CustomizeFromFileField />
         </div>
 
         <div className="fs-newscript-actions">
-          {onOpenScript && (
-            <button className="fs-newscript-alt" onClick={onOpenScript}>Open Script…</button>
-          )}
-          {onImport && (
-            <button className="fs-newscript-alt" onClick={onImport}>Import File…</button>
+          {/* v4.80: Open Script / Import File moved to the launcher. */}
+          {onBack && (
+            <button className="fs-newscript-alt" onClick={onBack}>← Back</button>
           )}
           <span className="fs-newscript-actions-gap" aria-hidden="true" />
           <button onClick={onClose}>Cancel</button>

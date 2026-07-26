@@ -6,6 +6,8 @@ import PreferencesDialog from './PreferencesDialog';
 import { PresetsDialog } from './PresetsPanel';
 import SetDraftDialog from './SetDraftDialog';
 import NewScriptDialog, { type NewScriptMeta } from './NewScriptDialog';
+import NewScriptLauncher from './NewScriptLauncher';
+import GuidedSetupDialog from './GuidedSetupDialog';
 import RenameDialog from './RenameDialog';
 import HelpReferenceDialog from './HelpReferenceDialog';
 import { ALL_TOOLS } from './ToolDock';
@@ -876,6 +878,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
      the reset is asynchronous; every entry to New Script overwrites it. */
   const pendingNewScriptMeta = useRef<NewScriptMeta | null>(null);
   const [newScriptOpen, setNewScriptOpen] = useState(false);
+  // v4.80: the four-way launcher, and the Guided wizard it can open.
+  const [launcherOpen, setLauncherOpen] = useState(false);
+  const [guidedOpen, setGuidedOpen] = useState(false);
 
   const resetForNewScreenplay = useCallback(() => {
     if (!editor) return;
@@ -958,14 +963,16 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   useEffect(() => {
     if (!newScriptPromptRequest || !editor) return;
     useEditorStore.getState().setNewScriptPromptRequest(false);
-    setNewScriptOpen(true);
+    setLauncherOpen(true);
   }, [newScriptPromptRequest, editor]);
 
   const handleNewScreenplay = useCallback(() => {
     // v1.50: New Script… asks for name/draft/version first; Create hands off
     // to the existing format flow. confirmOrRun is the existing unsaved-work
     // guard — it prompts to save before any of this if the doc is dirty.
-    confirmOrRun(() => setNewScriptOpen(true));
+    // v4.80, Derek: the LAUNCHER comes first — manual / guided / open /
+    // import — and hands off to the right one.
+    confirmOrRun(() => setLauncherOpen(true));
   }, [confirmOrRun]);
 
   // ProjectView sets pendingFormatPromptInProject=true before navigating into
@@ -2355,9 +2362,33 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       editor={editor}
     />
     <SetDraftDialog open={draftDialogOpen} onClose={() => setDraftDialogOpen(false)} editor={editor} />
+    {/* v4.80, Derek: the launcher fronts New Script — the unsaved-work guard
+        already ran on the way in, so its branches act directly. */}
+    <NewScriptLauncher
+      open={launcherOpen}
+      onClose={() => setLauncherOpen(false)}
+      onChoose={(choice) => {
+        setLauncherOpen(false);
+        if (choice === 'manual') setNewScriptOpen(true);
+        else if (choice === 'guided') setGuidedOpen(true);
+        else if (choice === 'open') useEditorStore.getState().setOpenFileOpen(true);
+        else handleImport();
+      }}
+    />
+    <GuidedSetupDialog
+      open={guidedOpen}
+      onClose={() => setGuidedOpen(false)}
+      onBack={() => { setGuidedOpen(false); setLauncherOpen(true); }}
+      onCreate={(meta) => {
+        pendingNewScriptMeta.current = meta;
+        setGuidedOpen(false);
+        finishNewScreenplayWithFormat(meta.templateId, 'reset');
+      }}
+    />
     <NewScriptDialog
       open={newScriptOpen}
       onClose={() => setNewScriptOpen(false)}
+      onBack={() => { setNewScriptOpen(false); setLauncherOpen(true); }}
       onCreate={(meta) => {
         pendingNewScriptMeta.current = meta;
         setNewScriptOpen(false);
@@ -2367,9 +2398,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         // creation, which has no New Script dialog.)
         finishNewScreenplayWithFormat(meta.templateId, 'reset');
       }}
-      /* v1.54: the unsaved-work guard already ran on the way in. */
-      onOpenScript={() => { setNewScriptOpen(false); useEditorStore.getState().setOpenFileOpen(true); }}
-      onImport={() => { setNewScriptOpen(false); handleImport(); }}
     />
     <RenameDialog open={renameOpen} onClose={() => setRenameOpen(false)} />
     {helpForm && (

@@ -1,11 +1,10 @@
-# ScriptCraft — continuation brief (current as of v4.79 — presets export/import)
+# ScriptCraft — continuation brief (current as of v4.80 — launcher + Guided Setup)
 
 > QUEUE (Derek-approved, not yet landed), in order:
-> 0. NEXT UP — the new-script launcher (task #42) then the Guided Setup
->    wizard (task #43). v4.79 already built the pieces both need:
->    utils/presets.ts (customize + full-preset build/apply, validated) and
->    PresetsPanel's exported flows — the setups' "customize from file"
->    must call applyCustomizeExport, never a second copy.
+> 0. NEXT UP — window-mode memory incl. fullscreen (task #44), then the
+>    audit items (#38). Derek's open question from v4.78 still unanswered:
+>    which extra Guided Setup steps he wants (page layout, autosave/backup,
+>    theme-with-preview, template preview, start-from-existing-script).
 > 1. NEW-SCRIPT LAUNCHER + GUIDED SETUP WIZARD (Derek's big feature,
 >    late v4.78 session — his spec verbatim in the chat): a first window
 >    with four options — New Script (Manual Setup) / New Script (Guided
@@ -295,7 +294,33 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.79 — presets: export/import everything (HEAD)
+### v4.80 — new-script launcher + Guided Setup wizard (HEAD)
+
+- **NewScriptLauncher.tsx** fronts every New Script entry (File ▸ New
+  Script, the newScreenplay command, and the launch-with-nothing-to-open
+  path): Manual / Guided / Open Script / Import File. The unsaved-work
+  guard (confirmOrRun) still runs BEFORE it, so the branches act directly.
+- **NewScriptDialog**: Open/Import buttons GONE (they're on the launcher);
+  gained a "Save to" field and "Customize from a file", plus ← Back.
+- **GuidedSetupDialog.tsx**: 9 steps — Name / Where it saves / What kind
+  of script / then one page per Customize tab (themes, elements, toolbar,
+  panels, qat, context) from `GUIDED_CUSTOMIZE_STEPS`. Each customize step
+  EMBEDS the live tab (`<CustomizePanelsDialog open embedded
+  soloCategory=…>`) under a plain-language heading — Derek's "if I change
+  Customize, the wizard updates too" is satisfied BY CONSTRUCTION, not by
+  syncing. Every step has Skip for now + Next; the footer always reads
+  "All of these options can be changed at a later time."
+- **setupFields.tsx** holds the two controls both setups render —
+  SaveLocationsField (writes through the SAME settingsStore setters as
+  Settings ▸ Save Options, which is why it already shows what the last
+  script used) and CustomizeFromFileField (calls v4.79's
+  applyCustomizeExport — no second copy of the apply logic).
+- DRIVER BURN (again, sharper): NEVER `.remove()` a dialog overlay in a
+  driver — it rips a React-managed node out and every later render fails,
+  which reads as "the feature is broken". Dismiss with Escape or the real
+  button. Cost two failed runs before the penny dropped.
+
+### v4.79 — presets: export/import everything
 
 - **utils/presets.ts** is the core: `buildCustomizeExport` /
   `applyCustomizeExport` (chrome via capture/restoreCustomizations +
