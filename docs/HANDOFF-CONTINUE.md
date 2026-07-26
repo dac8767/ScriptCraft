@@ -1,16 +1,17 @@
-# ScriptCraft — continuation brief (current as of v4.68 — paren after dialogue + '(' trigger)
+# ScriptCraft — continuation brief (current as of v4.69 — title-bar-style window buttons)
 
 > QUEUE (Derek-approved, not yet landed), in order:
-> 1. Window-tab collapse (v4.53 HeaderTabs): the condensed dropdown must
->    keep the blue active-tab pill styling, and widening the window must
->    automatically restore the full tab strip (Derek says it sticks).
-> 3. Window headers: REPLACE the vertical divider — everything right of it
->    (fullscreen, close) becomes distinct bordered buttons like classic
->    Windows title-bar buttons; scale the × so its drawn size matches the
->    fullscreen square's height.
-> 4. Feedback window: screenshot buttons in its header that auto-attach
+> 1. Feedback window: screenshot buttons in its header that auto-attach
 >    the capture to the form's attachment field.
-> 5. Audit items: rescans gated on tool-open (live open / refresh on open /
+> 2. Title Page batch: (a) "Sync Title from Project" above the Title/Title
+>    Size row; drop the duplicated "Title Page" caption row (keep the
+>    header one); replace "PLACE IMAGE"+dropdown with a character-tool
+>    style "+ Add Image" placeholder (same options); show top/bottom
+>    placement only once an image exists. (b) Both Title Size dropdowns
+>    get a top option "Default" that applies the default size but then
+>    DISPLAYS as the numeric size (e.g. 16 pt). (c) The tool's title-page
+>    display must be TO SCALE (match Preview) with zoom buttons.
+> 3. Audit items: rescans gated on tool-open (live open / refresh on open /
 >    idle closed); react-router major bump; Tauri fs $HOME scope narrowing;
 >    CSP decision documented.
 
@@ -259,7 +260,25 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.68 — parenthetical after dialogue + the "(" trigger (HEAD)
+### v4.69 — title-bar-style window buttons (HEAD)
+
+- Derek: replace the header's vertical divider — everything right of it
+  becomes distinct bordered buttons like classic Windows title-bar
+  buttons; scale the × so its drawn ink matches the fullscreen square.
+- `.tool-chrome-sep` is GONE — renders removed in ToolDock (floating
+  HeaderRightCluster AND both docked strips) and the CSS rule deleted.
+- Button chrome (20-tool-dock.css): `.tool-window-close` + the
+  fullscreen buttons in `.tool-window-header` / `.tool-inline-header` =
+  20×20, 1px var(--fd-border), radius 4, bg rgba(128,128,128,0.06);
+  close hover #c0564f/white, fullscreen hover --fd-hover-bg.
+  `.tool-chrome-right` gap 3px; `.tool-chrome-controls` margin-right 8px
+  keeps tool controls (Sort etc.) visually separate from the pair.
+- CloseIcon (uiIcons.tsx) lines now span 1→13 — a 12-unit ×, the same
+  extent as FullscreenIcon's square, so the drawn glyphs match height.
+- ToolDock.template.test.tsx asserts sep is null + cluster < fs < close
+  order. Driver v47: both buttons 20×20/1px/r4, SVGs 11×11, no sep.
+
+### v4.68 — parenthetical after dialogue + the "(" trigger
 
 - DEFAULT_SUGGESTION_RULES.dialogue += 'parenthetical' (mid-speech
   beats); ElementPicker/constants tests updated.

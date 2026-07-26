@@ -58,7 +58,7 @@ describe('single-row window template (v4.39)', () => {
     expect(header.querySelector('.tool-chrome-sep')).toBeNull();
   });
 
-  it('TOOL_CHROME slots land in the row: count beside the title, tabs next, cluster · divider · fullscreen · close right', () => {
+  it('TOOL_CHROME slots land in the row: count beside the title, tabs next, cluster · fullscreen · close right', () => {
     TOOL_CHROME.workspaces = {
       TitleExtra: () => <span data-testid="tx">· 3</span>,
       WindowActions: () => <button data-testid="wa">eye</button>,
@@ -82,25 +82,25 @@ describe('single-row window template (v4.39)', () => {
     const tabLabels = Array.from(tabs.querySelectorAll('.tool-chrome-tab')).map((b) => b.textContent);
     expect(tabLabels).toEqual(['Alpha', 'Beta']);
     expect(tabs.querySelector('.tool-chrome-tab.active')?.textContent).toBe('Alpha');
-    // right cluster order: controls (+ window actions) · divider · fullscreen · close
+    // right cluster order (v4.69 — the divider is gone; fullscreen and
+    // close are distinct bordered buttons): controls · fullscreen · close
     const rightKids = Array.from(right.children);
     const cluster = right.querySelector('.tool-chrome-controls')!;
     expect(cluster.querySelector('[data-testid="ctl"]')).toBeTruthy();
     expect(cluster.querySelector('[data-testid="wa"]')).toBeTruthy();
-    const sep = right.querySelector('.tool-chrome-sep')!;
+    expect(right.querySelector('.tool-chrome-sep')).toBeNull();
     const fs = right.querySelector('.char-profiles-fullscreen-btn')!;
     const close = right.querySelector('.tool-window-close')!;
-    expect(rightKids.indexOf(cluster)).toBeLessThan(rightKids.indexOf(sep));
-    expect(rightKids.indexOf(sep)).toBeLessThan(rightKids.indexOf(fs));
+    expect(rightKids.indexOf(cluster)).toBeLessThan(rightKids.indexOf(fs));
     expect(rightKids.indexOf(fs)).toBeLessThan(rightKids.indexOf(close));
   });
 
-  it('a Controls-only tool gets the cluster and the divider, still one row', () => {
+  it('a Controls-only tool gets the cluster, no divider anywhere, still one row', () => {
     TOOL_CHROME.workspaces = { Controls: () => <span data-testid="ctl-only">ctl</span> };
     renderFrame();
     const header = host.querySelector('.tool-window-header')!;
     expect(header.querySelector('.tool-chrome-right [data-testid="ctl-only"]')).toBeTruthy();
-    expect(header.querySelector('.tool-chrome-sep')).toBeTruthy();
+    expect(header.querySelector('.tool-chrome-sep')).toBeNull();
     expect(header.querySelector('.tool-chrome-tabs')).toBeNull();
     expect(host.querySelector('.tool-chrome-row2')).toBeNull();
   });

@@ -249,8 +249,9 @@ function HeaderTabs({ chrome }: { chrome: ToolChrome }) {
 }
 
 /** The right end of the single-row header, in Derek's fixed order:
- *  controls cluster (+ window actions) · divider · fullscreen · close.
- *  The divider only draws when there is a cluster to divide from. */
+ *  controls cluster (+ window actions) · fullscreen · close.
+ *  v4.69, Derek: the divider is GONE — fullscreen and close are distinct
+ *  bordered buttons (classic title-bar style), which is separation enough. */
 function HeaderRightCluster({ id, chrome, onClose, closeTitle, fullscreenBtn = true }: {
   id: ToolId; chrome?: ToolChrome; onClose: () => void; closeTitle?: string;
   /** false on the fullscreen takeover — it IS fullscreen. */
@@ -265,7 +266,6 @@ function HeaderRightCluster({ id, chrome, onClose, closeTitle, fullscreenBtn = t
           {chrome?.WindowActions && <chrome.WindowActions />}
         </span>
       )}
-      {hasCluster && <span className="tool-chrome-sep" aria-hidden />}
       {fullscreenBtn && <ToolFullscreenButton id={id} />}
       <button
         className="tool-window-close"
@@ -1023,18 +1023,17 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                     ? startDockDragOut(t, activeSize!.h)
                     : undefined}
                 >
-                  {/* v4.45, Derek: the controls↔fullscreen divider lives in
-                      the docked strip too (skipped when the tool has no
-                      fullscreen — a dangling line divides nothing). */}
+                  {/* v4.69, Derek: no divider — the fullscreen button is a
+                      distinct bordered button now, separation enough. */}
                   {side === 'right' && !NO_FULLSCREEN.includes(t.id) && (
-                    <><ToolFullscreenButton id={t.id} /><span className="tool-chrome-sep" aria-hidden /></>
+                    <ToolFullscreenButton id={t.id} />
                   )}
                   {chrome?.useTabs && <HeaderTabs chrome={chrome} />}
                   <span className="tool-chrome-controls">
                     {chrome?.Controls && <chrome.Controls />}
                   </span>
                   {side !== 'right' && !NO_FULLSCREEN.includes(t.id) && (
-                    <><span className="tool-chrome-sep" aria-hidden /><ToolFullscreenButton id={t.id} /></>
+                    <ToolFullscreenButton id={t.id} />
                   )}
                 </div>
                 <div className="tool-inline-body" style={solo ? undefined : { height: activeSize!.h }}>

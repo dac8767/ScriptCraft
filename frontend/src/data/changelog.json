@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.69",
+    "date": "2026-07-26",
+    "changes": [
+      "Window headers: the vertical divider is gone — fullscreen and close are now distinct bordered buttons, title-bar style",
+      "The close × is scaled so its drawn ink matches the fullscreen square's height"
+    ]
+  },
+  {
     "version": "4.68",
     "date": "2026-07-26",
     "changes": [

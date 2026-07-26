@@ -53,9 +53,11 @@ export const FullscreenIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (
  *  matter how the boxes aligned. Same 14-box, same 1.5 stroke as
  *  FullscreenIcon, so the pair centers identically everywhere. */
 export const CloseIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (
+  // v4.69, Derek: the × ink spans 1→13 — the same 12-unit extent as the
+  // fullscreen square — so the two icons read the same visual height.
   <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <line x1="2.5" y1="2.5" x2="11.5" y2="11.5" />
-    <line x1="11.5" y1="2.5" x2="2.5" y2="11.5" />
+    <line x1="1" y1="1" x2="13" y2="13" />
+    <line x1="13" y1="1" x2="1" y2="13" />
   </svg>
 );
 export const ExpandIcon: React.FC<{ size?: number }> = ({ size = 11 }) => (

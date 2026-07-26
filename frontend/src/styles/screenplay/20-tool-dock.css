@@ -406,17 +406,13 @@ body.fs-tool-dragging { cursor: grabbing; }
   align-items: center;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 2px;
+  /* v4.69: 3px between the bordered fullscreen/close buttons; the controls
+     cluster keeps its own air via margin. */
+  gap: 3px;
 }
-/* The divider between the controls cluster and the fullscreen/close pair. */
-.tool-chrome-sep {
-  width: var(--fd-hairline-w, 1px);
-  height: 16px;
-  background: var(--fd-hairline);
-  /* v4.40, Derek: more air between the controls and the fullscreen/close pair */
-  margin: 0 9px;
-  flex: none;
-}
+.tool-chrome-right .tool-chrome-controls { margin-right: 8px; }
+/* (v4.69: .tool-chrome-sep is GONE — fullscreen/close are distinct bordered
+   buttons now, and the divider they were separated by with divided nothing.) */
 /* The item count riding beside the window title ("Characters · 12") —
    published by the tool, rendered by its TitleExtra slot. */
 .tool-title-count {
@@ -596,10 +592,15 @@ body.fs-tool-dragging { cursor: grabbing; }
    sits dead level on every platform (the glyph version was seated by the
    system font's baseline and drifted a hair on macOS). The 20×20 box also
    gives each icon the same, honest hit area. */
+/* v4.69, Derek: fullscreen and close are DISTINCT bordered buttons (classic
+   title-bar style) — the divider that used to separate them is gone. Same
+   20×20 geometry as before (the v4.43 alignment guarantee). */
 .tool-window-close,
-.tool-window-header .char-profiles-fullscreen-btn {
-  background: none;
-  border: none;
+.tool-window-header .char-profiles-fullscreen-btn,
+.tool-inline-header .char-profiles-fullscreen-btn {
+  background: rgba(128, 128, 128, 0.06);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
   color: var(--fd-text-muted);
   cursor: pointer;
   width: 20px;
@@ -610,7 +611,16 @@ body.fs-tool-dragging { cursor: grabbing; }
   justify-content: center;
   flex: none;
 }
-.tool-window-close:hover { color: var(--fd-text); }
+.tool-window-header .char-profiles-fullscreen-btn:hover,
+.tool-inline-header .char-profiles-fullscreen-btn:hover {
+  color: var(--fd-text);
+  background: var(--fd-hover-bg);
+}
+.tool-window-close:hover {
+  color: #fff;
+  background: #c0564f;
+  border-color: #c0564f;
+}
 .tool-window-body {
   flex: 1;
   min-height: 0;
