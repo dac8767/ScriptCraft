@@ -1,5 +1,34 @@
 [
   {
+    "version": "4.39",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "One-row window headers",
+        "detail": "The two chrome rows in every window are now one: tool name, count, and tabs on the left; Filter / Sort / View / Search, a divider line, then Fullscreen and Close on the right. The same row appears docked, popped out, and in fullscreen. When the window is too narrow, excess items wrap onto a second line instead of collapsing into a dropdown.",
+        "tags": [
+          "Windows",
+          "UI"
+        ]
+      },
+      {
+        "title": "Dock and undock by dragging",
+        "detail": "The pop-in and pop-out buttons are gone. Grab a docked window's header and pull it out of the panel to float it; drag a floating window over either side panel — the panel highlights — and release to dock it there (even a window that lived on the other side, or one opened from the Tools menu).",
+        "tags": [
+          "Windows",
+          "UI"
+        ]
+      },
+      {
+        "title": "Panel edges and header dividers",
+        "detail": "Side panels keep a faint edge line against the editor and every window header is divided from its body by the same line, Airtable-style. Unselected tab labels went back to the muted gray.",
+        "tags": [
+          "UI"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.38",
     "date": "2026-07-26",
     "items": [

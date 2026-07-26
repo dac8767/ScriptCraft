@@ -249,16 +249,8 @@
   line-height: 1;
 }
 .char-profiles-fullscreen-btn:hover { color: var(--fd-text); }
-/* ── v4.27, Derek's window template: the fullscreen header is row 1 of the
-   template — three .tool-window-zone spans (20-tool-dock.css), title + count
-   centered, close right. Tabs left it for row 2 (.tool-chrome-row2-tabbed,
-   shared with the tool-window frame). ────────────────────────────────────── */
-.char-fs-header {
-  padding-top: 0;
-  padding-bottom: 0;
-  /* v4.30 batch-v7 #2, Derek: 45px left too much air above the tabs row */
-  min-height: 34px;
-}
+/* (v4.39: .char-fs-header is gone — the fullscreen takeover renders the same
+   single-row .tool-window-header as every window; see 20-tool-dock.css.) */
 /* the Relationship Map's toolbar, portalled into the rels toolbar slot —
    flatten it (no floating box). */
 .rel-map-toolbar.rel-map-toolbar-in-header {

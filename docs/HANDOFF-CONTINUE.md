@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.38 — fullscreen □ vs expand ⤢)
+# ScriptCraft — continuation brief (current as of v4.39 — single-row headers + drag docking)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,47 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.38 — fullscreen □ vs expand ⤢ (HEAD)
+### v4.39 — single-row window headers + drag docking (HEAD)
+
+Derek's structural rework, all windows (frame, open dock item, fullscreen
+takeover):
+
+- **ONE header row** — left: name · TitleExtra count · tabs; right
+  (`HeaderRightCluster`, ToolDock): Controls (+WindowActions) ·
+  `.tool-chrome-sep` divider · fullscreen · close. **Too narrow → the row
+  WRAPS** (flex-wrap; `.tool-chrome-right` is margin-left:auto so a wrapped
+  cluster stays right-aligned). This REPLACED the tabs collapse-to-dropdown:
+  ChromeRow2 + the measurer + `.tool-chrome-tabs-dd` + `TabbedRow2` are
+  DELETED (ChromeTabs is strip-only now). Old two-row classes
+  (`.tool-chrome-row2`, `.tool-inline-header`, `.tool-window-zone*`,
+  `.char-fs-header`, `.tool-dock-item-actions`) are gone — drivers/tests must
+  target `.tool-window-header` / `.tool-dock-item-header` / `.tool-chrome-right`.
+- **Pop-in/pop-out buttons DELETED** (`.tool-window-popin`, `.tool-dock-popout`,
+  `chevronTowards` + its test). Docked→floating: grab the open dock row and
+  pull ~10px (`startDockDragOut` — same width-write pop-out did:
+  `setToolSize(id, dockW+140, h)`; `draggedOutRef` swallows the release
+  click so it can't re-minimize). Floating→docked: drag the window header
+  over either panel — `.tool-dock` gets `.tool-dock-drop-target` (accent
+  outline), release calls `dockInto(side)`: config move if needed
+  (`setToolConfig {side, enabled}`), clear both slots, `setToolSize(w=dock
+  width)`, then `openTool` (the single placement choke point). Works for
+  temp/menu windows and cross-panel moves; icon-rail panels and
+  neverDock/PANEL_EXCLUDED tools are not drop targets. Inline-vs-float is
+  still DERIVED from width <= dockW — dragging just writes sizes/config.
+- `.tool-dock-item` is `user-select: none` now (drag anchors — without it a
+  pull-out painted a selection across the panel).
+- Takeover header = the same `.tool-window-header` (`tool-fs-header` variant
+  class, no fullscreen button, × = "Return to editor"); `--dz-toolwin-head-pad`
+  default 8→6 (designTokens.ts matches the CSS fallback — the registry test
+  pins them equal).
+- Tabs reverted to muted resting color (Derek), `.tool-chrome-tab:hover`
+  brightens again; `.tool-ctl` keeps v4.37's full text color.
+- Driver-verified (driver/batchv13-check.js): merged row content/order, 0 pop
+  buttons, drag-out floats, drop-hint + drag-in docks (hint clears), Characters
+  wraps at 300px (row 83px, 3 tabs), takeover single row, 1px panel edge +
+  header divider. Suite 612 tests / 82 files.
+
+### v4.38 — fullscreen □ vs expand ⤢
 
 Derek: "make it clear what the difference is between an expand button and a
 full screen button." The uiIcons registry now encodes TWO verbs:

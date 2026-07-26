@@ -29,14 +29,14 @@ import {
 import { useEditorStore, toolConfigFor, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
-import { DoubleChevronIcon, chevronTowards, FullscreenIcon } from './uiIcons';
+import { FullscreenIcon } from './uiIcons';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, LocationsTitleExtra, StructureTitleExtra, type NavTab } from './SceneNavigator';
 import NavigatorTool, { NavigatorControls } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
 import CharacterProfiles, { CharTitleExtra, useCharTabs, CharControls } from './CharacterProfiles';
-import { ChromeRow2, type ToolChromeTab } from './ToolControls';
+import { ChromeTabs, type ToolChromeTab } from './ToolControls';
 import { StickyNotesTool, FragmentsTool, TodoTool, StickyTitleExtra, StickyControls, TodoTitleExtra, TodoControls, SnippetsTitleExtra } from './StickyNotes';
 import { HighlightsTitleExtra } from './HighlightsTool';
 import HighlightsTool from './HighlightsTool';
@@ -141,41 +141,61 @@ export const ALL_TOOLS: ToolDef[] = [
 
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
 
-/** v4.27, Derek's universal window template (his schematic). Every tool window:
- *    row 1 — pop-in | centered tool name | window actions · pop-out · close
- *    row 2 — tabs (left) | Filter / Sort / View / Search cluster (right)
- *  A tool declares its slots here; the floating frame renders both rows, and
- *  the dock compresses the same template (the accordion row IS row 1 — the
- *  open tool's TitleExtra/WindowActions join it — and .tool-inline-header is
- *  row 2). New controls should be composed from the ToolControls primitives
- *  (ControlDropdown / ControlSearch) so every window's cluster matches.
- *  (Replaces v1.80's TOOL_HEADER_EXTRAS/TOOL_FOOTERS — one registry now.) */
+/** v4.39, Derek's single-row window template (replaces the v4.27 two-row one).
+ *  Every tool window — floating, docked-open, and the fullscreen takeover —
+ *  is ONE header row:
+ *    left:  tool name · count (TitleExtra) · tabs
+ *    right: Filter / Sort / View / Search cluster · divider · fullscreen · close
+ *  When the window is too narrow the row WRAPS — excess items flow onto a
+ *  second line (this replaced the tabs' collapse-to-dropdown). The pop-in /
+ *  pop-out buttons are gone: drag a docked window's header out of the panel
+ *  to float it; drag a floating window over a side panel to dock it there.
+ *  New controls should still be composed from the ToolControls primitives
+ *  (ControlDropdown / ControlSearch) so every window's cluster matches. */
 export interface ToolChrome {
-  /** Beside the centered row-1 title — e.g. the "· 12" count. */
+  /** Beside the tool name — e.g. the "· 12" count. */
   TitleExtra?: React.FC;
-  /** Row-1 right cluster, left of pop-out/close — e.g. fullscreen. */
+  /** Rides with the Controls cluster — e.g. Tags' eye toggle. */
   WindowActions?: React.FC;
-  /** Row-2 left: the tab DATA (a hook — it may read stores). ChromeRow2
-   *  renders it as a file-tab strip when it fits, a dropdown when it
-   *  doesn't, and the row scrolls sideways as the last resort — a tabbed
-   *  row never wraps (Derek, batch-v6 #4). */
+  /** The tab DATA (a hook — it may read stores). Rendered as a strip beside
+   *  the title; a strip that doesn't fit wraps with the row. */
   useTabs?: () => ToolChromeTab[];
-  /** Row-2 right: the Filter / Sort / View / Search cluster, in that order.
-   *  The cluster spans the row and right-aligns its content, so a spanning
-   *  control bar (Outline, Scrapbook) lays out inside it unchanged. */
+  /** The Filter / Sort / View / Search cluster, in that order. */
   Controls?: React.FC;
 }
 
 /** Hook-calling wrapper so useTabs runs in a component of its own — the
- *  frame/dock render it conditionally, which a bare hook call couldn't be. */
-function TabbedRow2({ chrome, className, before, after }: {
-  chrome: ToolChrome; className: string; before?: React.ReactNode; after?: React.ReactNode;
-}) {
+ *  header renders it conditionally, which a bare hook call couldn't be. */
+function HeaderTabs({ chrome }: { chrome: ToolChrome }) {
   const tabs = chrome.useTabs!();
+  return <span className="tool-chrome-tabs"><ChromeTabs tabs={tabs} /></span>;
+}
+
+/** The right end of the single-row header, in Derek's fixed order:
+ *  controls cluster (+ window actions) · divider · fullscreen · close.
+ *  The divider only draws when there is a cluster to divide from. */
+function HeaderRightCluster({ id, chrome, onClose, closeTitle, fullscreenBtn = true }: {
+  id: ToolId; chrome?: ToolChrome; onClose: () => void; closeTitle?: string;
+  /** false on the fullscreen takeover — it IS fullscreen. */
+  fullscreenBtn?: boolean;
+}) {
+  const hasCluster = !!(chrome?.Controls || chrome?.WindowActions);
   return (
-    <ChromeRow2 tabs={tabs} className={className} before={before} after={after}>
-      {chrome.Controls && <chrome.Controls />}
-    </ChromeRow2>
+    <span className="tool-chrome-right">
+      {hasCluster && (
+        <span className="tool-chrome-controls">
+          {chrome?.Controls && <chrome.Controls />}
+          {chrome?.WindowActions && <chrome.WindowActions />}
+        </span>
+      )}
+      {hasCluster && <span className="tool-chrome-sep" aria-hidden />}
+      {fullscreenBtn && <ToolFullscreenButton id={id} />}
+      <button
+        className="tool-window-close"
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        title={closeTitle ?? 'Close'}
+      >×</button>
+    </span>
   );
 }
 export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
@@ -233,43 +253,31 @@ function ToolFullscreenButton({ id }: { id: ToolId }) {
   );
 }
 
-/** The editor-area takeover for whichever tool owns fullscreenTool: the
- *  template's row-1 header (centered title + count, window actions, ×), the
- *  tool's own row-2 chrome (tabs + control cluster — the SAME registry the
- *  window frame reads), and the SAME ToolContent body. ScreenplayEditor swaps
- *  it in for the editor; toolbar/status bar stay, "Return to Editor" rides
- *  the ribbon. Replaces the bespoke Characters/Scenes takeovers. */
+/** The editor-area takeover for whichever tool owns fullscreenTool: the SAME
+ *  single-row header as the window frame (name · count · tabs left; controls ·
+ *  divider · × right — no fullscreen button, it IS fullscreen) and the SAME
+ *  ToolContent body. ScreenplayEditor swaps it in for the editor; toolbar/
+ *  status bar stay, "Return to Editor" rides the ribbon. */
 export function ToolFullscreenTakeover({ editor, scrollContainer }: {
   editor: Editor | null;
   scrollContainer?: HTMLDivElement | null;
 }) {
   const id = useEditorStore((s) => s.fullscreenTool);
+  const nameUpper = useEditorStore((s) => s.panelNameCase === 'upper');
   const def = ALL_TOOLS.find((t) => t.id === id);
   if (!id || !def) return null;
   const chrome = TOOL_CHROME[id];
   const close = () => useEditorStore.getState().setFullscreenTool(null);
   return (
     <div className={`fs-tool-takeover fs-tool-takeover-${id}`}>
-      <div className="char-profiles-header char-fs-header">
-        <span className="tool-window-zone tool-window-zone-l" />
-        <span className="tool-window-zone tool-window-zone-c">
-          <span className="char-profiles-title">{def.label}</span>
+      <div className="tool-window-header tool-fs-header">
+        <span className="tool-header-title">
+          <span className={`tool-window-title${nameUpper ? ' tool-name-upper' : ''}`}>{def.label}</span>
           {chrome?.TitleExtra && <chrome.TitleExtra />}
         </span>
-        <span className="tool-window-zone tool-window-zone-r">
-          {chrome?.WindowActions && <chrome.WindowActions />}
-          <button className="char-profiles-close" onClick={close} title="Return to editor">&times;</button>
-        </span>
+        {chrome?.useTabs && <HeaderTabs chrome={chrome} />}
+        <HeaderRightCluster id={id} chrome={chrome} onClose={close} closeTitle="Return to editor" fullscreenBtn={false} />
       </div>
-      {(chrome?.useTabs || chrome?.Controls) && (chrome?.useTabs ? (
-        <TabbedRow2 chrome={chrome} className="tool-chrome-row2" />
-      ) : (
-        <div className="tool-chrome-row2">
-          <span className="tool-chrome-controls">
-            {chrome?.Controls && <chrome.Controls />}
-          </span>
-        </div>
-      ))}
       <div className="fs-tool-takeover-body">
         <ToolContent id={id} editor={editor} scrollContainer={scrollContainer} onClose={close} />
       </div>
@@ -432,11 +440,33 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
     document.addEventListener('pointerup', onUp);
   };
 
+  /** v4.39: drop the floating window on a side panel and it docks there —
+   *  the pop-in button is gone, the gesture replaced it. Docking = the same
+   *  width-write pop-in did (inline is DERIVED from w <= dock width), plus a
+   *  config/slot move when the window came from the menu or the other side.
+   *  Everything routes through openTool so the placement logic stays single. */
+  const dockInto = (dropSide: ToolSide) => {
+    const st = useEditorStore.getState();
+    const surface = dropSide === 'left' ? 'panelLeft' : 'panelRight';
+    const w = dockWidthFor(dropSide, st.panelSizeMode[dropSide], st.chromeCustomPx[surface]);
+    const cfg = toolConfigFor(st.toolConfig, tool.id);
+    if (!cfg.enabled || cfg.side !== dropSide) {
+      st.setToolConfig({ ...st.toolConfig, [tool.id]: { side: dropSide, enabled: true } });
+    }
+    // Clear every slot first so openTool's placement is the only one left.
+    if (st.activeTool === tool.id) st.setActiveTool(null);
+    if (st.activeToolRight === tool.id) st.setActiveToolRight(null);
+    st.setToolSize(tool.id, w, size.h);
+    st.openTool(tool.id);
+  };
+
   /*
    * v1.33: grab the header, move the window. The window is absolutely
    * positioned (left/right + top in CSS); on the first drag we measure where
    * it actually is, switch to explicit left/top, and follow the pointer.
-   * Buttons in the header are exempt so Close and pop-in still just click.
+   * Buttons in the header are exempt so Close (and the controls) still click.
+   * v4.39: while dragging, hovering a side panel highlights it as a drop
+   * target; releasing there docks the window into that panel.
    */
   const startDrag = (e: React.PointerEvent) => {
     const el = windowRef.current;
@@ -448,14 +478,39 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
     const parent = el.offsetParent?.getBoundingClientRect() ?? ({ left: 0, top: 0 } as DOMRect);
     const baseLeft = rect.left - parent.left;
     const baseTop = rect.top - parent.top;
+    const zones = !tool.neverDock && !PANEL_EXCLUDED_IDS.includes(tool.id)
+      ? (['left', 'right'] as const).flatMap((s) => {
+          // an icon rail has no inline shape to receive the window
+          if (useEditorStore.getState().panelSizeMode[s] === 'icons') return [];
+          const dockEl = document.querySelector<HTMLElement>(`.tool-dock-wrap.tool-dock-${s} .tool-dock`);
+          return dockEl ? [{ s: s as ToolSide, el: dockEl }] : [];
+        })
+      : [];
+    let over: { s: ToolSide; el: HTMLElement } | null = null;
+    const hit = (x: number, y: number) => {
+      for (const z of zones) {
+        const r = z.el.getBoundingClientRect();
+        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return z;
+      }
+      return null;
+    };
     const onMove = (ev: PointerEvent) => {
       el.style.left = `${baseLeft + (ev.clientX - startX)}px`;
       el.style.right = 'auto'; // right-docked windows are right-anchored until dragged
       el.style.top = `${Math.max(0, baseTop + (ev.clientY - startY))}px`;
+      const nowOver = hit(ev.clientX, ev.clientY);
+      if (nowOver !== over) {
+        over?.el.classList.remove('tool-dock-drop-target');
+        nowOver?.el.classList.add('tool-dock-drop-target');
+        over = nowOver;
+      }
     };
-    const onUp = () => {
+    const onUp = (ev: PointerEvent) => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
+      over?.el.classList.remove('tool-dock-drop-target');
+      const drop = hit(ev.clientX, ev.clientY);
+      if (drop) dockInto(drop.s);
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
@@ -477,62 +532,20 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
           : {}),
       }}
     >
-      {/* v1.80: the pop-in button sits on the side of the header CLOSEST to
-        * the panel it returns to — far left for the left panel, far right for
-        * the right — pointing at that panel.
-        * v1.94: every window keeps × in the upper right (v1.80 dropped it
-        * from popped-out windows; Derek wants it back).
-        * v4.27, Derek's window template: row 1 is three zones so the title is
-        * truly CENTERED (pop-in | title + count | actions), and tabs/controls
-        * live on a second row — tabs left, Filter/Sort/View/Search right. */}
+      {/* v4.39, Derek's single-row header: name · count · tabs left, then
+        * controls · divider · fullscreen · close right; wraps when narrow.
+        * Grab anywhere on it to move the window; drop on a panel to dock. */}
       {(() => {
         const chrome = TOOL_CHROME[tool.id];
-        // v2.06: an icon-rail panel has no inline shape to return to — no
-        // pop-in on windows opened from it.
-        const iconsMode = side ? panelSizeMode[side] === 'icons' : false;
-        const popBtn = !temporary && !tool.neverDock && !iconsMode ? (
-          <button
-            className="tool-window-popin"
-            title="Pop back into the side panel"
-            onClick={() => setToolSize(tool.id, popInW, size.h)}
-          ><DoubleChevronIcon towards={chevronTowards('popin', side === 'right' ? 'right' : 'left')} /></button>
-        ) : null;
-        const hasRow2 = !!(chrome?.useTabs || chrome?.Controls);
         return (
-          <>
-            <div className="tool-window-header" onPointerDown={startDrag}>
-              <span className="tool-window-zone tool-window-zone-l">
-                {/* v4.36 batch-v10 #2, Derek: the fullscreen button sits on
-                    the INNER (editor-facing) side — zone-L for right-panel
-                    windows, zone-R for left-panel ones. The pop-in keeps the
-                    outer edge. */}
-                {side === 'right' && <ToolFullscreenButton id={tool.id} />}
-                {side !== 'right' && popBtn}
-              </span>
-              <span className="tool-window-zone tool-window-zone-c">
-                <span className={`tool-window-title${nameUpper ? ' tool-name-upper' : ''}`}>{tool.label}</span>
-                {chrome?.TitleExtra && <chrome.TitleExtra />}
-              </span>
-              <span className="tool-window-zone tool-window-zone-r tool-window-header-actions">
-                {chrome?.WindowActions && <chrome.WindowActions />}
-                {side !== 'right' && <ToolFullscreenButton id={tool.id} />}
-                {side === 'right' && popBtn}
-                <button className="tool-window-close" onClick={onClose} title="Close">×</button>
-              </span>
-            </div>
-            {hasRow2 && (chrome?.useTabs ? (
-              /* tabbed rows drop the surface tint + bottom-align the tabs so
-                 the active tab connects to the body below; ChromeRow2 owns
-                 the never-wrap behavior (collapse to dropdown, then scroll) */
-              <TabbedRow2 chrome={chrome} className="tool-chrome-row2" />
-            ) : (
-              <div className="tool-chrome-row2">
-                <span className="tool-chrome-controls">
-                  {chrome?.Controls && <chrome.Controls />}
-                </span>
-              </div>
-            ))}
-          </>
+          <div className="tool-window-header" onPointerDown={startDrag}>
+            <span className="tool-header-title">
+              <span className={`tool-window-title${nameUpper ? ' tool-name-upper' : ''}`}>{tool.label}</span>
+              {chrome?.TitleExtra && <chrome.TitleExtra />}
+            </span>
+            {chrome?.useTabs && <HeaderTabs chrome={chrome} />}
+            <HeaderRightCluster id={tool.id} chrome={chrome} onClose={onClose} />
+          </div>
         );
       })()}
       <div className={`tool-window-body${side === 'right' ? ' tool-window-body-right' : ''}`}>{children}</div>
@@ -641,6 +654,30 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
       document.removeEventListener('pointerup', onUp);
       setToolSize(active.id, activeSize.w, h);
     };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  };
+
+  // v4.39: pull a docked window out by its header — once the pointer travels
+  // ~10px the tool pops out to a floating window (the same width-write the
+  // pop-out button used to do). The ref swallows the click that would
+  // otherwise fire on release and immediately re-minimize the tool.
+  const draggedOutRef = useRef(false);
+  const startDockDragOut = (t: ToolDef, h: number) => (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest('button, select, input')) return;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const cleanup = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+    const onMove = (ev: PointerEvent) => {
+      if (Math.abs(ev.clientX - startX) < 10 && Math.abs(ev.clientY - startY) < 10) return;
+      cleanup();
+      draggedOutRef.current = true;
+      setToolSize(t.id, dockW + 140, h);
+    };
+    const onUp = () => cleanup();
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
   };
@@ -794,76 +831,54 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
              v3.83, Derek: the Scrapbook is panel-bound again — its writing
              surface takes over the editor area, so a floating pop-out makes no
              sense. No pop-out button on it. */
-          const popOutBtn = isOpenInline && t.id !== 'notebook' ? (
-            <button
-              className="tool-dock-popout"
-              title="Pop out into a floating window for resizing"
-              onClick={(e) => { e.stopPropagation(); setToolSize(t.id, dockW + 140, activeSize!.h); }}
-            ><DoubleChevronIcon towards={chevronTowards('popout', side === 'right' ? 'right' : 'left')} /></button>
-          ) : null;
           return (
           <React.Fragment key={t.id}>
             {/* a div, not a button: the header row can CONTAIN buttons and
-                dropdowns (pop-out, show/hide), and buttons can't nest. */}
+                dropdowns (chrome controls, show/hide), and buttons can't nest.
+                v4.39: the accordion row IS the window's whole single-row
+                header when open — name · count · tabs, then the controls ·
+                divider · fullscreen · close cluster; excess wraps to a second
+                line. Grab it and pull ~10px to float the window (the pop-out
+                button is gone). The Scrapbook stays panel-bound (v3.83), so
+                its drag-out is suppressed. */}
             <div
               role="button"
               tabIndex={0}
               className={'tool-dock-item' + (activeId === t.id ? ' active' : '') + (isOpenInline ? ' tool-dock-item-header' : '')}
               onClick={(e) => {
                 // Header controls (dropdowns, chrome buttons) act, they don't toggle.
-                if ((e.target as HTMLElement).closest('select, input, button, .tool-dock-popout')) return;
+                if ((e.target as HTMLElement).closest('select, input, button')) return;
+                // A drag-out just happened — the release must not re-toggle.
+                if (draggedOutRef.current) { draggedOutRef.current = false; return; }
                 setActive(activeId === t.id ? null : t.id);
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
-                  if ((e.target as HTMLElement).closest('select, input, button, .tool-dock-popout')) return;
+                  if ((e.target as HTMLElement).closest('select, input, button')) return;
                   e.preventDefault();
                   setActive(activeId === t.id ? null : t.id);
                 }
               }}
+              onPointerDown={isOpenInline && !t.neverDock && t.id !== 'notebook'
+                ? startDockDragOut(t, activeSize!.h)
+                : undefined}
               title={t.label}
             >
-              {/* v1.34: Premiere-style caret — a SINGLE chevron (the double one
-                * means pop-in/out): right when closed, down when open. */}
+              {/* v1.34: Premiere-style caret — a SINGLE chevron: right when
+                * closed, down when open. */}
               <span className="tool-dock-caret">
                 {activeId === t.id ? <FaChevronDown /> : <FaChevronRight />}
               </span>
               <span className="tool-dock-icon">{t.icon}</span>
               <span className={`tool-dock-label${nameUpper ? ' tool-name-upper' : ''}`}>{t.label}</span>
-              {/* v4.27 window template, dock-compressed: the accordion row IS
-                  row 1, so the open tool's title extra (count) and window
-                  actions (fullscreen…) ride on it. */}
               {isOpenInline && chrome?.TitleExtra && <chrome.TitleExtra />}
-              {isOpenInline && chrome?.WindowActions && (
-                <span className="tool-dock-item-actions"><chrome.WindowActions /></span>
+              {isOpenInline && chrome?.useTabs && <HeaderTabs chrome={chrome} />}
+              {isOpenInline && (
+                <HeaderRightCluster id={t.id} chrome={chrome} onClose={() => setActive(null)} />
               )}
             </div>
             {isOpenInline && (
               <div className={`tool-inline${side === 'right' ? ' tool-inline-right' : ''}${solo ? ' tool-inline-solo' : ''}`}>
-                {/* v2.00: the window HEADER — controls + pop-out live here,
-                    not on the dock button row. v4.27: this is the template's
-                    row 2 — tabs left, Filter/Sort/View/Search cluster right.
-                    The controls span always renders: it's also the flex
-                    spacer that keeps the pop-out at the editor-facing end. */}
-                {/* v4.36 batch-v10 #2: the fullscreen button rides the
-                    editor-facing end of this row, beside the pop-out (which
-                    keeps the extreme edge — its established home). */}
-                {chrome?.useTabs ? (
-                  <TabbedRow2
-                    chrome={chrome}
-                    className="tool-inline-header"
-                    before={side === 'right' ? <>{popOutBtn}<ToolFullscreenButton id={t.id} /></> : undefined}
-                    after={side !== 'right' ? <><ToolFullscreenButton id={t.id} />{popOutBtn}</> : undefined}
-                  />
-                ) : (
-                  <div className="tool-inline-header">
-                    {side === 'right' && <>{popOutBtn}<ToolFullscreenButton id={t.id} /></>}
-                    <span className="tool-chrome-controls">
-                      {chrome?.Controls && <chrome.Controls />}
-                    </span>
-                    {side !== 'right' && <><ToolFullscreenButton id={t.id} />{popOutBtn}</>}
-                  </div>
-                )}
                 <div className="tool-inline-body" style={solo ? undefined : { height: activeSize!.h }}>
                   <ToolContent id={active!.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />
                 </div>

@@ -154,10 +154,9 @@ export const VomitIcon: React.FC<{ size?: number | string }> = ({ size = '1em' }
   </svg>
 );
 
-/** Which way the double chevron points: pop-out sends the window AWAY from its
- *  panel; pop-in sends it back TOWARD the panel. */
-export const chevronTowards = (button: 'popout' | 'popin', side: 'left' | 'right'): 'left' | 'right' =>
-  (button === 'popout') === (side === 'right') ? 'left' : 'right';
+/* (v4.39: chevronTowards is gone with the pop-in/pop-out buttons — windows
+   dock and undock by drag now. DoubleChevronIcon stays: the collapsed-panel
+   expand strips still point with it.) */
 
 /** Menu-bar menus, by label. */
 export const MENU_ICONS: Record<string, React.ReactNode> = {

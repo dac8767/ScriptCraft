@@ -366,25 +366,15 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
 }
 .fs-kb-p { font-size: 12.5px; line-height: 1.55; margin: 4px 0; color: var(--fd-text); }
 
-/* v1.80: the pop-out lives ON the popped-in window's header row now, on the
-   editor-facing side (the old floating .tool-inline-popout corner button is
-   gone). The open row reads as a real header: separator below, no gap jump. */
+/* v4.39: the open row is the window's whole single-row header (name · tabs ·
+   controls · divider · fullscreen · close) — the separator below divides it
+   from the body, per Derek's Airtable reference. The pop-out button is gone;
+   dragging the row out of the panel floats the window. */
 .tool-inline { position: relative; }
 .tool-dock-item-header {
   border-bottom: 1px solid var(--fd-border);
   background: rgba(128, 128, 128, 0.22);
 }
-.tool-dock-popout {
-  background: none;
-  border: none;
-  color: var(--fd-text-muted);
-  font-size: 12px;
-  line-height: 1;
-  padding: 2px 4px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.tool-dock-popout:hover { color: var(--fd-text); }
 /* v2.15: Scrapbook solo mode (Settings > Tools) — while the Scrapbook is
    open, its dock is the only row and its window fills the whole sidebar. */
 .tool-dock-scrapbook-solo {
@@ -439,21 +429,8 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
   margin: 3px 0;
 }
 
-/* v2.00: the window HEADER — the row inside the window, under the dock
-   button. v4.27: this is the template's row 2 — tabs + the control cluster
-   (.tool-chrome-tabs / .tool-chrome-controls, 20-tool-dock.css) + pop-out.
-   (The old .tool-inline-header-extra span and the v1.80 .tool-window-footer
-   are gone with TOOL_HEADER_EXTRAS/TOOL_FOOTERS.) */
-.tool-inline-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px 8px;
-  border-bottom: 1px solid var(--fd-border);
-  background: var(--fd-navigator-bg);
-  flex-shrink: 0;
-}
-.tool-inline-header .tool-dock-popout { flex-shrink: 0; }
+/* (v4.39: .tool-inline-header is gone — the open dock row carries the whole
+   single-row header now; see .tool-dock-item-header above.) */
 
 /* v3.54: the Scenes filter popover — a floating shell (portalled to body,
    positioned by top/left) wrapping the same .scene-filters rows the tool body
@@ -1287,23 +1264,8 @@ input.fs-switch:checked::after { left: 15px; }
 .page.pv-hdr-plain .scene-heading { font-weight: 400 !important; }
 .page.pv-hdr-underline .scene-heading { text-decoration: underline; }
 
-/* Floating windows: pop-in button (returns the tool to the side panel) */
-/* v1.33: pop-in lives in the window header (its top toolbar), not a floating
-   corner button. */
-.tool-window-popin {
-  width: 20px;
-  height: 20px;
-  background: none;
-  border: none;
-  color: var(--fd-text-muted);
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-}
-.tool-window-popin:hover { color: var(--fd-text); }
-/* v1.32: the pop buttons carry an SVG chevron now, not a text glyph. */
-.tool-window-popin svg,
-.tool-inline-popout svg { display: block; margin: auto; }
+/* (v4.39: the .tool-window-popin button is gone — drag a floating window
+   onto a side panel to dock it.) */
 
 /* v1.33: Premiere-style open/closed caret at the left of every dock item.
    v1.34: a single chevron (right = closed, down = open) with extra breathing

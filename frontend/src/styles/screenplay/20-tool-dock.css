@@ -244,6 +244,9 @@
   gap: 10px;
   background: none;
   border: none;
+  /* v4.39: rows are drag handles now — without this, pulling a window out
+     painted a text selection across the whole panel. */
+  user-select: none;
   color: var(--fd-text);
   /* v2.77: the panel edge's vertical axis scales rows, text and icons. */
   font-size: calc(12.5px * var(--dock-scale, 1));
@@ -257,6 +260,19 @@
 .tool-dock-item.active {
   background: rgba(128, 128, 128, 0.22);
   color: var(--fd-accent, #4a90d9);
+}
+/* v4.39: the open row IS the window's single-row header — tabs/controls wrap
+   onto a second line in the narrow column; grab it to pull the window out. */
+.tool-dock-item.tool-dock-item-header {
+  flex-wrap: wrap;
+  row-gap: 2px;
+  cursor: grab;
+}
+.tool-dock-item.tool-dock-item-header:active { cursor: grabbing; }
+/* v4.39: a floating window dragged over this panel docks on release. */
+.tool-dock.tool-dock-drop-target {
+  outline: 2px solid var(--fd-accent, #4a90d9);
+  outline-offset: -2px;
 }
 .tool-dock-icon {
   width: calc(18px * var(--dock-scale, 1));
@@ -293,108 +309,68 @@
      vice-versa. */
   z-index: 120;
 }
+/* v4.39, Derek's single-row header (replaces the v4.27 two rows): name ·
+   count · tabs on the left, the controls · divider · fullscreen · close
+   cluster on the right. When the window is too narrow the row WRAPS —
+   excess items flow onto a second line (the tabs' collapse-to-dropdown and
+   its measurement machinery are gone). Painted --fd-bg over the body's
+   --fd-navigator-bg (the v4.37 pair), with the border-bottom as the
+   header/body dividing line. */
 .tool-window-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--dz-toolwin-head-pad, 8px) 12px;
+  flex-wrap: wrap;
+  row-gap: 2px;
+  column-gap: 8px;
+  padding: var(--dz-toolwin-head-pad, 6px) 10px;
   border-bottom: 1px solid var(--fd-border);
-  /* v4.37, Derek: row 1 darker than row 2, exactly like the fullscreen
-     takeover — its shell is --fd-bg and its row 2 paints --fd-navigator-bg,
-     so the windowed frame uses the same pair. */
   background: var(--fd-bg);
   flex-shrink: 0;
   user-select: none;
-  cursor: grab; /* v1.33: grab the header to move the window */
+  cursor: grab; /* v1.33: grab the header to move the window (drop on a panel to dock) */
 }
 .tool-window-header:active { cursor: grabbing; }
-.tool-window-header-actions { display: flex; align-items: center; gap: 6px; }
-/* v4.27, Derek's window template: row 1 is three zones — pop-in | centered
-   title (+ count) | actions — the side zones flex equally so the title is
-   truly centered no matter which side holds buttons. */
-.tool-window-zone { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
-.tool-window-zone-l { flex: 1 1 0; justify-content: flex-start; }
-.tool-window-zone-c { flex: 0 1 auto; }
-.tool-window-zone-r { flex: 1 1 0; justify-content: flex-end; }
+.tool-header-title { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
 .tool-window-title {
   font-size: var(--dz-toolwin-title-font, 12px);
   font-weight: 700;
   color: var(--fd-text);
 }
-
-/* v4.27: row 2 of the template — tabs on the left, the Filter / Sort / View /
-   Search cluster on the right. Rendered only when the tool declares tabs or
-   controls (or still carries a legacy header extra). Same surface as the
-   dock's .tool-inline-header so floating and docked read identically. */
-.tool-chrome-row2 {
-  display: flex;
+/* The right cluster right-aligns on the shared line and, when it wraps to a
+   line of its own, stays right-aligned there (margin-left:auto survives the
+   wrap). Its inner flex may wrap again in a very narrow dock column. */
+.tool-chrome-right {
+  margin-left: auto;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
-  border-bottom: 1px solid var(--fd-border);
-  background: var(--fd-navigator-bg);
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 2px;
+  min-width: 0;
 }
-.tool-chrome-tabs { display: inline-flex; align-items: center; gap: 2px; min-width: 0; }
-/* The cluster SPANS the remaining row and right-aligns its content — so a
-   quiet Filter/Sort/View/Search group packs right, while a spanning control
-   bar (Outline's flex:1 header, the Scrapbook's space-between head) fills it
-   and keeps its own layout. In the dock it doubles as the spacer that keeps
-   the pop-out at the editor-facing end. */
 .tool-chrome-controls {
-  flex: 1 1 auto;
   min-width: 0;
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 2px;
 }
-/* The item count riding beside a centered window title ("Characters · 12") —
+/* The divider between the controls cluster and the fullscreen/close pair. */
+.tool-chrome-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--fd-border);
+  margin: 0 4px;
+  flex: none;
+}
+/* The item count riding beside the window title ("Characters · 12") —
    published by the tool, rendered by its TitleExtra slot. */
 .tool-title-count {
   font-size: 12px;
   color: var(--fd-text-muted);
   white-space: nowrap;
   flex-shrink: 0;
-}
-/* Rows that carry TABS read as a tab track, not a toolbar: workspace-layer
-   background, zero vertical padding so the tabs' -1px overlap reaches the
-   track's bottom border, tabs bottom-aligned, everything else centered.
-   Doubled selector so it also beats .tool-inline-header (22-tools-extra.css
-   loads after this file). */
-.tool-chrome-row2.tool-chrome-row2-tabbed,
-.tool-inline-header.tool-chrome-row2-tabbed {
-  /* v4.35 #6: segmented tabs sit centered like any control — no sheet tint,
-     no bottom-seating (that was the file-tab "attached" illusion) */
-  align-items: center;
-  /* v4.28 batch-v6 #4, Derek: a tabbed row NEVER wraps. ChromeRow2 collapses
-     the strip into a dropdown first; if even that overflows, the row scrolls
-     sideways — items keep their size and stay on ONE line. */
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-}
-.tool-chrome-row2-tabbed::-webkit-scrollbar { height: 4px; }
-.tool-chrome-row2-tabbed::-webkit-scrollbar-thumb { background: var(--fd-border); border-radius: 2px; }
-.tool-chrome-row2-tabbed .tool-chrome-tabs {
-  /* never shrink below the tab labels — shrink meant buttons overflowed the
-     span and painted over the controls */
-  flex-shrink: 0;
-}
-/* ChromeRow2's natural-width measurer — out of flow, invisible, inert. */
-.tool-chrome-tabs-measure {
-  position: fixed;
-  top: -9999px;
-  left: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-.tool-chrome-row2-tabbed .tool-chrome-controls { min-width: max-content; }
-.tool-chrome-controls-inner {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
 }
 
 /* v4.35 batch-v9 #6, Derek: tabs are the Goals-style SEGMENTED control now
@@ -409,23 +385,23 @@
   border-radius: 5px;
   overflow: hidden;
 }
-/* no tabs (or the collapsed dropdown) → no empty pill border */
-.tool-chrome-tabs:empty,
-.tool-chrome-tabs.tool-chrome-tabs-dd { border: none; border-radius: 0; overflow: visible; }
+/* no tabs → no empty pill border */
+.tool-chrome-tabs:empty { border: none; border-radius: 0; overflow: visible; }
 .tool-chrome-tab {
   padding: 5px 12px;
   font-size: 12px;
   font-weight: 500;
   background: none;
-  color: var(--fd-text);   /* v4.37: full text color, like .tool-ctl */
+  /* v4.39, Derek: unselected tabs back to muted (the v4.37 full-text-color
+     experiment stays for .tool-ctl only). */
+  color: var(--fd-text-muted);
   border: none;
   border-radius: 0;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.1s, color 0.1s;
 }
-/* hover-brighten died with the muted resting color — bg hover like .tool-ctl */
-.tool-chrome-tab:hover:not(.active) { background: var(--fd-menu-hover); }
+.tool-chrome-tab:hover { color: var(--fd-text); }
 .tool-chrome-tab.active {
   background: var(--fd-accent, #4a90d9);
   color: #fff;
@@ -444,16 +420,9 @@
   margin-left: 5px;
   vertical-align: middle;
 }
-.tool-chrome-row2-tabbed .tool-chrome-controls,
-.tool-chrome-row2-tabbed .tool-dock-popout { align-self: center; }
-/* Dock-compressed row 1: the open accordion row carries the window actions
-   (fullscreen…) at its right edge. */
-.tool-dock-item-actions {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
+/* (v4.39: the .tool-chrome-row2 / .tool-inline-header second row and the
+   pop-in/pop-out buttons are gone — the single-row header above replaced
+   them, and docking is a drag gesture now.) */
 
 /* v4.27: the shared control primitives (ToolControls.tsx) — quiet
    Airtable-style text buttons for Filter / Sort / View, and the expanding
