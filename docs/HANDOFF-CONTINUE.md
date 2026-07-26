@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.84 — element revert + shape-memory fix)
+# ScriptCraft — continuation brief (current as of v4.85 — ribbon groups + window toggles)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,28 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.84 — element revert, shape-memory fix, chrome items (HEAD)
+### v4.85 — ribbon title groups, tool toggles, Scrapbook close (HEAD)
+
+- **Title spans a joined block** (Derek): sections separated by a REMOVED
+  divider (v4.75 `nd:`) render as one `.rib-group` — a single title band
+  above a `.rib-group-body` row of `.rib-section-ingroup` children, whose
+  own bands are suppressed (`liveSectionInner(s, withTitle=false)`).
+  `groupSections()` builds maximal runs joined by `noSepBefore`; the
+  group's title is the first non-empty one in the run. Driver v56:
+  titleCenter === bodyCenter, one band, sections 2.
+- **Tool buttons toggle**: new `toggleTool(id)` in editorStore (open in
+  ANY shape → close everywhere; else openTool). Wired to both toolbar
+  button forms and the pinned productionTags command (which also
+  reports `active` now).
+- **Fullscreen Return-to-Editor removed** — the takeover header's ×
+  already returns you. The SCRAPBOOK keeps its ribbon Return (its
+  surface has no header) and gained its own `.fs-nb-close` × in the
+  top-right, styled by the shared `.tool-window-close` rules.
+- Scrapbook empty tree copy → "No items. / Create a page or section to
+  begin." (NOTE: there are TWO `.fs-nb-empty` elements — the tree panel's
+  and the surface's "Select or create a page…"; this changed the tree's.)
+
+### v4.84 — element revert, shape-memory fix, chrome items
 
 - **BUG (Derek): "none of the windows are remembering the correct
   position."** v4.81's dock-row handler forced `setToolMode('docked')` on

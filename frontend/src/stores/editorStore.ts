@@ -992,6 +992,10 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    * dock if hidden), or a temporary window if it's disabled in both panels.
    */
   openTool: (tool: ToolId) => void;
+  /** v4.85, Derek: a toolbar tool button TOGGLES — open if closed, close if
+   *  open, in whatever shape the tool is currently using. One action, so
+   *  every surface with a tool button behaves the same. */
+  toggleTool: (tool: ToolId) => void;
   /**
    * v1.21: request Preferences, opened on a specific TAB.
    *
@@ -1594,6 +1598,18 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     }
     return { tempTool: tool };
   }),
+  toggleTool: (tool) => {
+    const s2 = get();
+    // "Open" means open in ANY shape: panel slot, temp/floating window, or
+    // the fullscreen takeover.
+    const open = s2.activeTool === tool || s2.activeToolRight === tool
+      || s2.tempTool === tool || s2.fullscreenTool === tool;
+    if (!open) { s2.openTool(tool); return; }
+    if (s2.fullscreenTool === tool) s2.setFullscreenTool(null);
+    if (s2.activeTool === tool) s2.setActiveTool(null);
+    if (s2.activeToolRight === tool) s2.setActiveToolRight(null);
+    if (s2.tempTool === tool) s2.setTempTool(null);
+  },
   toolbarHiddenItems: _vs.toolbarHiddenItems ?? [],
   toolbarPinnedTools: migrateToolOrder((_vs.toolbarPinnedTools as string[]) ?? []) as ToolId[],
   goal: _vs.writingGoal ?? null,

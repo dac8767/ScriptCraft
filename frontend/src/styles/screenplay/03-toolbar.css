@@ -479,6 +479,30 @@
   gap: 0;
   min-width: 0;
 }
+
+/* v4.85, Derek: sections joined by a removed divider read as ONE block, so
+   the title spans the block and centers over all of it. The group is a column
+   (title band, then the sections side by side); each section inside keeps its
+   own row structure but drops its own title band — the group's band is the
+   only one, which is what makes the title span. */
+.rib-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+  min-width: 0;
+}
+.rib-group-body {
+  display: flex;
+  align-items: stretch;
+  /* Same rhythm as the gap BETWEEN sections (--rib-gap is set on the bar
+     from chromeGapPx.toolbar), so a joined pair doesn't read tighter or
+     looser than the bar's other neighbours. */
+  gap: var(--rib-gap, 2px);
+  min-width: 0;
+  flex: 1;
+}
+.rib-group .rib-section-ingroup { flex: 0 0 auto; }
 /* v4.19, Derek: in Customize (edit) mode the whole bar shows — no overflow menu
    collapses it — so a crowded bar used to squeeze sections into each other until
    they overlapped. Instead, stop sections from shrinking and let the bar scroll

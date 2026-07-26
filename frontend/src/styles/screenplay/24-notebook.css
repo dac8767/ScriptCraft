@@ -164,6 +164,19 @@
   flex-direction: column;
   background: var(--fd-bg);
   color: var(--fd-text);
+  /* v4.85: anchors the close × in the top-right corner. */
+  position: relative;
+}
+/* v4.85, Derek: the Scrapbook's own close — the same bordered 20x20 button
+   every tool window header carries (.tool-window-close styles it), floated
+   into the surface's top-right because this surface has no header of its
+   own. It closes the Scrapbook; it does not un-fullscreen it, because the
+   Scrapbook is always full width by design. */
+.fs-nb-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 4;
 }
 .fs-nb-takeover-head {
   display: flex;

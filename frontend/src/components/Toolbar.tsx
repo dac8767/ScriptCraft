@@ -119,6 +119,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     toolbarPinnedTools,
     previewMode,
     openTool,
+    toggleTool,
     tagsPanelOpen,
     toggleTagsPanel,
     setPendingTagSelection,
@@ -135,7 +136,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // no duplicate B/I/U/S anywhere. Declared up here because the responsive
   // overflow measurement (below) also re-measures on this flag (v2.10).
   const scrapbookOpen = useNotebookStore((s) => s.notebookOpen);
-  const fullscreenTool = useEditorStore((s) => s.fullscreenTool);
   // v2.94: the Insert Table button needs a page to land the table on — the
   // old menu item was disabled without one, and firing the event with no
   // canvas mounted is a silent no-op.
@@ -1578,12 +1578,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       const t = ALL_TOOLS.find((x) => x.id === tok.slice(2));
       if (!t) return null;
       return tall ? (
-        <button key={tok} className="toolbar-btn rib-tall rib-tall-btn" title={t.label} data-key={t.id} onClick={() => openTool(t.id)}>
+        /* v4.85, Derek: a tool button TOGGLES — press it again to close. */
+        <button key={tok} className="toolbar-btn rib-tall rib-tall-btn" title={t.label} data-key={t.id} onClick={() => toggleTool(t.id)}>
           <span className="rib-tall-icon">{t.icon}</span>
           <span className="rib-tall-label">{t.label}</span>
         </button>
       ) : (
-        <button key={tok} className="toolbar-btn" title={t.label} data-key={t.id} onClick={() => openTool(t.id)}>
+        <button key={tok} className="toolbar-btn" title={t.label} data-key={t.id} onClick={() => toggleTool(t.id)}>
           {t.icon}
         </button>
       );
@@ -1633,14 +1634,62 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   /* v3.42, Derek: ONE renderer for a live section's inner rows (both zones
      read it, so the layout can't drift). A section's title sits ON TOP of its
      rows — first child of the section column, one- or two-row alike. */
-  const liveSectionInner = (s: typeof sections[number]) => (
+  const liveSectionInner = (s: typeof sections[number], withTitle = true) => (
     <>
-      <div className={`rib-sec-title${s.title ? '' : ' rib-sec-title-empty'}`}>{s.title || ''}</div>
+      {withTitle && (
+        <div className={`rib-sec-title${s.title ? '' : ' rib-sec-title-empty'}`}>{s.title || ''}</div>
+      )}
       <div className="rib-row">{s.top.map((t) => renderToken(t, !s.hasBreak))}</div>
       {s.hasBreak && s.breakLine && <div className="rib-row-line" />}
       {s.hasBreak && <div className="rib-row">{s.bottom.map((t) => renderToken(t, false))}</div>}
     </>
   );
+
+  /* v4.85, Derek: "a ribbon section title should span above everything that is
+     between two 2-row dividers." Removing a boundary divider (v4.75) makes two
+     sections read as ONE block, so its title must center over the whole block —
+     not just over the section that happens to carry the title.
+
+     A GROUP is a maximal run of live sections joined by naked boundaries
+     (noSepBefore). The group's title is the first non-empty title in the run;
+     it renders once, above the run, and the sections inside drop their own
+     bands. A single-section group is the ordinary case and looks exactly as
+     it did — the band still gets reserved so button rows stay aligned (the
+     v4.5 rule). */
+  type LiveSec = { s: typeof sections[number]; orig: number };
+  const groupSections = (list: LiveSec[]): LiveSec[][] => {
+    const groups: LiveSec[][] = [];
+    for (const entry of list) {
+      if (groups.length > 0 && entry.s.noSepBefore) groups[groups.length - 1].push(entry);
+      else groups.push([entry]);
+    }
+    return groups;
+  };
+  const renderLiveGroup = (group: LiveSec[], key: string) => {
+    if (group.length === 1) {
+      const { s } = group[0];
+      return (
+        <div key={key} className={`rib-section${s.hasBreak ? '' : ' rib-single'}`}>
+          {liveSectionInner(s)}
+        </div>
+      );
+    }
+    const title = group.map((g) => g.s.title).find((t) => !!t) || '';
+    // A grouped block is single-row only if EVERY section in it is.
+    const anyBreak = group.some((g) => g.s.hasBreak);
+    return (
+      <div key={key} className={`rib-group${anyBreak ? '' : ' rib-single'}`}>
+        <div className={`rib-sec-title${title ? '' : ' rib-sec-title-empty'}`}>{title}</div>
+        <div className="rib-group-body">
+          {group.map(({ s, orig }) => (
+            <div key={`gs-${orig}`} className={`rib-section rib-section-ingroup${s.hasBreak ? '' : ' rib-single'}`}>
+              {liveSectionInner(s, false)}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   /* v3.36, Derek: EDIT MODE — while Customize > Toolbar is open the real bar
      IS the editor. Every ALL section renders (empty ones too, as drop
@@ -1898,16 +1947,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       ref={toolbarRef}
     >
       {toolbarEditing ? editLayout : <>
-      {leftLive.map(({ s, orig }, i) => (
-        <React.Fragment key={`sec-${orig}`}>
-          {/* v3.25: dividers only BETWEEN rendered sections — empty ones are
-              skipped above, so nothing paints at the outer edges.
-              v4.75, Derek: a boundary whose divider was removed stays a
-              boundary — the sections just sit flush. */}
-          {i > 0 && !s.noSepBefore && <div className="toolbar-separator rib-section-sep" />}
-          <div className={`rib-section${s.hasBreak ? '' : ' rib-single'}`}>
-            {liveSectionInner(s)}
-          </div>
+      {/* v4.85: sections joined by removed dividers render as ONE titled
+          group; a visible divider still separates group from group. */}
+      {groupSections(leftLive).map((group, gi) => (
+        <React.Fragment key={`grp-${group[0].orig}`}>
+          {gi > 0 && <div className="toolbar-separator rib-section-sep" />}
+          {renderLiveGroup(group, `g-${group[0].orig}`)}
         </React.Fragment>
       ))}
       {/* v3.33, Derek: the Scrapbook section — injected while the tool is
@@ -1934,36 +1979,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           </div>
         </>
       )}
-      {/* v4.35 batch-v9 #4: ONE Return-to-Editor for whichever tool owns the
-          fullscreen takeover (fullscreenTool is a single field, so the
-          takeovers are exclusive by construction; the Scrapbook's still wins
-          if a stale state slips through). */}
-      {fullscreenTool && !scrapbookOpen && (
-        <>
-          {leftLive.length > 0 && <div className="toolbar-separator rib-section-sep" />}
-          <div className="rib-section rib-scrapbook-sec">
-            <div className="rib-scrapbook-body">
-              <button
-                className="rib-scrapbook-return"
-                title="Return to Editor"
-                onClick={() => useEditorStore.getState().setFullscreenTool(null)}
-              >
-                <LuUndo2 className="rib-scrapbook-return-icon" />
-                <span className="rib-scrapbook-return-label">Return to Editor</span>
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      {/* v4.85, Derek: the fullscreen takeover's Return-to-Editor is GONE —
+          its header × already returns you to the editor, so the ribbon
+          button was a second control for one action. (The Scrapbook keeps
+          its own, above: its surface has no window header of its own.) */}
       {/* v3.02, Derek: the align split — everything after it hugs the
           toolbar's right edge. */}
       {rightLive.length > 0 && <div className="rib-align-gap" />}
-      {rightLive.map(({ s, orig }, i) => (
-        <React.Fragment key={`sec-${orig}`}>
-          {i > 0 && !s.noSepBefore && <div className="toolbar-separator rib-section-sep" />}
-          <div className={`rib-section${s.hasBreak ? '' : ' rib-single'}`}>
-            {liveSectionInner(s)}
-          </div>
+      {groupSections(rightLive).map((group, gi) => (
+        <React.Fragment key={`grp-${group[0].orig}`}>
+          {gi > 0 && <div className="toolbar-separator rib-section-sep" />}
+          {renderLiveGroup(group, `g-${group[0].orig}`)}
         </React.Fragment>
       ))}
       </>}

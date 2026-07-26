@@ -1,5 +1,16 @@
 [
   {
+    "version": "4.85",
+    "date": "2026-07-26",
+    "changes": [
+      "A ribbon section title spans everything between two full-height dividers — join a two-row and a one-row section and the title centers over the whole block",
+      "Toolbar tool buttons toggle: press once to open the tool, press again to close it",
+      "The fullscreen \"Return to Editor\" button is gone — the window's × already does that",
+      "The Scrapbook has a close × in its top-right corner like every other window (it still always fills the editor)",
+      "Scrapbook: the empty list now reads \"No items. Create a page or section to begin.\""
+    ]
+  },
+  {
     "version": "4.84",
     "date": "2026-07-26",
     "changes": [

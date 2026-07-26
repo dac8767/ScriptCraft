@@ -24,6 +24,7 @@ import {
   type NbNode, type NbTable, type NbBox,
 } from '../stores/notebookStore';
 import { useEditorStore } from '../stores/editorStore';
+import { CloseIcon } from './uiIcons';
 import {
   FaRegFileAlt, FaRegFolder, FaRegFolderOpen,
   FaFolderPlus, FaRegEdit, FaRegTrashAlt, FaRegEye, FaRegEyeSlash,
@@ -932,7 +933,10 @@ export default function NotebookTool() {
         <TreeNodes nodes={tree} depth={0} />
         {tree.length === 0 && (
           <div className="fs-nb-empty">
-            No pages yet — the header's buttons add a page or a section.
+            {/* v4.85, Derek's copy — two lines. */}
+            No items.
+            <br />
+            Create a page or section to begin.
           </div>
         )}
       </div>
@@ -972,7 +976,16 @@ export function NotebookSurface() {
     <div className="fs-nb-takeover">
       {/* v2.07: no button row here — the Scrapbook's controls live in the
           MAIN toolbar (ScrapbookToolbarSection), tagged as tool-specific,
-          and the toolbar's own formatting buttons drive text boxes. */}
+          and the toolbar's own formatting buttons drive text boxes.
+          v4.85, Derek: except the CLOSE ×, which every other window has —
+          the Scrapbook is panel-bound and always fills the editor area, so
+          it has no window header to carry one. Same closeNotebook() the
+          ribbon's Return to Editor runs. */}
+      <button
+        className="tool-window-close fs-nb-close"
+        title="Close the Scrapbook"
+        onClick={() => closeNotebook()}
+      ><CloseIcon /></button>
       <div className="fs-nb-takeover-head">
         {page ? (
           <span className="fs-nb-title-block">
