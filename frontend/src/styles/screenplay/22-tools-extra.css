@@ -287,6 +287,42 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
   color: var(--fd-text);
   background: color-mix(in srgb, var(--fd-accent, #4a90d9) 14%, transparent);
 }
+/* v4.59: Customize ▸ Editor ▸ Element Suggestions — the follows-what rules.
+   One row per previous element; a chip per allowed next element (chips share
+   the seg-button look). */
+.fs-sugg-mode { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.fs-sugg-reset {
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  background: rgba(128, 128, 128, 0.06);
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.fs-sugg-rules { display: flex; flex-direction: column; gap: 6px; }
+.fs-sugg-row { display: flex; align-items: baseline; gap: 10px; }
+.fs-sugg-prev {
+  flex: 0 0 110px;
+  font-size: 12px;
+  color: var(--fd-text);
+  text-align: right;
+}
+.fs-sugg-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.fs-sugg-chip {
+  border: 1px solid var(--fd-border);
+  border-radius: 10px;
+  background: rgba(128, 128, 128, 0.06);
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  padding: 2px 9px;
+  cursor: pointer;
+}
+.fs-sugg-chip.active {
+  border-color: var(--fd-accent, #4a90d9);
+  color: var(--fd-text);
+  background: color-mix(in srgb, var(--fd-accent, #4a90d9) 14%, transparent);
+}
 .fs-customize-checks {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

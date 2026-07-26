@@ -22,6 +22,7 @@ import { DEFAULT_TOOLBAR_LEFT, stripTall } from './toolbarBuiltins';
 import RibbonPalette from './RibbonPalette';
 import { buildRibbonPalette } from './ribbonPaletteData';
 import EditElementsDialog from './EditElementsDialog';
+import SuggestionRulesEditor from './SuggestionRulesEditor';
 import MoresContdsDialog from './MoresContdsDialog';
 import { showToast } from './Toast';
 import ThemesTab from './ThemesTab';
@@ -898,6 +899,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           </>)}
           {activeCat === 'elements' && (<>
             <EditElementsDialog embedded />
+            {/* v4.59, Derek: what the Enter-key suggestion list may offer,
+                keyed on the element above — his follows-what table is the
+                default, edited here; All Elements switches the filter off. */}
+            <section>
+              <h3>Element Suggestions</h3>
+              <SuggestionRulesEditor />
+            </section>
             {/* v4.28, Derek: moved out of Settings — dialogue continuation
                 markers are editor composition. Per-document, like Final Draft. */}
             <section>

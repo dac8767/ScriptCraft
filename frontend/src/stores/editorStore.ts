@@ -999,6 +999,14 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    *  toggled from the View menu. Persisted view state. */
   rulersVisible: boolean;
   setRulersVisible: (v: boolean) => void;
+  /** v4.59, Derek: Enter-key element suggestions — 'smart' filters by the
+   *  follows-what grammar rules, 'all' shows every element. Persisted. */
+  suggestionMode: 'smart' | 'all';
+  setSuggestionMode: (v: 'smart' | 'all') => void;
+  /** v4.59: the user's edited follows-what table; null = built-in default
+   *  (DEFAULT_SUGGESTION_RULES in screenplayEditorConstants). Persisted. */
+  suggestionRules: Record<string, string[]> | null;
+  setSuggestionRules: (r: Record<string, string[]> | null) => void;
   /** v3.21, Derek: the Quick Access Toolbar's buttons (titlebar row) —
    *  ordered ids from TitleBar's QAT_OPTIONS. Persisted view state. */
   qatItems: string[];
@@ -1374,6 +1382,16 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   setRulersVisible: (v) => {
     saveViewState({ rulersVisible: v });
     set({ rulersVisible: v });
+  },
+  suggestionMode: (_vs.suggestionMode as 'smart' | 'all') ?? 'smart',
+  setSuggestionMode: (v) => {
+    saveViewState({ suggestionMode: v });
+    set({ suggestionMode: v });
+  },
+  suggestionRules: (_vs.suggestionRules as Record<string, string[]> | null) ?? null,
+  setSuggestionRules: (r) => {
+    saveViewState({ suggestionRules: r });
+    set({ suggestionRules: r });
   },
   qatItems: Array.isArray(_vs.qatItems) ? (_vs.qatItems as string[]) : ['save', 'undo', 'redo'],
   setQatItems: (ids) => {

@@ -13,6 +13,7 @@ import React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
 import ElementPicker from './ElementPicker';
+import { useEditorStore } from '../stores/editorStore';
 
 let host: HTMLElement;
 let root: Root;
@@ -86,5 +87,27 @@ describe('ElementPicker ordering', () => {
     expect(labels()).not.toContain('Transition');
     render({ prevScriptType: null });
     expect(labels()).not.toContain('Transition');
+  });
+
+  // v4.59: Customize ▸ Editor ▸ Element Suggestions.
+  it("'all' mode switches the grammar filter off", () => {
+    useEditorStore.setState({ suggestionMode: 'all' });
+    try {
+      render({ prevScriptType: 'sceneHeading' });
+      expect(labels()).toContain('Transition');
+      expect(labels()).toContain('General');
+    } finally {
+      useEditorStore.setState({ suggestionMode: 'smart' });
+    }
+  });
+
+  it('user-edited rules drive the filter', () => {
+    useEditorStore.setState({ suggestionRules: { sceneHeading: ['shot', 'action'] } });
+    try {
+      render({ prevScriptType: 'sceneHeading' });
+      expect(labels().sort()).toEqual(['Action', 'Shot']);
+    } finally {
+      useEditorStore.setState({ suggestionRules: null });
+    }
   });
 });

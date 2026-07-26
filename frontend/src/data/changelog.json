@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.59",
+    "date": "2026-07-26",
+    "changes": [
+      "The element suggestions now follow the full follows-what grammar table (Scene Heading → Action/Dialogue/Dual Dialogue; Action → those plus Scene Heading and Transition; after a name → Parenthetical/Dialogue; after a parenthetical → Dialogue; after dialogue → Action/Scene Heading/Dialogue/Dual Dialogue/Transition; after a transition → Scene Heading/Action)",
+      "Customize > Editor > Element Suggestions: choose Script-Aware (the pared-down list) or All Elements, and edit the follows-what rules yourself — the table above is the default, with a Reset to Default"
+    ]
+  },
+  {
     "version": "4.58",
     "date": "2026-07-26",
     "changes": [

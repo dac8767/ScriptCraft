@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { ELEMENT_LABELS, type ElementType } from '../stores/editorStore';
+import { ELEMENT_LABELS, useEditorStore, type ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { allowedElementsAfter } from './screenplayEditorConstants';
 
@@ -58,15 +58,18 @@ const ElementPicker: React.FC<ElementPickerProps> = ({
   const pickable = useFormattingTemplateStore((s) => s.getPickableElements)();
   useFormattingTemplateStore((s) => s.elementHidden);   // re-render on change
   useFormattingTemplateStore((s) => s.elementOrder);
+  const suggestionMode = useEditorStore((s) => s.suggestionMode);
+  const suggestionRules = useEditorStore((s) => s.suggestionRules);
 
   const orderedTypes = useMemo<ElementType[]>(
     () => {
       // Caller-supplied list (e.g. AV cell context) wins outright.
       if (availableTypes && availableTypes.length > 0) return availableTypes;
       let enabled = pickable.map((r) => r.id as ElementType);
-      // v4.58: grammar filter — what can actually follow the element above.
-      if (prevScriptType !== undefined) {
-        const allow = allowedElementsAfter(prevScriptType);
+      // v4.58/59: grammar filter — what can follow the element above, per
+      // the (user-editable) follows-what table. 'all' mode switches it off.
+      if (prevScriptType !== undefined && suggestionMode !== 'all') {
+        const allow = allowedElementsAfter(prevScriptType, suggestionRules ?? undefined);
         enabled = enabled.filter((t) => allow(t));
       }
 
@@ -86,7 +89,7 @@ const ElementPicker: React.FC<ElementPickerProps> = ({
       if (!suggestion) return enabled;
       return [suggestion, ...enabled.filter((t) => t !== suggestion)];
     },
-    [defaultType, pickable, availableTypes, suggestType, prevScriptType],
+    [defaultType, pickable, availableTypes, suggestType, prevScriptType, suggestionMode, suggestionRules],
   );
 
   // Resolve a display label: built-in label first, then template-rule label,

@@ -55,26 +55,60 @@ export function resolvePickedElement(
   return picked;
 }
 
-// v4.58, Derek: the Enter-key suggestions follow script grammar — the list is
-// filtered by the element ABOVE the line being chosen (working-note lines
-// don't count; they take no space in the final document):
-//   scene heading → only Action, Dialogue, Dual Dialogue can follow
-//   parenthetical → offered only right after a character name
-//   transition    → offered only after action or dialogue (dual or single)
-// `prevType` null means there is no previous script element (top of script).
-// Deliberate conversion surfaces (toolbar dropdown, Insert menu, right-click)
-// stay unfiltered — they fix existing lines rather than suggest the next one.
-export function allowedElementsAfter(prevType: string | null): (id: string) => boolean {
-  if (prevType === 'sceneHeading') {
-    return (id) => id === 'action' || id === 'dialogue' || id === 'dualDialogue';
-  }
-  return (id) => {
-    if (id === 'parenthetical') return prevType === 'character';
-    if (id === 'transition') {
-      return prevType === 'action' || prevType === 'dialogue' || prevType === 'dualDialogue';
-    }
-    return true;
-  };
+// v4.59 — Derek's full follows-what grammar table. The Enter-key suggestion
+// list is filtered by the element ABOVE the line being chosen (working-note
+// lines don't count; they take no space in the final document).
+//
+// Keys and values are PICKER ids. Derek's table distinguishes "Character"
+// (the name line) from "Dialogue" (the speech), but the dropdown only ever
+// offers "Dialogue" — which cues the character name on an empty line
+// (resolvePickedElement) — so his "Character"/"Dual Character" entries are
+// stored as 'dialogue'/'dualDialogue'. Where BOTH his Character and his
+// Dialogue are reachable, the single 'dialogue' entry covers both and the
+// resolver disambiguates by the caret's line.
+//
+//   Scene Heading → Action, Character, Dual Character
+//   Action        → Action, Character, Dual Character, Scene Heading, Transition
+//   Character     → Dialogue, Parenthetical
+//   Parenthetical → Dialogue
+//   Dialogue      → Character, Action, Scene Heading, Dual Character, Transition
+//   Transition    → Scene Heading, Action
+//
+// A dual-dialogue block ends in dialogue, so it uses the Dialogue row.
+// Unlisted contexts (top of script, shot, general, custom elements) fall
+// back to everything minus the two hard constraints his rows imply:
+// Parenthetical needs a character name above, Transition needs action or
+// dialogue above. Deliberate conversion surfaces (toolbar dropdown, Insert
+// menu, right-click) stay unfiltered — they fix lines, not suggest them.
+export const DEFAULT_SUGGESTION_RULES: Record<string, readonly string[]> = {
+  sceneHeading: ['action', 'dialogue', 'dualDialogue'],
+  action: ['action', 'dialogue', 'dualDialogue', 'sceneHeading', 'transition'],
+  character: ['dialogue', 'parenthetical'],
+  parenthetical: ['dialogue'],
+  dialogue: ['dialogue', 'action', 'sceneHeading', 'dualDialogue', 'transition'],
+  transition: ['sceneHeading', 'action'],
+};
+
+/** Every element the rules editor can offer as an allowed-next candidate. */
+export const SUGGESTION_RULE_CANDIDATES: readonly string[] = [
+  'action', 'dialogue', 'dualDialogue', 'sceneHeading', 'transition',
+  'parenthetical', 'general', 'shot', 'lyrics', 'showEpisode',
+];
+
+// v4.59 (same-day follow-up): the table is USER-EDITABLE — Customize ▸ Editor
+// ▸ Element Suggestions edits a copy stored in editorStore viewState
+// (`suggestionRules`, null = use the default above), and `suggestionMode`
+// 'all' switches the filter off entirely. Pass the effective table here; a
+// dual-dialogue block above uses the dialogue row (it ends in dialogue).
+export function allowedElementsAfter(
+  prevType: string | null,
+  rules: Record<string, readonly string[]> = DEFAULT_SUGGESTION_RULES,
+): (id: string) => boolean {
+  const row = prevType
+    ? (rules[prevType] ?? (prevType === 'dualDialogue' ? rules['dialogue'] : undefined))
+    : undefined;
+  if (row) return (id) => row.includes(id);
+  return (id) => id !== 'parenthetical' && id !== 'transition';
 }
 
 // v3.44, Derek: element autofill option lists (shown as soon as you're in an

@@ -65,43 +65,49 @@ describe('resolvePickedElement', () => {
 });
 
 /**
- * v4.58, Derek: the Enter-key suggestions follow script grammar, keyed on the
- * element above the line being chosen.
+ * v4.59 — Derek's full follows-what grammar table, keyed on the element
+ * above the line being chosen. His "Character"/"Dual Character" entries
+ * surface in the dropdown as "Dialogue"/"Dual Dialogue" (the couplet cue).
  */
 describe('allowedElementsAfter', () => {
-  const after = (prev: string | null, id: string) => allowedElementsAfter(prev)(id);
+  const CANDIDATES = ['action', 'dialogue', 'dualDialogue', 'sceneHeading', 'transition', 'parenthetical', 'general', 'shot', 'lyrics', 'showEpisode'];
+  const allowedSet = (prev: string | null) =>
+    CANDIDATES.filter((id) => allowedElementsAfter(prev)(id)).sort();
 
-  it('after a scene heading only Action, Dialogue, Dual Dialogue remain', () => {
-    for (const id of ['action', 'dialogue', 'dualDialogue']) {
-      expect(after('sceneHeading', id), id).toBe(true);
-    }
-    for (const id of ['transition', 'parenthetical', 'general', 'shot', 'sceneHeading', 'lyrics']) {
-      expect(after('sceneHeading', id), id).toBe(false);
+  it("matches Derek's table row for row", () => {
+    expect(allowedSet('sceneHeading')).toEqual(['action', 'dialogue', 'dualDialogue']);
+    expect(allowedSet('action')).toEqual(['action', 'dialogue', 'dualDialogue', 'sceneHeading', 'transition']);
+    expect(allowedSet('character')).toEqual(['dialogue', 'parenthetical']);
+    expect(allowedSet('parenthetical')).toEqual(['dialogue']);
+    expect(allowedSet('dialogue')).toEqual(['action', 'dialogue', 'dualDialogue', 'sceneHeading', 'transition']);
+    expect(allowedSet('transition')).toEqual(['action', 'sceneHeading']);
+  });
+
+  it('a dual-dialogue block behaves like dialogue', () => {
+    expect(allowedSet('dualDialogue')).toEqual(allowedSet('dialogue'));
+  });
+
+  it('unlisted contexts allow everything except parenthetical and transition', () => {
+    for (const prev of [null, 'shot', 'general', 'lyrics']) {
+      const set = allowedSet(prev);
+      expect(set, String(prev)).not.toContain('parenthetical');
+      expect(set, String(prev)).not.toContain('transition');
+      expect(set, String(prev)).toContain('action');
+      expect(set, String(prev)).toContain('sceneHeading');
+      expect(set, String(prev)).toContain('general');
     }
   });
 
-  it('parenthetical is offered only right after a character name', () => {
-    expect(after('character', 'parenthetical')).toBe(true);
-    for (const prev of ['action', 'dialogue', 'dualDialogue', 'parenthetical', 'transition', null]) {
-      expect(after(prev, 'parenthetical'), String(prev)).toBe(false);
-    }
-  });
-
-  it('transition is offered only after action or dialogue (dual or single)', () => {
-    for (const prev of ['action', 'dialogue', 'dualDialogue']) {
-      expect(after(prev, 'transition'), prev).toBe(true);
-    }
-    for (const prev of ['character', 'parenthetical', 'transition', 'shot', null]) {
-      expect(after(prev, 'transition'), String(prev)).toBe(false);
-    }
-  });
-
-  it('everything else passes through outside the scene-heading rule', () => {
-    for (const prev of ['action', 'dialogue', 'character', null]) {
-      for (const id of ['action', 'dialogue', 'dualDialogue', 'general', 'shot', 'sceneHeading']) {
-        expect(after(prev, id), `${prev} → ${id}`).toBe(true);
-      }
-    }
+  it('a user-edited table overrides the default (v4.59)', () => {
+    const custom = { sceneHeading: ['shot'], dialogue: ['dialogue', 'parenthetical'] };
+    expect(allowedElementsAfter('sceneHeading', custom)('shot')).toBe(true);
+    expect(allowedElementsAfter('sceneHeading', custom)('action')).toBe(false);
+    expect(allowedElementsAfter('dialogue', custom)('parenthetical')).toBe(true);
+    // dual dialogue above uses the user's dialogue row too
+    expect(allowedElementsAfter('dualDialogue', custom)('parenthetical')).toBe(true);
+    // unlisted prevs still use the generic fallback
+    expect(allowedElementsAfter('shot', custom)('action')).toBe(true);
+    expect(allowedElementsAfter('shot', custom)('parenthetical')).toBe(false);
   });
 });
 

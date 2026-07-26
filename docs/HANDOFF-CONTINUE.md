@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.58 — grammar-filtered element suggestions)
+# ScriptCraft — continuation brief (current as of v4.59 — user-editable follows-what grammar)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,34 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.58 — grammar-filtered element suggestions (HEAD)
+### v4.59 — Derek's full follows-what table, user-editable (HEAD)
+
+- **The complete grammar table (Derek)**: `DEFAULT_SUGGESTION_RULES` in
+  screenplayEditorConstants — sceneHeading→[action,dialogue,dualDialogue];
+  action→[+sceneHeading,transition]; character→[dialogue,parenthetical];
+  parenthetical→[dialogue]; dialogue→[dialogue,action,sceneHeading,
+  dualDialogue,transition]; transition→[sceneHeading,action]. KEY MAPPING:
+  Derek's "Character"/"Dual Character" (name lines) are stored as
+  'dialogue'/'dualDialogue' — the dropdown only ever says "Dialogue",
+  which cues the name on an empty line via resolvePickedElement. A
+  dualDialogue block above aliases to the dialogue row inside
+  allowedElementsAfter. Unlisted prevs (top of script, shot, general,
+  customs) fall back to all-minus-{parenthetical,transition}.
+- **Customize ▸ Editor ▸ Element Suggestions (Derek)**:
+  `SuggestionRulesEditor.tsx` — a Script-Aware / All Elements seg
+  (suggestionMode: 'smart'|'all') plus one chip-row per table row
+  (candidates = SUGGESTION_RULE_CANDIDATES, all ten pickable ids).
+  Edits materialize the whole table into editorStore.suggestionRules
+  (null = default; Reset to Default appears only when edited); both keys
+  persist via viewState. ElementPicker reads mode+rules and passes them
+  to allowedElementsAfter; rows render only in smart mode. CSS
+  `.fs-sugg-*` in 22-tools-extra.css (chips share the seg-button look).
+  Driver v35 (through the REAL Customize UI): 6 rows render; All
+  Elements → 10-item picker under a heading; Script-Aware + clicking the
+  Scene Heading row's "Shot" chip → picker reads Action/Dialogue/Dual
+  Dialogue/Shot. Driver v34: all six default rows match the table.
+
+### v4.58 — grammar-filtered element suggestions
 
 - **The Enter-key picker follows script grammar (Derek)**:
   `allowedElementsAfter(prevType)` in screenplayEditorConstants is the
