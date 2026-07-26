@@ -8,7 +8,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router';
 import { collabAuthApi, handleAuthResponse } from '../services/collabAuth';
 
 const VerifyEmailRoute: React.FC = () => {

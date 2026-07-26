@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router';
 import { FaRegEye, FaRegEyeSlash } from 'react-icons/fa';
 import { collabAuthApi } from '../services/collabAuth';
 import { showToast } from './Toast';

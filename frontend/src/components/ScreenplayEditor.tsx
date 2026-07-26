@@ -93,7 +93,7 @@ import { showToast } from './Toast';
 import { confirmDialog } from './ConfirmDialog';
 import VersionHistory from './VersionHistory';
 import AssetManager from './AssetManager';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import OpenFile from './OpenFile';
 import type { OpenSource } from './OpenFile';
 import WelcomeDialog, { type WelcomeChoice } from './WelcomeDialog';
@@ -1768,16 +1768,50 @@ const ScreenplayEditor: React.FC = () => {
     setScenes(list);
   }, [editor, setScenes]);
 
+  /* v4.82, Derek: "the lists should only continually refresh if the tool in
+     question is open. it also should refresh when opened initially. it does
+     not need to constantly refresh if the tool is closed."
+
+     Both rescans walk the WHOLE document on every keystroke-ish event, which
+     is the app's biggest idle cost in a long script. They now run only while
+     something needs them; otherwise the doc change just sets a dirty flag and
+     the scan happens the moment a consumer opens.
+
+     The scene scan is NOT purely a list feeder — it stamps scene numbers into
+     the document, and those print. So visible scene numbers keep it live
+     regardless of which tools are open. */
+  const openToolKey = useEditorStore(
+    (s) => `${s.activeTool}|${s.activeToolRight}|${s.tempTool}|${s.fullscreenTool}`,
+  );
+  const toolIsOpen = useCallback(
+    (id: string) => openToolKey.split('|').includes(id),
+    [openToolKey],
+  );
+  // Who reads store.scenes / store.characters (the ONLY consumers — checked
+  // by grep, and the reason this list is short): Scenes, Navigator,
+  // Characters (its Relationships view reads characters too).
+  const scenesNeeded = sceneNumbersVisible || toolIsOpen('scenes') || toolIsOpen('navigator') || toolIsOpen('characters');
+  const charsNeeded = toolIsOpen('navigator') || toolIsOpen('characters');
+  const scenesDirty = useRef(true);
+  const charsDirty = useRef(true);
+  const didInitialCharScan = useRef(false);
+
   useEffect(() => {
     if (!editor) return;
-    updateScenes();
-    editor.on('update', updateScenes);
-    return () => { editor.off('update', updateScenes); };
-  }, [editor, updateScenes]);
+    const onUpdate = () => {
+      scenesDirty.current = true;
+      if (scenesNeeded) { scenesDirty.current = false; updateScenes(); }
+    };
+    // Opening a consumer (or turning scene numbers on) catches up immediately.
+    if (scenesNeeded && scenesDirty.current) { scenesDirty.current = false; updateScenes(); }
+    editor.on('update', onUpdate);
+    return () => { editor.off('update', onUpdate); };
+  }, [editor, updateScenes, scenesNeeded]);
 
-  // Re-run when scene numbering visibility or lock state changes
+  // Re-run when scene numbering visibility or lock state changes — these
+  // rewrite the numbers in the document, so they never wait on a tool.
   useEffect(() => {
-    if (editor) updateScenes();
+    if (editor) { scenesDirty.current = false; updateScenes(); }
   }, [editor, sceneNumbersVisible, sceneNumbersLocked, updateScenes]);
 
   // --- Collect character names from document (strip extensions like CONT'D, V.O., O.S.) ---
@@ -1811,7 +1845,13 @@ const ScreenplayEditor: React.FC = () => {
 
   useEffect(() => {
     if (!editor) return;
-    updateCharacters();
+    // v4.82: one scan on mount (the autocomplete needs a cast from the word
+    // go), then catch up whenever a consumer opens.
+    if ((charsNeeded || !didInitialCharScan.current) && charsDirty.current) {
+      charsDirty.current = false;
+      didInitialCharScan.current = true;
+      updateCharacters();
+    }
     // Only update character list when the cursor leaves a character node
     // (i.e., user finished typing the name and pressed Enter / moved away)
     let prevInCharNode = false;
@@ -1820,6 +1860,14 @@ const ScreenplayEditor: React.FC = () => {
       const inCharNode = $from.parent.type.name === 'character';
       // Update when leaving a character node, or when entering a non-character node after being in one
       if (prevInCharNode && !inCharNode) {
+        charsDirty.current = true;
+        if (charsNeeded) { charsDirty.current = false; updateCharacters(); }
+      }
+      // v4.82: ENTERING a character node is the autocomplete's moment of
+      // need — refresh here even with every tool closed, or the dropdown
+      // offers a stale cast. Only when something actually changed.
+      if (!prevInCharNode && inCharNode && charsDirty.current) {
+        charsDirty.current = false;
         updateCharacters();
       }
       prevInCharNode = inCharNode;
@@ -1829,7 +1877,8 @@ const ScreenplayEditor: React.FC = () => {
       if (!transaction.docChanged) return;
       const { $from } = editor.state.selection;
       if ($from.parent.type.name !== 'character') {
-        updateCharacters();
+        charsDirty.current = true;
+        if (charsNeeded) { charsDirty.current = false; updateCharacters(); }
       }
     };
     editor.on('selectionUpdate', handleSelectionUpdate);
@@ -1845,7 +1894,7 @@ const ScreenplayEditor: React.FC = () => {
       editor.off('update', handleUpdate);
       editor.off('update', stampDocEdit);
     };
-  }, [editor, updateCharacters]);
+  }, [editor, updateCharacters, charsNeeded]);
 
   // v3.08/v3.25: the selection after every docChanged transaction becomes
   // the script's "last edit" spot (Edit > Last Edit Location).

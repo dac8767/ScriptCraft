@@ -1,5 +1,14 @@
 [
   {
+    "version": "4.82",
+    "date": "2026-07-26",
+    "changes": [
+      "Speed: the scene and character lists only rescan the script while a tool that shows them is open — they catch up the moment you open one, so typing in a long script does less work",
+      "Scene numbers still update live whenever they're switched on, and character autocomplete still knows every name even with all tools closed",
+      "Security: the last two dependency advisories are gone — react-router moved forward to v8 (npm's suggested fix was a downgrade to a version that is also affected)"
+    ]
+  },
+  {
     "version": "4.81",
     "date": "2026-07-26",
     "changes": [

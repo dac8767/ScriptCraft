@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import type { JSONContent } from '@tiptap/react';
 import { useProjectStore } from '../stores/projectStore';
 import { api } from '../services/api';

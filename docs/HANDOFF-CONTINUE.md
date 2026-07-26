@@ -1,12 +1,16 @@
-# ScriptCraft — continuation brief (current as of v4.81 — window-shape memory)
+# ScriptCraft — continuation brief (current as of v4.82 — gated rescans + react-router v8)
 
-> QUEUE (Derek-approved, not yet landed), in order:
-> 0. NEXT UP — the audit items (task #38): rescans gated on tool-open
->    (live while open / refresh on open / idle when closed), react-router
->    major bump, Tauri fs $HOME scope narrowing, CSP decision documented.
->    Derek's open question from v4.78 is still unanswered: which extra
->    Guided Setup steps he wants (page layout, autosave/backup,
->    theme-with-preview, template preview, start-from-existing-script).
+> QUEUE — Derek's approved list is CLEAR as of v4.82. What's left:
+> 1. **Tauri fs scope** — the one audit item deliberately NOT shipped.
+>    Full plan + Derek's 6-step desktop test list in
+>    docs/AUDIT-2026-07-26.md §3 (v4.82 follow-up). It rewrites the save
+>    path and cannot be tested in this sandbox — give it its own session.
+> 2. Derek's unanswered question (asked v4.78): which EXTRA Guided Setup
+>    steps he wants — page layout, autosave/backup, theme-with-preview,
+>    template preview, start-from-an-existing-script.
+> 3. Older backlog, untouched: #20 editorStore chrome slice, #21
+>    ScreenplayEditor hooks split, #22 MenuBar/Toolbar/CharacterProfiles
+>    split, #23 Modal/PopupMenu shells + dead-CSS pass.
 > 1. NEW-SCRIPT LAUNCHER + GUIDED SETUP WIZARD (Derek's big feature,
 >    late v4.78 session — his spec verbatim in the chat): a first window
 >    with four options — New Script (Manual Setup) / New Script (Guided
@@ -296,7 +300,31 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.81 — a tool reopens in its last-used shape (HEAD)
+### v4.82 — gated rescans + react-router v8 (HEAD)
+
+- **Rescans** (ScreenplayEditor): `openToolKey` = activeTool |
+  activeToolRight | tempTool | fullscreenTool → `toolIsOpen(id)`.
+  scenesNeeded = sceneNumbersVisible || Scenes || Navigator || Characters
+  open; charsNeeded = Navigator || Characters. Doc changes set
+  scenesDirty/charsDirty; the scan runs when needed and catches up on
+  open. TWO traps handled, both of which would have been silent:
+  scene numbers are STAMPED INTO THE DOC (so visible numbers keep the
+  scan live regardless of tools), and knownCharacters feeds the
+  autocomplete (so ENTERING a character node refreshes when dirty even
+  with everything closed — driver-verified).
+- **react-router**: npm's `audit fix --force` wanted a DOWNGRADE to
+  7.11.0. Real fix: react-router-dom is dead at 7.18.1 (v8 = the merged
+  `react-router` package), advisory range is 7.12.0–8.2.0, so we went
+  FORWARD to react-router@8.3.0, rewrote 9 imports, uninstalled
+  react-router-dom. `npm audit --omit=dev` = 0 vulnerabilities.
+  Driver-verified routes: /, /settings, /reset-password,
+  /verify?email&code, /project/:projectId/edit/:scriptId.
+  NOTE for drivers: the verify route is `/verify`, NOT `/verify-email`.
+- **fs scope + CSP**: written up in docs/AUDIT-2026-07-26.md (v4.82
+  follow-up). fs scope deliberately deferred WITH a plan and a test list
+  — it rewrites the save path and no Tauri runtime exists here.
+
+### v4.81 — a tool reopens in its last-used shape
 
 - `toolMode` gained `'fullscreen'` (editorStore + viewState types). Every
   transition writes it: dock-row open → 'docked', drag-out/dock-drop →
