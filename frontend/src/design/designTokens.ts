@@ -159,8 +159,9 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       // stacked-layout photo falls back to its own 360px until the knob moves).
       { id: 'charImageH', label: 'Image slot height', cssVar: '--dz-char-image-h', unit: 'px', min: 60, max: 480, step: 5, def: 200 },
       { id: 'charCardMinW', label: 'Cards view — min card width', cssVar: '--dz-char-card-minw', unit: 'px', min: 240, max: 520, step: 10, def: 320 },
-      // (v4.41: charCardMinH retired — the fullscreen-only min card height died
-      //  with the per-shape restyle; cards size to content in every shape now.)
+      // v4.50: charCardMinH is BACK (Derek asked for it) — a min-height on the
+      // cards-view card in every shape; 0 keeps cards purely content-sized.
+      { id: 'charCardMinH', label: 'Cards view — min card height', cssVar: '--dz-char-card-minh', unit: 'px', min: 0, max: 800, step: 10, def: 0 },
       { id: 'charDescLines', label: 'Cards view — description lines', cssVar: '--dz-char-desc-lines', unit: '', min: 1, max: 6, step: 1, def: 2,
         hint: 'Lines the description shows before clamping; clicking in still lifts it.' },
       // Store-bound (menuSpacing precedent): the size the Characters window

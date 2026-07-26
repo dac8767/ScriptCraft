@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.49 — the theme surface ladder)
+# ScriptCraft — continuation brief (current as of v4.50 — content-sized character cards)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,22 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.49 — the theme surface ladder (HEAD)
+### v4.50 — content-sized character cards + scroll (HEAD)
+
+Derek: fullscreen cards were FIXED-size, fitted to the editor window, no
+scroll. Root cause (driver-bisected): the `.char-view-cards` GRID's auto
+rows bound to the container height — `overflow: hidden` on
+`.char-profile-card` zeroes a grid item's automatic minimum size, so the
+tracks compressed to an equal slice each (150px with 9 cards) and clipped
+the card bodies; `overflow-y: auto` never engaged because nothing
+overflowed. Fix: `grid-auto-rows: max-content` (rows = content height, list
+scrolls; verified 150→441px cards, scrollH 2248 vs 796 client). The
+`charCardMinH` knob is REINSTATED (Derek asked) as a min-height with def 0
+— content can always exceed it. LESSON: a grid item with overflow:hidden
+can be crushed below its content — always set grid-auto-rows on
+scroll-container grids.
+
+### v4.49 — the theme surface ladder
 
 Derek annotated the dark theme's areas (same/lighter/darker) and made the
 PATTERN canonical for all themes: **status < navigator(panels+window

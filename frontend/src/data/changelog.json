@@ -1,5 +1,20 @@
 [
   {
+    "version": "4.50",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "Character cards size to their content — and the view scrolls",
+        "detail": "In cards view the grid rows were binding to the window height, slicing every card to an equal clipped share of the editor area (worst in fullscreen) with no way to scroll. Rows now size to their content: cards are as tall as they need to be, and the view scrolls vertically when it's longer than the window. The 'min card height' Design knob is back too — as a minimum content can always exceed, with 0 meaning purely content-sized.",
+        "tags": [
+          "Characters",
+          "Fix",
+          "Design"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.49",
     "date": "2026-07-26",
     "items": [

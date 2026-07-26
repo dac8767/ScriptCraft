@@ -342,10 +342,21 @@
 .char-profiles-list.char-view-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--dz-char-card-minw, 320px), 1fr));
+  /* v4.50, Derek: rows size to their CONTENT — without this the auto tracks
+     bound to the container's height, locking every card to an equal slice of
+     the editor window with the overflow clipped (overflow:hidden zeroes a
+     grid item's automatic minimum size, so nothing pushed back). max-content
+     rows let cards be as tall as they need and the list scrolls. */
+  grid-auto-rows: max-content;
   gap: 8px;
   align-content: start;
 }
-.char-profiles-list.char-view-cards .char-profile-card { margin-bottom: 0; }
+.char-profiles-list.char-view-cards .char-profile-card {
+  margin-bottom: 0;
+  /* v4.50: the Design height knob is back — a MINIMUM, so content can always
+     exceed it; 0 = purely content-sized. */
+  min-height: var(--dz-char-card-minh, 0px);
+}
 .char-profiles-empty {
   padding: 20px 12px;
   color: var(--fd-text-muted);
