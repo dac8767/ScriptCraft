@@ -245,8 +245,10 @@
   background: none;
   border: none;
   /* v4.39: rows are drag handles now — without this, pulling a window out
-     painted a text selection across the whole panel. */
+     painted a text selection across the whole panel. v4.41: WebKit needs the
+     prefixed form (the unprefixed one did nothing on Derek's Mac). */
   user-select: none;
+  -webkit-user-select: none;
   color: var(--fd-text);
   /* v2.77: the panel edge's vertical axis scales rows, text and icons. */
   font-size: calc(12.5px * var(--dock-scale, 1));
@@ -264,6 +266,36 @@
 /* v4.40: back to the compact pre-v4.39 row (Derek) — no wrap, click cursor;
    the tabs/controls live on .tool-inline-header inside the window again.
    The row is still the drag-out handle (pull it into the editor area). */
+/* v4.41: the drag-out ghost — a mini title bar riding the cursor while a
+   docked window is pulled toward the editor. Armed (over the editor area) =
+   accent border: release here and the window lands at the cursor. */
+.tool-drag-ghost {
+  position: fixed;
+  z-index: 300;
+  pointer-events: none;
+  padding: 5px 12px;
+  background: var(--fd-bg);
+  border: 1px solid var(--fd-hairline);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  color: var(--fd-text);
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.92;
+}
+.tool-drag-ghost.armed { border-color: var(--fd-accent, #4a90d9); }
+/* While any window drag is live: no text selection anywhere (WebKit anchors
+   a selection in whatever selectable content the pointer crosses). */
+body.fs-tool-dragging,
+body.fs-tool-dragging * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+body.fs-tool-dragging { cursor: grabbing; }
+/* The two drag handles advertise it. */
+.tool-dock-item.tool-dock-item-header { cursor: grab; }
+.tool-inline-header { cursor: grab; }
+
 /* v4.39: a floating window dragged over this panel docks on release. */
 .tool-dock.tool-dock-drop-target {
   outline: 2px solid var(--fd-accent, #4a90d9);

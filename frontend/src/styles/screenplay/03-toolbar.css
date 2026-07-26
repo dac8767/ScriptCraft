@@ -1,7 +1,11 @@
 /* ============ TOOLBAR ============ */
 .toolbar {
   display: flex; align-items: center; height: 33px;
-  background: var(--fd-toolbar-bg); border-bottom: none;
+  background: var(--fd-toolbar-bg);
+  /* v4.41, Derek: the same faint hairline the panels wear, on the ribbon's
+     top and bottom edges. */
+  border-top: 1px solid var(--fd-hairline);
+  border-bottom: 1px solid var(--fd-hairline);
   /* v0.87: right padding matched to the menu bar's (6px) so the toolbar's
      right-most control lines up with the Local Only chip above it.
      v2.73, Derek: 3px of bottom padding — breathing room between the

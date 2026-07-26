@@ -148,7 +148,7 @@ describe('characters group', () => {
     expect(group!.tokens.map((t) => t.id)).toEqual([
       'charCardRadius', 'charCardBorder', 'charHeaderGap', 'charFieldGap',
       'charDetailPad', 'charInputH', 'charImageH', 'charCardMinW',
-      'charCardMinH', 'charDescLines', 'charWinW', 'charWinH',
+      'charDescLines', 'charWinW', 'charWinH',
     ]);
   });
 

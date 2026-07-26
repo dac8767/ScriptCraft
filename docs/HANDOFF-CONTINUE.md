@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.40 — docked look restored, drag-to-editor undock, hairlines)
+# ScriptCraft — continuation brief (current as of v4.41 — drag ghost, shape-consistent Characters, ribbon hairlines)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,37 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.40 — docked look restored + drag-to-editor threshold + hairlines (HEAD)
+### v4.41 — visible drag-out + shape-consistent Characters + ribbon hairlines (HEAD)
+
+- **Drag-out is a visible gesture**: ~6px of motion spawns a `.tool-drag-ghost`
+  (mini title bar, fixed, pointer-events none, z-300) that rides the cursor;
+  over `.editor-center` it gets `.armed` (accent border); RELEASE there
+  triggers the undock and `windowSpawnAt` (module-local one-shot) makes
+  ToolWindowFrame's mount effect seat the window at the drop point (client
+  x−60/y−14, clamped ≥8). Release short = nothing. Both the accordion row
+  AND `.tool-inline-header` are handles (cursor: grab).
+- **Selection fix for Derek's Mac**: WebKit ignored the unprefixed
+  user-select AND anchors selections in content the pointer crosses —
+  `-webkit-user-select` added to the handles, plus `body.fs-tool-dragging`
+  (set for dock drags and frame drags alike) suppresses selection app-wide
+  for the gesture; `armSwallow()` (flag + setTimeout-0) keeps drags from
+  reading as accordion toggles without eating later clicks.
+- **Characters, one look everywhere** (Derek's screenshots: fs = dark flat
+  borderless, window = light bordered): the `char-profiles-fullscreen` /
+  `char-fs-list-mode` classes and ALL their CSS are DELETED. The container
+  carries `char-view-cards|list` now; cards = ONE responsive auto-fill grid
+  `minmax(var(--dz-char-card-minw,320px),1fr)` (1 column at 300px = the
+  docked look; more when wide). `isFullscreen` in CharacterProfiles is
+  behavior-only now (legacy overlay headers/swipe/style). The
+  `charCardMinH` Design knob is RETIRED (fullscreen-only; registry entry
+  removed — designTokens.test's dead-knob sweep enforces this stays tidy).
+- **Ribbon hairlines**: `.toolbar` border-top+bottom = `--fd-hairline`.
+- Driver-verified (driver/batchv15-check.js + v15b-cards.js): ghost + armed
+  states, short release stays docked with no selection, landing at drop
+  point (exact px), card style parity docked vs fullscreen (bg/border/radius
+  identical, grid 1→N columns), fs list = bordered rows, ribbon hairlines.
+
+### v4.40 — docked look restored + drag-to-editor threshold + hairlines
 
 Three Derek corrections to v4.39, same day:
 

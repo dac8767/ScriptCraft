@@ -34,89 +34,10 @@
   min-width: 0;
   border-left: none;
 }
-/* v4.16/v4.35: fullscreen is the generic .fs-tool-takeover (20-tool-dock.css)
-   now — the embedded panel below rides inside it and keeps emitting the
-   char-profiles-fullscreen / char-fs-list-mode layout classes. */
-.char-profiles-panel.char-profiles-fullscreen {
-  position: relative;
-  flex: 1;
-  width: 100%;
-  min-width: 0;
-  height: 100%;
-  min-height: 0;
-  border-left: none;
-  background: var(--fd-bg);
-}
-.char-profiles-fullscreen .char-profiles-list {
-  display: grid;
-  /* v4.26: Cards-view min card width/height are Design knobs */
-  grid-template-columns: repeat(auto-fill, minmax(var(--dz-char-card-minw, 320px), 1fr));
-  gap: 8px;
-  align-content: start;
-  padding: 12px;
-}
-.char-profiles-fullscreen .char-profile-card {
-  min-height: var(--dz-char-card-minh, 500px);
-}
-/* v4.20, Derek: the list view matches the app theme (was a hardcoded #d5d5d5
-   "page" that clashed with the dark theme — and leaked onto the Relationship
-   Map tab, which shares this class). */
-.char-profiles-fullscreen.char-fs-list-mode {
-  background: var(--fd-bg);
-}
-.char-profiles-fullscreen.char-fs-list-mode .char-profiles-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;              /* v4.20: was 32px — tighter so more items fit */
-  padding: 16px;
-  /* v4.20: fill the width up to the cap and center (align-self, not margin:auto,
-     which collapses a flex item to its content width). */
-  width: 100%;
-  max-width: 1275px;      /* was 850px — 50% wider column */
-  align-self: center;
-  box-sizing: border-box;
-}
-/* v4.17, Derek: the fullscreen List view used a hardcoded white "page" (dark
-   text, light borders) that clashed with the dark theme. It now uses the theme
-   variables like the rest of the app, so it matches whatever theme is active. */
-.char-fs-list-mode .char-profile-card {
-  border-radius: 2px;
-  border: none;
-  margin-bottom: 0;
-  min-height: auto;
-  overflow: visible;
-  background: var(--fd-navigator-bg);
-  color: var(--fd-text);
-  box-shadow: 0 1px 8px rgba(0,0,0,.25);
-  page-break-inside: avoid;
-}
-.char-fs-list-mode .char-profile-card:hover { border-color: transparent; }
-.char-fs-list-mode .char-profile-card.char-orphaned { opacity: 1; border-color: transparent; }
-/* Character header — v4.20: compact bar so more items fit on screen. */
-.char-fs-list-mode .char-profile-row {
-  padding: 8px 16px;
-  gap: 12px;
-}
-/* only draw the divider under the header when the card is expanded */
-.char-fs-list-mode .char-profile-card.char-profile-expanded .char-profile-row {
-  border-bottom: 2px solid var(--fd-border);
-  padding-bottom: 12px;
-}
-.char-fs-list-mode .char-profile-name {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  color: var(--fd-text);
-}
-.char-fs-list-mode .char-profile-name:hover { color: var(--fd-accent); }
-.char-fs-list-mode .char-profile-stats {
-  font-size: 11px;
-  color: var(--fd-text-muted);
-}
-/* v4.18/v4.20: the left caret is the expand affordance; hide the old right
-   chevron and the enlarge button in list mode. */
-.char-fs-list-mode .char-profile-enlarge-btn,
-.char-fs-list-mode .char-profile-chevron { display: none; }
+/* v4.41, Derek: the char-profiles-fullscreen / char-fs-list-mode restyle is
+   GONE — the takeover renders the exact same body as the docked and popped-out
+   window (same rows, same borders, same backgrounds). The embedded sizing
+   rule above covers all three shapes. */
 /* v4.20: left toggle caret. */
 /* v4.22, Derek: the same chevron the side panels use (FaChevronRight/Down),
    swapped rather than rotated. */
@@ -126,83 +47,6 @@
   align-items: center;
   color: var(--fd-text-muted);
   font-size: 10px;
-}
-/* Detail section — generous spacing. v4.26 batch-v5 #1: these hardcoded
-   gaps made the Design knob a dead slider in fullscreen List — every spacing
-   site reads it now (per-site fallbacks keep today's look untouched). */
-.char-fs-list-mode .char-profile-detail {
-  padding: 20px 32px 28px;
-  gap: var(--dz-char-field-gap, 16px);
-}
-.char-fs-list-mode .char-profile-detail-top {
-  gap: var(--dz-char-field-gap, 16px);
-}
-.char-fs-list-mode .char-profile-detail-bottom {
-  gap: var(--dz-char-field-gap, 16px);
-  border-top: 1px solid var(--fd-border);
-  padding-top: 16px;
-  margin-top: 4px;
-}
-/* Labels — section heading style */
-.char-fs-list-mode .char-profile-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--fd-text-muted);
-  letter-spacing: .5px;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-/* Rich text editors — clean look */
-.char-fs-list-mode .mini-rt-wrapper {
-  border: 1px solid var(--fd-border);
-  background: var(--fd-input-bg);
-}
-.char-fs-list-mode .mini-rt-editor {
-  color: var(--fd-text);
-  font-size: 13px;
-  line-height: 1.6;
-  min-height: 40px;
-}
-/* Inputs and selects */
-.char-fs-list-mode .char-profile-input,
-.char-fs-list-mode .char-profile-select {
-  background: var(--fd-input-bg);
-  color: var(--fd-text);
-  border-color: var(--fd-border);
-}
-/* Images — full size, no crop */
-.char-fs-list-mode .char-profile-image-main {
-  max-height: none;
-  object-fit: contain;
-  border-radius: 4px;
-}
-/* Scene chips */
-.char-fs-list-mode .char-profile-scene-chip {
-  background: var(--fd-overlay-light);
-  border-color: var(--fd-border);
-  color: var(--fd-text-muted);
-  font-size: 10px;
-  padding: 3px 8px;
-}
-.char-fs-list-mode .char-profile-scene-chip:hover {
-  background: var(--fd-overlay-medium);
-  border-color: var(--fd-accent);
-}
-/* Highlight button */
-.char-fs-list-mode .char-profile-highlight-btn {
-  color: var(--fd-text-muted);
-  border-color: var(--fd-border);
-}
-/* Orphaned banner */
-.char-fs-list-mode .char-orphaned-banner {
-  border-radius: 2px 2px 0 0;
-}
-/* List mode: remove all height constraints so content flows naturally */
-.char-fs-list-mode .mini-rt-editor {
-  max-height: none;
-}
-.char-fs-list-mode .char-profile-scene-chip {
-  max-width: none;
 }
 /* (v4.27: the Cards/List and List/Map segmented toggles are gone — every
    view choice is the chrome cluster's View dropdown now.) */
@@ -484,6 +328,17 @@
   overflow-y: auto;
   padding: 6px;
 }
+/* v4.41: cards view is ONE responsive grid for every shape — a 300px panel
+   yields a single column (the familiar docked look), a popped-out or
+   fullscreen width yields more columns. Same rows, borders and backgrounds
+   everywhere; the per-shape fullscreen restyle is gone. */
+.char-profiles-list.char-view-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--dz-char-card-minw, 320px), 1fr));
+  gap: 8px;
+  align-content: start;
+}
+.char-profiles-list.char-view-cards .char-profile-card { margin-bottom: 0; }
 .char-profiles-empty {
   padding: 20px 12px;
   color: var(--fd-text-muted);
@@ -1022,9 +877,6 @@
   min-height: 300px;
   height: 0; /* let flex compute actual height */
 }
-.char-profiles-fullscreen .rel-map-container {
-  height: calc(100vh - 90px);
-}
 .rel-map-svg {
   display: block;
   width: 100%;
@@ -1251,10 +1103,6 @@
   transition: opacity .15s;
 }
 .char-profile-image-main:hover { opacity: .85; }
-.char-profiles-fullscreen .char-profile-image-main {
-  max-height: 400px;
-  object-fit: contain;
-}
 
 /* Thumbnail strip for multiple images */
 .char-profile-images-strip {

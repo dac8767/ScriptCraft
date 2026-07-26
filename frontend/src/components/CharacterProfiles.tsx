@@ -170,8 +170,9 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   // that introduces them. Nothing is created until the writer clicks Add on a
   // row. null = not scanned yet this session.
   // v4.35: the generic takeover renders this SAME embedded body — the panel
-  // knows it's the fullscreen instance from the store, and keeps emitting the
-  // char-profiles-fullscreen / char-fs-list-mode layout classes CSS relies on.
+  // knows it's the fullscreen instance from the store. v4.41: purely for
+  // BEHAVIOR (legacy overlay headers, swipe, style) — the per-shape styling
+  // classes are gone, every shape renders the same body.
   const isFullscreen = useEditorStore((s) => embedded && s.fullscreenTool === 'characters');
   // v4.27: Cards/List applies EVERYWHERE now (window, dock, fullscreen) — it's
   // the cluster's View dropdown, persisted. Was fullscreen-only local state.
@@ -1268,7 +1269,11 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       ? 'panel-open' : animationState === 'exiting' ? 'panel-closing' : '');
 
   return (
-    <div ref={panelRef} className={`char-profiles-panel${embedded ? ' char-profiles-embedded' : ''}${isFullscreen ? ' char-profiles-fullscreen' : ''}${isFullscreen && activeTab === 'profiles' && viewMode === 'list' ? ' char-fs-list-mode' : ''} ${panelClass}`} style={isFullscreen ? undefined : style}>
+    // v4.41, Derek: NO per-shape restyling — the char-profiles-fullscreen /
+    // char-fs-list-mode classes (a bespoke flat borderless look the takeover
+    // wore) are gone, so docked, popped-out, and fullscreen all render the
+    // SAME body. isFullscreen still gates behavior (headers, swipe, style).
+    <div ref={panelRef} className={`char-profiles-panel${embedded ? ' char-profiles-embedded' : ''} ${panelClass}`} style={isFullscreen ? undefined : style}>
       {/* Hidden file input for image uploads */}
       <input
         ref={fileInputRef}
@@ -1368,8 +1373,11 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       </div>
       )}
 
-      {/* Character list */}
-      <div className="char-profiles-list">
+      {/* Character list — v4.41: the view mode rides the container so ONE
+          stylesheet serves every shape: cards = a responsive auto-fill grid
+          (one column in a 300px panel — the familiar docked look — more
+          columns as the window or fullscreen widens); list = stacked rows. */}
+      <div className={`char-profiles-list char-view-${viewMode}`}>
         {allCharacters.length === 0 ? (
           <div className="char-profiles-empty">
             {searchQuery

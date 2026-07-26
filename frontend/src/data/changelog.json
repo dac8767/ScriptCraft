@@ -1,5 +1,34 @@
 [
   {
+    "version": "4.41",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "Drag-out you can see",
+        "detail": "Pulling a docked window out shows a title-bar ghost riding the cursor. Over the editor area it arms with the accent color — release there and the window lands right where you dropped it. Release anywhere short and the tool stays docked. Both the accordion row and the window's header strip are grab handles now (with the cursor to match), and no more text gets highlighted mid-drag — selection is suppressed for the whole gesture, with the WebKit-prefixed rule the Mac build needed.",
+        "tags": [
+          "Windows",
+          "Fix"
+        ]
+      },
+      {
+        "title": "Characters looks the same in every shape",
+        "detail": "The fullscreen Characters view had its own flat, borderless, darker styling. That restyle is gone: docked, popped out, and fullscreen all render the same bordered rows and cards on the same background. The cards view is one responsive grid — one column in a narrow panel, more columns as the window widens. (The fullscreen-only 'min card height' Design knob retired with it.)",
+        "tags": [
+          "Characters",
+          "UI"
+        ]
+      },
+      {
+        "title": "Ribbon hairlines",
+        "detail": "The same faint edge line the side panels wear now runs along the top and bottom of the ribbon toolbar.",
+        "tags": [
+          "UI"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.40",
     "date": "2026-07-26",
     "items": [

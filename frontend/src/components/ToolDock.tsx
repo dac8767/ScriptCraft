@@ -12,7 +12,7 @@
  * stays). Tools disabled in both panels open as a temporary centered window
  * via the Tools menu (TempToolWindow, mounted once in ScreenplayEditor).
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
 import { CHROME_SCALES, chromePx, ICON_RAIL_W } from './chromeSizes';
 import AssetManager from './AssetManager';
@@ -371,6 +371,12 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
   }
 }
 
+/** v4.41: where a drag-out gesture dropped — the next frame MOUNT for this
+ *  tool seats the window there (header near the cursor) instead of at the
+ *  panel-anchored default. One-shot, module-local: set by startDockDragOut
+ *  the instant before the size write that makes the frame render. */
+let windowSpawnAt: { id: ToolId; x: number; y: number } | null = null;
+
 /** Resizable window chrome shared by docked and temporary tool windows. */
 export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
   tool: ToolDef; onClose: () => void; temporary?: boolean; side?: ToolSide; children: React.ReactNode;
@@ -378,6 +384,21 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
   const nameUpper = useEditorStore((s) => s.panelNameCase === 'upper');
   const { toolSizes, setToolSize, panelSizeMode, chromeCustomPx } = useEditorStore();
   const windowRef = useRef<HTMLDivElement>(null);
+
+  // v4.41: a window born from a drag-out gesture lands where it was dropped —
+  // header seated near the cursor — instead of snapping to the panel anchor.
+  useLayoutEffect(() => {
+    const el = windowRef.current;
+    if (!el || !windowSpawnAt || windowSpawnAt.id !== tool.id) return;
+    const parent = el.offsetParent?.getBoundingClientRect() ?? ({ left: 0, top: 0 } as DOMRect);
+    const clientLeft = Math.max(8, windowSpawnAt.x - 60);
+    const clientTop = Math.max(8, windowSpawnAt.y - 14);
+    el.style.left = `${clientLeft - parent.left}px`;
+    el.style.right = 'auto';
+    el.style.top = `${clientTop - parent.top}px`;
+    windowSpawnAt = null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
+  }, []);
   // Docked windows default to inline (see ToolDock below), so this frame only
   // renders windows the user has explicitly sized/popped out, plus temporary
   // Tools-menu windows — both of which should keep their own size.
@@ -472,6 +493,9 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
     const el = windowRef.current;
     if (!el || (e.target as HTMLElement).closest('button, select, input')) return;
     e.preventDefault();
+    // v4.41: WebKit can still anchor a text selection in content the pointer
+    // crosses mid-drag — suppress selection app-wide for the gesture.
+    document.body.classList.add('fs-tool-dragging');
     const startX = e.clientX;
     const startY = e.clientY;
     const rect = el.getBoundingClientRect();
@@ -508,6 +532,7 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
     const onUp = (ev: PointerEvent) => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
+      document.body.classList.remove('fs-tool-dragging');
       over?.el.classList.remove('tool-dock-drop-target');
       const drop = hit(ev.clientX, ev.clientY);
       if (drop) dockInto(drop.s);
@@ -658,12 +683,16 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     document.addEventListener('pointerup', onUp);
   };
 
-  // v4.40, Derek: pulling a docked window out requires dragging it ALL THE
-  // WAY into the editor area — the v4.39 ~10px tug popped windows out far
-  // too eagerly. The pointer crossing into .editor-center is the trigger
-  // (the same width-write the pop-out button used to do); released anywhere
-  // short of it, the tool stays docked. The ref swallows the release click
-  // in both cases so a drag can never read as an accordion toggle.
+  // v4.41, Derek: the drag-out is a VISIBLE gesture now. Grabbing the open
+  // row (or the window's header strip) and moving ~6px spawns a title-bar
+  // ghost that rides the cursor; while it's over the editor area the ghost
+  // arms (accent border), and RELEASING there undocks the window and lands
+  // it at the drop point (windowSpawnAt, consumed by ToolWindowFrame on
+  // mount). Released anywhere short of the editor, the ghost vanishes and
+  // nothing changes. While a ghost is up, body.fs-tool-dragging suppresses
+  // text selection app-wide — WebKit anchors a selection in whatever
+  // selectable content the pointer crosses, user-select on the row alone
+  // wasn't enough (Derek was painting selections across the panel).
   const draggedOutRef = useRef(false);
   const startDockDragOut = (t: ToolDef, h: number) => (e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest('button, select, input')) return;
@@ -671,7 +700,11 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     if (!editorEl) return;
     const startX = e.clientX;
     const startY = e.clientY;
-    let moved = false;
+    let ghost: HTMLDivElement | null = null;
+    const inEditor = (x: number, y: number) => {
+      const r = editorEl.getBoundingClientRect();
+      return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    };
     // The click this gesture ends with dispatches BEFORE timers run, so the
     // flag reliably swallows it — and the timeout guarantees the flag never
     // survives to eat a later, unrelated click (a drag released off the row
@@ -681,21 +714,34 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
       setTimeout(() => { draggedOutRef.current = false; }, 0);
     };
     const cleanup = () => {
+      ghost?.remove();
+      document.body.classList.remove('fs-tool-dragging');
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
     };
     const onMove = (ev: PointerEvent) => {
-      if (Math.abs(ev.clientX - startX) >= 4 || Math.abs(ev.clientY - startY) >= 4) moved = true;
-      const r = editorEl.getBoundingClientRect();
-      if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) return;
-      cleanup();
-      armSwallow();
-      setToolSize(t.id, dockW + 140, h);
+      if (!ghost) {
+        if (Math.abs(ev.clientX - startX) < 6 && Math.abs(ev.clientY - startY) < 6) return;
+        ghost = document.createElement('div');
+        ghost.className = 'tool-drag-ghost';
+        ghost.textContent = t.label;
+        document.body.appendChild(ghost);
+        document.body.classList.add('fs-tool-dragging');
+        window.getSelection()?.removeAllRanges();
+      }
+      ghost.style.left = `${ev.clientX + 10}px`;
+      ghost.style.top = `${ev.clientY + 8}px`;
+      ghost.classList.toggle('armed', inEditor(ev.clientX, ev.clientY));
     };
-    const onUp = () => {
-      // a real drag that fell short of the editor must not toggle the row
-      if (moved) armSwallow();
+    const onUp = (ev: PointerEvent) => {
+      const dragged = !!ghost;
       cleanup();
+      if (!dragged) return;
+      armSwallow();   // a real drag must never read as an accordion toggle
+      if (inEditor(ev.clientX, ev.clientY)) {
+        windowSpawnAt = { id: t.id, x: ev.clientX, y: ev.clientY };
+        setToolSize(t.id, dockW + 140, h);
+      }
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
@@ -900,7 +946,15 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                 {/* The window's own header strip — tabs left, controls right,
                     the fullscreen button at the editor-facing end (where the
                     pop-out used to sit). Wraps when the column is narrow. */}
-                <div className="tool-inline-header">
+                <div
+                  className="tool-inline-header"
+                  // v4.41: this strip is a drag-out handle too — Derek grabs
+                  // "the window's header", which is as often this row as the
+                  // accordion row above it. Controls are exempt (the guard).
+                  onPointerDown={!t.neverDock && t.id !== 'notebook'
+                    ? startDockDragOut(t, activeSize!.h)
+                    : undefined}
+                >
                   {side === 'right' && <ToolFullscreenButton id={t.id} />}
                   {chrome?.useTabs && <HeaderTabs chrome={chrome} />}
                   <span className="tool-chrome-controls">
