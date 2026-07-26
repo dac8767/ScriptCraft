@@ -6,6 +6,19 @@ import { openInBrowser, DONATE_URL } from '../services/external';
 import { APP_VERSION } from '../data/changelog';
 import { getCompatEntries } from '../services/compat';
 
+/** v4.76, Derek: every About link routes through openInBrowser — the raw
+ *  target="_blank" anchors stalled (or died) in the desktop WebView, while
+ *  the donate button's openInBrowser path opens the DEFAULT BROWSER
+ *  instantly. The href stays for hover/status affordance; the click is ours. */
+const Ext: React.FC<{ href: string; children: React.ReactNode }> = ({ href, children }) => (
+  <a
+    href={href}
+    onClick={(e) => { e.preventDefault(); openInBrowser(href); }}
+  >
+    {children}
+  </a>
+);
+
 export function AboutDialog({ onClose, onShowChangelog }: { onClose: () => void; onShowChangelog: () => void }) {
   return (
     <div className="dialog-overlay" onClick={onClose}>
@@ -24,37 +37,43 @@ export function AboutDialog({ onClose, onShowChangelog }: { onClose: () => void;
           <div className="about-tagline">Free, open-source screenwriting software</div>
           <div className="about-credit">
             Built from the{' '}
-            <a href="https://github.com/Proteus-Technologies-Private-Limited/OpenDraft" target="_blank" rel="noopener noreferrer">
-              OpenDraft
-            </a>{' '}
+            <Ext href="https://github.com/Proteus-Technologies-Private-Limited/OpenDraft">OpenDraft</Ext>{' '}
             source code by Proteus Technologies.
           </div>
+          {/* v4.76, Derek's standing rule: this list tracks package.json (and
+              the backend's requirements). Removing a tool that retires a
+              library — or adding/swapping one — updates this list in the SAME
+              change. Audited v4.76: everything below is still shipped;
+              html2canvas-pro (screenshots, v4.70) and pdf.js (PDF import)
+              joined. */}
           <div className="about-credit about-oss">
             Made possible by open source:{' '}
-            <a href="https://react.dev" target="_blank" rel="noopener noreferrer">React</a>,{' '}
-            <a href="https://tiptap.dev" target="_blank" rel="noopener noreferrer">TipTap</a> /{' '}
-            <a href="https://prosemirror.net" target="_blank" rel="noopener noreferrer">ProseMirror</a>,{' '}
-            <a href="https://yjs.dev" target="_blank" rel="noopener noreferrer">Yjs</a> &{' '}
-            <a href="https://tiptap.dev/hocuspocus" target="_blank" rel="noopener noreferrer">Hocuspocus</a>,{' '}
-            <a href="https://vite.dev" target="_blank" rel="noopener noreferrer">Vite</a>,{' '}
-            <a href="https://www.typescriptlang.org" target="_blank" rel="noopener noreferrer">TypeScript</a>,{' '}
-            <a href="https://zustand.docs.pmnd.rs" target="_blank" rel="noopener noreferrer">Zustand</a>,{' '}
-            <a href="https://reactrouter.com" target="_blank" rel="noopener noreferrer">React Router</a>,{' '}
-            <a href="https://recharts.org" target="_blank" rel="noopener noreferrer">Recharts</a>,{' '}
-            <a href="https://dndkit.com" target="_blank" rel="noopener noreferrer">dnd kit</a>,{' '}
-            <a href="https://react-icons.github.io/react-icons/" target="_blank" rel="noopener noreferrer">React Icons</a>,{' '}
-            <a href="https://github.com/parallax/jsPDF" target="_blank" rel="noopener noreferrer">jsPDF</a>,{' '}
-            <a href="https://github.com/dolanmiu/docx" target="_blank" rel="noopener noreferrer">docx</a>,{' '}
-            <a href="https://stuk.github.io/jszip/" target="_blank" rel="noopener noreferrer">JSZip</a>,{' '}
-            <a href="https://github.com/cure53/DOMPurify" target="_blank" rel="noopener noreferrer">DOMPurify</a>,{' '}
-            <a href="https://writewithharper.com" target="_blank" rel="noopener noreferrer">Harper</a>,{' '}
-            <a href="https://github.com/cfinke/Typo.js" target="_blank" rel="noopener noreferrer">Typo.js</a>,{' '}
-            <a href="https://github.com/retextjs/retext" target="_blank" rel="noopener noreferrer">retext</a> /{' '}
-            <a href="https://unifiedjs.com" target="_blank" rel="noopener noreferrer">unified</a>,{' '}
-            <a href="https://tauri.app" target="_blank" rel="noopener noreferrer">Tauri</a>,{' '}
-            <a href="https://fastapi.tiangolo.com" target="_blank" rel="noopener noreferrer">FastAPI</a>,{' '}
-            <a href="https://www.dulwich.io" target="_blank" rel="noopener noreferrer">Dulwich</a>, and{' '}
-            <a href="https://alembic.sqlalchemy.org" target="_blank" rel="noopener noreferrer">Alembic</a>.
+            <Ext href="https://react.dev">React</Ext>,{' '}
+            <Ext href="https://tiptap.dev">TipTap</Ext> /{' '}
+            <Ext href="https://prosemirror.net">ProseMirror</Ext>,{' '}
+            <Ext href="https://yjs.dev">Yjs</Ext> &{' '}
+            <Ext href="https://tiptap.dev/hocuspocus">Hocuspocus</Ext>,{' '}
+            <Ext href="https://vite.dev">Vite</Ext>,{' '}
+            <Ext href="https://www.typescriptlang.org">TypeScript</Ext>,{' '}
+            <Ext href="https://zustand.docs.pmnd.rs">Zustand</Ext>,{' '}
+            <Ext href="https://reactrouter.com">React Router</Ext>,{' '}
+            <Ext href="https://recharts.org">Recharts</Ext>,{' '}
+            <Ext href="https://dndkit.com">dnd kit</Ext>,{' '}
+            <Ext href="https://react-icons.github.io/react-icons/">React Icons</Ext>,{' '}
+            <Ext href="https://github.com/parallax/jsPDF">jsPDF</Ext>,{' '}
+            <Ext href="https://mozilla.github.io/pdf.js/">pdf.js</Ext>,{' '}
+            <Ext href="https://github.com/dolanmiu/docx">docx</Ext>,{' '}
+            <Ext href="https://stuk.github.io/jszip/">JSZip</Ext>,{' '}
+            <Ext href="https://github.com/cure53/DOMPurify">DOMPurify</Ext>,{' '}
+            <Ext href="https://github.com/yorickshan/html2canvas-pro">html2canvas-pro</Ext>,{' '}
+            <Ext href="https://writewithharper.com">Harper</Ext>,{' '}
+            <Ext href="https://github.com/cfinke/Typo.js">Typo.js</Ext>,{' '}
+            <Ext href="https://github.com/retextjs/retext">retext</Ext> /{' '}
+            <Ext href="https://unifiedjs.com">unified</Ext>,{' '}
+            <Ext href="https://tauri.app">Tauri</Ext>,{' '}
+            <Ext href="https://fastapi.tiangolo.com">FastAPI</Ext>,{' '}
+            <Ext href="https://www.dulwich.io">Dulwich</Ext>, and{' '}
+            <Ext href="https://alembic.sqlalchemy.org">Alembic</Ext>.
           </div>
 
 

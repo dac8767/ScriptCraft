@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.76",
+    "date": "2026-07-26",
+    "changes": [
+      "About: every link opens in your default browser, instantly — they used to stall (or never open) inside the app window",
+      "About: the open-source credits are audited against the real dependencies — html2canvas-pro (screenshots) and pdf.js (PDF import) joined the list, and keeping it current is now part of adding or removing a library"
+    ]
+  },
+  {
     "version": "4.75",
     "date": "2026-07-26",
     "changes": [
