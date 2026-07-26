@@ -62,15 +62,21 @@ describe('ElementPicker ordering', () => {
     expect(labels()[0]).toBe('Action');
   });
 
-  it('never offers Character', () => {
-    render({ suggestType: 'parenthetical' as never });
+  it('never shows a plain "Character" label — the name line is "Dialogue (character)"', () => {
+    render({});
     expect(labels()).not.toContain('Character');
+    expect(labels()).toContain('Dialogue (character)');
   });
 
-  // v4.58: grammar filter by the element above the line being chosen.
-  it('after a scene heading the list is exactly Action, Dialogue, Dual Dialogue', () => {
+  // v4.58/61: grammar filter by the element above the line being chosen.
+  it('after a scene heading: exactly Action, Dialogue (character), Dual Dialogue', () => {
     render({ prevScriptType: 'sceneHeading' });
-    expect(labels().sort()).toEqual(['Action', 'Dialogue', 'Dual Dialogue']);
+    expect(labels().sort()).toEqual(['Action', 'Dialogue (character)', 'Dual Dialogue']);
+  });
+
+  it('after a name line: Parenthetical (leading) and plain Dialogue', () => {
+    render({ prevScriptType: 'character', suggestType: 'parenthetical' as never });
+    expect(labels()).toEqual(['Parenthetical', 'Dialogue']);
   });
 
   it('parenthetical appears only when the previous element is a character', () => {

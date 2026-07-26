@@ -84,7 +84,6 @@ import { mirrorSave, mirrorSnapshot } from '../services/saveLocations';
 import { useSettingsStore } from '../stores/settingsStore';
 import { clearEditorHistory } from '../editor/clearHistory';
 import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
-import { resolvePickedElement } from './screenplayEditorConstants';
 import { importWorkspacesFromFile } from '../utils/workspaceImport';
 import { composeSaveContent } from '../utils/screenplaySaveContent';
 import { openTextFile, openBinaryFile } from '../utils/fileOps';
@@ -647,11 +646,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
   const setElement = (type: string) => {
     if (!editor) return;
-    // v4.54: Dialogue picked on an empty line starts at the character name.
-    const { $from } = editor.state.selection;
-    editor.chain().focus().setNode(
-      resolvePickedElement(type, $from.parent.type.name, $from.parent.textContent.trim() === ''),
-    ).run();
+    editor.chain().focus().setNode(type).run();
   };
 
   const handleImport = useCallback(async () => {

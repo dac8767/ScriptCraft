@@ -47,7 +47,7 @@ export const RADIO_PLAY_TEMPLATE: FormattingTemplate = {
       nextOnEnter: 'character',
       placeholder: 'Action description...',
     }),
-    character: rule('character', 'Character', true, {
+    character: rule('character', 'Dialogue (character)', true, {
       bold: true,
       textTransform: 'uppercase',
       marginTop: 12,

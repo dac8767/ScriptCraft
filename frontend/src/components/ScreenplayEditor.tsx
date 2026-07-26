@@ -121,7 +121,7 @@ import { createTrackChangesPlugin, trackChangesPluginKey } from '../editor/track
 import type { VersionInfo } from '../services/api';
 import { resolveHFFields, composeSaveContent, stripSaveExtras } from '../utils/screenplaySaveContent';
 
-import { randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, SCENE_PREFIX_OPTIONS, SAMPLE_CONTENT, resolvePickedElement } from './screenplayEditorConstants';
+import { randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, SCENE_PREFIX_OPTIONS, SAMPLE_CONTENT } from './screenplayEditorConstants';
 import { isWorkingNoteText } from '../utils/workingNotes';
 
 interface OverlayInfo {
@@ -1379,12 +1379,7 @@ const ScreenplayEditor: React.FC = () => {
         types.forEach((type, i) => {
           shortcuts[`Mod-${i + 1}`] = ({ editor }: { editor: any }) => {
             if (!editor.schema.nodes[type]) return false;
-            // v4.54: Mod-4 (Dialogue) on an empty line starts at the character
-            // name, same as every other pick surface. Mod-3 stays character.
-            const { $from } = editor.state.selection;
-            editor.chain().focus().setNode(resolvePickedElement(
-              type, $from.parent.type.name, $from.parent.textContent.trim() === '',
-            )).run();
+            editor.chain().focus().setNode(type).run();
             return true;
           };
         });
@@ -1406,14 +1401,13 @@ const ScreenplayEditor: React.FC = () => {
             const currentType = currentNode.type.name;
 
             // v4.57, Derek: Tab on an empty far-left line (a fresh action /
-            // general row) starts a dialogue — which begins at the
-            // character-name prompt per the couplet rule, moving the caret
-            // over to the element indent.
+            // general row) starts a dialogue at the character-name prompt
+            // ("Dialogue (character)"), moving the caret over to the indent.
             if (
               (currentType === 'action' || currentType === 'general')
               && currentNode.textContent.trim() === ''
             ) {
-              editor.chain().setNode(resolvePickedElement('dialogue', currentType, true)).run();
+              editor.chain().setNode('character').run();
               return true;
             }
 
@@ -3166,22 +3160,17 @@ const ScreenplayEditor: React.FC = () => {
       setPickerState((st) => ({ ...st, visible: false }));
       return;
     }
-    // v4.54: Dialogue picked on an empty line starts at the character name.
-    const { $from } = editor.state.selection;
-    const resolved = resolvePickedElement(
-      type, $from.parent.type.name, $from.parent.textContent.trim() === '',
-    ) as ElementType;
     // setNode works for any real schema node (built-in script elements as
     // well as the AV inner types avPara/avShot/avDirection). Custom-id elements
     // declared only in template rules go through the customElement wrapper.
-    if (editor.schema.nodes[resolved]) {
-      editor.chain().focus().setNode(resolved).run();
+    if (editor.schema.nodes[type]) {
+      editor.chain().focus().setNode(type).run();
     } else {
       const tpl = useFormattingTemplateStore.getState().getActiveTemplate();
-      const rule = tpl.rules[resolved];
+      const rule = tpl.rules[type];
       if (rule) {
         editor.chain().focus().setNode('customElement', {
-          customTypeId: resolved,
+          customTypeId: type,
           customLabel: rule.label,
         }).run();
       }

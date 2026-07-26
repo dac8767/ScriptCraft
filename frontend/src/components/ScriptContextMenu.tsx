@@ -13,7 +13,6 @@ import { grammarIgnore, GrammarIgnore } from '../editor/grammar/grammarIgnore';
 import { RETEXT_CATEGORY_META } from '../editor/grammar/retextProvider';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { getCurrentElementRule, getLockedFormatting } from '../utils/effectiveFormatting';
-import { resolvePickedElement } from './screenplayEditorConstants';
 
 const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform);
 const mod = isMac ? '⌘' : 'Ctrl+';
@@ -362,11 +361,7 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       onClose();
       return;
     }
-    // v4.54: Dialogue picked on an empty line starts at the character name.
-    const { $from } = editor.state.selection;
-    editor.chain().focus().setNode(
-      resolvePickedElement(type, $from.parent.type.name, $from.parent.textContent.trim() === ''),
-    ).run();
+    editor.chain().focus().setNode(type).run();
     onClose();
   };
 

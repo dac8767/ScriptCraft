@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.61",
+    "date": "2026-07-26",
+    "changes": [
+      "Three explicit dialogue options everywhere: Dialogue, Dialogue (character) — the name line, shown where Character used to be — and Dual Dialogue",
+      "Picks now apply their element directly: choosing Dialogue gives dialogue, choosing Dialogue (character) gives the name prompt (the implicit conversion is retired); Tab on an empty line still starts at the name"
+    ]
+  },
+  {
     "version": "4.60",
     "date": "2026-07-26",
     "changes": [

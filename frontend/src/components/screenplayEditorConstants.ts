@@ -38,40 +38,22 @@ export const ALL_ELEMENT_TYPES: ElementType[] = [
   'showEpisode', 'castList',
 ];
 
-// v4.54, Derek: Character is no longer offered in the element lists — a name
-// always sits above its dialogue, so picking Dialogue on an EMPTY line starts
-// the couplet at the name prompt (the character element); the in-script flow
-// (Enter walks name → dialogue) is unchanged. A NON-EMPTY line picked as
-// Dialogue converts directly — its text is spoken words, not a name — and a
-// line that is already dialogue stays dialogue. Every pick surface (Element
-// dropdown, Insert menu, Enter-key picker, right-click menu, Mod-4) routes
-// through here so the rule lives once.
-export function resolvePickedElement(
-  picked: string,
-  currentType: string,
-  isLineEmpty: boolean,
-): string {
-  if (picked === 'dialogue' && isLineEmpty && currentType !== 'dialogue') return 'character';
-  return picked;
-}
-
-// v4.59 — Derek's full follows-what grammar table. The Enter-key suggestion
-// list is filtered by the element ABOVE the line being chosen (working-note
-// lines don't count; they take no space in the final document).
+// v4.59 — Derek's full follows-what grammar table, stored VERBATIM (v4.61).
+// The Enter-key suggestion list is filtered by the element ABOVE the line
+// being chosen (working-note lines don't count; they take no space in the
+// final document).
 //
-// Keys and values are PICKER ids. Derek's table distinguishes "Character"
-// (the name line) from "Dialogue" (the speech), but the dropdown only ever
-// offers "Dialogue" — which cues the character name on an empty line
-// (resolvePickedElement) — so his "Character"/"Dual Character" entries are
-// stored as 'dialogue'/'dualDialogue'. Where BOTH his Character and his
-// Dialogue are reachable, the single 'dialogue' entry covers both and the
-// resolver disambiguates by the caret's line.
+// There are three dialogue options in every list (v4.61, Derek): plain
+// "Dialogue" (the speech), "Dialogue (character)" (the `character` id — the
+// name line; the label lives in ELEMENT_LABELS), and "Dual Dialogue". Picks
+// apply their element directly — nothing is silently converted (the v4.54
+// implicit Dialogue→character resolver is retired).
 //
-//   Scene Heading → Action, Character, Dual Character
-//   Action        → Action, Character, Dual Character, Scene Heading, Transition
-//   Character     → Dialogue, Parenthetical
+//   Scene Heading → Action, Dialogue (character), Dual Dialogue
+//   Action        → Action, Dialogue (character), Dual Dialogue, Scene Heading, Transition
+//   Dialogue (character) → Dialogue, Parenthetical
 //   Parenthetical → Dialogue
-//   Dialogue      → Character, Action, Scene Heading, Dual Character, Transition
+//   Dialogue      → Dialogue (character), Action, Scene Heading, Dual Dialogue, Transition
 //   Transition    → Scene Heading, Action
 //
 // A dual-dialogue block ends in dialogue, so it uses the Dialogue row.
@@ -81,18 +63,18 @@ export function resolvePickedElement(
 // dialogue above. Deliberate conversion surfaces (toolbar dropdown, Insert
 // menu, right-click) stay unfiltered — they fix lines, not suggest them.
 export const DEFAULT_SUGGESTION_RULES: Record<string, readonly string[]> = {
-  sceneHeading: ['action', 'dialogue', 'dualDialogue'],
-  action: ['action', 'dialogue', 'dualDialogue', 'sceneHeading', 'transition'],
+  sceneHeading: ['action', 'character', 'dualDialogue'],
+  action: ['action', 'character', 'dualDialogue', 'sceneHeading', 'transition'],
   character: ['dialogue', 'parenthetical'],
   parenthetical: ['dialogue'],
-  dialogue: ['dialogue', 'action', 'sceneHeading', 'dualDialogue', 'transition'],
+  dialogue: ['character', 'action', 'sceneHeading', 'dualDialogue', 'transition'],
   transition: ['sceneHeading', 'action'],
 };
 
 /** Every element the rules editor can offer as an allowed-next candidate. */
 export const SUGGESTION_RULE_CANDIDATES: readonly string[] = [
-  'action', 'dialogue', 'dualDialogue', 'sceneHeading', 'transition',
-  'parenthetical', 'general', 'shot', 'lyrics', 'showEpisode',
+  'action', 'dialogue', 'character', 'dualDialogue', 'sceneHeading',
+  'transition', 'parenthetical', 'general', 'shot', 'lyrics', 'showEpisode',
 ];
 
 // v4.59 (same-day follow-up): the table is USER-EDITABLE — Customize ▸ Editor

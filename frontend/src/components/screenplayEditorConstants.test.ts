@@ -9,7 +9,7 @@
  * catch it at test time instead of as a dead Enter key in the running app.
  */
 import { describe, it, expect } from 'vitest';
-import { COLLAB_COLORS, randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, resolvePickedElement, allowedElementsAfter } from './screenplayEditorConstants';
+import { COLLAB_COLORS, randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, allowedElementsAfter } from './screenplayEditorConstants';
 
 describe('element-type maps stay in sync', () => {
   it('every built-in element type has an Enter → next-type mapping', () => {
@@ -36,50 +36,21 @@ describe('element-type maps stay in sync', () => {
 });
 
 /**
- * v4.54, Derek: Character is not offered in the element lists — picking
- * Dialogue on an empty line starts the couplet at the character-name prompt.
- * Every pick surface routes through this one resolver.
- */
-describe('resolvePickedElement', () => {
-  it('Dialogue on an empty line starts at the character name', () => {
-    expect(resolvePickedElement('dialogue', 'action', true)).toBe('character');
-    expect(resolvePickedElement('dialogue', 'sceneHeading', true)).toBe('character');
-    expect(resolvePickedElement('dialogue', 'character', true)).toBe('character');
-  });
-
-  it('Dialogue on a non-empty line converts directly (its text is dialogue)', () => {
-    expect(resolvePickedElement('dialogue', 'action', false)).toBe('dialogue');
-  });
-
-  it('an empty line that is already dialogue stays dialogue', () => {
-    expect(resolvePickedElement('dialogue', 'dialogue', true)).toBe('dialogue');
-  });
-
-  it('every other pick passes through unchanged', () => {
-    for (const t of ALL_ELEMENT_TYPES) {
-      if (t === 'dialogue') continue;
-      expect(resolvePickedElement(t, 'action', true)).toBe(t);
-      expect(resolvePickedElement(t, 'action', false)).toBe(t);
-    }
-  });
-});
-
-/**
  * v4.59 — Derek's full follows-what grammar table, keyed on the element
- * above the line being chosen. His "Character"/"Dual Character" entries
- * surface in the dropdown as "Dialogue"/"Dual Dialogue" (the couplet cue).
+ * above the line being chosen. v4.61: stored VERBATIM — `character` is one
+ * of the three dialogue options, labeled "Dialogue (character)".
  */
 describe('allowedElementsAfter', () => {
-  const CANDIDATES = ['action', 'dialogue', 'dualDialogue', 'sceneHeading', 'transition', 'parenthetical', 'general', 'shot', 'lyrics', 'showEpisode'];
+  const CANDIDATES = ['action', 'character', 'dialogue', 'dualDialogue', 'sceneHeading', 'transition', 'parenthetical', 'general', 'shot', 'lyrics', 'showEpisode'];
   const allowedSet = (prev: string | null) =>
     CANDIDATES.filter((id) => allowedElementsAfter(prev)(id)).sort();
 
   it("matches Derek's table row for row", () => {
-    expect(allowedSet('sceneHeading')).toEqual(['action', 'dialogue', 'dualDialogue']);
-    expect(allowedSet('action')).toEqual(['action', 'dialogue', 'dualDialogue', 'sceneHeading', 'transition']);
+    expect(allowedSet('sceneHeading')).toEqual(['action', 'character', 'dualDialogue']);
+    expect(allowedSet('action')).toEqual(['action', 'character', 'dualDialogue', 'sceneHeading', 'transition']);
     expect(allowedSet('character')).toEqual(['dialogue', 'parenthetical']);
     expect(allowedSet('parenthetical')).toEqual(['dialogue']);
-    expect(allowedSet('dialogue')).toEqual(['action', 'dialogue', 'dualDialogue', 'sceneHeading', 'transition']);
+    expect(allowedSet('dialogue')).toEqual(['action', 'character', 'dualDialogue', 'sceneHeading', 'transition']);
     expect(allowedSet('transition')).toEqual(['action', 'sceneHeading']);
   });
 

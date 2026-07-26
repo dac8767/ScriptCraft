@@ -45,7 +45,6 @@ import { commandDef } from './toolbarCommands';
 import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, stripTall, parseRibbon } from './toolbarBuiltins';
 import { smartUndo, smartRedo, useEditorStore } from '../stores/editorStore';
 import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
-import { resolvePickedElement } from './screenplayEditorConstants';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { BUILT_IN_ELEMENT_IDS } from '../stores/formattingTypes';
@@ -367,9 +366,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       return;
     }
 
-    // v4.54: Dialogue picked on an empty line starts at the character name.
-    const { $from } = editor.state.selection;
-    const type = resolvePickedElement(picked, $from.parent.type.name, $from.parent.textContent.trim() === '');
+    // v4.61: picks apply directly — "Dialogue (character)" IS the character
+    // element, so there is no implicit conversion any more.
+    const type = picked;
 
     setActiveElement(type as ElementType);
     // Three cases:
@@ -899,9 +898,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       case 'element': return (
         <select
           className="element-selector"
-          // v4.54: a character line reads as "Dialogue" — the name row is the
-          // start of the dialogue couplet, and Character is no longer listed.
-          value={activeElement === 'character' ? 'dialogue' : activeElement}
+          value={activeElement}
           onChange={handleElementChange}
           title="Element"
         >

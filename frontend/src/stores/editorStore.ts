@@ -172,7 +172,11 @@ export type ElementType = BuiltInElementType | (string & {});
 export const ELEMENT_LABELS: Record<string, string> = {
   sceneHeading: 'Scene Heading',
   action: 'Action',
-  character: 'Character',
+  // v4.61, Derek: the name line is one of the THREE dialogue options
+  // (Dialogue, Dialogue (character), Dual Dialogue) — never plain
+  // "Character" in any list. The internal id stays `character` (persisted
+  // in every saved script).
+  character: 'Dialogue (character)',
   dialogue: 'Dialogue',
   parenthetical: 'Parenthetical',
   transition: 'Transition',

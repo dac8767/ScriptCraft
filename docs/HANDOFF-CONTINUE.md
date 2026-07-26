@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.60 — Customize ▸ Editor reordered)
+# ScriptCraft — continuation brief (current as of v4.61 — three explicit dialogue options)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,27 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.60 — Customize ▸ Editor reordered (HEAD)
+### v4.61 — three explicit dialogue options (HEAD)
+
+- **"Dialogue (character)" (Derek)**: every element list offers THREE
+  dialogue options — Dialogue, Dialogue (character) (= the `character`
+  id, the name line), Dual Dialogue. `character` came OUT of
+  NON_PICKABLE; `ELEMENT_LABELS['character']` AND all six templates'
+  character-rule labels are 'Dialogue (character)' (the templates feed
+  the Toolbar dropdown/Insert menu/context menu labels — ELEMENT_LABELS
+  alone left the dropdown reading "Character", the two-label-source
+  drift). DEFAULT_SUGGESTION_RULES now stores Derek's table VERBATIM
+  ('character' entries). **resolvePickedElement is DELETED** — picks
+  apply directly at all five former call sites; the Toolbar's
+  character→dialogue display mapping is gone (the dropdown value can be
+  'character' now); Tab-on-empty-far-left does `setNode('character')`.
+  Driver v37: picker after heading = Action / Dialogue (character) /
+  Dual Dialogue; picking it → character prompt; under a name =
+  Parenthetical / Dialogue; dropdown shows "Dialogue (character)" with
+  all three options listed. NOTE: internal id `character` persists in
+  saved scripts — labels only.
+
+### v4.60 — Customize ▸ Editor reordered
 
 - **Editor Views section REMOVED (Derek)** from EditElementsDialog — the
   settingsStore keys (editorViewOrder/editorViewHidden,
