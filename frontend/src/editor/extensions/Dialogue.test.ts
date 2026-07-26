@@ -33,7 +33,10 @@ function makeEditor(text: string) {
 
 const typeParen = (ed: Editor) => {
   const { from, to } = ed.state.selection;
-  const handled = ed.view.someProp('handleTextInput', (f) => f(ed.view, from, to, '('));
+  // The prop's TS type carries a 5th arg (the default-insert continuation);
+  // the plugin ignores it, and a real keystroke supplies it internally.
+  const handled = ed.view.someProp('handleTextInput', (f) =>
+    (f as (v: unknown, a: number, b: number, t: string) => boolean)(ed.view, from, to, '('));
   if (!handled) ed.view.dispatch(ed.state.tr.insertText('(', from, to));
   return handled;
 };

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.67 — collapse pill + auto-expand hardening)
+# ScriptCraft — continuation brief (current as of v4.68 — paren after dialogue + '(' trigger)
 
 > QUEUE (Derek-approved, not yet landed), in order:
 > 1. Window-tab collapse (v4.53 HeaderTabs): the condensed dropdown must
@@ -259,7 +259,25 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.67 — collapse pill + auto-expand hardening (HEAD)
+### v4.68 — parenthetical after dialogue + the "(" trigger (HEAD)
+
+- DEFAULT_SUGGESTION_RULES.dialogue += 'parenthetical' (mid-speech
+  beats); ElementPicker/constants tests updated.
+- Dialogue.ts plugin (handleTextInput): "(" at the END of a written
+  dialogue line inserts a parenthetical on the next line (the v3.44 seed
+  supplies "()", caret between); on an EMPTY dialogue line it converts
+  IN PLACE (no stray blank row); mid-text "(" stays literal. Its Tab
+  fallback is in-place-on-empty too. Tests: Dialogue.test.ts — invoke
+  view props via someProp('handleTextInput'); it returns undefined when
+  unhandled (assert toBeFalsy), and the prop TYPE takes 5 args (cast).
+  Driver v46: SARAH / dialogue / "(beat)"; picker after dialogue offers
+  Parenthetical.
+- PROCESS BURN: a heredoc in the ship chain BROKE the && gating — the
+  commit ran with tsc RED (the someProp arity error) and the handoff
+  edit skipped; fixed in an immediate follow-up commit. NEVER put a
+  heredoc mid-chain; run gates as their own command before committing.
+
+### v4.67 — collapse pill + auto-expand hardening
 
 - **Pill**: `.tool-chrome-tabs-dd .tool-ctl` = accent bg, white, 600 —
   the condensed dropdown reads as the active tab (shows its name).
