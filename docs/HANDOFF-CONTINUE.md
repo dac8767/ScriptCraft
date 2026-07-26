@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.46 — per-side header padding, 0.5px hairlines)
+# ScriptCraft — continuation brief (current as of v4.47 — title-gap knob, status-bar headers)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,16 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.46 — per-side header padding knobs + 0.5px hairlines (HEAD)
+### v4.47 — title-gap knob + status-bar headers (HEAD)
+
+- `toolWinTitleGap` (`--dz-toolwin-title-gap`, def 10) — the
+  `.tool-header-title` margin-right (name↔tabs air; the header's 8px
+  column-gap rides on top).
+- `.tool-window-header` bg: `--fd-toolbar-bg` → `--fd-status-bg` (v4.42's
+  ribbon match superseded — Derek wants the status bar's darker surface).
+  Driver: header computed == the status bar element's bg, knob 10→28 live.
+
+### v4.46 — per-side header padding knobs + 0.5px hairlines
 
 - `toolWinHeaderPad` RETIRED → four knobs: `toolWinPadTop/Bottom` (def 6) and
   `toolWinPadLeft/Right` (def 10), vars `--dz-toolwin-pad-*`. The frame/

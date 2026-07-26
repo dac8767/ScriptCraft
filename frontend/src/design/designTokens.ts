@@ -122,6 +122,9 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'toolWinPadBottom', label: 'Header padding — bottom', cssVar: '--dz-toolwin-pad-bottom', unit: 'px', min: 0, max: 20, step: 1, def: 6 },
       { id: 'toolWinPadLeft', label: 'Header padding — left', cssVar: '--dz-toolwin-pad-left', unit: 'px', min: 0, max: 28, step: 1, def: 10 },
       { id: 'toolWinPadRight', label: 'Header padding — right', cssVar: '--dz-toolwin-pad-right', unit: 'px', min: 0, max: 28, step: 1, def: 10 },
+      // v4.47, Derek: the air between the window's name and its tabs (the
+      // header's 8px column-gap sits on top of this margin).
+      { id: 'toolWinTitleGap', label: 'Space after window name', cssVar: '--dz-toolwin-title-gap', unit: 'px', min: 0, max: 40, step: 1, def: 10 },
       { id: 'toolWinTitleFont', label: 'Tool window title font', cssVar: '--dz-toolwin-title-font', unit: 'px', min: 9, max: 20, step: 0.5, def: 12 },
       // v4.45, Derek: header-bar tuning — the bar's control/tab type size and
       // the air between the header and the window's content, every shape.

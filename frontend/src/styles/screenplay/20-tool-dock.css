@@ -366,15 +366,16 @@ body.fs-tool-dragging { cursor: grabbing; }
   column-gap: 8px;
   padding: var(--dz-toolwin-pad-top, 6px) var(--dz-toolwin-pad-right, 10px) var(--dz-toolwin-pad-bottom, 6px) var(--dz-toolwin-pad-left, 10px);
   border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
-  /* v4.42, Derek: the window header matches the ribbon toolbar's surface. */
-  background: var(--fd-toolbar-bg);
+  /* v4.42: ribbon surface; v4.47, Derek: the STATUS BAR's surface now. */
+  background: var(--fd-status-bg);
   flex-shrink: 0;
   user-select: none;
   cursor: grab; /* v1.33: grab the header to move the window (drop on a panel to dock) */
 }
 .tool-window-header:active { cursor: grabbing; }
-/* v4.40, Derek: clear air between the window name and the tabs. */
-.tool-header-title { display: inline-flex; align-items: center; gap: 6px; min-width: 0; margin-right: 10px; }
+/* v4.40, Derek: clear air between the window name and the tabs — a Design
+   knob since v4.47. */
+.tool-header-title { display: inline-flex; align-items: center; gap: 6px; min-width: 0; margin-right: var(--dz-toolwin-title-gap, 10px); }
 .tool-window-title {
   font-size: var(--dz-toolwin-title-font, 12px);
   font-weight: 700;

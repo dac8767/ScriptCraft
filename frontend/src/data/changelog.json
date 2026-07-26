@@ -1,5 +1,19 @@
 [
   {
+    "version": "4.47",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "Name-to-tabs spacing knob; darker headers",
+        "detail": "Design → Panels & Windows gained 'Space after window name' — the air between a window's title and its tabs. And window headers now wear the status bar's surface color instead of the ribbon's, giving the top of every window (floating and fullscreen) the app's darkest chrome shade.",
+        "tags": [
+          "Design",
+          "UI"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.46",
     "date": "2026-07-26",
     "items": [
