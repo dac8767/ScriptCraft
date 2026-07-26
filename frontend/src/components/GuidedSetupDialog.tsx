@@ -19,8 +19,55 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { SYSTEM_TEMPLATE_LIST } from '../stores/formattingTemplateStore';
 import { formatAppDate } from '../utils/dateFormat';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
-import { SaveLocationsField, CustomizeFromFileField } from './setupFields';
+import PageSetupDialog from './PageSetupDialog';
+import { SaveLocationsField, CustomizeFromFileField, AutosaveField } from './setupFields';
 import type { NewScriptMeta } from './NewScriptDialog';
+import type { StarterNode } from '../stores/formattingTypes';
+
+/** Sample text per element, for formats that seed no starter document (the
+ *  industry-standard screenplay is one). Only elements the template ENABLES
+ *  appear, so the preview still describes that specific format. */
+const SAMPLE_LINES: [string, string][] = [
+  ['sceneHeading', 'INT. COFFEE SHOP - DAY'],
+  ['action', 'Rain streaks the window. MAYA stares at a cold cup.'],
+  ['character', 'MAYA'],
+  ['parenthetical', '(to herself)'],
+  ['dialogue', 'He is not coming.'],
+  ['transition', 'CUT TO:'],
+];
+
+/** v4.83: the format step shows what each format LOOKS like. Preferred source
+ *  is the template's OWN starter document — the very lines a new script of
+ *  that kind begins with; a format that seeds nothing falls back to sample
+ *  lines filtered by the elements that template enables. Either way the
+ *  template drives it, so editing a template updates this. */
+function FormatPreview({ templateId }: { templateId: string }) {
+  const tpl = SYSTEM_TEMPLATE_LIST.find((t) => t.id === templateId);
+  const textOf = (n: StarterNode): string =>
+    (n.content ?? [])
+      .map((c) => ('text' in c ? c.text : textOf(c as StarterNode)))
+      .join('');
+  if (!tpl) return null;
+  const starter: StarterNode[] = tpl.starterDocument ?? [];
+  const lines: { type: string; text: string }[] = starter.length
+    ? starter.map((n) => ({ type: n.type, text: textOf(n) }))
+    : SAMPLE_LINES
+      .filter(([id]) => tpl.rules[id]?.enabled !== false)
+      .map(([type, text]) => ({ type, text }));
+  return (
+    <div className="fs-guided-preview">
+      <div className="fs-guided-preview-label">
+        {starter.length ? `A ${tpl.name.toLowerCase()} starts like this` : `How a ${tpl.name.toLowerCase()} reads`}
+      </div>
+      <div className="fs-guided-preview-page">
+        {lines.map((l, i) => (
+          <div key={i} className={`fs-guided-preview-line pv-${l.type}`}>{l.text || ' '}</div>
+        ))}
+      </div>
+      {tpl.description && <div className="fs-guided-preview-desc">{tpl.description}</div>}
+    </div>
+  );
+}
 
 type CustomizeCat = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'themes';
 
@@ -109,7 +156,9 @@ export default function GuidedSetupDialog({ open, onClose, onCreate, onBack }: {
     templateId,
   });
 
-  const STEP_COUNT = 3 + GUIDED_CUSTOMIZE_STEPS.length;
+  // v4.83: five lead-in steps now — naming, saving, autosave, format, page.
+  const LEAD_STEPS = 5;
+  const STEP_COUNT = LEAD_STEPS + GUIDED_CUSTOMIZE_STEPS.length;
   const last = step === STEP_COUNT - 1;
   const next = () => (last ? create() : setStep((s) => s + 1));
 
@@ -123,8 +172,16 @@ export default function GuidedSetupDialog({ open, onClose, onCreate, onBack }: {
       blurb: 'Your script is always kept on this device. These are the extra copies kept in step with it.',
     },
     {
+      title: 'Safety net',
+      blurb: 'ScriptCraft keeps versions of your script as you work, so you can go back to any point. Nothing here replaces normal saving — it runs on top of it.',
+    },
+    {
       title: 'What kind of script',
-      blurb: 'The format sets the page layout and the elements you write with — a screenplay indents dialogue, a stage play does not.',
+      blurb: 'The format sets the page layout and the elements you write with — a screenplay indents dialogue, a stage play centers its character names.',
+    },
+    {
+      title: 'The page itself',
+      blurb: 'Paper size and margins. The defaults are the industry-standard US Letter screenplay page; change these only if your production asks for something else.',
     },
     ...GUIDED_CUSTOMIZE_STEPS.map((s) => ({ title: s.title, blurb: s.blurb })),
   ];
@@ -165,28 +222,41 @@ export default function GuidedSetupDialog({ open, onClose, onCreate, onBack }: {
 
           {step === 1 && <SaveLocationsField />}
 
-          {step === 2 && (
-            <div className="fs-guided-formats">
-              {options.map((t) => (
-                <label key={t.id} className={`fs-guided-format${templateId === t.id ? ' active' : ''}`}>
-                  <input
-                    type="radio"
-                    name="guided-format"
-                    checked={templateId === t.id}
-                    onChange={() => setTemplateId(t.id)}
-                  />
-                  <span className="fs-guided-format-name">{t.name}</span>
-                </label>
-              ))}
+          {step === 2 && <AutosaveField />}
+
+          {step === 3 && (
+            <>
+              <div className="fs-guided-formats">
+                {options.map((t) => (
+                  <label key={t.id} className={`fs-guided-format${templateId === t.id ? ' active' : ''}`}>
+                    <input
+                      type="radio"
+                      name="guided-format"
+                      checked={templateId === t.id}
+                      onChange={() => setTemplateId(t.id)}
+                    />
+                    <span className="fs-guided-format-name">{t.name}</span>
+                  </label>
+                ))}
+              </div>
+              <FormatPreview templateId={templateId} />
+            </>
+          )}
+
+          {/* The real Page Setup controls — same single-source reasoning as the
+              Customize steps below. */}
+          {step === 4 && (
+            <div className="fs-guided-pagesetup">
+              <PageSetupDialog embedded onClose={() => {}} />
             </div>
           )}
 
-          {step >= 3 && (
+          {step >= LEAD_STEPS && (
             <div className="fs-guided-customize">
               <CustomizePanelsDialog
                 open
                 embedded
-                soloCategory={GUIDED_CUSTOMIZE_STEPS[step - 3].cat}
+                soloCategory={GUIDED_CUSTOMIZE_STEPS[step - LEAD_STEPS].cat}
                 onClose={() => {}}
               />
             </div>

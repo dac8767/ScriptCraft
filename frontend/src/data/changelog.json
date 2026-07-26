@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.83",
+    "date": "2026-07-26",
+    "changes": [
+      "\"Customize from a file\" now also accepts an existing ScriptCraft script and copies its themes, page layout and format — it says which of those it found rather than implying it copied everything",
+      "Guided Setup gained three steps: a safety-net step for auto-saved versions, a page setup step (paper and margins), and a preview on the format step showing how that kind of script actually reads"
+    ]
+  },
+  {
     "version": "4.82",
     "date": "2026-07-26",
     "changes": [

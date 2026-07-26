@@ -15,6 +15,7 @@ import {
   typedExportName, stampedBase,
   buildCustomizeExport, applyCustomizeExport, parseCustomizeExport,
   buildFullPreset, applyFullPreset,
+  applySettingsFromScriptFile,
 } from './presets';
 import { useEditorStore } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
@@ -108,5 +109,45 @@ describe('full preset', () => {
     const doc = JSON.parse(buildFullPreset('2026-07-26T00:00:00.000Z'));
     expect(doc.settings['opendraft:collabAuth']).toBeUndefined();
     localStorage.removeItem('opendraft:collabAuth');
+  });
+});
+
+// v4.83, Derek: "they can import a customize file OR choose an existing
+// scriptcraft file, and copy the customization settings from that file."
+// A .odraft carries LESS than a preset — themes, page layout (with Mores &
+// Continueds) and the format — so the reader reports what it actually applied
+// instead of quietly doing nothing for the rest.
+describe('customize from an existing script (.odraft)', () => {
+  const odraft = (over: Record<string, unknown> = {}) => JSON.stringify({
+    odraft_version: 1,
+    format: 'opendraft-script',
+    meta: { title: 'T', author: '', color: '', page_count: 1 },
+    content: {},
+    ...over,
+  });
+
+  it('copies themes, page layout and the format, and says which', () => {
+    const json = odraft({
+      themes: [{ id: 'custom-x', label: 'My Look', vars: { '--fd-bg': '#123456' } }],
+      content: {
+        _pageLayout: { rightMargin: 1.25, moresContds: { characterContd: false, dialogueBreakContd: false, contdText: '(C)', moreText: '(M)' } },
+        _templateId: '__stage_play__',
+      },
+    });
+    const r = applySettingsFromScriptFile(json);
+    expect(r).toEqual({ themes: 1, pageLayout: true, moresContds: true, templateId: '__stage_play__' });
+    expect(useEditorStore.getState().pageLayout.rightMargin).toBe(1.25);
+    expect(useEditorStore.getState().pageLayout.moresContds?.contdText).toBe('(C)');
+  });
+
+  it('a script with nothing to copy reports nothing rather than throwing', () => {
+    expect(applySettingsFromScriptFile(odraft())).toEqual({
+      themes: 0, pageLayout: false, moresContds: false, templateId: null,
+    });
+  });
+
+  it('refuses a file that is not a ScriptCraft script', () => {
+    expect(() => applySettingsFromScriptFile('nope')).toThrow(/valid JSON/);
+    expect(() => applySettingsFromScriptFile(JSON.stringify({ kind: 'customize-export' }))).toThrow(/not a ScriptCraft script/);
   });
 });

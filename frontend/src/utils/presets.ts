@@ -200,3 +200,54 @@ export function applyFullPreset(json: string): { imported: number } {
   }
   return { imported: res.imported };
 }
+
+/* ── "Customize based on an existing script" (v4.83, Derek) ─────────────
+   A .odraft script file is NOT a preset — it carries what a SCRIPT carries:
+   its custom themes, its page layout (which includes Mores & Continueds),
+   and the script format it was written in. Chrome layout (toolbar, panels,
+   Quick Access) is app-level, lives in localStorage, and is simply not in
+   the file — so this reports exactly what it copied instead of implying it
+   brought everything. */
+export interface ScriptSettingsApplied {
+  themes: number;
+  pageLayout: boolean;
+  moresContds: boolean;
+  templateId: string | null;
+}
+
+export function applySettingsFromScriptFile(json: string): ScriptSettingsApplied {
+  let doc: unknown;
+  try { doc = JSON.parse(json); } catch { throw new Error('That file is not valid JSON.'); }
+  const d = doc as {
+    format?: unknown;
+    themes?: unknown;
+    content?: Record<string, unknown>;
+  };
+  if (!d || typeof d !== 'object' || d.format !== 'opendraft-script') {
+    throw new Error('That file is not a ScriptCraft script (.odraft).');
+  }
+  const out: ScriptSettingsApplied = { themes: 0, pageLayout: false, moresContds: false, templateId: null };
+
+  if (Array.isArray(d.themes)) {
+    const th = useThemeStore.getState();
+    for (const t of d.themes) {
+      const c = t as { id?: unknown; label?: unknown };
+      if (str(c.id) && str(c.label)) { th.saveCustomTheme(t as Parameters<typeof th.saveCustomTheme>[0]); out.themes++; }
+    }
+  }
+
+  const content = (d.content ?? {}) as Record<string, unknown>;
+  const layout = content._pageLayout;
+  if (layout && typeof layout === 'object') {
+    const ed = useEditorStore.getState();
+    const next = { ...ed.pageLayout, ...(layout as Record<string, unknown>) } as typeof ed.pageLayout;
+    ed.setPageLayout(next);
+    out.pageLayout = true;
+    out.moresContds = !!(layout as { moresContds?: unknown }).moresContds;
+  }
+  if (str(content._templateId)) {
+    useFormattingTemplateStore.getState().setActiveTemplateId(content._templateId);
+    out.templateId = content._templateId;
+  }
+  return out;
+}
