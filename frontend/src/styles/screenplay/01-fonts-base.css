@@ -94,7 +94,7 @@
 [data-theme="light"] {
   --fd-bg: #e8e8e8;
   --fd-page-bg: #ffffff;
-  --fd-toolbar-bg: #f4f4f4;
+  --fd-toolbar-bg: #f7f7f7;
   --fd-menu-bg: #f6f6f6;
   --fd-menu-hover: #e0e0e0;
   --fd-accent: #1565c0;
@@ -103,8 +103,12 @@
   --fd-chrome-shadow: 0 1px 3px rgba(0,0,0,0.08);
   --fd-text: #1a1a1a;
   --fd-text-muted: #666666;
-  --fd-navigator-bg: #f2f2f2;
-  --fd-status-bg: #e0e0e0;
+  /* v4.49, Derek: every theme follows the DARK theme's surface ladder —
+     status < panels/header < body <= cards <= menus <= toolbar (each step
+     lighter). Panels were LIGHTER than the body here; toolbar sat below the
+     menu. themeLadder.test.ts enforces the ordering for all themes. */
+  --fd-navigator-bg: #e2e2e2;
+  --fd-status-bg: #dbdbdb;
   --fd-dropdown-bg: #f5f5f5;
   --fd-overlay-subtle: #ededed;
   --fd-overlay-light: #e5e5e5;
@@ -114,9 +118,10 @@
   --fd-input-bg: #ffffff;
   --fd-btn-bg: #1565c0; --fd-btn-text: #ffffff; --fd-btn-hover: #357ac8;
 }
-/* Light theme: page keeps white bg, editor area uses a warm gray */
+/* v4.49: the editor canvas is the BODY surface, like the dark theme (the
+   d5d5d5 warm gray broke the canvas==body relationship the ladder pins). */
 [data-theme="light"] .editor-main {
-  background: #d5d5d5;
+  background: var(--fd-bg);
 }
 /* Light theme: page shadow */
 [data-theme="light"] .page {

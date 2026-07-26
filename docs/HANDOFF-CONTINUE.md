@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.48 — navigator-surface headers)
+# ScriptCraft — continuation brief (current as of v4.49 — the theme surface ladder)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,21 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.48 — header = navigator surface (HEAD)
+### v4.49 — the theme surface ladder (HEAD)
+
+Derek annotated the dark theme's areas (same/lighter/darker) and made the
+PATTERN canonical for all themes: **status < navigator(panels+window
+headers) < bg(body+canvas) <= dropdown(cards) <= menu <= toolbar**, each
+step LIGHTER, same direction in light themes. Fixed violators (hue kept):
+light (navigator f2f2f2→e2e2e2, status→dbdbdb, toolbar→f7f7f7, and
+`.editor-main` d5d5d5→var(--fd-bg)); sepia + solarized-light (toolbar/menu/
+dropdown lifted above bg); dracula (same). Nord/solarized-dark/midnight
+already complied. **`src/design/themeLadder.test.ts`** parses the REAL
+stylesheets, resolves each theme's effective tokens (override ?? :root) and
+asserts the ordering — theme edits that invert a relationship fail CI.
+Suite 623 tests.
+
+### v4.48 — header = navigator surface
 
 One line: `.tool-window-header` bg → `--fd-navigator-bg` (Derek asked for
 252525; that IS the dark theme's navigator token — the header has now been

@@ -1,5 +1,19 @@
 [
   {
+    "version": "4.49",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "One surface pattern across every theme",
+        "detail": "The dark theme's lightness ladder — status bar darkest, then panels and window headers, then the body and editor canvas, then cards, menus, and the ribbon toolbar lightest — now holds in every theme. Light and Solarized Light had panels lighter than the body, Sepia and Dracula had the toolbar darker than it, and the Light theme's editor canvas was a special-cased gray; all corrected in each theme's own hue, and a test now fails any future theme edit that inverts a relationship.",
+        "tags": [
+          "Themes",
+          "UI"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.48",
     "date": "2026-07-26",
     "items": [
