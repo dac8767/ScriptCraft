@@ -1,5 +1,18 @@
 [
   {
+    "version": "4.48",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "Window header color",
+        "detail": "Window headers wear the side-panel surface (#252525 in the dark theme) — the matching token keeps every other theme coherent.",
+        "tags": [
+          "UI"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.47",
     "date": "2026-07-26",
     "items": [

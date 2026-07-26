@@ -366,8 +366,9 @@ body.fs-tool-dragging { cursor: grabbing; }
   column-gap: 8px;
   padding: var(--dz-toolwin-pad-top, 6px) var(--dz-toolwin-pad-right, 10px) var(--dz-toolwin-pad-bottom, 6px) var(--dz-toolwin-pad-left, 10px);
   border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
-  /* v4.42: ribbon surface; v4.47, Derek: the STATUS BAR's surface now. */
-  background: var(--fd-status-bg);
+  /* v4.42 ribbon → v4.47 status bar → v4.48, Derek: the side-panel surface
+     (#252525 in the dark theme; the token keeps other themes coherent). */
+  background: var(--fd-navigator-bg);
   flex-shrink: 0;
   user-select: none;
   cursor: grab; /* v1.33: grab the header to move the window (drop on a panel to dock) */

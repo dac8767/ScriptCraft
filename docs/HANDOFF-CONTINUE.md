@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.47 — title-gap knob, status-bar headers)
+# ScriptCraft — continuation brief (current as of v4.48 — navigator-surface headers)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,14 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.47 — title-gap knob + status-bar headers (HEAD)
+### v4.48 — header = navigator surface (HEAD)
+
+One line: `.tool-window-header` bg → `--fd-navigator-bg` (Derek asked for
+252525; that IS the dark theme's navigator token — the header has now been
+--fd-bg (v4.37) → toolbar (v4.42) → status (v4.47) → navigator, keep using
+tokens so themes follow).
+
+### v4.47 — title-gap knob + status-bar headers
 
 - `toolWinTitleGap` (`--dz-toolwin-title-gap`, def 10) — the
   `.tool-header-title` margin-right (name↔tabs air; the header's 8px
