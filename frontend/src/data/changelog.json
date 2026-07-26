@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.57",
+    "date": "2026-07-26",
+    "changes": [
+      "Enter at the end of a written dialogue line skips a line and immediately shows the element options",
+      "Tab on an empty far-left line moves the cursor over and starts a dialogue — beginning at the character-name prompt, per the couplet rule"
+    ]
+  },
+  {
     "version": "4.56",
     "date": "2026-07-26",
     "changes": [

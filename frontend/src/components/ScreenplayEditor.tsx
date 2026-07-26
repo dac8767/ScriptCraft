@@ -1257,6 +1257,23 @@ const ScreenplayEditor: React.FC = () => {
               return true;
             }
 
+            // v4.57, Derek: Enter at the END of a written dialogue line skips
+            // a line (the fresh element is an action, whose space-before is
+            // the blank line) and immediately offers the element options.
+            // Mid-line and start-of-line Enter keep the generic behavior;
+            // dual-dialogue columns keep theirs.
+            if (currentType === 'dialogue' && $from.parentOffset === currentNode.content.size) {
+              let inDual = false;
+              for (let d = $from.depth; d >= 0; d--) {
+                if ($from.node(d).type.name === 'dualDialogue') { inDual = true; break; }
+              }
+              if (!inDual) {
+                editor.chain().splitBlock().setNode('action').run();
+                showPickerRef.current('action');
+                return true;
+              }
+            }
+
             // Check if cursor is at the very beginning of the block
             const atBlockStart = $from.parentOffset === 0;
 
@@ -1367,6 +1384,18 @@ const ScreenplayEditor: React.FC = () => {
             const { $from } = editor.state.selection;
             const currentNode = $from.parent;
             const currentType = currentNode.type.name;
+
+            // v4.57, Derek: Tab on an empty far-left line (a fresh action /
+            // general row) starts a dialogue — which begins at the
+            // character-name prompt per the couplet rule, moving the caret
+            // over to the element indent.
+            if (
+              (currentType === 'action' || currentType === 'general')
+              && currentNode.textContent.trim() === ''
+            ) {
+              editor.chain().setNode(resolvePickedElement('dialogue', currentType, true)).run();
+              return true;
+            }
 
             // For custom elements, look up by customTypeId
             const effectiveType = currentType === 'customElement'

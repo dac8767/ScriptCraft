@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.56 — parenthetical leads the picker under a name)
+# ScriptCraft — continuation brief (current as of v4.57 — dialogue Enter offers options, Tab starts dialogue)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,25 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.56 — parenthetical leads the picker under a name (HEAD)
+### v4.57 — dialogue Enter offers options, Tab starts dialogue (HEAD)
+
+- **Enter after a written dialogue line (Derek)**: at the END of a
+  non-empty dialogue (not mid-line, not at start, not in a dual column),
+  Enter splits to a fresh ACTION — its space-before IS the skipped blank
+  line (driver: 16px gap) — and immediately opens the element picker
+  (`showPickerRef('action')`, so the suggestion is Action). Escape/typing
+  falls through to writing action text. Replaces the old
+  nextOnEnter-dialogue chain for this case only.
+- **Tab on an empty far-left line (Derek)**: an empty `action`/`general`
+  row + Tab → `resolvePickedElement('dialogue', …)` → the character-name
+  prompt (caret x 456→648 in the driver, FLIGMA autofill pops, Enter
+  after the name lands in dialogue). Deliberately scoped to far-LEFT
+  types so the couplet Tab flows (empty dialogue → parenthetical via
+  nextOnTab, etc.) are untouched. Both live in ScreenplayEditor's
+  EnterHandler / TabHandlerExtension (they're inline extensions — driver
+  verification, no unit tests possible without extracting them).
+
+### v4.56 — parenthetical leads the picker under a name
 
 - **Context-aware picker suggestion (Derek)**: an empty DIALOGUE whose
   previous sibling is a CHARACTER (the couplet: name above, caret in the
