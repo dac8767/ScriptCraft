@@ -371,6 +371,7 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
    from the body, per Derek's Airtable reference. The pop-out button is gone;
    dragging the row out of the panel floats the window. */
 .tool-inline { position: relative; background: var(--fd-bg); }   /* v4.44: window body = editor-area color */
+.tool-inline-body { padding-top: var(--dz-toolwin-body-gap, 0px); }   /* v4.45: Design knob */
 .tool-dock-item-header {
   border-bottom: 1px solid var(--fd-hairline);
   background: rgba(128, 128, 128, 0.22);
@@ -442,7 +443,8 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
   -webkit-user-select: none;   /* v4.41: it's a drag handle */
   flex-wrap: wrap;
   gap: 4px 10px;
-  padding: 4px 8px;
+  /* v4.45: vertical padding rides the SAME Design knob as the window header */
+  padding: var(--dz-toolwin-head-pad, 4px) 8px;
   border-bottom: 1px solid var(--fd-hairline);
   background: var(--fd-navigator-bg);
   flex-shrink: 0;

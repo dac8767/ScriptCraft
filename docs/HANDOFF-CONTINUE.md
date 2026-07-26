@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.44 — flush fullscreen, fd-bg window bodies)
+# ScriptCraft — continuation brief (current as of v4.45 — window-chrome Design knobs, docked divider)
 
 Read `CLAUDE.md` and `docs/HANDOFF.md` first for the durable footguns, the architecture
 map, and Derek's working style. **This file is the fresh-chat catch-up**: the exact
@@ -245,7 +245,20 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.44 — flush fullscreen + fd-bg window bodies (HEAD)
+### v4.45 — window-chrome Design knobs + docked divider (HEAD)
+
+- New Panels & Windows knobs: `toolWinBodyGap` (`--dz-toolwin-body-gap`,
+  def 0 — padding-top on .tool-window-body/.tool-inline-body/
+  .fs-tool-takeover-body) and `toolWinBarFont` (`--dz-toolwin-bar-font`,
+  def 12 — .tool-ctl/.tool-chrome-tab/.tool-title-count). The existing
+  `toolWinHeaderPad` knob now ALSO drives `.tool-inline-header`'s vertical
+  padding (fallback 4 there vs 6 on the header — both fallback values are
+  legal per the token test as long as the def appears somewhere).
+- `.tool-chrome-sep` renders in the docked strip too, on the fullscreen
+  button's inner side (skipped for NO_FULLSCREEN tools — no dangling line).
+- Driver: knobs respond live (4→12 / 0→18 / 12→15px), defaults unchanged.
+
+### v4.44 — flush fullscreen + fd-bg window bodies
 
 - **Flush takeover**: `.editor-layout` gains `editor-layout-fs` while
   `fullscreenTool` is set (ScreenplayEditor) → the `.tool-dock-wrap` 6px

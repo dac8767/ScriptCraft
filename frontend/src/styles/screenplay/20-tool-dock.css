@@ -412,7 +412,7 @@ body.fs-tool-dragging { cursor: grabbing; }
 /* The item count riding beside the window title ("Characters · 12") —
    published by the tool, rendered by its TitleExtra slot. */
 .tool-title-count {
-  font-size: 12px;
+  font-size: var(--dz-toolwin-bar-font, 12px);   /* v4.45: Design knob */
   color: var(--fd-text-muted);
   white-space: nowrap;
   flex-shrink: 0;
@@ -434,7 +434,7 @@ body.fs-tool-dragging { cursor: grabbing; }
 .tool-chrome-tabs:empty { border: none; border-radius: 0; overflow: visible; }
 .tool-chrome-tab {
   padding: 5px 12px;
-  font-size: 12px;
+  font-size: var(--dz-toolwin-bar-font, 12px);   /* v4.45: Design knob */
   font-weight: 500;
   background: none;
   /* v4.39, Derek: unselected tabs back to muted (the v4.37 full-text-color
@@ -480,7 +480,7 @@ body.fs-tool-dragging { cursor: grabbing; }
   border: none;
   border-radius: 4px;
   padding: 3px 7px;
-  font-size: 12px;
+  font-size: var(--dz-toolwin-bar-font, 12px);   /* v4.45: Design knob */
   /* v4.37, Derek: full text color, not muted — these are the window's working
      controls, not secondary chrome. (Same for the tabs below.) */
   color: var(--fd-text);
@@ -586,6 +586,7 @@ body.fs-tool-dragging { cursor: grabbing; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  padding-top: var(--dz-toolwin-body-gap, 0px);   /* v4.45: Design knob */
 }
 /* v2.74, Derek: ONE corner-resize indicator everywhere. This selector list
    is the single source of the pattern — every bottom-right grip in the app
@@ -628,6 +629,7 @@ body.fs-tool-dragging { cursor: grabbing; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  padding-top: var(--dz-toolwin-body-gap, 0px);   /* v4.45: Design knob */
   /* v4.37: one color scheme in every presentation. v4.44, Derek: that ONE
      color is the editor-area's --fd-bg now (was --fd-navigator-bg) — the
      window frame and docked body match. */

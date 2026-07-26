@@ -955,12 +955,19 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                     ? startDockDragOut(t, activeSize!.h)
                     : undefined}
                 >
-                  {side === 'right' && <ToolFullscreenButton id={t.id} />}
+                  {/* v4.45, Derek: the controls↔fullscreen divider lives in
+                      the docked strip too (skipped when the tool has no
+                      fullscreen — a dangling line divides nothing). */}
+                  {side === 'right' && !NO_FULLSCREEN.includes(t.id) && (
+                    <><ToolFullscreenButton id={t.id} /><span className="tool-chrome-sep" aria-hidden /></>
+                  )}
                   {chrome?.useTabs && <HeaderTabs chrome={chrome} />}
                   <span className="tool-chrome-controls">
                     {chrome?.Controls && <chrome.Controls />}
                   </span>
-                  {side !== 'right' && <ToolFullscreenButton id={t.id} />}
+                  {side !== 'right' && !NO_FULLSCREEN.includes(t.id) && (
+                    <><span className="tool-chrome-sep" aria-hidden /><ToolFullscreenButton id={t.id} /></>
+                  )}
                 </div>
                 <div className="tool-inline-body" style={solo ? undefined : { height: activeSize!.h }}>
                   <ToolContent id={active!.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />

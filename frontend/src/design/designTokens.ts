@@ -117,6 +117,12 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       // v4.39: single-row header — tighter default (the row carries tabs + controls now)
       { id: 'toolWinHeaderPad', label: 'Tool window header padding', cssVar: '--dz-toolwin-head-pad', unit: 'px', min: 2, max: 20, step: 1, def: 6 },
       { id: 'toolWinTitleFont', label: 'Tool window title font', cssVar: '--dz-toolwin-title-font', unit: 'px', min: 9, max: 20, step: 0.5, def: 12 },
+      // v4.45, Derek: header-bar tuning — the bar's control/tab type size and
+      // the air between the header and the window's content, every shape.
+      { id: 'toolWinBarFont', label: 'Header bar font size', cssVar: '--dz-toolwin-bar-font', unit: 'px', min: 9, max: 18, step: 0.5, def: 12,
+        hint: 'Sizes the header bar\u2019s controls (Filter/Sort/View\u2026) and tabs; the title has its own knob.' },
+      { id: 'toolWinBodyGap', label: 'Space above window content', cssVar: '--dz-toolwin-body-gap', unit: 'px', min: 0, max: 32, step: 1, def: 0,
+        hint: 'Extra space between the header bar and the window\u2019s content \u2014 docked, popped out, and fullscreen alike.' },
     ],
   },
   {

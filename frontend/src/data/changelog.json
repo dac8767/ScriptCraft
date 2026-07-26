@@ -1,5 +1,25 @@
 [
   {
+    "version": "4.45",
+    "date": "2026-07-26",
+    "items": [
+      {
+        "title": "Three new Design knobs for window chrome",
+        "detail": "Panels & Windows grew: 'Space above window content' (the air between the header bar and the first item — docked, popped out, and fullscreen alike), 'Header bar font size' (the Filter/Sort/View controls and tabs; the title keeps its own knob), and the existing header-padding knob now also drives the docked window's header strip.",
+        "tags": [
+          "Design"
+        ]
+      },
+      {
+        "title": "Divider in the docked header too",
+        "detail": "The line between the search/controls cluster and the fullscreen button now appears in the side-panel window's header strip, matching the popped-out and fullscreen headers.",
+        "tags": [
+          "UI"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.44",
     "date": "2026-07-26",
     "items": [
