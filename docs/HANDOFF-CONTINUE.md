@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.99 — drag offered only where it works)
+# ScriptCraft — continuation brief (current as of v5.00 — screenshot drag removed)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,26 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.99 — the drag is offered only where it can work (HEAD)
+### v5.00 — the screenshot drag is REMOVED (HEAD)
+
+- Derek, final word: "dragging screenshots does not work. remove that language
+  and just make it so i can copy/paste the file or download/upload." WKWebView
+  never carried a File out of a dragstart, so on the desktop app the gesture
+  could only fail.
+- GONE: `attachShotToDrag`, `probeFileDrag`, `canDragFiles`, the chip's
+  draggable/dragstart/setDragImage, `.feedback-shot-draggable`, the
+  `attachShotToDrag.test.ts` file, and every "drag" string in the tool —
+  including the two header screenshot tooltips. A test asserts the rendered
+  chip contains no "drag" anywhere, so the language can't creep back.
+- TWO routes remain, both the user's own gesture INSIDE the cross-origin form:
+  **Copy → paste** (`copyCanvasToClipboard`) and **Download → upload**
+  (`saveScreenshotCanvas`). Verified in Chromium: no drag attributes, and Copy
+  still puts a real 78KB image/png on the clipboard.
+- Reintroducing a drag would need a NATIVE one — write the PNG to disk at
+  capture and drive it from Rust (a Tauri drag plugin + the deferred fs-scope
+  work). Don't re-add the DOM version; it is a control that cannot work here.
+
+### v4.99 — the drag is offered only where it can work
 
 - Derek confirmed it: "drag still doesn't work, but copy and pasting
   screenshots work." WKWebView will not carry a File out of a dragstart.

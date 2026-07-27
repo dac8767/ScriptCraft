@@ -16,12 +16,12 @@
  * field — the capture becomes a chip above the form instead, and the user
  * carries it across the boundary themselves.
  *
- * v4.98/v4.99: COPY is the primary route. Pasting works because the paste
- * happens inside the iframe, by the user's own gesture. Dragging the chip as a
- * file works in Chromium but NOT in WKWebView (Derek, on the desktop app), so
- * the drag is offered only where canDragFiles() says the engine can carry it —
- * a control that looks like it works and does nothing is worse than no control
- * (CLAUDE.md §3). Save is the third route.
+ * v5.00: TWO routes, both the user's own gesture inside the form — COPY the
+ * image and paste it into the attachment field, or DOWNLOAD it and upload it.
+ * Dragging the chip as a file is gone: it works in Chromium but never in
+ * WKWebView, so in the desktop app it could only fail, and a control that
+ * looks like it works and does nothing is worse than no control at all
+ * (CLAUDE.md §3). Reintroducing it needs a NATIVE drag, driven from Rust.
  *
  * While a capture runs, .fs-shot-veil-feedback on <body> hides this window and
  * the iframe host so the shot shows the app, not the Feedback window itself.
@@ -46,7 +46,7 @@ function publishFeedbackRect(r: DOMRect | null) {
    Same module-level idiom as the rect channel: the buttons render in the
    window HEADER (ToolDock's TOOL_CHROME slot) while the chip renders in the
    window BODY — two components, one transient value. Surviving a window
-   close/reopen is a feature: the capture is still there to drag in. */
+   close/reopen is a feature: the capture is still there to copy or save. */
 export interface FeedbackShot {
   file: File;
   /** object URL of the PNG, for the <img> thumbnail */
@@ -84,13 +84,13 @@ export function FeedbackShotControls() {
     <span className="feedback-shot-btns">
       <button
         className="tool-ctl"
-        title="Screenshot the whole window — it appears above the form, ready to drag into the attachment field"
+        title="Screenshot the whole window — it appears above the form, ready to copy or download"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => void take('full')}
       ><FaCamera aria-hidden /></button>
       <button
         className="tool-ctl"
-        title="Screenshot a selected area — it appears above the form, ready to drag into the attachment field"
+        title="Screenshot a selected area — it appears above the form, ready to copy or download"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => void take('area')}
       ><FaCrop aria-hidden /></button>
@@ -98,147 +98,47 @@ export function FeedbackShotControls() {
   );
 }
 
-/**
- * v4.99, Derek ("drag still doesn't work, but copy and pasting screenshots
- * work"): STOP OFFERING THE DRAG WHERE IT CANNOT WORK.
+/** The capture chip above the form. Two routes across the cross-origin
+ *  boundary, both of them the USER's own gesture inside the form:
+ *  Copy → paste, or Download → upload.
  *
- * CLAUDE.md §3 — a control that looks like it works and writes into the void
- * is worse than a missing control. WKWebView will not carry a File out of a
- * dragstart, so on Derek's machine the chip was an invitation to a gesture
- * that could only fail. This asks the engine the same question the real drag
- * asks — items.add(File), then does `types` report 'Files'? — on a throwaway
- * DataTransfer, at first use, with no user gesture needed. Where the answer
- * is no, the chip simply isn't draggable and leads with Copy.
- *
- * `make` is injected so the probe itself is testable; canDragFiles() is the
- * memoized real-engine call.
- */
-export function probeFileDrag(make: () => DataTransfer): boolean {
-  try {
-    const dt = make();
-    dt.items.add(new File([new Uint8Array(1)], 'probe.png', { type: 'image/png' }));
-    return Array.from(dt.types).includes('Files');
-  } catch {
-    // No DataTransfer constructor, no items.add, or a throwing add — all of
-    // them mean the same thing here: this engine can't hand over a file.
-    return false;
-  }
-}
-
-let fileDragSupport: boolean | null = null;
-export function canDragFiles(): boolean {
-  if (fileDragSupport === null) fileDragSupport = probeFileDrag(() => new DataTransfer());
-  return fileDragSupport;
-}
-
-/**
- * v4.97, Derek ("make the file … the actual file so I can drag and drop it"):
- * load a dragstart with the capture as a genuine FILE, and REPORT whether it
- * took.
- *
- * Order matters. `items.add(file)` goes first: it is the only call that makes
- * the drop target see `dataTransfer.files`, which is what an attachment
- * dropzone looks for. `DownloadURL` is Blink's out-of-page file drag and is
- * ignored elsewhere. `text/plain` is LAST and only when no file attached —
- * setting it up front advertises a text drag, and a dropzone that sniffs
- * types then takes the text branch and quietly ignores the image.
- *
- * The return value is the point. `types` after the add is the engine telling
- * us whether it really carried a file, so a webview that won't do file drags
- * produces a message instead of a drag into the void.
- */
-export function attachShotToDrag(dt: DataTransfer, file: File, url: string): boolean {
-  let carriesFile = false;
-  try {
-    dt.items.add(file);
-    carriesFile = Array.from(dt.types).includes('Files');
-  } catch {
-    /* engine without items.add — falls through to the text descriptor */
-  }
-  try {
-    // mime:filename:absolute-url — Blink only; a no-op everywhere else.
-    dt.setData('DownloadURL', `${file.type}:${file.name}:${url}`);
-  } catch { /* not supported here */ }
-  // WebKit refuses to START a drag with an empty dataTransfer (CLAUDE.md §4),
-  // so there is always something set by the time we return.
-  if (!carriesFile) dt.setData('text/plain', file.name);
-  dt.effectAllowed = 'copy';
-  return carriesFile;
-}
-
-/** The capture chip above the form. The WHOLE chip is the drag handle (v4.97
- *  — Derek drags "the file", not specifically its thumbnail); its buttons opt
- *  out so they still click. Dropping on the Airtable form's attachment
- *  dropzone uploads it — the one gesture the iframe boundary can't take
- *  away. */
+ *  v5.00, Derek: DRAGGING IS GONE — code, affordance and language. WKWebView
+ *  will not hand a File out of a dragstart, so on the desktop app it could
+ *  only ever fail, and a control that looks like it works and does nothing is
+ *  worse than a missing control (CLAUDE.md §3). Do not reintroduce it without
+ *  a native drag (write the PNG to disk, drive it from Rust). */
 function FeedbackShotChip({ shot }: { shot: FeedbackShot }) {
-  const thumbRef = useRef<HTMLImageElement>(null);
-  const canDrag = canDragFiles();
-  // v4.98: a toast is easy to miss, and "it just doesn't work" is the worst
-  // thing this chip could say. Once the engine has told us it won't carry the
-  // file, the hint line says so for good and points at Copy.
-  const [dragRefused, setDragRefused] = useState(false);
-  const onDragStart = (e: React.DragEvent) => {
-    const ok = attachShotToDrag(e.dataTransfer, shot.file, shot.url);
-    // Drag the picture, not a ghost of the whole chip.
-    if (thumbRef.current) {
-      const t = thumbRef.current;
-      try { e.dataTransfer.setDragImage(t, t.width / 2, t.height / 2); } catch { /* optional */ }
-    }
-    if (!ok) {
-      setDragRefused(true);
-      showToast('This webview will not carry the file in a drag — use Copy, then paste into the form.', 'info');
-    }
-  };
   return (
-    <div
-      className={`feedback-shot-chip${canDrag ? ' feedback-shot-draggable' : ''}`}
-      draggable={canDrag}
-      onDragStart={canDrag ? onDragStart : undefined}
-      title={canDrag ? "Drag me into the form's attachment field" : undefined}
-    >
+    <div className="feedback-shot-chip">
       <img
-        ref={thumbRef}
         className="feedback-shot-thumb"
         src={shot.url}
-        alt="Captured screenshot — drag into the form's attachment field"
-        draggable={false}
+        alt="Captured screenshot"
       />
       <span className="feedback-shot-meta">
         <span className="feedback-shot-name">{shot.file.name}</span>
         <span className="feedback-shot-hint">
-          {canDrag && !dragRefused
-            ? 'Drag this into the form’s attachment field — or Copy it and paste it in, or Save it and attach the file.'
-            : 'Copy it, then click the form’s attachment field and paste. (Or Save it and attach the file.)'}
+          Copy it and paste it into the form’s attachment field — or Download it
+          and upload it there.
         </span>
       </span>
-      {/* v4.98, Derek ("screenshot dragging is not working"): Copy is the route
-          that does NOT depend on the webview carrying a file in a drag. The
-          form is cross-origin, so the paste happens INSIDE it, by his own
-          gesture — which is precisely why it reaches where our drag can't. */}
       <button
         className="feedback-shot-act"
-        draggable={false}
-        onDragStart={(e) => e.preventDefault()}
         title="Copy the image — then paste it into the form's attachment field"
         onClick={() => void copyCanvasToClipboard(shot.canvas).then((ok) => showToast(
           ok
             ? 'Screenshot copied — click the form\u2019s attachment field and paste.'
-            : 'This webview would not give up the clipboard. Save the file and attach it instead.',
+            : 'This webview would not give up the clipboard. Download the file and upload it instead.',
           ok ? 'success' : 'error',
         ))}
       ><FaRegCopy aria-hidden /></button>
       <button
         className="feedback-shot-act"
-        draggable={false}
-        onDragStart={(e) => e.preventDefault()}
-        title="Save the PNG (screenshot folder, or Downloads)"
+        title="Download the PNG (screenshot folder, or Downloads) — then upload it to the form"
         onClick={() => void saveScreenshotCanvas(shot.canvas).catch(() => showToast('Could not save the screenshot.', 'error'))}
       ><FaDownload aria-hidden /></button>
       <button
         className="feedback-shot-act"
-        draggable={false}
-        onDragStart={(e) => e.preventDefault()}
         title="Discard this capture"
         onClick={() => publishFeedbackShot(null)}
       ><FaTimes aria-hidden /></button>

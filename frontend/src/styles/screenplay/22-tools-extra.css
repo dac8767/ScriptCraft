@@ -1616,17 +1616,11 @@ input.fs-switch:checked::after { left: 15px; }
   padding: 8px;
   border-bottom: 1px solid var(--fd-border);
   background: var(--fd-toolbar-bg);
-  /* Text selection would start a selection drag instead of the file drag. */
+  /* v5.00: the chip is a plain panel — dragging is gone (see FeedbackTool).
+     Selection stays off so the thumbnail and name don't highlight on a click. */
   user-select: none;
   -webkit-user-select: none;
 }
-/* v4.99: the grab cursor is only earned where the engine can actually carry
-   the file — see canDragFiles(). Elsewhere the chip is a plain panel and Copy
-   is the route. */
-.feedback-shot-draggable { cursor: grab; }
-.feedback-shot-draggable:active { cursor: grabbing; }
-/* …but the buttons are buttons. */
-.feedback-shot-chip .feedback-shot-act { cursor: pointer; }
 .feedback-shot-thumb {
   flex-shrink: 0;
   width: 56px; height: 42px;

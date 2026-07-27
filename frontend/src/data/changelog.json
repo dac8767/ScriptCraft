@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.00",
+    "date": "2026-07-26",
+    "changes": [
+      "Feedback: dragging a screenshot is gone. The desktop webview never carried the file, so it could only fail — the chip now offers Copy (paste it into the form's attachment field) and Download (upload it there), and says exactly that"
+    ]
+  },
+  {
     "version": "4.99",
     "date": "2026-07-26",
     "changes": [

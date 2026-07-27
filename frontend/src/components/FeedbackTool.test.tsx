@@ -56,33 +56,28 @@ describe('FeedbackTool capture chip', () => {
     expect(wrap.lastElementChild!.className).toContain('feedback-tool');
   });
 
-  /* v4.99, Derek ("drag still doesn't work, but copy and pasting screenshots
-     work"): the drag is offered ONLY where the engine can carry a File — see
-     canDragFiles(). jsdom can't, so the chip here is deliberately not
-     draggable, and the hint leads with Copy. The drag PAYLOAD itself is
-     covered by attachShotToDrag.test.ts.
-
-     (This replaces a v4.70 case asserting setData('text/plain', name) on
-     every drag. That is now the no-file FALLBACK only: setting text up front
-     advertises a text drag, and a dropzone that sniffs types then ignores the
-     image — which is half of why this never worked.) */
-  it('offers no drag where the engine cannot carry a File, and says so', () => {
+  /* v5.00, Derek: dragging is GONE — code, affordance and language. WKWebView
+     never carried a File out of a dragstart, so it could only fail in the
+     desktop app. Two routes remain, both the user's own gesture inside the
+     cross-origin form: Copy → paste, or Download → upload. */
+  it('offers no drag at all — not draggable, no drag language', () => {
     act(() => root.render(<FeedbackTool />));
     act(() => publishFeedbackShot(makeShot()));
 
     const chip = host.querySelector('.feedback-shot-chip') as HTMLElement;
     expect(chip.draggable).toBe(false);
-    expect(chip.className).not.toContain('feedback-shot-draggable');
     expect(chip.title).toBe('');
-    expect(host.querySelector('.feedback-shot-hint')!.textContent)
-      .toContain('Copy it');
+    expect(host.innerHTML.toLowerCase()).not.toContain('drag');
   });
 
-  it('the Copy button is present as the route that does not need a drag', () => {
+  it('offers Copy and Download as the two routes across the iframe boundary', () => {
     act(() => root.render(<FeedbackTool />));
     act(() => publishFeedbackShot(makeShot()));
     const titles = [...host.querySelectorAll('.feedback-shot-act')].map((b) => (b as HTMLElement).title);
     expect(titles.some((t) => t.startsWith('Copy the image'))).toBe(true);
+    expect(titles.some((t) => t.startsWith('Download the PNG'))).toBe(true);
+    expect(host.querySelector('.feedback-shot-hint')!.textContent)
+      .toContain('Copy it and paste it');
   });
 
   it('discard removes the chip', () => {
