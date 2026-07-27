@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.93 — Locations scene-order sort)
+# ScriptCraft — continuation brief (current as of v4.94 — Pages search + preview scaling)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,23 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.93 — Locations "Scene order" sort (HEAD)
+### v4.94 — Pages search + preview scaling (HEAD)
+
+- `pagesMatching()` in SceneNavigator is the search rule (6 tests). An empty
+  query returns the SAME array, not a copy — the thumbnail grid re-renders
+  otherwise. Filtering keeps real page numbers: renumbering survivors 1..n
+  would be a lie about the script, and clicking a thumbnail jumps to that page.
+- Scaling is `pagesThumbPx` (80–320 by 40, clamped in the SETTER so no caller
+  can push it out of range), applied as `--pages-thumb-w` on the grid's
+  `auto-fill, minmax(...)`. The thumbnails already size to their column via a
+  ResizeObserver, so one number drives both preview size and columns-per-row.
+- Buttons reuse `CircleMinusIcon` / `CirclePlusIcon` — the toolbar's own zoom
+  glyphs, so "make it bigger" wears one face across the app.
+- Watch hook ORDER here: the `shownPages` memo must sit after the
+  `pageContent` memo it reads. Placing it with the other store reads near the
+  top of the component was a use-before-declaration tsc error.
+
+### v4.93 — Locations "Scene order" sort
 
 - Derek asked to ADD "scene order" to the Locations sort. The existing
   default, "Script order", already WAS that ordering (first appearance), and

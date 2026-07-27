@@ -35,10 +35,25 @@ export interface SceneNavSlice {
    *  app calls the same idea "Scene #" in the Notes/To-Do sorts. */
   locationSort: LocationSort;
   setLocationSort: (v: LocationSort) => void;
+  /** v4.94, Derek: the Pages window's header search + preview scaling. Same
+   *  reasoning as the Locations trio — the controls render in the window
+   *  chrome, the thumbnails in the body. */
+  pagesSearch: string;
+  setPagesSearch: (v: string) => void;
+  pagesThumbPx: number;
+  setPagesThumbPx: (v: number) => void;
 }
 
 export type LocationFilter = 'all' | 'int' | 'ext';
 export type LocationSort = 'scene' | 'name' | 'count';
+
+/** v4.94: how wide a page thumbnail's grid column is. The grid is
+ *  `auto-fill, minmax(<this>, 1fr)`, so raising it makes the previews bigger
+ *  and fits fewer per row — which is what "scale" means for this tool. */
+export const PAGES_THUMB_MIN = 80;
+export const PAGES_THUMB_MAX = 320;
+export const PAGES_THUMB_STEP = 40;
+export const PAGES_THUMB_DEFAULT = 120;
 
 export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlice> = (set) => ({
   navFilter: '',
@@ -57,4 +72,9 @@ export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlic
   setLocationFilter: (v) => set({ locationFilter: v }),
   locationSort: 'scene',
   setLocationSort: (v) => set({ locationSort: v }),
+  pagesSearch: '',
+  setPagesSearch: (v) => set({ pagesSearch: v }),
+  pagesThumbPx: PAGES_THUMB_DEFAULT,
+  // Clamped HERE, not at the buttons, so no caller can push it out of range.
+  setPagesThumbPx: (v) => set({ pagesThumbPx: Math.min(PAGES_THUMB_MAX, Math.max(PAGES_THUMB_MIN, Math.round(v))) }),
 });

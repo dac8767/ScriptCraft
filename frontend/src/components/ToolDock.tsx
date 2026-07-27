@@ -31,7 +31,7 @@ import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { FullscreenIcon, CloseIcon, RestoreIcon } from './uiIcons';
 import { useProjectStore } from '../stores/projectStore';
-import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, LocationsTitleExtra, LocationsControls, StructureTitleExtra, type NavTab } from './SceneNavigator';
+import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, PagesControls, LocationsTitleExtra, LocationsControls, StructureTitleExtra, type NavTab } from './SceneNavigator';
 import NavigatorTool, { NavigatorControls } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
@@ -325,7 +325,9 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   highlights: { TitleExtra: HighlightsTitleExtra },
   // v4.32 batch-v8 #11/#12: counts beside the title; their in-body title
   // rows are gone (Structure counts acts).
-  pages: { TitleExtra: PagesTitleExtra },
+  // v4.94, Derek: Pages gains a header search and the two preview-scaling
+  // buttons.
+  pages: { TitleExtra: PagesTitleExtra, Controls: PagesControls },
   // v4.92, Derek: Locations gains Filter · Sort · Search — its header strip
   // held nothing but the window buttons and read as crushed.
   locations: { TitleExtra: LocationsTitleExtra, Controls: LocationsControls },

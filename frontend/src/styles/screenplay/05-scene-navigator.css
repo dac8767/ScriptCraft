@@ -597,9 +597,13 @@
 .page-thumbnails-scroll {
   padding: 0 !important;
 }
+/* v4.94, Derek: the column width is the Pages header's scale control. The
+   thumbnails size to their column (a ResizeObserver reads the rendered width
+   and scales the page content to match), so this ONE number sets both how big
+   a preview is and how many fit per row. */
 .page-thumbnails-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--pages-thumb-w, 120px), 1fr));
   gap: 0;
   padding: 6px 8px;
 }

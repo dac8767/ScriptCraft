@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import { useEditorStore, EMPTY_SCENE_FILTERS, type SceneFilters } from '../stores/editorStore';
 import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlice';
+import { PAGES_THUMB_MIN, PAGES_THUMB_MAX, PAGES_THUMB_STEP } from '../stores/slices/sceneNavSlice';
+import { CircleMinusIcon, CirclePlusIcon } from './uiIcons';
 import { computeSceneLengths, computePageBlocks, type PageContentInfo } from '../editor/pagination';
 import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../utils/scriptTiming';
 import { SCENE_SWATCH_COLORS } from '../utils/palettes';
@@ -87,6 +89,17 @@ export function visibleLocations(
   // Most-used first; ties keep scene order, so the list never shuffles at random.
   if (sort === 'count') return [...kept].sort((a, b) => b.sceneIndices.length - a.sceneIndices.length);
   return kept;
+}
+
+/** v4.94, Derek: the Pages window's search. A page matches when any of its
+ *  text contains the query — the question this answers is "which page is that
+ *  line on?", so it reads the page's OWN blocks rather than scene headings.
+ *  Page numbers are kept as they are: a filtered list still says "Page 7",
+ *  because renumbering the survivors 1..n would be a lie about the script. */
+export function pagesMatching(pages: PageContentInfo[], query: string): PageContentInfo[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return pages;
+  return pages.filter((p) => p.blocks.some((b) => (b.text || '').toLowerCase().includes(q)));
 }
 
 // ── Search highlight helper ─────────────────────────────────────────────
@@ -326,6 +339,12 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     if (!editor) return [];
     return computePageBlocks(editor.state.doc, pageLayout);
   }, [editor, scenes, pageLayout]);
+
+  // v4.94: the Pages header's search + preview scale (chrome controls, body
+  // list — one state, so neither can be decorative).
+  const pagesSearch = useEditorStore((s) => s.pagesSearch);
+  const pagesThumbPx = useEditorStore((s) => s.pagesThumbPx);
+  const shownPages = useMemo(() => pagesMatching(pageContent, pagesSearch), [pageContent, pagesSearch]);
 
   // ── Exact-match page layout for thumbnails ──
 
@@ -716,9 +735,13 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
         <div className="navigator-list page-thumbnails-scroll" ref={pageGridRef}>
           {pageContent.length === 0 ? (
             <div className="navigator-empty">No pages yet. Start writing to see page previews.</div>
+          ) : shownPages.length === 0 ? (
+            <div className="navigator-empty">No page contains “{pagesSearch.trim()}”.</div>
           ) : (
-            <div className="page-thumbnails-grid">
-              {pageContent.map((page) => (
+            /* v4.94: the header's scaling buttons set the grid column width;
+               the thumbnails already size themselves to their column. */
+            <div className="page-thumbnails-grid" style={{ '--pages-thumb-w': `${pagesThumbPx}px` } as React.CSSProperties}>
+              {shownPages.map((page) => (
                 <div key={page.pageNumber} className="page-thumb-wrapper">
                   <div
                     className={`page-thumbnail${page.pageNumber === currentVisiblePage ? ' current' : ''}`}
@@ -997,6 +1020,38 @@ export function LocationsControls() {
         items={SORTS.map((s) => ({ label: s.label, active: sort === s.id, onSelect: () => setSort(s.id) }))}
       />
       <ControlSearch value={search} onChange={setSearch} placeholder="Search locations…" />
+    </>
+  );
+}
+
+/** v4.94, Derek: the Pages window's header — Search plus the two scaling
+ *  buttons. The scale is the grid COLUMN width; the thumbnails already size
+ *  themselves to their column (a ResizeObserver reads the rendered width and
+ *  scales the page content to match), so one number drives both how big a
+ *  preview is and how many fit per row. Reuses the toolbar's own zoom glyphs
+ *  so "make it bigger" wears one face across the app. */
+export function PagesControls() {
+  const search = useEditorStore((s) => s.pagesSearch);
+  const setSearch = useEditorStore((s) => s.setPagesSearch);
+  const px = useEditorStore((s) => s.pagesThumbPx);
+  const setPx = useEditorStore((s) => s.setPagesThumbPx);
+  return (
+    <>
+      <button
+        className="tool-ctl"
+        title="Smaller page previews"
+        disabled={px <= PAGES_THUMB_MIN}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => setPx(px - PAGES_THUMB_STEP)}
+      ><CircleMinusIcon /></button>
+      <button
+        className="tool-ctl"
+        title="Larger page previews"
+        disabled={px >= PAGES_THUMB_MAX}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => setPx(px + PAGES_THUMB_STEP)}
+      ><CirclePlusIcon /></button>
+      <ControlSearch value={search} onChange={setSearch} placeholder="Search pages…" />
     </>
   );
 }
