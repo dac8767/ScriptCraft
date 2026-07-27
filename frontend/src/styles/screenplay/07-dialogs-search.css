@@ -2,7 +2,9 @@
 .status-bar {
   display: flex; align-items: center; justify-content: space-between;
   height: 24px; background: var(--fd-status-bg);
-  border-top: 1px solid var(--fd-border); padding: 0 12px;
+  /* v4.90: the reference edge line — read from the shared tokens (which are
+     defined AS this line) so the footer and every other seam stay identical. */
+  border-top: var(--fd-hairline-w, 1px) solid var(--fd-hairline); padding: 0 12px;
   flex: 1; flex-shrink: 0; user-select: none;
 }
 .status-left, .status-center, .status-right { display: flex; align-items: center; gap: 16px; }

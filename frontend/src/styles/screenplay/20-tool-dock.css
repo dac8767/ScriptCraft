@@ -345,12 +345,15 @@ body.fs-tool-dragging { cursor: grabbing; }
      area behind it, so with --fd-border (a near-invisible hairline) its edge
      simply disappeared — you could not see where the window ended. The edge
      line is mixed from --fd-text instead of a fixed grey, so it reads light
-     on a dark theme and dark on a light one. 0.5px = one device pixel on a
-     Retina display, already the thinnest a border renders — so when Derek
-     asked for a softer edge the lever was CONTRAST, not width: 32% → 18%,
-     which still separates the window from the editor without reading as a
-     hard outline. */
-  border: 0.5px solid color-mix(in srgb, var(--fd-text) 18%, transparent);
+     on a dark theme and dark on a light one.
+     THE ONE EDGE THAT CANNOT USE --fd-hairline (v4.90): that token is
+     --fd-border, and in the dark theme --fd-border (#2a2a2a) against --fd-bg
+     (#2b2b2b) is a one-value difference — invisible. It works everywhere else
+     because every other seam divides two DIFFERENT surfaces; here both sides
+     are the same color, which is why the edge vanished in the first place.
+     So this stays mixed from --fd-text, at the lowest weight that still
+     reads — quieter than the panel seams, in the spirit of matching them. */
+  border: 0.5px solid color-mix(in srgb, var(--fd-text) 10%, transparent);
   border-radius: var(--dz-toolwin-radius, 8px);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
   display: flex;
@@ -664,15 +667,18 @@ body.fs-tool-dragging { cursor: grabbing; }
    which would push the tabs and controls onto a second row in EVERY window,
    wide ones included. --tool-actions-w counts the buttons actually rendered,
    so the reservation can't drift from the markup.
-   Scoped to .tool-window-header (floating windows and the fullscreen
-   takeover). The DOCKED strip is deliberately a different layout — one
-   editor-facing fullscreen button, no close — so it keeps the in-flow
-   treatment below. */
-.tool-window-header { position: relative; --tool-actions-w: 30px; }
+   v4.90, Derek: the DOCKED strip gets the same treatment — it carries a close
+   button now, so it is the same kind of header, not a special case. */
+.tool-window-header,
+.tool-inline-header { position: relative; --tool-actions-w: 30px; }
 .tool-window-header:has(.char-profiles-fullscreen-btn),
-.tool-window-header:has(.tool-window-minimize) { --tool-actions-w: 60px; }
+.tool-window-header:has(.tool-window-minimize),
+.tool-inline-header:has(.char-profiles-fullscreen-btn) { --tool-actions-w: 60px; }
 .tool-window-header:has(.char-profiles-fullscreen-btn):has(.tool-window-minimize) { --tool-actions-w: 90px; }
 .tool-window-header { padding-right: calc(var(--dz-toolwin-pad-right, 10px) + var(--tool-actions-w)); }
+/* (.tool-inline-header's reservation rides its padding SHORTHAND in
+   22-tools-extra.css — that file loads later, so a padding-right here would
+   lose to it.) */
 .tool-chrome-actions {
   position: absolute;
   top: 0;
@@ -682,14 +688,8 @@ body.fs-tool-dragging { cursor: grabbing; }
   align-items: stretch;
   gap: 0;
 }
-/* The docked strip's lone fullscreen button stays IN FLOW at the editor-facing
-   end (v4.40) — it just needs the same full-height reach, which here means
-   stretching to the line and covering the strip's own padding. */
-.tool-inline-header .char-profiles-fullscreen-btn {
-  align-self: stretch;
-  margin-top: calc(-1 * var(--dz-toolwin-pad-top, 4px));
-  margin-bottom: calc(-1 * var(--dz-toolwin-pad-bottom, 4px));
-}
+/* (v4.90: the docked strip's buttons ride the pinned .tool-chrome-actions box
+   like every other header now — no per-side margin correction needed.) */
 /* The separating line, drawn only where one action button actually follows
    another — so a window without a fullscreen button doesn't wear a stray
    edge, and adding an action later needs no bookkeeping here. */

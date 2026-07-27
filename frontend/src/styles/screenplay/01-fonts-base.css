@@ -45,17 +45,20 @@
   --fd-menu-hover: #4a4a4a;
   --fd-accent: #4a9eff;
   --fd-border: #2a2a2a;
-  /* v4.40, Derek: the Airtable-style hairline. --fd-border sits nearly ON the
-     surface colors (dark: #2a2a2a against #252525/#2b2b2b) so the seams it
-     draws are invisible. This derives a faint-but-visible line from the
-     theme's TEXT color — the inner var() resolves where the hairline is
-     used, so every theme (and a data-theme override) retunes it for free.
-     Used for the sidebar's outer edge, the window header/body divider, and
-     the header's control divider. */
-  --fd-hairline: color-mix(in srgb, var(--fd-text) 18%, transparent);
-  /* v4.46, Derek: hairlines are HALF a CSS pixel — one device pixel on
-     Retina. Non-Retina displays round it up to a single device pixel. */
-  --fd-hairline-w: 0.5px;
+  /* THE chrome edge line — sidebar edges, toolbar top/bottom, window
+     header/body dividers, the line above the status bar. One pair of tokens
+     so every seam in the app is the same weight and color.
+     v4.90, Derek: "make all edge lines the same size and color as the
+     horizontal edge line (line above the app footer)." That line was the
+     status bar's own `1px solid var(--fd-border)`, while everything else
+     used a brighter 0.5px line mixed from the text color — so the vertical
+     panel seam read louder and thinner than the horizontal one right next to
+     it. These tokens ARE the footer's line now, and the status bar reads
+     them instead of spelling it out, so the two can't drift apart again.
+     (v4.40 derived the line from --fd-text because --fd-border was too faint
+     to see; Derek has since chosen the quieter line deliberately.) */
+  --fd-hairline: var(--fd-border);
+  --fd-hairline-w: 1px;
   --fd-chrome-separator: rgba(255,255,255,0.06);
   --fd-chrome-shadow: 0 1px 3px rgba(0,0,0,0.2);
   --fd-text: #e0e0e0;

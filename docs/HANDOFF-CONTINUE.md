@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.89 — per-character custom fields, header button fix)
+# ScriptCraft — continuation brief (current as of v4.90 — one edge line, docked close button)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,34 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.89 — header fullscreen button height (HEAD)
+### v4.90 — one edge line, docked close button (HEAD)
+
+- **`--fd-hairline` is now `var(--fd-border)` at `--fd-hairline-w: 1px`** —
+  i.e. the status bar's own line. Derek: every seam should match the
+  horizontal line above the footer, which the brighter 0.5px text-derived
+  hairline (v4.40) did not. `.status-bar` reads the tokens now instead of
+  spelling out `1px solid var(--fd-border)`, so the reference and the copies
+  can't drift.
+- **The ONE exception is `.tool-window`'s own border**: `--fd-border`
+  (#2a2a2a) against `--fd-bg` (#2b2b2b) is a one-value difference, and a
+  floating window has the SAME colour on both sides of its edge — which is
+  why it was invisible in the first place. It stays mixed from `--fd-text`,
+  now at 10% (the quietest weight that still reads).
+- **The docked strip carries a close ×** beside its fullscreen button, both
+  in the shared pinned `.tool-chrome-actions` box. The v4.40 editor-facing
+  placement is retired — with a close button beside it, the pair belongs
+  where every window's buttons are.
+- **Watch the padding SHORTHAND**: `.tool-inline-header`'s `padding:` lives in
+  22-tools-extra.css, which loads AFTER 20-tool-dock.css, so a `padding-right`
+  rule in the latter silently lost — and the controls ran under the pinned
+  buttons with their labels clipped. The action-width reservation rides the
+  shorthand now.
+- The docked controls need `min-width: 0` (shrink and wrap INSIDE), the
+  opposite of `.tool-chrome-right`'s `max-content` in a window header: that
+  band wraps to a second row because a title shares its line, while the strip
+  has no title and is the only in-flow item, so it has nothing to wrap against.
+
+### v4.89 — header fullscreen button height
 
 - `.char-profiles-fullscreen-btn` carries `align-self: center` from
   10-character-profiles.css (v4.42, when it was a small centered glyph), and

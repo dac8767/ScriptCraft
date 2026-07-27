@@ -553,13 +553,26 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
   gap: 4px 10px;
   /* v4.45/v4.46: rides the SAME per-side Design knobs as the window header,
      with the strip's own tighter defaults. */
-  padding: var(--dz-toolwin-pad-top, 4px) var(--dz-toolwin-pad-right, 8px) var(--dz-toolwin-pad-bottom, 4px) var(--dz-toolwin-pad-left, 8px);
+  /* v4.90: the right pad RESERVES the pinned action buttons' width (see
+     --tool-actions-w in 20-tool-dock.css) so the controls stop short of them
+     instead of sliding underneath. It has to live in this shorthand — a
+     separate padding-right rule in 20-tool-dock.css loses to it, which is
+     exactly how the controls ended up running under the buttons. */
+  padding: var(--dz-toolwin-pad-top, 4px) calc(var(--dz-toolwin-pad-right, 8px) + var(--tool-actions-w, 0px)) var(--dz-toolwin-pad-bottom, 4px) var(--dz-toolwin-pad-left, 8px);
   border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
   background: var(--fd-navigator-bg);
   flex-shrink: 0;
 }
-/* the controls span doubles as the flex spacer — packs right, fills the row */
-.tool-inline-header .tool-chrome-controls { flex: 1 1 auto; }
+/* the controls span doubles as the flex spacer — packs right, fills the row.
+   v4.90: it must be allowed to SHRINK here, unlike .tool-chrome-right in a
+   window header. That band wraps to a second row because a title shares its
+   line; this strip has no title, so it is the only in-flow item and has
+   nothing to wrap against — its own flex-wrap has to take the overflow onto a
+   second line inside it. */
+.tool-inline-header .tool-chrome-controls {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 
 /* v3.54: the Scenes filter popover — a floating shell (portalled to body,
    positioned by top/left) wrapping the same .scene-filters rows the tool body

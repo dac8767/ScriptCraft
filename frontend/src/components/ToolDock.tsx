@@ -1086,18 +1086,28 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                     ? startDockDragOut(t, activeSize!.h)
                     : undefined}
                 >
-                  {/* v4.69, Derek: no divider — the fullscreen button is a
-                      distinct bordered button now, separation enough. */}
-                  {side === 'right' && !NO_FULLSCREEN.includes(t.id) && (
-                    <ToolFullscreenButton id={t.id} />
-                  )}
                   {chrome?.useTabs && <HeaderTabs chrome={chrome} />}
                   <span className="tool-chrome-controls">
                     {chrome?.Controls && <chrome.Controls />}
                   </span>
-                  {side !== 'right' && !NO_FULLSCREEN.includes(t.id) && (
-                    <ToolFullscreenButton id={t.id} />
-                  )}
+                  {/* v4.90, Derek: "keep the X close button in all tool window
+                      headers when it is inside the side panel too." So the
+                      docked strip carries the SAME actions cluster as a
+                      floating window — fullscreen · close, pinned to the
+                      header's top-right corner by the shared CSS. That also
+                      retires the v4.40 editor-facing placement, which put the
+                      fullscreen button on the left in a right-hand panel: with
+                      a close button beside it, the pair belongs where every
+                      window's buttons are. Closing collapses the tool back to
+                      its row, which is what clicking the row again does. */}
+                  <span className="tool-chrome-actions">
+                    {!NO_FULLSCREEN.includes(t.id) && <ToolFullscreenButton id={t.id} />}
+                    <button
+                      className="tool-window-close"
+                      onClick={(e) => { e.stopPropagation(); setActive(null); }}
+                      title="Close"
+                    ><CloseIcon /></button>
+                  </span>
                 </div>
                 <div className="tool-inline-body" style={solo ? undefined : { height: activeSize!.h }}>
                   <ToolContent id={active!.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />

@@ -1,5 +1,14 @@
 [
   {
+    "version": "4.90",
+    "date": "2026-07-26",
+    "changes": [
+      "Every edge line in the app is now the same weight and colour as the line above the status bar — the panel seams were brighter and thinner than the horizontal one beside them",
+      "A tool docked in a side panel has a close × in its header like every other window, next to its fullscreen button in the top-right corner",
+      "Fix: a docked tool's Filter / Sort / View controls ran underneath those buttons in a narrow panel, clipping their labels"
+    ]
+  },
+  {
     "version": "4.89",
     "date": "2026-07-26",
     "changes": [
