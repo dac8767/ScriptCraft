@@ -100,6 +100,31 @@ export function screenshotFilename(): string {
   return `${base}-${stamp}.png`;
 }
 
+/* ── copy the canvas to the clipboard as a PNG (v4.98) ───────────────────
+   Derek: dragging the Feedback capture into the Airtable form doesn't work in
+   the desktop webview. Pasting doesn't depend on drag support at all, so this
+   is the route that survives whatever WKWebView will or won't carry in a drag.
+
+   The ClipboardItem value is the PENDING promise, not an awaited Blob, and
+   that is load-bearing on WebKit: awaiting the encode first spends the user
+   activation, and the write is then refused as "not triggered by the user".
+   Chromium accepts either form, so the promise shape is right for both.
+
+   Returns false rather than throwing — the caller decides what to say. */
+export async function copyCanvasToClipboard(canvas: HTMLCanvasElement): Promise<boolean> {
+  const CI = (globalThis as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
+  if (!CI || !navigator.clipboard?.write) return false;
+  try {
+    const png = new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not encode the image.'))), 'image/png');
+    });
+    await navigator.clipboard.write([new CI({ 'image/png': png })]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /* ── save the canvas (chosen folder on desktop, else browser download) ──── */
 export async function saveScreenshotCanvas(canvas: HTMLCanvasElement): Promise<void> {
   const filename = screenshotFilename();

@@ -20,9 +20,9 @@
  * iframe host so the shot shows the app, not the Feedback window itself.
  */
 import { useEffect, useRef, useState } from 'react';
-import { FaCamera, FaCrop, FaDownload, FaTimes } from 'react-icons/fa';
+import { FaCamera, FaCrop, FaDownload, FaRegCopy, FaTimes } from 'react-icons/fa';
 import { HELP_FORMS } from '../data/helpForms';
-import { captureToCanvas, saveScreenshotCanvas, screenshotFilename } from '../utils/screenshot';
+import { captureToCanvas, copyCanvasToClipboard, saveScreenshotCanvas, screenshotFilename } from '../utils/screenshot';
 import { showToast } from './Toast';
 
 /* Rect channel, tool → host. Module-level on purpose: this is transient
@@ -133,6 +133,10 @@ export function attachShotToDrag(dt: DataTransfer, file: File, url: string): boo
  *  away. */
 function FeedbackShotChip({ shot }: { shot: FeedbackShot }) {
   const thumbRef = useRef<HTMLImageElement>(null);
+  // v4.98: a toast is easy to miss, and "it just doesn't work" is the worst
+  // thing this chip could say. Once the engine has told us it won't carry the
+  // file, the hint line says so for good and points at Copy.
+  const [dragRefused, setDragRefused] = useState(false);
   const onDragStart = (e: React.DragEvent) => {
     const ok = attachShotToDrag(e.dataTransfer, shot.file, shot.url);
     // Drag the picture, not a ghost of the whole chip.
@@ -141,7 +145,8 @@ function FeedbackShotChip({ shot }: { shot: FeedbackShot }) {
       try { e.dataTransfer.setDragImage(t, t.width / 2, t.height / 2); } catch { /* optional */ }
     }
     if (!ok) {
-      showToast('This webview will not carry the file in a drag — use Save and attach it from the file.', 'info');
+      setDragRefused(true);
+      showToast('This webview will not carry the file in a drag — use Copy, then paste into the form.', 'info');
     }
   };
   return (
@@ -161,9 +166,27 @@ function FeedbackShotChip({ shot }: { shot: FeedbackShot }) {
       <span className="feedback-shot-meta">
         <span className="feedback-shot-name">{shot.file.name}</span>
         <span className="feedback-shot-hint">
-          Drag this into the form&rsquo;s attachment field — or Save it and attach the file.
+          {dragRefused
+            ? 'This webview won’t drag the file. Copy it, then click the form’s attachment field and paste.'
+            : 'Copy it, then click the form’s attachment field and paste — or drag this straight in, or Save it and attach the file.'}
         </span>
       </span>
+      {/* v4.98, Derek ("screenshot dragging is not working"): Copy is the route
+          that does NOT depend on the webview carrying a file in a drag. The
+          form is cross-origin, so the paste happens INSIDE it, by his own
+          gesture — which is precisely why it reaches where our drag can't. */}
+      <button
+        className="feedback-shot-act"
+        draggable={false}
+        onDragStart={(e) => e.preventDefault()}
+        title="Copy the image — then paste it into the form's attachment field"
+        onClick={() => void copyCanvasToClipboard(shot.canvas).then((ok) => showToast(
+          ok
+            ? 'Screenshot copied — click the form\u2019s attachment field and paste.'
+            : 'This webview would not give up the clipboard. Save the file and attach it instead.',
+          ok ? 'success' : 'error',
+        ))}
+      ><FaRegCopy aria-hidden /></button>
       <button
         className="feedback-shot-act"
         draggable={false}

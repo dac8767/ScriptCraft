@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.98",
+    "date": "2026-07-26",
+    "changes": [
+      "Feedback: a Copy button on the screenshot chip — copy the image, click the form's attachment field and paste. Pasting doesn't depend on the webview carrying a file in a drag, which is why it works where dragging doesn't",
+      "Feedback: if the webview refuses to drag the file, the chip says so permanently and points at Copy, instead of a toast you might miss"
+    ]
+  },
+  {
     "version": "4.97",
     "date": "2026-07-26",
     "changes": [

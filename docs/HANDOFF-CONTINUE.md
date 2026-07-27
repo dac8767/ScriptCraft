@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.97 — Feedback capture drags as a real file)
+# ScriptCraft — continuation brief (current as of v4.98 — Feedback capture Copy/paste route)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,29 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.97 — Feedback capture drags as a real file (HEAD)
+### v4.98 — Feedback capture: Copy/paste route (HEAD)
+
+- Derek: "screenshot dragging is not working" — i.e. WKWebView will not carry
+  the file, the case v4.97's probe was built for and the one this sandbox
+  cannot test (no WebKit here).
+- **`copyCanvasToClipboard()`** in utils/screenshot is the route that does not
+  depend on drag support at all: the paste happens INSIDE the cross-origin
+  form, by the user's own gesture, so it reaches where our drag can't.
+  Verified end to end in Chromium — clicking Copy put a real 78KB `image/png`
+  on the system clipboard, read back with `navigator.clipboard.read()`.
+- **The load-bearing detail** (6 tests, one dedicated to it): the ClipboardItem
+  value must be the PENDING `toBlob` promise, not an awaited Blob. Awaiting
+  first spends the user activation and WebKit refuses the write as "not
+  triggered by the user". Chromium accepts either, so this shape is right for
+  both — do not "simplify" it to `await`.
+- The chip remembers a refused drag and says so in its hint line for good; a
+  toast alone was missable, and "it just doesn't work" is the worst thing this
+  chip could say.
+- STILL OPEN if Copy also fails on his machine: write the PNG to disk on
+  capture and start a NATIVE drag (needs a Tauri drag plugin + the deferred fs
+  scope work). Not attempted — untestable here, and a dependency add.
+
+### v4.97 — Feedback capture drags as a real file
 
 - `attachShotToDrag(dt, file, url)` (exported, 7 tests) loads a dragstart:
   `items.add(file)` FIRST — the only call that makes the drop target see
