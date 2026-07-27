@@ -7,7 +7,7 @@
  * refuses to start a drag without it — CLAUDE.md §4) and items.add must
  * carry the PNG File.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
 import FeedbackTool, { FeedbackShotControls, publishFeedbackShot, type FeedbackShot } from './FeedbackTool';
@@ -56,24 +56,33 @@ describe('FeedbackTool capture chip', () => {
     expect(wrap.lastElementChild!.className).toContain('feedback-tool');
   });
 
-  it('dragging the thumbnail calls setData (WebKit) and attaches the File', () => {
-    const shot = makeShot();
+  /* v4.99, Derek ("drag still doesn't work, but copy and pasting screenshots
+     work"): the drag is offered ONLY where the engine can carry a File — see
+     canDragFiles(). jsdom can't, so the chip here is deliberately not
+     draggable, and the hint leads with Copy. The drag PAYLOAD itself is
+     covered by attachShotToDrag.test.ts.
+
+     (This replaces a v4.70 case asserting setData('text/plain', name) on
+     every drag. That is now the no-file FALLBACK only: setting text up front
+     advertises a text drag, and a dropzone that sniffs types then ignores the
+     image — which is half of why this never worked.) */
+  it('offers no drag where the engine cannot carry a File, and says so', () => {
     act(() => root.render(<FeedbackTool />));
-    act(() => publishFeedbackShot(shot));
+    act(() => publishFeedbackShot(makeShot()));
 
-    const dt = {
-      setData: vi.fn(),
-      items: { add: vi.fn() },
-      effectAllowed: '',
-    };
-    const thumb = host.querySelector('.feedback-shot-thumb')!;
-    const ev = new Event('dragstart', { bubbles: true, cancelable: true });
-    Object.defineProperty(ev, 'dataTransfer', { value: dt });
-    act(() => { thumb.dispatchEvent(ev); });
+    const chip = host.querySelector('.feedback-shot-chip') as HTMLElement;
+    expect(chip.draggable).toBe(false);
+    expect(chip.className).not.toContain('feedback-shot-draggable');
+    expect(chip.title).toBe('');
+    expect(host.querySelector('.feedback-shot-hint')!.textContent)
+      .toContain('Copy it');
+  });
 
-    expect(dt.setData).toHaveBeenCalledWith('text/plain', shot.file.name);
-    expect(dt.items.add).toHaveBeenCalledWith(shot.file);
-    expect(dt.effectAllowed).toBe('copy');
+  it('the Copy button is present as the route that does not need a drag', () => {
+    act(() => root.render(<FeedbackTool />));
+    act(() => publishFeedbackShot(makeShot()));
+    const titles = [...host.querySelectorAll('.feedback-shot-act')].map((b) => (b as HTMLElement).title);
+    expect(titles.some((t) => t.startsWith('Copy the image'))).toBe(true);
   });
 
   it('discard removes the chip', () => {

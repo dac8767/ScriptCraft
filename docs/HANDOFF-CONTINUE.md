@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.98 — Feedback capture Copy/paste route)
+# ScriptCraft — continuation brief (current as of v4.99 — drag offered only where it works)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,28 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.98 — Feedback capture: Copy/paste route (HEAD)
+### v4.99 — the drag is offered only where it can work (HEAD)
+
+- Derek confirmed it: "drag still doesn't work, but copy and pasting
+  screenshots work." WKWebView will not carry a File out of a dragstart.
+- `probeFileDrag(make)` / `canDragFiles()` in FeedbackTool ask the engine the
+  same question the real drag asks — `items.add(File)`, then does `types`
+  report `Files`? — on a throwaway DataTransfer at first use, no user gesture
+  needed. Where the answer is no, the chip is not `draggable`, gets no grab
+  cursor, no drag title, and the hint leads with Copy. CLAUDE.md §3: a control
+  that looks like it works and does nothing is worse than a missing control.
+- Two layers, deliberately: the static probe decides whether to OFFER the
+  drag; `attachShotToDrag`'s return value still catches an engine that
+  advertises the capability and then refuses, and flips the hint for good.
+- **A v4.70 test had to change**: it asserted `setData('text/plain', name)` on
+  every drag. That is now the no-file FALLBACK only — setting text up front
+  advertises a TEXT drag, and a dropzone that sniffs `types` then ignores the
+  image, which is half of why this never worked. Replaced with cases pinning
+  the new contract (not draggable where files can't be carried; Copy present).
+- If a native drag is ever wanted: write the PNG to disk at capture and use a
+  Tauri drag plugin. Needs the deferred fs-scope work and is untestable here.
+
+### v4.98 — Feedback capture: Copy/paste route
 
 - Derek: "screenshot dragging is not working" — i.e. WKWebView will not carry
   the file, the case v4.97's probe was built for and the one this sandbox

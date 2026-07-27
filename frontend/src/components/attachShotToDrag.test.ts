@@ -12,7 +12,7 @@
  * Both are pinned here.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { attachShotToDrag } from './FeedbackTool';
+import { attachShotToDrag, probeFileDrag } from './FeedbackTool';
 
 const file = () => new File([new Uint8Array([1, 2, 3])], 'scriptcraft-shot.png', { type: 'image/png' });
 
@@ -94,5 +94,24 @@ describe('attachShotToDrag', () => {
       return real.call(dt, t, v);
     });
     expect(() => attachShotToDrag(dt, file(), 'blob:x')).not.toThrow();
+  });
+});
+
+describe('probeFileDrag — only offer the drag where it can work (v4.99)', () => {
+  it('true when the engine reports Files after items.add', () => {
+    expect(probeFileDrag(() => dtWithFiles().dt)).toBe(true);
+  });
+
+  it('false when items.add throws — WKWebView, per Derek', () => {
+    expect(probeFileDrag(() => dtNoFiles().dt)).toBe(false);
+  });
+
+  it('false when add is silently ignored — no throw, but no Files either', () => {
+    const dt = { types: [] as string[], items: { add: () => {} }, setData: () => {} } as unknown as DataTransfer;
+    expect(probeFileDrag(() => dt)).toBe(false);
+  });
+
+  it('false when there is no DataTransfer constructor at all', () => {
+    expect(probeFileDrag(() => { throw new TypeError('not a constructor'); })).toBe(false);
   });
 });

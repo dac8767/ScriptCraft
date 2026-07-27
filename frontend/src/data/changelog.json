@@ -1,5 +1,12 @@
 [
   {
+    "version": "4.99",
+    "date": "2026-07-26",
+    "changes": [
+      "Feedback: the screenshot chip only offers a drag where the app can actually hand over the file. On the desktop the webview can't, so the chip no longer invites a gesture that could only fail — Copy and paste is the route, and the chip says so"
+    ]
+  },
+  {
     "version": "4.98",
     "date": "2026-07-26",
     "changes": [

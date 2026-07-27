@@ -13,11 +13,18 @@
  *
  * v4.70, Derek: screenshot buttons in the window header. The form lives in a
  * CROSS-ORIGIN Airtable iframe, so no script here can reach its attachment
- * field — the capture becomes a chip above the form instead, and its
- * thumbnail is DRAGGABLE straight into the form's attachment dropzone (the
- * drag carries the PNG as a real file). Save is the fallback path. While a
- * capture runs, .fs-shot-veil-feedback on <body> hides this window and the
- * iframe host so the shot shows the app, not the Feedback window itself.
+ * field — the capture becomes a chip above the form instead, and the user
+ * carries it across the boundary themselves.
+ *
+ * v4.98/v4.99: COPY is the primary route. Pasting works because the paste
+ * happens inside the iframe, by the user's own gesture. Dragging the chip as a
+ * file works in Chromium but NOT in WKWebView (Derek, on the desktop app), so
+ * the drag is offered only where canDragFiles() says the engine can carry it —
+ * a control that looks like it works and does nothing is worse than no control
+ * (CLAUDE.md §3). Save is the third route.
+ *
+ * While a capture runs, .fs-shot-veil-feedback on <body> hides this window and
+ * the iframe host so the shot shows the app, not the Feedback window itself.
  */
 import { useEffect, useRef, useState } from 'react';
 import { FaCamera, FaCrop, FaDownload, FaRegCopy, FaTimes } from 'react-icons/fa';
@@ -92,6 +99,39 @@ export function FeedbackShotControls() {
 }
 
 /**
+ * v4.99, Derek ("drag still doesn't work, but copy and pasting screenshots
+ * work"): STOP OFFERING THE DRAG WHERE IT CANNOT WORK.
+ *
+ * CLAUDE.md §3 — a control that looks like it works and writes into the void
+ * is worse than a missing control. WKWebView will not carry a File out of a
+ * dragstart, so on Derek's machine the chip was an invitation to a gesture
+ * that could only fail. This asks the engine the same question the real drag
+ * asks — items.add(File), then does `types` report 'Files'? — on a throwaway
+ * DataTransfer, at first use, with no user gesture needed. Where the answer
+ * is no, the chip simply isn't draggable and leads with Copy.
+ *
+ * `make` is injected so the probe itself is testable; canDragFiles() is the
+ * memoized real-engine call.
+ */
+export function probeFileDrag(make: () => DataTransfer): boolean {
+  try {
+    const dt = make();
+    dt.items.add(new File([new Uint8Array(1)], 'probe.png', { type: 'image/png' }));
+    return Array.from(dt.types).includes('Files');
+  } catch {
+    // No DataTransfer constructor, no items.add, or a throwing add — all of
+    // them mean the same thing here: this engine can't hand over a file.
+    return false;
+  }
+}
+
+let fileDragSupport: boolean | null = null;
+export function canDragFiles(): boolean {
+  if (fileDragSupport === null) fileDragSupport = probeFileDrag(() => new DataTransfer());
+  return fileDragSupport;
+}
+
+/**
  * v4.97, Derek ("make the file … the actual file so I can drag and drop it"):
  * load a dragstart with the capture as a genuine FILE, and REPORT whether it
  * took.
@@ -133,6 +173,7 @@ export function attachShotToDrag(dt: DataTransfer, file: File, url: string): boo
  *  away. */
 function FeedbackShotChip({ shot }: { shot: FeedbackShot }) {
   const thumbRef = useRef<HTMLImageElement>(null);
+  const canDrag = canDragFiles();
   // v4.98: a toast is easy to miss, and "it just doesn't work" is the worst
   // thing this chip could say. Once the engine has told us it won't carry the
   // file, the hint line says so for good and points at Copy.
@@ -151,10 +192,10 @@ function FeedbackShotChip({ shot }: { shot: FeedbackShot }) {
   };
   return (
     <div
-      className="feedback-shot-chip"
-      draggable
-      onDragStart={onDragStart}
-      title="Drag me into the form's attachment field"
+      className={`feedback-shot-chip${canDrag ? ' feedback-shot-draggable' : ''}`}
+      draggable={canDrag}
+      onDragStart={canDrag ? onDragStart : undefined}
+      title={canDrag ? "Drag me into the form's attachment field" : undefined}
     >
       <img
         ref={thumbRef}
@@ -166,9 +207,9 @@ function FeedbackShotChip({ shot }: { shot: FeedbackShot }) {
       <span className="feedback-shot-meta">
         <span className="feedback-shot-name">{shot.file.name}</span>
         <span className="feedback-shot-hint">
-          {dragRefused
-            ? 'This webview won’t drag the file. Copy it, then click the form’s attachment field and paste.'
-            : 'Copy it, then click the form’s attachment field and paste — or drag this straight in, or Save it and attach the file.'}
+          {canDrag && !dragRefused
+            ? 'Drag this into the form’s attachment field — or Copy it and paste it in, or Save it and attach the file.'
+            : 'Copy it, then click the form’s attachment field and paste. (Or Save it and attach the file.)'}
         </span>
       </span>
       {/* v4.98, Derek ("screenshot dragging is not working"): Copy is the route
