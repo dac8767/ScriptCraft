@@ -228,13 +228,18 @@
   flex-shrink: 0;
   font-weight: 500;
 }
-/* v4.32 batch-v8 #1: Fa chevrons (right = collapsed, down = expanded). */
+/* v4.32 batch-v8 #1: Fa chevrons (right = collapsed, down = expanded).
+   v4.92, Derek: the caret LEADS the row now. Fixed width + centred, because
+   the down and right glyphs are different widths — without it every name
+   shifted sideways as you opened and closed a location. */
 .location-chevron {
   color: var(--fd-text);
   opacity: 0.5;
   font-size: 9px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 10px;
   flex-shrink: 0;
 }
 

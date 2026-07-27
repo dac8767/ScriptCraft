@@ -20,7 +20,22 @@ export interface SceneNavSlice {
   setSceneNavData: (d: SceneNavData) => void;
   navShowKinds: Record<string, boolean>;
   setNavShowKinds: (v: Record<string, boolean>) => void;
+  /** v4.92, Derek: the Locations window's own Filter / Sort / Search. Here
+   *  rather than inside SceneNavigator because the controls render in the
+   *  window CHROME (TOOL_CHROME.locations) and the list renders in the body —
+   *  two components, one state, so a control can never be a no-op. */
+  locationSearch: string;
+  setLocationSearch: (v: string) => void;
+  /** 'all' | 'int' | 'ext' — read off each scene heading's prefix. */
+  locationFilter: LocationFilter;
+  setLocationFilter: (v: LocationFilter) => void;
+  /** 'script' = first appearance (the order the list has always used). */
+  locationSort: LocationSort;
+  setLocationSort: (v: LocationSort) => void;
 }
+
+export type LocationFilter = 'all' | 'int' | 'ext';
+export type LocationSort = 'script' | 'name' | 'count';
 
 export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlice> = (set) => ({
   navFilter: '',
@@ -33,4 +48,10 @@ export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlic
   setSceneNavData: (d) => set({ sceneNavData: d }),
   navShowKinds: {},
   setNavShowKinds: (v) => set({ navShowKinds: v }),
+  locationSearch: '',
+  setLocationSearch: (v) => set({ locationSearch: v }),
+  locationFilter: 'all',
+  setLocationFilter: (v) => set({ locationFilter: v }),
+  locationSort: 'script',
+  setLocationSort: (v) => set({ locationSort: v }),
 });

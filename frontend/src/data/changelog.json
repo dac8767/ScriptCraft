@@ -1,5 +1,14 @@
 [
   {
+    "version": "4.92",
+    "date": "2026-07-26",
+    "changes": [
+      "The Locations window has Filter (interior / exterior), Sort (script order, name, most scenes) and Search in its header — it had none, which is why the header looked crushed",
+      "Locations: the caret leads each row instead of trailing on the far right",
+      "Fix: opening Locations, Pages or Structure on its own left it permanently empty — the scene scan that feeds them was only switched on by Scenes, Navigator or Characters, so those three looked right only when another tool happened to be open"
+    ]
+  },
+  {
     "version": "4.91",
     "date": "2026-07-26",
     "changes": [

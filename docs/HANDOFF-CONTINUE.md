@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.91 — header tabs re-expand, icon centering)
+# ScriptCraft — continuation brief (current as of v4.92 — Locations controls, scene-scan gate fix)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,30 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.91 — header tabs re-expand, icon centering (HEAD)
+### v4.92 — Locations controls, scene-scan gate fix (HEAD)
+
+- **The v4.82 rescan gate was wrong.** `scenesNeeded` listed Scenes,
+  Navigator and Characters — but Pages, Locations and Structure are
+  SceneNavigator VIEWS under their own tool ids and render from
+  `store.scenes` too. Open one on its own and the scan stayed gated off, so
+  the tool sat on an empty list ("No locations yet") forever; it only ever
+  looked right when another scenes-reading tool happened to be open. The list
+  is the named constant `SCENES_READERS` now — one place to add a reader.
+  **Found by driving the app, not by reading the code**: the Locations list
+  came back empty in the driver and the gate was the reason.
+- `visibleLocations()` in SceneNavigator is the pure Filter/Sort/Search rule
+  (8 tests). INT/EXT tests "has any scene of this kind", so "INT./EXT. CAR"
+  and a location shot both ways survive either filter — a location list is
+  about places, not about one heading.
+- State lives in sceneNavSlice (`locationSearch` / `locationFilter` /
+  `locationSort`) because the controls render in the window CHROME
+  (`TOOL_CHROME.locations.Controls`) and the list in the body — two
+  components, one state, so no control can be decorative.
+- The location caret leads the row; `.location-chevron` gets a fixed 10px
+  width because the down and right glyphs differ, and without it every name
+  shifted sideways on expand.
+
+### v4.91 — header tabs re-expand, icon centering
 
 - **`naturalWidth` must never count a LEFT margin.** `.tool-chrome-right`
   carries `margin-left: auto` as the row's spacer, and `getComputedStyle`

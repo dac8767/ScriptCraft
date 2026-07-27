@@ -1783,14 +1783,23 @@ const ScreenplayEditor: React.FC = () => {
   const openToolKey = useEditorStore(
     (s) => `${s.activeTool}|${s.activeToolRight}|${s.tempTool}|${s.fullscreenTool}`,
   );
+  // Tools that render from store.scenes. Pages / Locations / Structure are all
+  // SceneNavigator views under their own ids — see the v4.92 note below.
+  const SCENES_READERS = ['scenes', 'navigator', 'characters', 'pages', 'locations', 'structure'];
   const toolIsOpen = useCallback(
     (id: string) => openToolKey.split('|').includes(id),
     [openToolKey],
   );
-  // Who reads store.scenes / store.characters (the ONLY consumers — checked
-  // by grep, and the reason this list is short): Scenes, Navigator,
-  // Characters (its Relationships view reads characters too).
-  const scenesNeeded = sceneNumbersVisible || toolIsOpen('scenes') || toolIsOpen('navigator') || toolIsOpen('characters');
+  // Who reads store.scenes / store.characters.
+  //
+  // v4.92 FIX: this list was missing Pages, Locations and Structure. All three
+  // are SceneNavigator views — they render from store.scenes like Scenes does,
+  // but they open under their own tool ids, so opening one on its own left the
+  // scan gated off and the tool sat on a stale (usually empty) list saying
+  // "No locations yet" forever. It only ever looked right because Scenes or
+  // Navigator happened to be open too. The list is a named constant now, so
+  // adding a scenes-reading tool means adding it in ONE place.
+  const scenesNeeded = sceneNumbersVisible || SCENES_READERS.some(toolIsOpen);
   const charsNeeded = toolIsOpen('navigator') || toolIsOpen('characters');
   const scenesDirty = useRef(true);
   const charsDirty = useRef(true);

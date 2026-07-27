@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import { useEditorStore, EMPTY_SCENE_FILTERS, type SceneFilters } from '../stores/editorStore';
+import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlice';
 import { computeSceneLengths, computePageBlocks, type PageContentInfo } from '../editor/pagination';
 import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../utils/scriptTiming';
 import { SCENE_SWATCH_COLORS } from '../utils/palettes';
@@ -55,6 +56,34 @@ function groupByLocation(scenes: Array<{ heading: string }>): LocationGroup[] {
     group.preambles.push(parsed.preamble.replace(/[\s.]+$/, ''));
   });
   return Array.from(map.values());
+}
+
+/** v4.92, Derek: the Locations window's Filter / Sort / Search, as one pure
+ *  function over the grouped list.
+ *
+ *  INT/EXT comes off the scene PREFIXES a location was seen with, and a
+ *  location can legitimately be both ("INT./EXT. CAR") or appear interior in
+ *  one scene and exterior in another — so the test is "has any scene of this
+ *  kind", not "is this kind". Filtering to Interior therefore keeps a location
+ *  you sometimes shoot inside, which is what a location list is for.
+ *
+ *  'script' order is the order groupByLocation produced — first appearance —
+ *  which is the order this list has always used, so it stays the default. */
+export function visibleLocations(
+  all: LocationGroup[],
+  { search, filter, sort }: { search: string; filter: LocationFilter; sort: LocationSort },
+): LocationGroup[] {
+  const q = search.trim().toLowerCase();
+  const kept = all.filter((loc) => {
+    if (q && !loc.name.toLowerCase().includes(q)) return false;
+    if (filter === 'all') return true;
+    const wanted = filter === 'int' ? 'INT' : 'EXT';
+    return loc.prefixes.some((p) => (p || '').toUpperCase().includes(wanted));
+  });
+  if (sort === 'name') return [...kept].sort((a, b) => a.name.localeCompare(b.name));
+  // Most-used first; ties keep script order, so the list never shuffles at random.
+  if (sort === 'count') return [...kept].sort((a, b) => b.sceneIndices.length - a.sceneIndices.length);
+  return kept;
 }
 
 // ── Search highlight helper ─────────────────────────────────────────────
@@ -216,7 +245,16 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     [synopsisModal, editor, updateSceneSynopsis, updateSceneColor],
   );
 
-  const locations = useMemo(() => groupByLocation(scenes), [scenes]);
+  const allLocations = useMemo(() => groupByLocation(scenes), [scenes]);
+  // v4.92: the header's Filter / Sort / Search drive the list through the
+  // store — one state, so the controls can't be decorative.
+  const locSearch = useEditorStore((s) => s.locationSearch);
+  const locFilter = useEditorStore((s) => s.locationFilter);
+  const locSort = useEditorStore((s) => s.locationSort);
+  const locations = useMemo(
+    () => visibleLocations(allLocations, { search: locSearch, filter: locFilter, sort: locSort }),
+    [allLocations, locSearch, locFilter, locSort],
+  );
 
   useEffect(() => {
     if (renamingLocation && renameInputRef.current) {
@@ -811,10 +849,14 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                 const isRenaming = renamingLocation === key;
                 return (
                   <div key={key} className="location-group">
+                    {/* v4.92, Derek: the caret LEADS the row (it used to trail
+                        on the far right). It's the control that opens the row,
+                        so it belongs where the eye starts — and it matches the
+                        panel's own accordion rows. */}
                     <div className="location-header" onClick={() => setExpandedLocation(isExpanded ? null : key)}>
+                      <span className="location-chevron">{isExpanded ? <FaChevronDown /> : <FaChevronRight />}</span>
                       <span className="location-name">{loc.name}</span>
                       <span className="location-scene-count">{loc.sceneIndices.length}</span>
-                      <span className="location-chevron">{isExpanded ? <FaChevronDown /> : <FaChevronRight />}</span>
                     </div>
                     {isExpanded && (
                       <div className="location-detail">
@@ -910,6 +952,49 @@ export function LocationsTitleExtra() {
   const count = useEditorStore((s) => s.toolCounts['locations'] ?? 0);
   return <span className="tool-title-count">· {count}</span>;
 }
+/** v4.92, Derek: the Locations window's header cluster — Filter · Sort ·
+ *  Search. It had none, so its header strip held nothing but the fullscreen
+ *  and close buttons and read as crushed. Same three controls, same
+ *  ControlDropdown/ControlSearch parts, as the Scenes header — and they drive
+ *  the store fields the list body reads, so none of them is decorative. */
+export function LocationsControls() {
+  const search = useEditorStore((s) => s.locationSearch);
+  const setSearch = useEditorStore((s) => s.setLocationSearch);
+  const filter = useEditorStore((s) => s.locationFilter);
+  const setFilter = useEditorStore((s) => s.setLocationFilter);
+  const sort = useEditorStore((s) => s.locationSort);
+  const setSort = useEditorStore((s) => s.setLocationSort);
+
+  const FILTERS: { id: LocationFilter; label: string }[] = [
+    { id: 'all', label: 'All' },
+    { id: 'int', label: 'Interior' },
+    { id: 'ext', label: 'Exterior' },
+  ];
+  const SORTS: { id: LocationSort; label: string }[] = [
+    { id: 'script', label: 'Script order' },
+    { id: 'name', label: 'Name (A–Z)' },
+    { id: 'count', label: 'Most scenes' },
+  ];
+  return (
+    <>
+      <ControlDropdown
+        label="Filter"
+        current={filter === 'all' ? undefined : FILTERS.find((f) => f.id === filter)?.label}
+        chip={filter === 'all' ? 0 : 1}
+        title="Show only interior or exterior locations"
+        items={FILTERS.map((f) => ({ label: f.label, active: filter === f.id, onSelect: () => setFilter(f.id) }))}
+      />
+      <ControlDropdown
+        label="Sort"
+        current={sort === 'script' ? undefined : SORTS.find((s) => s.id === sort)?.label}
+        title="Order the locations"
+        items={SORTS.map((s) => ({ label: s.label, active: sort === s.id, onSelect: () => setSort(s.id) }))}
+      />
+      <ControlSearch value={search} onChange={setSearch} placeholder="Search locations…" />
+    </>
+  );
+}
+
 export function StructureTitleExtra() {
   const count = useEditorStore((s) => s.toolCounts['structure'] ?? 0);
   return <span className="tool-title-count">· {count}</span>;
