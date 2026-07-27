@@ -1767,3 +1767,41 @@ body.fs-shot-veil-feedback .fs-tool-takeover-feedback { visibility: hidden !impo
   height: 620px;
   transform: translate(-200vw, 0);
 }
+
+/* ══ v4.95, Derek — TEMPORARY Airtable dev panel. REMOVE BEFORE RELEASE.
+   (Full removal list in src/dev/AirtableDevTool.tsx.) ══════════════════ */
+.fs-devairtable {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--fd-bg);
+}
+.fs-devairtable-frame {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  border: none;
+  background: #fff;   /* Airtable's own page is white; avoids a dark flash */
+}
+.fs-devairtable-open {
+  flex-shrink: 0;
+  margin: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+}
+.fs-devairtable-open:hover { color: var(--fd-text); background: var(--fd-hover-bg); }
+
+/* v4.95, Derek: the Pages scale pair sits tight, with clear air before the
+   search button beside it. */
+.fs-pages-scale {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 12px;
+}

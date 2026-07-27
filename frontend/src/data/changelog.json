@@ -1,5 +1,15 @@
 [
   {
+    "version": "4.95",
+    "date": "2026-07-26",
+    "changes": [
+      "Fix: the Feedback form was blocked by the app's own content policy in release builds — it would have shown as an empty panel with nothing to explain why",
+      "Fix: page 1 in the Pages tool had strange spacing — it was drawing the title page, which the editor hides in Page and Continuous view, on top of page 1's script",
+      "Fix: the Pages scaling buttons grew the page but left the text at its old size",
+      "Pages: clearer space between the scaling buttons and the search button"
+    ]
+  },
+  {
     "version": "4.94",
     "date": "2026-07-26",
     "changes": [

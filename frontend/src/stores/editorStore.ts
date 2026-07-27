@@ -366,6 +366,12 @@ export type ToolId =
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
   | 'spelling' | 'history' | 'titlepage' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
   | 'notebook' | 'design' | 'workspaces' | 'feedback'
+  /** v4.95, TEMPORARY (Derek's Airtable dev panel) — DEV builds only.
+   *  REMOVE BEFORE RELEASE; see src/dev/AirtableDevTool.tsx for the full
+   *  removal list. It stays in the union so a persisted layout that saw it
+   *  in dev still typechecks in a release build (the 'scriptnotes'
+   *  precedent) — ALL_TOOLS simply won't carry it, so it renders nowhere. */
+  | 'devairtable'
   /** legacy — Notes merged back into 'sticky' (Notes > Script tab); kept
    *  in the type so persisted configs still typecheck, remapped on use. */
   | 'scriptnotes'

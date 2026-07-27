@@ -545,6 +545,15 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
 
     for (let i = pb.startNode; i <= Math.min(pb.endNode, nodes.length - 1); i++) {
       const node = nodes[i];
+      // v4.95, Derek ("page 1 has strange spacing"): a HIDDEN title page must
+      // not appear in a page preview either. In Page/Continuous view the
+      // editor renders nothing for these nodes and computeBreaks counts them
+      // as zero lines — but they were still emitted as blocks, so the preview
+      // laid the title text out as ordinary elements above page 1's script
+      // and nothing lined up. Skipped here rather than filtered out of
+      // `nodes`, because `breaks[].nodeIndex` indexes THIS list: dropping
+      // entries would shift every page boundary.
+      if (visibilityOpts.hideTitlePage && node.typeName === 'titlePage') continue;
       const cpl = CHARS_PER_LINE[node.typeName] || 62;
       const textLines = getTextLines(node.text, cpl);
       const sb = firstOnPage ? 0 : (SPACE_BEFORE[node.typeName] ?? 0);

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.94 — Pages search + preview scaling)
+# ScriptCraft — continuation brief (current as of v4.95 — Pages fixes, Feedback CSP, Airtable dev panel)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,31 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.94 — Pages search + preview scaling (HEAD)
+### v4.95 — Pages fixes, Feedback CSP, Airtable dev panel (HEAD)
+
+- **The Feedback form was CSP-blocked in release builds.** FeedbackTool has
+  framed an airtable.com form since v4.23, but `app.security.csp`'s
+  `frame-src` never listed the host — a blocked frame is a silent empty box,
+  so it would have read as "the panel is blank", not as an error. Found while
+  checking the dev panel below stays out of shipped builds. `frame-src` now
+  includes `https://airtable.com` — **that entry belongs to FEEDBACK; do not
+  strip it with the dev panel.**
+- **Page 1's "strange spacing"**: `computePageBlocks` emitted `titlePage`
+  nodes as ordinary blocks even when `visibilityOpts.hideTitlePage` was on, so
+  the preview drew the title page on top of page 1's script while the editor
+  showed neither. Skipped in the block loop, NOT filtered out of `nodes` —
+  `breaks[].nodeIndex` indexes that list, so dropping entries would shift
+  every page boundary. 5 tests over a stub doc.
+- **Scaling left the text behind**: the thumbnail ResizeObserver watched only
+  the scroll container, whose width never changes when the grid's COLUMN width
+  does. It observes the first thumbnail now (and `pagesThumbPx` is a dep).
+  Verified: 123px→0.148, 253px→0.308, 79px→0.094.
+- **Airtable dev panel** (`src/dev/AirtableDevTool.tsx`) — TEMPORARY, dev
+  only, removal checklist in the audit doc. Kept out of release builds by the
+  `import.meta.env.DEV` guard on its ALL_TOOLS entry; confirmed against a
+  production bundle that the component tree-shakes away entirely.
+
+### v4.94 — Pages search + preview scaling
 
 - `pagesMatching()` in SceneNavigator is the search rule (6 tests). An empty
   query returns the SAME array, not a copy — the thumbnail grid re-renders

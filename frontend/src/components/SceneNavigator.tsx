@@ -381,15 +381,25 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   useEffect(() => {
     if (activeTab !== 'pages' || !pageGridRef.current) return;
     const grid = pageGridRef.current;
-    const observer = new ResizeObserver(() => {
+    const measure = () => {
       const firstThumb = grid.querySelector('.page-thumbnail') as HTMLElement;
       if (firstThumb) {
         setThumbScale(Math.max(0.05, firstThumb.clientWidth / refWidthPx));
       }
-    });
+    };
+    const observer = new ResizeObserver(measure);
+    // v4.95, Derek ("the text does not scale with the page size"): observe the
+    // THUMBNAIL, not just the scroll container. The scaling buttons change the
+    // grid's COLUMN width — the container's own width never moves — so an
+    // observer watching only the container never fired, the white page grew
+    // and the text kept the width it was scaled for. Grid stays observed for
+    // real container resizes (auto-fill retunes the columns then).
     observer.observe(grid);
+    const firstThumb = grid.querySelector('.page-thumbnail') as HTMLElement | null;
+    if (firstThumb) observer.observe(firstThumb);
+    measure();
     return () => observer.disconnect();
-  }, [activeTab, pageContent.length, refWidthPx]);
+  }, [activeTab, pageContent.length, refWidthPx, pagesThumbPx]);
 
   // ── Scroll sync: highlight current page in editor ──
 
@@ -1037,20 +1047,24 @@ export function PagesControls() {
   const setPx = useEditorStore((s) => s.setPagesThumbPx);
   return (
     <>
-      <button
-        className="tool-ctl"
-        title="Smaller page previews"
-        disabled={px <= PAGES_THUMB_MIN}
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => setPx(px - PAGES_THUMB_STEP)}
-      ><CircleMinusIcon /></button>
-      <button
-        className="tool-ctl"
-        title="Larger page previews"
-        disabled={px >= PAGES_THUMB_MAX}
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => setPx(px + PAGES_THUMB_STEP)}
-      ><CirclePlusIcon /></button>
+      {/* v4.95: the pair is one control, so it reads as a pair — tight
+          together, and clear air before the search beside it. */}
+      <span className="fs-pages-scale">
+        <button
+          className="tool-ctl"
+          title="Smaller page previews"
+          disabled={px <= PAGES_THUMB_MIN}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => setPx(px - PAGES_THUMB_STEP)}
+        ><CircleMinusIcon /></button>
+        <button
+          className="tool-ctl"
+          title="Larger page previews"
+          disabled={px >= PAGES_THUMB_MAX}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => setPx(px + PAGES_THUMB_STEP)}
+        ><CirclePlusIcon /></button>
+      </span>
       <ControlSearch value={search} onChange={setSearch} placeholder="Search pages…" />
     </>
   );

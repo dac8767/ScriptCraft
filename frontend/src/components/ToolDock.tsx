@@ -24,7 +24,7 @@ import {
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
   FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,
   FaKeyboard, FaRobot, FaBook, FaSlidersH, FaColumns,
-  FaCommentDots, FaChevronRight, FaChevronDown,
+  FaCommentDots, FaChevronRight, FaChevronDown, FaTable,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, NO_FULLSCREEN_TOOLS, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
@@ -49,6 +49,8 @@ import BeatBoard, { OutlineHeaderControls } from './BeatBoard';
 import TypewriterTool from './TypewriterTool';
 import AiWriterTool from './AiWriterTool';
 import NotebookTool, { NotebookHeaderExtra } from './NotebookTool';
+// v4.95 TEMPORARY (dev-only Airtable panel) — REMOVE BEFORE RELEASE.
+import AirtableDevTool from '../dev/AirtableDevTool';
 
 export interface ToolDef {
   id: ToolId;
@@ -137,6 +139,14 @@ export const ALL_TOOLS: ToolDef[] = [
   // kept beside the script instead of in a blocking modal. Opens floating (the
   // form needs width) but the pop-in button docks it.
   { id: 'feedback', label: 'Feedback', icon: <FaCommentDots />, defaultSize: { w: 460, h: 620 }, group: 3, noPanelFit: true },
+  /* v4.95, Derek — TEMPORARY Airtable dev panel. REMOVE BEFORE RELEASE (the
+     full list is in src/dev/AirtableDevTool.tsx). The spread is what keeps it
+     out of shipped builds: `tauri build` sets DEV false, the entry vanishes
+     from the registry, and every surface that reads ALL_TOOLS — the dock,
+     Customize, Workspaces — loses it at once. */
+  ...(import.meta.env.DEV
+    ? [{ id: 'devairtable' as ToolId, label: 'Airtable (dev)', icon: <FaTable />, defaultSize: { w: 520, h: 620 }, group: 3, noPanelFit: true }]
+    : []),
 ];
 
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
@@ -493,6 +503,9 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
       return <WorkspacesTool />;
     case 'feedback':
       return <FeedbackTool />;
+    // v4.95 TEMPORARY — dev only; see src/dev/AirtableDevTool.tsx.
+    case 'devairtable':
+      return import.meta.env.DEV ? <AirtableDevTool /> : null;
     default:
       return null;
   }
