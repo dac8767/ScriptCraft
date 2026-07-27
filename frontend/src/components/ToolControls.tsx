@@ -163,3 +163,24 @@ export const ControlSearch: React.FC<{
     </span>
   );
 };
+
+/**
+ * v5.01, Derek: "for tool specific buttons, like Reorder in the scene tool,
+ * move it down into the first row of the body, aligned left. give it a button
+ * shape and background color."
+ *
+ * The window HEADER carries the controls every tool shares — Filter, Sort,
+ * View, Search — as small text affordances. A tool's OWN actions read as
+ * something else and belong to its body: this is the first row of it,
+ * left-aligned, its buttons shaped and filled so they read as buttons rather
+ * than as more header text.
+ *
+ * One row component, so a second tool adopting it can't invent its own
+ * spacing. Renders nothing when it has no children — a tool with no
+ * actions must not gain an empty strip.
+ */
+export const ToolActionRow: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  const has = React.Children.toArray(children).some(Boolean);
+  if (!has) return null;
+  return <div className="tool-action-row">{children}</div>;
+};

@@ -534,6 +534,31 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
     }
   }
 
+  /* v5.01, Derek ("show the title page in Pages tool"): the title page is
+     page one of the finished script, so the preview shows it — as its OWN
+     page, numbered 0 and labelled "Title Page" by the tool.
+
+     v4.95 skipped these nodes entirely while the editor was hiding the title
+     page (Page / Continuous view). That fixed the real complaint — the title
+     was being laid out as ordinary elements ON TOP of page 1's script — but
+     it threw the page away with it. Splitting the leading run into its own
+     bound keeps both true: the title page appears, and never bleeds into the
+     script's first page.
+
+     The split happens on the BOUNDS, not on `nodes`: breaks[].nodeIndex
+     indexes that list, so removing entries would shift every later page. */
+  let titleRunEnd = -1;
+  while (titleRunEnd + 1 < nodes.length && nodes[titleRunEnd + 1].typeName === 'titlePage') titleRunEnd++;
+  if (titleRunEnd >= 0 && pageBounds.length > 0 && pageBounds[0].startNode === 0) {
+    const first = pageBounds[0];
+    const titleBound = { pageNumber: 0, startNode: 0, endNode: titleRunEnd, dialogueSplit: false };
+    const rest = { ...first, startNode: titleRunEnd + 1 };
+    // In Preview the title page already HAS its own bound (computeBreaks emits
+    // the title break) — then just renumber it; otherwise carve it off the
+    // front of page 1.
+    pageBounds.splice(0, 1, ...(first.endNode <= titleRunEnd ? [titleBound] : [titleBound, rest]));
+  }
+
   // Build page content
   const pages: PageContentInfo[] = [];
 
@@ -545,15 +570,10 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
 
     for (let i = pb.startNode; i <= Math.min(pb.endNode, nodes.length - 1); i++) {
       const node = nodes[i];
-      // v4.95, Derek ("page 1 has strange spacing"): a HIDDEN title page must
-      // not appear in a page preview either. In Page/Continuous view the
-      // editor renders nothing for these nodes and computeBreaks counts them
-      // as zero lines — but they were still emitted as blocks, so the preview
-      // laid the title text out as ordinary elements above page 1's script
-      // and nothing lined up. Skipped here rather than filtered out of
-      // `nodes`, because `breaks[].nodeIndex` indexes THIS list: dropping
-      // entries would shift every page boundary.
-      if (visibilityOpts.hideTitlePage && node.typeName === 'titlePage') continue;
+      // A title-page node belongs ONLY to the title page's own bound (above).
+      // This guard is what stops it bleeding into script page 1 — the v4.95
+      // "strange spacing" — now that the run is no longer skipped outright.
+      if (node.typeName === 'titlePage' && pb.pageNumber !== 0) continue;
       const cpl = CHARS_PER_LINE[node.typeName] || 62;
       const textLines = getTextLines(node.text, cpl);
       const sb = firstOnPage ? 0 : (SPACE_BEFORE[node.typeName] ?? 0);

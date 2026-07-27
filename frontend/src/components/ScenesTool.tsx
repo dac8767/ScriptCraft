@@ -6,8 +6,9 @@
 // is just the body.
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
-import SceneNavigator from './SceneNavigator';
+import SceneNavigator, { ScenesReorderControl } from './SceneNavigator';
 import IndexCards from './IndexCards';
+import { ToolActionRow } from './ToolControls';
 
 export function ScenesTool({ editor, scrollContainer }: {
   editor: Editor | null;
@@ -16,6 +17,10 @@ export function ScenesTool({ editor, scrollContainer }: {
   const mode = useEditorStore((s) => s.scenesViewMode);
   return (
     <div className="scenes-tool">
+      {/* v5.01, Derek: Reorder is the Scenes tool's OWN action, so it sits in
+          the first row of the body rather than in the shared header cluster.
+          Here (not in SceneNavigator) because it drives BOTH views. */}
+      <ToolActionRow><ScenesReorderControl /></ToolActionRow>
       <div className="scenes-tool-body">
         {mode === 'cards' ? (
           <IndexCards editor={editor} scrollContainer={scrollContainer ?? null} />

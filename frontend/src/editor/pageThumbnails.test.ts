@@ -43,44 +43,51 @@ describe('computePageBlocks and the title page', () => {
     setPaginationVisibility({ hideSections: false, hideTodos: false, doubleSpaceHeaders: false, hideTitlePage: false });
   });
 
-  it('HIDDEN (Page / Continuous view): page 1 shows the script, not the title', () => {
-    setPaginationVisibility({ hideTitlePage: true });
-    const pages = computePageBlocks(docOf(TITLE_AND_SCRIPT), DEFAULT_PAGE_LAYOUT);
-    expect(pages.length).toBeGreaterThan(0);
-    expect(texts(pages[0])).toEqual([
-      'EXT. SPACE - OPENING SCROLL',
-      'The camera tilts down to reveal a mid-sized space carrier.',
-    ]);
-  });
+  /* v5.01, Derek: "show the title page in Pages tool". It is page one of the
+     finished script, so the preview shows it — as its OWN page (number 0,
+     labelled "Title Page"), NEVER merged into script page 1. That merge was
+     the v4.95 "strange spacing"; v4.95 fixed it by dropping the title page
+     altogether, which went too far. Both halves are pinned below, and in BOTH
+     visibility modes — the preview shows the whole document either way. */
+  for (const hidden of [true, false]) {
+    const mode = hidden ? 'hidden (Page/Continuous)' : 'shown (Preview)';
 
-  it('…and the first surviving block starts at the top of the page', () => {
-    setPaginationVisibility({ hideTitlePage: true });
-    const pages = computePageBlocks(docOf(TITLE_AND_SCRIPT), DEFAULT_PAGE_LAYOUT);
-    // The strange spacing was the skipped title's leading gap pushing this
-    // down: the first block on a page always starts at line 0.
-    expect(pages[0].blocks[0].lineStart).toBe(0);
-  });
+    it(`title page is its own page, ${mode}`, () => {
+      setPaginationVisibility({ hideTitlePage: hidden });
+      const pages = computePageBlocks(docOf(TITLE_AND_SCRIPT), DEFAULT_PAGE_LAYOUT);
+      expect(pages[0].pageNumber).toBe(0);
+      expect(texts(pages[0])).toEqual(['STAR WARS - EPISODE 8', 'Written by Derek Carl']);
+    });
 
-  it('SHOWN (Preview): the title page keeps its own blocks', () => {
-    setPaginationVisibility({ hideTitlePage: false });
-    const pages = computePageBlocks(docOf(TITLE_AND_SCRIPT), DEFAULT_PAGE_LAYOUT);
-    const all = pages.flatMap(texts);
-    expect(all).toContain('STAR WARS - EPISODE 8');
-    expect(all).toContain('EXT. SPACE - OPENING SCROLL');
-  });
+    it(`script page 1 carries no title-page text, ${mode}`, () => {
+      setPaginationVisibility({ hideTitlePage: hidden });
+      const pages = computePageBlocks(docOf(TITLE_AND_SCRIPT), DEFAULT_PAGE_LAYOUT);
+      const script = pages.find((p) => p.pageNumber !== 0)!;
+      expect(texts(script)).toEqual([
+        'EXT. SPACE - OPENING SCROLL',
+        'The camera tilts down to reveal a mid-sized space carrier.',
+      ]);
+      // The strange spacing was the skipped title's leading gap pushing this
+      // down: the first block on a page always starts at line 0.
+      expect(script.blocks[0].lineStart).toBe(0);
+    });
+  }
 
-  it('a script with no title page is unaffected either way', () => {
+  it('a script with NO title page has no page 0 — nothing gains a title page', () => {
     const plain = [node('sceneHeading', 'INT. COFFEE SHOP - DAY'), node('action', 'Rain.')];
     for (const hide of [true, false]) {
       setPaginationVisibility({ hideTitlePage: hide });
-      expect(texts(computePageBlocks(docOf(plain), DEFAULT_PAGE_LAYOUT)[0]))
-        .toEqual(['INT. COFFEE SHOP - DAY', 'Rain.']);
+      const pages = computePageBlocks(docOf(plain), DEFAULT_PAGE_LAYOUT);
+      expect(pages.some((p) => p.pageNumber === 0)).toBe(false);
+      expect(texts(pages[0])).toEqual(['INT. COFFEE SHOP - DAY', 'Rain.']);
     }
   });
 
-  it('a doc that is ONLY a hidden title page yields no blocks to draw', () => {
+  it('a doc that is ONLY a title page still gives one page to draw', () => {
     setPaginationVisibility({ hideTitlePage: true });
     const pages = computePageBlocks(docOf([TITLE_AND_SCRIPT[0], TITLE_AND_SCRIPT[1]]), DEFAULT_PAGE_LAYOUT);
-    expect(pages.flatMap(texts)).toEqual([]);
+    expect(pages).toHaveLength(1);
+    expect(pages[0].pageNumber).toBe(0);
+    expect(texts(pages[0])).toHaveLength(2);
   });
 });

@@ -1801,11 +1801,64 @@ body.fs-shot-veil-feedback .fs-tool-takeover-feedback { visibility: hidden !impo
 }
 .fs-devairtable-open:hover { color: var(--fd-text); background: var(--fd-hover-bg); }
 
-/* v4.95, Derek: the Pages scale pair sits tight, with clear air before the
-   search button beside it. */
-.fs-pages-scale {
+/* (v5.01: .fs-pages-scale is gone — the zoom pair moved to the body's
+   action row, where .tool-action-group spaces it.) */
+
+/* ══ v5.01, Derek: the tool ACTION ROW — the first row of a tool's body,
+   holding that tool's own actions (Scenes' Reorder). Left-aligned, and its
+   buttons wear a real button shape and fill so they read as buttons, not as
+   more of the header's text controls. ══════════════════════════════════ */
+.tool-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 6px 8px;
+  border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
+}
+.tool-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  margin-right: 12px;
+  gap: 5px;
+  padding: 4px 12px;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tool-action-btn:hover:not(:disabled) { background: var(--fd-menu-hover); }
+.tool-action-btn:disabled { opacity: .4; cursor: default; }
+/* Icon-only actions (the Pages zoom pair) are square, not text-padded. */
+.tool-action-icon { padding: 4px 7px; }
+/* A run of controls that read as one thing (− Zoom +). */
+.tool-action-group { display: inline-flex; align-items: center; gap: 6px; }
+.tool-action-label { font-size: 11px; color: var(--fd-text-muted); white-space: nowrap; }
+/* v5.01, Derek: "aligned right" — the auto margin holds it at the edge
+   whatever the panel's width. */
+.tool-action-right { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.tool-action-field {
+  width: 48px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  font-size: 11px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+.tool-action-field:focus { border-color: var(--fd-accent); }
+.tool-action-btn.active {
+  background: var(--fd-accent);
+  border-color: var(--fd-accent);
+  color: #fff;
 }

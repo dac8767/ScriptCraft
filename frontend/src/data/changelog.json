@@ -1,5 +1,16 @@
 [
   {
+    "version": "5.01",
+    "date": "2026-07-26",
+    "changes": [
+      "Scenes: Reorder moved out of the header into the first row of the tool, left-aligned and shaped like a button — a tool's own actions read differently from the Filter / View / Search every tool shares",
+      "Scenes: a scene's synopsis sits in its own column to the right of the scene instead of on a second line underneath, so rows stay one line tall and the summaries read down the list",
+      "Pages: the title page is shown, as its own page rather than printed on top of page 1",
+      "Pages: the page label sits above its page, and the title page is labelled \"Title Page\"",
+      "Pages: the zoom buttons moved into the tool's first row with a \"Zoom\" label between them, and a \"Go to:\" field on the right jumps to any page number"
+    ]
+  },
+  {
     "version": "5.00",
     "date": "2026-07-26",
     "changes": [

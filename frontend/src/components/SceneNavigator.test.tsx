@@ -12,7 +12,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import { SceneTitleExtra, SceneControls } from './SceneNavigator';
+import { SceneTitleExtra, SceneControls, ScenesReorderControl } from './SceneNavigator';
 import { useEditorStore, EMPTY_SCENE_FILTERS, EMPTY_SCENE_NAV_DATA } from '../stores/editorStore';
 
 // React tracks a controlled field's value and ignores a raw value assignment,
@@ -98,14 +98,31 @@ describe('SceneControls (row-2 cluster)', () => {
     expect(useEditorStore.getState().scenesViewMode).toBe('cards');
   });
 
-  it('cards view offers the SAME cluster as list — Filter, Reorder, View, Search (v4.35 batch-v9 #2)', () => {
+  /* v5.01, Derek: REORDER LEFT this cluster — a tool's own action belongs in
+     the first row of its body (ToolActionRow in ScenesTool), shaped and filled
+     like a button, not among the Filter / View / Search controls every tool
+     shares. Both views still get the shared cluster, which is what v4.35
+     batch-v9 #2 was really pinning. */
+  it('cards view offers the SAME shared cluster as list — Filter, View, Search', () => {
     act(() => { useEditorStore.setState({ scenesViewMode: 'cards' }); });
     act(() => root.render(<SceneControls />));
     const labels = Array.from(host.querySelectorAll('button.tool-ctl')).map((b) => b.textContent);
     expect(labels.some((t) => t?.includes('Filter'))).toBe(true);
-    expect(labels.some((t) => t?.includes('Reorder'))).toBe(true);
     expect(host.querySelector('.tool-ctl-search-btn, .tool-ctl-search-field')).not.toBeNull();
     // View survives — it's how you get back to List.
     expect(labels.some((t) => t?.includes('Cards'))).toBe(true);
+    // …and Reorder is NOT in the header cluster anymore.
+    expect(labels.some((t) => t?.includes('Reorder'))).toBe(false);
+  });
+
+  it('Reorder renders as a body action button, driving the same store flag', () => {
+    act(() => { useEditorStore.setState({ scenesReorderMode: false }); });
+    act(() => root.render(<ScenesReorderControl />));
+    const btn = host.querySelector('button.tool-action-btn') as HTMLButtonElement;
+    expect(btn).not.toBeNull();
+    expect(btn.textContent).toBe('Reorder');
+    expect(btn.className).not.toContain('active');
+    act(() => { btn.click(); });
+    expect(useEditorStore.getState().scenesReorderMode).toBe(true);
   });
 });

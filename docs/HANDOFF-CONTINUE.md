@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.00 — screenshot drag removed)
+# ScriptCraft — continuation brief (current as of v5.01 — tool action rows, Scenes synopsis column, Pages title page)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,31 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.00 — the screenshot drag is REMOVED (HEAD)
+### v5.01 — tool action rows; Scenes synopsis column; Pages title page (HEAD)
+
+- **`ToolActionRow`** (ToolControls) is the new home for a tool's OWN actions:
+  the first row of its BODY, left-aligned, buttons wearing `.tool-action-btn`
+  (real shape + fill). The window HEADER keeps only what every tool shares —
+  Filter / Sort / View / Search. Renders nothing with no children, so a tool
+  without actions gains no empty strip. Adopted so far by SCENES (Reorder) and
+  PAGES (Zoom, Go to). The other candidates, if Derek wants them moved:
+  Scrapbook's create/declutter, Feedback's screenshot pair, Tags' eye,
+  Outline's Arrangement, Navigator's numbers toggle.
+- `.tool-action-right` uses `margin-left: auto` for the right-aligned group
+  (Pages' "Go to:"), so it holds the edge at any panel width.
+- **Scenes synopsis is a COLUMN** (`.scene-synopsis-col`), not a second line.
+  `flex: 0 1 45%` and rendered ONLY when a synopsis exists — a column that
+  claimed its share on every row truncated every heading in a docked panel to
+  pay for summaries that weren't there.
+- **The Pages title page is back, as its own page** (pageNumber 0, labelled
+  "Title Page"). v4.95 had removed it to stop it printing on top of page 1;
+  the split is on the page BOUNDS now, which fixes the bleed AND keeps the
+  page. `breaks[].nodeIndex` indexes the node list, so the nodes are never
+  filtered — only the bounds are carved. 6 tests, both visibility modes.
+- Page labels moved ABOVE their page; the separating border went with them (a
+  rule under a caption would divide it from the page it names).
+
+### v5.00 — the screenshot drag is REMOVED
 
 - Derek, final word: "dragging screenshots does not work. remove that language
   and just make it so i can copy/paste the file or download/upload." WKWebView

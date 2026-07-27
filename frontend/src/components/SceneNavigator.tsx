@@ -12,7 +12,7 @@ import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../
 import { parseHeading, computeSceneFilterDetails, sceneFilterOptions, filterSceneIndices, countActiveSceneFilters, type SceneFilterDetail } from '../utils/sceneFilters';
 import { useSceneReorder } from '../utils/useSceneReorder';
 import SynopsisModal from './SynopsisModal';
-import { ControlDropdown, ControlSearch } from './ToolControls';
+import { ControlDropdown, ControlSearch, ToolActionRow } from './ToolControls';
 import { SceneReorderBar } from './IndexCards';
 import { LuLayoutGrid, LuList } from 'react-icons/lu';
 import { FaChevronRight, FaChevronDown } from 'react-icons/fa';
@@ -527,6 +527,23 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
 
   // ── Handle page thumbnail click ──
 
+  const setPagesThumbPx = useEditorStore((s) => s.setPagesThumbPx);
+  const [gotoPage, setGotoPage] = useState('');
+  /** v5.01: jump to a typed page — scroll its thumbnail into view and take the
+   *  script to the page's first block, which is what clicking it does. A
+   *  number that isn't a page is left in the field rather than silently
+   *  ignored, so a typo is visible. */
+  const goToPageNumber = useCallback((raw: string) => {
+    const n = parseInt(raw, 10);
+    if (!Number.isFinite(n)) return;
+    const page = pageContent.find((p) => p.pageNumber === n);
+    if (!page) return;
+    const el = pageGridRef.current?.querySelector(`[data-page="${n}"]`) as HTMLElement | null;
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    const first = page.blocks[0];
+    if (first) goToPosition(first.docPos);
+  }, [pageContent, goToPosition]);
+
   const handlePageClick = useCallback(
     (page: PageContentInfo, e: React.MouseEvent<HTMLDivElement>) => {
       if (!editor || page.blocks.length === 0) return;
@@ -689,6 +706,16 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                           })()}
                           <span className="scene-heading-label">{highlightText(scene.heading, searchQuery)}</span>
                         </div>
+                        {/* v5.01, Derek: the synopsis is its own COLUMN beside
+                            the scene, not a line stacked underneath it — so a
+                            row stays one line tall and the summaries line up
+                            down the list, readable as a column. Only in the
+                            collapsed row; expanding shows the full text. */}
+                        {!isExpanded && scene.synopsis && (
+                          <div className="scene-synopsis-col" title={scene.synopsis}>
+                            {highlightText(scene.synopsis.split('\n')[0], searchQuery)}
+                          </div>
+                        )}
                         {detail && detail.pageLength > 0 && (
                           <div className="scene-length" data-tooltip={
                             formatPageLength(detail.pageLength) +
@@ -698,9 +725,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                           </div>
                         )}
                       </div>
-                      {!isExpanded && scene.synopsis && (
-                        <div className="scene-synopsis-preview">{highlightText(scene.synopsis.split('\n')[0], searchQuery)}</div>
-                      )}
                       {isExpanded && (
                         <div className="scene-synopsis-expanded">
                           {(detail || sceneTimings[sceneIdx]) && (
@@ -741,6 +765,49 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
       )}
 
       {/* ── Pages tab ────────────────────────────────────────────────── */}
+      {/* v5.01, Derek: the Pages tool's OWN actions, in the first row of its
+          body — Zoom left, Go to right. The scale is the grid COLUMN width;
+          the thumbnails size themselves to their column (a ResizeObserver
+          reads the rendered width and scales the page content to match), so
+          one number drives both preview size and pages-per-row. */}
+      {activeTab === 'pages' && (
+        <ToolActionRow>
+          <span className="tool-action-group">
+            <button
+              className="tool-action-btn tool-action-icon"
+              title="Smaller page previews"
+              disabled={pagesThumbPx <= PAGES_THUMB_MIN}
+              onClick={() => setPagesThumbPx(pagesThumbPx - PAGES_THUMB_STEP)}
+            ><CircleMinusIcon /></button>
+            <span className="tool-action-label">Zoom</span>
+            <button
+              className="tool-action-btn tool-action-icon"
+              title="Larger page previews"
+              disabled={pagesThumbPx >= PAGES_THUMB_MAX}
+              onClick={() => setPagesThumbPx(pagesThumbPx + PAGES_THUMB_STEP)}
+            ><CirclePlusIcon /></button>
+          </span>
+          {/* Right-aligned by the auto margin, so it stays at the edge however
+              wide the panel is. Submitting scrolls the thumbnail into view AND
+              takes the script there — the same jump clicking the page makes. */}
+          <form
+            className="tool-action-right"
+            onSubmit={(e) => { e.preventDefault(); goToPageNumber(gotoPage); }}
+          >
+            <label className="tool-action-label" htmlFor="fs-pages-goto">Go to:</label>
+            <input
+              id="fs-pages-goto"
+              className="tool-action-field"
+              type="text"
+              inputMode="numeric"
+              value={gotoPage}
+              placeholder="#"
+              onChange={(e) => setGotoPage(e.target.value.replace(/[^0-9]/g, ''))}
+              onBlur={() => goToPageNumber(gotoPage)}
+            />
+          </form>
+        </ToolActionRow>
+      )}
       {activeTab === 'pages' && (
         <div className="navigator-list page-thumbnails-scroll" ref={pageGridRef}>
           {pageContent.length === 0 ? (
@@ -753,6 +820,12 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
             <div className="page-thumbnails-grid" style={{ '--pages-thumb-w': `${pagesThumbPx}px` } as React.CSSProperties}>
               {shownPages.map((page) => (
                 <div key={page.pageNumber} className="page-thumb-wrapper">
+                  {/* v5.01, Derek: the label sits ABOVE its page (it used to
+                      trail underneath), and the title page says so by name
+                      rather than carrying a number it doesn't have. */}
+                  <div className="page-thumb-number">
+                    {page.pageNumber === 0 ? 'Title Page' : `Page ${page.pageNumber}`}
+                  </div>
                   <div
                     className={`page-thumbnail${page.pageNumber === currentVisiblePage ? ' current' : ''}`}
                     data-page={page.pageNumber}
@@ -778,7 +851,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                       </div>
                     </div>
                   </div>
-                  <div className="page-thumb-number">Page {page.pageNumber}</div>
                 </div>
               ))}
             </div>
@@ -1034,39 +1106,16 @@ export function LocationsControls() {
   );
 }
 
-/** v4.94, Derek: the Pages window's header — Search plus the two scaling
- *  buttons. The scale is the grid COLUMN width; the thumbnails already size
- *  themselves to their column (a ResizeObserver reads the rendered width and
- *  scales the page content to match), so one number drives both how big a
- *  preview is and how many fit per row. Reuses the toolbar's own zoom glyphs
- *  so "make it bigger" wears one face across the app. */
+/** v4.94/v5.01, Derek: the Pages window's header keeps only Search — the
+ *  shared control. Zoom and Go to live in the body's first row. */
 export function PagesControls() {
   const search = useEditorStore((s) => s.pagesSearch);
   const setSearch = useEditorStore((s) => s.setPagesSearch);
-  const px = useEditorStore((s) => s.pagesThumbPx);
-  const setPx = useEditorStore((s) => s.setPagesThumbPx);
   return (
-    <>
-      {/* v4.95: the pair is one control, so it reads as a pair — tight
-          together, and clear air before the search beside it. */}
-      <span className="fs-pages-scale">
-        <button
-          className="tool-ctl"
-          title="Smaller page previews"
-          disabled={px <= PAGES_THUMB_MIN}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => setPx(px - PAGES_THUMB_STEP)}
-        ><CircleMinusIcon /></button>
-        <button
-          className="tool-ctl"
-          title="Larger page previews"
-          disabled={px >= PAGES_THUMB_MAX}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => setPx(px + PAGES_THUMB_STEP)}
-        ><CirclePlusIcon /></button>
-      </span>
-      <ControlSearch value={search} onChange={setSearch} placeholder="Search pages…" />
-    </>
+    /* v5.01, Derek: the zoom pair LEFT this header for the body's first row
+       (PagesActionRow) — a tool's own actions belong to its body. Search is
+       shared chrome, so it stays. */
+    <ControlSearch value={search} onChange={setSearch} placeholder="Search pages…" />
   );
 }
 
@@ -1084,13 +1133,11 @@ export function ScenesReorderControl() {
   const setReorder = useEditorStore((s) => s.setScenesReorderMode);
   return (
     <button
-      className={`tool-ctl${reorder ? ' active' : ''}`}
+      className={`tool-action-btn${reorder ? ' active' : ''}`}
       title={reorder ? 'Exit reorder mode (discards unapplied order)' : 'Drag scenes into a new order'}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={() => setReorder(!reorder)}
-    >
-      <span className="tool-ctl-label">Reorder</span>
-    </button>
+    >Reorder</button>
   );
 }
 
@@ -1137,9 +1184,9 @@ export function SceneControls() {
 
   return (
     <>
-      {/* v4.53, Derek: TOOL-SPECIFIC controls lead the cluster — Reorder
-          first, then the standard Filter / View / Search. */}
-      <ScenesReorderControl />
+      {/* v5.01, Derek: Reorder LEFT this cluster — a tool's own action belongs
+          in the first row of its body (ToolActionRow in ScenesTool), not among
+          the Filter / View / Search controls every tool shares. */}
       <button
         ref={btnRef}
         className={`tool-ctl${open ? ' open' : ''}`}
