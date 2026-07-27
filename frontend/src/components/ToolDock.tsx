@@ -269,19 +269,28 @@ function HeaderRightCluster({ id, chrome, onClose, closeTitle, fullscreenBtn = t
           {chrome?.WindowActions && <chrome.WindowActions />}
         </span>
       )}
-      {fullscreenBtn && <ToolFullscreenButton id={id} />}
-      {onMinimize && (
+      {/* v4.86 follow-up, Derek: the window ACTIONS are their own span, pinned
+          to the header's top-right corner by CSS. Free-standing because a
+          right-aligned item mid-sequence has to eat the line's free space,
+          which would force the tabs and controls onto a second row even in a
+          wide window. Pinned, they stay in the corner while everything else
+          wraps beneath them — which is exactly the rule Derek asked for:
+          name, count and these buttons on the top row, the rest below. */}
+      <span className="tool-chrome-actions">
+        {fullscreenBtn && <ToolFullscreenButton id={id} />}
+        {onMinimize && (
+          <button
+            className="tool-window-minimize"
+            onClick={(e) => { e.stopPropagation(); onMinimize(); }}
+            title="Shrink to a floating window"
+          ><RestoreIcon /></button>
+        )}
         <button
-          className="tool-window-minimize"
-          onClick={(e) => { e.stopPropagation(); onMinimize(); }}
-          title="Shrink to a floating window"
-        ><RestoreIcon /></button>
-      )}
-      <button
-        className="tool-window-close"
-        onClick={(e) => { e.stopPropagation(); onClose(); }}
-        title={closeTitle ?? 'Close'}
-      ><CloseIcon /></button>
+          className="tool-window-close"
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
+          title={closeTitle ?? 'Close'}
+        ><CloseIcon /></button>
+      </span>
     </span>
   );
 }

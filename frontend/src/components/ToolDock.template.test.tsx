@@ -47,8 +47,11 @@ describe('single-row window template (v4.39)', () => {
     const header = host.querySelector('.tool-window-header')!;
     expect(header).toBeTruthy();
     expect(header.querySelector('.tool-header-title .tool-window-title')?.textContent).toBe('Workspaces');
-    const right = header.querySelector('.tool-chrome-right')!;
-    expect(right.lastElementChild?.classList.contains('tool-window-close')).toBe(true);
+    // v4.86: the actions live in their own span (pinned to the header's
+    // top-right corner by CSS); close is still the last one in it.
+    const actions = header.querySelector('.tool-chrome-actions')!;
+    expect(actions.lastElementChild?.classList.contains('tool-window-close')).toBe(true);
+    expect(header.querySelector('.tool-chrome-right .tool-chrome-actions')).toBeTruthy();
     // the old two-row template and its pop buttons are gone
     expect(host.querySelector('.tool-chrome-row2')).toBeNull();
     expect(host.querySelector('.tool-inline-header')).toBeNull();
@@ -83,16 +86,20 @@ describe('single-row window template (v4.39)', () => {
     expect(tabLabels).toEqual(['Alpha', 'Beta']);
     expect(tabs.querySelector('.tool-chrome-tab.active')?.textContent).toBe('Alpha');
     // right cluster order (v4.69 — the divider is gone; fullscreen and
-    // close are distinct bordered buttons): controls · fullscreen · close
+    // close are distinct bordered buttons): controls · fullscreen · close.
+    // v4.86: fullscreen/close moved into .tool-chrome-actions, which the CSS
+    // pins to the header's corner — the ORDER they read in is unchanged.
     const rightKids = Array.from(right.children);
     const cluster = right.querySelector('.tool-chrome-controls')!;
+    const actions = right.querySelector('.tool-chrome-actions')!;
     expect(cluster.querySelector('[data-testid="ctl"]')).toBeTruthy();
     expect(cluster.querySelector('[data-testid="wa"]')).toBeTruthy();
     expect(right.querySelector('.tool-chrome-sep')).toBeNull();
-    const fs = right.querySelector('.char-profiles-fullscreen-btn')!;
-    const close = right.querySelector('.tool-window-close')!;
-    expect(rightKids.indexOf(cluster)).toBeLessThan(rightKids.indexOf(fs));
-    expect(rightKids.indexOf(fs)).toBeLessThan(rightKids.indexOf(close));
+    const fs = actions.querySelector('.char-profiles-fullscreen-btn')!;
+    const close = actions.querySelector('.tool-window-close')!;
+    expect(rightKids.indexOf(cluster)).toBeLessThan(rightKids.indexOf(actions));
+    const actionKids = Array.from(actions.children);
+    expect(actionKids.indexOf(fs)).toBeLessThan(actionKids.indexOf(close));
   });
 
   it('a Controls-only tool gets the cluster, no divider anywhere, still one row', () => {

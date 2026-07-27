@@ -1067,8 +1067,14 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                 onClick={() => removeCharacterCustomField(f.id)}
               ><FaRegTrashAlt /></button>
             </div>
-            <input
-              className="char-profile-input"
+            {/* v4.87, Derek: a custom field is the SAME control as the built-in
+                profile fields above it — full width, two rows, resizable — not
+                the short one-line .char-profile-input it used to be. Sharing
+                .char-profile-textarea means it also tracks their styling and
+                Design knobs instead of drifting away from them. */}
+            <textarea
+              className="char-profile-textarea"
+              rows={2}
               value={prof.customFields?.[f.id] ?? ''}
               onChange={(e) => upsertCharacterProfile(charName, {
                 customFields: { ...(prof.customFields ?? {}), [f.id]: e.target.value },

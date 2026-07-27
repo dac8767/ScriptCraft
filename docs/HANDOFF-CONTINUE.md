@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.86 — menu check items, hidden panels, header buttons)
+# ScriptCraft — continuation brief (current as of v4.87 — header corner actions, softer window edge)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,37 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.86 — menu check items, hidden panels, header buttons (HEAD)
+### v4.87 — header corner actions, softer window edge (HEAD)
+
+- **`.tool-chrome-actions`** (new span in `HeaderRightCluster`) holds
+  fullscreen · shrink · close and is PINNED by CSS to `.tool-window-header`'s
+  top-right corner (`position: absolute; top/right/bottom: 0`). The header
+  reserves the width as `padding-right` via `--tool-actions-w`, set by three
+  `:has()` rules of increasing specificity (30/60/90px = buttons actually
+  rendered). Watch that reservation: the FULLSCREEN TAKEOVER has no
+  fullscreen button, and my first pass mis-sized it, which is why the
+  controls ran under the buttons instead of wrapping.
+- **Why pinned, not in flow**: right-aligning an item mid-sequence means
+  consuming the line's free space, which forces the tabs/controls onto a
+  second row in EVERY window. Pinned, they stay in the corner and only the
+  flow content wraps — which is exactly Derek's rule (name + count + those
+  buttons on row 1, everything else below).
+- **`.tool-chrome-right { min-width: max-content; max-width: 100% }`** is the
+  piece that makes the wrap actually happen — flexbox only wraps an item it
+  is not allowed to squeeze. `max-width` keeps the escape hatch for a band
+  too wide even for its own row.
+- Separator is a `border-left` drawn by `+` sibling selectors, so a window
+  without a fullscreen button gets no stray edge. Icons: `svg { display:
+  block }` takes them off the text baseline.
+- The DOCKED strip (`.tool-inline-header`) is deliberately NOT part of this:
+  one editor-facing fullscreen button, no close (ToolDock ~line 1091). It
+  keeps the in-flow full-height treatment.
+- Window edge softened 32% → 18% of `--fd-text`; 0.5px is already the
+  thinnest a border renders, so contrast was the only lever.
+- Character custom fields render `.char-profile-textarea rows={2}` — the
+  same control as the built-in fields, not the one-line `.char-profile-input`.
+
+### v4.86 — menu check items, hidden panels, header buttons
 
 - **Scrapbook first run**: `seedFirstRun()` in notebookStore gives a
   never-used Scrapbook one section holding one page, selected. Seeded ONLY

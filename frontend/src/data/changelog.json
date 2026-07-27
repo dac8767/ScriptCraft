@@ -1,5 +1,15 @@
 [
   {
+    "version": "4.87",
+    "date": "2026-07-26",
+    "changes": [
+      "Window headers: fullscreen, shrink and close sit flush in the top-right corner, separated by a line instead of a gap, with their icons properly centered",
+      "A window header too narrow for everything keeps the name, count and those buttons on the top row and moves the tabs and controls to the row below — they used to drop underneath the controls into the bottom corner",
+      "The popped-out window edge is softer — it was already as thin as a line renders, so the change is contrast, not width",
+      "Character records: a custom field is now a full-width, two-row box like the fields above it, instead of a short single line"
+    ]
+  },
+  {
     "version": "4.86",
     "date": "2026-07-26",
     "changes": [

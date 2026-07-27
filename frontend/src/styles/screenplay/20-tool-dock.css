@@ -346,8 +346,11 @@ body.fs-tool-dragging { cursor: grabbing; }
      simply disappeared — you could not see where the window ended. The edge
      line is mixed from --fd-text instead of a fixed grey, so it reads light
      on a dark theme and dark on a light one. 0.5px = one device pixel on a
-     Retina display: present, never heavy. */
-  border: 0.5px solid color-mix(in srgb, var(--fd-text) 32%, transparent);
+     Retina display, already the thinnest a border renders — so when Derek
+     asked for a softer edge the lever was CONTRAST, not width: 32% → 18%,
+     which still separates the window from the editor without reading as a
+     hard outline. */
+  border: 0.5px solid color-mix(in srgb, var(--fd-text) 18%, transparent);
   border-radius: var(--dz-toolwin-radius, 8px);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
   display: flex;
@@ -404,7 +407,13 @@ body.fs-tool-dragging { cursor: grabbing; }
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 2px;
-  min-width: 0;
+  /* v4.86 follow-up: `max-content` is what makes the band move to a row of its
+     own rather than shrinking under the pinned actions — flexbox only wraps an
+     item it is not allowed to squeeze. `max-width: 100%` keeps the escape
+     hatch: if it does not fit on a line of its own either, it wraps INSIDE
+     itself instead of overflowing the window. */
+  min-width: max-content;
+  max-width: 100%;
 }
 .tool-chrome-controls {
   min-width: 0;
@@ -627,24 +636,66 @@ body.fs-tool-dragging { cursor: grabbing; }
   align-items: center;
   justify-content: center;
   flex: none;
-  /* Fill the header line, then cover its vertical padding. `height: auto` is
-     required — a fixed height would beat align-self: stretch. */
-  align-self: stretch;
+  /* Height comes from .tool-chrome-actions (pinned top-to-bottom of the
+     header, align-items: stretch) — `height: auto` so the stretch wins. */
   height: auto;
-  margin-top: calc(-1 * var(--dz-toolwin-pad-top, 6px));
-  margin-bottom: calc(-1 * var(--dz-toolwin-pad-bottom, 6px));
+  margin: 0;
 }
 /* The cluster has to span the line for its children to stretch inside it,
-   while its OWN contents (the controls) stay vertically centered. */
-.tool-chrome-right { align-self: stretch; }
-/* The docked strip's padding knobs differ from the floating window's — same
-   rule, its own defaults (see .tool-inline-header in 22-tools-extra.css). */
-.tool-inline-header .tool-window-close,
-.tool-inline-header .tool-window-minimize,
+   while its OWN contents (the controls) stay vertically centered. The gap is
+   0 so the action buttons BUTT together (v4.86 follow-up, Derek: "use a line
+   instead of a gap"); the controls keep their own air via margin-right. */
+.tool-chrome-right { align-self: stretch; gap: 0; }
+
+/* v4.86 follow-up, Derek: "if the window is too small to fit all items in the
+   header, keep the window name, count, and the main window buttons all on the
+   top row. everything else should be on the next row."
+   The actions are PINNED to the header's top-right corner and the header
+   reserves their width as right padding, so wrapped content stops short of
+   them instead of running underneath. Pinned rather than in-flow because
+   right-aligning an item mid-sequence means consuming the line's free space,
+   which would push the tabs and controls onto a second row in EVERY window,
+   wide ones included. --tool-actions-w counts the buttons actually rendered,
+   so the reservation can't drift from the markup.
+   Scoped to .tool-window-header (floating windows and the fullscreen
+   takeover). The DOCKED strip is deliberately a different layout — one
+   editor-facing fullscreen button, no close — so it keeps the in-flow
+   treatment below. */
+.tool-window-header { position: relative; --tool-actions-w: 30px; }
+.tool-window-header:has(.char-profiles-fullscreen-btn),
+.tool-window-header:has(.tool-window-minimize) { --tool-actions-w: 60px; }
+.tool-window-header:has(.char-profiles-fullscreen-btn):has(.tool-window-minimize) { --tool-actions-w: 90px; }
+.tool-window-header { padding-right: calc(var(--dz-toolwin-pad-right, 10px) + var(--tool-actions-w)); }
+.tool-chrome-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+/* The docked strip's lone fullscreen button stays IN FLOW at the editor-facing
+   end (v4.40) — it just needs the same full-height reach, which here means
+   stretching to the line and covering the strip's own padding. */
 .tool-inline-header .char-profiles-fullscreen-btn {
+  align-self: stretch;
   margin-top: calc(-1 * var(--dz-toolwin-pad-top, 4px));
   margin-bottom: calc(-1 * var(--dz-toolwin-pad-bottom, 4px));
 }
+/* The separating line, drawn only where one action button actually follows
+   another — so a window without a fullscreen button doesn't wear a stray
+   edge, and adding an action later needs no bookkeeping here. */
+.char-profiles-fullscreen-btn + .tool-window-minimize,
+.char-profiles-fullscreen-btn + .tool-window-close,
+.tool-window-minimize + .tool-window-close {
+  border-left: 1px solid color-mix(in srgb, var(--fd-navigator-bg) 62%, var(--fd-text) 38%);
+}
+/* (Flush into the corner comes free now — .tool-chrome-actions sits at
+   right: 0 of the header, so the close button touches the window edge and the
+   window's border-radius + overflow:hidden round it.) */
+/* (The docked strip needs no per-side margin correction anymore either — the
+   pinned actions box spans the strip's own box, padding included.) */
 /* The Scrapbook's × floats over a surface with no header at all — it keeps
    the old free-standing button shape (v4.85). */
 .tool-window-close.fs-nb-close {
@@ -654,6 +705,18 @@ body.fs-tool-dragging { cursor: grabbing; }
   margin: 0;
   border: 1px solid var(--fd-border);
   border-radius: 4px;
+}
+/* The fullscreen SVG is an inline element inside the button, so it still sat
+   on the text box's baseline — flex-centered horizontally but a hair low, and
+   the base rule's `padding: 0 4px` shifted it off the horizontal centre too.
+   `display: block` takes it off the baseline entirely; both are already reset
+   above, this pins the icon itself. Same treatment for its siblings, so the
+   three glyphs sit on one line. */
+.tool-window-close > svg,
+.tool-window-minimize > svg,
+.char-profiles-fullscreen-btn > svg {
+  display: block;
+  flex: none;
 }
 .tool-window-header .char-profiles-fullscreen-btn:hover,
 .tool-inline-header .char-profiles-fullscreen-btn:hover,
