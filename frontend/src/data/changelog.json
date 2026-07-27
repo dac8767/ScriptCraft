@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.97",
+    "date": "2026-07-26",
+    "changes": [
+      "Feedback: the screenshot chip above the form is the actual file now — drag it straight onto the form's attachment field, and drag it from anywhere on the chip, not just the thumbnail",
+      "Feedback: if the webview refuses to carry a file in a drag, it says so instead of dragging nothing — Save and attach the file is the way through"
+    ]
+  },
+  {
     "version": "4.96",
     "date": "2026-07-26",
     "changes": [

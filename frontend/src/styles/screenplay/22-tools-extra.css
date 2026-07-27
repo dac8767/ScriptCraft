@@ -1616,7 +1616,15 @@ input.fs-switch:checked::after { left: 15px; }
   padding: 8px;
   border-bottom: 1px solid var(--fd-border);
   background: var(--fd-toolbar-bg);
+  /* v4.97: the whole chip is the drag handle, so it advertises that. Text
+     selection would start a selection drag instead of the file drag. */
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
 }
+.feedback-shot-chip:active { cursor: grabbing; }
+/* …but the buttons are buttons. */
+.feedback-shot-chip .feedback-shot-act { cursor: pointer; }
 .feedback-shot-thumb {
   flex-shrink: 0;
   width: 56px; height: 42px;

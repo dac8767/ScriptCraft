@@ -91,43 +91,90 @@ export function FeedbackShotControls() {
   );
 }
 
-/** The capture chip above the form. The thumbnail is the drag handle: the
- *  dragstart carries the PNG as a FILE, so dropping on the Airtable form's
- *  attachment dropzone uploads it — the one gesture the iframe boundary
- *  can't take away. (WebKit refuses to start any drag without setData —
- *  CLAUDE.md §4 — and items.add is what attaches the file payload.) */
+/**
+ * v4.97, Derek ("make the file … the actual file so I can drag and drop it"):
+ * load a dragstart with the capture as a genuine FILE, and REPORT whether it
+ * took.
+ *
+ * Order matters. `items.add(file)` goes first: it is the only call that makes
+ * the drop target see `dataTransfer.files`, which is what an attachment
+ * dropzone looks for. `DownloadURL` is Blink's out-of-page file drag and is
+ * ignored elsewhere. `text/plain` is LAST and only when no file attached —
+ * setting it up front advertises a text drag, and a dropzone that sniffs
+ * types then takes the text branch and quietly ignores the image.
+ *
+ * The return value is the point. `types` after the add is the engine telling
+ * us whether it really carried a file, so a webview that won't do file drags
+ * produces a message instead of a drag into the void.
+ */
+export function attachShotToDrag(dt: DataTransfer, file: File, url: string): boolean {
+  let carriesFile = false;
+  try {
+    dt.items.add(file);
+    carriesFile = Array.from(dt.types).includes('Files');
+  } catch {
+    /* engine without items.add — falls through to the text descriptor */
+  }
+  try {
+    // mime:filename:absolute-url — Blink only; a no-op everywhere else.
+    dt.setData('DownloadURL', `${file.type}:${file.name}:${url}`);
+  } catch { /* not supported here */ }
+  // WebKit refuses to START a drag with an empty dataTransfer (CLAUDE.md §4),
+  // so there is always something set by the time we return.
+  if (!carriesFile) dt.setData('text/plain', file.name);
+  dt.effectAllowed = 'copy';
+  return carriesFile;
+}
+
+/** The capture chip above the form. The WHOLE chip is the drag handle (v4.97
+ *  — Derek drags "the file", not specifically its thumbnail); its buttons opt
+ *  out so they still click. Dropping on the Airtable form's attachment
+ *  dropzone uploads it — the one gesture the iframe boundary can't take
+ *  away. */
 function FeedbackShotChip({ shot }: { shot: FeedbackShot }) {
+  const thumbRef = useRef<HTMLImageElement>(null);
+  const onDragStart = (e: React.DragEvent) => {
+    const ok = attachShotToDrag(e.dataTransfer, shot.file, shot.url);
+    // Drag the picture, not a ghost of the whole chip.
+    if (thumbRef.current) {
+      const t = thumbRef.current;
+      try { e.dataTransfer.setDragImage(t, t.width / 2, t.height / 2); } catch { /* optional */ }
+    }
+    if (!ok) {
+      showToast('This webview will not carry the file in a drag — use Save and attach it from the file.', 'info');
+    }
+  };
   return (
-    <div className="feedback-shot-chip">
+    <div
+      className="feedback-shot-chip"
+      draggable
+      onDragStart={onDragStart}
+      title="Drag me into the form's attachment field"
+    >
       <img
+        ref={thumbRef}
         className="feedback-shot-thumb"
         src={shot.url}
         alt="Captured screenshot — drag into the form's attachment field"
-        title="Drag me into the form's attachment field"
-        draggable
-        onDragStart={(e) => {
-          e.dataTransfer.setData('text/plain', shot.file.name);
-          try {
-            e.dataTransfer.items.add(shot.file);
-          } catch {
-            /* an engine without items.add still gets the text drag */
-          }
-          e.dataTransfer.effectAllowed = 'copy';
-        }}
+        draggable={false}
       />
       <span className="feedback-shot-meta">
         <span className="feedback-shot-name">{shot.file.name}</span>
         <span className="feedback-shot-hint">
-          Drag the thumbnail into the form&rsquo;s attachment field — or Save it and attach the file.
+          Drag this into the form&rsquo;s attachment field — or Save it and attach the file.
         </span>
       </span>
       <button
         className="feedback-shot-act"
+        draggable={false}
+        onDragStart={(e) => e.preventDefault()}
         title="Save the PNG (screenshot folder, or Downloads)"
         onClick={() => void saveScreenshotCanvas(shot.canvas).catch(() => showToast('Could not save the screenshot.', 'error'))}
       ><FaDownload aria-hidden /></button>
       <button
         className="feedback-shot-act"
+        draggable={false}
+        onDragStart={(e) => e.preventDefault()}
         title="Discard this capture"
         onClick={() => publishFeedbackShot(null)}
       ><FaTimes aria-hidden /></button>

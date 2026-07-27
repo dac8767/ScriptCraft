@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.95 — Pages fixes, Feedback CSP, Airtable dev panel)
+# ScriptCraft — continuation brief (current as of v4.97 — Feedback capture drags as a real file)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,28 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.95 — Pages fixes, Feedback CSP, Airtable dev panel (HEAD)
+### v4.97 — Feedback capture drags as a real file (HEAD)
+
+- `attachShotToDrag(dt, file, url)` (exported, 7 tests) loads a dragstart:
+  `items.add(file)` FIRST — the only call that makes the drop target see
+  `dataTransfer.files` — then Blink's `DownloadURL` descriptor, and
+  `text/plain` ONLY if no file attached. Setting text up front advertises a
+  text drag, and a dropzone that sniffs `types` takes the text branch and
+  ignores the image.
+- It RETURNS whether the file took (`types` includes 'Files' after the add),
+  and the chip toasts when it didn't — a webview without outgoing file drags
+  now says so instead of dragging nothing.
+- Whole chip is the drag handle; buttons opt out with
+  `draggable={false}` + `onDragStart preventDefault`.
+- **Verified in Chromium through a real DataTransfer**: types
+  `["downloadurl","Files"]`, 1 file, correct name/`image/png`/~240KB, no
+  `text/plain`. NOT verifiable here for WKWebView — no WebKit in the sandbox,
+  which is exactly why the probe-and-report path exists.
+- Gotcha for future drag tests: `effectAllowed` CANNOT be set on a synthetic
+  DataTransfer — a bare `new DataTransfer()` set to 'copy' reads back
+  'none'. That is the harness, not the code; don't chase it.
+
+### v4.95 — Pages fixes, Feedback CSP, Airtable dev panel
 
 - **The Feedback form was CSP-blocked in release builds.** FeedbackTool has
   framed an airtable.com form since v4.23, but `app.security.csp`'s
