@@ -27,10 +27,18 @@
  */
 import { openInBrowser } from '../services/external';
 
-/** Derek's interface. The /embed/ form is the one Airtable serves framed —
- *  the plain share URL sends frame-ancestors and renders blank. */
-const SHARE_URL = 'https://airtable.com/appEkGNRsf05IzdNq/shryvi3woXRez4Lmc';
-const EMBED_URL = 'https://airtable.com/embed/appEkGNRsf05IzdNq/shryvi3woXRez4Lmc';
+/** Derek's interface (v4.96: repointed at the pagM2rZ… page).
+ *
+ *  The /embed/ form is the only one Airtable serves framed — the app's own
+ *  URLs send frame-ancestors and render blank.
+ *
+ *  NOTE the id shape: `pag…` is an interface PAGE, which Airtable normally
+ *  serves behind a login, and this webview has its own cookie jar (no session
+ *  from Safari or Chrome). If the panel comes up blank or shows a sign-in
+ *  wall, that's why — Share ▸ create a share link gives a `shr…` URL, which
+ *  embeds with no login at all. "Open in browser" below always works. */
+const SHARE_URL = 'https://airtable.com/appEkGNRsf05IzdNq/pagM2rZlfgWaox1mR';
+const EMBED_URL = 'https://airtable.com/embed/appEkGNRsf05IzdNq/pagM2rZlfgWaox1mR';
 
 export default function AirtableDevTool() {
   return (

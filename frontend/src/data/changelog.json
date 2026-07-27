@@ -1,5 +1,12 @@
 [
   {
+    "version": "4.96",
+    "date": "2026-07-26",
+    "changes": [
+      "Internal: the development-only Airtable panel points at a different interface page"
+    ]
+  },
+  {
     "version": "4.95",
     "date": "2026-07-26",
     "changes": [
