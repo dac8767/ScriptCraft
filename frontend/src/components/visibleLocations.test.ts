@@ -28,10 +28,10 @@ const ALL: Loc[] = [
   loc('MAIN STREET', ['INT./EXT'], [11]),
 ];
 const names = (r: Loc[]) => r.map((l) => l.name);
-const NONE = { search: '', filter: 'all' as const, sort: 'script' as const };
+const NONE = { search: '', filter: 'all' as const, sort: 'scene' as const };
 
 describe('visibleLocations', () => {
-  it('with nothing set, the list is untouched and in script order', () => {
+  it('with nothing set, the list is untouched and in scene order', () => {
     expect(names(visibleLocations(ALL, NONE))).toEqual(
       ['SPACE - BELKADAN', "CAL'S A-WING", 'CARRIER - HANGER BAY', 'MAIN STREET'],
     );
@@ -60,7 +60,7 @@ describe('visibleLocations', () => {
       .toEqual(['SPACE - BELKADAN', 'CARRIER - HANGER BAY', "CAL'S A-WING", 'MAIN STREET']);
   });
 
-  it('ties in the count sort keep script order — the list never shuffles at random', () => {
+  it('ties in the count sort keep scene order — the list never shuffles at random', () => {
     const tied = [loc('B', ['INT'], [2]), loc('A', ['INT'], [1])];
     expect(names(visibleLocations(tied, { ...NONE, sort: 'count' }))).toEqual(['B', 'A']);
   });

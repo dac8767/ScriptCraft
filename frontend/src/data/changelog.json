@@ -1,5 +1,12 @@
 [
   {
+    "version": "4.93",
+    "date": "2026-07-26",
+    "changes": [
+      "Locations ▸ Sort: the default is called \"Scene order\" now — it lists the locations in the order you meet them reading the script, which is what \"Script order\" was doing under a vaguer name"
+    ]
+  },
+  {
     "version": "4.92",
     "date": "2026-07-26",
     "changes": [

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.92 — Locations controls, scene-scan gate fix)
+# ScriptCraft — continuation brief (current as of v4.93 — Locations scene-order sort)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,17 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.92 — Locations controls, scene-scan gate fix (HEAD)
+### v4.93 — Locations "Scene order" sort (HEAD)
+
+- Derek asked to ADD "scene order" to the Locations sort. The existing
+  default, "Script order", already WAS that ordering (first appearance), and
+  the app names the same idea "Scene #" in the Notes/To-Do sorts — so it was
+  RENAMED, not duplicated. A second entry sorting the list identically is two
+  controls doing one job, which is the drift this codebase keeps re-learning.
+  The union member went `script` → `scene` to match (ephemeral state, not
+  persisted, so the rename is free).
+
+### v4.92 — Locations controls, scene-scan gate fix
 
 - **The v4.82 rescan gate was wrong.** `scenesNeeded` listed Scenes,
   Navigator and Characters — but Pages, Locations and Structure are

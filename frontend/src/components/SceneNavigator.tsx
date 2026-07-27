@@ -67,8 +67,11 @@ function groupByLocation(scenes: Array<{ heading: string }>): LocationGroup[] {
  *  kind", not "is this kind". Filtering to Interior therefore keeps a location
  *  you sometimes shoot inside, which is what a location list is for.
  *
- *  'script' order is the order groupByLocation produced — first appearance —
- *  which is the order this list has always used, so it stays the default. */
+ *  'scene' order is the order groupByLocation produced — first appearance —
+ *  which is the order this list has always used, so it stays the default.
+ *  v4.93, Derek asked for "scene order" as an option; this IS that order, so
+ *  it was renamed rather than duplicated — a second entry sorting the list
+ *  the same way would be two controls doing one job. */
 export function visibleLocations(
   all: LocationGroup[],
   { search, filter, sort }: { search: string; filter: LocationFilter; sort: LocationSort },
@@ -81,7 +84,7 @@ export function visibleLocations(
     return loc.prefixes.some((p) => (p || '').toUpperCase().includes(wanted));
   });
   if (sort === 'name') return [...kept].sort((a, b) => a.name.localeCompare(b.name));
-  // Most-used first; ties keep script order, so the list never shuffles at random.
+  // Most-used first; ties keep scene order, so the list never shuffles at random.
   if (sort === 'count') return [...kept].sort((a, b) => b.sceneIndices.length - a.sceneIndices.length);
   return kept;
 }
@@ -971,7 +974,10 @@ export function LocationsControls() {
     { id: 'ext', label: 'Exterior' },
   ];
   const SORTS: { id: LocationSort; label: string }[] = [
-    { id: 'script', label: 'Script order' },
+    // v4.93, Derek: "Scene order" — the order the locations turn up reading
+    // the script. Same ordering that was called "Script order"; the app's own
+    // vocabulary for this is scene-based ("Scene #" in the Notes/To-Do sorts).
+    { id: 'scene', label: 'Scene order' },
     { id: 'name', label: 'Name (A–Z)' },
     { id: 'count', label: 'Most scenes' },
   ];
@@ -986,7 +992,7 @@ export function LocationsControls() {
       />
       <ControlDropdown
         label="Sort"
-        current={sort === 'script' ? undefined : SORTS.find((s) => s.id === sort)?.label}
+        current={sort === 'scene' ? undefined : SORTS.find((s) => s.id === sort)?.label}
         title="Order the locations"
         items={SORTS.map((s) => ({ label: s.label, active: sort === s.id, onSelect: () => setSort(s.id) }))}
       />

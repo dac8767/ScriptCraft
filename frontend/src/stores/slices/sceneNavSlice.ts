@@ -29,13 +29,16 @@ export interface SceneNavSlice {
   /** 'all' | 'int' | 'ext' — read off each scene heading's prefix. */
   locationFilter: LocationFilter;
   setLocationFilter: (v: LocationFilter) => void;
-  /** 'script' = first appearance (the order the list has always used). */
+  /** 'scene' = first appearance — the order you meet the locations reading
+   *  the script, which is the order the list has always used. v4.93, Derek
+   *  named it "scene order"; it was labelled "Script order" before, and the
+   *  app calls the same idea "Scene #" in the Notes/To-Do sorts. */
   locationSort: LocationSort;
   setLocationSort: (v: LocationSort) => void;
 }
 
 export type LocationFilter = 'all' | 'int' | 'ext';
-export type LocationSort = 'script' | 'name' | 'count';
+export type LocationSort = 'scene' | 'name' | 'count';
 
 export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlice> = (set) => ({
   navFilter: '',
@@ -52,6 +55,6 @@ export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlic
   setLocationSearch: (v) => set({ locationSearch: v }),
   locationFilter: 'all',
   setLocationFilter: (v) => set({ locationFilter: v }),
-  locationSort: 'script',
+  locationSort: 'scene',
   setLocationSort: (v) => set({ locationSort: v }),
 });
