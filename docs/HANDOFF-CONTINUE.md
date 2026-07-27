@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.90 — one edge line, docked close button)
+# ScriptCraft — continuation brief (current as of v4.91 — header tabs re-expand, icon centering)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,28 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.90 — one edge line, docked close button (HEAD)
+### v4.91 — header tabs re-expand, icon centering (HEAD)
+
+- **`naturalWidth` must never count a LEFT margin.** `.tool-chrome-right`
+  carries `margin-left: auto` as the row's spacer, and `getComputedStyle`
+  resolves an auto margin to its USED value — the row's entire leftover
+  space. So `need` grew in lockstep with the row and the fit test could never
+  succeed: once the tabs collapsed to a dropdown they stayed collapsed at any
+  window size. **v4.67 misdiagnosed this** as a stale ResizeObserver and
+  re-bound the observer; the observer was firing the whole time, the
+  arithmetic was self-defeating. Now counts `marginRight` only (which is what
+  the real spacing in this row is — the title's `--dz-toolwin-title-gap`).
+  `naturalWidth` is exported and has 5 tests over stubbed layout.
+- **Icon centering**: the header icons shipped at 11px in a 30px button —
+  9.5px a side, a half pixel the renderer rounds one way or the other
+  depending on the button's own fractional x, so the glyph crept as the
+  window resized. Now 12px (a whole 9px a side), scoped to
+  `.tool-chrome-actions svg`. The separator is an **inset box-shadow**, not a
+  `border-left`: with border-box sizing the border ate 1px of the 30px, so the
+  bordered button's icon sat half a pixel off its unbordered neighbour's.
+  Measured dx/dy = 0 for both buttons at four fractional window widths.
+
+### v4.90 — one edge line, docked close button
 
 - **`--fd-hairline` is now `var(--fd-border)` at `--fd-hairline-w: 1px`** —
   i.e. the status bar's own line. Derek: every seam should match the

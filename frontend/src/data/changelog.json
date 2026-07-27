@@ -1,5 +1,13 @@
 [
   {
+    "version": "4.91",
+    "date": "2026-07-26",
+    "changes": [
+      "Fix: window header tabs compacted into a dropdown when space ran out but never expanded again, at any size — the fit test was counting the row's flexible spacer, which grows with the window, so it could never decide anything fit",
+      "The fullscreen and close icons sit dead centre in their buttons and stay there — an 11px icon in a 30px button left half a pixel a side, which the renderer rounded differently as the window moved, so the glyph appeared to creep"
+    ]
+  },
+  {
     "version": "4.90",
     "date": "2026-07-26",
     "changes": [

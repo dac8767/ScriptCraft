@@ -173,9 +173,19 @@ export interface ToolChrome {
  *  the row's width against the NATURAL single-line widths — a hidden copy of
  *  the full strip, plus each sibling's unwrapped content width — so the
  *  row's own wrapping never feeds back into the decision. */
-function naturalWidth(el: HTMLElement): number {
+export function naturalWidth(el: HTMLElement): number {
   // flex-wrap containers report their wrapped box — sum their children the
   // same way to get the single-line width they WANT.
+  //
+  // v4.91, Derek ("it doesn't expand if I expand the window"): count the RIGHT
+  // margin, never the left. `.tool-chrome-right` carries `margin-left: auto`
+  // as the row's spacer, and getComputedStyle resolves an auto margin to its
+  // USED value — every pixel of leftover space in the row. Adding that made
+  // `need` grow in lockstep with the row's width, so the fit test could never
+  // succeed: once the tabs collapsed they stayed collapsed at ANY size. (The
+  // v4.67 pass blamed a stale ResizeObserver and re-bound it — the observer
+  // was firing all along; the arithmetic was self-defeating.) Real spacing in
+  // this row is right-margin anyway (the title's --dz-toolwin-title-gap).
   const cs = getComputedStyle(el);
   if (cs.flexWrap === 'wrap' && el.children.length > 0) {
     const gap = parseFloat(cs.columnGap) || 0;
@@ -183,9 +193,9 @@ function naturalWidth(el: HTMLElement): number {
     for (const c of el.children) w += naturalWidth(c as HTMLElement);
     return w + gap * Math.max(0, el.children.length - 1)
       + (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0)
-      + (parseFloat(cs.marginLeft) || 0);
+      + (parseFloat(cs.marginRight) || 0);
   }
-  return el.offsetWidth + (parseFloat(cs.marginLeft) || 0);
+  return el.offsetWidth + (parseFloat(cs.marginRight) || 0);
 }
 
 function HeaderTabs({ chrome }: { chrome: ToolChrome }) {

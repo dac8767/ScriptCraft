@@ -696,7 +696,12 @@ body.fs-tool-dragging { cursor: grabbing; }
 .char-profiles-fullscreen-btn + .tool-window-minimize,
 .char-profiles-fullscreen-btn + .tool-window-close,
 .tool-window-minimize + .tool-window-close {
-  border-left: 1px solid color-mix(in srgb, var(--fd-navigator-bg) 62%, var(--fd-text) 38%);
+  /* v4.91: an INSET SHADOW, not a border. With border-box sizing a 1px
+     border-left eats into the button's 30px, leaving a 29px content box — so
+     the icon centred on 14.5px and sat half a pixel right of the button's
+     middle, while its neighbour (no border) sat dead centre. A shadow paints
+     the same line without touching the box. */
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--fd-navigator-bg) 62%, var(--fd-text) 38%);
 }
 /* (Flush into the corner comes free now — .tool-chrome-actions sits at
    right: 0 of the header, so the close button touches the window edge and the
@@ -724,6 +729,20 @@ body.fs-tool-dragging { cursor: grabbing; }
 .char-profiles-fullscreen-btn > svg {
   display: block;
   flex: none;
+}
+/* v4.91, Derek ("not horizontally centered … I could see it shifting around
+   inside that space"): the icons ship at 11px, and an ODD icon in the 30px
+   button leaves 9.5px a side — a half pixel the renderer has to round, and it
+   rounds one way or the other depending on where the button's own fractional
+   x lands. Resizing the window changes that fraction, so the glyph appeared
+   to creep inside its plate. 12px in 30px leaves a whole 9px each side: dead
+   centre, and it stays there at every window width.
+   Scoped to the header actions — .fs-nb-close and the icons elsewhere keep
+   their own sizes. */
+.tool-chrome-actions svg,
+.tool-inline-header .tool-chrome-actions svg {
+  width: 12px;
+  height: 12px;
 }
 .tool-window-header .char-profiles-fullscreen-btn:hover,
 .tool-inline-header .char-profiles-fullscreen-btn:hover,
