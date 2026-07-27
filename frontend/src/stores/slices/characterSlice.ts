@@ -8,6 +8,18 @@ import type { StateCreator } from 'zustand';
 import type { EditorState, CharacterProfile, CharacterCustomField, CharacterRelationship, ReferredTag } from '../editorStore';
 import type { ScannedCharacter } from '../../utils/characterScan';
 
+/** v4.88: which custom fields a given character shows — the shared ones (no
+ *  owner, how every field worked before v4.88) plus the ones made ON this
+ *  character. Lives here rather than inline in CharacterProfiles so the rule
+ *  has one home and can be tested without rendering the tool. */
+export function characterFieldsFor(
+  fields: CharacterCustomField[],
+  name: string,
+): CharacterCustomField[] {
+  const key = name.toUpperCase();
+  return fields.filter((f) => !f.owner || f.owner === key);
+}
+
 export interface CharacterSlice {
   // Character profiles (Final Draft CastList + CharacterHighlighting)
   characters: string[];
@@ -19,7 +31,9 @@ export interface CharacterSlice {
   /** v4.22: user-defined character fields, shared by every character. */
   characterCustomFields: CharacterCustomField[];
   setCharacterCustomFields: (fields: CharacterCustomField[]) => void;
-  addCharacterCustomField: (label: string) => void;
+  /** v4.88: `owner` (a character name) scopes the field to that character;
+   *  omit it for a field every character carries. */
+  addCharacterCustomField: (label: string, owner?: string) => void;
   renameCharacterCustomField: (id: string, label: string) => void;
   removeCharacterCustomField: (id: string) => void;
   characterRelationships: CharacterRelationship[];
@@ -85,12 +99,13 @@ export const createCharacterSlice: StateCreator<EditorState, [], [], CharacterSl
     })),
   characterCustomFields: [],
   setCharacterCustomFields: (fields) => set({ characterCustomFields: fields }),
-  addCharacterCustomField: (label) =>
+  addCharacterCustomField: (label, owner) =>
     set((s) => {
       const clean = label.trim();
       if (!clean) return {};
       const id = `cf-${Date.now()}-${s.characterCustomFields.length}`;
-      return { characterCustomFields: [...s.characterCustomFields, { id, label: clean }] };
+      const field = owner ? { id, label: clean, owner: owner.toUpperCase() } : { id, label: clean };
+      return { characterCustomFields: [...s.characterCustomFields, field] };
     }),
   renameCharacterCustomField: (id, label) =>
     set((s) => ({

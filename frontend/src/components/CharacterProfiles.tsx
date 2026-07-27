@@ -10,6 +10,7 @@ import { CharacterRelationshipsTab } from './CharacterRelationshipsTab';
 import { CharacterImagePickerDialog } from './CharacterImageOverlays';
 import { useDelayedUnmount, useSwipeDismiss } from '../hooks/useTouch';
 import { useEditorStore, type CharacterProfile } from '../stores/editorStore';
+import { characterFieldsFor } from '../stores/slices/characterSlice';
 import { useProjectStore } from '../stores/projectStore';
 import { useAssetStore } from '../stores/assetStore';
 import { api } from '../services/api';
@@ -20,7 +21,7 @@ import { buildScanList, filterScanList, type ScannedCharacter } from '../utils/c
 import { useWindowTabMemory } from '../utils/windowTabMemory';
 import { InlineRelForm, REL_DYNAMICS } from './InlineRelForm';
 import { AssetImage, AssetAudio, ImageSourceMenu } from './CharacterAssetMedia';
-import { promptDialog } from './ConfirmDialog';
+import { promptWithCheckbox } from './ConfirmDialog';
 
 // Default colors for auto-assignment (VIBGYOR palette)
 const DEFAULT_HIGHLIGHT_COLORS = [
@@ -1050,20 +1051,23 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
    *  an "+ Add field" control. Shown on every character. (v4.22, Derek.) */
   const renderCustomFields = (charName: string) => {
     const prof = getProfile(charName);
+    // v4.88: a field with no owner belongs to every character (how they all
+    // worked before); an owned one shows only on the character it was made on.
+    const mine = characterFieldsFor(characterCustomFields, charName);
     return (
       <div className="char-profile-custom-fields">
-        {characterCustomFields.map((f) => (
+        {mine.map((f) => (
           <div className="char-profile-custom-field" key={f.id}>
             <div className="char-profile-custom-label-row">
               <input
                 className="char-profile-label char-profile-custom-label"
                 value={f.label}
-                title="Rename this field (applies to every character)"
+                title={f.owner ? `Rename this field (only on ${f.owner})` : 'Rename this field (applies to every character)'}
                 onChange={(e) => renameCharacterCustomField(f.id, e.target.value)}
               />
               <button
                 className="char-profile-custom-remove"
-                title="Remove this field from every character"
+                title={f.owner ? 'Remove this field from this character' : 'Remove this field from every character'}
                 onClick={() => removeCharacterCustomField(f.id)}
               ><FaRegTrashAlt /></button>
             </div>
@@ -1089,8 +1093,17 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             // WKWebView (the documented ConfirmDialog hazard) — the button
             // silently did nothing in the app. promptDialog is the in-app
             // replacement every other prompt already uses.
-            const label = await promptDialog('New field name (added to every character):', '', { title: 'New Custom Field', confirmLabel: 'Add' });
-            if (label && label.trim()) addCharacterCustomField(label.trim());
+            // v4.88, Derek: the name and the scope are ONE question, so they
+            // are one dialog — unchecked means the field belongs to this
+            // character alone.
+            const res = await promptWithCheckbox('New field name:', '', {
+              title: 'New Custom Field',
+              confirmLabel: 'Add',
+              checkboxLabel: 'Apply to all characters?',
+            });
+            if (res && res.value.trim()) {
+              addCharacterCustomField(res.value.trim(), res.checked ? undefined : charName);
+            }
           }}
         >+ Custom Field</button>
       </div>
@@ -1243,18 +1256,12 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         {/* Voice Profile moved to a photo-row toggle (batch-v5 #4); its
             fields render under the photo with the other section blocks. */}
 
-        {/* Color + Highlight */}
+        {/* v4.88, Derek: the swatch row is GONE. A character's color had TWO
+            controls — the picker beside the name and this row of circles at
+            the foot of the record — which is one colour with two places to set
+            it, and the second was the one you never saw. The picker by the
+            name stays as the single source. */}
         <div className="char-profile-color-highlight">
-          <label className="char-profile-label">Color</label>
-          <div className="char-color-swatches">
-            {['#8b5cf6','#4f46e5','#2563eb','#059669','#eab308','#f97316','#ef4444','#000000','#ffffff'].map(c => (
-              <button key={c} className={`synopsis-color-swatch${(prof.color || '') === c ? ' active' : ''}`} style={{ background: c }} onClick={() => upsertCharacterProfile(charName, { color: c })} />
-            ))}
-            <label className="synopsis-color-custom" title="Custom color">
-              <input type="color" value={prof.color || '#999999'} onChange={(e) => upsertCharacterProfile(charName, { color: e.target.value })} />
-              <span>+</span>
-            </label>
-          </div>
           <div className="char-profile-highlight-inline">
             <label className="char-profile-label" style={{ marginBottom: 0 }}>Highlight</label>
             <button
@@ -1516,13 +1523,20 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                       </div>
                     );
                   })()}
-                  <button
-                    className="char-profile-enlarge-btn"
-                    onClick={(e) => { e.stopPropagation(); setModalChar(name); }}
-                    title="Expand this character into a larger window"
-                  >
-                    <ExpandIcon />
-                  </button>
+                  {/* v4.88, Derek: no enlarge button in the LIST view — the
+                      caret already opens the full profile inline there, so it
+                      was a second control for the same job. Cards view keeps
+                      it: cards show the essentials only, and this is the only
+                      way from a card to the whole record. */}
+                  {isCardsView && (
+                    <button
+                      className="char-profile-enlarge-btn"
+                      onClick={(e) => { e.stopPropagation(); setModalChar(name); }}
+                      title="Expand this character into a larger window"
+                    >
+                      <ExpandIcon />
+                    </button>
+                  )}
                   </div>
                 </div>
 

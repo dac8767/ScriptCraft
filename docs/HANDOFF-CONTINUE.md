@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.87 — header corner actions, softer window edge)
+# ScriptCraft — continuation brief (current as of v4.88 — per-character custom fields, character-record cleanup)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,26 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.87 — header corner actions, softer window edge (HEAD)
+### v4.88 — per-character custom fields, character-record cleanup (HEAD)
+
+- **`CharacterCustomField.owner?: string`** (upper-cased character name).
+  Absent = shared by everyone, which is what every pre-v4.88 field is — so
+  nothing migrates and old data behaves identically. `characterFieldsFor()`
+  in characterSlice is the one place the rule lives; CharacterProfiles calls
+  it rather than filtering inline.
+- **`promptWithCheckbox()`** added to ConfirmDialog (not a bespoke dialog —
+  the shell, Escape/Enter handling and fail-safe stay shared). The checkbox
+  state is mirrored into a REF because `answer` is a stable useCallback;
+  reading the state there resolves the value the checkbox had when the dialog
+  opened, which looks exactly like a working checkbox that does nothing.
+  Five render tests pin it, including that hazard.
+- Character record: the bottom swatch row is gone (the picker beside the name
+  was always the other half of a two-controls-one-value pair). The List view's
+  enlarge button is gone too — the caret already opens the full profile there.
+  CARDS view keeps it: a card shows essentials only, so it is the only route
+  to the whole record.
+
+### v4.87 — header corner actions, softer window edge
 
 - **`.tool-chrome-actions`** (new span in `HeaderRightCluster`) holds
   fullscreen · shrink · close and is PINNED by CSS to `.tool-window-header`'s

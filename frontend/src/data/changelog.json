@@ -1,5 +1,14 @@
 [
   {
+    "version": "4.88",
+    "date": "2026-07-26",
+    "changes": [
+      "Custom fields can belong to ONE character: \"+ Custom Field\" now asks \"Apply to all characters?\" — leave it unticked and the field appears only on the character you made it on",
+      "Character records: the row of colour circles at the foot of the record is gone — the colour picker beside the character's name is the one place to set it",
+      "The expand button is off each row in the character List view (the caret already opens the full profile there); Cards view keeps it, since a card shows the essentials only"
+    ]
+  },
+  {
     "version": "4.87",
     "date": "2026-07-26",
     "changes": [

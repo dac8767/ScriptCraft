@@ -103,6 +103,18 @@
   font-size: 13px;
 }
 .fs-confirm-input:focus { outline: none; border-color: var(--fd-accent); }
+/* v4.88: the optional prompt checkbox ("Apply to all characters?"). */
+.fs-confirm-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--fd-text);
+  cursor: pointer;
+  user-select: none;
+}
+.fs-confirm-check input { margin: 0; cursor: pointer; }
 
 /* ─── v2.29: top chrome acts as one — unified resize + spacing grips ─── */
 .fs-top-chrome {

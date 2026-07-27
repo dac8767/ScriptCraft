@@ -713,10 +713,17 @@ export interface CharacterProfile {
   customFields?: Record<string, string>;
 }
 
-/** v4.22, Derek: a user-defined character field, shown on every character. */
+/** v4.22, Derek: a user-defined character field.
+ *
+ *  v4.88: it can belong to ONE character instead of all of them. `owner` is
+ *  that character's name (upper-cased, the key characterProfiles uses);
+ *  absent = shared by every character, which is what every field made before
+ *  v4.88 is — so old data needs no migration and keeps behaving exactly as it
+ *  did. The "Apply to all characters?" checkbox is what sets it. */
 export interface CharacterCustomField {
   id: string;
   label: string;
+  owner?: string;
 }
 
 export interface CharacterRelationship {

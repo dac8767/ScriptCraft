@@ -32,6 +32,12 @@ export interface ConfirmOptions {
   /** v3.49: three-way (save) mode — a middle button between Cancel and the
    *  confirm button (e.g. "Don't Save"). Only used by saveDialog. */
   tertiaryLabel?: string;
+  /** v4.88: an extra checkbox under the prompt input ("Apply to all
+   *  characters?"). Added HERE rather than as a bespoke dialog so every
+   *  prompt in the app keeps the one shell — same shape, same Escape/Enter
+   *  handling, same fail-safe. Read it with promptWithCheckbox. */
+  checkboxLabel?: string;
+  checkboxDefault?: boolean;
 }
 
 /** v3.49: the three outcomes of a save-before-closing prompt. */
@@ -44,8 +50,13 @@ interface ConfirmRequest extends ConfirmOptions {
   promptDefault?: string;
   /** v3.49: three-way mode — resolve 'save' | 'discard' | 'cancel'. */
   threeWay?: boolean;
-  resolve: (result: boolean | string | null | SaveChoice) => void;
+  /** v4.88: resolve { value, checked } instead of a bare string. */
+  withCheckbox?: boolean;
+  resolve: (result: boolean | string | null | SaveChoice | PromptWithCheck) => void;
 }
+
+/** v4.88: what promptWithCheckbox resolves on confirm. */
+export interface PromptWithCheck { value: string; checked: boolean }
 
 let nextId = 0;
 const listeners: Array<(req: ConfirmRequest) => void> = [];
@@ -72,6 +83,22 @@ export function promptDialog(message: string, defaultValue = '', opts: ConfirmOp
   });
 }
 
+/** v4.88: a prompt that also answers a yes/no question — the text and the
+ *  checkbox come back together, so the caller makes ONE decision from ONE
+ *  dialog. Fails SAFE to null (no host ⇒ nothing was asked, nothing is made). */
+export function promptWithCheckbox(
+  message: string,
+  defaultValue = '',
+  opts: ConfirmOptions & { checkboxLabel: string } = { checkboxLabel: '' },
+): Promise<PromptWithCheck | null> {
+  return new Promise<PromptWithCheck | null>((resolve) => {
+    enqueue(
+      { id: ++nextId, message, ...opts, promptDefault: defaultValue, withCheckbox: true, resolve: resolve as ConfirmRequest['resolve'] },
+      null,
+    );
+  });
+}
+
 /** v3.49: a "save before leaving?" prompt with three outcomes. Fails SAFE to
  *  'cancel' when no host is mounted — a prompt that can't be shown must never
  *  silently close-and-lose or close-and-keep on the user's behalf. */
@@ -88,6 +115,15 @@ const ConfirmDialogHost: React.FC = () => {
   // v3.36: for requireText confirms — the typed value gates the OK button.
   const [typed, setTyped] = useState('');
   useEffect(() => { setTyped(''); }, [current?.id]);
+  // v4.88: the optional checkbox. Mirrored into a ref because `answer` is a
+  // stable useCallback — reading the state there would resolve a stale value.
+  const [checked, setChecked] = useState(false);
+  const checkRef = useRef(false);
+  useEffect(() => {
+    const def = !!current?.checkboxDefault;
+    setChecked(def);
+    checkRef.current = def;
+  }, [current?.id, current?.checkboxDefault]);
   const requireOk = !current?.requireText || typed.trim() === current.requireText;
 
   useEffect(() => {
@@ -106,7 +142,10 @@ const ConfirmDialogHost: React.FC = () => {
         if (req.threeWay) {
           req.resolve(kind === 'confirm' ? 'save' : kind === 'tertiary' ? 'discard' : 'cancel');
         } else if (req.promptDefault !== undefined) {
-          req.resolve(kind === 'confirm' ? (inputRef.current?.value ?? '') : null);
+          const value = inputRef.current?.value ?? '';
+          if (kind !== 'confirm') req.resolve(null);
+          else if (req.withCheckbox) req.resolve({ value, checked: checkRef.current });
+          else req.resolve(value);
         } else {
           req.resolve(kind === 'confirm');
         }
@@ -143,6 +182,16 @@ const ConfirmDialogHost: React.FC = () => {
             defaultValue={current.promptDefault}
             onFocus={(e) => e.target.select()}
           />
+        )}
+        {current.checkboxLabel && (
+          <label className="fs-confirm-check">
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => { setChecked(e.target.checked); checkRef.current = e.target.checked; }}
+            />
+            <span>{current.checkboxLabel}</span>
+          </label>
         )}
         {current.requireText && (
           <input
