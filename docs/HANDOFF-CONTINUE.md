@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v4.88 — per-character custom fields, character-record cleanup)
+# ScriptCraft — continuation brief (current as of v4.89 — per-character custom fields, header button fix)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,18 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v4.88 — per-character custom fields, character-record cleanup (HEAD)
+### v4.89 — header fullscreen button height (HEAD)
+
+- `.char-profiles-fullscreen-btn` carries `align-self: center` from
+  10-character-profiles.css (v4.42, when it was a small centered glyph), and
+  a child’s `align-self` BEATS the parent’s `align-items: stretch` — so the
+  close button filled the header and the fullscreen button did not. The
+  shared action-button rule sets `align-self: stretch` explicitly now.
+  Lesson: my v4.87 driver measured the icon inside its button and the actions
+  CONTAINER against the header, but never each button against the header —
+  so it passed while the thing Derek could see was wrong.
+
+### v4.88 — per-character custom fields, character-record cleanup
 
 - **`CharacterCustomField.owner?: string`** (upper-cased character name).
   Absent = shared by everyone, which is what every pre-v4.88 field is — so

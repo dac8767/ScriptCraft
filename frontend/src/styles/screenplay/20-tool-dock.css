@@ -637,7 +637,14 @@ body.fs-tool-dragging { cursor: grabbing; }
   justify-content: center;
   flex: none;
   /* Height comes from .tool-chrome-actions (pinned top-to-bottom of the
-     header, align-items: stretch) — `height: auto` so the stretch wins. */
+     header) — `height: auto` so the stretch wins.
+     `align-self: stretch` is NOT redundant with the parent's align-items:
+     .char-profiles-fullscreen-btn carries its own `align-self: center` from
+     10-character-profiles.css (v4.42, when it was a small centered glyph),
+     and a child's align-self beats the parent's align-items. Without this the
+     close button filled the header and the fullscreen button did not — the
+     exact mismatch Derek spotted. */
+  align-self: stretch;
   height: auto;
   margin: 0;
 }

@@ -1,5 +1,12 @@
 [
   {
+    "version": "4.89",
+    "date": "2026-07-26",
+    "changes": [
+      "Fix: the fullscreen button in a window header was shorter than the close button beside it — both now fill the header's full height"
+    ]
+  },
+  {
     "version": "4.88",
     "date": "2026-07-26",
     "changes": [
