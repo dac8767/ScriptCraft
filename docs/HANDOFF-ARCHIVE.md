@@ -151,9 +151,34 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.18 and older (newest first)
+## Version history — v5.19 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.19 — Reorder wears the dialogs' Apply format
+
+- Derek (screenshot of a dialog's Cancel/Apply): "change the reorder button
+  to match this format." The Scenes Reorder button's idle look is now the
+  filled-accent primary — done by WEARING `dialog-btn dialog-btn-primary`
+  (ScenesReorderControl), not by copying values: the dialogs' rules, their
+  light-theme variant and the Design knobs --dz-dialog-btn-h/-radius all
+  drive it for free. 22-tools-extra.css keeps ONLY the `.active` amber
+  override (deliberate since v4.32: an unapplied order must not look like
+  an available action) — it beats the light-theme dialog rules on source
+  order (same specificity, 22 loads after 01), noted in the comment.
+- The old `.scene-reorder-btn` idle block (grey wash + accent outline,
+  v5.13) and its grey hover are GONE — the hover would have tied with
+  `.dialog-btn-primary:hover` and won on source order, silently killing the
+  primary hover.
+- SceneNavigator.test.tsx now selects `button.scene-reorder-btn` (was
+  `.tool-action-btn`, a class the button no longer wears) and pins
+  `dialog-btn-primary` in the class list.
+- Driver check-reorder-btn.mjs (5 checks): computed-style EQUALITY against
+  a live `dialog-btn dialog-btn-primary` probe appended to the same
+  document (9 properties, zero diffs — the "same format" proof is the
+  dialogs' own computed values, no hardcoded colors); active still amber.
+  Gotcha recorded: after page.click the cursor hovers the button — move
+  the mouse away before reading colors or you sample the :hover shade.
 
 ### v5.18 — per-row button spacing; the box-air truth
 

@@ -1001,6 +1001,12 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   setStickyKindFilter: (v: 'all' | 'note' | 'todo') => void;
   stickySort: 'type' | 'manual' | 'created';
   setStickySort: (v: 'type' | 'manual' | 'created') => void;
+  /** v5.23, Derek: "Items per row:" for the popped-out / fullscreen shapes —
+   *  the Pages per-row model (the count IS the meaning, stepped). Docked
+   *  panels stay one column and don't show the stepper. Default 1 so nothing
+   *  moves until the knob does. */
+  stickyPerRow: number;
+  setStickyPerRow: (v: number) => void;
   stickyTabOrder: ('all' | 'note' | 'todo')[];
   setStickyTabOrder: (order: ('all' | 'note' | 'todo')[]) => void;
   /** v4.32: generic list-count publisher — the body publishes, the window
@@ -1424,6 +1430,9 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   setStickyKindFilter: (v) => set({ stickyKindFilter: v }),
   stickySort: 'type',
   setStickySort: (v) => set({ stickySort: v }),
+  stickyPerRow: 1,
+  // Clamped HERE, not at the buttons (the pagesPerRow rule).
+  setStickyPerRow: (v) => set({ stickyPerRow: Math.min(8, Math.max(1, Math.round(v))) }),
   stickyTabOrder: (_vs.stickyTabOrder as ('all' | 'note' | 'todo')[] | undefined) ?? ['all', 'note', 'todo'],
   setStickyTabOrder: (order) => {
     saveViewState({ stickyTabOrder: order });

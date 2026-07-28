@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.22 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.23 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,43 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.22 — Sticky Notes: one interleaved list, reorderable tabs, blank check row (HEAD)
+### v5.23 — compact buttons, the anchored-resize truth, per-row right (HEAD)
+
+- Derek's batch: smaller add buttons; Manual LAST in Sort; the bottom-left
+  resize corner moved the wrong edge; "Items per row:" for popped/fullscreen
+  Sticky Notes; ALL per-row steppers right-aligned with former right
+  occupants swapping left (Pages Go-to, Scenes Reorder).
+- THE RESIZE BUG (root cause, ToolDock startResize): the grip and the width
+  math follow the tool's HOME side, but the ANCHOR follows position — a
+  right-docked window is right-anchored only until startDrag writes `left`
+  + `right:'auto'` (its comment even said "until dragged"; resize never
+  learned). Fix: `leftGrip = side==='right'`, `anchoredRight` read off the
+  inline styles at grab time; a left grip on a LEFT-anchored box hands the
+  width change to the left edge (el.style.left = startLeft + (startW − w)),
+  applied AFTER the v0.85 slack shrink so the edge tracks the final width.
+  Driver-proven with real mouse drags: left edge −80px, right edge ±1.
+- Sticky "Items per row:" — stickyPerRow (ephemeral, clamp 1–8, DEFAULT 1
+  so nothing moves until touched). Gate: popped = fullscreenTool==='sticky'
+  || tempTool==='sticky' || toolMode.sticky==='floating'; docked renders
+  plain (no stepper, forced 1 col). Grid via `.swn-scroll.swn-grid` +
+  inline --sticky-per-row (class only when >1 → the 1-col rendering is
+  byte-identical to before); hint + drop zones span `grid-column: 1 / -1`.
+- Add buttons: `.sticky-add-btn { height: 26px; padding: 0 12px; font-size:
+  12px }` — dialog-primary COLORS kept, box compacted (wins the tie with
+  .dialog-btn on source order). check-sticky-v522's probe check now
+  compares colors/radius only, height is deliberately different.
+- KNOWN-BY-DESIGN rediscovered while driving: clicking into the script
+  MINIMIZES the open tool window (v1.77, keepOpenOnEditorClick exempts
+  Typewriter) — drivers must not "click empty space" in the editor to
+  dismiss menus; press document.body instead. Also ControlDropdown closes
+  on outside PRESS, not Escape (only the filter popover listens for
+  Escape).
+- check-v523.mjs (9 checks): 26px buttons, sort order, right-aligned
+  stepper + 2-across grid in the floating shape, the two resize-edge
+  checks, docked has no stepper, Pages swap geometry. check-scenes-v520
+  updated to the swapped row (Reorder left ≤14px, stepper right ≤12px).
+
+### v5.22 — Sticky Notes: one interleaved list, reorderable tabs, blank check row
 
 - Derek's refinement of the v5.21 merge: (1) "do not force separating" —
   ONE interleaved list; Sort gains 'type' (default: notes before checklists)
@@ -333,36 +369,12 @@ Durable bits kept live here:
   scrollWidth overflow, dots contained, both exclusivity directions, stepper
   left / Reorder right by rect math, 3→4 columns, card bg rgb(53,53,53).
 
-### v5.19 — Reorder wears the dialogs' Apply format
-
-- Derek (screenshot of a dialog's Cancel/Apply): "change the reorder button
-  to match this format." The Scenes Reorder button's idle look is now the
-  filled-accent primary — done by WEARING `dialog-btn dialog-btn-primary`
-  (ScenesReorderControl), not by copying values: the dialogs' rules, their
-  light-theme variant and the Design knobs --dz-dialog-btn-h/-radius all
-  drive it for free. 22-tools-extra.css keeps ONLY the `.active` amber
-  override (deliberate since v4.32: an unapplied order must not look like
-  an available action) — it beats the light-theme dialog rules on source
-  order (same specificity, 22 loads after 01), noted in the comment.
-- The old `.scene-reorder-btn` idle block (grey wash + accent outline,
-  v5.13) and its grey hover are GONE — the hover would have tied with
-  `.dialog-btn-primary:hover` and won on source order, silently killing the
-  primary hover.
-- SceneNavigator.test.tsx now selects `button.scene-reorder-btn` (was
-  `.tool-action-btn`, a class the button no longer wears) and pins
-  `dialog-btn-primary` in the class list.
-- Driver check-reorder-btn.mjs (5 checks): computed-style EQUALITY against
-  a live `dialog-btn dialog-btn-primary` probe appended to the same
-  document (9 properties, zero diffs — the "same format" proof is the
-  dialogs' own computed values, no hardcoded colors); active still amber.
-  Gotcha recorded: after page.click the cursor hovers the button — move
-  the mouse away before reading colors or you sample the :hover shade.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.19** — Reorder wears the dialogs' Apply format
 - **v5.18** — per-row button spacing; the box-air truth
 - **v5.17** — padding grows the bar; the descender truth
 - **v5.16** — 0 means 0; bar side-padding knobs

@@ -935,7 +935,27 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
           number drives everything downstream unchanged. */}
       {activeTab === 'pages' && (
         <ToolActionRow>
-          <span className="tool-action-group">
+          {/* v5.23, Derek: every "x per row" stepper is RIGHT-aligned and
+              the row's former right occupant swaps left — Go to page leads,
+              the stepper holds the right edge. Submitting scrolls the
+              thumbnail into view AND takes the script there — the same jump
+              clicking the page makes. */}
+          <form
+            className="tool-action-group"
+            onSubmit={(e) => { e.preventDefault(); goToPageNumber(gotoPage); }}
+          >
+            <label className="tool-action-label" htmlFor="fs-pages-goto">Go to page:</label>
+            <input
+              id="fs-pages-goto"
+              className="tool-action-field"
+              type="text"
+              inputMode="numeric"
+              value={gotoPage}
+              onChange={(e) => setGotoPage(e.target.value.replace(/[^0-9]/g, ''))}
+              onBlur={() => goToPageNumber(gotoPage)}
+            />
+          </form>
+          <span className="tool-action-group tool-action-right">
             <span className="tool-action-label" id="fs-pages-perrow-label">Pages per row:</span>
             <button
               className="tool-action-btn tool-action-icon"
@@ -951,24 +971,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               onClick={() => setPagesPerRow(pagesPerRow + 1)}
             ><CirclePlusIcon /></button>
           </span>
-          {/* Right-aligned by the auto margin, so it stays at the edge however
-              wide the panel is. Submitting scrolls the thumbnail into view AND
-              takes the script there — the same jump clicking the page makes. */}
-          <form
-            className="tool-action-right"
-            onSubmit={(e) => { e.preventDefault(); goToPageNumber(gotoPage); }}
-          >
-            <label className="tool-action-label" htmlFor="fs-pages-goto">Go to page:</label>
-            <input
-              id="fs-pages-goto"
-              className="tool-action-field"
-              type="text"
-              inputMode="numeric"
-              value={gotoPage}
-              onChange={(e) => setGotoPage(e.target.value.replace(/[^0-9]/g, ''))}
-              onBlur={() => goToPageNumber(gotoPage)}
-            />
-          </form>
         </ToolActionRow>
       )}
       {activeTab === 'pages' && (

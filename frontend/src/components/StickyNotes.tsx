@@ -20,7 +20,7 @@
  * as placeholder), and creation dates. Data persists per script as the
  * `_shelf` key of the saved content JSON and syncs in collab via collabSync.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import type { Editor } from '@tiptap/react';
 import {
   useEditorStore,
@@ -31,6 +31,7 @@ import {
 import { StickyCard } from './StickyCard';
 import { cardMatchesSearch, STICKY_SORT_LABEL, type StickySort } from './ListControls';
 import { ControlDropdown, ControlSearch, ToolActionRow, type ToolChromeTab } from './ToolControls';
+import { CircleMinusIcon, CirclePlusIcon } from './uiIcons';
 import { uuid } from '../utils/uuid';
 
 
@@ -163,7 +164,7 @@ interface EditorToolProps {
  * The header tabs narrow to a kind; search runs through cardMatchesSearch.
  * The count published is exactly what's rendered.
  */
-function MergedStickyList() {
+function MergedStickyList({ perRow = 1 }: { perRow?: number }) {
   const { shelfCards, setShelfCards, update, remove } = useCardOps();
   const kind = useEditorStore((s) => s.stickyKindFilter);
   const sort = useEditorStore((s) => s.stickySort);
@@ -224,7 +225,10 @@ function MergedStickyList() {
         : 'No notes or checklists yet. Add one above.';
 
   return (
-    <div className="swn-scroll">
+    <div
+      className={'swn-scroll' + (perRow > 1 ? ' swn-grid' : '')}
+      style={perRow > 1 ? ({ '--sticky-per-row': perRow } as CSSProperties) : undefined}
+    >
       {visible.length === 0 && <div className="swn-hint">{emptyHint}</div>}
       {dragId && visible.length > 0 && (
         <div
@@ -259,19 +263,45 @@ function MergedStickyList() {
 }
 
 /** v5.21 merged window; v5.22, Derek: blue add buttons ("+ Add Note" /
- *  "+ Add Checklist" — the dialogs' primary format, the Reorder precedent),
- *  one interleaved list below. */
+ *  "+ Add Checklist" — the dialogs' primary COLORS; v5.23: compact box).
+ *  v5.23, Derek: popped-out and fullscreen shapes gain a right-aligned
+ *  "Items per row:" stepper (the Pages model); docked panels stay one
+ *  column and don't show it. */
 export function StickyNotesTool(_props: EditorToolProps) {
   const { add } = useCardOps();
+  const perRow = useEditorStore((s) => s.stickyPerRow);
+  const setPerRow = useEditorStore((s) => s.setStickyPerRow);
+  const fs = useEditorStore((s) => s.fullscreenTool === 'sticky');
+  const temp = useEditorStore((s) => s.tempTool === 'sticky');
+  const mode = useEditorStore((s) => s.toolMode.sticky);
+  const popped = fs || temp || mode === 'floating';
   return (
     <div className="fs-sticky-tool">
       <ToolActionRow>
         <button className="dialog-btn dialog-btn-primary sticky-add-btn" onClick={() => add('comment')}>+ Add Note</button>
         <button className="dialog-btn dialog-btn-primary sticky-add-btn" onClick={() => add('todo')}>+ Add Checklist</button>
+        {popped && (
+          <span className="tool-action-group tool-action-right">
+            <span className="tool-action-label" id="sticky-perrow-label">Items per row:</span>
+            <button
+              className="tool-action-btn tool-action-icon"
+              title="Fewer items per row (bigger cards)"
+              disabled={perRow <= 1}
+              onClick={() => setPerRow(perRow - 1)}
+            ><CircleMinusIcon /></button>
+            <span className="tool-action-count" aria-labelledby="sticky-perrow-label">{perRow}</span>
+            <button
+              className="tool-action-btn tool-action-icon"
+              title="More items per row (smaller cards)"
+              disabled={perRow >= 8}
+              onClick={() => setPerRow(perRow + 1)}
+            ><CirclePlusIcon /></button>
+          </span>
+        )}
       </ToolActionRow>
       {/* .swn-scroll is the ONE scroller (the Snippets model) — no wrapper,
           or the panel would nest two scrollbars. */}
-      <MergedStickyList />
+      <MergedStickyList perRow={popped ? perRow : 1} />
     </div>
   );
 }
@@ -337,7 +367,8 @@ export function reorderStickyTabs(from: number, to: number) {
   st.setStickyTabOrder(order);
 }
 
-/** v5.22: the header cluster is Sort · Search (the kind moved to the tabs). */
+/** v5.22: the header cluster is Sort · Search (the kind moved to the tabs).
+ *  v5.23, Derek: Manual is the LAST option. */
 export function StickyControls() {
   const sort = useEditorStore((s) => s.stickySort);
   const setSort = useEditorStore((s) => s.setStickySort);
@@ -349,7 +380,7 @@ export function StickyControls() {
         label="Sort"
         title="Type groups notes before checklists; Manual lets you drag any order"
         current={sort === 'type' ? undefined : STICKY_SORT_LABEL[sort]}
-        items={(['type', 'manual', 'created'] as StickySort[]).map((v) => ({
+        items={(['type', 'created', 'manual'] as StickySort[]).map((v) => ({
           label: STICKY_SORT_LABEL[v], active: sort === v, onSelect: () => setSort(v),
         }))}
       />

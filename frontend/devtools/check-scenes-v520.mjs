@@ -61,20 +61,22 @@ const cards = await page.evaluate(() => {
   const row = document.querySelector('.scenes-tool .tool-action-row');
   const rr = row.getBoundingClientRect();
   const label = row.querySelector('.tool-action-label');
+  const stepper = row.querySelector('.tool-action-group.tool-action-right');
   const btn = row.querySelector('.scene-reorder-btn');
   const grid = document.querySelector('.index-cards-grid');
   const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
   const bg = getComputedStyle(document.querySelector('.index-card')).backgroundColor;
   return {
     label: label?.textContent,
-    labelLeft: Math.round(label.getBoundingClientRect().left - rr.left),
-    reorderRight: Math.round(rr.right - btn.getBoundingClientRect().right),
+    // v5.23 swap: Reorder leads (left), the stepper holds the right edge.
+    reorderLeft: Math.round(btn.getBoundingClientRect().left - rr.left),
+    stepperRight: Math.round(rr.right - stepper.getBoundingClientRect().right),
     cols, bg,
   };
 });
 check('stepper labelled "Cards per row:"', cards.label, 'Cards per row:');
-check('stepper leads the row (left-aligned)', cards.labelLeft <= 14, true);
-check('Reorder hugs the row\'s right edge', cards.reorderRight <= 12, true);
+check('Reorder leads the row (v5.23 swap)', cards.reorderLeft <= 14, true);
+check('stepper hugs the row\'s right edge', cards.stepperRight <= 12, true);
 check('grid renders the default 3 columns', cards.cols, 3);
 check('cards wear the lighter surface', cards.bg, 'rgb(53, 53, 53)');
 

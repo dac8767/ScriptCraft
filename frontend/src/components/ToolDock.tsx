@@ -533,14 +533,23 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
     const startY = e.clientY;
     const startW = el.offsetWidth;
     const startH = el.offsetHeight;
+    // v5.23, Derek: "when I grab the window adjustment corner (bottom left),
+    // the right side of the window moves instead of the left." The grip
+    // follows the tool's HOME side, but the anchor follows POSITION: a
+    // right-docked window is right-anchored only until the header drag
+    // writes `left` + `right: auto` (startDrag). From then on width changes
+    // alone grow the RIGHT edge — so a left grip on a left-anchored box must
+    // move the left edge itself.
+    const leftGrip = side === 'right';
+    const anchoredRight = leftGrip && el.style.left === 'auto' && el.style.right !== 'auto';
+    const startLeft = el.offsetLeft;
     let w = startW;
     let h = startH;
     const onMove = (ev: PointerEvent) => {
-      // Right-docked windows are anchored on their right edge, so they grow
-      // AWAY from the side panel (leftward); the handle sits bottom-left and
-      // dragging left widens the window.
+      // The left grip widens when dragged LEFT; the right grip when dragged
+      // right. Which EDGE moves is the anchor's business, settled below.
       const dx = ev.clientX - startX;
-      w = Math.max(MIN_W, startW + (side === 'right' ? -dx : dx));
+      w = Math.max(MIN_W, startW + (leftGrip ? -dx : dx));
       h = Math.max(MIN_H, startH + (ev.clientY - startY));
       el.style.width = `${w}px`;
       el.style.height = `${h}px`;
@@ -567,6 +576,12 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
           w = Math.max(MIN_W, w - slackW);
           el.style.width = `${w}px`;
         }
+      }
+      // A left grip on a LEFT-anchored window: hand the width change to the
+      // left edge (right edge pinned). Runs AFTER the slack shrink so the
+      // edge tracks the final width.
+      if (leftGrip && !anchoredRight) {
+        el.style.left = `${startLeft + (startW - w)}px`;
       }
     };
     const onUp = () => {

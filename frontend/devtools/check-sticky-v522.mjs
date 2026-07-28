@@ -54,11 +54,13 @@ const blue = await page.evaluate(() => {
   probe.className = 'dialog-btn dialog-btn-primary';
   document.body.appendChild(probe);
   const a = getComputedStyle(btn), b = getComputedStyle(probe);
-  const diff = ['backgroundColor', 'color', 'height', 'borderRadius'].filter((p) => a[p] !== b[p]);
+  // v5.23: the buttons are deliberately COMPACT (26px) — the dialog-primary
+  // COLORS and radius still must match the probe exactly.
+  const diff = ['backgroundColor', 'color', 'borderRadius'].filter((p) => a[p] !== b[p]);
   probe.remove();
   return diff;
 });
-check('add buttons wear the dialog-primary format', blue, []);
+check('add buttons wear the dialog-primary colors', blue, []);
 
 // ── 4+6. tabs: wording, click narrows, drag reorders, persistence ───────────
 const tabLabels = () => page.evaluate(() =>

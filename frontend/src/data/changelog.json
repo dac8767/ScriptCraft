@@ -1,5 +1,15 @@
 [
   {
+    "version": "5.23",
+    "date": "2026-07-28",
+    "changes": [
+      "Sticky Notes: smaller add buttons, and Manual moved to the end of the Sort menu",
+      "Sticky Notes: popped-out and full-screen shapes gain a right-aligned \"Items per row:\" stepper (the Pages control) — the docked panel stays a single column",
+      "Fixed: dragging a floating window then grabbing its bottom-left resize corner moved the RIGHT side — the corner now moves the left edge it sits on",
+      "Every \"x per row\" stepper now sits at the right end of its row, and the control that used to live there swapped to the left (Pages' Go to page, Scenes' Reorder)"
+    ]
+  },
+  {
     "version": "5.22",
     "date": "2026-07-28",
     "changes": [
