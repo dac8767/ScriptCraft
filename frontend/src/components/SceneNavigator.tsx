@@ -527,6 +527,10 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
 
   // ── Navigate to a scene by index ──
 
+  /* v5.04: the click only says WHERE. ScreenplayEditor does the focus and the
+     scroll (see requestEditorScroll) — it is the one component that survives a
+     fullscreen takeover being lowered, which is exactly when this used to fail:
+     clicking a scene in a fullscreen Scenes list did nothing at all. */
   const goToScene = useCallback(
     (sceneIndex: number) => {
       if (!editor) return;
@@ -540,17 +544,12 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
         }
         return true;
       });
-      editor.chain().focus().setTextSelection(targetPos + 1).run();
-      requestAnimationFrame(() => {
-        const coords = editor.view.coordsAtPos(targetPos + 1);
-        if (scrollContainer) {
-          const containerRect = scrollContainer.getBoundingClientRect();
-          const scrollTo = scrollContainer.scrollTop + (coords.top - containerRect.top) - 60;
-          scrollContainer.scrollTo({ top: scrollTo, behavior: 'auto' });
-        }
-      });
+      // Clicking a scene means "take me there", so the takeover steps aside.
+      const s = useEditorStore.getState();
+      if (s.fullscreenTool) s.setFullscreenTool(null);
+      s.requestEditorScroll(targetPos + 1);
     },
-    [editor, scrollContainer],
+    [editor],
   );
 
   // ── Navigate to a document position ──
@@ -797,7 +796,10 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                           className="scene-synopsis-field"
                           key={`${scene.id}:${scene.synopsis}`}
                           defaultValue={scene.synopsis}
-                          placeholder="Synopsis"
+                          /* v5.04, Derek: no placeholder. The field's own box
+                             is the affordance; "Synopsis" repeated down every
+                             empty row was noise, and the column header already
+                             says what the column is. */
                           title={scene.synopsis || 'Add a synopsis for this scene'}
                           onClick={(e) => e.stopPropagation()}
                           onKeyDown={(e) => {

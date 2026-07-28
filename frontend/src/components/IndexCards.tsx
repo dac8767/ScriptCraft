@@ -11,7 +11,8 @@ import SynopsisModal from './SynopsisModal';
 
 interface IndexCardsProps {
   editor: Editor | null;
-  scrollContainer: HTMLDivElement | null;
+  /* v5.04: no scrollContainer — going to a scene is a store request now
+     (requestEditorScroll); ScreenplayEditor owns the container. */
 }
 
 /** The reorder context bar — Undo / Redo / Cancel / Apply — ONE component for
@@ -66,13 +67,14 @@ export function SceneReorderBar({ r }: { r: SceneReorder }) {
 // v4.24 batch 7: embedded-only — Index Cards is the Scenes tool's Cards view.
 // The old standalone overlay (indexCardsOpen gate over the editor) is gone;
 // the ScenesTool wrapper decides when this renders.
-const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
+const IndexCards: React.FC<IndexCardsProps> = ({ editor }) => {
   const { scenes, updateSceneSynopsis, updateSceneColor, pageLayout } = useEditorStore();
 
   // v4.35 batch-v9 #4: fullscreen is the generic per-tool takeover now.
   const fullscreen = useEditorStore((s) => s.fullscreenTool === 'scenes');
   const setFullscreenTool = useEditorStore((s) => s.setFullscreenTool);
 
+  const requestEditorScroll = useEditorStore((s) => s.requestEditorScroll);
   // v4.35 batch-v9 #2: the deferred-reorder machinery is the shared hook —
   // the same snapshot/undo/apply drives the list view's row drag.
   const reorder = useSceneReorder(editor);
@@ -236,27 +238,18 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
         return true;
       });
 
-      // v4.32 batch-v8 #2: exit the takeover BEFORE focusing — while it is up
-      // the editor surface (and the scroll container) is unmounted, so a
-      // focus/scroll fired first would land on a detached view and silently
-      // do nothing. The rAFs run after React has re-committed the editor.
+      /* v4.32 batch-v8 #2: exit the takeover BEFORE focusing — while it is up
+         the editor surface (and the scroll container) is unmounted.
+         v5.04: and then ASK for the scroll instead of doing it. Lowering the
+         takeover unmounts this very component, so the two rAFs that used to
+         live here ran against a stale null container and quietly did nothing.
+         ScreenplayEditor owns the editor and the container and always lives —
+         it carries the request out. Same channel as the Scenes list; there is
+         no second copy of this any more. */
       if (fullscreen) setFullscreenTool(null);
-
-      requestAnimationFrame(() => {
-        editor.chain().focus().setTextSelection(targetPos + 1).run();
-        requestAnimationFrame(() => {
-          // The prop is captured null while the takeover renders — re-query.
-          const container = scrollContainer ?? (document.querySelector('.editor-main') as HTMLDivElement | null);
-          if (!container) return;
-          const coords = editor.view.coordsAtPos(targetPos + 1);
-          const containerRect = container.getBoundingClientRect();
-          const scrollTo =
-            container.scrollTop + (coords.top - containerRect.top) - 60;
-          container.scrollTo({ top: scrollTo, behavior: 'smooth' });
-        });
-      });
+      requestEditorScroll(targetPos + 1);
     },
-    [editor, scrollContainer, fullscreen, setFullscreenTool],
+    [editor, fullscreen, setFullscreenTool, requestEditorScroll],
   );
 
   // ── Compute insertion index from mouse position ──
@@ -568,19 +561,9 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
                           )}
                         </div>
                       )}
-                    </div>
-                    <div className="index-card-synopsis-wrap">
-                      <textarea
-                        className="index-card-synopsis"
-                        placeholder="Add synopsis..."
-                        value={scene.synopsis}
-                        onChange={(e) => {
-                          updateSceneSynopsis(scene.id, e.target.value);
-                          updateSynopsisAttr(scene.id, e.target.value);
-                        }}
-                        rows={3}
-                        disabled={dragMode}
-                      />
+                      {/* v5.04, Derek: the expand button belongs in the card's
+                          top-right corner, right of the time estimate — not
+                          floating over the synopsis text it was covering. */}
                       <button
                         className="ic-synopsis-expand"
                         onClick={() => setSynopsisModal({ sceneIdx: idx, id: scene.id, heading: scene.heading, synopsis: scene.synopsis, color: scene.color })}
@@ -589,6 +572,18 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor, scrollContainer }) => {
                       >
                         <ExpandIcon size={12} />
                       </button>
+                    </div>
+                    <div className="index-card-synopsis-wrap">
+                      <textarea
+                        className="index-card-synopsis"
+                        value={scene.synopsis}
+                        onChange={(e) => {
+                          updateSceneSynopsis(scene.id, e.target.value);
+                          updateSynopsisAttr(scene.id, e.target.value);
+                        }}
+                        rows={3}
+                        disabled={dragMode}
+                      />
                     </div>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.03 — resizable scene columns; a full-screen tool closes from its panel row)
+# ScriptCraft — continuation brief (current as of v5.04 — going to a scene is one store request, owned by the editor)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,55 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.03 — resizable scene columns; the full-screen close bug (HEAD)
+### v5.04 — "clicking it doesn't do anything" (HEAD)
+
+Derek: "the items in the list are still clickable, even though clicking it
+doesn't do anything anymore (it changes the cursor to the pointer finger)."
+
+**The real fault was full screen, and it was in TWO places.** A fullscreen tool
+OWNS the editor area — the editor is not mounted behind it and the scroll
+container is null. Both scene lists tried to finish the jump themselves:
+- SceneNavigator captured `scrollContainer` in goToScene's closure — the null
+  from while the takeover was up.
+- IndexCards had a comment saying "the prop is captured null while the takeover
+  renders — re-query", and then didn't re-query. Its only working path was a
+  `document.querySelector('.editor-main')` fallback that had drifted away.
+
+And the deeper reason a component CAN'T finish the job: lowering the takeover
+unmounts the panel that asked. A pending target held in that component dies
+with it. I tried exactly that first (a local `pendingScrollPos` + effect) and
+it measured scrollTop 0 — worth remembering before reaching for it again.
+
+- **`requestEditorScroll(pos)` / `pendingEditorScroll` / `clearEditorScroll`**
+  are store actions now. ScreenplayEditor — which always lives and owns both
+  the editor and the container — consumes the request in an effect keyed on
+  `[pendingEditorScroll, editor, editorMainEl]`, so it fires the moment the
+  editor area comes back. Both lists just say WHERE. Two copies became none.
+- **`editorMainEl` is state, not `editorMainRef.current`.** Reading a ref
+  during render to pass as a prop is wrong on principle — null on first render,
+  and a ref changing never re-renders. A callback ref feeds both the ref (still
+  used imperatively in ~8 places) and the state the tools receive.
+  IndexCards no longer takes a `scrollContainer` prop at all.
+- Verified: docked list click 4563 → 65 → 4609; fullscreen click lowers the
+  takeover, mounts the editor and lands at 2833 (was 0); a Cards click from
+  fullscreen lands at 1257.
+- **Note on what fullscreen does now:** lowering the takeover CLOSES the tool
+  (enterToolFullscreen had cleared its panel slot). Clicking a scene therefore
+  shows you the script at that scene and the Scenes tool goes away. Flagged to
+  Derek — if he wants the tool to stay, it needs the slot restored on exit.
+
+**Also (Derek, same batch):** the synopsis helper text is gone from both views;
+the column resize grabbers are visible (they were `--fd-hairline`, i.e.
+`--fd-border` #2a2a2a on a #2b2b2b header — right for a passive chrome edge,
+wrong for something you must find and grab; now `--fd-text-muted`, 2px, full
+header height, accent on hover); column names are centred over their columns
+and Reorder is left-aligned again; and the Cards expand button moved into the
+card's top row. **That last one needed a CSS change, not just a JSX move** — it
+was `position: absolute`, so after the move it anchored to a different
+ancestor and rendered OUTSIDE the card (x=1178 on a card ending at 742). It is
+a flex item with `margin-left: auto` now.
+
+### v5.03 — resizable scene columns; the full-screen close bug
 
 **The bug worth remembering.** Derek: "clicking on the tool name in the side
 panel should close it, including if it is in full screen mode." It didn't.

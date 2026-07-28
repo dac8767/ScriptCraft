@@ -1,5 +1,16 @@
 [
   {
+    "version": "5.04",
+    "date": "2026-07-28",
+    "changes": [
+      "Scenes: clicking a scene takes you to it again. From a full-screen Scenes tool it did nothing at all — the editor isn't mounted behind the takeover, so the scroll had nowhere to land. The takeover now steps aside and the script scrolls to the scene; the same fix covers Cards view, which had the identical fault",
+      "Scenes: the synopsis field's \"Synopsis\" / \"Add synopsis...\" helper text is gone in both List and Cards views",
+      "Scenes: the column resize grabbers are visible — they were drawn in the chrome edge colour, which is one shade off the header behind them",
+      "Scenes: column names are centred over their columns, and Reorder is back to left-aligned",
+      "Scenes: in Cards view the expand button moved to the card's top-right corner, right of the time estimate, instead of sitting on top of the synopsis"
+    ]
+  },
+  {
     "version": "5.03",
     "date": "2026-07-28",
     "changes": [

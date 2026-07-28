@@ -467,7 +467,24 @@ const ScreenplayEditor: React.FC = () => {
   // Force editor recreation when collab mode toggles
   const [editorKey, setEditorKey] = useState(0);
 
-  const editorMainRef = useRef<HTMLDivElement>(null);
+  const editorMainRef = useRef<HTMLDivElement | null>(null);
+  /* v5.04: the scroll container ALSO lives in state, and the tools read the
+     state one — not `editorMainRef.current`.
+     Reading a ref during render is the bug that made clicking a scene in the
+     Scenes list do nothing: on the first render .current is still null (the
+     div below hasn't mounted), and a ref changing never re-renders, so every
+     tool was handed `null` forever. goToScene's `if (scrollContainer)` then
+     quietly skipped the scroll. IndexCards had already worked around it with
+     its own document.querySelector('.editor-main') fallback — one component
+     patched, the other left broken, which is how the two views disagreed.
+     A callback ref feeds both, so there is one container and it is never
+     null after mount. */
+  const [editorMainEl, setEditorMainEl] = useState<HTMLDivElement | null>(null);
+  const attachEditorMain = useCallback((el: HTMLDivElement | null) => {
+    editorMainRef.current = el;
+    setEditorMainEl(el);
+  }, []);
+
 
   /* v2.29/v2.31, Derek: two separate grips. The strip UNDER the menu bar +
      toolbar scales those two together (custom px, mode flips to 'custom');
@@ -1581,6 +1598,30 @@ const ScreenplayEditor: React.FC = () => {
       }
     },
   }, [editorKey]);
+
+  /* v5.04: the ONE place a "go to this scene" request is carried out. A panel
+     asks via requestEditorScroll(pos); this runs when the editor AND its
+     scroll container both exist, which is what makes it work from a fullscreen
+     tool — lowering the takeover unmounts the panel, so the panel cannot
+     finish the job itself. */
+  const pendingEditorScroll = useEditorStore((s) => s.pendingEditorScroll);
+  const clearEditorScroll = useEditorStore((s) => s.clearEditorScroll);
+  useEffect(() => {
+    if (pendingEditorScroll == null || !editor || !editorMainEl) return;
+    const raf = requestAnimationFrame(() => {
+      try {
+        editor.chain().focus().setTextSelection(pendingEditorScroll).run();
+        const coords = editor.view.coordsAtPos(pendingEditorScroll);
+        const rect = editorMainEl.getBoundingClientRect();
+        editorMainEl.scrollTo({ top: editorMainEl.scrollTop + (coords.top - rect.top) - 60, behavior: 'auto' });
+      } catch {
+        // The view can be mid-remount; a failed measure must not wedge the
+        // request and swallow the next click.
+      }
+      clearEditorScroll();
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [pendingEditorScroll, editor, editorMainEl, clearEditorScroll]);
 
   // Keep editor ref updated for onSynced callback
   collabEditorRef.current = editor;
@@ -4235,7 +4276,7 @@ const ScreenplayEditor: React.FC = () => {
       )}
       <div className={`editor-layout${previewMode ? " preview-mode" : " hide-title-page"}${!isHistoryMode && fullscreenTool ? " editor-layout-fs" : ""}`}>
       {previewMode && <PreviewSidebar editor={editor} />}
-        {!isHistoryMode && navigatorOpen && <ToolDock side="left" editor={editor} scrollContainer={editorMainRef.current} />}
+        {!isHistoryMode && navigatorOpen && <ToolDock side="left" editor={editor} scrollContainer={editorMainEl} />}
         {/* v3.07, Derek: the collapsed panel leaves a slim expand strip at its
             edge (Obsidian-style counterpart to the collapse button). */}
         {!isHistoryMode && !navigatorOpen && !previewMode && (
@@ -4253,13 +4294,13 @@ const ScreenplayEditor: React.FC = () => {
           ) : !isHistoryMode && fullscreenTool ? (
             /* v4.35 batch-v9 #4: ONE takeover for every tool — same chrome
                registry, same body renderer as the window (ToolDock). */
-            <ToolFullscreenTakeover editor={editor} scrollContainer={editorMainRef.current} />
+            <ToolFullscreenTakeover editor={editor} scrollContainer={editorMainEl} />
           ) : !isHistoryMode && statisticsOpen && editor ? (
             <ScriptStatistics editor={editor} />
           ) : !isHistoryMode && beatBoardOpen ? (
             <BeatBoard />
           ) : (
-            <div className="editor-main" ref={editorMainRef}>
+            <div className="editor-main" ref={attachEditorMain}>
               {/* v2.95, Derek: Word-style rulers, toggled in View > Show Rulers */}
               {rulersVisible && <EditorRulers container={editorMainRef} continuous={viewStyle === 'continuous' && !previewMode} />}
               <div
@@ -4406,12 +4447,12 @@ const ScreenplayEditor: React.FC = () => {
         {!isHistoryMode && (tagsPanelOpen || locationDatabaseOpen) && (
           <div className="panel-resize-handle" onPointerDown={(e) => handleResizePointerDown('right', e)} style={{ touchAction: 'none' }} />
         )}
-        {!isHistoryMode && <TempToolWindow editor={editor} scrollContainer={editorMainRef.current} />}
+        {!isHistoryMode && <TempToolWindow editor={editor} scrollContainer={editorMainEl} />}
         {/* v4.33: the script-note edit popover, anchored on its highlight
             (portalled — renders nothing until notePopoverId is set). */}
         {!isHistoryMode && <ScriptNotePopover editor={editor} />}
         <DesignPanel />
-        {!isHistoryMode && shelfOpen && <ToolDock side="right" editor={editor} scrollContainer={editorMainRef.current} />}
+        {!isHistoryMode && shelfOpen && <ToolDock side="right" editor={editor} scrollContainer={editorMainEl} />}
         {!isHistoryMode && !shelfOpen && !previewMode && (
           <button
             className="fs-panel-expand fs-panel-expand-right"

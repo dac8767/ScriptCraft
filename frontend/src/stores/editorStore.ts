@@ -1157,6 +1157,20 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    *  Persisted with the other view state. */
   sceneColWidths: { head: number; metrics: number };
   setSceneColWidth: (key: 'head' | 'metrics', px: number) => void;
+  /** v5.04: "take the editor to this document position." A doc position, or
+   *  null when nothing is pending.
+   *
+   *  Why it goes through the store instead of the panel doing its own scroll:
+   *  a fullscreen tool OWNS the editor area, so lowering the takeover UNMOUNTS
+   *  the very component that wanted to scroll — a pending target held in that
+   *  component dies with it, and a container captured in its closure is the
+   *  null from while the takeover was up. ScreenplayEditor always lives and
+   *  owns both the editor and the scroll container, so it does the scrolling.
+   *  Scenes list and Index Cards had a copy of this each; neither worked from
+   *  fullscreen. */
+  pendingEditorScroll: number | null;
+  requestEditorScroll: (pos: number) => void;
+  clearEditorScroll: () => void;
   /** v5.03: THE answer to "is this tool open?" — open in any shape you can
    *  actually SEE: a slot in a panel that is showing, the temp (no-panel)
    *  slot, or the fullscreen takeover. Every control that opens-or-closes a
@@ -1855,6 +1869,9 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   setCharListCount: (n) => set((s) => (s.charListCount === n ? {} : { charListCount: n })),
   charActiveTab: 'profiles',
   setCharActiveTab: (t) => set({ charActiveTab: t }),
+  pendingEditorScroll: null,
+  requestEditorScroll: (pos) => set({ pendingEditorScroll: pos }),
+  clearEditorScroll: () => set((s) => (s.pendingEditorScroll === null ? {} : { pendingEditorScroll: null })),
   sceneColWidths: (_vs.sceneColWidths as { head: number; metrics: number }) ?? { head: 320, metrics: 104 },
   setSceneColWidth: (key, px) => set((s) => {
     const sceneColWidths = { ...s.sceneColWidths, [key]: Math.round(px) };

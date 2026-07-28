@@ -80,9 +80,13 @@ describe('every row carries the same five cells', () => {
     });
   }
 
-  it('shows the Synopsis placeholder on rows that have no synopsis yet', () => {
+  /* v5.04, Derek: "remove the helper text in the synopsis field." The field's
+     own box is the affordance and the column header names it; "Synopsis"
+     repeated down every empty row was noise. The FIELD still renders on every
+     row — that part is what keeps the column a column. */
+  it('renders an empty, placeholder-free field on rows with no synopsis', () => {
     const f = fields();
-    expect(f.map((el) => el.placeholder)).toEqual(['Synopsis', 'Synopsis', 'Synopsis']);
+    expect(f.map((el) => el.placeholder)).toEqual(['', '', '']);
     expect(f.map((el) => el.value)).toEqual(['', 'She loses the tail in the rain.', '']);
   });
 

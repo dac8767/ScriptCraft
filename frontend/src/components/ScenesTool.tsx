@@ -23,7 +23,7 @@ export function ScenesTool({ editor, scrollContainer }: {
       <ToolActionRow><ScenesReorderControl /></ToolActionRow>
       <div className="scenes-tool-body">
         {mode === 'cards' ? (
-          <IndexCards editor={editor} scrollContainer={scrollContainer ?? null} />
+          <IndexCards editor={editor} />
         ) : (
           <SceneNavigator editor={editor} scrollContainer={scrollContainer} view="scenes" />
         )}

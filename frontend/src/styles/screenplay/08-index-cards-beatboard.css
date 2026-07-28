@@ -211,8 +211,14 @@
 .index-card-synopsis-wrap {
   position: relative; width: 100%;
 }
+/* v5.04, Derek: the expand button lives in the card's TOP ROW now, right of
+   the time estimate — so it is a flex item, not an absolutely-positioned
+   overlay. Left as `position: absolute` after the move it anchored to the
+   nearest positioned ancestor (no longer its own wrapper) and rendered
+   outside the card entirely: measured at x=1178 on a card ending at 742. */
 .ic-synopsis-expand {
-  position: absolute; top: 4px; right: 4px;
+  flex: none;
+  margin-left: auto;              /* holds the top-right corner as the heading grows */
   background: none; border: none; cursor: pointer;
   color: var(--fd-text); opacity: 0.3; padding: 3px;
   border-radius: 3px; display: flex; align-items: center; justify-content: center;

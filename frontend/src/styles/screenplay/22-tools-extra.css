@@ -1862,14 +1862,14 @@ body.fs-shot-veil-feedback .fs-tool-takeover-feedback { visibility: hidden !impo
   border-color: var(--fd-accent);
   color: #fff;
 }
-/* v5.03, Derek: "make the reorder button bigger, centered, and a different
-   color." Centred by `margin-inline: auto` inside the flex action row — it is
-   the only control in the Scenes row, so it takes the middle. The resting fill
-   is its own colour rather than the shared toolbar grey, and the ACTIVE state
-   stays clearly different from it: reorder mode holds an unapplied order, so
-   "on" must not look like "available". */
+/* v5.03, Derek: "make the reorder button bigger… and a different color."
+   The resting fill is its own colour rather than the shared toolbar grey, and
+   the ACTIVE state stays clearly different from it: reorder mode holds an
+   unapplied order, so "on" must not look like "available".
+   (v5.04: left-aligned again, per Derek.) */
 .scene-reorder-btn {
-  margin-inline: auto;
+  /* v5.04, Derek: back to left-aligned — it sits where every other tool's
+     own actions sit, at the start of the action row. */
   padding: 7px 26px;
   font-size: 13px;
   font-weight: 600;
