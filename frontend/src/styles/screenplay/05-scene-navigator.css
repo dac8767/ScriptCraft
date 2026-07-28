@@ -186,10 +186,14 @@
   transform: translateX(-50%);
   top: 0;
   bottom: 0;
-  width: 2px;
-  border-radius: 1px;
+  /* v5.07, Derek: "less visible — halfway in between the original format and
+     the current format." The original was 1px of --fd-hairline (#2a2a2a on a
+     #2b2b2b header — invisible); v5.04 went to 2px of --fd-text-muted at
+     0.65. Halfway: back to 1px, same muted colour, opacity split to 0.32.
+     Findability survives on the hover/active accent below, which stays full. */
+  width: 1px;
   background: var(--fd-text-muted);
-  opacity: 0.65;
+  opacity: 0.32;
 }
 .scene-col-grip:hover::after,
 .scene-col-grip:active::after { background: var(--fd-accent); opacity: 1; }

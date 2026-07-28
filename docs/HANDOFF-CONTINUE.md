@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.06 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything)
+# ScriptCraft — continuation brief (current as of v5.07 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,16 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.06 — a column is what the eye groups (HEAD)
+### v5.07 — resize bars split the difference (HEAD)
+
+Derek: "make the column adjustment bars less visible (halfway in between the
+original format and the current format)." Original = 1px --fd-hairline
+(invisible, #2a2a2a on #2b2b2b); v5.04 = 2px --fd-text-muted at 0.65.
+Halfway = 1px, same muted colour, opacity 0.32; the hover/active accent stays
+full strength, which is where findability now lives. Verified computed style
+via the kit (1px / 0.32 / rgb(153,153,153)); geometry checks all Δ0.0px.
+
+### v5.06 — a column is what the eye groups
 
 Derek's marked-up screenshot (red lines): "the titles are still not centered,
 and the column adjustment bars are still not in the right place." His marks

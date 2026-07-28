@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.07",
+    "date": "2026-07-28",
+    "changes": [
+      "Scenes: the column resize bars are subtler — back to 1px and about half their previous strength, splitting the difference between the invisible original and the v5.04 look. They still light up in the accent colour under the cursor"
+    ]
+  },
+  {
     "version": "5.06",
     "date": "2026-07-28",
     "changes": [
