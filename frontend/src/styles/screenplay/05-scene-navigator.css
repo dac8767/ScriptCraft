@@ -775,14 +775,21 @@
    and scales the page content to match), so this ONE number sets both how big
    a preview is and how many fit per row. */
 .page-thumbnails-grid {
+  /* v5.08, Derek: the control is "Pages per row: N", so the grid takes the
+     COUNT directly — repeat(N, 1fr) — instead of deriving it from a column
+     min-width. The thumbnails keep sizing themselves to their column. */
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--pages-thumb-w, 120px), 1fr));
+  grid-template-columns: repeat(var(--pages-per-row, 3), 1fr);
   gap: 0;
   padding: 6px 8px;
 }
 .page-thumb-wrapper {
   display: flex;
   flex-direction: column;
+  /* v5.08, Derek: air between the bottom of a page and the NEXT page's number
+     heading below it. The label rides ABOVE its page (v5.01), so the gap
+     under each wrapper is exactly that space. Design ▸ Navigator & Outline. */
+  margin-bottom: var(--dz-pages-row-gap, 14px);
 }
 .page-thumbnail {
   background: #fff;

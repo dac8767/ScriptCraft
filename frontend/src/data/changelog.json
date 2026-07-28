@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.08",
+    "date": "2026-07-28",
+    "changes": [
+      "Pages: the zoom pair is now \"Pages per row:\" — the number between the − / + buttons is the actual column count, stepped by clicking (1–8), nothing to type",
+      "Pages: the jump field is labelled \"Go to page:\" and no longer shows a # hint inside the box",
+      "Pages: more air between the bottom of a page and the next page's number heading, and the amount is adjustable in Design ▸ Navigator & Outline (\"Pages: space below each page\")"
+    ]
+  },
+  {
     "version": "5.07",
     "date": "2026-07-28",
     "changes": [

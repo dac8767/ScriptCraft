@@ -114,7 +114,9 @@ export async function openTool(page, label) {
 
 export async function fullscreen(page) {
   await page.click('button[title="Fullscreen"]');
-  await page.waitForSelector('.tool-fullscreen, .scenes-tool', { timeout: 8000 });
+  // .fs-tool-takeover is the generic takeover root (ToolFullscreenTakeover) —
+  // the first cut waited on a Scenes-only class and timed out on every other tool.
+  await page.waitForSelector('.fs-tool-takeover', { timeout: 8000 });
 }
 
 /** Wait until the Scenes list has n rows (rescans are debounced). */

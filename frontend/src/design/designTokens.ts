@@ -262,6 +262,7 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'navSceneFont', label: 'Scene heading font', cssVar: '--dz-nav-scene-font', unit: 'px', min: 10, max: 20, step: 0.5, def: 14 },
       { id: 'navSynopsisFont', label: 'Scene synopsis font', cssVar: '--dz-nav-synopsis-font', unit: 'px', min: 8, max: 18, step: 0.5, def: 11 },
       { id: 'navBadge', label: 'Scene number badge size', cssVar: '--dz-nav-badge', unit: 'px', min: 14, max: 32, step: 1, def: 22 },
+      { id: 'pagesRowGap', label: 'Pages: space below each page', cssVar: '--dz-pages-row-gap', unit: 'px', min: 0, max: 48, step: 1, def: 14 },
       { id: 'obPad', label: 'Outline bar padding', cssVar: '--dz-ob-pad', unit: 'px', min: 0, max: 16, step: 1, def: 4 },
       { id: 'obTitleFont', label: 'Outline title font', cssVar: '--dz-ob-title-font', unit: 'px', min: 8, max: 16, step: 0.5, def: 11 },
       { id: 'obIconBtn', label: 'Outline icon button size', cssVar: '--dz-ob-iconbtn', unit: 'px', min: 18, max: 36, step: 1, def: 26 },

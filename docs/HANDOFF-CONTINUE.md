@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.07 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything)
+# ScriptCraft — continuation brief (current as of v5.08 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,33 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.07 — resize bars split the difference (HEAD)
+### v5.08 — Pages controls say what they mean (HEAD)
+
+Derek's four Pages asks, all landed:
+- **"Pages per row: N"** replaces the − Zoom + pair. The store field is now
+  `pagesPerRow` (1–8, clamped in the slice, default 3) and the grid is
+  `repeat(var(--pages-per-row), 1fr)` — the count IS the model, not a derived
+  effect of a column min-width (`pagesThumbPx` and the `--pages-thumb-w`
+  minmax grid are GONE). The ResizeObserver text-scaling pipeline is untouched
+  — thumbnails still size to their rendered column. Readout is
+  `.tool-action-count` (fixed min-width + tabular digits so the row doesn't
+  shuffle at 9→10... at 8, rather).
+- **"Go to page:"** label; the `#` placeholder is removed.
+- **Air below each page**: `.page-thumb-wrapper { margin-bottom:
+  var(--dz-pages-row-gap, 14px) }` — the label sits ABOVE its page, so the
+  wrapper's bottom margin is exactly "between the bottom of a page and the
+  next page's number". Exposed in Design ▸ Navigator & Outline as
+  `pagesRowGap` ("Pages: space below each page"); the def-equals-fallback
+  test pins 14.
+- Verified with the kit (`devtools/check-pages-controls.mjs`, 13 checks):
+  labels, no placeholder, count↔grid-columns lockstep at default/floor/
+  ceiling, buttons disable at the clamps, and the token drives the computed
+  margin end-to-end. Kit fix along the way: `fullscreen()` now waits on the
+  generic `.fs-tool-takeover`, not a Scenes-only class.
+- Old `pagesThumbPx` in a persisted viewState is simply ignored (the key was
+  session-only anyway — no migration needed).
+
+### v5.07 — resize bars split the difference
 
 Derek: "make the column adjustment bars less visible (halfway in between the
 original format and the current format)." Original = 1px --fd-hairline

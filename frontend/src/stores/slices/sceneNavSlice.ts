@@ -40,20 +40,22 @@ export interface SceneNavSlice {
    *  chrome, the thumbnails in the body. */
   pagesSearch: string;
   setPagesSearch: (v: string) => void;
-  pagesThumbPx: number;
-  setPagesThumbPx: (v: number) => void;
+  /** v5.08, Derek: the preview scale is stated as what it MEANS — how many
+   *  pages sit on a row — stepped with buttons, never typed. Replaces the
+   *  v4.94 pagesThumbPx column-width model. */
+  pagesPerRow: number;
+  setPagesPerRow: (v: number) => void;
 }
 
 export type LocationFilter = 'all' | 'int' | 'ext';
 export type LocationSort = 'scene' | 'name' | 'count';
 
-/** v4.94: how wide a page thumbnail's grid column is. The grid is
- *  `auto-fill, minmax(<this>, 1fr)`, so raising it makes the previews bigger
- *  and fits fewer per row — which is what "scale" means for this tool. */
-export const PAGES_THUMB_MIN = 80;
-export const PAGES_THUMB_MAX = 320;
-export const PAGES_THUMB_STEP = 40;
-export const PAGES_THUMB_DEFAULT = 120;
+/** v5.08: the grid is `repeat(<count>, 1fr)` — the number IS the meaning.
+ *  (v4.94's pagesThumbPx set a column min-width and let auto-fill derive the
+ *  count; Derek asked for the count itself as the control.) */
+export const PAGES_PER_ROW_MIN = 1;
+export const PAGES_PER_ROW_MAX = 8;
+export const PAGES_PER_ROW_DEFAULT = 3;
 
 export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlice> = (set) => ({
   navFilter: '',
@@ -74,7 +76,7 @@ export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlic
   setLocationSort: (v) => set({ locationSort: v }),
   pagesSearch: '',
   setPagesSearch: (v) => set({ pagesSearch: v }),
-  pagesThumbPx: PAGES_THUMB_DEFAULT,
+  pagesPerRow: PAGES_PER_ROW_DEFAULT,
   // Clamped HERE, not at the buttons, so no caller can push it out of range.
-  setPagesThumbPx: (v) => set({ pagesThumbPx: Math.min(PAGES_THUMB_MAX, Math.max(PAGES_THUMB_MIN, Math.round(v))) }),
+  setPagesPerRow: (v) => set({ pagesPerRow: Math.min(PAGES_PER_ROW_MAX, Math.max(PAGES_PER_ROW_MIN, Math.round(v))) }),
 });

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import { useEditorStore, EMPTY_SCENE_FILTERS, type SceneFilters } from '../stores/editorStore';
 import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlice';
-import { PAGES_THUMB_MIN, PAGES_THUMB_MAX, PAGES_THUMB_STEP } from '../stores/slices/sceneNavSlice';
+import { PAGES_PER_ROW_MIN, PAGES_PER_ROW_MAX } from '../stores/slices/sceneNavSlice';
 import { CircleMinusIcon, CirclePlusIcon } from './uiIcons';
 import { computeSceneLengths, computePageBlocks, type PageContentInfo } from '../editor/pagination';
 import { computeSceneTiming, formatSceneDuration } from '../utils/scriptTiming';
@@ -389,7 +389,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   // v4.94: the Pages header's search + preview scale (chrome controls, body
   // list — one state, so neither can be decorative).
   const pagesSearch = useEditorStore((s) => s.pagesSearch);
-  const pagesThumbPx = useEditorStore((s) => s.pagesThumbPx);
+  const pagesPerRow = useEditorStore((s) => s.pagesPerRow);
   const shownPages = useMemo(() => pagesMatching(pageContent, pagesSearch), [pageContent, pagesSearch]);
 
   // ── Exact-match page layout for thumbnails ──
@@ -445,7 +445,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     if (firstThumb) observer.observe(firstThumb);
     measure();
     return () => observer.disconnect();
-  }, [activeTab, pageContent.length, refWidthPx, pagesThumbPx]);
+  }, [activeTab, pageContent.length, refWidthPx, pagesPerRow]);
 
   // ── Scroll sync: highlight current page in editor ──
 
@@ -572,7 +572,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
 
   // ── Handle page thumbnail click ──
 
-  const setPagesThumbPx = useEditorStore((s) => s.setPagesThumbPx);
+  const setPagesPerRow = useEditorStore((s) => s.setPagesPerRow);
   const [gotoPage, setGotoPage] = useState('');
   /** v5.01: jump to a typed page — scroll its thumbnail into view and take the
    *  script to the page's first block, which is what clicking it does. A
@@ -849,26 +849,27 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
       )}
 
       {/* ── Pages tab ────────────────────────────────────────────────── */}
-      {/* v5.01, Derek: the Pages tool's OWN actions, in the first row of its
-          body — Zoom left, Go to right. The scale is the grid COLUMN width;
-          the thumbnails size themselves to their column (a ResizeObserver
-          reads the rendered width and scales the page content to match), so
-          one number drives both preview size and pages-per-row. */}
+      {/* v5.08, Derek: the zoom pair is now "Pages per row: N" — the number is
+          the COLUMN COUNT, stepped by the − / + buttons, never typed. The
+          thumbnails still size themselves to their column (the ResizeObserver
+          reads the rendered width and scales the page content), so the one
+          number drives everything downstream unchanged. */}
       {activeTab === 'pages' && (
         <ToolActionRow>
           <span className="tool-action-group">
+            <span className="tool-action-label" id="fs-pages-perrow-label">Pages per row:</span>
             <button
               className="tool-action-btn tool-action-icon"
-              title="Smaller page previews"
-              disabled={pagesThumbPx <= PAGES_THUMB_MIN}
-              onClick={() => setPagesThumbPx(pagesThumbPx - PAGES_THUMB_STEP)}
+              title="Fewer pages per row (bigger pages)"
+              disabled={pagesPerRow <= PAGES_PER_ROW_MIN}
+              onClick={() => setPagesPerRow(pagesPerRow - 1)}
             ><CircleMinusIcon /></button>
-            <span className="tool-action-label">Zoom</span>
+            <span className="tool-action-count" aria-labelledby="fs-pages-perrow-label">{pagesPerRow}</span>
             <button
               className="tool-action-btn tool-action-icon"
-              title="Larger page previews"
-              disabled={pagesThumbPx >= PAGES_THUMB_MAX}
-              onClick={() => setPagesThumbPx(pagesThumbPx + PAGES_THUMB_STEP)}
+              title="More pages per row (smaller pages)"
+              disabled={pagesPerRow >= PAGES_PER_ROW_MAX}
+              onClick={() => setPagesPerRow(pagesPerRow + 1)}
             ><CirclePlusIcon /></button>
           </span>
           {/* Right-aligned by the auto margin, so it stays at the edge however
@@ -878,14 +879,13 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
             className="tool-action-right"
             onSubmit={(e) => { e.preventDefault(); goToPageNumber(gotoPage); }}
           >
-            <label className="tool-action-label" htmlFor="fs-pages-goto">Go to:</label>
+            <label className="tool-action-label" htmlFor="fs-pages-goto">Go to page:</label>
             <input
               id="fs-pages-goto"
               className="tool-action-field"
               type="text"
               inputMode="numeric"
               value={gotoPage}
-              placeholder="#"
               onChange={(e) => setGotoPage(e.target.value.replace(/[^0-9]/g, ''))}
               onBlur={() => goToPageNumber(gotoPage)}
             />
@@ -901,7 +901,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
           ) : (
             /* v4.94: the header's scaling buttons set the grid column width;
                the thumbnails already size themselves to their column. */
-            <div className="page-thumbnails-grid" style={{ '--pages-thumb-w': `${pagesThumbPx}px` } as React.CSSProperties}>
+            <div className="page-thumbnails-grid" style={{ '--pages-per-row': pagesPerRow } as React.CSSProperties}>
               {shownPages.map((page) => (
                 <div key={page.pageNumber} className="page-thumb-wrapper">
                   {/* v5.01, Derek: the label sits ABOVE its page (it used to
