@@ -857,17 +857,30 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                   <div key={scene.id} className="navigator-scene">
                     {/* v5.05, Derek: double click jumps; a single click never
                         moves the script out from under you. */}
-                    <div className="scene-info" onDoubleClick={() => goToScene(sceneIdx)} title="Double-click to go to this scene">
+                    <div
+                      className="scene-info"
+                      onDoubleClick={() => goToScene(sceneIdx)}
+                      title={navNarrow ? 'Click for synopsis & length · double-click to go to scene' : 'Double-click to go to this scene'}
+                    >
                       {navNarrow ? (
                         /* v5.09: not enough room for the three columns — the
                            synopsis field and the figures fold into a sub-item
-                           behind the scene's caret. */
+                           behind the scene's caret.
+                           v5.10, Derek: "i should be able to click anywhere on
+                           the scene line to open the hidden info, not just the
+                           caret. this is how the tools work in the side panels
+                           already." The toggle sits on the ROW, not on
+                           .scene-info — clicks inside the opened sub-item must
+                           not slam it shut. A double-click's two clicks toggle
+                           twice (net unchanged) and then the jump fires. */
                         <>
-                          <div className="scene-heading-row scene-row-narrow">
+                          <div className="scene-heading-row scene-row-narrow" onClick={() => toggleSub(scene.id)}>
                             <button
                               className="scene-caret-btn"
                               title={subOpen ? 'Hide synopsis & length' : 'Show synopsis & length'}
                               aria-expanded={subOpen}
+                              /* stopPropagation or the row's own onClick would
+                                 toggle a SECOND time and the caret would no-op */
                               onClick={(e) => { e.stopPropagation(); toggleSub(scene.id); }}
                               onDoubleClick={(e) => e.stopPropagation()}
                             >

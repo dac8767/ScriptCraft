@@ -32,7 +32,26 @@ check('no inline metrics', r.inlineMetrics, 0);
 check('no column header', r.header, false);
 check('no sub-items before a caret click', r.subItems, 0);
 
-// caret opens the sub-item; type + Enter persists; collapse + reopen shows it
+// v5.10: clicking ANYWHERE on the row toggles the fold (like dock rows);
+// double-click still jumps the script. Prove the row path, the sub-item's
+// click-immunity, and the caret both before using the fold for typing.
+const rowHead = (await page.$$('.scene-row-narrow .scene-heading-label'))[1];
+await rowHead.click();
+await page.waitForSelector('.scene-sub-item', { timeout: 4000 });
+check('row click opens the fold', await page.$$eval('.scene-sub-item', (e) => e.length), 1);
+await page.click('.scene-sub-metrics');            // inside the open fold
+await page.waitForTimeout(150);
+check('click inside fold stays open', await page.$$eval('.scene-sub-item', (e) => e.length), 1);
+await rowHead.click();
+await page.waitForTimeout(150);
+check('row click closes the fold', await page.$$eval('.scene-sub-item', (e) => e.length), 0);
+const before = await page.evaluate(() => Math.round(document.querySelector('.editor-main')?.scrollTop ?? -1));
+await rowHead.dblclick();
+await page.waitForTimeout(900);
+check('double-click still jumps the script',
+  (await page.evaluate(() => Math.round(document.querySelector('.editor-main')?.scrollTop ?? -1))) !== before, true);
+check('double-click leaves the fold as it was', await page.$$eval('.scene-sub-item', (e) => e.length), 0);
+
 const caret = (await page.$$('.scene-caret-btn'))[1];
 await caret.click();
 await page.waitForSelector('.scene-sub-item', { timeout: 4000 });

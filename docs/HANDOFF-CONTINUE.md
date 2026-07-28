@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.09 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.10 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,21 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.09 — narrow Scenes fold behind a caret; the isolate:false lesson (HEAD)
+### v5.10 — the whole row is the caret (HEAD)
+
+Derek: "i should be able to click anywhere on the scene line to open the
+hidden info, not just the caret… single click opens the info below" — the
+dock-row convention. The toggle went on the narrow ROW
+(`.scene-row-narrow`), deliberately NOT on `.scene-info`: the sub-item lives
+inside `.scene-info`, so a container-level handler would slam the fold shut
+on any click inside it (the metrics line, the padding). The caret keeps its
+own handler with stopPropagation — without it a caret click would toggle
+TWICE through the row and read as dead. Double-click still jumps: its two
+clicks toggle twice (net unchanged, a brief flicker) and then the jump
+fires; the driver pins "fold as it was" after a dblclick. 3 new jsdom tests
++ 5 new driver checks (21 total in check-scene-narrow.mjs).
+
+### v5.09 — narrow Scenes fold behind a caret; the isolate:false lesson
 
 **Scenes narrow mode** (Derek): under 520px of tool width the synopsis field,
 page length and runtime fold into a per-scene sub-item behind a caret; wide

@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.10",
+    "date": "2026-07-28",
+    "changes": [
+      "Scenes: in the narrow layout, clicking anywhere on a scene's line opens and closes its synopsis-and-length fold — the caret is a pointer, not the only target — matching how the tool rows in the side panels work. Double-clicking still jumps to the scene, and clicking inside the open fold doesn't close it"
+    ]
+  },
+  {
     "version": "5.09",
     "date": "2026-07-28",
     "changes": [
