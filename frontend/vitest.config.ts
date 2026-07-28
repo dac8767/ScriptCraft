@@ -11,5 +11,14 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     environmentMatchGlobs: [['src/**/*.test.tsx', 'jsdom']],
+    // Speed audit 2026-07-28: workers REUSE their environment across test
+    // files instead of building a fresh jsdom per file. Measured on this
+    // suite: 34–50s → ~10s, 786/786 green either way. The trade is that
+    // module state (zustand stores are module singletons) persists across
+    // files within a worker — tests already reset what they touch in
+    // beforeEach, and every NEW test file must keep doing that. If a failure
+    // ever appears only in full runs and smells like cross-file leakage,
+    // re-check with `npx vitest run --isolate` before chasing ghosts.
+    isolate: false,
   },
 })

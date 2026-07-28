@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.05 — scene-list header polish; double-click to jump)
+# ScriptCraft — continuation brief (current as of the 2026-07-28 speed audit — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -2230,14 +2230,34 @@ was the long-planned `screenplay.css` split; it happened). Character = `10-…`,
 
 ---
 
-## 4. Playwright live-check recipe (still true, if you do UI verification)
+## 4. UI verification — USE THE KIT (speed audit 2026-07-28)
 
-- Launch `chromium` at `executablePath: '/opt/pw-browsers/chromium'`; dev server
-  `npx vite --port 5199` (curl-poll for 200 before driving). Don't run `playwright install`.
-- On load a **"New Script" dialog** blocks the UI — click **Create** first.
+**Start from `frontend/devtools/driver.mjs`** — launch/boot/seedScript/openTool/
+fullscreen/waitScenes/shot, all event-waited. Derek timed the old way at 11
+minutes per small update; the kit reaches the same verified state **31× faster**
+(measured 108.4s → 3.5s, `devtools/bench-boot.mjs` reproduces it). The rules
+live in `docs/SPEED-AUDIT-2026-07-28.md` §3; the short form:
+
+- **Never type a fixture** — `seedScript()` injects the whole document through
+  the DEV-only `window.__scEditor` handle (ScreenplayEditor, DEV builds only).
+- **Never `waitForTimeout` on a guess** — wait on a named condition.
+- **One driver run prints every number** you need; re-running is ~4s but the
+  habit matters.
+- Iterate with `npx vitest related <files> --run` (~3s); the **full suite once,
+  before commit** (~12s since `isolate: false`; if a failure smells like
+  cross-file leakage, re-check with `--isolate`).
+- Driver scripts and fixtures live in `frontend/devtools/`, IN THE REPO — a
+  rollback wiped the scratchpad copies mid-audit.
+
+Environment facts that still hold:
+- Chromium at `executablePath: '/opt/pw-browsers/chromium'`; dev server
+  `npx vite --port 5199` (curl-poll for 200). Don't run `playwright install`.
+- Startup dialogs block the UI — `boot()` Escapes them; clicking **Create** on
+  the New Script dialog also works if you drive by hand.
 - Open Customize via `window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))`.
-- Seed state via `localStorage['opendraft:viewState']` in `addInitScript`; to keep a
-  seeded ribbon verbatim, also set the one-time migration flags (`opendraft:toolbar*NNN`).
+- Seed chrome state via `localStorage['opendraft:viewState']` in `addInitScript`;
+  to keep a seeded ribbon verbatim, also set the one-time migration flags
+  (`opendraft:toolbar*NNN`).
 - Tools render **inline** by default (`.tool-inline-*`); clicking `.ProseMirror`
   **minimizes** an open tool window (by design).
 

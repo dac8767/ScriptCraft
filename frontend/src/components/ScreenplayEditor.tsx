@@ -1599,6 +1599,17 @@ const ScreenplayEditor: React.FC = () => {
     },
   }, [editorKey]);
 
+  /* DEV ONLY (speed audit, 2026-07-28): hand the drivers the editor instance
+     so they can INJECT a fixture script (editor.commands.setContent) instead
+     of typing it keystroke by keystroke — ~40s of every Playwright check was
+     synthetic typing. Gated like the Airtable dev panel; import.meta.env.DEV
+     is false in `npm run build`, so nothing ships. See frontend/devtools/. */
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      (window as unknown as Record<string, unknown>).__scEditor = editor;
+    }
+  }, [editor]);
+
   /* v5.04: the ONE place a "go to this scene" request is carried out. A panel
      asks via requestEditorScroll(pos); this runs when the editor AND its
      scroll container both exist, which is what makes it work from a fullscreen
