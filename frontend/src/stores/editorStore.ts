@@ -366,11 +366,9 @@ export type ToolId =
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
   | 'spelling' | 'history' | 'titlepage' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
   | 'notebook' | 'design' | 'workspaces' | 'feedback'
-  /** v4.95, TEMPORARY (Derek's Airtable dev panel) — DEV builds only.
-   *  REMOVE BEFORE RELEASE; see src/dev/AirtableDevTool.tsx for the full
-   *  removal list. It stays in the union so a persisted layout that saw it
-   *  in dev still typechecks in a release build (the 'scriptnotes'
-   *  precedent) — ALL_TOOLS simply won't carry it, so it renders nowhere. */
+  /** legacy — the v4.95 dev-only Airtable panel, removed v5.21. Stays in
+   *  the union so a dev-era persisted layout still typechecks; ALL_TOOLS
+   *  doesn't carry it, so it renders nowhere (the 'scriptnotes' precedent). */
   | 'devairtable'
   /** legacy — Notes merged back into 'sticky' (Notes > Script tab); kept
    *  in the type so persisted configs still typecheck, remapped on use. */
@@ -514,10 +512,18 @@ function migrateNotebookInline(
 export const ALWAYS_FLOAT: ToolId[] = ['analytics'];
 
 /** v4.35: tools with NO fullscreen button — the Scrapbook (its surface IS a
- *  forced takeover) and the Title Page (a fixed-size card; fullscreening it
- *  is a no-op). v4.81: moved here from ToolDock so openTool's remembered-mode
- *  branch and the button read the SAME list. */
-export const NO_FULLSCREEN_TOOLS: ToolId[] = ['notebook', 'titlepage'];
+ *  forced takeover). v4.81: moved here from ToolDock so openTool's
+ *  remembered-mode branch and the button read the SAME list.
+ *  v5.21, Derek: the Title Page LEFT this list for the opposite one below —
+ *  it always opens as the fullscreen takeover now, like the Scrapbook. */
+export const NO_FULLSCREEN_TOOLS: ToolId[] = ['notebook'];
+
+/** v5.21, Derek: "make the title page doc always in full screen (the same as
+ *  the scrapbook)." These tools have ONE shape — the fullscreen takeover:
+ *  every open path routes there (openTool ignores any remembered mode), the
+ *  takeover hides its shrink-to-window button, and the generic fullscreen
+ *  button is dropped (there is nothing to toggle into). */
+export const FULLSCREEN_ONLY_TOOLS: ToolId[] = ['titlepage'];
 
 export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   // v0.68: the default panel layout. LEFT = script-structure windows;
@@ -534,8 +540,9 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   spelling: { side: 'left', enabled: true },
   assets: { side: 'left', enabled: true },
 
+  // v5.21: 'todo' retired — To-Do lives in the merged Sticky Notes tool
+  // (id 'sticky'; the ID predates the merge and persists user layouts).
   sticky: { side: 'right', enabled: true },
-  todo: { side: 'right', enabled: true },
   fragments: { side: 'right', enabled: true },
   beatboard: { side: 'right', enabled: true },
   highlights: { side: 'right', enabled: true },
@@ -553,30 +560,57 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
  *  within each panel. 'Reset to Default' restores exactly this. */
 export const DEFAULT_TOOL_ORDER: string[] = [
   'navigator', 'scenes', 'pages', 'titlepage', 'characters', 'locations', 'spelling', 'assets',
-  'sticky', 'todo', 'fragments', 'beatboard', 'highlights', 'goals', 'typewriter', 'aiwriter', 'notebook', 'analytics',
+  'sticky', 'fragments', 'beatboard', 'highlights', 'goals', 'typewriter', 'aiwriter', 'notebook', 'analytics',
   'tags',
 ];
 
+/** v5.21, Derek: "show one tool window at a time. opening a second window
+ *  closes the first." A floating WINDOW is: the temp slot, or a panel-slot
+ *  tool whose mode is 'floating' (it renders as a window while keeping its
+ *  slot). Docked tools and the fullscreen takeover are not windows. Called
+ *  wherever a float is BORN (openTool's float branches, setToolMode
+ *  'floating'); returns the patch closing every floating window but `keep`.
+ *  Spread it BEFORE the branch's own fields so they win any overlap. */
+function closeOtherFloats(s: Pick<EditorState, 'tempTool' | 'activeTool' | 'activeToolRight' | 'navigatorOpen' | 'shelfOpen' | 'toolMode'>, keep: ToolId): Partial<EditorState> {
+  const patch: Partial<EditorState> = {};
+  if (s.tempTool && s.tempTool !== keep) patch.tempTool = null;
+  if (s.activeTool && s.activeTool !== keep && s.navigatorOpen && s.toolMode[s.activeTool] === 'floating') {
+    patch.activeTool = null;
+    saveViewState({ activeTool: null });
+  }
+  if (s.activeToolRight && s.activeToolRight !== keep && s.shelfOpen && s.toolMode[s.activeToolRight] === 'floating') {
+    patch.activeToolRight = null;
+    saveViewState({ activeToolRight: null });
+  }
+  return patch;
+}
+
 /** v4.24 batch 7: Index Cards merged into the Scenes tool (its Cards view).
+ *  v5.21: To-Do merged into Sticky Notes (id 'sticky') the same way.
  *  Persisted layouts — viewState and workspace snapshots — may still carry
- *  the retired 'indexcards' id; map it onto 'scenes' without duplicating.
+ *  the retired ids; map them onto the merged tools without duplicating.
  *  (toolOrder also carries 'div:<id>' divider tokens; they pass through.) */
+const RETIRED_TOOL_IDS: Record<string, string> = { indexcards: 'scenes', todo: 'sticky' };
 export function migrateToolOrder(order: string[]): string[] {
   const out: string[] = [];
   for (const raw of order) {
-    const id = raw === 'indexcards' ? 'scenes' : raw;
+    const id = RETIRED_TOOL_IDS[raw] ?? raw;
     if (!out.includes(id)) out.push(id);
   }
   return out;
 }
 export function migrateToolConfig(cfg: Record<string, ToolConfig>): Record<string, ToolConfig> {
-  if (!('indexcards' in cfg)) return cfg;
-  const { indexcards, ...rest } = cfg;
-  // If the retired tool was the enabled one, the merged tool inherits that.
-  if (indexcards?.enabled && rest.scenes && !rest.scenes.enabled) {
-    rest.scenes = { ...rest.scenes, enabled: true };
+  let out = cfg;
+  for (const [retired, heir] of Object.entries(RETIRED_TOOL_IDS)) {
+    if (!(retired in out)) continue;
+    const { [retired]: old, ...rest } = out;
+    // If the retired tool was the enabled one, the merged tool inherits that.
+    if (old?.enabled && rest[heir] && !rest[heir].enabled) {
+      rest[heir] = { ...rest[heir], enabled: true };
+    }
+    out = rest;
   }
-  return rest;
+  return out;
 }
 
 /** Single source of truth for a tool's effective config. Used by ToolDock and
@@ -958,6 +992,12 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    *  v4.33: filters removed — the windows hold only general items now (script
    *  notes/to-dos live in the Navigator), so there is nothing to filter and
    *  no script position to sort by. */
+  /** v5.21, Derek: the merged Sticky Notes window — header search + kind
+   *  filter shared by the notes and to-do lists (both read these). */
+  stickySearch: string;
+  setStickySearch: (v: string) => void;
+  stickyKindFilter: 'all' | 'note' | 'todo';
+  setStickyKindFilter: (v: 'all' | 'note' | 'todo') => void;
   notesSort: 'manual' | 'created';
   setNotesSort: (v: 'manual' | 'created') => void;
   todoSort: 'manual' | 'created';
@@ -1374,6 +1414,10 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     saveViewState({ designCollapsedGroups: ids });
     set({ designCollapsedGroups: ids });
   },
+  stickySearch: '',
+  setStickySearch: (v) => set({ stickySearch: v }),
+  stickyKindFilter: 'all',
+  setStickyKindFilter: (v) => set({ stickyKindFilter: v }),
   notesSort: 'manual',
   setNotesSort: (v) => set({ notesSort: v }),
   todoSort: 'manual',
@@ -1395,7 +1439,7 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   // gone — Notes holds only general notes now, so there is no Script sub-view
   // to route into. Callers open tools directly (openTool) and script-note
   // editing goes through the highlight popover (notePopoverId).
-  activeTool: (_vs.activeTool === 'indexcards' ? 'scenes' : (_vs.activeTool as ToolId | null)) ?? null,
+  activeTool: (RETIRED_TOOL_IDS[_vs.activeTool as string] as ToolId ?? (_vs.activeTool as ToolId | null)) ?? null,
   setActiveTool: (tool) => {
     saveViewState({ activeTool: tool });
     // v4.37, Derek: a tool lives in exactly ONE place. Seating it in a slot
@@ -1419,9 +1463,11 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   setToolMode: (tool, mode) => set((s) => {
     const toolMode = { ...s.toolMode, [tool]: mode };
     saveViewState({ toolMode });
-    return { toolMode };
+    // v5.21: making a tool floating births a window (drag-out of the dock,
+    // shrink-from-fullscreen) — the one-window rule closes any other float.
+    return { toolMode, ...(mode === 'floating' ? closeOtherFloats(s, tool) : {}) };
   }),
-  activeToolRight: (_vs.activeToolRight === 'indexcards' ? 'scenes' : (_vs.activeToolRight as ToolId | null)) ?? null,
+  activeToolRight: (RETIRED_TOOL_IDS[_vs.activeToolRight as string] as ToolId ?? (_vs.activeToolRight as ToolId | null)) ?? null,
   setActiveToolRight: (tool) => {
     saveViewState({ activeToolRight: tool });
     // v4.37: same one-place invariant as setActiveTool.
@@ -1597,6 +1643,10 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
       setTimeout(() => set({ scenesViewMode: 'cards' }), 0);
       tool = 'scenes';
     }
+    if (tool === 'todo') {
+      // Legacy id — To-Do lives in the merged Sticky Notes window (v5.21).
+      tool = 'sticky';
+    }
     // v4.37, Derek: "I should not be able to have a window open twice." If the
     // tool already owns the fullscreen takeover it IS open — opening it again
     // is satisfied by the takeover, exactly as re-opening an already-docked
@@ -1608,7 +1658,10 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     // panel/temp slots the tool held — the same clean-up
     // enterToolFullscreen does, run here because that action can't be
     // called from inside this set().
-    if (s.toolMode[tool] === 'fullscreen' && !NO_FULLSCREEN_TOOLS.includes(tool)) {
+    // v5.21: FULLSCREEN_ONLY tools (Title Page) take this path from EVERY
+    // open — their remembered mode is irrelevant, fullscreen is their shape.
+    if (FULLSCREEN_ONLY_TOOLS.includes(tool)
+      || (s.toolMode[tool] === 'fullscreen' && !NO_FULLSCREEN_TOOLS.includes(tool))) {
       useNotebookStore.getState().setNotebookOpen(false);
       const patch: Partial<EditorState> = { fullscreenTool: tool };
       if (s.activeTool === tool || s.activeTool === 'notebook') patch.activeTool = null;
@@ -1619,7 +1672,7 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     // v1.2: Analytics always opens as its own window. It's far taller than a
     // panel, so docking it just meant a cramped column you had to scroll — the
     // window is the only shape it actually works in.
-    if (ALWAYS_FLOAT.includes(tool)) return { tempTool: tool };
+    if (ALWAYS_FLOAT.includes(tool)) return { ...closeOtherFloats(s, tool), tempTool: tool };
     /**
      * v1.10 — ask the SAME question the dock asks.
      *
@@ -1654,19 +1707,22 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
        * moment the panel comes back (v4.37's "open twice").
        */
       if (left ? !s.navigatorOpen : !s.shelfOpen) {
-        const patch: Partial<EditorState> = { tempTool: tool };
+        const patch: Partial<EditorState> = { ...closeOtherFloats(s, tool), tempTool: tool };
         if (s.activeTool === tool) { patch.activeTool = null; saveViewState({ activeTool: null }); }
         if (s.activeToolRight === tool) { patch.activeToolRight = null; saveViewState({ activeToolRight: null }); }
         return patch;
       }
+      // v5.21: a slot tool whose mode is 'floating' opens as a WINDOW — the
+      // one-window rule closes any other floating window first.
+      const floats = s.toolMode[tool] === 'floating' ? closeOtherFloats(s, tool) : {};
       if (left) {
         saveViewState({ activeTool: tool });
-        return { activeTool: tool, tempTool: null };
+        return { ...floats, activeTool: tool, tempTool: null };
       }
       saveViewState({ activeToolRight: tool });
-      return { activeToolRight: tool, tempTool: null };
+      return { ...floats, activeToolRight: tool, tempTool: null };
     }
-    return { tempTool: tool };
+    return { ...closeOtherFloats(s, tool), tempTool: tool };
   }),
   // "Open" means open in any shape you can actually SEE: a slot in a panel
   // that is showing, the temp (no-panel) slot, or the fullscreen takeover.

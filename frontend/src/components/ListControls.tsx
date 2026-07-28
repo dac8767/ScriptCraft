@@ -27,6 +27,20 @@ export const SORT_LABEL: Record<ListSort, string> = {
   created: 'Date Created',
 };
 
+/** v5.21: the merged Sticky Notes window's header search — ONE predicate for
+ *  the notes and to-do lists, so they can't disagree about what matches.
+ *  Covers the editable title, a note's text, and every to-do item line. */
+export function cardMatchesSearch(
+  card: { title?: string; text?: string; items?: { text: string }[] },
+  q: string,
+): boolean {
+  const needle = q.trim().toLowerCase();
+  if (!needle) return true;
+  if (card.title?.toLowerCase().includes(needle)) return true;
+  if (card.text?.toLowerCase().includes(needle)) return true;
+  return !!card.items?.some((it) => it.text.toLowerCase().includes(needle));
+}
+
 /** Order the list. Manual order is only honoured when Sort is Manual. */
 export function arrangeEntries(
   entries: ListEntry[],

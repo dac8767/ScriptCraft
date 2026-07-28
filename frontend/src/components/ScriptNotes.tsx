@@ -18,7 +18,7 @@ import {
 import { StickyCard, formatDate } from './StickyCard';
 export { formatDate };
 import {
-  arrangeEntries, reorderKeys, entryDragProps,
+  arrangeEntries, reorderKeys, entryDragProps, cardMatchesSearch,
   type ListEntry,
 } from './ListControls';
 import { type Asset } from '../stores/assetStore';
@@ -241,13 +241,16 @@ export const NoteContentDisplay: React.FC<{
 };
 
 /**
- * The Notes window's list: general note cards, sorted by the window chrome's
- * Sort control (manual drag order or date created).
+ * The notes list: general note cards, sorted by the window chrome's Sort
+ * control (manual drag order or date created). v5.21: one half of the merged
+ * Sticky Notes body — the header search (stickySearch) narrows it through
+ * the same predicate the to-do list uses (cardMatchesSearch).
  */
 export const ScriptNotesContent: React.FC = () => {
   const { shelfCards, setShelfCards, noteOrder, setNoteOrder } = useEditorStore();
   const sort = useEditorStore((s) => s.notesSort);
   const setSort = useEditorStore((s) => s.setNotesSort);
+  const search = useEditorStore((s) => s.stickySearch);
   const [dragKey, setDragKey] = useState<string | null>(null);
 
   const onDropKey = (from: string, to: string) => {
@@ -273,7 +276,7 @@ export const ScriptNotesContent: React.FC = () => {
   };
 
   const entries: ListEntry[] = shelfCards
-    .filter((c) => c.type === 'comment')
+    .filter((c) => c.type === 'comment' && cardMatchesSearch(c, search))
     .map((card) => ({
       key: `card:${card.id}`,
       createdAt: card.createdAt,
@@ -293,7 +296,7 @@ export const ScriptNotesContent: React.FC = () => {
     <div className="script-notes-list">
       {visible.length === 0 ? (
         <div className="script-notes-empty">
-          No notes yet. Add one below.
+          {search.trim() ? 'No notes match the search.' : 'No notes yet. Add one with + Note above.'}
         </div>
       ) : (
         visible.map((e) => <React.Fragment key={e.key}>{e.render()}</React.Fragment>)

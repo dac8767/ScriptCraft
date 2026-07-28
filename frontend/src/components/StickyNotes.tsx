@@ -1,19 +1,20 @@
 /**
- * StickyNotes — the ScriptCraft sticky-card system, now split into three
- * right-dock tools:
- *   - StickyNotesTool ("Notes"): general note cards.
+ * StickyNotes — the ScriptCraft sticky-card system, two right-dock tools:
+ *   - StickyNotesTool ("Sticky Notes"): note cards AND to-do cards in one
+ *     window. v5.21, Derek: "combine the notes and to-do tools" — + Note /
+ *     + To-Do lead the body's action row; Filter (kind) / Sort / Search live
+ *     in the window header (StickyControls below). The tool KEEPS the id
+ *     'sticky' (persisted layouts) and the retired 'todo' id migrates onto
+ *     it in editorStore; the card data was always one `_shelf` list, so the
+ *     merge is pure presentation.
  *   - FragmentsTool ("Snippets"): text sent from the
  *     editor via ⌥⌘X (cut) / ⌥⌘C (copy) — bound in ScreenplayEditor.
- *   - TodoTool ("To-Do"): general to-do list cards.
- * v4.33, Derek: both Notes and To-Do hold ONLY non-script items now. Script
- * notes and script [ ] to-do lists live in the Navigator (which jumps to
- * them); note text is edited in the popover on the highlight itself.
+ * v4.33, Derek: both lists hold ONLY non-script items. Script notes and
+ * script [ ] to-do lists live in the Navigator (which jumps to them); note
+ * text is edited in the popover on the highlight itself.
  * Cards keep sticky colors, drag-reorder, editable title headers (type name
  * as placeholder), and creation dates. Data persists per script as the
  * `_shelf` key of the saved content JSON and syncs in collab via collabSync.
- * v4.32 batch-v8 #12: Notes and To-Do wear the window template — the "· N"
- * count and the Sort dropdown live in the chrome (the slots at the
- * bottom of this file), not in the list bodies.
  */
 import { useState, useEffect } from 'react';
 import type { Editor } from '@tiptap/react';
@@ -27,16 +28,16 @@ import { ScriptNotesContent } from './ScriptNotes';
 import React from 'react';
 import { StickyCard } from './StickyCard';
 import {
-  arrangeEntries, reorderKeys, entryDragProps, SORT_LABEL,
+  arrangeEntries, reorderKeys, entryDragProps, cardMatchesSearch, SORT_LABEL,
   type ListEntry, type ListSort,
 } from './ListControls';
-import { ControlDropdown } from './ToolControls';
+import { ControlDropdown, ControlSearch, ToolActionRow } from './ToolControls';
 import { uuid } from '../utils/uuid';
 
 
 const EMPTY_HINTS: Record<ShelfCardType, string> = {
-  comment: 'Notes to self, research links, themes to keep present. Hit + Add below.',
-  todo: 'To-do lists for anything outside the script. Hit + Add below.',
+  comment: 'Notes to self, research links, themes to keep present. Hit + Note above.',
+  todo: 'To-do lists for anything outside the script. Hit + To-Do above.',
   snippet: 'Select text in the Editor and press ⌥⌘X to cut it here, or ⌥⌘C to copy it over.',
 };
 
@@ -145,33 +146,52 @@ function CardList({ type, cards }: CardListProps) {
   );
 }
 
-/* ═══════════ Tool: Notes ═══════════ */
+/* ═══════════ Tool: Sticky Notes (Notes + To-Do, merged v5.21) ═══════════ */
 
 interface EditorToolProps {
   editor: Editor | null;
 }
 
 /**
- * v0.93 — ONE list, no sub-types (same move as To-Do in v0.92).
+ * v5.21, Derek: "combine the notes and to-do tools… two buttons: '+ Note',
+ * and '+ To-Do'… at the top row of the window body. add search and filter to
+ * the window header."
  *
- * General vs Script was a filing system you had to understand before you could
- * find a note. What actually distinguishes them isn't a type, it's whether the
- * note is LINKED to something in the script — so both now sit in one list, and
- * the link is shown on the note itself: a script note carries the scene or
- * character it's anchored to (and the text it's attached to), while a standalone
- * note shows nothing there. Blank is the signal.
+ * ONE window, both lists, stacked under group labels (labels only while the
+ * header filter shows All — a narrowed view IS its label). Each list keeps
+ * its own sort/manual-order machinery (notesSort+noteOrder, todoSort+
+ * todoOrder) — the merge is presentation, not a data migration. The header
+ * search runs through cardMatchesSearch (ListControls) in both lists.
+ * A filtered-out list is unmounted, so this body zeroes its published count
+ * — the title's "· N" (StickyTitleExtra sums both) must count what's shown.
  */
 export function StickyNotesTool(_props: EditorToolProps) {
   const { add } = useCardOps();
+  const kind = useEditorStore((s) => s.stickyKindFilter);
+  useEffect(() => {
+    const st = useEditorStore.getState();
+    if (kind === 'note') st.setToolCount('todo', 0);
+    if (kind === 'todo') st.setToolCount('sticky', 0);
+  }, [kind]);
   return (
     <div className="fs-sticky-tool">
-      {/* v4.33: general note cards only — script notes live in the Navigator
-          and edit on their highlight. Sort sits in the window chrome. */}
+      <ToolActionRow>
+        <button className="tool-action-btn" onClick={() => add('comment')}>+ Note</button>
+        <button className="tool-action-btn" onClick={() => add('todo')}>+ To-Do</button>
+      </ToolActionRow>
       <div className="fs-notes-list">
-        <ScriptNotesContent />
-      </div>
-      <div className="swn-add-row">
-        <button className="swn-add-btn" onClick={() => add('comment')}>+ Add</button>
+        {kind !== 'todo' && (
+          <>
+            {kind === 'all' && <div className="sticky-group-label">Notes</div>}
+            <ScriptNotesContent />
+          </>
+        )}
+        {kind !== 'note' && (
+          <>
+            {kind === 'all' && <div className="sticky-group-label">To-Do</div>}
+            <TodoListContent />
+          </>
+        )}
       </div>
     </div>
   );
@@ -187,44 +207,44 @@ export function FragmentsTool(_props: EditorToolProps) {
   );
 }
 
-/* ═══════════ Tool: To-Do ═══════════ */
+/* ═══════════ The To-Do list (inside Sticky Notes since v5.21) ═══════════ */
 
 /**
  * v4.33, Derek — general to-do cards ONLY. Script [ ] lists left this window:
  * they live in the script itself (edit them there) and in the Navigator
- * (tick them there, click to jump). No Location column, no filter — nothing
- * here has a script location any more.
+ * (tick them there, click to jump).
+ * v5.21: no longer a tool of its own — this is the To-Do half of the merged
+ * Sticky Notes body. Same store pair (todoSort, todoOrder), same cards.
  */
-export function TodoTool(_props: EditorToolProps) {
-  const { add } = useCardOps();
+function TodoListContent() {
   const { shelfCards, setShelfCards, todoOrder, setTodoOrder } = useEditorStore();
-  // v4.32 batch-v8 #12: sort lives in the STORE (todoSort) so the window
-  // chrome's row-2 cluster (TodoControls) drives it — the in-body bar is
-  // gone. A drag still snaps Sort back to Manual.
   const sort = useEditorStore((s) => s.todoSort);
   const setSort = useEditorStore((s) => s.setTodoSort);
+  const search = useEditorStore((s) => s.stickySearch);
   const [dragKey, setDragKey] = useState<string | null>(null);
 
-  const entries: ListEntry[] = shelfCards.filter((c) => c.type === 'todo').map((card) => ({
-    key: `card:${card.id}`,
-    createdAt: card.createdAt,
-    render: () => {
-      const dp = entryDragProps(`card:${card.id}`, sort === 'manual', dragKey, setDragKey, onDropKey);
-      return (
-        <div {...dp.card}>
-          <StickyCard
-            card={card}
-            dragging={dragKey === `card:${card.id}`}
-            onDragStart={dp.grip.onDragStart}
-            onDragEnd={dp.grip.onDragEnd}
-            onDropHere={() => {}}
-            onUpdate={(patch) => setShelfCards(shelfCards.map((c) => (c.id === card.id ? { ...c, ...patch } : c)))}
-            onRemove={() => setShelfCards(shelfCards.filter((c) => c.id !== card.id))}
-          />
-        </div>
-      );
-    },
-  }));
+  const entries: ListEntry[] = shelfCards
+    .filter((c) => c.type === 'todo' && cardMatchesSearch(c, search))
+    .map((card) => ({
+      key: `card:${card.id}`,
+      createdAt: card.createdAt,
+      render: () => {
+        const dp = entryDragProps(`card:${card.id}`, sort === 'manual', dragKey, setDragKey, onDropKey);
+        return (
+          <div {...dp.card}>
+            <StickyCard
+              card={card}
+              dragging={dragKey === `card:${card.id}`}
+              onDragStart={dp.grip.onDragStart}
+              onDragEnd={dp.grip.onDragEnd}
+              onDropHere={() => {}}
+              onUpdate={(patch) => setShelfCards(shelfCards.map((c) => (c.id === card.id ? { ...c, ...patch } : c)))}
+              onRemove={() => setShelfCards(shelfCards.filter((c) => c.id !== card.id))}
+            />
+          </div>
+        );
+      },
+    }));
   const allKeys = entries.map((e) => e.key);
   function onDropKey(from: string, to: string) {
     setSort('manual');
@@ -233,46 +253,38 @@ export function TodoTool(_props: EditorToolProps) {
   const visible = arrangeEntries(entries, sort, todoOrder);
 
   // v4.32: publish the count this list is showing so the window chrome's
-  // title (TodoTitleExtra) displays the same number — displayed there,
-  // never recomputed (charListCount's no-drift rule).
+  // title (StickyTitleExtra sums notes + to-dos) displays the same number —
+  // displayed there, never recomputed (charListCount's no-drift rule).
   useEffect(() => {
     useEditorStore.getState().setToolCount('todo', visible.length);
   }, [visible.length]);
 
   return (
-    <div className="fs-sticky-tool">
-      <div className="fs-todo-list">
-        {visible.length === 0 ? (
-          <div className="fs-nav-empty fs-todo-hint">
-            Add a to-do below. (To-do lists IN the script live in the
-            Navigator — use Insert → To-Do List to add one there.)
-          </div>
-        ) : (
-          visible.map((e) => <React.Fragment key={e.key}>{e.render()}</React.Fragment>)
-        )}
-      </div>
-      <div className="swn-add-row">
-        <button className="swn-add-btn" onClick={() => add('todo')}>+ Add</button>
-      </div>
+    <div className="script-notes-list">
+      {visible.length === 0 ? (
+        <div className="fs-nav-empty fs-todo-hint">
+          {search.trim()
+            ? 'No to-dos match the search.'
+            : 'No to-dos yet. Add one with + To-Do above. (To-do lists IN the script live in the Navigator — use Insert → To-Do List.)'}
+        </div>
+      ) : (
+        visible.map((e) => <React.Fragment key={e.key}>{e.render()}</React.Fragment>)
+      )}
     </div>
   );
 }
 
 /* ═══════════ Window chrome (v4.32, Derek's window template) ═══════════ */
 
-/** TOOL_CHROME slots for Notes and To-Do, wired in ToolDock: the "· N" count
- *  beside the centered row-1 title, and the row-2 Filter / Sort cluster.
- *  Counts are published by the list bodies (setToolCount) — displayed here,
- *  never recomputed — and filter/sort live in the store, so the chrome and
- *  the lists can't drift. */
+/** TOOL_CHROME slots for Sticky Notes, wired in ToolDock. The "· N" count is
+ *  the SUM of what the two lists are showing — each publishes its own count
+ *  (setToolCount 'sticky'/'todo'), displayed here, never recomputed. Filter,
+ *  sort and search live in the store, so the chrome and the lists can't
+ *  drift. */
 export function StickyTitleExtra() {
-  const count = useEditorStore((s) => s.toolCounts['sticky'] ?? 0);
-  return <span className="tool-title-count">· {count}</span>;
-}
-
-export function TodoTitleExtra() {
-  const count = useEditorStore((s) => s.toolCounts['todo'] ?? 0);
-  return <span className="tool-title-count">· {count}</span>;
+  const notes = useEditorStore((s) => s.toolCounts['sticky'] ?? 0);
+  const todos = useEditorStore((s) => s.toolCounts['todo'] ?? 0);
+  return <span className="tool-title-count">· {notes + todos}</span>;
 }
 
 /** Snippets' count comes straight off the store list — the body (CardList)
@@ -282,33 +294,46 @@ export function SnippetsTitleExtra() {
   return <span className="tool-title-count">· {count}</span>;
 }
 
-/** The cluster both windows share, differing only in which store pair it
- *  drives. v4.33: Sort only — the General/In-Script filter died when script
- *  items left these windows. Option labels come from ListControls' map so
- *  the two windows can't drift apart. */
-function ListChromeControls({ sort, setSort }: {
-  sort: ListSort; setSort: (s: ListSort) => void;
-}) {
-  return (
-    <ControlDropdown
-      label="Sort"
-      title="Manual lets you drag items into any order you like"
-      items={(['manual', 'created'] as ListSort[]).map((v) => ({
-        label: SORT_LABEL[v], active: sort === v, onSelect: () => setSort(v),
-      }))}
-    />
-  );
-}
+const STICKY_KINDS = [
+  { id: 'all', label: 'All' },
+  { id: 'note', label: 'Notes' },
+  { id: 'todo', label: 'To-Dos' },
+] as const;
 
+/** v5.21, Derek: the merged window's header cluster — Filter (kind) · Sort ·
+ *  Search. ONE Sort control drives BOTH lists' sort fields; they can only
+ *  diverge through pre-merge state, shown as "Mixed" until it's set once. */
 export function StickyControls() {
-  const sort = useEditorStore((s) => s.notesSort);
-  const setSort = useEditorStore((s) => s.setNotesSort);
-  return <ListChromeControls sort={sort} setSort={setSort} />;
-}
-
-export function TodoControls() {
-  const sort = useEditorStore((s) => s.todoSort);
-  const setSort = useEditorStore((s) => s.setTodoSort);
-  return <ListChromeControls sort={sort} setSort={setSort} />;
+  const kind = useEditorStore((s) => s.stickyKindFilter);
+  const setKind = useEditorStore((s) => s.setStickyKindFilter);
+  const notesSort = useEditorStore((s) => s.notesSort);
+  const todoSort = useEditorStore((s) => s.todoSort);
+  const search = useEditorStore((s) => s.stickySearch);
+  const setSearch = useEditorStore((s) => s.setStickySearch);
+  const setBothSorts = (v: ListSort) => {
+    const st = useEditorStore.getState();
+    st.setNotesSort(v);
+    st.setTodoSort(v);
+  };
+  return (
+    <>
+      <ControlDropdown
+        label="Filter"
+        chip={kind === 'all' ? 0 : 1}
+        current={kind === 'all' ? undefined : STICKY_KINDS.find((k) => k.id === kind)?.label}
+        title="Show notes, to-dos, or both"
+        items={STICKY_KINDS.map((k) => ({ label: k.label, active: kind === k.id, onSelect: () => setKind(k.id) }))}
+      />
+      <ControlDropdown
+        label="Sort"
+        title="Manual lets you drag items into any order you like"
+        current={notesSort === todoSort ? undefined : 'Mixed'}
+        items={(['manual', 'created'] as ListSort[]).map((v) => ({
+          label: SORT_LABEL[v], active: notesSort === v && todoSort === v, onSelect: () => setBothSorts(v),
+        }))}
+      />
+      <ControlSearch value={search} onChange={setSearch} placeholder="Search notes & to-dos…" />
+    </>
+  );
 }
 

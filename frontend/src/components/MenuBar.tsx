@@ -29,7 +29,8 @@ const PROJECT_MENU_GROUPS: string[][] = [
 const TOOL_MENU_GROUPS: string[][] = [
   // v4.24 batch 7: 'indexcards' retired — it's the Scenes tool's Cards view.
   ['beatboard'],
-  ['sticky', 'fragments', 'todo', 'highlights'],
+  // v5.21: 'todo' retired — To-Do lives in the merged Sticky Notes tool.
+  ['sticky', 'fragments', 'highlights'],
   // 'tags' is intentionally absent: Production Tags opens from the
   // Production menu (its conceptual home); the window itself remains a
   // dockable Tool in Customize.

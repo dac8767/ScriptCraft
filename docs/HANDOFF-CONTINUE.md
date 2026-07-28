@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.20 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.21 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,58 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.20 — the Scenes four-pack: contained popover, Cards per row, one menu, lighter cards (HEAD)
+### v5.21 — the seven-pack: Sticky Notes merge, fullscreen Title Page, one window, and the zombie Window menu (HEAD)
+
+- Derek's queue, all shipped in one batch: (1) Title Page always fullscreen
+  "the same as the scrapbook"; (2) Notes + To-Do merged into "Sticky Notes"
+  (+ Note / + To-Do in the body's action row, Filter/Sort/Search in the
+  header); (3) Locations-style faint separators on the scene list;
+  (4) "show one tool window at a time"; (5) "remove the window menu";
+  (6) Pages fullscreen floors per-row at 2; (7) Airtable dev panel removed.
+- (1) `FULLSCREEN_ONLY_TOOLS = ['titlepage']` (editorStore) — openTool's
+  remembered-mode branch takes the fullscreen path for these UNCONDITIONALLY;
+  NO_FULLSCREEN_TOOLS is down to ['notebook']. The takeover hides its
+  shrink-to-window button and the generic fullscreen button drops
+  (ToolDock). toolModeMemory.test's old "Title Page never fullscreens" pin
+  is FLIPPED.
+- (2) The merge is PRESENTATION ONLY: id 'sticky' kept (label "Sticky
+  Notes"), 'todo' retired via the indexcards recipe — RETIRED_TOOL_IDS map
+  drives migrateToolOrder/migrateToolConfig (workspace snapshots included),
+  activeTool/Right init mapping, and an openTool legacy remap. Card data was
+  always one `_shelf` list. Each list keeps its own sort+manual order
+  (notesSort+noteOrder / todoSort+todoOrder); ONE header Sort sets both
+  ("Mixed" shown if pre-merge state diverged). New store fields stickySearch
+  + stickyKindFilter (ephemeral); cardMatchesSearch in ListControls is the
+  ONE search predicate (title, text, to-do item lines). Counts: each list
+  publishes its own (sticky/todo), StickyTitleExtra SUMS; the body zeroes a
+  filtered-out list's count (it's unmounted and can't publish).
+- (4) closeOtherFloats(s, keep) in editorStore — a floating WINDOW is the
+  temp slot or a panel-slot tool in 'floating' mode (visible panel);
+  docked/fullscreen are NOT windows. Called where floats are BORN: all four
+  openTool float branches + setToolMode('floating') (drag-out, shrink-from-
+  fullscreen). Spread the patch BEFORE the branch's own fields.
+- (5) THE WINDOW MENU WAS A ZOMBIE: the JS menu sync dropped it in v4.28,
+  but Rust's rebuild_window_menu (lib.rs) re-appended a fresh "Window"
+  submenu on every set_window_title and window Destroyed event. Removed:
+  that fn, both call sites, the window-list- menu-event handler, and the
+  boot menu's Window submenu. VERIFIED as far as this sandbox allows —
+  rustfmt parse + zero remaining references; cargo check CANNOT run here
+  (Linux GTK headers absent; macOS target needs a real mac toolchain), so
+  the first `tauri dev` on the Mac is the compile gate. Pure removals.
+- (6) Pages: `pagesPerRow` render value = max(floor, raw) with floor 2 only
+  when fullscreenTool === 'pages'; the STORE keeps the raw value, so leaving
+  fullscreen restores 1. The minus button disables at the floor.
+- (7) The v4.95 Airtable dev panel followed its own in-file removal list
+  (file, ALL_TOOLS spread, body case, CSS block; ToolId member stays as a
+  legacy union entry; Feedback's Airtable embed untouched, no npm lib —
+  no About-list change).
+- Driver kit: `window.__scStore` (the store) now rides beside __scEditor,
+  DEV-only — drivers set up state deterministically. check-tools-v521.mjs:
+  18 checks across all items (takeover shape, dock labels, + buttons, kind
+  filter, summed count, separators, one-window rule, fullscreen floor with
+  raw store value pinned at 1).
+
+### v5.20 — the Scenes four-pack: contained popover, Cards per row, one menu, lighter cards
 
 - Derek's batch: (1) "The filter menu items in the Scene tool spills out of
   the window." (2) "Copy the Pages per row tool… 'Cards per row:' aligned
@@ -295,36 +346,12 @@ Durable bits kept live here:
   show in columnGap — rect deltas are the honest measure).
   check-ribbon-kinds.mjs drives BOTH new knobs through the real Design panel.
 
-### v5.17 — padding grows the bar; the descender truth
-
-Derek: "increasing the section bottom padding can push the title behind the
-top bar. adjusting padding should never do this. the height of the bar
-should adjust instead." Root cause: per-kind paddings were rendered but NOT
-counted in ribbonKindVars' contentH, so a padded section overflowed the
-centered bar both ways and the title clipped under the menu bar.
-- ribbonKindVars now takes the four vertical pads; each kind's TOTAL =
-  pads + k·inner; contentH = max of totals; the auto-fill levels the padded
-  totals (still targeting titled-at-100%). CSS-truth note in the helper:
-  every scaled term mirrors a ×--rib-k rule — and that audit caught a real
-  mismatch: the ROW-GAP margin wasn't ×k while row heights and title gap
-  were. It is now, so "Section scale" scales the whole section. (The kinds
-  driver consequently expects rendered rowGap = knob × fill — 9 renders
-  9×72/65 with gapU 9 — the formula, not the raw knob.)
-- "Space between title and buttons: 0 still leaves a distance": at 0 the
-  structural margin IS zero — the leftover is the title text's descender +
-  the buttons' centering inside their row (~4-5px of physics). Rather than
-  lie about zero, the knob now goes NEGATIVE (−10) with a hint saying
-  exactly that; the auto-fill floors at 0.25 so extreme negatives can't
-  invert the bar.
-- 10 unit tests (padded totals level, contentH grows by pads, negative gap,
-  floor) + 4 new driver checks (bar grows ≥15px under 16px padding, title
-  and rows stay inside, −6 renders −6). Both ribbon drivers green: 19 + 17.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.17** — padding grows the bar; the descender truth
 - **v5.16** — 0 means 0; bar side-padding knobs
 - **v5.15** — the ribbon Design reorg, and the 1px lie
 - **v5.14** — per-kind ribbon geometry

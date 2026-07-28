@@ -2,7 +2,7 @@ use std::sync::Mutex;
 use percent_encoding::percent_decode_str;
 use tauri::{Emitter, Manager};
 #[cfg(desktop)]
-use tauri::menu::{Menu, Submenu, PredefinedMenuItem, MenuItem};
+use tauri::menu::{Menu, Submenu, PredefinedMenuItem};
 
 // ── Android content URI reading (JNI) ────────────────────────────────────
 // On Android, files opened via intents use content:// URIs. These cannot be
@@ -865,19 +865,18 @@ static WINDOW_COUNTER: AtomicU32 = AtomicU32::new(1);
 /// from warm-start file opens (open in a new window).
 static APP_READY: AtomicBool = AtomicBool::new(false);
 
-/// Update the native window title and refresh the Window menu list.
+/// Update the native window title.
 /// Called from the frontend whenever the document title changes.
+/// (v5.21, Derek: "remove the window menu" — the Window-menu rebuild that
+/// used to live here is gone. The JS menu sync had already dropped the
+/// standalone Window menu in v4.28; this rebuild kept re-appending a fresh
+/// one after every title change, which is why it kept coming back.)
 #[tauri::command]
 async fn set_window_title(window: tauri::WebviewWindow, title: String) -> Result<(), String> {
     #[cfg(desktop)]
     {
         let display_title = if title.is_empty() { "ScriptCraft".to_string() } else { format!("{} — ScriptCraft", title) };
         window.set_title(&display_title).map_err(|e| format!("{}", e))?;
-        // Rebuild the Window menu to reflect current window titles
-        let app = window.app_handle();
-        if let Some(menu) = app.menu() {
-            rebuild_window_menu(app, &menu);
-        }
     }
     #[cfg(not(desktop))]
     { let _ = (window, title); }
@@ -915,70 +914,9 @@ fn open_url(url: String) -> Result<(), String> {
     Ok(())
 }
 
-/// Rebuild the Window menu: standard items + list of all open windows.
-#[cfg(desktop)]
-fn rebuild_window_menu(app: &tauri::AppHandle, _menu: &Menu<tauri::Wry>) {
-    #[cfg(not(target_os = "macos"))]
-    return;
-
-    #[cfg(target_os = "macos")]
-    {
-        // Build a fresh Window submenu with standard items + window list
-        let mut items: Vec<Box<dyn tauri::menu::IsMenuItem<tauri::Wry>>> = vec![
-            Box::new(PredefinedMenuItem::minimize(app, None).unwrap()),
-            Box::new(PredefinedMenuItem::maximize(app, None).unwrap()),
-            Box::new(PredefinedMenuItem::separator(app).unwrap()),
-            Box::new(PredefinedMenuItem::close_window(app, None).unwrap()),
-        ];
-
-        // Add all open windows
-        let windows = app.webview_windows();
-        let mut win_entries: Vec<_> = windows.iter()
-            .filter(|(label, _)| *label != "splashscreen")
-            .collect();
-        win_entries.sort_by_key(|(label, _)| label.clone());
-
-        if !win_entries.is_empty() {
-            items.push(Box::new(PredefinedMenuItem::separator(app).unwrap()));
-            for (label, win) in &win_entries {
-                let title = win.title().unwrap_or_else(|_| (*label).clone());
-                let item_id = format!("window-list-{}", label);
-                if let Ok(mi) = MenuItem::with_id(app, &item_id, &title, true, None::<&str>) {
-                    items.push(Box::new(mi));
-                }
-            }
-        }
-
-        // Convert to references for Submenu::with_items
-        let item_refs: Vec<&dyn tauri::menu::IsMenuItem<tauri::Wry>> = items.iter()
-            .map(|b| b.as_ref())
-            .collect();
-
-        if let Ok(new_window_sub) = Submenu::with_items(app, "Window", true, &item_refs) {
-            // Replace the Window submenu in the app menu — at the SAME
-            // position. Appending would drag it to the end, undoing the
-            // Window-before-Help order the JS menu sync installs (v3.03).
-            if let Some(menu) = app.menu() {
-                let mut pos: Option<usize> = None;
-                if let Ok(menu_items) = menu.items() {
-                    for (i, item) in menu_items.iter().enumerate() {
-                        if let tauri::menu::MenuItemKind::Submenu(sub) = item {
-                            if sub.text().unwrap_or_default() == "Window" {
-                                pos = Some(i);
-                                let _ = menu.remove(item);
-                                break;
-                            }
-                        }
-                    }
-                }
-                match pos {
-                    Some(i) => { let _ = menu.insert(&new_window_sub, i); }
-                    None => { let _ = menu.append(&new_window_sub); }
-                }
-            }
-        }
-    }
-}
+// (v5.21: rebuild_window_menu is GONE with the Window menu itself — it was
+// re-appending a "Window" submenu to the JS-installed app menu, resurrecting
+// a menu the frontend removed in v4.28.)
 
 #[tauri::command]
 async fn open_new_window(app: tauri::AppHandle) -> Result<(), String> {
@@ -1007,11 +945,7 @@ async fn open_new_window(app: tauri::AppHandle) -> Result<(), String> {
     }
     builder.build()
         .map_err(|e| format!("Failed to create window: {}", e))?;
-    // Refresh window list in the Window menu
-    #[cfg(desktop)]
-    if let Some(menu) = app.menu() {
-        rebuild_window_menu(&app, &menu);
-    }
+    // (v5.21: no Window menu to refresh anymore.)
     Ok(())
 }
 
@@ -1115,18 +1049,10 @@ pub fn run() {
                         &PredefinedMenuItem::select_all(app_handle, None)?,
                     ],
                 )?;
-                let window_submenu = Submenu::with_items(
-                    app_handle,
-                    "Window",
-                    true,
-                    &[
-                        &PredefinedMenuItem::minimize(app_handle, None)?,
-                        &PredefinedMenuItem::maximize(app_handle, None)?,
-                        &PredefinedMenuItem::separator(app_handle)?,
-                        &PredefinedMenuItem::close_window(app_handle, None)?,
-                    ],
-                )?;
-                Menu::with_items(app_handle, &[&app_submenu, &edit_submenu, &window_submenu])
+                // v5.21, Derek: no Window submenu — the JS menu sync dropped
+                // it in v4.28 and the boot menu now matches (it only exists
+                // until the frontend installs the full menu set anyway).
+                Menu::with_items(app_handle, &[&app_submenu, &edit_submenu])
             }
             #[cfg(not(target_os = "macos"))]
             {
@@ -1217,26 +1143,8 @@ pub fn run() {
             Ok(())
         });
 
-    // Handle Window menu clicks to focus the selected window
-    #[cfg(desktop)]
-    let builder = builder.on_menu_event(|app, event| {
-        let id = event.id().0.as_str();
-        if let Some(label) = id.strip_prefix("window-list-") {
-            if let Some(win) = app.get_webview_window(label) {
-                let _ = win.unminimize();
-                let _ = win.show();
-                let _ = win.set_focus();
-            }
-        }
-    })
-    .on_window_event(|window, event| {
-        if let tauri::WindowEvent::Destroyed = event {
-            let app = window.app_handle();
-            if let Some(menu) = app.menu() {
-                rebuild_window_menu(app, &menu);
-            }
-        }
-    });
+    // (v5.21: the Window-menu click handler and the Destroyed-event menu
+    // rebuild are gone with the Window menu itself.)
 
     let app = builder
         .build(tauri::generate_context!())

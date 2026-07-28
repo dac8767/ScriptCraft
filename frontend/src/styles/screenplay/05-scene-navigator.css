@@ -40,6 +40,12 @@
 }
 .navigator-scene:hover { background: var(--fd-overlay-subtle); border-left-color: var(--fd-accent); }
 .navigator-scene:active { background: rgba(74, 158, 255, 0.12); }
+/* v5.21, Derek: the same faint row separators the Locations list has
+   (.location-group). When a narrow-mode row is expanded, the line must not
+   cut the row off from its own fold — it moves to the fold's bottom edge. */
+.navigator-scene { border-bottom: 1px solid var(--fd-overlay-subtle); }
+.navigator-scene:has(+ .scene-sub-item) { border-bottom: none; }
+.scene-sub-item { border-bottom: 1px solid var(--fd-overlay-subtle); }
 .scene-info { flex: 1; min-width: 0; }
 /* v5.02, Derek's mockup — the scene row is a five-column TABLE:
    number · heading · synopsis field · metrics · length icon.

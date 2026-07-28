@@ -421,7 +421,13 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   // v4.94: the Pages header's search + preview scale (chrome controls, body
   // list — one state, so neither can be decorative).
   const pagesSearch = useEditorStore((s) => s.pagesSearch);
-  const pagesPerRow = useEditorStore((s) => s.pagesPerRow);
+  const pagesPerRowRaw = useEditorStore((s) => s.pagesPerRow);
+  // v5.21, Derek: "do not allow 1 page per row in fullscreen mode. it must
+  // be 2 pages + in that case." The FLOOR is applied to what renders, not
+  // to the stored value — leaving fullscreen restores the remembered 1.
+  const pagesFullscreen = useEditorStore((s) => s.fullscreenTool === 'pages');
+  const pagesPerRowMin = pagesFullscreen ? 2 : PAGES_PER_ROW_MIN;
+  const pagesPerRow = Math.max(pagesPerRowMin, pagesPerRowRaw);
   const shownPages = useMemo(() => pagesMatching(pageContent, pagesSearch), [pageContent, pagesSearch]);
 
   // ── Exact-match page layout for thumbnails ──
@@ -934,7 +940,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
             <button
               className="tool-action-btn tool-action-icon"
               title="Fewer pages per row (bigger pages)"
-              disabled={pagesPerRow <= PAGES_PER_ROW_MIN}
+              disabled={pagesPerRow <= pagesPerRowMin}
               onClick={() => setPagesPerRow(pagesPerRow - 1)}
             ><CircleMinusIcon /></button>
             <span className="tool-action-count" aria-labelledby="fs-pages-perrow-label">{pagesPerRow}</span>

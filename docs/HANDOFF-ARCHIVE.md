@@ -151,9 +151,34 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.16 and older (newest first)
+## Version history — v5.17 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.17 — padding grows the bar; the descender truth
+
+Derek: "increasing the section bottom padding can push the title behind the
+top bar. adjusting padding should never do this. the height of the bar
+should adjust instead." Root cause: per-kind paddings were rendered but NOT
+counted in ribbonKindVars' contentH, so a padded section overflowed the
+centered bar both ways and the title clipped under the menu bar.
+- ribbonKindVars now takes the four vertical pads; each kind's TOTAL =
+  pads + k·inner; contentH = max of totals; the auto-fill levels the padded
+  totals (still targeting titled-at-100%). CSS-truth note in the helper:
+  every scaled term mirrors a ×--rib-k rule — and that audit caught a real
+  mismatch: the ROW-GAP margin wasn't ×k while row heights and title gap
+  were. It is now, so "Section scale" scales the whole section. (The kinds
+  driver consequently expects rendered rowGap = knob × fill — 9 renders
+  9×72/65 with gapU 9 — the formula, not the raw knob.)
+- "Space between title and buttons: 0 still leaves a distance": at 0 the
+  structural margin IS zero — the leftover is the title text's descender +
+  the buttons' centering inside their row (~4-5px of physics). Rather than
+  lie about zero, the knob now goes NEGATIVE (−10) with a hint saying
+  exactly that; the auto-fill floors at 0.25 so extreme negatives can't
+  invert the bar.
+- 10 unit tests (padded totals level, contentH grows by pads, negative gap,
+  floor) + 4 new driver checks (bar grows ≥15px under 16px padding, title
+  and rows stay inside, −6 renders −6). Both ribbon drivers green: 19 + 17.
 
 ### v5.16 — 0 means 0; bar side-padding knobs
 

@@ -21,12 +21,12 @@ import VersionHistory from './VersionHistory';
 import SpellCheckPanel from './SpellCheckPanel';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
-  FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard, FaCheckSquare,
+  FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard,
   FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,
   FaKeyboard, FaRobot, FaBook, FaSlidersH, FaColumns,
-  FaCommentDots, FaChevronRight, FaChevronDown, FaTable,
+  FaCommentDots, FaChevronRight, FaChevronDown,
 } from 'react-icons/fa';
-import { useEditorStore, toolConfigFor, NO_FULLSCREEN_TOOLS, type ToolId, type ToolSide } from '../stores/editorStore';
+import { useEditorStore, toolConfigFor, NO_FULLSCREEN_TOOLS, FULLSCREEN_ONLY_TOOLS, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { FullscreenIcon, CloseIcon, RestoreIcon } from './uiIcons';
@@ -37,7 +37,7 @@ import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
 import CharacterProfiles, { CharTitleExtra, useCharTabs, CharControls } from './CharacterProfiles';
 import { ChromeTabs, ControlDropdown, type ToolChromeTab } from './ToolControls';
-import { StickyNotesTool, FragmentsTool, TodoTool, StickyTitleExtra, StickyControls, TodoTitleExtra, TodoControls, SnippetsTitleExtra } from './StickyNotes';
+import { StickyNotesTool, FragmentsTool, StickyTitleExtra, StickyControls, SnippetsTitleExtra } from './StickyNotes';
 import { HighlightsTitleExtra } from './HighlightsTool';
 import HighlightsTool from './HighlightsTool';
 import { DesignPanelDocked } from './DesignPanel';
@@ -49,8 +49,6 @@ import BeatBoard, { OutlineHeaderControls } from './BeatBoard';
 import TypewriterTool from './TypewriterTool';
 import AiWriterTool from './AiWriterTool';
 import NotebookTool, { NotebookHeaderExtra } from './NotebookTool';
-// v4.95 TEMPORARY (dev-only Airtable panel) — REMOVE BEFORE RELEASE.
-import AirtableDevTool from '../dev/AirtableDevTool';
 
 export interface ToolDef {
   id: ToolId;
@@ -85,9 +83,11 @@ export const ALL_TOOLS: ToolDef[] = [
   // v4.24 batch 7: 'indexcards' retired — Index Cards is the Scenes tool's
   // Cards view now (persisted layouts carrying the old id are migrated).
   { id: 'beatboard', label: 'Outline', icon: <FaStream />, defaultSize: { w: 960, h: 372 }, group: 1 },
-  { id: 'sticky', label: 'Notes', icon: <FaRegStickyNote />, defaultSize: { w: 300, h: 336 }, group: 2 },
+  // v5.21, Derek: Notes + To-Do merged into "Sticky Notes" (the 'todo' id is
+  // retired and migrates onto 'sticky', which predates the merge and keeps
+  // every persisted layout).
+  { id: 'sticky', label: 'Sticky Notes', icon: <FaRegStickyNote />, defaultSize: { w: 300, h: 336 }, group: 2 },
   { id: 'fragments', label: 'Snippets', icon: <FaRegClipboard />, defaultSize: { w: 300, h: 312 }, group: 2 },
-  { id: 'todo', label: 'To-Do', icon: <FaCheckSquare />, defaultSize: { w: 300, h: 288 }, group: 2 },
   { id: 'highlights', label: 'Highlights', icon: <FaHighlighter />, defaultSize: { w: 300, h: 312 }, group: 2 },
   { id: 'tags', label: 'Production Tags', icon: <FaTags />, defaultSize: { w: 340, h: 336 }, group: 2 },
   // v0.94: Analytics opens FLOATING at its natural size — squeezed into a 300px
@@ -139,14 +139,7 @@ export const ALL_TOOLS: ToolDef[] = [
   // kept beside the script instead of in a blocking modal. Opens floating (the
   // form needs width) but the pop-in button docks it.
   { id: 'feedback', label: 'Feedback', icon: <FaCommentDots />, defaultSize: { w: 460, h: 620 }, group: 3, noPanelFit: true },
-  /* v4.95, Derek — TEMPORARY Airtable dev panel. REMOVE BEFORE RELEASE (the
-     full list is in src/dev/AirtableDevTool.tsx). The spread is what keeps it
-     out of shipped builds: `tauri build` sets DEV false, the entry vanishes
-     from the registry, and every surface that reads ALL_TOOLS — the dock,
-     Customize, Workspaces — loses it at once. */
-  ...(import.meta.env.DEV
-    ? [{ id: 'devairtable' as ToolId, label: 'Airtable (dev)', icon: <FaTable />, defaultSize: { w: 520, h: 620 }, group: 3, noPanelFit: true }]
-    : []),
+  // (v5.21, Derek: the v4.95 dev-only Airtable panel is removed for good.)
 ];
 
 export const toolDef = (id: ToolId | null) => ALL_TOOLS.find((t) => t.id === id) || null;
@@ -326,10 +319,9 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   // (their internal layouts are unchanged — the cluster lets them span).
   // v4.32: numbers toggle (left) + Filter dropdown + search (batch-v8 5-7)
   navigator: { Controls: NavigatorControls },
-  // v4.32 batch-v8 #12: Notes + To-Do — count beside the title, Sort as a
-  // row-2 dropdown (ListToolbar deleted; v4.33: general-only, filter gone).
+  // v5.21: the merged Sticky Notes — summed count beside the title,
+  // Filter (kind) / Sort / Search in the row-2 cluster.
   sticky: { TitleExtra: StickyTitleExtra, Controls: StickyControls },
-  todo: { TitleExtra: TodoTitleExtra, Controls: TodoControls },
   // v4.32 batch-v8 #12: Snippets + Highlights — count beside the title.
   fragments: { TitleExtra: SnippetsTitleExtra },
   highlights: { TitleExtra: HighlightsTitleExtra },
@@ -364,7 +356,9 @@ export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 const NO_FULLSCREEN = NO_FULLSCREEN_TOOLS;
 
 function ToolFullscreenButton({ id }: { id: ToolId }) {
-  if (NO_FULLSCREEN.includes(id)) return null;
+  // v5.21: fullscreen-ONLY tools drop the button too — they are never in a
+  // shape the button could act on (fullscreen is their only shape).
+  if (NO_FULLSCREEN.includes(id) || FULLSCREEN_ONLY_TOOLS.includes(id)) return null;
   return (
     <button
       className="char-profiles-fullscreen-btn"
@@ -406,8 +400,10 @@ export function ToolFullscreenTakeover({ editor, scrollContainer }: {
           closeTitle="Return to editor"
           fullscreenBtn={false}
           /* v4.78, Derek: shrink (left of ×) — leave fullscreen INTO a
-             floating window; openTool re-activates it wherever it lives. */
-          onMinimize={() => {
+             floating window; openTool re-activates it wherever it lives.
+             v5.21: fullscreen-ONLY tools (Title Page) have no other shape
+             to shrink into, so they don't offer the button. */
+          onMinimize={FULLSCREEN_ONLY_TOOLS.includes(id) ? undefined : () => {
             const st = useEditorStore.getState();
             st.setFullscreenTool(null);
             st.setToolMode(id, 'floating');
@@ -491,8 +487,6 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
       return <FragmentsTool editor={editor} />;
     case 'highlights':
       return <HighlightsTool editor={editor} scrollContainer={scrollContainer ?? null} />;
-    case 'todo':
-      return <TodoTool editor={editor} />;
     case 'tags':
       return <TagsPanel editor={editor} embedded />;
     case 'beatboard':
@@ -503,9 +497,6 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
       return <WorkspacesTool />;
     case 'feedback':
       return <FeedbackTool />;
-    // v4.95 TEMPORARY — dev only; see src/dev/AirtableDevTool.tsx.
-    case 'devairtable':
-      return import.meta.env.DEV ? <AirtableDevTool /> : null;
     default:
       return null;
   }

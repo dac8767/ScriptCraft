@@ -1,5 +1,18 @@
 [
   {
+    "version": "5.21",
+    "date": "2026-07-28",
+    "changes": [
+      "Sticky Notes: the Notes and To-Do tools are one window now — \"+ Note\" and \"+ To-Do\" lead the body, Filter (All / Notes / To-Dos), Sort and Search live in the window header, and the title count sums both lists. Cards, colors and manual orders carry over untouched",
+      "Title Page always opens full screen, like the Scrapbook — no more fixed floating card",
+      "One tool window at a time: opening a second floating window closes the first (docked panels and fullscreen are unaffected)",
+      "Scene list rows wear the same faint separators as the Locations list",
+      "Pages: full screen can't drop below 2 pages per row; your stored preference is untouched and returns when you leave full screen",
+      "The macOS Window menu is gone for good — it was removed from the menu set in v4.28, but a native-side rebuild kept resurrecting it after every title change",
+      "The temporary Airtable dev panel is removed"
+    ]
+  },
+  {
     "version": "5.20",
     "date": "2026-07-28",
     "changes": [

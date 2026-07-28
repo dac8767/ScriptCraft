@@ -54,10 +54,18 @@ describe('remembered window shape', () => {
     expect(st().activeToolRight).toBe('sticky');
   });
 
-  it('tools with no fullscreen (Scrapbook, Title Page) never take the fullscreen path', () => {
-    useEditorStore.setState({ toolMode: { titlepage: 'fullscreen' } });
-    st().openTool('titlepage');
+  it('tools with no fullscreen (Scrapbook) never take the fullscreen path', () => {
+    useEditorStore.setState({ toolMode: { notebook: 'fullscreen' } });
+    st().openTool('notebook');
     expect(st().fullscreenTool).toBeNull();
+  });
+
+  /** v5.21, Derek: "make the title page doc always in full screen" — every
+   *  open routes to the takeover, whatever mode an old session remembered. */
+  it('the Title Page ALWAYS opens fullscreen, ignoring any remembered mode', () => {
+    useEditorStore.setState({ toolMode: { titlepage: 'floating' } });
+    st().openTool('titlepage');
+    expect(st().fullscreenTool).toBe('titlepage');
   });
 
   it('an already-fullscreen tool is not reopened on top of itself', () => {
@@ -104,5 +112,61 @@ describe('reopening never rewrites the remembered shape', () => {
     st().openTool('sticky');
     st().setActiveToolRight(null);            // the × on a floating window
     expect(st().toolMode.sticky).toBe('floating');
+  });
+});
+
+/** v5.21, Derek: "show one tool window at a time. opening a second window
+ *  closes the first." A window = the temp slot or a panel-slot tool in
+ *  'floating' mode; docked tools and the fullscreen takeover are not
+ *  windows. */
+describe('v5.21: one floating window at a time', () => {
+  beforeEach(() => {
+    useEditorStore.setState({
+      toolMode: {},
+      activeTool: null,
+      activeToolRight: null,
+      tempTool: null,
+      fullscreenTool: null,
+      navigatorOpen: true,
+      shelfOpen: true,
+    });
+  });
+
+  it('opening a floating panel tool closes the temp window', () => {
+    st().openTool('analytics');                 // ALWAYS_FLOAT → temp window
+    expect(st().tempTool).toBe('analytics');
+    st().setToolMode('sticky', 'floating');
+    st().openTool('sticky');                    // slot window (right)
+    expect(st().activeToolRight).toBe('sticky');
+    expect(st().tempTool).toBeNull();           // analytics window closed
+  });
+
+  it('opening a temp window closes a floating slot window', () => {
+    st().setToolMode('sticky', 'floating');
+    st().openTool('sticky');
+    expect(st().activeToolRight).toBe('sticky');
+    st().openTool('analytics');
+    expect(st().tempTool).toBe('analytics');
+    expect(st().activeToolRight).toBeNull();    // sticky's window closed
+  });
+
+  it('drag-out (setToolMode floating on an open tool) closes the previous window', () => {
+    st().openTool('fragments');                 // docked right — not a window
+    st().openTool('analytics');                 // temp window
+    expect(st().tempTool).toBe('analytics');
+    st().setToolMode('fragments', 'floating');  // fragments becomes a window
+    expect(st().tempTool).toBeNull();
+    expect(st().activeToolRight).toBe('fragments');
+  });
+
+  it('a DOCKED tool in the other panel is not a window and stays put', () => {
+    st().openTool('fragments');                 // docked right
+    st().setToolMode('sticky', 'floating');
+    st().openTool('sticky');                    // window in the right slot
+    expect(st().activeToolRight).toBe('sticky');
+    // fragments lost its slot to sticky (same panel), but scenes docked left:
+    st().openTool('scenes');
+    expect(st().activeTool).toBe('scenes');
+    expect(st().activeToolRight).toBe('sticky');  // the window survives a docked open
   });
 });

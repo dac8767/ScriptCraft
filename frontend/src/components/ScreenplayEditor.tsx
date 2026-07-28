@@ -1602,11 +1602,14 @@ const ScreenplayEditor: React.FC = () => {
   /* DEV ONLY (speed audit, 2026-07-28): hand the drivers the editor instance
      so they can INJECT a fixture script (editor.commands.setContent) instead
      of typing it keystroke by keystroke — ~40s of every Playwright check was
-     synthetic typing. Gated like the Airtable dev panel; import.meta.env.DEV
-     is false in `npm run build`, so nothing ships. See frontend/devtools/. */
+     synthetic typing. v5.21: the STORE rides along for the same reason —
+     drivers set up state (open tools, modes) deterministically instead of
+     clicking through chrome. import.meta.env.DEV is false in `npm run
+     build`, so nothing ships. See frontend/devtools/. */
   useEffect(() => {
     if (import.meta.env.DEV) {
       (window as unknown as Record<string, unknown>).__scEditor = editor;
+      (window as unknown as Record<string, unknown>).__scStore = useEditorStore;
     }
   }, [editor]);
 
