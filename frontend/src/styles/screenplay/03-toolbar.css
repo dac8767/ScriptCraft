@@ -548,7 +548,9 @@
    the no-divider case (row + row) and the divider case (line + row). */
 .toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row + .rib-row,
 .toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row-line + .rib-row {
-  margin-top: var(--rib-row-gap-k, 0px);   /* per-kind since v5.15 */
+  /* per-kind (v5.15); ×k (v5.17) so Section scale scales the WHOLE section
+     — row heights and the title gap already multiplied, this one didn't. */
+  margin-top: calc(var(--rib-row-gap-k, 0px) * var(--rib-k, 1));
 }
 .rib-row {
   display: flex;

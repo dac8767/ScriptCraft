@@ -1646,6 +1646,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     titleGap: dzVars.ribTitleGap,
     rowGapTitled: dzVars.ribRowGapTitled,
     rowGapUntitled: dzVars.ribRowGapUntitled,
+    padTopTitled: dzVars.ribPadTopTitled,
+    padBottomTitled: dzVars.ribPadBottomTitled,
+    padTopUntitled: dzVars.ribPadTopUntitled,
+    padBottomUntitled: dzVars.ribPadBottomUntitled,
     scaleTitledPct: ribScaleTitledPct,
     scaleUntitledPct: ribScaleUntitledPct,
   });

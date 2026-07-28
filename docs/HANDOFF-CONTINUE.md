@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.16 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.17 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,32 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.16 — 0 means 0; bar side-padding knobs (HEAD)
+### v5.17 — padding grows the bar; the descender truth (HEAD)
+
+Derek: "increasing the section bottom padding can push the title behind the
+top bar. adjusting padding should never do this. the height of the bar
+should adjust instead." Root cause: per-kind paddings were rendered but NOT
+counted in ribbonKindVars' contentH, so a padded section overflowed the
+centered bar both ways and the title clipped under the menu bar.
+- ribbonKindVars now takes the four vertical pads; each kind's TOTAL =
+  pads + k·inner; contentH = max of totals; the auto-fill levels the padded
+  totals (still targeting titled-at-100%). CSS-truth note in the helper:
+  every scaled term mirrors a ×--rib-k rule — and that audit caught a real
+  mismatch: the ROW-GAP margin wasn't ×k while row heights and title gap
+  were. It is now, so "Section scale" scales the whole section. (The kinds
+  driver consequently expects rendered rowGap = knob × fill — 9 renders
+  9×72/65 with gapU 9 — the formula, not the raw knob.)
+- "Space between title and buttons: 0 still leaves a distance": at 0 the
+  structural margin IS zero — the leftover is the title text's descender +
+  the buttons' centering inside their row (~4-5px of physics). Rather than
+  lie about zero, the knob now goes NEGATIVE (−10) with a hint saying
+  exactly that; the auto-fill floors at 0.25 so extreme negatives can't
+  invert the bar.
+- 10 unit tests (padded totals level, contentH grows by pads, negative gap,
+  floor) + 4 new driver checks (bar grows ≥15px under 16px padding, title
+  and rows stay inside, −6 renders −6). Both ribbon drivers green: 19 + 17.
+
+### v5.16 — 0 means 0; bar side-padding knobs
 
 Derek: "I'll set it to 0 (lets say for padding), but then there is still
 significant padding space. make sure that 0 is actually 0 for all options."

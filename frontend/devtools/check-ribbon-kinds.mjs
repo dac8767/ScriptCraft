@@ -120,8 +120,11 @@ check('titled button spacing applies',
   await page.$eval('.rib-kind-titled:not(.rib-single) .rib-row', (el) => getComputedStyle(el).columnGap), '7px');
 await openGroup('Ribbon: Untitled Sections');
 await setKnob('Ribbon: Untitled Sections', 'Row spacing', 9);
-check('untitled row spacing applies (and only there)',
-  await page.$eval('.rib-kind-untitled:not(.rib-single) .rib-row + .rib-row, .rib-kind-untitled:not(.rib-single) .rib-row-line + .rib-row', (el) => getComputedStyle(el).marginTop), '9px');
+// v5.17: row spacing renders ×kind-factor (Section scale scales the WHOLE
+// section, auto-fill included). With gapU 9 the fill is 72/(56+9), so the
+// rendered margin is 9 × 72/65 ≈ 9.97 — the formula, not the raw knob.
+const unMt = parseFloat(await page.$eval('.rib-kind-untitled:not(.rib-single) .rib-row + .rib-row, .rib-kind-untitled:not(.rib-single) .rib-row-line + .rib-row', (el) => getComputedStyle(el).marginTop));
+check('untitled row spacing applies ×fill (and only there)', Math.abs(unMt - 9 * (72 / 65)) < 0.05, true);
 check('titled row spacing still 0',
   await page.$eval('.rib-kind-titled:not(.rib-single) .rib-row + .rib-row, .rib-kind-titled:not(.rib-single) .rib-row-line + .rib-row', (el) => getComputedStyle(el).marginTop), '0px');
 await openGroup('Ribbon: Single-Row Sections');
@@ -131,6 +134,32 @@ check('single-row top padding applies',
 await setKnob('Ribbon: Single-Row Sections', 'Icon size', 32);
 check('single-row icon size applies',
   await page.$eval('.rib-single .toolbar-btn svg, .rib-tall-icon svg', (el) => getComputedStyle(el).height), '32px');
+
+// ── v5.17, Derek: heavy padding must GROW the bar, never clip the title ──
+const barBefore = await page.$eval('.toolbar-ribbon', (el) => el.getBoundingClientRect().height);
+await openGroup('Ribbon: Titled Sections');
+await setKnob('Ribbon: Titled Sections', 'Bottom padding', 16);
+await page.waitForTimeout(300);
+const clip = await page.evaluate(() => {
+  const bar = document.querySelector('.toolbar-ribbon').getBoundingClientRect();
+  const title = document.querySelector('.rib-kind-titled .rib-sec-title').getBoundingClientRect();
+  const rows = [...document.querySelectorAll('.rib-kind-titled:not(.rib-single) .rib-row')];
+  const last = rows[rows.length - 1].getBoundingClientRect();
+  return {
+    barGrowth: Math.round(bar.height),
+    titleInside: title.top >= bar.top - 0.5,
+    rowsInside: last.bottom <= bar.bottom + 0.5,
+  };
+});
+check('bar grew by the padding', clip.barGrowth >= Math.round(barBefore) + 15, true);
+check('title stays inside the bar', clip.titleInside, true);
+check('last row stays inside the bar', clip.rowsInside, true);
+
+// negative title gap tucks buttons under the title — margin really goes minus
+await setKnob('Ribbon: Titled Sections', 'Bottom padding', 0);
+await setKnob('Ribbon: Titled Sections', 'Space between title and buttons', -6);
+check('negative title gap renders as a negative margin',
+  await page.$eval('.rib-kind-titled .rib-sec-title + .rib-row', (el) => getComputedStyle(el).marginTop), '-6px');
 
 await browser.close();
 process.exit(results.every(Boolean) ? 0 : 1);

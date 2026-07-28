@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.17",
+    "date": "2026-07-28",
+    "changes": [
+      "Ribbon: section padding grows the bar instead of pushing content out of it — a big bottom padding was shoving the section title up behind the top bar; the bar's height now always makes room for every section's padding",
+      "Ribbon: \"Space between title and buttons\" can go negative (down to −10) to tuck the buttons up under the title. At 0 the structural spacing really is zero — what remains is the title text's own descender and the buttons' centering in their row",
+      "Ribbon: row spacing now scales with the section's scale factor like everything else in the section, so a scaled section keeps its proportions"
+    ]
+  },
+  {
     "version": "5.16",
     "date": "2026-07-28",
     "changes": [

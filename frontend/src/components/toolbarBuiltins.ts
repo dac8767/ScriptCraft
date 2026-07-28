@@ -463,31 +463,48 @@ export function ribbonKindVars(opts: {
    *  the kinds that exist, or an all-titled bar would size to a phantom. */
   anyUntitled?: boolean;
   titleFont?: number;   // --dz-rib-title-font, def 9.5
-  /** v5.15: --dz-rib-title-gap, def 5 — the ONE title↔buttons spacing (the
-   *  band's own bottom padding was redundant with it and is gone; 3+2 → 5
-   *  keeps the stock geometry, which is why the default moved). */
+  /** --dz-rib-title-gap, def 5 — the ONE title↔buttons spacing. May be
+   *  NEGATIVE (v5.17): 0 is the true structural zero, and what remains at 0
+   *  is text descender + button centering — physics, not margin — so the
+   *  knob dips below zero to tuck the buttons optically under the title. */
   titleGap?: number;
   rowGapTitled?: number;    // --dz-rib-row-gap-titled, def 0
   rowGapUntitled?: number;  // --dz-rib-row-gap-untitled, def 0
+  /** v5.17, Derek: "increasing the section bottom padding can push the title
+   *  behind the top bar… the height of the bar should adjust instead."
+   *  Per-kind paddings are part of each kind's TOTAL now, so contentH (and
+   *  with it the bar's min-height) grows with them — padding can never
+   *  overflow a section past the bar's edges again. */
+  padTopTitled?: number;
+  padBottomTitled?: number;
+  padTopUntitled?: number;
+  padBottomUntitled?: number;
   scaleTitledPct?: number;    // Design: ribScaleTitled, def 100
   scaleUntitledPct?: number;  // Design: ribScaleUntitled, def 100
 }): RibbonKindVars {
   const titleFont = opts.titleFont ?? 9.5;
   const titleGap = opts.titleGap ?? 5;
-  const rowGapTitled = opts.rowGapTitled ?? 0;
-  const rowGapUntitled = opts.rowGapUntitled ?? 0;
-  // The band = the title line (font + 1.5, the v4.5 derived line-height) +
-  // the gap under it. Must match .rib-sec-title's CSS.
-  const band = titleFont + 1.5 + titleGap;
-  const untitledBase = 2 * opts.rowH + rowGapUntitled;
-  const titledBase = 2 * opts.rowH + rowGapTitled + band;
-  const autoFill = opts.anyTitle ? titledBase / untitledBase : 1;
+  const gT = opts.rowGapTitled ?? 0;
+  const gU = opts.rowGapUntitled ?? 0;
+  const padT = (opts.padTopTitled ?? 0) + (opts.padBottomTitled ?? 0);
+  const padU = (opts.padTopUntitled ?? 0) + (opts.padBottomUntitled ?? 0);
+  // Every SCALED term mirrors a CSS rule that multiplies by --rib-k: the band
+  // (font + 1.5), the title gap, the row heights and the row gap. Paddings
+  // are deliberately unscaled insets, in CSS and here alike.
+  const band = titleFont + 1.5;
+  const titledInner = band + titleGap + 2 * opts.rowH + gT;
+  const untitledInner = 2 * opts.rowH + gU;
+  // Auto-fill targets the titled total at scale 100 — the user scales
+  // multiply on top of a level baseline.
+  const autoFill = opts.anyTitle
+    ? Math.max(0.25, (padT + titledInner - padU) / untitledInner)
+    : 1;
   const kTitled = (opts.scaleTitledPct ?? 100) / 100;
   const kUntitled = ((opts.scaleUntitledPct ?? 100) / 100) * autoFill;
   const anyUntitled = opts.anyUntitled ?? true;
   const contentH = Math.max(
-    opts.anyTitle ? kTitled * titledBase : 0,
-    anyUntitled ? kUntitled * untitledBase : 0,
+    opts.anyTitle ? padT + kTitled * titledInner : 0,
+    anyUntitled ? padU + kUntitled * untitledInner : 0,
   );
   return { kTitled, kUntitled, contentH };
 }
