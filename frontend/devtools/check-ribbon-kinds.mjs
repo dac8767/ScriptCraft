@@ -115,9 +115,16 @@ await setKnob('Ribbon: Titled Sections', 'Section scale', 100);
 await setKnob('Ribbon: Titled Sections', 'Side padding', 12);
 check('titled side padding applies',
   await page.$eval('.rib-kind-titled:not(.rib-single)', (el) => getComputedStyle(el).paddingLeft), '12px');
-await setKnob('Ribbon: Titled Sections', 'Horizontal button spacing', 7);
-check('titled button spacing applies',
-  await page.$eval('.rib-kind-titled:not(.rib-single) .rib-row', (el) => getComputedStyle(el).columnGap), '7px');
+// v5.18: button spacing is per ROW and margin-based (rect deltas, not gap)
+const rowPair = (idx) => page.$$eval('.rib-kind-titled:not(.rib-single) .rib-row', (rows, i) => {
+  const els = [...rows[i].children].filter((c) => !c.classList.contains('rib-row-line'));
+  const a = els[0].getBoundingClientRect(), b = els[1].getBoundingClientRect();
+  return Math.round((b.left - a.right) * 10) / 10;
+}, idx);
+await setKnob('Ribbon: Titled Sections', 'Top row button spacing', 7);
+await setKnob('Ribbon: Titled Sections', 'Bottom row button spacing', 3);
+check('titled TOP row button spacing applies', await rowPair(0), 7);
+check('titled BOTTOM row spacing independent', await rowPair(1), 3);
 await openGroup('Ribbon: Untitled Sections');
 await setKnob('Ribbon: Untitled Sections', 'Row spacing', 9);
 // v5.17: row spacing renders ×kind-factor (Section scale scales the WHOLE

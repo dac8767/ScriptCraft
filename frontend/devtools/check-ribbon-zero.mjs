@@ -32,9 +32,9 @@ await page.addInitScript(() => {
     designVars: {
       ribPadTop: 0, ribPadBottom: 0, ribPadLeft: 0, ribPadRight: 0,
       ribPadXTitled: 0, ribPadTopTitled: 0, ribPadBottomTitled: 0,
-      ribRowGapTitled: 0, ribBtnGapTitled: 0, ribTitleGap: 0,
+      ribRowGapTitled: 0, ribBtnGapTopTitled: 0, ribBtnGapBottomTitled: 0, ribTitleGap: 0,
       ribPadXUntitled: 0, ribPadTopUntitled: 0, ribPadBottomUntitled: 0,
-      ribRowGapUntitled: 0, ribBtnGapUntitled: 0,
+      ribRowGapUntitled: 0, ribBtnGapTopUntitled: 0, ribBtnGapBottomUntitled: 0,
       ribPadXSingle: 0, ribPadTopSingle: 0, ribPadBottomSingle: 0,
     },
   }));
@@ -60,15 +60,23 @@ const r = await page.evaluate(() => {
   const unRows = [...un.querySelectorAll('.rib-row')];
   const secs = [ti, un, single].map((s) => s.getBoundingClientRect());
   const seps = [...bar.querySelectorAll('.rib-section-sep')].map((s) => s.getBoundingClientRect());
+  // v5.18: button spacing is a margin now (so it can go negative), so the
+  // honest measure is box-edge to box-edge of a row's first adjacent pair.
+  const pairGap = (row) => {
+    const els = [...row.children].filter((c) => !c.classList.contains('rib-row-line'));
+    if (els.length < 2) return null;
+    const a = els[0].getBoundingClientRect(), b = els[1].getBoundingClientRect();
+    return Math.round((b.left - a.right) * 10) / 10;
+  };
   return {
+    tiTopPair: pairGap(tiRows[0]), tiBotPair: pairGap(tiRows[1]),
+    unTopPair: pairGap(unRows[0]), unBotPair: pairGap(unRows[1]),
     barGap: cs.columnGap || cs.gap,
     barPadTop: cs.paddingTop, barPadBottom: cs.paddingBottom,
     barPadLeft: cs.paddingLeft, barPadRight: cs.paddingRight,
     barH: bar.getBoundingClientRect().height,
     contentH: parseFloat(cs.getPropertyValue('--rib-content-h')),
     tiPad: P(ti), unPad: P(un), singlePad: P(single),
-    tiRowGap: getComputedStyle(tiRows[0]).columnGap,
-    unRowGap: getComputedStyle(unRows[0]).columnGap,
     tiRow2Mt: getComputedStyle(tiRows[1]).marginTop,
     unRow2Mt: getComputedStyle(unRows[1]).marginTop,
     titleMt: getComputedStyle(ti.querySelector('.rib-sec-title + .rib-row')).marginTop,
@@ -89,8 +97,10 @@ check('bar height == content height exactly', r.barH, r.contentH);
 check('titled section padding all-zero', r.tiPad, '0px 0px 0px 0px');
 check('untitled section padding all-zero', r.unPad, '0px 0px 0px 0px');
 check('single-row section padding all-zero', r.singlePad, '0px 0px 0px 0px');
-check('titled button spacing 0', r.tiRowGap, '0px');
-check('untitled button spacing 0', r.unRowGap, '0px');
+check('titled TOP-row button boxes touch', r.tiTopPair, 0);
+check('titled BOTTOM-row button boxes touch', r.tiBotPair, 0);
+check('untitled TOP-row button boxes touch', r.unTopPair, 0);
+check('untitled BOTTOM-row button boxes touch', r.unBotPair, 0);
 check('titled row spacing 0', r.tiRow2Mt, '0px');
 check('untitled row spacing 0', r.unRow2Mt, '0px');
 check('title-to-buttons space 0', r.titleMt, '0px');

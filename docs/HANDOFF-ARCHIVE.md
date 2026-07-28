@@ -151,9 +151,45 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.13 and older (newest first)
+## Version history — v5.14 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.14 — per-kind ribbon geometry
+
+Derek: mixed titled/untitled sections left "a gap where the title is" over
+the untitled ones (the v4.5 invisible reserved band). His option (a) shipped:
+**untitled two-row sections stretch to a titled section's total height** —
+bases level, button tops level with the titled TITLE's top. Plus, mid-batch:
+separate Design scale + padding knobs per kind.
+
+- **`ribbonKindVars()` in toolbarBuiltins.ts is the single source** — pure,
+  6 tests. Returns kTitled/kUntitled (NUMBERS) + contentH. kUntitled carries
+  the auto-fill ((2·rowh+band)/(2·rowh)); the % knobs multiply on top.
+  band = titleFont+1.5+titlePad+titleGap and MUST match .rib-sec-title's CSS.
+- Toolbar.tsx puts `--rib-k-t` / `--rib-k-u` / `--rib-content-h` on the bar's
+  inline style (numbers, so CSS can `calc(base * factor)`) and stamps
+  `.rib-kind-titled` / `.rib-kind-untitled` on sections AND groups.
+- CSS multiplies row height, small-button box/font, `--rib-itemh` (via a new
+  `--rib-itemh-base` so bar-level consumers stay unscaled), and the titled
+  band itself by `--rib-k`. The bar's min-heights now read
+  `--rib-content-h` so scaled-up sections grow the bar instead of clipping.
+- The untitled empty band is `display: none` in a MIXED bar (superseding the
+  v4.5 reserve-the-band alignment for exactly that case); `rib-no-titles`
+  bars are untouched (no auto-fill — kU = scale% only).
+- Scale knobs are STORE-BOUND tokens (`ribScaleTitledPct/UntitledPct` in
+  editorStore, persisted in viewState) — the token registry test enforces
+  css-var XOR store-bound, and the fallback test requires every cssVar to be
+  consumed, so a designVars-only token is not an option. The 4 padding knobs
+  are ordinary css-var tokens (defaults 0 = no visual change until used).
+- Driver `check-ribbon-kinds.mjs` (10 checks): tops/bases level (Δ≤1.5px),
+  buttons grew, knobs move only their kind, padding lands. THREE driver
+  lessons, all now encoded there: (1) seed localStorage via addInitScript —
+  seeding after a first goto RACES the live app's autosaves, which clobbered
+  the seed two different ways; (2) set ALL ten `opendraft:toolbar*NNN`
+  migration flags or a migration rewrites the seeded bar; (3) Playwright
+  hasText strings are case-INSENSITIVE — "Titled sections" matches inside
+  "Untitled sections"; use word-boundary regexes.
 
 ### v5.13 — title page out of Pages; the Design field you can type in
 

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.17 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.18 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,36 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.17 — padding grows the bar; the descender truth (HEAD)
+### v5.18 — per-row button spacing; the box-air truth (HEAD)
+
+- Derek: "for two row section, add bottom row button spacing and top row
+  button spacing. currently 0 for button spacing still has a decent gap."
+- ROOT CAUSE of "0 isn't 0": flex gap bottomed out at box-touching, but a
+  20px (22 comfortable) button box holds a ~16px glyph — the "decent gap" at
+  0 was the boxes' own air around their icons. Same finding as v4.12's row
+  gap, vertically. Same cure: margins, which unlike `gap` can go NEGATIVE.
+- The row's `gap` became `.rib-row > * + * { margin-left: … }`; the second
+  row (`.rib-row ~ .rib-row >`) reads its own var. Four tokens replace the
+  two per-kind ones: ribBtnGapTop/BottomTitled, ribBtnGapTop/BottomUntitled
+  (min −10 to overlap boxes; def 1 so nothing moves). In-row user dividers
+  keep their intrinsic 6px side margins via `calc(knob + 6px)` restore rules
+  — defaults render IDENTICALLY to the gap model (driver-proven: 1px pairs,
+  7px divider air).
+- Specificity dance (recorded in 03-toolbar.css): divider rules AFTER row
+  rules — bottom-divider (7 classes) beats all; top-divider vs bottom-generic
+  is a 6-class tie broken by source order; top-generic (5) loses to both.
+- migrateDesignVars (designSlice) seeds both rows from a saved per-kind
+  value — the v4.46 toolWinHeaderPad pattern (init-time; a preset imported
+  mid-session migrates on next launch). 5 new unit tests in
+  designMigrate.test.ts.
+- Drivers: NEW check-ribbon-btngap.mjs — 11 checks in 3 boots (defaults
+  parity incl. divider air; per-row isolation with 8 / 0 / −6 / 12 rendering
+  exactly, the −6 as real box overlap; legacy-key migration).
+  check-ribbon-zero.mjs measures box-edge pair distances now (margins never
+  show in columnGap — rect deltas are the honest measure).
+  check-ribbon-kinds.mjs drives BOTH new knobs through the real Design panel.
+
+### v5.17 — padding grows the bar; the descender truth
 
 Derek: "increasing the section bottom padding can push the title behind the
 top bar. adjusting padding should never do this. the height of the bar
@@ -290,47 +319,12 @@ verified end-to-end. New driver lessons: Design GROUP heads TOGGLE (make
 openGroup idempotent), and per-kind knobs share labels — scope
 .dz-group-first, then .dz-row.
 
-### v5.14 — per-kind ribbon geometry
-
-Derek: mixed titled/untitled sections left "a gap where the title is" over
-the untitled ones (the v4.5 invisible reserved band). His option (a) shipped:
-**untitled two-row sections stretch to a titled section's total height** —
-bases level, button tops level with the titled TITLE's top. Plus, mid-batch:
-separate Design scale + padding knobs per kind.
-
-- **`ribbonKindVars()` in toolbarBuiltins.ts is the single source** — pure,
-  6 tests. Returns kTitled/kUntitled (NUMBERS) + contentH. kUntitled carries
-  the auto-fill ((2·rowh+band)/(2·rowh)); the % knobs multiply on top.
-  band = titleFont+1.5+titlePad+titleGap and MUST match .rib-sec-title's CSS.
-- Toolbar.tsx puts `--rib-k-t` / `--rib-k-u` / `--rib-content-h` on the bar's
-  inline style (numbers, so CSS can `calc(base * factor)`) and stamps
-  `.rib-kind-titled` / `.rib-kind-untitled` on sections AND groups.
-- CSS multiplies row height, small-button box/font, `--rib-itemh` (via a new
-  `--rib-itemh-base` so bar-level consumers stay unscaled), and the titled
-  band itself by `--rib-k`. The bar's min-heights now read
-  `--rib-content-h` so scaled-up sections grow the bar instead of clipping.
-- The untitled empty band is `display: none` in a MIXED bar (superseding the
-  v4.5 reserve-the-band alignment for exactly that case); `rib-no-titles`
-  bars are untouched (no auto-fill — kU = scale% only).
-- Scale knobs are STORE-BOUND tokens (`ribScaleTitledPct/UntitledPct` in
-  editorStore, persisted in viewState) — the token registry test enforces
-  css-var XOR store-bound, and the fallback test requires every cssVar to be
-  consumed, so a designVars-only token is not an option. The 4 padding knobs
-  are ordinary css-var tokens (defaults 0 = no visual change until used).
-- Driver `check-ribbon-kinds.mjs` (10 checks): tops/bases level (Δ≤1.5px),
-  buttons grew, knobs move only their kind, padding lands. THREE driver
-  lessons, all now encoded there: (1) seed localStorage via addInitScript —
-  seeding after a first goto RACES the live app's autosaves, which clobbered
-  the seed two different ways; (2) set ALL ten `opendraft:toolbar*NNN`
-  migration flags or a migration rewrites the seeded bar; (3) Playwright
-  hasText strings are case-INSENSITIVE — "Titled sections" matches inside
-  "Untitled sections"; use word-boundary regexes.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.14** — per-kind ribbon geometry
 - **v5.13** — title page out of Pages; the Design field you can type in
 - **v5.12** — the table↔caret line is Derek's slider
 - **v5.11** — caret-only again, but a caret you can hit

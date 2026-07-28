@@ -706,7 +706,21 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
    3) drop the priority-block's internal 2px gap for its (usually single) button.
    Custom mode keeps its dragged/scaled width; labeled buttons, dropdowns, and
    the hand-sized zoom steppers keep their own widths. */
-.toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row { gap: var(--rib-btn-gap-k, 1px); }   /* per-kind since v5.15 */
+/* v5.18, Derek: per-ROW horizontal spacing, and "0 is actually 0" — with flex
+   gap the knob bottomed out at box-touching, but a 20px box holds a ~16px
+   glyph, so 0 still LOOKED like a decent gap (the note above). The knob is now
+   a margin on every item after a row's first (the v4.12 row-gap move), so it
+   can go NEGATIVE to overlap the boxes and close the glyph air. Top and bottom
+   rows read separate knobs, per kind. In-row user dividers keep their
+   intrinsic 6px side margins ON TOP of the knob — exactly what the gap model
+   gave them — so defaults render identically. Rule order matters: the divider
+   rules must come after the row rules (bottom-row divider outranks by count;
+   top-row divider vs bottom-row generic is a tie broken by source order). */
+.toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row { gap: 0; }
+.toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row > * + * { margin-left: var(--rib-btn-gap-top-k, 1px); }
+.toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row ~ .rib-row > * + * { margin-left: var(--rib-btn-gap-bot-k, 1px); }
+.toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row > * + .toolbar-user-divider { margin-left: calc(var(--rib-btn-gap-top-k, 1px) + 6px); }
+.toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row ~ .rib-row > * + .toolbar-user-divider { margin-left: calc(var(--rib-btn-gap-bot-k, 1px) + 6px); }
 .toolbar.toolbar-ribbon .rib-section:not(.rib-single) .toolbar-priority-block { gap: 0; }
 .toolbar.toolbar-ribbon:not(.toolbar-comfortable):not(.toolbar-custom)
   .rib-section:not(.rib-single) .toolbar-btn:not(.toolbar-btn-labeled):not(.zoom-tb-step) { width: 20px; }
@@ -727,12 +741,14 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
    scale knobs multiply on top; the padding knobs are per-kind insets. */
 .toolbar.toolbar-ribbon .rib-kind-titled {
   --rib-k: var(--rib-k-t, 1);
-  --rib-btn-gap-k: var(--dz-rib-btn-gap-titled, 1px);
+  --rib-btn-gap-top-k: var(--dz-rib-btn-gap-top-titled, 1px);
+  --rib-btn-gap-bot-k: var(--dz-rib-btn-gap-bottom-titled, 1px);
   --rib-row-gap-k: var(--dz-rib-row-gap-titled, 0px);
 }
 .toolbar.toolbar-ribbon .rib-kind-untitled {
   --rib-k: var(--rib-k-u, 1);
-  --rib-btn-gap-k: var(--dz-rib-btn-gap-untitled, 1px);
+  --rib-btn-gap-top-k: var(--dz-rib-btn-gap-top-untitled, 1px);
+  --rib-btn-gap-bot-k: var(--dz-rib-btn-gap-bottom-untitled, 1px);
   --rib-row-gap-k: var(--dz-rib-row-gap-untitled, 0px);
 }
 /* Padding is per KIND — and single-row sections are their OWN kind with

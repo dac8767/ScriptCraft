@@ -129,7 +129,14 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'ribPadBottomTitled', label: 'Bottom padding', cssVar: '--dz-rib-pad-bottom-titled', unit: 'px', min: 0, max: 16, step: 1, def: 0 },
       { id: 'ribRowGapTitled', label: 'Row spacing', cssVar: '--dz-rib-row-gap-titled', unit: 'px', min: -14, max: 24, step: 1, def: 0,
         hint: 'Negative pulls the two rows together.' },
-      { id: 'ribBtnGapTitled', label: 'Horizontal button spacing', cssVar: '--dz-rib-btn-gap-titled', unit: 'px', min: 0, max: 20, step: 1, def: 1 },
+      /* v5.18, Derek: per ROW, and negative-capable — at 0 the button BOXES
+         already touch; the air he still saw is each box's slack around its
+         glyph, so closing it means overlapping boxes (margin, not flex gap).
+         A saved ribBtnGapTitled override seeds both rows (designSlice). */
+      { id: 'ribBtnGapTopTitled', label: 'Top row button spacing', cssVar: '--dz-rib-btn-gap-top-titled', unit: 'px', min: -10, max: 20, step: 1, def: 1,
+        hint: 'Boxes touch at 0 — remaining air is inside each button; negative overlaps them.' },
+      { id: 'ribBtnGapBottomTitled', label: 'Bottom row button spacing', cssVar: '--dz-rib-btn-gap-bottom-titled', unit: 'px', min: -10, max: 20, step: 1, def: 1,
+        hint: 'Boxes touch at 0 — remaining air is inside each button; negative overlaps them.' },
       { id: 'ribTitleGap', label: 'Space between title and buttons', cssVar: '--dz-rib-title-gap', unit: 'px', min: -10, max: 20, step: 1, def: 5,
         hint: '0 removes the margin; what remains is the text\u2019s own descender and button centering \u2014 go negative to tuck the buttons under the title.' },
       { id: 'ribTitleFont', label: 'Title font size', cssVar: '--dz-rib-title-font', unit: 'px', min: 7, max: 16, step: 0.5, def: 9.5,
@@ -154,7 +161,10 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'ribPadBottomUntitled', label: 'Bottom padding', cssVar: '--dz-rib-pad-bottom-untitled', unit: 'px', min: 0, max: 16, step: 1, def: 0 },
       { id: 'ribRowGapUntitled', label: 'Row spacing', cssVar: '--dz-rib-row-gap-untitled', unit: 'px', min: -14, max: 24, step: 1, def: 0,
         hint: 'Negative pulls the two rows together.' },
-      { id: 'ribBtnGapUntitled', label: 'Horizontal button spacing', cssVar: '--dz-rib-btn-gap-untitled', unit: 'px', min: 0, max: 20, step: 1, def: 1 },
+      { id: 'ribBtnGapTopUntitled', label: 'Top row button spacing', cssVar: '--dz-rib-btn-gap-top-untitled', unit: 'px', min: -10, max: 20, step: 1, def: 1,
+        hint: 'Boxes touch at 0 — remaining air is inside each button; negative overlaps them.' },
+      { id: 'ribBtnGapBottomUntitled', label: 'Bottom row button spacing', cssVar: '--dz-rib-btn-gap-bottom-untitled', unit: 'px', min: -10, max: 20, step: 1, def: 1,
+        hint: 'Boxes touch at 0 — remaining air is inside each button; negative overlaps them.' },
       { id: 'ribScaleUntitled', label: 'Section scale (%)', unit: '', min: 50, max: 200, step: 5, def: 100,
         hint: 'On top of auto-matching the titled sections\u2019 height',
         store: { get: (s) => s.ribScaleUntitledPct, set: (v) => useEditorStore.getState().setRibScaleUntitledPct(v) } },

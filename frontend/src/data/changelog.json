@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.18",
+    "date": "2026-07-28",
+    "changes": [
+      "Ribbon: two-row sections get separate \"Top row button spacing\" and \"Bottom row button spacing\" knobs, for titled and untitled sections alike (Design ▸ Ribbon groups) — replacing the single per-kind \"Horizontal button spacing\"; a saved value carries into both rows",
+      "Ribbon: button spacing 0 now really reads as touching — the \"decent gap\" that remained at 0 was each button's own box around its icon; the knobs can go negative (to −10) to overlap the boxes and pull the icons tighter",
+      "In-row dividers keep their familiar breathing room on top of the spacing knob, so existing bars look the same until you move the new knobs"
+    ]
+  },
+  {
     "version": "5.17",
     "date": "2026-07-28",
     "changes": [
