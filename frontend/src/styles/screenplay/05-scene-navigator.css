@@ -26,13 +26,10 @@
    few px right. The track is transparent and the thumb only paints when there's
    something to scroll, so the reserved strip stays invisible. */
 .navigator-list { flex: 1; overflow-y: scroll; padding: 0 0 4px; }
-/* v5.02: the scene row's column layout responds to the TOOL's width, not the
-   viewport's — the same list is docked at ~250px, popped out, and fullscreen.
-   v5.03: the container is the navigator root, not .navigator-list. The column
-   header is a SIBLING of the list, and a container query only reaches its
-   container's DESCENDANTS — anchored on the list, the rows collapsed to two
-   lines while the header kept drawing five columns above them. */
-.scene-navigator { container-type: inline-size; container-name: scenelist; }
+/* (v5.09: the old scenelist container query is GONE. Narrow mode now needs
+   DIFFERENT DOM — a caret button and a collapsible sub-item — which CSS
+   cannot conjure, so SceneNavigator watches its own width with a
+   ResizeObserver and renders the right structure. Same 520px line.) */
 .navigator-empty { padding: 24px 16px; color: var(--fd-text-secondary, var(--fd-text)); opacity: 0.7; font-size: 13px; font-style: italic; text-align: center; }
 .navigator-scene {
   /* v4.52, Derek: content CENTERS in the row (min-height made flex-start
@@ -77,30 +74,39 @@
 .scene-synopsis-field { grid-area: synopsis; }
 .scene-metrics        { grid-area: metrics; }
 .scene-length         { grid-area: icon; }
-/* Docked in a side panel the list is ~250px wide, and five columns across
-   that leaves the synopsis a 34px stump — measured, not guessed. Under 520px
-   the row wraps to two lines (heading + length, then the synopsis with its
-   figures). Still a table, still one set of tracks per row, so the columns go
-   on lining up down the list; there is just no room for five of them.
-   The WIDE layout is the default so that a renderer without container-query
-   support falls back to what Derek asked for, not to the compromise. */
-@container scenelist (max-width: 519px) {
-  .scene-heading-row {
-    /* The metrics track is FIXED here too, derived from the same
-       --scene-metrics-w (it spans this track plus the gap and the icon). An
-       `auto` track measured each row's own text — "0.19 page" against "1.7
-       pages" — and the synopsis fields came out 126px and 132px, off by six.
-       That is the misalignment in miniature; nothing here may size to content. */
-    grid-template-columns:
-      var(--dz-nav-badge, 22px)
-      minmax(0, 1fr)
-      calc(var(--scene-metrics-w, 104px) - 26px)
-      16px;
-    grid-template-areas:
-      "num head     head    icon"
-      "num synopsis metrics metrics";
-  }
+/* v5.09, Derek: docked in a side panel there is no room for the three
+   columns, so the row keeps only caret · number · heading · icon, and the
+   synopsis field with the figures folds into a sub-item behind the caret.
+   Tracks stay fixed-or-fr — nothing sizes to its own row's content. */
+.scene-heading-row.scene-row-narrow {
+  --scene-col-gap: 8px;             /* 22px gutters are for grips; none here */
+  grid-template-columns: 16px var(--dz-nav-badge, 22px) minmax(0, 1fr) 16px;
+  grid-template-areas: "caret num head icon";
 }
+.scene-caret-btn {
+  grid-area: caret;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+}
+.scene-caret-btn:hover { color: var(--fd-accent); }
+/* The revealed sub-item: the SAME synopsis field and the SAME figures the
+   wide table shows — indented under the heading, field first, figures under
+   it, matching the old expanded format's shape. */
+.scene-sub-item {
+  margin: 6px 0 2px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.scene-sub-item .scene-synopsis-field { width: 100%; }
+.scene-sub-metrics .scene-metrics { justify-content: flex-start; }
 /* The reorder list is NOT this table — it has a drag grip and a "3 → 5"
    renumber badge of its own width. It keeps the old single-line layout. */
 .nav-reorder-row .scene-heading-row { display: flex; align-items: center; gap: 8px; }
@@ -200,11 +206,8 @@
 /* (v5.05: the cell-scoped overflow/position overrides are gone — the titles
    are the header's own children now and carry both themselves. The lesson
    stands: a grip hanging off a cell that CLIPS is a grip you cannot grab.) */
-/* Two rows, no room, no resizing: the grips would be pulling tracks the
-   narrow template doesn't have. */
-@container scenelist (max-width: 519px) {
-  .scene-list-header { display: none; }
-}
+/* (v5.09: no @container hide for the header — in narrow mode the header is
+   simply not rendered; the resize grips' tracks don't exist there.) */
 
 .scene-heading-text { min-width: 0; display: flex; align-items: center; gap: 6px; font-size: var(--dz-nav-scene-font, 14px); font-family: var(--screenplay-font); color: var(--fd-text); line-height: 1.3; font-weight: 600; }
 /* The synopsis is EDITABLE in place (v5.02) — a real field on every row,

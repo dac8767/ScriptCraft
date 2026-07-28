@@ -70,13 +70,17 @@ needed to be the full suite.
      fresh clone (it was only in the session scratchpad — see rollback loss
      above). It has no install scripts and downloads no browser; the sandbox
      browser lives at `/opt/pw-browsers/chromium`.
-2. **vitest: `isolate: false` in `vitest.config.ts`.** Workers reuse their
-   environment across files. Measured: **34–50s → 10–14s**, 786/786 green
-   either way. The trade: module singletons (zustand stores) persist across
-   files within a worker — tests already reset what they touch in
-   `beforeEach`, and new test files must keep doing that. If a failure ever
-   appears only in full runs and smells like cross-file leakage, re-check
-   with `npx vitest run --isolate` before chasing ghosts.
+2. **vitest: `isolate: false` — tried, measured, and REVERTED same-day.**
+   It delivered 34–50s → 10–14s, then produced exactly the predicted failure
+   mode within hours: order-dependent flakes (Scrapbook caret/focus tests
+   red only when certain files shared a worker; 2-of-3 full runs failing).
+   Two real leaks were found and fixed (`src/test/sharedEnvReset.ts`: dirty
+   document + notebookStore accumulating pages across files) — and a
+   fifth-run flake REMAINED, so the gate went back to full isolation.
+   **A gate that is sometimes wrong is worse than one that is 20s slower.**
+   What survives: the per-file hygiene reset (real bugs, kept), and the
+   iteration loop below — `vitest related` is where the test-time win
+   actually lives. Full suite: ~34s, deterministic, once per delivery.
 
 ## 3. The working rules (the part that keeps it fast)
 
@@ -88,9 +92,9 @@ needed to be the full suite.
    re-run is ~4s, but the habit still matters.)
 3. **Iterate with `npx vitest related <changed files> --run`** (~3s, ~100
    tests for a SceneNavigator change). The **full suite runs once, right
-   before commit** — it is the gate of record, not the iteration loop.
-   `tsc -b` stays in the loop; it's incremental and catches the release
-   blocker class.
+   before commit, isolated** — it is the gate of record, not the iteration
+   loop. `tsc -b` stays in the loop; it's incremental and catches the
+   release blocker class.
 4. **Session tooling lives in the repo** (`frontend/devtools/`), never only
    in the scratchpad. Rollbacks wipe the scratchpad; they cannot wipe a
    pushed commit.
@@ -102,9 +106,10 @@ needed to be the full suite.
 ## 4. Expected shape of a small update now
 
 boot+seed+check driver ~5s × 2 runs, `related` tests ~3s × 2, full suite
-~12s, tsc ~6s × 2, build ~4s, git ~10s → **~1 min of tool time** per small
-update, plus reading/writing the code itself. The 11-minute figure was
-~80% verification overhead, and that overhead is what this removes.
+~34s (isolated, deterministic), tsc ~6s × 2, build ~4s, git ~10s →
+**~1.5 min of tool time** per small update, plus reading/writing the code
+itself. The 11-minute figure was ~80% verification overhead; the driver kit
+removed most of it, and the suite stays honest rather than fast-but-flaky.
 
 ## 5. Not done, deliberately
 

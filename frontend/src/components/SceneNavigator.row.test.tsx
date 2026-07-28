@@ -155,6 +155,68 @@ describe('the inline synopsis field writes back', () => {
   });
 });
 
+/* ── narrow mode (v5.09): the sub-item behind the caret ─────────────────
+   jsdom has no ResizeObserver, so the component defaults to WIDE — which is
+   what every test above relies on. Here we stub one that reports a 300px
+   container the moment it observes, flipping the SAME component narrow. */
+describe('narrow mode folds synopsis + figures behind the caret', () => {
+  let RealRO: typeof ResizeObserver | undefined;
+  beforeEach(() => {
+    RealRO = (globalThis as { ResizeObserver?: typeof ResizeObserver }).ResizeObserver;
+    (globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
+      cb: (entries: { contentRect: { width: number } }[]) => void;
+      constructor(cb: (entries: { contentRect: { width: number } }[]) => void) { this.cb = cb; }
+      observe() { this.cb([{ contentRect: { width: 300 } }]); }
+      disconnect() {}
+      unobserve() {}
+    };
+    // REMOUNT under the stub — the observer effect has [] deps, so a mere
+    // re-render of the already-mounted (wide) instance never observes again.
+    act(() => root.unmount());
+    root = createRoot(host);
+    act(() => root.render(<SceneNavigator editor={null} view="scenes" />));
+  });
+  afterEach(() => {
+    (globalThis as { ResizeObserver?: typeof ResizeObserver }).ResizeObserver = RealRO;
+  });
+
+  it('rows keep caret · number · heading · icon, and no inline synopsis or metrics', () => {
+    for (const r of rows()) {
+      expect(r.querySelector('.scene-caret-btn')).toBeTruthy();
+      expect(r.querySelector('.scene-num-cell')).toBeTruthy();
+      expect(r.querySelector('.scene-heading-text')).toBeTruthy();
+      expect(r.querySelector('.scene-length')).toBeTruthy();
+      expect(r.querySelector('.scene-synopsis-field')).toBeNull();
+      expect(r.querySelector('.scene-metrics')).toBeNull();
+    }
+  });
+
+  it('hides the column header (no columns to head, no grips to drag)', () => {
+    expect(host.querySelector('.scene-list-header')).toBeNull();
+  });
+
+  it('the caret reveals the sub-item — same field, same figures — and hides it again', () => {
+    const caret = rows()[1].querySelector('.scene-caret-btn') as HTMLButtonElement;
+    act(() => { caret.click(); });
+    const sub = rows()[1].querySelector('.scene-sub-item')!;
+    expect(sub).toBeTruthy();
+    expect((sub.querySelector('.scene-synopsis-field') as HTMLInputElement).value).toBe('She loses the tail in the rain.');
+    expect(sub.querySelector('.scene-metric-time')?.textContent).toBe('0:00');
+    // only the caret's own row opened
+    expect(host.querySelectorAll('.scene-sub-item')).toHaveLength(1);
+    act(() => { caret.click(); });
+    expect(rows()[1].querySelector('.scene-sub-item')).toBeNull();
+  });
+
+  it('the sub-item field commits through the same write path', () => {
+    const caret = rows()[0].querySelector('.scene-caret-btn') as HTMLButtonElement;
+    act(() => { caret.click(); });
+    const f = rows()[0].querySelector('.scene-sub-item .scene-synopsis-field') as HTMLInputElement;
+    act(() => { typeInto(f, 'Folded but not forked.'); blur(f); });
+    expect(useEditorStore.getState().scenes[0].synopsis).toBe('Folded but not forked.');
+  });
+});
+
 /* ── the CSS invariant: no track may size to its own row's content ──────── */
 describe('scene-heading-row grid tracks', () => {
   // vitest runs from frontend/; import.meta.url is a Vite http URL here, not a file one.
@@ -166,17 +228,22 @@ describe('scene-heading-row grid tracks', () => {
     (m) => m[1].replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\s+/g, ' ').trim(),
   );
 
-  it('defines both the wide and the narrow template', () => {
-    expect(templates).toHaveLength(2);
+  it('defines the wide template and the narrow caret-row template', () => {
+    // v5.09: narrow is a different DOM (caret + sub-item), selected by a
+    // ResizeObserver in the component — its template lives on .scene-row-narrow.
+    expect(templates).toHaveLength(1);
+    expect(css).toMatch(/\.scene-heading-row\.scene-row-narrow\s*\{[^}]*grid-template-columns/s);
+    expect(css).toMatch(/"caret num head icon"/);
   });
 
   it('sizes no track to content — no auto / min-content / max-content / fit-content', () => {
-    for (const t of templates) {
+    const narrow = css.match(/\.scene-heading-row\.scene-row-narrow\s*\{[^}]*grid-template-columns:\s*([^;]+);/s)![1];
+    for (const t of [...templates, narrow]) {
       expect(t, `content-sized track in "${t}"`).not.toMatch(/\b(auto|min-content|max-content|fit-content)\b/);
     }
   });
 
-  it('gives both templates a fixed number track, a fixed metrics track and a fixed icon track', () => {
+  it('gives the wide template a fixed number track, a fixed metrics track and a fixed icon track', () => {
     for (const t of templates) {
       expect(t).toMatch(/--dz-nav-badge/);        // number
       expect(t).toMatch(/--scene-metrics-w/);     // metrics

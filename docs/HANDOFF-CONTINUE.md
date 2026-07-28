@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.08 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything)
+# ScriptCraft — continuation brief (current as of v5.09 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,40 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.08 — Pages controls say what they mean (HEAD)
+### v5.09 — narrow Scenes fold behind a caret; the isolate:false lesson (HEAD)
+
+**Scenes narrow mode** (Derek): under 520px of tool width the synopsis field,
+page length and runtime fold into a per-scene sub-item behind a caret; wide
+keeps the five-column table untouched.
+- Narrow is a JS fact (ResizeObserver on `.scene-navigator`), NOT a container
+  query — the two modes need DIFFERENT DOM (a caret button, a collapsible
+  sub-row) and CSS cannot conjure elements. The old `@container scenelist`
+  rules are deleted.
+- The row's cells are built ONCE per scene and composed per mode, so the
+  sub-item is the SAME synopsis input and the SAME metrics — not copies.
+- jsdom has no ResizeObserver → tests default to wide (all v5.02+ tests
+  unchanged); the narrow tests stub RO and REMOUNT (the observer effect has
+  [] deps — re-rendering the mounted instance never observes again; that
+  remount was a real first-attempt failure).
+- Cards view: the time estimate always renders, `?? 0` → 0:00 (Derek,
+  mid-batch ask). The meta strip no longer vanishes on timeless scenes.
+- Driver `check-scene-narrow.mjs` (16 checks): docked carets/fold/type-
+  persist, fullscreen table intact, cards times. Two driver lessons: the
+  View dropdown trigger COMPACTS to its current value ("List") when the
+  header is tight — match /^(View|List|Cards)/; dropdown items are
+  `.tool-ctl-menu-item` in a `.tool-ctl-menu`.
+
+**The isolate:false story (READ before touching vitest.config.ts).** The
+speed audit set `isolate: false` (suite 34–50s → ~10s). Within hours the
+gate flaked: Scrapbook caret/focus tests red only under certain worker
+cohabitations, 2-of-3 runs. Found and FIXED two real leaks
+(`src/test/sharedEnvReset.ts`, kept: document junk + notebookStore pages
+accumulating across files) — still 1-of-5 flaky, so the config went BACK to
+full isolation. The suite is ~34s, deterministic, run ONCE before commit;
+iteration lives on `npx vitest related <files> --run` (~3s). Do not re-try
+isolate:false without hunting the remaining leak to extinction first.
+
+### v5.08 — Pages controls say what they mean
 
 Derek's four Pages asks, all landed:
 - **"Pages per row: N"** replaces the − Zoom + pair. The store field is now

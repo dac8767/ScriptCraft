@@ -549,18 +549,18 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor }) => {
                       >
                         {scene.heading}
                       </div>
-                      {(sceneLengths[idx] > 0 || sceneTimings[idx]?.finalSeconds > 0) && (
-                        <div className="index-card-meta">
-                          {sceneLengths[idx] > 0 && (
-                            <span className="ic-meta-item">{Number(sceneLengths[idx].toFixed(1))}p</span>
-                          )}
-                          {sceneTimings[idx]?.finalSeconds > 0 && (
-                            <span className="ic-meta-item" style={{ color: getTimingColor(sceneTimings[idx].finalSeconds) }}>
-                              {formatSceneDuration(sceneTimings[idx].finalSeconds)}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      {/* v5.09, Derek: the time estimate ALWAYS shows, 0:00
+                          included — same rule the list view got in v5.03. The
+                          page count keeps hiding at zero; the meta strip
+                          itself no longer vanishes. */}
+                      <div className="index-card-meta">
+                        {sceneLengths[idx] > 0 && (
+                          <span className="ic-meta-item">{Number(sceneLengths[idx].toFixed(1))}p</span>
+                        )}
+                        <span className="ic-meta-item" style={{ color: getTimingColor(sceneTimings[idx]?.finalSeconds ?? 0) }}>
+                          {formatSceneDuration(sceneTimings[idx]?.finalSeconds ?? 0)}
+                        </span>
+                      </div>
                       {/* v5.04, Derek: the expand button belongs in the card's
                           top-right corner, right of the time estimate — not
                           floating over the synopsis text it was covering. */}

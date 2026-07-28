@@ -11,14 +11,18 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     environmentMatchGlobs: [['src/**/*.test.tsx', 'jsdom']],
-    // Speed audit 2026-07-28: workers REUSE their environment across test
-    // files instead of building a fresh jsdom per file. Measured on this
-    // suite: 34–50s → ~10s, 786/786 green either way. The trade is that
-    // module state (zustand stores are module singletons) persists across
-    // files within a worker — tests already reset what they touch in
-    // beforeEach, and every NEW test file must keep doing that. If a failure
-    // ever appears only in full runs and smells like cross-file leakage,
-    // re-check with `npx vitest run --isolate` before chasing ghosts.
-    isolate: false,
+    // Speed audit 2026-07-28, CONCLUDED THE OTHER WAY: `isolate: false` was
+    // tried (34–50s → ~10s) and produced order-dependent flakes within a day
+    // — Scrapbook caret/focus tests failing only when certain files shared a
+    // worker, 2-of-3 full runs red, and still 1-of-5 after fixing the two
+    // leaks we could find (document junk, notebookStore page accumulation —
+    // both real, both now reset per file below). A gate that is sometimes
+    // wrong is worse than one that is 20s slower, so the FULL SUITE runs
+    // isolated and deterministic. Iterate with
+    //   npx vitest related <changed files> --run     (~3s)
+    // and run the full suite once before commit. `--no-isolate` exists for a
+    // quick opportunistic pass, but red there proves nothing until it is red
+    // under isolation too.
+    setupFiles: ['./src/test/sharedEnvReset.ts'],
   },
 })

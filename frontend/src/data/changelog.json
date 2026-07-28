@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.09",
+    "date": "2026-07-28",
+    "changes": [
+      "Scenes: when the window is too narrow for the three columns — docked in a side panel, say — the synopsis field, page length and time estimate fold into a sub-item behind a caret on each scene, like the old expandable format. With room (full screen, a wide pop-out) the full table shows exactly as before",
+      "Scenes: the sub-item is the same editable synopsis field, so typing there saves the same way, and the figures are the same page count and runtime the table shows",
+      "Scenes: Cards view always shows a time estimate on every card, 0:00 included — same rule the list got"
+    ]
+  },
+  {
     "version": "5.08",
     "date": "2026-07-28",
     "changes": [

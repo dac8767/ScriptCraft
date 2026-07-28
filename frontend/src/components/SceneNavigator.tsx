@@ -231,6 +231,32 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
      and the store is left alone; committing on every pointermove would
      re-render the whole list per pixel. */
   const navRootRef = useRef<HTMLDivElement>(null);
+  /* v5.09, Derek: "if there is not enough room for the three columns … move
+     the synopsis field, the page length and the time estimate to become a
+     sub-item of the scene, revealed by the scene's caret. only if there is
+     not enough space." Narrow is a JS fact, not a CSS one, because the two
+     modes need DIFFERENT DOM — a caret button and a collapsible sub-row —
+     which a container query cannot conjure. Same 520px line the old CSS
+     wrap used. jsdom has no ResizeObserver, so tests default to wide. */
+  const [navNarrow, setNavNarrow] = useState(false);
+  const [openSubIds, setOpenSubIds] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    const el = navRootRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width ?? el.clientWidth;
+      if (w > 0) setNavNarrow(w < 520);   // 0 = hidden container, not narrow
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const toggleSub = useCallback((id: string) => {
+    setOpenSubIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
   const sceneColWidths = useEditorStore((s) => s.sceneColWidths);
   const setSceneColWidth = useEditorStore((s) => s.setSceneColWidth);
   const COL_LIMITS = { head: { min: 90, max: 900, varName: '--scene-col-head', dir: 1 },
@@ -736,6 +762,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               column cannot line up in the header and miss in the list. The
               grips write --scene-col-head / --scene-metrics-w onto the tool
               body, which is the common ancestor of the header and the rows. */}
+          {!navNarrow && (
           <div className="scene-heading-row scene-list-header" aria-hidden="true">
             {/* v5.05: all three titles are SIBLINGS of one class, each parked
                 straight in its grid area — nested in the data cells they
@@ -756,6 +783,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               Length
             </span>
           </div>
+          )}
           <div className="navigator-list">
             {filteredIndices.length === 0 ? (
               <div className="navigator-empty">
@@ -767,78 +795,107 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               filteredIndices.map((sceneIdx) => {
                 const scene = scenes[sceneIdx];
                 const detail = sceneDetails[sceneIdx];
+                const subOpen = navNarrow && openSubIds.has(scene.id);
+                /* The cells are built ONCE and composed per mode — the narrow
+                   sub-item is the same field and the same figures, not copies
+                   that could drift. */
+                const numCell = (
+                  <span className="scene-num-cell">
+                    {scene.sceneNumber != null && (
+                      <span className="scene-number-badge" style={scene.color ? { background: scene.color } : undefined}>{scene.sceneNumber}</span>
+                    )}
+                  </span>
+                );
+                const headingCell = (
+                  <span className="scene-heading-text">
+                    {(() => {
+                      const label = sceneActLabel(structure, sceneIdx);
+                      return label ? <span className="scene-act-badge" title={`Act ${label.slice(1)}`}>{label}</span> : null;
+                    })()}
+                    <span className="scene-heading-label">{highlightText(scene.heading, searchQuery)}</span>
+                  </span>
+                );
+                const iconCell = (
+                  <span className="scene-length">
+                    {detail && detail.pageLength > 0 && <SceneLengthIcon pages={detail.pageLength} />}
+                  </span>
+                );
+                {/* Uncontrolled on purpose: a controlled input would round-trip
+                    every keystroke through the document and a full scene
+                    rescan. Commits on blur / Enter, reverts on Escape; `key`
+                    re-seeds it when the stored synopsis changes underneath.
+                    v5.04: no placeholder — the box is the affordance. */}
+                const synopsisField = (
+                  <input
+                    className="scene-synopsis-field"
+                    key={`${scene.id}:${scene.synopsis}`}
+                    defaultValue={scene.synopsis}
+                    title={scene.synopsis || 'Add a synopsis for this scene'}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                      if (e.key === 'Enter') e.currentTarget.blur();
+                      else if (e.key === 'Escape') {
+                        e.currentTarget.value = scene.synopsis;
+                        e.currentTarget.blur();
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const next = e.currentTarget.value.trim();
+                      if (next !== scene.synopsis) writeSceneSynopsis(sceneIdx, scene.id, next);
+                    }}
+                  />
+                );
+                /* v5.03: both figures always render, 0:00 included. */
+                const metricsCell = (
+                  <span className="scene-metrics">
+                    <span className="scene-metric-pages">{formatPageLength(detail?.pageLength ?? 0)}</span>
+                    <span className="scene-metric-time">{formatSceneDuration(sceneTimings[sceneIdx]?.finalSeconds ?? 0)}</span>
+                  </span>
+                );
                 return (
                   <div key={scene.id} className="navigator-scene">
-                    {/* v5.03, Derek: clicking a scene JUMPS to it and nothing
-                        else. The old click also unfolded a detail panel that
-                        repeated the row's own page count, runtime and synopsis
-                        back at you — everything it showed is on the row now. */}
-                    {/* v5.05, Derek: "require a double click to jump to the
-                        chosen scene." A single click lands in the row without
-                        moving the script out from under you — you can aim at
-                        the synopsis field, or just look. */}
+                    {/* v5.05, Derek: double click jumps; a single click never
+                        moves the script out from under you. */}
                     <div className="scene-info" onDoubleClick={() => goToScene(sceneIdx)} title="Double-click to go to this scene">
-                      {/* v5.02, Derek's mockup: five columns, and the SAME
-                          five on every row — number · heading · synopsis field
-                          · metrics · length icon. These are grid tracks, not
-                          flex children, because flex sizes each row to its own
-                          content: every synopsis would start at a different x.
-                          Empty cells still render so the tracks keep their
-                          width the whole way down the list. */}
-                      <div className="scene-heading-row">
-                        <span className="scene-num-cell">
-                          {scene.sceneNumber != null && (
-                            <span className="scene-number-badge" style={scene.color ? { background: scene.color } : undefined}>{scene.sceneNumber}</span>
+                      {navNarrow ? (
+                        /* v5.09: not enough room for the three columns — the
+                           synopsis field and the figures fold into a sub-item
+                           behind the scene's caret. */
+                        <>
+                          <div className="scene-heading-row scene-row-narrow">
+                            <button
+                              className="scene-caret-btn"
+                              title={subOpen ? 'Hide synopsis & length' : 'Show synopsis & length'}
+                              aria-expanded={subOpen}
+                              onClick={(e) => { e.stopPropagation(); toggleSub(scene.id); }}
+                              onDoubleClick={(e) => e.stopPropagation()}
+                            >
+                              {subOpen ? <FaChevronDown /> : <FaChevronRight />}
+                            </button>
+                            {numCell}
+                            {headingCell}
+                            {iconCell}
+                          </div>
+                          {subOpen && (
+                            <div className="scene-sub-item">
+                              {synopsisField}
+                              <div className="scene-sub-metrics">{metricsCell}</div>
+                            </div>
                           )}
-                        </span>
-                        <span className="scene-heading-text">
-                          {(() => {
-                            const label = sceneActLabel(structure, sceneIdx);
-                            return label ? <span className="scene-act-badge" title={`Act ${label.slice(1)}`}>{label}</span> : null;
-                          })()}
-                          <span className="scene-heading-label">{highlightText(scene.heading, searchQuery)}</span>
-                        </span>
-                        {/* Uncontrolled on purpose: a controlled input would
-                            round-trip every keystroke through the document and
-                            a full scene rescan. It commits on blur / Enter,
-                            reverts on Escape, and `key` re-seeds it whenever the
-                            stored synopsis changes underneath it. */}
-                        <input
-                          className="scene-synopsis-field"
-                          key={`${scene.id}:${scene.synopsis}`}
-                          defaultValue={scene.synopsis}
-                          /* v5.04, Derek: no placeholder. The field's own box
-                             is the affordance; "Synopsis" repeated down every
-                             empty row was noise, and the column header already
-                             says what the column is. */
-                          title={scene.synopsis || 'Add a synopsis for this scene'}
-                          onClick={(e) => e.stopPropagation()}
-                          onKeyDown={(e) => {
-                            e.stopPropagation();
-                            if (e.key === 'Enter') e.currentTarget.blur();
-                            else if (e.key === 'Escape') {
-                              e.currentTarget.value = scene.synopsis;
-                              e.currentTarget.blur();
-                            }
-                          }}
-                          onBlur={(e) => {
-                            const next = e.currentTarget.value.trim();
-                            if (next !== scene.synopsis) writeSceneSynopsis(sceneIdx, scene.id, next);
-                          }}
-                        />
-                        {/* v5.03, Derek: "always show a page count and a time
-                            here… make the first item 0:00". Both figures on
-                            every row — a scene that hadn't accrued a second
-                            printed a page count and then nothing, and the
-                            column read ragged for a reason that wasn't real. */}
-                        <span className="scene-metrics">
-                          <span className="scene-metric-pages">{formatPageLength(detail?.pageLength ?? 0)}</span>
-                          <span className="scene-metric-time">{formatSceneDuration(sceneTimings[sceneIdx]?.finalSeconds ?? 0)}</span>
-                        </span>
-                        <span className="scene-length">
-                          {detail && detail.pageLength > 0 && <SceneLengthIcon pages={detail.pageLength} />}
-                        </span>
-                      </div>
+                        </>
+                      ) : (
+                        /* v5.02, Derek's mockup: five columns, the SAME five on
+                           every row — grid tracks, not flex, so the columns
+                           line up down the list; empty cells still render. */
+                        <div className="scene-heading-row">
+                          {numCell}
+                          {headingCell}
+                          {synopsisField}
+                          {metricsCell}
+                          {iconCell}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
