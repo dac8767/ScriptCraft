@@ -151,9 +151,44 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.14 and older (newest first)
+## Version history — v5.15 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.15 — the ribbon Design reorg, and the 1px lie
+
+Derek's spec, delivered verbatim: FOUR Design groups — Ribbon (bar-level:
+section spacing, bar top/bottom padding, button radius), Titled Sections
+(side/top/bottom padding, row spacing, horizontal button spacing, space
+between title and buttons, title font, title alignment, section scale),
+Untitled Sections (same minus title knobs), Single-Row Sections (side/top/
+bottom padding, icon size, label font size — icon/label were the existing
+toolbarBigIcon/toolbarBigLabel, relocated).
+
+**Removed as redundant:** global ribBtnGap + ribRowGap (per-kind now, via a
+`--rib-btn-gap-k` / `--rib-row-gap-k` cascade set on the kind classes),
+ribTitlePad (the band's own bottom padding did the same job as ribTitleGap —
+merged; titleGap default 2→5 so stock geometry is unchanged, band stays 16),
+and the two ribPadY* (split top/bottom). Stale designVars keys for removed
+ids are simply ignored. Single-row sections are their OWN padding kind —
+titled/untitled pad rules carry :not(.rib-single).
+
+**The 1px lie (real bug, pre-existing):** the bar's min-height is BORDER-BOX
+and the old formula counted its own 5+2px padding against the content, so
+every row was flex-squeezed ~1px SILENTLY and uniformly — invisible until
+the per-kind scales made the squeeze asymmetric (titled rows measured
+26.75px when only the untitled knob moved; driver caught it inside the 1.5px
+tolerance, and the ribsqueeze probe pinned it: bar 78 = pad 7 + 71 for 72px
+of content). min-height now adds the padding vars on top of --rib-content-h,
+and .rib-row/.rib-sec-title carry flex-shrink: 0 — a mis-sized bar must
+OVERFLOW, never silently squeeze. The bar is 1px taller than before at
+defaults; that pixel was always owed.
+
+Driver (check-ribbon-kinds.mjs, 15 checks): geometry exact (33→105 both
+kinds, titled rows exactly 28 under foreign knobs), one knob per category
+verified end-to-end. New driver lessons: Design GROUP heads TOGGLE (make
+openGroup idempotent), and per-kind knobs share labels — scope
+.dz-group-first, then .dz-row.
 
 ### v5.14 — per-kind ribbon geometry
 

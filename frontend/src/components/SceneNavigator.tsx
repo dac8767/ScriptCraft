@@ -1271,13 +1271,15 @@ export function StructureTitleExtra() {
 /** v4.32 batch-v8 #9: the Reorder toggle — ONE control shared by the window's
  *  row-2 cluster and the fullscreen takeover header, so the two can't drift.
  *  Flipping it off without Apply cancels (useSceneReorder drops the pending
- *  snapshot when the flag clears). v4.35 batch-v9 #2: drives BOTH views. */
+ *  snapshot when the flag clears). v4.35 batch-v9 #2: drives BOTH views.
+ *  v5.19, Derek: "match this format" (a dialog's Apply) — it wears the
+ *  dialog button classes, so the filled-accent look is the dialogs' own. */
 export function ScenesReorderControl() {
   const reorder = useEditorStore((s) => s.scenesReorderMode);
   const setReorder = useEditorStore((s) => s.setScenesReorderMode);
   return (
     <button
-      className={`tool-action-btn scene-reorder-btn${reorder ? ' active' : ''}`}
+      className={`dialog-btn dialog-btn-primary scene-reorder-btn${reorder ? ' active' : ''}`}
       title={reorder ? 'Exit reorder mode (discards unapplied order)' : 'Drag scenes into a new order'}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={() => setReorder(!reorder)}

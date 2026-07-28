@@ -118,9 +118,11 @@ describe('SceneControls (row-2 cluster)', () => {
   it('Reorder renders as a body action button, driving the same store flag', () => {
     act(() => { useEditorStore.setState({ scenesReorderMode: false }); });
     act(() => root.render(<ScenesReorderControl />));
-    const btn = host.querySelector('button.tool-action-btn') as HTMLButtonElement;
+    const btn = host.querySelector('button.scene-reorder-btn') as HTMLButtonElement;
     expect(btn).not.toBeNull();
     expect(btn.textContent).toBe('Reorder');
+    // v5.19, Derek: it wears the dialogs' filled-primary format — one source.
+    expect(btn.className).toContain('dialog-btn-primary');
     expect(btn.className).not.toContain('active');
     act(() => { btn.click(); });
     expect(useEditorStore.getState().scenesReorderMode).toBe(true);

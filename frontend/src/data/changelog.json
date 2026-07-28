@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.19",
+    "date": "2026-07-28",
+    "changes": [
+      "Scenes: the Reorder button now wears the same filled-accent format as a dialog's Apply button — and follows the Design tool's dialog button height and corner radius knobs, since it shares their style outright",
+      "While reordering it still turns amber: an unapplied order in progress should not look like an available action"
+    ]
+  },
+  {
     "version": "5.18",
     "date": "2026-07-28",
     "changes": [

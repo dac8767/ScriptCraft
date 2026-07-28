@@ -1874,24 +1874,15 @@ body.fs-shot-veil-feedback .fs-tool-takeover-feedback { visibility: hidden !impo
   color: #fff;
 }
 /* v5.03, Derek: "make the reorder button bigger… and a different color";
-   v5.13: "a blue outline and text like an active side panel tool" — the SAME
-   accent pair .tool-dock-item.active wears (accent border + accent text, grey
-   wash), so the button reads as part of that family. The ACTIVE state stays
-   amber and clearly different: reorder mode holds an unapplied order, so
-   "on" must not look like "available".
-   (v5.04: left-aligned again, per Derek.) */
-.scene-reorder-btn {
-  /* v5.04, Derek: back to left-aligned — it sits where every other tool's
-     own actions sit, at the start of the action row. */
-  padding: 7px 26px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 6px;
-  background: rgba(128, 128, 128, 0.22);
-  border-color: var(--fd-accent, #4a90d9);
-  color: var(--fd-accent, #4a90d9);
-}
-.scene-reorder-btn:hover { background: var(--fd-overlay-light); }
+   v5.13: accent outline like an active tool; v5.19: "match this format" —
+   his screenshot of a dialog's Cancel/Apply pair. The button now WEARS
+   `dialog-btn dialog-btn-primary` (set in ScenesReorderControl), so the
+   filled-accent look, the light-theme variant and the Design tool's dialog
+   button height/radius knobs all come from the dialogs' own rules — zero
+   copied values. Only the ACTIVE state lives here: reorder mode holds an
+   unapplied order, so "on" stays amber and clearly different from
+   "available". (Ties with the [data-theme="light"] dialog rules resolve to
+   these — same specificity, this file loads later.) */
 .scene-reorder-btn.active {
   background: #e89b4f;
   border-color: #e89b4f;

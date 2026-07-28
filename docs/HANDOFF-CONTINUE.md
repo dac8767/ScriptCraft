@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.18 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.19 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,32 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.18 — per-row button spacing; the box-air truth (HEAD)
+### v5.19 — Reorder wears the dialogs' Apply format (HEAD)
+
+- Derek (screenshot of a dialog's Cancel/Apply): "change the reorder button
+  to match this format." The Scenes Reorder button's idle look is now the
+  filled-accent primary — done by WEARING `dialog-btn dialog-btn-primary`
+  (ScenesReorderControl), not by copying values: the dialogs' rules, their
+  light-theme variant and the Design knobs --dz-dialog-btn-h/-radius all
+  drive it for free. 22-tools-extra.css keeps ONLY the `.active` amber
+  override (deliberate since v4.32: an unapplied order must not look like
+  an available action) — it beats the light-theme dialog rules on source
+  order (same specificity, 22 loads after 01), noted in the comment.
+- The old `.scene-reorder-btn` idle block (grey wash + accent outline,
+  v5.13) and its grey hover are GONE — the hover would have tied with
+  `.dialog-btn-primary:hover` and won on source order, silently killing the
+  primary hover.
+- SceneNavigator.test.tsx now selects `button.scene-reorder-btn` (was
+  `.tool-action-btn`, a class the button no longer wears) and pins
+  `dialog-btn-primary` in the class list.
+- Driver check-reorder-btn.mjs (5 checks): computed-style EQUALITY against
+  a live `dialog-btn dialog-btn-primary` probe appended to the same
+  document (9 properties, zero diffs — the "same format" proof is the
+  dialogs' own computed values, no hardcoded colors); active still amber.
+  Gotcha recorded: after page.click the cursor hovers the button — move
+  the mouse away before reading colors or you sample the :hover shade.
+
+### v5.18 — per-row button spacing; the box-air truth
 
 - Derek: "for two row section, add bottom row button spacing and top row
   button spacing. currently 0 for button spacing still has a decent gap."
@@ -284,46 +309,12 @@ everywhere, bar height == content height exactly, sections TOUCH their
 dividers (driver lesson: pair each section with the correct SIDE of the
 divider — the first pairing was backwards and false-failed).
 
-### v5.15 — the ribbon Design reorg, and the 1px lie
-
-Derek's spec, delivered verbatim: FOUR Design groups — Ribbon (bar-level:
-section spacing, bar top/bottom padding, button radius), Titled Sections
-(side/top/bottom padding, row spacing, horizontal button spacing, space
-between title and buttons, title font, title alignment, section scale),
-Untitled Sections (same minus title knobs), Single-Row Sections (side/top/
-bottom padding, icon size, label font size — icon/label were the existing
-toolbarBigIcon/toolbarBigLabel, relocated).
-
-**Removed as redundant:** global ribBtnGap + ribRowGap (per-kind now, via a
-`--rib-btn-gap-k` / `--rib-row-gap-k` cascade set on the kind classes),
-ribTitlePad (the band's own bottom padding did the same job as ribTitleGap —
-merged; titleGap default 2→5 so stock geometry is unchanged, band stays 16),
-and the two ribPadY* (split top/bottom). Stale designVars keys for removed
-ids are simply ignored. Single-row sections are their OWN padding kind —
-titled/untitled pad rules carry :not(.rib-single).
-
-**The 1px lie (real bug, pre-existing):** the bar's min-height is BORDER-BOX
-and the old formula counted its own 5+2px padding against the content, so
-every row was flex-squeezed ~1px SILENTLY and uniformly — invisible until
-the per-kind scales made the squeeze asymmetric (titled rows measured
-26.75px when only the untitled knob moved; driver caught it inside the 1.5px
-tolerance, and the ribsqueeze probe pinned it: bar 78 = pad 7 + 71 for 72px
-of content). min-height now adds the padding vars on top of --rib-content-h,
-and .rib-row/.rib-sec-title carry flex-shrink: 0 — a mis-sized bar must
-OVERFLOW, never silently squeeze. The bar is 1px taller than before at
-defaults; that pixel was always owed.
-
-Driver (check-ribbon-kinds.mjs, 15 checks): geometry exact (33→105 both
-kinds, titled rows exactly 28 under foreign knobs), one knob per category
-verified end-to-end. New driver lessons: Design GROUP heads TOGGLE (make
-openGroup idempotent), and per-kind knobs share labels — scope
-.dz-group-first, then .dz-row.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.15** — the ribbon Design reorg, and the 1px lie
 - **v5.14** — per-kind ribbon geometry
 - **v5.13** — title page out of Pages; the Design field you can type in
 - **v5.12** — the table↔caret line is Derek's slider
