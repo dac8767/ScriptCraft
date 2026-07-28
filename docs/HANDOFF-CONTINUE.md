@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.11 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.12 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,26 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.11 — caret-only again, but a caret you can hit (HEAD)
+### v5.12 — the table↔caret line is Derek's slider (HEAD)
+
+Derek's ~570px pop-out screenshot: "the window should have already moved the
+synopsis field by the time it was this small. add a minimum size option in
+the design tool." The hard 520 became `scenesTableMinW` — store field in
+sceneNavSlice (persisted via viewState), default 700, driven by a
+STORE-BOUND Design token ("Scenes: min width for full table", Navigator &
+Outline, 300–2000).
+- 700 because: his ~570px pop-out must compress under the DEFAULT, and his
+  fullscreen (~1000px of tool width) must keep the table per v5.09.
+- SceneNavigator now keeps the measured WIDTH in state and derives
+  `navNarrow = navW > 0 && navW < scenesTableMinW` — width from the RO,
+  threshold from the store, so moving the slider re-decides the layout LIVE
+  with no resize (an RO-only design would sit stale until the next resize).
+- Verified: jsdom tests flip the mode by moving the threshold across the
+  stubbed 300px width both directions; kit run at exactly 570px shows 4
+  carets / 0 inline fields; both existing drivers pass unchanged at the
+  default (docked 277 narrow, fullscreen 900 table).
+
+### v5.11 — caret-only again, but a caret you can hit
 
 Derek reverted v5.10 same-day: "revert back to the caret being the only thing
 you click to make it expand, but make the clickable area of the caret larger."

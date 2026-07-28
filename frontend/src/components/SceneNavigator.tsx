@@ -238,18 +238,24 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
      modes need DIFFERENT DOM — a caret button and a collapsible sub-row —
      which a container query cannot conjure. Same 520px line the old CSS
      wrap used. jsdom has no ResizeObserver, so tests default to wide. */
-  const [navNarrow, setNavNarrow] = useState(false);
+  const [navW, setNavW] = useState(0);
   const [openSubIds, setOpenSubIds] = useState<Set<string>>(() => new Set());
   useEffect(() => {
     const el = navRootRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect?.width ?? el.clientWidth;
-      if (w > 0) setNavNarrow(w < 520);   // 0 = hidden container, not narrow
+      if (w > 0) setNavW(w);   // 0 = hidden container; keep the last real width
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  /* v5.12, Derek: the switch line is HIS number now — a Design slider
+     (store-bound, persisted), because 520 held the table together well past
+     the point he wanted the fold. Width is state and the threshold is store
+     state, so moving the slider re-decides the layout live, no resize needed. */
+  const scenesTableMinW = useEditorStore((s) => s.scenesTableMinW);
+  const navNarrow = navW > 0 && navW < scenesTableMinW;
   const toggleSub = useCallback((id: string) => {
     setOpenSubIds((prev) => {
       const next = new Set(prev);

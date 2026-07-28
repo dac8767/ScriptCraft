@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.12",
+    "date": "2026-07-28",
+    "changes": [
+      "Scenes: the point where the list swaps its three-column table for the compressed caret rows is now an option — Design ▸ Navigator & Outline ▸ \"Scenes: min width for full table\". Below that width the caret version shows; at or above it, the full table. Default 700px, so a squeezed pop-out compresses while full screen keeps the table",
+      "Scenes: moving the Design slider re-decides the layout immediately — no need to resize the window to see the change"
+    ]
+  },
+  {
     "version": "5.11",
     "date": "2026-07-28",
     "changes": [

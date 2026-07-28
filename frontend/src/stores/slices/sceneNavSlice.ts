@@ -4,6 +4,7 @@
 // The `scenes` list itself stays in editorStore (doc-derived, used broadly).
 import type { StateCreator } from 'zustand';
 import { EMPTY_SCENE_FILTERS, EMPTY_SCENE_NAV_DATA, type EditorState, type SceneFilters, type SceneNavData } from '../editorStore';
+import { _vs, saveViewState } from '../viewState';
 
 export interface SceneNavSlice {
   /** v1.80: Navigator filter + kind visibility live in the store so the
@@ -45,6 +46,11 @@ export interface SceneNavSlice {
    *  v4.94 pagesThumbPx column-width model. */
   pagesPerRow: number;
   setPagesPerRow: (v: number) => void;
+  /** v5.12, Derek: below this width the Scenes list swaps its three-column
+   *  table for the compressed caret rows. His call on where that line sits —
+   *  a Design slider drives it (store-bound token), persisted. */
+  scenesTableMinW: number;
+  setScenesTableMinW: (v: number) => void;
 }
 
 export type LocationFilter = 'all' | 'int' | 'ext';
@@ -56,6 +62,14 @@ export type LocationSort = 'scene' | 'name' | 'count';
 export const PAGES_PER_ROW_MIN = 1;
 export const PAGES_PER_ROW_MAX = 8;
 export const PAGES_PER_ROW_DEFAULT = 3;
+
+/** v5.12: the table↔caret switch line. Default 700: Derek's screenshot of
+ *  the ~570px pop-out came captioned "should have already moved the synopsis
+ *  field by the time it was this small" (the old hard line was 520, so the
+ *  table hung on into that squeeze), while his fullscreen — roughly 1000px
+ *  of tool width — must keep the full table per v5.09. 700 splits those
+ *  cases with margin on both sides; the Design slider owns the final word. */
+export const SCENES_TABLE_MIN_DEFAULT = 700;
 
 export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlice> = (set) => ({
   navFilter: '',
@@ -79,4 +93,10 @@ export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlic
   pagesPerRow: PAGES_PER_ROW_DEFAULT,
   // Clamped HERE, not at the buttons, so no caller can push it out of range.
   setPagesPerRow: (v) => set({ pagesPerRow: Math.min(PAGES_PER_ROW_MAX, Math.max(PAGES_PER_ROW_MIN, Math.round(v))) }),
+  scenesTableMinW: (_vs.scenesTableMinW as number) ?? SCENES_TABLE_MIN_DEFAULT,
+  setScenesTableMinW: (v) => {
+    const scenesTableMinW = Math.min(2000, Math.max(300, Math.round(v)));
+    saveViewState({ scenesTableMinW });
+    set({ scenesTableMinW });
+  },
 });

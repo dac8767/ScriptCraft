@@ -42,7 +42,7 @@ let host: HTMLElement;
 let root: Root;
 
 beforeEach(() => {
-  useEditorStore.setState({ scenes: SCENES.map((s) => ({ ...s })), sceneSearch: '', scenesViewMode: 'list' });
+  useEditorStore.setState({ scenes: SCENES.map((s) => ({ ...s })), sceneSearch: '', scenesViewMode: 'list', scenesTableMinW: 700 });
   host = document.createElement('div');
   document.body.appendChild(host);
   root = createRoot(host);
@@ -158,7 +158,9 @@ describe('the inline synopsis field writes back', () => {
 /* ── narrow mode (v5.09): the sub-item behind the caret ─────────────────
    jsdom has no ResizeObserver, so the component defaults to WIDE — which is
    what every test above relies on. Here we stub one that reports a 300px
-   container the moment it observes, flipping the SAME component narrow. */
+   container the moment it observes, flipping the SAME component narrow
+   (300 < the 700 default of scenesTableMinW — v5.12 made the line a Design
+   slider instead of a hard 520). */
 describe('narrow mode folds synopsis + figures behind the caret', () => {
   let RealRO: typeof ResizeObserver | undefined;
   beforeEach(() => {
@@ -228,6 +230,24 @@ describe('narrow mode folds synopsis + figures behind the caret', () => {
     expect(host.querySelectorAll('.scene-sub-item')).toHaveLength(1);
     act(() => { caret.click(); });
     expect(rows()[1].querySelector('.scene-sub-item')).toBeNull();
+  });
+
+  /* v5.12, Derek: "add a minimum size option in the design tool. if the
+     window gets smaller than the specified minimum size, it goes to the
+     compressed caret version." The stubbed container is 300px wide — where
+     the line sits relative to 300 decides the layout, live. */
+  it('the Design minimum decides the mode: 300px is WIDE under a 200px minimum…', () => {
+    act(() => { useEditorStore.getState().setScenesTableMinW(200); });
+    expect(host.querySelector('.scene-caret-btn')).toBeNull();
+    expect(host.querySelectorAll('.scene-heading-row .scene-synopsis-field')).toHaveLength(3);
+  });
+
+  it('…and narrow again the moment the minimum rises above the width', () => {
+    act(() => { useEditorStore.getState().setScenesTableMinW(200); });
+    expect(host.querySelector('.scene-caret-btn')).toBeNull();
+    act(() => { useEditorStore.getState().setScenesTableMinW(400); });
+    expect(host.querySelectorAll('.scene-caret-btn')).toHaveLength(3);
+    expect(host.querySelector('.scene-heading-row .scene-synopsis-field')).toBeNull();
   });
 
   it('the sub-item field commits through the same write path', () => {

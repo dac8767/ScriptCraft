@@ -57,6 +57,9 @@ export interface ViewState {
   /** v5.03: the scene list's resizable column widths, in px. The synopsis
    *  column takes the remainder, so these two describe the whole table. */
   sceneColWidths?: { head: number; metrics: number };
+  /** v5.12: below this tool width the scene list compresses to caret rows.
+   *  Driven by the Design slider ("Scenes: min width for full table"). */
+  scenesTableMinW?: number;
   /** v4.27 window template: Characters' persisted view choices. */
   charViewMode?: 'cards' | 'list';
   relViewMode?: 'list' | 'map';
