@@ -1171,6 +1171,14 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   pendingEditorScroll: number | null;
   requestEditorScroll: (pos: number) => void;
   clearEditorScroll: () => void;
+  /** v5.14, Derek: per-kind ribbon scales (%), driven by store-bound Design
+   *  tokens. Consumed by Toolbar.tsx via ribbonKindVars — the untitled one
+   *  multiplies ON TOP of the auto-fill that levels untitled sections with
+   *  titled ones. Persisted. */
+  ribScaleTitledPct: number;
+  setRibScaleTitledPct: (v: number) => void;
+  ribScaleUntitledPct: number;
+  setRibScaleUntitledPct: (v: number) => void;
   /** v5.03: THE answer to "is this tool open?" — open in any shape you can
    *  actually SEE: a slot in a panel that is showing, the temp (no-panel)
    *  slot, or the fullscreen takeover. Every control that opens-or-closes a
@@ -1869,6 +1877,18 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   setCharListCount: (n) => set((s) => (s.charListCount === n ? {} : { charListCount: n })),
   charActiveTab: 'profiles',
   setCharActiveTab: (t) => set({ charActiveTab: t }),
+  ribScaleTitledPct: (_vs.ribScaleTitledPct as number) ?? 100,
+  setRibScaleTitledPct: (v) => {
+    const ribScaleTitledPct = Math.min(200, Math.max(50, Math.round(v)));
+    saveViewState({ ribScaleTitledPct });
+    set({ ribScaleTitledPct });
+  },
+  ribScaleUntitledPct: (_vs.ribScaleUntitledPct as number) ?? 100,
+  setRibScaleUntitledPct: (v) => {
+    const ribScaleUntitledPct = Math.min(200, Math.max(50, Math.round(v)));
+    saveViewState({ ribScaleUntitledPct });
+    set({ ribScaleUntitledPct });
+  },
   pendingEditorScroll: null,
   requestEditorScroll: (pos) => set({ pendingEditorScroll: pos }),
   clearEditorScroll: () => set((s) => (s.pendingEditorScroll === null ? {} : { pendingEditorScroll: null })),

@@ -43,7 +43,7 @@ import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { confirmDialog } from './ConfirmDialog';
 import { commandDef, type ToolbarCommand } from './toolbarCommands';
 import { resolvePickedElement } from './screenplayEditorConstants';
-import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, stripTall, parseRibbon } from './toolbarBuiltins';
+import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, stripTall, parseRibbon, ribbonKindVars } from './toolbarBuiltins';
 import { smartUndo, smartRedo, useEditorStore } from '../stores/editorStore';
 import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
 import type { ElementType } from '../stores/editorStore';
@@ -1631,6 +1631,25 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
      title inputs must stay visible so titles can be added. */
   const anyRibTitle = liveSections.some(({ s }) => !!s.title);
 
+  /* v5.14, Derek: per-kind geometry. The numbers ride the same inline style
+     block as --rib-rowh; ribbonKindVars (toolbarBuiltins) holds the maths.
+     Auto-fill: untitled two-row sections stretch to a titled section's total
+     height; the two Design scale knobs multiply each kind on top. */
+  const dzVars = useEditorStore((st) => st.designVars);
+  const ribScaleTitledPct = useEditorStore((st) => st.ribScaleTitledPct);
+  const ribScaleUntitledPct = useEditorStore((st) => st.ribScaleUntitledPct);
+  const ribKind = ribbonKindVars({
+    rowH: ribRowH,
+    anyTitle: anyRibTitle,
+    anyUntitled: liveSections.some(({ s: ls }) => !ls.title),
+    titleFont: dzVars.ribTitleFont,
+    titlePad: dzVars.ribTitlePad,
+    titleGap: dzVars.ribTitleGap,
+    rowGap: dzVars.ribRowGap,
+    scaleTitledPct: ribScaleTitledPct,
+    scaleUntitledPct: ribScaleUntitledPct,
+  });
+
   /* v3.42, Derek: ONE renderer for a live section's inner rows (both zones
      read it, so the layout can't drift). A section's title sits ON TOP of its
      rows — first child of the section column, one- or two-row alike. */
@@ -1669,7 +1688,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     if (group.length === 1) {
       const { s } = group[0];
       return (
-        <div key={key} className={`rib-section${s.hasBreak ? '' : ' rib-single'}`}>
+        <div key={key} className={`rib-section${s.hasBreak ? '' : ' rib-single'} ${s.title ? 'rib-kind-titled' : 'rib-kind-untitled'}`}>
           {liveSectionInner(s)}
         </div>
       );
@@ -1678,7 +1697,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     // A grouped block is single-row only if EVERY section in it is.
     const anyBreak = group.some((g) => g.s.hasBreak);
     return (
-      <div key={key} className={`rib-group${anyBreak ? '' : ' rib-single'}`}>
+      <div key={key} className={`rib-group${anyBreak ? '' : ' rib-single'} ${title ? 'rib-kind-titled' : 'rib-kind-untitled'}`}>
         <div className={`rib-sec-title${title ? '' : ' rib-sec-title-empty'}`}>{title}</div>
         <div className="rib-group-body">
           {group.map(({ s, orig }) => (
@@ -1938,6 +1957,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         } as React.CSSProperties) : {}),
         ['--rib-rowh' as string]: `${ribRowH}px`,
         ['--rib-gap' as string]: `${chromeGapPx.toolbar}px`,
+        // v5.14: plain NUMBERS so the stylesheet can calc(base * factor).
+        ['--rib-k-t' as string]: String(ribKind.kTitled),
+        ['--rib-k-u' as string]: String(ribKind.kUntitled),
+        ['--rib-content-h' as string]: `${Math.round(ribKind.contentH)}px`,
         // v3.34, Derek: user-set dropdown widths (dragged in the visual
         // editor) — one store, applied here AND in the editor's chips.
         ...Object.fromEntries(Object.entries(toolbarDdWidths).map(([k, v]) => [`--ddw-${k}`, `${v}px`])),

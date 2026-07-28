@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.14",
+    "date": "2026-07-28",
+    "changes": [
+      "Ribbon: mixing titled and untitled sections no longer leaves a dead gap over the untitled ones — their rows and buttons grow so the section's full height matches a titled section's, bases level and button tops level with the titles",
+      "Ribbon: Design ▸ Toolbar / Ribbon gains separate scale sliders for titled and untitled sections (50–200%), applied on top of the automatic matching",
+      "Ribbon: separate side and vertical padding options for titled and untitled sections, also in Design ▸ Toolbar / Ribbon"
+    ]
+  },
+  {
     "version": "5.13",
     "date": "2026-07-28",
     "changes": [

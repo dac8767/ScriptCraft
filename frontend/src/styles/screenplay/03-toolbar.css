@@ -448,7 +448,10 @@
      the new height automatically (align-self: stretch). */
   /* v4.1, Derek: extra room in the floor so a section TITLE (a fixed ~15px, not
      scaled with the rows) fits above the two rows instead of clipping at the top. */
-  min-height: calc(var(--rib-rowh, 28px) * 2 + 22px);
+  /* v5.14: the content height is COMPUTED (ribbonKindVars) — rows × the
+     per-kind scale factors, title band included — so scaled-up sections
+     grow the bar instead of clipping. Fallback = the old v4.1 formula. */
+  min-height: calc(var(--rib-content-h, calc(var(--rib-rowh, 28px) * 2 + 16px)) + 6px);
   /* v3.98/v4.1, Derek: breathing room above the section titles at the top.
      v4.15: Design knobs. */
   padding-top: var(--dz-rib-pad-top, 5px);
@@ -694,6 +697,40 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar.toolbar-ribbon.toolbar-custom {
   --rib-itemh: clamp(20px, calc(22px * var(--chrome-scale, 1)), 40px);
 }
+
+/* ── v5.14, Derek: per-kind section scale + padding ──────────────────────
+   .rib-kind-titled / .rib-kind-untitled come from Toolbar.tsx; --rib-k-t /
+   --rib-k-u are NUMBERS computed there (ribbonKindVars). The untitled factor
+   CONTAINS the auto-fill: with any title on the bar, untitled two-row
+   sections stretch so their total equals a titled section's rows + band —
+   bases level, button tops level with the titled TITLE's top. The Design
+   scale knobs multiply on top; the padding knobs are per-kind insets. */
+.toolbar.toolbar-ribbon .rib-kind-titled {
+  --rib-k: var(--rib-k-t, 1);
+  padding: var(--dz-rib-pad-y-titled, 0px) var(--dz-rib-pad-x-titled, 0px);
+}
+.toolbar.toolbar-ribbon .rib-kind-untitled {
+  --rib-k: var(--rib-k-u, 1);
+  padding: var(--dz-rib-pad-y-untitled, 0px) var(--dz-rib-pad-x-untitled, 0px);
+}
+/* Rows, small buttons and item boxes all multiply their base by the kind
+   factor. Two-row sections only — single-row big buttons already span the
+   full bar and keep their own sizing. */
+.toolbar.toolbar-ribbon .rib-section:not(.rib-single) .rib-row { height: calc(var(--rib-rowh, 28px) * var(--rib-k, 1)); }
+.toolbar.toolbar-ribbon .rib-section:not(.rib-single) .toolbar-btn {
+  height: calc(24px * var(--rib-k, 1));
+  font-size: calc(12px * var(--rib-k, 1));
+}
+.toolbar.toolbar-ribbon:not(.toolbar-comfortable):not(.toolbar-custom)
+  .rib-section:not(.rib-single) .toolbar-btn:not(.toolbar-btn-labeled):not(.zoom-tb-step) { width: calc(20px * var(--rib-k, 1)); }
+.toolbar.toolbar-ribbon.toolbar-comfortable
+  .rib-section:not(.rib-single) .toolbar-btn:not(.toolbar-btn-labeled):not(.zoom-tb-step) { width: calc(22px * var(--rib-k, 1)); }
+/* dropdown/select boxes inside sections follow the same factor; the bar-level
+   --rib-itemh above stays unscaled for consumers outside any section. */
+.toolbar.toolbar-ribbon .rib-section, .toolbar.toolbar-ribbon .rib-group { --rib-itemh: calc(var(--rib-itemh-base, 24px) * var(--rib-k, 1)); }
+.toolbar.toolbar-ribbon { --rib-itemh-base: 24px; }
+.toolbar.toolbar-ribbon.toolbar-comfortable { --rib-itemh-base: 26px; }
+.toolbar.toolbar-ribbon.toolbar-custom { --rib-itemh-base: clamp(20px, calc(22px * var(--chrome-scale, 1)), 40px); }
 .toolbar.toolbar-ribbon .element-selector,
 .toolbar.toolbar-ribbon .font-selector,
 .toolbar.toolbar-ribbon .font-size-selector,

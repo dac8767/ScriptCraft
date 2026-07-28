@@ -60,6 +60,9 @@ export interface ViewState {
   /** v5.12: below this tool width the scene list compresses to caret rows.
    *  Driven by the Design slider ("Scenes: min width for full table"). */
   scenesTableMinW?: number;
+  /** v5.14: per-kind ribbon scale (%), Design-driven. */
+  ribScaleTitledPct?: number;
+  ribScaleUntitledPct?: number;
   /** v4.27 window template: Characters' persisted view choices. */
   charViewMode?: 'cards' | 'list';
   relViewMode?: 'list' | 'map';

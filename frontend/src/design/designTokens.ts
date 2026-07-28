@@ -126,6 +126,20 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       // row of buttons — distinct from the padding inside the band above.
       { id: 'ribTitleGap', label: 'Space below section title', cssVar: '--dz-rib-title-gap', unit: 'px', min: 0, max: 20, step: 1, def: 2,
         hint: 'Distance from the title to the buttons under it.' },
+      /* v5.14, Derek: titled and untitled sections get their OWN scale and
+         padding knobs. The scales have no cssVar — Toolbar.tsx turns them
+         into the --rib-k-* factors (numbers), because auto-fill maths can't
+         live in CSS. Paddings are ordinary css-var tokens. */
+      { id: 'ribScaleTitled', label: 'Titled sections: scale (%)', unit: '', min: 50, max: 200, step: 5, def: 100,
+        hint: 'Size of buttons & rows in sections WITH a title',
+        store: { get: (s) => s.ribScaleTitledPct, set: (v) => useEditorStore.getState().setRibScaleTitledPct(v) } },
+      { id: 'ribScaleUntitled', label: 'Untitled sections: scale (%)', unit: '', min: 50, max: 200, step: 5, def: 100,
+        hint: 'On top of auto-matching the titled sections\u2019 height',
+        store: { get: (s) => s.ribScaleUntitledPct, set: (v) => useEditorStore.getState().setRibScaleUntitledPct(v) } },
+      { id: 'ribPadXTitled', label: 'Titled sections: side padding', cssVar: '--dz-rib-pad-x-titled', unit: 'px', min: 0, max: 24, step: 1, def: 0 },
+      { id: 'ribPadYTitled', label: 'Titled sections: vertical padding', cssVar: '--dz-rib-pad-y-titled', unit: 'px', min: 0, max: 16, step: 1, def: 0 },
+      { id: 'ribPadXUntitled', label: 'Untitled sections: side padding', cssVar: '--dz-rib-pad-x-untitled', unit: 'px', min: 0, max: 24, step: 1, def: 0 },
+      { id: 'ribPadYUntitled', label: 'Untitled sections: vertical padding', cssVar: '--dz-rib-pad-y-untitled', unit: 'px', min: 0, max: 16, step: 1, def: 0 },
     ],
   },
   {

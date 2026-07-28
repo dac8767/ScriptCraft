@@ -438,3 +438,53 @@ export function normalizeToolbarZones(
   const l = [...expand(left), ...expand(right)];
   return { left: l, right: [] };
 }
+
+/* ── v5.14, Derek: per-kind section geometry ─────────────────────────────
+   "if there is one or more sections with a title and one or more without,
+   the spacing becomes weird (a gap where the title is)… expand the items in
+   sections without a title so the final vertical size is the same."
+
+   The maths lives HERE, pure and testable, because three consumers need the
+   same numbers: the toolbar's inline CSS variables, the bar's min-height,
+   and the tests. `k` factors are plain numbers so the stylesheet can
+   multiply them into any base length with calc().
+
+   kUntitled carries the AUTO-FILL: with any title present, an untitled
+   two-row section's rows stretch so its total equals a titled section's
+   total (rows + title band) — bases level, tops level with the titled
+   TITLE's top, which is option (a) of Derek's two. On top of that, the two
+   Design scale knobs (%) multiply each kind independently. */
+export interface RibbonKindVars { kTitled: number; kUntitled: number; contentH: number }
+
+export function ribbonKindVars(opts: {
+  rowH: number;
+  anyTitle: boolean;
+  /** any UNTITLED section on the bar (default true) — contentH only counts
+   *  the kinds that exist, or an all-titled bar would size to a phantom. */
+  anyUntitled?: boolean;
+  titleFont?: number;   // --dz-rib-title-font, def 9.5
+  titlePad?: number;    // --dz-rib-title-pad, def 3
+  titleGap?: number;    // --dz-rib-title-gap, def 2
+  rowGap?: number;      // --dz-rib-row-gap, def 0
+  scaleTitledPct?: number;    // Design: ribScaleTitled, def 100
+  scaleUntitledPct?: number;  // Design: ribScaleUntitled, def 100
+}): RibbonKindVars {
+  const titleFont = opts.titleFont ?? 9.5;
+  const titlePad = opts.titlePad ?? 3;
+  const titleGap = opts.titleGap ?? 2;
+  const rowGap = opts.rowGap ?? 0;
+  // The band = the title line (font + 1.5, the v4.5 derived line-height) +
+  // its bottom padding + the gap under it. Must match .rib-sec-title's CSS.
+  const band = titleFont + 1.5 + titlePad + titleGap;
+  const untitledBase = 2 * opts.rowH + rowGap;
+  const titledBase = untitledBase + band;
+  const autoFill = opts.anyTitle ? titledBase / untitledBase : 1;
+  const kTitled = (opts.scaleTitledPct ?? 100) / 100;
+  const kUntitled = ((opts.scaleUntitledPct ?? 100) / 100) * autoFill;
+  const anyUntitled = opts.anyUntitled ?? true;
+  const contentH = Math.max(
+    opts.anyTitle ? kTitled * titledBase : 0,
+    anyUntitled ? kUntitled * untitledBase : 0,
+  );
+  return { kTitled, kUntitled, contentH };
+}
