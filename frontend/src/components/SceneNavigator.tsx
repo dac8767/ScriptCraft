@@ -232,12 +232,13 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   // Synopsis modal state
   const [synopsisModal, setSynopsisModal] = useState<{ sceneIdx: number; id: string; heading: string; synopsis: string; color: string } | null>(null);
 
-  const handleSaveSynopsis = useCallback(
-    (synopsis: string, color: string, timingOverride?: number | null) => {
-      if (!synopsisModal || !editor) return;
-      const { sceneIdx, id } = synopsisModal;
-      updateSceneSynopsis(id, synopsis);
-      updateSceneColor(id, color);
+  /* v5.02: the ONE place scene-heading attrs are written back to the document.
+     The synopsis is now editable from two places — the inline field on the row
+     and the synopsis modal — and a second copy of this walk is exactly how the
+     two would drift. Both go through here. */
+  const setSceneHeadingAttrs = useCallback(
+    (sceneIdx: number, attrs: Record<string, unknown>) => {
+      if (!editor) return;
       let currentScene = -1;
       let targetPos = -1;
       editor.state.doc.descendants((node, pos) => {
@@ -247,18 +248,36 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
         }
         return true;
       });
-      if (targetPos >= 0) {
-        const node = editor.state.doc.nodeAt(targetPos);
-        if (node) {
-          const { tr } = editor.state;
-          const newAttrs = { ...node.attrs, synopsis, sceneColor: color, timingOverride: timingOverride ?? null };
-          tr.setNodeMarkup(targetPos, undefined, newAttrs);
-          tr.setMeta('addToHistory', false);
-          editor.view.dispatch(tr);
-        }
-      }
+      if (targetPos < 0) return;
+      const node = editor.state.doc.nodeAt(targetPos);
+      if (!node) return;
+      const { tr } = editor.state;
+      tr.setNodeMarkup(targetPos, undefined, { ...node.attrs, ...attrs });
+      tr.setMeta('addToHistory', false);
+      editor.view.dispatch(tr);
     },
-    [synopsisModal, editor, updateSceneSynopsis, updateSceneColor],
+    [editor],
+  );
+
+  /** Store + document, together — a synopsis written to only one of them
+   *  reappears as the old text the next time the scenes are rescanned. */
+  const writeSceneSynopsis = useCallback(
+    (sceneIdx: number, id: string, synopsis: string) => {
+      updateSceneSynopsis(id, synopsis);
+      setSceneHeadingAttrs(sceneIdx, { synopsis });
+    },
+    [updateSceneSynopsis, setSceneHeadingAttrs],
+  );
+
+  const handleSaveSynopsis = useCallback(
+    (synopsis: string, color: string, timingOverride?: number | null) => {
+      if (!synopsisModal) return;
+      const { sceneIdx, id } = synopsisModal;
+      updateSceneSynopsis(id, synopsis);
+      updateSceneColor(id, color);
+      setSceneHeadingAttrs(sceneIdx, { synopsis, sceneColor: color, timingOverride: timingOverride ?? null });
+    },
+    [synopsisModal, updateSceneSynopsis, updateSceneColor, setSceneHeadingAttrs],
   );
 
   const allLocations = useMemo(() => groupByLocation(scenes), [scenes]);
@@ -695,35 +714,62 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                 return (
                   <div key={scene.id} className={`navigator-scene${isExpanded ? ' expanded' : ''}`}>
                     <div className="scene-info" onClick={() => { setExpandedSceneIdx(isExpanded ? null : sceneIdx); goToScene(sceneIdx); }}>
+                      {/* v5.02, Derek's mockup: five columns, and the SAME
+                          five on every row — number · heading · synopsis field
+                          · metrics · length icon. These are grid tracks, not
+                          flex children, because flex sizes each row to its own
+                          content: every synopsis would start at a different x.
+                          Empty cells still render so the tracks keep their
+                          width the whole way down the list. */}
                       <div className="scene-heading-row">
-                        <div className="scene-heading-text">
+                        <span className="scene-num-cell">
                           {scene.sceneNumber != null && (
                             <span className="scene-number-badge" style={scene.color ? { background: scene.color } : undefined}>{scene.sceneNumber}</span>
                           )}
+                        </span>
+                        <span className="scene-heading-text">
                           {(() => {
                             const label = sceneActLabel(structure, sceneIdx);
                             return label ? <span className="scene-act-badge" title={`Act ${label.slice(1)}`}>{label}</span> : null;
                           })()}
                           <span className="scene-heading-label">{highlightText(scene.heading, searchQuery)}</span>
-                        </div>
-                        {/* v5.01, Derek: the synopsis is its own COLUMN beside
-                            the scene, not a line stacked underneath it — so a
-                            row stays one line tall and the summaries line up
-                            down the list, readable as a column. Only in the
-                            collapsed row; expanding shows the full text. */}
-                        {!isExpanded && scene.synopsis && (
-                          <div className="scene-synopsis-col" title={scene.synopsis}>
-                            {highlightText(scene.synopsis.split('\n')[0], searchQuery)}
-                          </div>
-                        )}
-                        {detail && detail.pageLength > 0 && (
-                          <div className="scene-length" data-tooltip={
-                            formatPageLength(detail.pageLength) +
-                            (sceneTimings[sceneIdx]?.finalSeconds ? ` \u00b7 ${formatSceneDuration(sceneTimings[sceneIdx].finalSeconds)}` : '')
-                          }>
-                            <SceneLengthIcon pages={detail.pageLength} />
-                          </div>
-                        )}
+                        </span>
+                        {/* Uncontrolled on purpose: a controlled input would
+                            round-trip every keystroke through the document and
+                            a full scene rescan. It commits on blur / Enter,
+                            reverts on Escape, and `key` re-seeds it whenever the
+                            stored synopsis changes underneath it. */}
+                        <input
+                          className="scene-synopsis-field"
+                          key={`${scene.id}:${scene.synopsis}`}
+                          defaultValue={scene.synopsis}
+                          placeholder="Synopsis"
+                          title={scene.synopsis || 'Add a synopsis for this scene'}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                            if (e.key === 'Enter') e.currentTarget.blur();
+                            else if (e.key === 'Escape') {
+                              e.currentTarget.value = scene.synopsis;
+                              e.currentTarget.blur();
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const next = e.currentTarget.value.trim();
+                            if (next !== scene.synopsis) writeSceneSynopsis(sceneIdx, scene.id, next);
+                          }}
+                        />
+                        <span className="scene-metrics">
+                          {detail && detail.pageLength > 0 && (
+                            <span className="scene-metric-pages">{formatPageLength(detail.pageLength)}</span>
+                          )}
+                          {sceneTimings[sceneIdx]?.finalSeconds > 0 && (
+                            <span className="scene-metric-time">{formatSceneDuration(sceneTimings[sceneIdx].finalSeconds)}</span>
+                          )}
+                        </span>
+                        <span className="scene-length">
+                          {detail && detail.pageLength > 0 && <SceneLengthIcon pages={detail.pageLength} />}
+                        </span>
                       </div>
                       {isExpanded && (
                         <div className="scene-synopsis-expanded">

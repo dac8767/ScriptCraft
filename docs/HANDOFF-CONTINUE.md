@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.01 — tool action rows, Scenes synopsis column, Pages title page)
+# ScriptCraft — continuation brief (current as of v5.02 — the Scenes list is a five-column table with an inline synopsis field)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,55 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.01 — tool action rows; Scenes synopsis column; Pages title page (HEAD)
+### v5.02 — the Scenes list is a TABLE (HEAD)
+
+Derek posted a mockup: "this is what i want the scene list page to look like.
+spacing and alignment is not exact here. make spacing and alignment uniform."
+
+- **Five columns, the same five on every row**: number · heading · synopsis
+  field · "0.19 page 0:10" metrics · length icon. `.scene-heading-row` is a
+  GRID with `grid-template-areas`, and every cell renders unconditionally —
+  an unnumbered scene still gets its `.scene-num-cell`, a scene with no page
+  length still gets its `.scene-length`. v5.01's `.scene-synopsis-col`
+  rendered only when a synopsis existed, so the column was there on some rows
+  and absent on others. That class is gone.
+- **THE RULE THAT MAKES IT LINE UP: no track may size to its own content.**
+  Each row is its own grid box — they are separate elements, not a table — so
+  an `auto` track measures THAT row's text and the columns land at different
+  x on every line. Number, metrics and icon are fixed widths; only the two
+  text columns are `fr`. Measured in Chromium: every column now reports one
+  distinct x and width across all rows (before: synopsis fields at 126px and
+  132px). A test reads the stylesheet and fails on `auto` / `min-content` /
+  `max-content` / `fit-content` in either template.
+- **The synopsis is editable in the row.** Uncontrolled `<input>`, `key`d on
+  `${id}:${synopsis}` so it re-seeds when the stored value changes; commits on
+  blur/Enter, reverts on Escape, stops click propagation so it doesn't expand
+  the row and jump the editor. Clearing it writes `''` — it does not silently
+  keep the old text.
+- **One write path**: `setSceneHeadingAttrs(sceneIdx, attrs)` +
+  `writeSceneSynopsis(sceneIdx, id, text)`. `handleSaveSynopsis` (the modal)
+  was inlining its own doc walk; both go through the helpers now, so the
+  inline field and the modal cannot drift. Store AND document, together —
+  writing only the store loses the text at the next scene rescan.
+- **Field styling comes from `--fd-input-bg` + `--fd-border`**, the pair every
+  other input in the app uses. My first pass set `background: transparent`,
+  and since `--fd-border` is `#2a2a2a` against a `#2b2b2b` row the field was
+  invisible — it read as plain text with no affordance. Caught in a
+  screenshot, not in the source.
+- **Narrow fallback**: `.navigator-list` is a `container-type: inline-size`
+  container named `scenelist`. Docked, the list is ~277px and five columns
+  leave the synopsis 34px — a stump. Under 520px the row wraps to two lines
+  (heading + icon, then synopsis + metrics), still with fixed tracks. The
+  WIDE layout is the default so a renderer without container-query support
+  falls back to what Derek asked for, not to the compromise.
+- The `.scene-length` hover tooltip is gone: it said "0.19 page · 0:04", which
+  the metrics column now prints on the row in plain sight.
+- 19 new tests (`SceneNavigator.row.test.tsx`). Note for whoever writes the
+  next one: React 17+ maps `onBlur` to the native **focusout**; dispatching
+  `blur` fires nothing and the commit assertions pass vacuously. That happened
+  here and the tests only went green after switching to `focusout`.
+
+### v5.01 — tool action rows; Scenes synopsis column; Pages title page
 
 - **`ToolActionRow`** (ToolControls) is the new home for a tool's OWN actions:
   the first row of its BODY, left-aligned, buttons wearing `.tool-action-btn`

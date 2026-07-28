@@ -25,7 +25,9 @@
    reserved — otherwise the bar vanishing when the list fits shoves every row a
    few px right. The track is transparent and the thumb only paints when there's
    something to scroll, so the reserved strip stays invisible. */
-.navigator-list { flex: 1; overflow-y: scroll; padding: 0 0 4px; }
+/* v5.02: the scene row's column layout responds to the LIST's width, not the
+   viewport's — the same list is docked at ~250px, popped out, and fullscreen. */
+.navigator-list { flex: 1; overflow-y: scroll; padding: 0 0 4px; container-type: inline-size; container-name: scenelist; }
 .navigator-empty { padding: 24px 16px; color: var(--fd-text-secondary, var(--fd-text)); opacity: 0.7; font-size: 13px; font-style: italic; text-align: center; }
 .navigator-scene {
   /* v4.52, Derek: content CENTERS in the row (min-height made flex-start
@@ -39,27 +41,103 @@
 .navigator-scene:active { background: rgba(74, 158, 255, 0.12); }
 .navigator-scene.expanded { background: var(--fd-overlay-subtle); border-left-color: var(--fd-accent); }
 .scene-info { flex: 1; min-width: 0; }
-.scene-heading-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
-/* v5.01, Derek: the synopsis rides in its OWN COLUMN to the right of the
-   scene, not stacked under it — so a row stays one line tall and the
-   summaries read down the list.
-   `flex: 0 1 45%` and rendered ONLY when there IS a synopsis: a column that
-   claimed its share on every row truncated every heading in a docked panel to
-   pay for summaries that weren't there. It takes what it needs, never more
-   than 45%, and ellipsises past that. */
-.scene-synopsis-col {
-  flex: 0 1 45%;
+/* v5.02, Derek's mockup — the scene row is a five-column TABLE:
+   number · heading · synopsis field · metrics · length icon.
+
+   Grid, and every track but the two text ones is a FIXED width. That is the
+   whole point: each row is its own grid box, so `auto` tracks would size to
+   that row's own content and the synopsis field would start at a different x
+   on every line — which is exactly the unevenness Derek was pointing at. Fixed
+   number/metrics/icon tracks + identical gaps mean the two `fr` tracks resolve
+   to the same widths on every row, and the columns line up down the list. */
+.scene-heading-row {
+  display: grid;
+  grid-template-columns:
+    var(--dz-nav-badge, 22px)                 /* number badge   */
+    minmax(0, 1fr)                            /* scene heading  */
+    minmax(0, 1.15fr)                         /* synopsis field */
+    var(--scene-metrics-w, 104px)             /* page + runtime */
+    16px;                                     /* length icon    */
+  grid-template-areas: "num head synopsis metrics icon";
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 6px;
   min-width: 0;
-  text-align: right;
+}
+.scene-num-cell       { grid-area: num; }
+.scene-heading-text   { grid-area: head; }
+.scene-synopsis-field { grid-area: synopsis; }
+.scene-metrics        { grid-area: metrics; }
+.scene-length         { grid-area: icon; }
+/* Docked in a side panel the list is ~250px wide, and five columns across
+   that leaves the synopsis a 34px stump — measured, not guessed. Under 520px
+   the row wraps to two lines (heading + length, then the synopsis with its
+   figures). Still a table, still one set of tracks per row, so the columns go
+   on lining up down the list; there is just no room for five of them.
+   The WIDE layout is the default so that a renderer without container-query
+   support falls back to what Derek asked for, not to the compromise. */
+@container scenelist (max-width: 519px) {
+  .scene-heading-row {
+    /* The metrics track is FIXED here too, derived from the same
+       --scene-metrics-w (it spans this track plus the gap and the icon). An
+       `auto` track measured each row's own text — "0.19 page" against "1.7
+       pages" — and the synopsis fields came out 126px and 132px, off by six.
+       That is the misalignment in miniature; nothing here may size to content. */
+    grid-template-columns:
+      var(--dz-nav-badge, 22px)
+      minmax(0, 1fr)
+      calc(var(--scene-metrics-w, 104px) - 26px)
+      16px;
+    grid-template-areas:
+      "num head     head    icon"
+      "num synopsis metrics metrics";
+  }
+}
+/* The reorder list is NOT this table — it has a drag grip and a "3 → 5"
+   renumber badge of its own width. It keeps the old single-line layout. */
+.nav-reorder-row .scene-heading-row { display: flex; align-items: center; gap: 8px; }
+.scene-num-cell { display: flex; align-items: center; justify-content: center; min-width: 0; }
+.scene-heading-text { min-width: 0; display: flex; align-items: center; gap: 6px; font-size: var(--dz-nav-scene-font, 14px); font-family: var(--screenplay-font); color: var(--fd-text); line-height: 1.3; font-weight: 600; }
+/* The synopsis is EDITABLE in place (v5.02) — a real field on every row,
+   present whether or not the scene has one yet, so the column reads as a
+   column and an empty scene shows where to type. */
+.scene-synopsis-field {
+  min-width: 0;
+  width: 100%;
+  padding: 3px 7px;
+  font-family: inherit;
   font-size: var(--dz-nav-synopsis-font, 11px);
+  line-height: 1.4;
   color: var(--fd-text);
-  opacity: 0.5;
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
+  /* --fd-input-bg + --fd-border is what every other field in the app wears.
+     A `transparent` fill made this one invisible: --fd-border is #2a2a2a and
+     the row behind it is #2b2b2b, so the box read as plain text and nothing
+     said "type here". The token pair is already theme-correct. */
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  outline: none;
+  box-sizing: border-box;
   text-overflow: ellipsis;
 }
-.scene-heading-text { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; font-size: var(--dz-nav-scene-font, 14px); font-family: var(--screenplay-font); color: var(--fd-text); line-height: 1.3; font-weight: 600; }
+.scene-synopsis-field::placeholder { color: var(--fd-text-muted); opacity: 0.85; }
+.scene-synopsis-field:hover { border-color: var(--fd-text-muted); }
+.scene-synopsis-field:focus { border-color: var(--fd-accent); }
+/* Metrics read as one right-aligned figure; tabular digits so the numbers
+   stack cleanly instead of jittering row to row. */
+.scene-metrics {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--dz-nav-synopsis-font, 11px);
+  color: var(--fd-text);
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+}
 .scene-heading-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .scene-number-badge {
   display: inline-flex; align-items: center; justify-content: center;
@@ -564,33 +642,16 @@
 .scene-length-fill { opacity: 0.55; }
 [data-theme="dark"] .scene-length-fill { opacity: 0.7; }
 
-/* ── Scene length tooltip ── */
+/* ── Scene length icon ──
+   v5.02: the hover tooltip is gone with it. It said "0.09 page · 0:04" —
+   the same figures the metrics column now prints on the row in plain sight,
+   so the tooltip was a second copy of a number the eye already has. */
 .scene-length {
-  flex-shrink: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
   color: var(--fd-text-muted);
   cursor: default;
-  margin-left: 4px;
-  position: relative;
-}
-.scene-length[data-tooltip]:hover::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  right: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-right: 6px;
-  background: var(--fd-text);
-  color: var(--fd-bg);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 5px 10px;
-  border-radius: 5px;
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 10;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
 /* ── Scene detail meta (expanded view) ── */
