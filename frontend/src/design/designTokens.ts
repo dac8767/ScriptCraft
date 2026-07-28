@@ -104,6 +104,13 @@ export const DESIGN_GROUPS: DesignGroup[] = [
         hint: 'Gap between sections (and between big buttons).' },
       { id: 'ribPadTop', label: 'Bar top padding', cssVar: '--dz-rib-pad-top', unit: 'px', min: 0, max: 30, step: 1, def: 5 },
       { id: 'ribPadBottom', label: 'Bar bottom padding', cssVar: '--dz-rib-pad-bottom', unit: 'px', min: 0, max: 30, step: 1, def: 2 },
+      /* v5.16, Derek: far-left / far-right bar padding. Setting the LEFT one
+         takes over from the automatic menu-bar icon alignment (which writes
+         an inline padding-left) — otherwise the knob would be a silent no-op
+         whenever the auto-alignment is active. Reset to restore auto. */
+      { id: 'ribPadLeft', label: 'Bar left padding', cssVar: '--dz-rib-pad-left', unit: 'px', min: 0, max: 40, step: 1, def: 8,
+        hint: 'Overrides the automatic menu-bar alignment; Reset restores it.' },
+      { id: 'ribPadRight', label: 'Bar right padding', cssVar: '--dz-rib-pad-right', unit: 'px', min: 0, max: 40, step: 1, def: 12 },
       { id: 'toolbarBtnRadius', label: 'Button corner radius', cssVar: '--dz-toolbar-btn-radius', unit: 'px', min: 0, max: 12, step: 1, def: 5 },
     ],
   },

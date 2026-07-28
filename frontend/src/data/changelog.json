@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.16",
+    "date": "2026-07-28",
+    "changes": [
+      "Design: 0 means 0. Several spacing options carried hidden extras that survived a zero — the ribbon's section spacing had a secret +3px (bar and big-button gaps both), the section titles kept a hard 2px side inset, the bar's right padding was pinned at 12px regardless of anything, and the character detail padding carried +2/+4 offsets. All gone: every ribbon spacing knob at 0 now renders exactly 0, verified corner to corner",
+      "Design: the ribbon gains Bar left padding and Bar right padding. Setting the left one takes over from the automatic menu-bar icon alignment — Reset gives the auto-alignment back",
+      "Ribbon: because Section spacing no longer adds its secret +3, the same stored value renders 3px tighter than before — nudge the slider up if you liked the old distance"
+    ]
+  },
+  {
     "version": "5.15",
     "date": "2026-07-28",
     "changes": [

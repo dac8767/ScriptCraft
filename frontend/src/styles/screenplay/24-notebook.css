@@ -818,8 +818,10 @@
   /* v4.1: trimmed bottom padding so the title needs less vertical room. */
   /* v5.15: the band's own bottom padding (--dz-rib-title-pad) was redundant
      with the title↔buttons gap and is GONE — the gap's default grew 2→5 so
-     the stock look is unchanged (3+2 = 5). */
-  padding: 0 2px;
+     the stock look is unchanged (3+2 = 5).
+     v5.16: the hard 2px side inset is gone too — the section's own Side
+     padding knob owns ALL horizontal inset, so its 0 is really 0. */
+  padding: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
 /* v4.5, Derek: a section with no title still renders the band (kept invisible)

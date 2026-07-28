@@ -1965,7 +1965,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         // editor) — one store, applied here AND in the editor's chips.
         ...Object.fromEntries(Object.entries(toolbarDdWidths).map(([k, v]) => [`--ddw-${k}`, `${v}px`])),
         // v2.72: measured so the first icons of the two bars align.
-        ...(alignPad !== null ? { paddingLeft: alignPad } : {}),
+        // v5.16: ONLY while the user hasn't set the Bar-left-padding knob —
+        // an inline value would beat the knob's CSS var and turn it into a
+        // silent no-op. Reset the knob to get the auto-alignment back.
+        ...(alignPad !== null && dzVars.ribPadLeft === undefined ? { paddingLeft: alignPad } : {}),
       }}
       ref={toolbarRef}
     >

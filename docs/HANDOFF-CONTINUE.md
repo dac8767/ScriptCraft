@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.15 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.16 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,35 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.15 — the ribbon Design reorg, and the 1px lie (HEAD)
+### v5.16 — 0 means 0; bar side-padding knobs (HEAD)
+
+Derek: "I'll set it to 0 (lets say for padding), but then there is still
+significant padding space. make sure that 0 is actually 0 for all options."
+The audit grep — `calc(var(--dz-*pad|gap|spacing*) + N)` — plus a manual
+sweep found FOUR liars, all fixed:
+- the bar's between-section gap AND the big-button row gap both carried a
+  hidden `+3px` on top of Section spacing (so 0 rendered 5, and Derek's
+  stored 2 rendered 5 — after the fix the same value is 3px tighter, called
+  out in the changelog);
+- `.rib-sec-title` kept a hard `2px` side inset (survived Side padding 0);
+- the bar's right padding was pinned by a later `padding-right: 12px`
+  literal that would have silently beaten the new knob (now the knob's
+  DEFAULT is 12 and the literal is the var's fallback);
+- `.char-profile-detail` padding used `+2/+4` offsets — now ×1.25/×1.5
+  RATIOS (identical at the default 8, true zero at zero).
+Also (Derek, mid-batch): **Bar left / Bar right padding knobs** (defaults
+8/12). The LEFT one must beat the v2.72 auto menu-bar alignment, which
+writes an INLINE padding-left that would out-rank any CSS var — Toolbar.tsx
+now skips the inline value when `designVars.ribPadLeft` is set; Reset
+restores auto-align. (That inline-beats-var trap is the same silent-no-op
+class as the fullscreen close bug — check for inline writers before adding
+any chrome knob.)
+`check-ribbon-zero.mjs` (17 checks): every knob seeded 0 → computed 0
+everywhere, bar height == content height exactly, sections TOUCH their
+dividers (driver lesson: pair each section with the correct SIDE of the
+divider — the first pairing was backwards and false-failed).
+
+### v5.15 — the ribbon Design reorg, and the 1px lie
 
 Derek's spec, delivered verbatim: FOUR Design groups — Ribbon (bar-level:
 section spacing, bar top/bottom padding, button radius), Titled Sections

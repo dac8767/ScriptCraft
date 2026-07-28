@@ -597,12 +597,12 @@
 }
 /* Expanded detail panel */
 .char-profile-detail {
-  /* v4.26: ONE Design knob scales the detail padding; the +2/+4 offsets keep
-     the original 8/10/12 top/sides/bottom rhythm at every value (a single var
-     couldn't otherwise preserve today's asymmetric padding at its default). */
+  /* v4.26 kept the 8/10/12 rhythm with hidden +2/+4 offsets; v5.16 (Derek:
+     "0 is actually 0") replaces the additive offsets with RATIOS — the same
+     10/12 at the default 8, and a true zero at zero. */
   padding: var(--dz-char-detail-pad, 8px)
-           calc(var(--dz-char-detail-pad, 8px) + 2px)
-           calc(var(--dz-char-detail-pad, 8px) + 4px);
+           calc(var(--dz-char-detail-pad, 8px) * 1.25)
+           calc(var(--dz-char-detail-pad, 8px) * 1.5);
   border-top: 1px solid var(--fd-border);
   display: flex;
   flex-direction: column;

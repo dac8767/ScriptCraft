@@ -441,7 +441,11 @@
   display: flex;
   align-items: stretch;
   /* v3.98, Derek: tighter spacing between sections. */
-  gap: calc(var(--rib-gap, 2px) + 3px);
+  /* v5.16, Derek: "make sure that 0 is actually 0." The gap carried a
+     hidden +3px, so Section spacing: 0 still left 3px between sections. The
+     value means exactly itself now — the stock look wants 5 where it used
+     to want 2. */
+  gap: var(--rib-gap, 2px);
   /* v3.65, Derek: min-height (not a fixed height) so a section title makes the
      WHOLE bar taller instead of overflowing. Sections stay vertically centered
      (justify-content: center) and the full-height section dividers stretch to
@@ -462,13 +466,18 @@
   /* v3.98/v4.1, Derek: breathing room above the section titles at the top.
      v4.15: Design knobs. */
   padding-top: var(--dz-rib-pad-top, 5px);
+  /* v5.16, Derek: the bar's far sides are knobs too. The LEFT one loses to
+     the inline auto-align padding unless the user has touched the knob —
+     Toolbar.tsx gates that. (Right lives a few lines down, where a later
+     12px literal used to override it.) */
+  padding-left: var(--dz-rib-pad-left, 8px);
   /* v3.44, Derek: a hair of breathing room under the buttons. */
   padding-bottom: var(--dz-rib-pad-bottom, 2px);
   /* v3.10, Derek: the right-aligned tail (Customize) sat flush against the
-     window edge. (v3.28 doubled this to 24px, but the real culprit was the
-     Customize button's icon-only sizing, fixed in v3.29 — so v3.32 walks it
-     back to 12px at Derek's request.) */
-  padding-right: 12px;
+     window edge; v3.32 settled on 12px. v5.16: that 12 is the KNOB's default
+     now — this later rule was overriding the knob and pinning Bar right
+     padding at 12 no matter what the slider said. */
+  padding-right: var(--dz-rib-pad-right, 12px);
   flex: 1;
   min-width: 0;
   /* v4.23, Derek: a narrow window scrolls the ribbon horizontally instead of
@@ -556,8 +565,9 @@
   height: 100%;
   flex: 1;
   align-items: center;
-  /* v3.98, Derek: tighter gap between big buttons. */
-  gap: calc(var(--rib-gap, 2px) + 3px);
+  /* v3.98, Derek: tighter gap between big buttons.
+     v5.16: the hidden +3px is gone — Section spacing 0 means touching. */
+  gap: var(--rib-gap, 2px);
 }
 div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; align-items: center; }
 .toolbar-priority-block.rib-tall {
