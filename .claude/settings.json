@@ -19,6 +19,15 @@
       "Bash(mkdir *)",
       "Bash(curl *)",
       "mcp__Claude_Code_Remote"
+    ],
+    "deny": [
+      "Read(**/node_modules/**)",
+      "Read(**/dist/**)",
+      "Read(**/coverage/**)",
+      "Read(**/src-tauri/target/**)",
+      "Read(**/package-lock.json)",
+      "Read(**/*.min.js)",
+      "Read(**/*.min.css)"
     ]
   }
 }

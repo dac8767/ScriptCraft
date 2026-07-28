@@ -1,0 +1,14 @@
+# Read-exclusions for AI coding tools (2026-07-28 token-efficiency batch).
+# NOTE: support for this file is advisory — Claude Code's ENFORCED layer is
+# permissions.deny in .claude/settings.json; this mirrors it for any tool
+# that honors an ignore file. Keep the two lists in sync.
+node_modules/
+dist/
+build/
+coverage/
+src-tauri/target/
+__pycache__/
+*.pyc
+*.min.js
+*.min.css
+package-lock.json
