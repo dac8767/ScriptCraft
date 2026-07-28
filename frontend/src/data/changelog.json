@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.06",
+    "date": "2026-07-28",
+    "changes": [
+      "Scenes: the Scene and Length column titles centre over the whole column as the eye reads it — Scene over the number badge plus the heading, Length over the figures plus the length icon — and the resize bars sit exactly halfway between adjacent columns, per the marked-up screenshot"
+    ]
+  },
+  {
     "version": "5.05",
     "date": "2026-07-28",
     "changes": [

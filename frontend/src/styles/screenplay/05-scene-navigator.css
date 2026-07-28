@@ -141,9 +141,15 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.scene-col-title-head { grid-area: head; }
+/* v5.06, Derek's marked-up screenshot: "Scene" centres over badge+heading,
+   "Length" over figures+icon — the REGION the eye reads as the column, not
+   the single grid track. grid-template-areas names the lines (num-start,
+   head-end, …), so the spans stay glued to the template if tracks change.
+   The grips don't move: each title's spanning edge at the gutter is the same
+   physical edge the grip hung on before. */
+.scene-col-title-head { grid-column: num-start / head-end; grid-row: 1; }
 .scene-col-title-syn { grid-area: synopsis; }
-.scene-col-title-met { grid-area: metrics; }
+.scene-col-title-met { grid-column: metrics-start / icon-end; grid-row: 1; }
 /* The grip is a hit target, not a line: 11px wide so it can actually be
    grabbed, with the visible rule drawn down its middle. It hangs off the
    cell's edge (position: absolute against the cell) so widening the target

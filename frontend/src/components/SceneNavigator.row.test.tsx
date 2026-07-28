@@ -229,6 +229,15 @@ describe('scene-heading-row grid tracks', () => {
     for (const g of offsets) expect(g).toMatch(/--scene-col-gap/);
   });
 
+  /* v5.06, Derek's marked-up screenshot: a column is what the eye groups.
+     "Scene" spans badge+heading, "Length" spans figures+icon — via the
+     template's NAMED LINES, so the spans track the template. Centred on the
+     bare head/metrics tracks, both titles sat visibly off his centre marks. */
+  it('Scene and Length titles span their whole regions', () => {
+    expect(css).toMatch(/\.scene-col-title-head\s*\{[^}]*grid-column:\s*num-start\s*\/\s*head-end/);
+    expect(css).toMatch(/\.scene-col-title-met\s*\{[^}]*grid-column:\s*metrics-start\s*\/\s*icon-end/);
+  });
+
   it('assigns every cell a grid area, so no cell can land in the wrong track', () => {
     for (const area of ['num', 'head', 'synopsis', 'metrics', 'icon']) {
       expect(css, `grid-area: ${area} unassigned`).toMatch(new RegExp(`grid-area:\\s*${area}\\s*;`));

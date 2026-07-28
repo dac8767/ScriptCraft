@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of the 2026-07-28 speed audit — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything)
+# ScriptCraft — continuation brief (current as of v5.06 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,24 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.05 — where an element SITS is its format (HEAD)
+### v5.06 — a column is what the eye groups (HEAD)
+
+Derek's marked-up screenshot (red lines): "the titles are still not centered,
+and the column adjustment bars are still not in the right place." His marks
+define the COLUMNS as the eye reads them — Scene = number badge + heading,
+Length = figures + icon — while v5.05 had centred each title on its single
+grid track, which is why both sat visibly off his centre lines.
+
+- `.scene-col-title-head` spans `num-start / head-end`, `.scene-col-title-met`
+  spans `metrics-start / icon-end` — grid-template-areas NAMES those lines, so
+  the spans stay glued to the template. The grips didn't move: each title's
+  spanning edge at the gutter is the same physical edge as before.
+- First delivery driven by the speed-audit kit: `devtools/check-scene-header.mjs`
+  printed all five geometry checks (3 title centres vs region midpoints, 2 bar
+  centres vs gutter midpoints) at Δ0.0px in **4.4s** — the old-style driver
+  took ~100s per run. `vitest related` mid-loop (3s), full suite once (12s).
+
+### v5.05 — where an element SITS is its format
 
 - **Column titles.** Derek: "the titles are not centered over the columns.
   make the column titles have the same format." They were nested inside the

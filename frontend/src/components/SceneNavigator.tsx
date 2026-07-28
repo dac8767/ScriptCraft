@@ -737,13 +737,15 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               grips write --scene-col-head / --scene-metrics-w onto the tool
               body, which is the common ancestor of the header and the rows. */}
           <div className="scene-heading-row scene-list-header" aria-hidden="true">
-            <span className="scene-num-cell" />
             {/* v5.05: all three titles are SIBLINGS of one class, each parked
-                straight in its grid area. They used to be nested inside the
-                data cells (.scene-heading-text, .scene-metrics), and those
-                cells set their own font — so "Scene" came out 14px monospace,
-                "Synopsis" 10px sans and "Length" 11px sans. Three formats
-                from one stylesheet, purely because of where they sat. */}
+                straight in its grid area — nested in the data cells they
+                inherited three different fonts.
+                v5.06, Derek's marked-up screenshot: a COLUMN is what the eye
+                groups, not what the grid tracks say. "Scene" is the number
+                badge AND the heading; "Length" is the figures AND the icon.
+                So those two titles span their whole regions (grid-column
+                spans in the CSS) and centre over them — centred on the bare
+                head/metrics tracks they sat visibly off Derek's centre lines. */}
             <span className="scene-col-title scene-col-title-head">
               Scene
               <span className="scene-col-grip" onPointerDown={startColResize('head')} title="Drag to resize" />
@@ -753,7 +755,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               <span className="scene-col-grip scene-col-grip-left" onPointerDown={startColResize('metrics')} title="Drag to resize" />
               Length
             </span>
-            <span className="scene-length" />
           </div>
           <div className="navigator-list">
             {filteredIndices.length === 0 ? (
