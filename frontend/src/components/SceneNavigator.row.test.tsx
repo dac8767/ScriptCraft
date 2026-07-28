@@ -193,6 +193,42 @@ describe('scene-heading-row grid tracks', () => {
     expect(header!.classList.contains('scene-heading-row')).toBe(true);
   });
 
+  /* v5.05, Derek: "make the column titles have the same format." All three are
+     one class and DIRECT children of the header. Nested inside the data cells
+     they inherited those cells' type — 14px monospace under .scene-heading-text,
+     11px under .scene-metrics — and no styling of .scene-col-title could undo
+     an inherited font it never set. Where they sit IS the format. */
+  it('all three column titles are siblings of one class, straight under the header', () => {
+    const header = host.querySelector('.scene-list-header')!;
+    const titles = Array.from(header.querySelectorAll('.scene-col-title'));
+    expect(titles.map((t) => t.textContent!.trim())).toEqual(['Scene', 'Synopsis', 'Length']);
+    for (const t of titles) expect(t.parentElement, 'a title nested in a data cell inherits its font').toBe(header);
+  });
+
+  /* v5.05, Derek: "require a double click to jump to the chosen scene." */
+  it('the row advertises double-click, and carries no single-click handler', () => {
+    const info = host.querySelector('.scene-info') as HTMLElement;
+    expect(info.title).toBe('Double-click to go to this scene');
+    // React stores its props on the fiber; the row must have ondblclick wiring
+    // and no onClick, or a stray single click would move the script again.
+    const key = Object.keys(info).find((k) => k.startsWith('__reactProps$'))!;
+    const props = (info as unknown as Record<string, { onClick?: unknown; onDoubleClick?: unknown }>)[key];
+    expect(props.onDoubleClick, 'no double-click handler').toBeTypeOf('function');
+    expect(props.onClick, 'a single click must not navigate').toBeUndefined();
+  });
+
+  /* v5.05, Derek: "the column resizing bar should be halfway between the end
+     of the scene name column and the synopsis field." The grip's offset is
+     computed FROM the grid's own gutter variable, so widening the gutter moves
+     the bar with it — hard-coding the offset is how they drift apart. */
+  it('the resize grips are positioned from the same variable as the column gutter', () => {
+    expect(css).toMatch(/column-gap:\s*var\(--scene-col-gap/);
+    const grips = css.match(/\.scene-col-grip[^{]*\{[^}]*\}/gs) ?? [];
+    const offsets = grips.filter((g) => /(^|\s)(right|left):\s*calc/m.test(g));
+    expect(offsets.length, 'a grip offset that ignores --scene-col-gap').toBeGreaterThanOrEqual(2);
+    for (const g of offsets) expect(g).toMatch(/--scene-col-gap/);
+  });
+
   it('assigns every cell a grid area, so no cell can land in the wrong track', () => {
     for (const area of ['num', 'head', 'synopsis', 'metrics', 'icon']) {
       expect(css, `grid-area: ${area} unassigned`).toMatch(new RegExp(`grid-area:\\s*${area}\\s*;`));

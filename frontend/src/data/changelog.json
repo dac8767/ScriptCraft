@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.05",
+    "date": "2026-07-28",
+    "changes": [
+      "Scenes: the column resize bars sit in the middle of the gutter between two columns instead of hard against the next one — the gutter was widened to 22px so a centred bar reads as centred",
+      "Scenes: the column titles are one format and centred over their columns. They were nested inside the data cells and inherited each cell's type, so Scene came out 14px monospace, Synopsis 10px and Length 11px",
+      "Scenes: it takes a double click to jump to a scene now. A single click just selects the row, so you can aim at the synopsis field without the script moving under you"
+    ]
+  },
+  {
     "version": "5.04",
     "date": "2026-07-28",
     "changes": [

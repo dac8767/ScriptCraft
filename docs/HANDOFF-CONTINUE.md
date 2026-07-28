@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.04 — going to a scene is one store request, owned by the editor)
+# ScriptCraft — continuation brief (current as of v5.05 — scene-list header polish; double-click to jump)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,31 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.04 — "clicking it doesn't do anything" (HEAD)
+### v5.05 — where an element SITS is its format (HEAD)
+
+- **Column titles.** Derek: "the titles are not centered over the columns.
+  make the column titles have the same format." They were nested inside the
+  data cells — `.scene-heading-text` sets 14px + `--screenplay-font`,
+  `.scene-metrics` sets 11px — so the three titles inherited three different
+  fonts and no rule on `.scene-col-title` could undo a font it never set.
+  They are siblings of one class now, direct children of the header, each
+  assigned its grid area (`.scene-col-title-head/-syn/-met`). One inherited
+  format, `text-align: center`, done. A test asserts `parentElement === header`
+  for all three — that IS the format guarantee.
+- **The resize bars** are centred ON the gutter, and the gutter is now a
+  variable: `--scene-col-gap: 22px` drives `column-gap` AND the grips'
+  `right/left: calc(-1 * (var(--scene-col-gap)/2 + 5.5px))`. It was 10px
+  before, and a 2px bar centred in a 10px gutter has 4px of air either side —
+  arithmetically centred, visually flush against the next column, which is what
+  Derek was reporting. Measured after: gutter 681→703, midpoint 692, bar at
+  692; second gutter 1022→1044, midpoint 1033, bar at 1033.
+- **Double-click to jump** (`onDoubleClick` on `.scene-info`, no `onClick`).
+  A test reads the fiber props and fails if an `onClick` comes back.
+- Careful when measuring a centred label in a driver: `selectNodeContents` on
+  the title span unions the absolutely-positioned GRIP inside it, and reported
+  "Scene" 79px off centre when it was exact. Range over the text node only.
+
+### v5.04 — "clicking it doesn't do anything"
 
 Derek: "the items in the list are still clickable, even though clicking it
 doesn't do anything anymore (it changes the cursor to the pointer finger)."

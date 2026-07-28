@@ -738,14 +738,20 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               body, which is the common ancestor of the header and the rows. */}
           <div className="scene-heading-row scene-list-header" aria-hidden="true">
             <span className="scene-num-cell" />
-            <span className="scene-heading-text">
-              <span className="scene-col-title">Scene</span>
+            {/* v5.05: all three titles are SIBLINGS of one class, each parked
+                straight in its grid area. They used to be nested inside the
+                data cells (.scene-heading-text, .scene-metrics), and those
+                cells set their own font — so "Scene" came out 14px monospace,
+                "Synopsis" 10px sans and "Length" 11px sans. Three formats
+                from one stylesheet, purely because of where they sat. */}
+            <span className="scene-col-title scene-col-title-head">
+              Scene
               <span className="scene-col-grip" onPointerDown={startColResize('head')} title="Drag to resize" />
             </span>
             <span className="scene-col-title scene-col-title-syn">Synopsis</span>
-            <span className="scene-metrics">
+            <span className="scene-col-title scene-col-title-met">
               <span className="scene-col-grip scene-col-grip-left" onPointerDown={startColResize('metrics')} title="Drag to resize" />
-              <span className="scene-col-title">Length</span>
+              Length
             </span>
             <span className="scene-length" />
           </div>
@@ -766,7 +772,11 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                         else. The old click also unfolded a detail panel that
                         repeated the row's own page count, runtime and synopsis
                         back at you — everything it showed is on the row now. */}
-                    <div className="scene-info" onClick={() => goToScene(sceneIdx)}>
+                    {/* v5.05, Derek: "require a double click to jump to the
+                        chosen scene." A single click lands in the row without
+                        moving the script out from under you — you can aim at
+                        the synopsis field, or just look. */}
+                    <div className="scene-info" onDoubleClick={() => goToScene(sceneIdx)} title="Double-click to go to this scene">
                       {/* v5.02, Derek's mockup: five columns, and the SAME
                           five on every row — number · heading · synopsis field
                           · metrics · length icon. These are grid tracks, not

@@ -63,7 +63,12 @@
     16px;                                     /* length icon    */
   grid-template-areas: "num head synopsis metrics icon";
   align-items: center;
-  column-gap: 10px;
+  /* v5.05: ONE variable for the gutter, because the resize grips are centred
+     ON it — see .scene-col-grip. Widened from 10px: a 2px bar centred in a
+     10px gutter has 4px of air either side and reads as flush against the
+     next column, which is what Derek was seeing. */
+  --scene-col-gap: 22px;
+  column-gap: var(--scene-col-gap);
   row-gap: 6px;
   min-width: 0;
 }
@@ -120,13 +125,25 @@
   border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
   user-select: none;
 }
-/* v5.04, Derek: "center the column name over each column." The titles are
-   centred in their TRACKS, not left-aligned with the data — the data itself
-   stays as it reads best (headings left, figures right). */
-.scene-col-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.scene-col-title-syn { grid-area: synopsis; text-align: center; }
-.scene-list-header .scene-heading-text,
-.scene-list-header .scene-metrics { justify-content: center; }
+/* Derek, v5.04: "center the column name over each column"; v5.05: "make the
+   column titles have the same format."
+   Both come from the same place — the titles are siblings of ONE class now,
+   direct children of the header, each assigned its grid area here. Nested in
+   the data cells they inherited those cells' typography (14px monospace under
+   .scene-heading-text, 11px under .scene-metrics) and no amount of centring
+   made three different fonts look like a set. Nothing is inherited from a
+   data cell any more; the header's own type rules reach all three. */
+.scene-col-title {
+  position: relative;             /* the grips anchor to the title, at the track edge */
+  min-width: 0;
+  text-align: center;
+  overflow: visible;              /* a clipped cell ate the grip — see below */
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.scene-col-title-head { grid-area: head; }
+.scene-col-title-syn { grid-area: synopsis; }
+.scene-col-title-met { grid-area: metrics; }
 /* The grip is a hit target, not a line: 11px wide so it can actually be
    grabbed, with the visible rule drawn down its middle. It hangs off the
    cell's edge (position: absolute against the cell) so widening the target
@@ -140,15 +157,22 @@
    the cursor. */
 .scene-col-grip {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  right: -11px;
+  top: -7px;                      /* out to the header's padding edges */
+  bottom: -7px;
+  /* Centred ON the gutter: to put an 11px-wide grip's middle at the gutter's
+     middle, it hangs (gap/2 + 11/2) past the column edge. Derived from the
+     same --scene-col-gap the grid uses, so widening the gutter moves the bar
+     with it and they cannot drift apart. */
+  right: calc(-1 * (var(--scene-col-gap, 22px) / 2 + 5.5px));
   width: 11px;
   cursor: col-resize;
   touch-action: none;
   flex: none;
 }
-.scene-col-grip-left { right: auto; left: -11px; }
+.scene-col-grip-left {
+  right: auto;
+  left: calc(-1 * (var(--scene-col-gap, 22px) / 2 + 5.5px));
+}
 .scene-col-grip::after {
   content: '';
   position: absolute;
@@ -163,12 +187,9 @@
 }
 .scene-col-grip:hover::after,
 .scene-col-grip:active::after { background: var(--fd-accent); opacity: 1; }
-/* overflow: visible is load-bearing, not tidiness. .scene-metrics clips its
-   text (`overflow: hidden`), and the metrics grip hangs off that cell's LEFT
-   edge at -9px — so in the header it was clipped away and could not be
-   grabbed at all. The drag reported no movement until this was added. */
-.scene-list-header .scene-heading-text,
-.scene-list-header .scene-metrics { position: relative; overflow: visible; }
+/* (v5.05: the cell-scoped overflow/position overrides are gone — the titles
+   are the header's own children now and carry both themselves. The lesson
+   stands: a grip hanging off a cell that CLIPS is a grip you cannot grab.) */
 /* Two rows, no room, no resizing: the grips would be pulling tracks the
    narrow template doesn't have. */
 @container scenelist (max-width: 519px) {
