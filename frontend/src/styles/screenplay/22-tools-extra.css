@@ -576,7 +576,10 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
 
 /* v3.54: the Scenes filter popover — a floating shell (portalled to body,
    positioned by top/left) wrapping the same .scene-filters rows the tool body
-   used to hold inline. */
+   used to hold inline. v5.20, Derek: it was spilling out of the tool window —
+   the WIDTH is inline now, computed from the hosting window's box (SceneControls
+   clamps it 240–400); this 240px is only the no-inline fallback. The rows wrap
+   to whatever width they're given (05-scene-navigator.css). */
 .fs-scene-filterpop {
   position: fixed;
   z-index: 10050;

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.19 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.20 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,46 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.19 — Reorder wears the dialogs' Apply format (HEAD)
+### v5.20 — the Scenes four-pack: contained popover, Cards per row, one menu, lighter cards (HEAD)
+
+- Derek's batch: (1) "The filter menu items in the Scene tool spills out of
+  the window." (2) "Copy the Pages per row tool… 'Cards per row:' aligned
+  left on the same row as Reorder, and move Reorder so it is right aligned."
+  (3) "allow only one of these menus to be open at one time." (4) "give the
+  cards a lighter background color."
+- (1) The popover's left math still assumed its pre-v3.54 240px width while
+  the content had grown past it. It now measures the hosting shape —
+  `closest('.tool-window, .tool-inline, .fs-tool-takeover')` (those are THE
+  three window containers; viewport fallback) — takes width
+  clamp(240, winW−16, 400) INLINE, right-aligns to the trigger, clamps into
+  the window box. `.scene-filter-row`/`.scene-filter-colors` got flex-wrap
+  so unshrinkable content (the 10 color dots) wraps instead of overflowing.
+- (3) ROOT CAUSE: every header trigger stopPropagations pointerdown (the
+  window-drag guard), so the bubble-phase outside-close listeners never
+  heard presses on sibling controls — two menus sat open. Both closers
+  (ControlDropdown in ToolControls, the filter popover in SceneControls)
+  now listen in the CAPTURE phase with explicit target tests (trigger and
+  own-menu exempt). This fixes exclusivity for EVERY ControlDropdown pair
+  in the app (Locations Filter+Sort etc.), not just Scenes. ControlDropdown's
+  resize handler split out (it closes unconditionally; the pointer one
+  target-checks).
+- (2) `cardsPerRow` in sceneNavSlice (CARDS_PER_ROW 1/8/3 — exact copy of
+  the pagesPerRow model incl. NOT persisted, matching Pages); stepper JSX in
+  ScenesTool's ToolActionRow, cards mode only; Reorder wrapped in
+  `.tool-action-right` (the Pages Go-to pattern) so it right-aligns in both
+  views. Grid: `repeat(var(--cards-per-row, 3), 1fr)` — fallback must equal
+  CARDS_PER_ROW_DEFAULT. (The grid WAS auto-fill minmax(190px,1fr) because a
+  hardcoded 3 once squeezed side panels — fine now: the count is Derek's own
+  number and steps to 1.)
+- (4) `.index-card` background: dropdown-bg → toolbar-bg — one step up the
+  surface ladder (dark #2d2d2d → #353535), lighter in light theme too.
+- Tests: exclusivity simulated in jsdom (dispatch pointerdown on the second
+  trigger — capture listener fires there too); cardsPerRow clamp. Driver
+  check-scenes-v520.mjs (11 checks): popover rect ⊆ window rect, no
+  scrollWidth overflow, dots contained, both exclusivity directions, stepper
+  left / Reorder right by rect math, 3→4 columns, card bg rgb(53,53,53).
+
+### v5.19 — Reorder wears the dialogs' Apply format
 
 - Derek (screenshot of a dialog's Cancel/Apply): "change the reorder button
   to match this format." The Scenes Reorder button's idle look is now the
@@ -281,39 +320,12 @@ centered bar both ways and the title clipped under the menu bar.
   floor) + 4 new driver checks (bar grows ≥15px under 16px padding, title
   and rows stay inside, −6 renders −6). Both ribbon drivers green: 19 + 17.
 
-### v5.16 — 0 means 0; bar side-padding knobs
-
-Derek: "I'll set it to 0 (lets say for padding), but then there is still
-significant padding space. make sure that 0 is actually 0 for all options."
-The audit grep — `calc(var(--dz-*pad|gap|spacing*) + N)` — plus a manual
-sweep found FOUR liars, all fixed:
-- the bar's between-section gap AND the big-button row gap both carried a
-  hidden `+3px` on top of Section spacing (so 0 rendered 5, and Derek's
-  stored 2 rendered 5 — after the fix the same value is 3px tighter, called
-  out in the changelog);
-- `.rib-sec-title` kept a hard `2px` side inset (survived Side padding 0);
-- the bar's right padding was pinned by a later `padding-right: 12px`
-  literal that would have silently beaten the new knob (now the knob's
-  DEFAULT is 12 and the literal is the var's fallback);
-- `.char-profile-detail` padding used `+2/+4` offsets — now ×1.25/×1.5
-  RATIOS (identical at the default 8, true zero at zero).
-Also (Derek, mid-batch): **Bar left / Bar right padding knobs** (defaults
-8/12). The LEFT one must beat the v2.72 auto menu-bar alignment, which
-writes an INLINE padding-left that would out-rank any CSS var — Toolbar.tsx
-now skips the inline value when `designVars.ribPadLeft` is set; Reset
-restores auto-align. (That inline-beats-var trap is the same silent-no-op
-class as the fullscreen close bug — check for inline writers before adding
-any chrome knob.)
-`check-ribbon-zero.mjs` (17 checks): every knob seeded 0 → computed 0
-everywhere, bar height == content height exactly, sections TOUCH their
-dividers (driver lesson: pair each section with the correct SIDE of the
-divider — the first pairing was backwards and false-failed).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.16** — 0 means 0; bar side-padding knobs
 - **v5.15** — the ribbon Design reorg, and the 1px lie
 - **v5.14** — per-kind ribbon geometry
 - **v5.13** — title page out of Pages; the Design field you can type in

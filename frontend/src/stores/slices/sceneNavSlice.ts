@@ -46,6 +46,11 @@ export interface SceneNavSlice {
    *  v4.94 pagesThumbPx column-width model. */
   pagesPerRow: number;
   setPagesPerRow: (v: number) => void;
+  /** v5.20, Derek: "Copy the Pages-per-row tool… It will be 'Cards per
+   *  row'" — the Scenes card view's column count, same model: the number IS
+   *  the meaning, stepped with buttons, never typed. */
+  cardsPerRow: number;
+  setCardsPerRow: (v: number) => void;
   /** v5.12, Derek: below this width the Scenes list swaps its three-column
    *  table for the compressed caret rows. His call on where that line sits —
    *  a Design slider drives it (store-bound token), persisted. */
@@ -62,6 +67,12 @@ export type LocationSort = 'scene' | 'name' | 'count';
 export const PAGES_PER_ROW_MIN = 1;
 export const PAGES_PER_ROW_MAX = 8;
 export const PAGES_PER_ROW_DEFAULT = 3;
+
+/** v5.20: the Scenes card grid is `repeat(<count>, 1fr)` too — the CSS
+ *  fallback in .index-cards-grid must equal CARDS_PER_ROW_DEFAULT. */
+export const CARDS_PER_ROW_MIN = 1;
+export const CARDS_PER_ROW_MAX = 8;
+export const CARDS_PER_ROW_DEFAULT = 3;
 
 /** v5.12: the table↔caret switch line. Default 700: Derek's screenshot of
  *  the ~570px pop-out came captioned "should have already moved the synopsis
@@ -93,6 +104,8 @@ export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlic
   pagesPerRow: PAGES_PER_ROW_DEFAULT,
   // Clamped HERE, not at the buttons, so no caller can push it out of range.
   setPagesPerRow: (v) => set({ pagesPerRow: Math.min(PAGES_PER_ROW_MAX, Math.max(PAGES_PER_ROW_MIN, Math.round(v))) }),
+  cardsPerRow: CARDS_PER_ROW_DEFAULT,
+  setCardsPerRow: (v) => set({ cardsPerRow: Math.min(CARDS_PER_ROW_MAX, Math.max(CARDS_PER_ROW_MIN, Math.round(v))) }),
   scenesTableMinW: (_vs.scenesTableMinW as number) ?? SCENES_TABLE_MIN_DEFAULT,
   setScenesTableMinW: (v) => {
     const scenesTableMinW = Math.min(2000, Math.max(300, Math.round(v)));

@@ -1,5 +1,15 @@
 [
   {
+    "version": "5.20",
+    "date": "2026-07-28",
+    "changes": [
+      "Scenes: the Filter popover now fits inside its window — sized to the window it opens in (floating, docked or fullscreen), with the color dots wrapping instead of spilling out",
+      "Scenes: card view gains a \"Cards per row:\" stepper (the Pages control, copied) leading the action row; Reorder moved to the row's right edge",
+      "Only one header menu at a time: opening the View menu closes the Filter popover and vice versa — across every tool window",
+      "Scene cards wear a lighter background, one step up the surface ladder in both themes"
+    ]
+  },
+  {
     "version": "5.19",
     "date": "2026-07-28",
     "changes": [

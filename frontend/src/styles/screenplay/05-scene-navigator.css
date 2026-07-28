@@ -283,7 +283,7 @@
 /* (v5.03: the click-to-expand detail panel and its styles are gone — the
    row prints the page count, the runtime and the synopsis itself now.) */
 /* Color filter dots */
-.scene-filter-colors { display: flex; gap: 4px; align-items: center; }
+.scene-filter-colors { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 .scene-filter-color-dot {
   width: 16px; height: 16px; border-radius: 50%; border: 2px solid transparent;
   cursor: pointer; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(128,128,128,0.3);
@@ -672,6 +672,9 @@
 .scene-filter-row {
   display: flex;
   gap: 6px;
+  /* v5.20: the popover is sized to its window now — a row whose content
+     can't shrink (the color dots) wraps instead of overflowing the box. */
+  flex-wrap: wrap;
 }
 .scene-filter-select {
   flex: 1;

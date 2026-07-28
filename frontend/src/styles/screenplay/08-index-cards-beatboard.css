@@ -57,7 +57,12 @@
    auto-fill + minmax reflows off the panel's own width, like the Pages grid. */
 .index-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  /* v5.20, Derek: "Cards per row" stepper (the Pages per-row control,
+     copied) — the count is HIS number now, so fixed columns are right again:
+     unlike the old hardcoded repeat(3,1fr) this steps down to 1 in a narrow
+     panel by hand. Inline --cards-per-row from IndexCards; the fallback must
+     equal CARDS_PER_ROW_DEFAULT (sceneNavSlice). */
+  grid-template-columns: repeat(var(--cards-per-row, 3), 1fr);
   gap: 12px;
   padding: 12px 16px;
 }
@@ -120,7 +125,10 @@
 }
 .index-card {
   display: flex;
-  background: var(--fd-dropdown-bg);
+  /* v5.20, Derek: "a lighter background color" — one step up the surface
+     ladder (navigator #252525 body → dropdown #2d2d2d was the card →
+     toolbar #353535 now), lighter in the light theme too. */
+  background: var(--fd-toolbar-bg);
   border: 1px solid var(--fd-border);
   border-radius: var(--dz-ic-radius, 6px);
   overflow: hidden;

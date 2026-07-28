@@ -53,14 +53,28 @@ export const ControlDropdown: React.FC<{
     // (focus scroll / anchoring) — without it the menu dies the frame it
     // opens. Genuine user scrolling still dismisses.
     const openedAt = performance.now();
-    const close = () => setPos(null);
+    const closeNow = () => setPos(null);
+    // v5.20, Derek: "opening the second closes the first." The close must
+    // run in the CAPTURE phase with an explicit outside test: sibling header
+    // controls (this one included) stopPropagation on pointerdown as the
+    // window-drag guard, so a bubble-phase listener never heard presses on
+    // them and two menus could sit open side by side. Capture runs before
+    // any stopPropagation; clicks inside the menu or on the trigger are
+    // exempt (the trigger's own onClick toggles).
+    const close = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (btnRef.current?.contains(t)) return;
+      const el = t instanceof Element ? t : (t as ChildNode).parentElement;
+      if (el?.closest('.tool-ctl-menu')) return;
+      setPos(null);
+    };
     const closeOnScroll = () => { if (performance.now() - openedAt > 150) setPos(null); };
-    window.addEventListener('pointerdown', close);
-    window.addEventListener('resize', close);
+    window.addEventListener('pointerdown', close, true);
+    window.addEventListener('resize', closeNow);
     window.addEventListener('scroll', closeOnScroll, true);
     return () => {
-      window.removeEventListener('pointerdown', close);
-      window.removeEventListener('resize', close);
+      window.removeEventListener('pointerdown', close, true);
+      window.removeEventListener('resize', closeNow);
       window.removeEventListener('scroll', closeOnScroll, true);
     };
   }, [pos]);

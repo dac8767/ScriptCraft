@@ -128,3 +128,41 @@ describe('SceneControls (row-2 cluster)', () => {
     expect(useEditorStore.getState().scenesReorderMode).toBe(true);
   });
 });
+
+/* v5.20, Derek's batch: only one header menu open at a time; the card view's
+ * "Cards per row" stepper leads the action row with Reorder right-aligned. */
+describe('v5.20: menu exclusivity and the Scenes action row', () => {
+  it('opening the View menu closes the Filter popover, and vice versa', () => {
+    act(() => root.render(<SceneControls />));
+    const filterBtn = Array.from(host.querySelectorAll('button.tool-ctl'))
+      .find((b) => b.textContent?.includes('Filter')) as HTMLButtonElement;
+    const viewBtn = Array.from(host.querySelectorAll('button.tool-ctl'))
+      .find((b) => b.getAttribute('title') === 'View') as HTMLButtonElement;
+    expect(filterBtn).toBeDefined();
+    expect(viewBtn).toBeDefined();
+
+    // Open Filter…
+    act(() => { filterBtn.click(); });
+    expect(document.querySelector('.fs-scene-filterpop')).not.toBeNull();
+
+    // …then PRESS View: the capture-phase closer must drop the popover even
+    // though the trigger stopPropagations its pointerdown (the drag guard).
+    act(() => { viewBtn.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true })); });
+    expect(document.querySelector('.fs-scene-filterpop')).toBeNull();
+    act(() => { viewBtn.click(); });
+    expect(document.querySelector('.tool-ctl-menu')).not.toBeNull();
+
+    // And back: pressing Filter closes the View menu.
+    act(() => { filterBtn.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true })); });
+    expect(document.querySelector('.tool-ctl-menu')).toBeNull();
+  });
+
+  it('setCardsPerRow clamps to the 1–8 range and rounds', () => {
+    useEditorStore.getState().setCardsPerRow(99);
+    expect(useEditorStore.getState().cardsPerRow).toBe(8);
+    useEditorStore.getState().setCardsPerRow(0);
+    expect(useEditorStore.getState().cardsPerRow).toBe(1);
+    useEditorStore.getState().setCardsPerRow(3.6);
+    expect(useEditorStore.getState().cardsPerRow).toBe(4);
+  });
+});

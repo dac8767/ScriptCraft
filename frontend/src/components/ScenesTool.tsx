@@ -6,21 +6,47 @@
 // is just the body.
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
+import { CARDS_PER_ROW_MAX, CARDS_PER_ROW_MIN } from '../stores/slices/sceneNavSlice';
 import SceneNavigator, { ScenesReorderControl } from './SceneNavigator';
 import IndexCards from './IndexCards';
 import { ToolActionRow } from './ToolControls';
+import { CircleMinusIcon, CirclePlusIcon } from './uiIcons';
 
 export function ScenesTool({ editor, scrollContainer }: {
   editor: Editor | null;
   scrollContainer?: HTMLDivElement | null;
 }) {
   const mode = useEditorStore((s) => s.scenesViewMode);
+  const cardsPerRow = useEditorStore((s) => s.cardsPerRow);
+  const setCardsPerRow = useEditorStore((s) => s.setCardsPerRow);
   return (
     <div className="scenes-tool">
       {/* v5.01, Derek: Reorder is the Scenes tool's OWN action, so it sits in
           the first row of the body rather than in the shared header cluster.
-          Here (not in SceneNavigator) because it drives BOTH views. */}
-      <ToolActionRow><ScenesReorderControl /></ToolActionRow>
+          Here (not in SceneNavigator) because it drives BOTH views.
+          v5.20, Derek: the card view's "Cards per row:" stepper (the Pages
+          per-row control, copied) leads the row; Reorder is right-aligned. */}
+      <ToolActionRow>
+        {mode === 'cards' && (
+          <span className="tool-action-group">
+            <span className="tool-action-label" id="scenes-cardsrow-label">Cards per row:</span>
+            <button
+              className="tool-action-btn tool-action-icon"
+              title="Fewer cards per row (bigger cards)"
+              disabled={cardsPerRow <= CARDS_PER_ROW_MIN}
+              onClick={() => setCardsPerRow(cardsPerRow - 1)}
+            ><CircleMinusIcon /></button>
+            <span className="tool-action-count" aria-labelledby="scenes-cardsrow-label">{cardsPerRow}</span>
+            <button
+              className="tool-action-btn tool-action-icon"
+              title="More cards per row (smaller cards)"
+              disabled={cardsPerRow >= CARDS_PER_ROW_MAX}
+              onClick={() => setCardsPerRow(cardsPerRow + 1)}
+            ><CirclePlusIcon /></button>
+          </span>
+        )}
+        <span className="tool-action-right"><ScenesReorderControl /></span>
+      </ToolActionRow>
       <div className="scenes-tool-body">
         {mode === 'cards' ? (
           <IndexCards editor={editor} />

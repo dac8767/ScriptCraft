@@ -1306,7 +1306,7 @@ export function SceneControls() {
 
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -1315,15 +1315,30 @@ export function SceneControls() {
       if (!t.closest('.fs-scene-filterpop') && t !== btnRef.current && !btnRef.current?.contains(t)) setOpen(false);
     };
     const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('pointerdown', close);
+    // v5.20, Derek: "opening the second closes the first." CAPTURE phase —
+    // the sibling header controls stopPropagation on pointerdown (the
+    // window-drag guard), which starved this bubble listener, so this
+    // popover sat open next to the View menu. Capture hears every press.
+    document.addEventListener('pointerdown', close, true);
     document.addEventListener('keydown', key);
-    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', key); };
+    return () => { document.removeEventListener('pointerdown', close, true); document.removeEventListener('keydown', key); };
   }, [open]);
 
   const toggle = () => {
     if (!open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 6, left: Math.max(8, Math.min(r.right - 240, window.innerWidth - 256)) });
+      // v5.20, Derek: "the filter menu spills out of the window." Fit the
+      // popover INSIDE the hosting shape — floating window, docked panel or
+      // fullscreen takeover — right-aligned to the trigger and clamped to
+      // that box; the rows inside wrap to the width instead of overflowing.
+      // (The old left math assumed the popover's pre-v3.54 240px width.)
+      const winEl = btnRef.current.closest('.tool-window, .tool-inline, .fs-tool-takeover');
+      const win = winEl ? winEl.getBoundingClientRect() : new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+      const width = Math.min(400, Math.max(240, win.width - 16));
+      let left = r.right - width;
+      left = Math.max(win.left + 8, Math.min(left, win.right - width - 8));
+      left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
+      setPos({ top: r.bottom + 6, left, width });
     }
     setOpen((v) => !v);
   };
@@ -1344,7 +1359,7 @@ export function SceneControls() {
         {activeCount > 0 && <span className="tool-ctl-chip">{activeCount}</span>}
       </button>
       {open && pos && createPortal(
-        <div className="fs-scene-filterpop scene-filters" style={{ top: pos.top, left: pos.left }}>
+        <div className="fs-scene-filterpop scene-filters" style={{ top: pos.top, left: pos.left, width: pos.width }}>
           <div className="scene-filter-group">
             <select
               className="scene-filter-select"

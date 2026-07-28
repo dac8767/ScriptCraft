@@ -85,6 +85,7 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor }) => {
   // location/prefix/time details come from the shared doc walk.
   const sceneFilters = useEditorStore((s) => s.sceneFilters);
   const sceneSearch = useEditorStore((s) => s.sceneSearch);
+  const cardsPerRow = useEditorStore((s) => s.cardsPerRow);
 
   const filterDetails = useMemo(
     () => (editor ? computeSceneFilterDetails(editor.state.doc) : []),
@@ -494,7 +495,9 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor }) => {
           and fullscreen in row 1. Only the reorder CONTEXT bar remains,
           shown while a reorder is in progress. */}
       {dragMode && <SceneReorderBar r={reorder} />}
-      <div className="index-cards-grid" ref={gridRef} style={{ position: 'relative' }}>
+      {/* v5.20, Derek: the column count is the "Cards per row" stepper's
+          number (ScenesTool action row) — same model as the Pages grid. */}
+      <div className="index-cards-grid" ref={gridRef} style={{ position: 'relative', '--cards-per-row': cardsPerRow } as React.CSSProperties}>
         {visibleScenes.length === 0 ? (
           <div className="index-cards-empty">
             {narrowed
