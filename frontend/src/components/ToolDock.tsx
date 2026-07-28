@@ -757,7 +757,14 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   const activeId = side === 'left' ? activeTool : activeToolRight;
   const setActive = side === 'left' ? setActiveTool : setActiveToolRight;
   const active = tools.find((t) => t.id === activeId) || null;
-  const { toolSizes, setToolSize, toolMode, setToolMode, panelSizeMode, chromeCustomPx, setChromeCustomPx, setPanelSizeMode, uiResizeLocked, panelItemScale } = useEditorStore();
+  // v5.03: the dock's open/close decisions and its caret both go through the
+  // store's isToolOpen — one definition of "open", so the row can't say closed
+  // and behave open. Taken off the whole-store subscription below on purpose:
+  // useEditorStore((s) => s.isToolOpen) would subscribe to a STABLE function
+  // identity and never re-render when fullscreenTool changed, leaving a stale
+  // chevron. `activeId` still decides which tool renders INLINE in this panel —
+  // a different question, and a side-specific one.
+  const { toolSizes, setToolSize, toolMode, setToolMode, panelSizeMode, chromeCustomPx, setChromeCustomPx, setPanelSizeMode, uiResizeLocked, panelItemScale, isToolOpen, closeTool } = useEditorStore();
   const dockW = dockWidthFor(side, panelSizeMode[side], chromeCustomPx[side === 'left' ? 'panelLeft' : 'panelRight']);
   // v0.66: by DEFAULT every window opens INSIDE its side panel (inline),
   // pushing the dock's remaining items down — so nothing floats over the
@@ -801,7 +808,14 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
    *  entry: it opens the tool in whatever shape it was left in, and only the
    *  explicit gestures (drag out, drop in, fullscreen, shrink) change that. */
   const openFromRow = (t: ToolDef) => {
-    if (activeId === t.id) { setActive(null); return; }   // clicking an open tool closes it
+    /* v5.03, Derek: "clicking on the tool name in the side panel should close
+       it, including if it is in full screen mode." It didn't, because the test
+       here was `activeId === t.id` — this side's PANEL slot — and
+       enterToolFullscreen CLEARS that slot when it raises the takeover. So a
+       fullscreen tool read as closed, fell through to the branch below, and
+       re-entered the fullscreen it was already in. The row looked live and did
+       nothing. isToolOpen/closeTool are the store's one answer; ask them. */
+    if (isToolOpen(t.id)) { closeTool(t.id); return; }
     const mode = toolMode[t.id] ?? (t.noPanelFit ? 'floating' : 'docked');
     if (mode === 'fullscreen' && !NO_FULLSCREEN.includes(t.id)) {
       useEditorStore.getState().enterToolFullscreen(t.id);
@@ -1017,9 +1031,12 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
         {iconsMode ? shownEntries.map((entry) => entry.kind === 'tool' ? (
           <button
             key={entry.tool.id}
-            className={`tool-dock-iconbtn${activeId === entry.tool.id ? ' active' : ''}`}
+            className={`tool-dock-iconbtn${isToolOpen(entry.tool.id) ? ' active' : ''}`}
             title={entry.tool.label}
-            onClick={() => setActive(activeId === entry.tool.id ? null : entry.tool.id)}
+            // v5.03: the collapsed rail is the same list — an open tool closes,
+            // and "open" includes the fullscreen takeover. It used to call
+            // setActive(id) on a fullscreen tool, which DOCKED it instead.
+            onClick={() => (isToolOpen(entry.tool.id) ? closeTool(entry.tool.id) : setActive(entry.tool.id))}
           >
             {entry.tool.icon}
           </button>
@@ -1064,7 +1081,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
             <div
               role="button"
               tabIndex={0}
-              className={'tool-dock-item' + (activeId === t.id ? ' active' : '') + (isOpenInline ? ' tool-dock-item-header' : '')}
+              className={'tool-dock-item' + (isToolOpen(t.id) ? ' active' : '') + (isOpenInline ? ' tool-dock-item-header' : '')}
               onClick={(e) => {
                 // Header controls (dropdowns, chrome buttons) act, they don't toggle.
                 if ((e.target as HTMLElement).closest('select, input, button')) return;
@@ -1090,7 +1107,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
               {/* v1.34: Premiere-style caret — a SINGLE chevron: right when
                 * closed, down when open. */}
               <span className="tool-dock-caret">
-                {activeId === t.id ? <FaChevronDown /> : <FaChevronRight />}
+                {isToolOpen(t.id) ? <FaChevronDown /> : <FaChevronRight />}
               </span>
               <span className="tool-dock-icon">{t.icon}</span>
               <span className={`tool-dock-label${nameUpper ? ' tool-name-upper' : ''}`}>{t.label}</span>

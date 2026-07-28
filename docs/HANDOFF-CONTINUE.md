@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.02 — the Scenes list is a five-column table with an inline synopsis field)
+# ScriptCraft — continuation brief (current as of v5.03 — resizable scene columns; a full-screen tool closes from its panel row)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,59 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.02 — the Scenes list is a TABLE (HEAD)
+### v5.03 — resizable scene columns; the full-screen close bug (HEAD)
+
+**The bug worth remembering.** Derek: "clicking on the tool name in the side
+panel should close it, including if it is in full screen mode." It didn't.
+`enterToolFullscreen` CLEARS the tool's panel slot and raises a separate
+`fullscreenTool` field — so the dock's own close test, `activeId === t.id`,
+saw a fullscreen tool as CLOSED. The click fell through to the open path and
+re-entered the fullscreen it was already in. A live-looking control writing
+into the void. `toggleTool` had known the right test all along (it checks all
+four slots); the dock had grown a second, narrower copy of the question.
+- `isToolOpen(id)` and `closeTool(id)` are now store actions and THE answer.
+  `toggleTool` delegates to them; so do the dock row, its caret and highlight,
+  and the collapsed icon rail (which used to DOCK a fullscreen tool instead of
+  closing it). 10 tests in `stores/isToolOpen.test.ts`.
+- ToolDock takes them off its existing whole-store `useEditorStore()`
+  destructure on purpose: `useEditorStore((s) => s.isToolOpen)` subscribes to a
+  STABLE function identity and would never re-render when `fullscreenTool`
+  changed, leaving a stale chevron.
+
+**Scenes list (Derek's four follow-ups to v5.02).**
+- **Click-to-expand is GONE.** Everything the panel showed — page count,
+  runtime, synopsis — is on the row now. Clicking a scene jumps to it, full
+  stop. `.scene-synopsis-expanded` / `-text` / `-empty` / `-edit-btn`,
+  `.scene-detail-meta`, `.scene-meta-item` and `.navigator-scene.expanded` are
+  all deleted.
+  - **CONSEQUENCE, flagged to Derek:** that panel's Edit / + Add button was the
+    List view's ONLY entry point to `SynopsisModal`, so scene COLOUR and the
+    runtime override are Cards-view-only for now. The modal itself is alive
+    (IndexCards opens it); SceneNavigator's unreachable copy was removed.
+- **Resizable columns.** `sceneColWidths: {head, metrics}` in the store,
+  persisted in viewState, reaching the grid as `--scene-col-head` /
+  `--scene-metrics-w` on the navigator root. The synopsis column takes the
+  slack, so two numbers describe the whole table. The header row wears
+  `.scene-heading-row` ITSELF — same template as the data rows, so a resized
+  column cannot line up in one and miss in the other. During a drag the CSS
+  var is written straight to the element; the store commits on release.
+  - **The grip that couldn't be grabbed:** `.scene-metrics` clips its text
+    (`overflow: hidden`) and the metrics grip hangs off that cell's LEFT edge
+    at -9px, so it was clipped away entirely. The drag reported zero movement
+    until `.scene-list-header .scene-metrics { overflow: visible }`. Found by
+    driving it, not by reading it.
+- **The container moved from `.navigator-list` to `.scene-navigator`.** A
+  container query only reaches its container's DESCENDANTS, and the column
+  header is a SIBLING of the list — anchored on the list, the rows collapsed
+  to two lines while the header went on drawing five columns above them.
+- **Both figures on every row**, `0:00` included, with runtimes in the accent
+  colour and page counts in muted text (Derek: "make all of the times a
+  different color than the page count").
+- **Reorder** is bigger, centred (`margin-inline: auto` in the flex action
+  row), with its own resting fill and AMBER while active — "on" must not look
+  like "available" when it is holding an unapplied order.
+
+### v5.02 — the Scenes list is a TABLE
 
 Derek posted a mockup: "this is what i want the scene list page to look like.
 spacing and alignment is not exact here. make spacing and alignment uniform."

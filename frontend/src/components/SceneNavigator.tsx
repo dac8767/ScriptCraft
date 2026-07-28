@@ -6,12 +6,11 @@ import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlic
 import { PAGES_THUMB_MIN, PAGES_THUMB_MAX, PAGES_THUMB_STEP } from '../stores/slices/sceneNavSlice';
 import { CircleMinusIcon, CirclePlusIcon } from './uiIcons';
 import { computeSceneLengths, computePageBlocks, type PageContentInfo } from '../editor/pagination';
-import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../utils/scriptTiming';
+import { computeSceneTiming, formatSceneDuration } from '../utils/scriptTiming';
 import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
 import { parseHeading, computeSceneFilterDetails, sceneFilterOptions, filterSceneIndices, countActiveSceneFilters, type SceneFilterDetail } from '../utils/sceneFilters';
 import { useSceneReorder } from '../utils/useSceneReorder';
-import SynopsisModal from './SynopsisModal';
 import { ControlDropdown, ControlSearch, ToolActionRow } from './ToolControls';
 import { SceneReorderBar } from './IndexCards';
 import { LuLayoutGrid, LuList } from 'react-icons/lu';
@@ -195,7 +194,7 @@ const LINE_HEIGHT_PX = 12 * (96 / 72); // 16px — matches pagination LINE_HEIGH
 // ── Main component ──────────────────────────────────────────────────────
 
 const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer, view }) => {
-  const { scenes, updateSceneSynopsis, updateSceneColor } = useEditorStore();
+  const { scenes, updateSceneSynopsis } = useEditorStore();
   const pageLayout = useEditorStore((s) => s.pageLayout);
   const fontFamily = useEditorStore((s) => s.fontFamily);
   const fontSize = useEditorStore((s) => s.fontSize);
@@ -206,7 +205,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const renameInputRef = useRef<HTMLInputElement>(null);
 
   // Expanded scene (shows synopsis inline)
-  const [expandedSceneIdx, setExpandedSceneIdx] = useState<number | null>(null);
 
   // v3.54, Derek: the search + filters live in the store — the window chrome
   // (SceneTitleExtra count, SceneControls cluster) renders them outside this
@@ -226,11 +224,51 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
 
   // Page preview state
   const pageGridRef = useRef<HTMLDivElement>(null);
+  /* v5.03, Derek: resizable scene-list columns. The widths live in the store
+     (persisted) and reach the grid as CSS variables on this root — the header
+     row and every data row read the SAME two variables, so they cannot
+     disagree. During a drag the variable is written straight to the element
+     and the store is left alone; committing on every pointermove would
+     re-render the whole list per pixel. */
+  const navRootRef = useRef<HTMLDivElement>(null);
+  const sceneColWidths = useEditorStore((s) => s.sceneColWidths);
+  const setSceneColWidth = useEditorStore((s) => s.setSceneColWidth);
+  const COL_LIMITS = { head: { min: 90, max: 900, varName: '--scene-col-head', dir: 1 },
+                       metrics: { min: 74, max: 260, varName: '--scene-metrics-w', dir: -1 } } as const;
+
+  const startColResize = (key: 'head' | 'metrics') => (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();                       // the header sits on the row; don't start a row drag
+    const { min, max, varName, dir } = COL_LIMITS[key];
+    const startX = e.clientX;
+    const startW = sceneColWidths[key];
+    const grip = e.currentTarget as HTMLElement;
+    grip.setPointerCapture(e.pointerId);
+    let w = startW;
+    // dir: the metrics grip is on that column's LEFT edge, so dragging right
+    // makes it NARROWER. Without this the metrics column ran the wrong way.
+    const onMove = (ev: PointerEvent) => {
+      w = Math.max(min, Math.min(max, startW + dir * (ev.clientX - startX)));
+      navRootRef.current?.style.setProperty(varName, `${w}px`);
+    };
+    const onUp = () => {
+      grip.releasePointerCapture(e.pointerId);
+      grip.removeEventListener('pointermove', onMove);
+      grip.removeEventListener('pointerup', onUp);
+      setSceneColWidth(key, w);
+    };
+    grip.addEventListener('pointermove', onMove);
+    grip.addEventListener('pointerup', onUp);
+  };
+
   const [thumbScale, setThumbScale] = useState(0.35);
   const [currentVisiblePage, setCurrentVisiblePage] = useState(1);
 
-  // Synopsis modal state
-  const [synopsisModal, setSynopsisModal] = useState<{ sceneIdx: number; id: string; heading: string; synopsis: string; color: string } | null>(null);
+  /* v5.03: the synopsis MODAL is gone from this view. Its only entry point
+     was the Edit / + Add button inside the click-to-expand panel Derek asked
+     to remove, so it became unreachable code the moment that panel went. The
+     modal itself still lives (IndexCards opens it), and with it the scene
+     COLOUR picker and the runtime override — Cards view only, for now. */
 
   /* v5.02: the ONE place scene-heading attrs are written back to the document.
      The synopsis is now editable from two places — the inline field on the row
@@ -267,17 +305,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
       setSceneHeadingAttrs(sceneIdx, { synopsis });
     },
     [updateSceneSynopsis, setSceneHeadingAttrs],
-  );
-
-  const handleSaveSynopsis = useCallback(
-    (synopsis: string, color: string, timingOverride?: number | null) => {
-      if (!synopsisModal) return;
-      const { sceneIdx, id } = synopsisModal;
-      updateSceneSynopsis(id, synopsis);
-      updateSceneColor(id, color);
-      setSceneHeadingAttrs(sceneIdx, { synopsis, sceneColor: color, timingOverride: timingOverride ?? null });
-    },
-    [synopsisModal, updateSceneSynopsis, updateSceneColor, setSceneHeadingAttrs],
   );
 
   const allLocations = useMemo(() => groupByLocation(scenes), [scenes]);
@@ -622,7 +649,11 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
 
   return (
     <>
-    <div className="scene-navigator scene-navigator-embed">
+    <div
+      className="scene-navigator scene-navigator-embed"
+      ref={navRootRef}
+      style={{ '--scene-col-head': `${sceneColWidths.head}px`, '--scene-metrics-w': `${sceneColWidths.metrics}px` } as React.CSSProperties}
+    >
 
       {/* ── Scenes tab ───────────────────────────────────────────────── */}
       {/* v4.27, Derek: the count sits beside the window title
@@ -699,6 +730,26 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
         </>
       )}
       {activeTab === 'scenes' && !reorder.dragMode && (
+          <>
+          {/* v5.03, Derek: "make it so I can adjust the size of the columns".
+              The header IS a .scene-heading-row, so it reads the very same
+              grid template as every data row — one template, so a resized
+              column cannot line up in the header and miss in the list. The
+              grips write --scene-col-head / --scene-metrics-w onto the tool
+              body, which is the common ancestor of the header and the rows. */}
+          <div className="scene-heading-row scene-list-header" aria-hidden="true">
+            <span className="scene-num-cell" />
+            <span className="scene-heading-text">
+              <span className="scene-col-title">Scene</span>
+              <span className="scene-col-grip" onPointerDown={startColResize('head')} title="Drag to resize" />
+            </span>
+            <span className="scene-col-title scene-col-title-syn">Synopsis</span>
+            <span className="scene-metrics">
+              <span className="scene-col-grip scene-col-grip-left" onPointerDown={startColResize('metrics')} title="Drag to resize" />
+              <span className="scene-col-title">Length</span>
+            </span>
+            <span className="scene-length" />
+          </div>
           <div className="navigator-list">
             {filteredIndices.length === 0 ? (
               <div className="navigator-empty">
@@ -710,10 +761,13 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               filteredIndices.map((sceneIdx) => {
                 const scene = scenes[sceneIdx];
                 const detail = sceneDetails[sceneIdx];
-                const isExpanded = expandedSceneIdx === sceneIdx;
                 return (
-                  <div key={scene.id} className={`navigator-scene${isExpanded ? ' expanded' : ''}`}>
-                    <div className="scene-info" onClick={() => { setExpandedSceneIdx(isExpanded ? null : sceneIdx); goToScene(sceneIdx); }}>
+                  <div key={scene.id} className="navigator-scene">
+                    {/* v5.03, Derek: clicking a scene JUMPS to it and nothing
+                        else. The old click also unfolded a detail panel that
+                        repeated the row's own page count, runtime and synopsis
+                        back at you — everything it showed is on the row now. */}
+                    <div className="scene-info" onClick={() => goToScene(sceneIdx)}>
                       {/* v5.02, Derek's mockup: five columns, and the SAME
                           five on every row — number · heading · synopsis field
                           · metrics · length icon. These are grid tracks, not
@@ -759,55 +813,26 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                             if (next !== scene.synopsis) writeSceneSynopsis(sceneIdx, scene.id, next);
                           }}
                         />
+                        {/* v5.03, Derek: "always show a page count and a time
+                            here… make the first item 0:00". Both figures on
+                            every row — a scene that hadn't accrued a second
+                            printed a page count and then nothing, and the
+                            column read ragged for a reason that wasn't real. */}
                         <span className="scene-metrics">
-                          {detail && detail.pageLength > 0 && (
-                            <span className="scene-metric-pages">{formatPageLength(detail.pageLength)}</span>
-                          )}
-                          {sceneTimings[sceneIdx]?.finalSeconds > 0 && (
-                            <span className="scene-metric-time">{formatSceneDuration(sceneTimings[sceneIdx].finalSeconds)}</span>
-                          )}
+                          <span className="scene-metric-pages">{formatPageLength(detail?.pageLength ?? 0)}</span>
+                          <span className="scene-metric-time">{formatSceneDuration(sceneTimings[sceneIdx]?.finalSeconds ?? 0)}</span>
                         </span>
                         <span className="scene-length">
                           {detail && detail.pageLength > 0 && <SceneLengthIcon pages={detail.pageLength} />}
                         </span>
                       </div>
-                      {isExpanded && (
-                        <div className="scene-synopsis-expanded">
-                          {(detail || sceneTimings[sceneIdx]) && (
-                            <div className="scene-detail-meta">
-                              {detail && detail.pageLength > 0 && (
-                                <span className="scene-meta-item">{formatPageLength(detail.pageLength)}</span>
-                              )}
-                              {sceneTimings[sceneIdx]?.finalSeconds > 0 && (
-                                <span className="scene-meta-item" style={{ color: getTimingColor(sceneTimings[sceneIdx].finalSeconds) }}>
-                                  {formatSceneDuration(sceneTimings[sceneIdx].finalSeconds)}
-                                  {sceneTimings[sceneIdx].overrideSeconds != null && ' *'}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                          {scene.synopsis ? (
-                            <div className="scene-synopsis-text">{scene.synopsis}</div>
-                          ) : (
-                            <div className="scene-synopsis-empty">No synopsis for this scene available.</div>
-                          )}
-                          <button
-                            className="scene-synopsis-edit-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSynopsisModal({ sceneIdx, id: scene.id, heading: scene.heading, synopsis: scene.synopsis, color: scene.color });
-                            }}
-                          >
-                            {scene.synopsis ? 'Edit' : '+ Add'}
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 );
               })
             )}
           </div>
+          </>
       )}
 
       {/* ── Pages tab ────────────────────────────────────────────────── */}
@@ -1054,19 +1079,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
         </>
       )}
     </div>
-    {synopsisModal && createPortal(
-      <SynopsisModal
-        sceneHeading={synopsisModal.heading}
-        synopsis={synopsisModal.synopsis}
-        sceneColor={synopsisModal.color}
-        pageLength={sceneDetails[synopsisModal.sceneIdx]?.pageLength}
-        autoTimingSeconds={sceneTimings[synopsisModal.sceneIdx]?.autoEstimateSeconds}
-        timingOverride={sceneTimings[synopsisModal.sceneIdx]?.overrideSeconds}
-        onSave={handleSaveSynopsis}
-        onClose={() => setSynopsisModal(null)}
-      />,
-      document.body,
-    )}
     </>
   );
 };
@@ -1179,7 +1191,7 @@ export function ScenesReorderControl() {
   const setReorder = useEditorStore((s) => s.setScenesReorderMode);
   return (
     <button
-      className={`tool-action-btn${reorder ? ' active' : ''}`}
+      className={`tool-action-btn scene-reorder-btn${reorder ? ' active' : ''}`}
       title={reorder ? 'Exit reorder mode (discards unapplied order)' : 'Drag scenes into a new order'}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={() => setReorder(!reorder)}

@@ -86,6 +86,16 @@ describe('every row carries the same five cells', () => {
     expect(f.map((el) => el.value)).toEqual(['', 'She loses the tail in the rain.', '']);
   });
 
+  /* v5.03, Derek: "always show a page count and a time here. for this first
+     item, make the time 0:00." With no editor there are no page lengths and
+     no timings at all, which is the harshest version of that case. */
+  it('prints a page count AND a time on every row, even with nothing measured', () => {
+    for (const r of rows()) {
+      expect(r.querySelector('.scene-metric-pages')?.textContent).toBeTruthy();
+      expect(r.querySelector('.scene-metric-time')?.textContent).toBe('0:00');
+    }
+  });
+
   it('keeps the number cell even when the scene is unnumbered', () => {
     // The third scene has sceneNumber null: the badge is gone, the CELL is not.
     const third = rows()[2];
@@ -129,20 +139,15 @@ describe('the inline synopsis field writes back', () => {
     expect(useEditorStore.getState().scenes).toBe(before);   // same array identity: no set() ran
   });
 
-  it('clicking the field does not toggle the row open', () => {
-    // The row's own click handler expands it and jumps the editor to the
-    // scene. Clicking into the synopsis must do neither — a field that
-    // scrolls the script out from under you as you click it is unusable.
-    // Asserted through the rendered result, not a native listener: React
-    // dispatches from the root, so a hand-attached listener sees every click
-    // regardless of stopPropagation and would pass no matter what.
-    act(() => { fields()[0].dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    expect(host.querySelector('.navigator-scene.expanded')).toBeNull();
-  });
-
-  it('and clicking the ROW still does toggle it open', () => {
+  /* v5.03, Derek: "remove the ability to show this info when clicking on a
+     scene in the list view." Clicking a row jumps to the scene and does
+     nothing else — the panel it used to unfold repeated the row's own page
+     count, runtime and synopsis back at you. */
+  it('clicking a row unfolds no detail panel', () => {
     act(() => { host.querySelector('.scene-info')!.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    expect(host.querySelector('.navigator-scene.expanded')).toBeTruthy();
+    expect(host.querySelector('.scene-synopsis-expanded')).toBeNull();
+    expect(host.querySelector('.navigator-scene.expanded')).toBeNull();
+    expect(host.querySelector('.scene-synopsis-edit-btn')).toBeNull();
   });
 });
 
@@ -173,6 +178,15 @@ describe('scene-heading-row grid tracks', () => {
       expect(t).toMatch(/--scene-metrics-w/);     // metrics
       expect(t).toMatch(/\b16px\b/);              // length icon
     }
+  });
+
+  it('the column header is laid out by the same class as the rows', () => {
+    // Not a lookalike template of its own: .scene-list-header ALSO carries
+    // .scene-heading-row, so a resized column cannot line up in the header
+    // and miss in the list.
+    const header = host.querySelector('.scene-list-header');
+    expect(header).toBeTruthy();
+    expect(header!.classList.contains('scene-heading-row')).toBe(true);
   });
 
   it('assigns every cell a grid area, so no cell can land in the wrong track', () => {

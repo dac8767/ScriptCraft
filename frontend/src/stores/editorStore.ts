@@ -1150,6 +1150,23 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   /** Clears the tool's docked/floating slot and raises its takeover (also
    *  lowers the Scrapbook surface — that's the other editor-area owner). */
   enterToolFullscreen: (id: ToolId) => void;
+  /** v5.03, Derek: "make it so I can adjust the size of the columns in the
+   *  scene list view." Widths in px for the two resizable tracks of the scene
+   *  row — the heading column and the metrics column; the synopsis column
+   *  takes whatever is left, so two numbers describe the whole table.
+   *  Persisted with the other view state. */
+  sceneColWidths: { head: number; metrics: number };
+  setSceneColWidth: (key: 'head' | 'metrics', px: number) => void;
+  /** v5.03: THE answer to "is this tool open?" — open in any shape you can
+   *  actually SEE: a slot in a panel that is showing, the temp (no-panel)
+   *  slot, or the fullscreen takeover. Every control that opens-or-closes a
+   *  tool must ask this. The dock row had its own narrower test (this side's
+   *  panel slot only) and so could not see a fullscreen tool: clicking the
+   *  row of a fullscreen tool re-entered fullscreen and nothing happened. */
+  isToolOpen: (id: ToolId) => boolean;
+  /** Closes a tool wherever it is — both panel slots, the temp slot and the
+   *  fullscreen takeover. Pairs with isToolOpen; never guess which one. */
+  closeTool: (id: ToolId) => void;
   /** v4.24 batch-v2 #6: the character count the panel currently shows —
    *  published by CharacterProfiles so the tool-window header displays the
    *  SAME number (search-filtered, profiles ∪ live cues) without recomputing
@@ -1629,21 +1646,31 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     }
     return { tempTool: tool };
   }),
+  // "Open" means open in any shape you can actually SEE: a slot in a panel
+  // that is showing, the temp (no-panel) slot, or the fullscreen takeover.
+  // v4.86: the panel checks matter — a tool sitting in a HIDDEN panel is not
+  // open, and treating it as open made the ribbon button a silent no-op (it
+  // cleared an invisible slot and nothing appeared).
+  // v5.03: lifted out of toggleTool so it is the ONE test. The tool dock had
+  // grown a second, narrower copy that only knew about its own side's panel
+  // slot, which is why a fullscreen tool's row wouldn't close it.
+  isToolOpen: (tool) => {
+    const s = get();
+    return (s.activeTool === tool && s.navigatorOpen)
+      || (s.activeToolRight === tool && s.shelfOpen)
+      || s.tempTool === tool || s.fullscreenTool === tool;
+  },
+  closeTool: (tool) => {
+    const s = get();
+    if (s.fullscreenTool === tool) s.setFullscreenTool(null);
+    if (s.activeTool === tool) s.setActiveTool(null);
+    if (s.activeToolRight === tool) s.setActiveToolRight(null);
+    if (s.tempTool === tool) s.setTempTool(null);
+  },
   toggleTool: (tool) => {
     const s2 = get();
-    // "Open" means open in any shape you can actually SEE: a slot in a panel
-    // that is showing, a floating window, or the fullscreen takeover. v4.86:
-    // the panel checks matter — a tool sitting in a HIDDEN panel is not open,
-    // and treating it as open made the ribbon button a silent no-op (it
-    // cleared an invisible slot and nothing appeared).
-    const open = (s2.activeTool === tool && s2.navigatorOpen)
-      || (s2.activeToolRight === tool && s2.shelfOpen)
-      || s2.tempTool === tool || s2.fullscreenTool === tool;
-    if (!open) { s2.openTool(tool); return; }
-    if (s2.fullscreenTool === tool) s2.setFullscreenTool(null);
-    if (s2.activeTool === tool) s2.setActiveTool(null);
-    if (s2.activeToolRight === tool) s2.setActiveToolRight(null);
-    if (s2.tempTool === tool) s2.setTempTool(null);
+    if (!s2.isToolOpen(tool)) { s2.openTool(tool); return; }
+    s2.closeTool(tool);
   },
   toolbarHiddenItems: _vs.toolbarHiddenItems ?? [],
   toolbarPinnedTools: migrateToolOrder((_vs.toolbarPinnedTools as string[]) ?? []) as ToolId[],
@@ -1828,6 +1855,12 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   setCharListCount: (n) => set((s) => (s.charListCount === n ? {} : { charListCount: n })),
   charActiveTab: 'profiles',
   setCharActiveTab: (t) => set({ charActiveTab: t }),
+  sceneColWidths: (_vs.sceneColWidths as { head: number; metrics: number }) ?? { head: 320, metrics: 104 },
+  setSceneColWidth: (key, px) => set((s) => {
+    const sceneColWidths = { ...s.sceneColWidths, [key]: Math.round(px) };
+    saveViewState({ sceneColWidths });
+    return { sceneColWidths };
+  }),
   charViewMode: (_vs.charViewMode as 'cards' | 'list') ?? 'cards',
   setCharViewMode: (m) => { saveViewState({ charViewMode: m }); set({ charViewMode: m }); },
   relViewMode: (_vs.relViewMode as 'list' | 'map') ?? 'list',

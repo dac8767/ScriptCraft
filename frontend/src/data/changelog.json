@@ -1,5 +1,17 @@
 [
   {
+    "version": "5.03",
+    "date": "2026-07-28",
+    "changes": [
+      "Side panels: clicking a tool's name in the panel closes it even when that tool is full screen — before, the row did nothing at all in full screen. The caret and highlight now show a full-screen tool as open too, and the collapsed icon rail behaves the same way",
+      "Scenes: clicking a scene in the list jumps to it and nothing else. The panel that used to unfold underneath repeated the row's own page count, runtime and synopsis back at you",
+      "Scenes: the list columns can be resized — drag the dividers in the SCENE / SYNOPSIS / LENGTH header. The widths are remembered between sessions",
+      "Scenes: every row shows both a page count and a runtime, including 0:00 for a scene that hasn't accrued one, and runtimes are a different colour from page counts",
+      "Scenes: the Reorder button is bigger, centred, and carries its own colour — amber while reorder mode is on, so an unapplied order is obvious",
+      "Scenes: scene colour and the runtime override are set from Cards view for now — their only entry point in List view was inside the detail panel that was removed"
+    ]
+  },
+  {
     "version": "5.02",
     "date": "2026-07-28",
     "changes": [
