@@ -93,53 +93,74 @@ export const DESIGN_GROUPS: DesignGroup[] = [
   },
   {
     id: 'toolbar',
-    label: 'Toolbar / Ribbon',
+    label: 'Ribbon',
     tokens: [
-      // Button width/height scale with the compact/comfortable/custom mode, so
-      // they're owned by the toolbar mode + its height drag-bar, not here. These
-      // are the leaf properties with a single declaration in every mode:
+      // Bar-level knobs only — everything per-SECTION-KIND lives in the three
+      // groups below (v5.15, Derek's reorganisation). Button width/height
+      // scale with the compact/comfortable/custom mode, so they're owned by
+      // the toolbar mode + its height drag-bar, not here.
       { id: 'toolbarSpacing', label: 'Section spacing', unit: 'px', min: 0, max: 32, step: 1, def: 2,
         store: { get: (s) => s.chromeGapPx.toolbar, set: (v) => useEditorStore.getState().setChromeGap('toolbar', v) },
         hint: 'Gap between sections (and between big buttons).' },
-      { id: 'ribBtnGap', label: 'Button spacing (in section)', cssVar: '--dz-rib-btn-gap', unit: 'px', min: 0, max: 20, step: 1, def: 1 },
-      { id: 'ribRowGap', label: 'Two-row vertical gap', cssVar: '--dz-rib-row-gap', unit: 'px', min: -14, max: 24, step: 1, def: 0,
-        hint: 'Negative pulls the two rows of icons together.' },
-      { id: 'ribPadTop', label: 'Ribbon top padding', cssVar: '--dz-rib-pad-top', unit: 'px', min: 0, max: 30, step: 1, def: 5 },
-      { id: 'ribPadBottom', label: 'Ribbon bottom padding', cssVar: '--dz-rib-pad-bottom', unit: 'px', min: 0, max: 30, step: 1, def: 2 },
+      { id: 'ribPadTop', label: 'Bar top padding', cssVar: '--dz-rib-pad-top', unit: 'px', min: 0, max: 30, step: 1, def: 5 },
+      { id: 'ribPadBottom', label: 'Bar bottom padding', cssVar: '--dz-rib-pad-bottom', unit: 'px', min: 0, max: 30, step: 1, def: 2 },
       { id: 'toolbarBtnRadius', label: 'Button corner radius', cssVar: '--dz-toolbar-btn-radius', unit: 'px', min: 0, max: 12, step: 1, def: 5 },
-      { id: 'toolbarBigIcon', label: 'Big icon size', cssVar: '--dz-toolbar-big-icon', unit: 'px', min: 16, max: 40, step: 1, def: 26 },
-      { id: 'toolbarBigLabel', label: 'Big button label font', cssVar: '--dz-toolbar-big-label', unit: 'px', min: 7, max: 16, step: 0.5, def: 10 },
-      // v4.71, Derek: the section-title band (.rib-sec-title). The band's
-      // height tracks the font (font + 1.5px) so titled and untitled sections
-      // keep reserving the identical strip — the v4.5 determinism rule.
-      { id: 'ribTitleFont', label: 'Section title font', cssVar: '--dz-rib-title-font', unit: 'px', min: 7, max: 16, step: 0.5, def: 9.5,
+    ],
+  },
+  /* ── v5.15, Derek's spec: one group per section KIND, every spacing knob
+     per kind, redundant globals REMOVED. Casualties of the de-dup:
+     ribBtnGap + ribRowGap (globals → per-kind), ribTitlePad (the title's
+     own bottom padding did the same job as the title↔buttons gap — merged
+     into ribTitleGap, whose default grew 2→5 so nothing moved), and the two
+     ribPadY* (split into top/bottom per Derek's list). */
+  {
+    id: 'ribbonTitled',
+    label: 'Ribbon: Titled Sections',
+    tokens: [
+      { id: 'ribPadXTitled', label: 'Side padding', cssVar: '--dz-rib-pad-x-titled', unit: 'px', min: 0, max: 24, step: 1, def: 0 },
+      { id: 'ribPadTopTitled', label: 'Top padding (above the title)', cssVar: '--dz-rib-pad-top-titled', unit: 'px', min: 0, max: 16, step: 1, def: 0 },
+      { id: 'ribPadBottomTitled', label: 'Bottom padding', cssVar: '--dz-rib-pad-bottom-titled', unit: 'px', min: 0, max: 16, step: 1, def: 0 },
+      { id: 'ribRowGapTitled', label: 'Row spacing', cssVar: '--dz-rib-row-gap-titled', unit: 'px', min: -14, max: 24, step: 1, def: 0,
+        hint: 'Negative pulls the two rows together.' },
+      { id: 'ribBtnGapTitled', label: 'Horizontal button spacing', cssVar: '--dz-rib-btn-gap-titled', unit: 'px', min: 0, max: 20, step: 1, def: 1 },
+      { id: 'ribTitleGap', label: 'Space between title and buttons', cssVar: '--dz-rib-title-gap', unit: 'px', min: 0, max: 20, step: 1, def: 5 },
+      { id: 'ribTitleFont', label: 'Title font size', cssVar: '--dz-rib-title-font', unit: 'px', min: 7, max: 16, step: 0.5, def: 9.5,
         hint: 'The title band grows with the font so rows stay aligned.' },
-      { id: 'ribTitleAlign', label: 'Section title alignment', cssVar: '--dz-rib-title-align', unit: '', min: 0, max: 2, step: 1, def: 1,
+      { id: 'ribTitleAlign', label: 'Title alignment', cssVar: '--dz-rib-title-align', unit: '', min: 0, max: 2, step: 1, def: 1,
         choices: [
           { value: 0, label: 'Left', css: 'left' },
           { value: 1, label: 'Center', css: 'center' },
           { value: 2, label: 'Right', css: 'right' },
         ] },
-      { id: 'ribTitlePad', label: 'Section title padding', cssVar: '--dz-rib-title-pad', unit: 'px', min: 0, max: 12, step: 1, def: 3,
-        hint: 'Padding inside the title band itself.' },
-      // v4.84, Derek: the gap BETWEEN the title band and the section's first
-      // row of buttons — distinct from the padding inside the band above.
-      { id: 'ribTitleGap', label: 'Space below section title', cssVar: '--dz-rib-title-gap', unit: 'px', min: 0, max: 20, step: 1, def: 2,
-        hint: 'Distance from the title to the buttons under it.' },
-      /* v5.14, Derek: titled and untitled sections get their OWN scale and
-         padding knobs. The scales have no cssVar — Toolbar.tsx turns them
-         into the --rib-k-* factors (numbers), because auto-fill maths can't
-         live in CSS. Paddings are ordinary css-var tokens. */
-      { id: 'ribScaleTitled', label: 'Titled sections: scale (%)', unit: '', min: 50, max: 200, step: 5, def: 100,
-        hint: 'Size of buttons & rows in sections WITH a title',
+      { id: 'ribScaleTitled', label: 'Section scale (%)', unit: '', min: 50, max: 200, step: 5, def: 100,
+        hint: 'Size of buttons & rows in titled sections',
         store: { get: (s) => s.ribScaleTitledPct, set: (v) => useEditorStore.getState().setRibScaleTitledPct(v) } },
-      { id: 'ribScaleUntitled', label: 'Untitled sections: scale (%)', unit: '', min: 50, max: 200, step: 5, def: 100,
+    ],
+  },
+  {
+    id: 'ribbonUntitled',
+    label: 'Ribbon: Untitled Sections',
+    tokens: [
+      { id: 'ribPadXUntitled', label: 'Side padding', cssVar: '--dz-rib-pad-x-untitled', unit: 'px', min: 0, max: 24, step: 1, def: 0 },
+      { id: 'ribPadTopUntitled', label: 'Top padding', cssVar: '--dz-rib-pad-top-untitled', unit: 'px', min: 0, max: 16, step: 1, def: 0 },
+      { id: 'ribPadBottomUntitled', label: 'Bottom padding', cssVar: '--dz-rib-pad-bottom-untitled', unit: 'px', min: 0, max: 16, step: 1, def: 0 },
+      { id: 'ribRowGapUntitled', label: 'Row spacing', cssVar: '--dz-rib-row-gap-untitled', unit: 'px', min: -14, max: 24, step: 1, def: 0,
+        hint: 'Negative pulls the two rows together.' },
+      { id: 'ribBtnGapUntitled', label: 'Horizontal button spacing', cssVar: '--dz-rib-btn-gap-untitled', unit: 'px', min: 0, max: 20, step: 1, def: 1 },
+      { id: 'ribScaleUntitled', label: 'Section scale (%)', unit: '', min: 50, max: 200, step: 5, def: 100,
         hint: 'On top of auto-matching the titled sections\u2019 height',
         store: { get: (s) => s.ribScaleUntitledPct, set: (v) => useEditorStore.getState().setRibScaleUntitledPct(v) } },
-      { id: 'ribPadXTitled', label: 'Titled sections: side padding', cssVar: '--dz-rib-pad-x-titled', unit: 'px', min: 0, max: 24, step: 1, def: 0 },
-      { id: 'ribPadYTitled', label: 'Titled sections: vertical padding', cssVar: '--dz-rib-pad-y-titled', unit: 'px', min: 0, max: 16, step: 1, def: 0 },
-      { id: 'ribPadXUntitled', label: 'Untitled sections: side padding', cssVar: '--dz-rib-pad-x-untitled', unit: 'px', min: 0, max: 24, step: 1, def: 0 },
-      { id: 'ribPadYUntitled', label: 'Untitled sections: vertical padding', cssVar: '--dz-rib-pad-y-untitled', unit: 'px', min: 0, max: 16, step: 1, def: 0 },
+    ],
+  },
+  {
+    id: 'ribbonSingle',
+    label: 'Ribbon: Single-Row Sections',
+    tokens: [
+      { id: 'ribPadXSingle', label: 'Side padding', cssVar: '--dz-rib-pad-x-single', unit: 'px', min: 0, max: 24, step: 1, def: 0 },
+      { id: 'ribPadTopSingle', label: 'Top padding', cssVar: '--dz-rib-pad-top-single', unit: 'px', min: 0, max: 16, step: 1, def: 0 },
+      { id: 'ribPadBottomSingle', label: 'Bottom padding', cssVar: '--dz-rib-pad-bottom-single', unit: 'px', min: 0, max: 16, step: 1, def: 0 },
+      { id: 'toolbarBigIcon', label: 'Icon size', cssVar: '--dz-toolbar-big-icon', unit: 'px', min: 16, max: 40, step: 1, def: 26 },
+      { id: 'toolbarBigLabel', label: 'Label font size', cssVar: '--dz-toolbar-big-label', unit: 'px', min: 7, max: 16, step: 0.5, def: 10 },
     ],
   },
   {

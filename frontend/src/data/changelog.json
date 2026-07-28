@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.15",
+    "date": "2026-07-28",
+    "changes": [
+      "Design: the ribbon's options are reorganised into four groups — Ribbon (bar-level), Titled Sections, Untitled Sections and Single-Row Sections — with every spacing knob per kind: side/top/bottom padding, row spacing and horizontal button spacing for titled and untitled sections; side/top/bottom padding, icon size and label font size for single-row sections; plus title spacing, title font, alignment and the per-kind scales",
+      "Design: redundant ribbon options removed — the global button spacing and row gap (now per-kind), the title band's own padding (merged into \"Space between title and buttons\", whose default grew so nothing moved), and the combined vertical paddings (split into top and bottom)",
+      "Ribbon: the bar reserves exactly the room its sections need — rows were being quietly squeezed about a pixel because the bar's padding was counted against the content, which showed up as uneven heights once the per-kind scales existed"
+    ]
+  },
+  {
     "version": "5.14",
     "date": "2026-07-28",
     "changes": [

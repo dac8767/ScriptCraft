@@ -14,7 +14,8 @@ import { describe, it, expect } from 'vitest';
 import { ribbonKindVars } from './toolbarBuiltins';
 
 const DEFAULTS = { rowH: 28, anyTitle: true };
-// band at default vars: 9.5 + 1.5 + 3 + 2 = 16
+// band at default vars (v5.15): 9.5 + 1.5 + titleGap 5 = 16 — the same 16 as
+// before the ribTitlePad merge, by construction (3 + 2 folded into the gap).
 const BAND = 16;
 
 describe('ribbonKindVars', () => {
@@ -50,13 +51,13 @@ describe('ribbonKindVars', () => {
   });
 
   it('the band follows the Design title vars, and the fill follows the band', () => {
-    const r = ribbonKindVars({ ...DEFAULTS, titleFont: 12, titlePad: 5, titleGap: 4 });
-    const band = 12 + 1.5 + 5 + 4;
+    const r = ribbonKindVars({ ...DEFAULTS, titleFont: 12, titleGap: 4 });
+    const band = 12 + 1.5 + 4;
     expect(r.kUntitled).toBeCloseTo((56 + band) / 56, 6);
   });
 
-  it('the row gap shifts both bases identically, keeping the equality', () => {
-    const r = ribbonKindVars({ ...DEFAULTS, rowGap: 6 });
-    expect(r.kUntitled * (2 * 28 + 6)).toBeCloseTo(r.kTitled * (2 * 28 + 6 + BAND), 6);
+  it('per-kind row gaps (v5.15) still equalize the two totals at 100%', () => {
+    const r = ribbonKindVars({ ...DEFAULTS, rowGapTitled: 6, rowGapUntitled: -4 });
+    expect(r.kUntitled * (2 * 28 - 4)).toBeCloseTo(r.kTitled * (2 * 28 + 6 + BAND), 6);
   });
 });

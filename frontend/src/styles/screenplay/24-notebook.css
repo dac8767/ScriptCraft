@@ -797,6 +797,7 @@
    live bar it's small centred text; while editing it's an inline input with an
    × to remove. */
 .rib-sec-title {
+  flex-shrink: 0;      /* v5.15: same rule as .rib-row — overflow, not squeeze */
   /* v3.73, Derek: centred (was left). v4.71: alignment is a Design knob. */
   text-align: var(--dz-rib-title-align, center);
   /* v4.5, Derek: FIXED height (was line-height:1.1, auto height). Every two-row
@@ -815,7 +816,10 @@
   /* v4.71, Derek: gray, not full text color. */
   color: var(--fd-text-muted);
   /* v4.1: trimmed bottom padding so the title needs less vertical room. */
-  padding: 0 2px var(--dz-rib-title-pad, 3px);
+  /* v5.15: the band's own bottom padding (--dz-rib-title-pad) was redundant
+     with the title↔buttons gap and is GONE — the gap's default grew 2→5 so
+     the stock look is unchanged (3+2 = 5). */
+  padding: 0 2px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
 /* v4.5, Derek: a section with no title still renders the band (kept invisible)
@@ -827,13 +831,13 @@
 /* v3.73, Derek: when a section HAS a title, nudge its first row of items down a
    few px to give the title more room above them.
    v4.84: that nudge is a Design knob — "Space below section title". */
-.rib-sec-title + .rib-row { margin-top: var(--dz-rib-title-gap, 2px); }
+.rib-sec-title + .rib-row { margin-top: var(--dz-rib-title-gap, 5px); }
 /* v4.14, Derek: when the WHOLE ribbon has no titles, collapse the reserved band
    (every section is empty-band here) and drop the title room from the min-height
    floor, so the rows shift up and the blank strip disappears. */
 .toolbar.toolbar-ribbon.rib-no-titles .rib-sec-title-empty { display: none; }
 .toolbar.toolbar-ribbon.rib-no-titles .rib-sec-title-empty + .rib-row { margin-top: 0; }
-.toolbar.toolbar-ribbon.rib-no-titles { min-height: calc(var(--rib-content-h, calc(var(--rib-rowh, 28px) * 2)) + 7px); }
+.toolbar.toolbar-ribbon.rib-no-titles { min-height: calc(var(--rib-content-h, calc(var(--rib-rowh, 28px) * 2)) + var(--dz-rib-pad-top, 5px) + var(--dz-rib-pad-bottom, 2px)); }
 /* v5.14, Derek: in a MIXED bar (some sections titled, some not) the reserved
    invisible band is GONE from untitled sections — their rows stretch to the
    titled total instead (the --rib-k-u auto-fill factor). This supersedes the
@@ -847,9 +851,8 @@
   font-size: calc(var(--dz-rib-title-font, 9.5px) * var(--rib-k, 1));
   line-height: calc((var(--dz-rib-title-font, 9.5px) + 1.5px) * var(--rib-k, 1));
   height: calc((var(--dz-rib-title-font, 9.5px) + 1.5px) * var(--rib-k, 1));
-  padding-bottom: calc(var(--dz-rib-title-pad, 3px) * var(--rib-k, 1));
 }
-.toolbar.toolbar-ribbon .rib-kind-titled .rib-sec-title + .rib-row { margin-top: calc(var(--dz-rib-title-gap, 2px) * var(--rib-k, 1)); }
+.toolbar.toolbar-ribbon .rib-kind-titled .rib-sec-title + .rib-row { margin-top: calc(var(--dz-rib-title-gap, 5px) * var(--rib-k, 1)); }
 .rib-edit-sectitle-wrap { position: relative; display: flex; align-items: center; justify-content: center; gap: 3px; }
 .rib-edit-sectitle {
   /* v4.22, Derek: flex-BASIS 0 (was auto) so the input contributes NO intrinsic

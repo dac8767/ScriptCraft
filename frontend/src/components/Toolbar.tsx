@@ -1643,9 +1643,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     anyTitle: anyRibTitle,
     anyUntitled: liveSections.some(({ s: ls }) => !ls.title),
     titleFont: dzVars.ribTitleFont,
-    titlePad: dzVars.ribTitlePad,
     titleGap: dzVars.ribTitleGap,
-    rowGap: dzVars.ribRowGap,
+    rowGapTitled: dzVars.ribRowGapTitled,
+    rowGapUntitled: dzVars.ribRowGapUntitled,
     scaleTitledPct: ribScaleTitledPct,
     scaleUntitledPct: ribScaleUntitledPct,
   });

@@ -26,6 +26,8 @@ await page.addInitScript(() => {
       'b:bold', 'b:italic', 'b:underline', 'r:t1', 'b:alignLeft', 'b:alignCenter', 'b:alignRight',
       '2!d:d1',
       'st:Go', 'b:find', 'b:goto', 'r:t2', 'b:undo', 'b:redo',
+      '2!d:d2',
+      'b:copy',
       'a:sp', 'b:customize',
     ],
     toolbarZonesSet: true,
@@ -76,35 +78,59 @@ await page.$eval('.tool-dock-item', () => {});   // app idle tick
 const openDesign = async () => {
   const rows = await page.$$('.tool-dock-item');
   for (const row of rows) { if (((await row.textContent()) || '').includes('Design')) { await row.click(); break; } }
-  await page.waitForTimeout(600);
-  await page.locator('.dz-group-title, .dz-group-head, .dz-group summary', { hasText: 'Toolbar / Ribbon' }).first().click();
-  await page.waitForTimeout(300);
+  await page.waitForSelector('.dz-group', { timeout: 8000 });
 };
 await openDesign();
-const setKnob = async (label, value) => {
-  // regex, word-boundary: hasText STRINGS are case-insensitive, so
-  // "Titled sections" also matched inside "Untitled sections".
-  const num = page.locator('.dz-row', { hasText: label }).locator('.dz-num').first();
+// v5.15: knobs live in per-kind GROUPS and share labels ("Section scale (%)"
+// in both Titled and Untitled) — so scope to the group, then the row.
+const openGroup = async (groupLabel) => {
+  // idempotent — the head TOGGLES, and a second visit was collapsing it
+  const group = page.locator('.dz-group', { hasText: groupLabel }).first();
+  if (await group.locator('.dz-row').count() > 0) return;
+  await group.locator('.dz-group-head').first().click();
+  await page.waitForTimeout(250);
+};
+const setKnob = async (groupLabel, rowLabel, value) => {
+  const num = page.locator('.dz-group', { hasText: groupLabel })
+    .locator('.dz-row', { hasText: rowLabel }).locator('.dz-num').first();
   await num.click({ clickCount: 3 });
   await page.keyboard.type(String(value));
   await page.keyboard.press('Enter');
   await page.waitForTimeout(250);
 };
-await setKnob(/Untitled sections: scale/, 80);
+await openGroup('Ribbon: Untitled Sections');
+await setKnob('Ribbon: Untitled Sections', 'Section scale', 80);
 let r2 = await read();
 check('untitled scale 80% shrinks its rows', r2.unRowH < r.unRowH, true);
 check('titled rows untouched by the untitled knob', r2.tiRowH, r.tiRowH);
-await setKnob(/Untitled sections: scale/, 100);
-await setKnob(/\bTitled sections: scale/, 150);
+await setKnob('Ribbon: Untitled Sections', 'Section scale', 100);
+await openGroup('Ribbon: Titled Sections');
+await setKnob('Ribbon: Titled Sections', 'Section scale', 150);
 let r3 = await read();
 check('titled scale 150% grows titled rows', r3.tiRowH > r.tiRowH, true);
 check('untitled back at auto-fill, unaffected', r3.unRowH, r.unRowH);
+await setKnob('Ribbon: Titled Sections', 'Section scale', 100);
 
-// per-kind padding knob reaches the section box
-await setKnob(/\bTitled sections: scale/, 100);
-await setKnob(/\bTitled sections: side padding/, 12);
-const pad = await page.$eval('.rib-kind-titled', (el) => getComputedStyle(el).paddingLeft);
-check('titled side padding applies', pad, '12px');
+// one knob per category proves each group's wiring end-to-end
+await setKnob('Ribbon: Titled Sections', 'Side padding', 12);
+check('titled side padding applies',
+  await page.$eval('.rib-kind-titled:not(.rib-single)', (el) => getComputedStyle(el).paddingLeft), '12px');
+await setKnob('Ribbon: Titled Sections', 'Horizontal button spacing', 7);
+check('titled button spacing applies',
+  await page.$eval('.rib-kind-titled:not(.rib-single) .rib-row', (el) => getComputedStyle(el).columnGap), '7px');
+await openGroup('Ribbon: Untitled Sections');
+await setKnob('Ribbon: Untitled Sections', 'Row spacing', 9);
+check('untitled row spacing applies (and only there)',
+  await page.$eval('.rib-kind-untitled:not(.rib-single) .rib-row + .rib-row, .rib-kind-untitled:not(.rib-single) .rib-row-line + .rib-row', (el) => getComputedStyle(el).marginTop), '9px');
+check('titled row spacing still 0',
+  await page.$eval('.rib-kind-titled:not(.rib-single) .rib-row + .rib-row, .rib-kind-titled:not(.rib-single) .rib-row-line + .rib-row', (el) => getComputedStyle(el).marginTop), '0px');
+await openGroup('Ribbon: Single-Row Sections');
+await setKnob('Ribbon: Single-Row Sections', 'Top padding', 6);
+check('single-row top padding applies',
+  await page.$eval('.rib-single', (el) => getComputedStyle(el).paddingTop), '6px');
+await setKnob('Ribbon: Single-Row Sections', 'Icon size', 32);
+check('single-row icon size applies',
+  await page.$eval('.rib-single .toolbar-btn svg, .rib-tall-icon svg', (el) => getComputedStyle(el).height), '32px');
 
 await browser.close();
 process.exit(results.every(Boolean) ? 0 : 1);

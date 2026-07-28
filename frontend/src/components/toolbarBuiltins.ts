@@ -463,21 +463,24 @@ export function ribbonKindVars(opts: {
    *  the kinds that exist, or an all-titled bar would size to a phantom. */
   anyUntitled?: boolean;
   titleFont?: number;   // --dz-rib-title-font, def 9.5
-  titlePad?: number;    // --dz-rib-title-pad, def 3
-  titleGap?: number;    // --dz-rib-title-gap, def 2
-  rowGap?: number;      // --dz-rib-row-gap, def 0
+  /** v5.15: --dz-rib-title-gap, def 5 — the ONE title↔buttons spacing (the
+   *  band's own bottom padding was redundant with it and is gone; 3+2 → 5
+   *  keeps the stock geometry, which is why the default moved). */
+  titleGap?: number;
+  rowGapTitled?: number;    // --dz-rib-row-gap-titled, def 0
+  rowGapUntitled?: number;  // --dz-rib-row-gap-untitled, def 0
   scaleTitledPct?: number;    // Design: ribScaleTitled, def 100
   scaleUntitledPct?: number;  // Design: ribScaleUntitled, def 100
 }): RibbonKindVars {
   const titleFont = opts.titleFont ?? 9.5;
-  const titlePad = opts.titlePad ?? 3;
-  const titleGap = opts.titleGap ?? 2;
-  const rowGap = opts.rowGap ?? 0;
+  const titleGap = opts.titleGap ?? 5;
+  const rowGapTitled = opts.rowGapTitled ?? 0;
+  const rowGapUntitled = opts.rowGapUntitled ?? 0;
   // The band = the title line (font + 1.5, the v4.5 derived line-height) +
-  // its bottom padding + the gap under it. Must match .rib-sec-title's CSS.
-  const band = titleFont + 1.5 + titlePad + titleGap;
-  const untitledBase = 2 * opts.rowH + rowGap;
-  const titledBase = untitledBase + band;
+  // the gap under it. Must match .rib-sec-title's CSS.
+  const band = titleFont + 1.5 + titleGap;
+  const untitledBase = 2 * opts.rowH + rowGapUntitled;
+  const titledBase = 2 * opts.rowH + rowGapTitled + band;
   const autoFill = opts.anyTitle ? titledBase / untitledBase : 1;
   const kTitled = (opts.scaleTitledPct ?? 100) / 100;
   const kUntitled = ((opts.scaleUntitledPct ?? 100) / 100) * autoFill;
