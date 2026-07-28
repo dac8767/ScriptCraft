@@ -83,8 +83,13 @@ export interface ViewState {
   toolbarZonesSet?: boolean;
   contextMenuHidden?: string[];
   contextMenuOrder?: string[];
+  /** legacy (pre-v5.22): the separate Notes/To-Do manual orders — the merged
+   *  list's manual order is the shelfCards array itself now. Never read. */
   noteOrder?: string[];
   todoOrder?: string[];
+  /** v5.22: the Sticky Notes header tabs, user-reordered; [0] is also the
+   *  view the tool opens on. */
+  stickyTabOrder?: ('all' | 'note' | 'todo')[];
   panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom' | 'icons'; right: 'compact' | 'comfortable' | 'custom' | 'icons' };
   /** v4.24, Derek: side-panel display names — Title Case (as authored) or ALL CAPS. */
   panelNameCase?: 'title' | 'upper';

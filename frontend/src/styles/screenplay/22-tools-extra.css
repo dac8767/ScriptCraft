@@ -1065,7 +1065,7 @@ input.fs-switch:checked::after { left: 15px; }
 /* v4.33: To-Do holds only general cards (script [ ] lists live in the
    Navigator), so the scene-link chrome (.fs-script-link / .fs-general-tag)
    is gone with them. */
-.fs-todo-list { flex: 1; overflow-y: auto; padding: 8px; min-height: 0; }
+/* (v5.22: .fs-todo-list retired — one merged .swn-scroll list now.) */
 
 /* v4.37, Derek: the foot of a card is one row — date on the LEFT, resize
    grabber on the RIGHT (comment cards; it drags the textarea's height). */
@@ -1125,28 +1125,9 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .fs-note-popover .note-edit-area { position: relative; }
 
-/* v0.93: Notes is one list too. Script-linked notes and standalone ones share a
-   single scroll area, so the inner list stops being its own scroller — otherwise
-   you'd get two scrollbars stacked inside one panel. */
-.fs-notes-list { flex: 1; overflow-y: auto; min-height: 0; }
-/* v5.21: the merged Sticky Notes window — group labels above the notes and
-   to-do lists, shown only while the header filter is All (a narrowed view IS
-   its own label). */
-.sticky-group-label {
-  padding: 8px 14px 2px;
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--fd-text-muted);
-}
-.fs-notes-list .script-notes-list {
-  flex: none;
-  overflow: visible;
-}
-.fs-todo-text { cursor: pointer; flex: 1; line-height: 1.4; min-width: 0; }
-
-.fs-todo-hint { padding: 10px 4px; }
+/* (v5.22: .fs-notes-list / .fs-todo-* / the v5.21 .sticky-group-label all
+   retired with the split lists — MergedStickyList's .swn-scroll is the one
+   scroller and the Type SORT gives the grouped look.) */
 
 /* Highlights window */
 .fs-highlights-tool { display: flex; flex-direction: column; height: 100%; }

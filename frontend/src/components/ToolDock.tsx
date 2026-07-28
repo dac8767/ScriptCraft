@@ -37,7 +37,7 @@ import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
 import CharacterProfiles, { CharTitleExtra, useCharTabs, CharControls } from './CharacterProfiles';
 import { ChromeTabs, ControlDropdown, type ToolChromeTab } from './ToolControls';
-import { StickyNotesTool, FragmentsTool, StickyTitleExtra, StickyControls, SnippetsTitleExtra } from './StickyNotes';
+import { StickyNotesTool, FragmentsTool, StickyTitleExtra, StickyControls, SnippetsTitleExtra, useStickyTabs, reorderStickyTabs } from './StickyNotes';
 import { HighlightsTitleExtra } from './HighlightsTool';
 import HighlightsTool from './HighlightsTool';
 import { DesignPanelDocked } from './DesignPanel';
@@ -163,6 +163,9 @@ export interface ToolChrome {
   /** The tab DATA (a hook — it may read stores). Rendered as a strip beside
    *  the title; a strip that doesn't fit wraps with the row. */
   useTabs?: () => ToolChromeTab[];
+  /** v5.22: with this set the tabs are user-draggable; called with strip
+   *  indices on drop (Sticky Notes persists its order through it). */
+  onTabReorder?: (from: number, to: number) => void;
   /** The Filter / Sort / View / Search cluster, in that order. */
   Controls?: React.FC;
 }
@@ -250,7 +253,7 @@ function HeaderTabs({ chrome }: { chrome: ToolChrome }) {
             items={tabs.map((t) => ({ label: t.label, active: t.active, onSelect: t.onSelect }))}
           />
         ) : (
-          <ChromeTabs tabs={tabs} />
+          <ChromeTabs tabs={tabs} onReorder={chrome.onTabReorder} />
         )}
       </span>
       {/* natural-width measurer — never visible, never interactive */}
@@ -319,9 +322,9 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   // (their internal layouts are unchanged — the cluster lets them span).
   // v4.32: numbers toggle (left) + Filter dropdown + search (batch-v8 5-7)
   navigator: { Controls: NavigatorControls },
-  // v5.21: the merged Sticky Notes — summed count beside the title,
-  // Filter (kind) / Sort / Search in the row-2 cluster.
-  sticky: { TitleExtra: StickyTitleExtra, Controls: StickyControls },
+  // v5.21: the merged Sticky Notes. v5.22: All · Notes · Checklists header
+  // TABS (user-draggable, persisted order) + Sort / Search in the cluster.
+  sticky: { TitleExtra: StickyTitleExtra, useTabs: useStickyTabs, onTabReorder: reorderStickyTabs, Controls: StickyControls },
   // v4.32 batch-v8 #12: Snippets + Highlights — count beside the title.
   fragments: { TitleExtra: SnippetsTitleExtra },
   highlights: { TitleExtra: HighlightsTitleExtra },

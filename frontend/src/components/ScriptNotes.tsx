@@ -7,20 +7,14 @@
  * media/@asset rendering helpers stay here and are exported for the popover,
  * so both surfaces render note content identically.
  */
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
-  useEditorStore,
   NOTE_COLORS,
   type NoteColor,
-  type ShelfCard,
   SHELF_COLORS,
 } from '../stores/editorStore';
-import { StickyCard, formatDate } from './StickyCard';
+import { formatDate } from './StickyCard';
 export { formatDate };
-import {
-  arrangeEntries, reorderKeys, entryDragProps, cardMatchesSearch,
-  type ListEntry,
-} from './ListControls';
 import { type Asset } from '../stores/assetStore';
 import { api } from '../services/api';
 import { isTauri } from '../services/platform';
@@ -240,67 +234,7 @@ export const NoteContentDisplay: React.FC<{
   return <div className="note-content-rendered">{elements}</div>;
 };
 
-/**
- * The notes list: general note cards, sorted by the window chrome's Sort
- * control (manual drag order or date created). v5.21: one half of the merged
- * Sticky Notes body — the header search (stickySearch) narrows it through
- * the same predicate the to-do list uses (cardMatchesSearch).
- */
-export const ScriptNotesContent: React.FC = () => {
-  const { shelfCards, setShelfCards, noteOrder, setNoteOrder } = useEditorStore();
-  const sort = useEditorStore((s) => s.notesSort);
-  const setSort = useEditorStore((s) => s.setNotesSort);
-  const search = useEditorStore((s) => s.stickySearch);
-  const [dragKey, setDragKey] = useState<string | null>(null);
-
-  const onDropKey = (from: string, to: string) => {
-    setSort('manual');
-    setNoteOrder(reorderKeys(noteOrder, allKeys, from, to));
-  };
-
-  const renderGeneralNote = (card: ShelfCard) => {
-    const dp = entryDragProps(`card:${card.id}`, sort === 'manual', dragKey, setDragKey, onDropKey);
-    return (
-      <div {...dp.card}>
-        <StickyCard
-          card={card}
-          dragging={dragKey === `card:${card.id}`}
-          onDragStart={dp.grip.onDragStart}
-          onDragEnd={dp.grip.onDragEnd}
-          onDropHere={() => {}}
-          onUpdate={(patch) => setShelfCards(shelfCards.map((c) => (c.id === card.id ? { ...c, ...patch } : c)))}
-          onRemove={() => setShelfCards(shelfCards.filter((c) => c.id !== card.id))}
-        />
-      </div>
-    );
-  };
-
-  const entries: ListEntry[] = shelfCards
-    .filter((c) => c.type === 'comment' && cardMatchesSearch(c, search))
-    .map((card) => ({
-      key: `card:${card.id}`,
-      createdAt: card.createdAt,
-      render: () => renderGeneralNote(card),
-    }));
-  const allKeys = entries.map((e) => e.key);
-  const visible = arrangeEntries(entries, sort, noteOrder);
-
-  // v4.32: publish the count this list is showing so the window chrome's
-  // title (StickyTitleExtra) displays the same number — displayed there,
-  // never recomputed (charListCount's no-drift rule).
-  useEffect(() => {
-    useEditorStore.getState().setToolCount('sticky', visible.length);
-  }, [visible.length]);
-
-  return (
-    <div className="script-notes-list">
-      {visible.length === 0 ? (
-        <div className="script-notes-empty">
-          {search.trim() ? 'No notes match the search.' : 'No notes yet. Add one with + Note above.'}
-        </div>
-      ) : (
-        visible.map((e) => <React.Fragment key={e.key}>{e.render()}</React.Fragment>)
-      )}
-    </div>
-  );
-};
+/* (v5.22: ScriptNotesContent is gone — the merged Sticky Notes window
+   renders ONE interleaved list (MergedStickyList in StickyNotes.tsx); this
+   file keeps the note color helpers and content renderers other surfaces
+   import.) */

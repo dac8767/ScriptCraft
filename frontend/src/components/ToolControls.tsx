@@ -118,21 +118,42 @@ export const ControlDropdown: React.FC<{
 
 /** The tab strip. v4.39, Derek: the single-row header WRAPS when the window
  *  is narrow (excess items flow to a second line), so the old collapse-to-
- *  dropdown mode and the ChromeRow2 measurement machinery are gone. */
-export const ChromeTabs: React.FC<{ tabs: ToolChromeTab[] }> = ({ tabs }) => (
-  <>
-    {tabs.map((t) => (
-      <button
-        key={t.label}
-        className={`tool-chrome-tab${t.active ? ' active' : ''}`}
-        onClick={t.onSelect}
-      >
-        {t.label}
-        {t.badge && <span className="tool-chrome-tab-dot" />}
-      </button>
-    ))}
-  </>
-);
+ *  dropdown mode and the ChromeRow2 measurement machinery are gone.
+ *  v5.22, Derek: a chrome entry may pass `onReorder` — then the tabs are
+ *  DRAGGABLE and dropping one on another reorders the strip (Sticky Notes
+ *  persists its order; Characters passes nothing and stays fixed).
+ *  dataTransfer.setData is NOT optional — WebKit refuses to start the drag
+ *  without it (the house footgun). */
+export const ChromeTabs: React.FC<{ tabs: ToolChromeTab[]; onReorder?: (from: number, to: number) => void }> = ({ tabs, onReorder }) => {
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  return (
+    <>
+      {tabs.map((t, i) => (
+        <button
+          key={t.label}
+          className={`tool-chrome-tab${t.active ? ' active' : ''}`}
+          onClick={t.onSelect}
+          draggable={!!onReorder}
+          onDragStart={onReorder ? (e) => {
+            e.dataTransfer.setData('text/plain', t.label);   // required by WebKit
+            e.dataTransfer.effectAllowed = 'move';
+            setDragIdx(i);
+          } : undefined}
+          onDragEnd={onReorder ? () => setDragIdx(null) : undefined}
+          onDragOver={onReorder ? (e) => { if (dragIdx !== null && dragIdx !== i) e.preventDefault(); } : undefined}
+          onDrop={onReorder ? (e) => {
+            e.preventDefault();
+            if (dragIdx !== null && dragIdx !== i) onReorder(dragIdx, i);
+            setDragIdx(null);
+          } : undefined}
+        >
+          {t.label}
+          {t.badge && <span className="tool-chrome-tab-dot" />}
+        </button>
+      ))}
+    </>
+  );
+};
 
 export const ControlSearch: React.FC<{
   value: string;

@@ -43,21 +43,23 @@ check('no Airtable (dev) row even in DEV', dockLabels.includes('Airtable (dev)')
 
 await openTool(page, 'Sticky Notes');
 await page.waitForSelector('.tool-inline[data-tool="sticky"] .tool-action-row');
+// (v5.22 refinement: blue "+ Add Note"/"+ Add Checklist", tabs instead of a
+// Filter dropdown, ONE interleaved list — no group labels.)
 const sticky = await page.evaluate(() => {
   const win = document.querySelector('.tool-inline[data-tool="sticky"]');
-  const btns = [...win.querySelectorAll('.tool-action-row .tool-action-btn')].map((b) => b.textContent);
+  const btns = [...win.querySelectorAll('.tool-action-row .sticky-add-btn')].map((b) => b.textContent);
   const ctls = [...win.querySelectorAll('.tool-chrome-controls .tool-ctl')].map((b) => b.textContent || b.getAttribute('title'));
   const labels = [...win.querySelectorAll('.sticky-group-label')].map((e) => e.textContent);
   return { btns, ctls, labels };
 });
-check('+ Note / + To-Do lead the body', sticky.btns, ['+ Note', '+ To-Do']);
-check('header carries Filter · Sort · Search',
-  sticky.ctls.some((t) => t?.includes('Filter')) && sticky.ctls.some((t) => t?.includes('Sort')) && sticky.ctls.some((t) => t === 'Search'),
+check('+ Add Note / + Add Checklist lead the body', sticky.btns, ['+ Add Note', '+ Add Checklist']);
+check('header cluster carries Sort · Search',
+  sticky.ctls.some((t) => t?.includes('Sort')) && sticky.ctls.some((t) => t === 'Search'),
   true);
-check('both group labels under All', sticky.labels, ['Notes', 'To-Do']);
+check('no forced group labels (v5.22)', sticky.labels, []);
 
-await page.click('.tool-inline[data-tool="sticky"] .tool-action-row button:has-text("+ Note")');
-await page.click('.tool-inline[data-tool="sticky"] .tool-action-row button:has-text("+ To-Do")');
+await page.click('.tool-inline[data-tool="sticky"] .tool-action-row button:has-text("+ Add Note")');
+await page.click('.tool-inline[data-tool="sticky"] .tool-action-row button:has-text("+ Add Checklist")');
 const counts = await store(page, () => {
   const s = window.__scStore.getState();
   return { notes: s.shelfCards.filter((c) => c.type === 'comment').length, todos: s.shelfCards.filter((c) => c.type === 'todo').length };
@@ -67,17 +69,11 @@ const title = await page.evaluate(() =>
   document.querySelector('.tool-dock-item[title="Sticky Notes"] .tool-title-count')?.textContent);
 check('the title count sums both lists', title, '· 2');
 
-await page.click('.tool-inline[data-tool="sticky"] .tool-chrome-controls .tool-ctl:has-text("Filter")');
-await page.click('.tool-ctl-menu-item:has-text("To-Dos")');
-const narrowed = await page.evaluate(() => {
-  const win = document.querySelector('.tool-inline[data-tool="sticky"]');
-  return {
-    labels: win.querySelectorAll('.sticky-group-label').length,
-    notesShown: !!win.querySelector('.script-notes-list .swn-card, .script-notes-list .sticky-card') &&
-      [...win.querySelectorAll('.script-notes-list')].length,
-  };
-});
-check('kind filter drops the group labels', narrowed.labels, 0);
+// narrowing rides the header TABS now (deep-checked in check-sticky-v522).
+await store(page, () => window.__scStore.getState().setStickyKindFilter('todo'));
+const narrowed = await page.evaluate(() =>
+  [...document.querySelectorAll('.tool-inline[data-tool="sticky"] .swn-card')].length);
+check('the Checklists view shows only the checklist', narrowed, 1);
 await store(page, () => window.__scStore.getState().setStickyKindFilter('all'));
 
 await shot(page, '.tool-inline[data-tool="sticky"]', new URL('./last-sticky-merged.png', import.meta.url).pathname, 500);

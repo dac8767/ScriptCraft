@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.21 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.22 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,48 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.21 — the seven-pack: Sticky Notes merge, fullscreen Title Page, one window, and the zombie Window menu (HEAD)
+### v5.22 — Sticky Notes: one interleaved list, reorderable tabs, blank check row (HEAD)
+
+- Derek's refinement of the v5.21 merge: (1) "do not force separating" —
+  ONE interleaved list; Sort gains 'type' (default: notes before checklists)
+  while 'created' sorts BOTH kinds together; (2) blue add buttons; (3)
+  "+ Add Note" / "+ Add Checklist"; (4) To-Do → "Checklist" wording; (5) a
+  blank check row replaces the dashed add-field on checklist cards; (6) the
+  Filter dropdown became All · Notes · Checklists header TABS, drag-
+  reorderable, order persisted, FIRST tab = the view the tool opens on.
+  NOTE: his item 5 ended mid-sentence ("move the ") — flagged, awaiting the
+  rest.
+- Manual sort IS the shelfCards array order now (the Snippets model — drag
+  any card anywhere, cross-kind; a drop snaps Sort to 'manual'). CASUALTIES,
+  all single-consumer: notesSort/todoSort/noteOrder/todoOrder store fields,
+  ScriptNotesContent (ScriptNotes.tsx keeps the color helpers/renderers the
+  popover imports), ListControls' arrangeEntries/reorderKeys/entryDragProps/
+  ListEntry (file now = cardMatchesSearch + StickySort labels), and the CSS
+  for .fs-notes-list/.fs-todo-*/.script-notes-list/.sticky-group-label.
+  viewState keys noteOrder/todoOrder linger unread (house pattern).
+- New store: stickySort ('type'|'manual'|'created', ephemeral, default
+  'type'), stickyTabOrder (persisted); stickyKindFilter INITIALIZES from
+  stickyTabOrder[0] — that is what "their preference is first in line" does.
+- Tabs: ChromeTabs gained an OPTIONAL onReorder (HTML5 drag; setData is
+  mandatory — the WebKit footgun); ToolChrome.onTabReorder wires it
+  (Characters passes nothing and stays fixed). In a NARROW docked panel the
+  strip collapses to the Section dropdown (v4.53 behavior) — the dropdown
+  can't reorder; tabs reorder in fullscreen/wide shapes. Driver runs the tab
+  checks in the takeover for exactly that reason.
+- Blank check row (StickyCard): a .swn-todo-item.swn-todo-blank with an
+  inert checkbox + borderless input; Enter OR blur-with-text commits and
+  re-blanks. .swn-todo-new (dashed divider) removed.
+- Add buttons wear `dialog-btn dialog-btn-primary sticky-add-btn` — the
+  v5.19 Reorder precedent; driver proves computed equality to a probe.
+- Drivers: check-sticky-v522.mjs (9 checks: both sort orders exact, probe
+  equality, tab wording/click/DRAG — page.dragAndDrop does real HTML5 dnd
+  in Chromium — persistence in store+viewState, blank-row commit).
+  check-tools-v521.mjs updated to the new labels/tabs reality.
+- Rename SCOPE: the sticky window only — the script's own to-do lists
+  (Insert → To-Do List, Navigator) keep their name until Derek says
+  otherwise.
+
+### v5.21 — the seven-pack: Sticky Notes merge, fullscreen Title Page, one window, and the zombie Window menu
 
 - Derek's queue, all shipped in one batch: (1) Title Page always fullscreen
   "the same as the scrapbook"; (2) Notes + To-Do merged into "Sticky Notes"
@@ -317,40 +358,12 @@ Durable bits kept live here:
   Gotcha recorded: after page.click the cursor hovers the button — move
   the mouse away before reading colors or you sample the :hover shade.
 
-### v5.18 — per-row button spacing; the box-air truth
-
-- Derek: "for two row section, add bottom row button spacing and top row
-  button spacing. currently 0 for button spacing still has a decent gap."
-- ROOT CAUSE of "0 isn't 0": flex gap bottomed out at box-touching, but a
-  20px (22 comfortable) button box holds a ~16px glyph — the "decent gap" at
-  0 was the boxes' own air around their icons. Same finding as v4.12's row
-  gap, vertically. Same cure: margins, which unlike `gap` can go NEGATIVE.
-- The row's `gap` became `.rib-row > * + * { margin-left: … }`; the second
-  row (`.rib-row ~ .rib-row >`) reads its own var. Four tokens replace the
-  two per-kind ones: ribBtnGapTop/BottomTitled, ribBtnGapTop/BottomUntitled
-  (min −10 to overlap boxes; def 1 so nothing moves). In-row user dividers
-  keep their intrinsic 6px side margins via `calc(knob + 6px)` restore rules
-  — defaults render IDENTICALLY to the gap model (driver-proven: 1px pairs,
-  7px divider air).
-- Specificity dance (recorded in 03-toolbar.css): divider rules AFTER row
-  rules — bottom-divider (7 classes) beats all; top-divider vs bottom-generic
-  is a 6-class tie broken by source order; top-generic (5) loses to both.
-- migrateDesignVars (designSlice) seeds both rows from a saved per-kind
-  value — the v4.46 toolWinHeaderPad pattern (init-time; a preset imported
-  mid-session migrates on next launch). 5 new unit tests in
-  designMigrate.test.ts.
-- Drivers: NEW check-ribbon-btngap.mjs — 11 checks in 3 boots (defaults
-  parity incl. divider air; per-row isolation with 8 / 0 / −6 / 12 rendering
-  exactly, the −6 as real box overlap; legacy-key migration).
-  check-ribbon-zero.mjs measures box-edge pair distances now (margins never
-  show in columnGap — rect deltas are the honest measure).
-  check-ribbon-kinds.mjs drives BOTH new knobs through the real Design panel.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.18** — per-row button spacing; the box-air truth
 - **v5.17** — padding grows the bar; the descender truth
 - **v5.16** — 0 means 0; bar side-padding knobs
 - **v5.15** — the ribbon Design reorg, and the 1px lie

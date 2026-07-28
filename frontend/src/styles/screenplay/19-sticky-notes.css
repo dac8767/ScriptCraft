@@ -262,19 +262,21 @@
   align-items: baseline;
   cursor: pointer;
 }
-.swn-todo-new {
-  width: 100%;
-  box-sizing: border-box;
+/* v5.22, Derek: the dashed-divider add field is GONE — a blank check row at
+   the bottom of the list is the add affordance. It dresses exactly like an
+   item row; only its inert checkbox and empty text give it away. */
+.swn-todo-blank { cursor: text; }
+.swn-todo-blank input[type="checkbox"] { opacity: 0.45; pointer-events: none; }
+.swn-todo-blank-input {
+  flex: 1;
+  min-width: 0;
   border: 0;
-  border-top: 1px dashed rgba(0, 0, 0, 0.2);
+  background: transparent;
   outline: none;
   font-size: 12px;
-  padding-top: 4px;
-  margin-top: 4px;
-  background: transparent;
   color: #333;
+  padding: 0;
 }
-.swn-todo-new::placeholder { color: #999; }
 
 .swn-snippet {
   background: rgba(255, 255, 255, 0.55);

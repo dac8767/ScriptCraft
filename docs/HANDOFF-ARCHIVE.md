@@ -151,9 +151,38 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.17 and older (newest first)
+## Version history — v5.18 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.18 — per-row button spacing; the box-air truth
+
+- Derek: "for two row section, add bottom row button spacing and top row
+  button spacing. currently 0 for button spacing still has a decent gap."
+- ROOT CAUSE of "0 isn't 0": flex gap bottomed out at box-touching, but a
+  20px (22 comfortable) button box holds a ~16px glyph — the "decent gap" at
+  0 was the boxes' own air around their icons. Same finding as v4.12's row
+  gap, vertically. Same cure: margins, which unlike `gap` can go NEGATIVE.
+- The row's `gap` became `.rib-row > * + * { margin-left: … }`; the second
+  row (`.rib-row ~ .rib-row >`) reads its own var. Four tokens replace the
+  two per-kind ones: ribBtnGapTop/BottomTitled, ribBtnGapTop/BottomUntitled
+  (min −10 to overlap boxes; def 1 so nothing moves). In-row user dividers
+  keep their intrinsic 6px side margins via `calc(knob + 6px)` restore rules
+  — defaults render IDENTICALLY to the gap model (driver-proven: 1px pairs,
+  7px divider air).
+- Specificity dance (recorded in 03-toolbar.css): divider rules AFTER row
+  rules — bottom-divider (7 classes) beats all; top-divider vs bottom-generic
+  is a 6-class tie broken by source order; top-generic (5) loses to both.
+- migrateDesignVars (designSlice) seeds both rows from a saved per-kind
+  value — the v4.46 toolWinHeaderPad pattern (init-time; a preset imported
+  mid-session migrates on next launch). 5 new unit tests in
+  designMigrate.test.ts.
+- Drivers: NEW check-ribbon-btngap.mjs — 11 checks in 3 boots (defaults
+  parity incl. divider air; per-row isolation with 8 / 0 / −6 / 12 rendering
+  exactly, the −6 as real box overlap; legacy-key migration).
+  check-ribbon-zero.mjs measures box-edge pair distances now (margins never
+  show in columnGap — rect deltas are the honest measure).
+  check-ribbon-kinds.mjs drives BOTH new knobs through the real Design panel.
 
 ### v5.17 — padding grows the bar; the descender truth
 

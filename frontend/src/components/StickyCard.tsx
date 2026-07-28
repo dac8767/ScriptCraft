@@ -237,17 +237,30 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
           </span>
         </label>
       ))}
-      <input
-        className="swn-todo-new"
-        placeholder="New to-do…"
-        onKeyDown={(e) => {
-          const el = e.target as HTMLInputElement;
-          if (e.key === 'Enter' && el.value.trim()) {
-            onUpdate({ items: [...items, { text: el.value.trim(), done: false }] });
-            el.value = '';
-          }
-        }}
-      />
+      {/* v5.22, Derek: the add affordance IS a blank check row — no dashed
+          divider, no separate field. Type into it; Enter (or clicking away
+          with text) commits the item and the row blanks again. */}
+      <label className="swn-todo-item swn-todo-blank">
+        <input type="checkbox" checked={false} disabled aria-hidden="true" tabIndex={-1} />
+        <input
+          className="swn-todo-blank-input"
+          aria-label="New checklist item"
+          onKeyDown={(e) => {
+            const el = e.target as HTMLInputElement;
+            if (e.key === 'Enter' && el.value.trim()) {
+              onUpdate({ items: [...items, { text: el.value.trim(), done: false }] });
+              el.value = '';
+            }
+          }}
+          onBlur={(e) => {
+            const el = e.currentTarget;
+            if (el.value.trim()) {
+              onUpdate({ items: [...items, { text: el.value.trim(), done: false }] });
+              el.value = '';
+            }
+          }}
+        />
+      </label>
     </>);
   }
 

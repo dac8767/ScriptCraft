@@ -67,20 +67,8 @@
 }
 /* Active filter summary */
 /* Filter rows */
-/* ── Notes list ── */
-.script-notes-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
-}
-.script-notes-empty {
-  padding: 20px 12px;
-  color: var(--fd-text-muted);
-  font-size: 12px;
-  font-style: italic;
-  text-align: center;
-  line-height: 1.5;
-}
+/* (v5.22: .script-notes-list / .script-notes-empty retired — the Sticky
+   Notes window renders one merged .swn-scroll list now.) */
 /* (v4.33: the .note-item window card is gone — script notes edit in the
    .fs-note-popover on their highlight, defined at the end of this file.) */
 /* ── Edit area with @asset dropdown ── */
@@ -207,9 +195,6 @@
 }
 
 /* Script Notes scrollbar */
-.script-notes-list::-webkit-scrollbar { width: 6px; }
-.script-notes-list::-webkit-scrollbar-track { background: transparent; }
-.script-notes-list::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
 
 /* ── v4.33: the script-note edit popover ─────────────────────────────────

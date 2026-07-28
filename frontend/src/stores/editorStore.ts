@@ -913,13 +913,10 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   /** Display order of the right-click menu's items (v0.86). */
   contextMenuOrder: string[];
   setContextMenuOrder: (ids: string[]) => void;
-  /** v1.0: manual order of the Notes / To-Do lists, when Sort is left blank.
-   *  Keys are 'note:<id>' | 'card:<id>' | 'todo:<todoId>' so script-anchored and
-   *  window items share ONE order — they live in one list now. */
-  noteOrder: string[];
-  setNoteOrder: (keys: string[]) => void;
-  todoOrder: string[];
-  setTodoOrder: (keys: string[]) => void;
+  /* (v5.22: noteOrder/todoOrder retired — the merged Sticky Notes list's
+     manual order IS the shelfCards array order, like Snippets. The old
+     viewState keys linger unread, which is the house pattern for retired
+     persisted fields.) */
   panelSizeMode: { left: 'compact' | 'comfortable' | 'custom' | 'icons'; right: 'compact' | 'comfortable' | 'custom' | 'icons' };
   /** v4.24, Derek: side-panel display names — Title Case (as authored) or ALL CAPS. */
   panelNameCase: 'title' | 'upper';
@@ -993,15 +990,19 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    *  notes/to-dos live in the Navigator), so there is nothing to filter and
    *  no script position to sort by. */
   /** v5.21, Derek: the merged Sticky Notes window — header search + kind
-   *  filter shared by the notes and to-do lists (both read these). */
+   *  tabs shared by both card kinds. v5.22: the kind is a header TAB (All /
+   *  Notes / Checklists), the tabs are user-reorderable (persisted), and
+   *  ONE sort covers the whole interleaved list — 'type' (notes first,
+   *  the default), 'manual' (the shelfCards array order, drag to arrange),
+   *  or 'created' (newest first across both kinds). */
   stickySearch: string;
   setStickySearch: (v: string) => void;
   stickyKindFilter: 'all' | 'note' | 'todo';
   setStickyKindFilter: (v: 'all' | 'note' | 'todo') => void;
-  notesSort: 'manual' | 'created';
-  setNotesSort: (v: 'manual' | 'created') => void;
-  todoSort: 'manual' | 'created';
-  setTodoSort: (v: 'manual' | 'created') => void;
+  stickySort: 'type' | 'manual' | 'created';
+  setStickySort: (v: 'type' | 'manual' | 'created') => void;
+  stickyTabOrder: ('all' | 'note' | 'todo')[];
+  setStickyTabOrder: (order: ('all' | 'note' | 'todo')[]) => void;
   /** v4.32: generic list-count publisher — the body publishes, the window
    *  title's count (TitleExtra) displays. Same no-drift rule as charListCount. */
   toolCounts: Record<string, number>;
@@ -1416,12 +1417,18 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   },
   stickySearch: '',
   setStickySearch: (v) => set({ stickySearch: v }),
-  stickyKindFilter: 'all',
+  // v5.22, Derek: "make it so the user can change the order of these tabs so
+  // their preference is first in line" — the FIRST tab of the persisted
+  // order is also which view the tool opens on.
+  stickyKindFilter: ((_vs.stickyTabOrder as ('all' | 'note' | 'todo')[] | undefined)?.[0]) ?? 'all',
   setStickyKindFilter: (v) => set({ stickyKindFilter: v }),
-  notesSort: 'manual',
-  setNotesSort: (v) => set({ notesSort: v }),
-  todoSort: 'manual',
-  setTodoSort: (v) => set({ todoSort: v }),
+  stickySort: 'type',
+  setStickySort: (v) => set({ stickySort: v }),
+  stickyTabOrder: (_vs.stickyTabOrder as ('all' | 'note' | 'todo')[] | undefined) ?? ['all', 'note', 'todo'],
+  setStickyTabOrder: (order) => {
+    saveViewState({ stickyTabOrder: order });
+    set({ stickyTabOrder: order });
+  },
   toolCounts: {},
   setToolCount: (id, n) => set((st) => (st.toolCounts[id] === n ? st : { toolCounts: { ...st.toolCounts, [id]: n } })),
   beatBoardOpen: _vs.beatBoardOpen ?? false,
@@ -1835,16 +1842,6 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   setContextMenuOrder: (ids) => {
     saveViewState({ contextMenuOrder: ids });
     set({ contextMenuOrder: ids });
-  },
-  noteOrder: _vs.noteOrder ?? [],
-  setNoteOrder: (keys) => {
-    saveViewState({ noteOrder: keys });
-    set({ noteOrder: keys });
-  },
-  todoOrder: _vs.todoOrder ?? [],
-  setTodoOrder: (keys) => {
-    saveViewState({ todoOrder: keys });
-    set({ todoOrder: keys });
   },
   panelSizeMode: _vs.panelSizeMode ?? { left: 'comfortable', right: 'comfortable' },
   panelNameCase: (_vs.panelNameCase === 'upper' ? 'upper' : 'title') as 'title' | 'upper',
