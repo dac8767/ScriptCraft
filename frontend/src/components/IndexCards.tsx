@@ -4,7 +4,7 @@ import { FaUndo, FaRedo } from 'react-icons/fa';
 import { ExpandIcon } from './uiIcons';
 import { useEditorStore } from '../stores/editorStore';
 import { computeSceneLengths } from '../editor/pagination';
-import { computeSceneTiming, formatSceneDuration, getTimingColor } from '../utils/scriptTiming';
+import { computeSceneTiming, formatSceneDuration } from '../utils/scriptTiming';
 import { computeSceneFilterDetails, filterSceneIndices, sceneFilterOptions, countActiveSceneFilters } from '../utils/sceneFilters';
 import { useSceneReorder, type SceneReorder } from '../utils/useSceneReorder';
 import SynopsisModal from './SynopsisModal';
@@ -557,7 +557,11 @@ const IndexCards: React.FC<IndexCardsProps> = ({ editor }) => {
                         {sceneLengths[idx] > 0 && (
                           <span className="ic-meta-item">{Number(sceneLengths[idx].toFixed(1))}p</span>
                         )}
-                        <span className="ic-meta-item" style={{ color: getTimingColor(sceneTimings[idx]?.finalSeconds ?? 0) }}>
+                        {/* v5.11, Derek: the SAME colour as the list view's
+                            runtime — the shared .scene-metric-time class, not
+                            a copied value. The green→red getTimingColor scale
+                            is gone from cards; list and cards can't drift. */}
+                        <span className="ic-meta-item scene-metric-time">
                           {formatSceneDuration(sceneTimings[idx]?.finalSeconds ?? 0)}
                         </span>
                       </div>

@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.11",
+    "date": "2026-07-28",
+    "changes": [
+      "Scenes: the caret is the only thing that opens a scene's fold again (clicking elsewhere on the line does nothing but select; double-click still jumps) — and the caret's clickable area is much larger, the full height of the row and about three times the arrow's width",
+      "Scenes: the time estimate is the same colour in List view and Cards view — cards used their own green-to-red scale before"
+    ]
+  },
+  {
     "version": "5.10",
     "date": "2026-07-28",
     "changes": [

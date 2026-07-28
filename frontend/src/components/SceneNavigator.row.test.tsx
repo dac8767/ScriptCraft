@@ -195,28 +195,26 @@ describe('narrow mode folds synopsis + figures behind the caret', () => {
     expect(host.querySelector('.scene-list-header')).toBeNull();
   });
 
-  /* v5.10, Derek: "i should be able to click anywhere on the scene line to
-     open the hidden info, not just the caret" — like the side-panel tool rows. */
-  it('clicking anywhere on the ROW toggles the sub-item', () => {
+  /* v5.11, Derek: back to CARET-ONLY (the v5.10 whole-row toggle is
+     reverted); the caret's hit area grew instead. */
+  it('clicking the row or the heading label does NOT open the sub-item', () => {
     const row = rows()[1].querySelector('.scene-row-narrow') as HTMLElement;
     act(() => { row.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    expect(rows()[1].querySelector('.scene-sub-item')).toBeTruthy();
-    act(() => { row.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    const label = rows()[1].querySelector('.scene-heading-label') as HTMLElement;
+    act(() => { label.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
     expect(rows()[1].querySelector('.scene-sub-item')).toBeNull();
   });
 
-  it('clicking the heading LABEL (a child) also toggles — anywhere means anywhere', () => {
-    const label = rows()[0].querySelector('.scene-row-narrow .scene-heading-label') as HTMLElement;
-    act(() => { label.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    expect(rows()[0].querySelector('.scene-sub-item')).toBeTruthy();
-  });
-
-  it('clicking inside the OPEN sub-item does not slam it shut', () => {
-    const row = rows()[1].querySelector('.scene-row-narrow') as HTMLElement;
-    act(() => { row.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    const metrics = rows()[1].querySelector('.scene-sub-metrics') as HTMLElement;
-    act(() => { metrics.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    expect(rows()[1].querySelector('.scene-sub-item')).toBeTruthy();
+  it('the caret hit area is enlarged in the stylesheet, the glyph is not', () => {
+    // The button stretches to the row height and reaches into the row
+    // padding; the 24px track + stretch + negative-margin pad ARE the hit
+    // area, so pin them where they live.
+    const css = readFileSync(resolve(process.cwd(), 'src/styles/screenplay/05-scene-navigator.css'), 'utf8');
+    const btn = css.match(/\.scene-caret-btn\s*\{[^}]*\}/s)![0];
+    expect(btn).toMatch(/align-self:\s*stretch/);
+    expect(btn).toMatch(/margin-left:\s*-10px/);
+    expect(btn).toMatch(/padding:\s*0 0 0 10px/);
+    expect(css).toMatch(/\.scene-row-narrow\s*\{[^}]*grid-template-columns:\s*24px/s);
   });
 
   it('the caret reveals the sub-item — same field, same figures — and hides it again', () => {

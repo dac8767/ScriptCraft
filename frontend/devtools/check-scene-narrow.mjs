@@ -32,25 +32,21 @@ check('no inline metrics', r.inlineMetrics, 0);
 check('no column header', r.header, false);
 check('no sub-items before a caret click', r.subItems, 0);
 
-// v5.10: clicking ANYWHERE on the row toggles the fold (like dock rows);
-// double-click still jumps the script. Prove the row path, the sub-item's
-// click-immunity, and the caret both before using the fold for typing.
+// v5.11: CARET-ONLY toggling again (v5.10's whole-row toggle reverted), with
+// a hit area worth aiming at. Row clicks must do nothing; double-click jumps.
 const rowHead = (await page.$$('.scene-row-narrow .scene-heading-label'))[1];
 await rowHead.click();
-await page.waitForSelector('.scene-sub-item', { timeout: 4000 });
-check('row click opens the fold', await page.$$eval('.scene-sub-item', (e) => e.length), 1);
-await page.click('.scene-sub-metrics');            // inside the open fold
-await page.waitForTimeout(150);
-check('click inside fold stays open', await page.$$eval('.scene-sub-item', (e) => e.length), 1);
-await rowHead.click();
-await page.waitForTimeout(150);
-check('row click closes the fold', await page.$$eval('.scene-sub-item', (e) => e.length), 0);
+await page.waitForTimeout(200);
+check('row click does NOT open the fold', await page.$$eval('.scene-sub-item', (e) => e.length), 0);
+const caretBox = await (await page.$('.scene-caret-btn')).boundingBox();
+check('caret hit area ≥ 24px wide', caretBox.width >= 24, true);
+check('caret hit area spans the row (≥ 36px tall)', caretBox.height >= 36, true);
 const before = await page.evaluate(() => Math.round(document.querySelector('.editor-main')?.scrollTop ?? -1));
 await rowHead.dblclick();
 await page.waitForTimeout(900);
 check('double-click still jumps the script',
   (await page.evaluate(() => Math.round(document.querySelector('.editor-main')?.scrollTop ?? -1))) !== before, true);
-check('double-click leaves the fold as it was', await page.$$eval('.scene-sub-item', (e) => e.length), 0);
+check('double-click opens no fold', await page.$$eval('.scene-sub-item', (e) => e.length), 0);
 
 const caret = (await page.$$('.scene-caret-btn'))[1];
 await caret.click();
@@ -109,6 +105,20 @@ r = await page.evaluate(() => {
 check('cards render', r.cards, 4);
 check('every card shows a time', r.allHaveTime, true);
 console.log('     card metas:', JSON.stringify(r.metas));
+
+// v5.11, Derek: "use the same color for the time estimate in both the list
+// and card view." The card time wears the SAME .scene-metric-time class —
+// computed colours must be identical.
+const cardTimeColor = await page.$eval('.index-card .scene-metric-time', (el) => getComputedStyle(el).color);
+const listTimeColor = await page.evaluate(() => {
+  const probe = document.createElement('span');
+  probe.className = 'scene-metric-time';
+  document.body.appendChild(probe);
+  const c = getComputedStyle(probe).color;
+  probe.remove();
+  return c;
+});
+check('card time colour === list time colour', cardTimeColor, listTimeColor);
 
 await browser.close();
 process.exit(results.every(Boolean) ? 0 : 1);

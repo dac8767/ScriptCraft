@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.10 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.11 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,27 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.10 — the whole row is the caret (HEAD)
+### v5.11 — caret-only again, but a caret you can hit (HEAD)
+
+Derek reverted v5.10 same-day: "revert back to the caret being the only thing
+you click to make it expand, but make the clickable area of the caret larger."
+- The row's onClick is gone; the caret's hit area is the full row height and
+  ~32px wide: 24px track (was 16) + `align-self: stretch` + negative-margin
+  padding reaching into the row's left padding. The GLYPH stays 10px — only
+  the invisible button grew. Driver measures the box ≥24×36.
+- Lesson for the log: v5.10 shipped exactly what was asked and lasted hours.
+  When a click target feels too small, offer the bigger-target option next to
+  the bigger-behaviour option before building the behaviour.
+- Also Derek, same batch: ONE colour for the time estimate in both Scenes
+  views — the card time now wears the same `.scene-metric-time` class the
+  list uses (accent); the per-card green→red `getTimingColor` scale is gone
+  from cards (`getTimingColor` remains in use in the status bar / modal).
+  Driver asserts computed equality: rgb(74,158,255) in both.
+- The mid-audit rollback also reverted `node_modules` — `npm install` brought
+  `playwright-core` back BECAUSE it is a devDependency now; the kit survived
+  its first rollback by design.
+
+### v5.10 — the whole row is the caret
 
 Derek: "i should be able to click anywhere on the scene line to open the
 hidden info, not just the caret… single click opens the info below" — the
