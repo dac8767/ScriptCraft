@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.13",
+    "date": "2026-07-28",
+    "changes": [
+      "Pages: the title page is gone from the preview — script pages only, numbered from 1. Its text still never bleeds into page 1",
+      "Design: numbers can be TYPED into the value fields again — typing 650 no longer snaps to the minimum on the first keystroke. Values clamp when you press Enter or leave the field; Escape abandons the edit",
+      "Scenes: the Reorder button wears the accent outline and text of an active side-panel tool; reorder mode itself stays amber"
+    ]
+  },
+  {
     "version": "5.12",
     "date": "2026-07-28",
     "changes": [

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * computePageBlocks + the title page (v4.95).
+ * computePageBlocks + the title page (v4.95 → v5.01 → v5.13).
  *
  * Derek: "page 1 has strange spacing." The Pages tool renders these blocks as
  * a miniature of the page. In Page/Continuous view the editor HIDES the title
@@ -43,37 +43,36 @@ describe('computePageBlocks and the title page', () => {
     setPaginationVisibility({ hideSections: false, hideTodos: false, doubleSpaceHeaders: false, hideTitlePage: false });
   });
 
-  /* v5.01, Derek: "show the title page in Pages tool". It is page one of the
-     finished script, so the preview shows it — as its OWN page (number 0,
-     labelled "Title Page"), NEVER merged into script page 1. That merge was
-     the v4.95 "strange spacing"; v4.95 fixed it by dropping the title page
-     altogether, which went too far. Both halves are pinned below, and in BOTH
-     visibility modes — the preview shows the whole document either way. */
+  /* v5.13, Derek: "remove title page from the page tool" — reversing his
+     v5.01 "show the title page in Pages tool". The preview shows SCRIPT
+     pages only, in BOTH visibility modes. What must survive the reversal is
+     the v5.01 splitting fix: title text never bleeds into page 1 (the v4.95
+     "strange spacing"), and page 1 starts at line 0 as if the title run
+     never existed. */
   for (const hidden of [true, false]) {
     const mode = hidden ? 'hidden (Page/Continuous)' : 'shown (Preview)';
 
-    it(`title page is its own page, ${mode}`, () => {
+    it(`no title page in the preview, ${mode}`, () => {
       setPaginationVisibility({ hideTitlePage: hidden });
       const pages = computePageBlocks(docOf(TITLE_AND_SCRIPT), DEFAULT_PAGE_LAYOUT);
-      expect(pages[0].pageNumber).toBe(0);
-      expect(texts(pages[0])).toEqual(['STAR WARS - EPISODE 8', 'Written by Derek Carl']);
+      expect(pages.some((p) => p.pageNumber === 0)).toBe(false);
+      expect(pages.flatMap(texts)).not.toContain('STAR WARS - EPISODE 8');
     });
 
-    it(`script page 1 carries no title-page text, ${mode}`, () => {
+    it(`script page 1 carries no title-page text and starts at line 0, ${mode}`, () => {
       setPaginationVisibility({ hideTitlePage: hidden });
       const pages = computePageBlocks(docOf(TITLE_AND_SCRIPT), DEFAULT_PAGE_LAYOUT);
-      const script = pages.find((p) => p.pageNumber !== 0)!;
-      expect(texts(script)).toEqual([
+      expect(texts(pages[0])).toEqual([
         'EXT. SPACE - OPENING SCROLL',
         'The camera tilts down to reveal a mid-sized space carrier.',
       ]);
       // The strange spacing was the skipped title's leading gap pushing this
       // down: the first block on a page always starts at line 0.
-      expect(script.blocks[0].lineStart).toBe(0);
+      expect(pages[0].blocks[0].lineStart).toBe(0);
     });
   }
 
-  it('a script with NO title page has no page 0 — nothing gains a title page', () => {
+  it('a script with NO title page is untouched by the trim', () => {
     const plain = [node('sceneHeading', 'INT. COFFEE SHOP - DAY'), node('action', 'Rain.')];
     for (const hide of [true, false]) {
       setPaginationVisibility({ hideTitlePage: hide });
@@ -83,11 +82,11 @@ describe('computePageBlocks and the title page', () => {
     }
   });
 
-  it('a doc that is ONLY a title page still gives one page to draw', () => {
-    setPaginationVisibility({ hideTitlePage: true });
-    const pages = computePageBlocks(docOf([TITLE_AND_SCRIPT[0], TITLE_AND_SCRIPT[1]]), DEFAULT_PAGE_LAYOUT);
-    expect(pages).toHaveLength(1);
-    expect(pages[0].pageNumber).toBe(0);
-    expect(texts(pages[0])).toHaveLength(2);
+  it('a doc that is ONLY a title page previews as no pages at all', () => {
+    for (const hide of [true, false]) {
+      setPaginationVisibility({ hideTitlePage: hide });
+      const pages = computePageBlocks(docOf([TITLE_AND_SCRIPT[0], TITLE_AND_SCRIPT[1]]), DEFAULT_PAGE_LAYOUT);
+      expect(pages).toHaveLength(0);   // the tool's own "No pages yet" empty state
+    }
   });
 });

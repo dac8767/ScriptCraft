@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.12 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.13 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -310,7 +310,29 @@ reliable; re-run before believing a weird worker failure.
 > (v4.28-era files reappearing while origin was fine). Symptom: a file shows
 > long-deleted code. The remote is the truth; pushes always survived.
 
-### v5.12 — the table↔caret line is Derek's slider (HEAD)
+### v5.13 — title page out of Pages; the Design field you can type in (HEAD)
+
+- **Pages, title page removed** (Derek reverses his v5.01 ask). The leading
+  `titlePage` run is still CARVED off page 1's bound — that split is the
+  v4.95 "strange spacing" fix and it stays — but the carved bound is now
+  DISCARDED instead of emitted as page 0, and the per-node guard skips
+  `titlePage` nodes on every page. A doc that is ONLY a title page previews
+  as zero pages (the tool's own empty state). pageThumbnails.test.ts
+  rewritten to pin the reversal in both visibility modes.
+- **Design number fields committed (and CLAMPED) every keystroke** — Derek:
+  "i was trying to type 650 … it immediately changes to 300." A leading "6"
+  hit the 300 minimum before the "5" landed; unnoticed until scenesTableMin
+  became the first token whose min exceeds one digit. The field now holds an
+  unclamped DRAFT while focused; clamp+commit on blur/Enter, Escape abandons.
+  Sliders keep instant commit (drag can't leave range). Driver-verified:
+  type 650 → 650; Escape reverts; 50 clamps to 300 on commit only.
+- **Reorder** wears the exact active-dock-row pair (accent border + accent
+  text + grey wash — compared computed against a probe `.tool-dock-item.active`
+  in the driver); active reorder stays amber.
+- Driver note: Design panel GROUPS render collapsed — expand
+  "Navigator & Outline" before looking for `.dz-row`s.
+
+### v5.12 — the table↔caret line is Derek's slider
 
 Derek's ~570px pop-out screenshot: "the window should have already moved the
 synopsis field by the time it was this small. add a minimum size option in

@@ -534,16 +534,13 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
     }
   }
 
-  /* v5.01, Derek ("show the title page in Pages tool"): the title page is
-     page one of the finished script, so the preview shows it — as its OWN
-     page, numbered 0 and labelled "Title Page" by the tool.
-
-     v4.95 skipped these nodes entirely while the editor was hiding the title
-     page (Page / Continuous view). That fixed the real complaint — the title
-     was being laid out as ordinary elements ON TOP of page 1's script — but
-     it threw the page away with it. Splitting the leading run into its own
-     bound keeps both true: the title page appears, and never bleeds into the
-     script's first page.
+  /* v5.13, Derek: "remove title page from the page tool" — reversing v5.01's
+     "show the title page in Pages tool". The leading titlePage run is still
+     CARVED off the front of page 1's bound (that split is what fixed the
+     v4.95 "strange spacing" — title text laid out on top of the script's
+     first page), but the carved bound is now DISCARDED instead of emitted as
+     a page 0. The per-node guard below keeps stray titlePage nodes out of
+     every script page either way.
 
      The split happens on the BOUNDS, not on `nodes`: breaks[].nodeIndex
      indexes that list, so removing entries would shift every later page. */
@@ -551,12 +548,10 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
   while (titleRunEnd + 1 < nodes.length && nodes[titleRunEnd + 1].typeName === 'titlePage') titleRunEnd++;
   if (titleRunEnd >= 0 && pageBounds.length > 0 && pageBounds[0].startNode === 0) {
     const first = pageBounds[0];
-    const titleBound = { pageNumber: 0, startNode: 0, endNode: titleRunEnd, dialogueSplit: false };
-    const rest = { ...first, startNode: titleRunEnd + 1 };
-    // In Preview the title page already HAS its own bound (computeBreaks emits
-    // the title break) — then just renumber it; otherwise carve it off the
-    // front of page 1.
-    pageBounds.splice(0, 1, ...(first.endNode <= titleRunEnd ? [titleBound] : [titleBound, rest]));
+    // In Preview the title page already HAS its own bound (computeBreaks
+    // emits the title break) — drop it; otherwise trim the title run off the
+    // front of page 1's bound.
+    pageBounds.splice(0, 1, ...(first.endNode <= titleRunEnd ? [] : [{ ...first, startNode: titleRunEnd + 1 }]));
   }
 
   // Build page content
@@ -570,10 +565,10 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
 
     for (let i = pb.startNode; i <= Math.min(pb.endNode, nodes.length - 1); i++) {
       const node = nodes[i];
-      // A title-page node belongs ONLY to the title page's own bound (above).
-      // This guard is what stops it bleeding into script page 1 — the v4.95
-      // "strange spacing" — now that the run is no longer skipped outright.
-      if (node.typeName === 'titlePage' && pb.pageNumber !== 0) continue;
+      // No title-page node renders on ANY preview page (v5.13). This guard is
+      // what stops one bleeding into script page 1 — the v4.95 "strange
+      // spacing" — including titlePage nodes that sit mid-document.
+      if (node.typeName === 'titlePage') continue;
       const cpl = CHARS_PER_LINE[node.typeName] || 62;
       const textLines = getTextLines(node.text, cpl);
       const sb = firstOnPage ? 0 : (SPACE_BEFORE[node.typeName] ?? 0);

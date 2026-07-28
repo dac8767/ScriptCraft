@@ -978,10 +978,10 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               {shownPages.map((page) => (
                 <div key={page.pageNumber} className="page-thumb-wrapper">
                   {/* v5.01, Derek: the label sits ABOVE its page (it used to
-                      trail underneath), and the title page says so by name
-                      rather than carrying a number it doesn't have. */}
+                      trail underneath). (v5.13: the title page is gone from
+                      this tool, so every label is a plain page number.) */}
                   <div className="page-thumb-number">
-                    {page.pageNumber === 0 ? 'Title Page' : `Page ${page.pageNumber}`}
+                    {`Page ${page.pageNumber}`}
                   </div>
                   <div
                     className={`page-thumbnail${page.pageNumber === currentVisiblePage ? ' current' : ''}`}

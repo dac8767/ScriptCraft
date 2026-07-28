@@ -24,6 +24,15 @@ function snap(val: number, step: number): number {
 
 function TokenRow({ t }: { t: DesignToken }) {
   const isStore = !!t.store;
+  /* v5.13, Derek: "i was trying to type 650 … but it immediately changes to
+     300." The number field committed (and CLAMPED) on every keystroke, so a
+     leading "6" was clamped to the 300 minimum before the "5" could land —
+     unnoticed until scenesTableMin became the first token with a min bigger
+     than a single digit. While focused, the field holds an unclamped DRAFT
+     string; clamp-and-commit happen on blur/Enter, Escape abandons the
+     draft. The slider keeps instant commit — dragging can't leave range. */
+  const [draft, setDraft] = useState<string | null>(null);
+  const draftCancelled = useRef(false);
   // css-var tokens read their override map; store-bound tokens read the store
   // field live (so external changes — e.g. the drag handle — reflect here too).
   const cssOverride = useEditorStore((s) => (isStore ? undefined : s.designVars[t.id]));
@@ -50,11 +59,23 @@ function TokenRow({ t }: { t: DesignToken }) {
               <input
                 type="number"
                 className="dz-num"
-                value={value}
+                value={draft ?? value}
                 min={t.min}
                 max={t.max}
                 step={t.step}
-                onChange={(e) => commit(parseFloat(e.target.value))}
+                onFocus={() => setDraft(String(value))}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur();
+                  else if (e.key === 'Escape') { draftCancelled.current = true; e.currentTarget.blur(); }
+                }}
+                onBlur={(e) => {
+                  // Read the DOM value, not the draft state — an Escape-blur
+                  // fires this handler inside the OLD closure.
+                  if (!draftCancelled.current && draft !== null) commit(parseFloat(e.currentTarget.value));
+                  draftCancelled.current = false;
+                  setDraft(null);
+                }}
               />
               {t.unit && <span className="dz-unit">{t.unit}</span>}
             </>
