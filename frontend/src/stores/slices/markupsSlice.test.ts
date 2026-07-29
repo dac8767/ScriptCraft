@@ -42,10 +42,9 @@ describe('markups slice', () => {
     expect(st().markupEditorId).toBeNull();
   });
 
-  it('the default filter view is OPEN markups only', () => {
+  it('the default filter view is OPEN annotations only, no types hidden', () => {
     expect(st().markupFilters.done).toBe('open');
-    expect(st().markupFilters.icons).toEqual([]);
-    expect(st().markupFilters.kinds).toEqual([]);
+    expect(st().markupFilters.hiddenIcons).toEqual([]);
   });
 
   it('the six default presets are Derek’s spec order, flag first', () => {

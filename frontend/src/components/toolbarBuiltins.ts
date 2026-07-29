@@ -47,9 +47,10 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'insertSection', label: 'Insert Section' },
   { key: 'insertNote', label: 'Insert Note' },
   { key: 'insertChecklist', label: 'Add To-Do List' },
-  // v5.25: Markups — palette-only (like scriptNotes/tags); Derek places them.
-  { key: 'markupScript', label: 'Markup Script' },
-  { key: 'toggleMarkups', label: 'Show/Hide Markups' },
+  // v5.25: Annotations — palette-only (like scriptNotes/tags); Derek places
+  // them. v5.26: labels renamed with the tool (keys are persisted tokens).
+  { key: 'markupScript', label: 'Add Annotation' },
+  { key: 'toggleMarkups', label: 'Show/Hide Annotations' },
   { key: 'titlePage', label: 'Title Page' },
   { key: 'fontFamily', label: 'Font Family', priority: '5', desktopOnly: true },
   { key: 'fontSize', label: 'Font Size', priority: '5', desktopOnly: true },

@@ -15,7 +15,7 @@ export { DualDialogue, DualDialogueColumn } from './DualDialogue';
 export { TitlePage } from './TitlePage';
 export { FontSize } from './FontSize';
 export { ScriptNoteMark } from './ScriptNoteMark';
-export { ScriptMarkupMark } from './ScriptMarkup';
+export { ScriptMarkupMark, MarkupBlockAnchor } from './ScriptMarkup';
 export { TagMark } from './TagMark';
 export { FormatOverride } from './FormatOverride';
 export { CustomElement } from './CustomElement';

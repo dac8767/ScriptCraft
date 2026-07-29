@@ -2,8 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 
 interface ColorPickerProps {
   value: string;
-  onChange: (color: string | null) => void;
+  /** `source` (v5.26) says where the pick came from — 'wheel' is the custom
+   *  square/hex Apply, 'preset' the built-in swatches, 'recent' the caller's
+   *  recents row. Callers that keep a recents list record ONLY 'wheel' picks
+   *  (Derek's rule); existing callers ignore the argument. */
+  onChange: (color: string | null, source?: 'preset' | 'wheel' | 'recent') => void;
   onClose: () => void;
+  /** v5.26: optional recently-used row (annotation pickers pass their list). */
+  recent?: string[];
 }
 
 const PRESET_COLORS = [
@@ -13,7 +19,7 @@ const PRESET_COLORS = [
   '#ff6666', '#ffcc66', '#ffff66', '#66ff66', '#66ccff', '#cc66ff',
 ];
 
-const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, onClose }) => {
+const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, onClose, recent }) => {
   const ref = useRef<HTMLDivElement>(null);
   const svRef = useRef<HTMLDivElement>(null);
   const [customColor, setCustomColor] = useState(value || '#000000');
@@ -70,11 +76,27 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, onClose }) =
             key={color}
             className={`color-picker-swatch${value === color ? ' active' : ''}`}
             style={{ backgroundColor: color }}
-            onClick={() => onChange(color)}
+            onClick={() => onChange(color, 'preset')}
             title={color}
           />
         ))}
       </div>
+      {recent && recent.length > 0 && (
+        <div className="color-picker-recent">
+          <span className="color-picker-recent-label">Recent</span>
+          <span className="color-picker-recent-row">
+            {recent.map((color) => (
+              <button
+                key={color}
+                className={`color-picker-swatch${value === color ? ' active' : ''}`}
+                style={{ backgroundColor: color }}
+                onClick={() => onChange(color, 'recent')}
+                title={color}
+              />
+            ))}
+          </span>
+        </div>
+      )}
       {/* v0.80: an in-app saturation/value square + hue slider REPLACES
           <input type="color">. That input hands off to the OPERATING SYSTEM's
           color panel, which an app cannot position — on a multi-monitor Mac it
@@ -114,7 +136,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, onClose }) =
           // v4.37, Derek: Apply commits the custom color AND closes the
           // popover — it's the "I'm done here" button, unlike the preset
           // swatches, which stay open for live try-outs.
-          onClick={() => { onChange(customColor); onClose(); }}
+          onClick={() => { onChange(customColor, 'wheel'); onClose(); }}
         >
           Apply
         </button>

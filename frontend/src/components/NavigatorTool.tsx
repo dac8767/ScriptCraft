@@ -21,7 +21,7 @@ const KINDS = ['scene', 'act', 'section', 'marker', 'note', 'todo', 'markup'] as
 type Kind = typeof KINDS[number];
 const LABEL: Record<Kind, string> = {
   scene: 'Scene Headers', act: 'Acts', section: 'Sections', marker: 'Markers',
-  note: 'Notes', todo: 'To-Dos', markup: 'Markups',
+  note: 'Notes', todo: 'To-Dos', markup: 'Annotations',
 };
 
 interface Item {
@@ -146,25 +146,35 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
         return true;
       });
     }
-    for (const n of notes) {
-      out.push({ kind: 'note', text: n.content || n.anchorText || '(empty note)', noteId: n.id });
-    }
-    // v5.25: markups — anchored like script notes; the row wears the
-    // markup's own icon + color and jumps to (and opens) it on click.
+    // v5.26 (#10): annotations sort INTO the outline by doc position, so
+    // each one sits under the scene it lives in — they used to append at
+    // the bottom. Same-position ties (a block anchor ON a scene heading)
+    // keep the landmark first, its annotation under it.
+    const annos: Item[] = [];
+    const orphans: Item[] = [];
     for (const m of markups) {
-      out.push({
+      const item: Item = {
         kind: 'markup',
-        text: markupPreviewText(m) || '(empty markup)',
+        text: markupPreviewText(m) || '(empty annotation)',
         markupId: m.id,
         markupIcon: m.icon,
         markupColor: m.color,
         done: m.done,
-      });
+        pos: editor ? findMarkupPos(editor, m.id) ?? undefined : undefined,
+      };
+      (item.pos !== undefined ? annos : orphans).push(item);
     }
+    const placed = [...out.map((it, i) => ({ it, i, anno: 0 })), ...annos.map((it, i) => ({ it, i, anno: 1 }))]
+      .sort((a, b) => ((a.it.pos ?? 0) - (b.it.pos ?? 0)) || (a.anno - b.anno) || (a.i - b.i))
+      .map((x) => x.it);
+    for (const n of notes) {
+      placed.push({ kind: 'note', text: n.content || n.anchorText || '(empty note)', noteId: n.id });
+    }
+    placed.push(...orphans);
     // v0.15: General To-Do cards intentionally do NOT appear here — the
     // Navigator maps the SCRIPT, and only script to-dos have a location
     // in it. Standalone to-dos live solely in the To-Do window (blank Location).
-    return out;
+    return placed;
     // docTick forces re-scan of editor content
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, docTick, notes, markups]);
@@ -186,18 +196,20 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
   };
 
   const handleClick = (it: Item) => {
-    if (it.pos !== undefined) jumpTo(it.pos);
-    else if (it.kind === 'note' && it.noteId && editor) {
+    if (it.kind === 'markup' && it.markupId) {
+      // v5.25: same gesture as notes — go there, open its popover. Checked
+      // BEFORE the plain-jump branch: annotation rows carry a pos too (v5.26
+      // sorts them into the outline), but a jump alone would skip the open.
+      if (it.pos !== undefined) jumpTo(it.pos);
+      setMarkupEditorId(it.markupId);
+    } else if (it.pos !== undefined) {
+      jumpTo(it.pos);
+    } else if (it.kind === 'note' && it.noteId && editor) {
       // v4.33: jump to the note's highlight and open its popover there —
       // the Notes window no longer holds script notes.
       const pos = findNotePos(editor, it.noteId);
       if (pos !== null) jumpTo(pos);
       setNotePopoverId(it.noteId);
-    } else if (it.kind === 'markup' && it.markupId && editor) {
-      // v5.25: same gesture as notes — go there, open its popover.
-      const pos = findMarkupPos(editor, it.markupId);
-      if (pos !== null) jumpTo(pos);
-      setMarkupEditorId(it.markupId);
     }
   };
 

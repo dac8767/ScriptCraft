@@ -747,7 +747,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       <div className={soloCategory ? 'fs-customize-solo' : 'prefs-layout fs-customize-layout'}>
         {!soloCategory && (
         <div className="prefs-tabs fs-customize-tabs">
-          {([['elements', 'Editor'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['qat', 'Quick Access'], ['context', 'Context Menu'], ['markups', 'Markups'], ['themes', 'Themes']] as const)
+          {([['elements', 'Editor'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['qat', 'Quick Access'], ['context', 'Context Menu'], ['markups', 'Annotations'], ['themes', 'Themes']] as const)
             .map(([id, label]) => (
             <button
               key={id}

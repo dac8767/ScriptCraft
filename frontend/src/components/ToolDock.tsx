@@ -88,10 +88,11 @@ export const ALL_TOOLS: ToolDef[] = [
   // retired and migrates onto 'sticky', which predates the merge and keeps
   // every persisted layout).
   { id: 'sticky', label: 'Sticky Notes', icon: <FaRegStickyNote />, defaultSize: { w: 300, h: 336 }, group: 2 },
-  // v5.25: Markups — anchored rich-text annotations on the script (set to
-  // replace script highlighting, markers, sections, script notes and script
-  // to-dos once Derek signs off on the core).
-  { id: 'markups', label: 'Markups', icon: <FaRegFlag />, defaultSize: { w: 320, h: 420 }, group: 2 },
+  // v5.25: anchored rich-text annotations on the script (set to replace
+  // script highlighting, markers, sections, script notes and script to-dos
+  // once Derek signs off on the core). v5.26, Derek: renamed "Annotations"
+  // (label only — the 'markups' id is persisted, the Focus/Scrapbook rule).
+  { id: 'markups', label: 'Annotations', icon: <FaRegFlag />, defaultSize: { w: 320, h: 420 }, group: 2 },
   { id: 'fragments', label: 'Snippets', icon: <FaRegClipboard />, defaultSize: { w: 300, h: 312 }, group: 2 },
   { id: 'highlights', label: 'Highlights', icon: <FaHighlighter />, defaultSize: { w: 300, h: 312 }, group: 2 },
   { id: 'tags', label: 'Production Tags', icon: <FaTags />, defaultSize: { w: 340, h: 336 }, group: 2 },

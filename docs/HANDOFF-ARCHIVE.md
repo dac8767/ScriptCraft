@@ -151,9 +151,51 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.21 and older (newest first)
+## Version history — v5.22 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.22 — Sticky Notes: one interleaved list, reorderable tabs, blank check row
+
+- Derek's refinement of the v5.21 merge: (1) "do not force separating" —
+  ONE interleaved list; Sort gains 'type' (default: notes before checklists)
+  while 'created' sorts BOTH kinds together; (2) blue add buttons; (3)
+  "+ Add Note" / "+ Add Checklist"; (4) To-Do → "Checklist" wording; (5) a
+  blank check row replaces the dashed add-field on checklist cards; (6) the
+  Filter dropdown became All · Notes · Checklists header TABS, drag-
+  reorderable, order persisted, FIRST tab = the view the tool opens on.
+  NOTE: his item 5 ended mid-sentence ("move the ") — flagged, awaiting the
+  rest.
+- Manual sort IS the shelfCards array order now (the Snippets model — drag
+  any card anywhere, cross-kind; a drop snaps Sort to 'manual'). CASUALTIES,
+  all single-consumer: notesSort/todoSort/noteOrder/todoOrder store fields,
+  ScriptNotesContent (ScriptNotes.tsx keeps the color helpers/renderers the
+  popover imports), ListControls' arrangeEntries/reorderKeys/entryDragProps/
+  ListEntry (file now = cardMatchesSearch + StickySort labels), and the CSS
+  for .fs-notes-list/.fs-todo-*/.script-notes-list/.sticky-group-label.
+  viewState keys noteOrder/todoOrder linger unread (house pattern).
+- New store: stickySort ('type'|'manual'|'created', ephemeral, default
+  'type'), stickyTabOrder (persisted); stickyKindFilter INITIALIZES from
+  stickyTabOrder[0] — that is what "their preference is first in line" does.
+- Tabs: ChromeTabs gained an OPTIONAL onReorder (HTML5 drag; setData is
+  mandatory — the WebKit footgun); ToolChrome.onTabReorder wires it
+  (Characters passes nothing and stays fixed). In a NARROW docked panel the
+  strip collapses to the Section dropdown (v4.53 behavior) — the dropdown
+  can't reorder; tabs reorder in fullscreen/wide shapes. Driver runs the tab
+  checks in the takeover for exactly that reason.
+- Blank check row (StickyCard): a .swn-todo-item.swn-todo-blank with an
+  inert checkbox + borderless input; Enter OR blur-with-text commits and
+  re-blanks. .swn-todo-new (dashed divider) removed.
+- Add buttons wear `dialog-btn dialog-btn-primary sticky-add-btn` — the
+  v5.19 Reorder precedent; driver proves computed equality to a probe.
+- Drivers: check-sticky-v522.mjs (9 checks: both sort orders exact, probe
+  equality, tab wording/click/DRAG — page.dragAndDrop does real HTML5 dnd
+  in Chromium — persistence in store+viewState, blank-row commit).
+  check-tools-v521.mjs updated to the new labels/tabs reality.
+- Rename SCOPE: the sticky window only — the script's own to-do lists
+  (Insert → To-Do List, Navigator) keep their name until Derek says
+  otherwise.
+
 
 ### v5.21 — the seven-pack: Sticky Notes merge, fullscreen Title Page, one window, and the zombie Window menu
 

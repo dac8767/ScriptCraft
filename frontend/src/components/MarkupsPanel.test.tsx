@@ -27,7 +27,7 @@ const cardTexts = () =>
 
 describe('MarkupsPanel', () => {
   beforeEach(() => {
-    useEditorStore.setState({ markups: [], markupEditorId: null, markupFilters: EMPTY_MARKUP_FILTERS });
+    useEditorStore.setState({ markups: [], markupEditorId: null, markupFilters: EMPTY_MARKUP_FILTERS, markupSearch: '' });
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -46,13 +46,34 @@ describe('MarkupsPanel', () => {
     expect(cardTexts()).toEqual(['text of a', 'text of b']);
   });
 
-  it('filters by icon', () => {
+  it('a type unchecked in the Filter grid (hiddenIcons) drops from the list', () => {
     useEditorStore.setState({
       markups: [mk('a'), mk('b', { icon: 'star' })],
-      markupFilters: { ...EMPTY_MARKUP_FILTERS, icons: ['star'] },
+      markupFilters: { ...EMPTY_MARKUP_FILTERS, hiddenIcons: ['flag'] },
     });
     renderPanel();
     expect(cardTexts()).toEqual(['text of b']);
+  });
+
+  it('search narrows by text (v5.26)', () => {
+    useEditorStore.setState({ markups: [mk('a'), mk('b')], markupSearch: 'of b' });
+    renderPanel();
+    expect(cardTexts()).toEqual(['text of b']);
+  });
+
+  it('double-click on an orphan card opens its editor popover (v5.26 #13)', () => {
+    useEditorStore.setState({ markups: [mk('a')] });
+    renderPanel();
+    const card = container.querySelector('.markup-card') as HTMLElement;
+    act(() => { card.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); });
+    expect(useEditorStore.getState().markupEditorId).toBe('a');
+  });
+
+  it('cards carry a ⋮ menu and no pencil/trash buttons (v5.26 #11/#13)', () => {
+    useEditorStore.setState({ markups: [mk('a')] });
+    renderPanel();
+    expect(container.querySelector('.markup-dots-btn')).toBeTruthy();
+    expect(container.querySelector('.markup-card-btn')).toBeNull();
   });
 
   it('without an editor a markup is listed with its orphan location line', () => {
@@ -72,6 +93,6 @@ describe('MarkupsPanel', () => {
 
   it('the empty state invites the first markup', () => {
     renderPanel();
-    expect(container.querySelector('.markups-empty')?.textContent).toMatch(/markups collect here/i);
+    expect(container.querySelector('.markups-empty')?.textContent).toMatch(/annotations collect here/i);
   });
 });

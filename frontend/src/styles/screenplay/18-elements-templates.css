@@ -30,6 +30,21 @@
 }
 .color-picker-swatch:hover { border-color: var(--fd-accent, #4a9eff); }
 .color-picker-swatch.active { border-color: #fff; box-shadow: 0 0 0 1px var(--fd-accent); }
+/* v5.26: optional Recent row (wheel picks only — annotation pickers pass it) */
+.color-picker-recent { margin-bottom: 8px; }
+.color-picker-recent-label {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fd-text-muted);
+  margin-bottom: 3px;
+}
+.color-picker-recent-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
 .color-picker-custom {
   display: flex;
   gap: 4px;

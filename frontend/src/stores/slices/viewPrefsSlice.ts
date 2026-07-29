@@ -33,6 +33,16 @@ export interface ViewPrefsSlice {
   /** v5.25: Markups on the script — margin icons + highlight tints. */
   markupsVisible: boolean;
   setMarkupsVisible: (v: boolean) => void;
+  /** v5.26: annotation TYPES (icons) hidden in the SCRIPT — the panel's
+   *  "Show in Script" grid and each ⋮ menu's hide toggle, one list. */
+  markupHiddenIcons: string[];
+  setMarkupHiddenIcons: (list: string[]) => void;
+  /** v5.26: recently APPLIED wheel colors / picked grid icons in the
+   *  annotation pickers (presets don't record — Derek's rule). Newest first. */
+  markupRecentColors: string[];
+  addMarkupRecentColor: (c: string) => void;
+  markupRecentIcons: string[];
+  addMarkupRecentIcon: (icon: string) => void;
   setMarkersVisible: (v: boolean) => void;
   sceneNumbersVisible: boolean;
   setSceneNumbersVisible: (v: boolean) => void;
@@ -74,6 +84,23 @@ export const createViewPrefsSlice: StateCreator<EditorState, [], [], ViewPrefsSl
     saveViewState({ markupsVisible: v });
     set({ markupsVisible: v });
   },
+  markupHiddenIcons: (_vs.markupHiddenIcons as string[] | undefined) ?? [],
+  setMarkupHiddenIcons: (list) => {
+    saveViewState({ markupHiddenIcons: list });
+    set({ markupHiddenIcons: list });
+  },
+  markupRecentColors: (_vs.markupRecentColors as string[] | undefined) ?? [],
+  addMarkupRecentColor: (c) => set((s) => {
+    const next = [c, ...s.markupRecentColors.filter((x) => x !== c)].slice(0, 8);
+    saveViewState({ markupRecentColors: next });
+    return { markupRecentColors: next };
+  }),
+  markupRecentIcons: (_vs.markupRecentIcons as string[] | undefined) ?? [],
+  addMarkupRecentIcon: (icon) => set((s) => {
+    const next = [icon, ...s.markupRecentIcons.filter((x) => x !== icon)].slice(0, 8);
+    saveViewState({ markupRecentIcons: next });
+    return { markupRecentIcons: next };
+  }),
   markersVisible: _vs.markersVisible ?? true,
   setMarkersVisible: (v) => {
     saveViewState({ markersVisible: v });

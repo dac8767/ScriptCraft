@@ -7,7 +7,7 @@
  * localStorage at module scope.)
  */
 import { describe, it, expect } from 'vitest';
-import { markupKinds, markupPreviewText, pageForPos } from './markupActions';
+import { markupKinds, markupPreviewText, pageForPos, firstContentKind } from './markupActions';
 import type { ScriptMarkup } from '../stores/slices/markupsSlice';
 
 const markup = (content: unknown): ScriptMarkup => ({
@@ -49,6 +49,50 @@ describe('markupPreviewText', () => {
   it('is empty for image-only content', () => {
     const m = markup({ type: 'doc', content: [{ type: 'image', attrs: { src: 'x.png' } }] });
     expect(markupPreviewText(m)).toBe('');
+  });
+});
+
+/** v5.26, Derek's auto-icon table — the FIRST item that maps decides. */
+describe('firstContentKind (auto-icon)', () => {
+  const doc = (...content: unknown[]) => ({ type: 'doc', content });
+  const para = (t: string, marks?: { type: string }[]) =>
+    ({ type: 'paragraph', content: [{ type: 'text', text: t, ...(marks ? { marks } : {}) }] });
+
+  it('plain text first → note (speech bubble), even with a link later', () => {
+    const d = doc({
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'a paragraph then ' },
+        { type: 'text', text: 'a link', marks: [{ type: 'link' }] },
+      ],
+    });
+    expect(firstContentKind(d)).toBe('note');
+  });
+
+  it('a pure link first → link', () => {
+    expect(firstContentKind(doc(para('example.com', [{ type: 'link' }])))).toBe('link');
+  });
+
+  it('lists decide by their flavor', () => {
+    const list = (type: string) => doc({ type, content: [{ type: 'listItem', content: [para('x')] }] });
+    expect(firstContentKind(list('orderedList'))).toBe('numbers');
+    expect(firstContentKind(list('taskList'))).toBe('checklist');
+    expect(firstContentKind(list('bulletList'))).toBe('bullets');
+  });
+
+  it('an image block first → image; empty paragraphs are skipped', () => {
+    expect(firstContentKind(doc({ type: 'image', attrs: { src: 'x.png' } }))).toBe('image');
+    expect(firstContentKind(doc({ type: 'paragraph' }, para('later text')))).toBe('note');
+  });
+
+  it('the FIRST mapping item wins over later ones', () => {
+    const d = doc(para('intro text'), { type: 'taskList', content: [] });
+    expect(firstContentKind(d)).toBe('note');
+  });
+
+  it('nothing decisive → null (icon left alone)', () => {
+    expect(firstContentKind(null)).toBeNull();
+    expect(firstContentKind(doc({ type: 'paragraph' }))).toBeNull();
   });
 });
 

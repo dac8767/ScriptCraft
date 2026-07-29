@@ -18,27 +18,36 @@ export interface ScriptMarkup {
   /** highlight color painted on the script text — range markups only */
   highlight: string | null;
   /** how it was made: 'range' = a real selection (highlight offered),
-   *  'point' = a bare cursor (mark spans the whole element, no highlight) */
+   *  'point' = a bare cursor (anchored on the whole element, no highlight) */
   anchor: 'range' | 'point';
   done: boolean;
   createdAt: string;
+  /** v5.26: the user picked this icon by hand — auto-icon (first content
+   *  kind) must never overwrite it. Absent on v5.25 saves = false. */
+  iconManual?: boolean;
 }
 
-/** Content kinds a markup can contain — the Filter's "what it includes". */
+/** Content kinds a markup can contain — drives the auto-icon rule. */
 export type MarkupKind = 'note' | 'bullets' | 'numbers' | 'checklist' | 'link' | 'image';
 
+/** v5.26: the side-panel Filter. `hiddenIcons` holds the annotation TYPES
+ *  (icons) unchecked in the "Select all that you want visible" grid — empty
+ *  means everything shows. Separate from viewPrefs' markupHiddenIcons,
+ *  which hides types in the SCRIPT (the "Show in Script" control). */
 export interface MarkupFilters {
-  /** icon ids to show; empty = all */
-  icons: string[];
-  /** content kinds to show; empty = all */
-  kinds: MarkupKind[];
+  hiddenIcons: string[];
   /** default 'open' — Derek: "by default it only shows incomplete markups" */
   done: 'open' | 'done' | 'all';
 }
 
-export const EMPTY_MARKUP_FILTERS: MarkupFilters = { icons: [], kinds: [], done: 'open' };
+export const EMPTY_MARKUP_FILTERS: MarkupFilters = { hiddenIcons: [], done: 'open' };
 
 export interface MarkupPreset { icon: string; color: string }
+
+/** v5.26, Derek: an annotation made from a SELECTION auto-highlights the
+ *  text in this yellow (the window's "Hide highlights in script" removes
+ *  it; the swatch recolors it). First entry of MARKUP_HIGHLIGHTS. */
+export const DEFAULT_MARKUP_HIGHLIGHT = '#ffe066';
 
 /** Shipped preset combos — Derek's six, in his order. Customize ▸ Markups
  *  edits the live copy (viewState.markupPresets); this is the reset state.
@@ -65,6 +74,9 @@ export interface MarkupsSlice {
   setMarkupEditorId: (id: string | null) => void;
   markupFilters: MarkupFilters;
   setMarkupFilters: (f: MarkupFilters) => void;
+  /** v5.26: the side panel's search query (header ControlSearch). */
+  markupSearch: string;
+  setMarkupSearch: (q: string) => void;
 }
 
 export const createMarkupsSlice: StateCreator<EditorState, [], [], MarkupsSlice> = (set) => ({
@@ -79,4 +91,6 @@ export const createMarkupsSlice: StateCreator<EditorState, [], [], MarkupsSlice>
   setMarkupEditorId: (id) => set({ markupEditorId: id }),
   markupFilters: EMPTY_MARKUP_FILTERS,
   setMarkupFilters: (f) => set({ markupFilters: f }),
+  markupSearch: '',
+  setMarkupSearch: (q) => set({ markupSearch: q }),
 });

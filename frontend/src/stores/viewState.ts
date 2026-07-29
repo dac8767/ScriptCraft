@@ -47,6 +47,9 @@ export interface ViewState {
   designVars?: Record<string, number>;
   /** v5.25: Customize ▸ Markups — the popover's predefined icon+color combos. */
   markupPresets?: { icon: string; color: string }[];
+  markupHiddenIcons?: string[];
+  markupRecentColors?: string[];
+  markupRecentIcons?: string[];
   /** v5.25: markup visibility on the script (margin icons + highlights). */
   markupsVisible?: boolean;
   outlineBarRows?: OutlineBarRow[];

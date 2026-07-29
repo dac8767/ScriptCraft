@@ -32,7 +32,9 @@ describe('ColorPicker', () => {
       root.render(<ColorPicker value="#123456" onChange={onChange} onClose={onClose} />);
     });
     act(() => { (host.querySelector('.color-picker-apply') as HTMLButtonElement).click(); });
-    expect(onChange).toHaveBeenCalledWith('#123456');
+    // v5.26: onChange carries the pick's source — Apply is the 'wheel'
+    // (annotation pickers record ONLY wheel picks in their Recent row).
+    expect(onChange).toHaveBeenCalledWith('#123456', 'wheel');
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -43,7 +45,7 @@ describe('ColorPicker', () => {
       root.render(<ColorPicker value="#123456" onChange={onChange} onClose={onClose} />);
     });
     act(() => { (host.querySelector('.color-picker-swatch') as HTMLButtonElement).click(); });
-    expect(onChange).toHaveBeenCalledWith('#000000');   // first preset
+    expect(onChange).toHaveBeenCalledWith('#000000', 'preset');   // first preset
     expect(onClose).not.toHaveBeenCalled();
   });
 });

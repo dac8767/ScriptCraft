@@ -11,7 +11,7 @@ import {
   FaRegFlag, FaRegStar, FaHashtag, FaCircle, FaCheck, FaExclamation,
   FaRegBookmark, FaRegHeart, FaRegQuestionCircle, FaRegLightbulb, FaRegBell,
   FaRegEye, FaBolt, FaFire, FaRegClock, FaRegComment, FaArrowUp, FaArrowDown,
-  FaAsterisk, FaRegGem, FaKey, FaSearch, FaTimes, FaPlus,
+  FaAsterisk, FaRegGem, FaKey, FaSearch, FaTimes, FaPlus, FaLink, FaRegImage,
 } from 'react-icons/fa';
 
 /** The full monotone icon list (id → glyph). The first six are the shipped
@@ -41,6 +41,20 @@ export const MARKUP_ICONS: Record<string, React.ReactNode> = {
   search: <FaSearch />,
   x: <FaTimes />,
   plus: <FaPlus />,
+  // v5.26: auto-icon targets for link/image content (also pickable).
+  link: <FaLink />,
+  image: <FaRegImage />,
+};
+
+/** v5.26, Derek's auto-icon table: the FIRST content kind in the annotation
+ *  decides its icon — unless the user picked one by hand (iconManual). */
+export const AUTO_ICON: Record<string, string> = {
+  numbers: 'hashtag',
+  checklist: 'check',
+  bullets: 'dot',
+  link: 'link',
+  image: 'image',
+  note: 'comment',
 };
 
 /** Common emoji offered beside the icons (stored as 'emoji:<char>'). */

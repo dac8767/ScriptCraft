@@ -202,7 +202,65 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.25 — MARKUPS: the annotation tool (HEAD)
+### v5.26 — ANNOTATIONS: rename + the 14-item polish batch (HEAD)
+
+- Derek's batch on v5.25's tool: RENAMED "Annotations" (labels only — tool id
+  'markups', builtin keys, context-menu id, `_markups`, all persisted names
+  STAY). Every create control reads "Add Annotation".
+- CURSOR-ADD ALWAYS WORKS (#3): point annotations are a BLOCK ATTRIBUTE now
+  (`MarkupBlockAnchor`, a global attribute `markupId` on every element type,
+  renderHTML data-markup-block, keepOnSplit:false) — works on an EMPTY line,
+  which the whole-element mark could not (no text to carry it). The v5.25
+  refusal toast is GONE. Range annotations stay the scriptMarkup mark and
+  now AUTO-APPLY the yellow default highlight (DEFAULT_MARKUP_HIGHLIGHT in
+  markupsSlice) at creation; the popover checkbox is the INVERSE — "Hide
+  highlights in script" (+ color swatch when shown). If an element already
+  carries an annotation, Add OPENS it instead of stacking a duplicate.
+- POPOVER (#4-#9,#11): icon + color are single SWATCHES opening picker
+  windows (MarkupPickers.tsx): color = the Theme ColorPicker + a Recent row
+  (onChange gained a `source` arg — 'wheel' Applies record to viewPrefs
+  markupRecentColors; presets don't. ColorPicker.test updated to the new
+  contract); icon = presets · recent (markupRecentIcons, grid picks only) ·
+  full grid. Any hand pick sets iconManual — AUTO-ICON (firstContentKind in
+  markupActions + AUTO_ICON map in markupIcons: numbers→hashtag, checklist→
+  check, bullets→dot, link→link, image→image, note→comment; NEW link/image
+  icons) runs live on the mini editor and never overwrites a manual choice.
+  A paragraph is 'link' only when ALL its text is linked. Links in the body
+  are clickable (scrapbook: → selectPage + openTool('notebook'), saving
+  first; http → window.open). The ⋮ menu (MarkupDotsMenu) carries Status
+  Open/Complete, Hide/Show "<type>" in script, Delete — footer is Save only.
+- SUB-POPOVER RULE: every picker/menu portals to body as `.markup-subpop`,
+  and the annotation popover's save-on-close treats presses inside ANY
+  .markup-subpop as inside itself (else picking a color closes the window).
+- SEAT FIX (#2): the popover CLAMPS top into the viewport and seats
+  SCREEN-CENTER when no anchor rect exists — off-viewport anchors used to
+  seat the window off-screen (the "can't edit some items" glitch) and
+  orphans never opened at all.
+- MARGIN ICONS (#12): ON the page, centered in the right-margin band
+  (rightMargin×96×scale from the rendered page width), vertically CENTERED
+  on the selection's span union for ranges / the element's first line for
+  block anchors. Paper-light chip styling (page is always white).
+- PANEL (#11,#13,#14 + mid-turn adds): dbl-click = requestEditorScroll THEN
+  setMarkupEditorId after 160ms (jump + open; pencil/trash gone, ⋮ + quick
+  checkbox stay). Header: Filter (two sections with helper text "Select one"
+  / "Select all that you want visible" — state rows + a GRID of in-use
+  types with Show/Hide all; markupFilters is now {hiddenIcons, done}),
+  "Show in Script" (same grid → viewPrefs markupHiddenIcons, PERSISTED,
+  shared with the ⋮ toggles; hides margin icons in JS and neutralizes
+  highlights via a .markup-type-hidden class the ICON LAYER syncs onto
+  spans — the span only knows its id), and Search (markupSearch in the
+  slice). Distinct trigger classes .markup-ctl-filter / .markup-ctl-script
+  (the Navigator's Filter matches :has-text and steals driver clicks).
+- NAVIGATOR (#10): annotation rows SORT INTO the outline by findMarkupPos
+  (ties keep the landmark first); orphans + notes still append. The markup
+  branch in handleClick must run BEFORE the plain-jump branch — rows carry
+  pos now.
+- check-v526.mjs: 34 checks green (geometry to the pixel). Driver lessons:
+  a dock-row click TOGGLES an open tool (guard with a .markups-panel
+  existence check), and an annotation on the doc's LAST line legitimately
+  sorts to the outline's bottom — assert interleaving, not "not last".
+
+### v5.25 — MARKUPS: the annotation tool
 
 - Derek's redesign brief: ONE tool for annotating the script, set to replace
   notes / to-dos / sections / markers on the page plus script highlighting.
@@ -334,52 +392,12 @@ Durable bits kept live here:
   checks, docked has no stepper, Pages swap geometry. check-scenes-v520
   updated to the swapped row (Reorder left ≤14px, stepper right ≤12px).
 
-### v5.22 — Sticky Notes: one interleaved list, reorderable tabs, blank check row
-
-- Derek's refinement of the v5.21 merge: (1) "do not force separating" —
-  ONE interleaved list; Sort gains 'type' (default: notes before checklists)
-  while 'created' sorts BOTH kinds together; (2) blue add buttons; (3)
-  "+ Add Note" / "+ Add Checklist"; (4) To-Do → "Checklist" wording; (5) a
-  blank check row replaces the dashed add-field on checklist cards; (6) the
-  Filter dropdown became All · Notes · Checklists header TABS, drag-
-  reorderable, order persisted, FIRST tab = the view the tool opens on.
-  NOTE: his item 5 ended mid-sentence ("move the ") — flagged, awaiting the
-  rest.
-- Manual sort IS the shelfCards array order now (the Snippets model — drag
-  any card anywhere, cross-kind; a drop snaps Sort to 'manual'). CASUALTIES,
-  all single-consumer: notesSort/todoSort/noteOrder/todoOrder store fields,
-  ScriptNotesContent (ScriptNotes.tsx keeps the color helpers/renderers the
-  popover imports), ListControls' arrangeEntries/reorderKeys/entryDragProps/
-  ListEntry (file now = cardMatchesSearch + StickySort labels), and the CSS
-  for .fs-notes-list/.fs-todo-*/.script-notes-list/.sticky-group-label.
-  viewState keys noteOrder/todoOrder linger unread (house pattern).
-- New store: stickySort ('type'|'manual'|'created', ephemeral, default
-  'type'), stickyTabOrder (persisted); stickyKindFilter INITIALIZES from
-  stickyTabOrder[0] — that is what "their preference is first in line" does.
-- Tabs: ChromeTabs gained an OPTIONAL onReorder (HTML5 drag; setData is
-  mandatory — the WebKit footgun); ToolChrome.onTabReorder wires it
-  (Characters passes nothing and stays fixed). In a NARROW docked panel the
-  strip collapses to the Section dropdown (v4.53 behavior) — the dropdown
-  can't reorder; tabs reorder in fullscreen/wide shapes. Driver runs the tab
-  checks in the takeover for exactly that reason.
-- Blank check row (StickyCard): a .swn-todo-item.swn-todo-blank with an
-  inert checkbox + borderless input; Enter OR blur-with-text commits and
-  re-blanks. .swn-todo-new (dashed divider) removed.
-- Add buttons wear `dialog-btn dialog-btn-primary sticky-add-btn` — the
-  v5.19 Reorder precedent; driver proves computed equality to a probe.
-- Drivers: check-sticky-v522.mjs (9 checks: both sort orders exact, probe
-  equality, tab wording/click/DRAG — page.dragAndDrop does real HTML5 dnd
-  in Chromium — persistence in store+viewState, blank-row commit).
-  check-tools-v521.mjs updated to the new labels/tabs reality.
-- Rename SCOPE: the sticky window only — the script's own to-do lists
-  (Insert → To-Do List, Navigator) keep their name until Derek says
-  otherwise.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.22** — Sticky Notes: one interleaved list, reorderable tabs, blank check row
 - **v5.21** — the seven-pack: Sticky Notes merge, fullscreen Title Page, one window, and the zombie Window menu
 - **v5.20** — the Scenes four-pack: contained popover, Cards per row, one menu, lighter cards
 - **v5.19** — Reorder wears the dialogs' Apply format

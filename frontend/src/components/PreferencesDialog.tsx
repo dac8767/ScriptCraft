@@ -70,7 +70,7 @@ const CUSTOMIZE_TABS: Array<{ id: CustomizeCat; label: string; icon: React.React
   { id: 'panels', label: 'Side Panels', icon: <FaColumns /> },
   { id: 'qat', label: 'Quick Access', icon: <FaBolt /> },
   { id: 'context', label: 'Context Menu', icon: <FaMousePointer /> },
-  { id: 'markups', label: 'Markups', icon: <FaRegFlag /> },
+  { id: 'markups', label: 'Annotations', icon: <FaRegFlag /> },
   { id: 'themes', label: 'Themes', icon: <FaPalette /> },
 ];
 

@@ -1485,7 +1485,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             },
             {
               icon: <FaRegFlag />,
-              label: 'Show Markups in Script',
+              label: 'Show Annotations in Script',
               checked: markupsVisible,
               action: () => setMarkupsVisible(!markupsVisible),
             },

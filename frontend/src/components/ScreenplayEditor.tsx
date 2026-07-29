@@ -31,7 +31,7 @@ import { HocuspocusProvider } from '@hocuspocus/provider';
 import {
   SceneHeading, Action, Character, Dialogue, Parenthetical,
   Transition, General, Shot, NewAct, EndOfAct, Lyrics,
-  ShowEpisode, CastList, FontSize, ScriptNoteMark, ScriptMarkupMark, TagMark,
+  ShowEpisode, CastList, FontSize, ScriptNoteMark, ScriptMarkupMark, MarkupBlockAnchor, TagMark,
   FormatOverride, CustomElement, DualDialogue, DualDialogueColumn,
   TitlePage,
   AvBlock, AvRow, AvCell, AvPara, AvShot, AvDirection, AvKeymap,
@@ -1560,7 +1560,7 @@ const ScreenplayEditor: React.FC = () => {
       Transition, General, Shot, NewAct, EndOfAct, Lyrics,
       ShowEpisode, CastList, DualDialogue, DualDialogueColumn, TitlePage,
       AvBlock, AvRow, AvCell, AvPara, AvShot, AvDirection, AvKeymap,
-      ScriptNoteMark, ScriptMarkupMark, TagMark,
+      ScriptNoteMark, ScriptMarkupMark, MarkupBlockAnchor, TagMark,
       PaginationExtension,
       ContdCaseExtension,
       SearchExtension,
@@ -3969,7 +3969,12 @@ const ScreenplayEditor: React.FC = () => {
       if (!store.markupsVisible || store.previewMode) return;
       const el = (e.target as HTMLElement).closest('.script-markup-highlight') as HTMLElement | null;
       const id = el?.getAttribute('data-markup-id');
-      if (!id || !store.markups.some((m) => m.id === id)) return;
+      if (!id) return;
+      const m = store.markups.find((x) => x.id === id);
+      if (!m) return;
+      // v5.26: a type hidden via "Show in Script" is invisible — its span
+      // must not swallow ordinary editing clicks.
+      if (store.markupHiddenIcons.includes(m.icon)) return;
       store.setMarkupEditorId(id);
     };
     const editorEl = editor.view.dom;

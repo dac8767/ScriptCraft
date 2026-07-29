@@ -51,8 +51,9 @@ export const CONTEXT_MENU_SECTIONS: { id: string; label: string; group: ContextM
   // menu; a script to-do does, and that's what this inserts. The internal id
   // stays 'insertChecklist' so saved menu orders keep working.
   { id: 'insertChecklist', label: 'Add To-Do List', group: 'Insert' },
-  // v5.25: Markups — on an existing markup the item becomes Edit/Delete.
-  { id: 'markupScript', label: 'Markup Script', group: 'Insert' },
+  // v5.25: Annotations — on an existing one the item becomes Edit/Delete.
+  // v5.26: label renamed with the tool (the id is a persisted menu-order key).
+  { id: 'markupScript', label: 'Add Annotation', group: 'Insert' },
   { id: 'tagAs', label: 'Tag as…', group: 'Context Menu' },
   { id: 'spelling', label: 'Spelling Tools', group: 'Context Menu' },
 ];
@@ -224,8 +225,9 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
     return noteMark ? (noteMark.attrs.noteId as string) : null;
   })();
 
-  // v5.25: is the caret on an existing markup? Both anchor flavors are the
-  // scriptMarkup mark (point = whole-element), so this is the note detector.
+  // v5.25/v5.26: is the caret on an existing annotation? Range annotations
+  // are the scriptMarkup mark on the text; cursor-made ones are a block
+  // attribute on the element itself.
   const existingMarkupId = (() => {
     const markType = editor.schema.marks.scriptMarkup;
     if (!markType) return null;
@@ -237,7 +239,8 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
         mark = node.marks?.find((m) => m.type === markType) ?? mark;
       }
     }
-    return mark ? (mark.attrs.markupId as string) : null;
+    if (mark) return mark.attrs.markupId as string;
+    return ($from.parent.attrs.markupId as string | null | undefined) ?? null;
   })();
 
   // Detect if cursor is on an existing production tag
@@ -754,15 +757,15 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       {existingMarkupId ? (
         <>
           <div className="ctx-item" onClick={handleEditMarkup}>
-            <span>Edit Markup</span>
+            <span>Edit Annotation</span>
           </div>
           <div className="ctx-item" onClick={handleDeleteMarkup}>
-            <span>Delete Markup</span>
+            <span>Delete Annotation</span>
           </div>
         </>
       ) : (
         <div className="ctx-item" onClick={handleMarkupScript}>
-          <span>Markup Script</span>
+          <span>Add Annotation</span>
         </div>
       )}
       <div className="ctx-separator" />

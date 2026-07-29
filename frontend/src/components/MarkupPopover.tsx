@@ -1,10 +1,16 @@
 /**
- * v5.25: THE markup editor window — opens at the markup's spot on the page
- * (the ScriptNotePopover seating rules: portalled, measured top/left, never
- * bottom-anchored). A self-contained mini TipTap editor: rich text, links,
- * bullet/numbered/check lists, images by URL, link-to-Scrapbook-page. Icon
- * presets come from Customize ▸ Markups; plus the full icon + emoji list and
- * a color per markup. Range-anchored markups also offer a highlight color.
+ * v5.25/v5.26: THE annotation editor window — opens at the annotation's spot
+ * on the page (the ScriptNotePopover seating rules: portalled, measured
+ * top/left, never bottom-anchored, clamped into the viewport; an annotation
+ * whose anchor left the script seats screen-center so it is never
+ * uneditable). A self-contained mini TipTap editor: rich text, links,
+ * bullet/numbered/check lists, images by URL, link-to-Scrapbook-page.
+ *
+ * v5.26: the icon and color show as single swatches — clicking opens the
+ * picker windows (MarkupPickers). "Highlight selection in script" is a
+ * checkbox (range annotations only) gating the highlight color. The icon
+ * follows the FIRST content kind automatically until the user picks one by
+ * hand (iconManual). The ⋮ menu carries status / hide-type / delete.
  */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -15,24 +21,23 @@ import Image from '@tiptap/extension-image';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import {
-  FaBold, FaItalic, FaListUl, FaListOl, FaCheckSquare, FaLink, FaRegImage, FaBook, FaRegTrashAlt,
+  FaBold, FaItalic, FaListUl, FaListOl, FaCheckSquare, FaLink, FaRegImage, FaBook,
 } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
-import { MARKUP_ICONS, MARKUP_EMOJI, MARKUP_COLORS, MARKUP_HIGHLIGHTS, MarkupIcon } from './markupIcons';
-import { findMarkupPos, removeMarkupFromDoc, setMarkupHighlight } from '../utils/markupActions';
+import { AUTO_ICON } from './markupIcons';
+import { DEFAULT_MARKUP_HIGHLIGHT } from '../stores/slices/markupsSlice';
+import { MarkupColorSwatch, MarkupIconSwatch, MarkupDotsMenu } from './MarkupPickers';
+import { findMarkupPos, setMarkupHighlight, firstContentKind } from '../utils/markupActions';
 
 const POP_W = 380;
 
 export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   const id = useEditorStore((s) => s.markupEditorId);
   const markup = useEditorStore((s) => s.markups.find((m) => m.id === id) ?? null);
-  const presets = useEditorStore((s) => s.markupPresets);
   const setMarkupEditorId = useEditorStore((s) => s.setMarkupEditorId);
   const updateMarkup = useEditorStore((s) => s.updateMarkup);
-  const removeMarkup = useEditorStore((s) => s.removeMarkup);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
-  const [morePicker, setMorePicker] = useState(false);
   const [scrapPicker, setScrapPicker] = useState(false);
   const popRef = useRef<HTMLDivElement>(null);
   const nbPages = useNotebookStore((s) => s.pages);
@@ -48,19 +53,37 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     content: null,
   }, []);
 
-  // Load the markup's content whenever a different markup opens.
+  // Load the annotation's content whenever a different one opens.
   useEffect(() => {
     if (!mini || !markup) return;
     mini.commands.setContent((markup.content as never) ?? '');
-    setMorePicker(false);
     setScrapPicker(false);
   }, [mini, id]);   // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Seat under the margin icon (or the highlight span) — top/left only.
+  // v5.26 auto-icon: the FIRST content kind decides — but a hand-picked icon
+  // is never overwritten (iconManual). Live, so the swatch reads true.
+  useEffect(() => {
+    if (!mini || !id) return;
+    const sync = () => {
+      const st = useEditorStore.getState();
+      const m = st.markups.find((x) => x.id === id);
+      if (!m || m.iconManual) return;
+      const kind = firstContentKind(mini.getJSON());
+      const auto = kind ? AUTO_ICON[kind] : null;
+      if (auto && auto !== m.icon) st.updateMarkup(id, { icon: auto });
+    };
+    mini.on('update', sync);
+    return () => { mini.off('update', sync); };
+  }, [mini, id]);
+
+  // Seat at the anchor — highlight span or block-anchored element; an
+  // anchorless (orphaned) annotation seats screen-center so it can still be
+  // read, edited and deleted (v5.26 — "unable to edit some items").
   useLayoutEffect(() => {
     if (!id) { setPos(null); return; }
     const place = () => {
-      const el = document.querySelector(`.script-markup-highlight[data-markup-id="${CSS.escape(id)}"]`);
+      const el = document.querySelector(`.script-markup-highlight[data-markup-id="${CSS.escape(id)}"]`)
+        || document.querySelector(`[data-markup-block="${CSS.escape(id)}"]`);
       let r = el?.getBoundingClientRect();
       if ((!r || (r.width === 0 && r.height === 0)) && editor && markup) {
         const p = findMarkupPos(editor, id);
@@ -71,9 +94,14 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
           } catch { /* keep last */ }
         }
       }
-      if (!r) return;
       const h = popRef.current?.offsetHeight ?? 320;
-      const top = r.bottom + 6 + h > window.innerHeight ? Math.max(8, r.top - h - 6) : r.bottom + 6;
+      if (!r) {
+        setPos({ top: Math.max(8, (window.innerHeight - h) / 2), left: Math.max(8, (window.innerWidth - POP_W) / 2) });
+        return;
+      }
+      const below = r.bottom + 6;
+      let top = below + h > window.innerHeight ? r.top - h - 6 : below;
+      top = Math.max(8, Math.min(top, window.innerHeight - h - 8));
       setPos({ top, left: Math.max(8, Math.min(r.left, window.innerWidth - POP_W - 8)) });
     };
     place();
@@ -88,11 +116,13 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   }, [id, editor, markup]);
 
   // Outside press closes AND SAVES (save-on-close = the sticky-card model).
+  // Presses inside a picker/menu sub-popover count as INSIDE this window.
   useEffect(() => {
     if (!id) return;
     const onDown = (e: PointerEvent) => {
       const t = e.target as HTMLElement;
       if (popRef.current?.contains(t)) return;
+      if (t.closest?.('.markup-subpop')) return;
       save();
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') save(); };
@@ -116,16 +146,6 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     setMarkupEditorId(null);
   };
 
-  const del = () => {
-    if (editor) {
-      removeMarkupFromDoc(editor, id);
-      editor.emit('update', { editor, transaction: editor.state.tr });
-    }
-    removeMarkup(id);
-    setMarkupEditorId(null);
-  };
-
-  const setIconColor = (patch: { icon?: string; color?: string }) => updateMarkup(id, patch);
   const setHighlight = (hl: string | null) => {
     updateMarkup(id, { highlight: hl });
     if (editor) setMarkupHighlight(editor, id, hl);
@@ -144,6 +164,25 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     setScrapPicker(false);
   };
 
+  // v5.26: links in the note are CLICKABLE — scrapbook: links open that
+  // Scrapbook page (saving this window first); web links open externally.
+  const onBodyClick = (e: React.MouseEvent) => {
+    const a = (e.target as HTMLElement).closest('a');
+    if (!a) return;
+    const href = a.getAttribute('href') ?? '';
+    if (href.startsWith('scrapbook:')) {
+      e.preventDefault();
+      const pageId = href.slice('scrapbook:'.length);
+      save();
+      const nb = useNotebookStore.getState();
+      if (nb.pages[pageId]) nb.selectPage(pageId);
+      useEditorStore.getState().openTool('notebook');
+    } else if (/^https?:/i.test(href)) {
+      e.preventDefault();
+      window.open(href, '_blank', 'noopener');
+    }
+  };
+
   const miniBtn = (active: boolean, title: string, onClick: () => void, child: React.ReactNode) => (
     <button className={`markup-mini-btn${active ? ' active' : ''}`} title={title} onMouseDown={(e) => e.preventDefault()} onClick={onClick}>{child}</button>
   );
@@ -151,47 +190,37 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   return createPortal(
     <div ref={popRef} className="fs-markup-popover" style={{ top: pos.top, left: pos.left, width: POP_W }}
       onPointerDown={(e) => e.stopPropagation()}>
-      {/* icon presets + more + color */}
-      <div className="markup-pop-row">
-        {presets.map((p, i) => (
-          <button
-            key={`${p.icon}-${i}`}
-            className={`markup-preset${markup.icon === p.icon && markup.color === p.color ? ' active' : ''}`}
-            title="Preset icon"
-            onClick={() => setIconColor({ icon: p.icon, color: p.color })}
-          ><MarkupIcon icon={p.icon} color={p.color} /></button>
-        ))}
-        <button className={`markup-preset markup-more${morePicker ? ' active' : ''}`} title="More icons & emoji" onClick={() => setMorePicker((v) => !v)}>…</button>
-        <span className="markup-color-dots">
-          {MARKUP_COLORS.map((c) => (
-            <button key={c} className={`markup-dot${markup.color === c ? ' active' : ''}`} style={{ background: c }} title="Icon color" onClick={() => setIconColor({ color: c })} />
-          ))}
-          <input type="color" className="markup-dot markup-dot-custom" value={markup.color} title="Custom color" onChange={(e) => setIconColor({ color: e.target.value })} />
-        </span>
+      {/* icon swatch · color swatch · ⋮ */}
+      <div className="markup-pop-row markup-pop-head">
+        <MarkupIconSwatch markup={markup} />
+        <MarkupColorSwatch
+          value={markup.color}
+          title="Icon color"
+          onPick={(color) => updateMarkup(id, { color })}
+        />
+        <span className="markup-pop-spacer" />
+        <MarkupDotsMenu markup={markup} editor={editor} onDeleted={() => setMarkupEditorId(null)} />
       </div>
-      {morePicker && (
-        <div className="markup-pop-grid">
-          {Object.keys(MARKUP_ICONS).map((k) => (
-            <button key={k} className={`markup-preset${markup.icon === k ? ' active' : ''}`} onClick={() => { setIconColor({ icon: k }); setMorePicker(false); }}>
-              <MarkupIcon icon={k} color={markup.color} />
-            </button>
-          ))}
-          {MARKUP_EMOJI.map((e) => (
-            <button key={e} className={`markup-preset${markup.icon === `emoji:${e}` ? ' active' : ''}`} onClick={() => { setIconColor({ icon: `emoji:${e}` }); setMorePicker(false); }}>
-              <span className="markup-emoji">{e}</span>
-            </button>
-          ))}
-        </div>
-      )}
-      {/* highlight color — range markups only */}
+      {/* highlight — range annotations only. v5.26, Derek: selection-made
+          annotations highlight YELLOW by default, so the option here is the
+          inverse — "Hide highlights in script" — plus the color swatch. */}
       {markup.anchor === 'range' && (
         <div className="markup-pop-row markup-hl-row">
-          <span className="markup-pop-label">Highlight:</span>
-          {MARKUP_HIGHLIGHTS.map((c) => (
-            <button key={c} className={`markup-dot${markup.highlight === c ? ' active' : ''}`} style={{ background: c }} title="Highlight text" onClick={() => setHighlight(c)} />
-          ))}
-          <input type="color" className="markup-dot markup-dot-custom" value={markup.highlight ?? '#ffe066'} title="Custom highlight" onChange={(e) => setHighlight(e.target.value)} />
-          <button className="markup-hl-clear" title="No highlight" onClick={() => setHighlight(null)}>None</button>
+          <label className="markup-hl-check">
+            <input
+              type="checkbox"
+              checked={markup.highlight === null}
+              onChange={(e) => setHighlight(e.target.checked ? null : DEFAULT_MARKUP_HIGHLIGHT)}
+            />
+            Hide highlights in script
+          </label>
+          {markup.highlight !== null && (
+            <MarkupColorSwatch
+              value={markup.highlight}
+              title="Highlight color"
+              onPick={(color) => setHighlight(color)}
+            />
+          )}
         </div>
       )}
       {/* mini editor toolbar */}
@@ -213,16 +242,10 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
           ))}
         </div>
       )}
-      <div className="markup-mini-editor"><EditorContent editor={mini} /></div>
+      <div className="markup-mini-editor" onClick={onBodyClick}><EditorContent editor={mini} /></div>
       <div className="markup-pop-row markup-pop-foot">
-        <label className="markup-done">
-          <input type="checkbox" checked={markup.done} onChange={() => updateMarkup(id, { done: !markup.done })} />
-          Complete
-        </label>
-        <span className="markup-foot-actions">
-          <button className="markup-del" title="Delete markup" onClick={del}><FaRegTrashAlt /></button>
-          <button className="dialog-btn dialog-btn-primary markup-save" onClick={save}>Save</button>
-        </span>
+        <span className="markup-pop-spacer" />
+        <button className="dialog-btn dialog-btn-primary markup-save" onClick={save}>Save</button>
       </div>
     </div>,
     document.body,

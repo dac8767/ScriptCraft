@@ -1,6 +1,7 @@
 /**
- * v5.25: Customize ▸ Markups — pick which icon + color combos are the
- * PREDEFINED options the markup popover offers (its first row). The list
+ * v5.25: Customize ▸ Annotations (tool renamed v5.26; ids keep 'markups') —
+ * pick which icon + color combos are the PREDEFINED options the annotation
+ * icon picker offers. The list
  * is ordered (drag a chip onto another to reorder — dataTransfer.setData
  * is mandatory, the WebKit footgun); build a new combo from the full
  * icon/emoji grid + a color, then Add. Floor of one preset: an empty row
@@ -36,10 +37,10 @@ export default function MarkupsCustomizeTab() {
 
   return (
     <section>
-      <h3>Markup Presets</h3>
+      <h3>Annotation Presets</h3>
       <p className="fs-markup-cz-help">
-        These combos appear as the one-click options when a markup opens.
-        Drag to reorder — the first is what a new markup starts as.
+        These combos appear as the one-click options in an annotation&rsquo;s icon
+        picker. Drag to reorder — the first is what a new annotation starts as.
       </p>
       <div className="fs-markup-cz-current">
         {presets.map((p, i) => (

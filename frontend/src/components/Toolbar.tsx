@@ -973,7 +973,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       case 'markupScript': return (
         <button
           className="toolbar-btn"
-          title="Markup Script"
+          title="Add Annotation"
           onClick={() => { if (editor) createMarkupAtSelection(editor); }}
         >
           <FaRegFlag />
@@ -982,7 +982,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       case 'toggleMarkups': return (
         <button
           className={`toolbar-btn ${markupsVisible ? 'active' : ''}`}
-          title={markupsVisible ? 'Hide Markups' : 'Show Markups'}
+          title={markupsVisible ? 'Hide Annotations' : 'Show Annotations'}
           onClick={() => setMarkupsVisible(!markupsVisible)}
         >
           {markupsVisible ? <FaRegEye /> : <FaRegEyeSlash />}

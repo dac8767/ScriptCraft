@@ -6,7 +6,9 @@
 
 /* ── Margin icons ─────────────────────────────────────────────────────────
    Absolutely-positioned children of .editor-main (position:relative since
-   v1.72), so they ride the scroll content — no scroll listener. */
+   v1.72), so they ride the scroll content — no scroll listener. v5.26:
+   they sit ON the page (centered in the white right margin), so the chip
+   is paper-light in every app theme — the page itself is always white. */
 .markup-margin-icon {
   position: absolute;
   z-index: 40;                    /* above pages, below floating windows */
@@ -15,12 +17,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--fd-dropdown-bg);
-  border: 1px solid var(--fd-border);
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.18);
   border-radius: 50%;
   cursor: pointer;
   padding: 0;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
 }
 .markup-margin-icon:hover { border-color: var(--fd-accent); }
 .markup-margin-icon .markup-glyph { display: flex; font-size: 12px; }
@@ -34,9 +36,15 @@
 .script-markup-highlight { cursor: pointer; border-radius: 1px; }
 
 /* Hide switch: the page gets .markups-hidden (preview mode, or the
-   Show Markups toggle off). Margin icons unmount in JS; the highlight
+   Show Annotations toggle off). Margin icons unmount in JS; the highlight
    span stays in the doc, so its inline background must be beaten here. */
 .markups-hidden .script-markup-highlight {
+  background-color: transparent !important;
+  cursor: text;
+}
+/* v5.26: a single TYPE hidden via "Show in Script" (class synced from the
+   icon layer — the span only knows its id, not its icon). */
+.script-markup-highlight.markup-type-hidden {
   background-color: transparent !important;
   cursor: text;
 }
@@ -80,10 +88,9 @@
 .markup-preset:hover { border-color: var(--fd-border); background: var(--fd-overlay-light); }
 .markup-preset.active { border-color: var(--fd-accent); }
 .markup-preset .markup-glyph { display: flex; }
-.markup-more { font-weight: 700; color: var(--fd-text-muted); }
 .markup-emoji { font-size: 14px; line-height: 1; }
 
-/* Full icon + emoji grid behind the "…" button */
+/* Full icon + emoji grid (icon picker window + Customize ▸ Annotations) */
 .markup-pop-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
@@ -93,8 +100,136 @@
   border-radius: 6px;
 }
 
-/* Color dots (icon color + highlight color rows) */
-.markup-color-dots { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+/* ── v5.26: swatches + sub-popovers ──────────────────────────────────────
+   The popover shows ONE current icon and ONE current color; clicking opens
+   the picker windows. All sub-popovers portal to body as .markup-subpop —
+   the annotation popover treats presses inside them as inside itself. */
+.markup-pop-head { gap: 6px; }
+.markup-pop-spacer { flex: 1; }
+.markup-swatch {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+}
+.markup-swatch:hover { border-color: var(--fd-accent); }
+.markup-swatch-icon { background: var(--fd-input-bg); font-size: 14px; }
+.markup-swatch-icon .markup-glyph { display: flex; }
+.markup-swatch-color { border-width: 2px; border-color: rgba(255, 255, 255, 0.25); }
+
+.markup-subpop { position: fixed; z-index: 3300; }
+.markup-color-pop .color-picker-popup { position: static; }
+.markup-icon-pop {
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  padding: 8px;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: min(60vh, 420px);
+  overflow-y: auto;
+}
+.markup-icon-pop-row { display: flex; flex-wrap: wrap; gap: 3px; }
+
+/* the ⋮ options menu (popover window + side-panel cards) */
+.markup-dots-btn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 11px;
+}
+.markup-dots-btn:hover { background: var(--fd-overlay-light); color: var(--fd-text); }
+.markup-dots-pop {
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  padding: 4px;
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+}
+.markup-dots-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fd-text-muted);
+  padding: 4px 8px 2px;
+}
+.markup-dots-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+  font-size: 12px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--fd-text);
+  cursor: pointer;
+  padding: 5px 8px 5px 22px;
+  position: relative;
+}
+.markup-dots-item:hover { background: var(--fd-overlay-light); }
+.markup-dots-check { position: absolute; left: 6px; font-size: 10px; color: var(--fd-accent); }
+.markup-dots-sep { height: 1px; background: var(--fd-border); margin: 3px 4px; }
+.markup-dots-del:hover { color: #e05555; }
+
+/* the panel's Filter / Show in Script popovers */
+.markup-filter-pop {
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  padding: 6px;
+  width: 216px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.markup-filter-help {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fd-text-muted);
+  padding: 4px 6px 2px;
+}
+.markup-filter-empty { font-size: 11px; color: var(--fd-text-muted); padding: 2px 6px 4px; }
+.markup-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+  padding: 2px 4px 4px;
+}
+.markup-filter-allrow { display: flex; gap: 6px; padding: 2px 4px 4px; }
+
+/* highlight checkbox row */
+.markup-hl-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fd-text);
+  cursor: pointer;
+}
+
+/* Color dots (Customize ▸ Annotations combo builder) */
 .markup-dot {
   width: 16px;
   height: 16px;
@@ -198,31 +333,8 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
   color: var(--fd-text-muted);
 }
 
-/* Footer: Complete + delete + Save */
-.markup-pop-foot { justify-content: space-between; border-top: 1px solid var(--fd-border); padding-top: 8px; }
-.markup-done {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--fd-text);
-  cursor: pointer;
-}
-.markup-foot-actions { display: flex; align-items: center; gap: 6px; }
-.markup-del {
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  border-radius: 4px;
-  color: var(--fd-text-muted);
-  cursor: pointer;
-  font-size: 13px;
-}
-.markup-del:hover { color: #e05555; background: var(--fd-overlay-light); }
+/* Footer: Save (status/delete live in the ⋮ menu since v5.26) */
+.markup-pop-foot { border-top: 1px solid var(--fd-border); padding-top: 8px; }
 
 /* ── The Markups tool window ─────────────────────────────────────────────── */
 .markups-panel {
@@ -276,22 +388,6 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
 }
 .markup-card-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
 .markup-card-check { margin: 0 2px 0 0; cursor: pointer; }
-.markup-card-btn {
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  border-radius: 4px;
-  color: var(--fd-text-muted);
-  cursor: pointer;
-  padding: 0;
-  font-size: 11px;
-}
-.markup-card-btn:hover { background: var(--fd-overlay-light); color: var(--fd-text); }
-.markup-card-del:hover { color: #e05555; }
 
 /* ── Customize ▸ Markups (preset combos) ─────────────────────────────────── */
 .fs-markup-cz-help { font-size: 11px; color: var(--fd-text-muted); margin: 2px 0 8px; }

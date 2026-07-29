@@ -1,5 +1,22 @@
 [
   {
+    "version": "5.26",
+    "date": "2026-07-29",
+    "changes": [
+      "Markups is called ANNOTATIONS now — the window, ribbon items, menus and Customize tab all follow, and every create button reads \"Add Annotation\"",
+      "Add at the cursor, always: an annotation lands on the current line even when it's empty — selecting text first is never required (the \"nothing to markup here\" refusal is gone)",
+      "Selecting text and adding an annotation paints a yellow highlight immediately; the window offers \"Hide highlights in script\" plus a color swatch",
+      "The icon and color are single swatches — click one to open its picker window: the Theme tool's color window (presets + color wheel) with a Recent row of your wheel picks, and an icon window (presets · recent · the full icon and emoji grid)",
+      "The icon follows what you write: numbered list → #, checklist → check, bullet list → dot, a link → link icon, an image → image icon, plain text → speech bubble. The FIRST thing in the note decides — and a hand-picked icon is never auto-replaced",
+      "Links inside an annotation are clickable now — Scrapbook links open that Scrapbook page, web links open in the browser",
+      "Margin icons sit ON the page — centered in the white right margin, on the row where the annotation was added (or vertically centered on the selected text)",
+      "Side panel: double-click a card to jump there AND open it (the edit button is gone); cards and the window carry a ⋮ menu — Status (Open / Complete), hide this annotation type in the script, Delete",
+      "Panel header: Filter with two sections (\"Select one\": Open / Complete / All, and \"Select all that you want visible\": a grid of the annotation types actually in your script, with Show all / Hide all), a \"Show in Script\" grid that controls the editor the same way, and Search",
+      "Navigator: annotations sit under the scene they live in instead of piling up at the bottom",
+      "Fixed: some annotations couldn't be edited from the side panel — the editor window could seat itself off-screen (and never appeared for annotations whose script text was deleted); it now clamps on-screen, and an orphaned annotation opens centered"
+    ]
+  },
+  {
     "version": "5.25",
     "date": "2026-07-29",
     "changes": [
