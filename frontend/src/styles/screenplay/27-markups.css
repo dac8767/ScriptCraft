@@ -473,7 +473,20 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
 .fs-markup-cz-add { font-size: 12px; padding: 5px 12px; margin-left: 6px; }
 .fs-markup-cz-footrow { margin-top: 16px; }
 
-/* Navigator markup rows — the row wears the markup's own icon + color */
+/* Navigator annotation rows — indented under their scene (v5.28) and
+   colored by their icon (inline from the row). */
+.fs-nav-item.markup { padding-left: 26px; }
 .fs-nav-markup-icon { display: inline-flex; margin-right: 4px; font-size: 11px; }
 .fs-nav-markup-icon .markup-glyph { display: inline-flex; }
 .fs-nav-markup-icon .markup-emoji { font-size: 11px; }
+
+/* v5.28: header-cluster helpers — the full-width break wraps the row-2
+   controls (the Navigator's Scene Numbers toggle), and the nav number
+   badge is the Scenes circle at list size, BEFORE the heading. */
+.tool-ctl-break { flex-basis: 100%; height: 0; }
+.fs-nav-num-badge {
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  margin-right: 6px;
+}

@@ -180,6 +180,113 @@ export function MarkupIconSwatch({ markup }: { markup: ScriptMarkup }) {
   );
 }
 
+/* ── The shared visibility popover (state row + type grid) ───────────────
+   v5.28: moved here from MarkupsPanel — the panel's Filter/Show buttons,
+   the ribbon's Annotation Visibility button and the View submenu all draw
+   on the same shapes (one source, three doors). */
+
+export const DONE_LABELS = { open: 'Open', done: 'Complete', all: 'All' } as const;
+
+/** Annotation types (icons) present in the script, plus any already-hidden
+ *  selections — a hidden type must stay listed or it could never come back. */
+export function useTypesInUse(extra: string[]) {
+  const markups = useEditorStore((s) => s.markups);
+  return React.useMemo(
+    () => [...new Set([...markups.map((m) => m.icon), ...extra])],
+    [markups, extra],
+  );
+}
+
+export function TypeGridPop({ boxRef, pos, done, onDone, gridHelp, types, hidden, onToggle, onShowAll, onHideAll }: {
+  boxRef: React.RefObject<HTMLDivElement | null>;
+  pos: { top: number; left: number } | null;
+  done: 'open' | 'done' | 'all';
+  onDone: (d: 'open' | 'done' | 'all') => void;
+  /** helper text over the type grid — the popovers differ here */
+  gridHelp: string;
+  types: string[];
+  hidden: string[];
+  onToggle: (icon: string) => void;
+  onShowAll: () => void;
+  onHideAll: () => void;
+}) {
+  return createPortal(
+    <div ref={boxRef} className="markup-subpop markup-filter-pop" style={pos ?? { top: -9999, left: -9999 }}
+      onPointerDown={(e) => e.stopPropagation()}>
+      <div className="markup-filter-help">Select one</div>
+      {/* v5.27, Derek: the three states side by side as ONE toggle row */}
+      <span className="markup-seg markup-filter-seg">
+        {(['open', 'done', 'all'] as const).map((d) => (
+          <button key={d} className={done === d ? 'active' : ''} onClick={() => onDone(d)}>
+            {DONE_LABELS[d]}
+          </button>
+        ))}
+      </span>
+      <div className="markup-dots-sep" />
+      <div className="markup-filter-help">{gridHelp}</div>
+      {types.length === 0 && <div className="markup-filter-empty">No annotations yet.</div>}
+      <div className="markup-filter-grid">
+        {types.map((icon) => (
+          <button
+            key={icon}
+            className={`markup-preset${hidden.includes(icon) ? '' : ' active'}`}
+            title={iconLabel(icon)}
+            onClick={() => onToggle(icon)}
+          ><MarkupIcon icon={icon} /></button>
+        ))}
+      </div>
+      <div className="markup-filter-allrow">
+        <button className="markup-hl-clear" onClick={onShowAll}>Show all</button>
+        <button className="markup-hl-clear" onClick={onHideAll}>Hide all</button>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/** A self-contained trigger + the SCRIPT-visibility popover (status row +
+ *  type grid bound to viewPrefs). The panel's "Show" button and the ribbon's
+ *  Annotation Visibility button are both this component in different coats. */
+export function AnnotationShowMenu({ className, title, children }: {
+  className: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const hidden = useEditorStore((s) => s.markupHiddenIcons);
+  const setHidden = useEditorStore((s) => s.setMarkupHiddenIcons);
+  const done = useEditorStore((s) => s.markupScriptDone);
+  const setDone = useEditorStore((s) => s.setMarkupScriptDone);
+  const types = useTypesInUse(hidden);
+  const pos = useSeat(open, btnRef, boxRef);
+  useDismiss(open, boxRef, btnRef, () => setOpen(false));
+  return (
+    <>
+      <button ref={btnRef} className={`${className}${open ? ' open' : ''}`} title={title}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}>
+        {children}
+      </button>
+      {open && (
+        <TypeGridPop
+          boxRef={boxRef}
+          pos={pos}
+          done={done}
+          onDone={setDone}
+          gridHelp="Toggle visibility in script"
+          types={types}
+          hidden={hidden}
+          onToggle={(icon) => setHidden(hidden.includes(icon) ? hidden.filter((x) => x !== icon) : [...hidden, icon])}
+          onShowAll={() => setHidden([])}
+          onHideAll={() => setHidden(types)}
+        />
+      )}
+    </>
+  );
+}
+
 /* ── The ⋮ options menu (popover window + side-panel cards) ─────────────── */
 
 export function MarkupDotsMenu({ markup, editor, onDeleted }: {

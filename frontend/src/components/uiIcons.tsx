@@ -244,6 +244,7 @@ export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
   // (the live button swaps eye/eye-slash by state, the lockResize model).
   markupScript: <FaMarker />,
   toggleMarkups: <FaRegEye />,
+  annotationsMenu: <FaMarker />,
   zoom: <CirclePlusIcon />,   // v4.31: zoom = the circled steppers (14-B)
   view: <FaDesktop />,
   // v2.34: surface toggles. The right panel is the left icon mirrored —

@@ -70,15 +70,18 @@ export function NavigatorControls() {
   const navFilter = useEditorStore((s) => s.navFilter);
   const setNavFilter = useEditorStore((s) => s.setNavFilter);
   const hiddenCount = KINDS.filter((k) => !kindShown(navShowKinds, k)).length;
+  const annosShown = kindShown(navShowKinds, 'markup');
   return (
     <>
+      {/* v5.28, Derek: a dedicated Annotations toggle — the same kind
+          visibility the Filter menu drives, one click instead of two. */}
       <button
-        className={'tool-ctl tool-ctl-lead' + (showNums ? ' active' : '')}
-        title={showNums ? 'Hide scene numbers' : 'Show scene numbers'}
+        className={'tool-ctl tool-ctl-lead' + (annosShown ? ' active' : '')}
+        title={annosShown ? 'Hide annotations in this list' : 'Show annotations in this list'}
         onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => setShowNums(!showNums)}
+        onClick={() => setNavShowKinds({ ...navShowKinds, markup: !annosShown })}
       >
-        <FaHashtag aria-hidden />
+        <span className="tool-ctl-label">Annotations</span>
       </button>
       <ControlDropdown
         label="Filter"
@@ -91,6 +94,18 @@ export function NavigatorControls() {
         }))}
       />
       <ControlSearch value={navFilter} onChange={setNavFilter} placeholder="Filter by keyword" />
+      {/* v5.28, Derek: the scene-number toggle moved DOWN A ROW, left-
+          aligned (the break forces the wrap; lead pins it left). */}
+      <span className="tool-ctl-break" aria-hidden />
+      <button
+        className={'tool-ctl tool-ctl-lead' + (showNums ? ' active' : '')}
+        title={showNums ? 'Hide scene numbers' : 'Show scene numbers'}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => setShowNums(!showNums)}
+      >
+        <FaHashtag aria-hidden />
+        <span className="tool-ctl-label">Scene Numbers</span>
+      </button>
     </>
   );
 }
@@ -247,7 +262,16 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
                 onClick={(e) => e.stopPropagation()}
               />
             )}
-            <span className={it.done ? 'fs-nav-done' : ''}>
+            {/* v5.28, Derek: the scene number is the Scenes tool's circle
+                badge, BEFORE the heading (was a bare number at the right). */}
+            {showNums && it.kind === 'scene' && it.num !== undefined && (
+              <span className="scene-number-badge fs-nav-num-badge">{it.num}</span>
+            )}
+            <span
+              className={it.done ? 'fs-nav-done' : ''}
+              /* v5.28: annotation rows wear their icon's color */
+              style={it.kind === 'markup' && it.markupColor ? { color: it.markupColor } : undefined}
+            >
               {it.kind === 'markup' ? (
                 <span className="fs-nav-kind-icon fs-nav-markup-icon">
                   <MarkupIcon icon={it.markupIcon ?? 'flag'} color={it.markupColor} />
@@ -255,11 +279,6 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
               ) : it.kind === 'note' ? <FaRegStickyNote className="fs-nav-kind-icon" /> : it.kind === 'act' ? '§ ' : it.kind === 'marker' ? '⚑ ' : it.kind === 'section' ? '# ' : ''}
               {it.text.length > 80 ? it.text.slice(0, 80) + '…' : it.text || '(untitled)'}
             </span>
-            {/* v4.32 batch-v8 #5 / v4.35 batch-v9 #3: scene number at the
-                RIGHT edge of the row (toggle in the row-2 cluster) */}
-            {showNums && it.kind === 'scene' && it.num !== undefined && (
-              <span className="fs-nav-scene-num">{it.num}</span>
-            )}
           </div>
         ))}
       </div>

@@ -48,6 +48,7 @@ import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeT
 import { smartUndo, smartRedo, useEditorStore } from '../stores/editorStore';
 import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
 import { createMarkupAtSelection } from '../utils/markupActions';
+import { AnnotationShowMenu } from './MarkupPickers';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { BUILT_IN_ELEMENT_IDS } from '../stores/formattingTypes';
@@ -987,6 +988,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         >
           {markupsVisible ? <FaRegEye /> : <FaRegEyeSlash />}
         </button>
+      );
+      // v5.28, Derek: a menu of which annotation types are visible on the
+      // script — the same popover the Annotations window's Show button opens.
+      case 'annotationsMenu': return (
+        <AnnotationShowMenu className="toolbar-btn" title="Annotation Visibility">
+          <FaMarker />
+        </AnnotationShowMenu>
       );
       case 'titlePage': return (
         <button

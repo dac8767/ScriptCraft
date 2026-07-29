@@ -1691,20 +1691,8 @@ body.fs-shot-veil-feedback .fs-tool-takeover-feedback { visibility: hidden !impo
    active menu item. This file loads after 20-tool-dock.css, so the accent
    survives the .tool-ctl:hover color at equal specificity. */
 .tool-ctl.active { color: var(--fd-accent, #4a90d9); }
-/* Muted number column before scene names — fixed-ish width, right-aligned
-   digits, so the names start on a shared edge; never shrinks or clips
-   (overrides .fs-nav-item span's ellipsis) and stays normal-weight under
-   the scene row's 600. */
-.fs-nav-scene-num {
-  flex: 0 0 auto;
-  /* v4.35 batch-v9 #3, Derek: the number sits at the row's RIGHT edge now */
-  margin-left: auto;
-  min-width: 2.5ch;
-  text-align: right;
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--fd-text-muted);
-}
+/* (v5.28: the Navigator's right-edge scene number is gone — the number is
+   the Scenes circle badge before the heading now; see .fs-nav-num-badge.) */
 
 /* ── v4.35, Derek batch 9: Focus tool master row + off-state (TypewriterTool.tsx) ── */
 /* The master toggle row: label left, "?" helper right. The divider that used

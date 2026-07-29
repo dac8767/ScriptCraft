@@ -13,78 +13,22 @@
  * Search. The eye toggle and the count ride the window chrome as before.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { computePageBlocks } from '../editor/pagination';
 import { ControlSearch } from './ToolControls';
 import { MarkupIcon } from './markupIcons';
-import { MarkupDotsMenu, iconLabel, useSeat, useDismiss } from './MarkupPickers';
+import {
+  MarkupDotsMenu, TypeGridPop, AnnotationShowMenu, useTypesInUse, useSeat, useDismiss,
+} from './MarkupPickers';
 import {
   createMarkupAtSelection, findMarkupPos, markupPreviewText,
   pageForPos, sceneHeadingBefore,
 } from '../utils/markupActions';
 import type { ScriptMarkup } from '../stores/slices/markupsSlice';
 
-const DONE_LABELS = { open: 'Open', done: 'Complete', all: 'All' } as const;
-
-/** Annotation types (icons) present in the script, plus any already-hidden
- *  selections — a hidden type must stay listed or it could never come back. */
-function useTypesInUse(extra: string[]) {
-  const markups = useEditorStore((s) => s.markups);
-  return useMemo(
-    () => [...new Set([...markups.map((m) => m.icon), ...extra])],
-    [markups, extra],
-  );
-}
-
-/** The shared two-part popover body: state toggle row + type grid. */
-function TypeGridPop({ boxRef, pos, done, onDone, gridHelp, types, hidden, onToggle, onShowAll, onHideAll }: {
-  boxRef: React.RefObject<HTMLDivElement | null>;
-  pos: { top: number; left: number } | null;
-  done: 'open' | 'done' | 'all';
-  onDone: (d: 'open' | 'done' | 'all') => void;
-  /** helper text over the type grid — the two popovers differ here */
-  gridHelp: string;
-  types: string[];
-  hidden: string[];
-  onToggle: (icon: string) => void;
-  onShowAll: () => void;
-  onHideAll: () => void;
-}) {
-  return createPortal(
-    <div ref={boxRef} className="markup-subpop markup-filter-pop" style={pos ?? { top: -9999, left: -9999 }}
-      onPointerDown={(e) => e.stopPropagation()}>
-      <div className="markup-filter-help">Select one</div>
-      {/* v5.27, Derek: the three states side by side as ONE toggle row */}
-      <span className="markup-seg markup-filter-seg">
-        {(['open', 'done', 'all'] as const).map((d) => (
-          <button key={d} className={done === d ? 'active' : ''} onClick={() => onDone(d)}>
-            {DONE_LABELS[d]}
-          </button>
-        ))}
-      </span>
-      <div className="markup-dots-sep" />
-      <div className="markup-filter-help">{gridHelp}</div>
-      {types.length === 0 && <div className="markup-filter-empty">No annotations yet.</div>}
-      <div className="markup-filter-grid">
-        {types.map((icon) => (
-          <button
-            key={icon}
-            className={`markup-preset${hidden.includes(icon) ? '' : ' active'}`}
-            title={iconLabel(icon)}
-            onClick={() => onToggle(icon)}
-          ><MarkupIcon icon={icon} /></button>
-        ))}
-      </div>
-      <div className="markup-filter-allrow">
-        <button className="markup-hl-clear" onClick={onShowAll}>Show all</button>
-        <button className="markup-hl-clear" onClick={onHideAll}>Hide all</button>
-      </div>
-    </div>,
-    document.body,
-  );
-}
+/* (v5.28: DONE_LABELS, useTypesInUse and TypeGridPop moved to MarkupPickers —
+   the ribbon's Annotation Visibility button and the View submenu share them.) */
 
 export function MarkupsTitleExtra() {
   const markups = useEditorStore((s) => s.markups);
@@ -104,25 +48,17 @@ export function MarkupsControls() {
   const filters = useEditorStore((s) => s.markupFilters);
   const setFilters = useEditorStore((s) => s.setMarkupFilters);
   const scriptHidden = useEditorStore((s) => s.markupHiddenIcons);
-  const setScriptHidden = useEditorStore((s) => s.setMarkupHiddenIcons);
   const scriptDone = useEditorStore((s) => s.markupScriptDone);
-  const setScriptDone = useEditorStore((s) => s.setMarkupScriptDone);
   const search = useEditorStore((s) => s.markupSearch);
   const setSearch = useEditorStore((s) => s.setMarkupSearch);
 
   const filterTypes = useTypesInUse(filters.hiddenIcons);
-  const scriptTypes = useTypesInUse(scriptHidden);
 
   const [filterOpen, setFilterOpen] = useState(false);
-  const [scriptOpen, setScriptOpen] = useState(false);
   const filterBtn = useRef<HTMLButtonElement>(null);
-  const scriptBtn = useRef<HTMLButtonElement>(null);
   const filterBox = useRef<HTMLDivElement>(null);
-  const scriptBox = useRef<HTMLDivElement>(null);
   const filterPos = useSeat(filterOpen, filterBtn, filterBox);
-  const scriptPos = useSeat(scriptOpen, scriptBtn, scriptBox);
   useDismiss(filterOpen, filterBox, filterBtn, () => setFilterOpen(false));
-  useDismiss(scriptOpen, scriptBox, scriptBtn, () => setScriptOpen(false));
 
   const toggle = (list: string[], icon: string) =>
     (list.includes(icon) ? list.filter((x) => x !== icon) : [...list, icon]);
@@ -132,31 +68,16 @@ export function MarkupsControls() {
   return (
     <>
       {/* v5.27, Derek: "Show" — no icon, LEFT-aligned in the header (the
-          tool-ctl-lead seat), driving what renders in the SCRIPT. */}
-      <button ref={scriptBtn} className={`tool-ctl tool-ctl-lead markup-ctl-script${scriptOpen ? ' open' : ''}`}
-        title="What shows in the script"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => { e.stopPropagation(); setFilterOpen(false); setScriptOpen((v) => !v); }}>
+          tool-ctl-lead seat), driving what renders in the SCRIPT.
+          v5.28: the shared AnnotationShowMenu (same popover as the ribbon
+          button and the View submenu's state). */}
+      <AnnotationShowMenu className="tool-ctl tool-ctl-lead markup-ctl-script" title="What shows in the script">
         <span className="tool-ctl-label">Show</span>
         {showChip > 0 && <span className="tool-ctl-chip">{showChip}</span>}
-      </button>
-      {scriptOpen && (
-        <TypeGridPop
-          boxRef={scriptBox}
-          pos={scriptPos}
-          done={scriptDone}
-          onDone={setScriptDone}
-          gridHelp="Toggle visibility in script"
-          types={scriptTypes}
-          hidden={scriptHidden}
-          onToggle={(icon) => setScriptHidden(toggle(scriptHidden, icon))}
-          onShowAll={() => setScriptHidden([])}
-          onHideAll={() => setScriptHidden(scriptTypes)}
-        />
-      )}
+      </AnnotationShowMenu>
       <button ref={filterBtn} className={`tool-ctl markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Filter this list"
         onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => { e.stopPropagation(); setScriptOpen(false); setFilterOpen((v) => !v); }}>
+        onClick={(e) => { e.stopPropagation(); setFilterOpen((v) => !v); }}>
         <span className="tool-ctl-label">Filter</span>
         {filterChip > 0 && <span className="tool-ctl-chip">{filterChip}</span>}
       </button>

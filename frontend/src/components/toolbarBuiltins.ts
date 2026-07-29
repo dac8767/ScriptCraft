@@ -49,8 +49,10 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'insertChecklist', label: 'Add To-Do List' },
   // v5.25: Annotations — palette-only (like scriptNotes/tags); Derek places
   // them. v5.26: labels renamed with the tool (keys are persisted tokens).
+  // v5.28: annotationsMenu opens the per-type script-visibility menu.
   { key: 'markupScript', label: 'Add Annotation' },
   { key: 'toggleMarkups', label: 'Show/Hide Annotations' },
+  { key: 'annotationsMenu', label: 'Annotation Visibility' },
   { key: 'titlePage', label: 'Title Page' },
   { key: 'fontFamily', label: 'Font Family', priority: '5', desktopOnly: true },
   { key: 'fontSize', label: 'Font Size', priority: '5', desktopOnly: true },

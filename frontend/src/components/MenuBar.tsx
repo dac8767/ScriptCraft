@@ -1,5 +1,7 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
+import { MarkupIcon } from './markupIcons';
+import { iconLabel as markupIconLabel } from './MarkupPickers';
 import EditElementsDialog from './EditElementsDialog';
 import { SaveWorkspaceDialog, EditWorkspacesDialog } from './WorkspaceDialogs';
 import PreferencesDialog from './PreferencesDialog';
@@ -217,6 +219,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     sectionsVisible, setSectionsVisible,
     tagsVisible, setTagsVisible,
     markupsVisible, setMarkupsVisible,
+    markupHiddenIcons, setMarkupHiddenIcons,
+    markupScriptDone, setMarkupScriptDone,
     viewStyle, setViewStyle,
     revisionMode,
     setRevisionMode,
@@ -261,6 +265,14 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     sceneNumbersLocked,
     setSceneNumbersLocked,
   } = useEditorStore();
+
+  // v5.28: the View ▸ Annotations submenu lists only types the script uses
+  // (plus any already-hidden pick, so it can always be turned back on).
+  const markupList = useEditorStore((s) => s.markups);
+  const annotationTypesInUse = useMemo(
+    () => [...new Set([...markupList.map((m) => m.icon), ...markupHiddenIcons])],
+    [markupList, markupHiddenIcons],
+  );
 
   const {
     currentProject,
@@ -1508,6 +1520,44 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                 setMarkupsVisible(false);
               },
             },
+          ],
+        },
+        {
+          /* v5.28, Derek: the annotation view options as a submenu — the
+             same state the Annotations window's Show button drives (status
+             + per-type script visibility + the master toggle). Types are
+             only the ones the script actually uses. */
+          icon: <FaMarker />, label: 'Annotations',
+          children: [
+            {
+              icon: <FaMarker />,
+              label: 'Show Annotations in Script',
+              checked: markupsVisible,
+              action: () => setMarkupsVisible(!markupsVisible),
+            },
+            { separator: true, label: '' },
+            ...(['open', 'done', 'all'] as const).map((d) => ({
+              icon: <FaCheck style={{ opacity: 0 }} />,
+              label: d === 'open' ? 'Open Only' : d === 'done' ? 'Complete Only' : 'All Statuses',
+              checked: markupScriptDone === d,
+              action: () => setMarkupScriptDone(d),
+            })),
+            ...(annotationTypesInUse.length ? [{ separator: true as const, label: '' }] : []),
+            ...annotationTypesInUse.map((ic) => ({
+              icon: <MarkupIcon icon={ic} />,
+              label: `Show “${markupIconLabel(ic)}”`,
+              checked: !markupHiddenIcons.includes(ic),
+              action: () => setMarkupHiddenIcons(
+                markupHiddenIcons.includes(ic)
+                  ? markupHiddenIcons.filter((x) => x !== ic)
+                  : [...markupHiddenIcons, ic],
+              ),
+            })),
+            ...(annotationTypesInUse.length ? [
+              { separator: true as const, label: '' },
+              { icon: <FaRegEye />, label: 'Show All Types', action: () => setMarkupHiddenIcons([]) },
+              { icon: <FaRegEyeSlash />, label: 'Hide All Types', action: () => setMarkupHiddenIcons(annotationTypesInUse) },
+            ] : []),
           ],
         },
         { separator: true, label: '' },

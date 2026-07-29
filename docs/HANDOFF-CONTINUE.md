@@ -202,7 +202,32 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.27 — solid icons, colored rings, segmented toggles (HEAD)
+### v5.28 — annotation view controls everywhere + navigator polish (HEAD)
+
+- Derek's batch: (1) View ▸ Annotations SUBMENU — master toggle, status
+  check items (markupScriptDone), a per-type check item for each icon in
+  use (dynamic from `markups` via a MenuBar useMemo), Show/Hide All Types.
+  (2) Ribbon palette builtin `annotationsMenu` ("Annotation Visibility") —
+  opens the SAME script-visibility popover as the window's Show button.
+  (3-5) Navigator: annotation rows indent (26px) + text in the icon's
+  color; an "Annotations" tool-ctl toggle (navShowKinds.markup, the lead
+  slot); the scene-number toggle moved to ROW 2 left (a `.tool-ctl-break`
+  flex-basis:100% span forces the wrap; the button gained a "Scene
+  Numbers" label) and numbers render as `.scene-number-badge` (the Scenes
+  circle, `.fs-nav-num-badge` sizes it 18px) BEFORE the heading — the old
+  right-edge `.fs-nav-scene-num` span + CSS are gone.
+- SINGLE SOURCE move: DONE_LABELS / useTypesInUse / TypeGridPop now live in
+  MarkupPickers.tsx, plus `AnnotationShowMenu` — a self-contained trigger +
+  script-visibility popover used by BOTH the panel's Show button and the
+  ribbon builtin (the panel's Filter keeps its local-filter copy of the
+  popover with its own bindings). Mutual exclusion between panel popovers
+  now emerges from outside-press dismissal — no cross-wiring.
+- DRIVER LESSON (check-v528, 19 green): a `.menu-dropdown-item.has-children`
+  contains its submenu's TEXT — `:has-text("Annotations")` matched Working
+  Notes (whose child says "Show Annotations in Script") before the real
+  entry. Target the label span with `span:text-is(...)` for menu items.
+
+### v5.27 — solid icons, colored rings, segmented toggles
 
 - Derek's polish batch + two mid-turn refinements: MARKUP_ICONS flipped to
   SOLID Fa glyphs (colored fills, not outlines); the on-script chip's ring
@@ -350,49 +375,12 @@ Durable bits kept live here:
   createRoot harness (open-only default, icon filter, orphan location line,
   complete-drops-card, empty state).
 
-### v5.24 — columns not rows, the drag that never started, tab washes
-
-- Derek's batch (his screenshot showed HIS working checklist — those items
-  are his queue, not instructions): (1) "thinking in terms of rows leaves
-  odd gaps" → "# of Columns:" label AND a real column MASONRY; (2) card
-  drag-reorder dead; (3) window Design knobs; (4) card Design knobs;
-  (5, mid-turn) non-active header tabs get a visible button background.
-- (2) THE DRAG BUG was the house footgun itself (CLAUDE.md §4): StickyCard's
-  grip passed onDragStart straight through, and since v5.22 the consumers
-  pass bare closures — NOBODY called dataTransfer.setData, so WebKit refused
-  the drag (fine in Chromium's tolerance, dead on the Mac). Fix at the ROOT:
-  the grip sets its own payload ('text/plain', card.id) before delegating —
-  no consumer can forget again. CardList (Snippets) had the same latent hole.
-- (1) `.swn-scroll.swn-grid` is CSS MULTICOL now (column-count:
-  var(--sticky-cols)), not grid — cards stack down columns, break-inside:
-  avoid, no row alignment. DOM order unchanged (drag/sort semantics intact);
-  reading order snakes down columns, which IS the sticky-wall look.
-- (3)(4) Token groups: 'stickyWindow' ("Sticky Notes": stickyPadX 12 — the
-  side gutter MOVED off the card margins onto the scroller so it's one knob;
-  stickyPadTop 6 / Bottom 4, col/row gaps 10/10 — row gap = the sticky-
-  scoped card margin-bottom; btn-row pad-top 6 / pad-x 8 as sticky-scoped
-  .tool-action-row overrides). 'cards' group RELABELLED "Sticky Note Cards":
-  cardPad KEEPS its id (it always drove the TOP edge — persisted overrides
-  survive) + new cardPadX 10 / cardPadBottom 10 / cardHeadGap 6 /
-  cardFootGap 6 / cardActionsGap 6.
-- (5) `.tool-chrome-tab { background: var(--fd-overlay-light) }` (+ medium
-  on hover) — one class, every tabbed window (Characters included).
-- DRIVER LESSON (recorded the hard way): pointer-driven HTML5 dnd hangs
-  under Playwright when dragstart MUTATES the DOM around the pointer (our
-  drop zones render on dragstart; both mouse-sequence and page.dragAndDrop
-  stall). Dispatch DragEvents with a shared DataTransfer instead — and
-  YIELD between dragstart and drop (same-tick dispatch reads stale React
-  state; the drop no-ops). The tab drag (no DOM change on start) is why
-  v5.22's dragAndDrop worked.
-- check-v524.mjs (10 checks): payload-set proof, drop reorders [a,b,c] →
-  [b,a,c] + Sort snaps Manual, masonry columnCount, tab wash, four token
-  spot-checks driving computed styles.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.24** — columns not rows, the drag that never started, tab washes
 - **v5.23** — compact buttons, the anchored-resize truth, per-row right
 - **v5.22** — Sticky Notes: one interleaved list, reorderable tabs, blank check row
 - **v5.21** — the seven-pack: Sticky Notes merge, fullscreen Title Page, one window, and the zombie Window menu

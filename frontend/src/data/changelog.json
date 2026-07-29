@@ -1,5 +1,16 @@
 [
   {
+    "version": "5.28",
+    "date": "2026-07-29",
+    "changes": [
+      "View ▸ Annotations: a submenu with every annotation view option — the master Show Annotations toggle, Open Only / Complete Only / All Statuses, a check item per annotation type in your script, and Show/Hide All Types",
+      "A new ribbon button (Customize palette: \"Annotation Visibility\") opens the same script-visibility menu as the Annotations window's Show button",
+      "Navigator: annotations are indented under their scene and their text wears the icon's color",
+      "Navigator: an \"Annotations\" toggle button shows/hides annotation rows in the list with one click",
+      "Navigator: the scene-number toggle moved to its own row (left-aligned, labelled \"Scene Numbers\"), and numbers now render as the Scenes tool's circle badge before each heading instead of a bare number at the right edge"
+    ]
+  },
+  {
     "version": "5.27",
     "date": "2026-07-29",
     "changes": [

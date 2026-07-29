@@ -151,9 +151,48 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.23 and older (newest first)
+## Version history — v5.24 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.24 — columns not rows, the drag that never started, tab washes
+
+- Derek's batch (his screenshot showed HIS working checklist — those items
+  are his queue, not instructions): (1) "thinking in terms of rows leaves
+  odd gaps" → "# of Columns:" label AND a real column MASONRY; (2) card
+  drag-reorder dead; (3) window Design knobs; (4) card Design knobs;
+  (5, mid-turn) non-active header tabs get a visible button background.
+- (2) THE DRAG BUG was the house footgun itself (CLAUDE.md §4): StickyCard's
+  grip passed onDragStart straight through, and since v5.22 the consumers
+  pass bare closures — NOBODY called dataTransfer.setData, so WebKit refused
+  the drag (fine in Chromium's tolerance, dead on the Mac). Fix at the ROOT:
+  the grip sets its own payload ('text/plain', card.id) before delegating —
+  no consumer can forget again. CardList (Snippets) had the same latent hole.
+- (1) `.swn-scroll.swn-grid` is CSS MULTICOL now (column-count:
+  var(--sticky-cols)), not grid — cards stack down columns, break-inside:
+  avoid, no row alignment. DOM order unchanged (drag/sort semantics intact);
+  reading order snakes down columns, which IS the sticky-wall look.
+- (3)(4) Token groups: 'stickyWindow' ("Sticky Notes": stickyPadX 12 — the
+  side gutter MOVED off the card margins onto the scroller so it's one knob;
+  stickyPadTop 6 / Bottom 4, col/row gaps 10/10 — row gap = the sticky-
+  scoped card margin-bottom; btn-row pad-top 6 / pad-x 8 as sticky-scoped
+  .tool-action-row overrides). 'cards' group RELABELLED "Sticky Note Cards":
+  cardPad KEEPS its id (it always drove the TOP edge — persisted overrides
+  survive) + new cardPadX 10 / cardPadBottom 10 / cardHeadGap 6 /
+  cardFootGap 6 / cardActionsGap 6.
+- (5) `.tool-chrome-tab { background: var(--fd-overlay-light) }` (+ medium
+  on hover) — one class, every tabbed window (Characters included).
+- DRIVER LESSON (recorded the hard way): pointer-driven HTML5 dnd hangs
+  under Playwright when dragstart MUTATES the DOM around the pointer (our
+  drop zones render on dragstart; both mouse-sequence and page.dragAndDrop
+  stall). Dispatch DragEvents with a shared DataTransfer instead — and
+  YIELD between dragstart and drop (same-tick dispatch reads stale React
+  state; the drop no-ops). The tab drag (no DOM change on start) is why
+  v5.22's dragAndDrop worked.
+- check-v524.mjs (10 checks): payload-set proof, drop reorders [a,b,c] →
+  [b,a,c] + Sort snaps Manual, masonry columnCount, tab wash, four token
+  spot-checks driving computed styles.
+
 
 ### v5.23 — compact buttons, the anchored-resize truth, per-row right
 
