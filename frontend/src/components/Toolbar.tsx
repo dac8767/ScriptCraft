@@ -443,7 +443,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   /** Element ids valid inside an AV cell (per the avCell schema content rule). */
   const AV_CELL_ELEMENT_IDS = ['avPara', 'avShot', 'avDirection'];
 
+  // v5.41, Derek: "formatting options in the ribbon should be usable for
+  // the annotation window." While it's open, its mini editor is registered
+  // here and the B/I/U/S buttons read and drive IT instead of the script.
+  const miniEd = useEditorStore((s) => s.markupMiniEditor) as Editor | null;
+
   const isActive = (format: string) => {
+    if (miniEd) return miniEd.isActive(format);
     if (!editor) return false;
     return editor.isActive(format);
   };
@@ -1076,8 +1082,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <button
           className={`toolbar-btn ${isActive('bold') ? 'active' : ''}`}
           title="Bold (⌘B)"
-          disabled={locked.bold}
+          disabled={!miniEd && locked.bold}
           onClick={() => {
+            // the annotation window has no templates/locks — plain toggle
+            if (miniEd) { miniEd.chain().focus().toggleBold().run(); return; }
             if (!editor || locked.bold) return;
             if (isOverrideMode) {
               toggleBoldOverride(editor, getCurrentElementRule(editor, activeTemplate));
@@ -1093,8 +1101,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <button
           className={`toolbar-btn ${isActive('italic') ? 'active' : ''}`}
           title="Italic (⌘I)"
-          disabled={locked.italic}
+          disabled={!miniEd && locked.italic}
           onClick={() => {
+            if (miniEd) { miniEd.chain().focus().toggleItalic().run(); return; }
             if (!editor || locked.italic) return;
             if (isOverrideMode) {
               toggleItalicOverride(editor, getCurrentElementRule(editor, activeTemplate));
@@ -1110,8 +1119,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <button
           className={`toolbar-btn ${isActive('underline') ? 'active' : ''}`}
           title="Underline (⌘U)"
-          disabled={locked.underline}
+          disabled={!miniEd && locked.underline}
           onClick={() => {
+            if (miniEd) { miniEd.chain().focus().toggleUnderline().run(); return; }
             if (!editor || locked.underline) return;
             if (isOverrideMode) {
               toggleUnderlineOverride(editor, getCurrentElementRule(editor, activeTemplate));
@@ -1127,8 +1137,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <button
           className={`toolbar-btn ${isActive('strike') ? 'active' : ''}`}
           title="Strikethrough"
-          disabled={locked.strikethrough}
-          onClick={() => { if (!locked.strikethrough) editor?.chain().focus(undefined, { scrollIntoView: false }).toggleStrike().run(); }}
+          disabled={!miniEd && locked.strikethrough}
+          onClick={() => {
+            if (miniEd) { miniEd.chain().focus().toggleStrike().run(); return; }
+            if (!locked.strikethrough) editor?.chain().focus(undefined, { scrollIntoView: false }).toggleStrike().run();
+          }}
         >
           <FaStrikethrough />
         </button>

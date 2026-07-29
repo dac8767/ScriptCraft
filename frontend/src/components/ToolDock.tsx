@@ -30,6 +30,7 @@ import { useEditorStore, toolConfigFor, NO_FULLSCREEN_TOOLS, FULLSCREEN_ONLY_TOO
 import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { FullscreenIcon, CloseIcon, RestoreIcon } from './uiIcons';
+import { showToast } from './Toast';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, PagesControls, LocationsTitleExtra, LocationsControls, StructureTitleExtra, type NavTab } from './SceneNavigator';
 import NavigatorTool, { NavigatorControls } from './NavigatorTool';
@@ -371,9 +372,10 @@ export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
  *  remembered-shape branch and this button can't disagree. */
 const NO_FULLSCREEN = NO_FULLSCREEN_TOOLS;
 
-/** v5.30, Derek: helper text at the bottom of a side-panel window whose
- *  pop-out / fullscreen options are limited — the limitation is SAID, not
- *  silently missing. Keyed by tool id. */
+/** v5.30, Derek: a tool whose pop-out / fullscreen options are limited says
+ *  so — v5.41: at the ATTEMPT (a toast when the drag-out lands in the
+ *  editor), not parked at the panel's foot. Keyed by tool id; having a note
+ *  here IS the "this move is disallowed" flag. */
 const SHAPE_NOTES: Partial<Record<ToolId, string>> = {
   notebook: 'Scrapbook only appears in full-screen mode',
   markups: 'This window only appears in the side panel',
@@ -939,6 +941,9 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
       if (!dragged) return;
       armSwallow();   // a real drag must never read as an accordion toggle
       if (inEditor(ev.clientX, ev.clientY)) {
+        // v5.41, Derek: a shape-limited tool announces the limit AT the
+        // attempt — the drag lands, the toast explains, nothing moves.
+        if (SHAPE_NOTES[t.id]) { showToast(SHAPE_NOTES[t.id]!); return; }
         setToolMode(t.id, 'floating');
         setToolSize(t.id, dockW + 140, h);
         // v4.78, Derek: a CLOSED row drags out too — floating means open.
@@ -1197,9 +1202,8 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                 </div>
                 {/* v5.30, Derek: shape-limited tools SAY so at the bottom of
                     their side-panel window instead of just missing buttons. */}
-                {SHAPE_NOTES[active!.id] && (
-                  <div className="tool-shape-note">{SHAPE_NOTES[active!.id]}</div>
-                )}
+                {/* (v5.41: the SHAPE_NOTES foot text is gone — the limit
+                    toasts at the attempted move instead.) */}
                 {!solo && (
                   <div
                     className="tool-inline-resize"

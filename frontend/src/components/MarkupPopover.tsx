@@ -32,7 +32,8 @@ import { confirmDialog } from './ConfirmDialog';
 import { FullscreenIcon } from './uiIcons';
 import { convertMarkupToPoint, convertMarkupToRange } from '../utils/markupActions';
 import { MarkupColorSwatch, MarkupUsedRow, MarkupDotsMenu } from './MarkupPickers';
-import { findMarkupPos, setMarkupHighlight, firstContentKind, markupNavLines } from '../utils/markupActions';
+import { findMarkupPos, setMarkupHighlight, firstContentKind, markupNavLines, markupIsList } from '../utils/markupActions';
+import Underline from '@tiptap/extension-underline';
 
 const POP_W = 380;
 
@@ -64,8 +65,9 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   const snapRef = useRef<{ json: string; icon: string; color: string; highlight: string | null; done: boolean } | null>(null);
   const popRef = useRef<HTMLDivElement>(null);
   const nbPages = useNotebookStore((s) => s.pages);
-  // v5.33, Derek: "Displays as:" — the Navigator row, previewed LIVE.
-  const [navPreview, setNavPreview] = useState<string[]>([]);
+  // v5.33, Derek: the Navigator row, previewed LIVE (v5.41: "In Navigator:",
+  // plus whether it's a LIST — lists show no icon there).
+  const [navPreview, setNavPreview] = useState<{ lines: string[]; isList: boolean }>({ lines: [], isList: false });
   // the seat function, reachable from the ResizeObserver effect below
   const reseatRef = useRef<(() => void) | null>(null);
 
@@ -79,6 +81,8 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
       Image,
       TaskList,
       TaskItem.configure({ nested: false }),
+      // v5.41: the ribbon's U button drives this editor too
+      Underline,
     ],
     content: null,
   }, []);
@@ -134,14 +138,25 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     return () => { mini.off('update', sync); };
   }, [mini, id]);
 
-  // v5.33: the "Displays as:" lines track the mini editor keystroke-live —
-  // the same capper the Navigator renders with (markupNavLines).
+  // v5.33: the "In Navigator:" lines track the mini editor keystroke-live —
+  // the same capper AND list predicate the Navigator renders with.
   useEffect(() => {
     if (!mini || !id) return;
-    const syncPreview = () => setNavPreview(markupNavLines(mini.getJSON()));
+    const syncPreview = () => {
+      const json = mini.getJSON();
+      setNavPreview({ lines: markupNavLines(json), isList: markupIsList(json) });
+    };
     syncPreview();
     mini.on('update', syncPreview);
     return () => { mini.off('update', syncPreview); };
+  }, [mini, id]);
+
+  // v5.41, Derek: while this window is open, the ribbon's formatting
+  // buttons drive the mini editor — register it; closing clears it.
+  useEffect(() => {
+    if (!mini || !id) return;
+    useEditorStore.getState().setMarkupMiniEditor(mini);
+    return () => { useEditorStore.getState().setMarkupMiniEditor(null); };
   }, [mini, id]);
 
   // Seat UNDER the annotation's on-script margin icon (v5.33, Derek), with
@@ -215,6 +230,9 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
       const t = e.target as HTMLElement;
       if (popRef.current?.contains(t)) return;
       if (t.closest?.('.markup-subpop')) return;
+      // v5.41, Derek: ribbon buttons operate ON this window (formatting
+      // drives the mini editor) — a ribbon press is not an outside press.
+      if (t.closest?.('.toolbar-btn')) return;
       // v5.30: the ×'s are-you-sure dialog is outside this window — its
       // buttons must not double as an outside-press save.
       if (t.closest?.('.fs-confirm-overlay')) return;
@@ -432,22 +450,28 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
         </div>
       )}
       <div className="markup-mini-editor" onClick={onBodyClick}><EditorContent editor={mini} /></div>
-      {/* v5.33, Derek: "Displays as:" — the Navigator row this annotation
-          will produce, live. Same classes as the real row so they can't
-          drift apart. Empty content = icon only, exactly like the row. */}
+      {/* v5.33/v5.41, Derek: the two live previews — "In Navigator:" (the
+          real row's classes, no icon for LIST annotations) and "In Script:"
+          (the margin chip exactly as it sits in the page's right margin). */}
       <div className="markup-pop-row markup-pop-preview">
-        <span className="markup-pop-grouplabel">Displays as:</span>
+        <span className="markup-pop-grouplabel">In Navigator:</span>
         <span className="fs-nav-anno markup-nav-preview" style={{ color: markup.color }}>
-          <span className="fs-nav-kind-icon fs-nav-markup-icon">
-            <MarkupIcon icon={markup.icon} color={markup.color} />
-          </span>
-          {navPreview.length > 0 && (
+          {!navPreview.isList && (
+            <span className="fs-nav-kind-icon fs-nav-markup-icon">
+              <MarkupIcon icon={markup.icon} color={markup.color} />
+            </span>
+          )}
+          {navPreview.lines.length > 0 && (
             <span className="fs-nav-anno-lines">
-              {navPreview.map((l, i) => (
+              {navPreview.lines.map((l, i) => (
                 <span key={i} className="fs-nav-anno-line">{l}</span>
               ))}
             </span>
           )}
+        </span>
+        <span className="markup-pop-grouplabel markup-pop-preview-script-label">In Script:</span>
+        <span className="markup-margin-preview" style={{ borderColor: markup.color }}>
+          <MarkupIcon icon={markup.icon} color={markup.color} />
         </span>
       </div>
       <div className="markup-pop-row markup-pop-foot">

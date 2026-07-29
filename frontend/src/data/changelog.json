@@ -1,5 +1,17 @@
 [
   {
+    "version": "5.41",
+    "date": "2026-07-29",
+    "changes": [
+      "The annotation window's preview is now two: \"In Navigator:\" (the row as the Navigator will show it) and \"In Script:\" (the round margin chip exactly as it sits on the page)",
+      "The Icon row leads with the CURRENT icon, then \"Used:\" and the rest of the icons present on your annotations",
+      "The combined icon/color picker is draggable by its new top bar, and compact — icons on the left, color on the right, side by side instead of one long stack",
+      "The ribbon's Bold / Italic / Underline / Strikethrough now format the annotation you're editing while its window is open (and hand back to the script when it closes) — and clicking them no longer closes the window",
+      "List annotations show no icon in the Navigator — their stacked lines are identification enough (the margin chip in the script keeps the icon)",
+      "The \"This window only appears in the side panel\" text is gone from the panels — instead, dragging a side-bar-only tool (or the Scrapbook) out shows that message the moment you try"
+    ]
+  },
+  {
     "version": "5.40",
     "date": "2026-07-29",
     "changes": [

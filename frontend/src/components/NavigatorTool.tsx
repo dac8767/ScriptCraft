@@ -15,7 +15,7 @@ import { useNotebookStore } from '../stores/notebookStore';
 import { FaHashtag, FaRegStickyNote } from 'react-icons/fa';
 import { ControlDropdown, ControlSearch } from './ToolControls';
 import { findNotePos } from '../utils/scriptNoteActions';
-import { findMarkupPos, markupContentLines, markupNavLines } from '../utils/markupActions';
+import { findMarkupPos, markupContentLines, markupNavLines, markupIsList } from '../utils/markupActions';
 import { MarkupIcon } from './markupIcons';
 import { TypeGridPop, useTypesInUse, useSeat, useDismiss } from './MarkupPickers';
 
@@ -43,6 +43,8 @@ interface Item {
   markupColor?: string;
   /** v5.30: content lines — a LIST annotation renders as a list */
   markupLines?: string[];
+  /** v5.41, Derek: list annotations show NO icon in the Navigator */
+  markupIsList?: boolean;
   /** shelf card id + item index for to-dos */
   cardId?: string;
   itemIdx?: number;
@@ -214,6 +216,7 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
         // empty annotation → NO placeholder text; the row is just the icon
         text: markupContentLines(m).join(' '),
         markupLines: markupNavLines(m.content),
+        markupIsList: markupIsList(m.content),
         markupId: m.id,
         markupIcon: m.icon,
         markupColor: m.color,
@@ -322,9 +325,13 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
                 className={`fs-nav-anno${it.done ? ' fs-nav-done' : ''}`}
                 style={it.markupColor ? { color: it.markupColor } : undefined}
               >
-                <span className="fs-nav-kind-icon fs-nav-markup-icon">
-                  <MarkupIcon icon={it.markupIcon ?? 'flag'} color={it.markupColor} />
-                </span>
+                {/* v5.41, Derek: list annotations carry no icon here —
+                    their stacked lines are identification enough */}
+                {!it.markupIsList && (
+                  <span className="fs-nav-kind-icon fs-nav-markup-icon">
+                    <MarkupIcon icon={it.markupIcon ?? 'flag'} color={it.markupColor} />
+                  </span>
+                )}
                 {(it.markupLines?.length ?? 0) > 0 && (
                   <span className="fs-nav-anno-lines">
                     {it.markupLines!.map((l, li) => (

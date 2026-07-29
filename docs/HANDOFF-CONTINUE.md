@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.40 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.41 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,36 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.40 — CUSTOM PAGES (Derek's queue item 5; ruling: not numbered) (HEAD)
+### v5.41 — previews, used order, compact draggable picker, ribbon fmt, move toast (HEAD)
+
+- Derek's 7 (one turn): (1) "Displays as:" split into "In Navigator:"
+  (nav-row classes, live) + "In Script:" (`.markup-margin-preview` — the
+  round margin chip inline, border in the annotation's color). (2)
+  MarkupUsedRow: CURRENT combo leads (always ringed), then the `+`, then
+  "Used:" (`.markup-used-label`) + the other combos (cap 7, current
+  excluded). (3+4) MarkupComboPicker: DRAGGABLE by `.markup-icon-pop-drag`
+  (dragPos overrides the seat; reset when it closes) and COMPACT —
+  `.markup-icon-pop-cols` puts icons LEFT / embedded ColorPicker RIGHT
+  (520px wide, ~447px tall vs the old 560-capped ~700 stack; the color
+  column is the height floor). (5) RIBBON FORMATTING drives the mini:
+  markupsSlice.markupMiniEditor (unknown-typed, never persisted) is set
+  while the window is open; Toolbar's isActive + B/I/U/S route to it
+  (no locks/overrides — plain toggles) and the mini gained Underline.
+  CRITICAL COMPANION FIX the driver caught: the outside-press saver now
+  ignores `.toolbar-btn` presses — clicking ribbon Bold used to SAVE-CLOSE
+  the window. (6) LIST annotations (markupIsList in markupActions —
+  firstContentKind ∈ bullets/numbers/checklist) show NO icon in the
+  Navigator or the nav preview; the script margin chip keeps it. (7)
+  SHAPE_NOTES no longer renders at the panel foot (.tool-shape-note CSS
+  gone) — the dock-row drag-out for a noted tool (markups/navigator/
+  notebook) TOASTS the message at the drop and stays put (having a note
+  IS the disallowed-move flag; setToolMode coercion remains the backstop).
+- check-v541: 17 green (order probe of the head row, both previews, live
+  icon-drop on checklist, ribbon bold hits mini not script + hand-back on
+  close, side-by-side geometry + drag Δ, nav rows with/without icon,
+  toast + mode still docked).
+
+### v5.40 — CUSTOM PAGES (Derek's queue item 5; ruling: not numbered)
 
 - MODEL (the title-page pattern — flat text*-only schema, v5.25 lesson):
   `customPage` node = ONE LINE, attrs {cpId}; a consecutive same-cpId run
@@ -291,47 +320,12 @@ Durable bits kept live here:
 - check-v537: 12 green (DOM-level takeover removal, save-on-stand-down
   content proof, navigator step-aside opening the popover).
 
-### v5.36 — Notes v2: one rich card kind, equal-height rows, real drag fix
-
-- Derek's queue item 1 (flag answered: "your assumption is correct" — old
-  checklist cards become notes whose content IS a task list; titles stay).
-  The tool is "Notes" (id 'sticky' NEVER changes — persisted). ONE card
-  kind: a rich TipTap body per card (StickyCard's NoteBody — StarterKit +
-  Link[protocols scrapbook] + Image + TaskList/TaskItem + Placeholder),
-  toolbar shown via `.swn-card:focus-within`. Cards store `content` (JSON)
-  + `text` (plain mirror — search/snippets/old-build safety). Migration:
-  utils/shelfMigrate.ts (migrateShelfCards), applied at the ONE load door
-  (ScreenplayEditor `_shelf` parse) and reused by NoteBody for unmigrated
-  strays; idempotent, unit-tested.
-- GONE: "+ Add Checklist", the kind TABS (useStickyTabs/reorderStickyTabs
-  deleted; stickyKindFilter/stickyTabOrder store fields removed — the old
-  viewState key just goes unread), the Type sort ('manual' is default),
-  the v4.37 card-height grabber (equal rows made it meaningless — its CSS
-  cleaned from 22-tools-extra + the 20-tool-dock grip selector list).
-- LAYOUT: `.swn-grid` is a real GRID again (repeat(--sticky-cols,
-  minmax(0,1fr)), align-items stretch) — rows equalize height natively;
-  cards are flex-column with the body flex:1 so the foot pins. Stepper
-  label: "Notes per row:". The v5.24 masonry (and its second-column
-  misalignment artifact) is gone.
-- THE DRAG FIX (root cause at last): setting dragId in onDragStart
-  re-rendered the list (drop zones mount) and WEBKIT ABORTS a drag whose
-  DOM mutates during dragstart — Chrome tolerates it, so the v5.24
-  setData fix looked complete in a browser and stayed broken in the app.
-  The dragId write is DEFERRED one tick (setTimeout 0) in both lists.
-- Driver lesson: Playwright's page.dragAndDrop HANGS on HTML5 draggables
-  headless — dispatch synthetic DragEvents (with new DataTransfer()) at
-  the handler chain instead; select cards by querySelectorAll INDEX (an
-  nth-of-type on .swn-card returned null in the takeover).
-- check-v536: 16 green (rename, one add button, no tabs, 4 rich bodies,
-  migrated checklist renders real boxes, stepper wording, 2-col grid,
-  per-row top AND height equality, drag reorder → dabc + Manual snap,
-  typing updates content+mirror, focus toolbar, checklist toggle).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.36** — Notes v2: one rich card kind, equal-height rows, the WebKit drag-abort fix
 - **v5.35** — docked side-panel tools survive clicks into the script (floats/temp still dismiss)
 - **v5.34** — the Scenes "Reorder" button reads "Change Order"
 - **v5.33** — icon-anchored seating, resizable windows, real scrapbook links, nav list rows, titlebar ⋮, Displays-as preview

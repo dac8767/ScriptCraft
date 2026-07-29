@@ -170,15 +170,8 @@
   background: rgba(74, 158, 255, 0.08);
 }
 
-/* v5.30: shape-limit helper at the bottom of a side-panel window (ToolDock
-   SHAPE_NOTES — Scrapbook, Annotations). */
-.tool-shape-note {
-  font-size: 10px;
-  color: var(--fd-text-muted);
-  padding: 4px 12px 6px;
-  border-top: 1px solid var(--fd-border);
-  flex-shrink: 0;
-}
+/* (v5.41: .tool-shape-note is gone — SHAPE_NOTES toast at the attempted
+   move instead of sitting in the panel foot.) */
 .markup-pop-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .markup-pop-label { font-size: 11px; color: var(--fd-text-muted); margin-right: 2px; }
 
@@ -280,8 +273,10 @@
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   padding: 8px;
-  width: 260px;
-  min-width: 220px;
+  /* v5.41, Derek: COMPACT — two columns side by side (wider, half as
+     tall) instead of the old 260px single stack */
+  width: 520px;
+  min-width: 320px;
   min-height: 200px;
   display: flex;
   flex-direction: column;
@@ -446,14 +441,60 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
 
 /* Mini rich-text toolbar */
 .markup-mini-bar { gap: 2px; border-top: 1px solid rgba(0, 0, 0, 0.14); padding-top: 8px; }
-/* v5.33, Derek: "Displays as:" — the Navigator row previewed under the
-   editor, rendered with the row's own classes so the two never drift. */
+/* v5.33/v5.41, Derek: the two live previews under the editor — "In
+   Navigator:" (the row's own classes so the two never drift) and "In
+   Script:" (the margin chip, inline and inert). */
 .markup-pop-preview {
   align-items: flex-start;
   border-top: 1px solid rgba(0, 0, 0, 0.14);
   padding-top: 8px;
 }
-.markup-nav-preview { font-size: 12px; line-height: 1.4; min-width: 0; }
+.markup-nav-preview { font-size: 12px; line-height: 1.4; min-width: 0; flex: 1; }
+.markup-pop-preview-script-label { margin-left: 8px; }
+.markup-margin-preview {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  background: #fff;
+  border: 2px solid rgba(0, 0, 0, 0.18);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+.markup-margin-preview .markup-glyph { display: flex; font-size: inherit; }
+
+/* v5.41: the Used row — the current combo leads, then "Used:" + the rest */
+.markup-used-label { margin-left: 4px; }
+
+/* v5.41: the combined icon/color window — draggable by its bar, and
+   COMPACT: icons left, color right, side by side instead of a long stack */
+.markup-icon-pop-drag {
+  display: flex;
+  align-items: center;
+  margin: -8px -8px 6px;
+  padding: 5px 10px;
+  background: rgba(0, 0, 0, 0.14);
+  border-bottom: 1px solid var(--fd-border);
+  border-radius: 8px 8px 0 0;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fd-text-muted);
+  cursor: grab;
+  user-select: none;
+}
+.markup-icon-pop-drag:active { cursor: grabbing; }
+.markup-icon-pop-cols {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.markup-icon-pop-left { width: 236px; flex: none; }
+.markup-icon-pop-right { flex: none; }
 .markup-mini-btn {
   width: 24px;
   height: 24px;

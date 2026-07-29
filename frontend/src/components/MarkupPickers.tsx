@@ -154,31 +154,36 @@ function importIconFile(file: File, onDone: (dataUrl: string) => void, onErr: (m
 export function MarkupUsedRow({ markup }: { markup: ScriptMarkup }) {
   const markups = useEditorStore((s) => s.markups);
   const updateMarkup = useEditorStore((s) => s.updateMarkup);
-  const usedCombos = React.useMemo(() => {
+  // v5.41, Derek: the CURRENT combo leads the row; then "Used:" and the
+  // rest of the combos present on annotations (current excluded, cap 7).
+  const others = React.useMemo(() => {
     const seen = new Set<string>();
     const out: { icon: string; color: string }[] = [];
     for (const m of markups) {
       const key = `${m.icon}|${m.color}`;
-      if (!seen.has(key)) { seen.add(key); out.push({ icon: m.icon, color: m.color }); }
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (m.icon === markup.icon && m.color === markup.color) continue;
+      out.push({ icon: m.icon, color: m.color });
     }
-    // the window is narrow — cap at 8, but the ACTIVE combo must always
-    // be visible (v5.32, Derek: "make it clear which icon is active").
-    const capped = out.slice(0, 8);
-    const active = out.find((c) => c.icon === markup.icon && c.color === markup.color);
-    if (active && !capped.includes(active)) capped[capped.length - 1] = active;
-    return capped;
+    return out.slice(0, 7);
   }, [markups, markup.icon, markup.color]);
   return (
     <>
-      {usedCombos.map(({ icon, color }) => (
+      <button
+        className={`markup-preset active${isDarkColor(markup.color) ? ' markup-light-chip' : ''}`}
+        title={`Current: ${iconLabel(markup.icon)}`}
+      ><MarkupIcon icon={markup.icon} color={markup.color} /></button>
+      <MarkupComboPicker markup={markup} />
+      {others.length > 0 && <span className="markup-pop-grouplabel markup-used-label">Used:</span>}
+      {others.map(({ icon, color }) => (
         <button
           key={`${icon}-${color}`}
-          className={`markup-preset${isDarkColor(color) ? ' markup-light-chip' : ''}${markup.icon === icon && markup.color === color ? ' active' : ''}`}
+          className={`markup-preset${isDarkColor(color) ? ' markup-light-chip' : ''}`}
           title={iconLabel(icon)}
           onClick={() => updateMarkup(markup.id, { icon, color, iconManual: true })}
         ><MarkupIcon icon={icon} color={color} /></button>
       ))}
-      <MarkupComboPicker markup={markup} />
     </>
   );
 }
@@ -197,6 +202,26 @@ export function MarkupComboPicker({ markup }: { markup: ScriptMarkup }) {
   const updateMarkup = useEditorStore((s) => s.updateMarkup);
   const pos = useSeat(open, btnRef, boxRef);
   useDismiss(open, boxRef, btnRef, () => setOpen(false));
+  // v5.41, Derek: the window is draggable — a grab bar at its top; a drag
+  // overrides the seat until the window closes.
+  const [dragPos, setDragPos] = useState<{ top: number; left: number } | null>(null);
+  React.useEffect(() => { if (!open) setDragPos(null); }, [open]);
+  const startDrag = (e: React.PointerEvent) => {
+    const start = dragPos ?? pos;
+    if (!start) return;
+    const sx = e.clientX, sy = e.clientY;
+    const move = (ev: PointerEvent) => setDragPos({
+      top: Math.max(8, Math.min(start.top + ev.clientY - sy, window.innerHeight - 60)),
+      left: Math.max(8, Math.min(start.left + ev.clientX - sx, window.innerWidth - 120)),
+    });
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    e.preventDefault();
+  };
 
   // v5.29, Derek: "Used" — the icon+color combos currently on annotations,
   // shown in the colors they were used in (presets and customs alike).
@@ -238,77 +263,89 @@ export function MarkupComboPicker({ markup }: { markup: ScriptMarkup }) {
         +
       </button>
       {open && createPortal(
-        <div ref={boxRef} className="markup-subpop markup-icon-pop" style={pos ?? { top: -9999, left: -9999 }}
+        <div ref={boxRef} className="markup-subpop markup-icon-pop" style={dragPos ?? pos ?? { top: -9999, left: -9999 }}
           onPointerDown={(e) => e.stopPropagation()}>
-          <div className="markup-pop-label">Presets</div>
-          <div className="markup-icon-pop-row">
-            {presets.map((p, i) => (
-              <button
-                key={`${p.icon}-${i}`}
-                className={`markup-preset${isDarkColor(p.color) ? ' markup-light-chip' : ''}${markup.icon === p.icon && markup.color === p.color ? ' active' : ''}`}
-                title={iconLabel(p.icon)}
-                onClick={() => pick({ icon: p.icon, color: p.color })}
-              ><MarkupIcon icon={p.icon} color={p.color} /></button>
-            ))}
+          {/* v5.41: grab bar — drag to reposition */}
+          <div className="markup-icon-pop-drag" onPointerDown={startDrag} title="Drag to move">
+            <span>Icon &amp; Color</span>
           </div>
-          {usedCombos.length > 0 && (<>
-            <div className="markup-pop-label">Used</div>
-            <div className="markup-icon-pop-row">
-              {usedCombos.map(({ icon, color }) => (
-                <button
-                  key={`${icon}-${color}`}
-                  className={`markup-preset${isDarkColor(color) ? ' markup-light-chip' : ''}${markup.icon === icon && markup.color === color ? ' active' : ''}`}
-                  title={iconLabel(icon)}
-                  onClick={() => pick({ icon, color })}
-                ><MarkupIcon icon={icon} color={color} /></button>
-              ))}
+          {/* v5.41, Derek: "compact the window" — icons LEFT, color RIGHT,
+              side by side instead of one long stack. */}
+          <div className="markup-icon-pop-cols">
+            <div className="markup-icon-pop-left">
+              <div className="markup-pop-label">Presets</div>
+              <div className="markup-icon-pop-row">
+                {presets.map((p, i) => (
+                  <button
+                    key={`${p.icon}-${i}`}
+                    className={`markup-preset${isDarkColor(p.color) ? ' markup-light-chip' : ''}${markup.icon === p.icon && markup.color === p.color ? ' active' : ''}`}
+                    title={iconLabel(p.icon)}
+                    onClick={() => pick({ icon: p.icon, color: p.color })}
+                  ><MarkupIcon icon={p.icon} color={p.color} /></button>
+                ))}
+              </div>
+              {usedCombos.length > 0 && (<>
+                <div className="markup-pop-label">Used</div>
+                <div className="markup-icon-pop-row">
+                  {usedCombos.map(({ icon, color }) => (
+                    <button
+                      key={`${icon}-${color}`}
+                      className={`markup-preset${isDarkColor(color) ? ' markup-light-chip' : ''}${markup.icon === icon && markup.color === color ? ' active' : ''}`}
+                      title={iconLabel(icon)}
+                      onClick={() => pick({ icon, color })}
+                    ><MarkupIcon icon={icon} color={color} /></button>
+                  ))}
+                </div>
+              </>)}
+              <div className="markup-pop-label">All icons</div>
+              <div className="markup-pop-grid">
+                {Object.keys(MARKUP_ICONS).map((k) => (
+                  <button key={k} className={`markup-preset${chip}${markup.icon === k ? ' active' : ''}`} title={iconLabel(k)}
+                    onClick={() => pick({ icon: k }, false)}>
+                    <MarkupIcon icon={k} color={markup.color} />
+                  </button>
+                ))}
+                {MARKUP_EMOJI.map((e) => (
+                  <button key={e} className={`markup-preset${markup.icon === `emoji:${e}` ? ' active' : ''}`}
+                    onClick={() => pick({ icon: `emoji:${e}` }, false)}>
+                    <span className="markup-emoji">{e}</span>
+                  </button>
+                ))}
+                {customIcons.map((c) => (
+                  <button key={c.id} className={`markup-preset${markup.icon === `custom:${c.id}` ? ' active' : ''}`}
+                    title="Imported icon"
+                    onClick={() => pick({ icon: `custom:${c.id}` }, false)}>
+                    <MarkupIcon icon={`custom:${c.id}`} />
+                  </button>
+                ))}
+              </div>
+              {/* v5.29, Derek: bring-your-own icon (image file → 48px chip) */}
+              <button className="markup-hl-clear markup-import-icon" onClick={() => fileRef.current?.click()}>
+                Import icon…
+              </button>
+              {importErr && <div className="markup-filter-empty">{importErr}</div>}
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => { onImportPicked(e.target.files?.[0]); e.target.value = ''; }}
+              />
             </div>
-          </>)}
-          <div className="markup-pop-label">All icons</div>
-          <div className="markup-pop-grid">
-            {Object.keys(MARKUP_ICONS).map((k) => (
-              <button key={k} className={`markup-preset${chip}${markup.icon === k ? ' active' : ''}`} title={iconLabel(k)}
-                onClick={() => pick({ icon: k }, false)}>
-                <MarkupIcon icon={k} color={markup.color} />
-              </button>
-            ))}
-            {MARKUP_EMOJI.map((e) => (
-              <button key={e} className={`markup-preset${markup.icon === `emoji:${e}` ? ' active' : ''}`}
-                onClick={() => pick({ icon: `emoji:${e}` }, false)}>
-                <span className="markup-emoji">{e}</span>
-              </button>
-            ))}
-            {customIcons.map((c) => (
-              <button key={c.id} className={`markup-preset${markup.icon === `custom:${c.id}` ? ' active' : ''}`}
-                title="Imported icon"
-                onClick={() => pick({ icon: `custom:${c.id}` }, false)}>
-                <MarkupIcon icon={`custom:${c.id}`} />
-              </button>
-            ))}
-          </div>
-          {/* v5.29, Derek: bring-your-own icon (image file → 48px chip) */}
-          <button className="markup-hl-clear markup-import-icon" onClick={() => fileRef.current?.click()}>
-            Import icon…
-          </button>
-          {importErr && <div className="markup-filter-empty">{importErr}</div>}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={(e) => { onImportPicked(e.target.files?.[0]); e.target.value = ''; }}
-          />
-          {/* v5.31, Derek: icon picker + color picker, ONE window — the
-              color section drives the icon color (Apply = done). */}
-          <div className="markup-pop-label">Icon color</div>
-          <div className="markup-combo-color">
-            <ColorPicker
-              value={markup.color}
-              used={[...new Set(markups.map((m) => m.color))]}
-              embedded
-              onChange={(color) => { if (color) updateMarkup(markup.id, { color, iconManual: true }); }}
-              onClose={() => setOpen(false)}
-            />
+            <div className="markup-icon-pop-right">
+              {/* v5.31, Derek: icon picker + color picker, ONE window — the
+                  color section drives the icon color (Apply = done). */}
+              <div className="markup-pop-label">Icon color</div>
+              <div className="markup-combo-color">
+                <ColorPicker
+                  value={markup.color}
+                  used={[...new Set(markups.map((m) => m.color))]}
+                  embedded
+                  onChange={(color) => { if (color) updateMarkup(markup.id, { color, iconManual: true }); }}
+                  onClose={() => setOpen(false)}
+                />
+              </div>
+            </div>
           </div>
         </div>,
         document.body,

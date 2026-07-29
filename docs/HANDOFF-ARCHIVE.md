@@ -151,9 +151,45 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.35 and older (newest first)
+## Version history — v5.36 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.36 — Notes v2: one rich card kind, equal-height rows, real drag fix
+
+- Derek's queue item 1 (flag answered: "your assumption is correct" — old
+  checklist cards become notes whose content IS a task list; titles stay).
+  The tool is "Notes" (id 'sticky' NEVER changes — persisted). ONE card
+  kind: a rich TipTap body per card (StickyCard's NoteBody — StarterKit +
+  Link[protocols scrapbook] + Image + TaskList/TaskItem + Placeholder),
+  toolbar shown via `.swn-card:focus-within`. Cards store `content` (JSON)
+  + `text` (plain mirror — search/snippets/old-build safety). Migration:
+  utils/shelfMigrate.ts (migrateShelfCards), applied at the ONE load door
+  (ScreenplayEditor `_shelf` parse) and reused by NoteBody for unmigrated
+  strays; idempotent, unit-tested.
+- GONE: "+ Add Checklist", the kind TABS (useStickyTabs/reorderStickyTabs
+  deleted; stickyKindFilter/stickyTabOrder store fields removed — the old
+  viewState key just goes unread), the Type sort ('manual' is default),
+  the v4.37 card-height grabber (equal rows made it meaningless — its CSS
+  cleaned from 22-tools-extra + the 20-tool-dock grip selector list).
+- LAYOUT: `.swn-grid` is a real GRID again (repeat(--sticky-cols,
+  minmax(0,1fr)), align-items stretch) — rows equalize height natively;
+  cards are flex-column with the body flex:1 so the foot pins. Stepper
+  label: "Notes per row:". The v5.24 masonry (and its second-column
+  misalignment artifact) is gone.
+- THE DRAG FIX (root cause at last): setting dragId in onDragStart
+  re-rendered the list (drop zones mount) and WEBKIT ABORTS a drag whose
+  DOM mutates during dragstart — Chrome tolerates it, so the v5.24
+  setData fix looked complete in a browser and stayed broken in the app.
+  The dragId write is DEFERRED one tick (setTimeout 0) in both lists.
+- Driver lesson: Playwright's page.dragAndDrop HANGS on HTML5 draggables
+  headless — dispatch synthetic DragEvents (with new DataTransfer()) at
+  the handler chain instead; select cards by querySelectorAll INDEX (an
+  nth-of-type on .swn-card returned null in the takeover).
+- check-v536: 16 green (rename, one add button, no tabs, 4 rich bodies,
+  migrated checklist renders real boxes, stepper wording, 2-col grid,
+  per-row top AND height equality, drag reorder → dabc + Manual snap,
+  typing updates content+mirror, focus toolbar, checklist toggle).
 
 ### v5.35 — docked panel tools survive script clicks
 

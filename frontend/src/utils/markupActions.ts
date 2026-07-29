@@ -282,8 +282,16 @@ export function markupContentLines(m: ScriptMarkup): string[] {
   return lines;
 }
 
+/** v5.41, Derek: LIST annotations show NO icon in the Navigator — their
+ *  lines are identification enough. One predicate for the Navigator row
+ *  and the edit window's "In Navigator:" preview. */
+export function markupIsList(content: ScriptMarkup['content']): boolean {
+  const kind = firstContentKind(content);
+  return kind === 'bullets' || kind === 'numbers' || kind === 'checklist';
+}
+
 /** v5.33: the EXACT lines a Navigator row renders — capped at 6 lines of 60
- *  chars. Shared by the Navigator and the edit window's "Displays as:"
+ *  chars. Shared by the Navigator and the edit window's "In Navigator:"
  *  preview so the preview can never drift from the real row. */
 export function markupNavLines(content: ScriptMarkup['content']): string[] {
   return markupContentLines({ content } as ScriptMarkup)

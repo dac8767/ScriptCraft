@@ -72,6 +72,12 @@ export interface MarkupsSlice {
   /** the markup whose popover editor is open (null = closed) */
   markupEditorId: string | null;
   setMarkupEditorId: (id: string | null) => void;
+  /** v5.41, Derek: while the annotation window is open, the ribbon's
+   *  formatting buttons drive ITS mini editor instead of the script.
+   *  Loosely typed (the tiptap Editor) to keep tiptap out of store types;
+   *  never persisted. */
+  markupMiniEditor: unknown;
+  setMarkupMiniEditor: (ed: unknown) => void;
   markupFilters: MarkupFilters;
   setMarkupFilters: (f: MarkupFilters) => void;
   /** v5.26: the side panel's search query (header ControlSearch). */
@@ -89,6 +95,8 @@ export const createMarkupsSlice: StateCreator<EditorState, [], [], MarkupsSlice>
   removeMarkup: (id) => set((s) => ({ markups: s.markups.filter((m) => m.id !== id) })),
   markupEditorId: null,
   setMarkupEditorId: (id) => set({ markupEditorId: id }),
+  markupMiniEditor: null,
+  setMarkupMiniEditor: (ed) => set({ markupMiniEditor: ed }),
   markupFilters: EMPTY_MARKUP_FILTERS,
   setMarkupFilters: (f) => set({ markupFilters: f }),
   markupSearch: '',
