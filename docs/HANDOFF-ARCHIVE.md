@@ -155,6 +155,41 @@ reliable; re-run before believing a weird worker failure.
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
 
+### v5.48 — annotations = highlighted text, pick-to-place, title-bar status/delete, Scene # in header
+
+- Derek's 8 (six mid-turn messages):
+  (1) EVERY annotation anchors to highlighted TEXT: createMarkupAtSelection
+  with an EMPTY selection creates NOTHING — it arms
+  markupsSlice.markupCreatePick (+ a toast prompt) and the next selection
+  in the script places the annotation (the Link Script Text flow promoted
+  to the front door; listener hosted in MarkupIconLayer, Escape stands
+  down). A cursor INSIDE an existing highlight opens that annotation.
+  Point annotations are no longer creatable; legacy ones stay readable
+  (their Link Script Text upgrade path remains). convertMarkupToPoint is
+  GONE with the remove-highlight button. Return type is now
+  `string | null`.
+  (2) The window's ⋮ MENU IS GONE (superseding the just-asked move-to-
+  header mid-batch): the title bar carries a STATUS toggle
+  (.markup-win-status, FaRegCheckCircle, green when done) and DELETE
+  (.markup-win-delete) which confirmDialog-warns, then does the ⋮ menu's
+  exact delete (removeMarkupFromDoc + emit + removeMarkup + close).
+  MarkupDotsMenu remains on panel cards + Navigator rows.
+  (3) Preview icons CENTERED on their labels (.markup-pop-preview
+  align-items center; nav preview inline-flex).
+  (4) NAVIGATOR: the Scene # toggle moved into the window HEADER — text
+  only (.fs-nav-nums-ctl, .tool-ctl.active = accent); NavActionRow and
+  its CSS are gone.
+  (5) DESIGN POP-OUT SEAT (Derek's screenshot: half off-screen): the
+  dock-drag left `pos` at the panel edge and reopening used it. dockInto
+  resets pos to the sentinel; the open effect ALSO re-anchors whenever
+  the remembered spot is mostly off-viewport.
+- check-v548: 12 green (empty add → armed+toast+no create, Escape
+  cancels, next selection places a highlighted range annotation with the
+  mark in the doc, no hl-del / no ⋮ / status+delete present, status
+  toggles+lights, chip centered Δ0, cancel keeps, confirmed delete
+  removes annotation+span+window, selected add unchanged, dock-cycle
+  pop-out fully on screen).
+
 ### v5.47 — # goto in header, stacked stepper, Design DOCKS BACK, notes checklist fixes, edit-window force-show
 
 - Derek's 10 (seven mid-turn messages; the sandbox ALSO rolled back a

@@ -37,7 +37,8 @@ const TOOL_MENU_GROUPS: string[][] = [
   // dockable Tool in Customize.
   // v5.45, Derek: 'aiwriter' is out of this menu — its doors are the dock
   // row and Customize ▸ Panels (where the footer's remove stashes it).
-  ['analytics', 'goals', 'typewriter', 'notebook'],
+  // v5.53: + the Thesaurus (local MyThes/WordNet data).
+  ['analytics', 'goals', 'typewriter', 'thesaurus', 'notebook'],
 ];
 /** v1.83: Format > Highlighting color list — Final Draft's palette. */
 const HIGHLIGHT_MENU_COLORS: Array<[string, string]> = [

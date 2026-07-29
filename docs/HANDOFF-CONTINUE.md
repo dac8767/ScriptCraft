@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.52 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.53 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,53 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.52 — icon/color window OK/Cancel + live hex, colored filter grids, one-checkbox nav fix, header + (HEAD)
+### v5.53 — the THESAURUS tool: local MyThes/WordNet data, caret-follow, replace-in-place (HEAD)
+
+- Derek: "Add a thesaurus tool. Find an open source thesaurus resource
+  online… The code should be local, don't connect to an external app or
+  server."
+- DATA: MyThes en_US (th_en_US_v2.dat, 18.5 MB, UTF-8, ~146k head words)
+  — the WordNet-derived thesaurus LibreOffice ships — fetched VERBATIM
+  from github.com/LibreOffice/dictionaries (en/) into
+  frontend/public/thesaurus/ with WordNet_license.txt + license.txt +
+  a provenance README. Bundled asset, fetched same-origin at first tool
+  open; NO runtime network (deliberately unlike languageCatalog's CDN
+  fetch, which remains a release blocker). The upstream .idx is NOT
+  shipped — the loader derives the index in one pass.
+- utils/thesaurus.ts: the file stays ONE string; buildThesaurusIndex maps
+  head word → char offset (head lines say how many sense lines to skip);
+  readThesaurusEntry parses on demand. Qualifier grammar audited over the
+  whole file: (generic term)/(similar term)/(related term) strip,
+  (antonym) becomes a flag. lookupCandidates: exact → lower → suffix
+  fallbacks ORDERED so "hoping"→hope beats hop, running→run,
+  stopped→stop, cities→city. wordAt (caret word, edge-punctuation
+  trimmed) + matchCase (WALK→AMBLE, Walk→Amble) are pure and tested
+  (15 new unit tests → 895).
+- ThesaurusTool.tsx: search row (Back + input + go); follows the script
+  caret via debounced selectionUpdate/update (250ms) — caret word looks
+  up + becomes the replace TARGET ("In script: word"); chips = word
+  button (chain lookup, Back retraces) + ⇄ replace (only when targeted;
+  validates doc.textBetween(from,to)===word before writing, toast if the
+  script moved; matchCase dresses the replacement; after replace the
+  tool follows onto the new word). Antonyms: dashed chips on an "ant."
+  row per sense. Loading/miss/fallback states all speak
+  ("Showing "hope"", "No synonyms found").
+- Registration (the full surface, v0.63 rule): ToolId union,
+  DEFAULT_TOOL_CONFIG (right, enabled — toolConfigFor's fallback shows
+  it for EXISTING layouts too; a missing toolOrder id lands at the rail
+  end by the 1000+index rule, no migration needed), DEFAULT_TOOL_ORDER,
+  ALL_TOOLS (FaBookOpen, 320×420, group 3), ToolDock render case,
+  MenuBar TOOL_MENU_GROUPS third group. About window credits
+  WordNet/MyThes (Derek's v4.76 standing rule). CSS: 28-thesaurus.css
+  (+ screenplay.css import).
+- check-v553: 11 green (loads from dock, happy = 4 senses incl. adj.,
+  no ⇄ before a script target, chip chains + Back, caret in "occupy"
+  auto-targets, ⇄ swaps occupy→inhabit exactly once, tool follows onto
+  the new word, Hoping→hope note, zzzqqq miss message, Tools menu row).
+- QUEUED NEXT: the PAGES WINDOW TABS restructure (Script / Title Page /
+  Custom; the separate Title Page tool leaves the side panels).
+
+### v5.52 — icon/color window OK/Cancel + live hex, colored filter grids, one-checkbox nav fix, header +
 
 - Derek's 4 (one in flight when the batch opened, three mid-turn):
   (1) ICON & COLOR WINDOW: the hex row's Apply is GONE for embedded
@@ -352,46 +398,12 @@ Durable bits kept live here:
   right-hug 0px, picker × present/closes, 57/57 white chips, framed
   tight arrows, 3px number gap, typed 6 → store+grid 6).
 
-### v5.48 — annotations = highlighted text, pick-to-place, title-bar status/delete, Scene # in header
-
-- Derek's 8 (six mid-turn messages):
-  (1) EVERY annotation anchors to highlighted TEXT: createMarkupAtSelection
-  with an EMPTY selection creates NOTHING — it arms
-  markupsSlice.markupCreatePick (+ a toast prompt) and the next selection
-  in the script places the annotation (the Link Script Text flow promoted
-  to the front door; listener hosted in MarkupIconLayer, Escape stands
-  down). A cursor INSIDE an existing highlight opens that annotation.
-  Point annotations are no longer creatable; legacy ones stay readable
-  (their Link Script Text upgrade path remains). convertMarkupToPoint is
-  GONE with the remove-highlight button. Return type is now
-  `string | null`.
-  (2) The window's ⋮ MENU IS GONE (superseding the just-asked move-to-
-  header mid-batch): the title bar carries a STATUS toggle
-  (.markup-win-status, FaRegCheckCircle, green when done) and DELETE
-  (.markup-win-delete) which confirmDialog-warns, then does the ⋮ menu's
-  exact delete (removeMarkupFromDoc + emit + removeMarkup + close).
-  MarkupDotsMenu remains on panel cards + Navigator rows.
-  (3) Preview icons CENTERED on their labels (.markup-pop-preview
-  align-items center; nav preview inline-flex).
-  (4) NAVIGATOR: the Scene # toggle moved into the window HEADER — text
-  only (.fs-nav-nums-ctl, .tool-ctl.active = accent); NavActionRow and
-  its CSS are gone.
-  (5) DESIGN POP-OUT SEAT (Derek's screenshot: half off-screen): the
-  dock-drag left `pos` at the panel edge and reopening used it. dockInto
-  resets pos to the sentinel; the open effect ALSO re-anchors whenever
-  the remembered spot is mostly off-viewport.
-- check-v548: 12 green (empty add → armed+toast+no create, Escape
-  cancels, next selection places a highlighted range annotation with the
-  mark in the doc, no hl-del / no ⋮ / status+delete present, status
-  toggles+lights, chip centered Δ0, cancel keeps, confirmed delete
-  removes annotation+span+window, selected add unchanged, dock-cycle
-  pop-out fully on screen).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.48** — annotations = highlighted text, pick-to-place, title-bar status/delete, Scene # in header
 - **v5.47** — # goto in header, stacked stepper, Design DOCKS BACK, notes checklist fixes, edit-window force-show
 - **v5.46** — nav Filter=annotation grid, Design independent window, edge resize everywhere, live checklist, working inserts
 - **v5.45** — AI Writer: panel-only remove button, out of the Tools menu; Pages header right pair

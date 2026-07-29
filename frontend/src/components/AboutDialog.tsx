@@ -72,8 +72,13 @@ export function AboutDialog({ onClose, onShowChangelog }: { onClose: () => void;
             <Ext href="https://unifiedjs.com">unified</Ext>,{' '}
             <Ext href="https://tauri.app">Tauri</Ext>,{' '}
             <Ext href="https://fastapi.tiangolo.com">FastAPI</Ext>,{' '}
-            <Ext href="https://www.dulwich.io">Dulwich</Ext>, and{' '}
-            <Ext href="https://alembic.sqlalchemy.org">Alembic</Ext>.
+            <Ext href="https://www.dulwich.io">Dulwich</Ext>,{' '}
+            <Ext href="https://alembic.sqlalchemy.org">Alembic</Ext>, and the{' '}
+            {/* v5.53: the Thesaurus tool's data — MyThes en_US from the
+                OpenOffice/LibreOffice lingucomponent project, derived from
+                Princeton's WordNet (license ships in public/thesaurus/). */}
+            <Ext href="https://wordnet.princeton.edu">WordNet</Ext>-based{' '}
+            MyThes English thesaurus.
           </div>
 
 

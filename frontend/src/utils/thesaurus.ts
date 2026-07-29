@@ -1,0 +1,230 @@
+/**
+ * v5.53: the Thesaurus tool's data layer — MyThes en_US (th_en_US_v2), the
+ * WordNet-derived thesaurus LibreOffice ships, bundled as a LOCAL asset in
+ * public/thesaurus/ (Derek: no external app or server; the WordNet license
+ * files travel next to the data). ~146k entries, senses grouped by part of
+ * speech; synonym qualifiers — (generic term) etc. — are metadata suffixes,
+ * and (antonym) marks true antonyms.
+ *
+ * Memory model: the decoded file stays ONE string; the index maps each head
+ * word to its char offset and entries are parsed on demand. Building 146k
+ * map entries is cheap; materializing a million synonym strings up front is
+ * not.
+ *
+ * File format (MyThes): line 1 is the encoding name ("UTF-8" here), then
+ * repeating blocks of a head line `word|senseCount` followed by senseCount
+ * lines of `(pos)|synonym|synonym …`.
+ */
+
+export interface ThesaurusWord {
+  word: string;
+  /** marked `(antonym)` in the data — an opposite, not a synonym */
+  antonym?: boolean;
+}
+
+export interface ThesaurusSense {
+  /** raw pos tag from the data: "(noun)" | "(verb)" | "(adj)" | "(adv)" */
+  pos: string;
+  words: ThesaurusWord[];
+}
+
+export interface ThesaurusEntry {
+  word: string;
+  senses: ThesaurusSense[];
+}
+
+export interface ThesaurusApi {
+  /** Lookup with the fallback chain; `matched` is the head word actually
+   *  found (it may differ from the query — the UI says so). */
+  lookup(raw: string): { matched: string; entry: ThesaurusEntry } | null;
+  /** number of head words in the index */
+  size: number;
+}
+
+/** The four qualifier suffixes th_en_US_v2 uses (audited over the full
+ *  file — nothing else appears). Only these are stripped, so a parenthesis
+ *  that is PART of a term survives. */
+const QUALIFIER_RE = /\s*\((generic term|similar term|related term|antonym)\)$/;
+
+export const POS_LABELS: Record<string, string> = {
+  '(noun)': 'noun',
+  '(verb)': 'verb',
+  '(adj)': 'adj.',
+  '(adv)': 'adv.',
+};
+
+/** One pass over the decoded file: head-line offsets by word. The sense
+ *  count on each head line says how many lines to skip, so sense lines can
+ *  never be mistaken for heads (a sense line's last `|` field isn't a
+ *  number anyway, but the walk doesn't need to care). */
+export function buildThesaurusIndex(text: string): Map<string, number> {
+  const idx = new Map<string, number>();
+  let pos = text.indexOf('\n') + 1;   // skip the encoding line
+  if (pos <= 0) return idx;
+  while (pos < text.length) {
+    const eol = text.indexOf('\n', pos);
+    const line = eol === -1 ? text.slice(pos) : text.slice(pos, eol);
+    if (line) {
+      const bar = line.lastIndexOf('|');
+      const n = bar > 0 ? Number(line.slice(bar + 1)) : NaN;
+      if (Number.isInteger(n) && n > 0) {
+        idx.set(line.slice(0, bar), pos);
+        let p = eol;
+        for (let k = 0; k < n && p !== -1; k++) p = text.indexOf('\n', p + 1);
+        if (p === -1) break;
+        pos = p + 1;
+        continue;
+      }
+    }
+    if (eol === -1) break;
+    pos = eol + 1;   // blank or malformed line — step past it
+  }
+  return idx;
+}
+
+/** Parse the entry whose head line starts at `offset` (an index value). */
+export function readThesaurusEntry(text: string, offset: number): ThesaurusEntry | null {
+  let eol = text.indexOf('\n', offset);
+  if (eol === -1) eol = text.length;
+  const head = text.slice(offset, eol);
+  const bar = head.lastIndexOf('|');
+  if (bar <= 0) return null;
+  const word = head.slice(0, bar);
+  const n = Number(head.slice(bar + 1));
+  if (!Number.isInteger(n) || n <= 0) return null;
+  const senses: ThesaurusSense[] = [];
+  let pos = eol + 1;
+  for (let k = 0; k < n && pos < text.length; k++) {
+    let lineEnd = text.indexOf('\n', pos);
+    if (lineEnd === -1) lineEnd = text.length;
+    const fields = text.slice(pos, lineEnd).split('|');
+    pos = lineEnd + 1;
+    if (fields.length < 2) continue;
+    const seen = new Set<string>();
+    const words: ThesaurusWord[] = [];
+    for (const raw of fields.slice(1)) {
+      const m = raw.match(QUALIFIER_RE);
+      const w = (m ? raw.slice(0, m.index) : raw).trim();
+      if (!w) continue;
+      const key = w.toLowerCase();
+      if (seen.has(key)) continue;   // same word under two qualifiers
+      seen.add(key);
+      const entry: ThesaurusWord = { word: w };
+      if (m && m[1] === 'antonym') entry.antonym = true;
+      words.push(entry);
+    }
+    if (words.length) senses.push({ pos: fields[0], words });
+  }
+  return senses.length ? { word, senses } : null;
+}
+
+/** The queries to try, in order: the word as given, lowercased, then light
+ *  suffix fallbacks (plurals and -ed/-ing forms — MyThes heads are lemmas).
+ *  Ordering inside each family matters: "hoping" must reach "hope" before
+ *  the shorter "hop" gets a chance to hit. Heuristic by design — it only
+ *  runs after the exact form missed, and the UI shows which head matched. */
+export function lookupCandidates(raw: string): string[] {
+  const trimmed = raw.trim()
+    .replace(/^[\s"'‘’“”(—-]+/, '')
+    .replace(/[\s"'‘’“”).,!?;:…—-]+$/, '');
+  if (!trimmed) return [];
+  const lower = trimmed.toLowerCase();
+  const out = [trimmed, lower];
+  const dedouble = (w: string) =>
+    w.length > 2 && w[w.length - 1] === w[w.length - 2] ? w.slice(0, -1) : null;
+  if (lower.endsWith('ies') && lower.length > 4) out.push(`${lower.slice(0, -3)}y`);
+  if (lower.endsWith('ing') && lower.length > 5) {
+    const base = lower.slice(0, -3);
+    out.push(`${base}e`);                      // hoping → hope (before hop)
+    const dd = dedouble(base);
+    if (dd) out.push(dd);                      // running → run
+    out.push(base);                            // walking → walk
+  }
+  if (lower.endsWith('ed') && lower.length > 4) {
+    out.push(lower.slice(0, -1));              // hoped → hope
+    const base = lower.slice(0, -2);
+    const dd = dedouble(base);
+    if (dd) out.push(dd);                      // stopped → stop
+    out.push(base);                            // walked → walk
+  }
+  if (lower.endsWith('es') && lower.length > 3) out.push(lower.slice(0, -2));
+  if (lower.endsWith('s') && lower.length > 3) out.push(lower.slice(0, -1));
+  return [...new Set(out)];
+}
+
+/** Build the API from the raw decoded file text. Pure — tests feed it
+ *  fixture text; the app feeds it the fetched asset. */
+export function createThesaurus(text: string): ThesaurusApi {
+  const index = buildThesaurusIndex(text);
+  return {
+    size: index.size,
+    lookup(raw: string) {
+      for (const candidate of lookupCandidates(raw)) {
+        const at = index.get(candidate);
+        if (at === undefined) continue;
+        const entry = readThesaurusEntry(text, at);
+        if (entry) return { matched: candidate, entry };
+      }
+      return null;
+    },
+  };
+}
+
+/* ── the bundled asset ──────────────────────────────────────────────────── */
+
+let loadPromise: Promise<ThesaurusApi> | null = null;
+
+/** Fetch + parse the bundled data once per app run (first tool open pays
+ *  ~18 MB parse; every later lookup is an index hit). A failed load clears
+ *  the cache so Retry actually retries. */
+export function loadThesaurus(): Promise<ThesaurusApi> {
+  if (!loadPromise) {
+    loadPromise = fetch(`${import.meta.env.BASE_URL}thesaurus/th_en_US_v2.dat`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`thesaurus data: HTTP ${r.status}`);
+        return r.text();
+      })
+      .then(createThesaurus)
+      .catch((e) => { loadPromise = null; throw e; });
+  }
+  return loadPromise;
+}
+
+/* ── editor-side helpers (pure, tested) ─────────────────────────────────── */
+
+const WORD_CHAR = /[\p{L}\p{N}'’-]/u;
+
+/** The word around `offset` in `text` (both ends expanded), with edge
+ *  apostrophes/hyphens trimmed so "—word," or "'word'" resolves to word.
+ *  Returns null when the offset touches no word character. */
+export function wordAt(
+  text: string,
+  offset: number,
+): { start: number; end: number; word: string } | null {
+  const at = Math.max(0, Math.min(offset, text.length));
+  let start = at;
+  let end = at;
+  // an offset at a word's END (caret after the last letter) still counts
+  if (!(end < text.length && WORD_CHAR.test(text[end]))
+      && !(start > 0 && WORD_CHAR.test(text[start - 1]))) return null;
+  while (start > 0 && WORD_CHAR.test(text[start - 1])) start--;
+  while (end < text.length && WORD_CHAR.test(text[end])) end++;
+  // trim edge punctuation that the char class admits mid-word
+  while (start < end && /['’-]/.test(text[start])) start++;
+  while (end > start && /['’-]/.test(text[end - 1])) end--;
+  if (end <= start) return null;
+  return { start, end, word: text.slice(start, end) };
+}
+
+/** Dress `replacement` in `original`'s case: ALL-CAPS stays ALL-CAPS,
+ *  Capitalized stays Capitalized, anything else passes through. */
+export function matchCase(original: string, replacement: string): string {
+  if (original.length > 1 && original === original.toUpperCase() && /\p{L}/u.test(original)) {
+    return replacement.toUpperCase();
+  }
+  const first = original.charAt(0);
+  if (first && first === first.toUpperCase() && first !== first.toLowerCase()) {
+    return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+  }
+  return replacement;
+}

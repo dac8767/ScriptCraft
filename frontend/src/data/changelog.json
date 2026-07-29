@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.53",
+    "date": "2026-07-29",
+    "changes": [
+      "New: Thesaurus tool — synonyms and antonyms grouped by part of speech, from the open-source WordNet/MyThes dictionary bundled inside the app (146,000 entries, fully offline — nothing leaves your machine).",
+      "Thesaurus follows the script: put the cursor in a word to look it up; the ⇄ on a synonym replaces the word in place with its case kept; click any word to explore deeper, Back retraces.",
+      "About window: the open-source list credits WordNet and the MyThes English thesaurus."
+    ]
+  },
+  {
     "version": "5.52",
     "date": "2026-07-29",
     "changes": [

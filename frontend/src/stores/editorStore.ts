@@ -382,7 +382,7 @@ export type ToolId =
   | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets' | 'markups'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
   | 'spelling' | 'history' | 'titlepage' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
-  | 'notebook' | 'design' | 'workspaces' | 'feedback'
+  | 'notebook' | 'design' | 'workspaces' | 'feedback' | 'thesaurus'
   /** legacy — the v4.95 dev-only Airtable panel, removed v5.21. Stays in
    *  the union so a dev-era persisted layout still typechecks; ALL_TOOLS
    *  doesn't carry it, so it renders nowhere (the 'scriptnotes' precedent). */
@@ -572,6 +572,8 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   goals: { side: 'right', enabled: true },
   typewriter: { side: 'right', enabled: true },
   aiwriter: { side: 'right', enabled: true },
+  // v5.53, Derek: the Thesaurus (local MyThes/WordNet data — no network)
+  thesaurus: { side: 'right', enabled: true },
   notebook: { side: 'right', enabled: true },
   analytics: { side: 'right', enabled: true },
 
@@ -583,7 +585,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
  *  within each panel. 'Reset to Default' restores exactly this. */
 export const DEFAULT_TOOL_ORDER: string[] = [
   'navigator', 'scenes', 'pages', 'titlepage', 'characters', 'locations', 'spelling', 'assets',
-  'sticky', 'markups', 'fragments', 'beatboard', 'highlights', 'goals', 'typewriter', 'aiwriter', 'notebook', 'analytics',
+  'sticky', 'markups', 'fragments', 'beatboard', 'highlights', 'goals', 'typewriter', 'aiwriter', 'thesaurus', 'notebook', 'analytics',
   'tags',
 ];
 

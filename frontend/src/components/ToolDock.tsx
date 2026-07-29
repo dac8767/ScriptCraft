@@ -23,7 +23,7 @@ import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard,
   FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,
-  FaKeyboard, FaRobot, FaBook, FaSlidersH, FaColumns,
+  FaKeyboard, FaRobot, FaBook, FaBookOpen, FaSlidersH, FaColumns,
   FaCommentDots, FaChevronRight, FaChevronDown, FaMarker,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, NO_FULLSCREEN_TOOLS, FULLSCREEN_ONLY_TOOLS, type ToolId, type ToolSide } from '../stores/editorStore';
@@ -47,6 +47,7 @@ import WorkspacesTool from './WorkspacesTool';
 import FeedbackTool, { FeedbackShotControls } from './FeedbackTool';
 import TagsPanel, { TagsTitleExtra, TagsWindowActions, useTagsTabs } from './TagsPanel';
 import MarkupsPanel, { MarkupsTitleExtra, MarkupsControls } from './MarkupsPanel';
+import ThesaurusTool from './ThesaurusTool';
 import { ScenesTool } from './ScenesTool';
 import BeatBoard, { OutlineHeaderControls } from './BeatBoard';
 import TypewriterTool from './TypewriterTool';
@@ -116,6 +117,10 @@ export const ALL_TOOLS: ToolDef[] = [
   { id: 'typewriter', label: 'Focus', icon: <FaKeyboard />, defaultSize: { w: 340, h: 520 }, group: 3, keepOpenOnEditorClick: true },
   // v1.69: the joke. It ships enabled — that's the joke landing.
   { id: 'aiwriter', label: 'AI Writer', icon: <FaRobot />, defaultSize: { w: 300, h: 150 }, group: 3 },
+  // v5.53, Derek: the Thesaurus — MyThes en_US (WordNet-derived) bundled
+  // locally under public/thesaurus/; follows the script caret, replaces
+  // in place. No network involved (see utils/thesaurus.ts).
+  { id: 'thesaurus', label: 'Thesaurus', icon: <FaBookOpen />, defaultSize: { w: 320, h: 420 }, group: 3 },
   // v1.96: the Notebook window is ONLY the pages tree — it sits inline in
   // the panel like Navigator, while the writing surface takes over the
   // editor area (NotebookSurface in ScreenplayEditor). keepOpenOnEditorClick
@@ -513,6 +518,8 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
       return <StickyNotesTool editor={editor} />;
     case 'markups':
       return <MarkupsPanel editor={editor} />;
+    case 'thesaurus':
+      return <ThesaurusTool editor={editor} />;
     case 'fragments':
       return <FragmentsTool editor={editor} />;
     case 'highlights':
