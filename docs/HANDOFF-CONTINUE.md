@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.44 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.45 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,27 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.44 — Pages tool: header reorder + gap knob, + Add Page dropdown, ratio fix, custom-thumb drag/⋮ (HEAD)
+### v5.45 — AI Writer panel-only remove button + out of Tools menu; Pages right pair (HEAD)
+
+- Derek's queue #1 + a mid-turn Pages tweak: (1) AiWriterTool's footer
+  button renders ONLY in-panel — `inPanel = (toolMode.aiwriter ?? 'docked')
+  === 'docked' && tempTool !== 'aiwriter'` (ToolContent renders the same
+  body docked and floating; tempTool is the no-dock-home float) — and its
+  text is "Remove AI Writer from side panel". Popped out: no footer at
+  all. The remove-and-stash behavior (enabled:false, back via Customize ▸
+  Panels) is unchanged. (2) 'aiwriter' removed from MenuBar's
+  TOOL_MENU_GROUPS — its doors are the dock row and Customize ▸ Panels.
+  (Ribbon palette already hid it: t:aiwriter in RIBBON_HIDE.) (3) Pages
+  header re-split per Derek: + Add Page keeps the LEFT; Go to page + the
+  per-row stepper live in `.fs-pages-right` (margin-left auto, its own
+  ctl-gap, justify-content flex-end so a wrapped lone row still hugs
+  right).
+- check-v545: 7 green (left/right geometry, Tools menu without AI Writer
+  but with neighbors, docked button text, floating = no button,
+  remove-and-stash still works: window closed + dock row gone +
+  enabled=false).
+
+### v5.44 — Pages tool: header reorder + gap knob, + Add Page dropdown, ratio fix, custom-thumb drag/⋮
 
 - Derek's 5 (four mid-turn messages, one batch): (1) HEADER ORDER — the
   Pages row is now a raw `.tool-action-row.fs-pages-actions` div (ToolActionRow
@@ -325,50 +345,12 @@ Durable bits kept live here:
   close, side-by-side geometry + drag Δ, nav rows with/without icon,
   toast + mode still docked).
 
-### v5.40 — CUSTOM PAGES (Derek's queue item 5; ruling: not numbered)
-
-- MODEL (the title-page pattern — flat text*-only schema, v5.25 lesson):
-  `customPage` node = ONE LINE, attrs {cpId}; a consecutive same-cpId run
-  is one page. src/editor/extensions/CustomPage.ts: the Node, the
-  `CustomPageKeymap` Extension (priority 1100 — the AvKeymap precedent;
-  NEVER priority on the NODE or it becomes the schema defaultType and
-  clearNodes crashes), and `insertCustomPage(editor)` (all three doors
-  call it: Insert menu, ribbon palette builtin 'insertCustomPage'
-  [FaRegFileAlt], Pages tool `+ Custom Page` / `.fs-pages-addcustom`).
-- ENTER inside a line: hand-built node insert carrying cpId + the line's
-  tail. splitBlock FAILS in this schema (end-of-block default-type path)
-  and falling through hands Enter to the element cycler, which minted a
-  customElement — the driver caught both stages.
-- PAGINATION (computeBreaks, now exported for tests): entering a run
-  pushes a break flagged `isCustomPage` (consumes NO pageNumber, header
-  suppressed, measured-fill skipped BOTH sides — it shares its number
-  with the next script page); leaving pushes `afterCustomPage` (footer
-  for the custom page suppressed) numbered `scriptSeen ? pageNumber++ :
-  1` — a LEADING custom run plays the title page's part. No overflow
-  breaks inside a run (one page however long — renders tall). scriptSeen
-  = any non-custom non-title-region node laid out. Overlay React keys
-  now `${pageNumber}@${top}` (custom breaks share numbers). Continuous
-  view labels the divide "Custom Page".
-- computePageBlocks: bounds carry isCustom (leading-run case handled);
-  PageContentInfo.isCustom → Pages tool thumbs labeled "Custom Page",
-  `data-page` unique, go-to-page targets `!isCustom` pages only.
-- EXPORT: fountainExporter skips customPage (§4 rule — no stray action
-  lines in a collaborator's copy). Print: accent border stripped by the
-  @media print reset in 06-editor-content.css.
-- Tests: pagination.customPages.test.ts (5 — consecutive numbering, no
-  count inflation, leading-run page-1, per-page block isolation,
-  back-to-back distinct cpIds). NOTE learned writing it: the page BEFORE
-  a custom page is legitimately cut short, so total PHYSICAL pages may
-  grow — the invariant is the consecutive script numbering, not equal
-  page counts. check-v540: 10 green (menu insert, same-id Enter lines,
-  header sequence ["2.".."6."] with one headerless sep, export
-  exclusion, Pages tool label + door).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.40** — CUSTOM PAGES: the customPage node/keymap, unnumbered pagination breaks, export exclusion
 - **v5.39** — Title Page hand-grabber pan (per-column scrolling made the preview pannable)
 - **v5.38** — Scenes cards: metrics wrap to a second row instead of truncating the name
 - **v5.37** — fullscreen joins the one-window rule; the annotation window never coexists with a takeover

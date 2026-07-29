@@ -885,12 +885,20 @@
   overflow-wrap: break-word;
 }
 
-/* v5.44, Derek: the Pages header row — + Add Page, Go to page, Pages per
-   row, all LEFT-aligned in that order; the space between them is a Design
-   knob (Navigator & Outline ▸ "Pages: header button spacing"). Compound
-   selector: the base .tool-action-row gap loads LATER (22-tools-extra) and
-   would win a single-class tie. */
+/* v5.44/v5.45, Derek: the Pages header row — + Add Page on the LEFT, the
+   Go to page + Pages per row pair pushed RIGHT; the space between groups
+   is a Design knob (Navigator & Outline ▸ "Pages: header button spacing").
+   Compound selector: the base .tool-action-row gap loads LATER
+   (22-tools-extra) and would win a single-class tie. */
 .tool-action-row.fs-pages-actions { gap: var(--dz-pages-ctl-gap, 10px); }
+.fs-pages-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;   /* wrapped alone, it still hugs the right */
+  gap: var(--dz-pages-ctl-gap, 10px);
+}
 
 /* The ⋮ on a custom page's thumbnail (top-right, over the paper). */
 .page-thumb-kebab {

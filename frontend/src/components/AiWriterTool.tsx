@@ -5,10 +5,18 @@
  * v2.75: a footer button removes it from the sidebar — the SAME
  * remove-and-stash hide Customize's Hidden column uses (enabled: false),
  * so it comes back from Customize > Panels like any other tool.
+ * v5.45, Derek: the button shows ONLY while the tool sits in a side
+ * panel ("Remove AI Writer from side panel"); popped out as a floating
+ * window there's no button — the panel is what it removes from.
  */
 import { useEditorStore } from '../stores/editorStore';
 
 export default function AiWriterTool() {
+  // ToolContent renders this body in the dock AND in floating windows —
+  // the mode (plus the no-dock-home temp float) says which one this is.
+  const inPanel = useEditorStore(
+    (s) => (s.toolMode.aiwriter ?? 'docked') === 'docked' && s.tempTool !== 'aiwriter',
+  );
   const removeFromSidebar = () => {
     const s = useEditorStore.getState();
     s.setToolConfig({
@@ -24,11 +32,13 @@ export default function AiWriterTool() {
   return (
     <div className="fs-aiwriter">
       <p>Write your own damn script.</p>
-      <div className="fs-aiwriter-footer">
-        <button className="fs-aiwriter-remove" onClick={removeFromSidebar}>
-          Remove AI Writer from the side bar
-        </button>
-      </div>
+      {inPanel && (
+        <div className="fs-aiwriter-footer">
+          <button className="fs-aiwriter-remove" onClick={removeFromSidebar}>
+            Remove AI Writer from side panel
+          </button>
+        </div>
+      )}
     </div>
   );
 }

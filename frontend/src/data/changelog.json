@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.45",
+    "date": "2026-07-29",
+    "changes": [
+      "AI Writer: the footer button reads \"Remove AI Writer from side panel\" and only appears while the tool sits in a side panel — popped out as a floating window, no button",
+      "AI Writer left the Tools menu — its doors are the side-panel row and Customize ▸ Panels (where the remove button stashes it)",
+      "Pages tool: Go to page and Pages per row now sit together on the RIGHT edge of the header row; + Add Page keeps the left"
+    ]
+  },
+  {
     "version": "5.44",
     "date": "2026-07-29",
     "changes": [

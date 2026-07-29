@@ -1045,10 +1045,10 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
           reads the rendered width and scales the page content), so the one
           number drives everything downstream unchanged. */}
       {activeTab === 'pages' && (
-        /* v5.44, Derek: + Add Page leads, then Go to page, then the per-row
-           stepper — ALL left-aligned (reversing v5.23's right-pinned stepper
-           for THIS row only; Scenes keeps its). The gap between them is a
-           Design knob (Navigator & Outline ▸ "Pages: header button spacing"). */
+        /* v5.44/v5.45, Derek: + Add Page leads on the LEFT; Go to page and
+           the per-row stepper ride together on the RIGHT. The gap between
+           the groups is a Design knob (Navigator & Outline ▸ "Pages:
+           header button spacing"). */
         <div className="tool-action-row fs-pages-actions">
           {/* v5.40/v5.44: the Pages door for custom pages is now a dropdown —
               Add Custom Page (with "Add after page #:") or the Title Page. */}
@@ -1058,36 +1058,38 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
             title="Add a custom page or the title page"
             onClick={() => { setAddAfterMode(false); setAfterPageNum(''); setAddPageOpen((v) => !v); }}
           >+ Add Page</button>
-          <form
-            className="tool-action-group"
-            onSubmit={(e) => { e.preventDefault(); goToPageNumber(gotoPage); }}
-          >
-            <label className="tool-action-label" htmlFor="fs-pages-goto">Go to page:</label>
-            <input
-              id="fs-pages-goto"
-              className="tool-action-field"
-              type="text"
-              inputMode="numeric"
-              value={gotoPage}
-              onChange={(e) => setGotoPage(e.target.value.replace(/[^0-9]/g, ''))}
-              onBlur={() => goToPageNumber(gotoPage)}
-            />
-          </form>
-          <span className="tool-action-group">
-            <span className="tool-action-label" id="fs-pages-perrow-label">Pages per row:</span>
-            <button
-              className="tool-action-btn tool-action-icon"
-              title="Fewer pages per row (bigger pages)"
-              disabled={pagesPerRow <= pagesPerRowMin}
-              onClick={() => setPagesPerRow(pagesPerRow - 1)}
-            ><CircleMinusIcon /></button>
-            <span className="tool-action-count" aria-labelledby="fs-pages-perrow-label">{pagesPerRow}</span>
-            <button
-              className="tool-action-btn tool-action-icon"
-              title="More pages per row (smaller pages)"
-              disabled={pagesPerRow >= PAGES_PER_ROW_MAX}
-              onClick={() => setPagesPerRow(pagesPerRow + 1)}
-            ><CirclePlusIcon /></button>
+          <span className="fs-pages-right">
+            <form
+              className="tool-action-group"
+              onSubmit={(e) => { e.preventDefault(); goToPageNumber(gotoPage); }}
+            >
+              <label className="tool-action-label" htmlFor="fs-pages-goto">Go to page:</label>
+              <input
+                id="fs-pages-goto"
+                className="tool-action-field"
+                type="text"
+                inputMode="numeric"
+                value={gotoPage}
+                onChange={(e) => setGotoPage(e.target.value.replace(/[^0-9]/g, ''))}
+                onBlur={() => goToPageNumber(gotoPage)}
+              />
+            </form>
+            <span className="tool-action-group">
+              <span className="tool-action-label" id="fs-pages-perrow-label">Pages per row:</span>
+              <button
+                className="tool-action-btn tool-action-icon"
+                title="Fewer pages per row (bigger pages)"
+                disabled={pagesPerRow <= pagesPerRowMin}
+                onClick={() => setPagesPerRow(pagesPerRow - 1)}
+              ><CircleMinusIcon /></button>
+              <span className="tool-action-count" aria-labelledby="fs-pages-perrow-label">{pagesPerRow}</span>
+              <button
+                className="tool-action-btn tool-action-icon"
+                title="More pages per row (smaller pages)"
+                disabled={pagesPerRow >= PAGES_PER_ROW_MAX}
+                onClick={() => setPagesPerRow(pagesPerRow + 1)}
+              ><CirclePlusIcon /></button>
+            </span>
           </span>
         </div>
       )}
