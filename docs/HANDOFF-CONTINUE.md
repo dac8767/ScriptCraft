@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.34 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.35 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,22 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.34 — "Change Order" (HEAD)
+### v5.35 — docked panel tools survive script clicks (HEAD)
+
+- Derek: "if there is a tool in a side panel toggled open, and i click
+  into the script, that tool window should stay open." ToolDock's
+  v1.77-era document pointerdown (target inside `.editor-center` →
+  setActive(null)) predates docked-vs-floating and closed both. It now
+  stands down unless `toolMode[active.id] === 'floating'`, read LIVE at
+  event time (drag-out can change the mode while open). FLOATING slot
+  windows and temp windows still dismiss on script clicks;
+  keepOpenOnEditorClick (Typewriter) still survives everything.
+- check-v535: 9 green — both docks stay through real clicks; floating
+  slot + temp window still close (pinned so the dismiss rule can't
+  silently vanish). Driver note: Playwright refuses clicks the temp
+  window intercepts — click uncovered editor coordinates via mouse.click.
+
+### v5.34 — "Change Order"
 
 - Derek: any button labelled "Reorder" → "Change Order". Exactly ONE
   existed: the Scenes tool's ScenesReorderControl (one component shared by
@@ -303,46 +318,12 @@ Durable bits kept live here:
   full-height buttons by rect, keep-open pick, both conversions with
   doc-level span/block proofs, stay-open pick mode).
 
-### v5.30 — the edit window becomes a WINDOW; tool locked to panel
-
-- Derek's batch (+3 mid-turn adds): (1) the Annotations TOOL is LOCKED to
-  the side bar — PANEL_LOCKED_TOOLS in editorStore; setToolMode COERCES
-  every write to 'docked' (drag-out, remembered shapes, all paths) and
-  enterToolFullscreen early-returns; NO_FULLSCREEN_TOOLS hides the button.
-  SHAPE_NOTES (ToolDock) prints the limitation at the panel window's foot
-  ("This window only appears in the side panel"; Scrapbook: "only appears
-  in full-screen mode") — limits are SAID, not silently missing.
-- (2) The EDIT window is a real window: `.markup-pop-titlebar` (sticky,
-  drag-move via pointer capture — dragPos overrides seating and an
-  overrideRef makes the scroll/resize re-seat STAND DOWN), FullscreenIcon
-  button (maximized = fixed inset 48px), × = close WITHOUT saving — dirty
-  check against a snapshot taken at open (content JSON + icon/color/
-  highlight/done); dirty → confirmDialog("Are you sure you want to close
-  this annotation without saving?") then RESTORES the snapshot fields +
-  setMarkupHighlight (content was never written). The popover's outside-
-  press/Escape saver must IGNORE .fs-confirm-overlay or the dialog's own
-  buttons would save-and-close underneath it.
-- (3) Its OWN THEME: --anno-win-bg/-win-text/-field-bg/-field-text — :root
-  (dark bases) = light-gray #d6d8dc window + WHITE field; [data-theme=
-  light] = #e2e4e8; THEME_VARS gains an "Annotations" group so every theme
-  (custom included, via seedVarsFromBase) can restyle it. 27-markups.css
-  interior chrome moved off --fd-* onto inherit/rgba-black so it reads on
-  the light surface.
-- NAVIGATOR adds: empty annotation = icon only (no "(empty annotation)");
-  list content renders AS a list (markupContentLines in markupActions —
-  paragraph lines + •/n./☐☑ item lines, cap 6); the Annotations button now
-  opens the SHARED filter popover (markupFilters — same state as the panel
-  Filter) and the navigator rows OBEY it; it sits beside Scene Numbers on
-  row 2 (Scene Numbers carries the lead margin to eat trailing width).
-- check-v530: 19 green (lock coercion, helper notes, computed theme colors,
-  drag + no-re-seat, maximize, clean vs dirty ×, discard proof, icon-only
-  and list rows, same-row buttons, shared-filter drive).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.30** — the edit window becomes a WINDOW (drag/fullscreen/× + own theme); tool locked to panel
 - **v5.29** — picker Used sections, legible chips, one-row popover head, icon import
 - **v5.28** — annotation view controls everywhere (View submenu, ribbon menu) + navigator polish
 - **v5.27** — solid icons, colored rings, segmented toggles, FaMarker identity

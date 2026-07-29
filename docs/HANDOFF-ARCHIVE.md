@@ -151,9 +151,44 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.29 and older (newest first)
+## Version history — v5.30 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.30 — the edit window becomes a WINDOW; tool locked to panel
+
+- Derek's batch (+3 mid-turn adds): (1) the Annotations TOOL is LOCKED to
+  the side bar — PANEL_LOCKED_TOOLS in editorStore; setToolMode COERCES
+  every write to 'docked' (drag-out, remembered shapes, all paths) and
+  enterToolFullscreen early-returns; NO_FULLSCREEN_TOOLS hides the button.
+  SHAPE_NOTES (ToolDock) prints the limitation at the panel window's foot
+  ("This window only appears in the side panel"; Scrapbook: "only appears
+  in full-screen mode") — limits are SAID, not silently missing.
+- (2) The EDIT window is a real window: `.markup-pop-titlebar` (sticky,
+  drag-move via pointer capture — dragPos overrides seating and an
+  overrideRef makes the scroll/resize re-seat STAND DOWN), FullscreenIcon
+  button (maximized = fixed inset 48px), × = close WITHOUT saving — dirty
+  check against a snapshot taken at open (content JSON + icon/color/
+  highlight/done); dirty → confirmDialog("Are you sure you want to close
+  this annotation without saving?") then RESTORES the snapshot fields +
+  setMarkupHighlight (content was never written). The popover's outside-
+  press/Escape saver must IGNORE .fs-confirm-overlay or the dialog's own
+  buttons would save-and-close underneath it.
+- (3) Its OWN THEME: --anno-win-bg/-win-text/-field-bg/-field-text — :root
+  (dark bases) = light-gray #d6d8dc window + WHITE field; [data-theme=
+  light] = #e2e4e8; THEME_VARS gains an "Annotations" group so every theme
+  (custom included, via seedVarsFromBase) can restyle it. 27-markups.css
+  interior chrome moved off --fd-* onto inherit/rgba-black so it reads on
+  the light surface.
+- NAVIGATOR adds: empty annotation = icon only (no "(empty annotation)");
+  list content renders AS a list (markupContentLines in markupActions —
+  paragraph lines + •/n./☐☑ item lines, cap 6); the Annotations button now
+  opens the SHARED filter popover (markupFilters — same state as the panel
+  Filter) and the navigator rows OBEY it; it sits beside Scene Numbers on
+  row 2 (Scene Numbers carries the lead margin to eat trailing width).
+- check-v530: 19 green (lock coercion, helper notes, computed theme colors,
+  drag + no-re-seat, maximize, clean vs dirty ×, discard proof, icon-only
+  and list rows, same-row buttons, shared-filter drive).
 
 ### v5.29 — picker Used sections, legible chips, head row, icon import
 

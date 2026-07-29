@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.35",
+    "date": "2026-07-29",
+    "changes": [
+      "A tool open in a side panel now STAYS open when you click back into the script — only floating windows still tuck away on a script click"
+    ]
+  },
+  {
     "version": "5.34",
     "date": "2026-07-29",
     "changes": [

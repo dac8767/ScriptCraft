@@ -947,13 +947,19 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     document.addEventListener('pointerup', onUp);
   };
 
-  // Clicking back into the script minimizes the open tool window —
-  // except tools flagged keepOpenOnEditorClick (v1.77: Typewriter), whose
-  // whole point is being adjusted while the editor has focus.
+  // Clicking back into the script minimizes a FLOATING tool window. A tool
+  // docked IN the side panel stays open — v5.35, Derek: "if there is a tool
+  // in a side panel toggled open, and i click into the script, that tool
+  // window should stay open." (The v1.77 rule predates docked-vs-floating;
+  // it was written when every open tool was an overlay.) Tools flagged
+  // keepOpenOnEditorClick (Typewriter) survive even as floats — their whole
+  // point is being adjusted while the editor has focus.
   useEffect(() => {
     if (!active) return;
     if (toolDef(active.id)?.keepOpenOnEditorClick) return;
     const onPointerDown = (e: PointerEvent) => {
+      // presentation can change while open (drag-out) — read it live
+      if (useEditorStore.getState().toolMode[active.id] !== 'floating') return;
       const target = e.target as HTMLElement | null;
       if (target && target.closest('.editor-center')) setActive(null);
     };
