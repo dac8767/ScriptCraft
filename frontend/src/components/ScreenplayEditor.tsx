@@ -33,7 +33,7 @@ import {
   Transition, General, Shot, NewAct, EndOfAct, Lyrics,
   ShowEpisode, CastList, FontSize, ScriptNoteMark, ScriptMarkupMark, MarkupBlockAnchor, TagMark,
   FormatOverride, CustomElement, DualDialogue, DualDialogueColumn,
-  TitlePage,
+  TitlePage, CustomPage, CustomPageKeymap,
   AvBlock, AvRow, AvCell, AvPara, AvShot, AvDirection, AvKeymap,
 } from '../editor/extensions';
 import { registerAvCellPicker } from '../editor/extensions/AvBlock';
@@ -133,6 +133,10 @@ interface OverlayInfo {
   isDialogueSplit: boolean;
   characterName: string;
   isTitlePage: boolean;
+  /** v5.40: this break opens a CUSTOM page — unnumbered, no header */
+  isCustomPage?: boolean;
+  /** v5.40: the page before this break is custom — its footer is suppressed */
+  afterCustomPage?: boolean;
 }
 
 
@@ -1026,6 +1030,8 @@ const ScreenplayEditor: React.FC = () => {
         isDialogueSplit: brk.isDialogueSplit,
         characterName: brk.characterName,
         isTitlePage: brk.isTitlePage,
+        isCustomPage: brk.isCustomPage,
+        afterCustomPage: brk.afterCustomPage,
       });
     }
     setOverlays(newOverlays);
@@ -1044,7 +1050,9 @@ const ScreenplayEditor: React.FC = () => {
       for (const brk of breaks) {
         const breakEl = children[brk.nodeIndex];
         // The title region keeps the budget path; just advance the cursor.
-        if (!brk.isTitlePage) {
+        // v5.40: a custom-page-opening break shares its pageNumber with the
+        // next script page — recording its fill would cross their wires.
+        if (!brk.isTitlePage && !brk.isCustomPage) {
           const lastEl = children[brk.nodeIndex - 1];
           if (lastEl && breakEl) {
             const contentEnd = (lastEl.getBoundingClientRect().bottom - pageRect.top) / scale;
@@ -1559,7 +1567,7 @@ const ScreenplayEditor: React.FC = () => {
       }),
       SceneHeading, Action, Character, Dialogue, Parenthetical,
       Transition, General, Shot, NewAct, EndOfAct, Lyrics,
-      ShowEpisode, CastList, DualDialogue, DualDialogueColumn, TitlePage,
+      ShowEpisode, CastList, DualDialogue, DualDialogueColumn, TitlePage, CustomPage, CustomPageKeymap,
       AvBlock, AvRow, AvCell, AvPara, AvShot, AvDirection, AvKeymap,
       ScriptNoteMark, ScriptMarkupMark, MarkupBlockAnchor, TagMark,
       PaginationExtension,
@@ -4408,26 +4416,32 @@ const ScreenplayEditor: React.FC = () => {
                     const hStart = pageLayout.headerStartPage ?? 2;
                     const fStart = pageLayout.footerStartPage ?? 1;
                     const { documentTitle: docTitle, revisionColor: revColor, pageCount: totalPages } = useEditorStore.getState();
-                    const showHeader = ov.pageNumber >= hStart && !ov.isTitlePage;
+                    // v5.40: a custom page is unnumbered — the break OPENING
+                    // one shows no header, and the break AFTER one shows no
+                    // footer (there is no number for it to print).
+                    const showHeader = ov.pageNumber >= hStart && !ov.isTitlePage && !ov.isCustomPage;
                     // The footer belongs to the page BEFORE this break (ov.pageNumber - 1).
                     // For the title-page break that previous page IS the title page, which
                     // is unnumbered and carries no header/footer.
                     const footerPage = ov.pageNumber - 1;
-                    const showFooterForPrev = footerPage >= fStart && !ov.isTitlePage;
+                    const showFooterForPrev = footerPage >= fStart && !ov.isTitlePage && !ov.afterCustomPage;
                     if (viewStyle === 'continuous' && !previewMode) {
                       return (
                         <div
-                          key={ov.pageNumber}
+                          /* v5.40: custom-page breaks share their pageNumber
+                             with the next script page — the top makes the
+                             key unique */
+                          key={`${ov.pageNumber}@${Math.round(ov.top)}`}
                           className="page-sep page-sep-line"
                           style={{ top: `${ov.top}px` }}
                         >
-                          <span className="page-sep-line-label">Page {ov.pageNumber}</span>
+                          <span className="page-sep-line-label">{ov.isCustomPage ? 'Custom Page' : `Page ${ov.pageNumber}`}</span>
                         </div>
                       );
                     }
                     return (
                     <div
-                      key={ov.pageNumber}
+                      key={`${ov.pageNumber}@${Math.round(ov.top)}`}
                       className="page-sep"
                       style={{ top: `${ov.top}px` }}
                     >

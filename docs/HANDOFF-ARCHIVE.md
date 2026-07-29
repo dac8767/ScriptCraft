@@ -151,9 +151,24 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.34 and older (newest first)
+## Version history — v5.35 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.35 — docked panel tools survive script clicks
+
+- Derek: "if there is a tool in a side panel toggled open, and i click
+  into the script, that tool window should stay open." ToolDock's
+  v1.77-era document pointerdown (target inside `.editor-center` →
+  setActive(null)) predates docked-vs-floating and closed both. It now
+  stands down unless `toolMode[active.id] === 'floating'`, read LIVE at
+  event time (drag-out can change the mode while open). FLOATING slot
+  windows and temp windows still dismiss on script clicks;
+  keepOpenOnEditorClick (Typewriter) still survives everything.
+- check-v535: 9 green — both docks stay through real clicks; floating
+  slot + temp window still close (pinned so the dismiss rule can't
+  silently vanish). Driver note: Playwright refuses clicks the temp
+  window intercepts — click uncovered editor coordinates via mouse.click.
 
 ### v5.34 — "Change Order"
 

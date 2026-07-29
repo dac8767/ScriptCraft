@@ -19,7 +19,7 @@ import {
   FaHighlighter,
   FaEllipsisV,
   FaHashtag,
-  FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
+  FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt, FaRegFileAlt,
   FaExchangeAlt, FaChevronDown,
   FaMarker,
 } from 'react-icons/fa';
@@ -48,6 +48,7 @@ import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeT
 import { smartUndo, smartRedo, useEditorStore } from '../stores/editorStore';
 import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
 import { createMarkupAtSelection } from '../utils/markupActions';
+import { insertCustomPage } from '../editor/extensions';
 import { AnnotationShowMenu } from './MarkupPickers';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
@@ -997,6 +998,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <AnnotationShowMenu className="toolbar-btn" title="Annotation Visibility">
           <FaMarker />
         </AnnotationShowMenu>
+      );
+      // v5.40, Derek: custom pages — a non-script page at the cursor.
+      case 'insertCustomPage': return (
+        <button
+          className="toolbar-btn"
+          title="Insert Custom Page"
+          onClick={() => { if (editor) insertCustomPage(editor); }}
+        >
+          <FaRegFileAlt />
+        </button>
       );
       case 'titlePage': return (
         <button

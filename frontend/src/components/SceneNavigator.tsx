@@ -6,6 +6,7 @@ import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlic
 import { PAGES_PER_ROW_MIN, PAGES_PER_ROW_MAX } from '../stores/slices/sceneNavSlice';
 import { CircleMinusIcon, CirclePlusIcon } from './uiIcons';
 import { computeSceneLengths, computePageBlocks, type PageContentInfo } from '../editor/pagination';
+import { insertCustomPage } from '../editor/extensions';
 import { computeSceneTiming, formatSceneDuration } from '../utils/scriptTiming';
 import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
@@ -619,7 +620,9 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const goToPageNumber = useCallback((raw: string) => {
     const n = parseInt(raw, 10);
     if (!Number.isFinite(n)) return;
-    const page = pageContent.find((p) => p.pageNumber === n);
+    // v5.40: custom pages carry the NEXT script page's number without being
+    // it — go-to targets the real script page.
+    const page = pageContent.find((p) => !p.isCustom && p.pageNumber === n);
     if (!page) return;
     const el = pageGridRef.current?.querySelector(`[data-page="${n}"]`) as HTMLElement | null;
     el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -955,6 +958,13 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               onBlur={() => goToPageNumber(gotoPage)}
             />
           </form>
+          {/* v5.40, Derek: custom pages — the Pages tool is one of the three
+              doors (with the ribbon button and Insert ▸ Custom Page). */}
+          <button
+            className="dialog-btn dialog-btn-primary fs-pages-addcustom"
+            title="Insert a custom page at the cursor (not counted in page numbering)"
+            onClick={() => { if (editor) insertCustomPage(editor); }}
+          >+ Custom Page</button>
           <span className="tool-action-group tool-action-right">
             <span className="tool-action-label" id="fs-pages-perrow-label">Pages per row:</span>
             <button
@@ -983,17 +993,19 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
             /* v4.94: the header's scaling buttons set the grid column width;
                the thumbnails already size themselves to their column. */
             <div className="page-thumbnails-grid" style={{ '--pages-per-row': pagesPerRow } as React.CSSProperties}>
-              {shownPages.map((page) => (
-                <div key={page.pageNumber} className="page-thumb-wrapper">
+              {shownPages.map((page, pi) => (
+                /* v5.40: custom pages share the NEXT script page's number —
+                   the index keeps keys unique, the label says what it is */
+                <div key={`${page.pageNumber}-${page.isCustom ? 'c' : 's'}-${pi}`} className="page-thumb-wrapper">
                   {/* v5.01, Derek: the label sits ABOVE its page (it used to
                       trail underneath). (v5.13: the title page is gone from
                       this tool, so every label is a plain page number.) */}
                   <div className="page-thumb-number">
-                    {`Page ${page.pageNumber}`}
+                    {page.isCustom ? 'Custom Page' : `Page ${page.pageNumber}`}
                   </div>
                   <div
-                    className={`page-thumbnail${page.pageNumber === currentVisiblePage ? ' current' : ''}`}
-                    data-page={page.pageNumber}
+                    className={`page-thumbnail${!page.isCustom && page.pageNumber === currentVisiblePage ? ' current' : ''}`}
+                    data-page={page.isCustom ? `custom-${pi}` : page.pageNumber}
                     onClick={(e) => handlePageClick(page, e)}
                   >
                     <div className="page-thumb-content-clip">

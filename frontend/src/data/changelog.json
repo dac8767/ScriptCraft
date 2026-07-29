@@ -1,5 +1,16 @@
 [
   {
+    "version": "5.40",
+    "date": "2026-07-29",
+    "changes": [
+      "CUSTOM PAGES: insert a non-script page anywhere — a list, a quote, anything — and the script flows around it onto the next page. Three doors: Insert ▸ Custom Page, an \"Insert Custom Page\" ribbon button (Customize palette), and \"+ Custom Page\" in the Pages tool",
+      "Custom pages do NOT count in page numbering: the script page after one keeps the number it would have had, no header prints on the custom page, and the script page count ignores them",
+      "Enter inside a custom page adds another line to the same page; the lines carry a faint accent while editing (clean in print)",
+      "The Pages tool shows custom pages as their own thumbnails labeled \"Custom Page\"; Go-to-page keeps targeting real script pages",
+      "Custom pages are excluded from the Fountain export — a collaborator's copy never carries them as stray script lines"
+    ]
+  },
+  {
     "version": "5.39",
     "date": "2026-07-29",
     "changes": [

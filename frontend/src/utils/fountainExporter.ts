@@ -55,6 +55,11 @@ export function exportFountain(doc: JSONContent): string {
       case 'screenplayImage':
         // Fountain is plain text — no image representation. Skip.
         break;
+      case 'customPage':
+        // v5.40: custom pages are NOT script content — Fountain has no
+        // representation for them, and a collaborator's copy must not
+        // carry them as stray action lines. Skip.
+        break;
       case 'sceneHeading':
         lines.push('');
         lines.push(text.toUpperCase());

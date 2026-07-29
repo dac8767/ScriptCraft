@@ -293,6 +293,21 @@
 }
 .tp-sync-btn:hover { border-color: var(--fd-accent); color: var(--fd-accent); }
 
+/* v5.40, Derek: CUSTOM PAGES — free-text lines on their own unnumbered
+   page (lists, quotes; the script flows around them). Full printable
+   width, faint left accent while editing so the region reads as "not
+   script" (print keeps it clean via the print stylesheet's border reset). */
+.custom-page-line {
+  min-height: 1em;
+  white-space: pre-wrap;
+  border-left: 2px solid rgba(120, 140, 255, 0.25);
+  padding-left: 6px;
+  margin-left: -8px;
+}
+@media print {
+  .custom-page-line { border-left: none; padding-left: 0; margin-left: 0; }
+}
+
 /* Title Page Live Preview — v4.73, Derek: TO SCALE. A real 8.5×11in page
    (same specs Apply inserts) scaled down by the zoom, in a scrollable well.
    The old approximate mock (.tp-preview-*) is gone with it. */

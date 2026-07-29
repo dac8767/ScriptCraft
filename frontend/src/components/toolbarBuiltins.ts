@@ -53,6 +53,8 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'markupScript', label: 'Add Annotation' },
   { key: 'toggleMarkups', label: 'Show/Hide Annotations' },
   { key: 'annotationsMenu', label: 'Annotation Visibility' },
+  // v5.40: custom pages — palette-only, like the annotation buttons.
+  { key: 'insertCustomPage', label: 'Insert Custom Page' },
   { key: 'titlePage', label: 'Title Page' },
   { key: 'fontFamily', label: 'Font Family', priority: '5', desktopOnly: true },
   { key: 'fontSize', label: 'Font Size', priority: '5', desktopOnly: true },

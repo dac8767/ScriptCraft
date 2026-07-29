@@ -89,6 +89,7 @@ import { scriptApi } from '../services/scriptApi';
 import { mirrorSave, mirrorSnapshot } from '../services/saveLocations';
 import { useSettingsStore } from '../stores/settingsStore';
 import { clearEditorHistory } from '../editor/clearHistory';
+import { insertCustomPage } from '../editor/extensions';
 import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
 import { importWorkspacesFromFile } from '../utils/workspaceImport';
 import { composeSaveContent } from '../utils/screenplaySaveContent';
@@ -152,6 +153,7 @@ import {
   FaBug,
   FaRulerHorizontal,
   FaPencilAlt, FaCoffee, FaBoxOpen,
+  FaRegFileAlt,
 } from 'react-icons/fa';
 
 /** v2.98: the Help-menu form links, shared by the menu items and the
@@ -1628,6 +1630,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           ],
         },
         { icon: <FaImage />, label: 'Insert Image…', action: () => useEditorStore.getState().imageInsertHandler?.() },
+        // v5.40, Derek: custom pages — non-script pages the script flows
+        // around; not counted in page numbering.
+        { icon: <FaRegFileAlt />, label: 'Custom Page', action: () => { if (editor) insertCustomPage(editor); } },
         { separator: true, label: '' },
         { icon: <FaListOl />, label: 'Section', action: () => insertOutlineLine('# ') },
         { icon: <FaListOl />, label: 'Marker', action: () => insertOutlineLine('⚑ ') },

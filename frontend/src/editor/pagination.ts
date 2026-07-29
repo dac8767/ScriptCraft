@@ -130,6 +130,13 @@ export interface BreakInfo {
    *  The title page is its own unnumbered page and is not part of the script
    *  page count, so this break does not consume a page number. */
   isTitlePage: boolean;
+  /** v5.40: this break OPENS a custom page (Derek: custom pages do not count
+   *  in page numbering — no number is consumed, no header renders, and the
+   *  measured-fill path skips it). */
+  isCustomPage?: boolean;
+  /** v5.40: the page BEFORE this break is a custom page — the footer that
+   *  would describe it is suppressed (it has no number to print). */
+  afterCustomPage?: boolean;
 }
 
 export interface PaginationState {
@@ -170,7 +177,10 @@ export function createPaginationPlugin(
         for (const brk of ps.breaks) {
           // Prefer the measured fill; fall back to the line-budget estimate until
           // the first measurement lands (keyed by page number, set by React).
-          const measured = measuredFills.get(brk.pageNumber);
+          // v5.40: a break OPENING a custom page shares its pageNumber with
+          // the script page after it — it keeps the budget fill so the two
+          // can't cross wires (its own fill is never recorded either).
+          const measured = brk.isCustomPage ? undefined : measuredFills.get(brk.pageNumber);
           const whitespacePx = measured !== undefined
             ? measured
             : Math.max(0, linesPerPage - brk.linesOnPage) * lineHeightPx;
@@ -243,12 +253,14 @@ export function titlePageBlockLines(text: string, sizePt: number): number {
   return getTextLines(text, cpl) * slotsPerLine;
 }
 
-function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = EMPTY_HINTS): PaginationState {
+export function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = EMPTY_HINTS): PaginationState {
   const { linesPerPage } = getPageMetrics(layout);
 
   interface NodeInfo {
     typeName: string; elementId: string; spaceBefore: number; text: string;
     offset: number; nodeSize: number; lineMul: number; fixedLines?: number;
+    /** v5.40: which custom page a customPage line belongs to */
+    cpId?: string;
   }
   const nodes: NodeInfo[] = [];
   let isFirst = true;
@@ -295,7 +307,11 @@ function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = E
     if (typeName === 'sceneHeading' && visibilityOpts.doubleSpaceHeaders && !isFirst) {
       sb += 1;
     }
-    nodes.push({ typeName, elementId, spaceBefore: sb, text: node.textContent || '', offset, nodeSize: node.nodeSize, lineMul, fixedLines });
+    nodes.push({
+      typeName, elementId, spaceBefore: sb, text: node.textContent || '',
+      offset, nodeSize: node.nodeSize, lineMul, fixedLines,
+      cpId: typeName === 'customPage' ? String((node.attrs as { cpId?: string })?.cpId ?? '') : undefined,
+    });
     isFirst = false;
   });
 
@@ -307,11 +323,20 @@ function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = E
   // unnumbered page. Force the script body onto its own page after them.
   let sawTitlePage = false;
   let titleBroken = false;
+  // v5.40: custom pages — a consecutive run of customPage lines sharing a
+  // cpId is ONE page of its own, OUTSIDE the numbering (Derek: custom pages
+  // do not count — the script page after one keeps the number it would have
+  // had). `customRun` is the run's id while inside it; `scriptSeen` says
+  // whether any script content was laid out before the run (a LEADING
+  // custom page plays the title page's part: the body still opens page 1).
+  let customRun: string | null = null;
+  let scriptSeen = false;
 
   while (i < nodes.length) {
     const node = nodes[i];
 
     if (node.typeName === 'titlePage') sawTitlePage = true;
+    const isCustomNode = node.typeName === 'customPage';
     // Leading images (when a title page exists) belong to the title page, so they
     // don't trigger the body break and stay on the title page.
     const isTitleRegionNode = node.typeName === 'titlePage' || node.typeName === 'screenplayImage';
@@ -332,6 +357,39 @@ function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = E
         isDialogueSplit: false, characterName: '', isTitlePage: true,
       });
       lineCount = 0; // fall through and lay this node out at the top of the body page
+    }
+
+    // v5.40: custom pages — a consecutive run of customPage lines sharing a
+    // cpId is ONE page of its own, OUTSIDE the numbering (Derek: custom
+    // pages do not count — the script page after one keeps the number it
+    // would have had). Runs after the title handling so a custom page
+    // directly after the title region rides that break, not a second one.
+    if (isCustomNode && customRun !== (node.cpId ?? '')) {
+      // entering a custom run (or a different one back-to-back)
+      if (lineCount > 0) {
+        breaks.push({
+          nodeIndex: i, offset: node.offset, nodeSize: node.nodeSize,
+          pageNumber, linesOnPage: lineCount,
+          isDialogueSplit: false, characterName: '', isTitlePage: false,
+          isCustomPage: true,   // opens an unnumbered page — no number consumed
+        });
+        lineCount = 0;
+      }
+      customRun = node.cpId ?? '';
+    } else if (!isCustomNode && customRun !== null) {
+      // leaving the run — this node starts the next SCRIPT page, which keeps
+      // the number it would have had without the custom page in between
+      breaks.push({
+        nodeIndex: i, offset: node.offset, nodeSize: node.nodeSize,
+        pageNumber: scriptSeen ? pageNumber : 1,
+        linesOnPage: lineCount,
+        isDialogueSplit: false, characterName: '',
+        isTitlePage: !scriptSeen,
+        afterCustomPage: true,
+      });
+      if (scriptSeen) pageNumber++;
+      lineCount = 0;
+      customRun = null;
     }
 
     const cpl = CHARS_PER_LINE[node.typeName] || 62;
@@ -366,8 +424,11 @@ function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = E
     // The leading title region is a single unnumbered page by definition —
     // never emit page breaks inside it (spacer blocks position its content).
     const inTitleRegion = !titleBroken && sawTitlePage && isTitleRegionNode;
+    // v5.40: same rule inside a custom page — it is ONE page, however long
+    // its content runs (overflow renders tall rather than splitting).
+    const inCustomRegion = isCustomNode && customRun !== null;
 
-    if (!inTitleRegion && (forceBreak || lineCount + blockLines > linesPerPage) && lineCount > 0) {
+    if (!inTitleRegion && !inCustomRegion && (forceBreak || lineCount + blockLines > linesPerPage) && lineCount > 0) {
       const remaining = linesPerPage - lineCount;
 
       // Try to split character+dialogue blocks
@@ -442,6 +503,11 @@ function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = E
       lineCount += blockLines;
     }
 
+    // v5.40: script content (anything that isn't a custom-page line or the
+    // title region) marks the numbering as started — a custom run BEFORE any
+    // of it plays the title page's part instead.
+    if (!isCustomNode && !isTitleRegionNode) scriptSeen = true;
+
     i = blockEnd + 1;
   }
 
@@ -494,6 +560,9 @@ export interface PageContentInfo {
   pageNumber: number;
   blocks: PageBlockInfo[];
   linesPerPage: number;
+  /** v5.40: this page is a CUSTOM page — unnumbered; the Pages tool labels
+   *  it "Custom" instead of a number. */
+  isCustom?: boolean;
 }
 
 /**
@@ -513,14 +582,17 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
   if (nodes.length === 0) return [];
 
   // Determine page boundaries from breaks
-  const pageBounds: { pageNumber: number; startNode: number; endNode: number; dialogueSplit: boolean }[] = [];
+  const pageBounds: { pageNumber: number; startNode: number; endNode: number; dialogueSplit: boolean; isCustom?: boolean }[] = [];
+
+  // v5.40: a leading custom run has no entering break — page 1 IS custom.
+  const leadingCustom = nodes.length > 0 && nodes[0].typeName === 'customPage';
 
   if (breaks.length === 0) {
-    pageBounds.push({ pageNumber: 1, startNode: 0, endNode: nodes.length - 1, dialogueSplit: false });
+    pageBounds.push({ pageNumber: 1, startNode: 0, endNode: nodes.length - 1, dialogueSplit: false, isCustom: leadingCustom });
   } else {
     // Page 1
     if (breaks[0].nodeIndex > 0) {
-      pageBounds.push({ pageNumber: 1, startNode: 0, endNode: breaks[0].nodeIndex - 1, dialogueSplit: false });
+      pageBounds.push({ pageNumber: 1, startNode: 0, endNode: breaks[0].nodeIndex - 1, dialogueSplit: false, isCustom: leadingCustom });
     }
     // Pages from breaks
     for (let i = 0; i < breaks.length; i++) {
@@ -530,6 +602,7 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
         startNode: breaks[i].nodeIndex,
         endNode,
         dialogueSplit: breaks[i].isDialogueSplit,
+        isCustom: breaks[i].isCustomPage === true,
       });
     }
   }
@@ -584,7 +657,7 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
       lineOnPage += sb + textLines;
     }
 
-    pages.push({ pageNumber: pb.pageNumber, blocks, linesPerPage });
+    pages.push({ pageNumber: pb.pageNumber, blocks, linesPerPage, isCustom: pb.isCustom });
   }
 
   return pages;
