@@ -44,9 +44,6 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'undo', label: 'Undo' },
   { key: 'redo', label: 'Redo' },
   { key: 'element', label: 'Element' },
-  { key: 'insertSection', label: 'Insert Section' },
-  { key: 'insertNote', label: 'Insert Note' },
-  { key: 'insertChecklist', label: 'Add To-Do List' },
   // v5.25: Annotations — palette-only (like scriptNotes/tags); Derek places
   // them. v5.26: labels renamed with the tool (keys are persisted tokens).
   // v5.28: annotationsMenu opens the per-type script-visibility menu.
@@ -127,7 +124,7 @@ export const DEFAULT_TOOLBAR_LEFT: string[] = [
   'b:bold', 'b:italic', 'b:underline', 'b:textColor', 'b:highlightColor',
   'b:alignLeft', 'b:alignCenter', 'b:alignRight', 'b:alignJustify',
   '2!d:def-b',
-  'b:element', 'r:def-3', 'b:insertSection', 'b:insertNote', 'b:insertChecklist',
+  'b:element',
   '2!d:def-c',
   'b:find', 'b:goto',
   // v3.02: the align split — Customize hugs the right edge by default.
@@ -151,6 +148,15 @@ export function migratePanelToggles(left: string[]): string[] {
 export function migrateDropPanelToggles(left: string[]): string[] {
   const dropped = new Set(['b:togglePanelLeft', 'b:togglePanelRight']);
   return left.filter((t) => !dropped.has(t.replace(/^2!/, '')));
+}
+
+/** v5.51 one-time, Derek: the legacy working-note buttons are retired from
+ *  the ribbon — Insert Section / Insert Note / Add To-Do List (builtins)
+ *  and Insert Marker (command). Saved layouts shed the tokens (flag-blind:
+ *  they may carry a 2! span flag); annotations replace the lot. */
+export function migrateDropLegacyInserts(tokens: string[]): string[] {
+  const dropped = new Set(['b:insertSection', 'b:insertNote', 'b:insertChecklist', 'c:insertMarker']);
+  return tokens.filter((t) => !dropped.has(t.replace(/^2!/, '')));
 }
 
 /** v2.55 one-time: existing saved layouts get the sizing lock appended. */
@@ -387,7 +393,7 @@ export function migrateToolbarBigZone(
 const LEGACY_GROUP_ITEMS: Record<string, string[]> = {
   history: ['undo', 'redo'],
   element: ['element'],
-  insert: ['insertSection', 'insertNote', 'insertChecklist'],
+  insert: [],   // v5.51: the legacy inserts are retired
   font: ['fontFamily', 'fontSize'],
   style: ['bold', 'italic', 'underline', 'strike', 'subscript', 'superscript', 'textColor', 'highlightColor'],
   align: ['alignLeft', 'alignCenter', 'alignRight', 'alignJustify'],

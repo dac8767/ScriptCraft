@@ -19,7 +19,7 @@ import {
   FaHighlighter,
   FaEllipsisV,
   FaHashtag,
-  FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt, FaRegFileAlt,
+  FaFileAlt, FaRegFileAlt,
   FaExchangeAlt, FaChevronDown,
   FaMarker,
 } from 'react-icons/fa';
@@ -958,33 +958,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             .map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
         </select>
       );
-      case 'insertSection': return (
-        <button
-          className="toolbar-btn"
-          title="Insert Section"
-          onClick={() => editor?.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '# ' }] }).run()}
-        >
-          <FaListOl />
-        </button>
-      );
-      case 'insertNote': return (
-        <button
-          className="toolbar-btn"
-          title="Insert Note"
-          onClick={handleNotesClick}
-        >
-          <FaRegStickyNote />
-        </button>
-      );
-      case 'insertChecklist': return (
-        <button
-          className="toolbar-btn"
-          title="Add To-Do List"
-          onClick={() => editor?.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '[ ] ' }] }).run()}
-        >
-          <FaCheckSquare />
-        </button>
-      );
+      /* (v5.51, Derek: insertSection / insertNote / insertChecklist are
+         RETIRED — the legacy working-note ribbon buttons; stale layout
+         tokens fall through to the unknown-key null.) */
       case 'markupScript': return (
         <button
           className="toolbar-btn"

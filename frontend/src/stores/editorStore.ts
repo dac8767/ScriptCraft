@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, migrateResetSizes, migrateTwoRows, migrateRibbon, migrateRibbonSections, migrateDropPanelToggles, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
+import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, migrateResetSizes, migrateTwoRows, migrateRibbon, migrateRibbonSections, migrateDropPanelToggles, migrateDropLegacyInserts, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
 
 // ── View-state persistence helpers ──
 import { _vs, saveViewState, clamp, type ViewState } from './viewState';
@@ -38,6 +38,22 @@ try {
     localStorage.setItem(BIG_FLAG, '1');
     _tbZones = migrateToolbarBigZone(_tbZones.left, _tbZones.right);
     saveViewState({ toolbarLeft: _tbZones.left, toolbarRight: _tbZones.right });
+  }
+} catch { /* storage unavailable — keep what we have */ }
+
+// v5.51, Derek: the legacy working-note inserts left the ribbon (Insert
+// Section / Insert Note / Add To-Do List / Insert Marker) — saved layouts
+// shed the tokens once so the bar renders no dead buttons.
+try {
+  const DROP_INSERTS_FLAG = 'opendraft:toolbarDropLegacyInserts551';
+  if (_vs.toolbarZonesSet && !localStorage.getItem(DROP_INSERTS_FLAG)) {
+    localStorage.setItem(DROP_INSERTS_FLAG, '1');
+    const strippedL = migrateDropLegacyInserts(_tbZones.left);
+    const strippedR = migrateDropLegacyInserts(_tbZones.right);
+    if (strippedL.length !== _tbZones.left.length || strippedR.length !== _tbZones.right.length) {
+      _tbZones = { left: strippedL, right: strippedR };
+      saveViewState({ toolbarLeft: _tbZones.left, toolbarRight: _tbZones.right });
+    }
   }
 } catch { /* storage unavailable — keep what we have */ }
 // v2.14 one-time: the sepAfter ghost separators became real d: tokens —

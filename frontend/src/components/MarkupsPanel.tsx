@@ -95,7 +95,7 @@ export function MarkupsControls() {
   const chip = hiddenUnion.length + (doneShown !== 'all' ? 1 : 0);
   return (
     <>
-      <button ref={filterBtn} className={`tool-ctl tool-ctl-lead markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Filter annotations (script and window together)"
+      <button ref={filterBtn} className={`tool-ctl markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Filter annotations (script and window together)"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setFilterOpen((v) => !v); }}>
         <span className="tool-ctl-label">Filter</span>

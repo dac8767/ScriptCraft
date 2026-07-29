@@ -6,7 +6,6 @@
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { DEFAULT_MARKUP_HIGHLIGHT, type MarkupKind, type ScriptMarkup } from '../stores/slices/markupsSlice';
-import { showToast } from '../components/Toast';
 import { uuid } from './uuid';
 
 /** Create an annotation on the current selection and open its popover.
@@ -37,8 +36,9 @@ export function createMarkupAtSelection(
       store.setMarkupEditorId(existingId);
       return existingId;
     }
+    // v5.51, Derek: the prompt is a persistent BANNER at the editor top
+    // (ScreenplayEditor renders it off markupCreatePick), not a toast.
     store.setMarkupCreatePick(true);
-    showToast('Select text in the script to add the annotation', 'info');
     return null;
   }
 

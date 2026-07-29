@@ -1,5 +1,15 @@
 [
   {
+    "version": "5.51",
+    "date": "2026-07-29",
+    "changes": [
+      "The legacy working-note buttons left the ribbon — Insert Section, Insert Note, Add To-Do List and Insert Marker are gone from the bar, the palette and saved layouts (annotations are the system now)",
+      "Annotations panel: Filter sits on the right, just left of the Search button",
+      "The select-text prompt is a large banner pinned top-center of the editor — it stays until you highlight text, and Escape cancels the whole thing",
+      "Navigator: the Scene # button became a View menu — Scene Numbers, Annotations and Scene Headings, each a toggle"
+    ]
+  },
+  {
     "version": "5.50",
     "date": "2026-07-29",
     "changes": [

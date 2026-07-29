@@ -14,7 +14,7 @@ import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
 import { FaRegStickyNote } from 'react-icons/fa';
-import { ControlSearch } from './ToolControls';
+import { ControlDropdown, ControlSearch } from './ToolControls';
 import { findNotePos } from '../utils/scriptNoteActions';
 import { findMarkupPos, markupContentLines, markupNavLines, markupIsList, type MarkupNavLine } from '../utils/markupActions';
 import { MarkupIcon } from './markupIcons';
@@ -67,9 +67,13 @@ export function NavigatorControls() {
   const setNavFilter = useEditorStore((s) => s.setNavFilter);
   const mkFilters = useEditorStore((s) => s.markupFilters);
   const setMkFilters = useEditorStore((s) => s.setMarkupFilters);
-  // v5.48, Derek: the scene-number toggle lives HERE now — text only.
+  // v5.51, Derek: the Scene # toggle became a "View" MENU — Scene
+  // Numbers / Annotations / Scene Headings, each a keep-open toggle.
+  // Kind visibility rides navShowKinds (missing = shown).
   const showNums = useEditorStore((s) => s.navShowSceneNumbers);
   const setShowNums = useEditorStore((s) => s.setNavShowSceneNumbers);
+  const showKinds = useEditorStore((s) => s.navShowKinds);
+  const setShowKinds = useEditorStore((s) => s.setNavShowKinds);
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -79,14 +83,25 @@ export function NavigatorControls() {
   const chip = mkFilters.hiddenIcons.length + (mkFilters.done !== 'open' ? 1 : 0);
   return (
     <>
-      <button
-        className={`tool-ctl fs-nav-nums-ctl${showNums ? ' active' : ''}`}
-        title={showNums ? 'Hide scene numbers' : 'Show scene numbers'}
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => { e.stopPropagation(); setShowNums(!showNums); }}
-      >
-        <span className="tool-ctl-label">Scene #</span>
-      </button>
+      <ControlDropdown
+        label="View"
+        items={[
+          { label: 'Scene Numbers', active: showNums, keepOpen: true,
+            onSelect: () => setShowNums(!showNums) },
+          // store-time reads — two quick toggles must not clobber each
+          // other through stale render closures
+          { label: 'Annotations', active: showKinds.markup !== false, keepOpen: true,
+            onSelect: () => {
+              const cur = useEditorStore.getState().navShowKinds;
+              setShowKinds({ ...cur, markup: cur.markup === false });
+            } },
+          { label: 'Scene Headings', active: showKinds.scene !== false, keepOpen: true,
+            onSelect: () => {
+              const cur = useEditorStore.getState().navShowKinds;
+              setShowKinds({ ...cur, scene: cur.scene === false });
+            } },
+        ]}
+      />
       <button ref={btn} className={`tool-ctl markup-ctl-filter${open ? ' open' : ''}`} title="Filter annotations"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}>
@@ -216,11 +231,14 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, docTick, notes, markups, mkFilters]);
 
-  // v5.46: the kind toggles are gone from the Filter menu — every kind
-  // always lists (a persisted navShowKinds hide would be an invisible trap
-  // with no door left to undo it). Search + the annotation filter remain.
+  // v5.51, Derek: the View menu governs scene-heading and annotation rows
+  // (navShowKinds — missing = shown); other kinds always list until their
+  // phase-2 retirement. Search stacks on top.
+  const show = useEditorStore((s) => s.navShowKinds);
   const visible = items.filter(
-    (it) => !filter || it.text.toLowerCase().includes(filter.toLowerCase()),
+    (it) => (it.kind !== 'scene' || show.scene !== false)
+      && (it.kind !== 'markup' || show.markup !== false)
+      && (!filter || it.text.toLowerCase().includes(filter.toLowerCase())),
   );
 
   const jumpTo = (pos: number) => {

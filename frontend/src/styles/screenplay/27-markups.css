@@ -50,6 +50,29 @@
   cursor: text;
 }
 
+/* v5.51, Derek: the pick-to-place banner — top of the editor section,
+   centered, BIG, and it stays until text is selected (Esc cancels). A
+   sticky flow child so it rides scrolling without covering the page. */
+.markup-pick-banner {
+  /* a strip ABOVE the scroll area (editor-center column child), centered */
+  flex: none;
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 4px;
+  background: var(--fd-bg);
+  pointer-events: none;
+}
+.markup-pick-banner-pill {
+  max-width: 90%;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  background: var(--fd-accent);
+  color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
 /* ── The annotation EDIT window ──────────────────────────────────────────
    ScriptNotePopover seating rules: portalled to body, fixed, measured
    top/left only. v5.30, Derek: its OWN surface — light-gray window, white

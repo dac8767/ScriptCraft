@@ -153,6 +153,10 @@ const ScreenplayEditor: React.FC = () => {
   // annotations whatever the hide toggle says (an override, not a write —
   // closing the window falls back to the chosen state untouched).
   const markupEditOpen = useEditorStore((s) => s.markupEditorId != null);
+  // v5.51, Derek: the pick-to-place prompt is a persistent banner at the
+  // top of the editor section (sticky, centered) until text is selected;
+  // Escape cancels (the MarkupIconLayer listener owns both).
+  const markupCreatePick = useEditorStore((s) => s.markupCreatePick);
 
   const {
     setActiveElement, setScenes, setPageCount, setCurrentPage,
@@ -4366,6 +4370,18 @@ const ScreenplayEditor: React.FC = () => {
           ) : !isHistoryMode && beatBoardOpen ? (
             <BeatBoard />
           ) : (
+            <>
+            {/* v5.51, Derek: the pick-to-place banner — a strip pinned above
+                the scroll area (editor-main is a flex ROW; a child there
+                lands beside the page), centered, up until text is selected
+                or Escape cancels. */}
+            {markupCreatePick && (
+              <div className="markup-pick-banner">
+                <span className="markup-pick-banner-pill">
+                  Select text in the script to add the annotation — Esc cancels
+                </span>
+              </div>
+            )}
             <div className="editor-main" ref={attachEditorMain}>
               {/* v5.25: markup icons ride the scroll content (abs children of
                   the scroller move with it) — recompute on doc change only. */}
@@ -4517,6 +4533,7 @@ const ScreenplayEditor: React.FC = () => {
               </div>
               </div>
             </div>
+            </>
           )}
         </div>
         {!isHistoryMode && (tagsPanelOpen || locationDatabaseOpen) && (

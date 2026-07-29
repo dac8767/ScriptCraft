@@ -24,7 +24,7 @@ const TOOLS_CMDS = ['spellCheck', 'writingSuggestions', 'takeSnapshot', 'snapsho
 const RIBBON_HIDE = new Set(['c:spellCheck', 'c:writingSuggestions', 'c:takeSnapshot', 'c:compareSnapshot', 't:aiwriter']);
 const PROJECT_CMDS = ['rename'];
 const EDIT_CMDS = ['cut', 'copy', 'paste', 'lastEditLocation'];
-const INSERT_CMDS = ['insertImage', 'insertMarker'];
+const INSERT_CMDS = ['insertImage'];   // v5.51: insertMarker retired
 const VIEW_CMDS = ['fitPage', 'fitWidth', 'actualSize', 'showRulers', 'screenshot', 'toggleLeftPanel', 'toggleRightPanel'];
 
 const cmdOpt = (id: string) => {

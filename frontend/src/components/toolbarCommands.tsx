@@ -11,7 +11,7 @@ import {
   FaUpload, FaHistory, FaExchangeAlt, FaSpellCheck, FaTags, FaCodeBranch,
   FaFile, FaFolderOpen, FaFileImport, FaSave, FaRegSave, FaPrint,
   FaFilePdf, FaFileExport, FaFileWord, FaCut, FaCopy, FaPaste,
-  FaMousePointer, FaColumns, FaImage, FaFlag, FaSearchPlus, FaSearchMinus,
+  FaMousePointer, FaColumns, FaImage, FaSearchPlus, FaSearchMinus,
   FaRulerHorizontal, FaInfoCircle, FaKeyboard, FaExternalLinkAlt,
   FaPencilAlt, FaCamera, FaWrench, FaRegEye,
 } from 'react-icons/fa';
@@ -81,7 +81,6 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'importPdf', label: 'Import PDF', icon: <FaFilePdf />, run: () => emit('importPdf') },
   { id: 'exportOdraft', label: 'Export ScriptCraft (.odraft)', icon: <FaFile />, run: () => emit('exportOdraft') },
   { id: 'insertImage', label: 'Insert Image', icon: <FaImage />, run: () => emit('insertImage') },
-  { id: 'insertMarker', label: 'Insert Marker', icon: <FaFlag />, run: () => emit('insertMarker') },
   { id: 'fitPage', label: 'Scale to Fit Page', icon: <FaSearchPlus />, run: () => emit('fitPage') },
   { id: 'fitWidth', label: 'Scale to Max Width', icon: <FaSearchPlus />, run: () => emit('fitWidth') },
   { id: 'actualSize', label: 'Actual Size (100%)', icon: <FaSearchMinus />, run: () => emit('actualSize') },

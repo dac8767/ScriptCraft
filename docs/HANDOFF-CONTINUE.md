@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.50 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.51 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,40 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.50 — hide-ribbon CRASH fix, shared PerRowStepper, no-flash Design seat, Scrapbook auto-dock (HEAD)
+### v5.51 — ribbon legacy-inserts retired, Filter right, pick BANNER, Navigator View menu (HEAD)
+
+- Derek's 4 (mid-turn, after the v5.50 ship):
+  (1) RIBBON RETIREMENT (phase 2's leading edge): Insert Section /
+  Insert Note / Add To-Do List (builtins) + Insert Marker (command)
+  removed — TOOLBAR_BUILTINS entries, Toolbar render cases,
+  DEFAULT_TOOLBAR_LEFT tokens (and the orphaned r:def-3 rail),
+  LEGACY_GROUP_ITEMS.insert → [], the insertMarker command +
+  INSERT_CMDS palette slot. migrateDropLegacyInserts (toolbarBuiltins,
+  the v3.25 shed pattern, flag 'opendraft:toolbarDropLegacyInserts551')
+  strips saved layouts ONCE, both zones, 2!-flag-blind. The Insert MENU
+  entries remain until phase 2 proper.
+  (2) Annotations panel Filter: tool-ctl-lead dropped → rides right,
+  just left of Search.
+  (3) The PICK BANNER replaced the pick toast: a strip pinned above the
+  scroll area — editor-center column child; .editor-main is a flex ROW,
+  so a child there lands BESIDE the page (the first driver run caught
+  the pill far-left) — pill centered, 15px, persistent until a
+  selection lands; Escape cancels (the v5.48 listener).
+  (4) NAVIGATOR VIEW MENU: the Scene # button became a ControlDropdown
+  "View" with keep-open toggles — Scene Numbers (navShowSceneNumbers),
+  Annotations, Scene Headings (navShowKinds.markup/.scene; missing =
+  shown; the body honors JUST these two kinds again). Toggle handlers
+  read the store AT CLICK TIME — two same-tick clicks through render
+  closures clobbered each other (the driver caught it).
+- check-v551: 11 green (fresh ribbon clean, persisted-layout shed with
+  flag + undo kept, Filter gap 3px, banner top-center 15px persistent,
+  Esc cancels, pick places + clears, Scene # gone, three menu items,
+  scene rows 4→0, anno rows 1→0, both restored).
+- QUEUED NEXT: the PAGES WINDOW TABS restructure (Script / Title Page /
+  Custom; the separate Title Page tool leaves the side panels) — the
+  batch opener for the next run.
+
+### v5.50 — hide-ribbon CRASH fix, shared PerRowStepper, no-flash Design seat, Scrapbook auto-dock
 
 - Derek's 6 (five mid-turn messages, one CRASH report):
   (1) THE CRASH ("when i tried to hide the ribbon toolbar"): three
@@ -364,85 +397,12 @@ Durable bits kept live here:
   force-show with toggle off + revert on close, new tooltip, + gone /
   current combo opens picker).
 
-### v5.46 — nav Filter=annotations, Design independent window, edge resize everywhere, live checklist, working inserts
-
-- Derek's 9 (six mid-turn messages, one batch):
-  (1) NAVIGATOR FILTER: NavigatorControls' kind-toggle ControlDropdown is
-  GONE — the header Filter button now opens `.markup-filter-pop` with a
-  `.fs-nav-filter-title` ("Filter Annotations") + the shared
-  TypeGridSection driving markupFilters. The body's Annotations button
-  died with it (content moved up); NavActionRow is just the scene-number
-  toggle, relabeled "Scene #". The body list STOPPED consulting
-  navShowKinds (no door left — a stale persisted hide would be an
-  invisible trap); the store field remains, unread.
-  (2) DESIGN INDEPENDENT: openTool('design') now returns
-  `{designPanelOpen: true}` — the pre-existing INDEPENDENT window
-  (DesignPanel, portalled, own pos/size) is Design's ONE shape from every
-  door (openFromRow routes there too; isToolOpen/closeTool know the
-  flag). The probe that drove it: Design docked STOLE the panel slot
-  (collapsing the neighbor) and a slot-float Design DIED to slot
-  reassignment — closeOtherFloats' v5.32 exemption never covered slots.
-  The old keep-the-temp special case in openTool's slot branch is dead
-  code, removed (TS2367 flagged it). MarkupPopover's outside-press saver
-  ignores `.dz-panel` + `[data-tool-row="design"]` (rows carry
-  data-tool-row now) — tweaking Design with the annotation window open
-  is the point. toolModeMemory.test updated to the new contract.
-  (3) EDGE RESIZE: components/EdgeResize.tsx — ONE primitive
-  (startEdgeResize: 8 zones n/s/e/w/ne/nw/se/sw, west/north drags move
-  that edge and pin the opposite) + EdgeResizeZones renderer +
-  `.fs-edge-*` CSS (5px edges inset 12, 12px corners, z 40). Wired into:
-  the floating tool frame (anchor converted to explicit left/top at
-  start — the header-drag conversion; v0.85 slack-shrink kept, edge
-  recomputed POST-slack; commits via setToolSize), DesignPanel
-  (pos/size state), MarkupPopover (writes el width/height + setDragPos →
-  the seat's override engages, so the v5.33 right-edge re-pin stands
-  down once you resize). The hash grips are GONE (.tool-window-resize
-  element+CSS, .dz-resize, and the popover's native `resize: both` — its
-  WebKit corner was the same hash; `.markup-icon-pop` keeps native
-  resize for now). CRITICAL RESTRUCTURE for the popover: the frame is
-  `overflow: hidden` and a new `.markup-pop-scroll` inside carries the
-  scrolling (flex:1, the v5.42 flex-chain selectors moved onto it) —
-  abs-positioned zones inside a scrolling box would have scrolled away
-  with the content.
-  (4) FILE MENU: Asset Manager (label/icon from ALL_TOOLS — single
-  source) + the Script History submenu moved from Project to File, after
-  Print. (The Project block had MIXED \uXXXX escapes and literals — the
-  Edit tool can't match those; a python line-range splice did it.)
-  (5) LIVE CHECKLIST: markupNavLines returns STRUCTURED MarkupNavLine[]
-  ({text, marker: bullet/number/check/uncheck, n}) and
-  MarkupNavLines.tsx (MarkupNavLineSpans) is THE renderer for the
-  Navigator row AND the "In Navigator:" preview — checklist lines show
-  real FaReg(Check)Square icons at the nav's 11px. The mini editor
-  LIVE-MIRRORS content into the store (debounced 250ms on 'update') so
-  the real Navigator updates as you type/check; snapRef gained `content`
-  (the STORE value at open) and closeWithoutSaving restores it — ×
-  still discards. markupActions.test updated to the structured shape
-  (+ a numbered/bullet case).
-  (6) INSERTS FIXED: Insert Link / Insert Image used window.prompt — a
-  SILENT NO-OP in Tauri WebKit (fine in a browser, dead in the app; §4
-  material). Both are in-window flows now: link = inline URL field
-  (collapsed selection inserts the URL as linked text; a selection gets
-  setLink); image = three-source menu — From local device (via
-  utils/imageIntake.ts: fileToDataUrl+compressImage EXTRACTED from
-  NotebookTool, shared, compressed to the Scrapbook's ~300k budget),
-  From Asset Manager (api.listAssets image/* → api.getAssetUrl), From
-  URL. State resets when a different annotation opens.
-- check-v546: 20 green (menu moves, nav filter title/grid/store-write,
-  Scene # alone, live mirror via a REAL checkbox click — setContent is
-  emit-silent, the first run's lesson — 4 rendered checkboxes, × rollback
-  despite live writes, link href landed, 3-source menu, URL image node,
-  8 zones + resize:none + scroll split + e-drag Δ70 on the annotation
-  window, Design beside the annotation window with slot untouched, dz
-  8 zones/no grip/w-drag moves left edge, float opens with Design still
-  up, tool window 8 zones/no hash/w-drag). NOTE: the Design window can
-  COVER the annotation window (both seat right) — the driver drags dz
-  aside by its header before clicking Save under it.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.46** — nav Filter=annotation grid, Design independent window, edge resize everywhere, live checklist, working inserts
 - **v5.45** — AI Writer: panel-only remove button, out of the Tools menu; Pages header right pair
 - **v5.44** — Pages: header reorder + gap knob, + Add Page dropdown, thumb ratio fix, custom-page drag/⋮
 - **v5.43** — ONE Filter drives script+window together; whole-area context menu; Return to Editor retired
