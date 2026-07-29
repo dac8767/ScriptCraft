@@ -1,5 +1,16 @@
 [
   {
+    "version": "5.44",
+    "date": "2026-07-29",
+    "changes": [
+      "Pages tool: the header reads + Add Page, Go to page, Pages per row — in that order, all left-aligned — and the space between them is a Design knob (Navigator & Outline ▸ \"Pages: header button spacing\")",
+      "\"+ Custom Page\" grew into a \"+ Add Page\" dropdown: Add Custom Page asks \"Add after page #:\" (type 5 and the page lands between 5 and 6; blank = at the cursor, 0 = before page 1), and Add / Edit Title Page opens the Title Page window",
+      "Custom pages drag to a new spot in the Pages grid — drop one on any page and it lands right after it, with the landing edge marked while you hover; script pages don't drag (their order IS the script)",
+      "Every custom page thumbnail carries a ⋮ menu — Move page (\"Move after page #:\") and Delete page (asks first — it removes that content from the script)",
+      "Page thumbnails are the right shape now — a hardcoded A4 ratio left a dead white strip at the bottom of every US-Letter page; the ratio now comes from your actual page layout"
+    ]
+  },
+  {
     "version": "5.43",
     "date": "2026-07-29",
     "changes": [

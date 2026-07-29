@@ -93,4 +93,13 @@ describe('custom pages and the paginator', () => {
     const { breaks } = computeBreaks(ed.state.doc, DEFAULT_PAGE_LAYOUT);
     expect(breaks.filter((b) => b.isCustomPage)).toHaveLength(2);
   });
+
+  // v5.44: the Pages tool's drag / Move / Delete address a run by cpId — the
+  // page entry must carry it (and script pages must not).
+  it('computePageBlocks carries each custom page\'s cpId; script pages carry none', () => {
+    const ed = docOf([...actions(10), cpLine('one', 'cpA'), cpLine('two', 'cpB'), ...actions(20)]);
+    const pages = computePageBlocks(ed.state.doc, DEFAULT_PAGE_LAYOUT);
+    expect(pages.filter((p) => p.isCustom).map((p) => p.cpId)).toEqual(['cpA', 'cpB']);
+    expect(pages.filter((p) => !p.isCustom).every((p) => p.cpId === undefined)).toBe(true);
+  });
 });

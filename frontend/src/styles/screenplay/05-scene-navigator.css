@@ -820,6 +820,7 @@
   overflow: hidden;
   transition: border-color 0.15s, box-shadow 0.15s;
   margin: 4px;
+  position: relative;   /* v5.44: seats the custom-page ⋮ button */
 }
 .page-thumbnail:hover {
   border-color: var(--fd-accent);
@@ -830,10 +831,25 @@
   box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.4);
 }
 
-/* Clip area maintains page aspect ratio */
+/* v5.44, Derek: custom thumbs reposition by drag — script thumbs don't
+   (their order IS the script). The target page shows the landing edge:
+   the dragged page goes right AFTER it. */
+.page-thumbnail[draggable="true"] { cursor: grab; }
+.page-thumbnail.dragging { opacity: 0.45; cursor: grabbing; }
+.page-thumbnail.drop-after {
+  border-color: var(--fd-accent);
+  box-shadow: inset -4px 0 0 var(--fd-accent);
+}
+
+/* Clip area maintains page aspect ratio.
+   v5.44, Derek ("too long — white space at the bottom of each page"): the
+   ratio was hardcoded A4 (8.26 × 11.69) while the scripts are US Letter —
+   ~9% of every thumb was a dead strip no content could reach. The REAL
+   ratio rides in from pageLayout as an inline style; this is the fallback,
+   matching the default Letter layout. */
 .page-thumb-content-clip {
   overflow: hidden;
-  aspect-ratio: 8.26 / 11.69;
+  aspect-ratio: 8.5 / 11;
   position: relative;
 }
 
@@ -867,6 +883,75 @@
 .page-thumb-el {
   word-break: break-word;
   overflow-wrap: break-word;
+}
+
+/* v5.44, Derek: the Pages header row — + Add Page, Go to page, Pages per
+   row, all LEFT-aligned in that order; the space between them is a Design
+   knob (Navigator & Outline ▸ "Pages: header button spacing"). Compound
+   selector: the base .tool-action-row gap loads LATER (22-tools-extra) and
+   would win a single-class tie. */
+.tool-action-row.fs-pages-actions { gap: var(--dz-pages-ctl-gap, 10px); }
+
+/* The ⋮ on a custom page's thumbnail (top-right, over the paper). */
+.page-thumb-kebab {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  z-index: 2;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  font-size: 10px;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+.page-thumb-kebab:hover { opacity: 1; border-color: var(--fd-accent); }
+
+/* v5.44: the + Add Page dropdown and the custom-thumb ⋮ menu — portalled
+   to body (§4: a menu inside a side panel can't escape its overflow). */
+.fs-pages-pop {
+  position: fixed;
+  z-index: 3300;
+  min-width: 190px;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  padding: 4px;
+}
+.fs-pages-pop-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  color: var(--fd-text);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.fs-pages-pop-item:hover { background: var(--fd-hover); }
+.fs-pages-pop-form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+}
+.fs-pages-pop-form .tool-action-field { width: 52px; }
+.fs-pages-pop-hint {
+  width: 100%;
+  font-size: 10.5px;
+  color: var(--fd-text-muted);
 }
 .page-thumb-sceneHeading {
   font-weight: bold;

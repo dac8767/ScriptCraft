@@ -340,6 +340,7 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'navSynopsisFont', label: 'Scene synopsis font', cssVar: '--dz-nav-synopsis-font', unit: 'px', min: 8, max: 18, step: 0.5, def: 11 },
       { id: 'navBadge', label: 'Scene number badge size', cssVar: '--dz-nav-badge', unit: 'px', min: 14, max: 32, step: 1, def: 22 },
       { id: 'pagesRowGap', label: 'Pages: space below each page', cssVar: '--dz-pages-row-gap', unit: 'px', min: 0, max: 48, step: 1, def: 14 },
+      { id: 'pagesCtlGap', label: 'Pages: header button spacing', cssVar: '--dz-pages-ctl-gap', unit: 'px', min: 0, max: 40, step: 1, def: 10 },
       { id: 'scenesTableMin', label: 'Scenes: min width for full table', unit: 'px', min: 300, max: 2000, step: 10, def: 700,
         hint: 'Narrower than this, the scene list compresses to caret rows',
         store: { get: (s) => s.scenesTableMinW, set: (v) => useEditorStore.getState().setScenesTableMinW(v) } },

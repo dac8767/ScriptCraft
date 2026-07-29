@@ -151,9 +151,25 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.38 and older (newest first)
+## Version history — v5.39 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.39 — Title Page hand-grabber pan
+
+- Derek's queue item 4. `tp-pan-toggle` (FaRegHandPaper, accent while
+  armed) leads the preview zoom cluster; pan mode pointer-drags scroll
+  `.tp-preview-scroll` (grab/grabbing cursors, user-select none).
+- THE LAYOUT PREREQUISITE the first driver run exposed: `.tp-editor-body`
+  scrolled as ONE grid, so the preview column just grew (clientHeight ==
+  scrollHeight — nothing to pan, and the drag target's center sat off
+  viewport). Now the body is overflow:hidden and each COLUMN scrolls
+  itself (`.tp-editor-form` auto; preview min-height 0 so
+  `.tp-preview-scroll` clamps) — the preview stays fully in view while
+  the form scrolls. The ≤720px stack reverts to one body scroller with a
+  60vh preview cap (stacked columns can't share the height).
+- check-v539: 6 green (button seat, real overflow, off = no pan, grab
+  cursor, Δ80/60 pan, off restores cursor).
 
 ### v5.38 — Scenes cards: metrics wrap instead of truncating the name
 

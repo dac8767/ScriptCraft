@@ -6,16 +6,20 @@ import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlic
 import { PAGES_PER_ROW_MIN, PAGES_PER_ROW_MAX } from '../stores/slices/sceneNavSlice';
 import { CircleMinusIcon, CirclePlusIcon } from './uiIcons';
 import { computeSceneLengths, computePageBlocks, type PageContentInfo } from '../editor/pagination';
-import { insertCustomPage } from '../editor/extensions';
+import {
+  insertCustomPage, insertCustomPageAt, moveCustomPage, deleteCustomPage,
+} from '../editor/extensions';
+import { useSeat, useDismiss } from './MarkupPickers';
+import { confirmDialog } from './ConfirmDialog';
 import { computeSceneTiming, formatSceneDuration } from '../utils/scriptTiming';
 import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
 import { parseHeading, computeSceneFilterDetails, sceneFilterOptions, filterSceneIndices, countActiveSceneFilters, type SceneFilterDetail } from '../utils/sceneFilters';
 import { useSceneReorder } from '../utils/useSceneReorder';
-import { ControlDropdown, ControlSearch, ToolActionRow } from './ToolControls';
+import { ControlDropdown, ControlSearch } from './ToolControls';
 import { SceneReorderBar } from './IndexCards';
 import { LuLayoutGrid, LuList } from 'react-icons/lu';
-import { FaChevronRight, FaChevronDown } from 'react-icons/fa';
+import { FaChevronRight, FaChevronDown, FaEllipsisV } from 'react-icons/fa';
 
 interface SceneNavigatorProps {
   editor: Editor | null;
@@ -297,6 +301,34 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const [thumbScale, setThumbScale] = useState(0.35);
   const [currentVisiblePage, setCurrentVisiblePage] = useState(1);
 
+  /* v5.44, Derek: "+ Add Page" dropdown (Add Custom Page → "Add after
+     page #:", Add/Edit Title Page), the per-custom-thumb ⋮ menu (Move /
+     Delete), and drag-to-reposition for custom thumbs. */
+  const [addPageOpen, setAddPageOpen] = useState(false);
+  const [addAfterMode, setAddAfterMode] = useState(false);
+  const [afterPageNum, setAfterPageNum] = useState('');
+  const addBtnRef = useRef<HTMLButtonElement>(null);
+  const addPopRef = useRef<HTMLDivElement>(null);
+  const addPos = useSeat(addPageOpen, addBtnRef, addPopRef);
+  const closeAddPage = useCallback(() => {
+    setAddPageOpen(false); setAddAfterMode(false); setAfterPageNum('');
+  }, []);
+  useDismiss(addPageOpen, addPopRef, addBtnRef, closeAddPage);
+
+  const [kebabFor, setKebabFor] = useState<string | null>(null);
+  const [kebabMove, setKebabMove] = useState(false);
+  const [movePageNum, setMovePageNum] = useState('');
+  const kebabBtnRef = useRef<HTMLButtonElement>(null);
+  const kebabPopRef = useRef<HTMLDivElement>(null);
+  const kebabPos = useSeat(kebabFor != null, kebabBtnRef, kebabPopRef);
+  const closeKebab = useCallback(() => {
+    setKebabFor(null); setKebabMove(false); setMovePageNum('');
+  }, []);
+  useDismiss(kebabFor != null, kebabPopRef, kebabBtnRef, closeKebab);
+
+  const [dragCpId, setDragCpId] = useState<string | null>(null);
+  const [dropPi, setDropPi] = useState<number | null>(null);
+
   /* v5.03: the synopsis MODAL is gone from this view. Its only entry point
      was the Edit / + Add button inside the click-to-expand panel Derek asked
      to remove, so it became unreachable code the moment that panel went. The
@@ -430,6 +462,82 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const pagesPerRowMin = pagesFullscreen ? 2 : PAGES_PER_ROW_MIN;
   const pagesPerRow = Math.max(pagesPerRowMin, pagesPerRowRaw);
   const shownPages = useMemo(() => pagesMatching(pageContent, pagesSearch), [pageContent, pagesSearch]);
+
+  /* v5.44: page-boundary math for Add / Move / drag-drop. "After page N" =
+     the doc position where the NEXT page's first block starts (doc end when
+     N is the last page); 0 = before script page 1. All three doors — the
+     Add dropdown, the ⋮ Move flow and a thumbnail drop — resolve through
+     these two, so they cannot disagree. */
+  const posAfterScriptPage = useCallback((n: number): number | null => {
+    if (!editor) return null;
+    if (n === 0) {
+      const first = pageContent.find((p) => p.blocks.length > 0);
+      return first ? first.blocks[0].docPos : 0;
+    }
+    const idx = pageContent.findIndex((p) => !p.isCustom && p.pageNumber === n);
+    if (idx < 0) return null;
+    for (let i = idx + 1; i < pageContent.length; i++) {
+      if (pageContent[i].blocks.length > 0) return pageContent[i].blocks[0].docPos;
+    }
+    return editor.state.doc.content.size;
+  }, [editor, pageContent]);
+
+  const posAfterEntry = useCallback((entry: PageContentInfo): number | null => {
+    if (!editor) return null;
+    const idx = pageContent.indexOf(entry);
+    if (idx < 0) return null;
+    for (let i = idx + 1; i < pageContent.length; i++) {
+      if (pageContent[i].blocks.length > 0) return pageContent[i].blocks[0].docPos;
+    }
+    return editor.state.doc.content.size;
+  }, [editor, pageContent]);
+
+  const lastScriptPage = useMemo(() => {
+    for (let i = pageContent.length - 1; i >= 0; i--) {
+      if (!pageContent[i].isCustom) return pageContent[i].pageNumber;
+    }
+    return 0;
+  }, [pageContent]);
+
+  // Title page: the doc either carries titlePage nodes already or it doesn't —
+  // the menu label says which, and either way the Title Page window is the door.
+  const hasTitlePage = useMemo(() => {
+    if (!addPageOpen || !editor) return false;
+    let found = false;
+    editor.state.doc.forEach((node) => { if (node.type.name === 'titlePage') found = true; });
+    return found;
+  }, [addPageOpen, editor]);
+
+  const submitAddAfter = useCallback(() => {
+    if (!editor) return;
+    if (afterPageNum === '') {
+      insertCustomPage(editor);          // blank = the cursor, the original door
+    } else {
+      const pos = posAfterScriptPage(parseInt(afterPageNum, 10));
+      if (pos == null) return;           // no such page — keep the input for correction
+      insertCustomPageAt(editor, pos);
+    }
+    closeAddPage();
+  }, [editor, afterPageNum, posAfterScriptPage, closeAddPage]);
+
+  const submitMoveAfter = useCallback(() => {
+    if (!editor || kebabFor == null || movePageNum === '') return;
+    const pos = posAfterScriptPage(parseInt(movePageNum, 10));
+    if (pos == null) return;
+    moveCustomPage(editor, kebabFor, pos);
+    closeKebab();
+  }, [editor, kebabFor, movePageNum, posAfterScriptPage, closeKebab]);
+
+  const onDeleteCustom = useCallback(async () => {
+    const cpId = kebabFor;
+    closeKebab();
+    if (!editor || !cpId) return;
+    const okDel = await confirmDialog(
+      'Delete this custom page? Its content is removed from the script.',
+      { title: 'Delete Custom Page', confirmLabel: 'Delete', danger: true },
+    );
+    if (okDel) deleteCustomPage(editor, cpId);
+  }, [editor, kebabFor, closeKebab]);
 
   // ── Exact-match page layout for thumbnails ──
 
@@ -937,12 +1045,19 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
           reads the rendered width and scales the page content), so the one
           number drives everything downstream unchanged. */}
       {activeTab === 'pages' && (
-        <ToolActionRow>
-          {/* v5.23, Derek: every "x per row" stepper is RIGHT-aligned and
-              the row's former right occupant swaps left — Go to page leads,
-              the stepper holds the right edge. Submitting scrolls the
-              thumbnail into view AND takes the script there — the same jump
-              clicking the page makes. */}
+        /* v5.44, Derek: + Add Page leads, then Go to page, then the per-row
+           stepper — ALL left-aligned (reversing v5.23's right-pinned stepper
+           for THIS row only; Scenes keeps its). The gap between them is a
+           Design knob (Navigator & Outline ▸ "Pages: header button spacing"). */
+        <div className="tool-action-row fs-pages-actions">
+          {/* v5.40/v5.44: the Pages door for custom pages is now a dropdown —
+              Add Custom Page (with "Add after page #:") or the Title Page. */}
+          <button
+            ref={addBtnRef}
+            className="dialog-btn dialog-btn-primary fs-pages-addpage"
+            title="Add a custom page or the title page"
+            onClick={() => { setAddAfterMode(false); setAfterPageNum(''); setAddPageOpen((v) => !v); }}
+          >+ Add Page</button>
           <form
             className="tool-action-group"
             onSubmit={(e) => { e.preventDefault(); goToPageNumber(gotoPage); }}
@@ -958,14 +1073,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               onBlur={() => goToPageNumber(gotoPage)}
             />
           </form>
-          {/* v5.40, Derek: custom pages — the Pages tool is one of the three
-              doors (with the ribbon button and Insert ▸ Custom Page). */}
-          <button
-            className="dialog-btn dialog-btn-primary fs-pages-addcustom"
-            title="Insert a custom page at the cursor (not counted in page numbering)"
-            onClick={() => { if (editor) insertCustomPage(editor); }}
-          >+ Custom Page</button>
-          <span className="tool-action-group tool-action-right">
+          <span className="tool-action-group">
             <span className="tool-action-label" id="fs-pages-perrow-label">Pages per row:</span>
             <button
               className="tool-action-btn tool-action-icon"
@@ -981,7 +1089,77 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               onClick={() => setPagesPerRow(pagesPerRow + 1)}
             ><CirclePlusIcon /></button>
           </span>
-        </ToolActionRow>
+        </div>
+      )}
+      {addPageOpen && createPortal(
+        <div
+          ref={addPopRef}
+          className="fs-pages-pop"
+          style={addPos ?? { top: -9999, left: -9999 }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {!addAfterMode ? (
+            <>
+              <button className="fs-pages-pop-item" onClick={() => setAddAfterMode(true)}>
+                Add Custom Page
+              </button>
+              <button
+                className="fs-pages-pop-item"
+                onClick={() => { useEditorStore.getState().openTool('titlepage'); closeAddPage(); }}
+              >
+                {hasTitlePage ? 'Edit Title Page' : 'Add Title Page'}
+              </button>
+            </>
+          ) : (
+            <form className="fs-pages-pop-form" onSubmit={(e) => { e.preventDefault(); submitAddAfter(); }}>
+              <label className="tool-action-label" htmlFor="fs-pages-addafter">Add after page #:</label>
+              <input
+                id="fs-pages-addafter"
+                className="tool-action-field"
+                type="text"
+                inputMode="numeric"
+                autoFocus
+                placeholder={lastScriptPage ? String(lastScriptPage) : ''}
+                value={afterPageNum}
+                onChange={(e) => setAfterPageNum(e.target.value.replace(/[^0-9]/g, ''))}
+              />
+              <button type="submit" className="dialog-btn dialog-btn-primary">Add</button>
+              <div className="fs-pages-pop-hint">Blank = at the cursor · 0 = before page 1</div>
+            </form>
+          )}
+        </div>,
+        document.body,
+      )}
+      {kebabFor != null && createPortal(
+        <div
+          ref={kebabPopRef}
+          className="fs-pages-pop"
+          style={kebabPos ?? { top: -9999, left: -9999 }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {!kebabMove ? (
+            <>
+              <button className="fs-pages-pop-item" onClick={() => setKebabMove(true)}>Move page</button>
+              <button className="fs-pages-pop-item" onClick={onDeleteCustom}>Delete page</button>
+            </>
+          ) : (
+            <form className="fs-pages-pop-form" onSubmit={(e) => { e.preventDefault(); submitMoveAfter(); }}>
+              <label className="tool-action-label" htmlFor="fs-pages-moveafter">Move after page #:</label>
+              <input
+                id="fs-pages-moveafter"
+                className="tool-action-field"
+                type="text"
+                inputMode="numeric"
+                autoFocus
+                value={movePageNum}
+                onChange={(e) => setMovePageNum(e.target.value.replace(/[^0-9]/g, ''))}
+              />
+              <button type="submit" className="dialog-btn dialog-btn-primary">Move</button>
+              <div className="fs-pages-pop-hint">0 = before page 1</div>
+            </form>
+          )}
+        </div>,
+        document.body,
       )}
       {activeTab === 'pages' && (
         <div className="navigator-list page-thumbnails-scroll" ref={pageGridRef}>
@@ -1003,12 +1181,62 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                   <div className="page-thumb-number">
                     {page.isCustom ? 'Custom Page' : `Page ${page.pageNumber}`}
                   </div>
+                  {/* v5.44: CUSTOM thumbs drag to a new spot (drop on any page
+                      = land right after it) and carry a ⋮ menu; script thumbs
+                      do neither — their order IS the script. */}
                   <div
-                    className={`page-thumbnail${!page.isCustom && page.pageNumber === currentVisiblePage ? ' current' : ''}`}
+                    className={`page-thumbnail${!page.isCustom && page.pageNumber === currentVisiblePage ? ' current' : ''}${page.isCustom && dragCpId != null && page.cpId === dragCpId ? ' dragging' : ''}${dragCpId != null && dropPi === pi && page.cpId !== dragCpId ? ' drop-after' : ''}`}
                     data-page={page.isCustom ? `custom-${pi}` : page.pageNumber}
+                    data-cp-id={page.isCustom ? page.cpId : undefined}
+                    draggable={page.isCustom || undefined}
                     onClick={(e) => handlePageClick(page, e)}
+                    onDragStart={page.isCustom ? (e) => {
+                      // WebKit refuses to start a drag without setData, and
+                      // aborts one whose dragstart mutates the DOM — write
+                      // state a tick later (the v5.36 lesson).
+                      e.dataTransfer.setData('text/plain', page.cpId ?? '');
+                      e.dataTransfer.effectAllowed = 'move';
+                      const id = page.cpId ?? null;
+                      window.setTimeout(() => setDragCpId(id), 0);
+                    } : undefined}
+                    onDragEnd={page.isCustom ? () => { setDragCpId(null); setDropPi(null); } : undefined}
+                    onDragOver={(e) => {
+                      if (dragCpId == null || page.cpId === dragCpId) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      if (dropPi !== pi) setDropPi(pi);
+                    }}
+                    onDragLeave={() => { if (dropPi === pi) setDropPi(null); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (!editor || dragCpId == null || page.cpId === dragCpId) return;
+                      const pos = posAfterEntry(page);
+                      if (pos != null) moveCustomPage(editor, dragCpId, pos);
+                      setDragCpId(null);
+                      setDropPi(null);
+                    }}
                   >
-                    <div className="page-thumb-content-clip">
+                    {page.isCustom && (
+                      <button
+                        className="page-thumb-kebab"
+                        title="Custom page options"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          kebabBtnRef.current = e.currentTarget;
+                          setKebabMove(false);
+                          setMovePageNum('');
+                          setKebabFor(page.cpId ?? null);
+                        }}
+                      ><FaEllipsisV /></button>
+                    )}
+                    {/* v5.44: the clip's aspect ratio comes from the REAL page
+                        layout — the hardcoded A4 ratio left a dead strip under
+                        every US-Letter page. */}
+                    <div
+                      className="page-thumb-content-clip"
+                      style={{ aspectRatio: `${pageLayout.pageWidth} / ${pageLayout.pageHeight}` }}
+                    >
                       <div
                         className="page-thumb-content"
                         style={{

@@ -13,7 +13,10 @@ export { ShowEpisode } from './ShowEpisode';
 export { CastList } from './CastList';
 export { DualDialogue, DualDialogueColumn } from './DualDialogue';
 export { TitlePage } from './TitlePage';
-export { CustomPage, CustomPageKeymap, insertCustomPage } from './CustomPage';
+export {
+  CustomPage, CustomPageKeymap, insertCustomPage, insertCustomPageAt,
+  customPageRunRange, moveCustomPage, deleteCustomPage,
+} from './CustomPage';
 export { FontSize } from './FontSize';
 export { ScriptNoteMark } from './ScriptNoteMark';
 export { ScriptMarkupMark, MarkupBlockAnchor } from './ScriptMarkup';

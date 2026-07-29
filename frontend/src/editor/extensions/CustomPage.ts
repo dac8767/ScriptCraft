@@ -11,6 +11,7 @@
 import { Node, Extension, mergeAttributes } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
 import type { Editor } from '@tiptap/core';
+import type { Node as PmNode } from '@tiptap/pm/model';
 import { uuid } from '../../utils/uuid';
 
 export const CustomPage = Node.create({
@@ -81,9 +82,52 @@ export function insertCustomPage(editor: Editor): void {
   const { state } = editor;
   const { $from } = state.selection;
   const insertPos = $from.depth > 0 ? $from.after(1) : state.selection.from;
+  insertCustomPageAt(editor, insertPos);
+}
+
+/** v5.44: insert a fresh one-line custom page at an exact top-level doc
+ *  position — the Pages tool's "Add after page #" computes the boundary
+ *  (the next page's first block) and hands it here. */
+export function insertCustomPageAt(editor: Editor, pos: number): void {
+  const { state } = editor;
   const node = state.schema.nodes.customPage.create({ cpId: uuid() });
-  let tr = state.tr.insert(insertPos, node);
-  tr = tr.setSelection(TextSelection.create(tr.doc, insertPos + 1));
+  let tr = state.tr.insert(pos, node);
+  tr = tr.setSelection(TextSelection.create(tr.doc, pos + 1));
   editor.view.dispatch(tr.scrollIntoView());
   editor.view.focus();
+}
+
+/** The doc range covering a custom page's whole run — every consecutive
+ *  customPage line sharing this cpId. Null when the id is gone. */
+export function customPageRunRange(doc: PmNode, cpId: string): { from: number; to: number } | null {
+  let from = -1;
+  let to = -1;
+  doc.forEach((node, offset) => {
+    if (node.type.name === 'customPage' && (node.attrs.cpId as string) === cpId) {
+      if (from < 0) from = offset;
+      to = offset + node.nodeSize;
+    }
+  });
+  return from < 0 ? null : { from, to };
+}
+
+/** v5.44: relocate a custom page (its whole run) to a top-level position
+ *  measured on the CURRENT doc — the delete is applied first and the target
+ *  mapped through it. A target inside the run itself is a no-op. */
+export function moveCustomPage(editor: Editor, cpId: string, pos: number): void {
+  const range = customPageRunRange(editor.state.doc, cpId);
+  if (!range) return;
+  if (pos >= range.from && pos <= range.to) return;
+  const run = editor.state.doc.slice(range.from, range.to);
+  let tr = editor.state.tr.delete(range.from, range.to);
+  tr = tr.insert(tr.mapping.map(pos), run.content);
+  editor.view.dispatch(tr);
+}
+
+/** v5.44: delete a custom page's whole run (the Pages tool confirms first —
+ *  this removes content from the script). */
+export function deleteCustomPage(editor: Editor, cpId: string): void {
+  const range = customPageRunRange(editor.state.doc, cpId);
+  if (!range) return;
+  editor.view.dispatch(editor.state.tr.delete(range.from, range.to));
 }

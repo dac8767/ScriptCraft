@@ -563,6 +563,9 @@ export interface PageContentInfo {
   /** v5.40: this page is a CUSTOM page — unnumbered; the Pages tool labels
    *  it "Custom" instead of a number. */
   isCustom?: boolean;
+  /** v5.44: the custom page's run id — the Pages tool's drag / move /
+   *  delete all address the run by this, never by position. */
+  cpId?: string;
 }
 
 /**
@@ -574,9 +577,14 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
   const { breaks } = computeBreaks(doc, layout);
 
   // Collect top-level nodes
-  const nodes: { typeName: string; text: string; offset: number }[] = [];
+  const nodes: { typeName: string; text: string; offset: number; cpId?: string }[] = [];
   doc.forEach((node, offset) => {
-    nodes.push({ typeName: node.type.name, text: node.textContent || '', offset });
+    nodes.push({
+      typeName: node.type.name,
+      text: node.textContent || '',
+      offset,
+      cpId: node.type.name === 'customPage' ? ((node.attrs.cpId as string) || undefined) : undefined,
+    });
   });
 
   if (nodes.length === 0) return [];
@@ -657,7 +665,13 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
       lineOnPage += sb + textLines;
     }
 
-    pages.push({ pageNumber: pb.pageNumber, blocks, linesPerPage, isCustom: pb.isCustom });
+    pages.push({
+      pageNumber: pb.pageNumber,
+      blocks,
+      linesPerPage,
+      isCustom: pb.isCustom,
+      cpId: pb.isCustom ? nodes[pb.startNode]?.cpId : undefined,
+    });
   }
 
   return pages;
