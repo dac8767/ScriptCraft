@@ -266,9 +266,15 @@ export function MarkupComboPicker({ markup }: { markup: ScriptMarkup }) {
       {open && createPortal(
         <div ref={boxRef} className="markup-subpop markup-icon-pop" style={dragPos ?? pos ?? { top: -9999, left: -9999 }}
           onPointerDown={(e) => e.stopPropagation()}>
-          {/* v5.41: grab bar — drag to reposition */}
+          {/* v5.41: grab bar — drag to reposition. v5.49, Derek: a × too. */}
           <div className="markup-icon-pop-drag" onPointerDown={startDrag} title="Drag to move">
-            <span>Icon &amp; Color</span>
+            <span className="markup-icon-pop-title">Icon &amp; Color</span>
+            <button
+              className="markup-icon-pop-close"
+              title="Close"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => setOpen(false)}
+            >×</button>
           </div>
           {/* v5.41, Derek: "compact the window" — icons LEFT, color RIGHT,
               side by side instead of one long stack. */}

@@ -151,6 +151,9 @@
 }
 .markup-combo-color .color-picker-popup { position: static; width: auto; }
 .markup-pop-icon-group { flex-wrap: wrap; }
+/* v5.49, Derek: the Highlight group hugs the head row's RIGHT edge (and
+   keeps hugging it when a narrow window wraps it to its own line). */
+.markup-hl-group { margin-left: auto; }
 .markup-hl-del:hover { color: #c0392b; border-color: #c0392b; opacity: 1; }
 .markup-add-hl { font-size: 11px; padding: 4px 8px; }
 /* v5.33, Derek: the annotation window is a LIGHT surface in both themes —
@@ -176,15 +179,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--fd-input-bg);
-  border: 1px solid transparent;
+  /* v5.49, Derek: every icon chip sits on WHITE — the same paper the
+     margin icons ride, whatever the app theme (the light-chip special
+     case for dark colors is folded into the base). */
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 6px;
   cursor: pointer;
   padding: 0;
   font-size: 13px;
   color: var(--fd-text);
 }
-.markup-preset:hover { border-color: var(--fd-border); background: var(--fd-overlay-light); }
+.markup-preset:hover { border-color: var(--fd-border); background: #f0f0f0; }
 .markup-preset.active { border-color: var(--fd-accent); }
 .markup-preset .markup-glyph { display: flex; }
 .markup-emoji { font-size: 14px; line-height: 1; }
@@ -248,7 +254,7 @@
 }
 .markup-hl-eye:hover { border-color: var(--fd-accent); opacity: 1; }
 .markup-hl-eye.active { opacity: 1; }
-.markup-pop-spacer { flex: 1; }
+/* (v5.49: .markup-pop-spacer retired — Save rides the preview section.) */
 
 /* v5.29: legibility — a light chip behind icons drawn in DARK colors (they
    vanished on the dark chrome), and imported custom icons. */
@@ -465,15 +471,26 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
    Navigator:" (the row's own classes so the two never drift) and "In
    Script:" (the margin chip, inline and inert). */
 .markup-pop-preview {
-  /* v5.48, Derek: icons sit CENTERED against the labels on their left */
-  align-items: center;
+  /* v5.49, Derek: the two previews STACK left-aligned; Save pins to the
+     section's bottom-right. */
+  align-items: flex-end;
+  flex-wrap: nowrap;
   border-top: 1px solid rgba(0, 0, 0, 0.14);
   /* v5.42, Derek: all four sides are Design knobs (Design ▸ Annotations) */
   padding: var(--dz-anno-prev-pad-top, 8px) var(--dz-anno-prev-pad-right, 0px) var(--dz-anno-prev-pad-bottom, 0px) var(--dz-anno-prev-pad-left, 0px);
 }
+.markup-prev-lines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* v5.48, Derek: icons sit CENTERED against the labels on their left */
+.markup-prev-line { display: flex; align-items: center; gap: 4px; }
+.markup-pop-preview .markup-save { margin-left: 8px; align-self: flex-end; }
 .markup-nav-preview { font-size: 12px; line-height: 1.4; min-width: 0; flex: 1; align-items: center; }
 .markup-nav-preview .fs-nav-kind-icon { display: inline-flex; vertical-align: 0; }
-.markup-pop-preview-script-label { margin-left: 8px; }
 .markup-margin-preview {
   width: 22px;
   height: 22px;
@@ -511,6 +528,21 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
   user-select: none;
 }
 .markup-icon-pop-drag:active { cursor: grabbing; }
+.markup-icon-pop-title { flex: 1; }
+/* v5.49, Derek: the picker header's × */
+.markup-icon-pop-close {
+  border: none;
+  background: rgba(0, 0, 0, 0.1);
+  color: inherit;
+  font-size: 14px;
+  line-height: 1;
+  width: 22px;
+  height: 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+.markup-icon-pop-close:hover { opacity: 1; background: rgba(0, 0, 0, 0.24); }
 .markup-icon-pop-cols {
   display: flex;
   gap: 12px;
@@ -603,8 +635,6 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
   opacity: 0.55;
 }
 
-/* Footer: Save (status/delete live in the ⋮ menu since v5.26) */
-.markup-pop-foot { border-top: 1px solid rgba(0, 0, 0, 0.14); padding-top: 8px; }
 
 /* ── The Markups tool window ─────────────────────────────────────────────── */
 .markups-panel {

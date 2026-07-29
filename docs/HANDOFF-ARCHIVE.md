@@ -151,9 +151,46 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.43 and older (newest first)
+## Version history — v5.44 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.44 — Pages tool: header reorder + gap knob, + Add Page dropdown, ratio fix, custom-thumb drag/⋮
+
+- Derek's 5 (four mid-turn messages, one batch): (1) HEADER ORDER — the
+  Pages row is now a raw `.tool-action-row.fs-pages-actions` div (ToolActionRow
+  couldn't take a class): + Add Page, Go to page, Pages per row, ALL left
+  (v5.23's right-pinned stepper reversed for THIS row only; Scenes keeps
+  its). Gap = `--dz-pages-ctl-gap` (pagesCtlGap, def 10, Navigator &
+  Outline group). COMPOUND selector required — the base row's `gap: 6px`
+  lives in 22-tools-extra which loads AFTER 05-scene-navigator, so a
+  single-class override silently loses the tie (the driver caught 6px).
+  (2) "+ Add Page" DROPDOWN (`.fs-pages-pop`, portalled, useSeat/useDismiss
+  from MarkupPickers): "Add Custom Page" → "Add after page #:" input
+  (blank = cursor via insertCustomPage, 0 = before page 1, N = between N
+  and N+1); "Add/Edit Title Page" (label = doc has titlePage nodes) →
+  openTool('titlepage'). (3) POSITION MATH single-sourced: posAfterScriptPage
+  / posAfterEntry — "after page N" = the NEXT pageContent entry's first
+  block docPos (doc end when last). PageContentInfo now carries cpId
+  (computePageBlocks; unit-tested) so every door addresses a run by id.
+  New CustomPage.ts helpers: insertCustomPageAt / customPageRunRange /
+  moveCustomPage (delete run → insert mapped through tr.mapping; target
+  inside the run = no-op) / deleteCustomPage. (4) CUSTOM thumbs drag
+  (draggable only when isCustom; dragstart does setData + DEFERRED state
+  write — both v5.36 WebKit rules; drop on any page = land right after it,
+  `.drop-after` inset edge marks the target); ⋮ kebab (`.page-thumb-kebab`,
+  FaEllipsisV, top-right of the thumb) → Move page ("Move after page #:")
+  / Delete page (confirmDialog danger, removes the run). Script thumbs:
+  no drag, no kebab. (5) RATIO ROOT CAUSE of "white space at the bottom
+  of each page": `.page-thumb-content-clip` hardcoded aspect-ratio
+  8.26/11.69 — A4 — while scripts are US Letter (8.5/11), a ~9% dead
+  strip on EVERY thumb. Now inline `${pageLayout.pageWidth} /
+  ${pageLayout.pageHeight}` (CSS fallback = Letter).
+- check-v544: 16 green (old button gone, reading order, stepper unpinned,
+  gap 10→26 via setDesignVar, ratio 1.294 ≠ A4 1.415, menu pair, add
+  after 1 → [P1, Custom, P2], custom draggable+kebab / script neither,
+  Move after 2, synthetic DataTransfer drag with mid-drag `.drop-after`
+  hint, confirmed delete empties the doc, Title Page window opens).
 
 ### v5.43 — ONE Filter for both scopes, whole-area context menu, Return to Editor retired
 

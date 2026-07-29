@@ -557,7 +557,7 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
             <MarkupUsedRow markup={markup} />
           </span>
           {markup.anchor === 'range' ? (
-          <span className="markup-pop-group">
+          <span className="markup-pop-group markup-hl-group">
             <span className="markup-pop-grouplabel">Highlight:</span>
             <MarkupColorSwatch
               value={markup.highlight ?? DEFAULT_MARKUP_HIGHLIGHT}
@@ -657,23 +657,28 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
       {/* v5.33/v5.41, Derek: the two live previews — "In Navigator:" (the
           real row's classes, no icon for LIST annotations) and "In Script:"
           (the margin chip exactly as it sits in the page's right margin). */}
+      {/* v5.49, Derek: In Navigator / In Script STACKED, both left-aligned;
+          Save rides the same section, pinned to its bottom-right. */}
       <div className="markup-pop-row markup-pop-preview">
-        <span className="markup-pop-grouplabel">In Navigator:</span>
-        <span className="fs-nav-anno markup-nav-preview" style={{ color: markup.color }}>
-          {!navPreview.isList && (
-            <span className="fs-nav-kind-icon fs-nav-markup-icon">
+        <div className="markup-prev-lines">
+          <div className="markup-prev-line">
+            <span className="markup-pop-grouplabel">In Navigator:</span>
+            <span className="fs-nav-anno markup-nav-preview" style={{ color: markup.color }}>
+              {!navPreview.isList && (
+                <span className="fs-nav-kind-icon fs-nav-markup-icon">
+                  <MarkupIcon icon={markup.icon} color={markup.color} />
+                </span>
+              )}
+              <MarkupNavLineSpans lines={navPreview.lines} />
+            </span>
+          </div>
+          <div className="markup-prev-line">
+            <span className="markup-pop-grouplabel">In Script:</span>
+            <span className="markup-margin-preview" style={{ borderColor: markup.color }}>
               <MarkupIcon icon={markup.icon} color={markup.color} />
             </span>
-          )}
-          <MarkupNavLineSpans lines={navPreview.lines} />
-        </span>
-        <span className="markup-pop-grouplabel markup-pop-preview-script-label">In Script:</span>
-        <span className="markup-margin-preview" style={{ borderColor: markup.color }}>
-          <MarkupIcon icon={markup.icon} color={markup.color} />
-        </span>
-      </div>
-      <div className="markup-pop-row markup-pop-foot">
-        <span className="markup-pop-spacer" />
+          </div>
+        </div>
         <button className="dialog-btn dialog-btn-primary markup-save" onClick={save}>Save</button>
       </div>
       </div>

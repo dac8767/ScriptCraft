@@ -225,17 +225,27 @@ export default function DesignPanel() {
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 340, h: 560 });
   const drag = useRef<{ dx: number; dy: number } | null>(null);
 
-  // First open: anchor to the top-right so the editor stays visible on the
-  // left. v5.48, Derek ("it does not appear in the correct place"): ALSO
-  // re-anchor whenever the remembered spot is (mostly) off-screen — the
-  // dock-drag leaves pos at the panel edge, and reopening there hung the
-  // window half off the viewport.
+  // v5.49, Derek: the pop-out SEATS against its side panel — the window's
+  // RIGHT edge touching the right panel's LEFT edge (mirrored when the
+  // tool lives in the left panel) — the classic popped position every
+  // drag-out window snaps to (v4.64). Every open re-seats; dragging it
+  // somewhere else is respected while it stays open. No visible panel
+  // (icon rail / hidden) → fall back to the top-right anchor.
   useEffect(() => {
     if (!open) return;
-    const offscreen = pos.x < 0
-      || pos.x > window.innerWidth - 120
-      || pos.y > window.innerHeight - 80;
-    if (offscreen) setPos({ x: Math.max(8, window.innerWidth - size.w - 24), y: 64 });
+    const side = (useEditorStore.getState().toolConfig.design?.side ?? 'right') as 'left' | 'right';
+    const dockEl = document.querySelector<HTMLElement>(`.tool-dock-wrap.tool-dock-${side}`);
+    const r = dockEl?.getBoundingClientRect();
+    if (r && r.width > 0) {
+      setPos({
+        x: side === 'right'
+          ? Math.max(8, r.left - size.w - 8)
+          : Math.min(window.innerWidth - size.w - 8, r.right + 8),
+        y: Math.max(8, r.top + 8),
+      });
+    } else {
+      setPos({ x: Math.max(8, window.innerWidth - size.w - 24), y: 64 });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -259,7 +269,6 @@ export default function DesignPanel() {
       }
       st.setToolMode('design', 'docked');
       st.setDesignPanelOpen(false);
-      setPos({ x: -1, y: 64 });   // next pop-out re-anchors fresh (v5.48)
       st.openTool('design');   // routes to the docked slot now
     };
     const move = (e: PointerEvent) => {

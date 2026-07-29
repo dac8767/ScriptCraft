@@ -901,24 +901,47 @@
 }
 
 /* v5.47, Derek: the per-row stepper is a stacked Up/Down pair LEFT of the
-   number (replacing − / +; his screenshot). Up = more pages per row. */
-.fs-updown { display: inline-flex; flex-direction: column; gap: 2px; }
+   number. v5.49: ONE button frame around both arrows (a classic spinner),
+   the arrows tight together, the number snug beside them. */
+.fs-updown {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
 .fs-updown-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 13px;
+  width: 20px;
+  height: 11px;
   padding: 0;
-  border: 1px solid var(--fd-border);
-  border-radius: 4px;
+  border: none;
+  border-radius: 0;
   background: none;
   color: var(--fd-text);
   font-size: 8px;
   cursor: pointer;
 }
+.fs-updown-btn + .fs-updown-btn { border-top: 1px solid var(--fd-border); }
 .fs-updown-btn:hover:not(:disabled) { background: var(--fd-toolbar-hover); }
 .fs-updown-btn:disabled { opacity: 0.35; cursor: default; }
+.fs-updown + .tool-action-count { margin-left: -3px; }
+/* v5.49, Derek: the number is a FIELD now — type it or step it. */
+.fs-perrow-input {
+  width: 26px;
+  text-align: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: inherit;
+  font: inherit;
+  padding: 1px 2px;
+}
+.fs-perrow-input:hover { border-color: var(--fd-border); }
+.fs-perrow-input:focus { border-color: var(--fd-accent); outline: none; background: var(--fd-input-bg); }
 
 /* The ⋮ on a custom page's thumbnail (top-right, over the paper). */
 .page-thumb-kebab {

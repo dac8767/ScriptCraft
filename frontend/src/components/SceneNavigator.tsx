@@ -719,6 +719,10 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   // ── Handle page thumbnail click ──
 
   const setPagesPerRow = useEditorStore((s) => s.setPagesPerRow);
+  // v5.49, Derek: the per-row number is TYPEABLE too (reversing v5.08's
+  // "never typed"). Raw text while editing; blur snaps back to the
+  // clamped store value.
+  const [perRowText, setPerRowText] = useState<string | null>(null);
   // v5.47: the header's # pop REQUESTS the jump (pagesGotoRequest); this
   // body — owner of the grid ref and the editor — performs and clears it.
   const gotoReq = useEditorStore((s) => s.pagesGotoRequest);
@@ -1086,7 +1090,21 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                   onClick={() => setPagesPerRow(pagesPerRow - 1)}
                 ><FaChevronDown /></button>
               </span>
-              <span className="tool-action-count" aria-labelledby="fs-pages-perrow-label">{pagesPerRow}</span>
+              <input
+                className="tool-action-count fs-perrow-input"
+                type="text"
+                inputMode="numeric"
+                aria-labelledby="fs-pages-perrow-label"
+                value={perRowText ?? String(pagesPerRow)}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const t = e.target.value.replace(/[^0-9]/g, '');
+                  setPerRowText(t);
+                  const n = parseInt(t, 10);
+                  if (Number.isFinite(n) && n >= 1) setPagesPerRow(n);   // slice clamps 1–8
+                }}
+                onBlur={() => setPerRowText(null)}
+              />
             </span>
           </span>
         </div>

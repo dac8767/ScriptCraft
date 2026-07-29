@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.48 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.49 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,41 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.48 — annotations = highlighted text, pick-to-place, title-bar status/delete, Scene # in header (HEAD)
+### v5.49 — Design seats at the panel edge, stacked previews + Save, picker ×/white chips, spinner + typeable count (HEAD)
+
+- Derek's 8 (five mid-turn messages; the sandbox rolled back a FOURTH
+  time at turn start — reset + reinstall recovered it, and the restored
+  node_modules was MISSING the tiptap extension packages until
+  `npm install` reran):
+  (1) DESIGN SEAT SPEC (his correction of v5.48's top-right anchor):
+  every OPEN of the independent window seats it against its OWN panel —
+  right edge on the right panel's left edge (mirrored for a left-side
+  config), measured live from `.tool-dock-wrap.tool-dock-<side>`;
+  no visible panel → top-right fallback. Drags while open are
+  respected; the v5.48 sentinel/off-screen logic is gone.
+  (2) PREVIEWS STACKED: "In Script:" UNDER "In Navigator:", both left
+  (.markup-prev-lines column, .markup-prev-line rows); SAVE moved into
+  the same section, pinned bottom-right (.markup-pop-preview align-items
+  flex-end + margin-left auto); the .markup-pop-foot row + spacer are
+  dead, removed.
+  (3) Highlight group hugs the head row's right (.markup-hl-group
+  margin-left auto — keeps right-hugging when wrapped).
+  (4) The icon/color picker's drag bar gained a × (.markup-icon-pop-close,
+  stopPropagation vs the drag).
+  (5) WHITE CHIPS: `.markup-preset` background is #fff app-wide (the
+  paper the margin icons ride) — the isDarkColor light-chip special case
+  is now redundant-but-harmless (class + rule remain).
+  (6) STEPPER: one frame around both arrows (.fs-updown bordered,
+  divider between buttons), number snug (-3px against the group gap)…
+  (7) …and the count is a FIELD (.fs-perrow-input — type it or step it;
+  raw text while editing, blur snaps to the clamped store value;
+  reverses v5.08's "never typed").
+- check-v549: 11 green (fresh + post-dock-cycle seat gap 8px, stacked
+  left-aligned previews, Save bottom-right + foot gone, highlight
+  right-hug 0px, picker × present/closes, 57/57 white chips, framed
+  tight arrows, 3px number gap, typed 6 → store+grid 6).
+
+### v5.48 — annotations = highlighted text, pick-to-place, title-bar status/delete, Scene # in header
 
 - Derek's 8 (six mid-turn messages):
   (1) EVERY annotation anchors to highlighted TEXT: createMarkupAtSelection
@@ -388,48 +422,12 @@ Durable bits kept live here:
   remove-and-stash still works: window closed + dock row gone +
   enabled=false).
 
-### v5.44 — Pages tool: header reorder + gap knob, + Add Page dropdown, ratio fix, custom-thumb drag/⋮
-
-- Derek's 5 (four mid-turn messages, one batch): (1) HEADER ORDER — the
-  Pages row is now a raw `.tool-action-row.fs-pages-actions` div (ToolActionRow
-  couldn't take a class): + Add Page, Go to page, Pages per row, ALL left
-  (v5.23's right-pinned stepper reversed for THIS row only; Scenes keeps
-  its). Gap = `--dz-pages-ctl-gap` (pagesCtlGap, def 10, Navigator &
-  Outline group). COMPOUND selector required — the base row's `gap: 6px`
-  lives in 22-tools-extra which loads AFTER 05-scene-navigator, so a
-  single-class override silently loses the tie (the driver caught 6px).
-  (2) "+ Add Page" DROPDOWN (`.fs-pages-pop`, portalled, useSeat/useDismiss
-  from MarkupPickers): "Add Custom Page" → "Add after page #:" input
-  (blank = cursor via insertCustomPage, 0 = before page 1, N = between N
-  and N+1); "Add/Edit Title Page" (label = doc has titlePage nodes) →
-  openTool('titlepage'). (3) POSITION MATH single-sourced: posAfterScriptPage
-  / posAfterEntry — "after page N" = the NEXT pageContent entry's first
-  block docPos (doc end when last). PageContentInfo now carries cpId
-  (computePageBlocks; unit-tested) so every door addresses a run by id.
-  New CustomPage.ts helpers: insertCustomPageAt / customPageRunRange /
-  moveCustomPage (delete run → insert mapped through tr.mapping; target
-  inside the run = no-op) / deleteCustomPage. (4) CUSTOM thumbs drag
-  (draggable only when isCustom; dragstart does setData + DEFERRED state
-  write — both v5.36 WebKit rules; drop on any page = land right after it,
-  `.drop-after` inset edge marks the target); ⋮ kebab (`.page-thumb-kebab`,
-  FaEllipsisV, top-right of the thumb) → Move page ("Move after page #:")
-  / Delete page (confirmDialog danger, removes the run). Script thumbs:
-  no drag, no kebab. (5) RATIO ROOT CAUSE of "white space at the bottom
-  of each page": `.page-thumb-content-clip` hardcoded aspect-ratio
-  8.26/11.69 — A4 — while scripts are US Letter (8.5/11), a ~9% dead
-  strip on EVERY thumb. Now inline `${pageLayout.pageWidth} /
-  ${pageLayout.pageHeight}` (CSS fallback = Letter).
-- check-v544: 16 green (old button gone, reading order, stepper unpinned,
-  gap 10→26 via setDesignVar, ratio 1.294 ≠ A4 1.415, menu pair, add
-  after 1 → [P1, Custom, P2], custom draggable+kebab / script neither,
-  Move after 2, synthetic DataTransfer drag with mid-drag `.drop-after`
-  hint, confirmed delete empties the doc, Title Page window opens).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.44** — Pages: header reorder + gap knob, + Add Page dropdown, thumb ratio fix, custom-page drag/⋮
 - **v5.43** — ONE Filter drives script+window together; whole-area context menu; Return to Editor retired
 - **v5.42** — annotation preview padding knobs, no phantom row, pinned ⋮, growing field, two-section Filter (reversed in v5.43)
 - **v5.41** — annotation previews ×2, Used order, compact draggable picker, ribbon formatting drives the mini, move toast

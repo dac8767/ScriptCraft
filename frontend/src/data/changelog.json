@@ -1,5 +1,15 @@
 [
   {
+    "version": "5.49",
+    "date": "2026-07-29",
+    "changes": [
+      "The popped-out Design window seats where it belongs — its right edge touching the side panel's left edge (mirrored for the left panel), on every open",
+      "Annotation window: \"In Script:\" sits under \"In Navigator:\", both left-aligned, with Save in the same section pinned to the bottom-right; the Highlight control hugs the right edge of its row",
+      "The icon/color window has a × in its header, and every icon chip in the app sits on a white background",
+      "Pages tool: the Up/Down arrows share one button frame, the number sits snug beside them — and it's a typeable field now (type 6, get 6 per row)"
+    ]
+  },
+  {
     "version": "5.48",
     "date": "2026-07-29",
     "changes": [
