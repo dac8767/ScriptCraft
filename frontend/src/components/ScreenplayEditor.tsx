@@ -122,6 +122,7 @@ import { pluginRegistry } from '../plugins/registry';
 import { createTrackChangesPlugin, trackChangesPluginKey } from '../editor/trackChanges';
 import type { VersionInfo } from '../services/api';
 import { resolveHFFields, composeSaveContent, stripSaveExtras, resolveSpellCheckOnLoad } from '../utils/screenplaySaveContent';
+import { migrateShelfCards } from '../utils/shelfMigrate';
 
 import { randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, SCENE_PREFIX_OPTIONS, SAMPLE_CONTENT, resolvePickedElement } from './screenplayEditorConstants';
 import { isWorkingNoteText } from '../utils/workingNotes';
@@ -2983,7 +2984,9 @@ const ScreenplayEditor: React.FC = () => {
             const gNotes = parseAttr(c._generalNotes);
             if (gNotes.length > 0) store.setGeneralNotes(gNotes as import('../stores/editorStore').GeneralNote[]);
             const shelfArr = parseAttr(c._shelf);
-            if (shelfArr.length > 0) store.setShelfCards(shelfArr as import('../stores/editorStore').ShelfCard[]);
+            // v5.36: legacy note/checklist cards become rich notes here —
+            // the ONE door saved files enter through.
+            if (shelfArr.length > 0) store.setShelfCards(migrateShelfCards(shelfArr as import('../stores/editorStore').ShelfCard[]));
             const tagsArr = parseAttr(c._tags);
             if (tagsArr.length > 0) store.setTags(tagsArr as import('../stores/editorStore').TagItem[]);
             const tagCats = parseAttr(c._tagCategories);

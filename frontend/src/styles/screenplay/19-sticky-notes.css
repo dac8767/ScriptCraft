@@ -178,7 +178,13 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   color: #333;
   font-size: var(--dz-swn-card-font, 12px);
+  /* v5.36: column flex, so the body grows and the foot pins to the bottom —
+     in the equal-height grid a short note reads as one card, not a stub
+     floating over leftover space. */
+  display: flex;
+  flex-direction: column;
 }
+.swn-card > .swn-note-body { flex: 1; }
 .swn-card.dragging { opacity: 0.45; }
 .swn-card-date {
   margin-top: 6px;
@@ -256,27 +262,68 @@
 }
 .swn-comment-input::placeholder { color: #999; }
 
-.swn-todo-item {
+/* ── v5.36, Derek's Notes v2: the rich note body ──────────────────────────
+   The annotation window's field, on a card: a mini TipTap editor with a
+   toolbar that shows only while the card has focus (CSS, no JS). Ink stays
+   the card's dark #333 whatever the app theme — cards are pastel. */
+.swn-note-body { display: flex; flex-direction: column; min-width: 0; }
+.swn-mini-bar {
+  display: none;
+  gap: 2px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  margin-bottom: 4px;
+}
+.swn-card:focus-within .swn-mini-bar { display: flex; }
+.swn-mini-btn {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #555;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+}
+.swn-mini-btn:hover { background: rgba(0, 0, 0, 0.08); color: #222; }
+.swn-mini-btn.active { background: rgba(0, 0, 0, 0.12); color: #111; }
+.swn-note-editor { flex: 1; min-height: 64px; cursor: text; }
+.swn-note-editor .ProseMirror {
+  outline: none;
+  min-height: 64px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #333;
+}
+.swn-note-editor .ProseMirror p { margin: 0 0 2px; }
+.swn-note-editor .ProseMirror ul,
+.swn-note-editor .ProseMirror ol { margin: 2px 0; padding-left: 18px; }
+.swn-note-editor .ProseMirror ul[data-type='taskList'] {
+  list-style: none;
+  padding-left: 2px;
+}
+.swn-note-editor .ProseMirror ul[data-type='taskList'] li {
   display: flex;
   gap: 6px;
-  margin: 2px 0;
   align-items: baseline;
-  cursor: pointer;
 }
-/* v5.22, Derek: the dashed-divider add field is GONE — a blank check row at
-   the bottom of the list is the add affordance. It dresses exactly like an
-   item row; only its inert checkbox and empty text give it away. */
-.swn-todo-blank { cursor: text; }
-.swn-todo-blank input[type="checkbox"] { opacity: 0.45; pointer-events: none; }
-.swn-todo-blank-input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  outline: none;
-  font-size: 12px;
-  color: #333;
-  padding: 0;
+.swn-note-editor .ProseMirror ul[data-type='taskList'] li[data-checked='true'] > div {
+  text-decoration: line-through;
+  color: #8a8a7a;
+}
+.swn-note-editor .ProseMirror a { color: #1a6ac0; }
+.swn-note-editor .ProseMirror img { max-width: 100%; border-radius: 4px; }
+/* the TipTap placeholder (empty first node) — matches the old textarea's */
+.swn-note-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #999;
+  float: left;
+  height: 0;
+  pointer-events: none;
 }
 
 .swn-snippet {

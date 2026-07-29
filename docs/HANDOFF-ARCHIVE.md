@@ -151,9 +151,37 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.30 and older (newest first)
+## Version history — v5.31 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.31 — highlight conversions, inline Used row, combined picker
+
+- Derek's batch (+3 mid-turn adds): (1) title bar darker (rgba .22) and the
+  fullscreen/× are FULL-HEIGHT header buttons (the .tool-window-close
+  format: 30px wide, align-self stretch, square, flush right with a
+  matching top-right radius). (2) HIDE-highlight is GONE — replaced by
+  DELETE: `convertMarkupToPoint` (markupActions) strips the mark and
+  re-anchors the annotation as a block anchor on the SAME element (occupied
+  block → anchorless orphan, still editable); the inverse,
+  `convertMarkupToRange`, powers "Link Script Text" (label Derek asked to
+  shorten from "Add Highlighted Text in Script") — a PICK MODE: the window
+  stays open (pickingRef makes the outside-press saver stand down; Escape
+  cancels the pick only), the next real selection converts point→range
+  with the yellow default. (3) the Icon row shows the USED combos INLINE
+  (MarkupUsedRow, cap 8) ending in a + (MarkupComboPicker — the old icon
+  window + an EMBEDDED ColorPicker in ONE popover; bare icon picks keep it
+  open so a color can follow; preset/used combos close).
+- ColorPicker gained `embedded` — its own outside-MOUSEDOWN closer fired on
+  clicks in the host's icon grid and closed the whole combined window (the
+  first driver run caught it). Embedded = the host owns dismissal.
+- NAVIGATOR is panel-locked too now (PANEL_LOCKED_TOOLS + NO_FULLSCREEN +
+  its own SHAPE_NOTE).
+- DRIVER LESSON: to close a sub-popover mid-test use ESCAPE, not a body
+  press — the body press is an outside-press for the EDIT WINDOW as well
+  and save-closes it under you. check-v531: 18 green (computed bar color,
+  full-height buttons by rect, keep-open pick, both conversions with
+  doc-level span/block proofs, stay-open pick mode).
 
 ### v5.30 — the edit window becomes a WINDOW; tool locked to panel
 

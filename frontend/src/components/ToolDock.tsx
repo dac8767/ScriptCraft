@@ -37,7 +37,7 @@ import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
 import CharacterProfiles, { CharTitleExtra, useCharTabs, CharControls } from './CharacterProfiles';
 import { ChromeTabs, ControlDropdown, type ToolChromeTab } from './ToolControls';
-import { StickyNotesTool, FragmentsTool, StickyTitleExtra, StickyControls, SnippetsTitleExtra, useStickyTabs, reorderStickyTabs } from './StickyNotes';
+import { StickyNotesTool, FragmentsTool, StickyTitleExtra, StickyControls, SnippetsTitleExtra } from './StickyNotes';
 import { HighlightsTitleExtra } from './HighlightsTool';
 import HighlightsTool from './HighlightsTool';
 import { DesignPanelDocked } from './DesignPanel';
@@ -87,7 +87,9 @@ export const ALL_TOOLS: ToolDef[] = [
   // v5.21, Derek: Notes + To-Do merged into "Sticky Notes" (the 'todo' id is
   // retired and migrates onto 'sticky', which predates the merge and keeps
   // every persisted layout).
-  { id: 'sticky', label: 'Sticky Notes', icon: <FaRegStickyNote />, defaultSize: { w: 300, h: 336 }, group: 2 },
+  // v5.36, Derek: renamed "Notes" with the v2 rebuild (id 'sticky' is a
+  // persisted identifier — the label changes, the id never does).
+  { id: 'sticky', label: 'Notes', icon: <FaRegStickyNote />, defaultSize: { w: 300, h: 336 }, group: 2 },
   // v5.25: anchored rich-text annotations on the script (set to replace
   // script highlighting, markers, sections, script notes and script to-dos
   // once Derek signs off on the core). v5.26, Derek: renamed "Annotations"
@@ -331,7 +333,7 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   navigator: { Controls: NavigatorControls },
   // v5.21: the merged Sticky Notes. v5.22: All · Notes · Checklists header
   // TABS (user-draggable, persisted order) + Sort / Search in the cluster.
-  sticky: { TitleExtra: StickyTitleExtra, useTabs: useStickyTabs, onTabReorder: reorderStickyTabs, Controls: StickyControls },
+  sticky: { TitleExtra: StickyTitleExtra, Controls: StickyControls },
   // v4.32 batch-v8 #12: Snippets + Highlights — count beside the title.
   fragments: { TitleExtra: SnippetsTitleExtra },
   highlights: { TitleExtra: HighlightsTitleExtra },

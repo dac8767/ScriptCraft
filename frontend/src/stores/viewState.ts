@@ -99,6 +99,7 @@ export interface ViewState {
   todoOrder?: string[];
   /** v5.22: the Sticky Notes header tabs, user-reordered; [0] is also the
    *  view the tool opens on. */
+  /** retired v5.36 (Notes v2 has no kind tabs) — old saved values ignored */
   stickyTabOrder?: ('all' | 'note' | 'todo')[];
   panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom' | 'icons'; right: 'compact' | 'comfortable' | 'custom' | 'icons' };
   /** v4.24, Derek: side-panel display names — Title Case (as authored) or ALL CAPS. */

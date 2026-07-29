@@ -1,5 +1,17 @@
 [
   {
+    "version": "5.36",
+    "date": "2026-07-29",
+    "changes": [
+      "Sticky Notes is now \"Notes\" — one kind of card with a RICH text body like the annotation window: bold/italic, bullet and numbered lists, checklists, links, and images, with the toolbar appearing while you're in the card",
+      "The separate checklist card is gone (\"+ Add Checklist\" too) — a checklist is just content now; your existing checklist cards convert automatically into notes containing a real checklist, checks intact",
+      "The Type sort went with the kinds — Manual (your drag order) is the default, Date Created is the alternative",
+      "The stepper is \"Notes per row:\" again, and every note in a row is the SAME SIZE — a true row grid replaces the column masonry (this also kills the second-column misalignment)",
+      "Drag-reorder is fixed for real: the reorder drop zones used to appear at the exact moment the drag started, and WebKit cancels a drag whose surroundings change mid-start — they now appear a beat later, so drags survive",
+      "The old card-height drag grabber is retired — rows share their height now, so a hand-set height had nothing left to mean"
+    ]
+  },
+  {
     "version": "5.35",
     "date": "2026-07-29",
     "changes": [

@@ -772,7 +772,6 @@ body.fs-tool-dragging { cursor: grabbing; }
    stripes. Add new grips HERE, don't invent another triangle. */
 .tool-window-resize,
 .fs-nb-box-grip,
-.swn-card-resize,
 .beat-card-resize-handle::after {
   background:
     linear-gradient(135deg, transparent 50%, var(--fd-text-muted) 50%, var(--fd-text-muted) 55%,

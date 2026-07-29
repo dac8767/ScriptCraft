@@ -253,12 +253,12 @@ export const DESIGN_GROUPS: DesignGroup[] = [
                  set: (v) => { const st = useEditorStore.getState(); st.setToolSize('characters', st.toolSizes.characters?.w ?? 420, v); } } },
     ],
   },
-  /* v5.24, Derek: the Sticky Notes WINDOW's own spacing knobs. Side gutters
-     live on the scroller (the sticky-scoped card margin is zeroed), the row
-     gap is the card's bottom margin, and the column gap feeds the masonry. */
+  /* v5.24, Derek: the Notes WINDOW's own spacing knobs. Side gutters live
+     on the scroller (the sticky-scoped card margin is zeroed); the row and
+     column gaps feed the v5.36 equal-height grid. */
   {
     id: 'stickyWindow',
-    label: 'Sticky Notes',
+    label: 'Notes',
     tokens: [
       { id: 'stickyPadX', label: 'Side padding', cssVar: '--dz-sticky-pad-x', unit: 'px', min: 0, max: 32, step: 1, def: 12 },
       { id: 'stickyPadTop', label: 'Top padding (below the buttons)', cssVar: '--dz-sticky-pad-top', unit: 'px', min: 0, max: 32, step: 1, def: 6 },

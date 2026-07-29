@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.35 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.36 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,43 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.35 — docked panel tools survive script clicks (HEAD)
+### v5.36 — Notes v2: one rich card kind, equal-height rows, real drag fix (HEAD)
+
+- Derek's queue item 1 (flag answered: "your assumption is correct" — old
+  checklist cards become notes whose content IS a task list; titles stay).
+  The tool is "Notes" (id 'sticky' NEVER changes — persisted). ONE card
+  kind: a rich TipTap body per card (StickyCard's NoteBody — StarterKit +
+  Link[protocols scrapbook] + Image + TaskList/TaskItem + Placeholder),
+  toolbar shown via `.swn-card:focus-within`. Cards store `content` (JSON)
+  + `text` (plain mirror — search/snippets/old-build safety). Migration:
+  utils/shelfMigrate.ts (migrateShelfCards), applied at the ONE load door
+  (ScreenplayEditor `_shelf` parse) and reused by NoteBody for unmigrated
+  strays; idempotent, unit-tested.
+- GONE: "+ Add Checklist", the kind TABS (useStickyTabs/reorderStickyTabs
+  deleted; stickyKindFilter/stickyTabOrder store fields removed — the old
+  viewState key just goes unread), the Type sort ('manual' is default),
+  the v4.37 card-height grabber (equal rows made it meaningless — its CSS
+  cleaned from 22-tools-extra + the 20-tool-dock grip selector list).
+- LAYOUT: `.swn-grid` is a real GRID again (repeat(--sticky-cols,
+  minmax(0,1fr)), align-items stretch) — rows equalize height natively;
+  cards are flex-column with the body flex:1 so the foot pins. Stepper
+  label: "Notes per row:". The v5.24 masonry (and its second-column
+  misalignment artifact) is gone.
+- THE DRAG FIX (root cause at last): setting dragId in onDragStart
+  re-rendered the list (drop zones mount) and WEBKIT ABORTS a drag whose
+  DOM mutates during dragstart — Chrome tolerates it, so the v5.24
+  setData fix looked complete in a browser and stayed broken in the app.
+  The dragId write is DEFERRED one tick (setTimeout 0) in both lists.
+- Driver lesson: Playwright's page.dragAndDrop HANGS on HTML5 draggables
+  headless — dispatch synthetic DragEvents (with new DataTransfer()) at
+  the handler chain instead; select cards by querySelectorAll INDEX (an
+  nth-of-type on .swn-card returned null in the takeover).
+- check-v536: 16 green (rename, one add button, no tabs, 4 rich bodies,
+  migrated checklist renders real boxes, stepper wording, 2-col grid,
+  per-row top AND height equality, drag reorder → dabc + Manual snap,
+  typing updates content+mirror, focus toolbar, checklist toggle).
+
+### v5.35 — docked panel tools survive script clicks
 
 - Derek: "if there is a tool in a side panel toggled open, and i click
   into the script, that tool window should stay open." ToolDock's
@@ -290,39 +326,12 @@ Durable bits kept live here:
   vertically — assert one-row with a ≤2px spread, not exact equality.
 - check-v532: 9 green.
 
-### v5.31 — highlight conversions, inline Used row, combined picker
-
-- Derek's batch (+3 mid-turn adds): (1) title bar darker (rgba .22) and the
-  fullscreen/× are FULL-HEIGHT header buttons (the .tool-window-close
-  format: 30px wide, align-self stretch, square, flush right with a
-  matching top-right radius). (2) HIDE-highlight is GONE — replaced by
-  DELETE: `convertMarkupToPoint` (markupActions) strips the mark and
-  re-anchors the annotation as a block anchor on the SAME element (occupied
-  block → anchorless orphan, still editable); the inverse,
-  `convertMarkupToRange`, powers "Link Script Text" (label Derek asked to
-  shorten from "Add Highlighted Text in Script") — a PICK MODE: the window
-  stays open (pickingRef makes the outside-press saver stand down; Escape
-  cancels the pick only), the next real selection converts point→range
-  with the yellow default. (3) the Icon row shows the USED combos INLINE
-  (MarkupUsedRow, cap 8) ending in a + (MarkupComboPicker — the old icon
-  window + an EMBEDDED ColorPicker in ONE popover; bare icon picks keep it
-  open so a color can follow; preset/used combos close).
-- ColorPicker gained `embedded` — its own outside-MOUSEDOWN closer fired on
-  clicks in the host's icon grid and closed the whole combined window (the
-  first driver run caught it). Embedded = the host owns dismissal.
-- NAVIGATOR is panel-locked too now (PANEL_LOCKED_TOOLS + NO_FULLSCREEN +
-  its own SHAPE_NOTE).
-- DRIVER LESSON: to close a sub-popover mid-test use ESCAPE, not a body
-  press — the body press is an outside-press for the EDIT WINDOW as well
-  and save-closes it under you. check-v531: 18 green (computed bar color,
-  full-height buttons by rect, keep-open pick, both conversions with
-  doc-level span/block proofs, stay-open pick mode).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.31** — highlight delete/link conversions, inline Used row, combined icon+color picker
 - **v5.30** — the edit window becomes a WINDOW (drag/fullscreen/× + own theme); tool locked to panel
 - **v5.29** — picker Used sections, legible chips, one-row popover head, icon import
 - **v5.28** — annotation view controls everywhere (View submenu, ribbon menu) + navigator polish

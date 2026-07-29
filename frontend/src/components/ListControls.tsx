@@ -10,17 +10,16 @@
  * here so the header controls and the list can't disagree.
  */
 
-export type StickySort = 'type' | 'manual' | 'created';
+export type StickySort = 'manual' | 'created';
 
 export const STICKY_SORT_LABEL: Record<StickySort, string> = {
-  type: 'Type',
   manual: 'Manual',
   created: 'Date Created',
 };
 
-/** The merged window's header search — ONE predicate for notes and
- *  checklists, so they can't disagree about what matches. Covers the
- *  editable title, a note's text, and every checklist item line. */
+/** The Notes window's header search — covers the editable title, the note's
+ *  plain-text mirror (kept beside the rich content), and legacy checklist
+ *  item lines from files that predate the v5.36 migration. */
 export function cardMatchesSearch(
   card: { title?: string; text?: string; items?: { text: string }[] },
   q: string,

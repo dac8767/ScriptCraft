@@ -1,6 +1,6 @@
 /**
- * StickyCard (v0.96) — THE card. One component for every card in Notes and To-Do,
- * whether the thing was made in the window or in the script.
+ * StickyCard (v0.96) — THE card. One component for every card in Notes and
+ * Snippets, whether the thing was made in the window or in the script.
  *
  * It used to live inside StickyNotes, so anything outside that file could only
  * imitate it — which is exactly how script to-dos and script notes ended up as
@@ -9,12 +9,28 @@
  *
  * It also breaks an import cycle: ScriptNotes needs the card, and StickyNotes
  * needs ScriptNotes. formatDate lives here now, so nothing imports backwards.
+ *
+ * v5.36, Derek's Notes v2: a note's body is a RICH TEXT field like the
+ * annotation window — bold/italic, bullet/numbered/check lists, links,
+ * images — so the separate checklist card kind is gone (old ones migrate in
+ * shelfMigrate.ts). The mini toolbar shows while the card has focus. The
+ * v4.37 height grabber went with the textarea: rows share their height now
+ * (the equal-height grid), so a hand-set card height has nothing to mean.
  */
-import React, { useRef, useState } from 'react';
-import { FaCopy, FaRegTrashAlt } from 'react-icons/fa';
+import React, { useEffect, useState } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import Image from '@tiptap/extension-image';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import Placeholder from '@tiptap/extension-placeholder';
+import { FaCopy, FaRegTrashAlt, FaBold, FaItalic, FaListUl, FaListOl, FaCheckSquare, FaLink, FaRegImage } from 'react-icons/fa';
 import type { ShelfCard, ShelfCardType } from '../stores/editorStore';
-import { SHELF_COLORS, SHELF_DEFAULT_COLOR } from '../stores/editorStore';
+import { SHELF_COLORS, SHELF_DEFAULT_COLOR, useEditorStore } from '../stores/editorStore';
+import { useNotebookStore } from '../stores/notebookStore';
 import { readableTextOn } from '../utils/palettes';
+import { migrateShelfCards } from '../utils/shelfMigrate';
 
 /** Shared date formatter for card headers. */
 export const formatDate = (iso: string) => {
@@ -27,8 +43,9 @@ export const formatDate = (iso: string) => {
   });
 };
 
-// v1.2: the title is an editable field, and "Note" / "To-Do" read like a label
-// for the card rather than an invitation to type. The ellipsis says "your turn".
+// v1.2: the title is an editable field, and "Note" reads like a label for the
+// card rather than an invitation to type. The ellipsis says "your turn".
+// ('todo' remains in the type for files that predate the v5.36 migration.)
 export const CARD_PLACEHOLDERS: Record<ShelfCardType, string> = {
   comment: 'Note Title...',
   todo: '✓ List Title...',
@@ -40,7 +57,7 @@ export function ColorDots({ card, onUpdate, surface }: { card: ShelfCard; onUpda
   // v4.35 (batch-v9 #5): while the NATIVE color panel is up the pointer is off
   // the row — the pop must not close under it, or the <input> unmounts and
   // every pick lands in the void. Blur (next click anywhere) closes instead.
-  const picking = useRef(false);
+  const picking = React.useRef(false);
   const cur = card.color || SHELF_DEFAULT_COLOR;
   const isPreset = SHELF_COLORS.some(([c]) => c === cur);
   // v4.37: the closed trigger circle is painted the card's own color and sits
@@ -107,6 +124,88 @@ export function ColorDots({ card, onUpdate, surface }: { card: ShelfCard; onUpda
   );
 }
 
+/** The rich note body — the annotation window's field, on a card. Its own
+ *  component so the TipTap hook never sits below StickyCard's branch returns
+ *  (the hooks-after-early-return footgun, CLAUDE.md §4). */
+function NoteBody({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: Partial<ShelfCard>) => void }) {
+  // a card that reached the renderer unmigrated (collab from an old build)
+  // goes through the SAME migration for its initial content — one converter
+  const legacyDoc = card.content == null ? migrateShelfCards([card])[0].content ?? null : null;
+  const mini = useEditor({
+    extensions: [
+      StarterKit.configure({ heading: false, codeBlock: false, blockquote: false, horizontalRule: false }),
+      // scrapbook: must be an allowed protocol or Link strips the href (v5.33)
+      Link.configure({ openOnClick: false, protocols: ['scrapbook'] }),
+      Image,
+      TaskList,
+      TaskItem.configure({ nested: false }),
+      Placeholder.configure({ placeholder: 'Research links, themes to keep present, notes to self…' }),
+    ],
+    content: (card.content as never) ?? (legacyDoc as never),
+    onUpdate: ({ editor }) => onUpdate({ content: editor.getJSON(), text: editor.getText().trim() }),
+  }, []);
+
+  // Remote (collab) edits land in the store; fold them in unless this card
+  // is the one being typed in. Own updates round-trip identical JSON, so
+  // this is a no-op for the local writer.
+  useEffect(() => {
+    if (!mini || mini.isFocused || card.content == null) return;
+    if (JSON.stringify(card.content) !== JSON.stringify(mini.getJSON())) {
+      mini.commands.setContent(card.content as never);
+    }
+  }, [mini, card.content]);
+
+  const onBodyClick = (e: React.MouseEvent) => {
+    const a = (e.target as HTMLElement).closest('a');
+    if (!a) return;
+    const href = a.getAttribute('href') ?? '';
+    if (href.startsWith('scrapbook:')) {
+      e.preventDefault();
+      const pageId = href.slice('scrapbook:'.length);
+      const nb = useNotebookStore.getState();
+      if (nb.pages[pageId]) nb.selectPage(pageId);
+      useEditorStore.getState().openTool('notebook');
+    } else if (/^https?:/i.test(href)) {
+      e.preventDefault();
+      window.open(href, '_blank', 'noopener');
+    }
+  };
+
+  const btn = (active: boolean, title: string, onClick: () => void, child: React.ReactNode) => (
+    <button
+      className={`swn-mini-btn${active ? ' active' : ''}`}
+      title={title}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onClick}
+      tabIndex={-1}
+    >{child}</button>
+  );
+  const promptLink = () => {
+    const url = window.prompt('Link URL:');
+    if (url) mini?.chain().focus().setLink({ href: url }).run();
+  };
+  const promptImage = () => {
+    const url = window.prompt('Image URL:');
+    if (url) mini?.chain().focus().setImage({ src: url }).run();
+  };
+
+  return (
+    <div className="swn-note-body">
+      {/* shown while the card has focus (CSS :focus-within) */}
+      <div className="swn-mini-bar">
+        {btn(!!mini?.isActive('bold'), 'Bold', () => mini?.chain().focus().toggleBold().run(), <FaBold />)}
+        {btn(!!mini?.isActive('italic'), 'Italic', () => mini?.chain().focus().toggleItalic().run(), <FaItalic />)}
+        {btn(!!mini?.isActive('bulletList'), 'Bullet list', () => mini?.chain().focus().toggleBulletList().run(), <FaListUl />)}
+        {btn(!!mini?.isActive('orderedList'), 'Numbered list', () => mini?.chain().focus().toggleOrderedList().run(), <FaListOl />)}
+        {btn(!!mini?.isActive('taskList'), 'Checklist', () => mini?.chain().focus().toggleTaskList().run(), <FaCheckSquare />)}
+        {btn(!!mini?.isActive('link'), 'Insert link', promptLink, <FaLink />)}
+        {btn(false, 'Insert image by URL', promptImage, <FaRegImage />)}
+      </div>
+      <div className="swn-note-editor" onClick={onBodyClick}><EditorContent editor={mini} /></div>
+    </div>
+  );
+}
+
 interface StickyCardProps {
   card: ShelfCard;
   dragging: boolean;
@@ -123,28 +222,6 @@ interface StickyCardProps {
 // card in these windows is general now, so there was nothing left to
 // distinguish. Script notes/to-dos live in the Navigator instead.
 export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere, onUpdate, onRemove, children }: StickyCardProps) {
-  // v4.37, Derek: the resize grabber lives in the foot's right corner now, so
-  // the textarea's native corner handle is off (19-sticky-notes.css) and this
-  // pointer-drag adjusts its height instead. Height is an inline style, same
-  // as the native handle wrote, so persistence semantics are unchanged.
-  const taRef = useRef<HTMLTextAreaElement>(null);
-  const startResize = (e: React.PointerEvent) => {
-    const ta = taRef.current;
-    if (!ta) return;
-    e.preventDefault();
-    const startY = e.clientY;
-    const startH = ta.offsetHeight;
-    const onMove = (ev: PointerEvent) => {
-      ta.style.height = Math.max(64, startH + (ev.clientY - startY)) + 'px';
-    };
-    const onUp = () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  };
-
   // Header: ⋮⋮ grip drags; the type name is placeholder text in an editable title
   const head = (extra?: React.ReactNode) => (
     <h5 className="swn-card-head">
@@ -177,7 +254,7 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
     </h5>
   );
 
-  const wrap = (inner: React.ReactNode, resizable = false) => (
+  const wrap = (inner: React.ReactNode) => (
     <div
       className={'swn-card' + (dragging ? ' dragging' : '')}
       style={{ background: card.color || SHELF_DEFAULT_COLOR }}
@@ -185,21 +262,8 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
       onDrop={onDropHere}
     >
       {inner}
-      {/* v4.37, Derek: foot is ONE row — date on the LEFT, resize grabber
-          (comment cards) on the RIGHT. */}
       <div className="swn-card-foot">
         {card.createdAt && <span className="swn-card-date">{formatDate(card.createdAt)}</span>}
-        {resizable && (
-          <span
-            className="swn-card-resize"
-            title="Drag to resize"
-            // The shared stripe gradient inks with --fd-text-muted (a THEME
-            // color); this grip sits on a USER color, so re-point the var at
-            // the card's luminance ink — same system as the dot ring above.
-            style={{ '--fd-text-muted': readableTextOn(card.color || SHELF_DEFAULT_COLOR) || '#333' } as React.CSSProperties}
-            onPointerDown={startResize}
-          />
-        )}
       </div>
     </div>
   );
@@ -209,66 +273,13 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
   // editor (asset autocomplete, media).
   if (children) return wrap(<>{head()}{children}</>);
 
-  if (card.type === 'comment') {
+  // v5.36: 'comment' AND legacy 'todo' both render the rich body — a todo
+  // that somehow escaped migration still shows (its items become content on
+  // the next load; NoteBody falls back to `text`, which mirrors them).
+  if (card.type === 'comment' || card.type === 'todo') {
     return wrap(<>
       {head()}
-      <textarea
-        ref={taRef}
-        className="swn-comment-input"
-        value={card.text || ''}
-        placeholder="Research links, themes to keep present, notes to self…"
-        onChange={(e) => onUpdate({ text: e.target.value })}
-      />
-    </>, true);
-  }
-
-  if (card.type === 'todo') {
-    const items = card.items || [];
-    return wrap(<>
-      {head((
-        <button
-          className="swn-x"
-          title="Clear completed"
-          onClick={() => onUpdate({ items: items.filter((i) => !i.done) })}
-        >⌫</button>
-      ))}
-      {items.map((it, i) => (
-        <label key={i} className="swn-todo-item">
-          <input
-            type="checkbox"
-            checked={it.done}
-            onChange={() =>
-              onUpdate({ items: items.map((x, j) => (j === i ? { ...x, done: !x.done } : x)) })}
-          />
-          <span style={{ textDecoration: it.done ? 'line-through' : 'none', color: it.done ? '#8a8a7a' : '#333' }}>
-            {it.text}
-          </span>
-        </label>
-      ))}
-      {/* v5.22, Derek: the add affordance IS a blank check row — no dashed
-          divider, no separate field. Type into it; Enter (or clicking away
-          with text) commits the item and the row blanks again. */}
-      <label className="swn-todo-item swn-todo-blank">
-        <input type="checkbox" checked={false} disabled aria-hidden="true" tabIndex={-1} />
-        <input
-          className="swn-todo-blank-input"
-          aria-label="New checklist item"
-          onKeyDown={(e) => {
-            const el = e.target as HTMLInputElement;
-            if (e.key === 'Enter' && el.value.trim()) {
-              onUpdate({ items: [...items, { text: el.value.trim(), done: false }] });
-              el.value = '';
-            }
-          }}
-          onBlur={(e) => {
-            const el = e.currentTarget;
-            if (el.value.trim()) {
-              onUpdate({ items: [...items, { text: el.value.trim(), done: false }] });
-              el.value = '';
-            }
-          }}
-        />
-      </label>
+      <NoteBody card={card} onUpdate={onUpdate} />
     </>);
   }
 

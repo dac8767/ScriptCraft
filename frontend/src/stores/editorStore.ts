@@ -670,9 +670,14 @@ export interface ShelfCard {
   title?: string;
   /** ISO timestamp; cards created before v0.3 have none and show no date */
   createdAt?: string;
-  /** comment + snippet body */
+  /** v5.36: a note's RICH body (TipTap JSON). `text` stays alongside as the
+   *  plain-text mirror — search reads it, snippets are it, and files saved
+   *  by older builds still show their words. shelfMigrate.ts turns legacy
+   *  text/items cards into this shape at load. */
+  content?: unknown;
+  /** plain text: a snippet's body, and a note's search/plain mirror */
   text?: string;
-  /** todo entries */
+  /** legacy checklist entries — migrated into `content` at load (v5.36) */
   items?: ShelfTodoItem[];
 }
 
@@ -1006,26 +1011,20 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    *  v4.33: filters removed — the windows hold only general items now (script
    *  notes/to-dos live in the Navigator), so there is nothing to filter and
    *  no script position to sort by. */
-  /** v5.21, Derek: the merged Sticky Notes window — header search + kind
-   *  tabs shared by both card kinds. v5.22: the kind is a header TAB (All /
-   *  Notes / Checklists), the tabs are user-reorderable (persisted), and
-   *  ONE sort covers the whole interleaved list — 'type' (notes first,
-   *  the default), 'manual' (the shelfCards array order, drag to arrange),
-   *  or 'created' (newest first across both kinds). */
+  /** v5.36, Derek's Notes v2: ONE kind of card (a rich-text note), so the
+   *  v5.22 kind tabs are gone. Sort is 'manual' (the shelfCards array
+   *  order, drag to arrange — the default) or 'created' (newest first). */
   stickySearch: string;
   setStickySearch: (v: string) => void;
-  stickyKindFilter: 'all' | 'note' | 'todo';
-  setStickyKindFilter: (v: 'all' | 'note' | 'todo') => void;
-  stickySort: 'type' | 'manual' | 'created';
-  setStickySort: (v: 'type' | 'manual' | 'created') => void;
-  /** v5.23, Derek: "Items per row:" for the popped-out / fullscreen shapes —
-   *  the Pages per-row model (the count IS the meaning, stepped). Docked
-   *  panels stay one column and don't show the stepper. Default 1 so nothing
-   *  moves until the knob does. */
+  stickySort: 'manual' | 'created';
+  setStickySort: (v: 'manual' | 'created') => void;
+  /** v5.23, Derek: a per-row stepper for the popped-out / fullscreen shapes
+   *  (the Pages model). v5.36: named "Notes per row" again, and the layout
+   *  is a row GRID whose rows equalize height (the v5.24 masonry is gone —
+   *  equal-height rows were the fix for its "odd gaps"). Docked panels stay
+   *  one column and don't show the stepper. */
   stickyPerRow: number;
   setStickyPerRow: (v: number) => void;
-  stickyTabOrder: ('all' | 'note' | 'todo')[];
-  setStickyTabOrder: (order: ('all' | 'note' | 'todo')[]) => void;
   /** v4.32: generic list-count publisher — the body publishes, the window
    *  title's count (TitleExtra) displays. Same no-drift rule as charListCount. */
   toolCounts: Record<string, number>;
@@ -1446,21 +1445,13 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   },
   stickySearch: '',
   setStickySearch: (v) => set({ stickySearch: v }),
-  // v5.22, Derek: "make it so the user can change the order of these tabs so
-  // their preference is first in line" — the FIRST tab of the persisted
-  // order is also which view the tool opens on.
-  stickyKindFilter: ((_vs.stickyTabOrder as ('all' | 'note' | 'todo')[] | undefined)?.[0]) ?? 'all',
-  setStickyKindFilter: (v) => set({ stickyKindFilter: v }),
-  stickySort: 'type',
+  // v5.36: Manual (the array order) is the default — with one card kind
+  // there is no Type sort to group by anymore.
+  stickySort: 'manual',
   setStickySort: (v) => set({ stickySort: v }),
   stickyPerRow: 1,
   // Clamped HERE, not at the buttons (the pagesPerRow rule).
   setStickyPerRow: (v) => set({ stickyPerRow: Math.min(8, Math.max(1, Math.round(v))) }),
-  stickyTabOrder: (_vs.stickyTabOrder as ('all' | 'note' | 'todo')[] | undefined) ?? ['all', 'note', 'todo'],
-  setStickyTabOrder: (order) => {
-    saveViewState({ stickyTabOrder: order });
-    set({ stickyTabOrder: order });
-  },
   toolCounts: {},
   setToolCount: (id, n) => set((st) => (st.toolCounts[id] === n ? st : { toolCounts: { ...st.toolCounts, [id]: n } })),
   beatBoardOpen: _vs.beatBoardOpen ?? false,
