@@ -9,6 +9,7 @@ import { createCharacterSlice, type CharacterSlice } from './slices/characterSli
 import { createTagSlice, type TagSlice } from './slices/tagSlice';
 import { createTypewriterSlice, type TypewriterSlice } from './slices/typewriterSlice';
 import { createNotesSlice, type NotesSlice } from './slices/notesSlice';
+import { createMarkupsSlice, DEFAULT_MARKUP_PRESETS, type MarkupsSlice } from './slices/markupsSlice';
 import { createSceneNavSlice, type SceneNavSlice } from './slices/sceneNavSlice';
 import { createWorkspacesSlice, type WorkspacesSlice } from './slices/workspacesSlice';
 import { createViewPrefsSlice, type ViewPrefsSlice } from './slices/viewPrefsSlice';
@@ -888,7 +889,11 @@ export interface BeatInfo {
 
 export type BeatArrangeMode = 'auto' | 'custom';
 
-export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, TypewriterSlice, NotesSlice, SceneNavSlice, WorkspacesSlice, ViewPrefsSlice, SpellGrammarSlice, BeatsOutlineSlice {
+export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, TypewriterSlice, NotesSlice, MarkupsSlice, SceneNavSlice, WorkspacesSlice, ViewPrefsSlice, SpellGrammarSlice, BeatsOutlineSlice {
+  /** v5.25: Customize ▸ Markups — the predefined icon+color combos the
+   *  markup popover offers. Persisted; defaults in markupsSlice. */
+  markupPresets: { icon: string; color: string }[];
+  setMarkupPresets: (p: { icon: string; color: string }[]) => void;
   /** Toolbar zones (v0.38). Tokens: g:<group> built-in section, t:<toolId>
    *  pinned tool, c:<commandId> pinned command, d:<n> divider line. The right
    *  zone renders after the flex spacer (far right). Empty arrays mean
@@ -1368,6 +1373,12 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   ...createTagSlice(set, get, api),
   ...createTypewriterSlice(set, get, api),
   ...createNotesSlice(set, get, api),
+  ...createMarkupsSlice(set, get, api),
+  markupPresets: (_vs.markupPresets as { icon: string; color: string }[] | undefined) ?? DEFAULT_MARKUP_PRESETS,
+  setMarkupPresets: (p) => {
+    saveViewState({ markupPresets: p });
+    set({ markupPresets: p });
+  },
   ...createSceneNavSlice(set, get, api),
   ...createWorkspacesSlice(set, get, api),
   ...createViewPrefsSlice(set, get, api),

@@ -53,6 +53,7 @@ export function composeSaveContent(doc: Record<string, unknown>): Record<string,
   return {
     ...doc,
     _notes: store.notes,
+    _markups: store.markups,
     _generalNotes: store.generalNotes,
     _shelf: store.shelfCards,
     _tags: store.tags,

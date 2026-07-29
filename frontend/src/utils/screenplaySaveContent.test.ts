@@ -57,7 +57,7 @@ describe('composeSaveContent', () => {
   it('carries the FULL extras list — every documented underscore key is present', () => {
     const out = composeSaveContent({ type: 'doc', content: [] });
     for (const key of [
-      '_notes', '_generalNotes', '_shelf', '_tags', '_tagCategories',
+      '_notes', '_markups', '_generalNotes', '_shelf', '_tags', '_tagCategories',
       '_characterProfiles', '_characterRelationships', '_characterCustomFields',
       '_referredTags', '_characterScan',
       '_beats', '_beatColumns', '_beatArrangeMode',

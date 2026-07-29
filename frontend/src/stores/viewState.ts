@@ -45,6 +45,10 @@ export interface ViewState {
    *  (src/design/designTokens.ts). Each maps to a --dz-* custom property on
    *  :root; absent keys fall back to the built-in CSS value. */
   designVars?: Record<string, number>;
+  /** v5.25: Customize ▸ Markups — the popover's predefined icon+color combos. */
+  markupPresets?: { icon: string; color: string }[];
+  /** v5.25: markup visibility on the script (margin icons + highlights). */
+  markupsVisible?: boolean;
   outlineBarRows?: OutlineBarRow[];
   outlineBarLabels?: boolean;
   beatColorAllTabs?: boolean;

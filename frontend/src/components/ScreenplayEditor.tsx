@@ -2976,6 +2976,8 @@ const ScreenplayEditor: React.FC = () => {
             const c = content as Record<string, unknown>;
             const notes = parseAttr(c._notes);
             if (notes.length > 0) store.setNotes(notes as import('../stores/editorStore').NoteInfo[]);
+            const markups = parseAttr(c._markups);
+            store.setMarkups(markups as import('../stores/slices/markupsSlice').ScriptMarkup[]);
             const gNotes = parseAttr(c._generalNotes);
             if (gNotes.length > 0) store.setGeneralNotes(gNotes as import('../stores/editorStore').GeneralNote[]);
             const shelfArr = parseAttr(c._shelf);
@@ -3404,6 +3406,8 @@ const ScreenplayEditor: React.FC = () => {
           const c = content as Record<string, unknown>;
           const notes2 = parseAttr2(c._notes);
           if (notes2.length > 0) store.setNotes(notes2 as import('../stores/editorStore').NoteInfo[]);
+          const markups2 = parseAttr2(c._markups);
+          store.setMarkups(markups2 as import('../stores/slices/markupsSlice').ScriptMarkup[]);
           const gNotes2 = parseAttr2(c._generalNotes);
           if (gNotes2.length > 0) store.setGeneralNotes(gNotes2 as import('../stores/editorStore').GeneralNote[]);
           const tags2 = parseAttr2(c._tags);

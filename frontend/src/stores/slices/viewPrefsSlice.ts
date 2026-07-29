@@ -30,6 +30,9 @@ export interface ViewPrefsSlice {
   /** v1.4: markers had no switch of their own — they were hidden with sections,
    *  which meant you couldn't keep your act breaks and drop the flags. */
   markersVisible: boolean;
+  /** v5.25: Markups on the script — margin icons + highlight tints. */
+  markupsVisible: boolean;
+  setMarkupsVisible: (v: boolean) => void;
   setMarkersVisible: (v: boolean) => void;
   sceneNumbersVisible: boolean;
   setSceneNumbersVisible: (v: boolean) => void;
@@ -66,6 +69,11 @@ export const createViewPrefsSlice: StateCreator<EditorState, [], [], ViewPrefsSl
     doubleSpaceHeaders: false, boldHeaders: true, underlineHeaders: false,
   },
   setPreviewOpt: (key, value) => set((s) => ({ previewOpts: { ...s.previewOpts, [key]: value } })),
+  markupsVisible: _vs.markupsVisible ?? true,
+  setMarkupsVisible: (v) => {
+    saveViewState({ markupsVisible: v });
+    set({ markupsVisible: v });
+  },
   markersVisible: _vs.markersVisible ?? true,
   setMarkersVisible: (v) => {
     saveViewState({ markersVisible: v });
