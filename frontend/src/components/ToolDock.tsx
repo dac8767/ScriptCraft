@@ -24,7 +24,7 @@ import {
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard,
   FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,
   FaKeyboard, FaRobot, FaBook, FaSlidersH, FaColumns,
-  FaCommentDots, FaChevronRight, FaChevronDown, FaRegFlag,
+  FaCommentDots, FaChevronRight, FaChevronDown, FaMarker,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, NO_FULLSCREEN_TOOLS, FULLSCREEN_ONLY_TOOLS, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
@@ -44,7 +44,7 @@ import { DesignPanelDocked } from './DesignPanel';
 import WorkspacesTool from './WorkspacesTool';
 import FeedbackTool, { FeedbackShotControls } from './FeedbackTool';
 import TagsPanel, { TagsTitleExtra, TagsWindowActions, useTagsTabs } from './TagsPanel';
-import MarkupsPanel, { MarkupsTitleExtra, MarkupsWindowActions, MarkupsControls } from './MarkupsPanel';
+import MarkupsPanel, { MarkupsTitleExtra, MarkupsControls } from './MarkupsPanel';
 import { ScenesTool } from './ScenesTool';
 import BeatBoard, { OutlineHeaderControls } from './BeatBoard';
 import TypewriterTool from './TypewriterTool';
@@ -92,7 +92,8 @@ export const ALL_TOOLS: ToolDef[] = [
   // script highlighting, markers, sections, script notes and script to-dos
   // once Derek signs off on the core). v5.26, Derek: renamed "Annotations"
   // (label only — the 'markups' id is persisted, the Focus/Scrapbook rule).
-  { id: 'markups', label: 'Annotations', icon: <FaRegFlag />, defaultSize: { w: 320, h: 420 }, group: 2 },
+  // v5.27, Derek: the tool wears a marker pen, not a flag.
+  { id: 'markups', label: 'Annotations', icon: <FaMarker />, defaultSize: { w: 320, h: 420 }, group: 2 },
   { id: 'fragments', label: 'Snippets', icon: <FaRegClipboard />, defaultSize: { w: 300, h: 312 }, group: 2 },
   { id: 'highlights', label: 'Highlights', icon: <FaHighlighter />, defaultSize: { w: 300, h: 312 }, group: 2 },
   { id: 'tags', label: 'Production Tags', icon: <FaTags />, defaultSize: { w: 340, h: 336 }, group: 2 },
@@ -346,9 +347,10 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   // v4.32 batch-v8 #12: Production Tags — count, eye toggle as the window
   // action, View/Manage tabs (Manage carries the pending-selection dot).
   tags: { TitleExtra: TagsTitleExtra, WindowActions: TagsWindowActions, useTabs: useTagsTabs },
-  // v5.25: Markups — count, the eye toggle (same state as ribbon/View menu),
-  // and the state/kind/icon Filter.
-  markups: { TitleExtra: MarkupsTitleExtra, WindowActions: MarkupsWindowActions, Controls: MarkupsControls },
+  // v5.25: Annotations — count + the Filter / Show in Script / Search
+  // cluster. (v5.27: the header eye is retired — View menu + ribbon toggle
+  // + the per-type "Show in Script" grid cover visibility.)
+  markups: { TitleExtra: MarkupsTitleExtra, Controls: MarkupsControls },
   goals: { Controls: GoalsHeaderExtra },
   notebook: { Controls: NotebookHeaderExtra },   // v2.05: declutter + create buttons
   beatboard: { Controls: OutlineHeaderControls }, // v2.41: count/Arrangement/help

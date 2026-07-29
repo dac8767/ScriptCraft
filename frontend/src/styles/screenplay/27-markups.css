@@ -12,21 +12,22 @@
 .markup-margin-icon {
   position: absolute;
   z-index: 40;                    /* above pages, below floating windows */
-  width: 22px;
-  height: 22px;
+  width: 22px;                    /* size + font-size + ring color come    */
+  height: 22px;                   /* inline from the layer (Design scale + */
+  font-size: 12px;                /* the annotation's own color, v5.27)    */
   display: flex;
   align-items: center;
   justify-content: center;
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.18);
+  border: 2px solid rgba(0, 0, 0, 0.18);
   border-radius: 50%;
   cursor: pointer;
   padding: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
 }
-.markup-margin-icon:hover { border-color: var(--fd-accent); }
-.markup-margin-icon .markup-glyph { display: flex; font-size: 12px; }
-.markup-margin-icon .markup-emoji { font-size: 12px; line-height: 1; }
+.markup-margin-icon:hover { filter: brightness(1.06); }
+.markup-margin-icon .markup-glyph { display: flex; font-size: inherit; }
+.markup-margin-icon .markup-emoji { font-size: inherit; line-height: 1; }
 .markup-margin-icon.done { opacity: 0.45; }
 .markup-margin-icon.done:hover { opacity: 0.9; }
 
@@ -187,9 +188,36 @@
   position: relative;
 }
 .markup-dots-item:hover { background: var(--fd-overlay-light); }
-.markup-dots-check { position: absolute; left: 6px; font-size: 10px; color: var(--fd-accent); }
 .markup-dots-sep { height: 1px; background: var(--fd-border); margin: 3px 4px; }
 .markup-dots-del:hover { color: #e05555; }
+.markup-dots-statusrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+}
+.markup-dots-statusrow .markup-dots-label { padding: 0; }
+
+/* v5.27: the joined toggle row (⋮ status, Filter states) */
+.markup-seg {
+  display: inline-flex;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.markup-seg button {
+  background: var(--fd-input-bg);
+  border: none;
+  border-right: 1px solid var(--fd-border);
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 10px;
+}
+.markup-seg button:last-child { border-right: none; }
+.markup-seg button:hover { color: var(--fd-text); background: var(--fd-overlay-light); }
+.markup-seg button.active { background: var(--fd-accent); color: #fff; }
+.markup-filter-seg { margin: 2px 4px 4px; align-self: flex-start; }
 
 /* the panel's Filter / Show in Script popovers */
 .markup-filter-pop {

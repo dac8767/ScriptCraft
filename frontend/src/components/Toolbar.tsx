@@ -21,7 +21,7 @@ import {
   FaHashtag,
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
   FaExchangeAlt, FaChevronDown,
-  FaRegFlag, FaRegEye, FaRegEyeSlash,
+  FaMarker, FaRegEye, FaRegEyeSlash,
 } from 'react-icons/fa';
 import { LuUndo2, LuSearch } from 'react-icons/lu';
 import { ALL_TOOLS } from './ToolDock';
@@ -976,7 +976,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           title="Add Annotation"
           onClick={() => { if (editor) createMarkupAtSelection(editor); }}
         >
-          <FaRegFlag />
+          <FaMarker />
         </button>
       );
       case 'toggleMarkups': return (

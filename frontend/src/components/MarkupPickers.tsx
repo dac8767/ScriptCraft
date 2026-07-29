@@ -12,7 +12,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
-import { FaEllipsisV, FaRegTrashAlt, FaCheck } from 'react-icons/fa';
+import { FaEllipsisV, FaRegTrashAlt } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import type { ScriptMarkup } from '../stores/slices/markupsSlice';
 import ColorPicker from './ColorPicker';
@@ -229,20 +229,21 @@ export function MarkupDotsMenu({ markup, editor, onDeleted }: {
       {open && createPortal(
         <div ref={boxRef} className="markup-subpop markup-dots-pop" style={pos ?? { top: -9999, left: -9999 }}
           onPointerDown={(e) => e.stopPropagation()}>
-          <div className="markup-dots-label">Status</div>
-          <button className={`markup-dots-item${markup.done ? '' : ' active'}`} onClick={() => setDone(false)}>
-            {!markup.done && <FaCheck className="markup-dots-check" />}Open
-          </button>
-          <button className={`markup-dots-item${markup.done ? ' active' : ''}`} onClick={() => setDone(true)}>
-            {markup.done && <FaCheck className="markup-dots-check" />}Complete
-          </button>
+          {/* v5.27, Derek: Open/Complete side by side as ONE toggle row */}
+          <div className="markup-dots-statusrow">
+            <span className="markup-dots-label">Status</span>
+            <span className="markup-seg">
+              <button className={markup.done ? '' : 'active'} onClick={() => setDone(false)}>Open</button>
+              <button className={markup.done ? 'active' : ''} onClick={() => setDone(true)}>Complete</button>
+            </span>
+          </div>
           <div className="markup-dots-sep" />
           <button className="markup-dots-item" onClick={toggleTypeHidden}>
             {typeHidden ? `Show “${iconLabel(markup.icon)}” in script` : `Hide “${iconLabel(markup.icon)}” in script`}
           </button>
           <div className="markup-dots-sep" />
           <button className="markup-dots-item markup-dots-del" onClick={del}>
-            <FaRegTrashAlt /> Delete
+            <FaRegTrashAlt /> Delete Annotation
           </button>
         </div>,
         document.body,

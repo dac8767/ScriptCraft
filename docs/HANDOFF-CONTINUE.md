@@ -202,7 +202,39 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.26 — ANNOTATIONS: rename + the 14-item polish batch (HEAD)
+### v5.27 — solid icons, colored rings, segmented toggles (HEAD)
+
+- Derek's polish batch + two mid-turn refinements: MARKUP_ICONS flipped to
+  SOLID Fa glyphs (colored fills, not outlines); the on-script chip's ring
+  is 2px in the ANNOTATION'S color (inline from the layer; base rule keeps
+  the neutral fallback); chip size is a Design knob — markupIconScalePct in
+  viewPrefs (persisted), store-bound token 'markupIconScale' in a NEW
+  Design ▸ Annotations group (the layer needs the NUMBER for centering, so
+  a CSS var can't drive it). Glyph font-size inherits from the button.
+- Tool icon: FaRegFlag → FaMarker in ALL FIVE identity spots (ALL_TOOLS,
+  TOOLBAR_ICONS.markupScript, Toolbar case, View-menu row, Settings'
+  CUSTOMIZE_TABS).
+- ⋮ menu: Status is a same-row Open|Complete toggle (`.markup-seg`, the
+  joined-buttons row); "Delete" → "Delete Annotation". Card checkbox
+  REMOVED (status lives in ⋮; the panel test pins the absence). Header eye
+  REMOVED (MarkupsWindowActions deleted; View menu + ribbon toggle + Show
+  cover it).
+- "Show in Script" → "Show": no icon, LEFT-seated via .tool-ctl-lead
+  (margin-right:auto pushes the rest right), and it gained its OWN
+  Open/Complete/All row — viewPrefs.markupScriptDone (persisted, default
+  'all') filters the SCRIPT by status: the icon layer skips filtered
+  annotations, the span-neutralize sync covers them (scriptFiltered =
+  hidden-type OR status mismatch), and the highlight click-guard ignores
+  them. Helper texts: Filter grid = "Toggle visibility in tool window",
+  Show grid = "Toggle visibility in script", both state rows = "Select
+  one" (TypeGridPop takes gridHelp; both popovers now always show state).
+- check-v527.mjs: 18 checks green (ring width/color computed, 150% → 33px
+  chip, same-row toggles by rect tops, helper-text strings, left seating).
+- ColorPicker.test updated to the v5.26 source-arg contract (Apply →
+  ('#hex','wheel'), preset → (color,'preset')) — the pinned exact-args
+  assertions were the only callers that noticed.
+
+### v5.26 — ANNOTATIONS: rename + the 14-item polish batch
 
 - Derek's batch on v5.25's tool: RENAMED "Annotations" (labels only — tool id
   'markups', builtin keys, context-menu id, `_markups`, all persisted names
@@ -356,47 +388,12 @@ Durable bits kept live here:
   [b,a,c] + Sort snaps Manual, masonry columnCount, tab wash, four token
   spot-checks driving computed styles.
 
-### v5.23 — compact buttons, the anchored-resize truth, per-row right
-
-- Derek's batch: smaller add buttons; Manual LAST in Sort; the bottom-left
-  resize corner moved the wrong edge; "Items per row:" for popped/fullscreen
-  Sticky Notes; ALL per-row steppers right-aligned with former right
-  occupants swapping left (Pages Go-to, Scenes Reorder).
-- THE RESIZE BUG (root cause, ToolDock startResize): the grip and the width
-  math follow the tool's HOME side, but the ANCHOR follows position — a
-  right-docked window is right-anchored only until startDrag writes `left`
-  + `right:'auto'` (its comment even said "until dragged"; resize never
-  learned). Fix: `leftGrip = side==='right'`, `anchoredRight` read off the
-  inline styles at grab time; a left grip on a LEFT-anchored box hands the
-  width change to the left edge (el.style.left = startLeft + (startW − w)),
-  applied AFTER the v0.85 slack shrink so the edge tracks the final width.
-  Driver-proven with real mouse drags: left edge −80px, right edge ±1.
-- Sticky "Items per row:" — stickyPerRow (ephemeral, clamp 1–8, DEFAULT 1
-  so nothing moves until touched). Gate: popped = fullscreenTool==='sticky'
-  || tempTool==='sticky' || toolMode.sticky==='floating'; docked renders
-  plain (no stepper, forced 1 col). Grid via `.swn-scroll.swn-grid` +
-  inline --sticky-per-row (class only when >1 → the 1-col rendering is
-  byte-identical to before); hint + drop zones span `grid-column: 1 / -1`.
-- Add buttons: `.sticky-add-btn { height: 26px; padding: 0 12px; font-size:
-  12px }` — dialog-primary COLORS kept, box compacted (wins the tie with
-  .dialog-btn on source order). check-sticky-v522's probe check now
-  compares colors/radius only, height is deliberately different.
-- KNOWN-BY-DESIGN rediscovered while driving: clicking into the script
-  MINIMIZES the open tool window (v1.77, keepOpenOnEditorClick exempts
-  Typewriter) — drivers must not "click empty space" in the editor to
-  dismiss menus; press document.body instead. Also ControlDropdown closes
-  on outside PRESS, not Escape (only the filter popover listens for
-  Escape).
-- check-v523.mjs (9 checks): 26px buttons, sort order, right-aligned
-  stepper + 2-across grid in the floating shape, the two resize-edge
-  checks, docked has no stepper, Pages swap geometry. check-scenes-v520
-  updated to the swapped row (Reorder left ≤14px, stepper right ≤12px).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.23** — compact buttons, the anchored-resize truth, per-row right
 - **v5.22** — Sticky Notes: one interleaved list, reorderable tabs, blank check row
 - **v5.21** — the seven-pack: Sticky Notes merge, fullscreen Title Page, one window, and the zombie Window menu
 - **v5.20** — the Scenes four-pack: contained popover, Cards per row, one menu, lighter cards

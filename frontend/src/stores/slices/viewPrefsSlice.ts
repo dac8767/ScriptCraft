@@ -37,6 +37,14 @@ export interface ViewPrefsSlice {
    *  "Show in Script" grid and each ⋮ menu's hide toggle, one list. */
   markupHiddenIcons: string[];
   setMarkupHiddenIcons: (list: string[]) => void;
+  /** v5.27: scale (%) of the annotation icons in the page margin — a
+   *  store-bound Design token (the layer needs the number for centering). */
+  markupIconScalePct: number;
+  setMarkupIconScalePct: (v: number) => void;
+  /** v5.27: the Show popover's status toggle — which annotations render in
+   *  the SCRIPT by state ('all' default; the panel Filter defaults 'open'). */
+  markupScriptDone: 'open' | 'done' | 'all';
+  setMarkupScriptDone: (v: 'open' | 'done' | 'all') => void;
   /** v5.26: recently APPLIED wheel colors / picked grid icons in the
    *  annotation pickers (presets don't record — Derek's rule). Newest first. */
   markupRecentColors: string[];
@@ -88,6 +96,16 @@ export const createViewPrefsSlice: StateCreator<EditorState, [], [], ViewPrefsSl
   setMarkupHiddenIcons: (list) => {
     saveViewState({ markupHiddenIcons: list });
     set({ markupHiddenIcons: list });
+  },
+  markupIconScalePct: (_vs.markupIconScalePct as number | undefined) ?? 100,
+  setMarkupIconScalePct: (v) => {
+    saveViewState({ markupIconScalePct: v });
+    set({ markupIconScalePct: v });
+  },
+  markupScriptDone: (_vs.markupScriptDone as 'open' | 'done' | 'all' | undefined) ?? 'all',
+  setMarkupScriptDone: (v) => {
+    saveViewState({ markupScriptDone: v });
+    set({ markupScriptDone: v });
   },
   markupRecentColors: (_vs.markupRecentColors as string[] | undefined) ?? [],
   addMarkupRecentColor: (c) => set((s) => {

@@ -3972,9 +3972,11 @@ const ScreenplayEditor: React.FC = () => {
       if (!id) return;
       const m = store.markups.find((x) => x.id === id);
       if (!m) return;
-      // v5.26: a type hidden via "Show in Script" is invisible — its span
-      // must not swallow ordinary editing clicks.
+      // v5.26/v5.27: an annotation filtered out of the script — by type
+      // ("Show" grid) or status (its Open/Complete/All row) — is invisible;
+      // its span must not swallow ordinary editing clicks.
       if (store.markupHiddenIcons.includes(m.icon)) return;
+      if (store.markupScriptDone !== 'all' && (store.markupScriptDone === 'done') !== m.done) return;
       store.setMarkupEditorId(id);
     };
     const editorEl = editor.view.dom;

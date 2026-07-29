@@ -48,6 +48,8 @@ export interface ViewState {
   /** v5.25: Customize ▸ Markups — the popover's predefined icon+color combos. */
   markupPresets?: { icon: string; color: string }[];
   markupHiddenIcons?: string[];
+  markupIconScalePct?: number;
+  markupScriptDone?: 'open' | 'done' | 'all';
   markupRecentColors?: string[];
   markupRecentIcons?: string[];
   /** v5.25: markup visibility on the script (margin icons + highlights). */

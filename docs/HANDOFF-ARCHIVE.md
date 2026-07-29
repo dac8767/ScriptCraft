@@ -151,9 +151,46 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.22 and older (newest first)
+## Version history — v5.23 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.23 — compact buttons, the anchored-resize truth, per-row right
+
+- Derek's batch: smaller add buttons; Manual LAST in Sort; the bottom-left
+  resize corner moved the wrong edge; "Items per row:" for popped/fullscreen
+  Sticky Notes; ALL per-row steppers right-aligned with former right
+  occupants swapping left (Pages Go-to, Scenes Reorder).
+- THE RESIZE BUG (root cause, ToolDock startResize): the grip and the width
+  math follow the tool's HOME side, but the ANCHOR follows position — a
+  right-docked window is right-anchored only until startDrag writes `left`
+  + `right:'auto'` (its comment even said "until dragged"; resize never
+  learned). Fix: `leftGrip = side==='right'`, `anchoredRight` read off the
+  inline styles at grab time; a left grip on a LEFT-anchored box hands the
+  width change to the left edge (el.style.left = startLeft + (startW − w)),
+  applied AFTER the v0.85 slack shrink so the edge tracks the final width.
+  Driver-proven with real mouse drags: left edge −80px, right edge ±1.
+- Sticky "Items per row:" — stickyPerRow (ephemeral, clamp 1–8, DEFAULT 1
+  so nothing moves until touched). Gate: popped = fullscreenTool==='sticky'
+  || tempTool==='sticky' || toolMode.sticky==='floating'; docked renders
+  plain (no stepper, forced 1 col). Grid via `.swn-scroll.swn-grid` +
+  inline --sticky-per-row (class only when >1 → the 1-col rendering is
+  byte-identical to before); hint + drop zones span `grid-column: 1 / -1`.
+- Add buttons: `.sticky-add-btn { height: 26px; padding: 0 12px; font-size:
+  12px }` — dialog-primary COLORS kept, box compacted (wins the tie with
+  .dialog-btn on source order). check-sticky-v522's probe check now
+  compares colors/radius only, height is deliberately different.
+- KNOWN-BY-DESIGN rediscovered while driving: clicking into the script
+  MINIMIZES the open tool window (v1.77, keepOpenOnEditorClick exempts
+  Typewriter) — drivers must not "click empty space" in the editor to
+  dismiss menus; press document.body instead. Also ControlDropdown closes
+  on outside PRESS, not Escape (only the filter popover listens for
+  Escape).
+- check-v523.mjs (9 checks): 26px buttons, sort order, right-aligned
+  stepper + 2-across grid in the floating shape, the two resize-edge
+  checks, docked has no stepper, Pages swap geometry. check-scenes-v520
+  updated to the swapped row (Reorder left ≤14px, stepper right ≤12px).
+
 
 ### v5.22 — Sticky Notes: one interleaved list, reorderable tabs, blank check row
 

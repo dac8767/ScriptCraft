@@ -8,42 +8,43 @@
  */
 import React from 'react';
 import {
-  FaRegFlag, FaRegStar, FaHashtag, FaCircle, FaCheck, FaExclamation,
-  FaRegBookmark, FaRegHeart, FaRegQuestionCircle, FaRegLightbulb, FaRegBell,
-  FaRegEye, FaBolt, FaFire, FaRegClock, FaRegComment, FaArrowUp, FaArrowDown,
-  FaAsterisk, FaRegGem, FaKey, FaSearch, FaTimes, FaPlus, FaLink, FaRegImage,
+  FaFlag, FaStar, FaHashtag, FaCircle, FaCheck, FaExclamation,
+  FaBookmark, FaHeart, FaQuestionCircle, FaLightbulb, FaBell,
+  FaEye, FaBolt, FaFire, FaClock, FaComment, FaArrowUp, FaArrowDown,
+  FaAsterisk, FaGem, FaKey, FaSearch, FaTimes, FaPlus, FaLink, FaImage,
 } from 'react-icons/fa';
 
-/** The full monotone icon list (id → glyph). The first six are the shipped
- *  preset defaults, in Derek's order. */
+/** The full icon list (id → glyph). v5.27, Derek: SOLID glyphs — the icon
+ *  is a filled shape in the annotation's chosen color, not an outline.
+ *  The first six are the shipped preset defaults, in Derek's order. */
 export const MARKUP_ICONS: Record<string, React.ReactNode> = {
-  flag: <FaRegFlag />,
-  star: <FaRegStar />,
+  flag: <FaFlag />,
+  star: <FaStar />,
   hashtag: <FaHashtag />,
   dot: <FaCircle />,
   check: <FaCheck />,
   exclaim: <FaExclamation />,
-  bookmark: <FaRegBookmark />,
-  heart: <FaRegHeart />,
-  question: <FaRegQuestionCircle />,
-  idea: <FaRegLightbulb />,
-  bell: <FaRegBell />,
-  eye: <FaRegEye />,
+  bookmark: <FaBookmark />,
+  heart: <FaHeart />,
+  question: <FaQuestionCircle />,
+  idea: <FaLightbulb />,
+  bell: <FaBell />,
+  eye: <FaEye />,
   bolt: <FaBolt />,
   fire: <FaFire />,
-  clock: <FaRegClock />,
-  comment: <FaRegComment />,
+  clock: <FaClock />,
+  comment: <FaComment />,
   up: <FaArrowUp />,
   down: <FaArrowDown />,
   asterisk: <FaAsterisk />,
-  gem: <FaRegGem />,
+  gem: <FaGem />,
   key: <FaKey />,
   search: <FaSearch />,
   x: <FaTimes />,
   plus: <FaPlus />,
   // v5.26: auto-icon targets for link/image content (also pickable).
   link: <FaLink />,
-  image: <FaRegImage />,
+  image: <FaImage />,
 };
 
 /** v5.26, Derek's auto-icon table: the FIRST content kind in the annotation

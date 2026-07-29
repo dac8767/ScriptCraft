@@ -1,5 +1,18 @@
 [
   {
+    "version": "5.27",
+    "date": "2026-07-29",
+    "changes": [
+      "Annotation icons are SOLID now — filled shapes in the annotation's chosen color; the circle on the script wears a thicker ring in that same color",
+      "Design ▸ Annotations: a size knob for the on-script icons (50–200%)",
+      "The Annotations tool wears a marker pen icon instead of a flag",
+      "The ⋮ menu's status is a one-row Open / Complete toggle, and the delete item reads \"Delete Annotation\"",
+      "Side-panel cards slimmed: the complete checkbox is gone (status lives in the ⋮ menu), and the header eye is retired (View menu, the ribbon toggle and Show cover visibility)",
+      "\"Show in Script\" is now \"Show\" — no icon, seated at the LEFT of the header — and gains its own Open / Complete / All row, so the script can show only open annotations; helper text reads \"Toggle visibility in script\"",
+      "Filter: Open / Complete / All are a one-row toggle under \"Select one\", and the type grid's helper reads \"Toggle visibility in tool window\""
+    ]
+  },
+  {
     "version": "5.26",
     "date": "2026-07-29",
     "changes": [

@@ -349,6 +349,18 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     ],
   },
   {
+    // v5.27, Derek: the on-script annotation icons get a size knob. Store-
+    // bound — the icon layer needs the NUMBER for its centering math, so a
+    // CSS var alone couldn't drive it.
+    id: 'annotations',
+    label: 'Annotations',
+    tokens: [
+      { id: 'markupIconScale', label: 'Script icon size (%)', unit: '', min: 50, max: 200, step: 5, def: 100,
+        hint: 'Scale of the annotation icons in the page margin.',
+        store: { get: (s) => s.markupIconScalePct, set: (v) => useEditorStore.getState().setMarkupIconScalePct(v) } },
+    ],
+  },
+  {
     id: 'behavior',
     label: 'Behavior',
     tokens: [

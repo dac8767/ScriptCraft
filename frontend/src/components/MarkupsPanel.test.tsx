@@ -82,12 +82,14 @@ describe('MarkupsPanel', () => {
     expect(container.querySelector('.markup-card-meta')?.textContent).toBe('location removed from script');
   });
 
-  it('the checkbox completes a markup (and the open-only view drops it)', () => {
+  /** v5.27, Derek: the card checkbox is GONE — status lives in the ⋮ menu.
+   *  Completing (via the store the menu drives) still drops the card from
+   *  the default open-only view. */
+  it('no card checkbox; completing via status drops it from the open view', () => {
     useEditorStore.setState({ markups: [mk('a')] });
     renderPanel();
-    const check = container.querySelector('.markup-card-check') as HTMLInputElement;
-    act(() => { check.click(); });
-    expect(useEditorStore.getState().markups[0].done).toBe(true);
+    expect(container.querySelector('.markup-card-check')).toBeNull();
+    act(() => { useEditorStore.getState().updateMarkup('a', { done: true }); });
     expect(cardTexts()).toEqual([]);
   });
 
