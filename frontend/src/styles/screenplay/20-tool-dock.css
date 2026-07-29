@@ -766,27 +766,29 @@ body.fs-tool-dragging { cursor: grabbing; }
   overflow: hidden;
   padding-top: var(--dz-toolwin-body-gap, 0px);   /* v4.45: Design knob */
 }
-/* v2.74, Derek: ONE corner-resize indicator everywhere. This selector list
-   is the single source of the pattern — every bottom-right grip in the app
-   (tool windows, Scrapbook boxes, beat cards) paints these same diagonal
-   stripes. Add new grips HERE, don't invent another triangle. */
-.tool-window-resize,
+/* v2.74, Derek: ONE corner-resize indicator. v5.46: WINDOWS lost their
+   corner grips — any edge resizes now (.fs-edge-* below) — so the stripe
+   pattern remains only on in-canvas boxes (Scrapbook boxes, beat cards). */
 .fs-nb-box-grip,
 .beat-card-resize-handle::after {
   background:
     linear-gradient(135deg, transparent 50%, var(--fd-text-muted) 50%, var(--fd-text-muted) 55%,
       transparent 55%, transparent 70%, var(--fd-text-muted) 70%, var(--fd-text-muted) 75%, transparent 75%);
 }
-.tool-window-resize {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 16px;
-  height: 16px;
-  cursor: nwse-resize;
-  opacity: 0.6;
-}
-.tool-window-resize:hover { opacity: 1; }
+
+/* v5.46, Derek: every window resizes from ANY side or corner — eight
+   invisible zones (EdgeResizeZones) shared by the tool windows, the Design
+   window and the annotation window. Edges stay INSIDE the frame (5px) so
+   they never bleed onto neighbors; corners get a bigger 12px square. */
+.fs-edge { position: absolute; z-index: 40; }
+.fs-edge-n { top: 0; left: 12px; right: 12px; height: 5px; cursor: ns-resize; }
+.fs-edge-s { bottom: 0; left: 12px; right: 12px; height: 5px; cursor: ns-resize; }
+.fs-edge-e { right: 0; top: 12px; bottom: 12px; width: 5px; cursor: ew-resize; }
+.fs-edge-w { left: 0; top: 12px; bottom: 12px; width: 5px; cursor: ew-resize; }
+.fs-edge-ne { top: 0; right: 0; width: 12px; height: 12px; cursor: nesw-resize; }
+.fs-edge-nw { top: 0; left: 0; width: 12px; height: 12px; cursor: nwse-resize; }
+.fs-edge-se { bottom: 0; right: 0; width: 12px; height: 12px; cursor: nwse-resize; }
+.fs-edge-sw { bottom: 0; left: 0; width: 12px; height: 12px; cursor: nesw-resize; }
 
 /* v4.35 batch-v9 #4: the ONE fullscreen takeover every side-panel window
    shares — fills the editor area only (toolbar + status bar stay, "Return to

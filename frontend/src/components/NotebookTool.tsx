@@ -33,40 +33,10 @@ import {
 import { useSettingsStore } from '../stores/settingsStore';
 import { showToast } from './Toast';
 import { confirmDialog } from './ConfirmDialog';
+/* image helpers: shared with the annotation window (v5.46) */
+import { fileToDataUrl, compressImage } from '../utils/imageIntake';
 
 const IMAGE_BUDGET = 300_000;   // dataURL chars — localStorage is the store
-
-/* ── image helpers (his, typed) ── */
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(String(r.result));
-    r.onerror = rej;
-    r.readAsDataURL(file);
-  });
-}
-function compressImage(dataUrl: string, maxDim: number, quality: number): Promise<{ src: string; w: number; h: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-      const w = Math.max(1, Math.round(img.width * scale));
-      const h = Math.max(1, Math.round(img.height * scale));
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) { reject(new Error('no canvas')); return; }
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, w, h);
-      ctx.drawImage(img, 0, 0, w, h);
-      try { resolve({ src: canvas.toDataURL('image/jpeg', quality), w, h }); }
-      catch (e) { reject(e); }
-    };
-    img.onerror = reject;
-    img.src = dataUrl;
-  });
-}
 
 /* ── structured table (his EditableTable, typed) ── */
 function Cell({ value, onCommit, onCellFocus, align }: {

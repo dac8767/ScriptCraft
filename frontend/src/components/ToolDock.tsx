@@ -30,6 +30,7 @@ import { useEditorStore, toolConfigFor, NO_FULLSCREEN_TOOLS, FULLSCREEN_ONLY_TOO
 import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { FullscreenIcon, CloseIcon, RestoreIcon } from './uiIcons';
+import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
 import { showToast } from './Toast';
 import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, PagesControls, LocationsTitleExtra, LocationsControls, StructureTitleExtra, type NavTab } from './SceneNavigator';
@@ -551,73 +552,50 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
   // compact panel would reject the window as too wide and it would keep floating.
   const popInW = side ? dockWidthFor(side, panelSizeMode[side], chromeCustomPx[side === 'left' ? 'panelLeft' : 'panelRight']) : DOCK_W;
 
-  const startResize = (e: React.PointerEvent) => {
-    if (!windowRef.current) return;
-    e.preventDefault();
+  // v5.46, Derek: ANY edge or corner resizes (the bottom-corner hash grip is
+  // gone). On start the frame converts to an explicit left/top anchor — the
+  // same conversion the header drag does — so west/north drags can move
+  // those edges while the shared math pins the opposite ones.
+  const beginEdgeResize = (zone: EdgeZone, e: React.PointerEvent) => {
     const el = windowRef.current;
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startW = el.offsetWidth;
-    const startH = el.offsetHeight;
-    // v5.23, Derek: "when I grab the window adjustment corner (bottom left),
-    // the right side of the window moves instead of the left." The grip
-    // follows the tool's HOME side, but the anchor follows POSITION: a
-    // right-docked window is right-anchored only until the header drag
-    // writes `left` + `right: auto` (startDrag). From then on width changes
-    // alone grow the RIGHT edge — so a left grip on a left-anchored box must
-    // move the left edge itself.
-    const leftGrip = side === 'right';
-    const anchoredRight = leftGrip && el.style.left === 'auto' && el.style.right !== 'auto';
-    const startLeft = el.offsetLeft;
-    let w = startW;
-    let h = startH;
-    const onMove = (ev: PointerEvent) => {
-      // The left grip widens when dragged LEFT; the right grip when dragged
-      // right. Which EDGE moves is the anchor's business, settled below.
-      const dx = ev.clientX - startX;
-      w = Math.max(MIN_W, startW + (leftGrip ? -dx : dx));
-      h = Math.max(MIN_H, startH + (ev.clientY - startY));
-      el.style.width = `${w}px`;
-      el.style.height = `${h}px`;
-
-      // v0.85: stop growing once the content no longer fills the window.
-      // Rather than hardcode a max size per tool, measure it: the gap between
-      // the body's clientHeight (space given) and scrollHeight (space the
-      // content actually wants) IS the dead space. Give that slack back.
-      //
-      // This self-selects correctly. A panel whose content stretches (Scenes,
-      // Notes…) always has scrollHeight === clientHeight, so slack is 0 and it
-      // resizes freely. A fixed-layout window like Title Page has a box of a
-      // set size, so past that point slack appears and the window stops — no
-      // more dragging out a window that's mostly empty grey.
-      const body = el.querySelector('.tool-window-body') as HTMLElement | null;
-      if (body) {
-        const slackH = body.clientHeight - body.scrollHeight;
-        const slackW = body.clientWidth - body.scrollWidth;
-        if (slackH > 1) {
-          h = Math.max(MIN_H, h - slackH);
-          el.style.height = `${h}px`;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const parent = el.offsetParent?.getBoundingClientRect() ?? ({ left: 0, top: 0 } as DOMRect);
+    const baseLeft = rect.left - parent.left;
+    const baseTop = rect.top - parent.top;
+    el.style.left = `${baseLeft}px`;
+    el.style.right = 'auto';
+    el.style.top = `${baseTop}px`;
+    let w = el.offsetWidth;
+    let h = el.offsetHeight;
+    startEdgeResize(e, zone, {
+      rect: () => ({ left: baseLeft, top: baseTop, w: el.offsetWidth, h: el.offsetHeight }),
+      min: { w: MIN_W, h: MIN_H },
+      apply: (g) => {
+        w = g.w;
+        h = g.h;
+        el.style.width = `${w}px`;
+        el.style.height = `${h}px`;
+        // v0.85: stop growing once the content no longer fills the window.
+        // The gap between the body's clientHeight (space given) and
+        // scrollHeight (space wanted) IS the dead space — give it back. A
+        // stretching panel (Scenes, Notes…) has slack 0 and resizes freely;
+        // a fixed-layout window (Title Page) stops at its content.
+        const body = el.querySelector('.tool-window-body') as HTMLElement | null;
+        if (body) {
+          const slackH = body.clientHeight - body.scrollHeight;
+          const slackW = body.clientWidth - body.scrollWidth;
+          if (slackH > 1) { h = Math.max(MIN_H, h - slackH); el.style.height = `${h}px`; }
+          if (slackW > 1) { w = Math.max(MIN_W, w - slackW); el.style.width = `${w}px`; }
         }
-        if (slackW > 1) {
-          w = Math.max(MIN_W, w - slackW);
-          el.style.width = `${w}px`;
-        }
-      }
-      // A left grip on a LEFT-anchored window: hand the width change to the
-      // left edge (right edge pinned). Runs AFTER the slack shrink so the
-      // edge tracks the final width.
-      if (leftGrip && !anchoredRight) {
-        el.style.left = `${startLeft + (startW - w)}px`;
-      }
-    };
-    const onUp = () => {
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onUp);
+        // The dragged west/north edge tracks the FINAL size (post-slack);
+        // east/south drags leave left/top at the anchor.
+        el.style.left = `${zone.includes('w') ? g.left + (g.w - w) : g.left}px`;
+        el.style.top = `${zone.includes('n') ? g.top + (g.h - h) : g.top}px`;
+      },
       // the resized size becomes this tool's default from now on
-      setToolSize(tool.id, w, h);
-    };
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onUp);
+      commit: () => setToolSize(tool.id, w, h),
+    });
   };
 
   /** v4.39: drop the floating window on a side panel and it docks there —
@@ -737,13 +715,8 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
         );
       })()}
       <div className={`tool-window-body${side === 'right' ? ' tool-window-body-right' : ''}`}>{children}</div>
-      {!tool.fixedSize && (
-        <div
-          className={`tool-window-resize${side === 'right' ? ' tool-window-resize-left' : ''}`}
-          onPointerDown={startResize}
-          title="Drag to resize — the new size becomes this tool's default"
-        />
-      )}
+      {/* v5.46: any edge/corner resizes — the hash grip is gone */}
+      {!tool.fixedSize && <EdgeResizeZones onStart={beginEdgeResize} />}
     </div>
   );
 }
@@ -851,6 +824,10 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
        re-entered the fullscreen it was already in. The row looked live and did
        nothing. isToolOpen/closeTool are the store's one answer; ask them. */
     if (isToolOpen(t.id)) { closeTool(t.id); return; }
+    // v5.46, Derek: Design opens its INDEPENDENT window (designPanelOpen) —
+    // never the panel slot, so this click disturbs no other window. The
+    // store's openTool is the one door; it routes design there.
+    if (t.id === 'design') { useEditorStore.getState().openTool('design'); return; }
     const mode = toolMode[t.id] ?? (t.noPanelFit ? 'floating' : 'docked');
     if (mode === 'fullscreen' && !NO_FULLSCREEN.includes(t.id)) {
       useEditorStore.getState().enterToolFullscreen(t.id);
@@ -1125,6 +1102,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
             <div
               role="button"
               tabIndex={0}
+              data-tool-row={t.id}
               className={'tool-dock-item' + (isToolOpen(t.id) ? ' active' : '') + (isOpenInline ? ' tool-dock-item-header' : '')}
               onClick={(e) => {
                 // Header controls (dropdowns, chrome buttons) act, they don't toggle.

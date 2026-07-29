@@ -1,5 +1,17 @@
 [
   {
+    "version": "5.46",
+    "date": "2026-07-29",
+    "changes": [
+      "Navigator: the Filter menu now IS the annotation filter — titled \"Filter Annotations\", holding the Status toggle and the type grid (the old kind toggles and the body's separate Annotations button are gone); the body button reads \"Scene #\"",
+      "Opening the Design tool never closes anything anymore — it lives in its own independent window (no panel slot to steal), so Design + any other window can be on screen together; pressing into it no longer save-closes the annotation window either",
+      "Every window resizes from ANY side or corner — tool windows, the Design window and the annotation window; the bottom-corner hash grip is gone everywhere",
+      "Asset Manager and Script History moved from the Project menu to the File menu",
+      "Checking a checklist box in the annotation window shows in the Navigator IMMEDIATELY — content mirrors live while you edit (the × still discards back to how it was), and checklist rows render real checkboxes at the same size as the other Navigator icons",
+      "The annotation window's Insert Link and Insert Image actually work now (they relied on a browser prompt the desktop app silently ignores) — Insert Link is an in-window field, and Insert Image offers From local device / From Asset Manager / From URL"
+    ]
+  },
+  {
     "version": "5.45",
     "date": "2026-07-29",
     "changes": [

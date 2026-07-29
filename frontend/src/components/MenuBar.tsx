@@ -18,14 +18,13 @@ import { ALL_TOOLS } from './ToolDock';
 const PROJECT_MENU_GROUPS: string[][] = [
   ['navigator', 'pages', 'scenes'],
   ['locations', 'characters'],
-  // v0.62: Asset Manager is a Project window again (rolled back from File);
+  // v5.46, Derek: 'assets' moved to the FILE menu (with Script History).
   // 'projects' stays out — the Project Manager lives under File.
   // v1.63: 'spelling' is NOT a plain item here anymore — Spelling & Grammar
   // is the extensive submenu appended to the Project menu below (one version,
   // one home; the docked panel now carries the full feature set).
   // v3.24: 'titlepage' is out of the windows groups — the merged-in
   // Production block heads with Title Page (one home, per v1.64's rule).
-  ['assets'],
 ];
 /** Tools menu: story planning / writing aids / production & analysis. */
 const TOOL_MENU_GROUPS: string[][] = [
@@ -1344,6 +1343,30 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           ],
         },
         { icon: <FaPrint />, label: 'Print…', shortcut: sc('print'), action: () => setTimeout(() => window.print(), 60) },
+        // v5.46, Derek: Asset Manager and Script History moved here from the
+        // Project menu — they manage the FILE's belongings and its history.
+        { separator: true, label: '' },
+        ...(() => {
+          const t = ALL_TOOLS.find((x) => x.id === 'assets');
+          return t ? [{ icon: t.icon, label: t.label, action: () => useEditorStore.getState().openTool('assets') }] : [];
+        })(),
+        {
+          icon: <FaCodeBranch />, label: 'Script History',
+          disabled: isCollabGuest,
+          children: [
+            { icon: <FaUpload />, label: 'Take Auto Save…', action: handleCheckinOpen, disabled: isCollabGuest },
+            { icon: <FaHistory />, label: 'Auto Saves', action: () => setVersionHistoryOpen(true), disabled: isCollabGuest },
+            { separator: true, label: '' },
+            {
+              icon: <FaExchangeAlt />,
+              label: trackChangesEnabled
+                ? '✓ Track Changes'
+                : 'Track Changes Since Last Auto Save',
+              action: handleTrackChangesToggle,
+            },
+            { icon: <FaFileSignature />, label: 'Compare with Auto Save…', action: () => setCompareVersionOpen(true) },
+          ],
+        },
         // v1.34: Collaboration is UNRELEASED — hidden unless the Developer
         // toggle (Help > Developer > Show Unreleased Tools) is on.
         ...(showUnreleasedTools ? [
@@ -1737,26 +1760,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
                Settings dialog (it's configuration, not workflow). */
           ],
         },
-        // v1.66: Script History moved here from Tools — it's project/script
-        // management, and its dockable window was already a Project Window.
-        { separator: true, label: '' },
-        {
-          icon: <FaCodeBranch />, label: 'Script History',
-          disabled: isCollabGuest,
-          children: [
-            { icon: <FaUpload />, label: 'Take Auto Save…', action: handleCheckinOpen, disabled: isCollabGuest },
-            { icon: <FaHistory />, label: 'Auto Saves', action: () => setVersionHistoryOpen(true), disabled: isCollabGuest },
-            { separator: true, label: '' },
-            {
-              icon: <FaExchangeAlt />,
-              label: trackChangesEnabled
-                ? '\u2713 Track Changes'
-                : 'Track Changes Since Last Auto Save',
-              action: handleTrackChangesToggle,
-            },
-            { icon: <FaFileSignature />, label: 'Compare with Auto Save\u2026', action: () => setCompareVersionOpen(true) },
-          ],
-        },
+        /* v5.46, Derek: Script History (and Asset Manager) moved to the
+           FILE menu — file management sits with the file. */
         /* v3.24, Derek's menu reorg #1: the Production menu merged in —
            everything below was that menu. Title Page heads the block
            (v0.91's rule) and appears ONLY here (v1.64's one-home rule).

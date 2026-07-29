@@ -290,13 +290,56 @@ export function markupIsList(content: ScriptMarkup['content']): boolean {
   return kind === 'bullets' || kind === 'numbers' || kind === 'checklist';
 }
 
+/** v5.46, Derek: a Navigator line with its marker SPLIT OUT — checklist
+ *  rows render a real icon-sized checkbox (checked state included), not a
+ *  text glyph. marker null = a plain paragraph line. */
+export interface MarkupNavLine {
+  text: string;
+  marker: 'bullet' | 'number' | 'check' | 'uncheck' | null;
+  /** 1-based number for 'number' markers */
+  n?: number;
+}
+
 /** v5.33: the EXACT lines a Navigator row renders — capped at 6 lines of 60
  *  chars. Shared by the Navigator and the edit window's "In Navigator:"
  *  preview so the preview can never drift from the real row. */
-export function markupNavLines(content: ScriptMarkup['content']): string[] {
-  return markupContentLines({ content } as ScriptMarkup)
+export function markupNavLines(content: ScriptMarkup['content']): MarkupNavLine[] {
+  const doc = content as { content?: unknown[] } | null;
+  if (!doc?.content) return [];
+  const textOf = (n: unknown): string => {
+    const parts: string[] = [];
+    const walk = (x: unknown) => {
+      if (!x || typeof x !== 'object') return;
+      const node = x as { type?: string; text?: string; content?: unknown[] };
+      if (node.type === 'text' && node.text) parts.push(node.text);
+      node.content?.forEach(walk);
+    };
+    walk(n);
+    return parts.join(' ').trim();
+  };
+  const lines: MarkupNavLine[] = [];
+  for (const raw of doc.content) {
+    const node = raw as { type?: string; content?: unknown[] };
+    if (node.type === 'paragraph') {
+      const t = textOf(node);
+      if (t) lines.push({ text: t, marker: null });
+    } else if (node.type === 'bulletList' || node.type === 'orderedList' || node.type === 'taskList') {
+      (node.content ?? []).forEach((item, i) => {
+        const it = item as { attrs?: { checked?: boolean } };
+        const t = textOf(item);
+        if (!t) return;
+        lines.push({
+          text: t,
+          marker: node.type === 'orderedList' ? 'number'
+            : node.type === 'taskList' ? (it.attrs?.checked ? 'check' : 'uncheck') : 'bullet',
+          ...(node.type === 'orderedList' ? { n: i + 1 } : {}),
+        });
+      });
+    }
+  }
+  return lines
     .slice(0, 6)
-    .map((l) => (l.length > 60 ? `${l.slice(0, 60)}…` : l));
+    .map((l) => (l.text.length > 60 ? { ...l, text: `${l.text.slice(0, 60)}…` } : l));
 }
 
 /** Plain-text preview of a markup's content (cards + navigator rows). */

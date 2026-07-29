@@ -55,14 +55,34 @@ describe('markupPreviewText', () => {
 /** v5.33: ONE capper feeds the Navigator rows AND the edit window's
  *  "Displays as:" preview — a list stacks as lines, long lines ellipsize. */
 describe('markupNavLines', () => {
-  it('a 3-item checklist is 3 marker-prefixed lines', () => {
+  it('a 3-item checklist is 3 lines carrying LIVE checked state (v5.46)', () => {
     const item = (t: string, checked: boolean) =>
       ({ type: 'taskItem', attrs: { checked }, content: [p(t)] });
     const lines = markupNavLines({
       type: 'doc',
       content: [{ type: 'taskList', content: [item('one', false), item('two', false), item('three', true)] }],
     });
-    expect(lines).toEqual(['☐ one', '☐ two', '☑ three']);
+    expect(lines).toEqual([
+      { text: 'one', marker: 'uncheck' },
+      { text: 'two', marker: 'uncheck' },
+      { text: 'three', marker: 'check' },
+    ]);
+  });
+
+  it('numbered lists carry their 1-based number; bullets a bullet marker', () => {
+    const li = (t: string) => ({ type: 'listItem', content: [p(t)] });
+    const lines = markupNavLines({
+      type: 'doc',
+      content: [
+        { type: 'orderedList', content: [li('a'), li('b')] },
+        { type: 'bulletList', content: [li('c')] },
+      ],
+    });
+    expect(lines).toEqual([
+      { text: 'a', marker: 'number', n: 1 },
+      { text: 'b', marker: 'number', n: 2 },
+      { text: 'c', marker: 'bullet' },
+    ]);
   });
 
   it('caps at 6 lines and 60 chars per line', () => {
@@ -70,8 +90,9 @@ describe('markupNavLines', () => {
     const lines = markupNavLines({ type: 'doc', content: many });
     expect(lines).toHaveLength(6);
     for (const l of lines) {
-      expect(l.length).toBe(61);          // 60 kept + the ellipsis
-      expect(l.endsWith('…')).toBe(true);
+      expect(l.text.length).toBe(61);          // 60 kept + the ellipsis
+      expect(l.text.endsWith('…')).toBe(true);
+      expect(l.marker).toBeNull();
     }
   });
 

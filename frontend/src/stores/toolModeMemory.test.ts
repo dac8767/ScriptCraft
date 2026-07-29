@@ -243,14 +243,22 @@ describe('v5.37: fullscreen joins the one-window rule', () => {
   });
 
   it('Design neither lowers the takeover nor is closed by it', () => {
+    // v5.46: Design opens its OWN independent window (designPanelOpen) —
+    // never a panel/temp slot — so nothing can steal its seat and it
+    // disturbs nothing on its way in.
     st().enterToolFullscreen('scenes');
-    st().setToolMode('design', 'floating');
-    st().openTool('design');                    // design opens beside it…
-    expect(st().fullscreenTool).toBe('scenes'); // …takeover survives
-    const designSlot = () => (st().activeTool === 'design' || st().activeToolRight === 'design' || st().tempTool === 'design');
-    expect(designSlot()).toBe(true);
+    st().openTool('design');
+    expect(st().fullscreenTool).toBe('scenes'); // takeover survives
+    expect(st().designPanelOpen).toBe(true);    // design is up…
+    expect(st().activeTool).not.toBe('design'); // …and holds NO slot
+    expect(st().activeToolRight).not.toBe('design');
+    expect(st().tempTool).not.toBe('design');
     st().setFullscreenTool(null);
     st().enterToolFullscreen('scenes');         // re-entering fullscreen…
-    expect(designSlot()).toBe(true);            // …keeps the Design float
+    expect(st().designPanelOpen).toBe(true);    // …keeps the Design window
+    // the row/menu toggle contract rides isToolOpen/closeTool:
+    expect(st().isToolOpen('design')).toBe(true);
+    st().closeTool('design');
+    expect(st().designPanelOpen).toBe(false);
   });
 });

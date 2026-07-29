@@ -15,6 +15,7 @@ import { LuRotateCcw, LuSearch } from 'react-icons/lu';
 import { FaCopy, FaCheck, FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { DESIGN_GROUPS, buildOverrideCss, type DesignToken } from '../design/designTokens';
+import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
 
 // Round to the token's step so the number input doesn't show float noise.
 function snap(val: number, step: number): number {
@@ -223,7 +224,6 @@ export default function DesignPanel() {
   const [pos, setPos] = useState<{ x: number; y: number }>({ x: -1, y: 64 });
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 340, h: 560 });
   const drag = useRef<{ dx: number; dy: number } | null>(null);
-  const resize = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
 
   // First open: anchor to the top-right so the editor stays visible on the left.
   useEffect(() => {
@@ -239,14 +239,9 @@ export default function DesignPanel() {
           x: Math.min(window.innerWidth - 80, Math.max(0, e.clientX - drag.current.dx)),
           y: Math.min(window.innerHeight - 40, Math.max(0, e.clientY - drag.current.dy)),
         });
-      } else if (resize.current) {
-        setSize({
-          w: Math.max(280, resize.current.w + (e.clientX - resize.current.x)),
-          h: Math.max(240, resize.current.h + (e.clientY - resize.current.y)),
-        });
       }
     };
-    const up = () => { drag.current = null; resize.current = null; };
+    const up = () => { drag.current = null; };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
     return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
@@ -258,10 +253,12 @@ export default function DesignPanel() {
     if ((e.target as HTMLElement).closest('button, input')) return;
     drag.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y };
   };
-  const startResize = (e: React.PointerEvent) => {
-    e.preventDefault();
-    resize.current = { x: e.clientX, y: e.clientY, w: size.w, h: size.h };
-  };
+  // v5.46: any edge/corner resizes (the corner grip is gone).
+  const beginEdge = (zone: EdgeZone, e: React.PointerEvent) => startEdgeResize(e, zone, {
+    rect: () => ({ left: pos.x, top: pos.y, w: size.w, h: size.h }),
+    min: { w: 280, h: 240 },
+    apply: (g) => { setPos({ x: g.left, y: g.top }); setSize({ w: g.w, h: g.h }); },
+  });
 
   const overrideCount = Object.keys(designVars).filter((k) => designVars[k] !== undefined).length;
 
@@ -275,7 +272,8 @@ export default function DesignPanel() {
 
       <DesignPanelBody />
 
-      <div className="dz-resize" onPointerDown={startResize} title="Resize" />
+      {/* v5.46: any edge/corner resizes — the corner grip is gone */}
+      <EdgeResizeZones onStart={beginEdge} />
     </div>,
     document.body,
   );

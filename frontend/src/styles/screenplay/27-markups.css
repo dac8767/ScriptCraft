@@ -71,9 +71,20 @@
   min-width: 300px;
   min-height: 220px;
   max-height: min(84vh, 720px);
-  overflow: auto;
-  resize: both;              /* v5.33, Derek: the edit window is resizable */
+  /* v5.46: the FRAME never scrolls (the edge-resize zones anchor to it) —
+     .markup-pop-scroll inside carries the overflow. Native resize:both
+     (bottom-right only, WebKit's corner hash) is replaced by the zones. */
+  overflow: hidden;
 }
+.markup-pop-scroll {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+}
+.markup-pop-scroll > *:not(.markup-mini-editor) { flex-shrink: 0; }
 /* maximize must beat a user-resized inline width/height */
 .fs-markup-popover.maximized {
   max-height: none;
@@ -262,6 +273,14 @@
 .markup-swatch-color { border-width: 2px; border-color: rgba(255, 255, 255, 0.25); }
 
 .markup-subpop { position: fixed; z-index: 3300; }
+/* v5.46, Derek: the Navigator's Filter menu holds the annotation grid
+   under this title. */
+.fs-nav-filter-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fd-text);
+  padding: 2px 2px 8px;
+}
 .markup-color-pop .color-picker-popup { position: static; }
 .markup-icon-pop {
   background: var(--fd-dropdown-bg);
@@ -702,6 +721,18 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
 .fs-nav-markup-icon { display: inline-flex; margin-right: 4px; font-size: 11px; }
 .fs-nav-markup-icon .markup-glyph { display: inline-flex; }
 .fs-nav-markup-icon .markup-emoji { font-size: 11px; }
+/* v5.46, Derek: checklist lines carry a REAL checkbox (live checked state)
+   at the same 11px the other navigator icons use; bullet/number markers
+   stay text. Shared by the Navigator row and the "In Navigator:" preview
+   (MarkupNavLineSpans — one renderer). */
+.fs-nav-line-check { display: inline-flex; vertical-align: -1px; margin-right: 5px; font-size: 11px; }
+.fs-nav-line-marker { margin-right: 5px; }
+
+/* v5.46: the annotation window's in-window Insert Link / Insert Image
+   flows (window.prompt is a silent no-op under Tauri WebKit). */
+.markup-insert-row { display: flex; align-items: center; gap: 6px; }
+.markup-insert-url { flex: 1; min-width: 0; }
+.markup-img-menu { display: flex; flex-direction: column; }
 
 /* v5.32, Derek: the Navigator body's first row — blue action buttons
    (Annotations opens the shared filter; Scene Numbers is a toggle whose

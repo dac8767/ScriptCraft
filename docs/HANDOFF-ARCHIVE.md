@@ -151,9 +151,38 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.40 and older (newest first)
+## Version history — v5.41 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.41 — previews, used order, compact draggable picker, ribbon fmt, move toast
+
+- Derek's 7 (one turn): (1) "Displays as:" split into "In Navigator:"
+  (nav-row classes, live) + "In Script:" (`.markup-margin-preview` — the
+  round margin chip inline, border in the annotation's color). (2)
+  MarkupUsedRow: CURRENT combo leads (always ringed), then the `+`, then
+  "Used:" (`.markup-used-label`) + the other combos (cap 7, current
+  excluded). (3+4) MarkupComboPicker: DRAGGABLE by `.markup-icon-pop-drag`
+  (dragPos overrides the seat; reset when it closes) and COMPACT —
+  `.markup-icon-pop-cols` puts icons LEFT / embedded ColorPicker RIGHT
+  (520px wide, ~447px tall vs the old 560-capped ~700 stack; the color
+  column is the height floor). (5) RIBBON FORMATTING drives the mini:
+  markupsSlice.markupMiniEditor (unknown-typed, never persisted) is set
+  while the window is open; Toolbar's isActive + B/I/U/S route to it
+  (no locks/overrides — plain toggles) and the mini gained Underline.
+  CRITICAL COMPANION FIX the driver caught: the outside-press saver now
+  ignores `.toolbar-btn` presses — clicking ribbon Bold used to SAVE-CLOSE
+  the window. (6) LIST annotations (markupIsList in markupActions —
+  firstContentKind ∈ bullets/numbers/checklist) show NO icon in the
+  Navigator or the nav preview; the script margin chip keeps it. (7)
+  SHAPE_NOTES no longer renders at the panel foot (.tool-shape-note CSS
+  gone) — the dock-row drag-out for a noted tool (markups/navigator/
+  notebook) TOASTS the message at the drop and stays put (having a note
+  IS the disallowed-move flag; setToolMode coercion remains the backstop).
+- check-v541: 17 green (order probe of the head row, both previews, live
+  icon-drop on checklist, ribbon bold hits mini not script + hand-back on
+  close, side-by-side geometry + drag Δ, nav rows with/without icon,
+  toast + mode still docked).
 
 ### v5.40 — CUSTOM PAGES (Derek's queue item 5; ruling: not numbered)
 

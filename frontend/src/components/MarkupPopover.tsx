@@ -29,10 +29,19 @@ import { useNotebookStore } from '../stores/notebookStore';
 import { AUTO_ICON, MarkupIcon } from './markupIcons';
 import { DEFAULT_MARKUP_HIGHLIGHT } from '../stores/slices/markupsSlice';
 import { confirmDialog } from './ConfirmDialog';
+import { showToast } from './Toast';
 import { FullscreenIcon } from './uiIcons';
+import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
 import { convertMarkupToPoint, convertMarkupToRange } from '../utils/markupActions';
 import { MarkupColorSwatch, MarkupUsedRow, MarkupDotsMenu } from './MarkupPickers';
-import { findMarkupPos, setMarkupHighlight, firstContentKind, markupNavLines, markupIsList } from '../utils/markupActions';
+import {
+  findMarkupPos, setMarkupHighlight, firstContentKind, markupNavLines, markupIsList,
+  type MarkupNavLine,
+} from '../utils/markupActions';
+import { MarkupNavLineSpans } from './MarkupNavLines';
+import { fileToDataUrl, compressImage } from '../utils/imageIntake';
+import { api } from '../services/api';
+import { useProjectStore } from '../stores/projectStore';
 import Underline from '@tiptap/extension-underline';
 
 const POP_W = 380;
@@ -49,6 +58,17 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   const nbOpen = useNotebookStore((s) => s.notebookOpen);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const [scrapPicker, setScrapPicker] = useState(false);
+  // v5.46, Derek: Insert Link / Insert Image used window.prompt — a SILENT
+  // NO-OP under Tauri's WebKit (prompt is disabled there; fine in a browser,
+  // dead in the app). Both are in-window flows now, and Insert Image is a
+  // three-source menu: local device / Asset Manager / URL.
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [imgMenu, setImgMenu] = useState<null | 'menu' | 'url' | 'assets'>(null);
+  const [imgUrl, setImgUrl] = useState('');
+  const [assetList, setAssetList] = useState<{ id: string; filename: string }[] | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const currentProject = useProjectStore((s) => s.currentProject);
   // v5.30 window chrome: drag override + fullscreen; a ref mirrors them so
   // the scroll/resize re-seat handler can stand down once the user takes over.
   const [dragPos, setDragPos] = useState<{ top: number; left: number } | null>(null);
@@ -61,13 +81,15 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   const overrideRef = useRef(false);
   overrideRef.current = dragPos !== null || maximized;
   // what the annotation looked like when this window opened — the X button's
-  // discard restores it ("close without saving")
-  const snapRef = useRef<{ json: string; icon: string; color: string; highlight: string | null; done: boolean } | null>(null);
+  // discard restores it ("close without saving"). v5.46: `content` is the
+  // STORE value at open — the live mirror below writes content while the
+  // window is up, so discard must put the original back.
+  const snapRef = useRef<{ json: string; content: unknown; icon: string; color: string; highlight: string | null; done: boolean } | null>(null);
   const popRef = useRef<HTMLDivElement>(null);
   const nbPages = useNotebookStore((s) => s.pages);
   // v5.33, Derek: the Navigator row, previewed LIVE (v5.41: "In Navigator:",
   // plus whether it's a LIST — lists show no icon there).
-  const [navPreview, setNavPreview] = useState<{ lines: string[]; isList: boolean }>({ lines: [], isList: false });
+  const [navPreview, setNavPreview] = useState<{ lines: MarkupNavLine[]; isList: boolean }>({ lines: [], isList: false });
   // the seat function, reachable from the ResizeObserver effect below
   const reseatRef = useRef<(() => void) | null>(null);
 
@@ -94,6 +116,7 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     mini.commands.setContent((markup.content as never) ?? '');
     snapRef.current = {
       json: JSON.stringify(mini.getJSON()),
+      content: markup.content,
       icon: markup.icon,
       color: markup.color,
       highlight: markup.highlight,
@@ -103,6 +126,11 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     setDragPos(null);
     setMaximized(false);
     setPickingRange(false);
+    setLinkOpen(false);
+    setLinkUrl('');
+    setImgMenu(null);
+    setImgUrl('');
+    setAssetList(null);
   }, [mini, id]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   // v5.31: while picking, the next real selection in the SCRIPT converts
@@ -157,6 +185,27 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     if (!mini || !id) return;
     useEditorStore.getState().setMarkupMiniEditor(mini);
     return () => { useEditorStore.getState().setMarkupMiniEditor(null); };
+  }, [mini, id]);
+
+  // v5.46, Derek: "if a checklist annotation is checked in the annotation
+  // window, show a checkmark in the navigator as well" — the mini's content
+  // mirrors into the STORE live (debounced a beat), so the real Navigator
+  // row, the panel card and this window always agree while you edit. The ×
+  // discard restores the snapshot's content (closeWithoutSaving), so "close
+  // without saving" still means it.
+  useEffect(() => {
+    if (!mini || !id) return;
+    let t = 0;
+    const liveSync = () => {
+      window.clearTimeout(t);
+      t = window.setTimeout(() => {
+        const json = mini.getJSON();
+        const empty = !mini.getText().trim() && !JSON.stringify(json).includes('"image"');
+        useEditorStore.getState().updateMarkup(id, { content: empty ? null : json });
+      }, 250);
+    };
+    mini.on('update', liveSync);
+    return () => { window.clearTimeout(t); mini.off('update', liveSync); };
   }, [mini, id]);
 
   // Seat UNDER the annotation's on-script margin icon (v5.33, Derek), with
@@ -233,6 +282,11 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
       // v5.41, Derek: ribbon buttons operate ON this window (formatting
       // drives the mini editor) — a ribbon press is not an outside press.
       if (t.closest?.('.toolbar-btn')) return;
+      // v5.46, Derek: the Design window is the tweak-ALONGSIDE tool — its
+      // window and its dock row must not save-close this one; seeing both
+      // at the same time is the point.
+      if (t.closest?.('.dz-panel')) return;
+      if (t.closest?.('[data-tool-row="design"]')) return;
       // v5.30: the ×'s are-you-sure dialog is outside this window — its
       // buttons must not double as an outside-press save.
       if (t.closest?.('.fs-confirm-overlay')) return;
@@ -279,13 +333,53 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     if (editor) setMarkupHighlight(editor, id, hl);
   };
 
-  const promptLink = () => {
-    const url = window.prompt('Link URL:');
-    if (url) mini?.chain().focus().setLink({ href: url }).run();
+  const insertLink = () => {
+    const url = linkUrl.trim();
+    if (!url || !mini) return;
+    if (mini.state.selection.empty) {
+      // nothing selected — insert the URL itself as the linked text
+      mini.chain().focus().insertContent([
+        { type: 'text', text: url, marks: [{ type: 'link', attrs: { href: url } }] },
+        { type: 'text', text: ' ' },
+      ]).run();
+    } else {
+      mini.chain().focus().setLink({ href: url }).run();
+    }
+    setLinkOpen(false);
+    setLinkUrl('');
   };
-  const promptImage = () => {
-    const url = window.prompt('Image URL:');
-    if (url) mini?.chain().focus().setImage({ src: url }).run();
+  const insertImageUrl = () => {
+    const u = imgUrl.trim();
+    if (u) mini?.chain().focus().setImage({ src: u }).run();
+    setImgMenu(null);
+    setImgUrl('');
+  };
+  const onPickLocalImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f || !mini) return;
+    try {
+      // the Scrapbook's intake discipline: compress until the data URL is
+      // storage-sized (annotations persist like its pages do)
+      const raw = await fileToDataUrl(f);
+      let out = await compressImage(raw, 1200, 0.85);
+      if (out.src.length > 300_000) out = await compressImage(raw, 800, 0.8);
+      if (out.src.length > 300_000) out = await compressImage(raw, 520, 0.72);
+      mini.chain().focus().setImage({ src: out.src }).run();
+    } catch {
+      showToast('Could not read that image', 'error');
+    }
+    setImgMenu(null);
+  };
+  const openAssetPick = async () => {
+    setImgMenu('assets');
+    if (!currentProject) { setAssetList([]); return; }
+    try {
+      const list = await api.listAssets(currentProject.id) as { id: string; filename: string; mime_type?: string }[];
+      setAssetList(list.filter((a) => (a.mime_type ?? '').startsWith('image/')));
+    } catch {
+      setAssetList([]);
+    }
   };
   const linkScrapPage = (pageId: string, title: string) => {
     // v5.33: a REAL link mark, not an HTML string — the Link extension's
@@ -339,7 +433,11 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     if (isDirty() && snap) {
       const sure = await confirmDialog('Are you sure you want to close this annotation without saving?');
       if (!sure) return;
-      updateMarkup(id, { icon: snap.icon, color: snap.color, highlight: snap.highlight, done: snap.done });
+      // v5.46: content too — the live mirror wrote edits into the store
+      updateMarkup(id, {
+        content: snap.content as never,
+        icon: snap.icon, color: snap.color, highlight: snap.highlight, done: snap.done,
+      });
       if (editor) setMarkupHighlight(editor, id, snap.highlight);
     }
     setMarkupEditorId(null);
@@ -362,6 +460,26 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     e.preventDefault();
   };
 
+  // v5.46, Derek: any edge/corner resizes (native resize:both — bottom-right
+  // only, with WebKit's hash corner — is gone). Writing dragPos hands the
+  // geometry to the user, so the auto-seat and its right-edge re-pin stand
+  // down for the rest of this window's life (same as a title-bar drag).
+  const beginEdge = (zone: EdgeZone, e: React.PointerEvent) => {
+    if (maximized) return;
+    const el = popRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    startEdgeResize(e, zone, {
+      rect: () => ({ left: r.left, top: r.top, w: r.width, h: r.height }),
+      min: { w: 300, h: 220 },
+      apply: (g) => {
+        el.style.width = `${g.w}px`;
+        el.style.height = `${g.h}px`;
+        setDragPos({ top: g.top, left: g.left });
+      },
+    });
+  };
+
   // width lives in CSS (v5.33: the window is user-resizable — the browser's
   // resize handle writes inline width/height that React must not clobber)
   const winStyle = maximized
@@ -371,6 +489,8 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   return createPortal(
     <div ref={popRef} className={`fs-markup-popover${maximized ? ' maximized' : ''}`} style={winStyle}
       onPointerDown={(e) => e.stopPropagation()}>
+      {/* v5.46: any edge/corner resizes — the native corner grip is gone */}
+      {!maximized && <EdgeResizeZones onStart={beginEdge} />}
       {/* the draggable title bar — fullscreen and × like every window */}
       <div className="markup-pop-titlebar" onPointerDown={startDrag}>
         <span className="markup-pop-title">Annotation</span>
@@ -383,6 +503,10 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
           ×
         </button>
       </div>
+      {/* v5.46: the window frame no longer scrolls — this inner box does.
+          The edge zones anchor to the frame, so they stay put however far
+          the content scrolls. */}
+      <div className="markup-pop-scroll">
       {/* ONE head row (v5.29, Derek): "Icon:" swatches · "Highlight:"
           swatch (range annotations only) · ⋮ pinned at the right edge.
           v5.42, Derek: the wrapping lives in an INNER box (head-main) with
@@ -440,10 +564,62 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
         {miniBtn(!!mini?.isActive('bulletList'), 'Bullet list', () => mini?.chain().focus().toggleBulletList().run(), <FaListUl />)}
         {miniBtn(!!mini?.isActive('orderedList'), 'Numbered list', () => mini?.chain().focus().toggleOrderedList().run(), <FaListOl />)}
         {miniBtn(!!mini?.isActive('taskList'), 'Checklist', () => mini?.chain().focus().toggleTaskList().run(), <FaCheckSquare />)}
-        {miniBtn(!!mini?.isActive('link'), 'Insert link', promptLink, <FaLink />)}
-        {miniBtn(false, 'Insert image by URL', promptImage, <FaRegImage />)}
+        {miniBtn(linkOpen || !!mini?.isActive('link'), 'Insert link', () => { setImgMenu(null); setLinkOpen((v) => !v); }, <FaLink />)}
+        {miniBtn(imgMenu !== null, 'Insert image', () => { setLinkOpen(false); setImgMenu((v) => (v ? null : 'menu')); }, <FaRegImage />)}
         {miniBtn(scrapPicker, 'Link a Scrapbook page', () => setScrapPicker((v) => !v), <FaBook />)}
       </div>
+      {linkOpen && (
+        <form className="markup-insert-row" onSubmit={(e) => { e.preventDefault(); insertLink(); }}>
+          <input
+            className="tool-action-field markup-insert-url"
+            autoFocus
+            placeholder="https://…"
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+          />
+          <button type="submit" className="dialog-btn dialog-btn-primary">Insert Link</button>
+        </form>
+      )}
+      {imgMenu === 'menu' && (
+        <div className="markup-scrap-list markup-img-menu">
+          <button className="markup-scrap-item" onClick={() => fileInputRef.current?.click()}>From local device…</button>
+          <button className="markup-scrap-item" onClick={openAssetPick}>From Asset Manager…</button>
+          <button className="markup-scrap-item" onClick={() => setImgMenu('url')}>From URL…</button>
+        </div>
+      )}
+      {imgMenu === 'url' && (
+        <form className="markup-insert-row" onSubmit={(e) => { e.preventDefault(); insertImageUrl(); }}>
+          <input
+            className="tool-action-field markup-insert-url"
+            autoFocus
+            placeholder="https://…/image.png"
+            value={imgUrl}
+            onChange={(e) => setImgUrl(e.target.value)}
+          />
+          <button type="submit" className="dialog-btn dialog-btn-primary">Insert Image</button>
+        </form>
+      )}
+      {imgMenu === 'assets' && (
+        <div className="markup-scrap-list">
+          {assetList === null && <div className="markup-scrap-empty">Loading assets…</div>}
+          {assetList?.length === 0 && (
+            <div className="markup-scrap-empty">
+              {currentProject ? 'No image assets in the Asset Manager yet.' : 'No project open — no assets available.'}
+            </div>
+          )}
+          {(assetList ?? []).map((a) => (
+            <button
+              key={a.id}
+              className="markup-scrap-item"
+              onClick={() => {
+                if (currentProject) mini?.chain().focus().setImage({ src: api.getAssetUrl(currentProject.id, a.id) }).run();
+                setImgMenu(null);
+              }}
+            >{a.filename}</button>
+          ))}
+        </div>
+      )}
+      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onPickLocalImage} />
       {scrapPicker && (
         <div className="markup-scrap-list">
           {Object.values(nbPages).length === 0 && <div className="markup-scrap-empty">No Scrapbook pages yet.</div>}
@@ -464,13 +640,7 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
               <MarkupIcon icon={markup.icon} color={markup.color} />
             </span>
           )}
-          {navPreview.lines.length > 0 && (
-            <span className="fs-nav-anno-lines">
-              {navPreview.lines.map((l, i) => (
-                <span key={i} className="fs-nav-anno-line">{l}</span>
-              ))}
-            </span>
-          )}
+          <MarkupNavLineSpans lines={navPreview.lines} />
         </span>
         <span className="markup-pop-grouplabel markup-pop-preview-script-label">In Script:</span>
         <span className="markup-margin-preview" style={{ borderColor: markup.color }}>
@@ -480,6 +650,7 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
       <div className="markup-pop-row markup-pop-foot">
         <span className="markup-pop-spacer" />
         <button className="dialog-btn dialog-btn-primary markup-save" onClick={save}>Save</button>
+      </div>
       </div>
     </div>,
     document.body,

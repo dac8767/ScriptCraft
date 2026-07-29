@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.45 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.46 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,81 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.45 — AI Writer panel-only remove button + out of Tools menu; Pages right pair (HEAD)
+### v5.46 — nav Filter=annotations, Design independent window, edge resize everywhere, live checklist, working inserts (HEAD)
+
+- Derek's 9 (six mid-turn messages, one batch):
+  (1) NAVIGATOR FILTER: NavigatorControls' kind-toggle ControlDropdown is
+  GONE — the header Filter button now opens `.markup-filter-pop` with a
+  `.fs-nav-filter-title` ("Filter Annotations") + the shared
+  TypeGridSection driving markupFilters. The body's Annotations button
+  died with it (content moved up); NavActionRow is just the scene-number
+  toggle, relabeled "Scene #". The body list STOPPED consulting
+  navShowKinds (no door left — a stale persisted hide would be an
+  invisible trap); the store field remains, unread.
+  (2) DESIGN INDEPENDENT: openTool('design') now returns
+  `{designPanelOpen: true}` — the pre-existing INDEPENDENT window
+  (DesignPanel, portalled, own pos/size) is Design's ONE shape from every
+  door (openFromRow routes there too; isToolOpen/closeTool know the
+  flag). The probe that drove it: Design docked STOLE the panel slot
+  (collapsing the neighbor) and a slot-float Design DIED to slot
+  reassignment — closeOtherFloats' v5.32 exemption never covered slots.
+  The old keep-the-temp special case in openTool's slot branch is dead
+  code, removed (TS2367 flagged it). MarkupPopover's outside-press saver
+  ignores `.dz-panel` + `[data-tool-row="design"]` (rows carry
+  data-tool-row now) — tweaking Design with the annotation window open
+  is the point. toolModeMemory.test updated to the new contract.
+  (3) EDGE RESIZE: components/EdgeResize.tsx — ONE primitive
+  (startEdgeResize: 8 zones n/s/e/w/ne/nw/se/sw, west/north drags move
+  that edge and pin the opposite) + EdgeResizeZones renderer +
+  `.fs-edge-*` CSS (5px edges inset 12, 12px corners, z 40). Wired into:
+  the floating tool frame (anchor converted to explicit left/top at
+  start — the header-drag conversion; v0.85 slack-shrink kept, edge
+  recomputed POST-slack; commits via setToolSize), DesignPanel
+  (pos/size state), MarkupPopover (writes el width/height + setDragPos →
+  the seat's override engages, so the v5.33 right-edge re-pin stands
+  down once you resize). The hash grips are GONE (.tool-window-resize
+  element+CSS, .dz-resize, and the popover's native `resize: both` — its
+  WebKit corner was the same hash; `.markup-icon-pop` keeps native
+  resize for now). CRITICAL RESTRUCTURE for the popover: the frame is
+  `overflow: hidden` and a new `.markup-pop-scroll` inside carries the
+  scrolling (flex:1, the v5.42 flex-chain selectors moved onto it) —
+  abs-positioned zones inside a scrolling box would have scrolled away
+  with the content.
+  (4) FILE MENU: Asset Manager (label/icon from ALL_TOOLS — single
+  source) + the Script History submenu moved from Project to File, after
+  Print. (The Project block had MIXED \uXXXX escapes and literals — the
+  Edit tool can't match those; a python line-range splice did it.)
+  (5) LIVE CHECKLIST: markupNavLines returns STRUCTURED MarkupNavLine[]
+  ({text, marker: bullet/number/check/uncheck, n}) and
+  MarkupNavLines.tsx (MarkupNavLineSpans) is THE renderer for the
+  Navigator row AND the "In Navigator:" preview — checklist lines show
+  real FaReg(Check)Square icons at the nav's 11px. The mini editor
+  LIVE-MIRRORS content into the store (debounced 250ms on 'update') so
+  the real Navigator updates as you type/check; snapRef gained `content`
+  (the STORE value at open) and closeWithoutSaving restores it — ×
+  still discards. markupActions.test updated to the structured shape
+  (+ a numbered/bullet case).
+  (6) INSERTS FIXED: Insert Link / Insert Image used window.prompt — a
+  SILENT NO-OP in Tauri WebKit (fine in a browser, dead in the app; §4
+  material). Both are in-window flows now: link = inline URL field
+  (collapsed selection inserts the URL as linked text; a selection gets
+  setLink); image = three-source menu — From local device (via
+  utils/imageIntake.ts: fileToDataUrl+compressImage EXTRACTED from
+  NotebookTool, shared, compressed to the Scrapbook's ~300k budget),
+  From Asset Manager (api.listAssets image/* → api.getAssetUrl), From
+  URL. State resets when a different annotation opens.
+- check-v546: 20 green (menu moves, nav filter title/grid/store-write,
+  Scene # alone, live mirror via a REAL checkbox click — setContent is
+  emit-silent, the first run's lesson — 4 rendered checkboxes, × rollback
+  despite live writes, link href landed, 3-source menu, URL image node,
+  8 zones + resize:none + scroll split + e-drag Δ70 on the annotation
+  window, Design beside the annotation window with slot untouched, dz
+  8 zones/no grip/w-drag moves left edge, float opens with Design still
+  up, tool window 8 zones/no hash/w-drag). NOTE: the Design window can
+  COVER the annotation window (both seat right) — the driver drags dz
+  aside by its header before clicking Save under it.
+
+### v5.45 — AI Writer panel-only remove button + out of Tools menu; Pages right pair
 
 - Derek's queue #1 + a mid-turn Pages tweak: (1) AiWriterTool's footer
   button renders ONLY in-panel — `inPanel = (toolMode.aiwriter ?? 'docked')
@@ -316,40 +390,12 @@ Durable bits kept live here:
   the first run's lesson — field growth, knob-driven paddings, combined
   Filter structure + per-section store writes, menu labels).
 
-### v5.41 — previews, used order, compact draggable picker, ribbon fmt, move toast
-
-- Derek's 7 (one turn): (1) "Displays as:" split into "In Navigator:"
-  (nav-row classes, live) + "In Script:" (`.markup-margin-preview` — the
-  round margin chip inline, border in the annotation's color). (2)
-  MarkupUsedRow: CURRENT combo leads (always ringed), then the `+`, then
-  "Used:" (`.markup-used-label`) + the other combos (cap 7, current
-  excluded). (3+4) MarkupComboPicker: DRAGGABLE by `.markup-icon-pop-drag`
-  (dragPos overrides the seat; reset when it closes) and COMPACT —
-  `.markup-icon-pop-cols` puts icons LEFT / embedded ColorPicker RIGHT
-  (520px wide, ~447px tall vs the old 560-capped ~700 stack; the color
-  column is the height floor). (5) RIBBON FORMATTING drives the mini:
-  markupsSlice.markupMiniEditor (unknown-typed, never persisted) is set
-  while the window is open; Toolbar's isActive + B/I/U/S route to it
-  (no locks/overrides — plain toggles) and the mini gained Underline.
-  CRITICAL COMPANION FIX the driver caught: the outside-press saver now
-  ignores `.toolbar-btn` presses — clicking ribbon Bold used to SAVE-CLOSE
-  the window. (6) LIST annotations (markupIsList in markupActions —
-  firstContentKind ∈ bullets/numbers/checklist) show NO icon in the
-  Navigator or the nav preview; the script margin chip keeps it. (7)
-  SHAPE_NOTES no longer renders at the panel foot (.tool-shape-note CSS
-  gone) — the dock-row drag-out for a noted tool (markups/navigator/
-  notebook) TOASTS the message at the drop and stays put (having a note
-  IS the disallowed-move flag; setToolMode coercion remains the backstop).
-- check-v541: 17 green (order probe of the head row, both previews, live
-  icon-drop on checklist, ribbon bold hits mini not script + hand-back on
-  close, side-by-side geometry + drag Δ, nav rows with/without icon,
-  toast + mode still docked).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.41** — annotation previews ×2, Used order, compact draggable picker, ribbon formatting drives the mini, move toast
 - **v5.40** — CUSTOM PAGES: the customPage node/keymap, unnumbered pagination breaks, export exclusion
 - **v5.39** — Title Page hand-grabber pan (per-column scrolling made the preview pannable)
 - **v5.38** — Scenes cards: metrics wrap to a second row instead of truncating the name

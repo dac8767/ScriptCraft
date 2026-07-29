@@ -9,22 +9,20 @@
  * Show/hide per kind via the Filter dropdown; Search narrows by text.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
 import { FaHashtag, FaRegStickyNote } from 'react-icons/fa';
-import { ControlDropdown, ControlSearch } from './ToolControls';
+import { ControlSearch } from './ToolControls';
 import { findNotePos } from '../utils/scriptNoteActions';
-import { findMarkupPos, markupContentLines, markupNavLines, markupIsList } from '../utils/markupActions';
+import { findMarkupPos, markupContentLines, markupNavLines, markupIsList, type MarkupNavLine } from '../utils/markupActions';
 import { MarkupIcon } from './markupIcons';
-import { TypeGridPop, useTypesInUse, useSeat, useDismiss } from './MarkupPickers';
+import { MarkupNavLineSpans } from './MarkupNavLines';
+import { TypeGridSection, useTypesInUse, useSeat, useDismiss } from './MarkupPickers';
 
 const KINDS = ['scene', 'act', 'section', 'marker', 'note', 'todo', 'markup'] as const;
 type Kind = typeof KINDS[number];
-const LABEL: Record<Kind, string> = {
-  scene: 'Scene Headers', act: 'Acts', section: 'Sections', marker: 'Markers',
-  note: 'Notes', todo: 'To-Dos', markup: 'Annotations',
-};
 
 interface Item {
   kind: Kind;
@@ -41,8 +39,9 @@ interface Item {
   markupId?: string;
   markupIcon?: string;
   markupColor?: string;
-  /** v5.30: content lines — a LIST annotation renders as a list */
-  markupLines?: string[];
+  /** v5.30: content lines — a LIST annotation renders as a list
+   *  (v5.46: structured — checklist lines carry live checked state) */
+  markupLines?: MarkupNavLine[];
   /** v5.41, Derek: list annotations show NO icon in the Navigator */
   markupIsList?: boolean;
   /** shelf card id + item index for to-dos */
@@ -56,89 +55,74 @@ interface NavigatorToolProps {
   scrollContainer?: HTMLDivElement | null;
 }
 
-/** v1.80: header state lives in the store (navFilter / navShowKinds /
- *  navShowSceneNumbers) because the controls render in the WINDOW CHROME
- *  (the row-2 cluster), outside this component. Missing kind = shown. */
-const kindShown = (show: Record<string, boolean>, k: Kind) => show[k] !== false;
-
 /** v4.32 batch-v8 #5–#7, Derek's window template: the Navigator's row-2
- *  cluster, composed from the ToolControls primitives (replaces the v2.03
- *  funnel popover — same store state, standard chrome):
- *    - scene-number toggle, seated LEFT via .tool-ctl-lead
- *    - Filter: kind show/hide as a keepOpen multi-toggle menu (the chip
- *      counts HIDDEN kinds)
- *    - Search: the keyword filter (narrows the list by text) */
+ *  cluster (window chrome).
+ *  v5.46, Derek: the Filter menu IS the annotation filter now — the old
+ *  kind toggles (Scene Headers / Acts / …) are gone, and the grid that
+ *  lived in the body's "Annotations" button moved in here under a
+ *  "Filter Annotations" title. Drives the SAME markupFilters the
+ *  Annotations panel and the ribbon share. */
 export function NavigatorControls() {
-  const navShowKinds = useEditorStore((s) => s.navShowKinds);
-  const setNavShowKinds = useEditorStore((s) => s.setNavShowKinds);
   const navFilter = useEditorStore((s) => s.navFilter);
   const setNavFilter = useEditorStore((s) => s.setNavFilter);
-  const hiddenCount = KINDS.filter((k) => !kindShown(navShowKinds, k)).length;
-  // v5.32, Derek: ONE header row — Annotations and Scene Numbers moved into
-  // the body's first row as blue buttons (NavActionRow below).
+  const mkFilters = useEditorStore((s) => s.markupFilters);
+  const setMkFilters = useEditorStore((s) => s.setMarkupFilters);
+  const [open, setOpen] = useState(false);
+  const btn = useRef<HTMLButtonElement>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const pos = useSeat(open, btn, box);
+  useDismiss(open, box, btn, () => setOpen(false));
+  const types = useTypesInUse(mkFilters.hiddenIcons);
+  const chip = mkFilters.hiddenIcons.length + (mkFilters.done !== 'open' ? 1 : 0);
   return (
     <>
-      <ControlDropdown
-        label="Filter"
-        chip={hiddenCount}
-        items={KINDS.map((k) => ({
-          label: LABEL[k],
-          active: kindShown(navShowKinds, k),
-          keepOpen: true,
-          onSelect: () => setNavShowKinds({ ...navShowKinds, [k]: !kindShown(navShowKinds, k) }),
-        }))}
-      />
+      <button ref={btn} className={`tool-ctl markup-ctl-filter${open ? ' open' : ''}`} title="Filter annotations"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}>
+        <span className="tool-ctl-label">Filter</span>
+        {chip > 0 && <span className="tool-ctl-chip">{chip}</span>}
+      </button>
+      {open && createPortal(
+        <div ref={box} className="markup-subpop markup-filter-pop" style={pos ?? { top: -9999, left: -9999 }}
+          onPointerDown={(e) => e.stopPropagation()}>
+          <div className="fs-nav-filter-title">Filter Annotations</div>
+          <TypeGridSection
+            done={mkFilters.done}
+            onDone={(d) => setMkFilters({ ...mkFilters, done: d })}
+            types={types}
+            hidden={mkFilters.hiddenIcons}
+            onToggle={(icon) => setMkFilters({
+              ...mkFilters,
+              hiddenIcons: mkFilters.hiddenIcons.includes(icon)
+                ? mkFilters.hiddenIcons.filter((x) => x !== icon)
+                : [...mkFilters.hiddenIcons, icon],
+            })}
+            onShowAll={() => setMkFilters({ ...mkFilters, hiddenIcons: [] })}
+            onHideAll={() => setMkFilters({ ...mkFilters, hiddenIcons: types })}
+          />
+        </div>,
+        document.body,
+      )}
       <ControlSearch value={navFilter} onChange={setNavFilter} placeholder="Filter by keyword" />
     </>
   );
 }
 
-/** v5.32, Derek: the body's first row — Annotations (the shared filter
- *  popover) and Scene Numbers (toggle), in the blue button style. The
- *  toggle reads its state through the fill: solid blue when on. */
+/** v5.32, Derek: the body's first row. v5.46: the Annotations button moved
+ *  into the header's Filter menu — only the scene-number toggle remains
+ *  ("Scene #"). The toggle reads its state through the fill: solid blue
+ *  when on. */
 function NavActionRow() {
   const showNums = useEditorStore((s) => s.navShowSceneNumbers);
   const setShowNums = useEditorStore((s) => s.setNavShowSceneNumbers);
-  const mkFilters = useEditorStore((s) => s.markupFilters);
-  const setMkFilters = useEditorStore((s) => s.setMarkupFilters);
-  const [annoOpen, setAnnoOpen] = useState(false);
-  const annoBtn = useRef<HTMLButtonElement>(null);
-  const annoBox = useRef<HTMLDivElement>(null);
-  const annoPos = useSeat(annoOpen, annoBtn, annoBox);
-  useDismiss(annoOpen, annoBox, annoBtn, () => setAnnoOpen(false));
-  const annoTypes = useTypesInUse(mkFilters.hiddenIcons);
-  const annoChip = mkFilters.hiddenIcons.length + (mkFilters.done !== 'open' ? 1 : 0);
-  const toggleIcon = (icon: string) => setMkFilters({
-    ...mkFilters,
-    hiddenIcons: mkFilters.hiddenIcons.includes(icon)
-      ? mkFilters.hiddenIcons.filter((x) => x !== icon)
-      : [...mkFilters.hiddenIcons, icon],
-  });
   return (
     <div className="fs-nav-action-row">
-      <button ref={annoBtn} className="dialog-btn dialog-btn-primary fs-nav-action-btn" title="Filter annotations"
-        onClick={() => setAnnoOpen((v) => !v)}>
-        Annotations{annoChip > 0 ? ` · ${annoChip}` : ''}
-      </button>
-      {annoOpen && (
-        <TypeGridPop
-          boxRef={annoBox}
-          pos={annoPos}
-          done={mkFilters.done}
-          onDone={(d) => setMkFilters({ ...mkFilters, done: d })}
-          types={annoTypes}
-          hidden={mkFilters.hiddenIcons}
-          onToggle={toggleIcon}
-          onShowAll={() => setMkFilters({ ...mkFilters, hiddenIcons: [] })}
-          onHideAll={() => setMkFilters({ ...mkFilters, hiddenIcons: annoTypes })}
-        />
-      )}
       <button
         className={`dialog-btn fs-nav-action-btn${showNums ? ' dialog-btn-primary' : ''}`}
         title={showNums ? 'Hide scene numbers' : 'Show scene numbers'}
         onClick={() => setShowNums(!showNums)}
       >
-        <FaHashtag aria-hidden /> Scene Numbers
+        <FaHashtag aria-hidden /> Scene #
       </button>
     </div>
   );
@@ -150,7 +134,6 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
   const mkFilters = useEditorStore((s) => s.markupFilters);
   const setMarkupEditorId = useEditorStore((s) => s.setMarkupEditorId);
   const filter = useEditorStore((s) => s.navFilter);
-  const show = useEditorStore((s) => s.navShowKinds);
   const showNums = useEditorStore((s) => s.navShowSceneNumbers);
   const [docTick, setDocTick] = useState(0);
 
@@ -239,8 +222,11 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, docTick, notes, markups, mkFilters]);
 
+  // v5.46: the kind toggles are gone from the Filter menu — every kind
+  // always lists (a persisted navShowKinds hide would be an invisible trap
+  // with no door left to undo it). Search + the annotation filter remain.
   const visible = items.filter(
-    (it) => kindShown(show, it.kind) && (!filter || it.text.toLowerCase().includes(filter.toLowerCase())),
+    (it) => !filter || it.text.toLowerCase().includes(filter.toLowerCase()),
   );
 
   const jumpTo = (pos: number) => {
@@ -331,13 +317,7 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
                     <MarkupIcon icon={it.markupIcon ?? 'flag'} color={it.markupColor} />
                   </span>
                 )}
-                {(it.markupLines?.length ?? 0) > 0 && (
-                  <span className="fs-nav-anno-lines">
-                    {it.markupLines!.map((l, li) => (
-                      <span key={li} className="fs-nav-anno-line">{l}</span>
-                    ))}
-                  </span>
-                )}
+                <MarkupNavLineSpans lines={it.markupLines ?? []} />
               </span>
             ) : (
               <span className={it.done ? 'fs-nav-done' : ''}>

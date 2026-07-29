@@ -1686,6 +1686,15 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
       // Legacy id — To-Do lives in the merged Sticky Notes window (v5.21).
       tool = 'sticky';
     }
+    // v5.46, Derek: "clicking the design tool should not close any windows."
+    // Design is the tweak-ALONGSIDE tool — every door opens its OWN
+    // independent window (designPanelOpen, rendered outside the slot
+    // machinery), never a panel/temp slot. Opening it disturbs nothing,
+    // and nothing that opens later can steal its slot — it has none.
+    // (closeOtherFloats' v5.32 exemption covered the one-float rule, but a
+    // slot-float still DIED when another tool took the slot — the probe
+    // showed Design docked also collapsed the panel neighbor.)
+    if (tool === 'design') return { designPanelOpen: true };
     // v4.37, Derek: "I should not be able to have a window open twice." If the
     // tool already owns the fullscreen takeover it IS open — opening it again
     // is satisfied by the takeover, exactly as re-opening an already-docked
@@ -1754,16 +1763,16 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
       }
       // v5.21: a slot tool whose mode is 'floating' opens as a WINDOW — the
       // one-window rule closes any other floating window first.
-      // v5.32, Derek: DESIGN opens beside whatever is up — it neither runs
-      // the one-window rule nor clears the temp slot on its way in.
+      // (v5.46: design never reaches this branch — it returns early into its
+      // independent window — so the old v5.32 keep-the-temp special case is
+      // gone with it.)
       const floats = s.toolMode[tool] === 'floating' ? closeOtherFloats(s, tool) : {};
-      const temp = tool === 'design' ? s.tempTool : null;
       if (left) {
         saveViewState({ activeTool: tool });
-        return { ...floats, activeTool: tool, tempTool: temp };
+        return { ...floats, activeTool: tool, tempTool: null };
       }
       saveViewState({ activeToolRight: tool });
-      return { ...floats, activeToolRight: tool, tempTool: temp };
+      return { ...floats, activeToolRight: tool, tempTool: null };
     }
     return { ...closeOtherFloats(s, tool), tempTool: tool };
   }),
@@ -1777,12 +1786,15 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   // slot, which is why a fullscreen tool's row wouldn't close it.
   isToolOpen: (tool) => {
     const s = get();
+    // v5.46: Design's home is its independent window (slots are legacy).
+    if (tool === 'design' && s.designPanelOpen) return true;
     return (s.activeTool === tool && s.navigatorOpen)
       || (s.activeToolRight === tool && s.shelfOpen)
       || s.tempTool === tool || s.fullscreenTool === tool;
   },
   closeTool: (tool) => {
     const s = get();
+    if (tool === 'design' && s.designPanelOpen) s.setDesignPanelOpen(false);
     if (s.fullscreenTool === tool) s.setFullscreenTool(null);
     if (s.activeTool === tool) s.setActiveTool(null);
     if (s.activeToolRight === tool) s.setActiveToolRight(null);
