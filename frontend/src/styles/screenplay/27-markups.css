@@ -1,0 +1,355 @@
+/* ============ MARKUPS (v5.25) ============ */
+/* The Markups tool: anchored rich-text annotations on the script. Three
+   surfaces live here — the margin icon layer, the popover editor window,
+   and the on-page highlight — plus the markups-hidden kill switch.
+   Print exclusion lives in 16-print.css with the other working notes. */
+
+/* ── Margin icons ─────────────────────────────────────────────────────────
+   Absolutely-positioned children of .editor-main (position:relative since
+   v1.72), so they ride the scroll content — no scroll listener. */
+.markup-margin-icon {
+  position: absolute;
+  z-index: 40;                    /* above pages, below floating windows */
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.markup-margin-icon:hover { border-color: var(--fd-accent); }
+.markup-margin-icon .markup-glyph { display: flex; font-size: 12px; }
+.markup-margin-icon .markup-emoji { font-size: 12px; line-height: 1; }
+.markup-margin-icon.done { opacity: 0.45; }
+.markup-margin-icon.done:hover { opacity: 0.9; }
+
+/* ── On-page anchor span (both flavors are the scriptMarkup mark) ─────────
+   background-color arrives inline from the mark when a highlight color was
+   chosen; without one the span is invisible chrome over the text. */
+.script-markup-highlight { cursor: pointer; border-radius: 1px; }
+
+/* Hide switch: the page gets .markups-hidden (preview mode, or the
+   Show Markups toggle off). Margin icons unmount in JS; the highlight
+   span stays in the doc, so its inline background must be beaten here. */
+.markups-hidden .script-markup-highlight {
+  background-color: transparent !important;
+  cursor: text;
+}
+
+/* ── The popover editor window ────────────────────────────────────────────
+   ScriptNotePopover seating rules: portalled to body, fixed, measured
+   top/left only. Dark chrome (a tool surface, not a sticky pastel). */
+.fs-markup-popover {
+  position: fixed;
+  z-index: 3200;
+  background: var(--fd-dropdown-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45);
+  padding: 10px;
+  color: var(--fd-text);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+}
+.markup-pop-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.markup-pop-label { font-size: 11px; color: var(--fd-text-muted); margin-right: 2px; }
+
+/* Preset icon buttons (also reused by the Customize ▸ Markups tab) */
+.markup-preset {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fd-input-bg);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+  color: var(--fd-text);
+}
+.markup-preset:hover { border-color: var(--fd-border); background: var(--fd-overlay-light); }
+.markup-preset.active { border-color: var(--fd-accent); }
+.markup-preset .markup-glyph { display: flex; }
+.markup-more { font-weight: 700; color: var(--fd-text-muted); }
+.markup-emoji { font-size: 14px; line-height: 1; }
+
+/* Full icon + emoji grid behind the "…" button */
+.markup-pop-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 3px;
+  padding: 6px;
+  background: var(--fd-input-bg);
+  border-radius: 6px;
+}
+
+/* Color dots (icon color + highlight color rows) */
+.markup-color-dots { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.markup-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+.markup-dot.active { border-color: var(--fd-text); }
+input.markup-dot-custom {
+  appearance: none;
+  -webkit-appearance: none;
+  background: conic-gradient(#e05555, #e8b44f, #2d8a4e, #4a9eff, #9a5fd0, #e05555);
+  border: 2px solid transparent;
+  overflow: hidden;
+}
+input.markup-dot-custom::-webkit-color-swatch-wrapper { padding: 0; opacity: 0; }
+input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
+.markup-hl-clear {
+  font-size: 10px;
+  background: none;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.markup-hl-clear:hover { color: var(--fd-text); border-color: var(--fd-text-muted); }
+
+/* Mini rich-text toolbar */
+.markup-mini-bar { gap: 2px; border-top: 1px solid var(--fd-border); padding-top: 8px; }
+.markup-mini-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+}
+.markup-mini-btn:hover { background: var(--fd-overlay-light); color: var(--fd-text); }
+.markup-mini-btn.active { background: var(--fd-overlay-medium); color: var(--fd-accent); }
+
+/* Scrapbook page picker list */
+.markup-scrap-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 140px;
+  overflow-y: auto;
+  background: var(--fd-input-bg);
+  border-radius: 6px;
+  padding: 4px;
+}
+.markup-scrap-empty { font-size: 11px; color: var(--fd-text-muted); padding: 4px 6px; }
+.markup-scrap-item {
+  text-align: left;
+  font-size: 12px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--fd-text);
+  cursor: pointer;
+  padding: 4px 6px;
+}
+.markup-scrap-item:hover { background: var(--fd-overlay-light); }
+
+/* The mini editor body */
+.markup-mini-editor {
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  min-height: 84px;
+  max-height: 260px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+.markup-mini-editor .ProseMirror { outline: none; min-height: 72px; }
+.markup-mini-editor .ProseMirror p { margin: 0 0 4px; }
+.markup-mini-editor .ProseMirror ul,
+.markup-mini-editor .ProseMirror ol { margin: 0 0 4px; padding-left: 20px; }
+.markup-mini-editor .ProseMirror a { color: var(--fd-accent); }
+.markup-mini-editor .ProseMirror img { max-width: 100%; border-radius: 4px; }
+.markup-mini-editor .ProseMirror ul[data-type='taskList'] { list-style: none; padding-left: 2px; }
+.markup-mini-editor .ProseMirror ul[data-type='taskList'] li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.markup-mini-editor .ProseMirror ul[data-type='taskList'] li > label { flex-shrink: 0; }
+.markup-mini-editor .ProseMirror ul[data-type='taskList'] li > div { flex: 1; }
+.markup-mini-editor .ProseMirror ul[data-type='taskList'] li[data-checked='true'] > div {
+  text-decoration: line-through;
+  color: var(--fd-text-muted);
+}
+
+/* Footer: Complete + delete + Save */
+.markup-pop-foot { justify-content: space-between; border-top: 1px solid var(--fd-border); padding-top: 8px; }
+.markup-done {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fd-text);
+  cursor: pointer;
+}
+.markup-foot-actions { display: flex; align-items: center; gap: 6px; }
+.markup-del {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  font-size: 13px;
+}
+.markup-del:hover { color: #e05555; background: var(--fd-overlay-light); }
+
+/* ── The Markups tool window ─────────────────────────────────────────────── */
+.markups-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.markups-add-row { padding: 10px 12px 8px; flex-shrink: 0; }
+.markups-add-btn { font-size: 12px; padding: 5px 12px; }
+.markups-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.markups-empty { font-size: 12px; color: var(--fd-text-muted); padding: 8px 2px; }
+
+.markup-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--fd-overlay-subtle);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.markup-card.done { opacity: 0.55; }
+.markup-card.done .markup-card-text { text-decoration: line-through; }
+.markup-card-icon { flex-shrink: 0; display: flex; font-size: 13px; margin-top: 1px; }
+.markup-card-icon .markup-glyph { display: flex; }
+.markup-card-main { flex: 1; min-width: 0; }
+.markup-card-text {
+  font-size: 12px;
+  color: var(--fd-text);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.markup-card-meta {
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.markup-card-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.markup-card-check { margin: 0 2px 0 0; cursor: pointer; }
+.markup-card-btn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 11px;
+}
+.markup-card-btn:hover { background: var(--fd-overlay-light); color: var(--fd-text); }
+.markup-card-del:hover { color: #e05555; }
+
+/* ── Customize ▸ Markups (preset combos) ─────────────────────────────────── */
+.fs-markup-cz-help { font-size: 11px; color: var(--fd-text-muted); margin: 2px 0 8px; }
+.fs-markup-cz-current {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.fs-markup-cz-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  padding: 4px 4px 4px 8px;
+  font-size: 14px;
+  cursor: grab;
+}
+.fs-markup-cz-chip.dragging { opacity: 0.4; }
+.fs-markup-cz-chip .markup-glyph { display: flex; }
+.fs-markup-cz-x {
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+.fs-markup-cz-x:hover:not(:disabled) { color: #e05555; }
+.fs-markup-cz-x:disabled { opacity: 0.3; cursor: default; }
+.fs-markup-cz-grid { max-width: 420px; }
+.fs-markup-cz-colors {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.fs-markup-cz-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  font-size: 15px;
+  margin-left: 8px;
+}
+.fs-markup-cz-preview .markup-glyph { display: flex; }
+.fs-markup-cz-add { font-size: 12px; padding: 5px 12px; margin-left: 6px; }
+.fs-markup-cz-footrow { margin-top: 16px; }
+
+/* Navigator markup rows — the row wears the markup's own icon + color */
+.fs-nav-markup-icon { display: inline-flex; margin-right: 4px; font-size: 11px; }
+.fs-nav-markup-icon .markup-glyph { display: inline-flex; }
+.fs-nav-markup-icon .markup-emoji { font-size: 11px; }

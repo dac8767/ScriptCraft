@@ -43,6 +43,33 @@ describe('exportFountain — working notes never export', () => {
     const out = exportFountain(doc(node('general', '#nofilter energy')));
     expect(out).toContain('#nofilter energy');
   });
+
+  /** v5.25: Markups are working notes too. Every markup is a MARK on script
+   *  text (the text is real script — it must export, the mark must not). The
+   *  unknown-inline-atom case rides along as a robustness pin: any non-text
+   *  inline node in saved JSON must vanish without a trace on export. */
+  it('exports text under a scriptMarkup mark, without the mark', () => {
+    const out = exportFountain(doc({
+      type: 'action',
+      content: [text('She hesitates at the door.', [{ type: 'scriptMarkup' }])],
+    }));
+    expect(out).toContain('She hesitates at the door.');
+    expect(out).not.toContain('scriptMarkup');
+    expect(out).not.toContain('markup');
+  });
+
+  it('drops a markupAnchor atom mid-line without a trace', () => {
+    const out = exportFountain(doc({
+      type: 'action',
+      content: [
+        text('Rain on the '),
+        { type: 'markupAnchor', attrs: { markupId: 'm-1' } },
+        text('window.'),
+      ],
+    }));
+    expect(out).toContain('Rain on the window.');
+    expect(out).not.toContain('m-1');
+  });
 });
 
 describe('exportFountain — core formatting', () => {

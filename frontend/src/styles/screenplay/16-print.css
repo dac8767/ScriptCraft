@@ -27,6 +27,10 @@
     background: none !important;
     border-bottom: none !important;
   }
+  /* v5.25: Markups are working notes too — highlight, margin icons and the
+     popover never print, whatever the on-screen toggle says. */
+  .page .script-markup-highlight { background: none !important; }
+  .markup-margin-icon, .fs-markup-popover { display: none !important; }
 
   /* Unclip the full document chain so all pages flow */
   html, body, #root { height: auto !important; overflow: visible !important; }

@@ -151,9 +151,61 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.20 and older (newest first)
+## Version history — v5.21 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.21 — the seven-pack: Sticky Notes merge, fullscreen Title Page, one window, and the zombie Window menu
+
+- Derek's queue, all shipped in one batch: (1) Title Page always fullscreen
+  "the same as the scrapbook"; (2) Notes + To-Do merged into "Sticky Notes"
+  (+ Note / + To-Do in the body's action row, Filter/Sort/Search in the
+  header); (3) Locations-style faint separators on the scene list;
+  (4) "show one tool window at a time"; (5) "remove the window menu";
+  (6) Pages fullscreen floors per-row at 2; (7) Airtable dev panel removed.
+- (1) `FULLSCREEN_ONLY_TOOLS = ['titlepage']` (editorStore) — openTool's
+  remembered-mode branch takes the fullscreen path for these UNCONDITIONALLY;
+  NO_FULLSCREEN_TOOLS is down to ['notebook']. The takeover hides its
+  shrink-to-window button and the generic fullscreen button drops
+  (ToolDock). toolModeMemory.test's old "Title Page never fullscreens" pin
+  is FLIPPED.
+- (2) The merge is PRESENTATION ONLY: id 'sticky' kept (label "Sticky
+  Notes"), 'todo' retired via the indexcards recipe — RETIRED_TOOL_IDS map
+  drives migrateToolOrder/migrateToolConfig (workspace snapshots included),
+  activeTool/Right init mapping, and an openTool legacy remap. Card data was
+  always one `_shelf` list. Each list keeps its own sort+manual order
+  (notesSort+noteOrder / todoSort+todoOrder); ONE header Sort sets both
+  ("Mixed" shown if pre-merge state diverged). New store fields stickySearch
+  + stickyKindFilter (ephemeral); cardMatchesSearch in ListControls is the
+  ONE search predicate (title, text, to-do item lines). Counts: each list
+  publishes its own (sticky/todo), StickyTitleExtra SUMS; the body zeroes a
+  filtered-out list's count (it's unmounted and can't publish).
+- (4) closeOtherFloats(s, keep) in editorStore — a floating WINDOW is the
+  temp slot or a panel-slot tool in 'floating' mode (visible panel);
+  docked/fullscreen are NOT windows. Called where floats are BORN: all four
+  openTool float branches + setToolMode('floating') (drag-out, shrink-from-
+  fullscreen). Spread the patch BEFORE the branch's own fields.
+- (5) THE WINDOW MENU WAS A ZOMBIE: the JS menu sync dropped it in v4.28,
+  but Rust's rebuild_window_menu (lib.rs) re-appended a fresh "Window"
+  submenu on every set_window_title and window Destroyed event. Removed:
+  that fn, both call sites, the window-list- menu-event handler, and the
+  boot menu's Window submenu. VERIFIED as far as this sandbox allows —
+  rustfmt parse + zero remaining references; cargo check CANNOT run here
+  (Linux GTK headers absent; macOS target needs a real mac toolchain), so
+  the first `tauri dev` on the Mac is the compile gate. Pure removals.
+- (6) Pages: `pagesPerRow` render value = max(floor, raw) with floor 2 only
+  when fullscreenTool === 'pages'; the STORE keeps the raw value, so leaving
+  fullscreen restores 1. The minus button disables at the floor.
+- (7) The v4.95 Airtable dev panel followed its own in-file removal list
+  (file, ALL_TOOLS spread, body case, CSS block; ToolId member stays as a
+  legacy union entry; Feedback's Airtable embed untouched, no npm lib —
+  no About-list change).
+- Driver kit: `window.__scStore` (the store) now rides beside __scEditor,
+  DEV-only — drivers set up state deterministically. check-tools-v521.mjs:
+  18 checks across all items (takeover shape, dock labels, + buttons, kind
+  filter, summed count, separators, one-window rule, fullscreen floor with
+  raw store value pinned at 1).
+
 
 ### v5.20 — the Scenes four-pack: contained popover, Cards per row, one menu, lighter cards
 

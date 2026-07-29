@@ -15,6 +15,8 @@ import TypewriterScroll, { refreshTypewriterChrome, centerCaretLine } from '../e
 import OutlineBar from './OutlineBar';
 import { NotebookSurface } from './NotebookTool';
 import ScriptNotePopover from './ScriptNotePopover';
+import MarkupPopover from './MarkupPopover';
+import MarkupIconLayer from './MarkupIconLayer';
 import { useNotebookStore } from '../stores/notebookStore';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import TextAlign from '@tiptap/extension-text-align';
@@ -29,7 +31,7 @@ import { HocuspocusProvider } from '@hocuspocus/provider';
 import {
   SceneHeading, Action, Character, Dialogue, Parenthetical,
   Transition, General, Shot, NewAct, EndOfAct, Lyrics,
-  ShowEpisode, CastList, FontSize, ScriptNoteMark, TagMark,
+  ShowEpisode, CastList, FontSize, ScriptNoteMark, ScriptMarkupMark, TagMark,
   FormatOverride, CustomElement, DualDialogue, DualDialogueColumn,
   TitlePage,
   AvBlock, AvRow, AvCell, AvPara, AvShot, AvDirection, AvKeymap,
@@ -144,7 +146,7 @@ const ScreenplayEditor: React.FC = () => {
 
   const {
     setActiveElement, setScenes, setPageCount, setCurrentPage,
-    zoomLevel, setZoomLevel, fontFamily, fontSize, pageLayout, tagsVisible, notesVisible,
+    zoomLevel, setZoomLevel, fontFamily, fontSize, pageLayout, tagsVisible, notesVisible, markupsVisible,
     sectionsVisible, scriptTodosVisible, markersVisible, viewStyle, previewMode, previewOpts,
     beatBoardOpen, statisticsOpen, fullscreenTool,
     navigatorOpen, toggleNavigator, shelfOpen, toggleShelf,
@@ -1558,7 +1560,7 @@ const ScreenplayEditor: React.FC = () => {
       Transition, General, Shot, NewAct, EndOfAct, Lyrics,
       ShowEpisode, CastList, DualDialogue, DualDialogueColumn, TitlePage,
       AvBlock, AvRow, AvCell, AvPara, AvShot, AvDirection, AvKeymap,
-      ScriptNoteMark, TagMark,
+      ScriptNoteMark, ScriptMarkupMark, TagMark,
       PaginationExtension,
       ContdCaseExtension,
       SearchExtension,
@@ -3956,6 +3958,25 @@ const ScreenplayEditor: React.FC = () => {
     return () => editorEl.removeEventListener('click', handleClick);
   }, [editor]);
 
+  // --- Click on a markup highlight → open its popover (v5.25) ---
+  // The margin icon is the primary handle; the highlight span is the same
+  // door for range markups. Suppressed while markups are hidden so the
+  // invisible span can't hijack ordinary editing clicks.
+  useEffect(() => {
+    if (!editor) return;
+    const handleMarkupClick = (e: MouseEvent) => {
+      const store = useEditorStore.getState();
+      if (!store.markupsVisible || store.previewMode) return;
+      const el = (e.target as HTMLElement).closest('.script-markup-highlight') as HTMLElement | null;
+      const id = el?.getAttribute('data-markup-id');
+      if (!id || !store.markups.some((m) => m.id === id)) return;
+      store.setMarkupEditorId(id);
+    };
+    const editorEl = editor.view.dom;
+    editorEl.addEventListener('click', handleMarkupClick);
+    return () => editorEl.removeEventListener('click', handleMarkupClick);
+  }, [editor]);
+
   // --- Click on character element → expand in character panel ---
   useEffect(() => {
     if (!editor) return;
@@ -4319,6 +4340,9 @@ const ScreenplayEditor: React.FC = () => {
             <BeatBoard />
           ) : (
             <div className="editor-main" ref={attachEditorMain}>
+              {/* v5.25: markup icons ride the scroll content (abs children of
+                  the scroller move with it) — recompute on doc change only. */}
+              {!isHistoryMode && <MarkupIconLayer editor={editor} container={editorMainEl} />}
               {/* v2.95, Derek: Word-style rulers, toggled in View > Show Rulers */}
               {rulersVisible && <EditorRulers container={editorMainRef} continuous={viewStyle === 'continuous' && !previewMode} />}
               <div
@@ -4339,7 +4363,7 @@ const ScreenplayEditor: React.FC = () => {
                 }}
               >
                 <div
-                  className={`page${!tagsVisible || previewMode ? ' tags-hidden' : ''}${previewMode ? (previewOpts.notes ? '' : ' notes-hidden') : (!notesVisible ? ' notes-hidden' : '')}${isHistoryMode ? ' history-readonly' : ''}${previewMode ? (previewOpts.sceneNumbers ? ' show-scene-numbers' : '') : (sceneNumbersVisible ? ' show-scene-numbers' : '')}${previewMode ? (previewOpts.sections ? '' : ' hide-sections') : (!sectionsVisible ? ' hide-sections' : '')}${previewMode ? (previewOpts.sections ? '' : ' hide-markers') : (!markersVisible ? ' hide-markers' : '')}${previewMode ? (previewOpts.todos ? '' : ' hide-script-todos') : (!scriptTodosVisible ? ' hide-script-todos' : '')}${previewMode && previewOpts.doubleSpaceHeaders ? ' pv-hdr-double' : ''}${previewMode && !previewOpts.boldHeaders ? ' pv-hdr-plain' : ''}${previewMode && previewOpts.underlineHeaders ? ' pv-hdr-underline' : ''}`}
+                  className={`page${!tagsVisible || previewMode ? ' tags-hidden' : ''}${previewMode ? (previewOpts.notes ? '' : ' notes-hidden') : (!notesVisible ? ' notes-hidden' : '')}${isHistoryMode ? ' history-readonly' : ''}${previewMode ? (previewOpts.sceneNumbers ? ' show-scene-numbers' : '') : (sceneNumbersVisible ? ' show-scene-numbers' : '')}${previewMode ? (previewOpts.sections ? '' : ' hide-sections') : (!sectionsVisible ? ' hide-sections' : '')}${previewMode ? (previewOpts.sections ? '' : ' hide-markers') : (!markersVisible ? ' hide-markers' : '')}${previewMode ? (previewOpts.todos ? '' : ' hide-script-todos') : (!scriptTodosVisible ? ' hide-script-todos' : '')}${previewMode || !markupsVisible ? ' markups-hidden' : ''}${previewMode && previewOpts.doubleSpaceHeaders ? ' pv-hdr-double' : ''}${previewMode && !previewOpts.boldHeaders ? ' pv-hdr-plain' : ''}${previewMode && previewOpts.underlineHeaders ? ' pv-hdr-underline' : ''}`}
                   ref={pageRef}
                   style={{
                     fontFamily: `'${fontFamily}', 'Courier New', Courier, monospace`,
@@ -4469,6 +4493,7 @@ const ScreenplayEditor: React.FC = () => {
         {/* v4.33: the script-note edit popover, anchored on its highlight
             (portalled — renders nothing until notePopoverId is set). */}
         {!isHistoryMode && <ScriptNotePopover editor={editor} />}
+        {!isHistoryMode && <MarkupPopover editor={editor} />}
         <DesignPanel />
         {!isHistoryMode && shelfOpen && <ToolDock side="right" editor={editor} scrollContainer={editorMainEl} />}
         {!isHistoryMode && !shelfOpen && !previewMode && (

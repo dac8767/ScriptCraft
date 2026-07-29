@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import type { Editor } from '@tiptap/react';
 import { ELEMENT_LABELS, type ElementType } from '../stores/editorStore';
 import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
+import { createMarkupAtSelection, removeMarkupFromDoc } from '../utils/markupActions';
 import { uuid } from '../utils/uuid';
 import { showToast } from './Toast';
 import { useEditorStore } from '../stores/editorStore';
@@ -50,6 +51,8 @@ export const CONTEXT_MENU_SECTIONS: { id: string; label: string; group: ContextM
   // menu; a script to-do does, and that's what this inserts. The internal id
   // stays 'insertChecklist' so saved menu orders keep working.
   { id: 'insertChecklist', label: 'Add To-Do List', group: 'Insert' },
+  // v5.25: Markups — on an existing markup the item becomes Edit/Delete.
+  { id: 'markupScript', label: 'Markup Script', group: 'Insert' },
   { id: 'tagAs', label: 'Tag as…', group: 'Context Menu' },
   { id: 'spelling', label: 'Spelling Tools', group: 'Context Menu' },
 ];
@@ -219,6 +222,22 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       }
     }
     return noteMark ? (noteMark.attrs.noteId as string) : null;
+  })();
+
+  // v5.25: is the caret on an existing markup? Both anchor flavors are the
+  // scriptMarkup mark (point = whole-element), so this is the note detector.
+  const existingMarkupId = (() => {
+    const markType = editor.schema.marks.scriptMarkup;
+    if (!markType) return null;
+    const $from = editor.state.selection.$from;
+    let mark = $from.marks().find((m) => m.type === markType);
+    if (!mark) {
+      for (const node of [$from.nodeAfter, $from.nodeBefore]) {
+        if (!node) continue;
+        mark = node.marks?.find((m) => m.type === markType) ?? mark;
+      }
+    }
+    return mark ? (mark.attrs.markupId as string) : null;
   })();
 
   // Detect if cursor is on an existing production tag
@@ -399,6 +418,23 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
 
   const handleEditScriptNote = () => {
     if (existingNoteId) setNotePopoverId(existingNoteId);
+    onClose();
+  };
+
+  // v5.25: Markups.
+  const handleMarkupScript = () => {
+    createMarkupAtSelection(editor, hasSelection ? savedSelection.current : undefined);
+    onClose();
+  };
+  const handleEditMarkup = () => {
+    if (existingMarkupId) useEditorStore.getState().setMarkupEditorId(existingMarkupId);
+    onClose();
+  };
+  const handleDeleteMarkup = () => {
+    if (existingMarkupId) {
+      removeMarkupFromDoc(editor, existingMarkupId);
+      useEditorStore.getState().removeMarkup(existingMarkupId);
+    }
     onClose();
   };
 
@@ -713,6 +749,23 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
       )}
       <div className="ctx-separator" />
 
+      </></>),
+    markupScript: (<><>
+      {existingMarkupId ? (
+        <>
+          <div className="ctx-item" onClick={handleEditMarkup}>
+            <span>Edit Markup</span>
+          </div>
+          <div className="ctx-item" onClick={handleDeleteMarkup}>
+            <span>Delete Markup</span>
+          </div>
+        </>
+      ) : (
+        <div className="ctx-item" onClick={handleMarkupScript}>
+          <span>Markup Script</span>
+        </div>
+      )}
+      <div className="ctx-separator" />
       </></>),
     copyToSnippets: hasSelection ? (<><div className="ctx-item" onClick={() => {
             const { from, to } = savedSelection.current;

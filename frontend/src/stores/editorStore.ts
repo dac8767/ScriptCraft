@@ -363,7 +363,7 @@ export type ShelfCardType = 'comment' | 'todo' | 'snippet';
 /** Tools available in the tool docks (Photoshop-style panel lists). */
 export type ToolId =
   | 'navigator' | 'scenes' | 'pages' | 'structure' | 'locations' | 'characters'
-  | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets'
+  | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets' | 'markups'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
   | 'spelling' | 'history' | 'titlepage' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
   | 'notebook' | 'design' | 'workspaces' | 'feedback'
@@ -544,6 +544,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   // v5.21: 'todo' retired — To-Do lives in the merged Sticky Notes tool
   // (id 'sticky'; the ID predates the merge and persists user layouts).
   sticky: { side: 'right', enabled: true },
+  markups: { side: 'right', enabled: true },
   fragments: { side: 'right', enabled: true },
   beatboard: { side: 'right', enabled: true },
   highlights: { side: 'right', enabled: true },
@@ -561,7 +562,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
  *  within each panel. 'Reset to Default' restores exactly this. */
 export const DEFAULT_TOOL_ORDER: string[] = [
   'navigator', 'scenes', 'pages', 'titlepage', 'characters', 'locations', 'spelling', 'assets',
-  'sticky', 'fragments', 'beatboard', 'highlights', 'goals', 'typewriter', 'aiwriter', 'notebook', 'analytics',
+  'sticky', 'markups', 'fragments', 'beatboard', 'highlights', 'goals', 'typewriter', 'aiwriter', 'notebook', 'analytics',
   'tags',
 ];
 

@@ -7,23 +7,41 @@ import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import type { MarkupKind, ScriptMarkup } from '../stores/slices/markupsSlice';
 import { uuid } from './uuid';
+import { showToast } from '../components/Toast';
 
-/** Create a markup at the current selection (range → mark; cursor → atom),
- *  register it in the store, and open its popover. Returns the id. */
-export function createMarkupAtSelection(editor: Editor): string {
+/** Create a markup at the current selection and open its popover. A real
+ *  selection anchors on that range ('range' — highlight offered); a bare
+ *  cursor anchors on the WHOLE CURRENT ELEMENT ('point' — no highlight row),
+ *  the createScriptNoteAtSelection rule. Both are the scriptMarkup MARK:
+ *  every screenplay element is `content: 'text*'`, so an inline anchor NODE
+ *  is invalid everywhere and ProseMirror's replace-fitter drops it silently
+ *  — the first driver run shipped a phantom markup that way. Marks ride the
+ *  text; nothing else does here.
+ *  Returns the id, or null (with a toast) when there is no text to anchor.
+ *  `range` overrides the live selection — the context menu passes its saved
+ *  one, because opening the menu steals focus (the script-note model). */
+export function createMarkupAtSelection(
+  editor: Editor,
+  range?: { from: number; to: number; empty: boolean },
+): string | null {
   const store = useEditorStore.getState();
-  const { from, to, empty } = editor.state.selection;
+  const sel = range ?? editor.state.selection;
+  let { from, to } = sel;
+  if (sel.empty) {
+    const $pos = editor.state.doc.resolve(sel.from);
+    from = $pos.start();
+    to = $pos.end();
+  }
+  if (!editor.state.doc.textBetween(from, to, ' ').trim()) {
+    showToast('Nothing to markup here — select some script first', 'info');
+    return null;
+  }
+
   const id = uuid();
   const presets = store.markupPresets;
   const preset = presets[0] ?? { icon: 'flag', color: '#e05555' };
-
-  if (empty) {
-    const node = editor.state.schema.nodes.markupAnchor.create({ markupId: id });
-    editor.view.dispatch(editor.state.tr.insert(from, node));
-  } else {
-    const markType = editor.state.schema.marks.scriptMarkup;
-    editor.view.dispatch(editor.state.tr.addMark(from, to, markType.create({ markupId: id, highlight: null })));
-  }
+  const markType = editor.state.schema.marks.scriptMarkup;
+  editor.view.dispatch(editor.state.tr.addMark(from, to, markType.create({ markupId: id, highlight: null })));
 
   const markup: ScriptMarkup = {
     id,
@@ -31,7 +49,7 @@ export function createMarkupAtSelection(editor: Editor): string {
     icon: preset.icon,
     color: preset.color,
     highlight: null,
-    anchor: empty ? 'point' : 'range',
+    anchor: sel.empty ? 'point' : 'range',
     done: false,
     createdAt: new Date().toISOString(),
   };
@@ -42,12 +60,11 @@ export function createMarkupAtSelection(editor: Editor): string {
   return id;
 }
 
-/** Find a markup's doc position (mark start or anchor atom pos). */
+/** Find a markup's doc position (the start of its marked text). */
 export function findMarkupPos(editor: Editor, id: string): number | null {
   let found: number | null = null;
   editor.state.doc.descendants((node, pos) => {
     if (found !== null) return false;
-    if (node.type.name === 'markupAnchor' && node.attrs.markupId === id) { found = pos; return false; }
     if (node.isText && node.marks.some((m) => m.type.name === 'scriptMarkup' && m.attrs.markupId === id)) {
       found = pos;
       return false;
@@ -75,20 +92,17 @@ export function setMarkupHighlight(editor: Editor, id: string, highlight: string
   if (touched) editor.view.dispatch(tr);
 }
 
-/** Remove a markup's anchor (mark span or atom) from the doc. */
+/** Remove a markup's mark from the doc (the text itself is untouched). */
 export function removeMarkupFromDoc(editor: Editor, id: string) {
   const { doc, tr, schema } = editor.state;
   const markType = schema.marks.scriptMarkup;
-  const atoms: { pos: number }[] = [];
   doc.descendants((node, pos) => {
-    if (node.type.name === 'markupAnchor' && node.attrs.markupId === id) atoms.push({ pos });
     if (node.isText && node.marks.some((m) => m.type.name === 'scriptMarkup' && m.attrs.markupId === id)) {
       tr.removeMark(pos, pos + node.nodeSize, markType);
     }
     return true;
   });
-  for (const a of atoms.reverse()) tr.delete(a.pos, a.pos + 1);
-  if (tr.docChanged || tr.steps.length) editor.view.dispatch(tr);
+  if (tr.steps.length) editor.view.dispatch(tr);
 }
 
 /** The scene heading text preceding a position ('' when none yet). */

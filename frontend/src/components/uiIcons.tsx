@@ -11,7 +11,7 @@
  */
 import React from 'react';
 import {
-  FaFile, FaPencilAlt, FaPalette, FaClipboardList, FaRegEye, FaWrench,
+  FaFile, FaPencilAlt, FaPalette, FaClipboardList, FaRegEye, FaRegFlag, FaWrench,
   FaColumns, FaRegQuestionCircle, FaStream,
   FaUndo, FaRedo, FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
   FaBold, FaItalic, FaUnderline, FaStrikethrough, FaSubscript, FaSuperscript,
@@ -240,6 +240,10 @@ export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
   goto: <FaHashtag />,
   scriptNotes: <FaStickyNote />,
   tags: <FaTags />,
+  // v5.25: Markups — create at cursor/selection, and the visibility toggle
+  // (the live button swaps eye/eye-slash by state, the lockResize model).
+  markupScript: <FaRegFlag />,
+  toggleMarkups: <FaRegEye />,
   zoom: <CirclePlusIcon />,   // v4.31: zoom = the circled steppers (14-B)
   view: <FaDesktop />,
   // v2.34: surface toggles. The right panel is the left icon mirrored —

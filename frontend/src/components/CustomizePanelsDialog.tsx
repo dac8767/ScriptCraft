@@ -27,20 +27,21 @@ import MoresContdsDialog from './MoresContdsDialog';
 import { ResetSection, type CustomizeTabId } from './customizeResets';
 import { showToast } from './Toast';
 import ThemesTab from './ThemesTab';
+import MarkupsCustomizeTab from './MarkupsCustomizeTab';
 import ContextMenuTab from './ContextMenuTab';
 import { exportCustomizationsFlow, importCustomizationsFlow } from './PresetsPanel';
 import { QAT_OPTIONS, QAT_BY_ID, isQatDivider, isQatSpacer } from './TitleBar';
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
-  category?: 'toolbar' | 'panels' | 'elements' | 'themes' | 'context';
+  category?: 'toolbar' | 'panels' | 'elements' | 'themes' | 'context' | 'markups';
   open: boolean;
   onClose: () => void;
   /** Render only the content (no overlay/box) — used inside Preferences. */
   embedded?: boolean;
   /** v4.64: render ONE tab's content with no inner tab rail — Settings lists
    *  the customize tabs in its own sidebar now. Implies embedded. */
-  soloCategory?: 'toolbar' | 'qat' | 'panels' | 'elements' | 'themes' | 'context';
+  soloCategory?: 'toolbar' | 'qat' | 'panels' | 'elements' | 'themes' | 'context' | 'markups';
 }
 
 /** Default spacer sizes — match the CSS so an unsized spacer doesn't jump when
@@ -534,7 +535,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // v4.22, Derek: default landing is the Editor tab (top of the list).
   // v4.28, Derek: the Menu Bar tab is GONE — the menus always live in the
   // macOS menu bar now; there is nothing to place or reorder in-window.
-  const [activeCatState, setActiveCat] = React.useState<'toolbar' | 'qat' | 'panels' | 'elements' | 'themes' | 'context'>(category ?? 'elements');
+  const [activeCatState, setActiveCat] = React.useState<'toolbar' | 'qat' | 'panels' | 'elements' | 'themes' | 'context' | 'markups'>(category ?? 'elements');
   // v4.64, Derek: Settings lists the customize tabs directly in ITS sidebar
   // (no inner tab rail) — soloCategory pins this instance to one tab.
   const activeCat = soloCategory ?? activeCatState;
@@ -746,7 +747,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       <div className={soloCategory ? 'fs-customize-solo' : 'prefs-layout fs-customize-layout'}>
         {!soloCategory && (
         <div className="prefs-tabs fs-customize-tabs">
-          {([['elements', 'Editor'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['qat', 'Quick Access'], ['context', 'Context Menu'], ['themes', 'Themes']] as const)
+          {([['elements', 'Editor'], ['toolbar', 'Toolbar'], ['panels', 'Side Panels'], ['qat', 'Quick Access'], ['context', 'Context Menu'], ['markups', 'Markups'], ['themes', 'Themes']] as const)
             .map(([id, label]) => (
             <button
               key={id}
@@ -910,6 +911,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             </section>
           </>)}
           {activeCat === 'themes' && <ThemesTab />}
+          {activeCat === 'markups' && <MarkupsCustomizeTab />}
           {activeCat === 'context' && <ContextMenuTab />}
           {activeCat === 'panels' && renderPanelsTab()}
           {/* v4.65, Derek: every tab ends in its Reset section (one registry —

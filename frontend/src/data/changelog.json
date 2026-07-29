@@ -1,5 +1,19 @@
 [
   {
+    "version": "5.25",
+    "date": "2026-07-29",
+    "changes": [
+      "NEW: Markups — one tool for annotating the script. \"Markup Script\" (ribbon button, right-click menu, or the tool window) drops a markup at the cursor or over your selection; its window holds rich text — lists (bullet / numbered / checklist), links, images by URL, even a link to a Scrapbook page",
+      "Each markup wears an icon + color of your choice (six quick presets, or the full icon-and-emoji picker); the icon sits in the script's right margin — click it (or the highlight) to reopen the markup",
+      "Markups made from a selection can also paint a highlight color over the text (presets or custom, removable any time)",
+      "The Markups tool window lists every markup with its page number and scene heading — double-click jumps the script there; edit, delete, or check one complete from its card. Filter by state (open by default), content kind, or icon",
+      "Show/Hide Markups everywhere it matters: an eye toggle atop the Markups window, View ▸ Working Notes, and an addable ribbon button — hidden markups also skip Preview, print and every export (the working-notes rule)",
+      "Customize ▸ Markups: choose which icon + color combos are the quick presets — drag to reorder; the first one is what a new markup starts as",
+      "Markups appear in the Navigator alongside notes, markers, sections and to-dos, wearing their own icon — click to jump and open",
+      "(Markups will eventually replace script highlighting, markers, sections, script notes and script to-dos — those tools are untouched this build while the core gets a shakedown)"
+    ]
+  },
+  {
     "version": "5.24",
     "date": "2026-07-29",
     "changes": [

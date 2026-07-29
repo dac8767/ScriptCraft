@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
-import { FaWrench, FaColumns, FaFileAlt, FaRulerCombined, FaCloudUploadAlt, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo, FaBoxOpen } from 'react-icons/fa';
+import { FaWrench, FaColumns, FaFileAlt, FaRulerCombined, FaCloudUploadAlt, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo, FaBoxOpen, FaRegFlag } from 'react-icons/fa';
 import PresetsPanel from './PresetsPanel';
 import { CUSTOMIZE_RESETS, ResetAllButton, type CustomizeTabId } from './customizeResets';
 import { applyDraftNumber } from './SetDraftDialog';
@@ -39,7 +39,7 @@ import { redirectUri } from '../services/oauthPkce';
    points (where they still exist) edit exactly the same state.
    ───────────────────────────────────────────────────────────────────────── */
 
-type CustomizeCat = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'themes';
+type CustomizeCat = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'markups' | 'themes';
 type PrefTab = 'general' | 'formats' | 'page' | 'keys' | 'saveloc' | 'system' | 'presets' | 'defaults' | `cz-${CustomizeCat}`;
 
 const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
@@ -70,6 +70,7 @@ const CUSTOMIZE_TABS: Array<{ id: CustomizeCat; label: string; icon: React.React
   { id: 'panels', label: 'Side Panels', icon: <FaColumns /> },
   { id: 'qat', label: 'Quick Access', icon: <FaBolt /> },
   { id: 'context', label: 'Context Menu', icon: <FaMousePointer /> },
+  { id: 'markups', label: 'Markups', icon: <FaRegFlag /> },
   { id: 'themes', label: 'Themes', icon: <FaPalette /> },
 ];
 

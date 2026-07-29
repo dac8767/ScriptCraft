@@ -14,12 +14,14 @@ import { useEditorStore } from '../stores/editorStore';
 import { FaHashtag, FaRegStickyNote } from 'react-icons/fa';
 import { ControlDropdown, ControlSearch } from './ToolControls';
 import { findNotePos } from '../utils/scriptNoteActions';
+import { findMarkupPos, markupPreviewText } from '../utils/markupActions';
+import { MarkupIcon } from './markupIcons';
 
-const KINDS = ['scene', 'act', 'section', 'marker', 'note', 'todo'] as const;
+const KINDS = ['scene', 'act', 'section', 'marker', 'note', 'todo', 'markup'] as const;
 type Kind = typeof KINDS[number];
 const LABEL: Record<Kind, string> = {
   scene: 'Scene Headers', act: 'Acts', section: 'Sections', marker: 'Markers',
-  note: 'Notes', todo: 'To-Dos',
+  note: 'Notes', todo: 'To-Dos', markup: 'Markups',
 };
 
 interface Item {
@@ -33,6 +35,10 @@ interface Item {
   pos?: number;
   /** note id for script notes */
   noteId?: string;
+  /** markup id (v5.25) — the row carries its chosen icon + color */
+  markupId?: string;
+  markupIcon?: string;
+  markupColor?: string;
   /** shelf card id + item index for to-dos */
   cardId?: string;
   itemIdx?: number;
@@ -91,6 +97,8 @@ export function NavigatorControls() {
 
 export default function NavigatorTool({ editor, scrollContainer }: NavigatorToolProps) {
   const { notes, setNotePopoverId } = useEditorStore();
+  const markups = useEditorStore((s) => s.markups);
+  const setMarkupEditorId = useEditorStore((s) => s.setMarkupEditorId);
   const filter = useEditorStore((s) => s.navFilter);
   const show = useEditorStore((s) => s.navShowKinds);
   const showNums = useEditorStore((s) => s.navShowSceneNumbers);
@@ -141,13 +149,25 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
     for (const n of notes) {
       out.push({ kind: 'note', text: n.content || n.anchorText || '(empty note)', noteId: n.id });
     }
+    // v5.25: markups — anchored like script notes; the row wears the
+    // markup's own icon + color and jumps to (and opens) it on click.
+    for (const m of markups) {
+      out.push({
+        kind: 'markup',
+        text: markupPreviewText(m) || '(empty markup)',
+        markupId: m.id,
+        markupIcon: m.icon,
+        markupColor: m.color,
+        done: m.done,
+      });
+    }
     // v0.15: General To-Do cards intentionally do NOT appear here — the
     // Navigator maps the SCRIPT, and only script to-dos have a location
     // in it. Standalone to-dos live solely in the To-Do window (blank Location).
     return out;
     // docTick forces re-scan of editor content
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, docTick, notes]);
+  }, [editor, docTick, notes, markups]);
 
   const visible = items.filter(
     (it) => kindShown(show, it.kind) && (!filter || it.text.toLowerCase().includes(filter.toLowerCase())),
@@ -173,6 +193,11 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
       const pos = findNotePos(editor, it.noteId);
       if (pos !== null) jumpTo(pos);
       setNotePopoverId(it.noteId);
+    } else if (it.kind === 'markup' && it.markupId && editor) {
+      // v5.25: same gesture as notes — go there, open its popover.
+      const pos = findMarkupPos(editor, it.markupId);
+      if (pos !== null) jumpTo(pos);
+      setMarkupEditorId(it.markupId);
     }
   };
 
@@ -211,7 +236,11 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
               />
             )}
             <span className={it.done ? 'fs-nav-done' : ''}>
-              {it.kind === 'note' ? <FaRegStickyNote className="fs-nav-kind-icon" /> : it.kind === 'act' ? '§ ' : it.kind === 'marker' ? '⚑ ' : it.kind === 'section' ? '# ' : ''}
+              {it.kind === 'markup' ? (
+                <span className="fs-nav-kind-icon fs-nav-markup-icon">
+                  <MarkupIcon icon={it.markupIcon ?? 'flag'} color={it.markupColor} />
+                </span>
+              ) : it.kind === 'note' ? <FaRegStickyNote className="fs-nav-kind-icon" /> : it.kind === 'act' ? '§ ' : it.kind === 'marker' ? '⚑ ' : it.kind === 'section' ? '# ' : ''}
               {it.text.length > 80 ? it.text.slice(0, 80) + '…' : it.text || '(untitled)'}
             </span>
             {/* v4.32 batch-v8 #5 / v4.35 batch-v9 #3: scene number at the

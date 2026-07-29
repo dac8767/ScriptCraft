@@ -146,7 +146,7 @@ import {
   FaFileSignature,
   FaRegClone, FaStream,   FaEdit,
   FaTags,
-  FaFlag, FaRegEyeSlash, FaRegEye, FaCheck, FaWrench,
+  FaFlag, FaRegFlag, FaRegEyeSlash, FaRegEye, FaCheck, FaWrench,
   FaBug,
   FaRulerHorizontal,
   FaPencilAlt, FaCoffee, FaBoxOpen,
@@ -216,6 +216,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     markersVisible, setMarkersVisible,
     sectionsVisible, setSectionsVisible,
     tagsVisible, setTagsVisible,
+    markupsVisible, setMarkupsVisible,
     viewStyle, setViewStyle,
     revisionMode,
     setRevisionMode,
@@ -1482,6 +1483,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               checked: tagsVisible,
               action: () => setTagsVisible(!tagsVisible),
             },
+            {
+              icon: <FaRegFlag />,
+              label: 'Show Markups in Script',
+              checked: markupsVisible,
+              action: () => setMarkupsVisible(!markupsVisible),
+            },
             { separator: true, label: '' },
             {
               icon: <FaRegEye />,
@@ -1489,6 +1496,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               action: () => {
                 setNotesVisible(true); setScriptTodosVisible(true);
                 setMarkersVisible(true); setSectionsVisible(true); setTagsVisible(true);
+                setMarkupsVisible(true);
               },
             },
             {
@@ -1497,6 +1505,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               action: () => {
                 setNotesVisible(false); setScriptTodosVisible(false);
                 setMarkersVisible(false); setSectionsVisible(false); setTagsVisible(false);
+                setMarkupsVisible(false);
               },
             },
           ],

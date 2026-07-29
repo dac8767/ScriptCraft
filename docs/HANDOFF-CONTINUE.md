@@ -202,7 +202,65 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.24 — columns not rows, the drag that never started, tab washes (HEAD)
+### v5.25 — MARKUPS: the annotation tool (HEAD)
+
+- Derek's redesign brief: ONE tool for annotating the script, set to replace
+  notes / to-dos / sections / markers on the page plus script highlighting.
+  "Markup Script" creates over a selection ('range' — highlight color offered)
+  or at a bare cursor ('point' — the mark spans the WHOLE current element, the
+  createScriptNoteAtSelection rule); a rich-text popover edits it; its
+  icon+color sits in the RIGHT margin. REPLACEMENT IS PHASE 2 — deferred until
+  Derek shakes the core down; the old tools are untouched this build. His
+  naming question (Markups vs Annotations etc.) was answered in chat with
+  options; NO rename done — note 'markups' is now a SHIPPED tool id, so any
+  future rename is label-only.
+- BOTH anchor flavors are ONE mechanism: the `scriptMarkup` MARK. The first
+  cut used a zero-width inline `markupAnchor` ATOM for point markups — and
+  the LIVE DRIVER caught what tsc/vitest couldn't: every screenplay element
+  is `content: 'text*'`, an inline node is invalid EVERYWHERE, and
+  ProseMirror's replace-fitter DROPS it silently — store got a markup, doc
+  got nothing (a phantom: no icon, no anchor, the silent-no-op sin). Marks
+  don't touch content structure, so they're the only anchor this schema
+  permits. Empty element + cursor → toast, no markup (never a phantom).
+- The model is scriptNote's, deliberately: the doc carries only ids (mark
+  attrs markupId+highlight), data lives in markupsSlice keyed by id,
+  persisted as `_markups` (composeSaveContent + BOTH hand-written load blocks
+  in ScreenplayEditor + the history destructure). Exporters keep marked text
+  and drop the mark (fountain/fdx/pdf/docx verified); pagination reads
+  textContent only, untouched by marks — the fountain half is pinned by
+  tests.
+- New files: stores/slices/markupsSlice.ts (data + DEFAULT_MARKUP_PRESETS),
+  editor/extensions/ScriptMarkup.ts, components/markupIcons.tsx (24 icons +
+  24 emoji + color rows), utils/markupActions.ts (create/find/setHighlight/
+  remove/sceneHeadingBefore/pageForPos/kinds/preview), MarkupIconLayer.tsx
+  (margin icons INSIDE editor-main, doc-tick repaint — not scroll-driven),
+  MarkupPopover.tsx (mini TipTap: StarterKit + Link + Image + TaskList/Item;
+  save-on-close; Scrapbook page links as scrapbook:<id> hrefs),
+  MarkupsPanel.tsx (cards: page # via computePageBlocks + sceneHeadingBefore;
+  double-click jump via requestEditorScroll; OPEN-only default filter),
+  MarkupsCustomizeTab.tsx, styles/screenplay/27-markups.css.
+- Entry points: ribbon builtins `markupScript` + `toggleMarkups` (palette-
+  only, like scriptNotes/tags); context-menu `markupScript` (flips to Edit/
+  Delete on an existing markup; passes savedSelection — the script-note
+  rule); View ▸ Working Notes check item + Show All/Hide All; the window eye
+  (TagsWindowActions pattern); a highlight-click handler in ScreenplayEditor.
+  markupsVisible (viewPrefs, persisted) unmounts margin icons in JS and
+  neutralizes highlights via .markups-hidden on .page; 16-print.css kills
+  highlight + icons + popover unconditionally.
+- Customize ▸ Markups: markupPresets (persisted viewState) — chips DRAG to
+  reorder (grip sets dataTransfer, the footgun), build a combo from the full
+  grid + color dots, floor of ONE preset, Reset to Default. The tab is in
+  BOTH CustomizePanelsDialog's rail and Settings' CUSTOMIZE_TABS sidebar
+  (soloCategory unions widened in both files).
+- Deps: @tiptap/extension-link, -image, -task-list, -task-item @^2.27.2
+  (popover mini-editor only; the script schema is untouched).
+- Tests (13 new, 848 green): markupsSlice CRUD/filter-default/presets,
+  markupActions kinds/preview/pageForPos, fountain exclusion pair (mark
+  text survives mark-less; atom vanishes), MarkupsPanel rendered via the
+  createRoot harness (open-only default, icon filter, orphan location line,
+  complete-drops-card, empty state).
+
+### v5.24 — columns not rows, the drag that never started, tab washes
 
 - Derek's batch (his screenshot showed HIS working checklist — those items
   are his queue, not instructions): (1) "thinking in terms of rows leaves
@@ -317,62 +375,12 @@ Durable bits kept live here:
   (Insert → To-Do List, Navigator) keep their name until Derek says
   otherwise.
 
-### v5.21 — the seven-pack: Sticky Notes merge, fullscreen Title Page, one window, and the zombie Window menu
-
-- Derek's queue, all shipped in one batch: (1) Title Page always fullscreen
-  "the same as the scrapbook"; (2) Notes + To-Do merged into "Sticky Notes"
-  (+ Note / + To-Do in the body's action row, Filter/Sort/Search in the
-  header); (3) Locations-style faint separators on the scene list;
-  (4) "show one tool window at a time"; (5) "remove the window menu";
-  (6) Pages fullscreen floors per-row at 2; (7) Airtable dev panel removed.
-- (1) `FULLSCREEN_ONLY_TOOLS = ['titlepage']` (editorStore) — openTool's
-  remembered-mode branch takes the fullscreen path for these UNCONDITIONALLY;
-  NO_FULLSCREEN_TOOLS is down to ['notebook']. The takeover hides its
-  shrink-to-window button and the generic fullscreen button drops
-  (ToolDock). toolModeMemory.test's old "Title Page never fullscreens" pin
-  is FLIPPED.
-- (2) The merge is PRESENTATION ONLY: id 'sticky' kept (label "Sticky
-  Notes"), 'todo' retired via the indexcards recipe — RETIRED_TOOL_IDS map
-  drives migrateToolOrder/migrateToolConfig (workspace snapshots included),
-  activeTool/Right init mapping, and an openTool legacy remap. Card data was
-  always one `_shelf` list. Each list keeps its own sort+manual order
-  (notesSort+noteOrder / todoSort+todoOrder); ONE header Sort sets both
-  ("Mixed" shown if pre-merge state diverged). New store fields stickySearch
-  + stickyKindFilter (ephemeral); cardMatchesSearch in ListControls is the
-  ONE search predicate (title, text, to-do item lines). Counts: each list
-  publishes its own (sticky/todo), StickyTitleExtra SUMS; the body zeroes a
-  filtered-out list's count (it's unmounted and can't publish).
-- (4) closeOtherFloats(s, keep) in editorStore — a floating WINDOW is the
-  temp slot or a panel-slot tool in 'floating' mode (visible panel);
-  docked/fullscreen are NOT windows. Called where floats are BORN: all four
-  openTool float branches + setToolMode('floating') (drag-out, shrink-from-
-  fullscreen). Spread the patch BEFORE the branch's own fields.
-- (5) THE WINDOW MENU WAS A ZOMBIE: the JS menu sync dropped it in v4.28,
-  but Rust's rebuild_window_menu (lib.rs) re-appended a fresh "Window"
-  submenu on every set_window_title and window Destroyed event. Removed:
-  that fn, both call sites, the window-list- menu-event handler, and the
-  boot menu's Window submenu. VERIFIED as far as this sandbox allows —
-  rustfmt parse + zero remaining references; cargo check CANNOT run here
-  (Linux GTK headers absent; macOS target needs a real mac toolchain), so
-  the first `tauri dev` on the Mac is the compile gate. Pure removals.
-- (6) Pages: `pagesPerRow` render value = max(floor, raw) with floor 2 only
-  when fullscreenTool === 'pages'; the STORE keeps the raw value, so leaving
-  fullscreen restores 1. The minus button disables at the floor.
-- (7) The v4.95 Airtable dev panel followed its own in-file removal list
-  (file, ALL_TOOLS spread, body case, CSS block; ToolId member stays as a
-  legacy union entry; Feedback's Airtable embed untouched, no npm lib —
-  no About-list change).
-- Driver kit: `window.__scStore` (the store) now rides beside __scEditor,
-  DEV-only — drivers set up state deterministically. check-tools-v521.mjs:
-  18 checks across all items (takeover shape, dock labels, + buttons, kind
-  filter, summed count, separators, one-window rule, fullscreen floor with
-  raw store value pinned at 1).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.21** — the seven-pack: Sticky Notes merge, fullscreen Title Page, one window, and the zombie Window menu
 - **v5.20** — the Scenes four-pack: contained popover, Cards per row, one menu, lighter cards
 - **v5.19** — Reorder wears the dialogs' Apply format
 - **v5.18** — per-row button spacing; the box-air truth

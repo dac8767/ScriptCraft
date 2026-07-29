@@ -21,6 +21,7 @@ import {
   FaHashtag,
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
   FaExchangeAlt, FaChevronDown,
+  FaRegFlag, FaRegEye, FaRegEyeSlash,
 } from 'react-icons/fa';
 import { LuUndo2, LuSearch } from 'react-icons/lu';
 import { ALL_TOOLS } from './ToolDock';
@@ -46,6 +47,7 @@ import { resolvePickedElement } from './screenplayEditorConstants';
 import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, stripTall, parseRibbon, ribbonKindVars } from './toolbarBuiltins';
 import { smartUndo, smartRedo, useEditorStore } from '../stores/editorStore';
 import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
+import { createMarkupAtSelection } from '../utils/markupActions';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { BUILT_IN_ELEMENT_IDS } from '../stores/formattingTypes';
@@ -218,6 +220,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // v1.83: the highlighter color is store state — Format > Highlighting shares it.
   const currentBgColor = useEditorStore((s) => s.highlightColor);
   const setCurrentBgColor = useEditorStore((s) => s.setHighlightColor);
+  const markupsVisible = useEditorStore((s) => s.markupsVisible);
+  const setMarkupsVisible = useEditorStore((s) => s.setMarkupsVisible);
 
   // Track the font/size of the text at current cursor position. Empty string
   // / null indicates the selection spans more than one value ("mixed").
@@ -964,6 +968,24 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           onClick={() => editor?.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '[ ] ' }] }).run()}
         >
           <FaCheckSquare />
+        </button>
+      );
+      case 'markupScript': return (
+        <button
+          className="toolbar-btn"
+          title="Markup Script"
+          onClick={() => { if (editor) createMarkupAtSelection(editor); }}
+        >
+          <FaRegFlag />
+        </button>
+      );
+      case 'toggleMarkups': return (
+        <button
+          className={`toolbar-btn ${markupsVisible ? 'active' : ''}`}
+          title={markupsVisible ? 'Hide Markups' : 'Show Markups'}
+          onClick={() => setMarkupsVisible(!markupsVisible)}
+        >
+          {markupsVisible ? <FaRegEye /> : <FaRegEyeSlash />}
         </button>
       );
       case 'titlePage': return (

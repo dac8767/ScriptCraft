@@ -1,8 +1,9 @@
 // v5.25: the Markups tool — Derek's redesign of on-page annotations. A markup
-// anchors IN the script (a `scriptMarkup` mark over a selection, or a
-// zero-width `markupAnchor` atom at a cursor) and carries its rich content
-// HERE, keyed by id — the scriptNote model (mark in doc, data in store),
-// persisted per script as the `_markups` save-content key.
+// anchors IN the script as a `scriptMarkup` mark (over the selection, or over
+// the whole current element when created at a bare cursor — the schema is
+// text-only, so an inline anchor node is impossible) and carries its rich
+// content HERE, keyed by id — the scriptNote model (mark in doc, data in
+// store), persisted per script as the `_markups` save-content key.
 import type { StateCreator } from 'zustand';
 import type { EditorState } from '../editorStore';
 
@@ -16,7 +17,8 @@ export interface ScriptMarkup {
   color: string;
   /** highlight color painted on the script text — range markups only */
   highlight: string | null;
-  /** how it anchors: 'range' = mark over text, 'point' = cursor atom */
+  /** how it was made: 'range' = a real selection (highlight offered),
+   *  'point' = a bare cursor (mark spans the whole element, no highlight) */
   anchor: 'range' | 'point';
   done: boolean;
   createdAt: string;
