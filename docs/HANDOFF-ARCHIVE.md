@@ -151,9 +151,29 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.44 and older (newest first)
+## Version history — v5.45 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.45 — AI Writer panel-only remove button + out of Tools menu; Pages right pair
+
+- Derek's queue #1 + a mid-turn Pages tweak: (1) AiWriterTool's footer
+  button renders ONLY in-panel — `inPanel = (toolMode.aiwriter ?? 'docked')
+  === 'docked' && tempTool !== 'aiwriter'` (ToolContent renders the same
+  body docked and floating; tempTool is the no-dock-home float) — and its
+  text is "Remove AI Writer from side panel". Popped out: no footer at
+  all. The remove-and-stash behavior (enabled:false, back via Customize ▸
+  Panels) is unchanged. (2) 'aiwriter' removed from MenuBar's
+  TOOL_MENU_GROUPS — its doors are the dock row and Customize ▸ Panels.
+  (Ribbon palette already hid it: t:aiwriter in RIBBON_HIDE.) (3) Pages
+  header re-split per Derek: + Add Page keeps the LEFT; Go to page + the
+  per-row stepper live in `.fs-pages-right` (margin-left auto, its own
+  ctl-gap, justify-content flex-end so a wrapped lone row still hugs
+  right).
+- check-v545: 7 green (left/right geometry, Tools menu without AI Writer
+  but with neighbors, docked button text, floating = no button,
+  remove-and-stash still works: window closed + dock row gone +
+  enabled=false).
 
 ### v5.44 — Pages tool: header reorder + gap knob, + Add Page dropdown, ratio fix, custom-thumb drag/⋮
 

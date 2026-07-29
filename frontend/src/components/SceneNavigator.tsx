@@ -15,10 +15,10 @@ import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
 import { parseHeading, computeSceneFilterDetails, sceneFilterOptions, filterSceneIndices, countActiveSceneFilters, type SceneFilterDetail } from '../utils/sceneFilters';
 import { useSceneReorder } from '../utils/useSceneReorder';
-import { ControlDropdown, ControlSearch } from './ToolControls';
+import { ControlDropdown, ControlSearch, PerRowStepper } from './ToolControls';
 import { SceneReorderBar } from './IndexCards';
 import { LuLayoutGrid, LuList } from 'react-icons/lu';
-import { FaChevronRight, FaChevronDown, FaChevronUp, FaEllipsisV, FaHashtag } from 'react-icons/fa';
+import { FaChevronRight, FaChevronDown, FaEllipsisV, FaHashtag } from 'react-icons/fa';
 
 interface SceneNavigatorProps {
   editor: Editor | null;
@@ -719,10 +719,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   // ── Handle page thumbnail click ──
 
   const setPagesPerRow = useEditorStore((s) => s.setPagesPerRow);
-  // v5.49, Derek: the per-row number is TYPEABLE too (reversing v5.08's
-  // "never typed"). Raw text while editing; blur snaps back to the
-  // clamped store value.
-  const [perRowText, setPerRowText] = useState<string | null>(null);
   // v5.47: the header's # pop REQUESTS the jump (pagesGotoRequest); this
   // body — owner of the grid ref and the editor — performs and clears it.
   const gotoReq = useEditorStore((s) => s.pagesGotoRequest);
@@ -1072,38 +1068,18 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
           >+ Add Page</button>
           <span className="fs-pages-right">
             {/* v5.47, Derek: Go to page moved to the window header (the #
-                button); the stepper's − / + became a stacked Up/Down pair
-                LEFT of the number. */}
+                button). v5.50: the stepper is the SHARED PerRowStepper —
+                framed Up/Down + typeable field, same as Cards per row. */}
             <span className="tool-action-group">
               <span className="tool-action-label" id="fs-pages-perrow-label">Pages per row:</span>
-              <span className="fs-updown">
-                <button
-                  className="fs-updown-btn"
-                  title="More pages per row (smaller pages)"
-                  disabled={pagesPerRow >= PAGES_PER_ROW_MAX}
-                  onClick={() => setPagesPerRow(pagesPerRow + 1)}
-                ><FaChevronUp /></button>
-                <button
-                  className="fs-updown-btn"
-                  title="Fewer pages per row (bigger pages)"
-                  disabled={pagesPerRow <= pagesPerRowMin}
-                  onClick={() => setPagesPerRow(pagesPerRow - 1)}
-                ><FaChevronDown /></button>
-              </span>
-              <input
-                className="tool-action-count fs-perrow-input"
-                type="text"
-                inputMode="numeric"
-                aria-labelledby="fs-pages-perrow-label"
-                value={perRowText ?? String(pagesPerRow)}
-                onFocus={(e) => e.target.select()}
-                onChange={(e) => {
-                  const t = e.target.value.replace(/[^0-9]/g, '');
-                  setPerRowText(t);
-                  const n = parseInt(t, 10);
-                  if (Number.isFinite(n) && n >= 1) setPagesPerRow(n);   // slice clamps 1–8
-                }}
-                onBlur={() => setPerRowText(null)}
+              <PerRowStepper
+                value={pagesPerRow}
+                min={pagesPerRowMin}
+                max={PAGES_PER_ROW_MAX}
+                onChange={setPagesPerRow}
+                labelledBy="fs-pages-perrow-label"
+                moreTitle="More pages per row (smaller pages)"
+                fewerTitle="Fewer pages per row (bigger pages)"
               />
             </span>
           </span>
@@ -1542,7 +1518,7 @@ export function PagesControls() {
       <button
         ref={btn}
         className="tool-ctl fs-pages-goto-btn"
-        title="Go to page"
+        title="Go to page #"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setNum(''); setOpen((v) => !v); }}
       >

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.49 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.50 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,43 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.49 — Design seats at the panel edge, stacked previews + Save, picker ×/white chips, spinner + typeable count (HEAD)
+### v5.50 — hide-ribbon CRASH fix, shared PerRowStepper, no-flash Design seat, Scrapbook auto-dock (HEAD)
+
+- Derek's 6 (five mid-turn messages, one CRASH report):
+  (1) THE CRASH ("when i tried to hide the ribbon toolbar"): three
+  useEditorStore reads (dzVars + the two rib scale pcts, the v5.14
+  per-kind geometry) sat ~900 lines BELOW Toolbar's
+  `toolbarMode==='hidden'` early return — hiding the ribbon changed the
+  hook count → 'Rendered fewer hooks'. Hoisted above the return beside
+  the zone hooks (the file's own NOTE says exactly this; §4 footgun).
+  Verified live: hide→restore, 0 pageerrors.
+  (2) `.fs-perrow-input` wears `.tool-action-field` (standard border +
+  dark input bg) at 30px, margin -4px → ~2px off the arrow frame.
+  (3) The # button tooltip: "Go to page #".
+  (4) ONE PerRowStepper (ToolControls) — framed Up/Down + typeable
+  field; Pages AND Scenes-Cards render it (CircleMinus/Plus gone from
+  ScenesTool; the count-span/perRowText inline versions deleted).
+  (5) Design FLASH on open (far-left frame): the seat effect became
+  useLayoutEffect — seats before first paint.
+  (6) SCRAPBOOK AUTO-DOCK: NotebookSurface mount, when
+  toolConfig.notebook is disabled, enables it into the LEFT panel
+  (docked, activeTool) and remembers the prior cfg; unmount restores it
+  verbatim. Probe: rows 0 → 1 (left, active) → 0 with cfg restored.
+- Probes (inline, no check file — every piece store+DOM-verified live):
+  pages type-5, scenes framed stepper type-4 + 0 old icons, auto-dock
+  cycle, hidden-ribbon toggle crash-free.
+- QUEUED NEXT (Derek, this turn — in order): ribbon retirement of
+  Insert Section / Insert Note / Add To-Do List / Insert Marker
+  (builtins+palette+default layout+one-time shed; RIBBON_HIDE precedent);
+  Annotations-panel Filter right-aligned before Search (drop
+  tool-ctl-lead); the pick-to-place prompt as a BIG persistent centered
+  banner at the editor top (Escape cancels — listener exists);
+  Navigator: Scene # toggle → a "View" menu (Scene Number / Annotations
+  / Scene Heading toggles — reuse navShowKinds for scene+markup);
+  PAGES WINDOW TABS (Script / Title Page / Custom) with the separate
+  Title Page tool leaving the side panels — the big restructure.
+
+### v5.49 — Design seats at the panel edge, stacked previews + Save, picker ×/white chips, spinner + typeable count
 
 - Derek's 8 (five mid-turn messages; the sandbox rolled back a FOURTH
   time at turn start — reset + reinstall recovered it, and the restored
@@ -402,31 +438,12 @@ Durable bits kept live here:
   COVER the annotation window (both seat right) — the driver drags dz
   aside by its header before clicking Save under it.
 
-### v5.45 — AI Writer panel-only remove button + out of Tools menu; Pages right pair
-
-- Derek's queue #1 + a mid-turn Pages tweak: (1) AiWriterTool's footer
-  button renders ONLY in-panel — `inPanel = (toolMode.aiwriter ?? 'docked')
-  === 'docked' && tempTool !== 'aiwriter'` (ToolContent renders the same
-  body docked and floating; tempTool is the no-dock-home float) — and its
-  text is "Remove AI Writer from side panel". Popped out: no footer at
-  all. The remove-and-stash behavior (enabled:false, back via Customize ▸
-  Panels) is unchanged. (2) 'aiwriter' removed from MenuBar's
-  TOOL_MENU_GROUPS — its doors are the dock row and Customize ▸ Panels.
-  (Ribbon palette already hid it: t:aiwriter in RIBBON_HIDE.) (3) Pages
-  header re-split per Derek: + Add Page keeps the LEFT; Go to page + the
-  per-row stepper live in `.fs-pages-right` (margin-left auto, its own
-  ctl-gap, justify-content flex-end so a wrapped lone row still hugs
-  right).
-- check-v545: 7 green (left/right geometry, Tools menu without AI Writer
-  but with neighbors, docked button text, floating = no button,
-  remove-and-stash still works: window closed + dock row gone +
-  enabled=false).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.45** — AI Writer: panel-only remove button, out of the Tools menu; Pages header right pair
 - **v5.44** — Pages: header reorder + gap knob, + Add Page dropdown, thumb ratio fix, custom-page drag/⋮
 - **v5.43** — ONE Filter drives script+window together; whole-area context menu; Return to Editor retired
 - **v5.42** — annotation preview padding knobs, no phantom row, pinned ⋮, growing field, two-section Filter (reversed in v5.43)

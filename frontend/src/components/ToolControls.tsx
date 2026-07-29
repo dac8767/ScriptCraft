@@ -13,6 +13,58 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LuSearch } from 'react-icons/lu';
+import { FaChevronUp, FaChevronDown } from 'react-icons/fa';
+
+/** v5.50, Derek: THE "… per row:" stepper — one framed Up/Down arrow pair
+ *  with a typeable number field beside it (the v5.49 Pages format). Every
+ *  per-row control renders THIS; the caller's store setter clamps. */
+export function PerRowStepper({ value, min, max, onChange, labelledBy, moreTitle, fewerTitle }: {
+  value: number;
+  min: number;
+  max: number;
+  onChange: (n: number) => void;
+  labelledBy: string;
+  /** tooltip for the UP arrow (more per row) */
+  moreTitle: string;
+  /** tooltip for the DOWN arrow (fewer per row) */
+  fewerTitle: string;
+}) {
+  // raw text while editing; blur snaps back to the clamped store value
+  const [text, setText] = useState<string | null>(null);
+  return (
+    <>
+      <span className="fs-updown">
+        <button
+          className="fs-updown-btn"
+          title={moreTitle}
+          disabled={value >= max}
+          onClick={() => onChange(value + 1)}
+        ><FaChevronUp /></button>
+        <button
+          className="fs-updown-btn"
+          title={fewerTitle}
+          disabled={value <= min}
+          onClick={() => onChange(value - 1)}
+        ><FaChevronDown /></button>
+      </span>
+      <input
+        className="tool-action-field fs-perrow-input"
+        type="text"
+        inputMode="numeric"
+        aria-labelledby={labelledBy}
+        value={text ?? String(value)}
+        onFocus={(e) => e.target.select()}
+        onChange={(e) => {
+          const t = e.target.value.replace(/[^0-9]/g, '');
+          setText(t);
+          const n = parseInt(t, 10);
+          if (Number.isFinite(n) && n >= 1) onChange(n);
+        }}
+        onBlur={() => setText(null)}
+      />
+    </>
+  );
+}
 
 export interface ControlDropdownItem {
   label: string;

@@ -9,8 +9,7 @@ import { useEditorStore } from '../stores/editorStore';
 import { CARDS_PER_ROW_MAX, CARDS_PER_ROW_MIN } from '../stores/slices/sceneNavSlice';
 import SceneNavigator, { ScenesReorderControl } from './SceneNavigator';
 import IndexCards from './IndexCards';
-import { ToolActionRow } from './ToolControls';
-import { CircleMinusIcon, CirclePlusIcon } from './uiIcons';
+import { ToolActionRow, PerRowStepper } from './ToolControls';
 
 export function ScenesTool({ editor, scrollContainer }: {
   editor: Editor | null;
@@ -29,22 +28,20 @@ export function ScenesTool({ editor, scrollContainer }: {
           card view's stepper holds the right edge. */}
       <ToolActionRow>
         <ScenesReorderControl />
+        {/* v5.50, Derek: every "… per row:" control is the Pages format —
+            the shared framed Up/Down + typeable field. */}
         {mode === 'cards' && (
           <span className="tool-action-group tool-action-right">
             <span className="tool-action-label" id="scenes-cardsrow-label">Cards per row:</span>
-            <button
-              className="tool-action-btn tool-action-icon"
-              title="Fewer cards per row (bigger cards)"
-              disabled={cardsPerRow <= CARDS_PER_ROW_MIN}
-              onClick={() => setCardsPerRow(cardsPerRow - 1)}
-            ><CircleMinusIcon /></button>
-            <span className="tool-action-count" aria-labelledby="scenes-cardsrow-label">{cardsPerRow}</span>
-            <button
-              className="tool-action-btn tool-action-icon"
-              title="More cards per row (smaller cards)"
-              disabled={cardsPerRow >= CARDS_PER_ROW_MAX}
-              onClick={() => setCardsPerRow(cardsPerRow + 1)}
-            ><CirclePlusIcon /></button>
+            <PerRowStepper
+              value={cardsPerRow}
+              min={CARDS_PER_ROW_MIN}
+              max={CARDS_PER_ROW_MAX}
+              onChange={setCardsPerRow}
+              labelledBy="scenes-cardsrow-label"
+              moreTitle="More cards per row (smaller cards)"
+              fewerTitle="Fewer cards per row (bigger cards)"
+            />
           </span>
         )}
       </ToolActionRow>

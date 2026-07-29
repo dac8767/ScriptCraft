@@ -9,7 +9,7 @@
  * behind it. "Copy CSS" dumps the current overrides as a :root block so a chosen
  * look can be baked into the stylesheet permanently.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LuRotateCcw, LuSearch } from 'react-icons/lu';
 import { FaCopy, FaCheck, FaChevronRight, FaChevronDown } from 'react-icons/fa';
@@ -231,7 +231,10 @@ export default function DesignPanel() {
   // drag-out window snaps to (v4.64). Every open re-seats; dragging it
   // somewhere else is respected while it stays open. No visible panel
   // (icon rail / hidden) → fall back to the top-right anchor.
-  useEffect(() => {
+  // v5.50, Derek ("it flashes on the far left for a split second"): a
+  // LAYOUT effect — the seat lands before the browser paints, so the
+  // stale/initial position never shows for a frame.
+  useLayoutEffect(() => {
     if (!open) return;
     const side = (useEditorStore.getState().toolConfig.design?.side ?? 'right') as 'left' | 'right';
     const dockEl = document.querySelector<HTMLElement>(`.tool-dock-wrap.tool-dock-${side}`);

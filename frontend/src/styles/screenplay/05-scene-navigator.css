@@ -928,20 +928,15 @@
 .fs-updown-btn + .fs-updown-btn { border-top: 1px solid var(--fd-border); }
 .fs-updown-btn:hover:not(:disabled) { background: var(--fd-toolbar-hover); }
 .fs-updown-btn:disabled { opacity: 0.35; cursor: default; }
-.fs-updown + .tool-action-count { margin-left: -3px; }
-/* v5.49, Derek: the number is a FIELD now — type it or step it. */
+/* v5.49, Derek: the number is a FIELD now — type it or step it.
+   v5.50: it wears the STANDARD field dress (.tool-action-field — the
+   border + dark input background every other field has) and sits right
+   against the arrow frame. */
 .fs-perrow-input {
-  width: 26px;
-  text-align: center;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  color: inherit;
-  font: inherit;
-  padding: 1px 2px;
+  width: 30px;
+  padding: 0 2px;
+  margin-left: -4px;   /* the group gap is 6px — land ~2px off the frame */
 }
-.fs-perrow-input:hover { border-color: var(--fd-border); }
-.fs-perrow-input:focus { border-color: var(--fd-accent); outline: none; background: var(--fd-input-bg); }
 
 /* The ⋮ on a custom page's thumbnail (top-right, over the paper). */
 .page-thumb-kebab {

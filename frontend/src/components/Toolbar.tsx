@@ -751,6 +751,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // a hook after an early return crashes React when the toolbar is toggled
   // hidden ('Rendered fewer hooks than during the previous render').
   const { toolbarLeft, toolbarRight, setToolbarZones, toolbarZonesSet } = useEditorStore();
+  // v5.50, Derek's crash report ("when i tried to hide the ribbon toolbar"):
+  // these three lived ~900 lines below the toolbarMode==='hidden' early
+  // return — hiding the ribbon changed the hook count and React threw
+  // 'Rendered fewer hooks'. Hooks live ABOVE the return, per the NOTE above.
+  const dzVars = useEditorStore((st) => st.designVars);
+  const ribScaleTitledPct = useEditorStore((st) => st.ribScaleTitledPct);
+  const ribScaleUntitledPct = useEditorStore((st) => st.ribScaleUntitledPct);
   // Explicit flag, not length>0 — 'Remove All' legitimately empties the zones
   // and must not re-trigger default seeding.
   const zonesReady = toolbarZonesSet;
@@ -1691,9 +1698,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
      block as --rib-rowh; ribbonKindVars (toolbarBuiltins) holds the maths.
      Auto-fill: untitled two-row sections stretch to a titled section's total
      height; the two Design scale knobs multiply each kind on top. */
-  const dzVars = useEditorStore((st) => st.designVars);
-  const ribScaleTitledPct = useEditorStore((st) => st.ribScaleTitledPct);
-  const ribScaleUntitledPct = useEditorStore((st) => st.ribScaleUntitledPct);
   const ribKind = ribbonKindVars({
     rowH: ribRowH,
     anyTitle: anyRibTitle,

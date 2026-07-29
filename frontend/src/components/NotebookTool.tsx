@@ -942,6 +942,36 @@ export function NotebookSurface() {
     return () => document.removeEventListener('selectionchange', trackScrapbookSelection);
   }, []);
 
+  // v5.50, Derek: the Scrapbook opened from a door OTHER than the panel,
+  // with its tool absent from the side panels → auto-show the Scrapbook
+  // nav in the LEFT panel for the session; exiting removes it again (the
+  // original config comes back exactly). This surface's mount/unmount IS
+  // open/close, so the lifecycle can't drift from the takeover.
+  const autoDocked = useRef(false);
+  const prevNotebookCfg = useRef<{ side: 'left' | 'right'; enabled: boolean } | null>(null);
+  useEffect(() => {
+    const st = useEditorStore.getState();
+    const cfg = st.toolConfig.notebook;
+    if (!cfg?.enabled) {
+      prevNotebookCfg.current = cfg ?? null;
+      st.setToolConfig({ ...st.toolConfig, notebook: { side: 'left', enabled: true } });
+      st.setToolMode('notebook', 'docked');
+      st.setActiveTool('notebook');
+      autoDocked.current = true;
+    }
+    return () => {
+      if (!autoDocked.current) return;
+      autoDocked.current = false;
+      const s2 = useEditorStore.getState();
+      if (s2.activeTool === 'notebook') s2.setActiveTool(null);
+      if (s2.activeToolRight === 'notebook') s2.setActiveToolRight(null);
+      s2.setToolConfig({
+        ...s2.toolConfig,
+        notebook: prevNotebookCfg.current ?? { side: 'left', enabled: false },
+      });
+    };
+  }, []);
+
   return (
     <div className="fs-nb-takeover">
       {/* v2.07: no button row here — the Scrapbook's controls live in the

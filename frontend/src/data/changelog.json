@@ -1,5 +1,16 @@
 [
   {
+    "version": "5.50",
+    "date": "2026-07-29",
+    "changes": [
+      "FIX: hiding the ribbon toolbar crashed the app — three internal reads sat below the hide check and React threw the moment the ribbon went away; verified crash-free both directions now",
+      "The Pages per row number wears the standard field look (border + dark background) and sits right against the arrows; the # button's tooltip reads \"Go to page #\"",
+      "Every \"… per row:\" control is the same now — Scenes' Cards per row got the framed Up/Down arrows and typeable number too (one shared control drives both)",
+      "The Design window no longer flashes at the far left for a split second on open — it seats before the first paint",
+      "Opening the Scrapbook with its tool absent from the side panels auto-shows the Scrapbook nav in the LEFT panel; exiting removes it again exactly as it was"
+    ]
+  },
+  {
     "version": "5.49",
     "date": "2026-07-29",
     "changes": [
