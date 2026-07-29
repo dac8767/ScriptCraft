@@ -67,18 +67,19 @@ export function MarkupsControls() {
   const showChip = scriptHidden.length + (scriptDone !== 'all' ? 1 : 0);
   return (
     <>
-      {/* v5.27, Derek: "Show" — no icon, LEFT-aligned in the header (the
+      {/* v5.27, Derek: no icon, LEFT-aligned in the header (the
           tool-ctl-lead seat), driving what renders in the SCRIPT.
           v5.28: the shared AnnotationShowMenu (same popover as the ribbon
-          button and the View submenu's state). */}
+          button and the View submenu's state). v5.33, Derek: the pair is
+          named by WHERE it filters — "Script" / "Window". */}
       <AnnotationShowMenu className="tool-ctl tool-ctl-lead markup-ctl-script" title="What shows in the script">
-        <span className="tool-ctl-label">Show</span>
+        <span className="tool-ctl-label">Script</span>
         {showChip > 0 && <span className="tool-ctl-chip">{showChip}</span>}
       </AnnotationShowMenu>
-      <button ref={filterBtn} className={`tool-ctl markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Filter this list"
+      <button ref={filterBtn} className={`tool-ctl markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Filter this window"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setFilterOpen((v) => !v); }}>
-        <span className="tool-ctl-label">Filter</span>
+        <span className="tool-ctl-label">Window</span>
         {filterChip > 0 && <span className="tool-ctl-chip">{filterChip}</span>}
       </button>
       {filterOpen && (

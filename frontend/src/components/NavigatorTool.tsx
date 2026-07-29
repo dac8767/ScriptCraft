@@ -14,7 +14,7 @@ import { useEditorStore } from '../stores/editorStore';
 import { FaHashtag, FaRegStickyNote } from 'react-icons/fa';
 import { ControlDropdown, ControlSearch } from './ToolControls';
 import { findNotePos } from '../utils/scriptNoteActions';
-import { findMarkupPos, markupContentLines } from '../utils/markupActions';
+import { findMarkupPos, markupContentLines, markupNavLines } from '../utils/markupActions';
 import { MarkupIcon } from './markupIcons';
 import { TypeGridPop, useTypesInUse, useSeat, useDismiss } from './MarkupPickers';
 
@@ -205,12 +205,14 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
       // panel (markupFilters) — hidden types/states drop out here too.
       if (mkFilters.done !== 'all' && (mkFilters.done === 'done') !== m.done) continue;
       if (mkFilters.hiddenIcons.includes(m.icon)) continue;
-      const lines = markupContentLines(m).slice(0, 6);
+      // v5.33: the rendered lines come from the SHARED capper (the edit
+      // window's "Displays as:" preview uses the same one); search text
+      // stays uncapped so long lines remain findable.
       const item: Item = {
         kind: 'markup',
         // empty annotation → NO placeholder text; the row is just the icon
-        text: lines.join(' '),
-        markupLines: lines,
+        text: markupContentLines(m).join(' '),
+        markupLines: markupNavLines(m.content),
         markupId: m.id,
         markupIcon: m.icon,
         markupColor: m.color,
@@ -321,7 +323,7 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
                 {(it.markupLines?.length ?? 0) > 0 && (
                   <span className="fs-nav-anno-lines">
                     {it.markupLines!.map((l, li) => (
-                      <span key={li} className="fs-nav-anno-line">{l.length > 60 ? l.slice(0, 60) + '…' : l}</span>
+                      <span key={li} className="fs-nav-anno-line">{l}</span>
                     ))}
                   </span>
                 )}

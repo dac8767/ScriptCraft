@@ -118,6 +118,7 @@ export default function MarkupIconLayer({ editor, container }: {
         <button
           key={s.id}
           className={`markup-margin-icon${s.done ? ' done' : ''}`}
+          data-markup-icon={s.id}
           // v5.27, Derek: the ring wears the annotation's own color (thicker
           // 2px — base rule), and the whole chip scales with the Design knob.
           style={{

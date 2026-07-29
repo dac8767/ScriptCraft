@@ -21,7 +21,7 @@ import {
   FaHashtag,
   FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
   FaExchangeAlt, FaChevronDown,
-  FaMarker, FaRegEye, FaRegEyeSlash,
+  FaMarker,
 } from 'react-icons/fa';
 import { LuUndo2, LuSearch } from 'react-icons/lu';
 import { ALL_TOOLS } from './ToolDock';
@@ -980,13 +980,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           <FaMarker />
         </button>
       );
+      // v5.33, Derek: same glyph as the side panel's Annotations tool —
+      // the pressed (active) state carries the on/off, like Bold.
       case 'toggleMarkups': return (
         <button
           className={`toolbar-btn ${markupsVisible ? 'active' : ''}`}
           title={markupsVisible ? 'Hide Annotations' : 'Show Annotations'}
           onClick={() => setMarkupsVisible(!markupsVisible)}
         >
-          {markupsVisible ? <FaRegEye /> : <FaRegEyeSlash />}
+          <FaMarker />
         </button>
       );
       // v5.28, Derek: a menu of which annotation types are visible on the

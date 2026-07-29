@@ -240,10 +240,11 @@ export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
   goto: <FaHashtag />,
   scriptNotes: <FaStickyNote />,
   tags: <FaTags />,
-  // v5.25: Markups — create at cursor/selection, and the visibility toggle
-  // (the live button swaps eye/eye-slash by state, the lockResize model).
+  // v5.25: Markups — create at cursor/selection, plus the visibility toggle.
+  // v5.33, Derek: the toggle wears the SAME marker glyph as the side
+  // panel's Annotations tool; pressed state carries the on/off.
   markupScript: <FaMarker />,
-  toggleMarkups: <FaRegEye />,
+  toggleMarkups: <FaMarker />,
   annotationsMenu: <FaMarker />,
   zoom: <CirclePlusIcon />,   // v4.31: zoom = the circled steppers (14-B)
   view: <FaDesktop />,

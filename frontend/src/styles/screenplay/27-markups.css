@@ -67,10 +67,20 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: min(70vh, 560px);
-  overflow-y: auto;
+  width: 380px;              /* v5.33: CSS-owned so the user's resize wins */
+  min-width: 300px;
+  min-height: 220px;
+  max-height: min(84vh, 720px);
+  overflow: auto;
+  resize: both;              /* v5.33, Derek: the edit window is resizable */
 }
-.fs-markup-popover.maximized { max-height: none; }
+/* maximize must beat a user-resized inline width/height */
+.fs-markup-popover.maximized {
+  max-height: none;
+  width: auto !important;
+  height: auto !important;
+  resize: none;
+}
 
 /* window chrome: drag by the bar; fullscreen + close at its right */
 .markup-pop-titlebar {
@@ -118,6 +128,25 @@
 }
 .markup-win-btn:hover { opacity: 1; background: rgba(0, 0, 0, 0.24); }
 .markup-win-close { font-size: 15px; border-top-right-radius: 8px; }
+/* v5.33, Derek: the ⋮ rides the title bar, left of the fullscreen button —
+   dressed as a window button (full height, square, flush). */
+.markup-titlebar-dots { display: flex; align-self: stretch; }
+.markup-titlebar-dots .markup-dots-btn {
+  width: 30px;
+  height: auto;
+  align-self: stretch;
+  border: none;
+  border-radius: 0;
+  background: rgba(0, 0, 0, 0.1);
+  color: inherit;
+  opacity: 0.8;
+  font-size: 12px;
+}
+.markup-titlebar-dots .markup-dots-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.24);
+  color: inherit;
+}
 
 /* v5.31: the inline Used row's + and the combined picker's color section */
 .markup-combo-plus { font-weight: 700; font-size: 14px; background: rgba(0, 0, 0, 0.06); }
@@ -130,6 +159,11 @@
 .markup-pop-icon-group { flex-wrap: wrap; }
 .markup-hl-del:hover { color: #c0392b; border-color: #c0392b; opacity: 1; }
 .markup-add-hl { font-size: 11px; padding: 4px 8px; }
+/* v5.33, Derek: the annotation window is a LIGHT surface in both themes —
+   the generic --fd-text hover flipped "Link Script Text" white and
+   unreadable. Fixed dark ink here, whatever the app theme. */
+.fs-markup-popover .markup-hl-clear { color: rgba(0, 0, 0, 0.55); border-color: rgba(0, 0, 0, 0.25); }
+.fs-markup-popover .markup-hl-clear:hover { color: rgba(0, 0, 0, 0.85); border-color: rgba(0, 0, 0, 0.45); }
 .markup-add-hl.active {
   border-color: var(--fd-accent);
   color: var(--fd-accent);
@@ -247,11 +281,14 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   padding: 8px;
   width: 260px;
+  min-width: 220px;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-height: min(60vh, 420px);
-  overflow-y: auto;
+  max-height: min(70vh, 560px);
+  overflow: auto;
+  resize: both;              /* v5.33, Derek: the picker is resizable */
 }
 .markup-icon-pop-row { display: flex; flex-wrap: wrap; gap: 3px; }
 
@@ -304,6 +341,10 @@
 }
 .markup-dots-item:hover { background: var(--fd-overlay-light); }
 .markup-dots-sep { height: 1px; background: var(--fd-border); margin: 3px 4px; }
+.markup-dots-hidetype { gap: 5px; }
+.markup-dots-hidetype .markup-glyph { display: inline-flex; font-size: 12px; }
+.markup-dots-hidetype .markup-emoji { font-size: 12px; }
+.markup-dots-hidetype .markup-custom-icon { width: 13px; height: 13px; }
 .markup-dots-del:hover { color: #e05555; }
 .markup-dots-statusrow {
   display: flex;
@@ -405,6 +446,14 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
 
 /* Mini rich-text toolbar */
 .markup-mini-bar { gap: 2px; border-top: 1px solid rgba(0, 0, 0, 0.14); padding-top: 8px; }
+/* v5.33, Derek: "Displays as:" — the Navigator row previewed under the
+   editor, rendered with the row's own classes so the two never drift. */
+.markup-pop-preview {
+  align-items: flex-start;
+  border-top: 1px solid rgba(0, 0, 0, 0.14);
+  padding-top: 8px;
+}
+.markup-nav-preview { font-size: 12px; line-height: 1.4; min-width: 0; }
 .markup-mini-btn {
   width: 24px;
   height: 24px;
@@ -591,8 +640,13 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
 .fs-markup-cz-footrow { margin-top: 16px; }
 
 /* Navigator annotation rows — indented under their scene (v5.28) and
-   colored by their icon (inline from the row). */
+   colored by their icon (inline from the row). v5.33: the LINE STACK CSS
+   was missing — a 3-item list rendered inline as one row (Derek's
+   screenshot); these are the rules the component was already naming. */
 .fs-nav-item.markup { padding-left: 26px; }
+.fs-nav-anno { display: flex; align-items: flex-start; gap: 4px; min-width: 0; }
+.fs-nav-anno-lines { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fs-nav-anno-line { display: block; overflow-wrap: anywhere; }
 .fs-nav-markup-icon { display: inline-flex; margin-right: 4px; font-size: 11px; }
 .fs-nav-markup-icon .markup-glyph { display: inline-flex; }
 .fs-nav-markup-icon .markup-emoji { font-size: 11px; }

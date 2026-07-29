@@ -7,7 +7,7 @@
  * localStorage at module scope.)
  */
 import { describe, it, expect } from 'vitest';
-import { markupKinds, markupPreviewText, pageForPos, firstContentKind } from './markupActions';
+import { markupKinds, markupPreviewText, pageForPos, firstContentKind, markupNavLines } from './markupActions';
 import type { ScriptMarkup } from '../stores/slices/markupsSlice';
 
 const markup = (content: unknown): ScriptMarkup => ({
@@ -49,6 +49,34 @@ describe('markupPreviewText', () => {
   it('is empty for image-only content', () => {
     const m = markup({ type: 'doc', content: [{ type: 'image', attrs: { src: 'x.png' } }] });
     expect(markupPreviewText(m)).toBe('');
+  });
+});
+
+/** v5.33: ONE capper feeds the Navigator rows AND the edit window's
+ *  "Displays as:" preview — a list stacks as lines, long lines ellipsize. */
+describe('markupNavLines', () => {
+  it('a 3-item checklist is 3 marker-prefixed lines', () => {
+    const item = (t: string, checked: boolean) =>
+      ({ type: 'taskItem', attrs: { checked }, content: [p(t)] });
+    const lines = markupNavLines({
+      type: 'doc',
+      content: [{ type: 'taskList', content: [item('one', false), item('two', false), item('three', true)] }],
+    });
+    expect(lines).toEqual(['☐ one', '☐ two', '☑ three']);
+  });
+
+  it('caps at 6 lines and 60 chars per line', () => {
+    const many = Array.from({ length: 9 }, (_, i) => p(`line ${i + 1} ${'x'.repeat(80)}`));
+    const lines = markupNavLines({ type: 'doc', content: many });
+    expect(lines).toHaveLength(6);
+    for (const l of lines) {
+      expect(l.length).toBe(61);          // 60 kept + the ellipsis
+      expect(l.endsWith('…')).toBe(true);
+    }
+  });
+
+  it('empty content produces no lines (icon-only row)', () => {
+    expect(markupNavLines(null)).toEqual([]);
   });
 });
 

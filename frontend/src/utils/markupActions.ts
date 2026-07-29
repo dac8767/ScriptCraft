@@ -282,6 +282,15 @@ export function markupContentLines(m: ScriptMarkup): string[] {
   return lines;
 }
 
+/** v5.33: the EXACT lines a Navigator row renders — capped at 6 lines of 60
+ *  chars. Shared by the Navigator and the edit window's "Displays as:"
+ *  preview so the preview can never drift from the real row. */
+export function markupNavLines(content: ScriptMarkup['content']): string[] {
+  return markupContentLines({ content } as ScriptMarkup)
+    .slice(0, 6)
+    .map((l) => (l.length > 60 ? `${l.slice(0, 60)}…` : l));
+}
+
 /** Plain-text preview of a markup's content (cards + navigator rows). */
 export function markupPreviewText(m: ScriptMarkup): string {
   const parts: string[] = [];

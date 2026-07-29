@@ -1,5 +1,21 @@
 [
   {
+    "version": "5.33",
+    "date": "2026-07-29",
+    "changes": [
+      "The annotation window opens directly under its on-script icon, with its right edge on the side panel's left edge (no right panel → centered under the icon) — and it stays anchored there through scrolling and resizing",
+      "The annotation window is resizable (drag its bottom-right corner), and so is the combined icon/color picker",
+      "The ⋮ menu moved into the annotation window's title bar, left of the fullscreen button; when the Used icons leave no room, the Highlight controls drop to a second row",
+      "New \"Displays as:\" section under the note text — a live preview of exactly what the Navigator row will show (icon + lines)",
+      "The ⋮ menu's hide-in-script item now shows the annotation's ICON instead of naming it",
+      "Scrapbook links in annotations are real links again — clicking one opens that Scrapbook page (they had been landing as raw text)",
+      "Navigator: list annotations stack as rows — a 3-item list is 3 lines, not one run-on line",
+      "Annotations window: \"Show\" and \"Filter\" are now \"Script\" and \"Window\" — named for where each applies",
+      "\"Link Script Text\" keeps dark, readable ink on hover",
+      "The ribbon's Show/Hide Annotations button wears the same marker icon as the side panel's Annotations tool (pressed = showing)"
+    ]
+  },
+  {
     "version": "5.32",
     "date": "2026-07-29",
     "changes": [

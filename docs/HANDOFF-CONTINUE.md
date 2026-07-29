@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.24 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.33 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,51 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.32 — one-row nav header, unmistakable active icon, Design exempt (HEAD)
+### v5.33 — icon-anchored seating, resizable windows, real scrapbook links (HEAD)
+
+- Derek's batch (11 items, most added mid-turn): (1) the edit window SEATS
+  under the annotation's on-script margin icon with its RIGHT edge on the
+  side panel's left edge (`.tool-dock-wrap.tool-dock-right`, width>0 guard);
+  no right panel → centered under the icon. `.markup-margin-icon` now
+  carries `data-markup-icon` for the lookup; icon missing (type hidden,
+  layer off) → highlight/block rect stands in; orphan → screen-center as
+  before. A ResizeObserver re-runs place() when the SIZE changes, so a user
+  resize keeps the right edge pinned and grows the box LEFTWARD (drag +
+  maximize still override everything). (2) both the edit window and the
+  combined icon/color picker are resizable (CSS resize:both; the window's
+  width lives in CSS, not React style, so the handle's inline w/h survive
+  re-renders). (3) the ⋮ menu rides the TITLE BAR left of fullscreen
+  (`.markup-titlebar-dots` wrapper stopPropagations pointerdown or the bar
+  would start a drag); the head row's spacer moved BETWEEN the Icon and
+  Highlight groups — flex base-size math wraps the Highlight group to a
+  second row exactly when the Used combos leave no room. (4) "Displays as:"
+  under the note text: the LIVE Navigator-row preview (icon + lines),
+  rendered with the REAL row's classes and fed by `markupNavLines` in
+  markupActions — the ONE capper (6 lines × 60 chars + …) the Navigator now
+  uses too; the mini's 'update' event drives it keystroke-live. (5) the ⋮
+  hide-type item shows the annotation's ICON, not its name
+  (`.markup-dots-hidetype`). (6) scrapbook links: tiptap Link ≥2.11 STRIPS
+  hrefs of unknown schemes at RENDER (anchor stays, href="") — fixed with
+  `Link.configure({ protocols: ['scrapbook'] })` + linkScrapPage inserts a
+  text node with a real link MARK (the old HTML string landed as plain
+  text). (7) navigator list annotations STACK (`.fs-nav-anno-lines` column
+  CSS — the v5.30 component named classes that were never written). (8)
+  panel labels renamed by WHERE they filter: Show→"Script", Filter→"Window".
+  (9) `.markup-hl-clear` gets fixed DARK ink scoped to `.fs-markup-popover`
+  (the --fd-text hover flipped "Link Script Text" white on the light
+  surface). (10) ribbon Show/Hide Annotations = the SAME FaMarker as the
+  side panel tool (Toolbar case + TOOLBAR_ICONS registry, both), pressed
+  state carries on/off — the eye/eye-slash pair is gone.
+- DRIVER LESSONS: a dock-row click TOGGLES an open tool and the Navigator
+  docks LEFT — Annotations stayed open on the right, so a blind
+  openTool('Annotations') CLOSED it (guard with an existence check).
+  And never inject store content while the popover is open — save-on-close
+  writes the mini editor's JSON over it; type through the mini instead.
+- check-v533: 25 green (edge/center seating deltas, titlebar order, wrap
+  by measured tops, live preview lines, real <a href="scrapbook:…">,
+  resize sticks + edge re-pins, 3 stacked nav rows, labels).
+
+### v5.32 — one-row nav header, unmistakable active icon, Design exempt
 
 - Derek: (1) the Navigator header is ONE row (Filter + Search only); the
   Annotations filter button + Scene Numbers toggle moved into the BODY's
@@ -286,37 +330,12 @@ Durable bits kept live here:
   drag + no-re-seat, maximize, clean vs dirty ×, discard proof, icon-only
   and list rows, same-row buttons, shared-filter drive).
 
-### v5.29 — picker Used sections, legible chips, head row, icon import
-
-- Derek's batch: (1) RECENT → USED in both pickers, derived LIVE from
-  `markups` (no stored lists — markupRecentColors/Icons fields deleted;
-  old viewState keys ignored). Color picker `used` prop (was `recent`,
-  label "Used"); icon picker Used row = unique icon+color COMBOS rendered
-  in their own colors; picking one sets both. (2) LEGIBILITY: isDarkColor
-  (markupIcons, luminance < .42) puts `.markup-light-chip` behind icon
-  buttons drawn in dark colors (his screenshot: near-black on dark chrome).
-  (3) HEAD ROW: one row — "Icon:" group (icon+color swatches) ·
-  "Highlight:" group (EYE toggle, title "Hide (or show) highlight in
-  script", replacing the checkbox + color swatch) · ⋮. Three cssVar Design
-  knobs: --dz-anno-head-gap 6 / --dz-anno-group-gap 14 / --dz-anno-head-pad
-  0 (Design ▸ Annotations). (4) IMPORT ICON: file input in the icon picker
-  — image/* only, 2 MB cap, canvas contain-fit to a 48px PNG data URL,
-  stored in viewPrefs.markupCustomIcons ({id,data}[], persisted), icon key
-  `custom:<id>`; MarkupIcon renders customs via a store lookup (img
-  .markup-custom-icon; margin chip sizes it 72%).
-- WATCH FOR: an Edit once wrote a NUL byte into MarkupPickers.tsx (file
-  became "data" to grep/file and would have broken the build) — caught by
-  `file`; stripped with python. If grep calls a source file BINARY, look
-  for \x00.
-- check-v529: 19 green (labels/row geometry, eye toggle, Design var drives
-  computed gap, Used rows from live state, chip bg computed, real file
-  import via setInputFiles → registry + swatch + margin img).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.29** — picker Used sections, legible chips, one-row popover head, icon import
 - **v5.28** — annotation view controls everywhere (View submenu, ribbon menu) + navigator polish
 - **v5.27** — solid icons, colored rings, segmented toggles, FaMarker identity
 - **v5.26** — ANNOTATIONS: rename + the 14-item polish batch (block anchors, swatch pickers, auto-icon)

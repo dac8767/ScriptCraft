@@ -151,9 +151,35 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.28 and older (newest first)
+## Version history — v5.29 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.29 — picker Used sections, legible chips, head row, icon import
+
+- Derek's batch: (1) RECENT → USED in both pickers, derived LIVE from
+  `markups` (no stored lists — markupRecentColors/Icons fields deleted;
+  old viewState keys ignored). Color picker `used` prop (was `recent`,
+  label "Used"); icon picker Used row = unique icon+color COMBOS rendered
+  in their own colors; picking one sets both. (2) LEGIBILITY: isDarkColor
+  (markupIcons, luminance < .42) puts `.markup-light-chip` behind icon
+  buttons drawn in dark colors (his screenshot: near-black on dark chrome).
+  (3) HEAD ROW: one row — "Icon:" group (icon+color swatches) ·
+  "Highlight:" group (EYE toggle, title "Hide (or show) highlight in
+  script", replacing the checkbox + color swatch) · ⋮. Three cssVar Design
+  knobs: --dz-anno-head-gap 6 / --dz-anno-group-gap 14 / --dz-anno-head-pad
+  0 (Design ▸ Annotations). (4) IMPORT ICON: file input in the icon picker
+  — image/* only, 2 MB cap, canvas contain-fit to a 48px PNG data URL,
+  stored in viewPrefs.markupCustomIcons ({id,data}[], persisted), icon key
+  `custom:<id>`; MarkupIcon renders customs via a store lookup (img
+  .markup-custom-icon; margin chip sizes it 72%).
+- WATCH FOR: an Edit once wrote a NUL byte into MarkupPickers.tsx (file
+  became "data" to grep/file and would have broken the build) — caught by
+  `file`; stripped with python. If grep calls a source file BINARY, look
+  for \x00.
+- check-v529: 19 green (labels/row geometry, eye toggle, Design var drives
+  computed gap, Used rows from live state, chip bg computed, real file
+  import via setInputFiles → registry + swatch + margin img).
 
 ### v5.28 — annotation view controls everywhere + navigator polish
 

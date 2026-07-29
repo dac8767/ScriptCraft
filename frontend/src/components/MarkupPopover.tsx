@@ -26,13 +26,13 @@ import {
 } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
-import { AUTO_ICON } from './markupIcons';
+import { AUTO_ICON, MarkupIcon } from './markupIcons';
 import { DEFAULT_MARKUP_HIGHLIGHT } from '../stores/slices/markupsSlice';
 import { confirmDialog } from './ConfirmDialog';
 import { FullscreenIcon } from './uiIcons';
 import { convertMarkupToPoint, convertMarkupToRange } from '../utils/markupActions';
 import { MarkupColorSwatch, MarkupUsedRow, MarkupDotsMenu } from './MarkupPickers';
-import { findMarkupPos, setMarkupHighlight, firstContentKind } from '../utils/markupActions';
+import { findMarkupPos, setMarkupHighlight, firstContentKind, markupNavLines } from '../utils/markupActions';
 
 const POP_W = 380;
 
@@ -59,11 +59,18 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   const snapRef = useRef<{ json: string; icon: string; color: string; highlight: string | null; done: boolean } | null>(null);
   const popRef = useRef<HTMLDivElement>(null);
   const nbPages = useNotebookStore((s) => s.pages);
+  // v5.33, Derek: "Displays as:" — the Navigator row, previewed LIVE.
+  const [navPreview, setNavPreview] = useState<string[]>([]);
+  // the seat function, reachable from the ResizeObserver effect below
+  const reseatRef = useRef<(() => void) | null>(null);
 
   const mini = useEditor({
     extensions: [
       StarterKit.configure({ heading: false, codeBlock: false, blockquote: false, horizontalRule: false }),
-      Link.configure({ openOnClick: false }),
+      // v5.33: 'scrapbook' must be an ALLOWED protocol — tiptap's Link
+      // strips the href of any scheme it doesn't know at render time, which
+      // left Scrapbook links as dead <a href=""> anchors.
+      Link.configure({ openOnClick: false, protocols: ['scrapbook'] }),
       Image,
       TaskList,
       TaskItem.configure({ nested: false }),
@@ -122,14 +129,28 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     return () => { mini.off('update', sync); };
   }, [mini, id]);
 
-  // Seat at the anchor — highlight span or block-anchored element; an
+  // v5.33: the "Displays as:" lines track the mini editor keystroke-live —
+  // the same capper the Navigator renders with (markupNavLines).
+  useEffect(() => {
+    if (!mini || !id) return;
+    const syncPreview = () => setNavPreview(markupNavLines(mini.getJSON()));
+    syncPreview();
+    mini.on('update', syncPreview);
+    return () => { mini.off('update', syncPreview); };
+  }, [mini, id]);
+
+  // Seat UNDER the annotation's on-script margin icon (v5.33, Derek), with
+  // the window's right edge on the side panel's left edge — or centered
+  // under the icon when no right panel is showing. When the icon is hidden
+  // (type filtered out, layer off) the highlight/block rect stands in; an
   // anchorless (orphaned) annotation seats screen-center so it can still be
   // read, edited and deleted (v5.26 — "unable to edit some items").
   useLayoutEffect(() => {
     if (!id) { setPos(null); return; }
     const place = () => {
       if (overrideRef.current) return;   // dragged or fullscreen — user owns it
-      const el = document.querySelector(`.script-markup-highlight[data-markup-id="${CSS.escape(id)}"]`)
+      const el = document.querySelector(`.markup-margin-icon[data-markup-icon="${CSS.escape(id)}"]`)
+        || document.querySelector(`.script-markup-highlight[data-markup-id="${CSS.escape(id)}"]`)
         || document.querySelector(`[data-markup-block="${CSS.escape(id)}"]`);
       let r = el?.getBoundingClientRect();
       if ((!r || (r.width === 0 && r.height === 0)) && editor && markup) {
@@ -141,16 +162,23 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
           } catch { /* keep last */ }
         }
       }
-      const h = popRef.current?.offsetHeight ?? 320;
+      // live offsetWidth — the window is user-resizable (v5.33)
+      const w = popRef.current?.offsetWidth || POP_W;
+      const h = popRef.current?.offsetHeight || 320;
       if (!r) {
-        setPos({ top: Math.max(8, (window.innerHeight - h) / 2), left: Math.max(8, (window.innerWidth - POP_W) / 2) });
+        setPos({ top: Math.max(8, (window.innerHeight - h) / 2), left: Math.max(8, (window.innerWidth - w) / 2) });
         return;
       }
       const below = r.bottom + 6;
       let top = below + h > window.innerHeight ? r.top - h - 6 : below;
       top = Math.max(8, Math.min(top, window.innerHeight - h - 8));
-      setPos({ top, left: Math.max(8, Math.min(r.left, window.innerWidth - POP_W - 8)) });
+      const dockR = document.querySelector('.tool-dock-wrap.tool-dock-right')?.getBoundingClientRect();
+      const left = dockR && dockR.width > 0
+        ? dockR.left - w
+        : r.left + r.width / 2 - w / 2;
+      setPos({ top, left: Math.max(8, Math.min(left, window.innerWidth - w - 8)) });
     };
+    reseatRef.current = place;
     place();
     const raf = requestAnimationFrame(place);
     window.addEventListener('resize', place);
@@ -161,6 +189,18 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
       document.removeEventListener('scroll', place, true);
     };
   }, [id, editor, markup]);
+
+  // v5.33: the window is user-resizable — when its SIZE changes, re-seat so
+  // the right edge stays pinned to the panel edge (the box grows leftward).
+  // A dragged or maximized window is the user's own geometry; place()
+  // already stands down for those.
+  const hasPos = pos !== null;
+  useEffect(() => {
+    if (!hasPos || !popRef.current || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => reseatRef.current?.());
+    ro.observe(popRef.current);
+    return () => ro.disconnect();
+  }, [id, hasPos]);
 
   // Outside press closes AND SAVES (save-on-close = the sticky-card model).
   // Presses inside a picker/menu sub-popover count as INSIDE this window.
@@ -217,7 +257,17 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     if (url) mini?.chain().focus().setImage({ src: url }).run();
   };
   const linkScrapPage = (pageId: string, title: string) => {
-    mini?.chain().focus().insertContent(`<a href="scrapbook:${pageId}">📖 ${title || 'Scrapbook page'}</a> `).run();
+    // v5.33: a REAL link mark, not an HTML string — the Link extension's
+    // scheme validation rejected the scrapbook: protocol on parse, so the
+    // raw <a…> markup landed in the note as plain text.
+    mini?.chain().focus().insertContent([
+      {
+        type: 'text',
+        text: `📖 ${title || 'Scrapbook page'}`,
+        marks: [{ type: 'link', attrs: { href: `scrapbook:${pageId}` } }],
+      },
+      { type: 'text', text: ' ' },
+    ]).run();
     setScrapPicker(false);
   };
 
@@ -281,16 +331,22 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     e.preventDefault();
   };
 
+  // width lives in CSS (v5.33: the window is user-resizable — the browser's
+  // resize handle writes inline width/height that React must not clobber)
   const winStyle = maximized
-    ? { top: 48, left: 48, right: 48, bottom: 48, width: 'auto' as const }
-    : { top: (dragPos ?? pos).top, left: (dragPos ?? pos).left, width: POP_W };
+    ? { top: 48, left: 48, right: 48, bottom: 48 }
+    : { top: (dragPos ?? pos).top, left: (dragPos ?? pos).left };
 
   return createPortal(
     <div ref={popRef} className={`fs-markup-popover${maximized ? ' maximized' : ''}`} style={winStyle}
       onPointerDown={(e) => e.stopPropagation()}>
-      {/* the draggable title bar — fullscreen and × like every window */}
+      {/* the draggable title bar — fullscreen and × like every window;
+          v5.33, Derek: the ⋮ rides here too, left of the fullscreen button */}
       <div className="markup-pop-titlebar" onPointerDown={startDrag}>
         <span className="markup-pop-title">Annotation</span>
+        <span className="markup-titlebar-dots" onPointerDown={(e) => e.stopPropagation()}>
+          <MarkupDotsMenu markup={markup} editor={editor} onDeleted={() => setMarkupEditorId(null)} />
+        </span>
         <button className="markup-win-btn" title={maximized ? 'Exit full screen' : 'Full screen'}
           onPointerDown={(e) => e.stopPropagation()} onClick={() => setMaximized((v) => !v)}>
           <FullscreenIcon />
@@ -300,9 +356,10 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
           ×
         </button>
       </div>
-      {/* ONE head row (v5.29, Derek): "Icon:" swatches · "Highlight:" eye +
-          swatch (range annotations only) · ⋮. The eye replaces the hide
-          checkbox — eye-slash = hidden. Spacing/padding are Design knobs. */}
+      {/* ONE head row (v5.29, Derek): "Icon:" swatches · "Highlight:"
+          swatch (range annotations only). Spacing/padding are Design knobs.
+          v5.33: the row wraps — when the Used combos leave no room, the
+          highlight group drops to a second row (Derek). */}
       <div className="markup-pop-row markup-pop-head">
         <span className="markup-pop-group markup-pop-icon-group">
           <span className="markup-pop-grouplabel">Icon:</span>
@@ -310,6 +367,7 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
               combined icon-and-color picker */}
           <MarkupUsedRow markup={markup} />
         </span>
+        <span className="markup-pop-spacer" />
         {markup.anchor === 'range' ? (
           <span className="markup-pop-group">
             <span className="markup-pop-grouplabel">Highlight:</span>
@@ -340,8 +398,6 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
             </button>
           </span>
         )}
-        <span className="markup-pop-spacer" />
-        <MarkupDotsMenu markup={markup} editor={editor} onDeleted={() => setMarkupEditorId(null)} />
       </div>
       {/* mini editor toolbar */}
       <div className="markup-pop-row markup-mini-bar">
@@ -363,6 +419,24 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
         </div>
       )}
       <div className="markup-mini-editor" onClick={onBodyClick}><EditorContent editor={mini} /></div>
+      {/* v5.33, Derek: "Displays as:" — the Navigator row this annotation
+          will produce, live. Same classes as the real row so they can't
+          drift apart. Empty content = icon only, exactly like the row. */}
+      <div className="markup-pop-row markup-pop-preview">
+        <span className="markup-pop-grouplabel">Displays as:</span>
+        <span className="fs-nav-anno markup-nav-preview" style={{ color: markup.color }}>
+          <span className="fs-nav-kind-icon fs-nav-markup-icon">
+            <MarkupIcon icon={markup.icon} color={markup.color} />
+          </span>
+          {navPreview.length > 0 && (
+            <span className="fs-nav-anno-lines">
+              {navPreview.map((l, i) => (
+                <span key={i} className="fs-nav-anno-line">{l}</span>
+              ))}
+            </span>
+          )}
+        </span>
+      </div>
       <div className="markup-pop-row markup-pop-foot">
         <span className="markup-pop-spacer" />
         <button className="dialog-btn dialog-btn-primary markup-save" onClick={save}>Save</button>

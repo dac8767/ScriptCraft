@@ -482,8 +482,10 @@ export function MarkupDotsMenu({ markup, editor, onDeleted }: {
             </span>
           </div>
           <div className="markup-dots-sep" />
-          <button className="markup-dots-item" onClick={toggleTypeHidden}>
-            {typeHidden ? `Show “${iconLabel(markup.icon)}” in script` : `Hide “${iconLabel(markup.icon)}” in script`}
+          <button className="markup-dots-item markup-dots-hidetype" onClick={toggleTypeHidden}>
+            {typeHidden ? 'Show' : 'Hide'}
+            <MarkupIcon icon={markup.icon} color={markup.color} />
+            in script
           </button>
           <div className="markup-dots-sep" />
           <button className="markup-dots-item markup-dots-del" onClick={del}>
