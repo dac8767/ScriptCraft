@@ -227,7 +227,7 @@ function MergedStickyList({ perRow = 1 }: { perRow?: number }) {
   return (
     <div
       className={'swn-scroll' + (perRow > 1 ? ' swn-grid' : '')}
-      style={perRow > 1 ? ({ '--sticky-per-row': perRow } as CSSProperties) : undefined}
+      style={perRow > 1 ? ({ '--sticky-cols': perRow } as CSSProperties) : undefined}
     >
       {visible.length === 0 && <div className="swn-hint">{emptyHint}</div>}
       {dragId && visible.length > 0 && (
@@ -282,17 +282,20 @@ export function StickyNotesTool(_props: EditorToolProps) {
         <button className="dialog-btn dialog-btn-primary sticky-add-btn" onClick={() => add('todo')}>+ Add Checklist</button>
         {popped && (
           <span className="tool-action-group tool-action-right">
-            <span className="tool-action-label" id="sticky-perrow-label">Items per row:</span>
+            {/* v5.24, Derek: "thinking about this in terms of rows leaves
+                odd gaps" — it's COLUMNS now, in name and in layout (the list
+                is a multi-column masonry, not a row-aligned grid). */}
+            <span className="tool-action-label" id="sticky-cols-label"># of Columns:</span>
             <button
               className="tool-action-btn tool-action-icon"
-              title="Fewer items per row (bigger cards)"
+              title="Fewer columns (bigger cards)"
               disabled={perRow <= 1}
               onClick={() => setPerRow(perRow - 1)}
             ><CircleMinusIcon /></button>
-            <span className="tool-action-count" aria-labelledby="sticky-perrow-label">{perRow}</span>
+            <span className="tool-action-count" aria-labelledby="sticky-cols-label">{perRow}</span>
             <button
               className="tool-action-btn tool-action-icon"
-              title="More items per row (smaller cards)"
+              title="More columns (smaller cards)"
               disabled={perRow >= 8}
               onClick={() => setPerRow(perRow + 1)}
             ><CirclePlusIcon /></button>

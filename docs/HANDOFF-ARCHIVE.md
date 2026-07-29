@@ -151,9 +151,48 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.19 and older (newest first)
+## Version history — v5.20 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.20 — the Scenes four-pack: contained popover, Cards per row, one menu, lighter cards
+
+- Derek's batch: (1) "The filter menu items in the Scene tool spills out of
+  the window." (2) "Copy the Pages per row tool… 'Cards per row:' aligned
+  left on the same row as Reorder, and move Reorder so it is right aligned."
+  (3) "allow only one of these menus to be open at one time." (4) "give the
+  cards a lighter background color."
+- (1) The popover's left math still assumed its pre-v3.54 240px width while
+  the content had grown past it. It now measures the hosting shape —
+  `closest('.tool-window, .tool-inline, .fs-tool-takeover')` (those are THE
+  three window containers; viewport fallback) — takes width
+  clamp(240, winW−16, 400) INLINE, right-aligns to the trigger, clamps into
+  the window box. `.scene-filter-row`/`.scene-filter-colors` got flex-wrap
+  so unshrinkable content (the 10 color dots) wraps instead of overflowing.
+- (3) ROOT CAUSE: every header trigger stopPropagations pointerdown (the
+  window-drag guard), so the bubble-phase outside-close listeners never
+  heard presses on sibling controls — two menus sat open. Both closers
+  (ControlDropdown in ToolControls, the filter popover in SceneControls)
+  now listen in the CAPTURE phase with explicit target tests (trigger and
+  own-menu exempt). This fixes exclusivity for EVERY ControlDropdown pair
+  in the app (Locations Filter+Sort etc.), not just Scenes. ControlDropdown's
+  resize handler split out (it closes unconditionally; the pointer one
+  target-checks).
+- (2) `cardsPerRow` in sceneNavSlice (CARDS_PER_ROW 1/8/3 — exact copy of
+  the pagesPerRow model incl. NOT persisted, matching Pages); stepper JSX in
+  ScenesTool's ToolActionRow, cards mode only; Reorder wrapped in
+  `.tool-action-right` (the Pages Go-to pattern) so it right-aligns in both
+  views. Grid: `repeat(var(--cards-per-row, 3), 1fr)` — fallback must equal
+  CARDS_PER_ROW_DEFAULT. (The grid WAS auto-fill minmax(190px,1fr) because a
+  hardcoded 3 once squeezed side panels — fine now: the count is Derek's own
+  number and steps to 1.)
+- (4) `.index-card` background: dropdown-bg → toolbar-bg — one step up the
+  surface ladder (dark #2d2d2d → #353535), lighter in light theme too.
+- Tests: exclusivity simulated in jsdom (dispatch pointerdown on the second
+  trigger — capture listener fires there too); cardsPerRow clamp. Driver
+  check-scenes-v520.mjs (11 checks): popover rect ⊆ window rect, no
+  scrollWidth overflow, dots contained, both exclusivity directions, stepper
+  left / Reorder right by rect math, 3→4 columns, card bg rgb(53,53,53).
 
 ### v5.19 — Reorder wears the dialogs' Apply format
 

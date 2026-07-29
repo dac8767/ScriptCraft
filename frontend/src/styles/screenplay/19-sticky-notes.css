@@ -172,7 +172,8 @@
 /* ── Cards: real stickies — pastel backgrounds stay light in both themes ── */
 .swn-card {
   margin: 0 12px 10px;
-  padding: var(--dz-swn-card-pad, 8px) 10px 10px;
+  /* v5.24, Derek: top / side / bottom padding are separate Design knobs. */
+  padding: var(--dz-swn-card-pad, 8px) var(--dz-swn-card-pad-x, 10px) var(--dz-swn-card-pad-bottom, 10px);
   border-radius: var(--dz-swn-card-radius, 4px);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   color: #333;
@@ -190,7 +191,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  margin: 0 0 6px;
+  margin: 0 0 var(--dz-swn-head-gap, 6px);   /* v5.24: title↔body knob */
   font-size: var(--dz-swn-card-head-font, 11px);
   font-weight: 700;
   color: #555;
@@ -198,7 +199,7 @@
 .swn-card-actions {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--dz-swn-actions-gap, 6px);   /* v5.24: color/clear/delete spacing */
 }
 .swn-x {
   background: none;

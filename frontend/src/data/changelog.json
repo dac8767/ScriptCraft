@@ -1,5 +1,16 @@
 [
   {
+    "version": "5.24",
+    "date": "2026-07-29",
+    "changes": [
+      "Sticky Notes: the layout thinks in COLUMNS now — the stepper reads \"# of Columns:\" and cards stack masonry-style down each column, so a tall checklist no longer punches gaps in the row beside it",
+      "Fixed: dragging cards to reorder them did nothing — the drag never started on the desktop's engine (a missing internal handshake); the card's grip now handles it itself",
+      "Design ▸ Sticky Notes: side / top / bottom padding, column and row gaps, space above the + buttons, and the button row's side padding",
+      "Design ▸ Sticky Note Cards: top / side / bottom padding, title-to-body and body-to-footer spacing, and the head buttons' spacing",
+      "Header tabs everywhere: non-active tabs wear a visible button background instead of blending into the bar"
+    ]
+  },
+  {
     "version": "5.23",
     "date": "2026-07-28",
     "changes": [

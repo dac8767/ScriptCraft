@@ -107,15 +107,17 @@ describe('v5.22: reorderable header tabs', () => {
 /** v5.23, Derek: the "Items per row:" stepper exists ONLY in the popped-out
  *  and fullscreen shapes; docked stays one column with no stepper. */
 describe('v5.23: Items per row gating', () => {
-  it('fullscreen shows the right-aligned stepper and drives the grid', () => {
+  it('fullscreen shows the right-aligned stepper and drives the columns', () => {
     act(() => { useEditorStore.setState({ fullscreenTool: 'sticky', stickyPerRow: 3 }); });
     act(() => root.render(<StickyNotesTool editor={null} />));
     const group = host.querySelector('.tool-action-group.tool-action-right');
     expect(group).not.toBeNull();
-    expect(group!.textContent).toContain('Items per row:');
+    // v5.24, Derek: columns, not rows — the label says so and the list is a
+    // multi-column masonry driven by --sticky-cols.
+    expect(group!.textContent).toContain('# of Columns:');
     const scroll = host.querySelector('.swn-scroll') as HTMLElement;
     expect(scroll.className).toContain('swn-grid');
-    expect(scroll.style.getPropertyValue('--sticky-per-row')).toBe('3');
+    expect(scroll.style.getPropertyValue('--sticky-cols')).toBe('3');
   });
 
   it('docked shows no stepper and stays one column whatever the count says', () => {

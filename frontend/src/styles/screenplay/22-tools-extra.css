@@ -1074,7 +1074,7 @@ input.fs-switch:checked::after { left: 15px; }
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: var(--dz-swn-foot-gap, 6px);   /* v5.24: body↔footer knob */
 }
 .swn-card-foot .swn-card-date { margin: 0; white-space: nowrap; }
 .swn-card-resize {
@@ -1135,18 +1135,29 @@ input.fs-switch:checked::after { left: 15px; }
    order (this file loads later). */
 .sticky-add-btn { height: 26px; padding: 0 12px; font-size: 12px; }
 
-/* v5.23, Derek: "Items per row:" in the popped-out / fullscreen shapes —
-   the list becomes a grid; hints and drop zones span the full row. Docked
-   panels stay one column and never take this class. */
+/* v5.23 grew the popped-out / fullscreen shapes a per-row GRID; v5.24,
+   Derek: "thinking about this in terms of rows leaves odd gaps" — it is a
+   COLUMN MASONRY now (CSS multicol): cards stack down each column with no
+   row alignment, so a tall checklist never punches a hole in the row beside
+   it. Docked panels stay one column and never take this class. */
 .fs-sticky-tool .swn-scroll.swn-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--sticky-per-row, 1), 1fr);
-  gap: 0 10px;
-  align-items: start;
-  align-content: start;
+  column-count: var(--sticky-cols, 1);
+  column-gap: var(--dz-sticky-col-gap, 10px);
 }
-.fs-sticky-tool .swn-scroll.swn-grid .swn-drop-zone,
-.fs-sticky-tool .swn-scroll.swn-grid .swn-hint { grid-column: 1 / -1; }
+.fs-sticky-tool .swn-scroll.swn-grid .swn-card { break-inside: avoid; }
+
+/* v5.24, Derek: the Sticky Notes WINDOW design knobs. Side gutters moved off
+   the card margins onto the scroller (default 12 keeps the look), so the
+   knob is one number; the row gap is the card's bottom margin. */
+.fs-sticky-tool .swn-scroll {
+  padding: var(--dz-sticky-pad-top, 6px) var(--dz-sticky-pad-x, 12px) var(--dz-sticky-pad-bottom, 4px);
+}
+.fs-sticky-tool .swn-card {
+  margin: 0 0 var(--dz-sticky-row-gap, 10px);
+}
+.fs-sticky-tool .tool-action-row {
+  padding: var(--dz-sticky-btnrow-pad-top, 6px) var(--dz-sticky-btnrow-pad-x, 8px) 6px;
+}
 
 /* Highlights window */
 .fs-highlights-tool { display: flex; flex-direction: column; height: 100%; }

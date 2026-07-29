@@ -58,11 +58,11 @@ const stepper = await page.evaluate(() => {
     rightGap: grp ? Math.round(rr.right - grp.getBoundingClientRect().right) : null,
   };
 });
-check('popped shape shows "Items per row:" right-aligned', { l: stepper.label, ok: stepper.rightGap <= 12 }, { l: 'Items per row:', ok: true });
-await page.click('.tool-window[data-tool="sticky"] button[title="More items per row (smaller cards)"]');
+check('popped shape shows "# of Columns:" right-aligned', { l: stepper.label, ok: stepper.rightGap <= 12 }, { l: '# of Columns:', ok: true });
+await page.click('.tool-window[data-tool="sticky"] button[title="More columns (smaller cards)"]');
 const cols = await page.$eval('.tool-window[data-tool="sticky"] .swn-scroll', (el) =>
-  getComputedStyle(el).gridTemplateColumns.split(' ').length);
-check('+ makes it a 2-across grid', cols, 2);
+  getComputedStyle(el).columnCount);
+check('+ makes it a 2-column masonry', cols, '2');
 
 // 3. THE RESIZE BUG — drag the window (it becomes left-anchored), then pull
 // the bottom-left grip leftward: the LEFT edge must move, the RIGHT stay.

@@ -481,7 +481,10 @@ body.fs-tool-dragging { cursor: grabbing; }
   padding: 5px 12px;
   font-size: var(--dz-toolwin-bar-font, 12px);   /* v4.45: Design knob */
   font-weight: 500;
-  background: none;
+  /* v5.24, Derek: "make the background for all non-active tabs brighter so
+     you can still see they are buttons" — a visible button wash instead of
+     nothing, in EVERY window with this tab style (one class, one rule). */
+  background: var(--fd-overlay-light);
   /* v4.39, Derek: unselected tabs back to muted (the v4.37 full-text-color
      experiment stays for .tool-ctl only). */
   color: var(--fd-text-muted);
@@ -491,7 +494,7 @@ body.fs-tool-dragging { cursor: grabbing; }
   white-space: nowrap;
   transition: background 0.1s, color 0.1s;
 }
-.tool-chrome-tab:hover { color: var(--fd-text); }
+.tool-chrome-tab:hover { color: var(--fd-text); background: var(--fd-overlay-medium); }
 .tool-chrome-tab.active {
   background: var(--fd-accent, #4a90d9);
   color: #fff;

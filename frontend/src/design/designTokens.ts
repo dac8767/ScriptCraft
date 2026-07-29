@@ -253,11 +253,35 @@ export const DESIGN_GROUPS: DesignGroup[] = [
                  set: (v) => { const st = useEditorStore.getState(); st.setToolSize('characters', st.toolSizes.characters?.w ?? 420, v); } } },
     ],
   },
+  /* v5.24, Derek: the Sticky Notes WINDOW's own spacing knobs. Side gutters
+     live on the scroller (the sticky-scoped card margin is zeroed), the row
+     gap is the card's bottom margin, and the column gap feeds the masonry. */
+  {
+    id: 'stickyWindow',
+    label: 'Sticky Notes',
+    tokens: [
+      { id: 'stickyPadX', label: 'Side padding', cssVar: '--dz-sticky-pad-x', unit: 'px', min: 0, max: 32, step: 1, def: 12 },
+      { id: 'stickyPadTop', label: 'Top padding (below the buttons)', cssVar: '--dz-sticky-pad-top', unit: 'px', min: 0, max: 32, step: 1, def: 6 },
+      { id: 'stickyPadBottom', label: 'Bottom padding', cssVar: '--dz-sticky-pad-bottom', unit: 'px', min: 0, max: 32, step: 1, def: 4 },
+      { id: 'stickyColGap', label: 'Column gap', cssVar: '--dz-sticky-col-gap', unit: 'px', min: 0, max: 32, step: 1, def: 10 },
+      { id: 'stickyRowGap', label: 'Row gap', cssVar: '--dz-sticky-row-gap', unit: 'px', min: 0, max: 32, step: 1, def: 10 },
+      { id: 'stickyBtnRowPadTop', label: 'Space above the + buttons', cssVar: '--dz-sticky-btnrow-pad-top', unit: 'px', min: 0, max: 24, step: 1, def: 6 },
+      { id: 'stickyBtnRowPadX', label: 'Button row side padding', cssVar: '--dz-sticky-btnrow-pad-x', unit: 'px', min: 0, max: 32, step: 1, def: 8 },
+    ],
+  },
   {
     id: 'cards',
-    label: 'Notes & To-Do Cards',
+    label: 'Sticky Note Cards',
     tokens: [
-      { id: 'cardPad', label: 'Card padding', cssVar: '--dz-swn-card-pad', unit: 'px', min: 2, max: 20, step: 1, def: 8 },
+      /* v5.24, Derek: the card's padding is three knobs (cardPad KEEPS its
+         id — it always drove the TOP edge; persisted overrides survive). */
+      { id: 'cardPad', label: 'Top padding', cssVar: '--dz-swn-card-pad', unit: 'px', min: 2, max: 20, step: 1, def: 8 },
+      { id: 'cardPadX', label: 'Side padding', cssVar: '--dz-swn-card-pad-x', unit: 'px', min: 0, max: 24, step: 1, def: 10 },
+      { id: 'cardPadBottom', label: 'Bottom padding', cssVar: '--dz-swn-card-pad-bottom', unit: 'px', min: 0, max: 24, step: 1, def: 10 },
+      { id: 'cardHeadGap', label: 'Title to body spacing', cssVar: '--dz-swn-head-gap', unit: 'px', min: 0, max: 20, step: 1, def: 6 },
+      { id: 'cardFootGap', label: 'Body to footer spacing', cssVar: '--dz-swn-foot-gap', unit: 'px', min: 0, max: 20, step: 1, def: 6 },
+      { id: 'cardActionsGap', label: 'Button spacing', cssVar: '--dz-swn-actions-gap', unit: 'px', min: 0, max: 16, step: 1, def: 6,
+        hint: 'The color, clear-completed and delete buttons in the card head.' },
       { id: 'cardRadius', label: 'Card corner radius', cssVar: '--dz-swn-card-radius', unit: 'px', min: 0, max: 16, step: 1, def: 4 },
       { id: 'cardFont', label: 'Card body font', cssVar: '--dz-swn-card-font', unit: 'px', min: 9, max: 18, step: 0.5, def: 12 },
       { id: 'cardHeadFont', label: 'Card title font', cssVar: '--dz-swn-card-head-font', unit: 'px', min: 9, max: 16, step: 0.5, def: 11 },

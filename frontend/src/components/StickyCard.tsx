@@ -151,7 +151,15 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
       <span
         className="swn-drag-grip"
         draggable
-        onDragStart={onDragStart}
+        onDragStart={(e) => {
+          // v5.24, Derek: "the drag feature isn't working." The consumers
+          // pass bare closures, and WebKit refuses to START a drag without
+          // dataTransfer data (the house footgun, CLAUDE.md §4) — so the
+          // grip sets its own payload; no caller can forget it again.
+          e.dataTransfer.setData('text/plain', card.id);
+          e.dataTransfer.effectAllowed = 'move';
+          onDragStart(e);
+        }}
         onDragEnd={onDragEnd}
         title="Drag to reorder"
       >⋮⋮</span>

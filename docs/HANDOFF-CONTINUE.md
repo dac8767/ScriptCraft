@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.23 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.24 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,45 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.23 — compact buttons, the anchored-resize truth, per-row right (HEAD)
+### v5.24 — columns not rows, the drag that never started, tab washes (HEAD)
+
+- Derek's batch (his screenshot showed HIS working checklist — those items
+  are his queue, not instructions): (1) "thinking in terms of rows leaves
+  odd gaps" → "# of Columns:" label AND a real column MASONRY; (2) card
+  drag-reorder dead; (3) window Design knobs; (4) card Design knobs;
+  (5, mid-turn) non-active header tabs get a visible button background.
+- (2) THE DRAG BUG was the house footgun itself (CLAUDE.md §4): StickyCard's
+  grip passed onDragStart straight through, and since v5.22 the consumers
+  pass bare closures — NOBODY called dataTransfer.setData, so WebKit refused
+  the drag (fine in Chromium's tolerance, dead on the Mac). Fix at the ROOT:
+  the grip sets its own payload ('text/plain', card.id) before delegating —
+  no consumer can forget again. CardList (Snippets) had the same latent hole.
+- (1) `.swn-scroll.swn-grid` is CSS MULTICOL now (column-count:
+  var(--sticky-cols)), not grid — cards stack down columns, break-inside:
+  avoid, no row alignment. DOM order unchanged (drag/sort semantics intact);
+  reading order snakes down columns, which IS the sticky-wall look.
+- (3)(4) Token groups: 'stickyWindow' ("Sticky Notes": stickyPadX 12 — the
+  side gutter MOVED off the card margins onto the scroller so it's one knob;
+  stickyPadTop 6 / Bottom 4, col/row gaps 10/10 — row gap = the sticky-
+  scoped card margin-bottom; btn-row pad-top 6 / pad-x 8 as sticky-scoped
+  .tool-action-row overrides). 'cards' group RELABELLED "Sticky Note Cards":
+  cardPad KEEPS its id (it always drove the TOP edge — persisted overrides
+  survive) + new cardPadX 10 / cardPadBottom 10 / cardHeadGap 6 /
+  cardFootGap 6 / cardActionsGap 6.
+- (5) `.tool-chrome-tab { background: var(--fd-overlay-light) }` (+ medium
+  on hover) — one class, every tabbed window (Characters included).
+- DRIVER LESSON (recorded the hard way): pointer-driven HTML5 dnd hangs
+  under Playwright when dragstart MUTATES the DOM around the pointer (our
+  drop zones render on dragstart; both mouse-sequence and page.dragAndDrop
+  stall). Dispatch DragEvents with a shared DataTransfer instead — and
+  YIELD between dragstart and drop (same-tick dispatch reads stale React
+  state; the drop no-ops). The tab drag (no DOM change on start) is why
+  v5.22's dragAndDrop worked.
+- check-v524.mjs (10 checks): payload-set proof, drop reorders [a,b,c] →
+  [b,a,c] + Sort snaps Manual, masonry columnCount, tab wash, four token
+  spot-checks driving computed styles.
+
+### v5.23 — compact buttons, the anchored-resize truth, per-row right
 
 - Derek's batch: smaller add buttons; Manual LAST in Sort; the bottom-left
   resize corner moved the wrong edge; "Items per row:" for popped/fullscreen
@@ -330,50 +368,12 @@ Durable bits kept live here:
   filter, summed count, separators, one-window rule, fullscreen floor with
   raw store value pinned at 1).
 
-### v5.20 — the Scenes four-pack: contained popover, Cards per row, one menu, lighter cards
-
-- Derek's batch: (1) "The filter menu items in the Scene tool spills out of
-  the window." (2) "Copy the Pages per row tool… 'Cards per row:' aligned
-  left on the same row as Reorder, and move Reorder so it is right aligned."
-  (3) "allow only one of these menus to be open at one time." (4) "give the
-  cards a lighter background color."
-- (1) The popover's left math still assumed its pre-v3.54 240px width while
-  the content had grown past it. It now measures the hosting shape —
-  `closest('.tool-window, .tool-inline, .fs-tool-takeover')` (those are THE
-  three window containers; viewport fallback) — takes width
-  clamp(240, winW−16, 400) INLINE, right-aligns to the trigger, clamps into
-  the window box. `.scene-filter-row`/`.scene-filter-colors` got flex-wrap
-  so unshrinkable content (the 10 color dots) wraps instead of overflowing.
-- (3) ROOT CAUSE: every header trigger stopPropagations pointerdown (the
-  window-drag guard), so the bubble-phase outside-close listeners never
-  heard presses on sibling controls — two menus sat open. Both closers
-  (ControlDropdown in ToolControls, the filter popover in SceneControls)
-  now listen in the CAPTURE phase with explicit target tests (trigger and
-  own-menu exempt). This fixes exclusivity for EVERY ControlDropdown pair
-  in the app (Locations Filter+Sort etc.), not just Scenes. ControlDropdown's
-  resize handler split out (it closes unconditionally; the pointer one
-  target-checks).
-- (2) `cardsPerRow` in sceneNavSlice (CARDS_PER_ROW 1/8/3 — exact copy of
-  the pagesPerRow model incl. NOT persisted, matching Pages); stepper JSX in
-  ScenesTool's ToolActionRow, cards mode only; Reorder wrapped in
-  `.tool-action-right` (the Pages Go-to pattern) so it right-aligns in both
-  views. Grid: `repeat(var(--cards-per-row, 3), 1fr)` — fallback must equal
-  CARDS_PER_ROW_DEFAULT. (The grid WAS auto-fill minmax(190px,1fr) because a
-  hardcoded 3 once squeezed side panels — fine now: the count is Derek's own
-  number and steps to 1.)
-- (4) `.index-card` background: dropdown-bg → toolbar-bg — one step up the
-  surface ladder (dark #2d2d2d → #353535), lighter in light theme too.
-- Tests: exclusivity simulated in jsdom (dispatch pointerdown on the second
-  trigger — capture listener fires there too); cardsPerRow clamp. Driver
-  check-scenes-v520.mjs (11 checks): popover rect ⊆ window rect, no
-  scrollWidth overflow, dots contained, both exclusivity directions, stepper
-  left / Reorder right by rect math, 3→4 columns, card bg rgb(53,53,53).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.20** — the Scenes four-pack: contained popover, Cards per row, one menu, lighter cards
 - **v5.19** — Reorder wears the dialogs' Apply format
 - **v5.18** — per-row button spacing; the box-air truth
 - **v5.17** — padding grows the bar; the descender truth
