@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.32",
+    "date": "2026-07-29",
+    "changes": [
+      "Navigator: the header is ONE row again — Annotations and Scene Numbers moved into the body's first row as blue buttons (Scene Numbers fills blue while it's on)",
+      "The annotation window's ACTIVE icon is unmistakable now — a thick accent ring, and the current combo is always visible in the Used row",
+      "Opening the Design window no longer closes any other window (and no window closes Design) — it's the tweak-alongside tool"
+    ]
+  },
+  {
     "version": "5.31",
     "date": "2026-07-29",
     "changes": [

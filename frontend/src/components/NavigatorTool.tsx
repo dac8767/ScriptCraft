@@ -66,33 +66,13 @@ const kindShown = (show: Record<string, boolean>, k: Kind) => show[k] !== false;
  *      counts HIDDEN kinds)
  *    - Search: the keyword filter (narrows the list by text) */
 export function NavigatorControls() {
-  const showNums = useEditorStore((s) => s.navShowSceneNumbers);
-  const setShowNums = useEditorStore((s) => s.setNavShowSceneNumbers);
   const navShowKinds = useEditorStore((s) => s.navShowKinds);
   const setNavShowKinds = useEditorStore((s) => s.setNavShowKinds);
   const navFilter = useEditorStore((s) => s.navFilter);
   const setNavFilter = useEditorStore((s) => s.setNavFilter);
-  const mkFilters = useEditorStore((s) => s.markupFilters);
-  const setMkFilters = useEditorStore((s) => s.setMarkupFilters);
   const hiddenCount = KINDS.filter((k) => !kindShown(navShowKinds, k)).length;
-
-  // v5.30, Derek: the Annotations button opens the SAME filter popover the
-  // Annotations window's Filter shows — one state (markupFilters), and the
-  // Navigator's annotation rows obey it too.
-  const [annoOpen, setAnnoOpen] = useState(false);
-  const annoBtn = useRef<HTMLButtonElement>(null);
-  const annoBox = useRef<HTMLDivElement>(null);
-  const annoPos = useSeat(annoOpen, annoBtn, annoBox);
-  useDismiss(annoOpen, annoBox, annoBtn, () => setAnnoOpen(false));
-  const annoTypes = useTypesInUse(mkFilters.hiddenIcons);
-  const annoChip = mkFilters.hiddenIcons.length + (mkFilters.done !== 'open' ? 1 : 0);
-  const toggleIcon = (icon: string) => setMkFilters({
-    ...mkFilters,
-    hiddenIcons: mkFilters.hiddenIcons.includes(icon)
-      ? mkFilters.hiddenIcons.filter((x) => x !== icon)
-      : [...mkFilters.hiddenIcons, icon],
-  });
-
+  // v5.32, Derek: ONE header row — Annotations and Scene Numbers moved into
+  // the body's first row as blue buttons (NavActionRow below).
   return (
     <>
       <ControlDropdown
@@ -106,15 +86,36 @@ export function NavigatorControls() {
         }))}
       />
       <ControlSearch value={navFilter} onChange={setNavFilter} placeholder="Filter by keyword" />
-      {/* v5.28/v5.30, Derek: row 2 — Annotations and Scene Numbers side by
-          side, left-aligned (the break wraps; the trailing lead margin on
-          Scene Numbers eats the leftover width). */}
-      <span className="tool-ctl-break" aria-hidden />
-      <button ref={annoBtn} className={`tool-ctl${annoOpen ? ' open' : ''}`} title="Filter annotations"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => { e.stopPropagation(); setAnnoOpen((v) => !v); }}>
-        <span className="tool-ctl-label">Annotations</span>
-        {annoChip > 0 && <span className="tool-ctl-chip">{annoChip}</span>}
+    </>
+  );
+}
+
+/** v5.32, Derek: the body's first row — Annotations (the shared filter
+ *  popover) and Scene Numbers (toggle), in the blue button style. The
+ *  toggle reads its state through the fill: solid blue when on. */
+function NavActionRow() {
+  const showNums = useEditorStore((s) => s.navShowSceneNumbers);
+  const setShowNums = useEditorStore((s) => s.setNavShowSceneNumbers);
+  const mkFilters = useEditorStore((s) => s.markupFilters);
+  const setMkFilters = useEditorStore((s) => s.setMarkupFilters);
+  const [annoOpen, setAnnoOpen] = useState(false);
+  const annoBtn = useRef<HTMLButtonElement>(null);
+  const annoBox = useRef<HTMLDivElement>(null);
+  const annoPos = useSeat(annoOpen, annoBtn, annoBox);
+  useDismiss(annoOpen, annoBox, annoBtn, () => setAnnoOpen(false));
+  const annoTypes = useTypesInUse(mkFilters.hiddenIcons);
+  const annoChip = mkFilters.hiddenIcons.length + (mkFilters.done !== 'open' ? 1 : 0);
+  const toggleIcon = (icon: string) => setMkFilters({
+    ...mkFilters,
+    hiddenIcons: mkFilters.hiddenIcons.includes(icon)
+      ? mkFilters.hiddenIcons.filter((x) => x !== icon)
+      : [...mkFilters.hiddenIcons, icon],
+  });
+  return (
+    <div className="fs-nav-action-row">
+      <button ref={annoBtn} className="dialog-btn dialog-btn-primary fs-nav-action-btn" title="Filter annotations"
+        onClick={() => setAnnoOpen((v) => !v)}>
+        Annotations{annoChip > 0 ? ` · ${annoChip}` : ''}
       </button>
       {annoOpen && (
         <TypeGridPop
@@ -131,15 +132,13 @@ export function NavigatorControls() {
         />
       )}
       <button
-        className={'tool-ctl tool-ctl-lead' + (showNums ? ' active' : '')}
+        className={`dialog-btn fs-nav-action-btn${showNums ? ' dialog-btn-primary' : ''}`}
         title={showNums ? 'Hide scene numbers' : 'Show scene numbers'}
-        onPointerDown={(e) => e.stopPropagation()}
         onClick={() => setShowNums(!showNums)}
       >
-        <FaHashtag aria-hidden />
-        <span className="tool-ctl-label">Scene Numbers</span>
+        <FaHashtag aria-hidden /> Scene Numbers
       </button>
-    </>
+    </div>
   );
 }
 
@@ -281,8 +280,9 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
 
   return (
     <div className="fs-navigator">
-      {/* v1.80: the body is ONLY the list — the whole filter control
-          (funnel + field) lives in the window header (v1.97). */}
+      {/* v5.32, Derek: the body's FIRST ROW is the Annotations + Scene
+          Numbers buttons (the header is one row again — Filter + Search). */}
+      <NavActionRow />
       <div className="fs-nav-list">
         {visible.length === 0 && (
           <div className="fs-nav-empty">

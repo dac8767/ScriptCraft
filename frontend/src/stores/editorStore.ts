@@ -580,12 +580,18 @@ export const DEFAULT_TOOL_ORDER: string[] = [
  *  Spread it BEFORE the branch's own fields so they win any overlap. */
 function closeOtherFloats(s: Pick<EditorState, 'tempTool' | 'activeTool' | 'activeToolRight' | 'navigatorOpen' | 'shelfOpen' | 'toolMode'>, keep: ToolId): Partial<EditorState> {
   const patch: Partial<EditorState> = {};
-  if (s.tempTool && s.tempTool !== keep) patch.tempTool = null;
-  if (s.activeTool && s.activeTool !== keep && s.navigatorOpen && s.toolMode[s.activeTool] === 'floating') {
+  // v5.32, Derek: "opening the design window should not close any other
+  // window." Design is the tweak-alongside tool — it neither closes others
+  // when it opens, nor is it closed when others open.
+  if (keep === 'design') return patch;
+  if (s.tempTool && s.tempTool !== keep && s.tempTool !== 'design') patch.tempTool = null;
+  if (s.activeTool && s.activeTool !== keep && s.activeTool !== 'design'
+      && s.navigatorOpen && s.toolMode[s.activeTool] === 'floating') {
     patch.activeTool = null;
     saveViewState({ activeTool: null });
   }
-  if (s.activeToolRight && s.activeToolRight !== keep && s.shelfOpen && s.toolMode[s.activeToolRight] === 'floating') {
+  if (s.activeToolRight && s.activeToolRight !== keep && s.activeToolRight !== 'design'
+      && s.shelfOpen && s.toolMode[s.activeToolRight] === 'floating') {
     patch.activeToolRight = null;
     saveViewState({ activeToolRight: null });
   }
@@ -1750,13 +1756,16 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
       }
       // v5.21: a slot tool whose mode is 'floating' opens as a WINDOW — the
       // one-window rule closes any other floating window first.
+      // v5.32, Derek: DESIGN opens beside whatever is up — it neither runs
+      // the one-window rule nor clears the temp slot on its way in.
       const floats = s.toolMode[tool] === 'floating' ? closeOtherFloats(s, tool) : {};
+      const temp = tool === 'design' ? s.tempTool : null;
       if (left) {
         saveViewState({ activeTool: tool });
-        return { ...floats, activeTool: tool, tempTool: null };
+        return { ...floats, activeTool: tool, tempTool: temp };
       }
       saveViewState({ activeToolRight: tool });
-      return { ...floats, activeToolRight: tool, tempTool: null };
+      return { ...floats, activeToolRight: tool, tempTool: temp };
     }
     return { ...closeOtherFloats(s, tool), tempTool: tool };
   }),

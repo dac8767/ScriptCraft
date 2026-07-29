@@ -151,9 +151,35 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.27 and older (newest first)
+## Version history — v5.28 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.28 — annotation view controls everywhere + navigator polish
+
+- Derek's batch: (1) View ▸ Annotations SUBMENU — master toggle, status
+  check items (markupScriptDone), a per-type check item for each icon in
+  use (dynamic from `markups` via a MenuBar useMemo), Show/Hide All Types.
+  (2) Ribbon palette builtin `annotationsMenu` ("Annotation Visibility") —
+  opens the SAME script-visibility popover as the window's Show button.
+  (3-5) Navigator: annotation rows indent (26px) + text in the icon's
+  color; an "Annotations" tool-ctl toggle (navShowKinds.markup, the lead
+  slot); the scene-number toggle moved to ROW 2 left (a `.tool-ctl-break`
+  flex-basis:100% span forces the wrap; the button gained a "Scene
+  Numbers" label) and numbers render as `.scene-number-badge` (the Scenes
+  circle, `.fs-nav-num-badge` sizes it 18px) BEFORE the heading — the old
+  right-edge `.fs-nav-scene-num` span + CSS are gone.
+- SINGLE SOURCE move: DONE_LABELS / useTypesInUse / TypeGridPop now live in
+  MarkupPickers.tsx, plus `AnnotationShowMenu` — a self-contained trigger +
+  script-visibility popover used by BOTH the panel's Show button and the
+  ribbon builtin (the panel's Filter keeps its local-filter copy of the
+  popover with its own bindings). Mutual exclusion between panel popovers
+  now emerges from outside-press dismissal — no cross-wiring.
+- DRIVER LESSON (check-v528, 19 green): a `.menu-dropdown-item.has-children`
+  contains its submenu's TEXT — `:has-text("Annotations")` matched Working
+  Notes (whose child says "Show Annotations in Script") before the real
+  entry. Target the label span with `span:text-is(...)` for menu items.
+
 
 ### v5.27 — solid icons, colored rings, segmented toggles
 

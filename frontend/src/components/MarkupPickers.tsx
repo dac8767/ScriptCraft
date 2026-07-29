@@ -161,8 +161,13 @@ export function MarkupUsedRow({ markup }: { markup: ScriptMarkup }) {
       const key = `${m.icon}|${m.color}`;
       if (!seen.has(key)) { seen.add(key); out.push({ icon: m.icon, color: m.color }); }
     }
-    return out.slice(0, 8);   // the window is narrow — the + opens the rest
-  }, [markups]);
+    // the window is narrow — cap at 8, but the ACTIVE combo must always
+    // be visible (v5.32, Derek: "make it clear which icon is active").
+    const capped = out.slice(0, 8);
+    const active = out.find((c) => c.icon === markup.icon && c.color === markup.color);
+    if (active && !capped.includes(active)) capped[capped.length - 1] = active;
+    return capped;
+  }, [markups, markup.icon, markup.color]);
   return (
     <>
       {usedCombos.map(({ icon, color }) => (

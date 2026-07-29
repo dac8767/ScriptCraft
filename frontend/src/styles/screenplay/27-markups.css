@@ -121,6 +121,11 @@
 
 /* v5.31: the inline Used row's + and the combined picker's color section */
 .markup-combo-plus { font-weight: 700; font-size: 14px; background: rgba(0, 0, 0, 0.06); }
+/* v5.32, Derek: the ACTIVE icon must be unmistakable — a thick accent ring */
+.markup-pop-icon-group .markup-preset.active {
+  border-width: 2px;
+  box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.4);
+}
 .markup-combo-color .color-picker-popup { position: static; width: auto; }
 .markup-pop-icon-group { flex-wrap: wrap; }
 .markup-hl-del:hover { color: #c0392b; border-color: #c0392b; opacity: 1; }
@@ -592,10 +597,22 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
 .fs-nav-markup-icon .markup-glyph { display: inline-flex; }
 .fs-nav-markup-icon .markup-emoji { font-size: 11px; }
 
-/* v5.28: header-cluster helpers — the full-width break wraps the row-2
-   controls (the Navigator's Scene Numbers toggle), and the nav number
-   badge is the Scenes circle at list size, BEFORE the heading. */
-.tool-ctl-break { flex-basis: 100%; height: 0; }
+/* v5.32, Derek: the Navigator body's first row — blue action buttons
+   (Annotations opens the shared filter; Scene Numbers is a toggle whose
+   fill reads its state). The v5.28 header break is retired. */
+.fs-nav-action-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  flex-shrink: 0;
+}
+.fs-nav-action-btn {
+  font-size: 12px;
+  padding: 5px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
 .fs-nav-num-badge {
   width: 18px;
   height: 18px;

@@ -159,6 +159,21 @@ describe('v5.21: one floating window at a time', () => {
     expect(st().activeToolRight).toBe('fragments');
   });
 
+  /** v5.32, Derek: "opening the design window should not close any other
+   *  window." Design is the tweak-alongside tool — exempt BOTH ways. */
+  it('Design neither closes other windows nor is closed by them', () => {
+    st().openTool('analytics');                 // temp window
+    expect(st().tempTool).toBe('analytics');
+    st().setToolMode('design', 'floating');
+    st().openTool('design');                    // design opens…
+    expect(st().tempTool).toBe('analytics');    // …and analytics survives
+    st().setToolMode('sticky', 'floating');
+    st().openTool('sticky');                    // another window opens…
+    expect(st().activeToolRight).toBe('sticky');
+    // …and the one-window rule still applies between NON-design floats
+    expect(st().tempTool).toBeNull();
+  });
+
   it('a DOCKED tool in the other panel is not a window and stays put', () => {
     st().openTool('fragments');                 // docked right
     st().setToolMode('sticky', 'floating');

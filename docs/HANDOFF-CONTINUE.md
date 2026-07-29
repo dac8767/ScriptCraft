@@ -202,7 +202,28 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.31 — highlight conversions, inline Used row, combined picker (HEAD)
+### v5.32 — one-row nav header, unmistakable active icon, Design exempt (HEAD)
+
+- Derek: (1) the Navigator header is ONE row (Filter + Search only); the
+  Annotations filter button + Scene Numbers toggle moved into the BODY's
+  first row (`NavActionRow`, `.fs-nav-action-row`) as BLUE buttons —
+  dialog-btn-primary; Scene Numbers is primary only while ON (state reads
+  through the fill). The v5.28 `.tool-ctl-break` is retired.
+- (2) the ACTIVE icon chip in the edit window wears a 2px accent border +
+  glow ring, and MarkupUsedRow guarantees the active combo is IN the capped
+  row (swaps into the last slot when the cap would hide it).
+- (3) DESIGN is exempt from the one-window rule BOTH ways: closeOtherFloats
+  early-returns for keep==='design' and never closes a design float — AND
+  openTool's slot branch had a HARDCODED `tempTool: null` outside
+  closeOtherFloats that closed the temp window anyway (the store test
+  caught it; the exemption must live in BOTH spots). Pinned in
+  toolModeMemory.test ("Design neither closes other windows nor is closed
+  by them") — 858 tests now.
+- Driver note: the Navigator's Filter and the Search button sit 1px apart
+  vertically — assert one-row with a ≤2px spread, not exact equality.
+- check-v532: 9 green.
+
+### v5.31 — highlight conversions, inline Used row, combined picker
 
 - Derek's batch (+3 mid-turn adds): (1) title bar darker (rgba .22) and the
   fullscreen/× are FULL-HEIGHT header buttons (the .tool-window-close
@@ -291,36 +312,12 @@ Durable bits kept live here:
   computed gap, Used rows from live state, chip bg computed, real file
   import via setInputFiles → registry + swatch + margin img).
 
-### v5.28 — annotation view controls everywhere + navigator polish
-
-- Derek's batch: (1) View ▸ Annotations SUBMENU — master toggle, status
-  check items (markupScriptDone), a per-type check item for each icon in
-  use (dynamic from `markups` via a MenuBar useMemo), Show/Hide All Types.
-  (2) Ribbon palette builtin `annotationsMenu` ("Annotation Visibility") —
-  opens the SAME script-visibility popover as the window's Show button.
-  (3-5) Navigator: annotation rows indent (26px) + text in the icon's
-  color; an "Annotations" tool-ctl toggle (navShowKinds.markup, the lead
-  slot); the scene-number toggle moved to ROW 2 left (a `.tool-ctl-break`
-  flex-basis:100% span forces the wrap; the button gained a "Scene
-  Numbers" label) and numbers render as `.scene-number-badge` (the Scenes
-  circle, `.fs-nav-num-badge` sizes it 18px) BEFORE the heading — the old
-  right-edge `.fs-nav-scene-num` span + CSS are gone.
-- SINGLE SOURCE move: DONE_LABELS / useTypesInUse / TypeGridPop now live in
-  MarkupPickers.tsx, plus `AnnotationShowMenu` — a self-contained trigger +
-  script-visibility popover used by BOTH the panel's Show button and the
-  ribbon builtin (the panel's Filter keeps its local-filter copy of the
-  popover with its own bindings). Mutual exclusion between panel popovers
-  now emerges from outside-press dismissal — no cross-wiring.
-- DRIVER LESSON (check-v528, 19 green): a `.menu-dropdown-item.has-children`
-  contains its submenu's TEXT — `:has-text("Annotations")` matched Working
-  Notes (whose child says "Show Annotations in Script") before the real
-  entry. Target the label span with `span:text-is(...)` for menu items.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.28** — annotation view controls everywhere (View submenu, ribbon menu) + navigator polish
 - **v5.27** — solid icons, colored rings, segmented toggles, FaMarker identity
 - **v5.26** — ANNOTATIONS: rename + the 14-item polish batch (block anchors, swatch pickers, auto-icon)
 - **v5.25** — MARKUPS: the annotation tool is born (store/mark/popover/panel/presets)
