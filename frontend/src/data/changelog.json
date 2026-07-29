@@ -1,5 +1,16 @@
 [
   {
+    "version": "5.48",
+    "date": "2026-07-29",
+    "changes": [
+      "Every annotation is connected to highlighted text now — adding one with nothing selected prompts you to select text, and the next selection in the script places it (Escape cancels); the \"remove highlight\" button is gone",
+      "The annotation window's ⋮ menu is gone — a STATUS icon and a DELETE icon ride the title bar instead, and delete asks before removing the annotation and its highlight",
+      "The In Navigator / In Script preview icons sit vertically centered against their labels",
+      "Navigator: the Scene # toggle moved into the window header (text only, no icon); the body's button row is gone",
+      "The popped-out Design window seats itself fully on screen again — a dock-and-pop-out cycle used to leave it hanging half off the viewport"
+    ]
+  },
+  {
     "version": "5.47",
     "date": "2026-07-29",
     "changes": [

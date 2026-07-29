@@ -225,12 +225,19 @@ export default function DesignPanel() {
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 340, h: 560 });
   const drag = useRef<{ dx: number; dy: number } | null>(null);
 
-  // First open: anchor to the top-right so the editor stays visible on the left.
+  // First open: anchor to the top-right so the editor stays visible on the
+  // left. v5.48, Derek ("it does not appear in the correct place"): ALSO
+  // re-anchor whenever the remembered spot is (mostly) off-screen — the
+  // dock-drag leaves pos at the panel edge, and reopening there hung the
+  // window half off the viewport.
   useEffect(() => {
-    if (open && pos.x < 0) {
-      setPos({ x: Math.max(8, window.innerWidth - size.w - 24), y: 64 });
-    }
-  }, [open, pos.x, size.w]);
+    if (!open) return;
+    const offscreen = pos.x < 0
+      || pos.x > window.innerWidth - 120
+      || pos.y > window.innerHeight - 80;
+    if (offscreen) setPos({ x: Math.max(8, window.innerWidth - size.w - 24), y: 64 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   useEffect(() => {
     // v5.47, Derek ("i can no longer add the design window back into the
@@ -252,6 +259,7 @@ export default function DesignPanel() {
       }
       st.setToolMode('design', 'docked');
       st.setDesignPanelOpen(false);
+      setPos({ x: -1, y: 64 });   // next pop-out re-anchors fresh (v5.48)
       st.openTool('design');   // routes to the docked slot now
     };
     const move = (e: PointerEvent) => {

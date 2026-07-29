@@ -13,7 +13,7 @@ import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
-import { FaHashtag, FaRegStickyNote } from 'react-icons/fa';
+import { FaRegStickyNote } from 'react-icons/fa';
 import { ControlSearch } from './ToolControls';
 import { findNotePos } from '../utils/scriptNoteActions';
 import { findMarkupPos, markupContentLines, markupNavLines, markupIsList, type MarkupNavLine } from '../utils/markupActions';
@@ -67,6 +67,9 @@ export function NavigatorControls() {
   const setNavFilter = useEditorStore((s) => s.setNavFilter);
   const mkFilters = useEditorStore((s) => s.markupFilters);
   const setMkFilters = useEditorStore((s) => s.setMarkupFilters);
+  // v5.48, Derek: the scene-number toggle lives HERE now — text only.
+  const showNums = useEditorStore((s) => s.navShowSceneNumbers);
+  const setShowNums = useEditorStore((s) => s.setNavShowSceneNumbers);
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -76,6 +79,14 @@ export function NavigatorControls() {
   const chip = mkFilters.hiddenIcons.length + (mkFilters.done !== 'open' ? 1 : 0);
   return (
     <>
+      <button
+        className={`tool-ctl fs-nav-nums-ctl${showNums ? ' active' : ''}`}
+        title={showNums ? 'Hide scene numbers' : 'Show scene numbers'}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); setShowNums(!showNums); }}
+      >
+        <span className="tool-ctl-label">Scene #</span>
+      </button>
       <button ref={btn} className={`tool-ctl markup-ctl-filter${open ? ' open' : ''}`} title="Filter annotations"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}>
@@ -108,25 +119,8 @@ export function NavigatorControls() {
   );
 }
 
-/** v5.32, Derek: the body's first row. v5.46: the Annotations button moved
- *  into the header's Filter menu — only the scene-number toggle remains
- *  ("Scene #"). The toggle reads its state through the fill: solid blue
- *  when on. */
-function NavActionRow() {
-  const showNums = useEditorStore((s) => s.navShowSceneNumbers);
-  const setShowNums = useEditorStore((s) => s.setNavShowSceneNumbers);
-  return (
-    <div className="fs-nav-action-row">
-      <button
-        className={`dialog-btn fs-nav-action-btn${showNums ? ' dialog-btn-primary' : ''}`}
-        title={showNums ? 'Hide scene numbers' : 'Show scene numbers'}
-        onClick={() => setShowNums(!showNums)}
-      >
-        <FaHashtag aria-hidden /> Scene #
-      </button>
-    </div>
-  );
-}
+/* (v5.48, Derek: the body's action row is GONE — the scene-number toggle
+   moved into the window HEADER (NavigatorControls), text only.) */
 
 export default function NavigatorTool({ editor, scrollContainer }: NavigatorToolProps) {
   const { notes, setNotePopoverId } = useEditorStore();
@@ -275,9 +269,7 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
 
   return (
     <div className="fs-navigator">
-      {/* v5.32, Derek: the body's FIRST ROW is the Annotations + Scene
-          Numbers buttons (the header is one row again — Filter + Search). */}
-      <NavActionRow />
+      {/* (v5.48: the body's action row is gone — Scene # rides the header.) */}
       <div className="fs-nav-list">
         {visible.length === 0 && (
           <div className="fs-nav-empty">

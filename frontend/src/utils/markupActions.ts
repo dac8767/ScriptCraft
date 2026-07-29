@@ -6,59 +6,58 @@
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { DEFAULT_MARKUP_HIGHLIGHT, type MarkupKind, type ScriptMarkup } from '../stores/slices/markupsSlice';
+import { showToast } from '../components/Toast';
 import { uuid } from './uuid';
 
-/** Create an annotation at the current selection and open its popover.
- *  A real selection → the scriptMarkup MARK over that range ('range' —
- *  highlight offered). A bare cursor → a BLOCK-ATTRIBUTE anchor on the
- *  current element ('point'), which works on an EMPTY line too — Derek:
- *  "It is not required to highlight text." (A mark can't anchor an empty
- *  element, and an inline node is invalid in this text*-only schema — the
- *  fitter drops it silently.) If the element already carries an annotation,
- *  that one is OPENED instead of stacking a duplicate. Returns the id.
+/** Create an annotation on the current selection and open its popover.
+ *  v5.48, Derek: EVERY annotation anchors to highlighted TEXT now. A real
+ *  selection → the scriptMarkup MARK over that range. A bare cursor →
+ *  nothing is created; the pick mode arms instead (markupCreatePick — the
+ *  old Link Script Text flow, promoted to the front door: the next
+ *  selection in the script places the annotation). A cursor sitting INSIDE
+ *  an existing highlight opens that annotation rather than arming.
+ *  Returns the id, or null when the pick was armed.
  *  `range` overrides the live selection — the context menu passes its saved
  *  one, because opening the menu steals focus (the script-note model). */
 export function createMarkupAtSelection(
   editor: Editor,
   range?: { from: number; to: number; empty: boolean },
-): string {
+): string | null {
   const store = useEditorStore.getState();
   const sel = range ?? editor.state.selection;
   const { from, to } = sel;
   const empty = sel.empty || !editor.state.doc.textBetween(from, to, ' ').trim();
 
+  if (empty) {
+    // cursor inside an existing highlight → that annotation is the intent
+    const $pos = editor.state.doc.resolve(from);
+    const under = $pos.marks().find((m) => m.type.name === 'scriptMarkup');
+    const existingId = under?.attrs.markupId as string | undefined;
+    if (existingId && store.markups.some((m) => m.id === existingId)) {
+      store.setMarkupEditorId(existingId);
+      return existingId;
+    }
+    store.setMarkupCreatePick(true);
+    showToast('Select text in the script to add the annotation', 'info');
+    return null;
+  }
+
   const id = uuid();
   const preset = store.markupPresets[0] ?? { icon: 'flag', color: '#e05555' };
-
-  if (empty) {
-    const $pos = editor.state.doc.resolve(from);
-    const blockPos = $pos.before($pos.depth);
-    const block = $pos.parent;
-    const existing = block.attrs.markupId as string | null | undefined;
-    if (existing && store.markups.some((m) => m.id === existing)) {
-      store.setMarkupEditorId(existing);
-      return existing;
-    }
-    editor.view.dispatch(
-      editor.state.tr.setNodeMarkup(blockPos, undefined, { ...block.attrs, markupId: id }),
-    );
-  } else {
-    // v5.26, Derek: a selection-made annotation highlights its text in
-    // yellow IMMEDIATELY — the window offers "Hide highlights in script"
-    // and the color swatch to change it.
-    const markType = editor.state.schema.marks.scriptMarkup;
-    editor.view.dispatch(editor.state.tr.addMark(
-      from, to, markType.create({ markupId: id, highlight: DEFAULT_MARKUP_HIGHLIGHT }),
-    ));
-  }
+  // v5.26, Derek: a selection-made annotation highlights its text in
+  // yellow IMMEDIATELY — the window offers the color swatch to change it.
+  const markType = editor.state.schema.marks.scriptMarkup;
+  editor.view.dispatch(editor.state.tr.addMark(
+    from, to, markType.create({ markupId: id, highlight: DEFAULT_MARKUP_HIGHLIGHT }),
+  ));
 
   const markup: ScriptMarkup = {
     id,
     content: null,
     icon: preset.icon,
     color: preset.color,
-    highlight: empty ? null : DEFAULT_MARKUP_HIGHLIGHT,
-    anchor: empty ? 'point' : 'range',
+    highlight: DEFAULT_MARKUP_HIGHLIGHT,
+    anchor: 'range',
     done: false,
     createdAt: new Date().toISOString(),
     iconManual: false,
@@ -122,33 +121,10 @@ export function removeMarkupFromDoc(editor: Editor, id: string) {
 }
 
 /** v5.31, Derek: DELETING a highlight converts the annotation to a point
- *  annotation anchored on the element the highlight lived in — the
- *  annotation itself survives. (If that element already carries another
- *  annotation's block anchor, ours has nowhere to sit and goes anchorless —
- *  still listed and editable, like any orphan.) */
-export function convertMarkupToPoint(editor: Editor, id: string) {
-  const store = useEditorStore.getState();
-  const { doc, tr, schema } = editor.state;
-  const markType = schema.marks.scriptMarkup;
-  let blockPos: number | null = null;
-  doc.descendants((node, pos) => {
-    if (node.isText && node.marks.some((m) => m.type.name === 'scriptMarkup' && m.attrs.markupId === id)) {
-      if (blockPos === null) blockPos = doc.resolve(pos).before(doc.resolve(pos).depth);
-      tr.removeMark(pos, pos + node.nodeSize, markType);
-    }
-    return true;
-  });
-  if (blockPos !== null) {
-    const block = tr.doc.nodeAt(blockPos);
-    if (block && !block.attrs.markupId) {
-      tr.setNodeMarkup(blockPos, undefined, { ...block.attrs, markupId: id });
-    }
-  }
-  if (tr.steps.length) editor.view.dispatch(tr);
-  store.updateMarkup(id, { anchor: 'point', highlight: null });
-  editor.emit('update', { editor, transaction: editor.state.tr });
-}
-
+ *  annotation. (v5.48: convertMarkupToPoint is GONE with the "remove
+ *  highlight" button — every annotation anchors to highlighted text;
+ *  legacy point annotations remain readable and use the conversion
+ *  below to gain their text.) */
 /** v5.31, Derek: "Add Highlighted Text in Script" — a point annotation
  *  takes over a fresh selection and becomes a range annotation with the
  *  default yellow highlight. */

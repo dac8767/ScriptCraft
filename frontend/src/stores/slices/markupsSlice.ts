@@ -78,6 +78,12 @@ export interface MarkupsSlice {
    *  never persisted. */
   markupMiniEditor: unknown;
   setMarkupMiniEditor: (ed: unknown) => void;
+  /** v5.48, Derek: every annotation anchors to highlighted TEXT. An add
+   *  with nothing selected arms this instead of creating — the next
+   *  selection in the script places the annotation (the old Link Script
+   *  Text flow, promoted to the front door). Ephemeral. */
+  markupCreatePick: boolean;
+  setMarkupCreatePick: (v: boolean) => void;
   markupFilters: MarkupFilters;
   setMarkupFilters: (f: MarkupFilters) => void;
   /** v5.26: the side panel's search query (header ControlSearch). */
@@ -97,6 +103,8 @@ export const createMarkupsSlice: StateCreator<EditorState, [], [], MarkupsSlice>
   setMarkupEditorId: (id) => set({ markupEditorId: id }),
   markupMiniEditor: null,
   setMarkupMiniEditor: (ed) => set({ markupMiniEditor: ed }),
+  markupCreatePick: false,
+  setMarkupCreatePick: (v) => set({ markupCreatePick: v }),
   markupFilters: EMPTY_MARKUP_FILTERS,
   setMarkupFilters: (f) => set({ markupFilters: f }),
   markupSearch: '',

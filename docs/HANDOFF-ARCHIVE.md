@@ -151,9 +151,37 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.42 and older (newest first)
+## Version history — v5.43 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.43 — ONE Filter for both scopes, whole-area context menu, Return to Editor retired
+
+- Derek's 3 (one turn): (1) FILTER REVERSAL of v5.42's two-section design
+  ("the drop down window is not big enough for the status field. abandon
+  the two section idea"): MarkupsPanel renders ONE TypeGridSection whose
+  every control writes BOTH scopes — setBothDone/toggleBoth/showAll/
+  hideAll pair markupHiddenIcons+markupScriptDone (script) with
+  markupFilters (window). Display reads the UNION of the two hidden
+  lists, so legacy split state (the ⋮ menus, ribbon and Navigator still
+  write single scopes) shows as hidden and ONE click converges both.
+  `.markup-filter-pop` widened 216→252px (216 clipped the Status row's
+  "All"); `.markup-filter-combined` + section-title CSS removed dead.
+  Chip = hiddenUnion + status. (2) CONTEXT MENU owns the whole script
+  area: the handler moved from `editor.view.dom.parentElement` to
+  DOCUMENT with a `.closest('.editor-main')` guard — right-clicks on
+  page margins, page-break bands and annotation chips now open the APP
+  menu (WebKit's native Look Up/Translate suppressed); outside the
+  script area nothing changes. (3) the Scrapbook ribbon's "Return to
+  Editor" section is GONE (the × does it; last remaining instance —
+  the fullscreen one died earlier); orphaned LuUndo2 + closeNotebook
+  imports cleaned (the TS6133 gate would have blocked the .dmg).
+- check-v543: 10 green (one section/one status row, old titles gone,
+  "All" fits in 252px, status/type/hide-all each write BOTH scopes,
+  split-state converges in one click, backdrop right-click →
+  defaultPrevented + app menu AFTER the React flush — same-tick DOM
+  reads race the render, the first run's lesson — no-op outside the
+  script area, no Return-to-Editor button with the Scrapbook open).
 
 ### v5.42 — preview knobs, no phantom row, pinned ⋮, growing field, ONE Filter
 

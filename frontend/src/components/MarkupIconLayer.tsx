@@ -15,7 +15,7 @@
 import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
-import { findMarkupPos } from '../utils/markupActions';
+import { findMarkupPos, createMarkupAtSelection } from '../utils/markupActions';
 import { MarkupIcon } from './markupIcons';
 
 interface IconSpot { id: string; top: number; left: number; icon: string; color: string; done: boolean }
@@ -49,6 +49,34 @@ export default function MarkupIconLayer({ editor, container }: {
     editor.on('update', bump);
     return () => { editor.off('update', bump); };
   }, [editor]);
+
+  // v5.48, Derek: an "add annotation" with nothing selected ARMS this —
+  // the next text selection in the script creates the annotation on it
+  // (the old Link Script Text flow, promoted to the front door). Escape
+  // stands down. Hosted here: always mounted beside the editor, and this
+  // is annotation land.
+  const createPick = useEditorStore((s) => s.markupCreatePick);
+  useEffect(() => {
+    if (!createPick || !editor) return;
+    const dom = editor.view.dom;
+    const onUp = () => {
+      window.setTimeout(() => {
+        const sel = editor.state.selection;
+        if (sel.empty) return;
+        useEditorStore.getState().setMarkupCreatePick(false);
+        createMarkupAtSelection(editor);
+      }, 0);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') useEditorStore.getState().setMarkupCreatePick(false);
+    };
+    dom.addEventListener('mouseup', onUp);
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      dom.removeEventListener('mouseup', onUp);
+      document.removeEventListener('keydown', onKey, true);
+    };
+  }, [createPick, editor]);
 
   // Script-hidden highlight neutralization: tag every span whose annotation
   // is filtered out of the script — by TYPE ("Show" grid / ⋮ toggles) or by

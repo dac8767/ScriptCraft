@@ -221,7 +221,10 @@
   flex: 1;
   min-width: 0;
 }
-.markup-head-dots { margin-left: auto; flex: none; }
+/* v5.48, Derek: the window's ⋮ menu is GONE — STATUS and DELETE ride the
+   title bar as their own buttons (delete warns first). */
+.markup-win-status.done { color: #2e8b57; opacity: 1; background: rgba(46, 139, 87, 0.14); }
+.markup-win-delete:hover { color: #c0392b; }
 .markup-pop-group {
   display: inline-flex;
   align-items: center;
@@ -462,12 +465,14 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
    Navigator:" (the row's own classes so the two never drift) and "In
    Script:" (the margin chip, inline and inert). */
 .markup-pop-preview {
-  align-items: flex-start;
+  /* v5.48, Derek: icons sit CENTERED against the labels on their left */
+  align-items: center;
   border-top: 1px solid rgba(0, 0, 0, 0.14);
   /* v5.42, Derek: all four sides are Design knobs (Design ▸ Annotations) */
   padding: var(--dz-anno-prev-pad-top, 8px) var(--dz-anno-prev-pad-right, 0px) var(--dz-anno-prev-pad-bottom, 0px) var(--dz-anno-prev-pad-left, 0px);
 }
-.markup-nav-preview { font-size: 12px; line-height: 1.4; min-width: 0; flex: 1; }
+.markup-nav-preview { font-size: 12px; line-height: 1.4; min-width: 0; flex: 1; align-items: center; }
+.markup-nav-preview .fs-nav-kind-icon { display: inline-flex; vertical-align: 0; }
 .markup-pop-preview-script-label { margin-left: 8px; }
 .markup-margin-preview {
   width: 22px;
@@ -734,22 +739,8 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
 .markup-insert-url { flex: 1; min-width: 0; }
 .markup-img-menu { display: flex; flex-direction: column; }
 
-/* v5.32, Derek: the Navigator body's first row — blue action buttons
-   (Annotations opens the shared filter; Scene Numbers is a toggle whose
-   fill reads its state). The v5.28 header break is retired. */
-.fs-nav-action-row {
-  display: flex;
-  gap: 8px;
-  padding: 10px 12px 8px;
-  flex-shrink: 0;
-}
-.fs-nav-action-btn {
-  font-size: 12px;
-  padding: 5px 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
+/* (v5.48: the Navigator body's action row is gone — Scene # is a header
+   control, .fs-nav-nums-ctl in 20-tool-dock.css.) */
 .fs-nav-num-badge {
   width: 18px;
   height: 18px;

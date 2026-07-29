@@ -536,6 +536,8 @@ body.fs-tool-dragging { cursor: grabbing; }
   white-space: nowrap;
 }
 .tool-ctl:hover, .tool-ctl.open { background: var(--fd-menu-hover); color: var(--fd-text); }
+/* v5.48, Derek: the Navigator's Scene # header toggle — ON = accent text */
+.tool-ctl.active { color: var(--fd-accent); }
 .tool-ctl-icon { display: inline-flex; font-size: 13px; }
 .tool-ctl-current { color: var(--fd-text); font-weight: 600; }
 .tool-ctl-chip {

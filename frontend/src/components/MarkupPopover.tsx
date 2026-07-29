@@ -22,7 +22,7 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import {
   FaBold, FaItalic, FaListUl, FaListOl, FaCheckSquare, FaLink, FaRegImage, FaBook,
-  FaRegTrashAlt,
+  FaRegTrashAlt, FaRegCheckCircle,
 } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
@@ -32,8 +32,8 @@ import { confirmDialog } from './ConfirmDialog';
 import { showToast } from './Toast';
 import { FullscreenIcon } from './uiIcons';
 import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
-import { convertMarkupToPoint, convertMarkupToRange } from '../utils/markupActions';
-import { MarkupColorSwatch, MarkupUsedRow, MarkupDotsMenu } from './MarkupPickers';
+import { convertMarkupToRange, removeMarkupFromDoc } from '../utils/markupActions';
+import { MarkupColorSwatch, MarkupUsedRow } from './MarkupPickers';
 import {
   findMarkupPos, setMarkupHighlight, firstContentKind, markupNavLines, markupIsList,
   type MarkupNavLine,
@@ -442,6 +442,24 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     }
     setMarkupEditorId(null);
   };
+  // v5.48, Derek: the title bar's delete WARNS first — deleting removes
+  // the highlight anchor and the annotation itself (the ⋮ menu's exact
+  // delete, with a confirm in front).
+  const deleteWithConfirm = async () => {
+    const sure = await confirmDialog(
+      'Delete this annotation? Its highlight and content are removed.',
+      { title: 'Delete Annotation', confirmLabel: 'Delete', danger: true },
+    );
+    if (!sure) return;
+    const s = useEditorStore.getState();
+    if (editor) {
+      removeMarkupFromDoc(editor, id);
+      editor.emit('update', { editor, transaction: editor.state.tr });
+    }
+    s.removeMarkup(id);
+    setMarkupEditorId(null);
+  };
+
   const startDrag = (e: React.PointerEvent) => {
     if (maximized) return;
     const start = dragPos ?? pos;
@@ -491,9 +509,27 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
       onPointerDown={(e) => e.stopPropagation()}>
       {/* v5.46: any edge/corner resizes — the native corner grip is gone */}
       {!maximized && <EdgeResizeZones onStart={beginEdge} />}
-      {/* the draggable title bar — fullscreen and × like every window */}
+      {/* the draggable title bar — v5.48, Derek: the ⋮ menu is GONE from
+          this window; STATUS and DELETE ride the bar directly (delete
+          warns first), then fullscreen and × like every window */}
       <div className="markup-pop-titlebar" onPointerDown={startDrag}>
         <span className="markup-pop-title">Annotation</span>
+        <button
+          className={`markup-win-btn markup-win-status${markup.done ? ' done' : ''}`}
+          title={markup.done ? 'Complete — click to reopen' : 'Mark as complete'}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => updateMarkup(id, { done: !markup.done })}
+        >
+          <FaRegCheckCircle />
+        </button>
+        <button
+          className="markup-win-btn markup-win-delete"
+          title="Delete annotation"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={deleteWithConfirm}
+        >
+          <FaRegTrashAlt />
+        </button>
         <button className="markup-win-btn" title={maximized ? 'Exit full screen' : 'Full screen'}
           onPointerDown={(e) => e.stopPropagation()} onClick={() => setMaximized((v) => !v)}>
           <FullscreenIcon />
@@ -529,15 +565,8 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
               usedKind="highlight"
               onPick={(color) => setHighlight(color)}
             />
-            {/* v5.31, Derek: DELETE the highlight — the annotation stays,
-                re-anchored to the element as a cursor-made one. */}
-            <button
-              className="markup-hl-eye markup-hl-del"
-              title="Remove highlight from script"
-              onClick={() => { if (editor) convertMarkupToPoint(editor, id); }}
-            >
-              <FaRegTrashAlt />
-            </button>
+            {/* (v5.48, Derek: the remove-highlight button is GONE — every
+                annotation stays connected to its highlighted text.) */}
           </span>
         ) : (
           <span className="markup-pop-group">
@@ -551,11 +580,7 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
           </span>
         )}
         </div>
-        {/* v5.42, Derek: the ⋮ — top row, right-aligned, LOCKED (it never
-            wraps to a new line the way the highlight group can) */}
-        <span className="markup-head-dots" onPointerDown={(e) => e.stopPropagation()}>
-          <MarkupDotsMenu markup={markup} editor={editor} onDeleted={() => setMarkupEditorId(null)} />
-        </span>
+        {/* (v5.48, Derek: the ⋮ moved UP into the title bar.) */}
       </div>
       {/* mini editor toolbar */}
       <div className="markup-pop-row markup-mini-bar">

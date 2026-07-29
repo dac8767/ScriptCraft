@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.47 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.48 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,42 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.47 — # goto in header, stacked stepper, Design DOCKS BACK, notes checklist fixes, edit-window force-show (HEAD)
+### v5.48 — annotations = highlighted text, pick-to-place, title-bar status/delete, Scene # in header (HEAD)
+
+- Derek's 8 (six mid-turn messages):
+  (1) EVERY annotation anchors to highlighted TEXT: createMarkupAtSelection
+  with an EMPTY selection creates NOTHING — it arms
+  markupsSlice.markupCreatePick (+ a toast prompt) and the next selection
+  in the script places the annotation (the Link Script Text flow promoted
+  to the front door; listener hosted in MarkupIconLayer, Escape stands
+  down). A cursor INSIDE an existing highlight opens that annotation.
+  Point annotations are no longer creatable; legacy ones stay readable
+  (their Link Script Text upgrade path remains). convertMarkupToPoint is
+  GONE with the remove-highlight button. Return type is now
+  `string | null`.
+  (2) The window's ⋮ MENU IS GONE (superseding the just-asked move-to-
+  header mid-batch): the title bar carries a STATUS toggle
+  (.markup-win-status, FaRegCheckCircle, green when done) and DELETE
+  (.markup-win-delete) which confirmDialog-warns, then does the ⋮ menu's
+  exact delete (removeMarkupFromDoc + emit + removeMarkup + close).
+  MarkupDotsMenu remains on panel cards + Navigator rows.
+  (3) Preview icons CENTERED on their labels (.markup-pop-preview
+  align-items center; nav preview inline-flex).
+  (4) NAVIGATOR: the Scene # toggle moved into the window HEADER — text
+  only (.fs-nav-nums-ctl, .tool-ctl.active = accent); NavActionRow and
+  its CSS are gone.
+  (5) DESIGN POP-OUT SEAT (Derek's screenshot: half off-screen): the
+  dock-drag left `pos` at the panel edge and reopening used it. dockInto
+  resets pos to the sentinel; the open effect ALSO re-anchors whenever
+  the remembered spot is mostly off-viewport.
+- check-v548: 12 green (empty add → armed+toast+no create, Escape
+  cancels, next selection places a highlighted range annotation with the
+  mark in the doc, no hl-del / no ⋮ / status+delete present, status
+  toggles+lights, chip centered Δ0, cancel keeps, confirmed delete
+  removes annotation+span+window, selected add unchanged, dock-cycle
+  pop-out fully on screen).
+
+### v5.47 — # goto in header, stacked stepper, Design DOCKS BACK, notes checklist fixes, edit-window force-show
 
 - Derek's 10 (seven mid-turn messages; the sandbox ALSO rolled back a
   THIRD time at turn start — reset + npm install + Vite restart, the
@@ -390,39 +425,12 @@ Durable bits kept live here:
   Move after 2, synthetic DataTransfer drag with mid-drag `.drop-after`
   hint, confirmed delete empties the doc, Title Page window opens).
 
-### v5.43 — ONE Filter for both scopes, whole-area context menu, Return to Editor retired
-
-- Derek's 3 (one turn): (1) FILTER REVERSAL of v5.42's two-section design
-  ("the drop down window is not big enough for the status field. abandon
-  the two section idea"): MarkupsPanel renders ONE TypeGridSection whose
-  every control writes BOTH scopes — setBothDone/toggleBoth/showAll/
-  hideAll pair markupHiddenIcons+markupScriptDone (script) with
-  markupFilters (window). Display reads the UNION of the two hidden
-  lists, so legacy split state (the ⋮ menus, ribbon and Navigator still
-  write single scopes) shows as hidden and ONE click converges both.
-  `.markup-filter-pop` widened 216→252px (216 clipped the Status row's
-  "All"); `.markup-filter-combined` + section-title CSS removed dead.
-  Chip = hiddenUnion + status. (2) CONTEXT MENU owns the whole script
-  area: the handler moved from `editor.view.dom.parentElement` to
-  DOCUMENT with a `.closest('.editor-main')` guard — right-clicks on
-  page margins, page-break bands and annotation chips now open the APP
-  menu (WebKit's native Look Up/Translate suppressed); outside the
-  script area nothing changes. (3) the Scrapbook ribbon's "Return to
-  Editor" section is GONE (the × does it; last remaining instance —
-  the fullscreen one died earlier); orphaned LuUndo2 + closeNotebook
-  imports cleaned (the TS6133 gate would have blocked the .dmg).
-- check-v543: 10 green (one section/one status row, old titles gone,
-  "All" fits in 252px, status/type/hide-all each write BOTH scopes,
-  split-state converges in one click, backdrop right-click →
-  defaultPrevented + app menu AFTER the React flush — same-tick DOM
-  reads race the render, the first run's lesson — no-op outside the
-  script area, no Return-to-Editor button with the Scrapbook open).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.43** — ONE Filter drives script+window together; whole-area context menu; Return to Editor retired
 - **v5.42** — annotation preview padding knobs, no phantom row, pinned ⋮, growing field, two-section Filter (reversed in v5.43)
 - **v5.41** — annotation previews ×2, Used order, compact draggable picker, ribbon formatting drives the mini, move toast
 - **v5.40** — CUSTOM PAGES: the customPage node/keymap, unnumbered pagination breaks, export exclusion
