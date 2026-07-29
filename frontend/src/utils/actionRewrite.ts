@@ -37,7 +37,15 @@ export interface EditorSelection {
   focusIndex: number;
 }
 
-export type RewriteIntent = 'tighten' | 'visual' | 'verbs' | 'plain' | '';
+/**
+ * Optional steer applied to all three variants.
+ *
+ * Only "tighten" is meaningful. Earlier drafts also had "visual", "verbs" and
+ * "plain", which were removed (design revision, second handoff) because they
+ * only asked the model to do what the craft rules already require. Degree is
+ * the one axis genuinely orthogonal to the rules.
+ */
+export type RewriteIntent = 'tighten' | '';
 
 export interface RewriteRequest {
   selection: string;
@@ -54,7 +62,14 @@ export interface RewriteRequest {
   intent?: RewriteIntent;
 }
 
-export type RewriteStrategy = 'cut' | 'sharpen' | 'restructure';
+/**
+ * The three variants differ by how much license they take with the writer's
+ * shape, not by which craft rule they apply. All three apply all the rules
+ * (design revision, second handoff: cut/sharpen/restructure made `sharpen` a
+ * deliberate under-application; the writer should never choose between a
+ * correct rewrite and a half-correct one).
+ */
+export type RewriteStrategy = 'faithful' | 'compressed' | 'reimagined';
 
 export interface RewriteVariant {
   strategy: RewriteStrategy;
@@ -98,22 +113,19 @@ export type Resolved =
   | { ok: false; reason: string };
 
 export const STRATEGY_LABELS: Record<RewriteStrategy, string> = {
-  cut: 'Cut',
-  sharpen: 'Sharpen',
-  restructure: 'Restructure',
+  faithful: 'Faithful',
+  compressed: 'Compressed',
+  reimagined: 'Reimagined',
 };
 
 export const STRATEGY_BLURBS: Record<RewriteStrategy, string> = {
-  cut: 'Stripped to the essential beat',
-  sharpen: 'Same shape, stronger verbs and nouns',
-  restructure: 'Re-broken for rhythm and reveal',
+  faithful: 'Your beats, your order, cleaned up',
+  compressed: 'The same moment in the fewest words',
+  reimagined: 'Reshaped, reordered, same facts',
 };
 
 export const INTENT_LABELS: Record<Exclude<RewriteIntent, ''>, string> = {
   tighten: 'Tighten',
-  visual: 'More visual',
-  verbs: 'Stronger verbs',
-  plain: 'Plainer',
 };
 
 /** Neighbouring action paragraphs sent as context on each side. */

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.56 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.57 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -204,7 +204,42 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.56 — Action Rewrite prompt: Derek's no-em-dash rule (HEAD)
+### v5.57 — Action Rewrite v2: faithful/compressed/reimagined, tighten-only steer, native dash rule (HEAD)
+
+- Derek's SECOND design-chat drop ("update the ai tool with this info") —
+  a revised handoff superseding the v5.54 package. Every delta diffed
+  against the first drop before applying. docs/ACTION-REWRITE.md updated;
+  read it before touching the feature.
+- THE VARIANT MODEL CHANGED (the big one): cut/sharpen/restructure →
+  faithful / compressed / reimagined. Rationale (preserved in the doc):
+  sharpen was a deliberate under-application — the writer should never
+  pick between a correct rewrite and a half-correct one. All three now
+  apply every rule in full and differ by LICENSE taken with the writer's
+  shape. Rust rank order: faithful, compressed, reimagined (least license
+  first). Prompt v2 copied VERBATIM.
+- Steer reduced to ONLY tighten (visual/verbs/plain asked for what the
+  hard rules already require — no observable change). INTENT_LABELS is
+  the single source: the panel select updated itself with zero component
+  edits.
+- The no-em-dash rule is NATIVE to the v2 prompt now (hard rule 8 — also
+  en dashes and -- as punctuation; compound-word hyphens protected),
+  superseding v5.56's rule 13. The prompt's own prose is deliberately
+  dash-free (models mimic prompt punctuation); keep it that way when
+  editing. -- ban came from the design side, resolving the question
+  v5.56 left open.
+- Cache policy documented (second handoff §6): stay on the 5-minute TTL;
+  break-even ~0.28 reads; an isolated rewrite costing 1.25x is the design
+  working — do not "fix" idle-gap cache misses; if rewrites prove
+  isolated, drop caching rather than reach for the 1-hour tier.
+- KEPT deliberately: our keychain service com.freedraft.app (their v2
+  says com.derek.scriptcraft + "confirm it matches" — ours IS the real
+  bundle id, and Derek's key already lives under it; changing the
+  service would orphan his saved key. Keychain coordinates are persisted
+  identifiers).
+- Gates: cargo check, tsc 0, 908 tests, build, check-v557 2/2 (steer
+  pair, targeting regression).
+
+### v5.56 — Action Rewrite prompt: Derek's no-em-dash rule
 
 - Derek confirmed the API path works on his Mac, then: "add a rule to the
   suggestions: Dont use em dash". Hard rule 13 added to
@@ -350,58 +385,12 @@ Durable bits kept live here:
 - QUEUED NEXT: the PAGES WINDOW TABS restructure (Script / Title Page /
   Custom; the separate Title Page tool leaves the side panels).
 
-### v5.52 — icon/color window OK/Cancel + live hex, colored filter grids, one-checkbox nav fix, header +
-
-- Derek's 4 (one in flight when the batch opened, three mid-turn):
-  (1) ICON & COLOR WINDOW: the hex row's Apply is GONE for embedded
-  pickers — ColorPicker auto-applies any complete #rrggbb (typed or
-  square/hue-drag) via effect; standalone pickers (highlight swatch)
-  keep Apply. MarkupComboPicker picks (presets / used / bare icons) no
-  longer close the window — v5.31's combo-closes shortcut retired; a
-  `.markup-icon-pop-foot` (Cancel / OK, compact .dialog-btn dress) owns
-  leaving. Open-time snapshot {icon, color, iconManual}; Cancel
-  restores via updateMarkup, OK / × / outside keep what's live.
-  (2) FILTER GRID COLORS (Derek's screenshot: a gray flag): the shared
-  TypeGridSection drew MarkupIcon colorless (inherited chrome gray on
-  the white chip). It now derives icon→color from the markups wearing
-  it (first in store order, memoized) — one fix, every door: panel
-  Filter, Navigator Filter, ribbon visibility menu, View submenu.
-  (3) ONE-CHECKBOX NAV BUG root-caused: MarkupPopover's live mirror
-  called a doc "empty" when getText() was blank and stored
-  content: null — but a taskList with one blank item IS structure;
-  the null made markupIsList false while the auto-icon (a check for
-  checklists, read from the LIVE editor) became the row's big icon.
-  Typing anything "fixed" it, which is why two items looked like the
-  cure. markupDocIsEmpty (markupActions — structural: only blank
-  paragraphs are empty; lists/images/text count) now feeds BOTH mirror
-  sites, and markupNavLines keeps textless LIST items so the row shows
-  its ☐ (4 new unit tests → 880).
-  (4) + ADD ANNOTATION → the window header: bare FaPlus, tool-ctl-lead
-  (leads the row; Filter/Search ride right). The header has no editor,
-  so the click arms markupsSlice.markupAddRequest and the panel body
-  (owns the editor, mounted iff that header shows) runs
-  createMarkupAtSelection — the pagesGotoRequest chrome→body pattern.
-  Body add-row + its CSS retired; empty-state copy updated.
-- check-v552: 12 green (bare + leads the header, gap 116px, body row
-  gone; + creates from the selection; no Apply + Cancel/OK footer;
-  typed hex auto-applies; a preset pick stays open; Cancel restores;
-  OK keeps; a lone checkbox is STORED and previews ☐; nav row shows ☐
-  and NO big icon; both filter-grid doors wear the annotation color;
-  empty-selection + still arms the banner).
-- Driver lesson (encoded in the check script): Navigator and
-  Annotations dock on DIFFERENT sides — both windows live at once and
-  both filter buttons are `.markup-ctl-filter`. Scope chrome clicks via
-  closest('.tool-dock-wrap') from a body landmark, and NEVER re-click a
-  dock item to "open" an already-active tool — it toggles it CLOSED.
-- QUEUED NEXT: the PAGES WINDOW TABS restructure (Script / Title Page /
-  Custom; the separate Title Page tool leaves the side panels) — the
-  batch opener for the next run.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.52** — icon/color window OK/Cancel + live hex, colored filter grids, one-checkbox nav fix, header +
 - **v5.51** — ribbon legacy-inserts retired, Filter right, pick BANNER, Navigator View menu
 - **v5.50** — hide-ribbon CRASH fix, shared PerRowStepper, no-flash Design seat, Scrapbook auto-dock
 - **v5.49** — Design seats at the panel edge, stacked previews + Save, picker ×/white chips, spinner + typeable count

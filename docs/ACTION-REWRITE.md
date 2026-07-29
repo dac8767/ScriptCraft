@@ -1,10 +1,11 @@
-# Action Rewrite — design rationale & verification (v5.54)
+# Action Rewrite — design rationale & verification (v5.54, revised v5.57)
 
 Integrated from Derek's design-chat handoff (four files: the system prompt,
 `rewrite.rs`, an `actionRewrite.ts` written for a flat element model, and a
-HANDOFF.md whose decisions this file preserves). The feature: select action
-lines, get three craft-guided rewrites — **cut** / **sharpen** /
-**restructure** — each with a one-line note teaching the principle. Dialogue
+HANDOFF.md whose decisions this file preserves; a SECOND handoff drop revised
+the design — see "The three variants" below). The feature: select action
+lines, get three craft-guided rewrites — **faithful** / **compressed** /
+**reimagined** — each with a one-line note teaching the principle. Dialogue
 is never touched.
 
 ## Where things live
@@ -27,10 +28,38 @@ is never touched.
   is swapping calibration examples for before/afters from Derek's own
   scripts — deferred, not forgotten. Deliberate non-goal: no screenwriting
   books/corpora embedded (cost without signal + legal exposure).
-- **Three variants are three strategies** (cut 40–60%, sharpen same-shape,
-  restructure re-broken), sorted into fixed order Rust-side. Without this
-  the model returns three near-identical rewordings.
-- **`temperature: 1.0`** — the variants must diverge. Don't lower it.
+- **The three variants differ by LICENSE taken with the writer's shape, not
+  by which craft rule they apply** (v5.57 revision — the reasoning matters):
+  the original cut/sharpen/restructure trio made `sharpen` a deliberate
+  under-application of the governing principle, forcing the writer to choose
+  between a correct rewrite and a half-correct one. Now all three apply
+  every rule in full: `faithful` (the writer's beats and order, cleaned up),
+  `compressed` (fewest words, may drop a secondary detail, 40–60%),
+  `reimagined` (re-broken, reordered, same facts). Sorted into that fixed
+  order Rust-side — least license first. Divergence is still guaranteed:
+  "closest to what you wrote" and "reshaped" cannot collapse into each
+  other.
+- **The intent steer is ONLY `tighten`** (v5.57): visual/verbs/plain were
+  removed because they asked for what the hard rules already require and
+  produced no observable change. Degree is the one axis orthogonal to the
+  rules. Don't re-add the others without a reason.
+- **Prompt cache stays on the 5-minute default TTL** (v5.57): a read is
+  0.1×, a 5-min write 1.25×, a 1-hour write 2×. Break-even for the short
+  tier is ~0.28 reads — one follow-up rewrite inside the window pays for
+  the write; the 1-hour tier needs 2+ reads/hour to win and an idle hour
+  on a 2× write is expensive. Writers polishing a scene fire clustered
+  rewrites, so the short tier fits. An isolated rewrite costing 1.25× is
+  the design working as intended — do NOT "fix" a cache miss after an idle
+  gap; if rewrites ever prove typically isolated, reconsider caching
+  entirely rather than reaching for the 1-hour tier.
+- **`temperature: 1.0`** — the variants must diverge in interpretation.
+  Don't lower it.
+- **No em dashes is a HARD RULE in the prompt** (rule 8; also bans en
+  dashes and `--` as punctuation, keeps compound-word hyphens), and the
+  prompt's own prose deliberately avoids em dashes — models pick up
+  punctuation habits from the prompt they're given. If you edit the file,
+  keep its prose dash-free (the rule itself and the calibration example
+  that demonstrates the fix are the two exceptions).
 - **`assessment: "already_strong"`** softens the UI — a tool that churns on
   good writing loses trust. Don't hide or dramatize it.
 - **BYO key, OS keychain, Rust-side only** (service `com.freedraft.app`,
@@ -69,7 +98,7 @@ sceneHeading · preceding/following (≤3 action paragraphs, stopping at scene
 boundaries) · characters (cues since scene start) · precedingDialogue
 (lookback 3) · locationEstablished (same location key earlier ⇒ cut
 establishing description) · firstAppearances (drives intro caps) · intent
-(tighten/visual/verbs/plain). Empty `preceding` is sent as
+(`tighten` only). Empty `preceding` is sent as
 `POSITION: opens the scene` — the absence is meaningful.
 
 ## Verification on the desktop app (this sandbox can't make API calls)
@@ -79,7 +108,8 @@ feature wiring is the crate's documented standard set. Then, on the Mac:
 
 1. Save a key in the panel → survives an app restart (it's in Keychain
    Access under `com.freedraft.app`).
-2. Select one action paragraph → three distinctly different variants.
+2. Select one action paragraph → three variants that differ in license
+   taken (faithful / compressed / reimagined), not near-duplicates.
 3. Selection spanning action + dialogue → range clamps, notice shown.
 4. Dialogue-only selection → button disabled with the craft reason.
 5. Log `usage` on two consecutive requests → the second shows
@@ -87,5 +117,5 @@ feature wiring is the crate's documented standard set. Then, on the Mac:
    per-call leaked into the system block).
 6. Accept a variant → paragraphs replaced; ⌘Z restores the original.
 7. Edit above the target mid-request → Use blocked with the stale notice.
-8. Rewrite in a location seen earlier → the `cut` variant drops
+8. Rewrite in a location seen earlier → all three variants drop
    establishing description rather than rephrasing it.

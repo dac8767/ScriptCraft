@@ -155,6 +155,53 @@ reliable; re-run before believing a weird worker failure.
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
 
+### v5.52 — icon/color window OK/Cancel + live hex, colored filter grids, one-checkbox nav fix, header +
+
+- Derek's 4 (one in flight when the batch opened, three mid-turn):
+  (1) ICON & COLOR WINDOW: the hex row's Apply is GONE for embedded
+  pickers — ColorPicker auto-applies any complete #rrggbb (typed or
+  square/hue-drag) via effect; standalone pickers (highlight swatch)
+  keep Apply. MarkupComboPicker picks (presets / used / bare icons) no
+  longer close the window — v5.31's combo-closes shortcut retired; a
+  `.markup-icon-pop-foot` (Cancel / OK, compact .dialog-btn dress) owns
+  leaving. Open-time snapshot {icon, color, iconManual}; Cancel
+  restores via updateMarkup, OK / × / outside keep what's live.
+  (2) FILTER GRID COLORS (Derek's screenshot: a gray flag): the shared
+  TypeGridSection drew MarkupIcon colorless (inherited chrome gray on
+  the white chip). It now derives icon→color from the markups wearing
+  it (first in store order, memoized) — one fix, every door: panel
+  Filter, Navigator Filter, ribbon visibility menu, View submenu.
+  (3) ONE-CHECKBOX NAV BUG root-caused: MarkupPopover's live mirror
+  called a doc "empty" when getText() was blank and stored
+  content: null — but a taskList with one blank item IS structure;
+  the null made markupIsList false while the auto-icon (a check for
+  checklists, read from the LIVE editor) became the row's big icon.
+  Typing anything "fixed" it, which is why two items looked like the
+  cure. markupDocIsEmpty (markupActions — structural: only blank
+  paragraphs are empty; lists/images/text count) now feeds BOTH mirror
+  sites, and markupNavLines keeps textless LIST items so the row shows
+  its ☐ (4 new unit tests → 880).
+  (4) + ADD ANNOTATION → the window header: bare FaPlus, tool-ctl-lead
+  (leads the row; Filter/Search ride right). The header has no editor,
+  so the click arms markupsSlice.markupAddRequest and the panel body
+  (owns the editor, mounted iff that header shows) runs
+  createMarkupAtSelection — the pagesGotoRequest chrome→body pattern.
+  Body add-row + its CSS retired; empty-state copy updated.
+- check-v552: 12 green (bare + leads the header, gap 116px, body row
+  gone; + creates from the selection; no Apply + Cancel/OK footer;
+  typed hex auto-applies; a preset pick stays open; Cancel restores;
+  OK keeps; a lone checkbox is STORED and previews ☐; nav row shows ☐
+  and NO big icon; both filter-grid doors wear the annotation color;
+  empty-selection + still arms the banner).
+- Driver lesson (encoded in the check script): Navigator and
+  Annotations dock on DIFFERENT sides — both windows live at once and
+  both filter buttons are `.markup-ctl-filter`. Scope chrome clicks via
+  closest('.tool-dock-wrap') from a body landmark, and NEVER re-click a
+  dock item to "open" an already-active tool — it toggles it CLOSED.
+- QUEUED NEXT: the PAGES WINDOW TABS restructure (Script / Title Page /
+  Custom; the separate Title Page tool leaves the side panels) — the
+  batch opener for the next run.
+
 ### v5.51 — ribbon legacy-inserts retired, Filter right, pick BANNER, Navigator View menu
 
 - Derek's 4 (mid-turn, after the v5.50 ship):

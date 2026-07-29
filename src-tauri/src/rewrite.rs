@@ -61,7 +61,8 @@ pub struct RewriteRequest {
     /// Names in the target making their first appearance in the script.
     #[serde(default)]
     pub first_appearances: Vec<String>,
-    /// Optional steer: "tighten" | "visual" | "verbs" | "plain" | "" (none).
+    /// Optional steer. Currently only "tighten" is meaningful; anything else
+    /// is ignored. See intent_line for why the list is deliberately short.
     #[serde(default)]
     pub intent: Option<String>,
 }
@@ -69,7 +70,7 @@ pub struct RewriteRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RewriteVariant {
-    /// "cut" | "sharpen" | "restructure"
+    /// "faithful" | "compressed" | "reimagined"
     pub strategy: String,
     pub text: String,
     pub note: String,
@@ -200,12 +201,14 @@ pub fn clear_api_key() -> Result<(), String> {
 // Prompt assembly
 // ---------------------------------------------------------------------------
 
+/// The intent list is deliberately minimal. "visual", "verbs", and "plain"
+/// were removed because they only ask the model to do what the hard rules
+/// already require, which produced no observable change. "tighten" survives
+/// because degree is genuinely orthogonal to the rules: a writer may want all
+/// three variants leaner, not just the compressed one.
 fn intent_line(intent: &Option<String>) -> Option<&'static str> {
     match intent.as_deref().unwrap_or("").trim() {
-        "tighten" => Some("Bias all three variants toward maximum compression."),
-        "visual" => Some("Bias all three variants toward concrete, photographable images."),
-        "verbs" => Some("Bias all three variants toward stronger, more active verbs."),
-        "plain" => Some("Bias all three variants toward plainness; strip all literary flourish."),
+        "tighten" => Some("Push all three variants leaner than you otherwise would."),
         _ => None,
     }
 }
@@ -261,7 +264,7 @@ fn build_user_message(req: &RewriteRequest) -> String {
         }
     }
 
-    push_section(&mut out, "SELECTION TO REWRITE", req.selection.trim());
+    push_section(&mut out, "PASSAGE TO REWRITE", req.selection.trim());
 
     if !req.following.is_empty() {
         push_section(
@@ -309,12 +312,17 @@ pub async fn rewrite_action_lines(req: RewriteRequest) -> Result<RewriteResponse
     let body = json!({
         "model": MODEL,
         "max_tokens": MAX_TOKENS,
-        // High temperature on purpose: three variants should actually diverge.
+        // High temperature on purpose: the three variants should diverge in
+        // interpretation. Lowering this collapses them toward each other.
         "temperature": 1.0,
         "system": [{
             "type": "text",
             "text": SYSTEM_PROMPT,
-            // Caches the craft rules + calibration examples across calls.
+            // Caches the craft rules and calibration examples across calls.
+            // 5-minute TTL (the default), refreshed on every hit. Break-even is
+            // well under one read, so clustered rewrites are a clear win; an
+            // isolated rewrite costs 1.25x. Do not switch to ttl "1h" without
+            // evidence of 2+ reads per hour. See docs/ACTION-REWRITE.md.
             "cache_control": { "type": "ephemeral" }
         }],
         "messages": [{
@@ -372,11 +380,12 @@ pub async fn rewrite_action_lines(req: RewriteRequest) -> Result<RewriteResponse
     let mut result: RewriteResponse = serde_json::from_str(extract_json(&text)?)
         .map_err(|e| format!("Could not parse suggestions: {e} — {text}"))?;
 
-    // Keep a stable order in the UI regardless of what the model emits.
+    // Stable UI order regardless of what the model emits: least license first,
+    // most license last.
     let rank = |s: &str| match s {
-        "cut" => 0,
-        "sharpen" => 1,
-        "restructure" => 2,
+        "faithful" => 0,
+        "compressed" => 1,
+        "reimagined" => 2,
         _ => 3,
     };
     result.variants.sort_by_key(|v| rank(&v.strategy));

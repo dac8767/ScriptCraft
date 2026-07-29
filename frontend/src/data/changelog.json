@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.57",
+    "date": "2026-07-29",
+    "changes": [
+      "Action Rewrite, revised from the design chat's second drop: the three suggestions are now Faithful (your beats, your order, cleaned up), Compressed (the same moment in the fewest words), and Reimagined (reshaped, reordered, same facts). Every variant applies every craft rule in full — they differ in how much license they take, so you never choose between a correct rewrite and a half-correct one.",
+      "The steer menu is just Tighten now — the old More visual / Stronger verbs / Plainer options only asked for what the hard rules already require, so they changed nothing.",
+      "The no-dash rule is now native to the craft prompt (em dashes, en dashes, and double hyphens as punctuation; compound words like beat-up keep theirs), and the prompt's own prose was scrubbed of them so the model doesn't pick up the habit."
+    ]
+  },
+  {
     "version": "5.56",
     "date": "2026-07-29",
     "changes": [
