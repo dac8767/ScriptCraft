@@ -50,8 +50,9 @@ export interface ViewState {
   markupHiddenIcons?: string[];
   markupIconScalePct?: number;
   markupScriptDone?: 'open' | 'done' | 'all';
-  markupRecentColors?: string[];
-  markupRecentIcons?: string[];
+  /** v5.29: 'Used' replaced the recents (derived live from markups);
+   *  the old markupRecentColors/markupRecentIcons keys are ignored. */
+  markupCustomIcons?: { id: string; data: string }[];
   /** v5.25: markup visibility on the script (margin icons + highlights). */
   markupsVisible?: boolean;
   outlineBarRows?: OutlineBarRow[];

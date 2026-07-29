@@ -1,5 +1,15 @@
 [
   {
+    "version": "5.29",
+    "date": "2026-07-29",
+    "changes": [
+      "Both pickers: the Recent section became USED — the colors and icon+color combos currently on your annotations (presets and customs alike), live; Used icons show in the colors they were used in",
+      "Icons you can actually see: options drawn in a dark color get a light chip behind them in the pickers",
+      "The annotation window's top row: \"Icon:\" and \"Highlight:\" labels, both groups on ONE row, and the hide-highlight checkbox is an eye toggle (\"Hide (or show) highlight in script\"); the row's spacing and padding are Design ▸ Annotations knobs",
+      "Import icon: bring your own image into the icon picker — resized to a crisp 48px chip (image files only, 2 MB cap) and usable anywhere an icon is"
+    ]
+  },
+  {
     "version": "5.28",
     "date": "2026-07-29",
     "changes": [

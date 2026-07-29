@@ -358,6 +358,10 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'markupIconScale', label: 'Script icon size (%)', unit: '', min: 50, max: 200, step: 5, def: 100,
         hint: 'Scale of the annotation icons in the page margin.',
         store: { get: (s) => s.markupIconScalePct, set: (v) => useEditorStore.getState().setMarkupIconScalePct(v) } },
+      // v5.29, Derek: the annotation window's head row (Icon:/Highlight: groups)
+      { id: 'annoHeadGap', label: 'Window: label-to-swatch spacing', cssVar: '--dz-anno-head-gap', unit: 'px', min: 0, max: 20, step: 1, def: 6 },
+      { id: 'annoGroupGap', label: 'Window: icon-to-highlight spacing', cssVar: '--dz-anno-group-gap', unit: 'px', min: 0, max: 40, step: 1, def: 14 },
+      { id: 'annoHeadPad', label: 'Window: top row padding', cssVar: '--dz-anno-head-pad', unit: 'px', min: 0, max: 24, step: 1, def: 0 },
     ],
   },
   {

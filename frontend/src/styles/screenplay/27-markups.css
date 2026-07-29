@@ -105,8 +105,44 @@
    The popover shows ONE current icon and ONE current color; clicking opens
    the picker windows. All sub-popovers portal to body as .markup-subpop —
    the annotation popover treats presses inside them as inside itself. */
-.markup-pop-head { gap: 6px; }
+/* v5.29: ONE head row — "Icon:" group + "Highlight:" group + ⋮. The three
+   --dz-anno-* knobs live in Design ▸ Annotations. */
+.markup-pop-head {
+  gap: var(--dz-anno-group-gap, 14px);
+  padding: var(--dz-anno-head-pad, 0px);
+}
+.markup-pop-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dz-anno-head-gap, 6px);
+}
+.markup-pop-grouplabel { font-size: 11px; color: var(--fd-text-muted); }
+.markup-hl-eye {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+}
+.markup-hl-eye:hover { border-color: var(--fd-accent); }
+.markup-hl-eye.active { color: var(--fd-text); }
 .markup-pop-spacer { flex: 1; }
+
+/* v5.29: legibility — a light chip behind icons drawn in DARK colors (they
+   vanished on the dark chrome), and imported custom icons. */
+.markup-preset.markup-light-chip { background: #ececec; }
+.markup-preset.markup-light-chip:hover { background: #fff; }
+.markup-custom-icon { width: 16px; height: 16px; object-fit: contain; display: block; }
+.markup-margin-icon .markup-custom-icon { width: 72%; height: 72%; }
+.markup-swatch-icon .markup-custom-icon { width: 17px; height: 17px; }
+.markup-import-icon { align-self: flex-start; margin-top: 4px; }
 .markup-swatch {
   width: 26px;
   height: 26px;

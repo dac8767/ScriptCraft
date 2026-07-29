@@ -6,10 +6,11 @@ interface ColorPickerProps {
    *  square/hex Apply, 'preset' the built-in swatches, 'recent' the caller's
    *  recents row. Callers that keep a recents list record ONLY 'wheel' picks
    *  (Derek's rule); existing callers ignore the argument. */
-  onChange: (color: string | null, source?: 'preset' | 'wheel' | 'recent') => void;
+  onChange: (color: string | null, source?: 'preset' | 'wheel' | 'used') => void;
   onClose: () => void;
-  /** v5.26: optional recently-used row (annotation pickers pass their list). */
-  recent?: string[];
+  /** v5.29: optional "Used" row — the annotation pickers pass the colors
+   *  currently used across annotations (was the Recent row in v5.26). */
+  used?: string[];
 }
 
 const PRESET_COLORS = [
@@ -19,7 +20,7 @@ const PRESET_COLORS = [
   '#ff6666', '#ffcc66', '#ffff66', '#66ff66', '#66ccff', '#cc66ff',
 ];
 
-const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, onClose, recent }) => {
+const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, onClose, used }) => {
   const ref = useRef<HTMLDivElement>(null);
   const svRef = useRef<HTMLDivElement>(null);
   const [customColor, setCustomColor] = useState(value || '#000000');
@@ -81,16 +82,16 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, onClose, rec
           />
         ))}
       </div>
-      {recent && recent.length > 0 && (
+      {used && used.length > 0 && (
         <div className="color-picker-recent">
-          <span className="color-picker-recent-label">Recent</span>
+          <span className="color-picker-recent-label">Used</span>
           <span className="color-picker-recent-row">
-            {recent.map((color) => (
+            {used.map((color) => (
               <button
                 key={color}
                 className={`color-picker-swatch${value === color ? ' active' : ''}`}
                 style={{ backgroundColor: color }}
-                onClick={() => onChange(color, 'recent')}
+                onClick={() => onChange(color, 'used')}
                 title={color}
               />
             ))}

@@ -22,6 +22,7 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import {
   FaBold, FaItalic, FaListUl, FaListOl, FaCheckSquare, FaLink, FaRegImage, FaBook,
+  FaRegEye, FaRegEyeSlash,
 } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
@@ -190,39 +191,43 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   return createPortal(
     <div ref={popRef} className="fs-markup-popover" style={{ top: pos.top, left: pos.left, width: POP_W }}
       onPointerDown={(e) => e.stopPropagation()}>
-      {/* icon swatch · color swatch · ⋮ */}
+      {/* ONE head row (v5.29, Derek): "Icon:" swatches · "Highlight:" eye +
+          swatch (range annotations only) · ⋮. The eye replaces the hide
+          checkbox — eye-slash = hidden. Spacing/padding are Design knobs. */}
       <div className="markup-pop-row markup-pop-head">
-        <MarkupIconSwatch markup={markup} />
-        <MarkupColorSwatch
-          value={markup.color}
-          title="Icon color"
-          onPick={(color) => updateMarkup(id, { color })}
-        />
+        <span className="markup-pop-group">
+          <span className="markup-pop-grouplabel">Icon:</span>
+          <MarkupIconSwatch markup={markup} />
+          <MarkupColorSwatch
+            value={markup.color}
+            title="Icon color"
+            usedKind="color"
+            onPick={(color) => updateMarkup(id, { color })}
+          />
+        </span>
+        {markup.anchor === 'range' && (
+          <span className="markup-pop-group">
+            <span className="markup-pop-grouplabel">Highlight:</span>
+            <button
+              className={`markup-hl-eye${markup.highlight !== null ? ' active' : ''}`}
+              title="Hide (or show) highlight in script"
+              onClick={() => setHighlight(markup.highlight === null ? DEFAULT_MARKUP_HIGHLIGHT : null)}
+            >
+              {markup.highlight !== null ? <FaRegEye /> : <FaRegEyeSlash />}
+            </button>
+            {markup.highlight !== null && (
+              <MarkupColorSwatch
+                value={markup.highlight}
+                title="Highlight color"
+                usedKind="highlight"
+                onPick={(color) => setHighlight(color)}
+              />
+            )}
+          </span>
+        )}
         <span className="markup-pop-spacer" />
         <MarkupDotsMenu markup={markup} editor={editor} onDeleted={() => setMarkupEditorId(null)} />
       </div>
-      {/* highlight — range annotations only. v5.26, Derek: selection-made
-          annotations highlight YELLOW by default, so the option here is the
-          inverse — "Hide highlights in script" — plus the color swatch. */}
-      {markup.anchor === 'range' && (
-        <div className="markup-pop-row markup-hl-row">
-          <label className="markup-hl-check">
-            <input
-              type="checkbox"
-              checked={markup.highlight === null}
-              onChange={(e) => setHighlight(e.target.checked ? null : DEFAULT_MARKUP_HIGHLIGHT)}
-            />
-            Hide highlights in script
-          </label>
-          {markup.highlight !== null && (
-            <MarkupColorSwatch
-              value={markup.highlight}
-              title="Highlight color"
-              onPick={(color) => setHighlight(color)}
-            />
-          )}
-        </div>
-      )}
       {/* mini editor toolbar */}
       <div className="markup-pop-row markup-mini-bar">
         {miniBtn(!!mini?.isActive('bold'), 'Bold', () => mini?.chain().focus().toggleBold().run(), <FaBold />)}

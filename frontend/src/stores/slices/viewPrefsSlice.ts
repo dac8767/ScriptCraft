@@ -45,12 +45,10 @@ export interface ViewPrefsSlice {
    *  the SCRIPT by state ('all' default; the panel Filter defaults 'open'). */
   markupScriptDone: 'open' | 'done' | 'all';
   setMarkupScriptDone: (v: 'open' | 'done' | 'all') => void;
-  /** v5.26: recently APPLIED wheel colors / picked grid icons in the
-   *  annotation pickers (presets don't record — Derek's rule). Newest first. */
-  markupRecentColors: string[];
-  addMarkupRecentColor: (c: string) => void;
-  markupRecentIcons: string[];
-  addMarkupRecentIcon: (icon: string) => void;
+  /** v5.29: imported custom annotation icons (small data-URL images).
+   *  Referenced from markups as 'custom:<id>' — app-level, persisted. */
+  markupCustomIcons: { id: string; data: string }[];
+  addMarkupCustomIcon: (icon: { id: string; data: string }) => void;
   setMarkersVisible: (v: boolean) => void;
   sceneNumbersVisible: boolean;
   setSceneNumbersVisible: (v: boolean) => void;
@@ -107,17 +105,11 @@ export const createViewPrefsSlice: StateCreator<EditorState, [], [], ViewPrefsSl
     saveViewState({ markupScriptDone: v });
     set({ markupScriptDone: v });
   },
-  markupRecentColors: (_vs.markupRecentColors as string[] | undefined) ?? [],
-  addMarkupRecentColor: (c) => set((s) => {
-    const next = [c, ...s.markupRecentColors.filter((x) => x !== c)].slice(0, 8);
-    saveViewState({ markupRecentColors: next });
-    return { markupRecentColors: next };
-  }),
-  markupRecentIcons: (_vs.markupRecentIcons as string[] | undefined) ?? [],
-  addMarkupRecentIcon: (icon) => set((s) => {
-    const next = [icon, ...s.markupRecentIcons.filter((x) => x !== icon)].slice(0, 8);
-    saveViewState({ markupRecentIcons: next });
-    return { markupRecentIcons: next };
+  markupCustomIcons: (_vs.markupCustomIcons as { id: string; data: string }[] | undefined) ?? [],
+  addMarkupCustomIcon: (icon) => set((s) => {
+    const next = [...s.markupCustomIcons, icon];
+    saveViewState({ markupCustomIcons: next });
+    return { markupCustomIcons: next };
   }),
   markersVisible: _vs.markersVisible ?? true,
   setMarkersVisible: (v) => {

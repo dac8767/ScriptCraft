@@ -202,7 +202,33 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.28 — annotation view controls everywhere + navigator polish (HEAD)
+### v5.29 — picker Used sections, legible chips, head row, icon import (HEAD)
+
+- Derek's batch: (1) RECENT → USED in both pickers, derived LIVE from
+  `markups` (no stored lists — markupRecentColors/Icons fields deleted;
+  old viewState keys ignored). Color picker `used` prop (was `recent`,
+  label "Used"); icon picker Used row = unique icon+color COMBOS rendered
+  in their own colors; picking one sets both. (2) LEGIBILITY: isDarkColor
+  (markupIcons, luminance < .42) puts `.markup-light-chip` behind icon
+  buttons drawn in dark colors (his screenshot: near-black on dark chrome).
+  (3) HEAD ROW: one row — "Icon:" group (icon+color swatches) ·
+  "Highlight:" group (EYE toggle, title "Hide (or show) highlight in
+  script", replacing the checkbox + color swatch) · ⋮. Three cssVar Design
+  knobs: --dz-anno-head-gap 6 / --dz-anno-group-gap 14 / --dz-anno-head-pad
+  0 (Design ▸ Annotations). (4) IMPORT ICON: file input in the icon picker
+  — image/* only, 2 MB cap, canvas contain-fit to a 48px PNG data URL,
+  stored in viewPrefs.markupCustomIcons ({id,data}[], persisted), icon key
+  `custom:<id>`; MarkupIcon renders customs via a store lookup (img
+  .markup-custom-icon; margin chip sizes it 72%).
+- WATCH FOR: an Edit once wrote a NUL byte into MarkupPickers.tsx (file
+  became "data" to grep/file and would have broken the build) — caught by
+  `file`; stripped with python. If grep calls a source file BINARY, look
+  for \x00.
+- check-v529: 19 green (labels/row geometry, eye toggle, Design var drives
+  computed gap, Used rows from live state, chip bg computed, real file
+  import via setInputFiles → registry + swatch + margin img).
+
+### v5.28 — annotation view controls everywhere + navigator polish
 
 - Derek's batch: (1) View ▸ Annotations SUBMENU — master toggle, status
   check items (markupScriptDone), a per-type check item for each icon in
@@ -317,69 +343,12 @@ Durable bits kept live here:
   existence check), and an annotation on the doc's LAST line legitimately
   sorts to the outline's bottom — assert interleaving, not "not last".
 
-### v5.25 — MARKUPS: the annotation tool
-
-- Derek's redesign brief: ONE tool for annotating the script, set to replace
-  notes / to-dos / sections / markers on the page plus script highlighting.
-  "Markup Script" creates over a selection ('range' — highlight color offered)
-  or at a bare cursor ('point' — the mark spans the WHOLE current element, the
-  createScriptNoteAtSelection rule); a rich-text popover edits it; its
-  icon+color sits in the RIGHT margin. REPLACEMENT IS PHASE 2 — deferred until
-  Derek shakes the core down; the old tools are untouched this build. His
-  naming question (Markups vs Annotations etc.) was answered in chat with
-  options; NO rename done — note 'markups' is now a SHIPPED tool id, so any
-  future rename is label-only.
-- BOTH anchor flavors are ONE mechanism: the `scriptMarkup` MARK. The first
-  cut used a zero-width inline `markupAnchor` ATOM for point markups — and
-  the LIVE DRIVER caught what tsc/vitest couldn't: every screenplay element
-  is `content: 'text*'`, an inline node is invalid EVERYWHERE, and
-  ProseMirror's replace-fitter DROPS it silently — store got a markup, doc
-  got nothing (a phantom: no icon, no anchor, the silent-no-op sin). Marks
-  don't touch content structure, so they're the only anchor this schema
-  permits. Empty element + cursor → toast, no markup (never a phantom).
-- The model is scriptNote's, deliberately: the doc carries only ids (mark
-  attrs markupId+highlight), data lives in markupsSlice keyed by id,
-  persisted as `_markups` (composeSaveContent + BOTH hand-written load blocks
-  in ScreenplayEditor + the history destructure). Exporters keep marked text
-  and drop the mark (fountain/fdx/pdf/docx verified); pagination reads
-  textContent only, untouched by marks — the fountain half is pinned by
-  tests.
-- New files: stores/slices/markupsSlice.ts (data + DEFAULT_MARKUP_PRESETS),
-  editor/extensions/ScriptMarkup.ts, components/markupIcons.tsx (24 icons +
-  24 emoji + color rows), utils/markupActions.ts (create/find/setHighlight/
-  remove/sceneHeadingBefore/pageForPos/kinds/preview), MarkupIconLayer.tsx
-  (margin icons INSIDE editor-main, doc-tick repaint — not scroll-driven),
-  MarkupPopover.tsx (mini TipTap: StarterKit + Link + Image + TaskList/Item;
-  save-on-close; Scrapbook page links as scrapbook:<id> hrefs),
-  MarkupsPanel.tsx (cards: page # via computePageBlocks + sceneHeadingBefore;
-  double-click jump via requestEditorScroll; OPEN-only default filter),
-  MarkupsCustomizeTab.tsx, styles/screenplay/27-markups.css.
-- Entry points: ribbon builtins `markupScript` + `toggleMarkups` (palette-
-  only, like scriptNotes/tags); context-menu `markupScript` (flips to Edit/
-  Delete on an existing markup; passes savedSelection — the script-note
-  rule); View ▸ Working Notes check item + Show All/Hide All; the window eye
-  (TagsWindowActions pattern); a highlight-click handler in ScreenplayEditor.
-  markupsVisible (viewPrefs, persisted) unmounts margin icons in JS and
-  neutralizes highlights via .markups-hidden on .page; 16-print.css kills
-  highlight + icons + popover unconditionally.
-- Customize ▸ Markups: markupPresets (persisted viewState) — chips DRAG to
-  reorder (grip sets dataTransfer, the footgun), build a combo from the full
-  grid + color dots, floor of ONE preset, Reset to Default. The tab is in
-  BOTH CustomizePanelsDialog's rail and Settings' CUSTOMIZE_TABS sidebar
-  (soloCategory unions widened in both files).
-- Deps: @tiptap/extension-link, -image, -task-list, -task-item @^2.27.2
-  (popover mini-editor only; the script schema is untouched).
-- Tests (13 new, 848 green): markupsSlice CRUD/filter-default/presets,
-  markupActions kinds/preview/pageForPos, fountain exclusion pair (mark
-  text survives mark-less; atom vanishes), MarkupsPanel rendered via the
-  createRoot harness (open-only default, icon filter, orphan location line,
-  complete-drops-card, empty state).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.25** — MARKUPS: the annotation tool is born (store/mark/popover/panel/presets)
 - **v5.24** — columns not rows, the drag that never started, tab washes
 - **v5.23** — compact buttons, the anchored-resize truth, per-row right
 - **v5.22** — Sticky Notes: one interleaved list, reorderable tabs, blank check row

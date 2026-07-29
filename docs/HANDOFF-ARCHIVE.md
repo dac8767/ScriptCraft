@@ -151,9 +151,68 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.24 and older (newest first)
+## Version history — v5.25 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.25 — MARKUPS: the annotation tool
+
+- Derek's redesign brief: ONE tool for annotating the script, set to replace
+  notes / to-dos / sections / markers on the page plus script highlighting.
+  "Markup Script" creates over a selection ('range' — highlight color offered)
+  or at a bare cursor ('point' — the mark spans the WHOLE current element, the
+  createScriptNoteAtSelection rule); a rich-text popover edits it; its
+  icon+color sits in the RIGHT margin. REPLACEMENT IS PHASE 2 — deferred until
+  Derek shakes the core down; the old tools are untouched this build. His
+  naming question (Markups vs Annotations etc.) was answered in chat with
+  options; NO rename done — note 'markups' is now a SHIPPED tool id, so any
+  future rename is label-only.
+- BOTH anchor flavors are ONE mechanism: the `scriptMarkup` MARK. The first
+  cut used a zero-width inline `markupAnchor` ATOM for point markups — and
+  the LIVE DRIVER caught what tsc/vitest couldn't: every screenplay element
+  is `content: 'text*'`, an inline node is invalid EVERYWHERE, and
+  ProseMirror's replace-fitter DROPS it silently — store got a markup, doc
+  got nothing (a phantom: no icon, no anchor, the silent-no-op sin). Marks
+  don't touch content structure, so they're the only anchor this schema
+  permits. Empty element + cursor → toast, no markup (never a phantom).
+- The model is scriptNote's, deliberately: the doc carries only ids (mark
+  attrs markupId+highlight), data lives in markupsSlice keyed by id,
+  persisted as `_markups` (composeSaveContent + BOTH hand-written load blocks
+  in ScreenplayEditor + the history destructure). Exporters keep marked text
+  and drop the mark (fountain/fdx/pdf/docx verified); pagination reads
+  textContent only, untouched by marks — the fountain half is pinned by
+  tests.
+- New files: stores/slices/markupsSlice.ts (data + DEFAULT_MARKUP_PRESETS),
+  editor/extensions/ScriptMarkup.ts, components/markupIcons.tsx (24 icons +
+  24 emoji + color rows), utils/markupActions.ts (create/find/setHighlight/
+  remove/sceneHeadingBefore/pageForPos/kinds/preview), MarkupIconLayer.tsx
+  (margin icons INSIDE editor-main, doc-tick repaint — not scroll-driven),
+  MarkupPopover.tsx (mini TipTap: StarterKit + Link + Image + TaskList/Item;
+  save-on-close; Scrapbook page links as scrapbook:<id> hrefs),
+  MarkupsPanel.tsx (cards: page # via computePageBlocks + sceneHeadingBefore;
+  double-click jump via requestEditorScroll; OPEN-only default filter),
+  MarkupsCustomizeTab.tsx, styles/screenplay/27-markups.css.
+- Entry points: ribbon builtins `markupScript` + `toggleMarkups` (palette-
+  only, like scriptNotes/tags); context-menu `markupScript` (flips to Edit/
+  Delete on an existing markup; passes savedSelection — the script-note
+  rule); View ▸ Working Notes check item + Show All/Hide All; the window eye
+  (TagsWindowActions pattern); a highlight-click handler in ScreenplayEditor.
+  markupsVisible (viewPrefs, persisted) unmounts margin icons in JS and
+  neutralizes highlights via .markups-hidden on .page; 16-print.css kills
+  highlight + icons + popover unconditionally.
+- Customize ▸ Markups: markupPresets (persisted viewState) — chips DRAG to
+  reorder (grip sets dataTransfer, the footgun), build a combo from the full
+  grid + color dots, floor of ONE preset, Reset to Default. The tab is in
+  BOTH CustomizePanelsDialog's rail and Settings' CUSTOMIZE_TABS sidebar
+  (soloCategory unions widened in both files).
+- Deps: @tiptap/extension-link, -image, -task-list, -task-item @^2.27.2
+  (popover mini-editor only; the script schema is untouched).
+- Tests (13 new, 848 green): markupsSlice CRUD/filter-default/presets,
+  markupActions kinds/preview/pageForPos, fountain exclusion pair (mark
+  text survives mark-less; atom vanishes), MarkupsPanel rendered via the
+  createRoot harness (open-only default, icon filter, orphan location line,
+  complete-drops-card, empty state).
+
 
 ### v5.24 — columns not rows, the drag that never started, tab washes
 

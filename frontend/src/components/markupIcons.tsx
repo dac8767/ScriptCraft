@@ -7,6 +7,7 @@
  * they are user content on the page, not UI chrome.
  */
 import React from 'react';
+import { useEditorStore } from '../stores/editorStore';
 import {
   FaFlag, FaStar, FaHashtag, FaCircle, FaCheck, FaExclamation,
   FaBookmark, FaHeart, FaQuestionCircle, FaLightbulb, FaBell,
@@ -72,8 +73,24 @@ export const MARKUP_COLORS = ['#e05555', '#e8b44f', '#4a9eff', '#2d8a4e', '#9a68
 /** Highlight colors for range markups (background tints on the script). */
 export const MARKUP_HIGHLIGHTS = ['#ffe066', '#a1e3a1', '#a8d4ff', '#f3b3d0', '#e0c3ff', '#ffd2a8'];
 
-/** Render any icon value — an id from MARKUP_ICONS or 'emoji:<char>'. */
+/** Render any icon value — an id from MARKUP_ICONS, 'emoji:<char>', or an
+ *  imported 'custom:<id>' (v5.29: a small data-URL image from the registry). */
 export function MarkupIcon({ icon, color }: { icon: string; color?: string }) {
+  const custom = useEditorStore((s) => (icon.startsWith('custom:') ? s.markupCustomIcons : EMPTY_CUSTOM));
   if (icon.startsWith('emoji:')) return <span className="markup-emoji">{icon.slice(6)}</span>;
+  if (icon.startsWith('custom:')) {
+    const data = custom.find((c) => c.id === icon.slice(7))?.data;
+    if (data) return <img className="markup-custom-icon" src={data} alt="" />;
+    return <span className="markup-glyph" style={color ? { color } : undefined}>{MARKUP_ICONS.flag}</span>;
+  }
   return <span className="markup-glyph" style={color ? { color } : undefined}>{MARKUP_ICONS[icon] ?? MARKUP_ICONS.flag}</span>;
+}
+const EMPTY_CUSTOM: { id: string; data: string }[] = [];
+
+/** v5.29: is a hex color too dark to read on the app's dark chrome? The
+ *  pickers put a light chip behind icons drawn in dark colors. */
+export function isDarkColor(hex: string): boolean {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return false;
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.42;
 }
