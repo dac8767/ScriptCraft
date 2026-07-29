@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.38",
+    "date": "2026-07-29",
+    "changes": [
+      "Scenes cards: a long scene name no longer gets truncated to make room for the metrics — the page length and time (and the expand button) drop to a second row, and the name takes the full card width"
+    ]
+  },
+  {
     "version": "5.37",
     "date": "2026-07-29",
     "changes": [

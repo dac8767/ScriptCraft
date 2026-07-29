@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.37 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.38 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,19 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.37 — fullscreen joins the one-window rule; popover never over a takeover (HEAD)
+### v5.38 — Scenes cards: metrics wrap instead of truncating the name (HEAD)
+
+- Derek's queue item 3. `.index-card-top` wraps; the CRUX:
+  `.index-card-heading` needed `flex: 1 1 auto` + min-width 0 — the old
+  `flex: 1` is basis 0, so the row NEVER overflowed and the metas never
+  dropped (first driver run caught it: Δtop 0). With basis auto the wrap
+  decision uses the name's real one-line width: short names keep the metas
+  beside them, long ones send metas (+ the expand button, which rides
+  them) to row 2 and spend the freed width on a second text line.
+- check-v538: 5 green (short same-row Δ0, long Δ33px drop, expand rides,
+  2-line heading height).
+
+### v5.37 — fullscreen joins the one-window rule; popover never over a takeover
 
 - Derek's queue item 2. closeOtherFloats now ALSO lowers `fullscreenTool`
   and the Scrapbook surface (notebookOpen) — every float birth path gets
@@ -283,55 +295,12 @@ Durable bits kept live here:
   Label + its test pin updated. The scenesReorderMode flag and
   scene-reorder-btn class keep their names — internal identifiers.
 
-### v5.33 — icon-anchored seating, resizable windows, real scrapbook links
-
-- Derek's batch (11 items, most added mid-turn): (1) the edit window SEATS
-  under the annotation's on-script margin icon with its RIGHT edge on the
-  side panel's left edge (`.tool-dock-wrap.tool-dock-right`, width>0 guard);
-  no right panel → centered under the icon. `.markup-margin-icon` now
-  carries `data-markup-icon` for the lookup; icon missing (type hidden,
-  layer off) → highlight/block rect stands in; orphan → screen-center as
-  before. A ResizeObserver re-runs place() when the SIZE changes, so a user
-  resize keeps the right edge pinned and grows the box LEFTWARD (drag +
-  maximize still override everything). (2) both the edit window and the
-  combined icon/color picker are resizable (CSS resize:both; the window's
-  width lives in CSS, not React style, so the handle's inline w/h survive
-  re-renders). (3) the ⋮ menu rides the TITLE BAR left of fullscreen
-  (`.markup-titlebar-dots` wrapper stopPropagations pointerdown or the bar
-  would start a drag); the head row's spacer moved BETWEEN the Icon and
-  Highlight groups — flex base-size math wraps the Highlight group to a
-  second row exactly when the Used combos leave no room. (4) "Displays as:"
-  under the note text: the LIVE Navigator-row preview (icon + lines),
-  rendered with the REAL row's classes and fed by `markupNavLines` in
-  markupActions — the ONE capper (6 lines × 60 chars + …) the Navigator now
-  uses too; the mini's 'update' event drives it keystroke-live. (5) the ⋮
-  hide-type item shows the annotation's ICON, not its name
-  (`.markup-dots-hidetype`). (6) scrapbook links: tiptap Link ≥2.11 STRIPS
-  hrefs of unknown schemes at RENDER (anchor stays, href="") — fixed with
-  `Link.configure({ protocols: ['scrapbook'] })` + linkScrapPage inserts a
-  text node with a real link MARK (the old HTML string landed as plain
-  text). (7) navigator list annotations STACK (`.fs-nav-anno-lines` column
-  CSS — the v5.30 component named classes that were never written). (8)
-  panel labels renamed by WHERE they filter: Show→"Script", Filter→"Window".
-  (9) `.markup-hl-clear` gets fixed DARK ink scoped to `.fs-markup-popover`
-  (the --fd-text hover flipped "Link Script Text" white on the light
-  surface). (10) ribbon Show/Hide Annotations = the SAME FaMarker as the
-  side panel tool (Toolbar case + TOOLBAR_ICONS registry, both), pressed
-  state carries on/off — the eye/eye-slash pair is gone.
-- DRIVER LESSONS: a dock-row click TOGGLES an open tool and the Navigator
-  docks LEFT — Annotations stayed open on the right, so a blind
-  openTool('Annotations') CLOSED it (guard with an existence check).
-  And never inject store content while the popover is open — save-on-close
-  writes the mini editor's JSON over it; type through the mini instead.
-- check-v533: 25 green (edge/center seating deltas, titlebar order, wrap
-  by measured tops, live preview lines, real <a href="scrapbook:…">,
-  resize sticks + edge re-pins, 3 stacked nav rows, labels).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.33** — icon-anchored seating, resizable windows, real scrapbook links, nav list rows, titlebar ⋮, Displays-as preview
 - **v5.32** — one-row nav header (blue body buttons), unmistakable active icon, Design exempt both ways
 - **v5.31** — highlight delete/link conversions, inline Used row, combined icon+color picker
 - **v5.30** — the edit window becomes a WINDOW (drag/fullscreen/× + own theme); tool locked to panel

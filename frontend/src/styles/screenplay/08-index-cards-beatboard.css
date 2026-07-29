@@ -149,10 +149,17 @@
   gap: 8px;
   min-width: 0;
 }
+/* v5.38, Derek: when the width would truncate the scene NAME, the metrics
+   (page length + time, with the expand button riding them) wrap to a second
+   row instead — flex-wrap with the heading's content-width basis does the
+   arithmetic: metas stay beside a name that fits on one line, and drop the
+   moment it wouldn't. */
 .index-card-top {
   display: flex;
   align-items: flex-start;
+  flex-wrap: wrap;
   gap: 8px;
+  row-gap: 2px;
 }
 .index-card-badge {
   display: flex;
@@ -175,7 +182,11 @@
   opacity: 0.6;
 }
 .index-card-heading {
-  flex: 1;
+  /* v5.38: basis AUTO, not 0 — the wrap decision needs the name's real
+     content width (flex:1's zero basis never overflows the row, so the
+     metas would never drop). */
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: var(--dz-ic-heading-font, 12px);
   font-family: var(--screenplay-font);
   color: var(--fd-text);

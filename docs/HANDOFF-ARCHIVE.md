@@ -151,9 +151,53 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.32 and older (newest first)
+## Version history — v5.33 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.33 — icon-anchored seating, resizable windows, real scrapbook links
+
+- Derek's batch (11 items, most added mid-turn): (1) the edit window SEATS
+  under the annotation's on-script margin icon with its RIGHT edge on the
+  side panel's left edge (`.tool-dock-wrap.tool-dock-right`, width>0 guard);
+  no right panel → centered under the icon. `.markup-margin-icon` now
+  carries `data-markup-icon` for the lookup; icon missing (type hidden,
+  layer off) → highlight/block rect stands in; orphan → screen-center as
+  before. A ResizeObserver re-runs place() when the SIZE changes, so a user
+  resize keeps the right edge pinned and grows the box LEFTWARD (drag +
+  maximize still override everything). (2) both the edit window and the
+  combined icon/color picker are resizable (CSS resize:both; the window's
+  width lives in CSS, not React style, so the handle's inline w/h survive
+  re-renders). (3) the ⋮ menu rides the TITLE BAR left of fullscreen
+  (`.markup-titlebar-dots` wrapper stopPropagations pointerdown or the bar
+  would start a drag); the head row's spacer moved BETWEEN the Icon and
+  Highlight groups — flex base-size math wraps the Highlight group to a
+  second row exactly when the Used combos leave no room. (4) "Displays as:"
+  under the note text: the LIVE Navigator-row preview (icon + lines),
+  rendered with the REAL row's classes and fed by `markupNavLines` in
+  markupActions — the ONE capper (6 lines × 60 chars + …) the Navigator now
+  uses too; the mini's 'update' event drives it keystroke-live. (5) the ⋮
+  hide-type item shows the annotation's ICON, not its name
+  (`.markup-dots-hidetype`). (6) scrapbook links: tiptap Link ≥2.11 STRIPS
+  hrefs of unknown schemes at RENDER (anchor stays, href="") — fixed with
+  `Link.configure({ protocols: ['scrapbook'] })` + linkScrapPage inserts a
+  text node with a real link MARK (the old HTML string landed as plain
+  text). (7) navigator list annotations STACK (`.fs-nav-anno-lines` column
+  CSS — the v5.30 component named classes that were never written). (8)
+  panel labels renamed by WHERE they filter: Show→"Script", Filter→"Window".
+  (9) `.markup-hl-clear` gets fixed DARK ink scoped to `.fs-markup-popover`
+  (the --fd-text hover flipped "Link Script Text" white on the light
+  surface). (10) ribbon Show/Hide Annotations = the SAME FaMarker as the
+  side panel tool (Toolbar case + TOOLBAR_ICONS registry, both), pressed
+  state carries on/off — the eye/eye-slash pair is gone.
+- DRIVER LESSONS: a dock-row click TOGGLES an open tool and the Navigator
+  docks LEFT — Annotations stayed open on the right, so a blind
+  openTool('Annotations') CLOSED it (guard with an existence check).
+  And never inject store content while the popover is open — save-on-close
+  writes the mini editor's JSON over it; type through the mini instead.
+- check-v533: 25 green (edge/center seating deltas, titlebar order, wrap
+  by measured tops, live preview lines, real <a href="scrapbook:…">,
+  resize sticks + edge re-pins, 3 stacked nav rows, labels).
 
 ### v5.32 — one-row nav header, unmistakable active icon, Design exempt
 
