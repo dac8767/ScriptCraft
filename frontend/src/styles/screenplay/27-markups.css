@@ -128,25 +128,8 @@
 }
 .markup-win-btn:hover { opacity: 1; background: rgba(0, 0, 0, 0.24); }
 .markup-win-close { font-size: 15px; border-top-right-radius: 8px; }
-/* v5.33, Derek: the ⋮ rides the title bar, left of the fullscreen button —
-   dressed as a window button (full height, square, flush). */
-.markup-titlebar-dots { display: flex; align-self: stretch; }
-.markup-titlebar-dots .markup-dots-btn {
-  width: 30px;
-  height: auto;
-  align-self: stretch;
-  border: none;
-  border-radius: 0;
-  background: rgba(0, 0, 0, 0.1);
-  color: inherit;
-  opacity: 0.8;
-  font-size: 12px;
-}
-.markup-titlebar-dots .markup-dots-btn:hover {
-  opacity: 1;
-  background: rgba(0, 0, 0, 0.24);
-  color: inherit;
-}
+/* (v5.42: the ⋮ moved from the title bar into the head row's right edge —
+   .markup-head-dots above; the title-bar dressing is gone with it.) */
 
 /* v5.31: the inline Used row's + and the combined picker's color section */
 .markup-combo-plus { font-weight: 700; font-size: 14px; background: rgba(0, 0, 0, 0.06); }
@@ -214,7 +197,20 @@
 .markup-pop-head {
   gap: var(--dz-anno-group-gap, 14px);
   padding: var(--dz-anno-head-pad, 0px);
+  /* v5.42, Derek: the OUTER row never wraps — the ⋮ stays pinned top-right;
+     the groups wrap inside head-main (no spacer = no phantom empty row). */
+  flex-wrap: nowrap;
+  align-items: flex-start;
 }
+.markup-pop-head-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--dz-anno-group-gap, 14px);
+  flex: 1;
+  min-width: 0;
+}
+.markup-head-dots { margin-left: auto; flex: none; }
 .markup-pop-group {
   display: inline-flex;
   align-items: center;
@@ -447,7 +443,8 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
 .markup-pop-preview {
   align-items: flex-start;
   border-top: 1px solid rgba(0, 0, 0, 0.14);
-  padding-top: 8px;
+  /* v5.42, Derek: all four sides are Design knobs (Design ▸ Annotations) */
+  padding: var(--dz-anno-prev-pad-top, 8px) var(--dz-anno-prev-pad-right, 0px) var(--dz-anno-prev-pad-bottom, 0px) var(--dz-anno-prev-pad-left, 0px);
 }
 .markup-nav-preview { font-size: 12px; line-height: 1.4; min-width: 0; flex: 1; }
 .markup-pop-preview-script-label { margin-left: 8px; }
@@ -495,6 +492,18 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
 }
 .markup-icon-pop-left { width: 236px; flex: none; }
 .markup-icon-pop-right { flex: none; }
+
+/* v5.42, Derek: the panel's ONE Filter — two sections in one dropdown */
+.markup-filter-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fd-accent);
+  margin: 2px 0;
+}
+.markup-filter-statusrow { display: flex; align-items: center; gap: 6px; }
+.markup-filter-combined { max-height: min(76vh, 620px); overflow-y: auto; }
 .markup-mini-btn {
   width: 24px;
   height: 24px;
@@ -537,7 +546,10 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
 }
 .markup-scrap-item:hover { background: rgba(0, 0, 0, 0.08); }
 
-/* The mini editor body — WHITE, script-like (the --anno-field vars) */
+/* The mini editor body — WHITE, script-like (the --anno-field vars).
+   v5.42, Derek: resizing the WINDOW grows THIS field — it takes all spare
+   height (flex: 1 on it, flex-shrink: 0 on its fixed siblings below), so a
+   taller window means more writing room, never dead space at the foot. */
 .markup-mini-editor {
   background: var(--anno-field-bg, #ffffff);
   color: var(--anno-field-text, #1a1a1a);
@@ -545,11 +557,16 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
   border-radius: 6px;
   padding: 6px 8px;
   min-height: 84px;
-  max-height: 260px;
+  flex: 1 1 auto;
   overflow-y: auto;
   font-size: 13px;
+  cursor: text;
+  display: flex;
+  flex-direction: column;
 }
-.markup-mini-editor .ProseMirror { outline: none; min-height: 72px; }
+.fs-markup-popover > *:not(.markup-mini-editor) { flex-shrink: 0; }
+.markup-mini-editor > div { flex: 1; display: flex; flex-direction: column; }
+.markup-mini-editor .ProseMirror { outline: none; min-height: 72px; flex: 1; }
 .markup-mini-editor .ProseMirror p { margin: 0 0 4px; }
 .markup-mini-editor .ProseMirror ul,
 .markup-mini-editor .ProseMirror ol { margin: 0 0 4px; padding-left: 20px; }

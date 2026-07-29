@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.41 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.42 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,36 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.41 — previews, used order, compact draggable picker, ribbon fmt, move toast (HEAD)
+### v5.42 — preview knobs, no phantom row, pinned ⋮, growing field, ONE Filter (HEAD)
+
+- Derek's 6 (mid-turn adds included): (1) `.markup-pop-preview` padding is
+  four Design knobs — --dz-anno-prev-pad-top/right/bottom/left (defs
+  8/0/0/0 = the CSS fallbacks; test-enforced). (2) the head-row SPACER is
+  gone; groups wrap inside `.markup-pop-head-main` (flex:1, wrap) so a
+  tight window drops the Highlight group with NO empty row between. (3)
+  the ⋮ left the title bar for the head row's right edge —
+  `.markup-head-dots` (margin-left auto) inside the NON-wrapping outer
+  head (`flex-wrap: nowrap`), so it is LOCKED to row 1; the v5.33
+  titlebar-dots dressing is dead CSS, removed. (4) the RESIZE GROWTH fix:
+  `.markup-mini-editor` had max-height 260 and no flex — now flex:1 (all
+  siblings flex-shrink:0, EditorContent→ProseMirror flex chain, cursor
+  text), so a taller window grows the FIELD (driver: 86→306px, 11px
+  under Save). (5) the panel's Script/Window buttons merged into ONE
+  "Filter" (`.markup-ctl-filter`, chip = both counts) whose dropdown
+  (`.markup-filter-combined`) holds TWO `TypeGridSection`s — "Show in
+  Script" (markupHiddenIcons/markupScriptDone) and "Show In Window"
+  (markupFilters). TypeGridSection is the extracted section body with
+  Derek's wording: "Status: " row + "Annotation Types: " grid, "Select
+  one"/"Toggle visibility…" texts deleted; TypeGridPop is now a portal
+  shell around one section (gridHelp prop gone — Navigator + ribbon
+  callers updated; AnnotationShowMenu/ribbon unchanged otherwise). (6)
+  View ▸ "Rulers" / "Scene Numbers" — "Show " prefix dropped.
+- check-v542: 18 green (dots seat/lock, spacer gone, genuine-tight wrap
+  via 6 probe combos — a 310px window with ONE combo legitimately fits,
+  the first run's lesson — field growth, knob-driven paddings, combined
+  Filter structure + per-section store writes, menu labels).
+
+### v5.41 — previews, used order, compact draggable picker, ribbon fmt, move toast
 
 - Derek's 7 (one turn): (1) "Displays as:" split into "In Navigator:"
   (nav-row classes, live) + "In Script:" (`.markup-margin-preview` — the
@@ -298,33 +327,12 @@ Durable bits kept live here:
 - check-v538: 5 green (short same-row Δ0, long Δ33px drop, expand rides,
   2-line heading height).
 
-### v5.37 — fullscreen joins the one-window rule; popover never over a takeover
-
-- Derek's queue item 2. closeOtherFloats now ALSO lowers `fullscreenTool`
-  and the Scrapbook surface (notebookOpen) — every float birth path gets
-  it for free; the design early-return keeps Design from closing anything.
-  Both fullscreen ENTRY paths close floats: openTool's fullscreen branch
-  spreads `closeOtherFloats(s, tool)` before setting its own
-  fullscreenTool (field composes — the literal after the spread wins), and
-  enterToolFullscreen clears temp + floating slots (design excepted) before
-  set. Docked opens still touch nothing.
-- The ANNOTATION WINDOW needs the editor visible (Derek's addendum): a new
-  MarkupPopover effect watches fullscreenTool + notebookOpen and SAVE-closes
-  (outside-press semantics) the moment either rises. NavigatorTool's
-  annotation-row click steps takeovers aside first (setFullscreenTool null
-  + setNotebookOpen false) — the jump needs the editor anyway.
-- Tests: toolModeMemory.test "v5.37: fullscreen joins the one-window rule"
-  (6 cases: float lowers takeover, temp lowers takeover, entry closes
-  floats, remembered-fullscreen path closes floats, docked opens don't,
-  Design exempt both ways).
-- check-v537: 12 green (DOM-level takeover removal, save-on-stand-down
-  content proof, navigator step-aside opening the popover).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.37** — fullscreen joins the one-window rule; the annotation window never coexists with a takeover
 - **v5.36** — Notes v2: one rich card kind, equal-height rows, the WebKit drag-abort fix
 - **v5.35** — docked side-panel tools survive clicks into the script (floats/temp still dismiss)
 - **v5.34** — the Scenes "Reorder" button reads "Change Order"

@@ -1,5 +1,17 @@
 [
   {
+    "version": "5.42",
+    "date": "2026-07-29",
+    "changes": [
+      "Design ▸ Annotations: the In Navigator / In Script section gets its own padding knobs — all four sides",
+      "The empty row that could appear between the Icon and Highlight sections is gone — when the window is narrow the highlight drops straight to the next line, nothing between",
+      "The ⋮ menu moved from the title bar into the window's top row, right-aligned and locked there — it never wraps to a new line the way the highlight controls can",
+      "Resizing the annotation window now grows the TEXT FIELD — a taller window means more writing room, never dead space under Save",
+      "The Annotations panel's \"Script\" and \"Window\" buttons merged into one \"Filter\" dropdown with two sections — \"Show in Script\" and \"Show In Window\" — each with a \"Status: \" toggle and an \"Annotation Types: \" grid (the old \"Select one\" and \"Toggle visibility…\" texts are gone)",
+      "View menu: \"Show Rulers\" and \"Show Scene Numbers\" are now just \"Rulers\" and \"Scene Numbers\" — the checkmark says the state"
+    ]
+  },
+  {
     "version": "5.41",
     "date": "2026-07-29",
     "changes": [

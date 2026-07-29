@@ -13,13 +13,14 @@
  * Search. The eye toggle and the count ride the window chrome as before.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { computePageBlocks } from '../editor/pagination';
 import { ControlSearch } from './ToolControls';
 import { MarkupIcon } from './markupIcons';
 import {
-  MarkupDotsMenu, TypeGridPop, AnnotationShowMenu, useTypesInUse, useSeat, useDismiss,
+  MarkupDotsMenu, TypeGridSection, useTypesInUse, useSeat, useDismiss,
 } from './MarkupPickers';
 import {
   createMarkupAtSelection, findMarkupPos, markupPreviewText,
@@ -48,11 +49,14 @@ export function MarkupsControls() {
   const filters = useEditorStore((s) => s.markupFilters);
   const setFilters = useEditorStore((s) => s.setMarkupFilters);
   const scriptHidden = useEditorStore((s) => s.markupHiddenIcons);
+  const setScriptHidden = useEditorStore((s) => s.setMarkupHiddenIcons);
   const scriptDone = useEditorStore((s) => s.markupScriptDone);
+  const setScriptDone = useEditorStore((s) => s.setMarkupScriptDone);
   const search = useEditorStore((s) => s.markupSearch);
   const setSearch = useEditorStore((s) => s.setMarkupSearch);
 
   const filterTypes = useTypesInUse(filters.hiddenIcons);
+  const scriptTypes = useTypesInUse(scriptHidden);
 
   const [filterOpen, setFilterOpen] = useState(false);
   const filterBtn = useRef<HTMLButtonElement>(null);
@@ -65,36 +69,45 @@ export function MarkupsControls() {
 
   const filterChip = filters.hiddenIcons.length + (filters.done !== 'open' ? 1 : 0);
   const showChip = scriptHidden.length + (scriptDone !== 'all' ? 1 : 0);
+  const chip = filterChip + showChip;
   return (
     <>
-      {/* v5.27, Derek: no icon, LEFT-aligned in the header (the
-          tool-ctl-lead seat), driving what renders in the SCRIPT.
-          v5.28: the shared AnnotationShowMenu (same popover as the ribbon
-          button and the View submenu's state). v5.33, Derek: the pair is
-          named by WHERE it filters — "Script" / "Window". */}
-      <AnnotationShowMenu className="tool-ctl tool-ctl-lead markup-ctl-script" title="What shows in the script">
-        <span className="tool-ctl-label">Script</span>
-        {showChip > 0 && <span className="tool-ctl-chip">{showChip}</span>}
-      </AnnotationShowMenu>
-      <button ref={filterBtn} className={`tool-ctl markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Filter this window"
+      {/* v5.42, Derek: ONE "Filter" button — its dropdown carries BOTH
+          scopes as sections: "Show in Script" (viewPrefs — what renders on
+          the page; the ribbon button and View submenu drive the same
+          state) and "Show In Window" (this list). */}
+      <button ref={filterBtn} className={`tool-ctl tool-ctl-lead markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Filter annotations"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setFilterOpen((v) => !v); }}>
-        <span className="tool-ctl-label">Window</span>
-        {filterChip > 0 && <span className="tool-ctl-chip">{filterChip}</span>}
+        <span className="tool-ctl-label">Filter</span>
+        {chip > 0 && <span className="tool-ctl-chip">{chip}</span>}
       </button>
-      {filterOpen && (
-        <TypeGridPop
-          boxRef={filterBox}
-          pos={filterPos}
-          done={filters.done}
-          onDone={(d) => setFilters({ ...filters, done: d })}
-          gridHelp="Toggle visibility in tool window"
-          types={filterTypes}
-          hidden={filters.hiddenIcons}
-          onToggle={(icon) => setFilters({ ...filters, hiddenIcons: toggle(filters.hiddenIcons, icon) })}
-          onShowAll={() => setFilters({ ...filters, hiddenIcons: [] })}
-          onHideAll={() => setFilters({ ...filters, hiddenIcons: filterTypes })}
-        />
+      {filterOpen && createPortal(
+        <div ref={filterBox} className="markup-subpop markup-filter-pop markup-filter-combined" style={filterPos ?? { top: -9999, left: -9999 }}
+          onPointerDown={(e) => e.stopPropagation()}>
+          <div className="markup-filter-section-title">Show in Script</div>
+          <TypeGridSection
+            done={scriptDone}
+            onDone={setScriptDone}
+            types={scriptTypes}
+            hidden={scriptHidden}
+            onToggle={(icon) => setScriptHidden(toggle(scriptHidden, icon))}
+            onShowAll={() => setScriptHidden([])}
+            onHideAll={() => setScriptHidden(scriptTypes)}
+          />
+          <div className="markup-dots-sep" />
+          <div className="markup-filter-section-title">Show In Window</div>
+          <TypeGridSection
+            done={filters.done}
+            onDone={(d) => setFilters({ ...filters, done: d })}
+            types={filterTypes}
+            hidden={filters.hiddenIcons}
+            onToggle={(icon) => setFilters({ ...filters, hiddenIcons: toggle(filters.hiddenIcons, icon) })}
+            onShowAll={() => setFilters({ ...filters, hiddenIcons: [] })}
+            onHideAll={() => setFilters({ ...filters, hiddenIcons: filterTypes })}
+          />
+        </div>,
+        document.body,
       )}
       <ControlSearch value={search} onChange={setSearch} placeholder="Search annotations" />
     </>

@@ -362,6 +362,11 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'annoHeadGap', label: 'Window: label-to-swatch spacing', cssVar: '--dz-anno-head-gap', unit: 'px', min: 0, max: 20, step: 1, def: 6 },
       { id: 'annoGroupGap', label: 'Window: icon-to-highlight spacing', cssVar: '--dz-anno-group-gap', unit: 'px', min: 0, max: 40, step: 1, def: 14 },
       { id: 'annoHeadPad', label: 'Window: top row padding', cssVar: '--dz-anno-head-pad', unit: 'px', min: 0, max: 24, step: 1, def: 0 },
+      // v5.42, Derek: the In Navigator / In Script section — all four sides
+      { id: 'annoPrevPadTop', label: 'Previews: top padding', cssVar: '--dz-anno-prev-pad-top', unit: 'px', min: 0, max: 32, step: 1, def: 8 },
+      { id: 'annoPrevPadRight', label: 'Previews: right padding', cssVar: '--dz-anno-prev-pad-right', unit: 'px', min: 0, max: 32, step: 1, def: 0 },
+      { id: 'annoPrevPadBottom', label: 'Previews: bottom padding', cssVar: '--dz-anno-prev-pad-bottom', unit: 'px', min: 0, max: 32, step: 1, def: 0 },
+      { id: 'annoPrevPadLeft', label: 'Previews: left padding', cssVar: '--dz-anno-prev-pad-left', unit: 'px', min: 0, max: 32, step: 1, def: 0 },
     ],
   },
   {

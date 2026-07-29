@@ -371,13 +371,9 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   return createPortal(
     <div ref={popRef} className={`fs-markup-popover${maximized ? ' maximized' : ''}`} style={winStyle}
       onPointerDown={(e) => e.stopPropagation()}>
-      {/* the draggable title bar — fullscreen and × like every window;
-          v5.33, Derek: the ⋮ rides here too, left of the fullscreen button */}
+      {/* the draggable title bar — fullscreen and × like every window */}
       <div className="markup-pop-titlebar" onPointerDown={startDrag}>
         <span className="markup-pop-title">Annotation</span>
-        <span className="markup-titlebar-dots" onPointerDown={(e) => e.stopPropagation()}>
-          <MarkupDotsMenu markup={markup} editor={editor} onDeleted={() => setMarkupEditorId(null)} />
-        </span>
         <button className="markup-win-btn" title={maximized ? 'Exit full screen' : 'Full screen'}
           onPointerDown={(e) => e.stopPropagation()} onClick={() => setMaximized((v) => !v)}>
           <FullscreenIcon />
@@ -388,18 +384,19 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
         </button>
       </div>
       {/* ONE head row (v5.29, Derek): "Icon:" swatches · "Highlight:"
-          swatch (range annotations only). Spacing/padding are Design knobs.
-          v5.33: the row wraps — when the Used combos leave no room, the
-          highlight group drops to a second row (Derek). */}
+          swatch (range annotations only) · ⋮ pinned at the right edge.
+          v5.42, Derek: the wrapping lives in an INNER box (head-main) with
+          no spacer — a tight window drops the highlight group to the next
+          line with no phantom row between, and the ⋮ NEVER wraps. */}
       <div className="markup-pop-row markup-pop-head">
-        <span className="markup-pop-group markup-pop-icon-group">
-          <span className="markup-pop-grouplabel">Icon:</span>
-          {/* v5.31: the USED combos ride the window itself; + = the
-              combined icon-and-color picker */}
-          <MarkupUsedRow markup={markup} />
-        </span>
-        <span className="markup-pop-spacer" />
-        {markup.anchor === 'range' ? (
+        <div className="markup-pop-head-main">
+          <span className="markup-pop-group markup-pop-icon-group">
+            <span className="markup-pop-grouplabel">Icon:</span>
+            {/* v5.31: the USED combos ride the window itself; + = the
+                combined icon-and-color picker */}
+            <MarkupUsedRow markup={markup} />
+          </span>
+          {markup.anchor === 'range' ? (
           <span className="markup-pop-group">
             <span className="markup-pop-grouplabel">Highlight:</span>
             <MarkupColorSwatch
@@ -429,6 +426,12 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
             </button>
           </span>
         )}
+        </div>
+        {/* v5.42, Derek: the ⋮ — top row, right-aligned, LOCKED (it never
+            wraps to a new line the way the highlight group can) */}
+        <span className="markup-head-dots" onPointerDown={(e) => e.stopPropagation()}>
+          <MarkupDotsMenu markup={markup} editor={editor} onDeleted={() => setMarkupEditorId(null)} />
+        </span>
       </div>
       {/* mini editor toolbar */}
       <div className="markup-pop-row markup-mini-bar">

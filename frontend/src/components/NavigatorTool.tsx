@@ -126,7 +126,6 @@ function NavActionRow() {
           pos={annoPos}
           done={mkFilters.done}
           onDone={(d) => setMkFilters({ ...mkFilters, done: d })}
-          gridHelp="Toggle visibility in tool window"
           types={annoTypes}
           hidden={mkFilters.hiddenIcons}
           onToggle={toggleIcon}

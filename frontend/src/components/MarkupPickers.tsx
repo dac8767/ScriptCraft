@@ -371,33 +371,35 @@ export function useTypesInUse(extra: string[]) {
   );
 }
 
-export function TypeGridPop({ boxRef, pos, done, onDone, gridHelp, types, hidden, onToggle, onShowAll, onHideAll }: {
-  boxRef: React.RefObject<HTMLDivElement | null>;
-  pos: { top: number; left: number } | null;
+interface TypeGridSectionProps {
   done: 'open' | 'done' | 'all';
   onDone: (d: 'open' | 'done' | 'all') => void;
-  /** helper text over the type grid — the popovers differ here */
-  gridHelp: string;
   types: string[];
   hidden: string[];
   onToggle: (icon: string) => void;
   onShowAll: () => void;
   onHideAll: () => void;
-}) {
-  return createPortal(
-    <div ref={boxRef} className="markup-subpop markup-filter-pop" style={pos ?? { top: -9999, left: -9999 }}
-      onPointerDown={(e) => e.stopPropagation()}>
-      <div className="markup-filter-help">Select one</div>
-      {/* v5.27, Derek: the three states side by side as ONE toggle row */}
-      <span className="markup-seg markup-filter-seg">
-        {(['open', 'done', 'all'] as const).map((d) => (
-          <button key={d} className={done === d ? 'active' : ''} onClick={() => onDone(d)}>
-            {DONE_LABELS[d]}
-          </button>
-        ))}
-      </span>
-      <div className="markup-dots-sep" />
-      <div className="markup-filter-help">{gridHelp}</div>
+}
+
+/** ONE filter section — "Status:" toggle row + "Annotation Types:" grid +
+ *  Show/Hide all (v5.42, Derek's wording: "Select one" is gone, the labels
+ *  say what each row IS). The panel's combined Filter renders two of these;
+ *  TypeGridPop wraps one in a portal for the single-purpose popovers. */
+export function TypeGridSection({ done, onDone, types, hidden, onToggle, onShowAll, onHideAll }: TypeGridSectionProps) {
+  return (
+    <>
+      <div className="markup-filter-statusrow">
+        <span className="markup-filter-help">Status: </span>
+        {/* v5.27, Derek: the three states side by side as ONE toggle row */}
+        <span className="markup-seg markup-filter-seg">
+          {(['open', 'done', 'all'] as const).map((d) => (
+            <button key={d} className={done === d ? 'active' : ''} onClick={() => onDone(d)}>
+              {DONE_LABELS[d]}
+            </button>
+          ))}
+        </span>
+      </div>
+      <div className="markup-filter-help">Annotation Types: </div>
       {types.length === 0 && <div className="markup-filter-empty">No annotations yet.</div>}
       <div className="markup-filter-grid">
         {types.map((icon) => (
@@ -413,6 +415,18 @@ export function TypeGridPop({ boxRef, pos, done, onDone, gridHelp, types, hidden
         <button className="markup-hl-clear" onClick={onShowAll}>Show all</button>
         <button className="markup-hl-clear" onClick={onHideAll}>Hide all</button>
       </div>
+    </>
+  );
+}
+
+export function TypeGridPop({ boxRef, pos, ...section }: TypeGridSectionProps & {
+  boxRef: React.RefObject<HTMLDivElement | null>;
+  pos: { top: number; left: number } | null;
+}) {
+  return createPortal(
+    <div ref={boxRef} className="markup-subpop markup-filter-pop" style={pos ?? { top: -9999, left: -9999 }}
+      onPointerDown={(e) => e.stopPropagation()}>
+      <TypeGridSection {...section} />
     </div>,
     document.body,
   );
@@ -449,7 +463,6 @@ export function AnnotationShowMenu({ className, title, children }: {
           pos={pos}
           done={done}
           onDone={setDone}
-          gridHelp="Toggle visibility in script"
           types={types}
           hidden={hidden}
           onToggle={(icon) => setHidden(hidden.includes(icon) ? hidden.filter((x) => x !== icon) : [...hidden, icon])}

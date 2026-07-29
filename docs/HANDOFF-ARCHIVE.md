@@ -151,9 +151,31 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.36 and older (newest first)
+## Version history — v5.37 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.37 — fullscreen joins the one-window rule; popover never over a takeover
+
+- Derek's queue item 2. closeOtherFloats now ALSO lowers `fullscreenTool`
+  and the Scrapbook surface (notebookOpen) — every float birth path gets
+  it for free; the design early-return keeps Design from closing anything.
+  Both fullscreen ENTRY paths close floats: openTool's fullscreen branch
+  spreads `closeOtherFloats(s, tool)` before setting its own
+  fullscreenTool (field composes — the literal after the spread wins), and
+  enterToolFullscreen clears temp + floating slots (design excepted) before
+  set. Docked opens still touch nothing.
+- The ANNOTATION WINDOW needs the editor visible (Derek's addendum): a new
+  MarkupPopover effect watches fullscreenTool + notebookOpen and SAVE-closes
+  (outside-press semantics) the moment either rises. NavigatorTool's
+  annotation-row click steps takeovers aside first (setFullscreenTool null
+  + setNotebookOpen false) — the jump needs the editor anyway.
+- Tests: toolModeMemory.test "v5.37: fullscreen joins the one-window rule"
+  (6 cases: float lowers takeover, temp lowers takeover, entry closes
+  floats, remembered-fullscreen path closes floats, docked opens don't,
+  Design exempt both ways).
+- check-v537: 12 green (DOM-level takeover removal, save-on-stand-down
+  content proof, navigator step-aside opening the popover).
 
 ### v5.36 — Notes v2: one rich card kind, equal-height rows, real drag fix
 

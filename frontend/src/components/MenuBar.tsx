@@ -1432,17 +1432,18 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           ],
         },
         // v2.95, Derek: Word/Docs-style rulers on the editor's top and left.
+        // v5.42, Derek: no "Show" prefix — the checkmark says the state.
         {
           icon: <FaRulerHorizontal />,
-          label: 'Show Rulers',
+          label: 'Rulers',
           checked: rulersVisible,
           action: () => useEditorStore.getState().setRulersVisible(!rulersVisible),
         },
         {
           // v4.22, Derek: moved here from Project. v4.86: a CHECK item, like
-          // Show Rulers above it — see the note on Working Notes below.
+          // Rulers above it — see the note on Working Notes below.
           icon: <FaListUl />,
-          label: 'Show Scene Numbers',
+          label: 'Scene Numbers',
           checked: sceneNumbersVisible,
           action: () => setSceneNumbersVisible(!sceneNumbersVisible),
         },
