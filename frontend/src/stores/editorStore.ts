@@ -517,7 +517,12 @@ export const ALWAYS_FLOAT: ToolId[] = ['analytics'];
  *  remembered-mode branch and the button read the SAME list.
  *  v5.21, Derek: the Title Page LEFT this list for the opposite one below —
  *  it always opens as the fullscreen takeover now, like the Scrapbook. */
-export const NO_FULLSCREEN_TOOLS: ToolId[] = ['notebook'];
+export const NO_FULLSCREEN_TOOLS: ToolId[] = ['notebook', 'markups'];
+
+/** v5.30, Derek: tools LOCKED to the side bar — no pop-out, no fullscreen.
+ *  setToolMode coerces every write to 'docked' (drag-out, shrink paths and
+ *  remembered shapes included), so the lock can't be bypassed. */
+export const PANEL_LOCKED_TOOLS: ToolId[] = ['markups'];
 
 /** v5.21, Derek: "make the title page doc always in full screen (the same as
  *  the scrapbook)." These tools have ONE shape — the fullscreen takeover:
@@ -1489,11 +1494,14 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
       .map(([id]) => [id, 'floating' as const]),
   ),
   setToolMode: (tool, mode) => set((s) => {
-    const toolMode = { ...s.toolMode, [tool]: mode };
+    // v5.30: panel-locked tools have ONE shape — docked (Derek: "lock the
+    // annotations window to the side bar").
+    const effMode = PANEL_LOCKED_TOOLS.includes(tool) ? 'docked' : mode;
+    const toolMode = { ...s.toolMode, [tool]: effMode };
     saveViewState({ toolMode });
     // v5.21: making a tool floating births a window (drag-out of the dock,
     // shrink-from-fullscreen) — the one-window rule closes any other float.
-    return { toolMode, ...(mode === 'floating' ? closeOtherFloats(s, tool) : {}) };
+    return { toolMode, ...(effMode === 'floating' ? closeOtherFloats(s, tool) : {}) };
   }),
   activeToolRight: (RETIRED_TOOL_IDS[_vs.activeToolRight as string] as ToolId ?? (_vs.activeToolRight as ToolId | null)) ?? null,
   setActiveToolRight: (tool) => {
@@ -1932,6 +1940,7 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   setFullscreenTool: (id) => set({ fullscreenTool: id }),
   enterToolFullscreen: (id) => {
     const s = get();
+    if (PANEL_LOCKED_TOOLS.includes(id)) return;   // v5.30: side-bar only
     // v4.81: fullscreen is a remembered SHAPE — record it before the
     // clean-up below, which clears the tool's panel/temp slots.
     s.setToolMode(id, 'fullscreen');

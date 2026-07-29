@@ -1,5 +1,16 @@
 [
   {
+    "version": "5.30",
+    "date": "2026-07-29",
+    "changes": [
+      "The annotation edit window is a real window now: drag it by its title bar, take it full screen, or close it with × — and if you changed anything, × asks \"Are you sure you want to close this annotation without saving?\" and discards on confirm (Save and click-away still save)",
+      "It wears its own look: a light-gray window with a white script-like text field, in every app theme — and Themes gains an Annotations group so each theme can restyle it",
+      "The Annotations tool window is locked to the side bar (no pop-out, no full screen) and says so at the bottom; the Scrapbook window explains its full-screen-only surface the same way",
+      "Navigator: an empty annotation shows just its icon (no placeholder), and a list annotation shows AS a list — bullet/numbered/check rows",
+      "Navigator: the Annotations button now opens the same filter the Annotations window's Filter shows (one state — the list obeys it too), sitting beside Scene Numbers on one row"
+    ]
+  },
+  {
     "version": "5.29",
     "date": "2026-07-29",
     "changes": [

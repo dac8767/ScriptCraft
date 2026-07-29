@@ -28,6 +28,8 @@ import { useEditorStore } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
 import { AUTO_ICON } from './markupIcons';
 import { DEFAULT_MARKUP_HIGHLIGHT } from '../stores/slices/markupsSlice';
+import { confirmDialog } from './ConfirmDialog';
+import { FullscreenIcon } from './uiIcons';
 import { MarkupColorSwatch, MarkupIconSwatch, MarkupDotsMenu } from './MarkupPickers';
 import { findMarkupPos, setMarkupHighlight, firstContentKind } from '../utils/markupActions';
 
@@ -40,6 +42,15 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   const updateMarkup = useEditorStore((s) => s.updateMarkup);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const [scrapPicker, setScrapPicker] = useState(false);
+  // v5.30 window chrome: drag override + fullscreen; a ref mirrors them so
+  // the scroll/resize re-seat handler can stand down once the user takes over.
+  const [dragPos, setDragPos] = useState<{ top: number; left: number } | null>(null);
+  const [maximized, setMaximized] = useState(false);
+  const overrideRef = useRef(false);
+  overrideRef.current = dragPos !== null || maximized;
+  // what the annotation looked like when this window opened — the X button's
+  // discard restores it ("close without saving")
+  const snapRef = useRef<{ json: string; icon: string; color: string; highlight: string | null; done: boolean } | null>(null);
   const popRef = useRef<HTMLDivElement>(null);
   const nbPages = useNotebookStore((s) => s.pages);
 
@@ -54,11 +65,21 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     content: null,
   }, []);
 
-  // Load the annotation's content whenever a different one opens.
+  // Load the annotation's content whenever a different one opens — and
+  // snapshot its state for the × button's are-you-sure discard (v5.30).
   useEffect(() => {
     if (!mini || !markup) return;
     mini.commands.setContent((markup.content as never) ?? '');
+    snapRef.current = {
+      json: JSON.stringify(mini.getJSON()),
+      icon: markup.icon,
+      color: markup.color,
+      highlight: markup.highlight,
+      done: markup.done,
+    };
     setScrapPicker(false);
+    setDragPos(null);
+    setMaximized(false);
   }, [mini, id]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   // v5.26 auto-icon: the FIRST content kind decides — but a hand-picked icon
@@ -83,6 +104,7 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   useLayoutEffect(() => {
     if (!id) { setPos(null); return; }
     const place = () => {
+      if (overrideRef.current) return;   // dragged or fullscreen — user owns it
       const el = document.querySelector(`.script-markup-highlight[data-markup-id="${CSS.escape(id)}"]`)
         || document.querySelector(`[data-markup-block="${CSS.escape(id)}"]`);
       let r = el?.getBoundingClientRect();
@@ -124,9 +146,16 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
       const t = e.target as HTMLElement;
       if (popRef.current?.contains(t)) return;
       if (t.closest?.('.markup-subpop')) return;
+      // v5.30: the ×'s are-you-sure dialog is outside this window — its
+      // buttons must not double as an outside-press save.
+      if (t.closest?.('.fs-confirm-overlay')) return;
       save();
     };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') save(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (document.querySelector('.fs-confirm-overlay')) return;   // dialog owns Esc
+      save();
+    };
     document.addEventListener('pointerdown', onDown, true);
     document.addEventListener('keydown', onKey);
     return () => {
@@ -188,9 +217,62 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     <button className={`markup-mini-btn${active ? ' active' : ''}`} title={title} onMouseDown={(e) => e.preventDefault()} onClick={onClick}>{child}</button>
   );
 
+  // v5.30: window chrome — drag by the title bar; × discards (with a
+  // confirm when something changed); the square maximizes.
+  const isDirty = () => {
+    const snap = snapRef.current;
+    if (!snap || !mini) return false;
+    return JSON.stringify(mini.getJSON()) !== snap.json
+      || markup.icon !== snap.icon || markup.color !== snap.color
+      || markup.highlight !== snap.highlight || markup.done !== snap.done;
+  };
+  const closeWithoutSaving = async () => {
+    const snap = snapRef.current;
+    if (isDirty() && snap) {
+      const sure = await confirmDialog('Are you sure you want to close this annotation without saving?');
+      if (!sure) return;
+      updateMarkup(id, { icon: snap.icon, color: snap.color, highlight: snap.highlight, done: snap.done });
+      if (editor) setMarkupHighlight(editor, id, snap.highlight);
+    }
+    setMarkupEditorId(null);
+  };
+  const startDrag = (e: React.PointerEvent) => {
+    if (maximized) return;
+    const start = dragPos ?? pos;
+    if (!start) return;
+    const sx = e.clientX, sy = e.clientY;
+    const move = (ev: PointerEvent) => setDragPos({
+      top: Math.max(8, Math.min(start.top + ev.clientY - sy, window.innerHeight - 60)),
+      left: Math.max(8, Math.min(start.left + ev.clientX - sx, window.innerWidth - 120)),
+    });
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    e.preventDefault();
+  };
+
+  const winStyle = maximized
+    ? { top: 48, left: 48, right: 48, bottom: 48, width: 'auto' as const }
+    : { top: (dragPos ?? pos).top, left: (dragPos ?? pos).left, width: POP_W };
+
   return createPortal(
-    <div ref={popRef} className="fs-markup-popover" style={{ top: pos.top, left: pos.left, width: POP_W }}
+    <div ref={popRef} className={`fs-markup-popover${maximized ? ' maximized' : ''}`} style={winStyle}
       onPointerDown={(e) => e.stopPropagation()}>
+      {/* the draggable title bar — fullscreen and × like every window */}
+      <div className="markup-pop-titlebar" onPointerDown={startDrag}>
+        <span className="markup-pop-title">Annotation</span>
+        <button className="markup-win-btn" title={maximized ? 'Exit full screen' : 'Full screen'}
+          onPointerDown={(e) => e.stopPropagation()} onClick={() => setMaximized((v) => !v)}>
+          <FullscreenIcon />
+        </button>
+        <button className="markup-win-btn markup-win-close" title="Close without saving"
+          onPointerDown={(e) => e.stopPropagation()} onClick={closeWithoutSaving}>
+          ×
+        </button>
+      </div>
       {/* ONE head row (v5.29, Derek): "Icon:" swatches · "Highlight:" eye +
           swatch (range annotations only) · ⋮. The eye replaces the hide
           checkbox — eye-slash = hidden. Spacing/padding are Design knobs. */}

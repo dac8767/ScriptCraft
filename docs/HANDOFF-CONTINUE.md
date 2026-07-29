@@ -202,7 +202,42 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.29 — picker Used sections, legible chips, head row, icon import (HEAD)
+### v5.30 — the edit window becomes a WINDOW; tool locked to panel (HEAD)
+
+- Derek's batch (+3 mid-turn adds): (1) the Annotations TOOL is LOCKED to
+  the side bar — PANEL_LOCKED_TOOLS in editorStore; setToolMode COERCES
+  every write to 'docked' (drag-out, remembered shapes, all paths) and
+  enterToolFullscreen early-returns; NO_FULLSCREEN_TOOLS hides the button.
+  SHAPE_NOTES (ToolDock) prints the limitation at the panel window's foot
+  ("This window only appears in the side panel"; Scrapbook: "only appears
+  in full-screen mode") — limits are SAID, not silently missing.
+- (2) The EDIT window is a real window: `.markup-pop-titlebar` (sticky,
+  drag-move via pointer capture — dragPos overrides seating and an
+  overrideRef makes the scroll/resize re-seat STAND DOWN), FullscreenIcon
+  button (maximized = fixed inset 48px), × = close WITHOUT saving — dirty
+  check against a snapshot taken at open (content JSON + icon/color/
+  highlight/done); dirty → confirmDialog("Are you sure you want to close
+  this annotation without saving?") then RESTORES the snapshot fields +
+  setMarkupHighlight (content was never written). The popover's outside-
+  press/Escape saver must IGNORE .fs-confirm-overlay or the dialog's own
+  buttons would save-and-close underneath it.
+- (3) Its OWN THEME: --anno-win-bg/-win-text/-field-bg/-field-text — :root
+  (dark bases) = light-gray #d6d8dc window + WHITE field; [data-theme=
+  light] = #e2e4e8; THEME_VARS gains an "Annotations" group so every theme
+  (custom included, via seedVarsFromBase) can restyle it. 27-markups.css
+  interior chrome moved off --fd-* onto inherit/rgba-black so it reads on
+  the light surface.
+- NAVIGATOR adds: empty annotation = icon only (no "(empty annotation)");
+  list content renders AS a list (markupContentLines in markupActions —
+  paragraph lines + •/n./☐☑ item lines, cap 6); the Annotations button now
+  opens the SHARED filter popover (markupFilters — same state as the panel
+  Filter) and the navigator rows OBEY it; it sits beside Scene Numbers on
+  row 2 (Scene Numbers carries the lead margin to eat trailing width).
+- check-v530: 19 green (lock coercion, helper notes, computed theme colors,
+  drag + no-re-seat, maximize, clean vs dirty ×, discard proof, icon-only
+  and list rows, same-row buttons, shared-filter drive).
+
+### v5.29 — picker Used sections, legible chips, head row, icon import
 
 - Derek's batch: (1) RECENT → USED in both pickers, derived LIVE from
   `markups` (no stored lists — markupRecentColors/Icons fields deleted;
@@ -285,69 +320,12 @@ Durable bits kept live here:
   ('#hex','wheel'), preset → (color,'preset')) — the pinned exact-args
   assertions were the only callers that noticed.
 
-### v5.26 — ANNOTATIONS: rename + the 14-item polish batch
-
-- Derek's batch on v5.25's tool: RENAMED "Annotations" (labels only — tool id
-  'markups', builtin keys, context-menu id, `_markups`, all persisted names
-  STAY). Every create control reads "Add Annotation".
-- CURSOR-ADD ALWAYS WORKS (#3): point annotations are a BLOCK ATTRIBUTE now
-  (`MarkupBlockAnchor`, a global attribute `markupId` on every element type,
-  renderHTML data-markup-block, keepOnSplit:false) — works on an EMPTY line,
-  which the whole-element mark could not (no text to carry it). The v5.25
-  refusal toast is GONE. Range annotations stay the scriptMarkup mark and
-  now AUTO-APPLY the yellow default highlight (DEFAULT_MARKUP_HIGHLIGHT in
-  markupsSlice) at creation; the popover checkbox is the INVERSE — "Hide
-  highlights in script" (+ color swatch when shown). If an element already
-  carries an annotation, Add OPENS it instead of stacking a duplicate.
-- POPOVER (#4-#9,#11): icon + color are single SWATCHES opening picker
-  windows (MarkupPickers.tsx): color = the Theme ColorPicker + a Recent row
-  (onChange gained a `source` arg — 'wheel' Applies record to viewPrefs
-  markupRecentColors; presets don't. ColorPicker.test updated to the new
-  contract); icon = presets · recent (markupRecentIcons, grid picks only) ·
-  full grid. Any hand pick sets iconManual — AUTO-ICON (firstContentKind in
-  markupActions + AUTO_ICON map in markupIcons: numbers→hashtag, checklist→
-  check, bullets→dot, link→link, image→image, note→comment; NEW link/image
-  icons) runs live on the mini editor and never overwrites a manual choice.
-  A paragraph is 'link' only when ALL its text is linked. Links in the body
-  are clickable (scrapbook: → selectPage + openTool('notebook'), saving
-  first; http → window.open). The ⋮ menu (MarkupDotsMenu) carries Status
-  Open/Complete, Hide/Show "<type>" in script, Delete — footer is Save only.
-- SUB-POPOVER RULE: every picker/menu portals to body as `.markup-subpop`,
-  and the annotation popover's save-on-close treats presses inside ANY
-  .markup-subpop as inside itself (else picking a color closes the window).
-- SEAT FIX (#2): the popover CLAMPS top into the viewport and seats
-  SCREEN-CENTER when no anchor rect exists — off-viewport anchors used to
-  seat the window off-screen (the "can't edit some items" glitch) and
-  orphans never opened at all.
-- MARGIN ICONS (#12): ON the page, centered in the right-margin band
-  (rightMargin×96×scale from the rendered page width), vertically CENTERED
-  on the selection's span union for ranges / the element's first line for
-  block anchors. Paper-light chip styling (page is always white).
-- PANEL (#11,#13,#14 + mid-turn adds): dbl-click = requestEditorScroll THEN
-  setMarkupEditorId after 160ms (jump + open; pencil/trash gone, ⋮ + quick
-  checkbox stay). Header: Filter (two sections with helper text "Select one"
-  / "Select all that you want visible" — state rows + a GRID of in-use
-  types with Show/Hide all; markupFilters is now {hiddenIcons, done}),
-  "Show in Script" (same grid → viewPrefs markupHiddenIcons, PERSISTED,
-  shared with the ⋮ toggles; hides margin icons in JS and neutralizes
-  highlights via a .markup-type-hidden class the ICON LAYER syncs onto
-  spans — the span only knows its id), and Search (markupSearch in the
-  slice). Distinct trigger classes .markup-ctl-filter / .markup-ctl-script
-  (the Navigator's Filter matches :has-text and steals driver clicks).
-- NAVIGATOR (#10): annotation rows SORT INTO the outline by findMarkupPos
-  (ties keep the landmark first); orphans + notes still append. The markup
-  branch in handleClick must run BEFORE the plain-jump branch — rows carry
-  pos now.
-- check-v526.mjs: 34 checks green (geometry to the pixel). Driver lessons:
-  a dock-row click TOGGLES an open tool (guard with a .markups-panel
-  existence check), and an annotation on the doc's LAST line legitimately
-  sorts to the outline's bottom — assert interleaving, not "not last".
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.26** — ANNOTATIONS: rename + the 14-item polish batch (block anchors, swatch pickers, auto-icon)
 - **v5.25** — MARKUPS: the annotation tool is born (store/mark/popover/panel/presets)
 - **v5.24** — columns not rows, the drag that never started, tab washes
 - **v5.23** — compact buttons, the anchored-resize truth, per-row right

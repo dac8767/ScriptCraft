@@ -198,6 +198,43 @@ export function firstContentKind(content: unknown): MarkupKind | null {
   return null;
 }
 
+/** v5.30, Derek: the Navigator shows LIST annotations as a list. Lines from
+ *  the content, in order: paragraph text as a line; list items as marker-
+ *  prefixed lines (• / n. / ☐ ☑). Empty content → []. Capped by callers. */
+export function markupContentLines(m: ScriptMarkup): string[] {
+  const doc = m.content as { content?: unknown[] } | null;
+  if (!doc?.content) return [];
+  const lines: string[] = [];
+  const textOf = (n: unknown): string => {
+    const parts: string[] = [];
+    const walk = (x: unknown) => {
+      if (!x || typeof x !== 'object') return;
+      const node = x as { type?: string; text?: string; content?: unknown[] };
+      if (node.type === 'text' && node.text) parts.push(node.text);
+      node.content?.forEach(walk);
+    };
+    walk(n);
+    return parts.join(' ').trim();
+  };
+  for (const raw of doc.content) {
+    const node = raw as { type?: string; attrs?: { checked?: boolean }; content?: unknown[] };
+    if (node.type === 'paragraph') {
+      const t = textOf(node);
+      if (t) lines.push(t);
+    } else if (node.type === 'bulletList' || node.type === 'orderedList' || node.type === 'taskList') {
+      (node.content ?? []).forEach((item, i) => {
+        const it = item as { type?: string; attrs?: { checked?: boolean } };
+        const t = textOf(item);
+        if (!t) return;
+        const marker = node.type === 'orderedList' ? `${i + 1}.`
+          : node.type === 'taskList' ? (it.attrs?.checked ? '☑' : '☐') : '•';
+        lines.push(`${marker} ${t}`);
+      });
+    }
+  }
+  return lines;
+}
+
 /** Plain-text preview of a markup's content (cards + navigator rows). */
 export function markupPreviewText(m: ScriptMarkup): string {
   const parts: string[] = [];

@@ -151,9 +151,68 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.25 and older (newest first)
+## Version history — v5.26 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.26 — ANNOTATIONS: rename + the 14-item polish batch
+
+- Derek's batch on v5.25's tool: RENAMED "Annotations" (labels only — tool id
+  'markups', builtin keys, context-menu id, `_markups`, all persisted names
+  STAY). Every create control reads "Add Annotation".
+- CURSOR-ADD ALWAYS WORKS (#3): point annotations are a BLOCK ATTRIBUTE now
+  (`MarkupBlockAnchor`, a global attribute `markupId` on every element type,
+  renderHTML data-markup-block, keepOnSplit:false) — works on an EMPTY line,
+  which the whole-element mark could not (no text to carry it). The v5.25
+  refusal toast is GONE. Range annotations stay the scriptMarkup mark and
+  now AUTO-APPLY the yellow default highlight (DEFAULT_MARKUP_HIGHLIGHT in
+  markupsSlice) at creation; the popover checkbox is the INVERSE — "Hide
+  highlights in script" (+ color swatch when shown). If an element already
+  carries an annotation, Add OPENS it instead of stacking a duplicate.
+- POPOVER (#4-#9,#11): icon + color are single SWATCHES opening picker
+  windows (MarkupPickers.tsx): color = the Theme ColorPicker + a Recent row
+  (onChange gained a `source` arg — 'wheel' Applies record to viewPrefs
+  markupRecentColors; presets don't. ColorPicker.test updated to the new
+  contract); icon = presets · recent (markupRecentIcons, grid picks only) ·
+  full grid. Any hand pick sets iconManual — AUTO-ICON (firstContentKind in
+  markupActions + AUTO_ICON map in markupIcons: numbers→hashtag, checklist→
+  check, bullets→dot, link→link, image→image, note→comment; NEW link/image
+  icons) runs live on the mini editor and never overwrites a manual choice.
+  A paragraph is 'link' only when ALL its text is linked. Links in the body
+  are clickable (scrapbook: → selectPage + openTool('notebook'), saving
+  first; http → window.open). The ⋮ menu (MarkupDotsMenu) carries Status
+  Open/Complete, Hide/Show "<type>" in script, Delete — footer is Save only.
+- SUB-POPOVER RULE: every picker/menu portals to body as `.markup-subpop`,
+  and the annotation popover's save-on-close treats presses inside ANY
+  .markup-subpop as inside itself (else picking a color closes the window).
+- SEAT FIX (#2): the popover CLAMPS top into the viewport and seats
+  SCREEN-CENTER when no anchor rect exists — off-viewport anchors used to
+  seat the window off-screen (the "can't edit some items" glitch) and
+  orphans never opened at all.
+- MARGIN ICONS (#12): ON the page, centered in the right-margin band
+  (rightMargin×96×scale from the rendered page width), vertically CENTERED
+  on the selection's span union for ranges / the element's first line for
+  block anchors. Paper-light chip styling (page is always white).
+- PANEL (#11,#13,#14 + mid-turn adds): dbl-click = requestEditorScroll THEN
+  setMarkupEditorId after 160ms (jump + open; pencil/trash gone, ⋮ + quick
+  checkbox stay). Header: Filter (two sections with helper text "Select one"
+  / "Select all that you want visible" — state rows + a GRID of in-use
+  types with Show/Hide all; markupFilters is now {hiddenIcons, done}),
+  "Show in Script" (same grid → viewPrefs markupHiddenIcons, PERSISTED,
+  shared with the ⋮ toggles; hides margin icons in JS and neutralizes
+  highlights via a .markup-type-hidden class the ICON LAYER syncs onto
+  spans — the span only knows its id), and Search (markupSearch in the
+  slice). Distinct trigger classes .markup-ctl-filter / .markup-ctl-script
+  (the Navigator's Filter matches :has-text and steals driver clicks).
+- NAVIGATOR (#10): annotation rows SORT INTO the outline by findMarkupPos
+  (ties keep the landmark first); orphans + notes still append. The markup
+  branch in handleClick must run BEFORE the plain-jump branch — rows carry
+  pos now.
+- check-v526.mjs: 34 checks green (geometry to the pixel). Driver lessons:
+  a dock-row click TOGGLES an open tool (guard with a .markups-panel
+  existence check), and an annotation on the doc's LAST line legitimately
+  sorts to the outline's bottom — assert interleaving, not "not last".
+
 
 ### v5.25 — MARKUPS: the annotation tool
 

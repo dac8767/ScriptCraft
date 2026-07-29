@@ -8,14 +8,15 @@
  *   - To-Dos:       script [ ] lines (tick here; click to jump)
  * Show/hide per kind via the Filter dropdown; Search narrows by text.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { FaHashtag, FaRegStickyNote } from 'react-icons/fa';
 import { ControlDropdown, ControlSearch } from './ToolControls';
 import { findNotePos } from '../utils/scriptNoteActions';
-import { findMarkupPos, markupPreviewText } from '../utils/markupActions';
+import { findMarkupPos, markupContentLines } from '../utils/markupActions';
 import { MarkupIcon } from './markupIcons';
+import { TypeGridPop, useTypesInUse, useSeat, useDismiss } from './MarkupPickers';
 
 const KINDS = ['scene', 'act', 'section', 'marker', 'note', 'todo', 'markup'] as const;
 type Kind = typeof KINDS[number];
@@ -39,6 +40,8 @@ interface Item {
   markupId?: string;
   markupIcon?: string;
   markupColor?: string;
+  /** v5.30: content lines — a LIST annotation renders as a list */
+  markupLines?: string[];
   /** shelf card id + item index for to-dos */
   cardId?: string;
   itemIdx?: number;
@@ -69,20 +72,29 @@ export function NavigatorControls() {
   const setNavShowKinds = useEditorStore((s) => s.setNavShowKinds);
   const navFilter = useEditorStore((s) => s.navFilter);
   const setNavFilter = useEditorStore((s) => s.setNavFilter);
+  const mkFilters = useEditorStore((s) => s.markupFilters);
+  const setMkFilters = useEditorStore((s) => s.setMarkupFilters);
   const hiddenCount = KINDS.filter((k) => !kindShown(navShowKinds, k)).length;
-  const annosShown = kindShown(navShowKinds, 'markup');
+
+  // v5.30, Derek: the Annotations button opens the SAME filter popover the
+  // Annotations window's Filter shows — one state (markupFilters), and the
+  // Navigator's annotation rows obey it too.
+  const [annoOpen, setAnnoOpen] = useState(false);
+  const annoBtn = useRef<HTMLButtonElement>(null);
+  const annoBox = useRef<HTMLDivElement>(null);
+  const annoPos = useSeat(annoOpen, annoBtn, annoBox);
+  useDismiss(annoOpen, annoBox, annoBtn, () => setAnnoOpen(false));
+  const annoTypes = useTypesInUse(mkFilters.hiddenIcons);
+  const annoChip = mkFilters.hiddenIcons.length + (mkFilters.done !== 'open' ? 1 : 0);
+  const toggleIcon = (icon: string) => setMkFilters({
+    ...mkFilters,
+    hiddenIcons: mkFilters.hiddenIcons.includes(icon)
+      ? mkFilters.hiddenIcons.filter((x) => x !== icon)
+      : [...mkFilters.hiddenIcons, icon],
+  });
+
   return (
     <>
-      {/* v5.28, Derek: a dedicated Annotations toggle — the same kind
-          visibility the Filter menu drives, one click instead of two. */}
-      <button
-        className={'tool-ctl tool-ctl-lead' + (annosShown ? ' active' : '')}
-        title={annosShown ? 'Hide annotations in this list' : 'Show annotations in this list'}
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => setNavShowKinds({ ...navShowKinds, markup: !annosShown })}
-      >
-        <span className="tool-ctl-label">Annotations</span>
-      </button>
       <ControlDropdown
         label="Filter"
         chip={hiddenCount}
@@ -94,9 +106,30 @@ export function NavigatorControls() {
         }))}
       />
       <ControlSearch value={navFilter} onChange={setNavFilter} placeholder="Filter by keyword" />
-      {/* v5.28, Derek: the scene-number toggle moved DOWN A ROW, left-
-          aligned (the break forces the wrap; lead pins it left). */}
+      {/* v5.28/v5.30, Derek: row 2 — Annotations and Scene Numbers side by
+          side, left-aligned (the break wraps; the trailing lead margin on
+          Scene Numbers eats the leftover width). */}
       <span className="tool-ctl-break" aria-hidden />
+      <button ref={annoBtn} className={`tool-ctl${annoOpen ? ' open' : ''}`} title="Filter annotations"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); setAnnoOpen((v) => !v); }}>
+        <span className="tool-ctl-label">Annotations</span>
+        {annoChip > 0 && <span className="tool-ctl-chip">{annoChip}</span>}
+      </button>
+      {annoOpen && (
+        <TypeGridPop
+          boxRef={annoBox}
+          pos={annoPos}
+          done={mkFilters.done}
+          onDone={(d) => setMkFilters({ ...mkFilters, done: d })}
+          gridHelp="Toggle visibility in tool window"
+          types={annoTypes}
+          hidden={mkFilters.hiddenIcons}
+          onToggle={toggleIcon}
+          onShowAll={() => setMkFilters({ ...mkFilters, hiddenIcons: [] })}
+          onHideAll={() => setMkFilters({ ...mkFilters, hiddenIcons: annoTypes })}
+        />
+      )}
       <button
         className={'tool-ctl tool-ctl-lead' + (showNums ? ' active' : '')}
         title={showNums ? 'Hide scene numbers' : 'Show scene numbers'}
@@ -113,6 +146,7 @@ export function NavigatorControls() {
 export default function NavigatorTool({ editor, scrollContainer }: NavigatorToolProps) {
   const { notes, setNotePopoverId } = useEditorStore();
   const markups = useEditorStore((s) => s.markups);
+  const mkFilters = useEditorStore((s) => s.markupFilters);
   const setMarkupEditorId = useEditorStore((s) => s.setMarkupEditorId);
   const filter = useEditorStore((s) => s.navFilter);
   const show = useEditorStore((s) => s.navShowKinds);
@@ -168,9 +202,16 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
     const annos: Item[] = [];
     const orphans: Item[] = [];
     for (const m of markups) {
+      // v5.30: the Annotations button drives the SAME filter as the side
+      // panel (markupFilters) — hidden types/states drop out here too.
+      if (mkFilters.done !== 'all' && (mkFilters.done === 'done') !== m.done) continue;
+      if (mkFilters.hiddenIcons.includes(m.icon)) continue;
+      const lines = markupContentLines(m).slice(0, 6);
       const item: Item = {
         kind: 'markup',
-        text: markupPreviewText(m) || '(empty annotation)',
+        // empty annotation → NO placeholder text; the row is just the icon
+        text: lines.join(' '),
+        markupLines: lines,
         markupId: m.id,
         markupIcon: m.icon,
         markupColor: m.color,
@@ -192,7 +233,7 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
     return placed;
     // docTick forces re-scan of editor content
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, docTick, notes, markups]);
+  }, [editor, docTick, notes, markups, mkFilters]);
 
   const visible = items.filter(
     (it) => kindShown(show, it.kind) && (!filter || it.text.toLowerCase().includes(filter.toLowerCase())),
@@ -267,18 +308,30 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
             {showNums && it.kind === 'scene' && it.num !== undefined && (
               <span className="scene-number-badge fs-nav-num-badge">{it.num}</span>
             )}
-            <span
-              className={it.done ? 'fs-nav-done' : ''}
-              /* v5.28: annotation rows wear their icon's color */
-              style={it.kind === 'markup' && it.markupColor ? { color: it.markupColor } : undefined}
-            >
-              {it.kind === 'markup' ? (
+            {it.kind === 'markup' ? (
+              /* v5.30, Derek: empty annotation = just the icon (no
+                 placeholder text); a LIST annotation renders as a list. */
+              <span
+                className={`fs-nav-anno${it.done ? ' fs-nav-done' : ''}`}
+                style={it.markupColor ? { color: it.markupColor } : undefined}
+              >
                 <span className="fs-nav-kind-icon fs-nav-markup-icon">
                   <MarkupIcon icon={it.markupIcon ?? 'flag'} color={it.markupColor} />
                 </span>
-              ) : it.kind === 'note' ? <FaRegStickyNote className="fs-nav-kind-icon" /> : it.kind === 'act' ? '§ ' : it.kind === 'marker' ? '⚑ ' : it.kind === 'section' ? '# ' : ''}
-              {it.text.length > 80 ? it.text.slice(0, 80) + '…' : it.text || '(untitled)'}
-            </span>
+                {(it.markupLines?.length ?? 0) > 0 && (
+                  <span className="fs-nav-anno-lines">
+                    {it.markupLines!.map((l, li) => (
+                      <span key={li} className="fs-nav-anno-line">{l.length > 60 ? l.slice(0, 60) + '…' : l}</span>
+                    ))}
+                  </span>
+                )}
+              </span>
+            ) : (
+              <span className={it.done ? 'fs-nav-done' : ''}>
+                {it.kind === 'note' ? <FaRegStickyNote className="fs-nav-kind-icon" /> : it.kind === 'act' ? '§ ' : it.kind === 'marker' ? '⚑ ' : it.kind === 'section' ? '# ' : ''}
+                {it.text.length > 80 ? it.text.slice(0, 80) + '…' : it.text || '(untitled)'}
+              </span>
+            )}
           </div>
         ))}
       </div>

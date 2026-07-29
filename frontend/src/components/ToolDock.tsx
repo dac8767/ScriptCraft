@@ -369,6 +369,14 @@ export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
  *  remembered-shape branch and this button can't disagree. */
 const NO_FULLSCREEN = NO_FULLSCREEN_TOOLS;
 
+/** v5.30, Derek: helper text at the bottom of a side-panel window whose
+ *  pop-out / fullscreen options are limited — the limitation is SAID, not
+ *  silently missing. Keyed by tool id. */
+const SHAPE_NOTES: Partial<Record<ToolId, string>> = {
+  notebook: 'Scrapbook only appears in full-screen mode',
+  markups: 'This window only appears in the side panel',
+};
+
 function ToolFullscreenButton({ id }: { id: ToolId }) {
   // v5.21: fullscreen-ONLY tools drop the button too — they are never in a
   // shape the button could act on (fullscreen is their only shape).
@@ -1178,6 +1186,11 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                 <div className="tool-inline-body" style={solo ? undefined : { height: activeSize!.h }}>
                   <ToolContent id={active!.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />
                 </div>
+                {/* v5.30, Derek: shape-limited tools SAY so at the bottom of
+                    their side-panel window instead of just missing buttons. */}
+                {SHAPE_NOTES[active!.id] && (
+                  <div className="tool-shape-note">{SHAPE_NOTES[active!.id]}</div>
+                )}
                 {!solo && (
                   <div
                     className="tool-inline-resize"

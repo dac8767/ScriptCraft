@@ -50,6 +50,12 @@ export const THEME_VARS: { key: string; label: string; group: string }[] = [
   { key: '--fd-text-muted', label: 'Muted text', group: 'Text' },
 
   { key: '--fd-page-bg', label: 'Script page', group: 'Page' },
+  // v5.30, Derek: the annotation edit window has its OWN surface — light
+  // gray with a white script-like field by default, per-theme editable.
+  { key: '--anno-win-bg', label: 'Annotation window', group: 'Annotations' },
+  { key: '--anno-win-text', label: 'Annotation window text', group: 'Annotations' },
+  { key: '--anno-field-bg', label: 'Annotation text field', group: 'Annotations' },
+  { key: '--anno-field-text', label: 'Annotation field text', group: 'Annotations' },
 ];
 
 export interface CustomTheme {
