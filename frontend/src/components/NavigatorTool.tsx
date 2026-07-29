@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
+import { useNotebookStore } from '../stores/notebookStore';
 import { FaHashtag, FaRegStickyNote } from 'react-icons/fa';
 import { ControlDropdown, ControlSearch } from './ToolControls';
 import { findNotePos } from '../utils/scriptNoteActions';
@@ -257,6 +258,10 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
       // v5.25: same gesture as notes — go there, open its popover. Checked
       // BEFORE the plain-jump branch: annotation rows carry a pos too (v5.26
       // sorts them into the outline), but a jump alone would skip the open.
+      // v5.37: the popover needs the EDITOR — step any takeover aside first.
+      const st = useEditorStore.getState();
+      if (st.fullscreenTool) st.setFullscreenTool(null);
+      if (useNotebookStore.getState().notebookOpen) useNotebookStore.getState().setNotebookOpen(false);
       if (it.pos !== undefined) jumpTo(it.pos);
       setMarkupEditorId(it.markupId);
     } else if (it.pos !== undefined) {

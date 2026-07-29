@@ -185,3 +185,72 @@ describe('v5.21: one floating window at a time', () => {
     expect(st().activeToolRight).toBe('sticky');  // the window survives a docked open
   });
 });
+
+/** v5.37, Derek's queue item 2: "one popped-out-or-fullscreen window at a
+ *  time — opening a second closes the first; docked panels unaffected."
+ *  The fullscreen takeover joined the one-window rule in BOTH directions;
+ *  Design stays exempt both ways (v5.32). */
+describe('v5.37: fullscreen joins the one-window rule', () => {
+  beforeEach(() => {
+    useEditorStore.setState({
+      toolMode: {},
+      activeTool: null,
+      activeToolRight: null,
+      tempTool: null,
+      fullscreenTool: null,
+      navigatorOpen: true,
+      shelfOpen: true,
+    });
+  });
+
+  it('opening a floating slot window lowers the takeover', () => {
+    st().enterToolFullscreen('scenes');
+    expect(st().fullscreenTool).toBe('scenes');
+    st().setToolMode('sticky', 'floating');
+    st().openTool('sticky');
+    expect(st().fullscreenTool).toBeNull();
+    expect(st().activeToolRight).toBe('sticky');
+  });
+
+  it('opening a temp window lowers the takeover', () => {
+    st().enterToolFullscreen('scenes');
+    st().openTool('analytics');
+    expect(st().fullscreenTool).toBeNull();
+    expect(st().tempTool).toBe('analytics');
+  });
+
+  it('entering fullscreen closes floating windows', () => {
+    st().openTool('analytics');
+    expect(st().tempTool).toBe('analytics');
+    st().enterToolFullscreen('scenes');
+    expect(st().fullscreenTool).toBe('scenes');
+    expect(st().tempTool).toBeNull();
+  });
+
+  it('the remembered-fullscreen open path closes floats too', () => {
+    st().openTool('analytics');
+    useEditorStore.setState({ toolMode: { scenes: 'fullscreen' } });
+    st().openTool('scenes');
+    expect(st().fullscreenTool).toBe('scenes');
+    expect(st().tempTool).toBeNull();
+  });
+
+  it('a DOCKED open still leaves the takeover alone', () => {
+    st().enterToolFullscreen('scenes');
+    st().openTool('fragments');                 // docked right — not a window
+    expect(st().fullscreenTool).toBe('scenes');
+    expect(st().activeToolRight).toBe('fragments');
+  });
+
+  it('Design neither lowers the takeover nor is closed by it', () => {
+    st().enterToolFullscreen('scenes');
+    st().setToolMode('design', 'floating');
+    st().openTool('design');                    // design opens beside it…
+    expect(st().fullscreenTool).toBe('scenes'); // …takeover survives
+    const designSlot = () => (st().activeTool === 'design' || st().activeToolRight === 'design' || st().tempTool === 'design');
+    expect(designSlot()).toBe(true);
+    st().setFullscreenTool(null);
+    st().enterToolFullscreen('scenes');         // re-entering fullscreen…
+    expect(designSlot()).toBe(true);            // …keeps the Design float
+  });
+});

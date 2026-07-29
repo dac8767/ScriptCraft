@@ -151,9 +151,30 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.31 and older (newest first)
+## Version history — v5.32 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.32 — one-row nav header, unmistakable active icon, Design exempt
+
+- Derek: (1) the Navigator header is ONE row (Filter + Search only); the
+  Annotations filter button + Scene Numbers toggle moved into the BODY's
+  first row (`NavActionRow`, `.fs-nav-action-row`) as BLUE buttons —
+  dialog-btn-primary; Scene Numbers is primary only while ON (state reads
+  through the fill). The v5.28 `.tool-ctl-break` is retired.
+- (2) the ACTIVE icon chip in the edit window wears a 2px accent border +
+  glow ring, and MarkupUsedRow guarantees the active combo is IN the capped
+  row (swaps into the last slot when the cap would hide it).
+- (3) DESIGN is exempt from the one-window rule BOTH ways: closeOtherFloats
+  early-returns for keep==='design' and never closes a design float — AND
+  openTool's slot branch had a HARDCODED `tempTool: null` outside
+  closeOtherFloats that closed the temp window anyway (the store test
+  caught it; the exemption must live in BOTH spots). Pinned in
+  toolModeMemory.test ("Design neither closes other windows nor is closed
+  by them") — 858 tests now.
+- Driver note: the Navigator's Filter and the Search button sit 1px apart
+  vertically — assert one-row with a ≤2px spread, not exact equality.
+- check-v532: 9 green.
 
 ### v5.31 — highlight conversions, inline Used row, combined picker
 

@@ -41,6 +41,11 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   const markup = useEditorStore((s) => s.markups.find((m) => m.id === id) ?? null);
   const setMarkupEditorId = useEditorStore((s) => s.setMarkupEditorId);
   const updateMarkup = useEditorStore((s) => s.updateMarkup);
+  // v5.37, Derek's addendum: this window needs the EDITOR visible — when a
+  // fullscreen tool (or the Scrapbook surface) takes the editor area, the
+  // window saves and stands down.
+  const fsTool = useEditorStore((s) => s.fullscreenTool);
+  const nbOpen = useNotebookStore((s) => s.notebookOpen);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const [scrapPicker, setScrapPicker] = useState(false);
   // v5.30 window chrome: drag override + fullscreen; a ref mirrors them so
@@ -230,6 +235,14 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
       document.removeEventListener('keydown', onKey);
     };
   });   // deliberately unmemoized: `save` closes over live editors
+
+  // v5.37: an editor-area takeover rising while this window is open =
+  // save-and-close (the same semantics as an outside press).
+  useEffect(() => {
+    if (!id || (!fsTool && !nbOpen)) return;
+    save();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fsTool, nbOpen, id]);
 
   if (!id || !markup || !pos) return null;
 

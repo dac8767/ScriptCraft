@@ -578,12 +578,18 @@ export const DEFAULT_TOOL_ORDER: string[] = [
  *  wherever a float is BORN (openTool's float branches, setToolMode
  *  'floating'); returns the patch closing every floating window but `keep`.
  *  Spread it BEFORE the branch's own fields so they win any overlap. */
-function closeOtherFloats(s: Pick<EditorState, 'tempTool' | 'activeTool' | 'activeToolRight' | 'navigatorOpen' | 'shelfOpen' | 'toolMode'>, keep: ToolId): Partial<EditorState> {
+function closeOtherFloats(s: Pick<EditorState, 'tempTool' | 'activeTool' | 'activeToolRight' | 'navigatorOpen' | 'shelfOpen' | 'toolMode' | 'fullscreenTool'>, keep: ToolId): Partial<EditorState> {
   const patch: Partial<EditorState> = {};
   // v5.32, Derek: "opening the design window should not close any other
   // window." Design is the tweak-alongside tool — it neither closes others
   // when it opens, nor is it closed when others open.
   if (keep === 'design') return patch;
+  // v5.37, Derek: ONE popped-out OR fullscreen window at a time — a float
+  // being born lowers the fullscreen takeover and the Scrapbook surface
+  // too. (The fullscreen entry paths spread this patch and re-set their
+  // own fullscreenTool after it, so the field composes.)
+  if (s.fullscreenTool) patch.fullscreenTool = null;
+  if (useNotebookStore.getState().notebookOpen) useNotebookStore.getState().setNotebookOpen(false);
   if (s.tempTool && s.tempTool !== keep && s.tempTool !== 'design') patch.tempTool = null;
   if (s.activeTool && s.activeTool !== keep && s.activeTool !== 'design'
       && s.navigatorOpen && s.toolMode[s.activeTool] === 'floating') {
@@ -1696,7 +1702,8 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     if (FULLSCREEN_ONLY_TOOLS.includes(tool)
       || (s.toolMode[tool] === 'fullscreen' && !NO_FULLSCREEN_TOOLS.includes(tool))) {
       useNotebookStore.getState().setNotebookOpen(false);
-      const patch: Partial<EditorState> = { fullscreenTool: tool };
+      // v5.37: entering the takeover closes floating windows (Design stays)
+      const patch: Partial<EditorState> = { ...closeOtherFloats(s, tool), fullscreenTool: tool };
       if (s.activeTool === tool || s.activeTool === 'notebook') patch.activeTool = null;
       if (s.activeToolRight === tool || s.activeToolRight === 'notebook') patch.activeToolRight = null;
       if (s.tempTool === tool || s.tempTool === 'notebook') patch.tempTool = null;
@@ -1954,6 +1961,12 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     if (s.activeTool === 'notebook') s.setActiveTool(null);
     if (s.activeToolRight === 'notebook') s.setActiveToolRight(null);
     if (s.tempTool === 'notebook') s.setTempTool(null);
+    // v5.37, Derek: one popped-out OR fullscreen window — entering the
+    // takeover closes floating windows too (Design excepted, both ways).
+    const s2 = get();
+    if (s2.tempTool && s2.tempTool !== 'design') s2.setTempTool(null);
+    if (s2.activeTool && s2.activeTool !== 'design' && s2.toolMode[s2.activeTool] === 'floating') s2.setActiveTool(null);
+    if (s2.activeToolRight && s2.activeToolRight !== 'design' && s2.toolMode[s2.activeToolRight] === 'floating') s2.setActiveToolRight(null);
     set({ fullscreenTool: id });
   },
   charListCount: 0,

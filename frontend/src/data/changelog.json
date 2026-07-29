@@ -1,5 +1,15 @@
 [
   {
+    "version": "5.37",
+    "date": "2026-07-29",
+    "changes": [
+      "One popped-out OR fullscreen window at a time: opening a floating window lowers a fullscreen tool (and the Scrapbook), and taking a tool fullscreen closes any floating window — docked side-panel tools are unaffected either way",
+      "Design keeps its exemption in both directions — it opens beside anything and nothing closes it",
+      "The annotation edit window never sits over a fullscreen tool: if one rises while you're editing, the annotation saves and closes (same as clicking away)",
+      "Clicking an annotation in the Navigator while a tool is fullscreen steps the takeover aside first, then opens the annotation at its spot in the script"
+    ]
+  },
+  {
     "version": "5.36",
     "date": "2026-07-29",
     "changes": [

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.36 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.37 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,29 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.36 — Notes v2: one rich card kind, equal-height rows, real drag fix (HEAD)
+### v5.37 — fullscreen joins the one-window rule; popover never over a takeover (HEAD)
+
+- Derek's queue item 2. closeOtherFloats now ALSO lowers `fullscreenTool`
+  and the Scrapbook surface (notebookOpen) — every float birth path gets
+  it for free; the design early-return keeps Design from closing anything.
+  Both fullscreen ENTRY paths close floats: openTool's fullscreen branch
+  spreads `closeOtherFloats(s, tool)` before setting its own
+  fullscreenTool (field composes — the literal after the spread wins), and
+  enterToolFullscreen clears temp + floating slots (design excepted) before
+  set. Docked opens still touch nothing.
+- The ANNOTATION WINDOW needs the editor visible (Derek's addendum): a new
+  MarkupPopover effect watches fullscreenTool + notebookOpen and SAVE-closes
+  (outside-press semantics) the moment either rises. NavigatorTool's
+  annotation-row click steps takeovers aside first (setFullscreenTool null
+  + setNotebookOpen false) — the jump needs the editor anyway.
+- Tests: toolModeMemory.test "v5.37: fullscreen joins the one-window rule"
+  (6 cases: float lowers takeover, temp lowers takeover, entry closes
+  floats, remembered-fullscreen path closes floats, docked opens don't,
+  Design exempt both ways).
+- check-v537: 12 green (DOM-level takeover removal, save-on-stand-down
+  content proof, navigator step-aside opening the popover).
+
+### v5.36 — Notes v2: one rich card kind, equal-height rows, real drag fix
 
 - Derek's queue item 1 (flag answered: "your assumption is correct" — old
   checklist cards become notes whose content IS a task list; titles stay).
@@ -305,32 +327,12 @@ Durable bits kept live here:
   by measured tops, live preview lines, real <a href="scrapbook:…">,
   resize sticks + edge re-pins, 3 stacked nav rows, labels).
 
-### v5.32 — one-row nav header, unmistakable active icon, Design exempt
-
-- Derek: (1) the Navigator header is ONE row (Filter + Search only); the
-  Annotations filter button + Scene Numbers toggle moved into the BODY's
-  first row (`NavActionRow`, `.fs-nav-action-row`) as BLUE buttons —
-  dialog-btn-primary; Scene Numbers is primary only while ON (state reads
-  through the fill). The v5.28 `.tool-ctl-break` is retired.
-- (2) the ACTIVE icon chip in the edit window wears a 2px accent border +
-  glow ring, and MarkupUsedRow guarantees the active combo is IN the capped
-  row (swaps into the last slot when the cap would hide it).
-- (3) DESIGN is exempt from the one-window rule BOTH ways: closeOtherFloats
-  early-returns for keep==='design' and never closes a design float — AND
-  openTool's slot branch had a HARDCODED `tempTool: null` outside
-  closeOtherFloats that closed the temp window anyway (the store test
-  caught it; the exemption must live in BOTH spots). Pinned in
-  toolModeMemory.test ("Design neither closes other windows nor is closed
-  by them") — 858 tests now.
-- Driver note: the Navigator's Filter and the Search button sit 1px apart
-  vertically — assert one-row with a ≤2px spread, not exact equality.
-- check-v532: 9 green.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.32** — one-row nav header (blue body buttons), unmistakable active icon, Design exempt both ways
 - **v5.31** — highlight delete/link conversions, inline Used row, combined icon+color picker
 - **v5.30** — the edit window becomes a WINDOW (drag/fullscreen/× + own theme); tool locked to panel
 - **v5.29** — picker Used sections, legible chips, one-row popover head, icon import
