@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.55",
+    "date": "2026-07-29",
+    "changes": [
+      "Fix: npm run desktop could abort at git pull when a local build had rewritten Cargo.lock (\"Your local changes would be overwritten by merge\"). The launcher now restores the generated lockfile before pulling — the committed one is the source of truth."
+    ]
+  },
+  {
     "version": "5.54",
     "date": "2026-07-29",
     "changes": [

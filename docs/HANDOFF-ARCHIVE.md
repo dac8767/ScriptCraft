@@ -155,6 +155,42 @@ reliable; re-run before believing a weird worker failure.
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
 
+### v5.50 — hide-ribbon CRASH fix, shared PerRowStepper, no-flash Design seat, Scrapbook auto-dock
+
+- Derek's 6 (five mid-turn messages, one CRASH report):
+  (1) THE CRASH ("when i tried to hide the ribbon toolbar"): three
+  useEditorStore reads (dzVars + the two rib scale pcts, the v5.14
+  per-kind geometry) sat ~900 lines BELOW Toolbar's
+  `toolbarMode==='hidden'` early return — hiding the ribbon changed the
+  hook count → 'Rendered fewer hooks'. Hoisted above the return beside
+  the zone hooks (the file's own NOTE says exactly this; §4 footgun).
+  Verified live: hide→restore, 0 pageerrors.
+  (2) `.fs-perrow-input` wears `.tool-action-field` (standard border +
+  dark input bg) at 30px, margin -4px → ~2px off the arrow frame.
+  (3) The # button tooltip: "Go to page #".
+  (4) ONE PerRowStepper (ToolControls) — framed Up/Down + typeable
+  field; Pages AND Scenes-Cards render it (CircleMinus/Plus gone from
+  ScenesTool; the count-span/perRowText inline versions deleted).
+  (5) Design FLASH on open (far-left frame): the seat effect became
+  useLayoutEffect — seats before first paint.
+  (6) SCRAPBOOK AUTO-DOCK: NotebookSurface mount, when
+  toolConfig.notebook is disabled, enables it into the LEFT panel
+  (docked, activeTool) and remembers the prior cfg; unmount restores it
+  verbatim. Probe: rows 0 → 1 (left, active) → 0 with cfg restored.
+- Probes (inline, no check file — every piece store+DOM-verified live):
+  pages type-5, scenes framed stepper type-4 + 0 old icons, auto-dock
+  cycle, hidden-ribbon toggle crash-free.
+- QUEUED NEXT (Derek, this turn — in order): ribbon retirement of
+  Insert Section / Insert Note / Add To-Do List / Insert Marker
+  (builtins+palette+default layout+one-time shed; RIBBON_HIDE precedent);
+  Annotations-panel Filter right-aligned before Search (drop
+  tool-ctl-lead); the pick-to-place prompt as a BIG persistent centered
+  banner at the editor top (Escape cancels — listener exists);
+  Navigator: Scene # toggle → a "View" menu (Scene Number / Annotations
+  / Scene Heading toggles — reuse navShowKinds for scene+markup);
+  PAGES WINDOW TABS (Script / Title Page / Custom) with the separate
+  Title Page tool leaving the side panels — the big restructure.
+
 ### v5.49 — Design seats at the panel edge, stacked previews + Save, picker ×/white chips, spinner + typeable count
 
 - Derek's 8 (five mid-turn messages; the sandbox rolled back a FOURTH

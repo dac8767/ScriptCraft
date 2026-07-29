@@ -125,7 +125,9 @@ End any message that delivers a change with:
 cd /Users/dcarl/ScriptCraft && npm run desktop
 ```
 
-`npm run desktop` = `git pull` → `npm install` (a no-op unless deps changed — this is
+`npm run desktop` = restore `src-tauri/Cargo.lock` (v5.55 — a local `tauri dev`
+rewrites that generated file and a dirty copy aborted `git pull`; the committed
+lockfile is canonical) → `git pull` → `npm install` (a no-op unless deps changed — this is
 what stops the baffling "Cannot find package" after a pull) → launch the Tauri app.
 It's `&&`-chained, so a failed pull stops rather than launching a half-merged tree.
 `npm run app` launches without pulling.

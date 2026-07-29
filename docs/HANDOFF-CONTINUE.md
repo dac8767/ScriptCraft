@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.54 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.55 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -95,8 +95,10 @@ build — he runs **one command** and your pushed commits arrive.
    cd /Users/dcarl/ScriptCraft && npm run desktop
    ```
 
-That's it. **`npm run desktop` = `git pull` → `npm install` (no-op unless deps changed) →
-launch the Tauri app.** So the instant you've pushed to `claude/v0_32`, Derek runs that
+That's it. **`npm run desktop` = restore `src-tauri/Cargo.lock` (v5.55: his local
+`tauri dev` rewrites that generated file; a dirty copy aborted `git pull` — the
+committed lockfile is canonical) → `git pull` → `npm install` (no-op unless deps
+changed) → launch the Tauri app.** So the instant you've pushed to `claude/v0_32`, Derek runs that
 one command and sees your change. If you didn't push, he gets nothing — pushing **is**
 the deploy.
 
@@ -202,7 +204,25 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.54 — ACTION REWRITE: Derek's design-handoff integrated (Rust API call + keychain, PM adaptation) (HEAD)
+### v5.55 — npm run desktop self-heals the Cargo.lock pull collision (HEAD)
+
+- Derek's launch failed live: `git pull` aborted with "Your local changes
+  to src-tauri/Cargo.lock would be overwritten by merge". Cause: his
+  `tauri dev` runs rewrite the generated lockfile locally (cargo version
+  skew re-resolves it), and v5.54 was the first push in ages to also
+  change it. Fix: the desktop script now runs
+  `git restore src-tauri/Cargo.lock 2>/dev/null;` BEFORE the pull chain —
+  surgical (that one generated file only), and the `&&` chain after it is
+  untouched so a failed pull still blocks the launch. One-time manual
+  unblock (the fixed script arrives via the very pull that was blocked):
+  `git restore src-tauri/Cargo.lock && npm run desktop`. CLAUDE.md §3 and
+  §0 here updated to describe the new script.
+- RECURRENCE NOTE for future Rust batches: any push touching Cargo.toml/
+  Cargo.lock would have re-hit this on every Mac pull; the self-heal ends
+  the class. Never gitignore Cargo.lock (app lockfiles are canonical and
+  cargo check here depends on it).
+
+### v5.54 — ACTION REWRITE: Derek's design-handoff integrated (Rust API call + keychain, PM adaptation)
 
 - Derek uploaded a zip from a DESIGN CHAT (HANDOFF.md + system prompt +
   rewrite.rs + a flat-model actionRewrite.ts): "use these files from a
@@ -395,47 +415,12 @@ Durable bits kept live here:
   Custom; the separate Title Page tool leaves the side panels) — the
   batch opener for the next run.
 
-### v5.50 — hide-ribbon CRASH fix, shared PerRowStepper, no-flash Design seat, Scrapbook auto-dock
-
-- Derek's 6 (five mid-turn messages, one CRASH report):
-  (1) THE CRASH ("when i tried to hide the ribbon toolbar"): three
-  useEditorStore reads (dzVars + the two rib scale pcts, the v5.14
-  per-kind geometry) sat ~900 lines BELOW Toolbar's
-  `toolbarMode==='hidden'` early return — hiding the ribbon changed the
-  hook count → 'Rendered fewer hooks'. Hoisted above the return beside
-  the zone hooks (the file's own NOTE says exactly this; §4 footgun).
-  Verified live: hide→restore, 0 pageerrors.
-  (2) `.fs-perrow-input` wears `.tool-action-field` (standard border +
-  dark input bg) at 30px, margin -4px → ~2px off the arrow frame.
-  (3) The # button tooltip: "Go to page #".
-  (4) ONE PerRowStepper (ToolControls) — framed Up/Down + typeable
-  field; Pages AND Scenes-Cards render it (CircleMinus/Plus gone from
-  ScenesTool; the count-span/perRowText inline versions deleted).
-  (5) Design FLASH on open (far-left frame): the seat effect became
-  useLayoutEffect — seats before first paint.
-  (6) SCRAPBOOK AUTO-DOCK: NotebookSurface mount, when
-  toolConfig.notebook is disabled, enables it into the LEFT panel
-  (docked, activeTool) and remembers the prior cfg; unmount restores it
-  verbatim. Probe: rows 0 → 1 (left, active) → 0 with cfg restored.
-- Probes (inline, no check file — every piece store+DOM-verified live):
-  pages type-5, scenes framed stepper type-4 + 0 old icons, auto-dock
-  cycle, hidden-ribbon toggle crash-free.
-- QUEUED NEXT (Derek, this turn — in order): ribbon retirement of
-  Insert Section / Insert Note / Add To-Do List / Insert Marker
-  (builtins+palette+default layout+one-time shed; RIBBON_HIDE precedent);
-  Annotations-panel Filter right-aligned before Search (drop
-  tool-ctl-lead); the pick-to-place prompt as a BIG persistent centered
-  banner at the editor top (Escape cancels — listener exists);
-  Navigator: Scene # toggle → a "View" menu (Scene Number / Annotations
-  / Scene Heading toggles — reuse navShowKinds for scene+markup);
-  PAGES WINDOW TABS (Script / Title Page / Custom) with the separate
-  Title Page tool leaving the side panels — the big restructure.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.50** — hide-ribbon CRASH fix, shared PerRowStepper, no-flash Design seat, Scrapbook auto-dock
 - **v5.49** — Design seats at the panel edge, stacked previews + Save, picker ×/white chips, spinner + typeable count
 - **v5.48** — annotations = highlighted text, pick-to-place, title-bar status/delete, Scene # in header
 - **v5.47** — # goto in header, stacked stepper, Design DOCKS BACK, notes checklist fixes, edit-window force-show
