@@ -36,7 +36,7 @@ import { convertMarkupToRange, removeMarkupFromDoc } from '../utils/markupAction
 import { MarkupColorSwatch, MarkupUsedRow } from './MarkupPickers';
 import {
   findMarkupPos, setMarkupHighlight, firstContentKind, markupNavLines, markupIsList,
-  type MarkupNavLine,
+  markupDocIsEmpty, type MarkupNavLine,
 } from '../utils/markupActions';
 import { MarkupNavLineSpans } from './MarkupNavLines';
 import { fileToDataUrl, compressImage } from '../utils/imageIntake';
@@ -199,9 +199,11 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     const liveSync = () => {
       window.clearTimeout(t);
       t = window.setTimeout(() => {
+        // v5.52: STRUCTURAL empty (a textless checklist is content) — the
+        // old text-only test stored null for a lone blank checkbox, so the
+        // Navigator saw no list and drew the big auto-check icon.
         const json = mini.getJSON();
-        const empty = !mini.getText().trim() && !JSON.stringify(json).includes('"image"');
-        useEditorStore.getState().updateMarkup(id, { content: empty ? null : json });
+        useEditorStore.getState().updateMarkup(id, { content: markupDocIsEmpty(json) ? null : json });
       }, 250);
     };
     mini.on('update', liveSync);
@@ -321,8 +323,7 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   const save = () => {
     if (mini) {
       const json = mini.getJSON();
-      const empty = !mini.getText().trim() && !JSON.stringify(json).includes('"image"');
-      updateMarkup(id, { content: empty ? null : json });
+      updateMarkup(id, { content: markupDocIsEmpty(json) ? null : json });
     }
     if (editor) editor.emit('update', { editor, transaction: editor.state.tr });
     setMarkupEditorId(null);

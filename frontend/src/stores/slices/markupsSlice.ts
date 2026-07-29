@@ -84,6 +84,12 @@ export interface MarkupsSlice {
    *  Text flow, promoted to the front door). Ephemeral. */
   markupCreatePick: boolean;
   setMarkupCreatePick: (v: boolean) => void;
+  /** v5.52, Derek: the panel's + moved into the window HEADER, which mounts
+   *  without the editor — the click arms this and the panel body (which has
+   *  the editor) runs createMarkupAtSelection. The pagesGotoRequest
+   *  chrome→body pattern. Ephemeral. */
+  markupAddRequest: boolean;
+  setMarkupAddRequest: (v: boolean) => void;
   markupFilters: MarkupFilters;
   setMarkupFilters: (f: MarkupFilters) => void;
   /** v5.26: the side panel's search query (header ControlSearch). */
@@ -105,6 +111,8 @@ export const createMarkupsSlice: StateCreator<EditorState, [], [], MarkupsSlice>
   setMarkupMiniEditor: (ed) => set({ markupMiniEditor: ed }),
   markupCreatePick: false,
   setMarkupCreatePick: (v) => set({ markupCreatePick: v }),
+  markupAddRequest: false,
+  setMarkupAddRequest: (v) => set({ markupAddRequest: v }),
   markupFilters: EMPTY_MARKUP_FILTERS,
   setMarkupFilters: (f) => set({ markupFilters: f }),
   markupSearch: '',

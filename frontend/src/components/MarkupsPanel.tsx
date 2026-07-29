@@ -14,6 +14,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { FaPlus } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { computePageBlocks } from '../editor/pagination';
@@ -95,6 +96,16 @@ export function MarkupsControls() {
   const chip = hiddenUnion.length + (doneShown !== 'all' ? 1 : 0);
   return (
     <>
+      {/* v5.52, Derek: + Add Annotation left the body for the header — a
+          bare +, leading the row (everything after it rides right). The
+          header has no editor, so the click arms markupAddRequest and the
+          panel body performs the add. */}
+      <button
+        className="tool-ctl tool-ctl-lead markups-add-btn"
+        title="Add annotation"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); useEditorStore.getState().setMarkupAddRequest(true); }}
+      ><FaPlus /></button>
       <button ref={filterBtn} className={`tool-ctl markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Filter annotations (script and window together)"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setFilterOpen((v) => !v); }}>
@@ -137,6 +148,17 @@ export default function MarkupsPanel({ editor }: { editor: Editor | null }) {
     return () => { editor.off('update', bump); };
   }, [editor]);
 
+  // v5.52, Derek: the header's + (MarkupsControls has no editor) arms
+  // markupAddRequest; this body — mounted exactly when that header shows —
+  // performs the add. Cleared even editorless so a click can't queue a
+  // surprise annotation for later.
+  const addRequest = useEditorStore((s) => s.markupAddRequest);
+  useEffect(() => {
+    if (!addRequest) return;
+    useEditorStore.getState().setMarkupAddRequest(false);
+    if (editor) createMarkupAtSelection(editor);
+  }, [addRequest, editor]);
+
   const rows = useMemo<Row[]>(() => {
     const pageContent = editor ? computePageBlocks(editor.state.doc, pageLayout) : [];
     const out: Row[] = markups.map((m) => {
@@ -178,20 +200,13 @@ export default function MarkupsPanel({ editor }: { editor: Editor | null }) {
 
   return (
     <div className="markups-panel">
-      <div className="markups-add-row">
-        <button
-          className="dialog-btn dialog-btn-primary markups-add-btn"
-          disabled={!editor}
-          onClick={() => { if (editor) createMarkupAtSelection(editor); }}
-        >
-          + Add Annotation
-        </button>
-      </div>
+      {/* v5.52, Derek: the add button lives in the window header now (the
+          leading + in MarkupsControls) — the body is all list. */}
       <div className="markups-list">
         {visible.length === 0 && (
           <div className="markups-empty">
             {markups.length === 0
-              ? 'Place the cursor (or select text) and hit Add Annotation — your annotations collect here.'
+              ? 'Select script text and hit the + above — your annotations collect here.'
               : 'No annotations match the current filter.'}
           </div>
         )}

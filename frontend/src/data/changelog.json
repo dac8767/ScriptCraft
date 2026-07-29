@@ -1,5 +1,15 @@
 [
   {
+    "version": "5.52",
+    "date": "2026-07-29",
+    "changes": [
+      "Icon & Color window: picks and typed hex codes apply instantly — the confusing Apply button is gone, and Cancel / OK in the bottom-right corner make leaving explicit (Cancel restores what you opened with).",
+      "Filter grids: annotation types show the color chosen in the annotation editor, in every filter and visibility grid.",
+      "Navigator: list annotations never show the big type icon — a one-checkbox list shows its checkbox line, like lists of every length.",
+      "Annotations panel: Add Annotation is now a + button leading the window header."
+    ]
+  },
+  {
     "version": "5.51",
     "date": "2026-07-29",
     "changes": [

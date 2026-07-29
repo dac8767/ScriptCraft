@@ -7,7 +7,7 @@
  * localStorage at module scope.)
  */
 import { describe, it, expect } from 'vitest';
-import { markupKinds, markupPreviewText, pageForPos, firstContentKind, markupNavLines } from './markupActions';
+import { markupKinds, markupPreviewText, pageForPos, firstContentKind, markupNavLines, markupDocIsEmpty } from './markupActions';
 import type { ScriptMarkup } from '../stores/slices/markupsSlice';
 
 const markup = (content: unknown): ScriptMarkup => ({
@@ -98,6 +98,43 @@ describe('markupNavLines', () => {
 
   it('empty content produces no lines (icon-only row)', () => {
     expect(markupNavLines(null)).toEqual([]);
+  });
+
+  it('a lone TEXTLESS checklist item keeps its marker line (v5.52)', () => {
+    // Derek: "choosing checklist adds one checkbox" — before any typing the
+    // item has no text; the row must show the ☐, not fall back to the icon.
+    const lines = markupNavLines({
+      type: 'doc',
+      content: [{ type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph' }] }] }],
+    });
+    expect(lines).toEqual([{ text: '', marker: 'uncheck' }]);
+  });
+});
+
+/** v5.52: the live mirror's empty test is STRUCTURAL — a textless list is
+ *  content (storing null made the Navigator draw the big auto-check icon
+ *  for a one-checkbox annotation until its first character was typed). */
+describe('markupDocIsEmpty', () => {
+  const doc = (...content: unknown[]) => ({ type: 'doc', content });
+  it('null / no nodes / blank paragraphs are empty', () => {
+    expect(markupDocIsEmpty(null)).toBe(true);
+    expect(markupDocIsEmpty(doc())).toBe(true);
+    expect(markupDocIsEmpty(doc({ type: 'paragraph' }, { type: 'paragraph' }))).toBe(true);
+    expect(markupDocIsEmpty(doc({ type: 'paragraph', content: [{ type: 'text', text: '   ' }] }))).toBe(true);
+  });
+  it('a checklist with ONE textless item is NOT empty (the v5.52 bug)', () => {
+    expect(markupDocIsEmpty(doc({
+      type: 'taskList',
+      content: [{ type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph' }] }],
+    }))).toBe(false);
+  });
+  it('bullet and numbered lists, images and text all count as content', () => {
+    const li = { type: 'listItem', content: [{ type: 'paragraph' }] };
+    expect(markupDocIsEmpty(doc({ type: 'bulletList', content: [li] }))).toBe(false);
+    expect(markupDocIsEmpty(doc({ type: 'orderedList', content: [li] }))).toBe(false);
+    expect(markupDocIsEmpty(doc({ type: 'image', attrs: { src: 'x.png' } }))).toBe(false);
+    expect(markupDocIsEmpty(doc({ type: 'paragraph', content: [{ type: 'image', attrs: { src: 'x.png' } }] }))).toBe(false);
+    expect(markupDocIsEmpty(doc({ type: 'paragraph', content: [{ type: 'text', text: 'words' }] }))).toBe(false);
   });
 });
 

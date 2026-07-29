@@ -36,6 +36,18 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, onClose, use
     if (/^#[0-9a-f]{6}$/i.test(customColor)) setHsv(rgbToHsv(hexToRgb(customColor)));
   }, [customColor]);
 
+  // v5.52, Derek: EMBEDDED pickers (the icon/color window) auto-apply — a
+  // complete hex, typed or reached by dragging the square/hue, commits
+  // LIVE; the host's OK/Cancel own closing. Standalone pickers keep the
+  // Apply-and-close button (v4.37's "I'm done here").
+  useEffect(() => {
+    if (!embedded) return;
+    if (/^#[0-9a-f]{6}$/i.test(customColor) && customColor.toLowerCase() !== (value ?? '').toLowerCase()) {
+      onChange(customColor, 'wheel');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customColor, embedded]);
+
   const hueHex = rgbToHex(hsvToRgb({ h: hsv.h, s: 1, v: 1 }));
 
   const applyHsv = (next: { h: number; s: number; v: number }) => {
@@ -138,15 +150,18 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, onClose, use
           placeholder="#000000"
           maxLength={7}
         />
-        <button
-          className="color-picker-apply"
-          // v4.37, Derek: Apply commits the custom color AND closes the
-          // popover — it's the "I'm done here" button, unlike the preset
-          // swatches, which stay open for live try-outs.
-          onClick={() => { onChange(customColor, 'wheel'); onClose(); }}
-        >
-          Apply
-        </button>
+        {!embedded && (
+          <button
+            className="color-picker-apply"
+            // v4.37, Derek: Apply commits the custom color AND closes the
+            // popover — it's the "I'm done here" button, unlike the preset
+            // swatches, which stay open for live try-outs. (v5.52: embedded
+            // pickers auto-apply instead — see the effect above.)
+            onClick={() => { onChange(customColor, 'wheel'); onClose(); }}
+          >
+            Apply
+          </button>
+        )}
       </div>
       <button
         className="color-picker-reset"

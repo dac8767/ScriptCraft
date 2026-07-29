@@ -573,6 +573,18 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
 }
 .markup-icon-pop-left { width: 236px; flex: none; }
 .markup-icon-pop-right { flex: none; }
+/* v5.52, Derek: the window's exits — Cancel / OK, bottom right. Compact
+   takes on the shared dialog buttons (34px dialog height is dialog-scale,
+   not popover-scale). */
+.markup-icon-pop-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--fd-border);
+}
+.markup-icon-pop-foot .dialog-btn { height: 26px; padding: 0 14px; font-size: 12px; }
 
 /* v5.42/v5.43, Derek: the panel's ONE Filter — one section whose controls
    drive the script AND the window together (the two-section idea is gone) */
@@ -666,8 +678,8 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
   height: 100%;
   overflow: hidden;
 }
-.markups-add-row { padding: 10px 12px 8px; flex-shrink: 0; }
-.markups-add-btn { font-size: 12px; padding: 5px 12px; }
+/* (v5.52: the body's Add Annotation row is gone — the add is the leading +
+   in the window header, a plain .tool-ctl needing no styles of its own.) */
 .markups-list {
   flex: 1;
   overflow-y: auto;

@@ -204,6 +204,19 @@ export function MarkupComboPicker({ markup }: { markup: ScriptMarkup }) {
   // overrides the seat until the window closes.
   const [dragPos, setDragPos] = useState<{ top: number; left: number } | null>(null);
   React.useEffect(() => { if (!open) setDragPos(null); }, [open]);
+  // v5.52, Derek: everything in this window commits LIVE (picks and the hex
+  // field alike) — the footer makes leaving explicit. Snapshot the combo at
+  // open time; Cancel restores it, OK (and × / clicking away) keeps it.
+  const snapRef = useRef<{ icon: string; color: string; iconManual: boolean } | null>(null);
+  React.useEffect(() => {
+    if (open) snapRef.current = { icon: markup.icon, color: markup.color, iconManual: !!markup.iconManual };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+  const cancel = () => {
+    const snap = snapRef.current;
+    if (snap) updateMarkup(markup.id, snap);
+    setOpen(false);
+  };
   const startDrag = (e: React.PointerEvent) => {
     const start = dragPos ?? pos;
     if (!start) return;
@@ -238,11 +251,11 @@ export function MarkupComboPicker({ markup }: { markup: ScriptMarkup }) {
   const chip = isDarkColor(markup.color) ? ' markup-light-chip' : '';
 
   // Any pick here is a HAND pick — auto-icon must never override it again.
-  // v5.31: a complete combo (preset/used) closes; a bare icon pick keeps
-  // the window open so a color can follow (it's the combined picker now).
-  const pick = (patch: { icon: string; color?: string }, close = true) => {
+  // v5.52, Derek: NO pick closes the window anymore — v5.31's combo-closes
+  // shortcut made closing implicit, which is the confusion the footer's
+  // OK/Cancel exists to end. One rule: picks apply live, the footer leaves.
+  const pick = (patch: { icon: string; color?: string }) => {
     updateMarkup(markup.id, { ...patch, iconManual: true });
-    if (close) setOpen(false);
   };
 
   const onImportPicked = (file: File | undefined) => {
@@ -308,20 +321,20 @@ export function MarkupComboPicker({ markup }: { markup: ScriptMarkup }) {
               <div className="markup-pop-grid">
                 {Object.keys(MARKUP_ICONS).map((k) => (
                   <button key={k} className={`markup-preset${chip}${markup.icon === k ? ' active' : ''}`} title={iconLabel(k)}
-                    onClick={() => pick({ icon: k }, false)}>
+                    onClick={() => pick({ icon: k })}>
                     <MarkupIcon icon={k} color={markup.color} />
                   </button>
                 ))}
                 {MARKUP_EMOJI.map((e) => (
                   <button key={e} className={`markup-preset${markup.icon === `emoji:${e}` ? ' active' : ''}`}
-                    onClick={() => pick({ icon: `emoji:${e}` }, false)}>
+                    onClick={() => pick({ icon: `emoji:${e}` })}>
                     <span className="markup-emoji">{e}</span>
                   </button>
                 ))}
                 {customIcons.map((c) => (
                   <button key={c.id} className={`markup-preset${markup.icon === `custom:${c.id}` ? ' active' : ''}`}
                     title="Imported icon"
-                    onClick={() => pick({ icon: `custom:${c.id}` }, false)}>
+                    onClick={() => pick({ icon: `custom:${c.id}` })}>
                     <MarkupIcon icon={`custom:${c.id}`} />
                   </button>
                 ))}
@@ -353,6 +366,12 @@ export function MarkupComboPicker({ markup }: { markup: ScriptMarkup }) {
                 />
               </div>
             </div>
+          </div>
+          {/* v5.52, Derek: the window-level exits — Cancel restores the
+              open-time combo, OK keeps what's live. */}
+          <div className="markup-icon-pop-foot">
+            <button className="dialog-btn" onClick={cancel}>Cancel</button>
+            <button className="dialog-btn dialog-btn-primary" onClick={() => setOpen(false)}>OK</button>
           </div>
         </div>,
         document.body,
@@ -393,6 +412,17 @@ interface TypeGridSectionProps {
  *  say what each row IS). The panel's combined Filter renders two of these;
  *  TypeGridPop wraps one in a portal for the single-purpose popovers. */
 export function TypeGridSection({ done, onDone, types, hidden, onToggle, onShowAll, onHideAll }: TypeGridSectionProps) {
+  // v5.52, Derek: "the annotation icon is faded in the filter view" — the
+  // grid drew icons colorless (inherited chrome gray). Each type shows the
+  // color its annotations wear (first in store order; a stale hidden type
+  // with no annotations left falls back to the plain glyph). Derived HERE
+  // so every door to this grid gets it.
+  const gridMarkups = useEditorStore((s) => s.markups);
+  const colorFor = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of gridMarkups) if (!map.has(m.icon)) map.set(m.icon, m.color);
+    return map;
+  }, [gridMarkups]);
   return (
     <>
       <div className="markup-filter-statusrow">
@@ -415,7 +445,7 @@ export function TypeGridSection({ done, onDone, types, hidden, onToggle, onShowA
             className={`markup-preset${hidden.includes(icon) ? '' : ' active'}`}
             title={iconLabel(icon)}
             onClick={() => onToggle(icon)}
-          ><MarkupIcon icon={icon} /></button>
+          ><MarkupIcon icon={icon} color={colorFor.get(icon)} /></button>
         ))}
       </div>
       <div className="markup-filter-allrow">

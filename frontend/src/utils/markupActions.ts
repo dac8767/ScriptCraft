@@ -221,6 +221,31 @@ export function firstContentKind(content: unknown): MarkupKind | null {
   return null;
 }
 
+/** v5.52, Derek: "one checkbox still shows the big check icon in the
+ *  Navigator." The edit window's live mirror treated a TEXTLESS doc as
+ *  empty and stored `content: null` — but a list with one blank item IS
+ *  structure. The null made markupIsList false while the auto-icon (read
+ *  from the live editor, a check for checklists) became the row's big icon;
+ *  typing anything "fixed" it because text made the doc count. Empty means:
+ *  nothing but blank paragraphs. Any list, image, or text is content. */
+export function markupDocIsEmpty(content: unknown): boolean {
+  const doc = content as { content?: unknown[] } | null;
+  if (!doc?.content?.length) return true;
+  let empty = true;
+  const walk = (x: unknown) => {
+    if (!empty || !x || typeof x !== 'object') return;
+    const node = x as { type?: string; text?: string; content?: unknown[] };
+    if (node.type === 'text') { if (node.text?.trim()) empty = false; return; }
+    if (node.type && node.type !== 'doc' && node.type !== 'paragraph' && node.type !== 'hardBreak') {
+      empty = false;   // list, image, heading… — structure counts
+      return;
+    }
+    node.content?.forEach(walk);
+  };
+  walk(doc);
+  return empty;
+}
+
 /** v5.30, Derek: the Navigator shows LIST annotations as a list. Lines from
  *  the content, in order: paragraph text as a line; list items as marker-
  *  prefixed lines (• / n. / ☐ ☑). Empty content → []. Capped by callers. */
@@ -303,7 +328,9 @@ export function markupNavLines(content: ScriptMarkup['content']): MarkupNavLine[
       (node.content ?? []).forEach((item, i) => {
         const it = item as { attrs?: { checked?: boolean } };
         const t = textOf(item);
-        if (!t) return;
+        // v5.52: an EMPTY item keeps its marker line — one unchecked box
+        // with no text yet is exactly the "just chose checklist" state;
+        // skipping it left the row with nothing at all.
         lines.push({
           text: t,
           marker: node.type === 'orderedList' ? 'number'
