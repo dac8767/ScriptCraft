@@ -21,7 +21,7 @@ import { DualDialogue, DualDialogueColumn } from '../editor/extensions/DualDialo
 import {
   projectScript, resolveEditorSelection, resolveSelection,
   targetIsCurrent, applyVariantToEditor, buildVariantNodes, indexForPos,
-  type ScriptElement,
+  MAX_WRITER_NOTE, type ScriptElement,
 } from './actionRewrite';
 
 let editor: Editor | null = null;
@@ -256,5 +256,21 @@ describe('pure pieces', () => {
     expect(r.adjusted).toBe(true);
     const none = resolveSelection(els, { anchorIndex: 3, focusIndex: 3 });
     expect(none.ok).toBe(false);
+  });
+
+  it('the writer note rides the request trimmed and capped; empty stays out (v5.58)', () => {
+    const els: ScriptElement[] = [
+      { type: 'action', text: 'One.', from: 0, to: 6 },
+    ];
+    const sel = { anchorIndex: 0, focusIndex: 0 };
+    const noted = resolveSelection(els, sel, '  keep the arrows  ');
+    if (!noted.ok) throw new Error(noted.reason);
+    expect(noted.request.writerNote).toBe('keep the arrows');
+    const blank = resolveSelection(els, sel, '   ');
+    if (!blank.ok) throw new Error(blank.reason);
+    expect(blank.request.writerNote).toBeUndefined();
+    const long = resolveSelection(els, sel, 'x'.repeat(MAX_WRITER_NOTE + 50));
+    if (!long.ok) throw new Error(long.reason);
+    expect(long.request.writerNote).toHaveLength(MAX_WRITER_NOTE);
   });
 });

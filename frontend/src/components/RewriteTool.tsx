@@ -24,8 +24,8 @@ import { confirmDialog } from './ConfirmDialog';
 import {
   resolveEditorSelection, applyVariantToEditor, targetIsCurrent,
   rewriteActionLines, saveApiKey, hasApiKey, clearApiKey,
-  STRATEGY_LABELS, STRATEGY_BLURBS, INTENT_LABELS,
-  type Resolved, type RewriteIntent, type RewriteResponse,
+  STRATEGY_LABELS, STRATEGY_BLURBS, MAX_WRITER_NOTE,
+  type Resolved, type RewriteResponse,
   type RewriteVariant, type PmTarget,
 } from '../utils/actionRewrite';
 import { isTauri } from '../services/platform';
@@ -44,7 +44,10 @@ export default function RewriteTool({ editor }: { editor: Editor | null }) {
   const [keyInput, setKeyInput] = useState('');
   const [keyErr, setKeyErr] = useState<string | null>(null);
   const [resolved, setResolved] = useState<Resolved | null>(null);
-  const [intent, setIntent] = useState<RewriteIntent>('');
+  // v5.58 (third handoff drop): free text replaced the preset-steer enum —
+  // the one thing the model can't infer is what the beat is FOR and which
+  // detail must SURVIVE, and that isn't enumerable.
+  const [note, setNote] = useState('');
   const [req, setReq] = useState<RequestState>({ status: 'idle' });
   const [applied, setApplied] = useState<string | null>(null);   // strategy
   const [stale, setStale] = useState(false);
@@ -116,9 +119,9 @@ export default function RewriteTool({ editor }: { editor: Editor | null }) {
 
   const suggest = async () => {
     if (!editor || req.status === 'loading') return;
-    // Re-resolve at request time WITH the intent — the live resolve is for
+    // Re-resolve at request time WITH the note — the live resolve is for
     // enablement only.
-    const fresh = resolveEditorSelection(editor, intent);
+    const fresh = resolveEditorSelection(editor, note);
     setResolved(fresh);
     if (!fresh.ok) return;
     targetRef.current = { ...fresh.pmTarget };
@@ -229,18 +232,24 @@ export default function RewriteTool({ editor }: { editor: Editor | null }) {
       )}
       {keyEntry && keyCard}
 
+      <div className="rw-note-row">
+        <input
+          className="rw-note"
+          type="text"
+          placeholder="What’s this beat for? Anything that must stay?"
+          title="Optional note to the rewriter — it guides interpretation, never overrides the craft rules"
+          maxLength={MAX_WRITER_NOTE}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') void suggest(); }}
+        />
+        {note.length > 0 && (
+          <span className={`rw-note-count${note.length >= MAX_WRITER_NOTE ? ' full' : ''}`}>
+            {note.length}/{MAX_WRITER_NOTE}
+          </span>
+        )}
+      </div>
       <div className="rw-ctl-row">
-        <select
-          className="rw-intent"
-          title="Steer all three variants"
-          value={intent}
-          onChange={(e) => setIntent(e.target.value as RewriteIntent)}
-        >
-          <option value="">No steer</option>
-          {(Object.keys(INTENT_LABELS) as Exclude<RewriteIntent, ''>[]).map((k) => (
-            <option key={k} value={k}>{INTENT_LABELS[k]}</option>
-          ))}
-        </select>
         <button
           className="dialog-btn dialog-btn-primary rw-go"
           disabled={keyState !== 'saved' || !resolved?.ok || req.status === 'loading'}

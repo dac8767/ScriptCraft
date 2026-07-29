@@ -155,6 +155,52 @@ reliable; re-run before believing a weird worker failure.
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
 
+### v5.53 — the THESAURUS tool: local MyThes/WordNet data, caret-follow, replace-in-place
+
+- Derek: "Add a thesaurus tool. Find an open source thesaurus resource
+  online… The code should be local, don't connect to an external app or
+  server."
+- DATA: MyThes en_US (th_en_US_v2.dat, 18.5 MB, UTF-8, ~146k head words)
+  — the WordNet-derived thesaurus LibreOffice ships — fetched VERBATIM
+  from github.com/LibreOffice/dictionaries (en/) into
+  frontend/public/thesaurus/ with WordNet_license.txt + license.txt +
+  a provenance README. Bundled asset, fetched same-origin at first tool
+  open; NO runtime network (deliberately unlike languageCatalog's CDN
+  fetch, which remains a release blocker). The upstream .idx is NOT
+  shipped — the loader derives the index in one pass.
+- utils/thesaurus.ts: the file stays ONE string; buildThesaurusIndex maps
+  head word → char offset (head lines say how many sense lines to skip);
+  readThesaurusEntry parses on demand. Qualifier grammar audited over the
+  whole file: (generic term)/(similar term)/(related term) strip,
+  (antonym) becomes a flag. lookupCandidates: exact → lower → suffix
+  fallbacks ORDERED so "hoping"→hope beats hop, running→run,
+  stopped→stop, cities→city. wordAt (caret word, edge-punctuation
+  trimmed) + matchCase (WALK→AMBLE, Walk→Amble) are pure and tested
+  (15 new unit tests → 895).
+- ThesaurusTool.tsx: search row (Back + input + go); follows the script
+  caret via debounced selectionUpdate/update (250ms) — caret word looks
+  up + becomes the replace TARGET ("In script: word"); chips = word
+  button (chain lookup, Back retraces) + ⇄ replace (only when targeted;
+  validates doc.textBetween(from,to)===word before writing, toast if the
+  script moved; matchCase dresses the replacement; after replace the
+  tool follows onto the new word). Antonyms: dashed chips on an "ant."
+  row per sense. Loading/miss/fallback states all speak
+  ("Showing "hope"", "No synonyms found").
+- Registration (the full surface, v0.63 rule): ToolId union,
+  DEFAULT_TOOL_CONFIG (right, enabled — toolConfigFor's fallback shows
+  it for EXISTING layouts too; a missing toolOrder id lands at the rail
+  end by the 1000+index rule, no migration needed), DEFAULT_TOOL_ORDER,
+  ALL_TOOLS (FaBookOpen, 320×420, group 3), ToolDock render case,
+  MenuBar TOOL_MENU_GROUPS third group. About window credits
+  WordNet/MyThes (Derek's v4.76 standing rule). CSS: 28-thesaurus.css
+  (+ screenplay.css import).
+- check-v553: 11 green (loads from dock, happy = 4 senses incl. adj.,
+  no ⇄ before a script target, chip chains + Back, caret in "occupy"
+  auto-targets, ⇄ swaps occupy→inhabit exactly once, tool follows onto
+  the new word, Hoping→hope note, zzzqqq miss message, Tools menu row).
+- QUEUED NEXT: the PAGES WINDOW TABS restructure (Script / Title Page /
+  Custom; the separate Title Page tool leaves the side panels).
+
 ### v5.52 — icon/color window OK/Cancel + live hex, colored filter grids, one-checkbox nav fix, header +
 
 - Derek's 4 (one in flight when the batch opened, three mid-turn):

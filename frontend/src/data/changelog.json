@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.58",
+    "date": "2026-07-29",
+    "changes": [
+      "Action Rewrite, third revision from the design chat: the steer menu is gone — in its place, a free-text note to the rewriter (\"What's this beat for? Anything that must stay?\", up to 300 characters). Name a detail and it survives in all three variants; name a feeling and it's expressed through behavior, never stated. The note can't override the craft rules or add story, and it's never quoted into your script."
+    ]
+  },
+  {
     "version": "5.57",
     "date": "2026-07-29",
     "changes": [

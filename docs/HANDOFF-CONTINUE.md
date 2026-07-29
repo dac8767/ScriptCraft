@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.57 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.58 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -204,7 +204,33 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.57 — Action Rewrite v2: faithful/compressed/reimagined, tighten-only steer, native dash rule (HEAD)
+### v5.58 — Action Rewrite v3: the writer's NOTE replaces the steer enum (HEAD)
+
+- Derek's THIRD design-chat drop ("another update"), diffed against the
+  second before applying. The steer enum is GONE (tighten too — compressed
+  already covers it; the obvious "improvement" is re-adding the dropdown,
+  DON'T). In its place: `writerNote`, optional free text ≤300 chars — the
+  two things no rule can infer: what the beat is FOR and which detail must
+  SURVIVE. Four prompt guards (first is load-bearing): never overrides a
+  hard rule (a feeling request is answered with behavior); a named detail
+  survives in ALL variants incl. compressed; cannot authorize new story;
+  never quoted into the script.
+- Wire shape: request field writer_note/writerNote (distinct from
+  RewriteVariant.note, the model's explanation, opposite direction);
+  Rust clean_note flattens whitespace to one line (a multi-line note
+  can't fake a labelled context section) + chars().take cap (multi-byte
+  safe); sent LAST in the user turn. Cap enforced BOTH ends
+  (MAX_WRITER_NOTE TS / MAX_NOTE_CHARS Rust — the command is callable
+  without the panel).
+- Panel: single-line note field + live counter (shows once non-empty,
+  flags at 300), teaching placeholder "What's this beat for? Anything
+  that must stay?"; Enter submits. Prompt v3 verbatim;
+  docs/ACTION-REWRITE.md updated incl. 4 new desktop verification steps
+  (the feeling-request guard is the one most likely to fail).
+- Gates: cargo check, tsc 0, 909 tests (writerNote trim/cap/empty test),
+  build, check-v558 4/4.
+
+### v5.57 — Action Rewrite v2: faithful/compressed/reimagined, tighten-only steer, native dash rule
 
 - Derek's SECOND design-chat drop ("update the ai tool with this info") —
   a revised handoff superseding the v5.54 package. Every delta diffed
@@ -339,57 +365,12 @@ Durable bits kept live here:
      filter options should be INT. or EXT., location, Contains X (type
      in a word or words)".
 
-### v5.53 — the THESAURUS tool: local MyThes/WordNet data, caret-follow, replace-in-place
-
-- Derek: "Add a thesaurus tool. Find an open source thesaurus resource
-  online… The code should be local, don't connect to an external app or
-  server."
-- DATA: MyThes en_US (th_en_US_v2.dat, 18.5 MB, UTF-8, ~146k head words)
-  — the WordNet-derived thesaurus LibreOffice ships — fetched VERBATIM
-  from github.com/LibreOffice/dictionaries (en/) into
-  frontend/public/thesaurus/ with WordNet_license.txt + license.txt +
-  a provenance README. Bundled asset, fetched same-origin at first tool
-  open; NO runtime network (deliberately unlike languageCatalog's CDN
-  fetch, which remains a release blocker). The upstream .idx is NOT
-  shipped — the loader derives the index in one pass.
-- utils/thesaurus.ts: the file stays ONE string; buildThesaurusIndex maps
-  head word → char offset (head lines say how many sense lines to skip);
-  readThesaurusEntry parses on demand. Qualifier grammar audited over the
-  whole file: (generic term)/(similar term)/(related term) strip,
-  (antonym) becomes a flag. lookupCandidates: exact → lower → suffix
-  fallbacks ORDERED so "hoping"→hope beats hop, running→run,
-  stopped→stop, cities→city. wordAt (caret word, edge-punctuation
-  trimmed) + matchCase (WALK→AMBLE, Walk→Amble) are pure and tested
-  (15 new unit tests → 895).
-- ThesaurusTool.tsx: search row (Back + input + go); follows the script
-  caret via debounced selectionUpdate/update (250ms) — caret word looks
-  up + becomes the replace TARGET ("In script: word"); chips = word
-  button (chain lookup, Back retraces) + ⇄ replace (only when targeted;
-  validates doc.textBetween(from,to)===word before writing, toast if the
-  script moved; matchCase dresses the replacement; after replace the
-  tool follows onto the new word). Antonyms: dashed chips on an "ant."
-  row per sense. Loading/miss/fallback states all speak
-  ("Showing "hope"", "No synonyms found").
-- Registration (the full surface, v0.63 rule): ToolId union,
-  DEFAULT_TOOL_CONFIG (right, enabled — toolConfigFor's fallback shows
-  it for EXISTING layouts too; a missing toolOrder id lands at the rail
-  end by the 1000+index rule, no migration needed), DEFAULT_TOOL_ORDER,
-  ALL_TOOLS (FaBookOpen, 320×420, group 3), ToolDock render case,
-  MenuBar TOOL_MENU_GROUPS third group. About window credits
-  WordNet/MyThes (Derek's v4.76 standing rule). CSS: 28-thesaurus.css
-  (+ screenplay.css import).
-- check-v553: 11 green (loads from dock, happy = 4 senses incl. adj.,
-  no ⇄ before a script target, chip chains + Back, caret in "occupy"
-  auto-targets, ⇄ swaps occupy→inhabit exactly once, tool follows onto
-  the new word, Hoping→hope note, zzzqqq miss message, Tools menu row).
-- QUEUED NEXT: the PAGES WINDOW TABS restructure (Script / Title Page /
-  Custom; the separate Title Page tool leaves the side panels).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.53** — the THESAURUS tool: local MyThes/WordNet data, caret-follow, replace-in-place
 - **v5.52** — icon/color window OK/Cancel + live hex, colored filter grids, one-checkbox nav fix, header +
 - **v5.51** — ribbon legacy-inserts retired, Filter right, pick BANNER, Navigator View menu
 - **v5.50** — hide-ribbon CRASH fix, shared PerRowStepper, no-flash Design seat, Scrapbook auto-dock

@@ -38,14 +38,10 @@ export interface EditorSelection {
 }
 
 /**
- * Optional steer applied to all three variants.
- *
- * Only "tighten" is meaningful. Earlier drafts also had "visual", "verbs" and
- * "plain", which were removed (design revision, second handoff) because they
- * only asked the model to do what the craft rules already require. Degree is
- * the one axis genuinely orthogonal to the rules.
+ * Ceiling on the writer's note, for a character counter in the panel. Also
+ * enforced in Rust, since the command is callable without the panel.
  */
-export type RewriteIntent = 'tighten' | '';
+export const MAX_WRITER_NOTE = 300;
 
 export interface RewriteRequest {
   selection: string;
@@ -59,7 +55,16 @@ export interface RewriteRequest {
   locationEstablished: boolean;
   /** Names in the selection making their first appearance in the script. */
   firstAppearances: string[];
-  intent?: RewriteIntent;
+  /**
+   * Optional free-text direction: what the writer is going for in this moment,
+   * or what must survive the rewrite. This replaced an enum of preset steers
+   * (third handoff drop), which only asked the model to do what the craft
+   * rules already require.
+   *
+   * Named writerNote rather than note to avoid colliding with
+   * RewriteVariant.note, which travels in the opposite direction.
+   */
+  writerNote?: string;
 }
 
 /**
@@ -74,6 +79,7 @@ export type RewriteStrategy = 'faithful' | 'compressed' | 'reimagined';
 export interface RewriteVariant {
   strategy: RewriteStrategy;
   text: string;
+  /** The model's one-line explanation of what it changed and why. */
   note: string;
 }
 
@@ -122,10 +128,6 @@ export const STRATEGY_BLURBS: Record<RewriteStrategy, string> = {
   faithful: 'Your beats, your order, cleaned up',
   compressed: 'The same moment in the fewest words',
   reimagined: 'Reshaped, reordered, same facts',
-};
-
-export const INTENT_LABELS: Record<Exclude<RewriteIntent, ''>, string> = {
-  tighten: 'Tighten',
 };
 
 /** Neighbouring action paragraphs sent as context on each side. */
@@ -191,11 +193,15 @@ export function indexForPos(elements: ScriptElement[], pos: number): number {
  * target range, walks the surrounding script for context, and reports
  * whether the range had to be adjusted. Pure over the projection — the
  * editor entry point below feeds it and adds PM positions.
+ *
+ * `writerNote` is optional free text. Resolving with an empty note is cheap
+ * and safe, so the panel resolves on selection change for enablement, then
+ * resolves again with the note when the writer submits.
  */
 export function resolveSelection(
   elements: ScriptElement[],
   selection: EditorSelection,
-  intent: RewriteIntent = '',
+  writerNote = '',
 ): Resolved {
   const lo = Math.min(selection.anchorIndex, selection.focusIndex);
   const hi = Math.max(selection.anchorIndex, selection.focusIndex);
@@ -214,6 +220,7 @@ export function resolveSelection(
 
   const { start, end, adjusted, adjustedReason } = range;
   const target = elements.slice(start, end + 1);
+  const trimmedNote = writerNote.trim().slice(0, MAX_WRITER_NOTE);
 
   return {
     ok: true,
@@ -235,7 +242,7 @@ export function resolveSelection(
       precedingDialogue: findPrecedingDialogue(elements, start),
       locationEstablished: isLocationEstablished(elements, start),
       firstAppearances: findFirstAppearances(elements, start, target),
-      intent,
+      writerNote: trimmedNote || undefined,
     },
   };
 }
@@ -244,7 +251,7 @@ export function resolveSelection(
  *  no network — safe on every (debounced) selection change. */
 export function resolveEditorSelection(
   editor: Editor,
-  intent: RewriteIntent = '',
+  writerNote = '',
 ): Resolved {
   const elements = projectScript(editor.state.doc);
   if (elements.length === 0) {
@@ -253,7 +260,7 @@ export function resolveEditorSelection(
   const sel = editor.state.selection;
   const anchorIndex = indexForPos(elements, sel.from);
   const focusIndex = indexForPos(elements, Math.max(sel.from, sel.to - 1));
-  return resolveSelection(elements, { anchorIndex, focusIndex }, intent);
+  return resolveSelection(elements, { anchorIndex, focusIndex }, writerNote);
 }
 
 /** True while the doc still holds exactly the text the target was resolved

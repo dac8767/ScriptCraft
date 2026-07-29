@@ -36,17 +36,24 @@
 .rw-key-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .rw-key-actions .dialog-btn { height: 26px; padding: 0 14px; font-size: 12px; }
 
-.rw-ctl-row { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
-.rw-intent {
+/* v5.58: the free-text writer's note (replaced the preset-steer select) */
+.rw-note-row { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.rw-note {
+  flex: 1;
+  min-width: 0;
   height: 26px;
   background: var(--fd-input-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 4px;
+  padding: 0 8px;
   font-size: 12px;
-  padding: 0 4px;
-  flex: none;
 }
+.rw-note:focus { outline: none; border-color: var(--fd-accent); }
+.rw-note-count { font-size: 10px; opacity: 0.55; flex: none; }
+.rw-note-count.full { color: #e8994f; opacity: 1; }
+
+.rw-ctl-row { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
 .rw-go { height: 26px; padding: 0 14px; font-size: 12px; flex: 1; }
 
 .rw-target { font-size: 11px; color: var(--fd-text-muted); flex-shrink: 0; }

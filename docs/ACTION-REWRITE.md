@@ -39,10 +39,23 @@ is never touched.
   order Rust-side — least license first. Divergence is still guaranteed:
   "closest to what you wrote" and "reshaped" cannot collapse into each
   other.
-- **The intent steer is ONLY `tighten`** (v5.57): visual/verbs/plain were
-  removed because they asked for what the hard rules already require and
-  produced no observable change. Degree is the one axis orthogonal to the
-  rules. Don't re-add the others without a reason.
+- **There is no preset steer enum — the writer gets a FREE-TEXT NOTE**
+  (v5.58, third drop; the obvious "improvement" is to add the dropdown
+  back — don't). visual/verbs/plain asked for what the hard rules already
+  require; `tighten` survived one round then went too (`compressed`
+  already covers it). What the model genuinely cannot infer is (a) what
+  the beat is FOR ("first time she's scared of him") and (b) what must
+  SURVIVE ("keep the arrows") — not enumerable. `writerNote`: optional,
+  ≤300 chars (MAX_WRITER_NOTE in TS, MAX_NOTE_CHARS in Rust — both ends
+  enforce, the command is callable without the panel), flattened to one
+  line Rust-side so it can't fake another labelled context section, sent
+  LAST in the user turn. Four prompt guards, the first load-bearing: it
+  never overrides a hard rule ("make it clear she's devastated" is an
+  emotional target, answered with behavior, not stated feeling); a named
+  detail survives in ALL variants including compressed; it cannot
+  authorize new story; it is never quoted into the script. Naming: the
+  request field is `writerNote`, distinct from `RewriteVariant.note`
+  (the model's craft explanation, opposite direction).
 - **Prompt cache stays on the 5-minute default TTL** (v5.57): a read is
   0.1×, a 5-min write 1.25×, a 1-hour write 2×. Break-even for the short
   tier is ~0.28 reads — one follow-up rewrite inside the window pays for
@@ -97,8 +110,9 @@ helpers run unchanged over that projection. Targets are PM ranges:
 sceneHeading · preceding/following (≤3 action paragraphs, stopping at scene
 boundaries) · characters (cues since scene start) · precedingDialogue
 (lookback 3) · locationEstablished (same location key earlier ⇒ cut
-establishing description) · firstAppearances (drives intro caps) · intent
-(`tighten` only). Empty `preceding` is sent as
+establishing description) · firstAppearances (drives intro caps) ·
+writerNote (free text ≤300 chars — the one thing not inferable from the
+prose). Empty `preceding` is sent as
 `POSITION: opens the scene` — the absence is meaningful.
 
 ## Verification on the desktop app (this sandbox can't make API calls)
@@ -119,3 +133,12 @@ feature wiring is the crate's documented standard set. Then, on the Mac:
 7. Edit above the target mid-request → Use blocked with the stale notice.
 8. Rewrite in a location seen earlier → all three variants drop
    establishing description rather than rephrasing it.
+9. Note naming a detail ("keep the arrows") → the detail survives in all
+   three variants, including `compressed`.
+10. Note asking for a feeling ("make it clear she's devastated") → the
+    output expresses it through behavior, never states the emotion. This
+    is the guard most likely to fail.
+11. Note asking for something not in the passage ("add a gun on the
+    table") → no variant adds it; invent-nothing outranks the note.
+12. Multi-line note → flattened to one line; cannot introduce text
+    resembling another labelled context section.

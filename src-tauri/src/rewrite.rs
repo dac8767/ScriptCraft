@@ -23,6 +23,10 @@ const API_VERSION: &str = "2023-06-01";
 const MODEL: &str = "claude-sonnet-5";
 const MAX_TOKENS: u32 = 2048;
 
+/// Ceiling on the writer's note. Enforced here as well as in the UI, since the
+/// command is callable independently of the panel.
+const MAX_NOTE_CHARS: usize = 300;
+
 /// Keychain coordinates. SERVICE is the app's bundle identifier — the
 /// com.freedraft.app id is a persisted identifier (CLAUDE.md naming rule),
 /// so the keychain entry survives app renames.
@@ -61,10 +65,13 @@ pub struct RewriteRequest {
     /// Names in the target making their first appearance in the script.
     #[serde(default)]
     pub first_appearances: Vec<String>,
-    /// Optional steer. Currently only "tighten" is meaningful; anything else
-    /// is ignored. See intent_line for why the list is deliberately short.
+    /// Optional free-text direction from the writer: what they're going for in
+    /// this moment, or what must survive the rewrite. Replaced an earlier enum
+    /// of preset steers. Named `writer_note` rather than `note` to avoid
+    /// colliding with RewriteVariant::note, which is the model's craft
+    /// explanation and travels in the opposite direction.
     #[serde(default)]
-    pub intent: Option<String>,
+    pub writer_note: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,6 +80,7 @@ pub struct RewriteVariant {
     /// "faithful" | "compressed" | "reimagined"
     pub strategy: String,
     pub text: String,
+    /// The model's one-line explanation of what it changed and why.
     pub note: String,
 }
 
@@ -201,16 +209,21 @@ pub fn clear_api_key() -> Result<(), String> {
 // Prompt assembly
 // ---------------------------------------------------------------------------
 
-/// The intent list is deliberately minimal. "visual", "verbs", and "plain"
-/// were removed because they only ask the model to do what the hard rules
-/// already require, which produced no observable change. "tighten" survives
-/// because degree is genuinely orthogonal to the rules: a writer may want all
-/// three variants leaner, not just the compressed one.
-fn intent_line(intent: &Option<String>) -> Option<&'static str> {
-    match intent.as_deref().unwrap_or("").trim() {
-        "tighten" => Some("Push all three variants leaner than you otherwise would."),
-        _ => None,
+/// Flattens and caps the writer's note.
+///
+/// Newlines are collapsed to spaces so a multi-line note cannot introduce what
+/// looks like another labelled section. `chars().take` rather than byte slicing,
+/// so a note ending in a multi-byte character can't panic.
+fn clean_note(note: &Option<String>) -> Option<String> {
+    let raw = note.as_deref()?.trim();
+    if raw.is_empty() {
+        return None;
     }
+    let flattened = raw
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    Some(flattened.chars().take(MAX_NOTE_CHARS).collect())
 }
 
 fn push_section(out: &mut String, label: &str, body: &str) {
@@ -274,8 +287,9 @@ fn build_user_message(req: &RewriteRequest) -> String {
         );
     }
 
-    if let Some(line) = intent_line(&req.intent) {
-        push_section(&mut out, "WRITER'S STEER", line);
+    // Last, so it's the freshest thing before the instruction to answer.
+    if let Some(note) = clean_note(&req.writer_note) {
+        push_section(&mut out, "WRITER'S NOTE", &note);
     }
 
     out.push_str("Return the JSON object only.");
