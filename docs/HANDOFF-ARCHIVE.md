@@ -151,9 +151,38 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.41 and older (newest first)
+## Version history — v5.42 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.42 — preview knobs, no phantom row, pinned ⋮, growing field, ONE Filter
+
+- Derek's 6 (mid-turn adds included): (1) `.markup-pop-preview` padding is
+  four Design knobs — --dz-anno-prev-pad-top/right/bottom/left (defs
+  8/0/0/0 = the CSS fallbacks; test-enforced). (2) the head-row SPACER is
+  gone; groups wrap inside `.markup-pop-head-main` (flex:1, wrap) so a
+  tight window drops the Highlight group with NO empty row between. (3)
+  the ⋮ left the title bar for the head row's right edge —
+  `.markup-head-dots` (margin-left auto) inside the NON-wrapping outer
+  head (`flex-wrap: nowrap`), so it is LOCKED to row 1; the v5.33
+  titlebar-dots dressing is dead CSS, removed. (4) the RESIZE GROWTH fix:
+  `.markup-mini-editor` had max-height 260 and no flex — now flex:1 (all
+  siblings flex-shrink:0, EditorContent→ProseMirror flex chain, cursor
+  text), so a taller window grows the FIELD (driver: 86→306px, 11px
+  under Save). (5) the panel's Script/Window buttons merged into ONE
+  "Filter" (`.markup-ctl-filter`, chip = both counts) whose dropdown
+  (`.markup-filter-combined`) holds TWO `TypeGridSection`s — "Show in
+  Script" (markupHiddenIcons/markupScriptDone) and "Show In Window"
+  (markupFilters). TypeGridSection is the extracted section body with
+  Derek's wording: "Status: " row + "Annotation Types: " grid, "Select
+  one"/"Toggle visibility…" texts deleted; TypeGridPop is now a portal
+  shell around one section (gridHelp prop gone — Navigator + ribbon
+  callers updated; AnnotationShowMenu/ribbon unchanged otherwise). (6)
+  View ▸ "Rulers" / "Scene Numbers" — "Show " prefix dropped.
+- check-v542: 18 green (dots seat/lock, spacer gone, genuine-tight wrap
+  via 6 probe combos — a 310px window with ONE combo legitimately fits,
+  the first run's lesson — field growth, knob-driven paddings, combined
+  Filter structure + per-section store writes, menu labels).
 
 ### v5.41 — previews, used order, compact draggable picker, ribbon fmt, move toast
 

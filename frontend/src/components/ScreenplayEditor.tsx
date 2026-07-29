@@ -149,6 +149,11 @@ const ScreenplayEditor: React.FC = () => {
   const navigate = useNavigate();
   const isHistoryMode = Boolean(urlCommitHash);
 
+  // v5.47, Derek: while the annotation EDIT window is open, the script shows
+  // annotations whatever the hide toggle says (an override, not a write —
+  // closing the window falls back to the chosen state untouched).
+  const markupEditOpen = useEditorStore((s) => s.markupEditorId != null);
+
   const {
     setActiveElement, setScenes, setPageCount, setCurrentPage,
     zoomLevel, setZoomLevel, fontFamily, fontSize, pageLayout, tagsVisible, notesVisible, markupsVisible,
@@ -4385,7 +4390,7 @@ const ScreenplayEditor: React.FC = () => {
                 }}
               >
                 <div
-                  className={`page${!tagsVisible || previewMode ? ' tags-hidden' : ''}${previewMode ? (previewOpts.notes ? '' : ' notes-hidden') : (!notesVisible ? ' notes-hidden' : '')}${isHistoryMode ? ' history-readonly' : ''}${previewMode ? (previewOpts.sceneNumbers ? ' show-scene-numbers' : '') : (sceneNumbersVisible ? ' show-scene-numbers' : '')}${previewMode ? (previewOpts.sections ? '' : ' hide-sections') : (!sectionsVisible ? ' hide-sections' : '')}${previewMode ? (previewOpts.sections ? '' : ' hide-markers') : (!markersVisible ? ' hide-markers' : '')}${previewMode ? (previewOpts.todos ? '' : ' hide-script-todos') : (!scriptTodosVisible ? ' hide-script-todos' : '')}${previewMode || !markupsVisible ? ' markups-hidden' : ''}${previewMode && previewOpts.doubleSpaceHeaders ? ' pv-hdr-double' : ''}${previewMode && !previewOpts.boldHeaders ? ' pv-hdr-plain' : ''}${previewMode && previewOpts.underlineHeaders ? ' pv-hdr-underline' : ''}`}
+                  className={`page${!tagsVisible || previewMode ? ' tags-hidden' : ''}${previewMode ? (previewOpts.notes ? '' : ' notes-hidden') : (!notesVisible ? ' notes-hidden' : '')}${isHistoryMode ? ' history-readonly' : ''}${previewMode ? (previewOpts.sceneNumbers ? ' show-scene-numbers' : '') : (sceneNumbersVisible ? ' show-scene-numbers' : '')}${previewMode ? (previewOpts.sections ? '' : ' hide-sections') : (!sectionsVisible ? ' hide-sections' : '')}${previewMode ? (previewOpts.sections ? '' : ' hide-markers') : (!markersVisible ? ' hide-markers' : '')}${previewMode ? (previewOpts.todos ? '' : ' hide-script-todos') : (!scriptTodosVisible ? ' hide-script-todos' : '')}${previewMode || (!markupsVisible && !markupEditOpen) ? ' markups-hidden' : ''}${previewMode && previewOpts.doubleSpaceHeaders ? ' pv-hdr-double' : ''}${previewMode && !previewOpts.boldHeaders ? ' pv-hdr-plain' : ''}${previewMode && previewOpts.underlineHeaders ? ' pv-hdr-underline' : ''}`}
                   ref={pageRef}
                   style={{
                     fontFamily: `'${fontFamily}', 'Courier New', Courier, monospace`,

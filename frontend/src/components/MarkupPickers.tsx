@@ -170,10 +170,8 @@ export function MarkupUsedRow({ markup }: { markup: ScriptMarkup }) {
   }, [markups, markup.icon, markup.color]);
   return (
     <>
-      <button
-        className={`markup-preset active${isDarkColor(markup.color) ? ' markup-light-chip' : ''}`}
-        title={`Current: ${iconLabel(markup.icon)}`}
-      ><MarkupIcon icon={markup.icon} color={markup.color} /></button>
+      {/* v5.47, Derek: the CURRENT combo IS the picker trigger — the +
+          button is gone; clicking the icon opens the icon/color window. */}
       <MarkupComboPicker markup={markup} />
       {others.length > 0 && <span className="markup-pop-grouplabel markup-used-label">Used:</span>}
       {others.map(({ icon, color }) => (
@@ -259,9 +257,12 @@ export function MarkupComboPicker({ markup }: { markup: ScriptMarkup }) {
 
   return (
     <>
-      <button ref={btnRef} className="markup-preset markup-combo-plus" title="All icons & colors" onClick={() => setOpen((v) => !v)}>
-        +
-      </button>
+      <button
+        ref={btnRef}
+        className={`markup-preset active markup-combo-current${isDarkColor(markup.color) ? ' markup-light-chip' : ''}`}
+        title={`${iconLabel(markup.icon)} — click for all icons & colors`}
+        onClick={() => setOpen((v) => !v)}
+      ><MarkupIcon icon={markup.icon} color={markup.color} /></button>
       {open && createPortal(
         <div ref={boxRef} className="markup-subpop markup-icon-pop" style={dragPos ?? pos ?? { top: -9999, left: -9999 }}
           onPointerDown={(e) => e.stopPropagation()}>

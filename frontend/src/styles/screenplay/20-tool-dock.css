@@ -577,7 +577,7 @@ body.fs-tool-dragging { cursor: grabbing; }
 }
 .tool-ctl-menu-item:hover { background: var(--fd-hover-bg); }
 .tool-ctl-menu-item.active { color: var(--fd-accent, #4a90d9); font-weight: 600; }
-.tool-ctl-search-btn { padding: 3px 6px; font-size: 13px; }
+.tool-ctl-search-btn, .fs-pages-goto-btn { padding: 3px 6px; font-size: 13px; }
 .tool-ctl-search-field {
   display: inline-flex;
   align-items: center;

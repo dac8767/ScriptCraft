@@ -34,6 +34,10 @@ export default function MarkupIconLayer({ editor, container }: {
   const pageLayout = useEditorStore((s) => s.pageLayout);
   const iconScalePct = useEditorStore((s) => s.markupIconScalePct);
   const setMarkupEditorId = useEditorStore((s) => s.setMarkupEditorId);
+  // v5.47, Derek: while the edit window is open, EVERY annotation shows on
+  // the script — the layer toggle and the type/status filters stand down;
+  // closing the window reverts to the chosen state (nothing is written).
+  const editOpen = useEditorStore((s) => s.markupEditorId != null);
   const [spots, setSpots] = useState<IconSpot[]>([]);
   const [tick, setTick] = useState(0);
   // v5.27: Design ▸ Annotations drives the on-script icon size.
@@ -51,18 +55,18 @@ export default function MarkupIconLayer({ editor, container }: {
   // STATUS (the Show popover's Open/Complete/All row, v5.27). Runs even
   // while the whole layer is off (spans always exist in the doc).
   const scriptFiltered = (m: { icon: string; done: boolean }) =>
-    markupHiddenIcons.includes(m.icon)
-    || (markupScriptDone !== 'all' && (markupScriptDone === 'done') !== m.done);
+    !editOpen && (markupHiddenIcons.includes(m.icon)
+      || (markupScriptDone !== 'all' && (markupScriptDone === 'done') !== m.done));
   useEffect(() => {
     for (const m of markups) {
       const spans = document.querySelectorAll(`.script-markup-highlight[data-markup-id="${CSS.escape(m.id)}"]`);
       spans.forEach((el) => el.classList.toggle('markup-type-hidden', scriptFiltered(m)));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [markups, markupHiddenIcons, markupScriptDone, tick]);
+  }, [markups, markupHiddenIcons, markupScriptDone, editOpen, tick]);
 
   useEffect(() => {
-    if (!editor || !container || !markupsVisible || previewMode) { setSpots([]); return; }
+    if (!editor || !container || (!markupsVisible && !editOpen) || previewMode) { setSpots([]); return; }
     const crect = container.getBoundingClientRect();
     const page = container.querySelector('.page');
     const prect = page?.getBoundingClientRect();
@@ -109,9 +113,9 @@ export default function MarkupIconLayer({ editor, container }: {
     }
     setSpots(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, container, markups, markupsVisible, markupHiddenIcons, markupScriptDone, previewMode, pageLayout, iconPx, tick]);
+  }, [editor, container, markups, markupsVisible, markupHiddenIcons, markupScriptDone, editOpen, previewMode, pageLayout, iconPx, tick]);
 
-  if (!markupsVisible || previewMode) return null;
+  if ((!markupsVisible && !editOpen) || previewMode) return null;
   return (
     <>
       {spots.map((s) => (

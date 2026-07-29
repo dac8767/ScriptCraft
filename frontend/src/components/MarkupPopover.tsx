@@ -533,7 +533,7 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
                 re-anchored to the element as a cursor-made one. */}
             <button
               className="markup-hl-eye markup-hl-del"
-              title="Delete highlight (the annotation stays)"
+              title="Remove highlight from script"
               onClick={() => { if (editor) convertMarkupToPoint(editor, id); }}
             >
               <FaRegTrashAlt />

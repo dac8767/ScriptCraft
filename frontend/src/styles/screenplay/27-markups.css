@@ -143,7 +143,7 @@
    .markup-head-dots above; the title-bar dressing is gone with it.) */
 
 /* v5.31: the inline Used row's + and the combined picker's color section */
-.markup-combo-plus { font-weight: 700; font-size: 14px; background: rgba(0, 0, 0, 0.06); }
+/* (v5.47: the + trigger is gone — the current combo opens the picker.) */
 /* v5.32, Derek: the ACTIVE icon must be unmistakable — a thick accent ring */
 .markup-pop-icon-group .markup-preset.active {
   border-width: 2px;
@@ -593,8 +593,8 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
 }
 .markup-mini-editor .ProseMirror ul[data-type='taskList'] li > label { flex-shrink: 0; }
 .markup-mini-editor .ProseMirror ul[data-type='taskList'] li > div { flex: 1; }
+/* v5.47, Derek: NO strikethrough on checked items — the dim alone says done. */
 .markup-mini-editor .ProseMirror ul[data-type='taskList'] li[data-checked='true'] > div {
-  text-decoration: line-through;
   opacity: 0.55;
 }
 

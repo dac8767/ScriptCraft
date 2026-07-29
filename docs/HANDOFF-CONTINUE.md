@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.46 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.47 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,64 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.46 — nav Filter=annotations, Design independent window, edge resize everywhere, live checklist, working inserts (HEAD)
+### v5.47 — # goto in header, stacked stepper, Design DOCKS BACK, notes checklist fixes, edit-window force-show (HEAD)
+
+- Derek's 10 (seven mid-turn messages; the sandbox ALSO rolled back a
+  THIRD time at turn start — reset + npm install + Vite restart, the
+  standing recovery):
+  (1) GO TO PAGE → the window HEADER: PagesControls gains a bare
+  `#` button (`.fs-pages-goto-btn`, FaHashtag, shares the
+  .tool-ctl-search-btn sizing rule) LEFT of the search; its pop asks
+  "Go to page #:". The jump crosses components via
+  sceneNavSlice.pagesGotoRequest (chrome REQUESTS, the body — owner of
+  the grid ref + editor — performs and clears; the slice's own
+  chrome/body precedent). The body row's goto form + gotoPage state are
+  gone.
+  (2) STEPPER: `.fs-updown` — Up stacked on Down, LEFT of the number
+  (− / + retired; CircleMinus/PlusIcon imports dropped here — the
+  Scenes cards stepper keeps its own).
+  (3) DESIGN DOCKS BACK (Derek: "i can no longer add the design window
+  back into the side panel" — the v5.46 hole): the independent window's
+  header drag got the v4.39 drop-on-panel gesture (zones + drop-target
+  highlight + dockInto: setToolConfig side, setToolMode 'docked',
+  designPanelOpen false, openTool). openTool('design') honors an
+  EXPLICIT docked home (cfg.enabled && toolMode.design==='docked' →
+  falls through to the docked-slot branch), else independent window.
+  migrateDesignToolMode (editorStore, viewState.designModeReset flag)
+  strips a LEGACY pre-v5.46 'docked' ONCE so upgrades don't resurrect
+  the slot-stealing v5.46 removed. The dock-row drag-out for design
+  hands back to the independent window (mode 'floating', closeTool +
+  openTool), never the old slot-float frame.
+  (4) NOTES CHECKLIST CARET: `.swn-note-editor` task rows lacked the
+  annotation editor's `li > div { flex: 1 }` — the empty text div was
+  ZERO-width, so clicks beside the box missed the editable area. Fixed
+  (+ label flex-shrink 0).
+  (5) NOTES HELPER TEXT gone: the Placeholder extension removed from
+  StickyCard's NoteBody (+ its CSS); the title field's placeholder
+  stays.
+  (6) NO STRIKETHROUGH on checked items — Notes AND annotation editor
+  (line-through dropped, the dim color/opacity kept).
+  (7) ICON ROW: MarkupUsedRow's separate current-swatch + `+` trigger
+  merged — MarkupComboPicker's trigger IS the current combo
+  (`.markup-combo-current`); .markup-combo-plus CSS retired.
+  (8) EDIT-WINDOW FORCE-SHOW: while markupEditorId != null the script
+  shows ALL annotations — an OVERRIDE, never a write: the page's
+  `markups-hidden` class condition, MarkupIconLayer's layer gates AND
+  its scriptFiltered() all stand down while open; closing reverts to
+  the stored preference untouched.
+  (9) tooltip: "Delete highlight (the annotation stays)" → "Remove
+  highlight from script". (10) (batch hygiene: mixed-escape MenuBar-
+  style edits again needed python splices; .swn mini bar is
+  :focus-within-gated — the driver must click INTO the field first.)
+- check-v547: 21 green (bare # left of search, pop label, jump from
+  pos 1 → page 2 + request cleared, stacked geometry + left-of-count +
+  − / + gone, up/down 3→4→3, window-drop docks + row click honors home
+  + row drag-out returns to the window, no [data-placeholder], div
+  fills row + caret lands beside the box, no strikethrough ×2,
+  force-show with toggle off + revert on close, new tooltip, + gone /
+  current combo opens picker).
+
+### v5.46 — nav Filter=annotations, Design independent window, edge resize everywhere, live checklist, working inserts
 
 - Derek's 9 (six mid-turn messages, one batch):
   (1) NAVIGATOR FILTER: NavigatorControls' kind-toggle ControlDropdown is
@@ -361,40 +418,12 @@ Durable bits kept live here:
   reads race the render, the first run's lesson — no-op outside the
   script area, no Return-to-Editor button with the Scrapbook open).
 
-### v5.42 — preview knobs, no phantom row, pinned ⋮, growing field, ONE Filter
-
-- Derek's 6 (mid-turn adds included): (1) `.markup-pop-preview` padding is
-  four Design knobs — --dz-anno-prev-pad-top/right/bottom/left (defs
-  8/0/0/0 = the CSS fallbacks; test-enforced). (2) the head-row SPACER is
-  gone; groups wrap inside `.markup-pop-head-main` (flex:1, wrap) so a
-  tight window drops the Highlight group with NO empty row between. (3)
-  the ⋮ left the title bar for the head row's right edge —
-  `.markup-head-dots` (margin-left auto) inside the NON-wrapping outer
-  head (`flex-wrap: nowrap`), so it is LOCKED to row 1; the v5.33
-  titlebar-dots dressing is dead CSS, removed. (4) the RESIZE GROWTH fix:
-  `.markup-mini-editor` had max-height 260 and no flex — now flex:1 (all
-  siblings flex-shrink:0, EditorContent→ProseMirror flex chain, cursor
-  text), so a taller window grows the FIELD (driver: 86→306px, 11px
-  under Save). (5) the panel's Script/Window buttons merged into ONE
-  "Filter" (`.markup-ctl-filter`, chip = both counts) whose dropdown
-  (`.markup-filter-combined`) holds TWO `TypeGridSection`s — "Show in
-  Script" (markupHiddenIcons/markupScriptDone) and "Show In Window"
-  (markupFilters). TypeGridSection is the extracted section body with
-  Derek's wording: "Status: " row + "Annotation Types: " grid, "Select
-  one"/"Toggle visibility…" texts deleted; TypeGridPop is now a portal
-  shell around one section (gridHelp prop gone — Navigator + ribbon
-  callers updated; AnnotationShowMenu/ribbon unchanged otherwise). (6)
-  View ▸ "Rulers" / "Scene Numbers" — "Show " prefix dropped.
-- check-v542: 18 green (dots seat/lock, spacer gone, genuine-tight wrap
-  via 6 probe combos — a 310px window with ONE combo legitimately fits,
-  the first run's lesson — field growth, knob-driven paddings, combined
-  Filter structure + per-section store writes, menu labels).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.42** — annotation preview padding knobs, no phantom row, pinned ⋮, growing field, two-section Filter (reversed in v5.43)
 - **v5.41** — annotation previews ×2, Used order, compact draggable picker, ribbon formatting drives the mini, move toast
 - **v5.40** — CUSTOM PAGES: the customPage node/keymap, unnumbered pagination breaks, export exclusion
 - **v5.39** — Title Page hand-grabber pan (per-column scrolling made the preview pannable)

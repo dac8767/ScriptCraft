@@ -233,15 +233,54 @@ export default function DesignPanel() {
   }, [open, pos.x, size.w]);
 
   useEffect(() => {
+    // v5.47, Derek ("i can no longer add the design window back into the
+    // side panel"): the v4.39 gesture works on THIS window too — while it
+    // drags, hovering a side panel marks the drop target; releasing there
+    // docks Design (writes toolMode 'docked', which the row click honors
+    // until the row is dragged back out).
+    let over: { side: 'left' | 'right'; el: HTMLElement } | null = null;
+    const zones = () => (['left', 'right'] as const).flatMap((s) => {
+      if (useEditorStore.getState().panelSizeMode[s] === 'icons') return [];
+      const el = document.querySelector<HTMLElement>(`.tool-dock-wrap.tool-dock-${s} .tool-dock`);
+      return el ? [{ side: s, el }] : [];
+    });
+    const dockInto = (side: 'left' | 'right') => {
+      const st = useEditorStore.getState();
+      const cfg = st.toolConfig.design;
+      if (!cfg?.enabled || cfg.side !== side) {
+        st.setToolConfig({ ...st.toolConfig, design: { side, enabled: true } });
+      }
+      st.setToolMode('design', 'docked');
+      st.setDesignPanelOpen(false);
+      st.openTool('design');   // routes to the docked slot now
+    };
     const move = (e: PointerEvent) => {
       if (drag.current) {
         setPos({
           x: Math.min(window.innerWidth - 80, Math.max(0, e.clientX - drag.current.dx)),
           y: Math.min(window.innerHeight - 40, Math.max(0, e.clientY - drag.current.dy)),
         });
+        const hit = zones().find(({ el }) => {
+          const r = el.getBoundingClientRect();
+          return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+        }) ?? null;
+        if ((hit?.el ?? null) !== (over?.el ?? null)) {
+          over?.el.classList.remove('tool-dock-drop-target');
+          hit?.el.classList.add('tool-dock-drop-target');
+          over = hit;
+        }
       }
     };
-    const up = () => { drag.current = null; };
+    const up = () => {
+      const dropped = drag.current && over;
+      drag.current = null;
+      if (over) {
+        const side = over.side;
+        over.el.classList.remove('tool-dock-drop-target');
+        over = null;
+        if (dropped) dockInto(side);
+      }
+    };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
     return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };

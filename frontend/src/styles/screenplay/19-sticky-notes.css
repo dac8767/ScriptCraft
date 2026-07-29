@@ -311,20 +311,18 @@
   gap: 6px;
   align-items: baseline;
 }
+/* v5.47, Derek: the box fills its row (clicking beside the checkbox lands
+   IN the editable text, so the caret shows) — the same flex the annotation
+   editor's task rows use. */
+.swn-note-editor .ProseMirror ul[data-type='taskList'] li > label { flex-shrink: 0; }
+.swn-note-editor .ProseMirror ul[data-type='taskList'] li > div { flex: 1; }
+/* v5.47, Derek: NO strikethrough on checked items — the dim alone says done. */
 .swn-note-editor .ProseMirror ul[data-type='taskList'] li[data-checked='true'] > div {
-  text-decoration: line-through;
   color: #8a8a7a;
 }
 .swn-note-editor .ProseMirror a { color: #1a6ac0; }
 .swn-note-editor .ProseMirror img { max-width: 100%; border-radius: 4px; }
-/* the TipTap placeholder (empty first node) — matches the old textarea's */
-.swn-note-editor .ProseMirror p.is-editor-empty:first-child::before {
-  content: attr(data-placeholder);
-  color: #999;
-  float: left;
-  height: 0;
-  pointer-events: none;
-}
+/* (v5.47: the placeholder helper text is gone — Derek's call.) */
 
 .swn-snippet {
   background: rgba(255, 255, 255, 0.55);

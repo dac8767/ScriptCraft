@@ -609,6 +609,24 @@ function closeOtherFloats(s: Pick<EditorState, 'tempTool' | 'activeTool' | 'acti
  *  Persisted layouts — viewState and workspace snapshots — may still carry
  *  the retired ids; map them onto the merged tools without duplicating.
  *  (toolOrder also carries 'div:<id>' divider tokens; they pass through.) */
+/** v5.47: v5.46 made the independent window Design's home, but a pre-v5.46
+ *  session left toolMode.design='docked' behind — which would put the row
+ *  click straight back on the slot path and resurrect exactly what v5.46
+ *  removed. Strip it ONCE (flagged in viewState); docking Design again via
+ *  the drop gesture writes it fresh, and that one is honored. */
+export function migrateDesignToolMode(
+  mode: Record<string, 'docked' | 'floating' | 'fullscreen'>,
+): Record<string, 'docked' | 'floating' | 'fullscreen'> {
+  if (_vs.designModeReset) return mode;
+  if (!('design' in mode)) {
+    saveViewState({ designModeReset: true });
+    return mode;
+  }
+  const { design: _legacy, ...rest } = mode;
+  saveViewState({ designModeReset: true, toolMode: rest });
+  return rest;
+}
+
 const RETIRED_TOOL_IDS: Record<string, string> = { indexcards: 'scenes', todo: 'sticky' };
 export function migrateToolOrder(order: string[]): string[] {
   const out: string[] = [];
@@ -1491,10 +1509,12 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   }),
   // First run after v4.52 derives each tool's home from the stored width the
   // retired rule used to read, so every window keeps its current home.
-  toolMode: (_vs.toolMode as Record<string, 'docked' | 'floating' | 'fullscreen'>) ?? Object.fromEntries(
-    Object.entries((_vs.toolSizes ?? {}) as Record<string, { w: number }>)
-      .filter(([, sz]) => sz && sz.w > 300)
-      .map(([id]) => [id, 'floating' as const]),
+  toolMode: migrateDesignToolMode(
+    (_vs.toolMode as Record<string, 'docked' | 'floating' | 'fullscreen'>) ?? Object.fromEntries(
+      Object.entries((_vs.toolSizes ?? {}) as Record<string, { w: number }>)
+        .filter(([, sz]) => sz && sz.w > 300)
+        .map(([id]) => [id, 'floating' as const]),
+    ),
   ),
   setToolMode: (tool, mode) => set((s) => {
     // v5.30: panel-locked tools have ONE shape — docked (Derek: "lock the
@@ -1687,14 +1707,20 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
       tool = 'sticky';
     }
     // v5.46, Derek: "clicking the design tool should not close any windows."
-    // Design is the tweak-ALONGSIDE tool — every door opens its OWN
-    // independent window (designPanelOpen, rendered outside the slot
-    // machinery), never a panel/temp slot. Opening it disturbs nothing,
-    // and nothing that opens later can steal its slot — it has none.
-    // (closeOtherFloats' v5.32 exemption covered the one-float rule, but a
-    // slot-float still DIED when another tool took the slot — the probe
-    // showed Design docked also collapsed the panel neighbor.)
-    if (tool === 'design') return { designPanelOpen: true };
+    // Design is the tweak-ALONGSIDE tool — its home is its OWN independent
+    // window (designPanelOpen, rendered outside the slot machinery), so
+    // opening it disturbs nothing and nothing can steal its seat.
+    // v5.47, Derek ("i can no longer add the design window back into the
+    // side panel"): an EXPLICIT dock — the window dropped on a panel, the
+    // v4.39 gesture, now wired on the independent window too — writes
+    // toolMode.design='docked' and IS honored: fall through to the normal
+    // docked open (v4.84's rule: opening READS the mode, gestures write
+    // it). Legacy pre-v5.46 'docked' values are stripped once at init
+    // (migrateDesignToolMode), so only a real dock gesture lands here.
+    if (tool === 'design') {
+      const dCfg = toolConfigFor(s.toolConfig, 'design');
+      if (!(dCfg.enabled && s.toolMode.design === 'docked')) return { designPanelOpen: true };
+    }
     // v4.37, Derek: "I should not be able to have a window open twice." If the
     // tool already owns the fullscreen takeover it IS open — opening it again
     // is satisfied by the takeover, exactly as re-opening an already-docked

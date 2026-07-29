@@ -4,7 +4,6 @@ import { Editor } from '@tiptap/react';
 import { useEditorStore, EMPTY_SCENE_FILTERS, type SceneFilters } from '../stores/editorStore';
 import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlice';
 import { PAGES_PER_ROW_MIN, PAGES_PER_ROW_MAX } from '../stores/slices/sceneNavSlice';
-import { CircleMinusIcon, CirclePlusIcon } from './uiIcons';
 import { computeSceneLengths, computePageBlocks, type PageContentInfo } from '../editor/pagination';
 import {
   insertCustomPage, insertCustomPageAt, moveCustomPage, deleteCustomPage,
@@ -19,7 +18,7 @@ import { useSceneReorder } from '../utils/useSceneReorder';
 import { ControlDropdown, ControlSearch } from './ToolControls';
 import { SceneReorderBar } from './IndexCards';
 import { LuLayoutGrid, LuList } from 'react-icons/lu';
-import { FaChevronRight, FaChevronDown, FaEllipsisV } from 'react-icons/fa';
+import { FaChevronRight, FaChevronDown, FaChevronUp, FaEllipsisV, FaHashtag } from 'react-icons/fa';
 
 interface SceneNavigatorProps {
   editor: Editor | null;
@@ -720,7 +719,10 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   // ── Handle page thumbnail click ──
 
   const setPagesPerRow = useEditorStore((s) => s.setPagesPerRow);
-  const [gotoPage, setGotoPage] = useState('');
+  // v5.47: the header's # pop REQUESTS the jump (pagesGotoRequest); this
+  // body — owner of the grid ref and the editor — performs and clears it.
+  const gotoReq = useEditorStore((s) => s.pagesGotoRequest);
+  const setGotoReq = useEditorStore((s) => s.setPagesGotoRequest);
   /** v5.01: jump to a typed page — scroll its thumbnail into view and take the
    *  script to the page's first block, which is what clicking it does. A
    *  number that isn't a page is left in the field rather than silently
@@ -737,6 +739,12 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     const first = page.blocks[0];
     if (first) goToPosition(first.docPos);
   }, [pageContent, goToPosition]);
+
+  useEffect(() => {
+    if (gotoReq == null || activeTab !== 'pages') return;
+    goToPageNumber(String(gotoReq));
+    setGotoReq(null);
+  }, [gotoReq, activeTab, goToPageNumber, setGotoReq]);
 
   const handlePageClick = useCallback(
     (page: PageContentInfo, e: React.MouseEvent<HTMLDivElement>) => {
@@ -1059,36 +1067,26 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
             onClick={() => { setAddAfterMode(false); setAfterPageNum(''); setAddPageOpen((v) => !v); }}
           >+ Add Page</button>
           <span className="fs-pages-right">
-            <form
-              className="tool-action-group"
-              onSubmit={(e) => { e.preventDefault(); goToPageNumber(gotoPage); }}
-            >
-              <label className="tool-action-label" htmlFor="fs-pages-goto">Go to page:</label>
-              <input
-                id="fs-pages-goto"
-                className="tool-action-field"
-                type="text"
-                inputMode="numeric"
-                value={gotoPage}
-                onChange={(e) => setGotoPage(e.target.value.replace(/[^0-9]/g, ''))}
-                onBlur={() => goToPageNumber(gotoPage)}
-              />
-            </form>
+            {/* v5.47, Derek: Go to page moved to the window header (the #
+                button); the stepper's − / + became a stacked Up/Down pair
+                LEFT of the number. */}
             <span className="tool-action-group">
               <span className="tool-action-label" id="fs-pages-perrow-label">Pages per row:</span>
-              <button
-                className="tool-action-btn tool-action-icon"
-                title="Fewer pages per row (bigger pages)"
-                disabled={pagesPerRow <= pagesPerRowMin}
-                onClick={() => setPagesPerRow(pagesPerRow - 1)}
-              ><CircleMinusIcon /></button>
+              <span className="fs-updown">
+                <button
+                  className="fs-updown-btn"
+                  title="More pages per row (smaller pages)"
+                  disabled={pagesPerRow >= PAGES_PER_ROW_MAX}
+                  onClick={() => setPagesPerRow(pagesPerRow + 1)}
+                ><FaChevronUp /></button>
+                <button
+                  className="fs-updown-btn"
+                  title="Fewer pages per row (bigger pages)"
+                  disabled={pagesPerRow <= pagesPerRowMin}
+                  onClick={() => setPagesPerRow(pagesPerRow - 1)}
+                ><FaChevronDown /></button>
+              </span>
               <span className="tool-action-count" aria-labelledby="fs-pages-perrow-label">{pagesPerRow}</span>
-              <button
-                className="tool-action-btn tool-action-icon"
-                title="More pages per row (smaller pages)"
-                disabled={pagesPerRow >= PAGES_PER_ROW_MAX}
-                onClick={() => setPagesPerRow(pagesPerRow + 1)}
-              ><CirclePlusIcon /></button>
             </span>
           </span>
         </div>
@@ -1505,11 +1503,58 @@ export function LocationsControls() {
 export function PagesControls() {
   const search = useEditorStore((s) => s.pagesSearch);
   const setSearch = useEditorStore((s) => s.setPagesSearch);
+  // v5.47, Derek: Go to page lives in the HEADER now — a bare # button left
+  // of the search opens the "Go to page #" pop. The jump itself runs in the
+  // body (it owns the grid ref and the editor) via pagesGotoRequest.
+  const setGotoReq = useEditorStore((s) => s.setPagesGotoRequest);
+  const [open, setOpen] = useState(false);
+  const [num, setNum] = useState('');
+  const btn = useRef<HTMLButtonElement>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const seatPos = useSeat(open, btn, box);
+  useDismiss(open, box, btn, () => setOpen(false));
+  const submit = () => {
+    const n = parseInt(num, 10);
+    if (Number.isFinite(n)) setGotoReq(n);
+    setOpen(false);
+    setNum('');
+  };
   return (
-    /* v5.01, Derek: the zoom pair LEFT this header for the body's first row
-       (PagesActionRow) — a tool's own actions belong to its body. Search is
-       shared chrome, so it stays. */
-    <ControlSearch value={search} onChange={setSearch} placeholder="Search pages…" />
+    <>
+      <button
+        ref={btn}
+        className="tool-ctl fs-pages-goto-btn"
+        title="Go to page"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); setNum(''); setOpen((v) => !v); }}
+      >
+        <FaHashtag aria-hidden />
+      </button>
+      {open && createPortal(
+        <div
+          ref={box}
+          className="fs-pages-pop"
+          style={seatPos ?? { top: -9999, left: -9999 }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <form className="fs-pages-pop-form" onSubmit={(e) => { e.preventDefault(); submit(); }}>
+            <label className="tool-action-label" htmlFor="fs-pages-goto">Go to page #:</label>
+            <input
+              id="fs-pages-goto"
+              className="tool-action-field"
+              type="text"
+              inputMode="numeric"
+              autoFocus
+              value={num}
+              onChange={(e) => setNum(e.target.value.replace(/[^0-9]/g, ''))}
+            />
+            <button type="submit" className="dialog-btn dialog-btn-primary">Go</button>
+          </form>
+        </div>,
+        document.body,
+      )}
+      <ControlSearch value={search} onChange={setSearch} placeholder="Search pages…" />
+    </>
   );
 }
 

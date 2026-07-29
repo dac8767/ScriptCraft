@@ -1,5 +1,18 @@
 [
   {
+    "version": "5.47",
+    "date": "2026-07-29",
+    "changes": [
+      "Pages tool: Go to page moved into the window header as a bare # button (left of the search icon) — clicking it opens the \"Go to page #\" window",
+      "Pages tool: the per-row − / + buttons are a stacked Up/Down pair now, sitting LEFT of the number",
+      "Design docks again — drop its window on a side panel and it docks there (v5.46 made it an independent window and lost the way back); the row click then honors the docked home until you drag the row back out",
+      "Notes: clicking beside a checklist box lands the cursor in the text (the text area now fills the row), and the helper text is gone from the note field",
+      "Checked checklist items show NO strikethrough anymore — Notes and annotations both (the dimming stays)",
+      "Annotation window: the + beside the icon is gone — clicking the current icon opens the icon/color picker; the highlight delete tooltip reads \"Remove highlight from script\"",
+      "While the annotation edit window is open, ALL annotations show on the script (whatever Hide Annotations says); closing it reverts to your chosen state"
+    ]
+  },
+  {
     "version": "5.46",
     "date": "2026-07-29",
     "changes": [

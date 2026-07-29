@@ -900,6 +900,26 @@
   gap: var(--dz-pages-ctl-gap, 10px);
 }
 
+/* v5.47, Derek: the per-row stepper is a stacked Up/Down pair LEFT of the
+   number (replacing − / +; his screenshot). Up = more pages per row. */
+.fs-updown { display: inline-flex; flex-direction: column; gap: 2px; }
+.fs-updown-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 13px;
+  padding: 0;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: none;
+  color: var(--fd-text);
+  font-size: 8px;
+  cursor: pointer;
+}
+.fs-updown-btn:hover:not(:disabled) { background: var(--fd-toolbar-hover); }
+.fs-updown-btn:disabled { opacity: 0.35; cursor: default; }
+
 /* The ⋮ on a custom page's thumbnail (top-right, over the paper). */
 .page-thumb-kebab {
   position: absolute;

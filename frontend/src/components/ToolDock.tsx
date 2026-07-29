@@ -921,6 +921,15 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
         // v5.41, Derek: a shape-limited tool announces the limit AT the
         // attempt — the drag lands, the toast explains, nothing moves.
         if (SHAPE_NOTES[t.id]) { showToast(SHAPE_NOTES[t.id]!); return; }
+        // v5.47: dragging Design out of the panel hands it back to its
+        // INDEPENDENT window (mode 'floating' routes every open there).
+        if (t.id === 'design') {
+          setToolMode(t.id, 'floating');
+          const st = useEditorStore.getState();
+          st.closeTool('design');
+          st.openTool('design');
+          return;
+        }
         setToolMode(t.id, 'floating');
         setToolSize(t.id, dockW + 140, h);
         // v4.78, Derek: a CLOSED row drags out too — floating means open.

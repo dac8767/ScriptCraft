@@ -41,6 +41,11 @@ export interface SceneNavSlice {
    *  chrome, the thumbnails in the body. */
   pagesSearch: string;
   setPagesSearch: (v: string) => void;
+  /** v5.47, Derek: Go to page moved into the window CHROME (the # button's
+   *  pop). The chrome REQUESTS the jump here; the Pages body — which owns
+   *  the grid ref and the editor — performs it and clears the request. */
+  pagesGotoRequest: number | null;
+  setPagesGotoRequest: (n: number | null) => void;
   /** v5.08, Derek: the preview scale is stated as what it MEANS — how many
    *  pages sit on a row — stepped with buttons, never typed. Replaces the
    *  v4.94 pagesThumbPx column-width model. */
@@ -101,6 +106,8 @@ export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlic
   setLocationSort: (v) => set({ locationSort: v }),
   pagesSearch: '',
   setPagesSearch: (v) => set({ pagesSearch: v }),
+  pagesGotoRequest: null,
+  setPagesGotoRequest: (n) => set({ pagesGotoRequest: n }),
   pagesPerRow: PAGES_PER_ROW_DEFAULT,
   // Clamped HERE, not at the buttons, so no caller can push it out of range.
   setPagesPerRow: (v) => set({ pagesPerRow: Math.min(PAGES_PER_ROW_MAX, Math.max(PAGES_PER_ROW_MIN, Math.round(v))) }),

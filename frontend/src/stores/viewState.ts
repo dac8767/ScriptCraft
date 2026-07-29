@@ -118,6 +118,9 @@ export interface ViewState {
   /** v4.52: EXPLICIT docked/floating per tool — replaces the width<=dock rule. */
   /** v4.81: 'fullscreen' joined — a tool reopens in its last-used shape. */
   toolMode?: Record<string, 'docked' | 'floating' | 'fullscreen'>;
+  /** v5.47: one-time strip of a pre-v5.46 toolMode.design='docked' (see
+   *  migrateDesignToolMode) — set after it has run once. */
+  designModeReset?: boolean;
   writingGoal?: WritingGoal | null;
   goalsCompleted?: number;
   characterProfilesOpen?: boolean;

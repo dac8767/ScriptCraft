@@ -24,7 +24,6 @@ import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
-import Placeholder from '@tiptap/extension-placeholder';
 import { FaCopy, FaRegTrashAlt, FaBold, FaItalic, FaListUl, FaListOl, FaCheckSquare, FaLink, FaRegImage } from 'react-icons/fa';
 import type { ShelfCard, ShelfCardType } from '../stores/editorStore';
 import { SHELF_COLORS, SHELF_DEFAULT_COLOR, useEditorStore } from '../stores/editorStore';
@@ -139,7 +138,7 @@ function NoteBody({ card, onUpdate }: { card: ShelfCard; onUpdate: (p: Partial<S
       Image,
       TaskList,
       TaskItem.configure({ nested: false }),
-      Placeholder.configure({ placeholder: 'Research links, themes to keep present, notes to self…' }),
+      // v5.47, Derek: no helper text in the field — the placeholder is gone.
     ],
     content: (card.content as never) ?? (legacyDoc as never),
     onUpdate: ({ editor }) => onUpdate({ content: editor.getJSON(), text: editor.getText().trim() }),
