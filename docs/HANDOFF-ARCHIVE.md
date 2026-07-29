@@ -155,6 +155,39 @@ reliable; re-run before believing a weird worker failure.
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
 
+### v5.51 — ribbon legacy-inserts retired, Filter right, pick BANNER, Navigator View menu
+
+- Derek's 4 (mid-turn, after the v5.50 ship):
+  (1) RIBBON RETIREMENT (phase 2's leading edge): Insert Section /
+  Insert Note / Add To-Do List (builtins) + Insert Marker (command)
+  removed — TOOLBAR_BUILTINS entries, Toolbar render cases,
+  DEFAULT_TOOLBAR_LEFT tokens (and the orphaned r:def-3 rail),
+  LEGACY_GROUP_ITEMS.insert → [], the insertMarker command +
+  INSERT_CMDS palette slot. migrateDropLegacyInserts (toolbarBuiltins,
+  the v3.25 shed pattern, flag 'opendraft:toolbarDropLegacyInserts551')
+  strips saved layouts ONCE, both zones, 2!-flag-blind. The Insert MENU
+  entries remain until phase 2 proper.
+  (2) Annotations panel Filter: tool-ctl-lead dropped → rides right,
+  just left of Search.
+  (3) The PICK BANNER replaced the pick toast: a strip pinned above the
+  scroll area — editor-center column child; .editor-main is a flex ROW,
+  so a child there lands BESIDE the page (the first driver run caught
+  the pill far-left) — pill centered, 15px, persistent until a
+  selection lands; Escape cancels (the v5.48 listener).
+  (4) NAVIGATOR VIEW MENU: the Scene # button became a ControlDropdown
+  "View" with keep-open toggles — Scene Numbers (navShowSceneNumbers),
+  Annotations, Scene Headings (navShowKinds.markup/.scene; missing =
+  shown; the body honors JUST these two kinds again). Toggle handlers
+  read the store AT CLICK TIME — two same-tick clicks through render
+  closures clobbered each other (the driver caught it).
+- check-v551: 11 green (fresh ribbon clean, persisted-layout shed with
+  flag + undo kept, Filter gap 3px, banner top-center 15px persistent,
+  Esc cancels, pick places + clears, Scene # gone, three menu items,
+  scene rows 4→0, anno rows 1→0, both restored).
+- QUEUED NEXT: the PAGES WINDOW TABS restructure (Script / Title Page /
+  Custom; the separate Title Page tool leaves the side panels) — the
+  batch opener for the next run.
+
 ### v5.50 — hide-ribbon CRASH fix, shared PerRowStepper, no-flash Design seat, Scrapbook auto-dock
 
 - Derek's 6 (five mid-turn messages, one CRASH report):

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.55 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.56 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -204,7 +204,22 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.55 — npm run desktop self-heals the Cargo.lock pull collision (HEAD)
+### v5.56 — Action Rewrite prompt: Derek's no-em-dash rule (HEAD)
+
+- Derek confirmed the API path works on his Mac, then: "add a rule to the
+  suggestions: Dont use em dash". Hard rule 13 added to
+  src-tauri/prompts/action_line_rewrite.md (variant text never contains
+  an em dash; break the sentence or use comma/colon/ellipsis). This is
+  the SANCTIONED kind of prompt edit — Derek asking is exactly the
+  condition the design handoff set; keep honoring that rule.
+- Mechanics to remember: the prompt is include_str!'d, so a prompt edit
+  is a RUST change — cargo check here, quick incremental rebuild on his
+  next launch, and the prompt cache re-writes once (pennies). The
+  screenplay interruption dash (--) is deliberately untouched; ban it
+  too only if Derek asks. No output post-processing was added — the
+  prompt is the enforcement point; revisit only if he reports leaks.
+
+### v5.55 — npm run desktop self-heals the Cargo.lock pull collision
 
 - Derek's launch failed live: `git pull` aborted with "Your local changes
   to src-tauri/Cargo.lock would be overwritten by merge". Cause: his
@@ -382,44 +397,12 @@ Durable bits kept live here:
   Custom; the separate Title Page tool leaves the side panels) — the
   batch opener for the next run.
 
-### v5.51 — ribbon legacy-inserts retired, Filter right, pick BANNER, Navigator View menu
-
-- Derek's 4 (mid-turn, after the v5.50 ship):
-  (1) RIBBON RETIREMENT (phase 2's leading edge): Insert Section /
-  Insert Note / Add To-Do List (builtins) + Insert Marker (command)
-  removed — TOOLBAR_BUILTINS entries, Toolbar render cases,
-  DEFAULT_TOOLBAR_LEFT tokens (and the orphaned r:def-3 rail),
-  LEGACY_GROUP_ITEMS.insert → [], the insertMarker command +
-  INSERT_CMDS palette slot. migrateDropLegacyInserts (toolbarBuiltins,
-  the v3.25 shed pattern, flag 'opendraft:toolbarDropLegacyInserts551')
-  strips saved layouts ONCE, both zones, 2!-flag-blind. The Insert MENU
-  entries remain until phase 2 proper.
-  (2) Annotations panel Filter: tool-ctl-lead dropped → rides right,
-  just left of Search.
-  (3) The PICK BANNER replaced the pick toast: a strip pinned above the
-  scroll area — editor-center column child; .editor-main is a flex ROW,
-  so a child there lands BESIDE the page (the first driver run caught
-  the pill far-left) — pill centered, 15px, persistent until a
-  selection lands; Escape cancels (the v5.48 listener).
-  (4) NAVIGATOR VIEW MENU: the Scene # button became a ControlDropdown
-  "View" with keep-open toggles — Scene Numbers (navShowSceneNumbers),
-  Annotations, Scene Headings (navShowKinds.markup/.scene; missing =
-  shown; the body honors JUST these two kinds again). Toggle handlers
-  read the store AT CLICK TIME — two same-tick clicks through render
-  closures clobbered each other (the driver caught it).
-- check-v551: 11 green (fresh ribbon clean, persisted-layout shed with
-  flag + undo kept, Filter gap 3px, banner top-center 15px persistent,
-  Esc cancels, pick places + clears, Scene # gone, three menu items,
-  scene rows 4→0, anno rows 1→0, both restored).
-- QUEUED NEXT: the PAGES WINDOW TABS restructure (Script / Title Page /
-  Custom; the separate Title Page tool leaves the side panels) — the
-  batch opener for the next run.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.51** — ribbon legacy-inserts retired, Filter right, pick BANNER, Navigator View menu
 - **v5.50** — hide-ribbon CRASH fix, shared PerRowStepper, no-flash Design seat, Scrapbook auto-dock
 - **v5.49** — Design seats at the panel edge, stacked previews + Save, picker ×/white chips, spinner + typeable count
 - **v5.48** — annotations = highlighted text, pick-to-place, title-bar status/delete, Scene # in header

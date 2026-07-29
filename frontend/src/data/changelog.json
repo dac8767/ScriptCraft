@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.56",
+    "date": "2026-07-29",
+    "changes": [
+      "Action Rewrite: a new hard rule in the craft prompt — suggestions never use em dashes. Where one would fall, the rewrite breaks the sentence or reaches for a comma, colon, or ellipsis instead."
+    ]
+  },
+  {
     "version": "5.55",
     "date": "2026-07-29",
     "changes": [
