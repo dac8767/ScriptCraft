@@ -262,10 +262,16 @@
   width: min(780px, 96vw); max-width: 96vw; max-height: 85vh;
   display: flex; flex-direction: column;
 }
+/* v5.39, Derek's hand tool: the BODY no longer scrolls as one piece — each
+   column scrolls itself, so the preview well is a real, height-bounded
+   scroller the hand can pan (and the preview stays fully in view while the
+   form scrolls). The mobile stack below reverts to one body scroller. */
 .tp-editor-body {
   display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
-  padding: 16px; overflow-y: auto; flex: 1;
+  padding: 16px; overflow: hidden; flex: 1; min-height: 0;
 }
+.tp-editor-body > .tp-editor-form { overflow-y: auto; min-height: 0; }
+.tp-editor-body > .tp-editor-preview-scale { min-height: 0; }
 /* v3.42, Derek: the action buttons were flush against the window's bottom
    edge — give the row real padding all round. */
 .tp-editor-dialog .dialog-actions { padding: 12px 16px 16px; }
@@ -313,7 +319,16 @@
   font-size: 11px; cursor: pointer;
 }
 .tp-preview-zoom button:hover { background: var(--fd-hover-bg); color: var(--fd-text); }
+/* v5.39, Derek: the hand tool — accent while armed; grab cursors on the
+   preview while it pans. */
+.tp-preview-zoom button.tp-pan-toggle.active {
+  color: var(--fd-accent);
+  border-color: var(--fd-accent);
+  background: rgba(74, 158, 255, 0.12);
+}
 .tp-preview-scroll { flex: 1; min-height: 0; overflow: auto; }
+.tp-preview-scroll.tp-pan-mode { cursor: grab; user-select: none; }
+.tp-preview-scroll.tp-pan-mode:active { cursor: grabbing; }
 .tp-scale-page {
   position: absolute; top: 0; left: 0;
   width: 8.5in; height: 11in;
@@ -338,7 +353,10 @@
    so it fits the screen without horizontal scroll. */
 @media (max-width: 720px) {
   .tp-editor-dialog { width: 96vw; max-height: 90vh; }
-  .tp-editor-body { grid-template-columns: 1fr; gap: 14px; }
+  /* stacked columns can't share the height — one body scroller again */
+  .tp-editor-body { grid-template-columns: 1fr; gap: 14px; overflow-y: auto; }
+  .tp-editor-body > .tp-editor-form { overflow: visible; }
+  .tp-editor-body > .tp-editor-preview-scale { max-height: 60vh; }
   .tp-editor-form { grid-template-columns: 1fr; }
   /* Narrow screens: let the size select drop below its text field again. */
   .tp-field-row { flex-direction: column; align-items: stretch; }

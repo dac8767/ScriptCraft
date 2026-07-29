@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { FaRegTrashAlt, FaRegImage, FaSearchMinus, FaSearchPlus } from 'react-icons/fa';
+import { FaRegTrashAlt, FaRegImage, FaSearchMinus, FaSearchPlus, FaRegHandPaper } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { TitlePageAttrs } from '../editor/extensions/TitlePage';
@@ -338,6 +338,28 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
   );
   const [tpZoom, setTpZoom] = useState<number | 'fit'>('fit');
   const previewBoxRef = useRef<HTMLDivElement>(null);
+  // v5.39, Derek: the hand tool — while on, dragging the zoomed preview
+  // pans it (scrolls the container); the zoom cluster carries the toggle.
+  const [panMode, setPanMode] = useState(false);
+  const previewScrollRef = useRef<HTMLDivElement>(null);
+  const startPan = (e: React.PointerEvent) => {
+    if (!panMode) return;
+    const el = previewScrollRef.current;
+    if (!el) return;
+    e.preventDefault();
+    const sx = e.clientX, sy = e.clientY;
+    const sl = el.scrollLeft, stp = el.scrollTop;
+    const move = (ev: PointerEvent) => {
+      el.scrollLeft = sl - (ev.clientX - sx);
+      el.scrollTop = stp - (ev.clientY - sy);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
   const [fitScale, setFitScale] = useState(0.28);
   useEffect(() => {
     const el = previewBoxRef.current;
@@ -659,11 +681,19 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
               zoom buttons magnify, Fit re-fits the column. */}
           <div className="tp-editor-preview tp-editor-preview-scale" ref={previewBoxRef}>
             <div className="tp-preview-zoom">
+              {/* v5.39, Derek: the hand grabber — a MODE, so it leads the
+                  zoom actions */}
+              <button
+                type="button"
+                className={`tp-pan-toggle${panMode ? ' active' : ''}`}
+                title={panMode ? 'Hand tool off' : 'Hand tool — drag to pan the preview'}
+                onClick={() => setPanMode((v) => !v)}
+              ><FaRegHandPaper /></button>
               <button type="button" title="Zoom out" onClick={() => setTpZoom(Math.max(0.12, Math.round((tpScale / 1.25) * 1000) / 1000))}><FaSearchMinus /></button>
               <button type="button" className="tp-preview-zoom-fit" title="Fit the preview column" onClick={() => setTpZoom('fit')}>Fit</button>
               <button type="button" title="Zoom in" onClick={() => setTpZoom(Math.min(1.6, Math.round((tpScale * 1.25) * 1000) / 1000))}><FaSearchPlus /></button>
             </div>
-            <div className="tp-preview-scroll">
+            <div className={`tp-preview-scroll${panMode ? ' tp-pan-mode' : ''}`} ref={previewScrollRef} onPointerDown={startPan}>
               <div style={{ width: 8.5 * 96 * tpScale, height: 11 * 96 * tpScale, position: 'relative', margin: '0 auto', flex: '0 0 auto' }}>
                 <div className="tp-scale-page" style={{ transform: `scale(${tpScale})` }}>
                   {imagesAbove.map((a, i) => (

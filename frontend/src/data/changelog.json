@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.39",
+    "date": "2026-07-29",
+    "changes": [
+      "Title Page: a hand tool joins the preview's zoom cluster — switch it on and drag the zoomed page to pan around it (grab cursor while it's armed)",
+      "The Title Page window's two columns scroll independently now: the preview stays fully in view while you scroll the form, and the zoomed page pans inside its own well"
+    ]
+  },
+  {
     "version": "5.38",
     "date": "2026-07-29",
     "changes": [

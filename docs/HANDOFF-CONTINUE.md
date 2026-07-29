@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.38 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.39 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,23 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.38 — Scenes cards: metrics wrap instead of truncating the name (HEAD)
+### v5.39 — Title Page hand-grabber pan (HEAD)
+
+- Derek's queue item 4. `tp-pan-toggle` (FaRegHandPaper, accent while
+  armed) leads the preview zoom cluster; pan mode pointer-drags scroll
+  `.tp-preview-scroll` (grab/grabbing cursors, user-select none).
+- THE LAYOUT PREREQUISITE the first driver run exposed: `.tp-editor-body`
+  scrolled as ONE grid, so the preview column just grew (clientHeight ==
+  scrollHeight — nothing to pan, and the drag target's center sat off
+  viewport). Now the body is overflow:hidden and each COLUMN scrolls
+  itself (`.tp-editor-form` auto; preview min-height 0 so
+  `.tp-preview-scroll` clamps) — the preview stays fully in view while
+  the form scrolls. The ≤720px stack reverts to one body scroller with a
+  60vh preview cap (stacked columns can't share the height).
+- check-v539: 6 green (button seat, real overflow, off = no pan, grab
+  cursor, Δ80/60 pan, off restores cursor).
+
+### v5.38 — Scenes cards: metrics wrap instead of truncating the name
 
 - Derek's queue item 3. `.index-card-top` wraps; the CRUX:
   `.index-card-heading` needed `flex: 1 1 auto` + min-width 0 — the old
@@ -287,19 +303,12 @@ Durable bits kept live here:
   silently vanish). Driver note: Playwright refuses clicks the temp
   window intercepts — click uncovered editor coordinates via mouse.click.
 
-### v5.34 — "Change Order"
-
-- Derek: any button labelled "Reorder" → "Change Order". Exactly ONE
-  existed: the Scenes tool's ScenesReorderControl (one component shared by
-  the window chrome and the fullscreen takeover, so both changed at once).
-  Label + its test pin updated. The scenesReorderMode flag and
-  scene-reorder-btn class keep their names — internal identifiers.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.34** — the Scenes "Reorder" button reads "Change Order"
 - **v5.33** — icon-anchored seating, resizable windows, real scrapbook links, nav list rows, titlebar ⋮, Displays-as preview
 - **v5.32** — one-row nav header (blue body buttons), unmistakable active icon, Design exempt both ways
 - **v5.31** — highlight delete/link conversions, inline Used row, combined icon+color picker

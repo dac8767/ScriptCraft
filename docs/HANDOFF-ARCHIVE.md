@@ -151,9 +151,17 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.33 and older (newest first)
+## Version history — v5.34 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.34 — "Change Order"
+
+- Derek: any button labelled "Reorder" → "Change Order". Exactly ONE
+  existed: the Scenes tool's ScenesReorderControl (one component shared by
+  the window chrome and the fullscreen takeover, so both changed at once).
+  Label + its test pin updated. The scenesReorderMode flag and
+  scene-reorder-btn class keep their names — internal identifiers.
 
 ### v5.33 — icon-anchored seating, resizable windows, real scrapbook links
 
