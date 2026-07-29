@@ -11,6 +11,11 @@ interface ColorPickerProps {
   /** v5.29: optional "Used" row — the annotation pickers pass the colors
    *  currently used across annotations (was the Recent row in v5.26). */
   used?: string[];
+  /** v5.31: rendered INSIDE a larger popover (the combined icon+color
+   *  window) — the host owns outside-dismissal, so the picker's own
+   *  outside-mousedown close must stand down (it fired on clicks in the
+   *  host's icon grid and closed the whole window). */
+  embedded?: boolean;
 }
 
 const PRESET_COLORS = [
@@ -20,7 +25,7 @@ const PRESET_COLORS = [
   '#ff6666', '#ffcc66', '#ffff66', '#66ff66', '#66ccff', '#cc66ff',
 ];
 
-const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, onClose, used }) => {
+const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, onClose, used, embedded }) => {
   const ref = useRef<HTMLDivElement>(null);
   const svRef = useRef<HTMLDivElement>(null);
   const [customColor, setCustomColor] = useState(value || '#000000');
@@ -60,6 +65,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, onClose, use
   };
 
   useEffect(() => {
+    if (embedded) return;   // the host popover owns dismissal (v5.31)
     const handleClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         onClose();
@@ -67,7 +73,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, onClose, use
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [onClose]);
+  }, [onClose, embedded]);
 
   return (
     <div className="color-picker-popup" ref={ref}>

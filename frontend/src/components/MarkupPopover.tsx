@@ -22,7 +22,7 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import {
   FaBold, FaItalic, FaListUl, FaListOl, FaCheckSquare, FaLink, FaRegImage, FaBook,
-  FaRegEye, FaRegEyeSlash,
+  FaRegTrashAlt,
 } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
@@ -30,7 +30,8 @@ import { AUTO_ICON } from './markupIcons';
 import { DEFAULT_MARKUP_HIGHLIGHT } from '../stores/slices/markupsSlice';
 import { confirmDialog } from './ConfirmDialog';
 import { FullscreenIcon } from './uiIcons';
-import { MarkupColorSwatch, MarkupIconSwatch, MarkupDotsMenu } from './MarkupPickers';
+import { convertMarkupToPoint, convertMarkupToRange } from '../utils/markupActions';
+import { MarkupColorSwatch, MarkupUsedRow, MarkupDotsMenu } from './MarkupPickers';
 import { findMarkupPos, setMarkupHighlight, firstContentKind } from '../utils/markupActions';
 
 const POP_W = 380;
@@ -46,6 +47,11 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
   // the scroll/resize re-seat handler can stand down once the user takes over.
   const [dragPos, setDragPos] = useState<{ top: number; left: number } | null>(null);
   const [maximized, setMaximized] = useState(false);
+  // v5.31: "Add Highlighted Text in Script" — the window stays open while
+  // the user selects; a ref lets the outside-press saver stand down.
+  const [pickingRange, setPickingRange] = useState(false);
+  const pickingRef = useRef(false);
+  pickingRef.current = pickingRange;
   const overrideRef = useRef(false);
   overrideRef.current = dragPos !== null || maximized;
   // what the annotation looked like when this window opened — the X button's
@@ -80,7 +86,25 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
     setScrapPicker(false);
     setDragPos(null);
     setMaximized(false);
+    setPickingRange(false);
   }, [mini, id]);   // eslint-disable-line react-hooks/exhaustive-deps
+
+  // v5.31: while picking, the next real selection in the SCRIPT converts
+  // this point annotation into a range annotation (yellow default).
+  useEffect(() => {
+    if (!pickingRange || !editor || !id) return;
+    const dom = editor.view.dom;
+    const onUp = () => {
+      window.setTimeout(() => {
+        const sel = editor.state.selection;
+        if (sel.empty) return;
+        convertMarkupToRange(editor, id, sel.from, sel.to);
+        setPickingRange(false);
+      }, 0);
+    };
+    dom.addEventListener('mouseup', onUp);
+    return () => dom.removeEventListener('mouseup', onUp);
+  }, [pickingRange, editor, id]);
 
   // v5.26 auto-icon: the FIRST content kind decides — but a hand-picked icon
   // is never overwritten (iconManual). Live, so the swatch reads true.
@@ -149,11 +173,14 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
       // v5.30: the ×'s are-you-sure dialog is outside this window — its
       // buttons must not double as an outside-press save.
       if (t.closest?.('.fs-confirm-overlay')) return;
+      // v5.31: script clicks while picking a highlight ARE the flow.
+      if (pickingRef.current) return;
       save();
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       if (document.querySelector('.fs-confirm-overlay')) return;   // dialog owns Esc
+      if (pickingRef.current) { setPickingRange(false); return; }  // cancel the pick only
       save();
     };
     document.addEventListener('pointerdown', onDown, true);
@@ -277,34 +304,40 @@ export default function MarkupPopover({ editor }: { editor: Editor | null }) {
           swatch (range annotations only) · ⋮. The eye replaces the hide
           checkbox — eye-slash = hidden. Spacing/padding are Design knobs. */}
       <div className="markup-pop-row markup-pop-head">
-        <span className="markup-pop-group">
+        <span className="markup-pop-group markup-pop-icon-group">
           <span className="markup-pop-grouplabel">Icon:</span>
-          <MarkupIconSwatch markup={markup} />
-          <MarkupColorSwatch
-            value={markup.color}
-            title="Icon color"
-            usedKind="color"
-            onPick={(color) => updateMarkup(id, { color })}
-          />
+          {/* v5.31: the USED combos ride the window itself; + = the
+              combined icon-and-color picker */}
+          <MarkupUsedRow markup={markup} />
         </span>
-        {markup.anchor === 'range' && (
+        {markup.anchor === 'range' ? (
           <span className="markup-pop-group">
             <span className="markup-pop-grouplabel">Highlight:</span>
+            <MarkupColorSwatch
+              value={markup.highlight ?? DEFAULT_MARKUP_HIGHLIGHT}
+              title="Highlight color"
+              usedKind="highlight"
+              onPick={(color) => setHighlight(color)}
+            />
+            {/* v5.31, Derek: DELETE the highlight — the annotation stays,
+                re-anchored to the element as a cursor-made one. */}
             <button
-              className={`markup-hl-eye${markup.highlight !== null ? ' active' : ''}`}
-              title="Hide (or show) highlight in script"
-              onClick={() => setHighlight(markup.highlight === null ? DEFAULT_MARKUP_HIGHLIGHT : null)}
+              className="markup-hl-eye markup-hl-del"
+              title="Delete highlight (the annotation stays)"
+              onClick={() => { if (editor) convertMarkupToPoint(editor, id); }}
             >
-              {markup.highlight !== null ? <FaRegEye /> : <FaRegEyeSlash />}
+              <FaRegTrashAlt />
             </button>
-            {markup.highlight !== null && (
-              <MarkupColorSwatch
-                value={markup.highlight}
-                title="Highlight color"
-                usedKind="highlight"
-                onPick={(color) => setHighlight(color)}
-              />
-            )}
+          </span>
+        ) : (
+          <span className="markup-pop-group">
+            <button
+              className={`markup-hl-clear markup-add-hl${pickingRange ? ' active' : ''}`}
+              title="Highlight text in the script and link it to this annotation"
+              onClick={() => setPickingRange((v) => !v)}
+            >
+              {pickingRange ? 'Select text in the script…' : 'Link Script Text'}
+            </button>
           </span>
         )}
         <span className="markup-pop-spacer" />

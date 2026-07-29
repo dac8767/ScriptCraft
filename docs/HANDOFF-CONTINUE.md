@@ -202,7 +202,35 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.30 — the edit window becomes a WINDOW; tool locked to panel (HEAD)
+### v5.31 — highlight conversions, inline Used row, combined picker (HEAD)
+
+- Derek's batch (+3 mid-turn adds): (1) title bar darker (rgba .22) and the
+  fullscreen/× are FULL-HEIGHT header buttons (the .tool-window-close
+  format: 30px wide, align-self stretch, square, flush right with a
+  matching top-right radius). (2) HIDE-highlight is GONE — replaced by
+  DELETE: `convertMarkupToPoint` (markupActions) strips the mark and
+  re-anchors the annotation as a block anchor on the SAME element (occupied
+  block → anchorless orphan, still editable); the inverse,
+  `convertMarkupToRange`, powers "Link Script Text" (label Derek asked to
+  shorten from "Add Highlighted Text in Script") — a PICK MODE: the window
+  stays open (pickingRef makes the outside-press saver stand down; Escape
+  cancels the pick only), the next real selection converts point→range
+  with the yellow default. (3) the Icon row shows the USED combos INLINE
+  (MarkupUsedRow, cap 8) ending in a + (MarkupComboPicker — the old icon
+  window + an EMBEDDED ColorPicker in ONE popover; bare icon picks keep it
+  open so a color can follow; preset/used combos close).
+- ColorPicker gained `embedded` — its own outside-MOUSEDOWN closer fired on
+  clicks in the host's icon grid and closed the whole combined window (the
+  first driver run caught it). Embedded = the host owns dismissal.
+- NAVIGATOR is panel-locked too now (PANEL_LOCKED_TOOLS + NO_FULLSCREEN +
+  its own SHAPE_NOTE).
+- DRIVER LESSON: to close a sub-popover mid-test use ESCAPE, not a body
+  press — the body press is an outside-press for the EDIT WINDOW as well
+  and save-closes it under you. check-v531: 18 green (computed bar color,
+  full-height buttons by rect, keep-open pick, both conversions with
+  doc-level span/block proofs, stay-open pick mode).
+
+### v5.30 — the edit window becomes a WINDOW; tool locked to panel
 
 - Derek's batch (+3 mid-turn adds): (1) the Annotations TOOL is LOCKED to
   the side bar — PANEL_LOCKED_TOOLS in editorStore; setToolMode COERCES
@@ -288,43 +316,12 @@ Durable bits kept live here:
   Notes (whose child says "Show Annotations in Script") before the real
   entry. Target the label span with `span:text-is(...)` for menu items.
 
-### v5.27 — solid icons, colored rings, segmented toggles
-
-- Derek's polish batch + two mid-turn refinements: MARKUP_ICONS flipped to
-  SOLID Fa glyphs (colored fills, not outlines); the on-script chip's ring
-  is 2px in the ANNOTATION'S color (inline from the layer; base rule keeps
-  the neutral fallback); chip size is a Design knob — markupIconScalePct in
-  viewPrefs (persisted), store-bound token 'markupIconScale' in a NEW
-  Design ▸ Annotations group (the layer needs the NUMBER for centering, so
-  a CSS var can't drive it). Glyph font-size inherits from the button.
-- Tool icon: FaRegFlag → FaMarker in ALL FIVE identity spots (ALL_TOOLS,
-  TOOLBAR_ICONS.markupScript, Toolbar case, View-menu row, Settings'
-  CUSTOMIZE_TABS).
-- ⋮ menu: Status is a same-row Open|Complete toggle (`.markup-seg`, the
-  joined-buttons row); "Delete" → "Delete Annotation". Card checkbox
-  REMOVED (status lives in ⋮; the panel test pins the absence). Header eye
-  REMOVED (MarkupsWindowActions deleted; View menu + ribbon toggle + Show
-  cover it).
-- "Show in Script" → "Show": no icon, LEFT-seated via .tool-ctl-lead
-  (margin-right:auto pushes the rest right), and it gained its OWN
-  Open/Complete/All row — viewPrefs.markupScriptDone (persisted, default
-  'all') filters the SCRIPT by status: the icon layer skips filtered
-  annotations, the span-neutralize sync covers them (scriptFiltered =
-  hidden-type OR status mismatch), and the highlight click-guard ignores
-  them. Helper texts: Filter grid = "Toggle visibility in tool window",
-  Show grid = "Toggle visibility in script", both state rows = "Select
-  one" (TypeGridPop takes gridHelp; both popovers now always show state).
-- check-v527.mjs: 18 checks green (ring width/color computed, 150% → 33px
-  chip, same-row toggles by rect tops, helper-text strings, left seating).
-- ColorPicker.test updated to the v5.26 source-arg contract (Apply →
-  ('#hex','wheel'), preset → (color,'preset')) — the pinned exact-args
-  assertions were the only callers that noticed.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.27** — solid icons, colored rings, segmented toggles, FaMarker identity
 - **v5.26** — ANNOTATIONS: rename + the 14-item polish batch (block anchors, swatch pickers, auto-icon)
 - **v5.25** — MARKUPS: the annotation tool is born (store/mark/popover/panel/presets)
 - **v5.24** — columns not rows, the drag that never started, tab washes

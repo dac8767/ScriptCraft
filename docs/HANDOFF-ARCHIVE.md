@@ -151,9 +151,42 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.26 and older (newest first)
+## Version history — v5.27 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.27 — solid icons, colored rings, segmented toggles
+
+- Derek's polish batch + two mid-turn refinements: MARKUP_ICONS flipped to
+  SOLID Fa glyphs (colored fills, not outlines); the on-script chip's ring
+  is 2px in the ANNOTATION'S color (inline from the layer; base rule keeps
+  the neutral fallback); chip size is a Design knob — markupIconScalePct in
+  viewPrefs (persisted), store-bound token 'markupIconScale' in a NEW
+  Design ▸ Annotations group (the layer needs the NUMBER for centering, so
+  a CSS var can't drive it). Glyph font-size inherits from the button.
+- Tool icon: FaRegFlag → FaMarker in ALL FIVE identity spots (ALL_TOOLS,
+  TOOLBAR_ICONS.markupScript, Toolbar case, View-menu row, Settings'
+  CUSTOMIZE_TABS).
+- ⋮ menu: Status is a same-row Open|Complete toggle (`.markup-seg`, the
+  joined-buttons row); "Delete" → "Delete Annotation". Card checkbox
+  REMOVED (status lives in ⋮; the panel test pins the absence). Header eye
+  REMOVED (MarkupsWindowActions deleted; View menu + ribbon toggle + Show
+  cover it).
+- "Show in Script" → "Show": no icon, LEFT-seated via .tool-ctl-lead
+  (margin-right:auto pushes the rest right), and it gained its OWN
+  Open/Complete/All row — viewPrefs.markupScriptDone (persisted, default
+  'all') filters the SCRIPT by status: the icon layer skips filtered
+  annotations, the span-neutralize sync covers them (scriptFiltered =
+  hidden-type OR status mismatch), and the highlight click-guard ignores
+  them. Helper texts: Filter grid = "Toggle visibility in tool window",
+  Show grid = "Toggle visibility in script", both state rows = "Select
+  one" (TypeGridPop takes gridHelp; both popovers now always show state).
+- check-v527.mjs: 18 checks green (ring width/color computed, 150% → 33px
+  chip, same-row toggles by rect tops, helper-text strings, left seating).
+- ColorPicker.test updated to the v5.26 source-arg contract (Apply →
+  ('#hex','wheel'), preset → (color,'preset')) — the pinned exact-args
+  assertions were the only callers that noticed.
+
 
 ### v5.26 — ANNOTATIONS: rename + the 14-item polish batch
 

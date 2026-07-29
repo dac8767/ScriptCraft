@@ -375,6 +375,7 @@ const NO_FULLSCREEN = NO_FULLSCREEN_TOOLS;
 const SHAPE_NOTES: Partial<Record<ToolId, string>> = {
   notebook: 'Scrapbook only appears in full-screen mode',
   markups: 'This window only appears in the side panel',
+  navigator: 'This window only appears in the side panel',
 };
 
 function ToolFullscreenButton({ id }: { id: ToolId }) {

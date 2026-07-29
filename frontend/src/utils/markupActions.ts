@@ -121,6 +121,53 @@ export function removeMarkupFromDoc(editor: Editor, id: string) {
   if (tr.steps.length) editor.view.dispatch(tr);
 }
 
+/** v5.31, Derek: DELETING a highlight converts the annotation to a point
+ *  annotation anchored on the element the highlight lived in — the
+ *  annotation itself survives. (If that element already carries another
+ *  annotation's block anchor, ours has nowhere to sit and goes anchorless —
+ *  still listed and editable, like any orphan.) */
+export function convertMarkupToPoint(editor: Editor, id: string) {
+  const store = useEditorStore.getState();
+  const { doc, tr, schema } = editor.state;
+  const markType = schema.marks.scriptMarkup;
+  let blockPos: number | null = null;
+  doc.descendants((node, pos) => {
+    if (node.isText && node.marks.some((m) => m.type.name === 'scriptMarkup' && m.attrs.markupId === id)) {
+      if (blockPos === null) blockPos = doc.resolve(pos).before(doc.resolve(pos).depth);
+      tr.removeMark(pos, pos + node.nodeSize, markType);
+    }
+    return true;
+  });
+  if (blockPos !== null) {
+    const block = tr.doc.nodeAt(blockPos);
+    if (block && !block.attrs.markupId) {
+      tr.setNodeMarkup(blockPos, undefined, { ...block.attrs, markupId: id });
+    }
+  }
+  if (tr.steps.length) editor.view.dispatch(tr);
+  store.updateMarkup(id, { anchor: 'point', highlight: null });
+  editor.emit('update', { editor, transaction: editor.state.tr });
+}
+
+/** v5.31, Derek: "Add Highlighted Text in Script" — a point annotation
+ *  takes over a fresh selection and becomes a range annotation with the
+ *  default yellow highlight. */
+export function convertMarkupToRange(editor: Editor, id: string, from: number, to: number) {
+  const store = useEditorStore.getState();
+  const { doc, tr, schema } = editor.state;
+  const markType = schema.marks.scriptMarkup;
+  doc.descendants((node, pos) => {
+    if (!node.isText && node.attrs?.markupId === id) {
+      tr.setNodeMarkup(pos, undefined, { ...node.attrs, markupId: null });
+    }
+    return true;
+  });
+  tr.addMark(from, to, markType.create({ markupId: id, highlight: DEFAULT_MARKUP_HIGHLIGHT }));
+  editor.view.dispatch(tr);
+  store.updateMarkup(id, { anchor: 'range', highlight: DEFAULT_MARKUP_HIGHLIGHT });
+  editor.emit('update', { editor, transaction: editor.state.tr });
+}
+
 /** The scene heading text preceding a position ('' when none yet). */
 export function sceneHeadingBefore(editor: Editor, pos: number): string {
   let heading = '';

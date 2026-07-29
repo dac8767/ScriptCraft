@@ -517,12 +517,12 @@ export const ALWAYS_FLOAT: ToolId[] = ['analytics'];
  *  remembered-mode branch and the button read the SAME list.
  *  v5.21, Derek: the Title Page LEFT this list for the opposite one below —
  *  it always opens as the fullscreen takeover now, like the Scrapbook. */
-export const NO_FULLSCREEN_TOOLS: ToolId[] = ['notebook', 'markups'];
+export const NO_FULLSCREEN_TOOLS: ToolId[] = ['notebook', 'markups', 'navigator'];
 
 /** v5.30, Derek: tools LOCKED to the side bar — no pop-out, no fullscreen.
  *  setToolMode coerces every write to 'docked' (drag-out, shrink paths and
  *  remembered shapes included), so the lock can't be bypassed. */
-export const PANEL_LOCKED_TOOLS: ToolId[] = ['markups'];
+export const PANEL_LOCKED_TOOLS: ToolId[] = ['markups', 'navigator'];   // v5.31: +navigator
 
 /** v5.21, Derek: "make the title page doc always in full screen (the same as
  *  the scrapbook)." These tools have ONE shape — the fullscreen takeover:

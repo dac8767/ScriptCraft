@@ -149,7 +149,37 @@ function importIconFile(file: File, onDone: (dataUrl: string) => void, onErr: (m
   img.src = url;
 }
 
-export function MarkupIconSwatch({ markup }: { markup: ScriptMarkup }) {
+/** v5.31, Derek: the head row shows the USED combos inline, ending in a +
+ *  that opens the icon picker and color picker COMBINED in one window. */
+export function MarkupUsedRow({ markup }: { markup: ScriptMarkup }) {
+  const markups = useEditorStore((s) => s.markups);
+  const updateMarkup = useEditorStore((s) => s.updateMarkup);
+  const usedCombos = React.useMemo(() => {
+    const seen = new Set<string>();
+    const out: { icon: string; color: string }[] = [];
+    for (const m of markups) {
+      const key = `${m.icon}|${m.color}`;
+      if (!seen.has(key)) { seen.add(key); out.push({ icon: m.icon, color: m.color }); }
+    }
+    return out.slice(0, 8);   // the window is narrow — the + opens the rest
+  }, [markups]);
+  return (
+    <>
+      {usedCombos.map(({ icon, color }) => (
+        <button
+          key={`${icon}-${color}`}
+          className={`markup-preset${isDarkColor(color) ? ' markup-light-chip' : ''}${markup.icon === icon && markup.color === color ? ' active' : ''}`}
+          title={iconLabel(icon)}
+          onClick={() => updateMarkup(markup.id, { icon, color, iconManual: true })}
+        ><MarkupIcon icon={icon} color={color} /></button>
+      ))}
+      <MarkupComboPicker markup={markup} />
+    </>
+  );
+}
+
+/** The + at the end of the Used row: icon picker + color picker, ONE window. */
+export function MarkupComboPicker({ markup }: { markup: ScriptMarkup }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -180,9 +210,11 @@ export function MarkupIconSwatch({ markup }: { markup: ScriptMarkup }) {
   const chip = isDarkColor(markup.color) ? ' markup-light-chip' : '';
 
   // Any pick here is a HAND pick — auto-icon must never override it again.
-  const pick = (patch: { icon: string; color?: string }) => {
+  // v5.31: a complete combo (preset/used) closes; a bare icon pick keeps
+  // the window open so a color can follow (it's the combined picker now).
+  const pick = (patch: { icon: string; color?: string }, close = true) => {
     updateMarkup(markup.id, { ...patch, iconManual: true });
-    setOpen(false);
+    if (close) setOpen(false);
   };
 
   const onImportPicked = (file: File | undefined) => {
@@ -197,8 +229,8 @@ export function MarkupIconSwatch({ markup }: { markup: ScriptMarkup }) {
 
   return (
     <>
-      <button ref={btnRef} className="markup-swatch markup-swatch-icon" title="Choose an icon" onClick={() => setOpen((v) => !v)}>
-        <MarkupIcon icon={markup.icon} color={markup.color} />
+      <button ref={btnRef} className="markup-preset markup-combo-plus" title="All icons & colors" onClick={() => setOpen((v) => !v)}>
+        +
       </button>
       {open && createPortal(
         <div ref={boxRef} className="markup-subpop markup-icon-pop" style={pos ?? { top: -9999, left: -9999 }}
@@ -231,20 +263,20 @@ export function MarkupIconSwatch({ markup }: { markup: ScriptMarkup }) {
           <div className="markup-pop-grid">
             {Object.keys(MARKUP_ICONS).map((k) => (
               <button key={k} className={`markup-preset${chip}${markup.icon === k ? ' active' : ''}`} title={iconLabel(k)}
-                onClick={() => pick({ icon: k })}>
+                onClick={() => pick({ icon: k }, false)}>
                 <MarkupIcon icon={k} color={markup.color} />
               </button>
             ))}
             {MARKUP_EMOJI.map((e) => (
               <button key={e} className={`markup-preset${markup.icon === `emoji:${e}` ? ' active' : ''}`}
-                onClick={() => pick({ icon: `emoji:${e}` })}>
+                onClick={() => pick({ icon: `emoji:${e}` }, false)}>
                 <span className="markup-emoji">{e}</span>
               </button>
             ))}
             {customIcons.map((c) => (
               <button key={c.id} className={`markup-preset${markup.icon === `custom:${c.id}` ? ' active' : ''}`}
                 title="Imported icon"
-                onClick={() => pick({ icon: `custom:${c.id}` })}>
+                onClick={() => pick({ icon: `custom:${c.id}` }, false)}>
                 <MarkupIcon icon={`custom:${c.id}`} />
               </button>
             ))}
@@ -261,6 +293,18 @@ export function MarkupIconSwatch({ markup }: { markup: ScriptMarkup }) {
             style={{ display: 'none' }}
             onChange={(e) => { onImportPicked(e.target.files?.[0]); e.target.value = ''; }}
           />
+          {/* v5.31, Derek: icon picker + color picker, ONE window — the
+              color section drives the icon color (Apply = done). */}
+          <div className="markup-pop-label">Icon color</div>
+          <div className="markup-combo-color">
+            <ColorPicker
+              value={markup.color}
+              used={[...new Set(markups.map((m) => m.color))]}
+              embedded
+              onChange={(color) => { if (color) updateMarkup(markup.id, { color, iconManual: true }); }}
+              onClose={() => setOpen(false)}
+            />
+          </div>
         </div>,
         document.body,
       )}

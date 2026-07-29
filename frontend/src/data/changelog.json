@@ -1,5 +1,15 @@
 [
   {
+    "version": "5.31",
+    "date": "2026-07-29",
+    "changes": [
+      "The annotation window's title bar is darker, and its fullscreen/close buttons are the standard full-height window buttons",
+      "Hide-highlight is gone — in its place: DELETE the highlight (trash beside the color). The annotation survives, re-anchored to that line as if made from a cursor",
+      "Cursor-made annotations offer \"Link Script Text\": the window stays open while you select text in the script, and the selection becomes this annotation's yellow highlight",
+      "The Used icon+color combos now sit directly ON the window's Icon row; the + at the end opens the icon picker and color picker combined into one window (pick an icon, then a color — it stays open while you build the combo)"
+    ]
+  },
+  {
     "version": "5.30",
     "date": "2026-07-29",
     "changes": [
