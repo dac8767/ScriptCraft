@@ -33,6 +33,12 @@ percent-encoding = "2"
 jni = "0.21"
 ndk-context = "0.1"
 
+# v5.54: OS-keychain storage for the Action Rewrite BYO API key (rewrite.rs).
+# Desktop-only — mobile builds compile keyless stubs instead (no keychain
+# store there), which is why this sits in a target table, not [dependencies].
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
+
 [profile.release]
 panic = "abort"
 codegen-units = 1

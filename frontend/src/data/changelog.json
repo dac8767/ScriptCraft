@@ -1,5 +1,15 @@
 [
   {
+    "version": "5.54",
+    "date": "2026-07-29",
+    "changes": [
+      "New: Action Rewrite tool — select action lines and get three craft-guided rewrites (Cut, Sharpen, Restructure), each with a one-line note on what changed and why. Dialogue is never touched.",
+      "Action Rewrite reads the scene: it knows the heading, who's present, the dialogue it follows, whether the location was established earlier, and first appearances — and clamps politely to whole action paragraphs.",
+      "Bring your own Anthropic API key: stored in the system keychain by the desktop app, never in the app's files or your scripts. Applying a suggestion is one undo step; a stale suggestion refuses to overwrite changed text.",
+      "About window: the open-source list credits keyring-rs."
+    ]
+  },
+  {
     "version": "5.53",
     "date": "2026-07-29",
     "changes": [

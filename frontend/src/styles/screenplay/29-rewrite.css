@@ -1,0 +1,136 @@
+/* ── v5.54: the Action Rewrite tool (RewriteTool.tsx) ─────────────────────
+   Key setup card, intent + go row, live target line, and the three variant
+   cards (Cut / Sharpen / Restructure) with their craft notes. Variant text
+   renders in the script's own face. */
+
+.rw-tool {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 10px 12px 8px;
+  gap: 8px;
+}
+
+.rw-key-card {
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.rw-key-title { font-size: 13px; font-weight: 600; }
+.rw-key-text { font-size: 12px; opacity: 0.75; line-height: 1.45; }
+.rw-key-input {
+  height: 26px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+.rw-key-input:focus { outline: none; border-color: var(--fd-accent); }
+.rw-key-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.rw-key-actions .dialog-btn { height: 26px; padding: 0 14px; font-size: 12px; }
+
+.rw-ctl-row { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.rw-intent {
+  height: 26px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 0 4px;
+  flex: none;
+}
+.rw-go { height: 26px; padding: 0 14px; font-size: 12px; flex: 1; }
+
+.rw-target { font-size: 11px; color: var(--fd-text-muted); flex-shrink: 0; }
+.rw-target-off { font-style: italic; }
+.rw-adjusted { opacity: 0.85; }
+
+.rw-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+.rw-status { font-size: 12px; opacity: 0.7; padding: 6px 0; line-height: 1.5; }
+.rw-status-icon { margin-right: 6px; vertical-align: -1px; }
+.rw-error { font-size: 12px; color: #e06060; line-height: 1.45; }
+.rw-retry { margin-left: 8px; height: 24px; padding: 0 10px; font-size: 12px; }
+
+/* "already_strong" — visibly softer, not an alarm */
+.rw-strong {
+  font-size: 12px;
+  font-style: italic;
+  opacity: 0.75;
+  border-left: 3px solid #2e8b57;
+  padding: 4px 8px;
+}
+.rw-stale {
+  font-size: 12px;
+  color: #e8994f;
+  border-left: 3px solid #e8994f;
+  padding: 4px 8px;
+}
+
+.rw-card {
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.rw-card.applied { border-color: #2e8b57; }
+.rw-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid var(--fd-border);
+}
+.rw-card-label { font-size: 12px; font-weight: 700; }
+.rw-card-blurb { font-size: 11px; opacity: 0.65; }
+.rw-card-text {
+  font-family: 'Courier Prime', Courier, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  padding: 8px 10px;
+}
+.rw-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--fd-border);
+}
+.rw-card-note { font-size: 11px; font-style: italic; opacity: 0.7; flex: 1; line-height: 1.4; }
+.rw-use { height: 24px; padding: 0 12px; font-size: 12px; flex: none; }
+
+.rw-foot {
+  font-size: 11px;
+  opacity: 0.65;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-top: 4px;
+  border-top: 1px solid var(--fd-border);
+}
+.rw-link {
+  border: none;
+  background: none;
+  color: var(--fd-accent, #4a90d9);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+}
+.rw-link:hover { text-decoration: underline; }

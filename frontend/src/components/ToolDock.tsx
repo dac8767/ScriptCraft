@@ -24,7 +24,7 @@ import {
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard,
   FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,
   FaKeyboard, FaRobot, FaBook, FaBookOpen, FaSlidersH, FaColumns,
-  FaCommentDots, FaChevronRight, FaChevronDown, FaMarker,
+  FaCommentDots, FaChevronRight, FaChevronDown, FaMarker, FaMagic,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, NO_FULLSCREEN_TOOLS, FULLSCREEN_ONLY_TOOLS, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
@@ -48,6 +48,7 @@ import FeedbackTool, { FeedbackShotControls } from './FeedbackTool';
 import TagsPanel, { TagsTitleExtra, TagsWindowActions, useTagsTabs } from './TagsPanel';
 import MarkupsPanel, { MarkupsTitleExtra, MarkupsControls } from './MarkupsPanel';
 import ThesaurusTool from './ThesaurusTool';
+import RewriteTool from './RewriteTool';
 import { ScenesTool } from './ScenesTool';
 import BeatBoard, { OutlineHeaderControls } from './BeatBoard';
 import TypewriterTool from './TypewriterTool';
@@ -121,6 +122,10 @@ export const ALL_TOOLS: ToolDef[] = [
   // locally under public/thesaurus/; follows the script caret, replaces
   // in place. No network involved (see utils/thesaurus.ts).
   { id: 'thesaurus', label: 'Thesaurus', icon: <FaBookOpen />, defaultSize: { w: 320, h: 420 }, group: 3 },
+  // v5.54, Derek: Action Rewrite — three craft-guided rewrites of selected
+  // action lines (Derek's design handoff; prompt + API call live Rust-side,
+  // the writer brings their own Anthropic key, stored in the OS keychain).
+  { id: 'rewrite', label: 'Action Rewrite', icon: <FaMagic />, defaultSize: { w: 360, h: 520 }, group: 3 },
   // v1.96: the Notebook window is ONLY the pages tree — it sits inline in
   // the panel like Navigator, while the writing surface takes over the
   // editor area (NotebookSurface in ScreenplayEditor). keepOpenOnEditorClick
@@ -520,6 +525,8 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
       return <MarkupsPanel editor={editor} />;
     case 'thesaurus':
       return <ThesaurusTool editor={editor} />;
+    case 'rewrite':
+      return <RewriteTool editor={editor} />;
     case 'fragments':
       return <FragmentsTool editor={editor} />;
     case 'highlights':

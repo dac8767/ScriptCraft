@@ -4,6 +4,10 @@ use tauri::{Emitter, Manager};
 #[cfg(desktop)]
 use tauri::menu::{Menu, Submenu, PredefinedMenuItem};
 
+// v5.54: the Action Rewrite feature — Anthropic API call + keychain key
+// management, kept Rust-side so the key never enters the webview.
+mod rewrite;
+
 // ── Android content URI reading (JNI) ────────────────────────────────────
 // On Android, files opened via intents use content:// URIs. These cannot be
 // read with std::fs — we must go through Android's ContentResolver via JNI.
@@ -1007,6 +1011,10 @@ pub fn run() {
             open_new_window,
             set_window_title,
             open_url,
+            rewrite::rewrite_action_lines,
+            rewrite::save_api_key,
+            rewrite::has_api_key,
+            rewrite::clear_api_key,
         ]);
 
         // ── Native menu (desktop only) ────────────────────────────────

@@ -155,6 +155,40 @@ reliable; re-run before believing a weird worker failure.
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
 
+### v5.49 — Design seats at the panel edge, stacked previews + Save, picker ×/white chips, spinner + typeable count
+
+- Derek's 8 (five mid-turn messages; the sandbox rolled back a FOURTH
+  time at turn start — reset + reinstall recovered it, and the restored
+  node_modules was MISSING the tiptap extension packages until
+  `npm install` reran):
+  (1) DESIGN SEAT SPEC (his correction of v5.48's top-right anchor):
+  every OPEN of the independent window seats it against its OWN panel —
+  right edge on the right panel's left edge (mirrored for a left-side
+  config), measured live from `.tool-dock-wrap.tool-dock-<side>`;
+  no visible panel → top-right fallback. Drags while open are
+  respected; the v5.48 sentinel/off-screen logic is gone.
+  (2) PREVIEWS STACKED: "In Script:" UNDER "In Navigator:", both left
+  (.markup-prev-lines column, .markup-prev-line rows); SAVE moved into
+  the same section, pinned bottom-right (.markup-pop-preview align-items
+  flex-end + margin-left auto); the .markup-pop-foot row + spacer are
+  dead, removed.
+  (3) Highlight group hugs the head row's right (.markup-hl-group
+  margin-left auto — keeps right-hugging when wrapped).
+  (4) The icon/color picker's drag bar gained a × (.markup-icon-pop-close,
+  stopPropagation vs the drag).
+  (5) WHITE CHIPS: `.markup-preset` background is #fff app-wide (the
+  paper the margin icons ride) — the isDarkColor light-chip special case
+  is now redundant-but-harmless (class + rule remain).
+  (6) STEPPER: one frame around both arrows (.fs-updown bordered,
+  divider between buttons), number snug (-3px against the group gap)…
+  (7) …and the count is a FIELD (.fs-perrow-input — type it or step it;
+  raw text while editing, blur snaps to the clamped store value;
+  reverses v5.08's "never typed").
+- check-v549: 11 green (fresh + post-dock-cycle seat gap 8px, stacked
+  left-aligned previews, Save bottom-right + foot gone, highlight
+  right-hug 0px, picker × present/closes, 57/57 white chips, framed
+  tight arrows, 3px number gap, typed 6 → store+grid 6).
+
 ### v5.48 — annotations = highlighted text, pick-to-place, title-bar status/delete, Scene # in header
 
 - Derek's 8 (six mid-turn messages):

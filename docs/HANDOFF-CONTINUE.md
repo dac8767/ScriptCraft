@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.53 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.54 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,74 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.53 — the THESAURUS tool: local MyThes/WordNet data, caret-follow, replace-in-place (HEAD)
+### v5.54 — ACTION REWRITE: Derek's design-handoff integrated (Rust API call + keychain, PM adaptation) (HEAD)
+
+- Derek uploaded a zip from a DESIGN CHAT (HANDOFF.md + system prompt +
+  rewrite.rs + a flat-model actionRewrite.ts): "use these files from a
+  different chat to create an action line improvement tool." Feature:
+  select action lines → three craft-guided rewrites (cut / sharpen /
+  restructure), each with a teaching note; dialogue untouched.
+  docs/ACTION-REWRITE.md now carries the handoff's rationale + Derek's
+  desktop verification checklist — READ IT before touching this feature;
+  its decisions are deliberate (temperature 1.0, include_str! prompt,
+  already_strong softening, three-strategies contract).
+- RUST (first Rust this project ships beyond upstream): rewrite.rs =
+  4 tauri commands (rewrite_action_lines, save/has/clear_api_key);
+  system prompt include_str!'d from src-tauri/prompts/ (VERBATIM from
+  the handoff — it is the product, don't rewrite its craft content);
+  BYO Anthropic key in the OS keychain (service com.freedraft.app —
+  the persisted bundle id), read Rust-side per request, NEVER the
+  webview. keyring v3 dep gated to desktop targets; mobile compiles
+  keyless stubs. reqwest body serialized by hand (this repo's reqwest
+  lacks the json feature — kept it that way). Model claude-sonnet-5,
+  opus is a one-line swap.
+- SANDBOX CAN CARGO CHECK NOW: apt-get install libgtk-3-dev
+  libwebkit2gtk-4.1-dev (after apt-get update) makes `cargo check`
+  pass on the Linux host (~58s cold). Derek's `npm run desktop` runs
+  `tauri dev` = compiles Rust on HIS machine — NEVER push Rust
+  unchecked. macOS cross-check is impossible here (objc2 needs a mac
+  cc); the Linux check + keyring's documented feature set is the gate.
+- FRONTEND (the handoff's §5 answered — flat model → ProseMirror):
+  utils/actionRewrite.ts = projectScript (top-level walk, sceneHeading→
+  scene_heading, recurses dualDialogue columns, elements carry PM
+  spans), the handoff's pure context helpers UNCHANGED (clamp-to-action,
+  scene-boundary stops, locationEstablished, firstAppearances, dialogue
+  lookback), resolveEditorSelection (PM selection → indices → pmTarget
+  {from,to,text}), targetIsCurrent (textBetween equality — the stale
+  guard), applyVariantToEditor (insertContentAt, retargets onto the
+  insert so variant B replaces variant A; undo = history), invoke
+  wrappers isTauri-guarded (browser build: hasApiKey false, calls throw
+  the desktop-only message).
+- RewriteTool.tsx: key setup card (BYO key → keychain; Change/Remove in
+  a footer), intent select (No steer/Tighten/More visual/Stronger
+  verbs/Plainer), live target line ("Target: N action paragraphs" /
+  clamp notice / refusal reason — never a silent dead button), three
+  variant cards (label + blurb + Courier text + note + Use),
+  already_strong banner softens, stale banner blocks Use after
+  conflicting edits (positions remapped via transaction mapping
+  map(from,1)/map(to,-1)). Registered: ToolId 'rewrite', right panel,
+  ALL_TOOLS (FaMagic, 360×520, group 3), Tools menu, 29-rewrite.css.
+  About list credits keyring-rs. AI Writer (the joke) untouched.
+- Tests: 13 new in actionRewrite.test.ts against a REAL TipTap editor
+  (the Dialogue.test.ts harness pattern) — projection spans (textBetween
+  agreement), dual-dialogue nesting, clamping, context fields, scene
+  boundaries, established location, first appearances, apply+retarget+
+  swap, stale refusal (908 total). check-v554: 6 green in the browser
+  build (desktop-only notice + disabled button, intent options, 1-para
+  target, clamp notice, refusal reason, Tools menu row).
+- NOT VERIFIABLE HERE: the live API call + keychain round-trip — Derek's
+  8-step checklist is in docs/ACTION-REWRITE.md (incl. the prompt-cache
+  check: second request must show cache_read, not cache_creation).
+- QUEUED NEXT (in order):
+  1. PAGES WINDOW TABS restructure (Script / Title Page / Custom; the
+     separate Title Page tool leaves the side panels).
+  2. NAVIGATOR FILTER (Derek, mid-v5.54, verbatim): "in the navigator
+     filter window, change Filter Annotations to 'Annotations'. Above
+     that, add a new section in the filter called 'Scene Headings'. the
+     filter options should be INT. or EXT., location, Contains X (type
+     in a word or words)".
+
+### v5.53 — the THESAURUS tool: local MyThes/WordNet data, caret-follow, replace-in-place
 
 - Derek: "Add a thesaurus tool. Find an open source thesaurus resource
   online… The code should be local, don't connect to an external app or
@@ -364,45 +431,12 @@ Durable bits kept live here:
   PAGES WINDOW TABS (Script / Title Page / Custom) with the separate
   Title Page tool leaving the side panels — the big restructure.
 
-### v5.49 — Design seats at the panel edge, stacked previews + Save, picker ×/white chips, spinner + typeable count
-
-- Derek's 8 (five mid-turn messages; the sandbox rolled back a FOURTH
-  time at turn start — reset + reinstall recovered it, and the restored
-  node_modules was MISSING the tiptap extension packages until
-  `npm install` reran):
-  (1) DESIGN SEAT SPEC (his correction of v5.48's top-right anchor):
-  every OPEN of the independent window seats it against its OWN panel —
-  right edge on the right panel's left edge (mirrored for a left-side
-  config), measured live from `.tool-dock-wrap.tool-dock-<side>`;
-  no visible panel → top-right fallback. Drags while open are
-  respected; the v5.48 sentinel/off-screen logic is gone.
-  (2) PREVIEWS STACKED: "In Script:" UNDER "In Navigator:", both left
-  (.markup-prev-lines column, .markup-prev-line rows); SAVE moved into
-  the same section, pinned bottom-right (.markup-pop-preview align-items
-  flex-end + margin-left auto); the .markup-pop-foot row + spacer are
-  dead, removed.
-  (3) Highlight group hugs the head row's right (.markup-hl-group
-  margin-left auto — keeps right-hugging when wrapped).
-  (4) The icon/color picker's drag bar gained a × (.markup-icon-pop-close,
-  stopPropagation vs the drag).
-  (5) WHITE CHIPS: `.markup-preset` background is #fff app-wide (the
-  paper the margin icons ride) — the isDarkColor light-chip special case
-  is now redundant-but-harmless (class + rule remain).
-  (6) STEPPER: one frame around both arrows (.fs-updown bordered,
-  divider between buttons), number snug (-3px against the group gap)…
-  (7) …and the count is a FIELD (.fs-perrow-input — type it or step it;
-  raw text while editing, blur snaps to the clamped store value;
-  reverses v5.08's "never typed").
-- check-v549: 11 green (fresh + post-dock-cycle seat gap 8px, stacked
-  left-aligned previews, Save bottom-right + foot gone, highlight
-  right-hug 0px, picker × present/closes, 57/57 white chips, framed
-  tight arrows, 3px number gap, typed 6 → store+grid 6).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.49** — Design seats at the panel edge, stacked previews + Save, picker ×/white chips, spinner + typeable count
 - **v5.48** — annotations = highlighted text, pick-to-place, title-bar status/delete, Scene # in header
 - **v5.47** — # goto in header, stacked stepper, Design DOCKS BACK, notes checklist fixes, edit-window force-show
 - **v5.46** — nav Filter=annotation grid, Design independent window, edge resize everywhere, live checklist, working inserts
