@@ -1281,7 +1281,8 @@ export function StructureTitleExtra() {
  *  Flipping it off without Apply cancels (useSceneReorder drops the pending
  *  snapshot when the flag clears). v4.35 batch-v9 #2: drives BOTH views.
  *  v5.19, Derek: "match this format" (a dialog's Apply) — it wears the
- *  dialog button classes, so the filled-accent look is the dialogs' own. */
+ *  dialog button classes, so the filled-accent look is the dialogs' own.
+ *  v5.34, Derek: labelled "Change Order". */
 export function ScenesReorderControl() {
   const reorder = useEditorStore((s) => s.scenesReorderMode);
   const setReorder = useEditorStore((s) => s.setScenesReorderMode);
@@ -1291,7 +1292,7 @@ export function ScenesReorderControl() {
       title={reorder ? 'Exit reorder mode (discards unapplied order)' : 'Drag scenes into a new order'}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={() => setReorder(!reorder)}
-    >Reorder</button>
+    >Change Order</button>
   );
 }
 

@@ -115,12 +115,13 @@ describe('SceneControls (row-2 cluster)', () => {
     expect(labels.some((t) => t?.includes('Reorder'))).toBe(false);
   });
 
-  it('Reorder renders as a body action button, driving the same store flag', () => {
+  it('Change Order renders as a body action button, driving the same store flag', () => {
     act(() => { useEditorStore.setState({ scenesReorderMode: false }); });
     act(() => root.render(<ScenesReorderControl />));
     const btn = host.querySelector('button.scene-reorder-btn') as HTMLButtonElement;
     expect(btn).not.toBeNull();
-    expect(btn.textContent).toBe('Reorder');
+    // v5.34, Derek: the label is "Change Order"
+    expect(btn.textContent).toBe('Change Order');
     // v5.19, Derek: it wears the dialogs' filled-primary format — one source.
     expect(btn.className).toContain('dialog-btn-primary');
     expect(btn.className).not.toContain('active');
