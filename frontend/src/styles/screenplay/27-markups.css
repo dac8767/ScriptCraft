@@ -373,7 +373,9 @@
   border-radius: 6px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   padding: 6px;
-  width: 216px;
+  /* v5.43, Derek: wide enough for the full Status toggle — "All" was
+     clipped at 216px */
+  width: 252px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -493,17 +495,9 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
 .markup-icon-pop-left { width: 236px; flex: none; }
 .markup-icon-pop-right { flex: none; }
 
-/* v5.42, Derek: the panel's ONE Filter — two sections in one dropdown */
-.markup-filter-section-title {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--fd-accent);
-  margin: 2px 0;
-}
+/* v5.42/v5.43, Derek: the panel's ONE Filter — one section whose controls
+   drive the script AND the window together (the two-section idea is gone) */
 .markup-filter-statusrow { display: flex; align-items: center; gap: 6px; }
-.markup-filter-combined { max-height: min(76vh, 620px); overflow-y: auto; }
 .markup-mini-btn {
   width: 24px;
   height: 24px;

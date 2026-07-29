@@ -50,13 +50,19 @@ export function MarkupsControls() {
   const setFilters = useEditorStore((s) => s.setMarkupFilters);
   const scriptHidden = useEditorStore((s) => s.markupHiddenIcons);
   const setScriptHidden = useEditorStore((s) => s.setMarkupHiddenIcons);
-  const scriptDone = useEditorStore((s) => s.markupScriptDone);
   const setScriptDone = useEditorStore((s) => s.setMarkupScriptDone);
   const search = useEditorStore((s) => s.markupSearch);
   const setSearch = useEditorStore((s) => s.setMarkupSearch);
 
-  const filterTypes = useTypesInUse(filters.hiddenIcons);
-  const scriptTypes = useTypesInUse(scriptHidden);
+  // v5.43, Derek: ONE filter — every control here drives the SCRIPT and the
+  // WINDOW together. Display reads the union (a type hidden in either shows
+  // as hidden; one click converges the two), so legacy per-scope state from
+  // the other doors (⋮ menus, ribbon, Navigator) can't hide a mismatch.
+  const hiddenUnion = useMemo(
+    () => [...new Set([...scriptHidden, ...filters.hiddenIcons])],
+    [scriptHidden, filters.hiddenIcons],
+  );
+  const types = useTypesInUse(hiddenUnion);
 
   const [filterOpen, setFilterOpen] = useState(false);
   const filterBtn = useRef<HTMLButtonElement>(null);
@@ -64,47 +70,48 @@ export function MarkupsControls() {
   const filterPos = useSeat(filterOpen, filterBtn, filterBox);
   useDismiss(filterOpen, filterBox, filterBtn, () => setFilterOpen(false));
 
-  const toggle = (list: string[], icon: string) =>
-    (list.includes(icon) ? list.filter((x) => x !== icon) : [...list, icon]);
+  const setBothDone = (d: 'open' | 'done' | 'all') => {
+    setScriptDone(d);
+    setFilters({ ...filters, done: d });
+  };
+  const toggleBoth = (icon: string) => {
+    const hidden = hiddenUnion.includes(icon);
+    setScriptHidden(hidden ? scriptHidden.filter((x) => x !== icon) : [...scriptHidden, icon]);
+    setFilters({
+      ...filters,
+      hiddenIcons: hidden ? filters.hiddenIcons.filter((x) => x !== icon) : [...filters.hiddenIcons, icon],
+    });
+  };
+  const showAllBoth = () => {
+    setScriptHidden([]);
+    setFilters({ ...filters, hiddenIcons: [] });
+  };
+  const hideAllBoth = () => {
+    setScriptHidden(types);
+    setFilters({ ...filters, hiddenIcons: types });
+  };
 
-  const filterChip = filters.hiddenIcons.length + (filters.done !== 'open' ? 1 : 0);
-  const showChip = scriptHidden.length + (scriptDone !== 'all' ? 1 : 0);
-  const chip = filterChip + showChip;
+  const doneShown = filters.done;
+  const chip = hiddenUnion.length + (doneShown !== 'all' ? 1 : 0);
   return (
     <>
-      {/* v5.42, Derek: ONE "Filter" button — its dropdown carries BOTH
-          scopes as sections: "Show in Script" (viewPrefs — what renders on
-          the page; the ribbon button and View submenu drive the same
-          state) and "Show In Window" (this list). */}
-      <button ref={filterBtn} className={`tool-ctl tool-ctl-lead markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Filter annotations"
+      <button ref={filterBtn} className={`tool-ctl tool-ctl-lead markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Filter annotations (script and window together)"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setFilterOpen((v) => !v); }}>
         <span className="tool-ctl-label">Filter</span>
         {chip > 0 && <span className="tool-ctl-chip">{chip}</span>}
       </button>
       {filterOpen && createPortal(
-        <div ref={filterBox} className="markup-subpop markup-filter-pop markup-filter-combined" style={filterPos ?? { top: -9999, left: -9999 }}
+        <div ref={filterBox} className="markup-subpop markup-filter-pop" style={filterPos ?? { top: -9999, left: -9999 }}
           onPointerDown={(e) => e.stopPropagation()}>
-          <div className="markup-filter-section-title">Show in Script</div>
           <TypeGridSection
-            done={scriptDone}
-            onDone={setScriptDone}
-            types={scriptTypes}
-            hidden={scriptHidden}
-            onToggle={(icon) => setScriptHidden(toggle(scriptHidden, icon))}
-            onShowAll={() => setScriptHidden([])}
-            onHideAll={() => setScriptHidden(scriptTypes)}
-          />
-          <div className="markup-dots-sep" />
-          <div className="markup-filter-section-title">Show In Window</div>
-          <TypeGridSection
-            done={filters.done}
-            onDone={(d) => setFilters({ ...filters, done: d })}
-            types={filterTypes}
-            hidden={filters.hiddenIcons}
-            onToggle={(icon) => setFilters({ ...filters, hiddenIcons: toggle(filters.hiddenIcons, icon) })}
-            onShowAll={() => setFilters({ ...filters, hiddenIcons: [] })}
-            onHideAll={() => setFilters({ ...filters, hiddenIcons: filterTypes })}
+            done={doneShown}
+            onDone={setBothDone}
+            types={types}
+            hidden={hiddenUnion}
+            onToggle={toggleBoth}
+            onShowAll={showAllBoth}
+            onHideAll={hideAllBoth}
           />
         </div>,
         document.body,

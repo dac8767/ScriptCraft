@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.43",
+    "date": "2026-07-29",
+    "changes": [
+      "The Annotations panel's Filter is ONE section again — its Status toggle and type grid drive the script and the window TOGETHER (the two-section split never fit and split states were a trap); a type hidden in either scope shows as hidden, and one click brings it back everywhere",
+      "Right-click anywhere in the script area — page margins, the space between pages, annotation chips — now opens the app's context menu; WebKit's native Look Up / Translate menu no longer sneaks in",
+      "The \"Return to Editor\" ribbon button is gone from every window that still had one — the window's × already does that"
+    ]
+  },
+  {
     "version": "5.42",
     "date": "2026-07-29",
     "changes": [

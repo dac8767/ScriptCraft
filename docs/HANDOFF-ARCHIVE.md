@@ -151,9 +151,21 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.37 and older (newest first)
+## Version history — v5.38 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.38 — Scenes cards: metrics wrap instead of truncating the name
+
+- Derek's queue item 3. `.index-card-top` wraps; the CRUX:
+  `.index-card-heading` needed `flex: 1 1 auto` + min-width 0 — the old
+  `flex: 1` is basis 0, so the row NEVER overflowed and the metas never
+  dropped (first driver run caught it: Δtop 0). With basis auto the wrap
+  decision uses the name's real one-line width: short names keep the metas
+  beside them, long ones send metas (+ the expand button, which rides
+  them) to row 2 and spend the freed width on a second text line.
+- check-v538: 5 green (short same-row Δ0, long Δ33px drop, expand rides,
+  2-line heading height).
 
 ### v5.37 — fullscreen joins the one-window rule; popover never over a takeover
 

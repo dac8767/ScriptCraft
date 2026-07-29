@@ -23,7 +23,7 @@ import {
   FaExchangeAlt, FaChevronDown,
   FaMarker,
 } from 'react-icons/fa';
-import { LuUndo2, LuSearch } from 'react-icons/lu';
+import { LuSearch } from 'react-icons/lu';
 import { ALL_TOOLS } from './ToolDock';
 import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import {
@@ -39,7 +39,7 @@ import { tokenLabel } from './tokenMeta';
 import { buildRibbonPalette } from './ribbonPaletteData';
 import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
-import { TableGridPicker, closeNotebook, applyScrapbookTextFormat } from './NotebookTool';
+import { TableGridPicker, applyScrapbookTextFormat } from './NotebookTool';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { confirmDialog } from './ConfirmDialog';
 import { commandDef, type ToolbarCommand } from './toolbarCommands';
@@ -2041,30 +2041,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           {renderLiveGroup(group, `g-${group[0].orig}`)}
         </React.Fragment>
       ))}
-      {/* v3.33, Derek: the Scrapbook section — injected while the tool is
-          open, always the last left-aligned section. */}
-      {scrapbookOpen && (
-        <>
-          {leftLive.length > 0 && <div className="toolbar-separator rib-section-sep" />}
-          <div className="rib-section rib-scrapbook-sec">
-            {/* v3.87, Derek: no section title — the Return to Editor button is
-                the only control. Insert Picture / Insert Table live in the menu
-                bar's contextual Picture / Table menus. */}
-            <div className="rib-scrapbook-body">
-              {/* v3.77/v3.87, Derek: Return to Editor — blue like the old surface
-                  button, icon beside two lines of text ("Return" / "to Editor"). */}
-              <button
-                className="rib-scrapbook-return"
-                title="Return to Editor"
-                onClick={() => closeNotebook()}
-              >
-                <LuUndo2 className="rib-scrapbook-return-icon" />
-                <span className="rib-scrapbook-return-label">Return to Editor</span>
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      {/* (v5.43, Derek: the Scrapbook's ribbon "Return to Editor" section is
+          gone — the surface's own × (v4.85) does it, and one control per
+          action is the rule.) */}
       {/* v4.85, Derek: the fullscreen takeover's Return-to-Editor is GONE —
           its header × already returns you to the editor, so the ribbon
           button was a second control for one action. (The Scrapbook keeps

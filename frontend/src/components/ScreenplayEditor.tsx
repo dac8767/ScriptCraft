@@ -4026,8 +4026,13 @@ const ScreenplayEditor: React.FC = () => {
     if (!editor) return;
     const isTouchDevice = navigator.maxTouchPoints > 0;
     const handleContextMenu = (e: MouseEvent) => {
-      const editorDom = editor.view.dom;
-      if (!editorDom.contains(e.target as Node)) return;
+      // v5.43, Derek: ONLY the app's menu in the script area. The old guard
+      // required the target to be INSIDE editor.view.dom, so right-clicks
+      // on page margins, the page-break bands and the annotation icons —
+      // all part of the script area but outside the ProseMirror DOM — fell
+      // through to WebKit's NATIVE menu (Look Up / Translate / Services).
+      const area = (e.target as HTMLElement).closest?.('.editor-main');
+      if (!area) return;
       e.preventDefault();
       // No context menu on touch devices — use 3-finger touch instead
       if (isTouchDevice) return;
@@ -4096,12 +4101,11 @@ const ScreenplayEditor: React.FC = () => {
       });
     };
 
-    // Attach to the editor's parent to catch all right-clicks in the editor area
-    const editorEl = editor.view.dom.parentElement;
-    if (editorEl) {
-      editorEl.addEventListener('contextmenu', handleContextMenu);
-      return () => editorEl.removeEventListener('contextmenu', handleContextMenu);
-    }
+    // v5.43: DOCUMENT-level so every right-click in the script area is
+    // caught — the old parentElement binding missed the overlays and
+    // margins that sit beside the ProseMirror DOM.
+    document.addEventListener('contextmenu', handleContextMenu);
+    return () => document.removeEventListener('contextmenu', handleContextMenu);
   }, [editor]);
 
   const handleCtxMenuClose = useCallback(() => {

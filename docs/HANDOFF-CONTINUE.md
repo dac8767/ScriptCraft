@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.42 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.43 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -202,7 +202,35 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.42 — preview knobs, no phantom row, pinned ⋮, growing field, ONE Filter (HEAD)
+### v5.43 — ONE Filter for both scopes, whole-area context menu, Return to Editor retired (HEAD)
+
+- Derek's 3 (one turn): (1) FILTER REVERSAL of v5.42's two-section design
+  ("the drop down window is not big enough for the status field. abandon
+  the two section idea"): MarkupsPanel renders ONE TypeGridSection whose
+  every control writes BOTH scopes — setBothDone/toggleBoth/showAll/
+  hideAll pair markupHiddenIcons+markupScriptDone (script) with
+  markupFilters (window). Display reads the UNION of the two hidden
+  lists, so legacy split state (the ⋮ menus, ribbon and Navigator still
+  write single scopes) shows as hidden and ONE click converges both.
+  `.markup-filter-pop` widened 216→252px (216 clipped the Status row's
+  "All"); `.markup-filter-combined` + section-title CSS removed dead.
+  Chip = hiddenUnion + status. (2) CONTEXT MENU owns the whole script
+  area: the handler moved from `editor.view.dom.parentElement` to
+  DOCUMENT with a `.closest('.editor-main')` guard — right-clicks on
+  page margins, page-break bands and annotation chips now open the APP
+  menu (WebKit's native Look Up/Translate suppressed); outside the
+  script area nothing changes. (3) the Scrapbook ribbon's "Return to
+  Editor" section is GONE (the × does it; last remaining instance —
+  the fullscreen one died earlier); orphaned LuUndo2 + closeNotebook
+  imports cleaned (the TS6133 gate would have blocked the .dmg).
+- check-v543: 10 green (one section/one status row, old titles gone,
+  "All" fits in 252px, status/type/hide-all each write BOTH scopes,
+  split-state converges in one click, backdrop right-click →
+  defaultPrevented + app menu AFTER the React flush — same-tick DOM
+  reads race the render, the first run's lesson — no-op outside the
+  script area, no Return-to-Editor button with the Scrapbook open).
+
+### v5.42 — preview knobs, no phantom row, pinned ⋮, growing field, ONE Filter
 
 - Derek's 6 (mid-turn adds included): (1) `.markup-pop-preview` padding is
   four Design knobs — --dz-anno-prev-pad-top/right/bottom/left (defs
@@ -315,23 +343,12 @@ Durable bits kept live here:
 - check-v539: 6 green (button seat, real overflow, off = no pan, grab
   cursor, Δ80/60 pan, off restores cursor).
 
-### v5.38 — Scenes cards: metrics wrap instead of truncating the name
-
-- Derek's queue item 3. `.index-card-top` wraps; the CRUX:
-  `.index-card-heading` needed `flex: 1 1 auto` + min-width 0 — the old
-  `flex: 1` is basis 0, so the row NEVER overflowed and the metas never
-  dropped (first driver run caught it: Δtop 0). With basis auto the wrap
-  decision uses the name's real one-line width: short names keep the metas
-  beside them, long ones send metas (+ the expand button, which rides
-  them) to row 2 and spend the freed width on a second text line.
-- check-v538: 5 green (short same-row Δ0, long Δ33px drop, expand rides,
-  2-line heading height).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.38** — Scenes cards: metrics wrap to a second row instead of truncating the name
 - **v5.37** — fullscreen joins the one-window rule; the annotation window never coexists with a takeover
 - **v5.36** — Notes v2: one rich card kind, equal-height rows, the WebKit drag-abort fix
 - **v5.35** — docked side-panel tools survive clicks into the script (floats/temp still dismiss)
