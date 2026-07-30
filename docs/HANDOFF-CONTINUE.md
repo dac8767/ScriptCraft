@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.60 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.61 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -204,7 +204,29 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.60 — the rewrite target stays PAINTED (blur-proof), + the declutter eye (HEAD)
+### v5.61 — full-length suggestion cards, ONE scroll (HEAD)
+
+- Derek: "show the text of all three suggestions in their full length…
+  i just want one scroll for the whole tool." The v5.59 textareas capped
+  at rows 9 (and counted only \n — soft-wrapped lines overflowed even
+  sooner), so long variants scrolled inside their cards inside the
+  scrolling body.
+- Fix: the grid replicated-content trick — `.rw-grow` wraps each
+  textarea; its ::after mirrors data-value (same font/padding/pre-wrap
+  box, hidden) and defines the cell height, the textarea stretches to
+  match (grid-area 1/1 both). Pure CSS: no JS measuring, re-wraps
+  automatically when the panel resizes. data-value carries a trailing
+  \n so the last empty line counts. `overflow: hidden; resize: none` on
+  the textarea; the beat list's max-height/scroll removed too —
+  `.rw-body` is the ONLY scroll.
+- Driver technique worth keeping (check-v561): the results UI needs the
+  API, but the MECHANISM was probed in-page against the real
+  stylesheet — inject the .rw-grow structure, long text → 416px tall
+  with scrollHeight == clientHeight (no inner scroll), short text →
+  56px. Verifies the CSS contract without a live request.
+- Gates: tsc 0, 916 tests, build, check-v561 5/5.
+
+### v5.60 — the rewrite target stays PAINTED (blur-proof), + the declutter eye
 
 - Derek's bug: "if i click into the context text field, or if I open the
   ai tool and it is popped out, my selected text on screen gets
@@ -342,26 +364,12 @@ Durable bits kept live here:
 - Gates: cargo check, tsc 0, 908 tests, build, check-v557 2/2 (steer
   pair, targeting regression).
 
-### v5.56 — Action Rewrite prompt: Derek's no-em-dash rule
-
-- Derek confirmed the API path works on his Mac, then: "add a rule to the
-  suggestions: Dont use em dash". Hard rule 13 added to
-  src-tauri/prompts/action_line_rewrite.md (variant text never contains
-  an em dash; break the sentence or use comma/colon/ellipsis). This is
-  the SANCTIONED kind of prompt edit — Derek asking is exactly the
-  condition the design handoff set; keep honoring that rule.
-- Mechanics to remember: the prompt is include_str!'d, so a prompt edit
-  is a RUST change — cargo check here, quick incremental rebuild on his
-  next launch, and the prompt cache re-writes once (pennies). The
-  screenplay interruption dash (--) is deliberately untouched; ban it
-  too only if Derek asks. No output post-processing was added — the
-  prompt is the enforcement point; revisit only if he reports leaks.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.56** — Action Rewrite prompt: Derek's no-em-dash rule
 - **v5.55** — npm run desktop self-heals the Cargo.lock pull collision
 - **v5.54** — ACTION REWRITE: Derek's design-handoff integrated (Rust API call + keychain, PM adaptation)
 - **v5.53** — the THESAURUS tool: local MyThes/WordNet data, caret-follow, replace-in-place

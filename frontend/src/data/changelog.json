@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.61",
+    "date": "2026-07-30",
+    "changes": [
+      "Action Rewrite: suggestions show at their full length — no more scrolling inside each card. The cards grow with their text (and shrink back as you edit), the beat list flows inline too, and the only scrollbar is the tool window's own."
+    ]
+  },
+  {
     "version": "5.60",
     "date": "2026-07-30",
     "changes": [

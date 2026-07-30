@@ -155,6 +155,21 @@ reliable; re-run before believing a weird worker failure.
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
 
+### v5.56 — Action Rewrite prompt: Derek's no-em-dash rule
+
+- Derek confirmed the API path works on his Mac, then: "add a rule to the
+  suggestions: Dont use em dash". Hard rule 13 added to
+  src-tauri/prompts/action_line_rewrite.md (variant text never contains
+  an em dash; break the sentence or use comma/colon/ellipsis). This is
+  the SANCTIONED kind of prompt edit — Derek asking is exactly the
+  condition the design handoff set; keep honoring that rule.
+- Mechanics to remember: the prompt is include_str!'d, so a prompt edit
+  is a RUST change — cargo check here, quick incremental rebuild on his
+  next launch, and the prompt cache re-writes once (pennies). The
+  screenplay interruption dash (--) is deliberately untouched; ban it
+  too only if Derek asks. No output post-processing was added — the
+  prompt is the enforcement point; revisit only if he reports leaks.
+
 ### v5.55 — npm run desktop self-heals the Cargo.lock pull collision
 
 - Derek's launch failed live: `git pull` aborted with "Your local changes

@@ -301,13 +301,20 @@ export default function RewriteTool({ editor }: { editor: Editor | null }) {
             ))}
           </div>
         )}
-        <textarea
-          className="rw-card-edit"
-          rows={Math.max(3, Math.min(9, d.draft.split('\n').length + 1))}
-          placeholder={isCustom ? 'Write it your way, or borrow beats below…' : undefined}
-          value={d.draft}
-          onChange={(e) => setDrafts(updateDraft(drafts, d.slot, e.target.value))}
-        />
+        {/* v5.61, Derek: full-length suggestions, ONE scroll for the whole
+            tool. The wrapper's ::after mirrors the text and sets the height,
+            so the textarea grows with its content and never scrolls itself
+            (the grid replicated-content trick — pure CSS, re-wraps with the
+            panel width). */}
+        <div className="rw-grow" data-value={`${d.draft}\n`}>
+          <textarea
+            className="rw-card-edit"
+            rows={2}
+            placeholder={isCustom ? 'Write it your way, or borrow beats below…' : undefined}
+            value={d.draft}
+            onChange={(e) => setDrafts(updateDraft(drafts, d.slot, e.target.value))}
+          />
+        </div>
         {isCustom && (
           <div className="rw-beats">
             <div className="rw-beats-bar">

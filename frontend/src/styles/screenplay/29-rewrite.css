@@ -107,18 +107,35 @@
 }
 .rw-card-label { font-size: 12px; font-weight: 700; }
 .rw-card-blurb { font-size: 11px; opacity: 0.65; }
-/* v5.59: suggestions are EDITABLE — the draft field wears the script face */
-.rw-card-edit {
+/* v5.59: suggestions are EDITABLE — the draft field wears the script face.
+   v5.61, Derek: full length, no inner scroll — the .rw-grow wrapper's
+   ::after mirrors the value (same box, hidden) and defines the height, the
+   textarea stretches to match. The ONLY scroll is .rw-body's. */
+.rw-grow { display: grid; }
+.rw-grow::after {
+  content: attr(data-value);
+  visibility: hidden;
+  grid-area: 1 / 1;
+}
+.rw-grow > .rw-card-edit {
+  grid-area: 1 / 1;
   width: 100%;
   border: none;
   background: none;
   color: inherit;
-  resize: vertical;
+  resize: none;
+  overflow: hidden;
+}
+/* the mirror must wear EXACTLY the textarea's text box */
+.rw-grow::after,
+.rw-grow > .rw-card-edit {
   font-family: 'Courier Prime', Courier, monospace;
   font-size: 12px;
   line-height: 1.45;
   padding: 8px 10px;
-  min-height: 54px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 40px;
 }
 .rw-card-edit:focus { outline: none; background: rgba(0, 0, 0, 0.08); }
 .rw-revert { margin-left: auto; flex: none; }
@@ -135,13 +152,12 @@
 
 .rw-beats { padding: 0 10px 4px; }
 .rw-beats-bar { display: flex; gap: 12px; align-items: center; font-size: 11px; }
+/* v5.61: no inner scroll here either — the beat list flows in the body */
 .rw-beat-list {
   display: flex;
   flex-direction: column;
   gap: 3px;
   margin-top: 4px;
-  max-height: 150px;
-  overflow-y: auto;
 }
 .rw-beat {
   display: flex;
