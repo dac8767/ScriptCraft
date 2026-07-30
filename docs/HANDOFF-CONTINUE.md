@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.59 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.60 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -204,7 +204,40 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.59 — Action Rewrite v4: editable drafts + linter, the Yours slot + beats, the LOG + calibration loop (HEAD)
+### v5.60 — the rewrite target stays PAINTED (blur-proof), + the declutter eye (HEAD)
+
+- Derek's bug: "if i click into the context text field, or if I open the
+  ai tool and it is popped out, my selected text on screen gets
+  unselected." ROOT CAUSE: the PM selection state SURVIVES the blur —
+  WebKit just stops painting the native contenteditable selection when
+  focus moves into the panel. Nothing was collapsing state (driver
+  proved from/to identical through note-field focus AND a floating
+  open). The missing piece was the design handoff's own
+  highlight(resolved.target), never built.
+- FIX: editor/extensions/RewriteTarget.ts — a decoration plugin
+  (meta-only transactions via setRewriteTargetHighlight; the pagination
+  plugin correctly ignores them). Pre-request the highlight follows the
+  debounced live resolve; suggest() freezes it on the captured range;
+  the plugin maps itself through edits with the SAME biases as the
+  panel's targetRef (map(from,1)/map(to,-1)); cleared on accept/off-
+  action caret/unmount. Registered in ScreenplayEditor's extension list;
+  .rw-target-hl in 29-rewrite.css. BONUS Derek will feel: it paints the
+  CLAMPED range (whole action paragraphs) — truer than the native
+  selection ever was.
+- DECLUTTER (Derek, same turn: "the same button & functionality found in
+  the scrapbook"): RewriteHeaderControls (chrome Controls slot) reuses
+  the .fs-nb-declutter eye classes; settingsStore.rewriteExclusive
+  (persisted, own key 'opendraft:rewriteExclusive'); ToolDock's
+  scrapbookSolo generalized to soloId ('notebook' wins if both claim);
+  the outline bar drops too (ScreenplayEditor, render-time only).
+  isToolOpen('rewrite') is the one "open" answer (docked/floating/
+  fullscreen alike).
+- Gates: tsc 0, 916 tests (3 new: decoration paints/clears, maps
+  through prior edits, dies with a consumed range), build, check-v560
+  9/9 (selection + paint survive note-field focus and a floating open;
+  caret-off clears; declutter hides/restores both sidebars exactly).
+
+### v5.59 — Action Rewrite v4: editable drafts + linter, the Yours slot + beats, the LOG + calibration loop
 
 - Derek's FOURTH design-chat drop, the big one (two NEW files:
   rewrite_log.rs + scripts/harvest-calibration.mjs). Everything diffed
@@ -324,29 +357,12 @@ Durable bits kept live here:
   too only if Derek asks. No output post-processing was added — the
   prompt is the enforcement point; revisit only if he reports leaks.
 
-### v5.55 — npm run desktop self-heals the Cargo.lock pull collision
-
-- Derek's launch failed live: `git pull` aborted with "Your local changes
-  to src-tauri/Cargo.lock would be overwritten by merge". Cause: his
-  `tauri dev` runs rewrite the generated lockfile locally (cargo version
-  skew re-resolves it), and v5.54 was the first push in ages to also
-  change it. Fix: the desktop script now runs
-  `git restore src-tauri/Cargo.lock 2>/dev/null;` BEFORE the pull chain —
-  surgical (that one generated file only), and the `&&` chain after it is
-  untouched so a failed pull still blocks the launch. One-time manual
-  unblock (the fixed script arrives via the very pull that was blocked):
-  `git restore src-tauri/Cargo.lock && npm run desktop`. CLAUDE.md §3 and
-  §0 here updated to describe the new script.
-- RECURRENCE NOTE for future Rust batches: any push touching Cargo.toml/
-  Cargo.lock would have re-hit this on every Mac pull; the self-heal ends
-  the class. Never gitignore Cargo.lock (app lockfiles are canonical and
-  cargo check here depends on it).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.55** — npm run desktop self-heals the Cargo.lock pull collision
 - **v5.54** — ACTION REWRITE: Derek's design-handoff integrated (Rust API call + keychain, PM adaptation)
 - **v5.53** — the THESAURUS tool: local MyThes/WordNet data, caret-follow, replace-in-place
 - **v5.52** — icon/color window OK/Cancel + live hex, colored filter grids, one-checkbox nav fix, header +

@@ -48,7 +48,7 @@ import FeedbackTool, { FeedbackShotControls } from './FeedbackTool';
 import TagsPanel, { TagsTitleExtra, TagsWindowActions, useTagsTabs } from './TagsPanel';
 import MarkupsPanel, { MarkupsTitleExtra, MarkupsControls } from './MarkupsPanel';
 import ThesaurusTool from './ThesaurusTool';
-import RewriteTool from './RewriteTool';
+import RewriteTool, { RewriteHeaderControls } from './RewriteTool';
 import { ScenesTool } from './ScenesTool';
 import BeatBoard, { OutlineHeaderControls } from './BeatBoard';
 import TypewriterTool from './TypewriterTool';
@@ -367,6 +367,7 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   markups: { TitleExtra: MarkupsTitleExtra, Controls: MarkupsControls },
   goals: { Controls: GoalsHeaderExtra },
   notebook: { Controls: NotebookHeaderExtra },   // v2.05: declutter + create buttons
+  rewrite: { Controls: RewriteHeaderControls },  // v5.60: the same declutter eye
   beatboard: { Controls: OutlineHeaderControls }, // v2.41: count/Arrangement/help
   // v4.70, Derek: screenshot buttons in the Feedback header — the capture
   // lands as a draggable chip above the form (FeedbackTool.tsx).
@@ -818,6 +819,14 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   const scrapbookOpenForSolo = useNotebookStore((s) => s.notebookOpen);
   const scrapbookExclusive = useSettingsStore((s) => s.scrapbookExclusive);
   const scrapbookSolo = scrapbookOpenForSolo && scrapbookExclusive;
+  // v5.60, Derek: Action Rewrite gets the same declutter. isToolOpen is the
+  // store's one answer to "open" (docked, floating, or fullscreen); the
+  // selector calls it so the boolean re-derives on every store change.
+  const rewriteOpenForSolo = useEditorStore((s) => s.isToolOpen('rewrite'));
+  const rewriteExclusive = useSettingsStore((s) => s.rewriteExclusive);
+  // If both claim solo, the Scrapbook wins — its surface owns the editor.
+  const soloId: ToolId | null = scrapbookSolo ? 'notebook'
+    : (rewriteOpenForSolo && rewriteExclusive) ? 'rewrite' : null;
   // neverDock tools float regardless — even a stale small toolSize from before
   // the flag existed must not pull them inline.
   const inline = !iconsMode && !!(active && activeSize && activeMode === 'docked' && !active.neverDock);
@@ -974,14 +983,14 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     return () => document.removeEventListener('pointerdown', onPointerDown);
   }, [active, setActive]);
 
-  const hasNotebook = tools.some((t) => t.id === 'notebook');
-  const shownEntries = scrapbookSolo
-    ? entries.filter((en) => en.kind === 'tool' && en.tool.id === 'notebook')
+  const hasSoloTool = soloId !== null && tools.some((t) => t.id === soloId);
+  const shownEntries = soloId
+    ? entries.filter((en) => en.kind === 'tool' && en.tool.id === soloId)
     : entries;
-  const solo = scrapbookSolo && hasNotebook;
+  const solo = soloId !== null && hasSoloTool;
 
   if (tools.length === 0) return null;
-  if (scrapbookSolo && !hasNotebook) return null;   // the other sidebar hides
+  if (soloId && !hasSoloTool) return null;   // the other sidebar hides
 
   /**
    * v1.1 — drag the panel's OUTER edge to size it. Setting a width by opening

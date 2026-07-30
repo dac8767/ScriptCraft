@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.60",
+    "date": "2026-07-30",
+    "changes": [
+      "Fix: clicking into Action Rewrite's note field (or opening the tool popped out) made your selected text look unselected. The selection was never lost — the highlight was. The tool now paints its target directly in the script, and it stays visible no matter where focus goes. It also shows the exact paragraphs the rewrite will replace, which the native selection never did.",
+      "Action Rewrite: a declutter eye in the window header — the same button as the Scrapbook's. On, every other sidebar tool hides (and the outline bar drops) while the window is open; off restores everything exactly."
+    ]
+  },
+  {
     "version": "5.59",
     "date": "2026-07-30",
     "changes": [

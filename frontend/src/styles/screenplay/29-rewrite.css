@@ -225,3 +225,9 @@
   text-align: left;
 }
 .rw-log-hint { opacity: 0.55; }
+
+/* v5.60: the rewrite TARGET, painted as an editor decoration so it stays
+   visible when focus moves into the panel (WebKit drops the native selection
+   highlight on blur — the state survives, the paint didn't). Shows the exact
+   clamped range the rewrite will replace. */
+.rw-target-hl { background: rgba(74, 144, 217, 0.22); }

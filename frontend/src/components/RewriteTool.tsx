@@ -16,8 +16,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import type { Transaction } from '@tiptap/pm/state';
-import { FaMagic } from 'react-icons/fa';
+import { FaMagic, FaRegEye, FaRegEyeSlash } from 'react-icons/fa';
 import { confirmDialog } from './ConfirmDialog';
+import { setRewriteTargetHighlight } from '../editor/extensions/RewriteTarget';
+import { useSettingsStore } from '../stores/settingsStore';
 import {
   resolveEditorSelection, targetIsCurrent, acceptDraftInEditor,
   rewriteActionLines, recordRewriteOutcome, saveApiKey, hasApiKey, clearApiKey,
@@ -31,6 +33,25 @@ import {
 import { isTauri } from '../services/platform';
 
 type KeyState = 'checking' | 'none' | 'saved' | 'unavailable';
+
+/** v5.60, Derek: the Scrapbook's declutter, on this window's header — hide
+ *  every other sidebar tool (and the outline bar) while Action Rewrite is
+ *  open, so it's the script and the rewrites and nothing else. Same eye,
+ *  same classes, same render-time-only mechanics (ToolDock's solo path). */
+export function RewriteHeaderControls() {
+  const declutter = useSettingsStore((s) => s.rewriteExclusive);
+  const setDeclutter = useSettingsStore((s) => s.setRewriteExclusive);
+  return (
+    <button
+      className={`fs-nb-declutter${declutter ? ' active' : ''}`}
+      title={declutter
+        ? 'Decluttered — click to show the other tools again'
+        : 'Declutter — hide every other tool while this window is open'}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => { e.stopPropagation(); setDeclutter(!declutter); }}
+    >{declutter ? <FaRegEyeSlash /> : <FaRegEye />}</button>
+  );
+}
 
 type Phase =
   | { status: 'idle' }
@@ -90,6 +111,24 @@ export default function RewriteTool({ editor }: { editor: Editor | null }) {
     };
   }, [editor]);
 
+  // v5.60, Derek: "my selected text on screen gets unselected" — WebKit
+  // stops painting the native selection the moment focus moves into this
+  // panel (the note field, a popped-out window's frame). The PM selection
+  // itself survives; what was missing is a visible target. Paint the
+  // resolved target as an editor decoration: pre-request it follows the
+  // caret; from request time it freezes on the captured range (the plugin
+  // maps it through edits itself); clear when nothing is targeted or the
+  // panel goes away.
+  useEffect(() => {
+    if (!editor) return;
+    if (phase.status === 'loading' || phase.status === 'results') return;
+    setRewriteTargetHighlight(editor, resolved?.ok ? {
+      from: resolved.pmTarget.from,
+      to: resolved.pmTarget.to,
+    } : null);
+  }, [editor, resolved, phase.status]);
+  useEffect(() => () => { setRewriteTargetHighlight(editor, null); }, [editor]);
+
   // Remap the held target through every transaction; reflect staleness live.
   useEffect(() => {
     if (!editor) return;
@@ -145,6 +184,8 @@ export default function RewriteTool({ editor }: { editor: Editor | null }) {
     if (!fresh.ok) return;
     reportPendingDismissed();   // a superseded suggestion is a dismissal
     targetRef.current = { ...fresh.pmTarget };
+    // freeze the highlight on the captured range for the whole request
+    setRewriteTargetHighlight(editor, { from: fresh.pmTarget.from, to: fresh.pmTarget.to });
     setStale(false);
     setDrafts(null);
     setBeatsOpen(false);
@@ -174,6 +215,7 @@ export default function RewriteTool({ editor }: { editor: Editor | null }) {
     }
     pendingEventRef.current = null;   // outcome recorded by acceptDraftInEditor
     targetRef.current = null;
+    setRewriteTargetHighlight(editor, null);
     setDrafts(null);
     setPhase({ status: 'applied', slot: draft.slot });
     refreshLogStats();

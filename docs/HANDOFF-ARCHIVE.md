@@ -155,6 +155,24 @@ reliable; re-run before believing a weird worker failure.
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
 
+### v5.55 — npm run desktop self-heals the Cargo.lock pull collision
+
+- Derek's launch failed live: `git pull` aborted with "Your local changes
+  to src-tauri/Cargo.lock would be overwritten by merge". Cause: his
+  `tauri dev` runs rewrite the generated lockfile locally (cargo version
+  skew re-resolves it), and v5.54 was the first push in ages to also
+  change it. Fix: the desktop script now runs
+  `git restore src-tauri/Cargo.lock 2>/dev/null;` BEFORE the pull chain —
+  surgical (that one generated file only), and the `&&` chain after it is
+  untouched so a failed pull still blocks the launch. One-time manual
+  unblock (the fixed script arrives via the very pull that was blocked):
+  `git restore src-tauri/Cargo.lock && npm run desktop`. CLAUDE.md §3 and
+  §0 here updated to describe the new script.
+- RECURRENCE NOTE for future Rust batches: any push touching Cargo.toml/
+  Cargo.lock would have re-hit this on every Mac pull; the self-heal ends
+  the class. Never gitignore Cargo.lock (app lockfiles are canonical and
+  cargo check here depends on it).
+
 ### v5.54 — ACTION REWRITE: Derek's design-handoff integrated (Rust API call + keychain, PM adaptation)
 
 - Derek uploaded a zip from a DESIGN CHAT (HANDOFF.md + system prompt +
