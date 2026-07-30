@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.65",
+    "date": "2026-07-30",
+    "changes": [
+      "Fix: editing the middle of a scene heading threw the cursor to the end of the line after every letter typed (e.g. changing CARRIER to CRUISER). The auto-uppercase was rewriting the whole heading on each keystroke; it now fixes only the letters that need it, and the cursor stays put."
+    ]
+  },
+  {
     "version": "5.64",
     "date": "2026-07-30",
     "changes": [

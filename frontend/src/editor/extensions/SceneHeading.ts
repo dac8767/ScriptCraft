@@ -33,8 +33,21 @@ export const SceneHeading = Node.create({
               // Skip anything whose case-fold changes length (e.g. ß→SS) so
               // positions never drift.
               if (up === child.text || up.length !== child.text.length) return;
-              const from = pos + 1 + offset;
-              edits.push({ from, to: from + child.text.length, text: up });
+              // v5.65, Derek's repro ("Carrier"→"cruiser", caret jumped to
+              // the heading's end on every letter): replace ONLY the runs
+              // that differ, never the whole text node. A caret strictly
+              // INSIDE a replaced range maps to the range's end, so the old
+              // whole-node replacement threw any mid-heading caret to the
+              // end; a one-letter edit is a one-char range whose boundary
+              // the caret sits on, which maps to itself.
+              const base = pos + 1 + offset;
+              for (let i = 0; i < child.text.length; i++) {
+                if (child.text[i] === up[i]) continue;
+                let j = i + 1;
+                while (j < child.text.length && child.text[j] !== up[j]) j++;
+                edits.push({ from: base + i, to: base + j, text: up.slice(i, j) });
+                i = j;
+              }
             });
           });
           if (edits.length === 0) return null;

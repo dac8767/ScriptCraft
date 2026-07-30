@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.64 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.65 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -204,7 +204,33 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.64 — Rerun-with-note + the shared-language prompt rule (HEAD)
+### v5.65 — the mid-heading caret jump (uppercase plugin, since v3.45) (HEAD)
+
+- Derek's repro: changing "EXT. SPACE CARRIER - BELKADIN" to CRUISER —
+  "my cursor would jump to the end of the scene header after every
+  single letter typed." ROOT CAUSE in SceneHeading.ts's uppercase
+  appendTransaction: it replaced the WHOLE heading text node whenever
+  any character differed, and its comment's claim that same-length
+  replacement leaves the "selection untouched" is FALSE — a caret
+  strictly INSIDE a replaced range maps to the range's END. Appending
+  at the end never showed it (the caret sits on the boundary), which
+  is how it survived since v3.45. LESSON for the footgun list:
+  length-preserving ≠ selection-preserving; a caret inside any
+  replaced range maps to its end — replace only what changed.
+- Fix: replace only the DIFFERING RUNS (per-char scan inside the text
+  node) — a typed lowercase letter becomes a one-char replacement whose
+  boundary the caret sits on, which maps to itself. Still same-length
+  ⇒ the batch stays position-safe; v3.54's preventUpdate guard and
+  addToHistory:false untouched.
+- Proven red→green: the new caret test FAILED against the old code
+  (caret at heading end), passes now. check-v565 3/3 drives REAL
+  keystrokes through the view (types "ruiser" mid-heading → CRUISER in
+  place, head advances letter by letter). Gates: tsc 0, 920 tests,
+  build. (SIXTH sandbox rollback at batch start — standing recovery:
+  reset + npm install + Vite; cargo untouched this batch so GTK libs
+  not needed.)
+
+### v5.64 — Rerun-with-note + the shared-language prompt rule
 
 - Derek: all three suggestions once contained "their fingers drummed on
   the control panel"; he wants (a) a rerun with "do not use the phrase
@@ -292,44 +318,12 @@ Durable bits kept live here:
   56px. Verifies the CSS contract without a live request.
 - Gates: tsc 0, 916 tests, build, check-v561 5/5.
 
-### v5.60 — the rewrite target stays PAINTED (blur-proof), + the declutter eye
-
-- Derek's bug: "if i click into the context text field, or if I open the
-  ai tool and it is popped out, my selected text on screen gets
-  unselected." ROOT CAUSE: the PM selection state SURVIVES the blur —
-  WebKit just stops painting the native contenteditable selection when
-  focus moves into the panel. Nothing was collapsing state (driver
-  proved from/to identical through note-field focus AND a floating
-  open). The missing piece was the design handoff's own
-  highlight(resolved.target), never built.
-- FIX: editor/extensions/RewriteTarget.ts — a decoration plugin
-  (meta-only transactions via setRewriteTargetHighlight; the pagination
-  plugin correctly ignores them). Pre-request the highlight follows the
-  debounced live resolve; suggest() freezes it on the captured range;
-  the plugin maps itself through edits with the SAME biases as the
-  panel's targetRef (map(from,1)/map(to,-1)); cleared on accept/off-
-  action caret/unmount. Registered in ScreenplayEditor's extension list;
-  .rw-target-hl in 29-rewrite.css. BONUS Derek will feel: it paints the
-  CLAMPED range (whole action paragraphs) — truer than the native
-  selection ever was.
-- DECLUTTER (Derek, same turn: "the same button & functionality found in
-  the scrapbook"): RewriteHeaderControls (chrome Controls slot) reuses
-  the .fs-nb-declutter eye classes; settingsStore.rewriteExclusive
-  (persisted, own key 'opendraft:rewriteExclusive'); ToolDock's
-  scrapbookSolo generalized to soloId ('notebook' wins if both claim);
-  the outline bar drops too (ScreenplayEditor, render-time only).
-  isToolOpen('rewrite') is the one "open" answer (docked/floating/
-  fullscreen alike).
-- Gates: tsc 0, 916 tests (3 new: decoration paints/clears, maps
-  through prior edits, dies with a consumed range), build, check-v560
-  9/9 (selection + paint survive note-field focus and a floating open;
-  caret-off clears; declutter hides/restores both sidebars exactly).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.60** — the rewrite target stays PAINTED (blur-proof), + the declutter eye
 - **v5.59** — Action Rewrite v4: editable drafts + linter, the Yours slot + beats, the LOG + calibration loop
 - **v5.58** — Action Rewrite v3: the writer's NOTE replaces the steer enum
 - **v5.57** — Action Rewrite v2: faithful/compressed/reimagined, tighten-only steer, native dash rule
