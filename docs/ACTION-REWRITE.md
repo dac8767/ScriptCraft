@@ -1,4 +1,4 @@
-# Action Rewrite — design rationale & verification (v5.54, revised v5.57)
+# Action Rewrite — design rationale & verification (v5.54, revised v5.57–v5.59)
 
 Integrated from Derek's design-chat handoff (four files: the system prompt,
 `rewrite.rs`, an `actionRewrite.ts` written for a flat element model, and a
@@ -12,10 +12,12 @@ is never touched.
 
 | Piece | Path |
 |---|---|
-| The system prompt (**the product** — Derek's craft rules + calibration examples) | `src-tauri/prompts/action_line_rewrite.md` |
+| The system prompt (**the product** — Derek's craft rules + calibration examples + the WRITER CALIBRATION block) | `src-tauri/prompts/action_line_rewrite.md` |
 | API call + keychain key management (Tauri commands) | `src-tauri/src/rewrite.rs` |
-| Projection, range/context resolution, stale-guarded apply | `frontend/src/utils/actionRewrite.ts` |
+| Append-only JSONL log of suggestions + outcomes | `src-tauri/src/rewrite_log.rs` |
+| Projection, resolution, drafts/beats/classify/lint, stale-guarded apply | `frontend/src/utils/actionRewrite.ts` |
 | The panel | `frontend/src/components/RewriteTool.tsx` |
+| Manual calibration harvest (dev tool) | `scripts/harvest-calibration.mjs` |
 
 ## Decisions that must not get "fixed"
 
@@ -85,6 +87,41 @@ is never touched.
   context-sensitive by nature; keep it out of formatting/rules engines.
 - **Model `claude-sonnet-5`** for latency; `claude-opus-5` is a one-line
   swap in `rewrite.rs` if quality beats speed.
+- **The log is the improvement mechanism, not telemetry** (v5.59). Every
+  suggestion gets an `eventId`; the panel MUST report an outcome for each —
+  accepted (with `finalText` AFTER panel edits, `editKind`, `composedFrom`)
+  or dismissed (a superseded/abandoned suggestion counts as dismissed;
+  the panel reports on Dismiss, on a new request, and on unmount).
+  Suggestions without outcomes teach nothing. Logging is fire-and-forget
+  and never surfaces in the writing flow. JSONL, append-only, local-only;
+  the panel's Activity log shows stats/path/Clear.
+- **Suggestions are edited IN THE PANEL, before applying** (v5.59) — an
+  earlier accept-then-edit-in-document design couldn't tell rewrite
+  corrections from unrelated typing. `offered` is never mutated;
+  `classifyEdit(offered, final)` grades none/punctuation/minor/substantive
+  by word-level LCS (punctuation swaps must NOT outrank clean accepts in
+  the harvest). Use `acceptDraftInEditor` — apply + record in one step so
+  the log can't drift from the script.
+- **The linter is advisory, never blocking.** `lintActionText` covers
+  dashes, "we see", camera language, interiority verbs, weak/progressive
+  verbs, over-long paragraphs, excessive caps, repeated beats. The writer
+  outranks the linter.
+- **The fourth slot composes, and there is no fifth model variant.** The
+  license axis (none / fewest words / free reshape) is fully covered; a
+  fourth model variant would interpolate into near-duplicates — the
+  original failure mode. "Yours" borrows sentence-level beats
+  (`allBeats`/`appendBeatToCustom`; paragraph breaks survive appends),
+  seeds from the original or any variant, logs as `composed` with
+  `composedFrom` — the best calibration material the log collects, ranked
+  first by the harvester.
+- **The harvest stays manual.** `node scripts/harvest-calibration.mjs
+  --log <path>` (get the path from the panel's Activity log) prints
+  reviewed-by-hand markdown for the prompt's
+  `<!-- BEGIN WRITER CALIBRATION -->` block; `--stats` answers the
+  strategy-mix questions with data. Nothing ever writes to the prompt
+  automatically: unreviewed model output must never become an exemplar,
+  and the prompt stays a byte-identical cache prefix. Ten of Derek's own
+  pairs are the highest-leverage improvement available.
 
 ## The ProseMirror adaptation (the handoff's §5, answered)
 
@@ -142,3 +179,20 @@ feature wiring is the crate's documented standard set. Then, on the Mac:
     table") → no variant adds it; invent-nothing outranks the note.
 12. Multi-line note → flattened to one line; cannot introduce text
     resembling another labelled context section.
+13. Accept one suggestion, dismiss another → both in the log with matching
+    `eventId`s (Activity log counts move; `tail` the file to inspect).
+14. Edit a suggestion in the panel, then accept → outcome carries the
+    edited `finalText` with `editKind: substantive`; the harvester ranks
+    it REWRITTEN. A comma-only change logs `punctuation` and does NOT
+    outrank a clean accept.
+15. Type an em dash into a draft → the linter flags it; applying still
+    works (advisory only).
+16. Pull beats from two variants, insert a ¶ break, add another beat →
+    the break survives (this regressed once in design); accept → logs
+    `chosenStrategy: custom`, `editKind: composed`, both sources in
+    `composedFrom`; repeated same sentence → the no-repeats warning.
+17. Run the harvester on a log with a truncated last line → reports the
+    skipped line, still produces output. (Verified in this sandbox by
+    check-v559 on a synthetic log.)
+18. `cacheReadTokens` in the log is non-zero on a second request within
+    five minutes — checklist 5, now observable from the log.

@@ -84,8 +84,73 @@ export interface RewriteVariant {
 }
 
 export interface RewriteResponse {
+  /**
+   * Log correlation id. Hold this in panel state and pass it to
+   * recordRewriteOutcome when the writer resolves the panel, otherwise the
+   * suggestion is logged with no outcome and teaches nothing.
+   */
+  eventId: string;
   assessment: 'improvable' | 'already_strong';
   variants: RewriteVariant[];
+}
+
+/**
+ * Panel slots. The three strategies come from the model; `custom` is the empty
+ * slot the writer fills in, either by typing or by pulling beats out of the
+ * other three.
+ *
+ * Kept distinct from RewriteStrategy so the model-response types stay honest:
+ * the API never returns a `custom` variant.
+ */
+export const CUSTOM_SLOT = 'custom' as const;
+export type DraftSlot = RewriteStrategy | typeof CUSTOM_SLOT;
+
+/**
+ * How far the writer's text departs from what the model offered.
+ *
+ * `composed` is its own category rather than a flavour of edit: text in the
+ * custom slot was assembled or written by the writer, so there is no single
+ * offered version to measure against. It is also the highest-value signal the
+ * log collects, since it is entirely in the writer's voice.
+ */
+export type EditKind =
+  | 'none'
+  | 'punctuation'
+  | 'minor'
+  | 'substantive'
+  | 'composed';
+
+export interface RewriteOutcome {
+  eventId: string;
+  outcome: 'accepted' | 'dismissed';
+  /** Required when accepted. `"custom"` when the writer used the blank slot. */
+  chosenStrategy?: DraftSlot;
+  /** The text as it went into the script. */
+  finalText?: string;
+  editKind?: EditKind;
+  /**
+   * Which model variants contributed beats to a composed draft. Empty means
+   * the writer typed it from scratch. Answers whether the three slots are
+   * carving the space usefully.
+   */
+  composedFrom?: RewriteStrategy[];
+}
+
+export interface RewriteLogStats {
+  suggestions: number;
+  accepted: number;
+  dismissed: number;
+  /** Accepts the writer changed in any way. */
+  editedAfterAccept: number;
+  /** Accepts with a substantive edit. */
+  editedSubstantive: number;
+  /** Accepts taken from the custom slot. */
+  composed: number;
+  /** How often each variant contributed a beat to a composed draft. */
+  contributed: [string, number][];
+  byStrategy: [string, number][];
+  path: string;
+  bytes: number;
 }
 
 /** Inclusive element index range that a chosen variant replaces. */
@@ -118,17 +183,31 @@ export type Resolved =
     }
   | { ok: false; reason: string };
 
-export const STRATEGY_LABELS: Record<RewriteStrategy, string> = {
+export const SLOT_LABELS: Record<DraftSlot, string> = {
   faithful: 'Faithful',
   compressed: 'Compressed',
   reimagined: 'Reimagined',
+  custom: 'Yours',
 };
 
-export const STRATEGY_BLURBS: Record<RewriteStrategy, string> = {
+export const SLOT_BLURBS: Record<DraftSlot, string> = {
   faithful: 'Your beats, your order, cleaned up',
   compressed: 'The same moment in the fewest words',
   reimagined: 'Reshaped, reordered, same facts',
+  custom: 'Pull lines from the others, or write it yourself',
 };
+
+/** Display order: least license first, the writer's own slot last. */
+export const SLOT_ORDER: DraftSlot[] = [
+  'faithful',
+  'compressed',
+  'reimagined',
+  'custom',
+];
+
+/** Retained for compatibility with earlier call sites. */
+export const STRATEGY_LABELS = SLOT_LABELS;
+export const STRATEGY_BLURBS = SLOT_BLURBS;
 
 /** Neighbouring action paragraphs sent as context on each side. */
 const CONTEXT_WINDOW = 3;
@@ -310,6 +389,416 @@ export function applyVariantToEditor(
     to,
     text: editor.state.doc.textBetween(target.from, to, '\n\n'),
   };
+}
+
+/**
+ * Applies a draft and reports the outcome in one step, so the log can never
+ * drift from what actually landed in the script (the fourth handoff's
+ * acceptDraft, on ProseMirror targets).
+ *
+ * Handles the custom slot: with no offered text to compare against, the edit
+ * is classified `composed` and the contributing variants are recorded.
+ *
+ * Returns the applied range (retargeted, like applyVariantToEditor), or null
+ * when the target went stale or the draft is empty.
+ */
+export function acceptDraftInEditor(
+  editor: Editor,
+  target: PmTarget,
+  eventId: string,
+  draft: VariantDraft,
+): PmTarget | null {
+  const finalText = draft.draft.trim();
+  if (!finalText) return null;
+  const next = applyVariantToEditor(editor, target, finalText);
+  if (!next) return null;
+  void recordRewriteOutcome({
+    eventId,
+    outcome: 'accepted',
+    chosenStrategy: draft.slot,
+    finalText,
+    editKind:
+      draft.offered === null ? 'composed' : classifyEdit(draft.offered, finalText),
+    composedFrom: draft.offered === null ? draft.composedFrom : undefined,
+  });
+  return next;
+}
+
+// ---------------------------------------------------------------------------
+// Editable drafts (fourth handoff drop, logic unchanged)
+// ---------------------------------------------------------------------------
+
+/**
+ * One slot plus the writer's working copy of it.
+ *
+ * The panel renders `draft` in an editable field and leaves `offered` alone.
+ * Both are needed at apply time: `draft` goes into the script, and the pair is
+ * what classifyEdit measures. `offered` is null for the custom slot, which has
+ * nothing to compare against.
+ */
+export interface VariantDraft {
+  slot: DraftSlot;
+  /** Exactly what the model returned. Null for the custom slot. */
+  offered: string | null;
+  /** The writer's editable working copy. */
+  draft: string;
+  /** The model's craft note. Empty for the custom slot. */
+  note: string;
+  /** Variants that contributed beats, for the custom slot only. */
+  composedFrom: RewriteStrategy[];
+}
+
+/** Initializes drafts from a response, plus an empty custom slot. */
+export function prepareDrafts(response: RewriteResponse): VariantDraft[] {
+  const fromModel: VariantDraft[] = response.variants.map((v) => ({
+    slot: v.strategy,
+    offered: v.text,
+    draft: v.text,
+    note: v.note,
+    composedFrom: [],
+  }));
+  return [
+    ...fromModel,
+    { slot: CUSTOM_SLOT, offered: null, draft: '', note: '', composedFrom: [] },
+  ];
+}
+
+/** Immutable draft update, for use in React state. */
+export function updateDraft(
+  drafts: VariantDraft[],
+  slot: DraftSlot,
+  draft: string,
+): VariantDraft[] {
+  return drafts.map((d) => (d.slot === slot ? { ...d, draft } : d));
+}
+
+/**
+ * Discards the writer's changes to a slot. Clears the custom slot entirely,
+ * including its composition history.
+ */
+export function revertDraft(
+  drafts: VariantDraft[],
+  slot: DraftSlot,
+): VariantDraft[] {
+  return drafts.map((d) => {
+    if (d.slot !== slot) return d;
+    return d.offered === null
+      ? { ...d, draft: '', composedFrom: [] }
+      : { ...d, draft: d.offered };
+  });
+}
+
+export function isDirty(d: VariantDraft): boolean {
+  if (d.offered === null) return d.draft.trim().length > 0;
+  return normalizeWhitespace(d.draft) !== normalizeWhitespace(d.offered);
+}
+
+export function findDraft(
+  drafts: VariantDraft[],
+  slot: DraftSlot,
+): VariantDraft | undefined {
+  return drafts.find((d) => d.slot === slot);
+}
+
+// ---------------------------------------------------------------------------
+// Composing the custom slot
+// ---------------------------------------------------------------------------
+
+/**
+ * A single sentence-level beat from one of the suggestions, so the panel can
+ * offer it as something to pull into the custom slot. Sentence granularity is
+ * deliberate: in this form a beat is usually a sentence, which is the unit a
+ * writer actually wants to borrow.
+ */
+export interface Beat {
+  id: string;
+  slot: DraftSlot;
+  /** Index of the paragraph this beat came from. */
+  paragraph: number;
+  text: string;
+}
+
+/**
+ * Splits a slot's text into beats. Sentence splitting is naive on purpose: it
+ * breaks after . ! ? followed by whitespace. Action prose rarely contains
+ * abbreviations, and a mis-split beat is a cosmetic annoyance the writer can
+ * fix in the field, not a correctness problem.
+ */
+export function extractBeats(draft: VariantDraft): Beat[] {
+  const source = draft.offered ?? draft.draft;
+  const beats: Beat[] = [];
+  source
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .forEach((para, pIndex) => {
+      para
+        .split(/(?<=[.!?])\s+/)
+        .map((sentence) => sentence.trim())
+        .filter(Boolean)
+        .forEach((text, sIndex) => {
+          beats.push({
+            id: `${draft.slot}-${pIndex}-${sIndex}`,
+            slot: draft.slot,
+            paragraph: pIndex,
+            text,
+          });
+        });
+    });
+  return beats;
+}
+
+/** All beats across the model's suggestions, for a pick list. */
+export function allBeats(drafts: VariantDraft[]): Beat[] {
+  return drafts
+    .filter((d) => d.slot !== CUSTOM_SLOT)
+    .flatMap((d) => extractBeats(d));
+}
+
+/**
+ * Appends a beat to the custom slot, joined with a space so it continues the
+ * current paragraph. Records which variant it came from.
+ */
+export function appendBeatToCustom(
+  drafts: VariantDraft[],
+  beat: Beat,
+): VariantDraft[] {
+  return drafts.map((d) => {
+    if (d.slot !== CUSTOM_SLOT) return d;
+    // A trailing blank line is an intentional paragraph break from
+    // appendParagraphBreak, so it must survive. Only horizontal whitespace is
+    // trimmed in that case.
+    const endsWithBreak = /\n[ \t]*\n[ \t]*$/.test(d.draft);
+    const existing = endsWithBreak
+      ? d.draft.replace(/[ \t]+$/, '')
+      : d.draft.replace(/\s+$/, '');
+    let joined: string;
+    if (!existing.trim()) joined = beat.text;
+    else if (endsWithBreak) joined = `${existing}${beat.text}`;
+    else joined = `${existing} ${beat.text}`;
+    const from = new Set(d.composedFrom);
+    if (beat.slot !== CUSTOM_SLOT) from.add(beat.slot as RewriteStrategy);
+    return { ...d, draft: joined, composedFrom: [...from] };
+  });
+}
+
+/** Starts a new paragraph in the custom slot. */
+export function appendParagraphBreak(drafts: VariantDraft[]): VariantDraft[] {
+  return drafts.map((d) => {
+    if (d.slot !== CUSTOM_SLOT) return d;
+    if (!d.draft.trim()) return d;
+    return { ...d, draft: `${d.draft.replace(/\s+$/, '')}\n\n` };
+  });
+}
+
+/**
+ * Fills the custom slot from a starting point: the original passage, or any
+ * suggestion. Overwrites whatever is there. The slot starts genuinely empty,
+ * but starting from scratch on every rewrite is friction — this makes "start
+ * from the original and borrow a line" one click.
+ */
+export function seedCustom(
+  drafts: VariantDraft[],
+  source: DraftSlot | 'original',
+  originalText: string,
+): VariantDraft[] {
+  let text = '';
+  let from: RewriteStrategy[] = [];
+  if (source === 'original') {
+    text = originalText.trim();
+  } else {
+    const src = findDraft(drafts, source);
+    if (!src) return drafts;
+    text = (src.offered ?? src.draft).trim();
+    if (source !== CUSTOM_SLOT) from = [source];
+  }
+  return drafts.map((d) =>
+    d.slot === CUSTOM_SLOT ? { ...d, draft: text, composedFrom: from } : d,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Edit classification
+// ---------------------------------------------------------------------------
+
+function normalizeWhitespace(s: string): string {
+  return s.trim().replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n');
+}
+
+function words(s: string): string[] {
+  return s.trim().split(/\s+/).filter(Boolean);
+}
+
+/** Longest common subsequence length over token arrays. */
+function lcsLength(a: string[], b: string[]): number {
+  // Action passages are short. Cap defensively so a pathological paste can't
+  // stall the UI thread.
+  const CAP = 400;
+  const x = a.slice(0, CAP);
+  const y = b.slice(0, CAP);
+  let prev = new Array(y.length + 1).fill(0);
+  let cur = new Array(y.length + 1).fill(0);
+  for (let i = 1; i <= x.length; i++) {
+    for (let j = 1; j <= y.length; j++) {
+      cur[j] =
+        x[i - 1] === y[j - 1] ? prev[j - 1] + 1 : Math.max(prev[j], cur[j - 1]);
+    }
+    [prev, cur] = [cur, prev];
+    cur.fill(0);
+  }
+  return prev[y.length];
+}
+
+/**
+ * Measures how far an edited draft departs from what the model offered.
+ *
+ * "punctuation" means only punctuation, casing, or whitespace changed. Those
+ * are real preferences worth applying but they teach nothing, so the harvester
+ * demotes them.
+ */
+export function classifyEdit(offered: string, edited: string): EditKind {
+  const a = normalizeWhitespace(offered);
+  const b = normalizeWhitespace(edited);
+  if (a === b) return 'none';
+
+  const strip = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]/gu, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  if (strip(a) === strip(b)) return 'punctuation';
+
+  const wa = words(a);
+  const wb = words(b);
+  const common = lcsLength(wa, wb);
+  const changed = Math.max(wa.length, wb.length) - common;
+  const ratio = wb.length / Math.max(1, wa.length);
+
+  if (changed <= 2 && ratio >= 0.85 && ratio <= 1.15) return 'minor';
+  return 'substantive';
+}
+
+export const EDIT_KIND_LABELS: Record<EditKind, string> = {
+  none: 'Unchanged',
+  punctuation: 'Punctuation only',
+  minor: 'Lightly edited',
+  substantive: 'Rewritten',
+  composed: 'Yours',
+};
+
+// ---------------------------------------------------------------------------
+// Craft linter
+// ---------------------------------------------------------------------------
+
+export interface LintWarning {
+  rule: string;
+  message: string;
+}
+
+/** Approximate characters per line of action at standard screenplay margins. */
+const CHARS_PER_LINE = 58;
+const MAX_PARAGRAPH_LINES = 4;
+
+/**
+ * Checks text against the craft rules the system prompt enforces.
+ *
+ * The model's output is bound by those rules; a writer's hand edit is not, and
+ * a draft assembled from beats can end up repetitive or over-capped even when
+ * every part was clean. This closes that gap with no API call.
+ *
+ * Advisory only. Never block applying: the writer outranks the linter, and
+ * this exists to catch slips, not to argue.
+ */
+export function lintActionText(text: string): LintWarning[] {
+  const out: LintWarning[] = [];
+  const t = text.trim();
+  if (!t) return out;
+
+  if (/[—–]|(?<!-)--(?!-)/.test(t)) {
+    out.push({
+      rule: 'no-em-dash',
+      message: 'Em dash. Use a period, comma, or colon.',
+    });
+  }
+
+  if (/\bwe\s+(see|hear|find|watch|notice)\b/i.test(t)) {
+    out.push({
+      rule: 'no-we-see',
+      message: 'Cut "we see" or "we hear" and describe the thing.',
+    });
+  }
+
+  const camera =
+    /\b(CU|ECU|WS|MS|POV|ZOOM|PAN|DOLLY|CRANE|TRACKING|ANGLE ON|PUSH IN|PULL BACK|SMASH CUT)\b|the camera/i;
+  if (camera.test(t)) {
+    out.push({
+      rule: 'no-camera',
+      message: 'Camera direction. Describe the action instead.',
+    });
+  }
+
+  if (
+    /\b(remembers?|wonders?|realizes?|realises?|feels?|thinks?|knows?|hopes?|wants?|decides?)\b/i.test(
+      t,
+    )
+  ) {
+    out.push({
+      rule: 'external-only',
+      message: 'Reads as internal. Show it as behavior.',
+    });
+  }
+
+  if (/\b(begins?|starts?|proceeds?)\s+to\b/i.test(t)) {
+    out.push({
+      rule: 'strong-verbs',
+      message: '"Begins to" weakens the verb. Just do it.',
+    });
+  }
+
+  if (/\b(is|are|was|were)\s+\w+ing\b/i.test(t)) {
+    out.push({
+      rule: 'strong-verbs',
+      message: 'Progressive tense. A single active verb is stronger.',
+    });
+  }
+
+  for (const para of t.split(/\n\s*\n/)) {
+    const lines = Math.ceil(para.trim().length / CHARS_PER_LINE);
+    if (lines > MAX_PARAGRAPH_LINES) {
+      out.push({
+        rule: 'short-paragraphs',
+        message: `A paragraph runs about ${lines} lines. Break at ${MAX_PARAGRAPH_LINES}.`,
+      });
+      break;
+    }
+  }
+
+  const capRuns = t.match(/\b[A-Z][A-Z' ]{3,}\b/g) || [];
+  const meaningful = capRuns.filter((c) => c.trim().length > 3);
+  if (meaningful.length > 2) {
+    out.push({
+      rule: 'caps-scalpel',
+      message: `${meaningful.length} capped phrases. Emphasis flattens past one or two.`,
+    });
+  }
+
+  // Assembling beats from different variants can duplicate an image that read
+  // fine in isolation. Cheap check, and the failure is easy to miss by eye.
+  const sentences = t
+    .split(/(?<=[.!?])\s+/)
+    .map((x) => x.trim().toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ''))
+    .filter((x) => x.split(/\s+/).length >= 3);
+  const seen = new Set<string>();
+  for (const sentence of sentences) {
+    if (seen.has(sentence)) {
+      out.push({ rule: 'no-repeats', message: 'A beat appears twice. Cut one.' });
+      break;
+    }
+    seen.add(sentence);
+  }
+
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -540,6 +1029,33 @@ export async function rewriteActionLines(
   req: RewriteRequest,
 ): Promise<RewriteResponse> {
   return invokeCmd<RewriteResponse>('rewrite_action_lines', { req });
+}
+
+/**
+ * Records what the writer did. Fire and forget: a logging failure (or a
+ * browser build with no Tauri at all) must never surface as an error in the
+ * writing flow.
+ */
+export async function recordRewriteOutcome(
+  outcome: RewriteOutcome,
+): Promise<void> {
+  try {
+    await invokeCmd('record_rewrite_outcome', { outcome });
+  } catch (e) {
+    console.warn('rewrite outcome not logged:', e);
+  }
+}
+
+export async function rewriteLogStats(): Promise<RewriteLogStats> {
+  return invokeCmd<RewriteLogStats>('rewrite_log_stats');
+}
+
+export async function rewriteLogPath(): Promise<string> {
+  return invokeCmd<string>('rewrite_log_path');
+}
+
+export async function clearRewriteLog(): Promise<void> {
+  return invokeCmd('clear_rewrite_log');
 }
 
 export async function saveApiKey(key: string): Promise<void> {

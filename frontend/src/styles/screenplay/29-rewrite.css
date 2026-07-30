@@ -73,14 +73,16 @@
 .rw-error { font-size: 12px; color: #e06060; line-height: 1.45; }
 .rw-retry { margin-left: 8px; height: 24px; padding: 0 10px; font-size: 12px; }
 
-/* "already_strong" — visibly softer, not an alarm */
-.rw-strong {
-  font-size: 12px;
-  font-style: italic;
-  opacity: 0.75;
-  border-left: 3px solid #2e8b57;
-  padding: 4px 8px;
+/* v5.59: the results header — assessment (soft when already_strong) + Dismiss */
+.rw-results-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
 }
+.rw-results-title { opacity: 0.65; }
+.rw-strong-inline { font-style: italic; opacity: 0.75; color: #2e8b57; }
 .rw-stale {
   font-size: 12px;
   color: #e8994f;
@@ -105,13 +107,73 @@
 }
 .rw-card-label { font-size: 12px; font-weight: 700; }
 .rw-card-blurb { font-size: 11px; opacity: 0.65; }
-.rw-card-text {
+/* v5.59: suggestions are EDITABLE — the draft field wears the script face */
+.rw-card-edit {
+  width: 100%;
+  border: none;
+  background: none;
+  color: inherit;
+  resize: vertical;
   font-family: 'Courier Prime', Courier, monospace;
   font-size: 12px;
   line-height: 1.45;
-  white-space: pre-wrap;
   padding: 8px 10px;
+  min-height: 54px;
 }
+.rw-card-edit:focus { outline: none; background: rgba(0, 0, 0, 0.08); }
+.rw-revert { margin-left: auto; flex: none; }
+
+.rw-seed-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 0;
+  font-size: 11px;
+}
+.rw-seed-label { opacity: 0.6; }
+
+.rw-beats { padding: 0 10px 4px; }
+.rw-beats-bar { display: flex; gap: 12px; align-items: center; font-size: 11px; }
+.rw-beat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+.rw-beat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  text-align: left;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font-family: 'Courier Prime', Courier, monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+.rw-beat:hover { border-color: var(--fd-accent); }
+.rw-beat-src {
+  flex: none;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  opacity: 0.55;
+  border: 1px solid var(--fd-border);
+  border-radius: 3px;
+  padding: 0 3px;
+}
+
+/* the advisory craft linter — visible, never blocking */
+.rw-lint { padding: 0 10px 6px; display: flex; flex-direction: column; gap: 2px; }
+.rw-lint-item { font-size: 10px; color: #e8994f; }
+.rw-lint-item::before { content: '⚠ '; }
 .rw-card-foot {
   display: flex;
   align-items: center;
@@ -141,3 +203,25 @@
   padding: 0;
 }
 .rw-link:hover { text-decoration: underline; }
+.rw-link:disabled { opacity: 0.35; cursor: default; text-decoration: none; }
+.rw-foot-gap { flex: 1; }
+
+/* v5.59: the local activity log summary */
+.rw-log {
+  border-top: 1px solid var(--fd-border);
+  padding-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.rw-log-line { font-size: 10px; opacity: 0.7; display: flex; align-items: center; gap: 8px; }
+.rw-log-path {
+  font-family: 'Courier Prime', Courier, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+}
+.rw-log-hint { opacity: 0.55; }

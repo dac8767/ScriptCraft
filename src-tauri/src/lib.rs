@@ -6,7 +6,10 @@ use tauri::menu::{Menu, Submenu, PredefinedMenuItem};
 
 // v5.54: the Action Rewrite feature — Anthropic API call + keychain key
 // management, kept Rust-side so the key never enters the webview.
+// v5.59: + the append-only rewrite log (suggestions and outcomes, local
+// JSONL) that feeds the calibration harvest loop.
 mod rewrite;
+mod rewrite_log;
 
 // ── Android content URI reading (JNI) ────────────────────────────────────
 // On Android, files opened via intents use content:// URIs. These cannot be
@@ -1015,6 +1018,10 @@ pub fn run() {
             rewrite::save_api_key,
             rewrite::has_api_key,
             rewrite::clear_api_key,
+            rewrite_log::record_rewrite_outcome,
+            rewrite_log::rewrite_log_stats,
+            rewrite_log::rewrite_log_path,
+            rewrite_log::clear_rewrite_log,
         ]);
 
         // ── Native menu (desktop only) ────────────────────────────────

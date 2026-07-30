@@ -9,6 +9,7 @@
 //! prefix is byte-identical on every call. Do not build it dynamically —
 //! any per-call variation kills the prompt cache.
 
+use crate::rewrite_log;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::time::Duration;
@@ -84,10 +85,21 @@ pub struct RewriteVariant {
     pub note: String,
 }
 
+/// What the model returns. Parsed from the JSON in the response body.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RewriteResponse {
+pub struct ModelOutput {
     /// "improvable" | "already_strong"
+    pub assessment: String,
+    pub variants: Vec<RewriteVariant>,
+}
+
+/// What the command returns. Adds the log correlation id, which the UI must
+/// pass back to `record_rewrite_outcome` once the writer resolves the panel.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RewriteResponse {
+    pub event_id: String,
     pub assessment: String,
     pub variants: Vec<RewriteVariant>,
 }
@@ -102,6 +114,22 @@ struct ApiResponse {
     content: Vec<ContentBlock>,
     #[serde(default)]
     error: Option<ApiError>,
+    #[serde(default)]
+    usage: Option<Usage>,
+}
+
+/// Captured for the log. `cache_read_input_tokens` is also how you verify the
+/// prompt cache is actually working; see docs/ACTION-REWRITE.md checklist 5.
+#[derive(Debug, Default, Deserialize)]
+struct Usage {
+    #[serde(default)]
+    input_tokens: u64,
+    #[serde(default)]
+    output_tokens: u64,
+    #[serde(default)]
+    cache_read_input_tokens: u64,
+    #[serde(default)]
+    cache_creation_input_tokens: u64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -316,12 +344,16 @@ fn extract_json(raw: &str) -> Result<&str, String> {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub async fn rewrite_action_lines(req: RewriteRequest) -> Result<RewriteResponse, String> {
+pub async fn rewrite_action_lines(
+    app: tauri::AppHandle,
+    req: RewriteRequest,
+) -> Result<RewriteResponse, String> {
     if req.selection.trim().is_empty() {
         return Err("Nothing selected.".into());
     }
 
     let api_key = keys::read()?;
+    let started = std::time::Instant::now();
 
     let body = json!({
         "model": MODEL,
@@ -369,7 +401,7 @@ pub async fn rewrite_action_lines(req: RewriteRequest) -> Result<RewriteResponse
         .map_err(|e| format!("Could not read response: {e}"))?;
 
     let parsed: ApiResponse = serde_json::from_str(&payload)
-        .map_err(|e| format!("Unexpected response ({status}): {e} — {payload}"))?;
+        .map_err(|e| format!("Unexpected response ({status}): {e} / {payload}"))?;
 
     if let Some(err) = parsed.error {
         return Err(match status.as_u16() {
@@ -391,8 +423,8 @@ pub async fn rewrite_action_lines(req: RewriteRequest) -> Result<RewriteResponse
         return Err("Model returned no text.".into());
     }
 
-    let mut result: RewriteResponse = serde_json::from_str(extract_json(&text)?)
-        .map_err(|e| format!("Could not parse suggestions: {e} — {text}"))?;
+    let mut output: ModelOutput = serde_json::from_str(extract_json(&text)?)
+        .map_err(|e| format!("Could not parse suggestions: {e} / {text}"))?;
 
     // Stable UI order regardless of what the model emits: least license first,
     // most license last.
@@ -402,11 +434,54 @@ pub async fn rewrite_action_lines(req: RewriteRequest) -> Result<RewriteResponse
         "reimagined" => 2,
         _ => 3,
     };
-    result.variants.sort_by_key(|v| rank(&v.strategy));
+    output.variants.sort_by_key(|v| rank(&v.strategy));
 
-    if result.variants.is_empty() {
+    if output.variants.is_empty() {
         return Err("Model returned no variants.".into());
     }
 
-    Ok(result)
+    let event_id = rewrite_log::new_event_id();
+    let usage = parsed.usage.unwrap_or_default();
+
+    // Logging is best-effort. A full disk or a permissions problem must not cost
+    // the writer their suggestions, so the error is swallowed after a warning.
+    let record = rewrite_log::SuggestionRecord {
+        kind: "suggestion",
+        event_id: event_id.clone(),
+        ts_ms: rewrite_log::now_ms(),
+        original: req.selection.trim().to_string(),
+        scene_heading: req.scene_heading.clone(),
+        location_established: req.location_established,
+        opened_scene: req.preceding.is_empty(),
+        had_preceding_dialogue: req
+            .preceding_dialogue
+            .as_deref()
+            .map(|d| !d.trim().is_empty())
+            .unwrap_or(false),
+        writer_note: clean_note(&req.writer_note),
+        assessment: output.assessment.clone(),
+        variants: output
+            .variants
+            .iter()
+            .map(|v| rewrite_log::LoggedVariant {
+                strategy: v.strategy.clone(),
+                text: v.text.clone(),
+                note: v.note.clone(),
+            })
+            .collect(),
+        latency_ms: started.elapsed().as_millis() as u64,
+        input_tokens: usage.input_tokens,
+        output_tokens: usage.output_tokens,
+        cache_read_tokens: usage.cache_read_input_tokens,
+        cache_write_tokens: usage.cache_creation_input_tokens,
+    };
+    if let Err(e) = rewrite_log::append_suggestion(&app, &record) {
+        eprintln!("rewrite log write failed: {e}");
+    }
+
+    Ok(RewriteResponse {
+        event_id,
+        assessment: output.assessment,
+        variants: output.variants,
+    })
 }

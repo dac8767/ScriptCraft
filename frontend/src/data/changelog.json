@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.59",
+    "date": "2026-07-30",
+    "changes": [
+      "Action Rewrite, fourth revision: every suggestion is now editable right in the panel before you apply it, with a gentle craft check underneath (dashes, camera language, stated feelings, weak verbs, repeated beats) that warns but never blocks — you outrank the linter.",
+      "A fourth card, Yours: compose your own version by borrowing single sentences from the three suggestions (tap a beat to add it, ¶ starts a new paragraph), or start from the original or any variant and shape it.",
+      "The tool now keeps a private activity log on your Mac — each suggestion and what you did with it. That's the improvement loop: scripts/harvest-calibration.mjs turns your accepted-and-edited rewrites into calibration examples you can paste into the prompt so it learns your voice. Nothing ever leaves the machine; the panel footer shows the log and can clear it."
+    ]
+  },
+  {
     "version": "5.58",
     "date": "2026-07-29",
     "changes": [

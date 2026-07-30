@@ -21,7 +21,10 @@ import { DualDialogue, DualDialogueColumn } from '../editor/extensions/DualDialo
 import {
   projectScript, resolveEditorSelection, resolveSelection,
   targetIsCurrent, applyVariantToEditor, buildVariantNodes, indexForPos,
-  MAX_WRITER_NOTE, type ScriptElement,
+  MAX_WRITER_NOTE, prepareDrafts, updateDraft, revertDraft, isDirty,
+  allBeats, appendBeatToCustom, appendParagraphBreak, seedCustom,
+  classifyEdit, lintActionText, CUSTOM_SLOT,
+  type ScriptElement, type RewriteResponse, type VariantDraft,
 } from './actionRewrite';
 
 let editor: Editor | null = null;
@@ -256,6 +259,80 @@ describe('pure pieces', () => {
     expect(r.adjusted).toBe(true);
     const none = resolveSelection(els, { anchorIndex: 3, focusIndex: 3 });
     expect(none.ok).toBe(false);
+  });
+
+  it('classifyEdit grades the distance from what was offered (v5.59, six cases)', () => {
+    const offered = 'He rises. Bars. He grips them.';
+    expect(classifyEdit(offered, '  He rises.  Bars.  He grips them. ')).toBe('none');
+    expect(classifyEdit(offered, 'He rises: bars. He grips them!')).toBe('punctuation');
+    expect(classifyEdit(offered, 'He rises. Bars. He clutches them.')).toBe('minor');
+    expect(classifyEdit(offered, 'He stands slowly, crosses the cell, and wraps both fists around the bars.'))
+      .toBe('substantive');
+    expect(classifyEdit(offered, 'Bars.')).toBe('substantive');
+    expect(classifyEdit('', 'Anything at all here.')).toBe('substantive');
+  });
+
+  it('lintActionText flags slips and stays silent on clean copy (v5.59)', () => {
+    expect(lintActionText('Dark. Wet. KANE sits against the wall.')).toEqual([]);
+    const rules = (t: string) => lintActionText(t).map((w) => w.rule);
+    expect(rules('He reaches — stops.')).toContain('no-em-dash');
+    expect(rules('We see the door open.')).toContain('no-we-see');
+    expect(rules('The camera pans to the door.')).toContain('no-camera');
+    expect(rules('John remembers his father.')).toContain('external-only');
+    expect(rules('He begins to run.')).toContain('strong-verbs');
+    expect(rules('He is running.')).toContain('strong-verbs');
+    expect(rules('He grips the bars hard. He grips the bars hard.')).toContain('no-repeats');
+  });
+
+  it('drafts: prepare/edit/revert/dirty + the custom slot (v5.59)', () => {
+    const response: RewriteResponse = {
+      eventId: 'e1',
+      assessment: 'improvable',
+      variants: [
+        { strategy: 'faithful', text: 'He rises.', note: 'n1' },
+        { strategy: 'compressed', text: 'Rises.', note: 'n2' },
+        { strategy: 'reimagined', text: 'Bars. He rises.', note: 'n3' },
+      ],
+    };
+    let drafts = prepareDrafts(response);
+    expect(drafts).toHaveLength(4);
+    expect(drafts[3].slot).toBe(CUSTOM_SLOT);
+    expect(drafts[3].offered).toBeNull();
+    expect(isDirty(drafts[0])).toBe(false);
+    drafts = updateDraft(drafts, 'faithful', 'He rises fast.');
+    expect(isDirty(drafts.find((d) => d.slot === 'faithful') as VariantDraft)).toBe(true);
+    drafts = revertDraft(drafts, 'faithful');
+    expect(drafts.find((d) => d.slot === 'faithful')!.draft).toBe('He rises.');
+  });
+
+  it('beats: borrow, break survives the next append, seed records provenance (v5.59)', () => {
+    const response: RewriteResponse = {
+      eventId: 'e2',
+      assessment: 'improvable',
+      variants: [
+        { strategy: 'faithful', text: 'He rises. He waits.', note: '' },
+        { strategy: 'compressed', text: 'Rises.', note: '' },
+        { strategy: 'reimagined', text: 'Bars first. Then him.', note: '' },
+      ],
+    };
+    let drafts = prepareDrafts(response);
+    const beats = allBeats(drafts);
+    expect(beats.map((b) => b.text)).toEqual(
+      ['He rises.', 'He waits.', 'Rises.', 'Bars first.', 'Then him.']);
+    drafts = appendBeatToCustom(drafts, beats[0]);          // faithful
+    drafts = appendParagraphBreak(drafts);
+    drafts = appendBeatToCustom(drafts, beats[3]);          // reimagined
+    const custom = drafts.find((d) => d.slot === CUSTOM_SLOT)!;
+    // the regression the handoff calls out: the break must survive the append
+    expect(custom.draft).toBe('He rises.\n\nBars first.');
+    expect([...custom.composedFrom].sort()).toEqual(['faithful', 'reimagined']);
+    drafts = seedCustom(drafts, 'compressed', 'orig');
+    const seeded = drafts.find((d) => d.slot === CUSTOM_SLOT)!;
+    expect(seeded.draft).toBe('Rises.');
+    expect(seeded.composedFrom).toEqual(['compressed']);
+    drafts = seedCustom(drafts, 'original', 'The original passage.');
+    expect(drafts.find((d) => d.slot === CUSTOM_SLOT)!.draft).toBe('The original passage.');
+    expect(drafts.find((d) => d.slot === CUSTOM_SLOT)!.composedFrom).toEqual([]);
   });
 
   it('the writer note rides the request trimmed and capped; empty stays out (v5.58)', () => {

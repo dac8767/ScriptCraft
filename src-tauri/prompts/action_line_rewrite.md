@@ -159,6 +159,19 @@ After: `The city sleeps under heavy fog.`
 Before: `He reaches for the latch — stops.`
 After: `He reaches for the latch. Stops.`
 
+# Writer's own calibration
+
+This block is empty on purpose. It is where the writer's own before/after pairs
+go, harvested from real accepted rewrites via `scripts/harvest-calibration.mjs`.
+
+Pairs here outrank the general calibration above when they conflict, because they
+carry the writer's voice rather than a generic standard. Ten of them is enough to
+noticeably shift output. Add them as plain Before/After code blocks in the same
+shape as the section above.
+
+<!-- BEGIN WRITER CALIBRATION -->
+<!-- END WRITER CALIBRATION -->
+
 # Output
 
 Return **only** a JSON object. No preamble, no explanation, no markdown fences.

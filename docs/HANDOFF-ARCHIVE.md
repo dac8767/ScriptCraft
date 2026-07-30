@@ -155,6 +155,73 @@ reliable; re-run before believing a weird worker failure.
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
 
+### v5.54 — ACTION REWRITE: Derek's design-handoff integrated (Rust API call + keychain, PM adaptation)
+
+- Derek uploaded a zip from a DESIGN CHAT (HANDOFF.md + system prompt +
+  rewrite.rs + a flat-model actionRewrite.ts): "use these files from a
+  different chat to create an action line improvement tool." Feature:
+  select action lines → three craft-guided rewrites (cut / sharpen /
+  restructure), each with a teaching note; dialogue untouched.
+  docs/ACTION-REWRITE.md now carries the handoff's rationale + Derek's
+  desktop verification checklist — READ IT before touching this feature;
+  its decisions are deliberate (temperature 1.0, include_str! prompt,
+  already_strong softening, three-strategies contract).
+- RUST (first Rust this project ships beyond upstream): rewrite.rs =
+  4 tauri commands (rewrite_action_lines, save/has/clear_api_key);
+  system prompt include_str!'d from src-tauri/prompts/ (VERBATIM from
+  the handoff — it is the product, don't rewrite its craft content);
+  BYO Anthropic key in the OS keychain (service com.freedraft.app —
+  the persisted bundle id), read Rust-side per request, NEVER the
+  webview. keyring v3 dep gated to desktop targets; mobile compiles
+  keyless stubs. reqwest body serialized by hand (this repo's reqwest
+  lacks the json feature — kept it that way). Model claude-sonnet-5,
+  opus is a one-line swap.
+- SANDBOX CAN CARGO CHECK NOW: apt-get install libgtk-3-dev
+  libwebkit2gtk-4.1-dev (after apt-get update) makes `cargo check`
+  pass on the Linux host (~58s cold). Derek's `npm run desktop` runs
+  `tauri dev` = compiles Rust on HIS machine — NEVER push Rust
+  unchecked. macOS cross-check is impossible here (objc2 needs a mac
+  cc); the Linux check + keyring's documented feature set is the gate.
+- FRONTEND (the handoff's §5 answered — flat model → ProseMirror):
+  utils/actionRewrite.ts = projectScript (top-level walk, sceneHeading→
+  scene_heading, recurses dualDialogue columns, elements carry PM
+  spans), the handoff's pure context helpers UNCHANGED (clamp-to-action,
+  scene-boundary stops, locationEstablished, firstAppearances, dialogue
+  lookback), resolveEditorSelection (PM selection → indices → pmTarget
+  {from,to,text}), targetIsCurrent (textBetween equality — the stale
+  guard), applyVariantToEditor (insertContentAt, retargets onto the
+  insert so variant B replaces variant A; undo = history), invoke
+  wrappers isTauri-guarded (browser build: hasApiKey false, calls throw
+  the desktop-only message).
+- RewriteTool.tsx: key setup card (BYO key → keychain; Change/Remove in
+  a footer), intent select (No steer/Tighten/More visual/Stronger
+  verbs/Plainer), live target line ("Target: N action paragraphs" /
+  clamp notice / refusal reason — never a silent dead button), three
+  variant cards (label + blurb + Courier text + note + Use),
+  already_strong banner softens, stale banner blocks Use after
+  conflicting edits (positions remapped via transaction mapping
+  map(from,1)/map(to,-1)). Registered: ToolId 'rewrite', right panel,
+  ALL_TOOLS (FaMagic, 360×520, group 3), Tools menu, 29-rewrite.css.
+  About list credits keyring-rs. AI Writer (the joke) untouched.
+- Tests: 13 new in actionRewrite.test.ts against a REAL TipTap editor
+  (the Dialogue.test.ts harness pattern) — projection spans (textBetween
+  agreement), dual-dialogue nesting, clamping, context fields, scene
+  boundaries, established location, first appearances, apply+retarget+
+  swap, stale refusal (908 total). check-v554: 6 green in the browser
+  build (desktop-only notice + disabled button, intent options, 1-para
+  target, clamp notice, refusal reason, Tools menu row).
+- NOT VERIFIABLE HERE: the live API call + keychain round-trip — Derek's
+  8-step checklist is in docs/ACTION-REWRITE.md (incl. the prompt-cache
+  check: second request must show cache_read, not cache_creation).
+- QUEUED NEXT (in order):
+  1. PAGES WINDOW TABS restructure (Script / Title Page / Custom; the
+     separate Title Page tool leaves the side panels).
+  2. NAVIGATOR FILTER (Derek, mid-v5.54, verbatim): "in the navigator
+     filter window, change Filter Annotations to 'Annotations'. Above
+     that, add a new section in the filter called 'Scene Headings'. the
+     filter options should be INT. or EXT., location, Contains X (type
+     in a word or words)".
+
 ### v5.53 — the THESAURUS tool: local MyThes/WordNet data, caret-follow, replace-in-place
 
 - Derek: "Add a thesaurus tool. Find an open source thesaurus resource
