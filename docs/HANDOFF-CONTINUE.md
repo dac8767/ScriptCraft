@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.62 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.63 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -204,7 +204,28 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.62 — the note clears on a NEW target (disjoint-range rule) (HEAD)
+### v5.63 — the cards speak the app's visual language (dark block = editable) (HEAD)
+
+- Derek (screenshot): "in almost all other windows, dark blocks are
+  editable text blocks… so the Faithful/Compressed/Reimagined/Yours
+  title blocks look like they are the editable fields. I tried clicking
+  on 'Yours' thinking thats where I was supposed to type." The v5.59
+  cards had it INVERTED: dark header bars (read as inputs) over
+  borderless transparent textareas (read as static text).
+- Fix, pure CSS: headers are plain text (no background/border); the
+  draft textareas wear the standard input dress — var(--fd-input-bg) +
+  var(--fd-border) 1px + radius, accent border on focus — the SAME as
+  .rw-note/.thes-input. Card frames/dividers dropped; cards separate by
+  spacing. The grow mirror carries the border THICKNESS but not its
+  color (a `border: 1px solid transparent` shorthand in the shared rule
+  initially clobbered the field's color at equal specificity — split
+  into border-width/style shared + per-element color).
+- check-v563 5/5 asserts the CONTRACT, not pixels: header bg transparent;
+  the draft field's computed background AND border EQUAL the note
+  field's; focus flips accent; grow stays exact with the border. Gates:
+  tsc 0, 916 tests, build.
+
+### v5.62 — the note clears on a NEW target (disjoint-range rule)
 
 - Derek: "delete the text in the context/intent text field when a new set
   of text is highlighted." Rule chosen: the note clears when the live
@@ -317,37 +338,12 @@ Durable bits kept live here:
   (harvest end-to-end on a synthetic log incl. torn line + stats
   contributions; panel regression).
 
-### v5.58 — Action Rewrite v3: the writer's NOTE replaces the steer enum
-
-- Derek's THIRD design-chat drop ("another update"), diffed against the
-  second before applying. The steer enum is GONE (tighten too — compressed
-  already covers it; the obvious "improvement" is re-adding the dropdown,
-  DON'T). In its place: `writerNote`, optional free text ≤300 chars — the
-  two things no rule can infer: what the beat is FOR and which detail must
-  SURVIVE. Four prompt guards (first is load-bearing): never overrides a
-  hard rule (a feeling request is answered with behavior); a named detail
-  survives in ALL variants incl. compressed; cannot authorize new story;
-  never quoted into the script.
-- Wire shape: request field writer_note/writerNote (distinct from
-  RewriteVariant.note, the model's explanation, opposite direction);
-  Rust clean_note flattens whitespace to one line (a multi-line note
-  can't fake a labelled context section) + chars().take cap (multi-byte
-  safe); sent LAST in the user turn. Cap enforced BOTH ends
-  (MAX_WRITER_NOTE TS / MAX_NOTE_CHARS Rust — the command is callable
-  without the panel).
-- Panel: single-line note field + live counter (shows once non-empty,
-  flags at 300), teaching placeholder "What's this beat for? Anything
-  that must stay?"; Enter submits. Prompt v3 verbatim;
-  docs/ACTION-REWRITE.md updated incl. 4 new desktop verification steps
-  (the feeling-request guard is the one most likely to fail).
-- Gates: cargo check, tsc 0, 909 tests (writerNote trim/cap/empty test),
-  build, check-v558 4/4.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.58** — Action Rewrite v3: the writer's NOTE replaces the steer enum
 - **v5.57** — Action Rewrite v2: faithful/compressed/reimagined, tighten-only steer, native dash rule
 - **v5.56** — Action Rewrite prompt: Derek's no-em-dash rule
 - **v5.55** — npm run desktop self-heals the Cargo.lock pull collision

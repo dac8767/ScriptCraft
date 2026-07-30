@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.63",
+    "date": "2026-07-30",
+    "changes": [
+      "Action Rewrite: the cards follow the app's visual language now — Faithful / Compressed / Reimagined / Yours are plain text titles, and the dark bordered block in each card is the editable field itself, dressed exactly like every other text field. What looks typable is typable."
+    ]
+  },
+  {
     "version": "5.62",
     "date": "2026-07-30",
     "changes": [

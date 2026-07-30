@@ -155,6 +155,32 @@ reliable; re-run before believing a weird worker failure.
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
 
+### v5.58 — Action Rewrite v3: the writer's NOTE replaces the steer enum
+
+- Derek's THIRD design-chat drop ("another update"), diffed against the
+  second before applying. The steer enum is GONE (tighten too — compressed
+  already covers it; the obvious "improvement" is re-adding the dropdown,
+  DON'T). In its place: `writerNote`, optional free text ≤300 chars — the
+  two things no rule can infer: what the beat is FOR and which detail must
+  SURVIVE. Four prompt guards (first is load-bearing): never overrides a
+  hard rule (a feeling request is answered with behavior); a named detail
+  survives in ALL variants incl. compressed; cannot authorize new story;
+  never quoted into the script.
+- Wire shape: request field writer_note/writerNote (distinct from
+  RewriteVariant.note, the model's explanation, opposite direction);
+  Rust clean_note flattens whitespace to one line (a multi-line note
+  can't fake a labelled context section) + chars().take cap (multi-byte
+  safe); sent LAST in the user turn. Cap enforced BOTH ends
+  (MAX_WRITER_NOTE TS / MAX_NOTE_CHARS Rust — the command is callable
+  without the panel).
+- Panel: single-line note field + live counter (shows once non-empty,
+  flags at 300), teaching placeholder "What's this beat for? Anything
+  that must stay?"; Enter submits. Prompt v3 verbatim;
+  docs/ACTION-REWRITE.md updated incl. 4 new desktop verification steps
+  (the feeling-request guard is the one most likely to fail).
+- Gates: cargo check, tsc 0, 909 tests (writerNote trim/cap/empty test),
+  build, check-v558 4/4.
+
 ### v5.57 — Action Rewrite v2: faithful/compressed/reimagined, tighten-only steer, native dash rule
 
 - Derek's SECOND design-chat drop ("update the ai tool with this info") —

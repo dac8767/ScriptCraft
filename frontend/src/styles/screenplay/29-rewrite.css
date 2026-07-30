@@ -65,7 +65,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   min-height: 0;
 }
 .rw-status { font-size: 12px; opacity: 0.7; padding: 6px 0; line-height: 1.5; }
@@ -90,23 +90,26 @@
   padding: 4px 8px;
 }
 
+/* v5.63, Derek: "dark blocks are editable text blocks" everywhere else in
+   the app — so the old dark HEADER bars read as inputs (he typed at the
+   "Yours" title) while the borderless textareas read as static text. The
+   language is restored: headers are PLAIN TEXT, and the one dark bordered
+   box in each card IS the editable field, dressed exactly like .rw-note
+   and every other input. Cards separate by spacing, not frames. */
 .rw-card {
-  border: 1px solid var(--fd-border);
-  border-radius: 6px;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   flex-shrink: 0;
+  padding-top: 4px;
 }
-.rw-card.applied { border-color: #2e8b57; }
 .rw-card-head {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  padding: 6px 10px;
-  background: rgba(0, 0, 0, 0.12);
-  border-bottom: 1px solid var(--fd-border);
 }
 .rw-card-label { font-size: 12px; font-weight: 700; }
-.rw-card-blurb { font-size: 11px; opacity: 0.65; }
+.rw-card-blurb { font-size: 11px; opacity: 0.6; flex: 1; }
 /* v5.59: suggestions are EDITABLE — the draft field wears the script face.
    v5.61, Derek: full length, no inner scroll — the .rw-grow wrapper's
    ::after mirrors the value (same box, hidden) and defines the height, the
@@ -116,19 +119,25 @@
   content: attr(data-value);
   visibility: hidden;
   grid-area: 1 / 1;
+  border-color: transparent;
 }
 .rw-grow > .rw-card-edit {
   grid-area: 1 / 1;
   width: 100%;
-  border: none;
-  background: none;
+  background: var(--fd-input-bg);
+  border-color: var(--fd-border);
   color: inherit;
   resize: none;
   overflow: hidden;
 }
-/* the mirror must wear EXACTLY the textarea's text box */
+/* the mirror must wear EXACTLY the textarea's text box — border THICKNESS
+   included so the measured heights match; color stays per-element (the
+   field's --fd-border above, the mirror's transparent below) */
 .rw-grow::after,
 .rw-grow > .rw-card-edit {
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 4px;
   font-family: 'Courier Prime', Courier, monospace;
   font-size: 12px;
   line-height: 1.45;
@@ -137,7 +146,7 @@
   word-break: break-word;
   min-height: 40px;
 }
-.rw-card-edit:focus { outline: none; background: rgba(0, 0, 0, 0.08); }
+.rw-card-edit:focus { outline: none; border-color: var(--fd-accent); }
 .rw-revert { margin-left: auto; flex: none; }
 
 .rw-seed-row {
@@ -145,12 +154,11 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding: 5px 10px 0;
   font-size: 11px;
 }
 .rw-seed-label { opacity: 0.6; }
 
-.rw-beats { padding: 0 10px 4px; }
+.rw-beats { display: flex; flex-direction: column; }
 .rw-beats-bar { display: flex; gap: 12px; align-items: center; font-size: 11px; }
 /* v5.61: no inner scroll here either — the beat list flows in the body */
 .rw-beat-list {
@@ -187,15 +195,13 @@
 }
 
 /* the advisory craft linter — visible, never blocking */
-.rw-lint { padding: 0 10px 6px; display: flex; flex-direction: column; gap: 2px; }
+.rw-lint { display: flex; flex-direction: column; gap: 2px; }
 .rw-lint-item { font-size: 10px; color: #e8994f; }
 .rw-lint-item::before { content: '⚠ '; }
 .rw-card-foot {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px;
-  border-top: 1px solid var(--fd-border);
 }
 .rw-card-note { font-size: 11px; font-style: italic; opacity: 0.7; flex: 1; line-height: 1.4; }
 .rw-use { height: 24px; padding: 0 12px; font-size: 12px; flex: none; }
