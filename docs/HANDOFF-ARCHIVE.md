@@ -155,6 +155,41 @@ reliable; re-run before believing a weird worker failure.
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
 
+### v5.57 — Action Rewrite v2: faithful/compressed/reimagined, tighten-only steer, native dash rule
+
+- Derek's SECOND design-chat drop ("update the ai tool with this info") —
+  a revised handoff superseding the v5.54 package. Every delta diffed
+  against the first drop before applying. docs/ACTION-REWRITE.md updated;
+  read it before touching the feature.
+- THE VARIANT MODEL CHANGED (the big one): cut/sharpen/restructure →
+  faithful / compressed / reimagined. Rationale (preserved in the doc):
+  sharpen was a deliberate under-application — the writer should never
+  pick between a correct rewrite and a half-correct one. All three now
+  apply every rule in full and differ by LICENSE taken with the writer's
+  shape. Rust rank order: faithful, compressed, reimagined (least license
+  first). Prompt v2 copied VERBATIM.
+- Steer reduced to ONLY tighten (visual/verbs/plain asked for what the
+  hard rules already require — no observable change). INTENT_LABELS is
+  the single source: the panel select updated itself with zero component
+  edits.
+- The no-em-dash rule is NATIVE to the v2 prompt now (hard rule 8 — also
+  en dashes and -- as punctuation; compound-word hyphens protected),
+  superseding v5.56's rule 13. The prompt's own prose is deliberately
+  dash-free (models mimic prompt punctuation); keep it that way when
+  editing. -- ban came from the design side, resolving the question
+  v5.56 left open.
+- Cache policy documented (second handoff §6): stay on the 5-minute TTL;
+  break-even ~0.28 reads; an isolated rewrite costing 1.25x is the design
+  working — do not "fix" idle-gap cache misses; if rewrites prove
+  isolated, drop caching rather than reach for the 1-hour tier.
+- KEPT deliberately: our keychain service com.freedraft.app (their v2
+  says com.derek.scriptcraft + "confirm it matches" — ours IS the real
+  bundle id, and Derek's key already lives under it; changing the
+  service would orphan his saved key. Keychain coordinates are persisted
+  identifiers).
+- Gates: cargo check, tsc 0, 908 tests, build, check-v557 2/2 (steer
+  pair, targeting regression).
+
 ### v5.56 — Action Rewrite prompt: Derek's no-em-dash rule
 
 - Derek confirmed the API path works on his Mac, then: "add a rule to the

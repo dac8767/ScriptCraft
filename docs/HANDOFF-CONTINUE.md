@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.61 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.62 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -204,7 +204,21 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.61 — full-length suggestion cards, ONE scroll (HEAD)
+### v5.62 — the note clears on a NEW target (disjoint-range rule) (HEAD)
+
+- Derek: "delete the text in the context/intent text field when a new set
+  of text is highlighted." Rule chosen: the note clears when the live
+  target resolves DISJOINT from the last ok-target (lastOkTargetRef,
+  overlap test in the debounced sync). Deliberately NOT position-equality:
+  positions drift as you type inside the passage — an equality rule would
+  wipe the note mid-thought on every keystroke or on clicking back into
+  the same paragraph. Overlap = same working area = keep; disjoint = new
+  text = clear. Focusing the field itself never clears (no editor
+  selectionUpdate fires).
+- check-v562 4/4 (written → kept within passage → cleared on a different
+  paragraph → survives field focus). Gates: tsc 0, 916 tests, build.
+
+### v5.61 — full-length suggestion cards, ONE scroll
 
 - Derek: "show the text of all three suggestions in their full length…
   i just want one scroll for the whole tool." The v5.59 textareas capped
@@ -329,46 +343,12 @@ Durable bits kept live here:
 - Gates: cargo check, tsc 0, 909 tests (writerNote trim/cap/empty test),
   build, check-v558 4/4.
 
-### v5.57 — Action Rewrite v2: faithful/compressed/reimagined, tighten-only steer, native dash rule
-
-- Derek's SECOND design-chat drop ("update the ai tool with this info") —
-  a revised handoff superseding the v5.54 package. Every delta diffed
-  against the first drop before applying. docs/ACTION-REWRITE.md updated;
-  read it before touching the feature.
-- THE VARIANT MODEL CHANGED (the big one): cut/sharpen/restructure →
-  faithful / compressed / reimagined. Rationale (preserved in the doc):
-  sharpen was a deliberate under-application — the writer should never
-  pick between a correct rewrite and a half-correct one. All three now
-  apply every rule in full and differ by LICENSE taken with the writer's
-  shape. Rust rank order: faithful, compressed, reimagined (least license
-  first). Prompt v2 copied VERBATIM.
-- Steer reduced to ONLY tighten (visual/verbs/plain asked for what the
-  hard rules already require — no observable change). INTENT_LABELS is
-  the single source: the panel select updated itself with zero component
-  edits.
-- The no-em-dash rule is NATIVE to the v2 prompt now (hard rule 8 — also
-  en dashes and -- as punctuation; compound-word hyphens protected),
-  superseding v5.56's rule 13. The prompt's own prose is deliberately
-  dash-free (models mimic prompt punctuation); keep it that way when
-  editing. -- ban came from the design side, resolving the question
-  v5.56 left open.
-- Cache policy documented (second handoff §6): stay on the 5-minute TTL;
-  break-even ~0.28 reads; an isolated rewrite costing 1.25x is the design
-  working — do not "fix" idle-gap cache misses; if rewrites prove
-  isolated, drop caching rather than reach for the 1-hour tier.
-- KEPT deliberately: our keychain service com.freedraft.app (their v2
-  says com.derek.scriptcraft + "confirm it matches" — ours IS the real
-  bundle id, and Derek's key already lives under it; changing the
-  service would orphan his saved key. Keychain coordinates are persisted
-  identifiers).
-- Gates: cargo check, tsc 0, 908 tests, build, check-v557 2/2 (steer
-  pair, targeting regression).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.57** — Action Rewrite v2: faithful/compressed/reimagined, tighten-only steer, native dash rule
 - **v5.56** — Action Rewrite prompt: Derek's no-em-dash rule
 - **v5.55** — npm run desktop self-heals the Cargo.lock pull collision
 - **v5.54** — ACTION REWRITE: Derek's design-handoff integrated (Rust API call + keychain, PM adaptation)

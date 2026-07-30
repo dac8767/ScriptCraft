@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.62",
+    "date": "2026-07-30",
+    "changes": [
+      "Action Rewrite: the note field clears itself when you target a new set of text — no more deleting the previous entry by hand. Moving the cursor within the same passage keeps the note; only a genuinely different passage resets it."
+    ]
+  },
+  {
     "version": "5.61",
     "date": "2026-07-30",
     "changes": [

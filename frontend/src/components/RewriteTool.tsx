@@ -77,6 +77,10 @@ export default function RewriteTool({ editor }: { editor: Editor | null }) {
   // Every suggestion needs exactly one outcome — this guards double-reports
   // and lets unmount/new-request report a pending event as dismissed.
   const pendingEventRef = useRef<string | null>(null);
+  // v5.62, Derek: the note belongs to the passage it was written for. When
+  // the live target moves to a DISJOINT range (a new set of text), the note
+  // clears; caret moves within the same paragraphs keep it.
+  const lastOkTargetRef = useRef<{ from: number; to: number } | null>(null);
 
   useEffect(() => {
     if (!isTauri()) { setKeyState('unavailable'); return; }
@@ -99,7 +103,19 @@ export default function RewriteTool({ editor }: { editor: Editor | null }) {
     let t = 0;
     const sync = () => {
       window.clearTimeout(t);
-      t = window.setTimeout(() => setResolved(resolveEditorSelection(editor)), 250);
+      t = window.setTimeout(() => {
+        const r = resolveEditorSelection(editor);
+        setResolved(r);
+        if (r.ok) {
+          // v5.62: a target disjoint from the last one is NEW text — the
+          // old note was written for the old passage, so it clears.
+          const prev = lastOkTargetRef.current;
+          if (prev && (r.pmTarget.to <= prev.from || prev.to <= r.pmTarget.from)) {
+            setNote('');
+          }
+          lastOkTargetRef.current = { from: r.pmTarget.from, to: r.pmTarget.to };
+        }
+      }, 250);
     };
     sync();
     editor.on('selectionUpdate', sync);
