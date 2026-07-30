@@ -21,7 +21,7 @@ import { confirmDialog } from './ConfirmDialog';
 import { setRewriteTargetHighlight } from '../editor/extensions/RewriteTarget';
 import { useSettingsStore } from '../stores/settingsStore';
 import {
-  resolveEditorSelection, targetIsCurrent, acceptDraftInEditor,
+  resolveEditorSelection, resolveEditorRange, targetIsCurrent, acceptDraftInEditor,
   rewriteActionLines, recordRewriteOutcome, saveApiKey, hasApiKey, clearApiKey,
   rewriteLogStats, clearRewriteLog,
   prepareDrafts, updateDraft, revertDraft, isDirty, allBeats,
@@ -193,9 +193,8 @@ export default function RewriteTool({ editor }: { editor: Editor | null }) {
     }
   };
 
-  const suggest = async () => {
-    if (!editor || phase.status === 'loading') return;
-    const fresh = resolveEditorSelection(editor, note);
+  const runRequest = async (fresh: Resolved) => {
+    if (!editor) return;
     setResolved(fresh);
     if (!fresh.ok) return;
     reportPendingDismissed();   // a superseded suggestion is a dismissal
@@ -219,6 +218,25 @@ export default function RewriteTool({ editor }: { editor: Editor | null }) {
     } catch (e) {
       setPhase({ status: 'error', message: e instanceof Error ? e.message : String(e) });
     }
+  };
+
+  const suggest = async () => {
+    if (!editor || phase.status === 'loading') return;
+    await runRequest(resolveEditorSelection(editor, note));
+  };
+
+  // v5.64, Derek: "rerun the suggestions, but write 'do not use the phrase
+  // X'" — Rerun hits the SAME passage with the current note, even if the
+  // caret wandered while reading the results. The held target is mapped
+  // through edits; if the passage itself changed, fall back to the live
+  // selection rather than rewriting text that no longer exists.
+  const rerun = async () => {
+    if (!editor || phase.status === 'loading') return;
+    const held = targetRef.current;
+    const fresh = held && targetIsCurrent(editor.state.doc, held)
+      ? resolveEditorRange(editor, held.from, held.to, note)
+      : resolveEditorSelection(editor, note);
+    await runRequest(fresh);
   };
 
   const accept = (draft: VariantDraft) => {
@@ -419,7 +437,11 @@ export default function RewriteTool({ editor }: { editor: Editor | null }) {
           maxLength={MAX_WRITER_NOTE}
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') void suggest(); }}
+          onKeyDown={(e) => {
+            // With results up, Enter reruns the SAME passage with this note
+            // ("don't use that phrase" without re-selecting anything).
+            if (e.key === 'Enter') void (phase.status === 'results' ? rerun() : suggest());
+          }}
         />
         {note.length > 0 && (
           <span className={`rw-note-count${note.length >= MAX_WRITER_NOTE ? ' full' : ''}`}>
@@ -473,6 +495,13 @@ export default function RewriteTool({ editor }: { editor: Editor | null }) {
               {phase.assessment === 'already_strong'
                 ? <span className="rw-strong-inline">Already reads strong — optional takes.</span>
                 : <span className="rw-results-title">Three takes + yours</span>}
+              <button
+                className="rw-link"
+                title="Run the same passage again — add a note first to steer it (e.g. avoid a phrase)"
+                onClick={() => void rerun()}
+              >
+                Rerun
+              </button>
               <button className="rw-link" onClick={dismiss}>Dismiss</button>
             </div>
             {stale && (

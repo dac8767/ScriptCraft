@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.64",
+    "date": "2026-07-30",
+    "changes": [
+      "Action Rewrite: a Rerun button next to Dismiss — run the same passage again with a note like \"do not use the phrase 'their fingers drum'\". It re-targets the exact passage even if your cursor wandered, and pressing Enter in the note field while results are up does the same thing.",
+      "New craft rule in the prompt: the three suggestions may not share invented language. A phrase the model coined can appear in only one variant; wording carried from your original may repeat where a beat survives."
+    ]
+  },
+  {
     "version": "5.63",
     "date": "2026-07-30",
     "changes": [

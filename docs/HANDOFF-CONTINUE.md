@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.63 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.64 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -204,7 +204,38 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.63 — the cards speak the app's visual language (dark block = editable) (HEAD)
+### v5.64 — Rerun-with-note + the shared-language prompt rule (HEAD)
+
+- Derek: all three suggestions once contained "their fingers drummed on
+  the control panel"; he wants (a) a rerun with "do not use the phrase
+  X" and (b) a rule against variants sharing language.
+- (a) RERUN: the note field was ALWAYS the right channel for negative
+  steers — what was missing was targeting. A Rerun button (results bar,
+  left of Dismiss) re-runs the SAME passage via resolveEditorRange
+  (explicit range → indices → resolveSelection; context re-gathered
+  fresh) against the mapped targetRef, validated by targetIsCurrent
+  (stale → falls back to the live selection). Enter in the note field
+  reruns while results are up (suggests otherwise). suggest/rerun share
+  runRequest; a rerun dismisses the superseded event (log semantics
+  hold). The note survives a rerun (same target = overlap = v5.62 keeps
+  it).
+- (b) PROMPT (Derek-sanctioned craft edit): "Variants must not share
+  language" added to # The three variants — a phrase of the MODEL'S
+  invention may appear in only one variant; wording carried from the
+  writer's original may repeat where a beat survives. Prose kept
+  dash-free (the prompt discipline); cache re-writes once.
+- FIFTH SANDBOX ROLLBACK hit at this batch's start — worst yet: local
+  HEAD AND the origin ref were back at the ancient 7febeb7 while the
+  true origin held v5.63 (everything pushed = nothing lost). Recovery
+  additions to the standing drill: node_modules gutted (TS2307 on
+  @tiptap/extension-link → npm install) AND the apt-installed GTK libs
+  were wiped — re-run `apt-get update && apt-get install -y libgtk-3-dev
+  libwebkit2gtk-4.1-dev` before trusting cargo check.
+- Gates: cargo check, tsc 0, 917 tests (resolveEditorRange holds the
+  range against a wandering caret + carries the note), build,
+  check-v564 4/4 (rule present, scoped, dash-free; targeting live).
+
+### v5.63 — the cards speak the app's visual language (dark block = editable)
 
 - Derek (screenshot): "in almost all other windows, dark blocks are
   editable text blocks… so the Faithful/Compressed/Reimagined/Yours
@@ -294,55 +325,12 @@ Durable bits kept live here:
   9/9 (selection + paint survive note-field focus and a floating open;
   caret-off clears; declutter hides/restores both sidebars exactly).
 
-### v5.59 — Action Rewrite v4: editable drafts + linter, the Yours slot + beats, the LOG + calibration loop
-
-- Derek's FOURTH design-chat drop, the big one (two NEW files:
-  rewrite_log.rs + scripts/harvest-calibration.mjs). Everything diffed
-  against drop 3 before applying; docs/ACTION-REWRITE.md §Decisions is
-  current — READ IT FIRST, the following are its headlines.
-- THE LOG IS THE IMPROVEMENT MECHANISM ("most likely to be treated as
-  optional — it isn't"): append-only JSONL in the app data dir
-  (rewrite-log.jsonl), suggestion + outcome records sharing an eventId
-  (rewrite_action_lines now takes AppHandle and returns event_id, logs
-  variants/context flags/latency/token usage incl. cache reads). EVERY
-  suggestion needs an outcome: the panel reports accepted (finalText
-  AFTER panel edits + editKind + composedFrom) or dismissed — on
-  Dismiss, on a superseding request, and on unmount
-  (pendingEventRef). recordRewriteOutcome swallows its own errors.
-  Local-only; Activity log footer = stats/path/Clear.
-- EDITABLE DRAFTS: variants render as textareas (prepareDrafts →
-  VariantDraft {offered — never mutated, draft}); Revert when
-  isDirty; classifyEdit(offered, final) = none/punctuation/minor/
-  substantive via word-LCS (punctuation must NOT outrank clean accepts
-  in harvest); acceptDraftInEditor = validate + apply + record in ONE
-  step (PM port of their acceptDraft), then the results CLOSE (applied
-  state, ⌘Z undoes) — replaced v5.54's swap-variants-after-apply.
-- lintActionText: advisory craft check on every draft keystroke
-  (dashes, we-see, camera, interiority verbs, begins-to/progressive,
-  long paragraphs, caps count, repeated beats). NEVER blocks.
-- THE YOURS SLOT (4th card; "many times I wish I could use parts of
-  all three"): sentence-level beats from the other three
-  (allBeats/appendBeatToCustom — a trailing ¶ break must SURVIVE the
-  next append, their one dev regression, unit-tested), seedCustom from
-  original/any variant, logs editKind 'composed' + composedFrom (stats
-  report per-variant 'contributed'). NO fifth model variant — the
-  license axis is fully covered; reasoning recorded in the doc.
-- HARVEST (manual, never automated): node scripts/harvest-calibration.mjs
-  --log <path> [--stats] → reviewed markdown for the prompt's
-  <!-- BEGIN WRITER CALIBRATION --> block (prompt v4 verbatim, block
-  empty on purpose; composed ranks first, then REWRITTEN; torn last
-  line tolerated). Ten of Derek's own pairs = the highest-leverage
-  improvement; unreviewed output never becomes an exemplar.
-- Gates: cargo check, tsc 0, 913 tests (classify 6-case, lint, drafts,
-  beats-break regression, seed provenance), build, check-v559 8/8
-  (harvest end-to-end on a synthetic log incl. torn line + stats
-  contributions; panel regression).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.59** — Action Rewrite v4: editable drafts + linter, the Yours slot + beats, the LOG + calibration loop
 - **v5.58** — Action Rewrite v3: the writer's NOTE replaces the steer enum
 - **v5.57** — Action Rewrite v2: faithful/compressed/reimagined, tighten-only steer, native dash rule
 - **v5.56** — Action Rewrite prompt: Derek's no-em-dash rule

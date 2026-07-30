@@ -51,6 +51,8 @@ If the passage contains pure interiority, all three variants must externalize it
 
 If two of your variants come out nearly identical, `reimagined` is the one that failed to do its job. Take more license with the shape rather than returning a near-duplicate.
 
+Variants must not share language. A phrase or image of your own invention may appear in only one of the three: if "his fingers drum on the console" shows up in two variants, the second one teaches the writer nothing, and in all three it reads like a tic. Wording carried over from the writer's original may repeat where a beat survives; your own phrasing may not. When two drafts reach for the same image, keep it in the variant where it lands hardest and find a different angle for the others.
+
 # The context block
 
 The user message carries labelled context pulled automatically from the script. Every field is there to change your output. Use it.

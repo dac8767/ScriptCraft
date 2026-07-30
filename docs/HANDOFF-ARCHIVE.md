@@ -155,6 +155,50 @@ reliable; re-run before believing a weird worker failure.
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
 
+### v5.59 — Action Rewrite v4: editable drafts + linter, the Yours slot + beats, the LOG + calibration loop
+
+- Derek's FOURTH design-chat drop, the big one (two NEW files:
+  rewrite_log.rs + scripts/harvest-calibration.mjs). Everything diffed
+  against drop 3 before applying; docs/ACTION-REWRITE.md §Decisions is
+  current — READ IT FIRST, the following are its headlines.
+- THE LOG IS THE IMPROVEMENT MECHANISM ("most likely to be treated as
+  optional — it isn't"): append-only JSONL in the app data dir
+  (rewrite-log.jsonl), suggestion + outcome records sharing an eventId
+  (rewrite_action_lines now takes AppHandle and returns event_id, logs
+  variants/context flags/latency/token usage incl. cache reads). EVERY
+  suggestion needs an outcome: the panel reports accepted (finalText
+  AFTER panel edits + editKind + composedFrom) or dismissed — on
+  Dismiss, on a superseding request, and on unmount
+  (pendingEventRef). recordRewriteOutcome swallows its own errors.
+  Local-only; Activity log footer = stats/path/Clear.
+- EDITABLE DRAFTS: variants render as textareas (prepareDrafts →
+  VariantDraft {offered — never mutated, draft}); Revert when
+  isDirty; classifyEdit(offered, final) = none/punctuation/minor/
+  substantive via word-LCS (punctuation must NOT outrank clean accepts
+  in harvest); acceptDraftInEditor = validate + apply + record in ONE
+  step (PM port of their acceptDraft), then the results CLOSE (applied
+  state, ⌘Z undoes) — replaced v5.54's swap-variants-after-apply.
+- lintActionText: advisory craft check on every draft keystroke
+  (dashes, we-see, camera, interiority verbs, begins-to/progressive,
+  long paragraphs, caps count, repeated beats). NEVER blocks.
+- THE YOURS SLOT (4th card; "many times I wish I could use parts of
+  all three"): sentence-level beats from the other three
+  (allBeats/appendBeatToCustom — a trailing ¶ break must SURVIVE the
+  next append, their one dev regression, unit-tested), seedCustom from
+  original/any variant, logs editKind 'composed' + composedFrom (stats
+  report per-variant 'contributed'). NO fifth model variant — the
+  license axis is fully covered; reasoning recorded in the doc.
+- HARVEST (manual, never automated): node scripts/harvest-calibration.mjs
+  --log <path> [--stats] → reviewed markdown for the prompt's
+  <!-- BEGIN WRITER CALIBRATION --> block (prompt v4 verbatim, block
+  empty on purpose; composed ranks first, then REWRITTEN; torn last
+  line tolerated). Ten of Derek's own pairs = the highest-leverage
+  improvement; unreviewed output never becomes an exemplar.
+- Gates: cargo check, tsc 0, 913 tests (classify 6-case, lint, drafts,
+  beats-break regression, seed provenance), build, check-v559 8/8
+  (harvest end-to-end on a synthetic log incl. torn line + stats
+  contributions; panel regression).
+
 ### v5.58 — Action Rewrite v3: the writer's NOTE replaces the steer enum
 
 - Derek's THIRD design-chat drop ("another update"), diffed against the

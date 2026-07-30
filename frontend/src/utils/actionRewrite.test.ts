@@ -19,7 +19,7 @@ import { Parenthetical } from '../editor/extensions/Parenthetical';
 import { Transition } from '../editor/extensions/Transition';
 import { DualDialogue, DualDialogueColumn } from '../editor/extensions/DualDialogue';
 import {
-  projectScript, resolveEditorSelection, resolveSelection,
+  projectScript, resolveEditorSelection, resolveEditorRange, resolveSelection,
   targetIsCurrent, applyVariantToEditor, buildVariantNodes, indexForPos,
   MAX_WRITER_NOTE, prepareDrafts, updateDraft, revertDraft, isDirty,
   allBeats, appendBeatToCustom, appendParagraphBreak, seedCustom,
@@ -190,6 +190,23 @@ describe('resolveEditorSelection', () => {
     const r2 = resolveEditorSelection(ed2);
     if (!r2.ok) throw new Error(r2.reason);
     expect(r2.request.firstAppearances).toEqual(['GRIFFIN']);
+  });
+});
+
+describe('resolveEditorRange (the Rerun path, v5.64)', () => {
+  it('resolves an explicit range regardless of the live selection', () => {
+    const ed = makeEditor(SCRIPT);
+    caretIn(ed, 4);
+    const first = resolveEditorSelection(ed);
+    if (!first.ok) throw new Error(first.reason);
+    // caret wanders off to the scene heading…
+    caretIn(ed, 0);
+    // …but the rerun still hits the held range, note attached
+    const again = resolveEditorRange(ed, first.pmTarget.from, first.pmTarget.to, 'no drumming fingers');
+    if (!again.ok) throw new Error(again.reason);
+    expect(again.request.selection).toBe('He stands.');
+    expect(again.pmTarget).toEqual(first.pmTarget);
+    expect(again.request.writerNote).toBe('no drumming fingers');
   });
 });
 

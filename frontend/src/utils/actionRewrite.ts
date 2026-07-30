@@ -342,6 +342,25 @@ export function resolveEditorSelection(
   return resolveSelection(elements, { anchorIndex, focusIndex }, writerNote);
 }
 
+/** v5.64: resolve an EXPLICIT range instead of the live selection — the
+ *  Rerun path, so "run it again with this note" hits the same passage even
+ *  after the caret wandered. Context is re-gathered fresh (the script may
+ *  have changed around the target). */
+export function resolveEditorRange(
+  editor: Editor,
+  from: number,
+  to: number,
+  writerNote = '',
+): Resolved {
+  const elements = projectScript(editor.state.doc);
+  if (elements.length === 0) {
+    return { ok: false, reason: 'The script is empty.' };
+  }
+  const anchorIndex = indexForPos(elements, from);
+  const focusIndex = indexForPos(elements, Math.max(from, to - 1));
+  return resolveSelection(elements, { anchorIndex, focusIndex }, writerNote);
+}
+
 /** True while the doc still holds exactly the text the target was resolved
  *  over. Positions are remapped through edits by the panel; this is the
  *  last-line guard that makes a stale write impossible. */

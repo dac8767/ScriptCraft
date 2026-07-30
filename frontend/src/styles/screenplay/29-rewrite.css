@@ -77,12 +77,11 @@
 .rw-results-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   font-size: 11px;
 }
-.rw-results-title { opacity: 0.65; }
-.rw-strong-inline { font-style: italic; opacity: 0.75; color: #2e8b57; }
+.rw-results-title { opacity: 0.65; flex: 1; }
+.rw-strong-inline { font-style: italic; opacity: 0.75; color: #2e8b57; flex: 1; }
 .rw-stale {
   font-size: 12px;
   color: #e8994f;
