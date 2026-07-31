@@ -11,6 +11,7 @@
  * The line budget mirrors the paginator's accounting (titlePageBlockLines)
  * so the whole layout stays on exactly one unnumbered page.
  */
+import type { CSSProperties } from 'react';
 import { titlePageBlockLines } from '../editor/pagination';
 
 export interface TitlePageData {
@@ -121,4 +122,59 @@ export function titlePageJsonNodes(data: TitlePageData): Array<{ type: string; a
     attrs: s.attrs,
     ...(s.text ? { content: [{ type: 'text', text: s.text }] } : {}),
   }));
+}
+
+// ── How a title-page line LOOKS (v5.74) ─────────────────────────────────
+
+/**
+ * Derek: "the title page in the title page tool, and the title page in the
+ * Page > All view still do not match."
+ *
+ * They were three hand-written renderings of one page — the editor's
+ * `.title-page-<field>` CSS, the Title tab's live preview, and the Pages
+ * thumbnail — and they disagreed about weight, caps, size and centering.
+ * THIS is the single definition; the preview and the thumbnail both call
+ * it, and the editor CSS is kept in step by hand (it can't call JS).
+ *
+ * `sizePt` is the block's own point size, which every consumer of a title
+ * NODE reads from `tpTitleFontSize` — including title2 (the layout builder
+ * writes title2's size into that attr, and TitlePage's renderHTML, the
+ * paginator and the PDF exporter all read it there). The Title tab passes
+ * its form value instead, because it renders before any node exists.
+ *
+ * `shiftPx` is the container's paper-centering correction: a screenplay
+ * page's printable box is asymmetric (1.5in left vs 0.76in right), so text
+ * centered in that box lands (left-right)/2 right of the paper's true
+ * centre. Anchored fields (draft left, contact/copyright right) keep the
+ * body margins and never take the shift.
+ */
+export function titleLineStyle(
+  field: string,
+  { sizePt, shiftPx = 0 }: { sizePt?: number; shiftPx?: number } = {},
+): CSSProperties {
+  const isTitle = field === 'title' || field === 'title2';
+  const anchored = field === 'draft' || field === 'contact' || field === 'copyright';
+  const size = isTitle ? Math.max(1, Math.round(sizePt || 12)) : 12;
+  return {
+    textAlign: field === 'draft' ? 'left'
+      : field === 'contact' || field === 'copyright' ? 'right'
+      : 'center',
+    ...(isTitle ? { fontWeight: 700, textTransform: 'uppercase' as const } : null),
+    // An enlarged title snaps to whole 12pt line slots so its rendered
+    // height matches the line budget the paginator and the builder count.
+    ...(isTitle && size !== 12
+      ? { fontSize: `${size}pt`, lineHeight: `${Math.ceil(size / 12) * 12}pt` }
+      : null),
+    ...(shiftPx && !anchored ? { marginLeft: `${shiftPx}px`, marginRight: `${-shiftPx}px` } : null),
+    // Credit and contact blocks hold real newlines — the page breaks at
+    // them, so every preview of the page must too.
+    whiteSpace: 'pre-wrap',
+    minHeight: '12pt',
+  };
+}
+
+/** The paper-centering shift for `titleLineStyle`, in CSS px, for a page
+ *  laid out with these margins. 0 when the printable box is symmetric. */
+export function titlePaperShiftPx(layout: { leftMargin: number; rightMargin: number }): number {
+  return ((layout.rightMargin - layout.leftMargin) / 2) * 96;
 }

@@ -12,6 +12,7 @@ import { useSeat, useDismiss } from './MarkupPickers';
 import { confirmDialog } from './ConfirmDialog';
 import TitlePagePanel from './TitlePagePanel';
 import { computeSceneTiming, formatSceneDuration } from '../utils/scriptTiming';
+import { titleLineStyle, titlePaperShiftPx } from '../utils/titlePageLayout';
 import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
 import { parseHeading, computeSceneFilterDetails, sceneFilterOptions, filterSceneIndices, countActiveSceneFilters, type SceneFilterDetail } from '../utils/sceneFilters';
@@ -595,27 +596,17 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
        action indents. KEEP THE TWO IN STEP: this block and those rules are
        one look with two renderers (the editor's CSS, this inline style). */
     if (block.typeName === 'titlePage') {
-      const field = block.titleField || 'title';
-      const isTitle = field === 'title' || field === 'title2';
-      // Centered fields center on the PAPER, not on the asymmetric printable
-      // box — the same half-difference shift the CSS applies, or the title
-      // lands (left − right)/2 off-center.
-      const shift = ((pageLayout.rightMargin - pageLayout.leftMargin) / 2) * 96;
-      const anchored = field === 'draft' || field === 'contact' || field === 'copyright';
-      const size = block.fontSizePt && block.fontSizePt !== 12 ? block.fontSizePt : 0;
-      return {
-        textAlign: field === 'draft' ? 'left'
-          : field === 'contact' || field === 'copyright' ? 'right'
-          : 'center',
-        marginLeft: anchored ? undefined : `${shift}px`,
-        marginRight: anchored ? undefined : `${-shift}px`,
-        fontWeight: isTitle ? 700 : undefined,
-        textTransform: isTitle ? 'uppercase' : undefined,
-        // The editor snaps a custom title size to whole 12pt line slots so the
-        // block's height still matches the paginator's line count.
-        ...(size ? { fontSize: `${size}pt`, lineHeight: `${Math.max(1, Math.ceil(size / 12)) * 12}pt` } : null),
-        ...(field === 'author' ? { lineHeight: 1.5 } : null),
-      };
+      /* v5.73/v5.74, Derek: title-page blocks are NOT body elements, and the
+         look is ONE shared definition (utils/titlePageLayout.titleLineStyle)
+         that the Title tab's live preview renders from too — that is what
+         stops the miniature and the preview drifting. The editor's
+         `.title-page-<field>` CSS is the third renderer and is kept in step
+         by hand (it can't call JS); keep all three together when changing
+         the look. */
+      return titleLineStyle(block.titleField || 'title', {
+        sizePt: block.fontSizePt,
+        shiftPx: titlePaperShiftPx(pageLayout),
+      });
     }
     // v5.73: an image reserves the line budget the paginator gave it, so the
     // blocks under it sit where they really sit (it used to collapse to one

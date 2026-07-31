@@ -141,7 +141,8 @@ describe('v5.73: the blocks carry what a TRUE title-page preview needs', () => {
 
   const FULL_TITLE = [
     node('titlePage', 'BELKADAN RISING', { field: 'title', tpTitleFontSize: 24 }),
-    node('titlePage', 'Invasion of the Vong', { field: 'title2', tpTitle2FontSize: 18 }),
+    // as titlePageBlockSpecs builds it: title2's size rides tpTitleFontSize
+    node('titlePage', 'Invasion of the Vong', { field: 'title2', tpTitleFontSize: 18 }),
     node('titlePage', 'Written by Derek Carl', { field: 'author' }),
     node('titlePage', '1st Draft - 2026-07-17', { field: 'draft' }),
     node('sceneHeading', 'EXT. SPACE - OPENING SCROLL'),
@@ -152,7 +153,13 @@ describe('v5.73: the blocks carry what a TRUE title-page preview needs', () => {
     expect(title.blocks.map((b) => b.titleField)).toEqual(['title', 'title2', 'author', 'draft']);
   });
 
-  it('title and title2 carry their OWN custom sizes (separate attrs)', () => {
+  /* v5.74: BOTH title kinds keep their size in tpTitleFontSize — that's what
+     titlePageBlockSpecs writes onto a title2 node ({field:'title2',
+     tpTitleFontSize: data.tpTitle2FontSize}) and what renderHTML, the line
+     budget and the PDF read. The v5.73 fixture set tpTitle2FontSize on the
+     node, which no real title2 node carries — so the test passed while the
+     app previewed title2 at 12pt. Fixture now matches the builder. */
+  it('title and title2 both report their size from tpTitleFontSize', () => {
     const [title] = computePageBlocks(docOf(FULL_TITLE), DEFAULT_PAGE_LAYOUT, { includeTitlePage: true });
     expect(title.blocks[0].fontSizePt).toBe(24);
     expect(title.blocks[1].fontSizePt).toBe(18);

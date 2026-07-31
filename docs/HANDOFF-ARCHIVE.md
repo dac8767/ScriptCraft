@@ -151,9 +151,28 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.68 and older (newest first)
+## Version history — v5.69 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.69 — the type grid rides one row with "Type:"
+
+- Derek (screenshot of the v5.68 pop): "change 'annotation types' to
+  'Type:' show the buttons after that, so the format matches the rest of
+  the window." Changed INSIDE TypeGridSection (MarkupPickers.tsx), so
+  every door — the Navigator filter pop AND the Annotations window's
+  filter — reformats together; nothing forked.
+- The "Annotation Types:" caption line + full-width 6-column grid became
+  a statusrow-format row: "Type:" label, then the buttons. Scoped CSS
+  (.markup-filter-typerow .markup-filter-grid) turns the grid into a
+  wrapping flex in the row's remaining width (base 3px gap still
+  applies; extra types wrap under). The "No annotations yet." empty
+  state sits inline on the row too. Show all / Hide all row unchanged.
+- check-v569 9/9: label text, old caption gone, and a GEOMETRY proof
+  (label/buttons rects overlap vertically, buttons start right of the
+  label) in three states — Navigator empty, Navigator with a type,
+  Annotations window. Gates: tsc 0, 933 tests, build.
+
 
 ### v5.68 — Navigator filter: the Scene Headings section
 

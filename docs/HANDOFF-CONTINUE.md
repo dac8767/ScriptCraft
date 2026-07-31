@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.73 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.74 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,7 +227,43 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.73 — the title-page THUMBNAIL shows the true format (HEAD)
+### v5.74 — ONE title page, three renderers reconciled (HEAD)
+
+- Derek, after v5.73: "the title page in the title page tool, and the
+  title page in the Page > All view still do not match." True — v5.73
+  fixed the thumbnail against the EDITOR's CSS, but the Title tab's
+  preview is a THIRD hand-written renderer, and all three disagreed.
+- ROOT CAUSE + FIX: `titleLineStyle(field, {sizePt, shiftPx})` in
+  utils/titlePageLayout.ts is now THE definition of a title-page line;
+  TitlePageEditor's renderSpecLine and SceneNavigator's getBlockStyle both
+  render from it (the editor CSS is the third renderer and is kept in step
+  by hand — comments in all three say so). `titlePaperShiftPx(layout)` is
+  the paper-centering correction, applied by both containers.
+- THREE REAL BUGS THIS SURFACED:
+  1. title2's size lives in **tpTitleFontSize** on the node (that's what
+     titlePageBlockSpecs writes, and what renderHTML / computeBreaks /
+     pdfExporter read). v5.73 read tpTitle2FontSize → title2 previewed at
+     12pt. The v5.73 TEST passed because its fixture set the attr no real
+     node carries — fixture now built the way the builder builds.
+  2. The preview page was a hardcoded 8.5x11in with 1in/1.5in margins and
+     NO paper shift: A4 or custom margins previewed as Letter, and its
+     centered title sat 0.25in right of the paper's centre. It now takes
+     pageWidth/Height + all four margins + the shift from pageLayout.
+  3. `.title-page-author { line-height: 1.5 }` was the odd one out — the
+     paginator, the preview, the thumbnail and the PDF all count a credit
+     line on the 12pt grid. Removed.
+- STILL DIVERGENT, REPORTED NOT FIXED: pdfExporter treats **title2** as a
+  plain 12pt line (`isTitle = field === 'title'`), so the printed PDF
+  neither uppercases nor enlarges it. One-line change, but it moves print
+  output and can't be verified in this sandbox — queued for its own pass.
+- check-v574 14/14: fills the REAL form, clicks Apply, reads BOTH live
+  renderings and compares block by block (text/align/weight/caps/wrap +
+  size as a multiple of that rendering's own body line — the two are
+  transform-scaled differently, so raw px cannot be compared), then
+  proves each centres the title on the paper. Gates: tsc 0, 952 tests
+  (+9 titleLineStyle), build. NINTH rollback at batch start.
+
+### v5.73 — the title-page THUMBNAIL shows the true format
 
 - Derek (screenshot of the All tab): "the small version of the title page
   in this window should display the true format." It was drawing title
@@ -315,29 +351,12 @@ Durable bits kept live here:
   chip 5 → Reset → store defaults, visible control states, chip gone,
   no Reset added elsewhere). Gates: tsc 0, 933 tests, build.
 
-### v5.69 — the type grid rides one row with "Type:"
-
-- Derek (screenshot of the v5.68 pop): "change 'annotation types' to
-  'Type:' show the buttons after that, so the format matches the rest of
-  the window." Changed INSIDE TypeGridSection (MarkupPickers.tsx), so
-  every door — the Navigator filter pop AND the Annotations window's
-  filter — reformats together; nothing forked.
-- The "Annotation Types:" caption line + full-width 6-column grid became
-  a statusrow-format row: "Type:" label, then the buttons. Scoped CSS
-  (.markup-filter-typerow .markup-filter-grid) turns the grid into a
-  wrapping flex in the row's remaining width (base 3px gap still
-  applies; extra types wrap under). The "No annotations yet." empty
-  state sits inline on the row too. Show all / Hide all row unchanged.
-- check-v569 9/9: label text, old caption gone, and a GEOMETRY proof
-  (label/buttons rects overlap vertically, buttons start right of the
-  label) in three states — Navigator empty, Navigator with a type,
-  Annotations window. Gates: tsc 0, 933 tests, build.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.69** — the type grid rides one row with "Type:"
 - **v5.68** — Navigator filter: the Scene Headings section
 - **v5.67** — Pages window tabs: Script / Title Page / Custom; the tool retirement
 - **v5.66** — Focus tool: ? in the header + Design-window layout knobs

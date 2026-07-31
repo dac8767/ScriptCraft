@@ -235,7 +235,11 @@
   text-transform: uppercase;
   text-align: center;
 }
-.title-page-author { text-align: center; line-height: 1.5; }
+/* v5.74: line-height 1.5 removed — every OTHER renderer of this page (the
+   paginator's budget, the Title tab preview, the Pages thumbnail and the PDF
+   exporter) puts a credit line on the 12pt grid, so the editor's 1.5 made the
+   block taller here than anywhere else and pushed the bottom block down. */
+.title-page-author { text-align: center; }
 .title-page-draft { text-align: left; }
 .title-page-contact,
 .title-page-copyright { text-align: right; }

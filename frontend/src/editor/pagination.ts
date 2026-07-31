@@ -615,11 +615,13 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout, opts?: { incl
       offset,
       cpId: typeName === 'customPage' ? (a?.cpId || undefined) : undefined,
       titleField,
-      // title2 keeps its size in its own attr — the same split TitlePage's
-      // renderHTML and the paginator's line budget make.
-      fontSizePt: titleField === 'title' ? (Number(a?.tpTitleFontSize) || undefined)
-        : titleField === 'title2' ? (Number(a?.tpTitle2FontSize) || undefined)
-        : undefined,
+      // v5.74: BOTH title and title2 keep their size in tpTitleFontSize —
+      // that's what the layout builder writes onto a title2 node, and what
+      // TitlePage's renderHTML, computeBreaks' line budget and the PDF
+      // exporter all read. (v5.73 read title2's tpTitle2FontSize, which on a
+      // real node is the untouched default: title2 previewed at 12pt.)
+      fontSizePt: titleField === 'title' || titleField === 'title2'
+        ? (Number(a?.tpTitleFontSize) || undefined) : undefined,
       imageLines: typeName === 'screenplayImage' ? Math.max(1, Number(a?.heightLines) || 8) : undefined,
     });
   });

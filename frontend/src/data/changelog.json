@@ -1,5 +1,15 @@
 [
   {
+    "version": "5.74",
+    "date": "2026-07-31",
+    "changes": [
+      "The Title tab's preview and the Pages window's title-page thumbnail now render from one shared definition, so they match line for line — alignment, bold caps titles, both title sizes, and centering on the paper.",
+      "The Title tab's preview page is the real paper: your page size and margins, not a hardcoded US Letter with 1-inch margins.",
+      "Fixed: the second title line previewed at 12pt in the Pages thumbnail instead of its chosen size.",
+      "The credit line now sits on the same 12pt line grid everywhere — the editor was spacing it 1.5x, taller than the paginator, the preview and the PDF all count it."
+    ]
+  },
+  {
     "version": "5.73",
     "date": "2026-07-31",
     "changes": [

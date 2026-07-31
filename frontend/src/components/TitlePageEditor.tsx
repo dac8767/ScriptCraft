@@ -15,7 +15,7 @@ import { authedFetch } from '../services/authedFetch';
 import { isTauri } from '../services/platform';
 import { showToast } from './Toast';
 import { confirmDialog } from './ConfirmDialog';
-import { titlePageBlockSpecs } from '../utils/titlePageLayout';
+import { titlePageBlockSpecs, titleLineStyle, titlePaperShiftPx } from '../utils/titlePageLayout';
 
 /** Small auth-aware image thumbnail for the title-page preview/list. Uses the
  *  same blob-fetch path as the editor NodeView so it loads reliably.
@@ -201,6 +201,10 @@ function buildTitlePageBlocks(
 
 const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
   const [data, setData] = useState<Omit<TitlePageAttrs, 'field'>>({ ...EMPTY_ATTRS });
+  // v5.74: the preview renders the REAL page — its paper size, margins and
+  // paper-centering shift, the same three the editor's page uses.
+  const pageLayout = useEditorStore((s) => s.pageLayout);
+  const paperShift = titlePaperShiftPx(pageLayout);
 
   useEffect(() => {
     const fromDoc = readTitlePageData(editor);
@@ -364,7 +368,7 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
   useEffect(() => {
     const el = previewBoxRef.current;
     if (!el) return;
-    const compute = () => setFitScale(Math.max(0.1, (el.clientWidth - 20) / (8.5 * 96)));
+    const compute = () => setFitScale(Math.max(0.1, (el.clientWidth - 20) / (pageLayout.pageWidth * 96)));
     compute();
     if (typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(compute);
@@ -375,22 +379,17 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
   /** One title-page block, at page geometry: 12pt line grid; enlarged titles
    *  occupy ceil(size/12) grid lines per wrapped line — the paginator's math. */
   const renderSpecLine = (s: { field: string; text: string }, i: number) => {
-    if (s.field === 'title' || s.field === 'title2') {
-      const size = s.field === 'title' ? data.tpTitleFontSize : data.tpTitle2FontSize;
-      const slot = Math.ceil(size / 12) * 12;
-      return (
-        <div key={i} style={{ textAlign: 'center', fontWeight: 700, textTransform: 'uppercase', fontSize: `${size}pt`, lineHeight: `${slot}pt`, whiteSpace: 'pre-wrap' }}>
-          {s.text || (s.field === 'title' ? 'UNTITLED' : '')}
-        </div>
-      );
-    }
-    const align = s.field === 'author' || s.field === 'date' ? 'center'
-      : s.field === 'draft' ? 'left'
-      : s.field === 'contact' || s.field === 'copyright' ? 'right'
-      : 'left';
+    /* v5.74, Derek ("the two title pages still do not match"): ONE definition
+       of the look — utils/titlePageLayout.titleLineStyle — shared with the
+       Pages window's thumbnail, so the miniature and this preview cannot
+       drift again. Size comes from the live FORM here (no node exists yet);
+       the thumbnail reads the node's tpTitleFontSize. */
+    const size = s.field === 'title' ? data.tpTitleFontSize
+      : s.field === 'title2' ? data.tpTitle2FontSize
+      : undefined;
     return (
-      <div key={i} style={{ textAlign: align, whiteSpace: 'pre-wrap', minHeight: '12pt' }}>
-        {s.text || ' '}
+      <div key={i} style={titleLineStyle(s.field, { sizePt: size, shiftPx: paperShift })}>
+        {s.text || (s.field === 'title' ? 'UNTITLED' : ' ')}
       </div>
     );
   };
@@ -694,8 +693,23 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
               <button type="button" title="Zoom in" onClick={() => setTpZoom(Math.min(1.6, Math.round((tpScale * 1.25) * 1000) / 1000))}><FaSearchPlus /></button>
             </div>
             <div className={`tp-preview-scroll${panMode ? ' tp-pan-mode' : ''}`} ref={previewScrollRef} onPointerDown={startPan}>
-              <div style={{ width: 8.5 * 96 * tpScale, height: 11 * 96 * tpScale, position: 'relative', margin: '0 auto', flex: '0 0 auto' }}>
-                <div className="tp-scale-page" style={{ transform: `scale(${tpScale})` }}>
+              {/* v5.74: the preview page is the REAL paper — size and margins
+                  from the live page layout, not a hardcoded 8.5x11 with 1in/
+                  1.5in. A4 (or any custom margin) previewed as US Letter
+                  before, so the miniature could not match the page. */}
+              <div style={{ width: pageLayout.pageWidth * 96 * tpScale, height: pageLayout.pageHeight * 96 * tpScale, position: 'relative', margin: '0 auto', flex: '0 0 auto' }}>
+                <div
+                  className="tp-scale-page"
+                  style={{
+                    transform: `scale(${tpScale})`,
+                    width: `${pageLayout.pageWidth}in`,
+                    height: `${pageLayout.pageHeight}in`,
+                    paddingTop: `${pageLayout.topMargin}pt`,
+                    paddingBottom: `${pageLayout.bottomMargin}pt`,
+                    paddingLeft: `${pageLayout.leftMargin}in`,
+                    paddingRight: `${pageLayout.rightMargin}in`,
+                  }}
+                >
                   {imagesAbove.map((a, i) => (
                     <div key={`a${i}`} style={{ height: `${previewImgLines(a) * 12}pt`, overflow: 'hidden' }}>
                       <TpImageThumb attrs={a} align fill />
