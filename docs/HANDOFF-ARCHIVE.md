@@ -151,9 +151,35 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.65 and older (newest first)
+## Version history — v5.66 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.66 — Focus tool: ? in the header + Design-window layout knobs
+
+- Derek ("moving to the focus tool"): (1) the "?" moved from the master
+  row to the window header — FocusHeaderControls exported from
+  TypewriterTool.tsx into TOOL_CHROME (same portalled .fs-help-pop,
+  positioned from the header button; pointerdown stopPropagation for the
+  drag handle). (2) A 'Focus Tool' Design group: focusPad (side padding,
+  12), focusRowGap (8 — toggle gaps, the rest-block, subgroup gap),
+  focusSectionGap/Below (6/10 — subgroup vertical margins), focusIndent
+  (14 — subgroup padding-left). Defs === CSS fallbacks (the contract
+  test).
+- TRAP HIT AND WORTH REMEMBERING: .fs-typewriter-section and
+  .fs-typewriter-sub looked like the obvious binding targets but are
+  DEAD CSS (pre-v1.77 slim-down; nothing renders them) — the no-dead-
+  knobs TEST passed anyway because it only checks the var is read in
+  CSS, not that the RULE is alive in the DOM. First wiring shipped dead
+  sliders; the driver's computed-style probe caught it (nulls). Both
+  dead rule sets deleted; tokens re-bound to the live
+  .fs-typewriter-subgroup. Lesson: bind tokens to classes you've seen
+  in the RENDERED DOM, and always drive the knob in the driver.
+- Gates: tsc 0, 920 tests (29 token-contract incl. the new group),
+  build, check-v566 8/8 (header ?, popover open/Escape, three knobs
+  moving real computed styles, reset, Design group listed). SEVENTH
+  rollback at batch start (standing recovery).
+
 
 ### v5.65 — the mid-heading caret jump (uppercase plugin, since v3.45)
 

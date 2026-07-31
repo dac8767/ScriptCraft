@@ -64,8 +64,8 @@ export interface ViewState {
   indexCardsOpen?: boolean;
   /** v4.24 batch 7: the merged Scenes tool's view — scene list or index cards. */
   scenesViewMode?: 'list' | 'cards';
-  /** v5.67: the Pages window's header tab — Script / Title Page / Custom. */
-  pagesTab?: 'script' | 'title' | 'custom';
+  /** v5.67: the Pages window's header tab. v5.71: + 'all' (All Pages). */
+  pagesTab?: 'script' | 'title' | 'custom' | 'all';
   /** v5.03: the scene list's resizable column widths, in px. The synopsis
    *  column takes the remainder, so these two describe the whole table. */
   sceneColWidths?: { head: number; metrics: number };

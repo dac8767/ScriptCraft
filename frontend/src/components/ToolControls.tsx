@@ -13,7 +13,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LuSearch } from 'react-icons/lu';
-import { FaChevronUp, FaChevronDown } from 'react-icons/fa';
+import { FaCaretDown, FaChevronUp, FaChevronDown } from 'react-icons/fa';
 
 /** v5.50, Derek: THE "… per row:" stepper — one framed Up/Down arrow pair
  *  with a typeable number field beside it (the v5.49 Pages format). Every
@@ -95,8 +95,12 @@ export const ControlDropdown: React.FC<{
   /** Small count chip (e.g. active filter count); hidden when 0/undefined. */
   chip?: number;
   title?: string;
+  /** v5.71, Derek: a trailing ▾ so a control that IS a menu says so — set on
+   *  the collapsed header-tabs dropdown ("if the tabs are shrunk down to a
+   *  drop down… add a caret so it is obvious"). */
+  caret?: boolean;
   items: ControlDropdownItem[];
-}> = ({ label, current, icon, chip, title, items }) => {
+}> = ({ label, current, icon, chip, title, caret, items }) => {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -148,6 +152,7 @@ export const ControlDropdown: React.FC<{
         {icon && <span className="tool-ctl-icon">{icon}</span>}
         {label && <span className="tool-ctl-label">{label}</span>}
         {current && <span className="tool-ctl-current">{current}</span>}
+        {caret && <span className="tool-ctl-caret" aria-hidden><FaCaretDown /></span>}
         {chip !== undefined && chip > 0 && <span className="tool-ctl-chip">{chip}</span>}
       </button>
       {pos && createPortal(

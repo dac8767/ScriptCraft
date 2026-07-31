@@ -460,10 +460,16 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
 
   // ── Compute page blocks for page preview ──
 
-  const pageContent = useMemo((): PageContentInfo[] => {
+  /* v5.71: ONE computation with the title page included; pageContent (the
+     list every position/number consumer reads) derives by dropping the
+     title entry, so posAfterScriptPage / goToPageNumber / lastScriptPage /
+     the scroll sync keep their exact v5.13 semantics untouched. Only the
+     All Pages grid and posAfterEntry read the full list. */
+  const pageContentAll = useMemo((): PageContentInfo[] => {
     if (!editor) return [];
-    return computePageBlocks(editor.state.doc, pageLayout);
+    return computePageBlocks(editor.state.doc, pageLayout, { includeTitlePage: true });
   }, [editor, scenes, pageLayout]);
+  const pageContent = useMemo(() => pageContentAll.filter((p) => !p.isTitle), [pageContentAll]);
 
   // v4.94: the Pages header's search + preview scale (chrome controls, body
   // list — one state, so neither can be decorative).
@@ -486,7 +492,10 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const setPagesTab = useEditorStore((s) => s.setPagesTab);
   const scriptPages = useMemo(() => shownPages.filter((p) => !p.isCustom), [shownPages]);
   const customPages = useMemo(() => pageContent.filter((p) => p.isCustom), [pageContent]);
-  const gridPages = pagesTab === 'custom' ? customPages : scriptPages;
+  // v5.71: All Pages = title page + script + custom in document order, with
+  // the search applied (its control shows on this tab too).
+  const allPages = useMemo(() => pagesMatching(pageContentAll, pagesSearch), [pageContentAll, pagesSearch]);
+  const gridPages = pagesTab === 'all' ? allPages : pagesTab === 'custom' ? customPages : scriptPages;
 
   /* v5.44: page-boundary math for Add / Move / drag-drop. "After page N" =
      the doc position where the NEXT page's first block starts (doc end when
@@ -509,13 +518,16 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
 
   const posAfterEntry = useCallback((entry: PageContentInfo): number | null => {
     if (!editor) return null;
-    const idx = pageContent.indexOf(entry);
+    // v5.71: over the FULL list — the All Pages grid hands entries in, and
+    // dropping onto the title thumb means "after the title page", which is
+    // exactly the next page's first block (script page 1).
+    const idx = pageContentAll.indexOf(entry);
     if (idx < 0) return null;
-    for (let i = idx + 1; i < pageContent.length; i++) {
-      if (pageContent[i].blocks.length > 0) return pageContent[i].blocks[0].docPos;
+    for (let i = idx + 1; i < pageContentAll.length; i++) {
+      if (pageContentAll[i].blocks.length > 0) return pageContentAll[i].blocks[0].docPos;
     }
     return editor.state.doc.content.size;
-  }, [editor, pageContent]);
+  }, [editor, pageContentAll]);
 
   const lastScriptPage = useMemo(() => {
     for (let i = pageContent.length - 1; i >= 0; i--) {
@@ -629,8 +641,8 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   // ── Scroll sync: highlight current page in editor ──
 
   useEffect(() => {
-    // v5.67: Script tab only — its data-page targets are script numbers.
-    if (activeTab !== 'pages' || pagesTab !== 'script' || !scrollContainer || !editor || pageContent.length === 0) return;
+    // v5.67: numbered-grid tabs only — data-page targets are script numbers.
+    if (activeTab !== 'pages' || (pagesTab !== 'script' && pagesTab !== 'all') || !scrollContainer || !editor || pageContent.length === 0) return;
 
     let rafId = 0;
     const handleScroll = () => {
@@ -777,9 +789,9 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   }, [pageContent, goToPosition]);
 
   useEffect(() => {
-    // v5.67: the # pop only shows on the Script tab (PagesControls hides
-    // itself elsewhere), and the thumbnail it scrolls lives in that grid.
-    if (gotoReq == null || activeTab !== 'pages' || pagesTab !== 'script') return;
+    // v5.67: the # pop shows where numbered thumbs exist — the Script tab,
+    // and (v5.71) All Pages, whose grid carries the same data-page numbers.
+    if (gotoReq == null || activeTab !== 'pages' || (pagesTab !== 'script' && pagesTab !== 'all')) return;
     goToPageNumber(String(gotoReq));
     setGotoReq(null);
   }, [gotoReq, activeTab, pagesTab, goToPageNumber, setGotoReq]);
@@ -1199,7 +1211,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
         <div className="navigator-list page-thumbnails-scroll" ref={pageGridRef}>
           {pagesTab === 'custom' && customPages.length === 0 ? (
             <div className="navigator-empty">No custom pages yet. Add one — a list, a quote, anything — and the script flows around it without taking a page number.</div>
-          ) : pagesTab === 'script' && scriptPages.length === 0 && !pagesSearch.trim() ? (
+          ) : gridPages.length === 0 && !pagesSearch.trim() ? (
             <div className="navigator-empty">No pages yet. Start writing to see page previews.</div>
           ) : gridPages.length === 0 ? (
             <div className="navigator-empty">No page contains “{pagesSearch.trim()}”.</div>
@@ -1210,14 +1222,15 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               {gridPages.map((page, pi) => (
                 /* v5.40: custom pages share the NEXT script page's number —
                    the index keeps keys unique, the label says what it is */
-                <div key={`${page.pageNumber}-${page.isCustom ? 'c' : 's'}-${pi}`} className="page-thumb-wrapper">
+                <div key={`${page.pageNumber}-${page.isCustom ? 'c' : page.isTitle ? 't' : 's'}-${pi}`} className="page-thumb-wrapper">
                   {/* v5.01, Derek: the label sits ABOVE its page (it used to
-                      trail underneath). v5.67: in the Custom tab the label
-                      carries the page's position — the interleaved grid that
-                      used to SHOW it is gone (Script lists script pages only). */}
+                      trail underneath). v5.67: in the Custom Pages tab the
+                      label carries the page's position; in All Pages (v5.71)
+                      the interleaving SHOWS it, so the note stays off there.
+                      The title page labels itself. */}
                   <div className="page-thumb-number">
-                    {page.isCustom ? (
-                      <>Custom Page{customPagePosLabel(page, lastScriptPage) && (
+                    {page.isTitle ? 'Title Page' : page.isCustom ? (
+                      <>Custom Page{pagesTab === 'custom' && customPagePosLabel(page, lastScriptPage) && (
                         <span className="page-thumb-pos"> · {customPagePosLabel(page, lastScriptPage)}</span>
                       )}</>
                     ) : `Page ${page.pageNumber}`}
@@ -1226,8 +1239,8 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                       = land right after it) and carry a ⋮ menu; script thumbs
                       do neither — their order IS the script. */}
                   <div
-                    className={`page-thumbnail${!page.isCustom && page.pageNumber === currentVisiblePage ? ' current' : ''}${page.isCustom && dragCpId != null && page.cpId === dragCpId ? ' dragging' : ''}${dragCpId != null && dropPi === pi && page.cpId !== dragCpId ? ' drop-after' : ''}`}
-                    data-page={page.isCustom ? `custom-${pi}` : page.pageNumber}
+                    className={`page-thumbnail${!page.isCustom && !page.isTitle && page.pageNumber === currentVisiblePage ? ' current' : ''}${page.isCustom && dragCpId != null && page.cpId === dragCpId ? ' dragging' : ''}${dragCpId != null && dropPi === pi && page.cpId !== dragCpId ? ' drop-after' : ''}`}
+                    data-page={page.isTitle ? 'title' : page.isCustom ? `custom-${pi}` : page.pageNumber}
                     data-cp-id={page.isCustom ? page.cpId : undefined}
                     draggable={page.isCustom || undefined}
                     onClick={(e) => handlePageClick(page, e)}
@@ -1539,22 +1552,26 @@ export function LocationsControls() {
   );
 }
 
-/** v5.67: the Pages window's Script / Title Page / Custom tabs, in the
- *  chrome slot the Characters window's tabs use (TOOL_CHROME.useTabs). */
+/** v5.67: the Pages window's tabs, in the chrome slot the Characters
+ *  window's tabs use (TOOL_CHROME.useTabs). v5.71, Derek: + "All Pages"
+ *  (compiles the other three, leading) and the fuller names — labels only,
+ *  the persisted ids stay 'script'/'title'/'custom'. */
 export function usePagesTabs(): ToolChromeTab[] {
   const tab = useEditorStore((s) => s.pagesTab);
   const setTab = useEditorStore((s) => s.setPagesTab);
   return [
-    { label: 'Script', active: tab === 'script', onSelect: () => setTab('script') },
+    { label: 'All Pages', active: tab === 'all', onSelect: () => setTab('all') },
+    { label: 'Script Pages', active: tab === 'script', onSelect: () => setTab('script') },
     { label: 'Title Page', active: tab === 'title', onSelect: () => setTab('title') },
-    { label: 'Custom', active: tab === 'custom', onSelect: () => setTab('custom') },
+    { label: 'Custom Pages', active: tab === 'custom', onSelect: () => setTab('custom') },
   ];
 }
 
 /** v4.94/v5.01, Derek: the Pages window's header keeps only Search — the
  *  shared control. Zoom and Go to live in the body's first row.
- *  v5.67: Script tab only — # and the search are script-page controls
- *  (the CharControls null-off-tab precedent). */
+ *  v5.67: grid tabs only (the CharControls null-off-tab precedent);
+ *  v5.71: that's Script Pages AND All Pages — both carry numbered thumbs
+ *  and searchable page text. */
 export function PagesControls() {
   const pagesTab = useEditorStore((s) => s.pagesTab);
   const search = useEditorStore((s) => s.pagesSearch);
@@ -1576,8 +1593,8 @@ export function PagesControls() {
     setNum('');
   };
   // AFTER every hook (the dialog-components rule: hooks above any early
-  // return) — off the Script tab the cluster renders nothing.
-  if (pagesTab !== 'script') return null;
+  // return) — off the numbered-grid tabs the cluster renders nothing.
+  if (pagesTab !== 'script' && pagesTab !== 'all') return null;
   return (
     <>
       <button

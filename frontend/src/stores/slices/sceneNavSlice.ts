@@ -78,7 +78,10 @@ export interface SceneNavSlice {
 
 export type LocationFilter = 'all' | 'int' | 'ext';
 export type LocationSort = 'scene' | 'name' | 'count';
-export type PagesTab = 'script' | 'title' | 'custom';
+/** v5.71: + 'all' — the All Pages tab compiles the other three (title page,
+ *  script pages and custom pages in document order). Ids persist; labels are
+ *  usePagesTabs' business ("Script Pages" etc. — renamed v5.71). */
+export type PagesTab = 'script' | 'title' | 'custom' | 'all';
 
 /** v5.08: the grid is `repeat(<count>, 1fr)` — the number IS the meaning.
  *  (v4.94's pagesThumbPx set a column min-width and let auto-fill derive the

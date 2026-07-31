@@ -566,13 +566,19 @@ export interface PageContentInfo {
   /** v5.44: the custom page's run id — the Pages tool's drag / move /
    *  delete all address the run by this, never by position. */
   cpId?: string;
+  /** v5.71: this page is the TITLE page — unnumbered (pageNumber 0), only
+   *  emitted when the caller opts in (the Pages tool's All Pages tab).
+   *  The default output keeps v5.13's rule: no title entry at all. */
+  isTitle?: boolean;
 }
 
 /**
  * Compute content blocks per page for page-preview thumbnails.
  * Uses the same break algorithm as the pagination plugin for accuracy.
+ * `opts.includeTitlePage` (v5.71) re-emits the leading title region as an
+ * unnumbered first page (isTitle, pageNumber 0) instead of discarding it.
  */
-export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentInfo[] {
+export function computePageBlocks(doc: PmNode, layout: PageLayout, opts?: { includeTitlePage?: boolean }): PageContentInfo[] {
   const { linesPerPage } = getPageMetrics(layout);
   const { breaks } = computeBreaks(doc, layout);
 
@@ -590,7 +596,7 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
   if (nodes.length === 0) return [];
 
   // Determine page boundaries from breaks
-  const pageBounds: { pageNumber: number; startNode: number; endNode: number; dialogueSplit: boolean; isCustom?: boolean }[] = [];
+  const pageBounds: { pageNumber: number; startNode: number; endNode: number; dialogueSplit: boolean; isCustom?: boolean; isTitle?: boolean }[] = [];
 
   // v5.40: a leading custom run has no entering break — page 1 IS custom.
   const leadingCustom = nodes.length > 0 && nodes[0].typeName === 'customPage';
@@ -633,6 +639,11 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
     // emits the title break) — drop it; otherwise trim the title run off the
     // front of page 1's bound.
     pageBounds.splice(0, 1, ...(first.endNode <= titleRunEnd ? [] : [{ ...first, startNode: titleRunEnd + 1 }]));
+    // v5.71 opt-in: the carved region comes BACK as an unnumbered title
+    // page — same carve, one more consumer, so the two can't disagree.
+    if (opts?.includeTitlePage) {
+      pageBounds.unshift({ pageNumber: 0, startNode: 0, endNode: titleRunEnd, dialogueSplit: false, isTitle: true });
+    }
   }
 
   // Build page content
@@ -646,10 +657,11 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
 
     for (let i = pb.startNode; i <= Math.min(pb.endNode, nodes.length - 1); i++) {
       const node = nodes[i];
-      // No title-page node renders on ANY preview page (v5.13). This guard is
+      // No title-page node renders on any SCRIPT page (v5.13). This guard is
       // what stops one bleeding into script page 1 — the v4.95 "strange
-      // spacing" — including titlePage nodes that sit mid-document.
-      if (node.typeName === 'titlePage') continue;
+      // spacing" — including titlePage nodes that sit mid-document. The
+      // v5.71 title bound is the one place they DO render.
+      if (node.typeName === 'titlePage' && !pb.isTitle) continue;
       const cpl = CHARS_PER_LINE[node.typeName] || 62;
       const textLines = getTextLines(node.text, cpl);
       const sb = firstOnPage ? 0 : (SPACE_BEFORE[node.typeName] ?? 0);
@@ -671,6 +683,7 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout): PageContentI
       linesPerPage,
       isCustom: pb.isCustom,
       cpId: pb.isCustom ? nodes[pb.startNode]?.cpId : undefined,
+      isTitle: pb.isTitle,
     });
   }
 

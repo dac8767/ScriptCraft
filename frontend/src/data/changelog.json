@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.71",
+    "date": "2026-07-31",
+    "changes": [
+      "Pages window: a new All Pages tab compiles the other tabs into one grid — title page, script pages, and custom pages in document order (search, go-to-page, and custom-page drag all work there). The tabs are now named All Pages / Script Pages / Title Page / Custom Pages.",
+      "Every tabbed window: when tabs collapse into a dropdown because the window is narrow, the control now wears a caret so it reads as a menu, not a label."
+    ]
+  },
+  {
     "version": "5.70",
     "date": "2026-07-31",
     "changes": [

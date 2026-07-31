@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.70 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.71 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,7 +227,37 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.70 — "…all types" labels + the Navigator filter's Reset (HEAD)
+### v5.71 — All Pages tab, tab renames, the collapsed-tabs caret (HEAD)
+
+- Derek, three asks. (1) CARET: every window whose header tabs collapse
+  into the narrow-dock dropdown now shows a trailing ▾ — a `caret` prop
+  on ControlDropdown, set by HeaderTabs' collapsed branch, so ALL tabbed
+  windows (Characters, Tags, Pages) get it from the one shared spot.
+  (2) ALL PAGES: a leading Pages tab compiling the other three — title
+  page + script pages + custom pages in document order. (3) RENAMES:
+  "Script Pages" / "Title Page" / "Custom Pages" — labels only, the
+  persisted pagesTab ids stay 'script'/'title'/'custom' (+ new 'all').
+- Pagination: computePageBlocks grew opts.includeTitlePage — the v5.13
+  title carve, instead of discarding the region, re-emits it as an
+  UNNUMBERED first page (isTitle, pageNumber 0); titlePage nodes render
+  only on that bound (the per-node guard keeps them off script pages).
+  The DEFAULT call still emits nothing — pageThumbnails.test pins both
+  behaviors (11 tests incl. 5 new).
+- SceneNavigator: pageContentAll (flagged call) is the ONE computation;
+  pageContent derives by dropping the title entry, so every existing
+  consumer (posAfterScriptPage, goToPageNumber, lastScriptPage, scroll
+  sync, tool count) keeps v5.13 semantics with ZERO new guards. Only the
+  All grid and posAfterEntry read the full list — so dropping a dragged
+  custom onto the title thumb lands it "after the title page" (= before
+  page 1), which is the only legal spot there anyway. Controls (#/search)
+  and the scroll-sync/goto effects run on Script AND All. The custom
+  position note stays Custom-tab-only (All SHOWS the position).
+- check-v571 12/12 (carets in two windows, renamed set, document order
+  Title | Page 1 | Custom | Page 2, real title text in the thumb, no ⋮
+  on the title, controls on All, Script still script-only).
+  Gates: tsc 0, 938 tests, build.
+
+### v5.70 — "…all types" labels + the Navigator filter's Reset
 
 - Derek: (1) "make it clear that 'Show all' and 'Hide all' apply to the
   annotation types only" — renamed IN TypeGridSection ("Show all types" /
@@ -335,36 +365,12 @@ Durable bits kept live here:
   script-only grid, custom add/position note, narrow 1-col vs
   fullscreen 2-col, Cancel→Script, menu lands on the tab).
 
-### v5.66 — Focus tool: ? in the header + Design-window layout knobs
-
-- Derek ("moving to the focus tool"): (1) the "?" moved from the master
-  row to the window header — FocusHeaderControls exported from
-  TypewriterTool.tsx into TOOL_CHROME (same portalled .fs-help-pop,
-  positioned from the header button; pointerdown stopPropagation for the
-  drag handle). (2) A 'Focus Tool' Design group: focusPad (side padding,
-  12), focusRowGap (8 — toggle gaps, the rest-block, subgroup gap),
-  focusSectionGap/Below (6/10 — subgroup vertical margins), focusIndent
-  (14 — subgroup padding-left). Defs === CSS fallbacks (the contract
-  test).
-- TRAP HIT AND WORTH REMEMBERING: .fs-typewriter-section and
-  .fs-typewriter-sub looked like the obvious binding targets but are
-  DEAD CSS (pre-v1.77 slim-down; nothing renders them) — the no-dead-
-  knobs TEST passed anyway because it only checks the var is read in
-  CSS, not that the RULE is alive in the DOM. First wiring shipped dead
-  sliders; the driver's computed-style probe caught it (nulls). Both
-  dead rule sets deleted; tokens re-bound to the live
-  .fs-typewriter-subgroup. Lesson: bind tokens to classes you've seen
-  in the RENDERED DOM, and always drive the knob in the driver.
-- Gates: tsc 0, 920 tests (29 token-contract incl. the new group),
-  build, check-v566 8/8 (header ?, popover open/Escape, three knobs
-  moving real computed styles, reset, Design group listed). SEVENTH
-  rollback at batch start (standing recovery).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.66** — Focus tool: ? in the header + Design-window layout knobs
 - **v5.65** — the mid-heading caret jump (uppercase plugin, since v3.45)
 - **v5.64** — Rerun-with-note + the shared-language prompt rule
 - **v5.63** — the cards speak the app's visual language (dark block = editable)

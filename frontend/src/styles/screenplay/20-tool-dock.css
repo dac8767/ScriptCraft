@@ -540,6 +540,8 @@ body.fs-tool-dragging { cursor: grabbing; }
 .tool-ctl.active { color: var(--fd-accent); }
 .tool-ctl-icon { display: inline-flex; font-size: 13px; }
 .tool-ctl-current { color: var(--fd-text); font-weight: 600; }
+/* v5.71: the ▾ on dropdown-form controls (the collapsed header tabs). */
+.tool-ctl-caret { display: inline-flex; font-size: 9px; opacity: 0.65; margin-left: 1px; }
 .tool-ctl-chip {
   min-width: 16px;
   height: 16px;

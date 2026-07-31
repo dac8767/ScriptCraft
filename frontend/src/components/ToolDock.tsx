@@ -268,9 +268,12 @@ function HeaderTabs({ chrome }: { chrome: ToolChrome }) {
     <>
       <span ref={hostRef} className={`tool-chrome-tabs${collapsed ? ' tool-chrome-tabs-dd' : ''}`}>
         {collapsed ? (
+          /* v5.71, Derek: the caret marks the collapsed strip as a MENU —
+             without it the current tab's name read as a dead label. */
           <ControlDropdown
             title="Section"
             current={active?.label}
+            caret
             items={tabs.map((t) => ({ label: t.label, active: t.active, onSelect: t.onSelect }))}
           />
         ) : (

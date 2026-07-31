@@ -90,3 +90,46 @@ describe('computePageBlocks and the title page', () => {
     }
   });
 });
+
+describe('v5.71: includeTitlePage — the All Pages tab opt-in', () => {
+  beforeEach(() => {
+    setPaginationVisibility({ hideSections: false, hideTodos: false, doubleSpaceHeaders: false, hideTitlePage: false });
+  });
+
+  for (const hidden of [true, false]) {
+    const mode = hidden ? 'hidden (Page/Continuous)' : 'shown (Preview)';
+
+    it(`the title region comes back as an UNNUMBERED first page, ${mode}`, () => {
+      setPaginationVisibility({ hideTitlePage: hidden });
+      const pages = computePageBlocks(docOf(TITLE_AND_SCRIPT), DEFAULT_PAGE_LAYOUT, { includeTitlePage: true });
+      expect(pages[0].isTitle).toBe(true);
+      expect(pages[0].pageNumber).toBe(0);
+      expect(texts(pages[0])).toEqual(['STAR WARS - EPISODE 8', 'Written by Derek Carl']);
+      // script numbering is untouched — page 1 is still page 1, still clean
+      const script = pages.filter((p) => !p.isTitle);
+      expect(script[0].pageNumber).toBe(1);
+      expect(texts(script[0])).toEqual([
+        'EXT. SPACE - OPENING SCROLL',
+        'The camera tilts down to reveal a mid-sized space carrier.',
+      ]);
+      expect(script[0].blocks[0].lineStart).toBe(0);
+    });
+  }
+
+  it('no title page in the doc → no title entry, flag or not', () => {
+    const plain = [node('sceneHeading', 'INT. COFFEE SHOP - DAY'), node('action', 'Rain.')];
+    const pages = computePageBlocks(docOf(plain), DEFAULT_PAGE_LAYOUT, { includeTitlePage: true });
+    expect(pages.some((p) => p.isTitle)).toBe(false);
+  });
+
+  it('a doc that is ONLY a title page previews as just the title page', () => {
+    const pages = computePageBlocks(docOf([TITLE_AND_SCRIPT[0], TITLE_AND_SCRIPT[1]]), DEFAULT_PAGE_LAYOUT, { includeTitlePage: true });
+    expect(pages).toHaveLength(1);
+    expect(pages[0].isTitle).toBe(true);
+  });
+
+  it('the DEFAULT call still emits no title entry (the v5.13 rule holds)', () => {
+    const pages = computePageBlocks(docOf(TITLE_AND_SCRIPT), DEFAULT_PAGE_LAYOUT);
+    expect(pages.some((p) => p.isTitle)).toBe(false);
+  });
+});
