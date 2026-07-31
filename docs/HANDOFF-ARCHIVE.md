@@ -155,6 +155,28 @@ reliable; re-run before believing a weird worker failure.
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
 
+### v5.61 — full-length suggestion cards, ONE scroll
+
+- Derek: "show the text of all three suggestions in their full length…
+  i just want one scroll for the whole tool." The v5.59 textareas capped
+  at rows 9 (and counted only \n — soft-wrapped lines overflowed even
+  sooner), so long variants scrolled inside their cards inside the
+  scrolling body.
+- Fix: the grid replicated-content trick — `.rw-grow` wraps each
+  textarea; its ::after mirrors data-value (same font/padding/pre-wrap
+  box, hidden) and defines the cell height, the textarea stretches to
+  match (grid-area 1/1 both). Pure CSS: no JS measuring, re-wraps
+  automatically when the panel resizes. data-value carries a trailing
+  \n so the last empty line counts. `overflow: hidden; resize: none` on
+  the textarea; the beat list's max-height/scroll removed too —
+  `.rw-body` is the ONLY scroll.
+- Driver technique worth keeping (check-v561): the results UI needs the
+  API, but the MECHANISM was probed in-page against the real
+  stylesheet — inject the .rw-grow structure, long text → 416px tall
+  with scrollHeight == clientHeight (no inner scroll), short text →
+  56px. Verifies the CSS contract without a live request.
+- Gates: tsc 0, 916 tests, build, check-v561 5/5.
+
 ### v5.60 — the rewrite target stays PAINTED (blur-proof), + the declutter eye
 
 - Derek's bug: "if i click into the context text field, or if I open the

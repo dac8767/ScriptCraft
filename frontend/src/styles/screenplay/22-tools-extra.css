@@ -1714,7 +1714,7 @@ body.fs-shot-veil-feedback .fs-tool-takeover-feedback { visibility: hidden !impo
 /* Master off: the whole block below the master row reads AND acts disabled —
    pointer-events catches what the per-input disabled= can't (labels, the
    swatch/slider chrome). */
-.fs-typewriter-rest { margin-top: 8px; }
+.fs-typewriter-rest { margin-top: var(--dz-focus-row-gap, 8px); }
 .fs-typewriter-rest.disabled { opacity: .45; pointer-events: none; }
 
 /* v4.35 workspaces actions */

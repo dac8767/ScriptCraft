@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.66",
+    "date": "2026-07-31",
+    "changes": [
+      "Focus tool: the ? moved into the window header, and the panel's layout is now yours to tune — a Focus Tool group in the Design window carries side padding, row spacing, section spacing above and below, and the sub-option indent.",
+      "Housekeeping: two dead Focus styles from the v1.77 slim-down were removed rather than wired to sliders that would have moved nothing."
+    ]
+  },
+  {
     "version": "5.65",
     "date": "2026-07-30",
     "changes": [

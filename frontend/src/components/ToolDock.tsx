@@ -51,7 +51,7 @@ import ThesaurusTool from './ThesaurusTool';
 import RewriteTool, { RewriteHeaderControls } from './RewriteTool';
 import { ScenesTool } from './ScenesTool';
 import BeatBoard, { OutlineHeaderControls } from './BeatBoard';
-import TypewriterTool from './TypewriterTool';
+import TypewriterTool, { FocusHeaderControls } from './TypewriterTool';
 import AiWriterTool from './AiWriterTool';
 import NotebookTool, { NotebookHeaderExtra } from './NotebookTool';
 
@@ -368,6 +368,7 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   goals: { Controls: GoalsHeaderExtra },
   notebook: { Controls: NotebookHeaderExtra },   // v2.05: declutter + create buttons
   rewrite: { Controls: RewriteHeaderControls },  // v5.60: the same declutter eye
+  typewriter: { Controls: FocusHeaderControls }, // v5.66: the "?" in the header
   beatboard: { Controls: OutlineHeaderControls }, // v2.41: count/Arrangement/help
   // v4.70, Derek: screenshot buttons in the Feedback header — the capture
   // lands as a draggable chip above the form (FeedbackTool.tsx).

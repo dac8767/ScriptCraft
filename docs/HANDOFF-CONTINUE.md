@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.65 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.66 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -204,7 +204,32 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.65 — the mid-heading caret jump (uppercase plugin, since v3.45) (HEAD)
+### v5.66 — Focus tool: ? in the header + Design-window layout knobs (HEAD)
+
+- Derek ("moving to the focus tool"): (1) the "?" moved from the master
+  row to the window header — FocusHeaderControls exported from
+  TypewriterTool.tsx into TOOL_CHROME (same portalled .fs-help-pop,
+  positioned from the header button; pointerdown stopPropagation for the
+  drag handle). (2) A 'Focus Tool' Design group: focusPad (side padding,
+  12), focusRowGap (8 — toggle gaps, the rest-block, subgroup gap),
+  focusSectionGap/Below (6/10 — subgroup vertical margins), focusIndent
+  (14 — subgroup padding-left). Defs === CSS fallbacks (the contract
+  test).
+- TRAP HIT AND WORTH REMEMBERING: .fs-typewriter-section and
+  .fs-typewriter-sub looked like the obvious binding targets but are
+  DEAD CSS (pre-v1.77 slim-down; nothing renders them) — the no-dead-
+  knobs TEST passed anyway because it only checks the var is read in
+  CSS, not that the RULE is alive in the DOM. First wiring shipped dead
+  sliders; the driver's computed-style probe caught it (nulls). Both
+  dead rule sets deleted; tokens re-bound to the live
+  .fs-typewriter-subgroup. Lesson: bind tokens to classes you've seen
+  in the RENDERED DOM, and always drive the knob in the driver.
+- Gates: tsc 0, 920 tests (29 token-contract incl. the new group),
+  build, check-v566 8/8 (header ?, popover open/Escape, three knobs
+  moving real computed styles, reset, Design group listed). SEVENTH
+  rollback at batch start (standing recovery).
+
+### v5.65 — the mid-heading caret jump (uppercase plugin, since v3.45)
 
 - Derek's repro: changing "EXT. SPACE CARRIER - BELKADIN" to CRUISER —
   "my cursor would jump to the end of the scene header after every
@@ -296,33 +321,12 @@ Durable bits kept live here:
 - check-v562 4/4 (written → kept within passage → cleared on a different
   paragraph → survives field focus). Gates: tsc 0, 916 tests, build.
 
-### v5.61 — full-length suggestion cards, ONE scroll
-
-- Derek: "show the text of all three suggestions in their full length…
-  i just want one scroll for the whole tool." The v5.59 textareas capped
-  at rows 9 (and counted only \n — soft-wrapped lines overflowed even
-  sooner), so long variants scrolled inside their cards inside the
-  scrolling body.
-- Fix: the grid replicated-content trick — `.rw-grow` wraps each
-  textarea; its ::after mirrors data-value (same font/padding/pre-wrap
-  box, hidden) and defines the cell height, the textarea stretches to
-  match (grid-area 1/1 both). Pure CSS: no JS measuring, re-wraps
-  automatically when the panel resizes. data-value carries a trailing
-  \n so the last empty line counts. `overflow: hidden; resize: none` on
-  the textarea; the beat list's max-height/scroll removed too —
-  `.rw-body` is the ONLY scroll.
-- Driver technique worth keeping (check-v561): the results UI needs the
-  API, but the MECHANISM was probed in-page against the real
-  stylesheet — inject the .rw-grow structure, long text → 416px tall
-  with scrollHeight == clientHeight (no inner scroll), short text →
-  56px. Verifies the CSS contract without a live request.
-- Gates: tsc 0, 916 tests, build, check-v561 5/5.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.61** — full-length suggestion cards, ONE scroll
 - **v5.60** — the rewrite target stays PAINTED (blur-proof), + the declutter eye
 - **v5.59** — Action Rewrite v4: editable drafts + linter, the Yours slot + beats, the LOG + calibration loop
 - **v5.58** — Action Rewrite v3: the writer's NOTE replaces the steer enum

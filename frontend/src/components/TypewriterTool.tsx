@@ -21,24 +21,11 @@ import { centerCaretLine, refreshTypewriterChrome } from '../editor/extensions/T
  *  hues read best. The color input at the end covers everything else. */
 const HIGHLIGHT_COLORS = ['#4a9eff', '#f5d90a', '#34c759', '#ff9f0a', '#ff6ba9', '#9a9a9a'];
 
-export default function TypewriterTool({ editor }: { editor: Editor | null }) {
-  const {
-    typewriterEnabled, setTypewriterEnabled,
-    typewriterFollowCursor, setTypewriterFollowCursor,
-    typewriterOffset, setTypewriterOffset,
-    typewriterHighlightLine, setTypewriterHighlightLine,
-    typewriterHighlightColor, setTypewriterHighlightColor,
-    typewriterDimOthers, setTypewriterDimOthers,
-    typewriterDimMode, setTypewriterDimMode,
-    typewriterDimOpacity, setTypewriterDimOpacity,
-    writingFocus, setWritingFocus,
-    typewriterMasterEnabled, setTypewriterMasterEnabled,
-  } = useEditorStore();
-  const off = !typewriterMasterEnabled;
-
-  // v4.35: the "?" helper — GoalsHeaderExtra's popover shape: PORTALLED to
-  // document.body and positioned fixed from the button rect (top/left, never
-  // bottom), because a child of the panel could never escape its overflow.
+/** v5.66, Derek: the "?" rides the window HEADER now (chrome Controls slot).
+ *  Same popover shape as v4.35: PORTALLED to document.body and positioned
+ *  fixed from the button rect (top/left, never bottom), because a child of
+ *  the panel could never escape its overflow. */
+export function FocusHeaderControls() {
   const [helpOpen, setHelpOpen] = useState(false);
   const helpBtnRef = useRef<HTMLButtonElement>(null);
   const [helpPos, setHelpPos] = useState<{ top: number; left: number } | null>(null);
@@ -67,6 +54,41 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
     setHelpOpen((v) => !v);
   };
 
+  return (
+    <>
+      <button
+        ref={helpBtnRef}
+        className="fs-help-btn"
+        title="About Focus"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); toggleHelp(); }}
+      ><FaRegQuestionCircle /></button>
+      {helpOpen && helpPos && createPortal(
+        <div className="fs-help-pop" style={{ top: helpPos.top, left: helpPos.left }}>
+          Focus mode keeps the line you're typing on fixed on screen — the
+          page scrolls, your eyes don't. This window stays open while you write.
+        </div>,
+        document.body,
+      )}
+    </>
+  );
+}
+
+export default function TypewriterTool({ editor }: { editor: Editor | null }) {
+  const {
+    typewriterEnabled, setTypewriterEnabled,
+    typewriterFollowCursor, setTypewriterFollowCursor,
+    typewriterOffset, setTypewriterOffset,
+    typewriterHighlightLine, setTypewriterHighlightLine,
+    typewriterHighlightColor, setTypewriterHighlightColor,
+    typewriterDimOthers, setTypewriterDimOthers,
+    typewriterDimMode, setTypewriterDimMode,
+    typewriterDimOpacity, setTypewriterDimOpacity,
+    writingFocus, setWritingFocus,
+    typewriterMasterEnabled, setTypewriterMasterEnabled,
+  } = useEditorStore();
+  const off = !typewriterMasterEnabled;
+
   const live = editor && !editor.isDestroyed ? editor : null;
   const snapToCenter = () => { if (live) centerCaretLine(live); };
   const refreshChrome = () => { if (live) refreshTypewriterChrome(live); };
@@ -94,17 +116,8 @@ export default function TypewriterTool({ editor }: { editor: Editor | null }) {
           />
           <span>Enable Focus Tool</span>
         </label>
-        {/* Outside the label: inside it, a click would also forward to the
-            checkbox and flip the whole tool. */}
-        <button ref={helpBtnRef} className="fs-help-btn" title="About Focus" onClick={toggleHelp}><FaRegQuestionCircle /></button>
+        {/* (v5.66: the "?" moved to the window header — FocusHeaderControls) */}
       </div>
-      {helpOpen && helpPos && createPortal(
-        <div className="fs-help-pop" style={{ top: helpPos.top, left: helpPos.left }}>
-          Focus mode keeps the line you're typing on fixed on screen — the
-          page scrolls, your eyes don't. This window stays open while you write.
-        </div>,
-        document.body,
-      )}
 
       {/* v4.35: master off = everything below dims AND goes inert as one
           block (the per-input disabled= stays on as belt and braces). */}

@@ -350,6 +350,20 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     ],
   },
   {
+    // v5.66, Derek: the Focus tool's layout knobs — side padding, section
+    // spacing, the works. Defs mirror the base CSS fallbacks exactly (the
+    // no-dead-knobs test holds this group to the same contract as the rest).
+    id: 'focus',
+    label: 'Focus Tool',
+    tokens: [
+      { id: 'focusPad', label: 'Side padding', cssVar: '--dz-focus-pad', unit: 'px', min: 0, max: 32, step: 1, def: 12 },
+      { id: 'focusRowGap', label: 'Row spacing', cssVar: '--dz-focus-row-gap', unit: 'px', min: 0, max: 24, step: 1, def: 8 },
+      { id: 'focusSectionGap', label: 'Section spacing (above)', cssVar: '--dz-focus-section-gap', unit: 'px', min: 0, max: 32, step: 1, def: 6 },
+      { id: 'focusSectionBelow', label: 'Section spacing (below)', cssVar: '--dz-focus-section-below', unit: 'px', min: 0, max: 32, step: 1, def: 10 },
+      { id: 'focusIndent', label: 'Sub-option indent', cssVar: '--dz-focus-indent', unit: 'px', min: 0, max: 40, step: 1, def: 14 },
+    ],
+  },
+  {
     // v5.27, Derek: the on-script annotation icons get a size knob. Store-
     // bound — the icon layer needs the NUMBER for its centering math, so a
     // CSS var alone couldn't drive it.

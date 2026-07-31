@@ -1162,9 +1162,9 @@ body.fs-tool-dragging { cursor: grabbing; }
   line-height: 1.5;
 }
 
-/* ── Typewriter tool (v1.68) ── */
+/* ── Typewriter tool (v1.68; v5.66: layout reads the Focus Design knobs) ── */
 .fs-typewriter {
-  padding: 12px;
+  padding: var(--dz-focus-pad, 12px);
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -1177,24 +1177,18 @@ body.fs-tool-dragging { cursor: grabbing; }
   color: var(--fd-text);
   cursor: pointer;
 }
-.fs-typewriter-toggle + .fs-typewriter-toggle { margin-top: 8px; }
-.fs-typewriter-sub {
-  margin: 8px 0 0 22px;
-  font-size: 12px;
-}
-.fs-typewriter-sub.disabled {
-  color: var(--fd-text-muted);
-  cursor: default;
-}
+.fs-typewriter-toggle + .fs-typewriter-toggle { margin-top: var(--dz-focus-row-gap, 8px); }
+/* (v5.66: the pre-v1.77 .fs-typewriter-sub rules were DEAD — nothing renders
+   that class; the live nesting is .fs-typewriter-subgroup below.) */
 /* v1.77: sub-options nest under their parent toggle behind a guide line, so
    "Keep bright"/"Dimmed to" unmistakably belong to "Dim unfocused text". */
 .fs-typewriter-subgroup {
-  margin: 6px 0 10px 9px;
-  padding: 2px 0 2px 14px;
+  margin: var(--dz-focus-section-gap, 6px) 0 var(--dz-focus-section-below, 10px) 9px;
+  padding: 2px 0 2px var(--dz-focus-indent, 14px);
   border-left: 2px solid var(--fd-chrome-separator);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--dz-focus-row-gap, 8px);
   font-size: 12px;
 }
 .fs-typewriter-subgroup.disabled { color: var(--fd-text-muted); }
@@ -1233,17 +1227,8 @@ body.fs-tool-dragging { cursor: grabbing; }
   min-width: 34px;
   text-align: right;
 }
-.fs-typewriter-section {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--fd-text-muted);
-  border-top: 1px solid var(--fd-chrome-separator);
-  padding-top: 10px;
-  margin: 14px 0 8px;
-}
-.fs-typewriter-section:first-of-type { border-top: none; padding-top: 0; margin-top: 4px; }
+/* (v5.66: .fs-typewriter-section was dead too — the slimmed v1.77 panel has
+   no section headers; the subgroup rules above are the live "sections".) */
 .fs-typewriter-offset select {
   background: var(--fd-input-bg);
   border: 1px solid var(--fd-border);
