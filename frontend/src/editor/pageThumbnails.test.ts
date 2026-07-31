@@ -133,3 +133,64 @@ describe('v5.71: includeTitlePage — the All Pages tab opt-in', () => {
     expect(pages.some((p) => p.isTitle)).toBe(false);
   });
 });
+
+describe('v5.73: the blocks carry what a TRUE title-page preview needs', () => {
+  beforeEach(() => {
+    setPaginationVisibility({ hideSections: false, hideTodos: false, doubleSpaceHeaders: false, hideTitlePage: false });
+  });
+
+  const FULL_TITLE = [
+    node('titlePage', 'BELKADAN RISING', { field: 'title', tpTitleFontSize: 24 }),
+    node('titlePage', 'Invasion of the Vong', { field: 'title2', tpTitle2FontSize: 18 }),
+    node('titlePage', 'Written by Derek Carl', { field: 'author' }),
+    node('titlePage', '1st Draft - 2026-07-17', { field: 'draft' }),
+    node('sceneHeading', 'EXT. SPACE - OPENING SCROLL'),
+  ];
+
+  it('every title block reports its field, so per-field alignment is reproducible', () => {
+    const [title] = computePageBlocks(docOf(FULL_TITLE), DEFAULT_PAGE_LAYOUT, { includeTitlePage: true });
+    expect(title.blocks.map((b) => b.titleField)).toEqual(['title', 'title2', 'author', 'draft']);
+  });
+
+  it('title and title2 carry their OWN custom sizes (separate attrs)', () => {
+    const [title] = computePageBlocks(docOf(FULL_TITLE), DEFAULT_PAGE_LAYOUT, { includeTitlePage: true });
+    expect(title.blocks[0].fontSizePt).toBe(24);
+    expect(title.blocks[1].fontSizePt).toBe(18);
+    // a plain credit line has no size of its own
+    expect(title.blocks[2].fontSizePt).toBeUndefined();
+  });
+
+  it('script blocks carry no title fields at all', () => {
+    const pages = computePageBlocks(docOf(FULL_TITLE), DEFAULT_PAGE_LAYOUT, { includeTitlePage: true });
+    const script = pages.find((p) => !p.isTitle)!;
+    expect(script.blocks.every((b) => b.titleField === undefined)).toBe(true);
+  });
+
+  it('an image on the title page stays ON the title page, with its line budget', () => {
+    const withLogo = [
+      node('titlePage', 'BELKADAN RISING', { field: 'title' }),
+      node('screenplayImage', '', { heightLines: 10 }),
+      node('titlePage', 'Written by Derek Carl', { field: 'author' }),
+      node('sceneHeading', 'EXT. SPACE - OPENING SCROLL'),
+      node('action', 'A ship drifts.'),
+    ];
+    const pages = computePageBlocks(docOf(withLogo), DEFAULT_PAGE_LAYOUT, { includeTitlePage: true });
+    const image = pages[0].blocks.find((b) => b.typeName === 'screenplayImage');
+    expect(pages[0].isTitle).toBe(true);
+    expect(image?.imageLines).toBe(10);
+    // …and NOT on script page 1 — the editor draws it on the title page
+    const script = pages.find((p) => !p.isTitle)!;
+    expect(script.blocks.some((b) => b.typeName === 'screenplayImage')).toBe(false);
+    expect(script.blocks[0].text).toBe('EXT. SPACE - OPENING SCROLL');
+  });
+
+  it('a leading image with NO title page is body content, left where it is', () => {
+    const noTitle = [
+      node('screenplayImage', '', { heightLines: 6 }),
+      node('sceneHeading', 'INT. COFFEE SHOP - DAY'),
+    ];
+    const pages = computePageBlocks(docOf(noTitle), DEFAULT_PAGE_LAYOUT, { includeTitlePage: true });
+    expect(pages.some((p) => p.isTitle)).toBe(false);
+    expect(pages[0].blocks[0].typeName).toBe('screenplayImage');
+  });
+});

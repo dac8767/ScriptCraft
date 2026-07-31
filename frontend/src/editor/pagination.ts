@@ -554,6 +554,19 @@ export interface PageBlockInfo {
   lineCount: number;
   docPos: number;
   text: string;
+  /** v5.73: titlePage blocks only — which field this is ('title', 'title2',
+   *  'author', 'draft', 'contact', 'copyright', 'date', 'blank'…). A preview
+   *  needs it to reproduce the per-field alignment/weight the editor's
+   *  `.title-page-<field>` CSS applies; without it a title page previews as
+   *  body-indented left-aligned text. */
+  titleField?: string;
+  /** v5.73: the title/title2 custom point size when it isn't the default 12
+   *  — the same attr TitlePage's renderHTML reads. */
+  fontSizePt?: number;
+  /** v5.73: screenplayImage blocks — the line budget the paginator gave the
+   *  image, so a preview can reserve its real height instead of collapsing
+   *  it to one blank line. */
+  imageLines?: number;
 }
 
 export interface PageContentInfo {
@@ -582,14 +595,32 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout, opts?: { incl
   const { linesPerPage } = getPageMetrics(layout);
   const { breaks } = computeBreaks(doc, layout);
 
-  // Collect top-level nodes
-  const nodes: { typeName: string; text: string; offset: number; cpId?: string }[] = [];
+  // Collect top-level nodes. v5.73: title-page field + size and the image
+  // line budget ride along — a preview can't reproduce the real title-page
+  // layout from type name and text alone.
+  const nodes: {
+    typeName: string; text: string; offset: number; cpId?: string;
+    titleField?: string; fontSizePt?: number; imageLines?: number;
+  }[] = [];
   doc.forEach((node, offset) => {
+    const typeName = node.type.name;
+    const a = node.attrs as {
+      cpId?: string; field?: string; tpTitleFontSize?: number;
+      tpTitle2FontSize?: number; heightLines?: number;
+    };
+    const titleField = typeName === 'titlePage' ? (a?.field || 'title') : undefined;
     nodes.push({
-      typeName: node.type.name,
+      typeName,
       text: node.textContent || '',
       offset,
-      cpId: node.type.name === 'customPage' ? ((node.attrs.cpId as string) || undefined) : undefined,
+      cpId: typeName === 'customPage' ? (a?.cpId || undefined) : undefined,
+      titleField,
+      // title2 keeps its size in its own attr — the same split TitlePage's
+      // renderHTML and the paginator's line budget make.
+      fontSizePt: titleField === 'title' ? (Number(a?.tpTitleFontSize) || undefined)
+        : titleField === 'title2' ? (Number(a?.tpTitle2FontSize) || undefined)
+        : undefined,
+      imageLines: typeName === 'screenplayImage' ? Math.max(1, Number(a?.heightLines) || 8) : undefined,
     });
   });
 
@@ -631,8 +662,22 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout, opts?: { incl
 
      The split happens on the BOUNDS, not on `nodes`: breaks[].nodeIndex
      indexes that list, so removing entries would shift every later page. */
+  /* v5.73: the region is the leading run of TITLE-REGION nodes — titlePage
+     lines AND the images among them — which is exactly what computeBreaks
+     treats as the title page (isTitleRegionNode: "leading images, when a
+     title page exists, belong to the title page"). Scanning only titlePage
+     nodes left a title-page logo on script page 1 in the preview while the
+     editor drew it on the title page. The at-least-one-titlePage guard keeps
+     a leading image in a title-less script exactly where it is: page 1. */
   let titleRunEnd = -1;
-  while (titleRunEnd + 1 < nodes.length && nodes[titleRunEnd + 1].typeName === 'titlePage') titleRunEnd++;
+  let sawTitleNode = false;
+  for (let i = 0; i < nodes.length; i++) {
+    const t = nodes[i].typeName;
+    if (t !== 'titlePage' && t !== 'screenplayImage') break;
+    if (t === 'titlePage') sawTitleNode = true;
+    titleRunEnd = i;
+  }
+  if (!sawTitleNode) titleRunEnd = -1;
   if (titleRunEnd >= 0 && pageBounds.length > 0 && pageBounds[0].startNode === 0) {
     const first = pageBounds[0];
     // In Preview the title page already HAS its own bound (computeBreaks
@@ -673,6 +718,9 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout, opts?: { incl
         lineCount: textLines,
         docPos: node.offset,
         text: node.text,
+        titleField: node.titleField,
+        fontSizePt: node.fontSizePt,
+        imageLines: node.imageLines,
       });
       lineOnPage += sb + textLines;
     }

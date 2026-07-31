@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.73",
+    "date": "2026-07-31",
+    "changes": [
+      "Pages window: the title-page thumbnail now previews the real thing — title bold, in caps, at its chosen size, centered on the paper; the credit centered under it; the draft line anchored left and contact anchored right. It used to draw the title page as plain left-aligned action text.",
+      "A title-page image now previews on the title page, holding its real height, instead of landing at the top of script page 1."
+    ]
+  },
+  {
     "version": "5.72",
     "date": "2026-07-31",
     "changes": [

@@ -151,9 +151,39 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.67 and older (newest first)
+## Version history — v5.68 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.68 — Navigator filter: the Scene Headings section
+
+- Derek (verbatim): "in the navigator filter window, change Filter
+  Annotations to 'Annotations'. Above that, add a new section in the
+  filter called 'Scene Headings'. the filter options should be INT. or
+  EXT., location, Contains X (type in a word or words)."
+- ONE predicate — utils/sceneFilters.navSceneHeadingMatch — serves the
+  chrome chip and the body's row test (NavSceneFilters {intExt,
+  location, contains}; EMPTY_NAV_SCENE_FILTERS; ephemeral in
+  sceneNavSlice like navFilter). INT/EXT reads the PREFIX the
+  Locations-window way: "has this kind", so INT./EXT. compounds pass
+  both. Location is an EXACT match on parseHeading().location —
+  time words strip, sub-places stay ("SPACE CARRIER - BRIDGE" is one
+  location, identical to the Locations window's grouping). Contains is
+  a case-blind substring over the whole heading; whitespace = inactive.
+- The pop: Scene Headings title, INT./EXT. as a markup-seg segment (the
+  Status toggle's classes — one look for one idea), a native Location
+  select fed by sceneHeadingLocations(s.scenes headings — live because
+  'navigator' is in SCENES_READERS), a Contains text field; then the
+  "Annotations" title (renamed) over the untouched TypeGridSection.
+  Chip = annotation filters + countActiveNavSceneFilters. Scene filters
+  gate ONLY kind==='scene' rows — annotations/notes/acts keep their own
+  filters (the View-menu independence rule).
+- Gates: tsc 0, 933 tests (+7 predicate/count/locations — fixture
+  lesson: 'EXT. SPACE - BELKADAN' parses location 'SPACE - BELKADAN',
+  only TIME WORDS strip after a dash), build, check-v568 10/10 (titles
+  renamed/ordered, EXT/INT rows, dropdown lists all 4 locations,
+  location narrows, chip=2 stacked, contains, clear restores).
+
 
 ### v5.67 — Pages window tabs: Script / Title Page / Custom
 

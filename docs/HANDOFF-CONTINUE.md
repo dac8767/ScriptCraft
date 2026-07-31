@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.72 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.73 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,7 +227,36 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.72 — Pages tabs: Script / Title / Custom / All (HEAD)
+### v5.73 — the title-page THUMBNAIL shows the true format (HEAD)
+
+- Derek (screenshot of the All tab): "the small version of the title page
+  in this window should display the true format." It was drawing title
+  pages as body elements — action indents, left aligned, no weight/caps/
+  size — because PageBlockInfo carried only {typeName, text, lines, pos},
+  and the real look lives in `.title-page` / `.title-page-<field>` CSS
+  keyed off the node's `field` attr, which never reached the preview.
+- pagination.ts: blocks now carry titleField, fontSizePt (title vs title2
+  read their OWN size attrs — the same split renderHTML makes) and
+  imageLines. SceneNavigator's getBlockStyle takes the BLOCK (not a type
+  name) and, for titlePage, reproduces: per-field alignment (title/
+  title2/author/date center, draft left, contact/copyright right), bold +
+  uppercase titles, the custom size with its 12pt-slot-snapped
+  line-height, and the paper-centering shift ((right-left)/2) that the CSS
+  applies — without it a centered title lands (1.5in-0.76in)/2 right of
+  the paper's true center. The comment in each place says KEEP IN STEP:
+  one look, two renderers (editor CSS + this inline style).
+- FIXED ALONGSIDE (same feature, real bug): the title-region carve counted
+  only titlePage nodes, but computeBreaks counts the leading run of
+  titlePage OR screenplayImage as the title page — so a title-page logo
+  previewed at the top of script page 1. The carve now matches
+  computeBreaks (guarded: no titlePage in the run ⇒ a leading image is
+  ordinary body content, untouched), and an image block reserves its
+  paginator line budget instead of collapsing to one blank line.
+- check-v573 11/11 — computed styles AND geometry (title box center vs the
+  paper's center, 0.00px off; draft inside the left margin; script pages
+  unchanged). Gates: tsc 0, 943 tests (+5), build.
+
+### v5.72 — Pages tabs: Script / Title / Custom / All
 
 - Derek: "change the name of the tabs again so they are Script, Title,
   Custom, All. and put the tabs in that order." One edit in usePagesTabs
@@ -304,40 +333,12 @@ Durable bits kept live here:
   label) in three states — Navigator empty, Navigator with a type,
   Annotations window. Gates: tsc 0, 933 tests, build.
 
-### v5.68 — Navigator filter: the Scene Headings section
-
-- Derek (verbatim): "in the navigator filter window, change Filter
-  Annotations to 'Annotations'. Above that, add a new section in the
-  filter called 'Scene Headings'. the filter options should be INT. or
-  EXT., location, Contains X (type in a word or words)."
-- ONE predicate — utils/sceneFilters.navSceneHeadingMatch — serves the
-  chrome chip and the body's row test (NavSceneFilters {intExt,
-  location, contains}; EMPTY_NAV_SCENE_FILTERS; ephemeral in
-  sceneNavSlice like navFilter). INT/EXT reads the PREFIX the
-  Locations-window way: "has this kind", so INT./EXT. compounds pass
-  both. Location is an EXACT match on parseHeading().location —
-  time words strip, sub-places stay ("SPACE CARRIER - BRIDGE" is one
-  location, identical to the Locations window's grouping). Contains is
-  a case-blind substring over the whole heading; whitespace = inactive.
-- The pop: Scene Headings title, INT./EXT. as a markup-seg segment (the
-  Status toggle's classes — one look for one idea), a native Location
-  select fed by sceneHeadingLocations(s.scenes headings — live because
-  'navigator' is in SCENES_READERS), a Contains text field; then the
-  "Annotations" title (renamed) over the untouched TypeGridSection.
-  Chip = annotation filters + countActiveNavSceneFilters. Scene filters
-  gate ONLY kind==='scene' rows — annotations/notes/acts keep their own
-  filters (the View-menu independence rule).
-- Gates: tsc 0, 933 tests (+7 predicate/count/locations — fixture
-  lesson: 'EXT. SPACE - BELKADAN' parses location 'SPACE - BELKADAN',
-  only TIME WORDS strip after a dash), build, check-v568 10/10 (titles
-  renamed/ordered, EXT/INT rows, dropdown lists all 4 locations,
-  location narrows, chip=2 stacked, contains, clear restores).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.68** — Navigator filter: the Scene Headings section
 - **v5.67** — Pages window tabs: Script / Title Page / Custom; the tool retirement
 - **v5.66** — Focus tool: ? in the header + Design-window layout knobs
 - **v5.65** — the mid-heading caret jump (uppercase plugin, since v3.45)

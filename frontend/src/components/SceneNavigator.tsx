@@ -4,7 +4,7 @@ import { Editor } from '@tiptap/react';
 import { useEditorStore, EMPTY_SCENE_FILTERS, type SceneFilters } from '../stores/editorStore';
 import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlice';
 import { PAGES_PER_ROW_MIN, PAGES_PER_ROW_MAX } from '../stores/slices/sceneNavSlice';
-import { computeSceneLengths, computePageBlocks, type PageContentInfo } from '../editor/pagination';
+import { computeSceneLengths, computePageBlocks, type PageBlockInfo, type PageContentInfo } from '../editor/pagination';
 import {
   insertCustomPage, insertCustomPageAt, moveCustomPage, deleteCustomPage,
 } from '../editor/extensions';
@@ -585,11 +585,48 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   }), [refWidthPx, pageLayout, fontFamily, fontSize]);
 
   // Per-element inline style — same indentation as the editor
-  const getBlockStyle = useCallback((typeName: string, isFirst: boolean): React.CSSProperties => {
-    const [left, right] = FD_INDENTS[typeName] || [1.50, 7.50];
+  const getBlockStyle = useCallback((block: PageBlockInfo, isFirst: boolean): React.CSSProperties => {
+    /* v5.73, Derek ("the small version of the title page should display the
+       true format"): title-page blocks are NOT body elements. The editor
+       gives them the full printable width with no element indent, per-field
+       alignment, bold caps titles and a custom title size — that's what
+       `.title-page` / `.title-page-<field>` do in 06-editor-content.css, and
+       the preview reproduces it here rather than laying the title out with
+       action indents. KEEP THE TWO IN STEP: this block and those rules are
+       one look with two renderers (the editor's CSS, this inline style). */
+    if (block.typeName === 'titlePage') {
+      const field = block.titleField || 'title';
+      const isTitle = field === 'title' || field === 'title2';
+      // Centered fields center on the PAPER, not on the asymmetric printable
+      // box — the same half-difference shift the CSS applies, or the title
+      // lands (left − right)/2 off-center.
+      const shift = ((pageLayout.rightMargin - pageLayout.leftMargin) / 2) * 96;
+      const anchored = field === 'draft' || field === 'contact' || field === 'copyright';
+      const size = block.fontSizePt && block.fontSizePt !== 12 ? block.fontSizePt : 0;
+      return {
+        textAlign: field === 'draft' ? 'left'
+          : field === 'contact' || field === 'copyright' ? 'right'
+          : 'center',
+        marginLeft: anchored ? undefined : `${shift}px`,
+        marginRight: anchored ? undefined : `${-shift}px`,
+        fontWeight: isTitle ? 700 : undefined,
+        textTransform: isTitle ? 'uppercase' : undefined,
+        // The editor snaps a custom title size to whole 12pt line slots so the
+        // block's height still matches the paginator's line count.
+        ...(size ? { fontSize: `${size}pt`, lineHeight: `${Math.max(1, Math.ceil(size / 12)) * 12}pt` } : null),
+        ...(field === 'author' ? { lineHeight: 1.5 } : null),
+      };
+    }
+    // v5.73: an image reserves the line budget the paginator gave it, so the
+    // blocks under it sit where they really sit (it used to collapse to one
+    // blank line). The picture itself isn't drawn in a thumbnail.
+    if (block.typeName === 'screenplayImage') {
+      return { height: `${(block.imageLines ?? 8) * LINE_HEIGHT_PX}px` };
+    }
+    const [left, right] = FD_INDENTS[block.typeName] || [1.50, 7.50];
     const padL = Math.max(0, (left - pageLayout.leftMargin) * 96);
     const padR = Math.max(0, (pageLayout.pageWidth - right - pageLayout.rightMargin) * 96);
-    const sb = isFirst ? 0 : (SPACE_BEFORE[typeName] ?? 0);
+    const sb = isFirst ? 0 : (SPACE_BEFORE[block.typeName] ?? 0);
     return {
       paddingLeft: padL > 0 ? `${padL}px` : undefined,
       paddingRight: padR > 0 ? `${padR}px` : undefined,
@@ -1302,7 +1339,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                           <div
                             key={i}
                             className={`page-thumb-el page-thumb-${block.typeName}`}
-                            style={getBlockStyle(block.typeName, i === 0)}
+                            style={getBlockStyle(block, i === 0)}
                           >
                             {block.text || '\u00A0'}
                           </div>
