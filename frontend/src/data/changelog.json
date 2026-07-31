@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.68",
+    "date": "2026-07-31",
+    "changes": [
+      "Navigator filter: a new Scene Headings section leads the Filter window — INT. or EXT., a Location picker built from your script's own locations, and a Contains field for a word or words. The filters stack, count into the Filter chip, and touch only scene-heading rows.",
+      "The annotation section beneath it is now titled just \"Annotations\"."
+    ]
+  },
+  {
     "version": "5.67",
     "date": "2026-07-31",
     "changes": [

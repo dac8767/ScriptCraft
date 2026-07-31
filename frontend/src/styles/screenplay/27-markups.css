@@ -306,13 +306,35 @@
 
 .markup-subpop { position: fixed; z-index: 3300; }
 /* v5.46, Derek: the Navigator's Filter menu holds the annotation grid
-   under this title. */
+   under this title. v5.68: two titles now — "Scene Headings" leads with
+   its INT./EXT. + Location + Contains rows, "Annotations" follows. */
 .fs-nav-filter-title {
   font-size: 12px;
   font-weight: 700;
   color: var(--fd-text);
   padding: 2px 2px 8px;
 }
+/* v5.68: a later title separates from the section above it. */
+.fs-nav-filter-title + .fs-nav-filter-title,
+.fs-nav-scnf-row + .fs-nav-filter-title { padding-top: 10px; }
+.fs-nav-scnf-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 2px 4px;
+}
+.fs-nav-scnf-row .markup-filter-help { padding: 0; flex: 0 0 auto; }
+.fs-nav-scnf-select {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  font-size: 11px;
+  color: var(--fd-text);
+  background: var(--fd-input-bg, var(--fd-bg));
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+}
+.fs-nav-scnf-input { flex: 1; min-width: 0; }
 .markup-color-pop .color-picker-popup { position: static; }
 .markup-icon-pop {
   background: var(--fd-dropdown-bg);

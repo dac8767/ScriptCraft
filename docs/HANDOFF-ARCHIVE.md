@@ -151,9 +151,31 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.62 and older (newest first)
+## Version history — v5.63 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.63 — the cards speak the app's visual language (dark block = editable)
+
+- Derek (screenshot): "in almost all other windows, dark blocks are
+  editable text blocks… so the Faithful/Compressed/Reimagined/Yours
+  title blocks look like they are the editable fields. I tried clicking
+  on 'Yours' thinking thats where I was supposed to type." The v5.59
+  cards had it INVERTED: dark header bars (read as inputs) over
+  borderless transparent textareas (read as static text).
+- Fix, pure CSS: headers are plain text (no background/border); the
+  draft textareas wear the standard input dress — var(--fd-input-bg) +
+  var(--fd-border) 1px + radius, accent border on focus — the SAME as
+  .rw-note/.thes-input. Card frames/dividers dropped; cards separate by
+  spacing. The grow mirror carries the border THICKNESS but not its
+  color (a `border: 1px solid transparent` shorthand in the shared rule
+  initially clobbered the field's color at equal specificity — split
+  into border-width/style shared + per-element color).
+- check-v563 5/5 asserts the CONTRACT, not pixels: header bg transparent;
+  the draft field's computed background AND border EQUAL the note
+  field's; focus flips accent; grow stays exact with the border. Gates:
+  tsc 0, 916 tests, build.
+
 
 ### v5.62 — the note clears on a NEW target (disjoint-range rule)
 

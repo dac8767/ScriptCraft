@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.67 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.68 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -204,7 +204,36 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.67 — Pages window tabs: Script / Title Page / Custom (HEAD)
+### v5.68 — Navigator filter: the Scene Headings section (HEAD)
+
+- Derek (verbatim): "in the navigator filter window, change Filter
+  Annotations to 'Annotations'. Above that, add a new section in the
+  filter called 'Scene Headings'. the filter options should be INT. or
+  EXT., location, Contains X (type in a word or words)."
+- ONE predicate — utils/sceneFilters.navSceneHeadingMatch — serves the
+  chrome chip and the body's row test (NavSceneFilters {intExt,
+  location, contains}; EMPTY_NAV_SCENE_FILTERS; ephemeral in
+  sceneNavSlice like navFilter). INT/EXT reads the PREFIX the
+  Locations-window way: "has this kind", so INT./EXT. compounds pass
+  both. Location is an EXACT match on parseHeading().location —
+  time words strip, sub-places stay ("SPACE CARRIER - BRIDGE" is one
+  location, identical to the Locations window's grouping). Contains is
+  a case-blind substring over the whole heading; whitespace = inactive.
+- The pop: Scene Headings title, INT./EXT. as a markup-seg segment (the
+  Status toggle's classes — one look for one idea), a native Location
+  select fed by sceneHeadingLocations(s.scenes headings — live because
+  'navigator' is in SCENES_READERS), a Contains text field; then the
+  "Annotations" title (renamed) over the untouched TypeGridSection.
+  Chip = annotation filters + countActiveNavSceneFilters. Scene filters
+  gate ONLY kind==='scene' rows — annotations/notes/acts keep their own
+  filters (the View-menu independence rule).
+- Gates: tsc 0, 933 tests (+7 predicate/count/locations — fixture
+  lesson: 'EXT. SPACE - BELKADAN' parses location 'SPACE - BELKADAN',
+  only TIME WORDS strip after a dash), build, check-v568 10/10 (titles
+  renamed/ordered, EXT/INT rows, dropdown lists all 4 locations,
+  location narrows, chip=2 stacked, contains, clear restores).
+
+### v5.67 — Pages window tabs: Script / Title Page / Custom
 
 - Derek ("in the page window, add three tabs to the header…"): the Pages
   window's chrome carries Script / Title Page / Custom via the SAME
@@ -330,32 +359,12 @@ Durable bits kept live here:
   range against a wandering caret + carries the note), build,
   check-v564 4/4 (rule present, scoped, dash-free; targeting live).
 
-### v5.63 — the cards speak the app's visual language (dark block = editable)
-
-- Derek (screenshot): "in almost all other windows, dark blocks are
-  editable text blocks… so the Faithful/Compressed/Reimagined/Yours
-  title blocks look like they are the editable fields. I tried clicking
-  on 'Yours' thinking thats where I was supposed to type." The v5.59
-  cards had it INVERTED: dark header bars (read as inputs) over
-  borderless transparent textareas (read as static text).
-- Fix, pure CSS: headers are plain text (no background/border); the
-  draft textareas wear the standard input dress — var(--fd-input-bg) +
-  var(--fd-border) 1px + radius, accent border on focus — the SAME as
-  .rw-note/.thes-input. Card frames/dividers dropped; cards separate by
-  spacing. The grow mirror carries the border THICKNESS but not its
-  color (a `border: 1px solid transparent` shorthand in the shared rule
-  initially clobbered the field's color at equal specificity — split
-  into border-width/style shared + per-element color).
-- check-v563 5/5 asserts the CONTRACT, not pixels: header bg transparent;
-  the draft field's computed background AND border EQUAL the note
-  field's; focus flips accent; grow stays exact with the border. Gates:
-  tsc 0, 916 tests, build.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.63** — the cards speak the app's visual language (dark block = editable)
 - **v5.62** — the note clears on a NEW target (disjoint overlap rule)
 - **v5.61** — full-length suggestion cards, ONE scroll
 - **v5.60** — the rewrite target stays PAINTED (blur-proof), + the declutter eye

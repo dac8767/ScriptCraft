@@ -16,6 +16,7 @@ import { useNotebookStore } from '../stores/notebookStore';
 import { FaRegStickyNote } from 'react-icons/fa';
 import { ControlDropdown, ControlSearch } from './ToolControls';
 import { findNotePos } from '../utils/scriptNoteActions';
+import { countActiveNavSceneFilters, navSceneHeadingMatch, sceneHeadingLocations } from '../utils/sceneFilters';
 import { findMarkupPos, markupContentLines, markupNavLines, markupIsList, type MarkupNavLine } from '../utils/markupActions';
 import { MarkupIcon } from './markupIcons';
 import { MarkupNavLineSpans } from './MarkupNavLines';
@@ -61,12 +62,22 @@ interface NavigatorToolProps {
  *  kind toggles (Scene Headers / Acts / …) are gone, and the grid that
  *  lived in the body's "Annotations" button moved in here under a
  *  "Filter Annotations" title. Drives the SAME markupFilters the
- *  Annotations panel and the ribbon share. */
+ *  Annotations panel and the ribbon share.
+ *  v5.68, Derek: a "Scene Headings" section ABOVE it — INT./EXT.,
+ *  location, contains-text — and that title reads just "Annotations".
+ *  The predicate is utils/sceneFilters.navSceneHeadingMatch, the ONE
+ *  definition this chip and the body's row test share. */
 export function NavigatorControls() {
   const navFilter = useEditorStore((s) => s.navFilter);
   const setNavFilter = useEditorStore((s) => s.setNavFilter);
   const mkFilters = useEditorStore((s) => s.markupFilters);
   const setMkFilters = useEditorStore((s) => s.setMarkupFilters);
+  const scnf = useEditorStore((s) => s.navSceneFilters);
+  const setScnf = useEditorStore((s) => s.setNavSceneFilters);
+  // Live while this popover can exist: 'navigator' is in SCENES_READERS,
+  // so the store list rescans whenever the Navigator window is open.
+  const scenes = useEditorStore((s) => s.scenes);
+  const locOptions = useMemo(() => sceneHeadingLocations(scenes.map((sc) => sc.heading)), [scenes]);
   // v5.51, Derek: the Scene # toggle became a "View" MENU — Scene
   // Numbers / Annotations / Scene Headings, each a keep-open toggle.
   // Kind visibility rides navShowKinds (missing = shown).
@@ -80,7 +91,8 @@ export function NavigatorControls() {
   const pos = useSeat(open, btn, box);
   useDismiss(open, box, btn, () => setOpen(false));
   const types = useTypesInUse(mkFilters.hiddenIcons);
-  const chip = mkFilters.hiddenIcons.length + (mkFilters.done !== 'open' ? 1 : 0);
+  const chip = mkFilters.hiddenIcons.length + (mkFilters.done !== 'open' ? 1 : 0)
+    + countActiveNavSceneFilters(scnf);
   return (
     <>
       <ControlDropdown
@@ -111,7 +123,40 @@ export function NavigatorControls() {
       {open && createPortal(
         <div ref={box} className="markup-subpop markup-filter-pop" style={pos ?? { top: -9999, left: -9999 }}
           onPointerDown={(e) => e.stopPropagation()}>
-          <div className="fs-nav-filter-title">Filter Annotations</div>
+          {/* v5.68, Derek: Scene Headings filters lead the pop. The segment
+              row wears the Status toggle's classes — one look for one idea. */}
+          <div className="fs-nav-filter-title">Scene Headings</div>
+          <div className="markup-filter-statusrow">
+            <span className="markup-filter-help">INT. / EXT.: </span>
+            <span className="markup-seg markup-filter-seg">
+              {([['all', 'All'], ['int', 'INT.'], ['ext', 'EXT.']] as const).map(([id, label]) => (
+                <button key={id} className={scnf.intExt === id ? 'active' : ''}
+                  onClick={() => setScnf({ ...scnf, intExt: id })}>{label}</button>
+              ))}
+            </span>
+          </div>
+          <div className="fs-nav-scnf-row">
+            <span className="markup-filter-help">Location: </span>
+            <select
+              className="fs-nav-scnf-select"
+              value={scnf.location}
+              onChange={(e) => setScnf({ ...scnf, location: e.target.value })}
+            >
+              <option value="">All locations</option>
+              {locOptions.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </div>
+          <div className="fs-nav-scnf-row">
+            <span className="markup-filter-help">Contains: </span>
+            <input
+              className="tool-action-field fs-nav-scnf-input"
+              type="text"
+              placeholder="a word or words"
+              value={scnf.contains}
+              onChange={(e) => setScnf({ ...scnf, contains: e.target.value })}
+            />
+          </div>
+          <div className="fs-nav-filter-title">Annotations</div>
           <TypeGridSection
             done={mkFilters.done}
             onDone={(d) => setMkFilters({ ...mkFilters, done: d })}
@@ -234,9 +279,13 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
   // v5.51, Derek: the View menu governs scene-heading and annotation rows
   // (navShowKinds — missing = shown); other kinds always list until their
   // phase-2 retirement. Search stacks on top.
+  // v5.68: the Filter pop's Scene Headings section stacks on scene rows —
+  // annotations/notes/acts are untouched by it (they carry their own
+  // filters), exactly as the View menu hides kinds independently.
   const show = useEditorStore((s) => s.navShowKinds);
+  const scnf = useEditorStore((s) => s.navSceneFilters);
   const visible = items.filter(
-    (it) => (it.kind !== 'scene' || show.scene !== false)
+    (it) => (it.kind !== 'scene' || (show.scene !== false && navSceneHeadingMatch(it.text, scnf)))
       && (it.kind !== 'markup' || show.markup !== false)
       && (!filter || it.text.toLowerCase().includes(filter.toLowerCase())),
   );
