@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.70",
+    "date": "2026-07-31",
+    "changes": [
+      "Filter menus: \"Show all\" and \"Hide all\" now read \"Show all types\" / \"Hide all types\" — they act on the annotation types alone, and the labels say so (Navigator filter and the Annotations window's filter alike).",
+      "Navigator filter: a Reset button at the foot of the menu returns every filter to its default — INT./EXT., location, contains, annotation status and types."
+    ]
+  },
+  {
     "version": "5.69",
     "date": "2026-07-31",
     "changes": [

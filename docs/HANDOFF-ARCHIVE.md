@@ -151,9 +151,36 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.64 and older (newest first)
+## Version history — v5.65 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.65 — the mid-heading caret jump (uppercase plugin, since v3.45)
+
+- Derek's repro: changing "EXT. SPACE CARRIER - BELKADIN" to CRUISER —
+  "my cursor would jump to the end of the scene header after every
+  single letter typed." ROOT CAUSE in SceneHeading.ts's uppercase
+  appendTransaction: it replaced the WHOLE heading text node whenever
+  any character differed, and its comment's claim that same-length
+  replacement leaves the "selection untouched" is FALSE — a caret
+  strictly INSIDE a replaced range maps to the range's END. Appending
+  at the end never showed it (the caret sits on the boundary), which
+  is how it survived since v3.45. LESSON for the footgun list:
+  length-preserving ≠ selection-preserving; a caret inside any
+  replaced range maps to its end — replace only what changed.
+- Fix: replace only the DIFFERING RUNS (per-char scan inside the text
+  node) — a typed lowercase letter becomes a one-char replacement whose
+  boundary the caret sits on, which maps to itself. Still same-length
+  ⇒ the batch stays position-safe; v3.54's preventUpdate guard and
+  addToHistory:false untouched.
+- Proven red→green: the new caret test FAILED against the old code
+  (caret at heading end), passes now. check-v565 3/3 drives REAL
+  keystrokes through the view (types "ruiser" mid-heading → CRUISER in
+  place, head advances letter by letter). Gates: tsc 0, 920 tests,
+  build. (SIXTH sandbox rollback at batch start — standing recovery:
+  reset + npm install + Vite; cargo untouched this batch so GTK libs
+  not needed.)
+
 
 ### v5.64 — Rerun-with-note + the shared-language prompt rule
 

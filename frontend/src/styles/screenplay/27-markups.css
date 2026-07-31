@@ -480,6 +480,15 @@
   padding: 2px 0 2px;
 }
 .markup-filter-typerow .markup-filter-empty { padding: 2px 0; }
+/* v5.70: the Navigator filter's Reset — its own row under a divider, so it
+   reads as the MENU's action, not another type button. */
+.fs-nav-filter-resetrow {
+  border-top: 1px solid var(--fd-border);
+  margin-top: 6px;
+  padding: 6px 2px 2px;
+  display: flex;
+}
+.fs-nav-filter-reset { flex: 1; text-align: center; }
 
 /* highlight checkbox row */
 .markup-hl-check {

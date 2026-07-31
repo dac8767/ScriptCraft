@@ -16,7 +16,8 @@ import { useNotebookStore } from '../stores/notebookStore';
 import { FaRegStickyNote } from 'react-icons/fa';
 import { ControlDropdown, ControlSearch } from './ToolControls';
 import { findNotePos } from '../utils/scriptNoteActions';
-import { countActiveNavSceneFilters, navSceneHeadingMatch, sceneHeadingLocations } from '../utils/sceneFilters';
+import { countActiveNavSceneFilters, EMPTY_NAV_SCENE_FILTERS, navSceneHeadingMatch, sceneHeadingLocations } from '../utils/sceneFilters';
+import { EMPTY_MARKUP_FILTERS } from '../stores/slices/markupsSlice';
 import { findMarkupPos, markupContentLines, markupNavLines, markupIsList, type MarkupNavLine } from '../utils/markupActions';
 import { MarkupIcon } from './markupIcons';
 import { MarkupNavLineSpans } from './MarkupNavLines';
@@ -171,6 +172,19 @@ export function NavigatorControls() {
             onShowAll={() => setMkFilters({ ...mkFilters, hiddenIcons: [] })}
             onHideAll={() => setMkFilters({ ...mkFilters, hiddenIcons: types })}
           />
+          {/* v5.70, Derek: Reset — the WHOLE menu back to defaults, scene
+              filters and annotation filters alike. Both writes use the same
+              constants the store starts from (EMPTY_*), so "default" can't
+              drift from what a fresh session shows. The annotation half is
+              the SHARED markupFilters — resetting here resets the
+              Annotations panel/ribbon view too, which is v5.46's one-filter
+              design working as intended. */}
+          <div className="fs-nav-filter-resetrow">
+            <button
+              className="markup-hl-clear fs-nav-filter-reset"
+              onClick={() => { setScnf(EMPTY_NAV_SCENE_FILTERS); setMkFilters(EMPTY_MARKUP_FILTERS); }}
+            >Reset</button>
+          </div>
         </div>,
         document.body,
       )}

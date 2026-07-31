@@ -457,9 +457,11 @@ export function TypeGridSection({ done, onDone, types, hidden, onToggle, onShowA
           </div>
         )}
       </div>
+      {/* v5.70, Derek: say WHAT they cover — these two act on the type
+          buttons above, not on the whole filter menu. */}
       <div className="markup-filter-allrow">
-        <button className="markup-hl-clear" onClick={onShowAll}>Show all</button>
-        <button className="markup-hl-clear" onClick={onHideAll}>Hide all</button>
+        <button className="markup-hl-clear" onClick={onShowAll}>Show all types</button>
+        <button className="markup-hl-clear" onClick={onHideAll}>Hide all types</button>
       </div>
     </>
   );

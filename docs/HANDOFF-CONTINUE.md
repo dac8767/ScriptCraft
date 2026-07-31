@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.69 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.70 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,7 +227,24 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.69 — the type grid rides one row with "Type:" (HEAD)
+### v5.70 — "…all types" labels + the Navigator filter's Reset (HEAD)
+
+- Derek: (1) "make it clear that 'Show all' and 'Hide all' apply to the
+  annotation types only" — renamed IN TypeGridSection ("Show all types" /
+  "Hide all types"), so both doors (Navigator filter, Annotations
+  window's filter) say it. (2) "add a button to the navigator filter
+  menu called 'Reset'… resets everything back to the default options" —
+  a divider row at the menu's foot; onClick writes
+  EMPTY_NAV_SCENE_FILTERS + EMPTY_MARKUP_FILTERS — the SAME constants
+  the store initializes from, so "default" cannot drift from a fresh
+  session. Navigator-only (the ask named that menu); the annotation half
+  is the shared markupFilters, so Reset also resets the Annotations
+  panel/ribbon view — v5.46's one-filter design, working as intended.
+- check-v570 8/8 (labels in both doors, all five controls dirtied →
+  chip 5 → Reset → store defaults, visible control states, chip gone,
+  no Reset added elsewhere). Gates: tsc 0, 933 tests, build.
+
+### v5.69 — the type grid rides one row with "Type:"
 
 - Derek (screenshot of the v5.68 pop): "change 'annotation types' to
   'Type:' show the buttons after that, so the format matches the rest of
@@ -343,37 +360,12 @@ Durable bits kept live here:
   moving real computed styles, reset, Design group listed). SEVENTH
   rollback at batch start (standing recovery).
 
-### v5.65 — the mid-heading caret jump (uppercase plugin, since v3.45)
-
-- Derek's repro: changing "EXT. SPACE CARRIER - BELKADIN" to CRUISER —
-  "my cursor would jump to the end of the scene header after every
-  single letter typed." ROOT CAUSE in SceneHeading.ts's uppercase
-  appendTransaction: it replaced the WHOLE heading text node whenever
-  any character differed, and its comment's claim that same-length
-  replacement leaves the "selection untouched" is FALSE — a caret
-  strictly INSIDE a replaced range maps to the range's END. Appending
-  at the end never showed it (the caret sits on the boundary), which
-  is how it survived since v3.45. LESSON for the footgun list:
-  length-preserving ≠ selection-preserving; a caret inside any
-  replaced range maps to its end — replace only what changed.
-- Fix: replace only the DIFFERING RUNS (per-char scan inside the text
-  node) — a typed lowercase letter becomes a one-char replacement whose
-  boundary the caret sits on, which maps to itself. Still same-length
-  ⇒ the batch stays position-safe; v3.54's preventUpdate guard and
-  addToHistory:false untouched.
-- Proven red→green: the new caret test FAILED against the old code
-  (caret at heading end), passes now. check-v565 3/3 drives REAL
-  keystrokes through the view (types "ruiser" mid-heading → CRUISER in
-  place, head advances letter by letter). Gates: tsc 0, 920 tests,
-  build. (SIXTH sandbox rollback at batch start — standing recovery:
-  reset + npm install + Vite; cargo untouched this batch so GTK libs
-  not needed.)
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.65** — the mid-heading caret jump (uppercase plugin, since v3.45)
 - **v5.64** — Rerun-with-note + the shared-language prompt rule
 - **v5.63** — the cards speak the app's visual language (dark block = editable)
 - **v5.62** — the note clears on a NEW target (disjoint overlap rule)
