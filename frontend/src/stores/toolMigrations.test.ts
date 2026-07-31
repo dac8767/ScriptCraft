@@ -36,3 +36,31 @@ describe('v5.21: the retired todo id migrates onto sticky', () => {
     expect(useEditorStore.getState().activeToolRight).toBe('sticky');
   });
 });
+
+describe("v5.67: the retired titlepage id migrates onto pages (+ the tab)", () => {
+  it('toolOrder maps titlepage → pages without duplicating', () => {
+    expect(migrateToolOrder(['pages', 'titlepage', 'characters'])).toEqual(['pages', 'characters']);
+    expect(migrateToolOrder(['titlepage', 'characters'])).toEqual(['pages', 'characters']);
+  });
+
+  it('toolConfig drops titlepage and hands its enabled flag to pages', () => {
+    expect(migrateToolConfig({
+      titlepage: { side: 'left', enabled: true },
+      pages: { side: 'left', enabled: false },
+    })).toEqual({ pages: { side: 'left', enabled: true } });
+  });
+
+  it("openTool('titlepage') opens Pages on the Title Page tab", async () => {
+    useEditorStore.setState({
+      toolMode: {}, activeTool: null, activeToolRight: null,
+      tempTool: null, fullscreenTool: null, navigatorOpen: true, shelfOpen: true,
+      pagesTab: 'script',
+    });
+    useEditorStore.getState().openTool('titlepage');
+    // pages lives in the LEFT dock by default
+    expect(useEditorStore.getState().activeTool).toBe('pages');
+    // the tab lands via the remap's deferred set (the indexcards pattern)
+    await new Promise((r) => setTimeout(r, 0));
+    expect(useEditorStore.getState().pagesTab).toBe('title');
+  });
+});

@@ -381,8 +381,12 @@ export type ToolId =
   | 'navigator' | 'scenes' | 'pages' | 'structure' | 'locations' | 'characters'
   | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets' | 'markups'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
-  | 'spelling' | 'history' | 'titlepage' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
+  | 'spelling' | 'history' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
   | 'notebook' | 'design' | 'workspaces' | 'feedback' | 'thesaurus' | 'rewrite'
+  /** legacy — the standalone Title Page tool became the Pages window's
+   *  Title Page TAB (v5.67); persisted layouts migrate onto 'pages',
+   *  openTool remaps and lands on that tab. */
+  | 'titlepage'
   /** legacy — the v4.95 dev-only Airtable panel, removed v5.21. Stays in
    *  the union so a dev-era persisted layout still typechecks; ALL_TOOLS
    *  doesn't carry it, so it renders nowhere (the 'scriptnotes' precedent). */
@@ -544,8 +548,11 @@ export const PANEL_LOCKED_TOOLS: ToolId[] = ['markups', 'navigator'];   // v5.31
  *  the scrapbook)." These tools have ONE shape — the fullscreen takeover:
  *  every open path routes there (openTool ignores any remembered mode), the
  *  takeover hides its shrink-to-window button, and the generic fullscreen
- *  button is dropped (there is nothing to toggle into). */
-export const FULLSCREEN_ONLY_TOOLS: ToolId[] = ['titlepage'];
+ *  button is dropped (there is nothing to toggle into).
+ *  v5.67: EMPTY — the Title Page (its only member) became the Pages
+ *  window's Title Page tab. The machinery stays for the next
+ *  takeover-shaped tool. */
+export const FULLSCREEN_ONLY_TOOLS: ToolId[] = [];
 
 export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   // v0.68: the default panel layout. LEFT = script-structure windows;
@@ -556,7 +563,6 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   navigator: { side: 'left', enabled: true },
   scenes: { side: 'left', enabled: true },
   pages: { side: 'left', enabled: true },
-  titlepage: { side: 'left', enabled: true },
   characters: { side: 'left', enabled: true },
   locations: { side: 'left', enabled: true },
   spelling: { side: 'left', enabled: true },
@@ -586,7 +592,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
  *  Customize renders a stable partition by side, so this is also the order
  *  within each panel. 'Reset to Default' restores exactly this. */
 export const DEFAULT_TOOL_ORDER: string[] = [
-  'navigator', 'scenes', 'pages', 'titlepage', 'characters', 'locations', 'spelling', 'assets',
+  'navigator', 'scenes', 'pages', 'characters', 'locations', 'spelling', 'assets',
   'sticky', 'markups', 'fragments', 'beatboard', 'highlights', 'goals', 'typewriter', 'aiwriter', 'thesaurus', 'rewrite', 'notebook', 'analytics',
   'tags',
 ];
@@ -647,7 +653,9 @@ export function migrateDesignToolMode(
   return rest;
 }
 
-const RETIRED_TOOL_IDS: Record<string, string> = { indexcards: 'scenes', todo: 'sticky' };
+/** Exported (v5.67) so workspacesSlice normalizes snapshot activeTool fields
+ *  from the SAME map — its applyWorkspace hardcoded 'indexcards' before. */
+export const RETIRED_TOOL_IDS: Record<string, string> = { indexcards: 'scenes', todo: 'sticky', titlepage: 'pages' };
 export function migrateToolOrder(order: string[]): string[] {
   const out: string[] = [];
   for (const raw of order) {
@@ -1725,6 +1733,15 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     if (tool === 'todo') {
       // Legacy id — To-Do lives in the merged Sticky Notes window (v5.21).
       tool = 'sticky';
+    }
+    if (tool === 'titlepage') {
+      // Legacy id — the Title Page is the Pages window's Title Page tab
+      // (v5.67). Same shape as the indexcards remap: land on the right
+      // view, then open the heir. (Live code — the Production menu — sets
+      // the tab itself; this catches persisted ribbons/layouts/callers.)
+      saveViewState({ pagesTab: 'title' });
+      setTimeout(() => set({ pagesTab: 'title' }), 0);
+      tool = 'pages';
     }
     // v5.46, Derek: "clicking the design tool should not close any windows."
     // Design is the tweak-ALONGSIDE tool — its home is its OWN independent

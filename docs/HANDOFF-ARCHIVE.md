@@ -151,9 +151,24 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.46 and older (newest first)
+## Version history — v5.62 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.62 — the note clears on a NEW target (disjoint-range rule)
+
+- Derek: "delete the text in the context/intent text field when a new set
+  of text is highlighted." Rule chosen: the note clears when the live
+  target resolves DISJOINT from the last ok-target (lastOkTargetRef,
+  overlap test in the debounced sync). Deliberately NOT position-equality:
+  positions drift as you type inside the passage — an equality rule would
+  wipe the note mid-thought on every keystroke or on clicking back into
+  the same paragraph. Overlap = same working area = keep; disjoint = new
+  text = clear. Focusing the field itself never clears (no editor
+  selectionUpdate fires).
+- check-v562 4/4 (written → kept within passage → cleared on a different
+  paragraph → survives field focus). Gates: tsc 0, 916 tests, build.
+
 
 ### v5.61 — full-length suggestion cards, ONE scroll
 

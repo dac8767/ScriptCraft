@@ -4,6 +4,7 @@
 // The `scenes` list itself stays in editorStore (doc-derived, used broadly).
 import type { StateCreator } from 'zustand';
 import { EMPTY_SCENE_FILTERS, EMPTY_SCENE_NAV_DATA, type EditorState, type SceneFilters, type SceneNavData } from '../editorStore';
+import { EMPTY_NAV_SCENE_FILTERS, type NavSceneFilters } from '../../utils/sceneFilters';
 import { _vs, saveViewState } from '../viewState';
 
 export interface SceneNavSlice {
@@ -46,6 +47,18 @@ export interface SceneNavSlice {
    *  the grid ref and the editor — performs it and clears the request. */
   pagesGotoRequest: number | null;
   setPagesGotoRequest: (n: number | null) => void;
+  /** v5.67, Derek: the Pages window's header TABS — Script (the script's
+   *  pages), Title Page (the whole title-page editor, replacing the retired
+   *  standalone tool), Custom (create/manage custom pages). Persisted like
+   *  the Characters tab (charActiveTab), and in the store because the tabs
+   *  render in the window CHROME while the body switches on the value. */
+  pagesTab: PagesTab;
+  setPagesTab: (t: PagesTab) => void;
+  /** v5.68: the Navigator filter's Scene Headings section — INT./EXT.,
+   *  location, contains-text. Ephemeral like navFilter; in the store because
+   *  the controls live in the chrome popover and the list in the body. */
+  navSceneFilters: NavSceneFilters;
+  setNavSceneFilters: (f: NavSceneFilters) => void;
   /** v5.08, Derek: the preview scale is stated as what it MEANS — how many
    *  pages sit on a row — stepped with buttons, never typed. Replaces the
    *  v4.94 pagesThumbPx column-width model. */
@@ -65,6 +78,7 @@ export interface SceneNavSlice {
 
 export type LocationFilter = 'all' | 'int' | 'ext';
 export type LocationSort = 'scene' | 'name' | 'count';
+export type PagesTab = 'script' | 'title' | 'custom';
 
 /** v5.08: the grid is `repeat(<count>, 1fr)` — the number IS the meaning.
  *  (v4.94's pagesThumbPx set a column min-width and let auto-fill derive the
@@ -108,6 +122,13 @@ export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlic
   setPagesSearch: (v) => set({ pagesSearch: v }),
   pagesGotoRequest: null,
   setPagesGotoRequest: (n) => set({ pagesGotoRequest: n }),
+  pagesTab: (_vs.pagesTab as PagesTab) ?? 'script',
+  setPagesTab: (t) => {
+    saveViewState({ pagesTab: t });
+    set({ pagesTab: t });
+  },
+  navSceneFilters: EMPTY_NAV_SCENE_FILTERS,
+  setNavSceneFilters: (f) => set({ navSceneFilters: f }),
   pagesPerRow: PAGES_PER_ROW_DEFAULT,
   // Clamped HERE, not at the buttons, so no caller can push it out of range.
   setPagesPerRow: (v) => set({ pagesPerRow: Math.min(PAGES_PER_ROW_MAX, Math.max(PAGES_PER_ROW_MIN, Math.round(v))) }),

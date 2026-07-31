@@ -16,13 +16,12 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { CHROME_SCALES, chromePx, ICON_RAIL_W } from './chromeSizes';
 import AssetManager from './AssetManager';
-import TitlePagePanel from './TitlePagePanel';
 import VersionHistory from './VersionHistory';
 import SpellCheckPanel from './SpellCheckPanel';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard,
-  FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaFileAlt, FaHistory,
+  FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaHistory,
   FaKeyboard, FaRobot, FaBook, FaBookOpen, FaSlidersH, FaColumns,
   FaCommentDots, FaChevronRight, FaChevronDown, FaMarker, FaMagic,
 } from 'react-icons/fa';
@@ -33,7 +32,7 @@ import { FullscreenIcon, CloseIcon, RestoreIcon } from './uiIcons';
 import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
 import { showToast } from './Toast';
 import { useProjectStore } from '../stores/projectStore';
-import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, PagesControls, LocationsTitleExtra, LocationsControls, StructureTitleExtra, type NavTab } from './SceneNavigator';
+import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, PagesControls, usePagesTabs, LocationsTitleExtra, LocationsControls, StructureTitleExtra, type NavTab } from './SceneNavigator';
 import NavigatorTool, { NavigatorControls } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
@@ -134,10 +133,11 @@ export const ALL_TOOLS: ToolDef[] = [
   // v2.01: renamed Scrapbook (label only — the 'notebook' id and the
   // opendraft:notebook storage key persist user data and keep their names).
   { id: 'notebook', label: 'Scrapbook', icon: <FaBook />, defaultSize: { w: 300, h: 420 }, group: 3, keepOpenOnEditorClick: true },
-  // v0.89: fixed — the Title Page form is a set-size box, so the window is sized
-  // to it exactly and can't be resized. Nothing else is fixed; every other tool
-  // genuinely uses the space it's given.
-  { id: 'titlepage', label: 'Title Page', icon: <FaFileAlt />, defaultSize: { w: 520, h: 560 }, group: 3, noPanelFit: true, fixedSize: true, neverDock: true },
+  // v5.67, Derek: the standalone Title Page tool is retired — it's the Pages
+  // window's Title Page TAB now. The 'titlepage' id migrates onto 'pages'
+  // the way 'indexcards'/'todo' did (RETIRED_TOOL_IDS; openTool also lands
+  // on the tab). The Production menu entry and the toolbar's modal door
+  // still open the same TitlePageEditor.
   // v0.96: Customize is NOT a tool. It's the permanent button in the chrome, so
   // it can't be docked, hidden, or added to a panel/toolbar — removing it from
   // ALL_TOOLS is what takes it out of both Customize tabs, since those lists are
@@ -352,8 +352,9 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   // v4.32 batch-v8 #11/#12: counts beside the title; their in-body title
   // rows are gone (Structure counts acts).
   // v4.94, Derek: Pages gains a header search and the two preview-scaling
-  // buttons.
-  pages: { TitleExtra: PagesTitleExtra, Controls: PagesControls },
+  // buttons. v5.67: Script / Title Page / Custom header tabs (usePagesTabs);
+  // the controls hide themselves off the Script tab.
+  pages: { TitleExtra: PagesTitleExtra, useTabs: usePagesTabs, Controls: PagesControls },
   // v4.92, Derek: Locations gains Filter · Sort · Search — its header strip
   // held nothing but the window buttons and read as crushed.
   locations: { TitleExtra: LocationsTitleExtra, Controls: LocationsControls },
@@ -376,7 +377,7 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
 };
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
-export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'titlepage', 'history'];
+export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'history'];
 export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 
 /** v4.35 batch-v9 #4, Derek: EVERY side-panel window gets a fullscreen button
@@ -452,7 +453,7 @@ export function ToolFullscreenTakeover({ editor, scrollContainer }: {
         />
       </div>
       <div className="fs-tool-takeover-body">
-        <ToolContent id={id} editor={editor} scrollContainer={scrollContainer} onClose={close} />
+        <ToolContent id={id} editor={editor} scrollContainer={scrollContainer} />
       </div>
     </div>
   );
@@ -482,12 +483,11 @@ export const dockWidthFor = (
   customPx?: number,
 ) => chromePx(side === 'left' ? 'panelLeft' : 'panelRight', mode, customPx);
 
-/** Shared tool-content renderer (docked and temporary windows). */
-export function ToolContent({ id, editor, scrollContainer, onClose }: {
+/** Shared tool-content renderer (docked and temporary windows).
+ *  (v5.67: the onClose prop is gone — its one reader was the hosted Title
+ *  Page modal, retired into the Pages window's tab.) */
+export function ToolContent({ id, editor, scrollContainer }: {
   id: ToolId; editor: Editor | null; scrollContainer?: HTMLDivElement | null;
-  /** v0.89: lets a hosted modal (Title Page) close the window it lives in —
-   *  its Cancel/Apply buttons call onClose, which used to be a no-op. */
-  onClose?: () => void;
 }) {
   const { currentProject } = useProjectStore();
   switch (id) {
@@ -503,8 +503,6 @@ export function ToolContent({ id, editor, scrollContainer, onClose }: {
       return <SceneNavigator editor={editor} scrollContainer={scrollContainer} view={id as NavTab} />;
     case 'characters':
       return <CharacterProfiles editor={editor} projectId={currentProject?.id || ''} embedded />;
-    case 'titlepage':
-      return <TitlePagePanel editor={editor} onClose={onClose} />;
     case 'assets':
       return <AssetManager projectId={currentProject?.id || ''} embedded />;
     case 'spelling':
@@ -1209,7 +1207,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                   </span>
                 </div>
                 <div className="tool-inline-body" style={solo ? undefined : { height: activeSize!.h }}>
-                  <ToolContent id={active!.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />
+                  <ToolContent id={active!.id} editor={editor} scrollContainer={scrollContainer} />
                 </div>
                 {/* v5.30, Derek: shape-limited tools SAY so at the bottom of
                     their side-panel window instead of just missing buttons. */}
@@ -1231,7 +1229,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
 
       {active && !inline && (
         <ToolWindowFrame tool={active} side={side} onClose={() => setActive(null)}>
-          <ToolContent id={active.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setActive(null)} />
+          <ToolContent id={active.id} editor={editor} scrollContainer={scrollContainer} />
         </ToolWindowFrame>
       )}
     </div>
@@ -1262,7 +1260,7 @@ export function TempToolWindow({ editor, scrollContainer }: {
   return (
     <div className="tool-temp-anchor">
       <ToolWindowFrame tool={tool} onClose={() => setTempTool(null)} temporary>
-        <ToolContent id={tool.id} editor={editor} scrollContainer={scrollContainer} onClose={() => setTempTool(null)} />
+        <ToolContent id={tool.id} editor={editor} scrollContainer={scrollContainer} />
       </ToolWindowFrame>
     </div>
   );

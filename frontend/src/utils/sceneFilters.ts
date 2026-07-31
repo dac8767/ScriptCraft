@@ -183,3 +183,49 @@ export function filterSceneIndices(
     return acc;
   }, [] as number[]);
 }
+
+// ── Navigator: Scene Headings filter (v5.68) ────────────────────────────
+
+/** v5.68, Derek: the Navigator filter window's "Scene Headings" section —
+ *  INT. or EXT., location, and a contains-text field. Distinct from the
+ *  Scenes tool's SceneFilters on purpose: the Navigator filters heading
+ *  ROWS by the heading text alone (no synopsis/characters/colors there).
+ *  The predicate lives here so the chrome popover (chip count) and the
+ *  list body (row test) read ONE definition. */
+export interface NavSceneFilters {
+  intExt: 'all' | 'int' | 'ext';
+  /** UPPERCASE location name, '' = all. Compared against parseHeading().location. */
+  location: string;
+  /** Free text; a heading survives when it contains it (case-insensitive). */
+  contains: string;
+}
+
+export const EMPTY_NAV_SCENE_FILTERS: NavSceneFilters = { intExt: 'all', location: '', contains: '' };
+
+/** Same INT/EXT reading as the Locations window (visibleLocations): the test
+ *  is "does the prefix mention this kind", so "INT./EXT. CAR" passes both. */
+export function navSceneHeadingMatch(heading: string, f: NavSceneFilters): boolean {
+  if (f.intExt !== 'all') {
+    const p = parseHeading(heading).prefix.toUpperCase();
+    if (!p.includes(f.intExt === 'int' ? 'INT' : 'EXT')) return false;
+  }
+  if (f.location && parseHeading(heading).location.toUpperCase() !== f.location) return false;
+  const q = f.contains.trim().toLowerCase();
+  if (q && !heading.toLowerCase().includes(q)) return false;
+  return true;
+}
+
+export function countActiveNavSceneFilters(f: NavSceneFilters): number {
+  return (f.intExt !== 'all' ? 1 : 0) + (f.location ? 1 : 0) + (f.contains.trim() ? 1 : 0);
+}
+
+/** The distinct locations among `headings`, UPPERCASE, A–Z — the Navigator
+ *  filter's location dropdown options. */
+export function sceneHeadingLocations(headings: string[]): string[] {
+  const set = new Set<string>();
+  for (const h of headings) {
+    const loc = parseHeading(h).location.toUpperCase();
+    if (loc) set.add(loc);
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b));
+}

@@ -878,6 +878,21 @@
   padding: 4px 0 3px;
   margin: 0 4px;
 }
+/* v5.67: the Custom tab's position note ("· before page 7") — the
+   interleaved grid that used to show a custom page's spot is gone. */
+.page-thumb-pos { font-weight: 400; }
+
+/* v5.67: the Title Page tab hosts the whole title-page editor. The host
+   fills the window body and scrolls; .fs-tp-narrow (measured by the body,
+   not @media) stacks the editor's two columns — see the lockstep block in
+   06-editor-content.css beside the mobile @media rules. */
+.fs-pages-titlehost {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
 
 /* Element visual styling only — layout (padding, margin) is inline */
 .page-thumb-el {

@@ -10,7 +10,7 @@
 import type { StateCreator } from 'zustand';
 import { _vs, saveViewState } from '../viewState';
 import type { EditorState, WorkspaceSnapshot, ToolId } from '../editorStore';
-import { migrateToolConfig, migrateToolOrder } from '../editorStore';
+import { migrateToolConfig, migrateToolOrder, RETIRED_TOOL_IDS } from '../editorStore';
 
 export interface WorkspacesSlice {
   /** Named saved layouts (View → Workspaces) */
@@ -78,21 +78,28 @@ export const createWorkspacesSlice: StateCreator<EditorState, [], [], Workspaces
     const s = get();
     const raw = s.workspaces[name];
     if (!raw) return;
-    // v4.24 batch 7: snapshots saved before the Scenes / Index Cards merge may
-    // still carry the retired 'indexcards' id — normalize once, then apply.
+    // v4.24 batch 7: snapshots saved before a tool retirement may still carry
+    // the retired id — normalize once, then apply. v5.67: the active-slot
+    // fields read RETIRED_TOOL_IDS (the same map migrateToolOrder/Config use)
+    // instead of a hardcoded 'indexcards', so 'todo' and 'titlepage'
+    // snapshots heal too.
     const snap: WorkspaceSnapshot = {
       ...raw,
       toolConfig: migrateToolConfig(raw.toolConfig),
       toolOrder: migrateToolOrder(raw.toolOrder),
       toolbarPinnedTools: migrateToolOrder((raw.toolbarPinnedTools as string[]) ?? []) as ToolId[],
-      ...(raw.activeTool === 'indexcards' ? { activeTool: 'scenes' as ToolId } : {}),
-      ...(raw.activeToolRight === 'indexcards' ? { activeToolRight: 'scenes' as ToolId } : {}),
+      ...(raw.activeTool && RETIRED_TOOL_IDS[raw.activeTool] ? { activeTool: RETIRED_TOOL_IDS[raw.activeTool] as ToolId } : {}),
+      ...(raw.activeToolRight && RETIRED_TOOL_IDS[raw.activeToolRight] ? { activeToolRight: RETIRED_TOOL_IDS[raw.activeToolRight] as ToolId } : {}),
     };
     // v0.12 fields are optional (older snapshots): only restore when captured.
     const extras: Partial<EditorState> = {};
     // A workspace that had Index Cards showing reopens Scenes in Cards view.
     if (raw.activeTool === 'indexcards' || raw.activeToolRight === 'indexcards') {
       extras.scenesViewMode = 'cards';
+    }
+    // v5.67: one that had the Title Page window reopens Pages on its tab.
+    if (raw.activeTool === 'titlepage' || raw.activeToolRight === 'titlepage') {
+      extras.pagesTab = 'title';
     }
     if (snap.toolbarMode !== undefined) extras.toolbarMode = snap.toolbarMode;
     if (snap.activeTool !== undefined) { extras.activeTool = snap.activeTool; extras.tempTool = null; }

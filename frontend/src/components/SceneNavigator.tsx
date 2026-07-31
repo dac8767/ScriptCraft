@@ -10,12 +10,13 @@ import {
 } from '../editor/extensions';
 import { useSeat, useDismiss } from './MarkupPickers';
 import { confirmDialog } from './ConfirmDialog';
+import TitlePagePanel from './TitlePagePanel';
 import { computeSceneTiming, formatSceneDuration } from '../utils/scriptTiming';
 import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
 import { parseHeading, computeSceneFilterDetails, sceneFilterOptions, filterSceneIndices, countActiveSceneFilters, type SceneFilterDetail } from '../utils/sceneFilters';
 import { useSceneReorder } from '../utils/useSceneReorder';
-import { ControlDropdown, ControlSearch, PerRowStepper } from './ToolControls';
+import { ControlDropdown, ControlSearch, PerRowStepper, type ToolChromeTab } from './ToolControls';
 import { SceneReorderBar } from './IndexCards';
 import { LuLayoutGrid, LuList } from 'react-icons/lu';
 import { FaChevronRight, FaChevronDown, FaEllipsisV, FaHashtag } from 'react-icons/fa';
@@ -103,6 +104,15 @@ export function pagesMatching(pages: PageContentInfo[], query: string): PageCont
   const q = query.trim().toLowerCase();
   if (!q) return pages;
   return pages.filter((p) => p.blocks.some((b) => (b.text || '').toLowerCase().includes(q)));
+}
+
+/** v5.67: the Custom tab's position note. A custom page carries the NEXT
+ *  script page's number without consuming it (v5.40), so "before page N" is
+ *  that number read out; one past the last script page = the script's end.
+ *  '' when there are no script pages to be positioned against. */
+export function customPagePosLabel(page: PageContentInfo, lastScriptPage: number): string {
+  if (!lastScriptPage) return '';
+  return page.pageNumber <= lastScriptPage ? `before page ${page.pageNumber}` : 'end of script';
 }
 
 // ── Search highlight helper ─────────────────────────────────────────────
@@ -300,19 +310,24 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const [thumbScale, setThumbScale] = useState(0.35);
   const [currentVisiblePage, setCurrentVisiblePage] = useState(1);
 
-  /* v5.44, Derek: "+ Add Page" dropdown (Add Custom Page → "Add after
-     page #:", Add/Edit Title Page), the per-custom-thumb ⋮ menu (Move /
-     Delete), and drag-to-reposition for custom thumbs. */
+  /* v5.44, Derek: "+ Add Custom Page" → the "Add after page #:" pop, the
+     per-custom-thumb ⋮ menu (Move / Delete), and drag-to-reposition for
+     custom thumbs. (v5.67: the pop IS the form — the old two-item stage
+     lost its other item to the Title Page tab.) */
   const [addPageOpen, setAddPageOpen] = useState(false);
-  const [addAfterMode, setAddAfterMode] = useState(false);
   const [afterPageNum, setAfterPageNum] = useState('');
   const addBtnRef = useRef<HTMLButtonElement>(null);
   const addPopRef = useRef<HTMLDivElement>(null);
   const addPos = useSeat(addPageOpen, addBtnRef, addPopRef);
   const closeAddPage = useCallback(() => {
-    setAddPageOpen(false); setAddAfterMode(false); setAfterPageNum('');
+    setAddPageOpen(false); setAfterPageNum('');
   }, []);
   useDismiss(addPageOpen, addPopRef, addBtnRef, closeAddPage);
+
+  /* v5.67: the Title Page tab's host — measured for the narrow (stacked)
+     form layout. Class, not @media: the trigger is this box's width. */
+  const tpHostRef = useRef<HTMLDivElement>(null);
+  const [tpNarrow, setTpNarrow] = useState(false);
 
   const [kebabFor, setKebabFor] = useState<string | null>(null);
   const [kebabMove, setKebabMove] = useState(false);
@@ -462,6 +477,17 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const pagesPerRow = Math.max(pagesPerRowMin, pagesPerRowRaw);
   const shownPages = useMemo(() => pagesMatching(pageContent, pagesSearch), [pageContent, pagesSearch]);
 
+  /* v5.67, Derek: Script / Title Page / Custom header tabs. Script = the
+     script's pages ONLY (customs left this grid); Custom = the custom pages
+     with their add/move/delete flows; Title Page hosts the whole title-page
+     editor (the standalone tool is retired). Search applies where its
+     control shows — the Script tab; the Custom grid always lists all. */
+  const pagesTab = useEditorStore((s) => s.pagesTab);
+  const setPagesTab = useEditorStore((s) => s.setPagesTab);
+  const scriptPages = useMemo(() => shownPages.filter((p) => !p.isCustom), [shownPages]);
+  const customPages = useMemo(() => pageContent.filter((p) => p.isCustom), [pageContent]);
+  const gridPages = pagesTab === 'custom' ? customPages : scriptPages;
+
   /* v5.44: page-boundary math for Add / Move / drag-drop. "After page N" =
      the doc position where the NEXT page's first block starts (doc end when
      N is the last page); 0 = before script page 1. All three doors — the
@@ -497,15 +523,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     }
     return 0;
   }, [pageContent]);
-
-  // Title page: the doc either carries titlePage nodes already or it doesn't —
-  // the menu label says which, and either way the Title Page window is the door.
-  const hasTitlePage = useMemo(() => {
-    if (!addPageOpen || !editor) return false;
-    let found = false;
-    editor.state.doc.forEach((node) => { if (node.type.name === 'titlePage') found = true; });
-    return found;
-  }, [addPageOpen, editor]);
 
   const submitAddAfter = useCallback(() => {
     if (!editor) return;
@@ -571,7 +588,9 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   // ── ResizeObserver for thumbnail scaling ──
 
   useEffect(() => {
-    if (activeTab !== 'pages' || !pageGridRef.current) return;
+    // v5.67: the grid exists on the Script and Custom tabs (one at a time —
+    // the ref lands on whichever renders); the Title Page tab has none.
+    if (activeTab !== 'pages' || pagesTab === 'title' || !pageGridRef.current) return;
     const grid = pageGridRef.current;
     const measure = () => {
       const firstThumb = grid.querySelector('.page-thumbnail') as HTMLElement;
@@ -591,12 +610,27 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     if (firstThumb) observer.observe(firstThumb);
     measure();
     return () => observer.disconnect();
-  }, [activeTab, pageContent.length, refWidthPx, pagesPerRow]);
+  }, [activeTab, pagesTab, pageContent.length, refWidthPx, pagesPerRow]);
+
+  // v5.67: Title Page tab — stack the editor's two columns when the host is
+  // too narrow for them (a docked Pages column). 560 ≈ two usable ~250px
+  // columns + gaps; below it the form fields crush.
+  useEffect(() => {
+    if (activeTab !== 'pages' || pagesTab !== 'title' || !tpHostRef.current) return;
+    const host = tpHostRef.current;
+    const decide = () => setTpNarrow(host.clientWidth > 0 && host.clientWidth < 560);
+    decide();
+    if (typeof ResizeObserver === 'undefined') return;   // jsdom
+    const ro = new ResizeObserver(decide);
+    ro.observe(host);
+    return () => ro.disconnect();
+  }, [activeTab, pagesTab]);
 
   // ── Scroll sync: highlight current page in editor ──
 
   useEffect(() => {
-    if (activeTab !== 'pages' || !scrollContainer || !editor || pageContent.length === 0) return;
+    // v5.67: Script tab only — its data-page targets are script numbers.
+    if (activeTab !== 'pages' || pagesTab !== 'script' || !scrollContainer || !editor || pageContent.length === 0) return;
 
     let rafId = 0;
     const handleScroll = () => {
@@ -629,7 +663,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
       scrollContainer.removeEventListener('scroll', handleScroll);
       cancelAnimationFrame(rafId);
     };
-  }, [activeTab, scrollContainer, editor, pageContent, currentVisiblePage]);
+  }, [activeTab, pagesTab, scrollContainer, editor, pageContent, currentVisiblePage]);
 
   // ── Filter dropdown options ──
 
@@ -665,7 +699,9 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   useEffect(() => {
     const s = useEditorStore.getState();
     if (activeTab === 'locations') s.setToolCount('locations', locations.length);
-    else if (activeTab === 'pages') s.setToolCount('pages', pageContent.length);
+    // v5.67: the title count is the SCRIPT page count — customs live on
+    // their own tab now and never held a page number anyway.
+    else if (activeTab === 'pages') s.setToolCount('pages', pageContent.filter((p) => !p.isCustom).length);
     else if (activeTab === 'structure') {
       s.setToolCount('structure', structure.acts.filter((a) => a.actNumber > 0).length);
     }
@@ -741,10 +777,12 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   }, [pageContent, goToPosition]);
 
   useEffect(() => {
-    if (gotoReq == null || activeTab !== 'pages') return;
+    // v5.67: the # pop only shows on the Script tab (PagesControls hides
+    // itself elsewhere), and the thumbnail it scrolls lives in that grid.
+    if (gotoReq == null || activeTab !== 'pages' || pagesTab !== 'script') return;
     goToPageNumber(String(gotoReq));
     setGotoReq(null);
-  }, [gotoReq, activeTab, goToPageNumber, setGotoReq]);
+  }, [gotoReq, activeTab, pagesTab, goToPageNumber, setGotoReq]);
 
   const handlePageClick = useCallback(
     (page: PageContentInfo, e: React.MouseEvent<HTMLDivElement>) => {
@@ -1052,24 +1090,30 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
           thumbnails still size themselves to their column (the ResizeObserver
           reads the rendered width and scales the page content), so the one
           number drives everything downstream unchanged. */}
-      {activeTab === 'pages' && (
-        /* v5.44/v5.45, Derek: + Add Page leads on the LEFT; Go to page and
-           the per-row stepper ride together on the RIGHT. The gap between
-           the groups is a Design knob (Navigator & Outline ▸ "Pages:
-           header button spacing"). */
+      {/* v5.67, Derek: Script / Title Page / Custom tabs (window chrome —
+          usePagesTabs below). The action row shows on Script and Custom;
+          + Add Custom Page belongs to the CUSTOM tab (the v5.44 dropdown is
+          gone: the title page is the tab beside it, so the two-item stage
+          would offer a door to where you already are). */}
+      {activeTab === 'pages' && pagesTab !== 'title' && (
+        /* v5.44/v5.45, Derek: the add button leads on the LEFT; the per-row
+           stepper rides on the RIGHT. The gap between the groups is a Design
+           knob (Navigator & Outline ▸ "Pages: header button spacing"). */
         <div className="tool-action-row fs-pages-actions">
-          {/* v5.40/v5.44: the Pages door for custom pages is now a dropdown —
-              Add Custom Page (with "Add after page #:") or the Title Page. */}
-          <button
-            ref={addBtnRef}
-            className="dialog-btn dialog-btn-primary fs-pages-addpage"
-            title="Add a custom page or the title page"
-            onClick={() => { setAddAfterMode(false); setAfterPageNum(''); setAddPageOpen((v) => !v); }}
-          >+ Add Page</button>
+          {pagesTab === 'custom' && (
+            <button
+              ref={addBtnRef}
+              className="dialog-btn dialog-btn-primary fs-pages-addpage"
+              title="Add a custom page — the script flows around it"
+              onClick={() => { setAfterPageNum(''); setAddPageOpen((v) => !v); }}
+            >+ Add Custom Page</button>
+          )}
           <span className="fs-pages-right">
             {/* v5.47, Derek: Go to page moved to the window header (the #
                 button). v5.50: the stepper is the SHARED PerRowStepper —
-                framed Up/Down + typeable field, same as Cards per row. */}
+                framed Up/Down + typeable field, same as Cards per row.
+                One store value — the Custom tab's stepper steps the same
+                zoom the Script tab shows. */}
             <span className="tool-action-group">
               <span className="tool-action-label" id="fs-pages-perrow-label">Pages per row:</span>
               <PerRowStepper
@@ -1092,35 +1136,21 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
           style={addPos ?? { top: -9999, left: -9999 }}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          {!addAfterMode ? (
-            <>
-              <button className="fs-pages-pop-item" onClick={() => setAddAfterMode(true)}>
-                Add Custom Page
-              </button>
-              <button
-                className="fs-pages-pop-item"
-                onClick={() => { useEditorStore.getState().openTool('titlepage'); closeAddPage(); }}
-              >
-                {hasTitlePage ? 'Edit Title Page' : 'Add Title Page'}
-              </button>
-            </>
-          ) : (
-            <form className="fs-pages-pop-form" onSubmit={(e) => { e.preventDefault(); submitAddAfter(); }}>
-              <label className="tool-action-label" htmlFor="fs-pages-addafter">Add after page #:</label>
-              <input
-                id="fs-pages-addafter"
-                className="tool-action-field"
-                type="text"
-                inputMode="numeric"
-                autoFocus
-                placeholder={lastScriptPage ? String(lastScriptPage) : ''}
-                value={afterPageNum}
-                onChange={(e) => setAfterPageNum(e.target.value.replace(/[^0-9]/g, ''))}
-              />
-              <button type="submit" className="dialog-btn dialog-btn-primary">Add</button>
-              <div className="fs-pages-pop-hint">Blank = at the cursor · 0 = before page 1</div>
-            </form>
-          )}
+          <form className="fs-pages-pop-form" onSubmit={(e) => { e.preventDefault(); submitAddAfter(); }}>
+            <label className="tool-action-label" htmlFor="fs-pages-addafter">Add after page #:</label>
+            <input
+              id="fs-pages-addafter"
+              className="tool-action-field"
+              type="text"
+              inputMode="numeric"
+              autoFocus
+              placeholder={lastScriptPage ? String(lastScriptPage) : ''}
+              value={afterPageNum}
+              onChange={(e) => setAfterPageNum(e.target.value.replace(/[^0-9]/g, ''))}
+            />
+            <button type="submit" className="dialog-btn dialog-btn-primary">Add</button>
+            <div className="fs-pages-pop-hint">Blank = at the cursor · 0 = before page 1</div>
+          </form>
         </div>,
         document.body,
       )}
@@ -1155,25 +1185,42 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
         </div>,
         document.body,
       )}
-      {activeTab === 'pages' && (
+      {/* v5.67: the Title Page tab hosts the WHOLE title-page editor — the
+          same TitlePagePanel the retired standalone tool rendered, one
+          component behind every door. Apply/Cancel return to the Script tab.
+          fs-tp-narrow (measured, not @media — the trigger is the HOST's
+          width, a dock column, not the screen's) stacks its two columns. */}
+      {activeTab === 'pages' && pagesTab === 'title' && (
+        <div ref={tpHostRef} className={`fs-pages-titlehost${tpNarrow ? ' fs-tp-narrow' : ''}`}>
+          <TitlePagePanel editor={editor} onClose={() => setPagesTab('script')} />
+        </div>
+      )}
+      {activeTab === 'pages' && pagesTab !== 'title' && (
         <div className="navigator-list page-thumbnails-scroll" ref={pageGridRef}>
-          {pageContent.length === 0 ? (
+          {pagesTab === 'custom' && customPages.length === 0 ? (
+            <div className="navigator-empty">No custom pages yet. Add one — a list, a quote, anything — and the script flows around it without taking a page number.</div>
+          ) : pagesTab === 'script' && scriptPages.length === 0 && !pagesSearch.trim() ? (
             <div className="navigator-empty">No pages yet. Start writing to see page previews.</div>
-          ) : shownPages.length === 0 ? (
+          ) : gridPages.length === 0 ? (
             <div className="navigator-empty">No page contains “{pagesSearch.trim()}”.</div>
           ) : (
             /* v4.94: the header's scaling buttons set the grid column width;
                the thumbnails already size themselves to their column. */
             <div className="page-thumbnails-grid" style={{ '--pages-per-row': pagesPerRow } as React.CSSProperties}>
-              {shownPages.map((page, pi) => (
+              {gridPages.map((page, pi) => (
                 /* v5.40: custom pages share the NEXT script page's number —
                    the index keeps keys unique, the label says what it is */
                 <div key={`${page.pageNumber}-${page.isCustom ? 'c' : 's'}-${pi}`} className="page-thumb-wrapper">
                   {/* v5.01, Derek: the label sits ABOVE its page (it used to
-                      trail underneath). (v5.13: the title page is gone from
-                      this tool, so every label is a plain page number.) */}
+                      trail underneath). v5.67: in the Custom tab the label
+                      carries the page's position — the interleaved grid that
+                      used to SHOW it is gone (Script lists script pages only). */}
                   <div className="page-thumb-number">
-                    {page.isCustom ? 'Custom Page' : `Page ${page.pageNumber}`}
+                    {page.isCustom ? (
+                      <>Custom Page{customPagePosLabel(page, lastScriptPage) && (
+                        <span className="page-thumb-pos"> · {customPagePosLabel(page, lastScriptPage)}</span>
+                      )}</>
+                    ) : `Page ${page.pageNumber}`}
                   </div>
                   {/* v5.44: CUSTOM thumbs drag to a new spot (drop on any page
                       = land right after it) and carry a ⋮ menu; script thumbs
@@ -1492,9 +1539,24 @@ export function LocationsControls() {
   );
 }
 
+/** v5.67: the Pages window's Script / Title Page / Custom tabs, in the
+ *  chrome slot the Characters window's tabs use (TOOL_CHROME.useTabs). */
+export function usePagesTabs(): ToolChromeTab[] {
+  const tab = useEditorStore((s) => s.pagesTab);
+  const setTab = useEditorStore((s) => s.setPagesTab);
+  return [
+    { label: 'Script', active: tab === 'script', onSelect: () => setTab('script') },
+    { label: 'Title Page', active: tab === 'title', onSelect: () => setTab('title') },
+    { label: 'Custom', active: tab === 'custom', onSelect: () => setTab('custom') },
+  ];
+}
+
 /** v4.94/v5.01, Derek: the Pages window's header keeps only Search — the
- *  shared control. Zoom and Go to live in the body's first row. */
+ *  shared control. Zoom and Go to live in the body's first row.
+ *  v5.67: Script tab only — # and the search are script-page controls
+ *  (the CharControls null-off-tab precedent). */
 export function PagesControls() {
+  const pagesTab = useEditorStore((s) => s.pagesTab);
   const search = useEditorStore((s) => s.pagesSearch);
   const setSearch = useEditorStore((s) => s.setPagesSearch);
   // v5.47, Derek: Go to page lives in the HEADER now — a bare # button left
@@ -1513,6 +1575,9 @@ export function PagesControls() {
     setOpen(false);
     setNum('');
   };
+  // AFTER every hook (the dialog-components rule: hooks above any early
+  // return) — off the Script tab the cluster renders nothing.
+  if (pagesTab !== 'script') return null;
   return (
     <>
       <button

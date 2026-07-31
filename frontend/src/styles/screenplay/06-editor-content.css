@@ -377,6 +377,18 @@
   .tp-field-row { flex-direction: column; align-items: stretch; }
 }
 
+/* v5.67: the SAME stack for the Pages window's Title Page tab when the HOST
+   is narrow (a docked column) — a class set by a ResizeObserver, because
+   @media reads the screen and the trigger here is the window's own width.
+   KEEP IN LOCKSTEP with the @media block above (one intent, two triggers);
+   width is 100%, not 96vw — container-relative, not viewport-relative. */
+.fs-tp-narrow .tp-editor-dialog { width: 100%; max-height: none; }
+.fs-tp-narrow .tp-editor-body { grid-template-columns: 1fr; gap: 14px; overflow-y: auto; }
+.fs-tp-narrow .tp-editor-body > .tp-editor-form { overflow: visible; }
+.fs-tp-narrow .tp-editor-body > .tp-editor-preview-scale { max-height: 60vh; }
+.fs-tp-narrow .tp-editor-form { grid-template-columns: 1fr; }
+.fs-tp-narrow .tp-field-row { flex-direction: column; align-items: stretch; }
+
 /* ============ RTL SUPPORT FOR MULTI-LINGUAL DIALOGUE ============ */
 .dialogue[dir="rtl"],
 .parenthetical[dir="rtl"],

@@ -401,11 +401,9 @@
   flex: 0 0 auto;
   overflow: auto;        /* only scrolls if the screen is smaller than the form */
 }
-.fs-modal-as-panel-fixed { height: auto; }
-.fs-modal-as-panel-fixed .dialog-box {
-  width: max-content; max-width: none;
-  height: auto; max-height: none;
-}
+/* (v5.67: .fs-modal-as-panel-fixed is deleted — its one consumer was the
+   standalone Title Page window, retired into the Pages window's tab, where
+   the plain .fs-modal-as-panel sizing [max-width: 100%, scroll] is right.) */
 
 /* ── Permanent Customize button (v0.91) ────────────────────────────────────
    The menu bar and toolbar now sit in a column, and this button sits to their

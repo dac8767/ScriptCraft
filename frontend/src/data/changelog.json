@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.67",
+    "date": "2026-07-31",
+    "changes": [
+      "Pages window: three header tabs — Script, Title Page, Custom. Script shows the script's pages alone; Custom is where custom pages live (add, move, delete — each thumb notes its spot, \"before page 7\"); Title Page hosts the full title-page editor, stacking to one column when the window is narrow.",
+      "The standalone Title Page tool is retired — its dock row and window are gone, and Project ▸ Title Page now opens the Pages window on the Title Page tab. Saved layouts and workspaces that carried the old tool land on Pages automatically."
+    ]
+  },
+  {
     "version": "5.66",
     "date": "2026-07-31",
     "changes": [

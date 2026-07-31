@@ -9,7 +9,7 @@
  * a lie about the script, and clicking a thumbnail jumps to that page.
  */
 import { describe, it, expect } from 'vitest';
-import { pagesMatching } from './SceneNavigator';
+import { pagesMatching, customPagePosLabel } from './SceneNavigator';
 import type { PageContentInfo } from '../editor/pagination';
 
 const page = (n: number, lines: string[]): PageContentInfo => ({
@@ -52,5 +52,22 @@ describe('pagesMatching', () => {
   it('a page with no text at all never throws', () => {
     const blank = [{ pageNumber: 9, linesPerPage: 55, blocks: [] } as PageContentInfo];
     expect(pagesMatching(blank, 'x')).toEqual([]);
+  });
+});
+
+describe('customPagePosLabel (v5.67, the Custom tab position note)', () => {
+  const custom = (n: number): PageContentInfo => ({ ...page(n, ['a line']), isCustom: true, cpId: 'cp1' });
+
+  it('a custom page carries the NEXT script page number → "before page N"', () => {
+    expect(customPagePosLabel(custom(7), 11)).toBe('before page 7');
+    expect(customPagePosLabel(custom(1), 11)).toBe('before page 1');   // leading
+  });
+
+  it('one past the last script page = the end of the script', () => {
+    expect(customPagePosLabel(custom(12), 11)).toBe('end of script');
+  });
+
+  it('no script pages at all → no note', () => {
+    expect(customPagePosLabel(custom(1), 0)).toBe('');
   });
 });

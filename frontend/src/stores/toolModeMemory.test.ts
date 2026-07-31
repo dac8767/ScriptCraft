@@ -60,12 +60,15 @@ describe('remembered window shape', () => {
     expect(st().fullscreenTool).toBeNull();
   });
 
-  /** v5.21, Derek: "make the title page doc always in full screen" — every
-   *  open routes to the takeover, whatever mode an old session remembered. */
-  it('the Title Page ALWAYS opens fullscreen, ignoring any remembered mode', () => {
-    useEditorStore.setState({ toolMode: { titlepage: 'floating' } });
+  /** v5.21 made the Title Page fullscreen-only; v5.67 retired the tool into
+   *  the Pages window's Title Page TAB. The old id must still open SOMETHING
+   *  sensible — Pages, not a takeover — even when a stale session remembered
+   *  a mode for it. */
+  it("the retired 'titlepage' id opens Pages (no takeover), whatever mode it remembered", () => {
+    useEditorStore.setState({ toolMode: { titlepage: 'floating' }, pagesTab: 'script' });
     st().openTool('titlepage');
-    expect(st().fullscreenTool).toBe('titlepage');
+    expect(st().fullscreenTool).toBeNull();
+    expect(st().activeTool).toBe('pages');
   });
 
   it('an already-fullscreen tool is not reopened on top of itself', () => {

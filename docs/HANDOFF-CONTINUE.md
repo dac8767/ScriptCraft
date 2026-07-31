@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.66 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.67 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -204,7 +204,51 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.66 — Focus tool: ? in the header + Design-window layout knobs (HEAD)
+### v5.67 — Pages window tabs: Script / Title Page / Custom (HEAD)
+
+- Derek ("in the page window, add three tabs to the header…"): the Pages
+  window's chrome carries Script / Title Page / Custom via the SAME
+  useTabs slot Characters uses (usePagesTabs in SceneNavigator.tsx;
+  TOOL_CHROME.pages). Narrow dock ⇒ the v4.53 collapse-to-"Section"-
+  dropdown, by design. pagesTab persists in viewState (charActiveTab
+  precedent). PagesControls (# goto + search) null off the Script tab —
+  the hooks-above-early-return rule applies.
+- SCRIPT tab = script pages only (customs filtered out; the title count
+  publishes the script-page count). CUSTOM tab = the custom pages with
+  + Add Custom Page (the v5.44 two-item dropdown died — its other item
+  is the tab beside it), ⋮ Move/Delete, drag-to-reorder, and a position
+  note on each thumb: customPagePosLabel reads v5.40's numbering (a
+  custom page CARRIES the next script page's number) as "before page
+  N", one past the last script page as "end of script" (pure, tested in
+  pagesMatching.test.ts).
+- TITLE PAGE tab hosts TitlePagePanel — ONE TitlePageEditor behind the
+  modal door and the tab (no fork). Apply/Cancel → back to Script.
+  fs-tp-narrow (host ResizeObserver, <560px) stacks the editor's two
+  columns — the stack rules mirror the mobile @media 720 block in
+  06-editor-content.css and are commented to stay in LOCKSTEP; @media
+  reads the screen, this reads the HOST (a dock column ≈ 277px).
+- THE STANDALONE TOOL IS RETIRED (the todo/indexcards drill, every
+  surface): out of ALL_TOOLS / WINDOW_IDS / DEFAULT_TOOL_CONFIG /
+  DEFAULT_TOOL_ORDER; FULLSCREEN_ONLY_TOOLS is now EMPTY (machinery
+  kept); RETIRED_TOOL_IDS += titlepage→pages and is EXPORTED — the
+  workspaces activeTool remap reads the map instead of hardcoding
+  'indexcards' (todo snapshots heal too); openTool('titlepage') remaps
+  + defers pagesTab='title' (the indexcards setTimeout pattern);
+  Project ▸ Title Page sets the tab explicitly THEN opens Pages (no
+  Script flash). A titlepage workspace reopens Pages on the tab.
+  ToolContent's onClose prop retired (its one reader was the hosted
+  modal). CSS: .fs-modal-as-panel-fixed deleted (one consumer, gone).
+  toolModeMemory.test updated: the retired id opens Pages, NO takeover
+  (the old v5.21 fullscreen-only pin was the replaced behavior).
+- LATENT after this: ToolDef.fixedSize/neverDock have no members;
+  .tool-window-fixed CSS pairs with fixedSize. Kept as typed frame
+  machinery — flag for a future dead-CSS pass.
+- Gates: tsc 0, 926 tests (+6: titlepage migrations, customPagePosLabel),
+  build, check-v567 12/12 (tabs strip+dropdown forms, dock row gone,
+  script-only grid, custom add/position note, narrow 1-col vs
+  fullscreen 2-col, Cancel→Script, menu lands on the tab).
+
+### v5.66 — Focus tool: ? in the header + Design-window layout knobs
 
 - Derek ("moving to the focus tool"): (1) the "?" moved from the master
   row to the window header — FocusHeaderControls exported from
@@ -307,25 +351,12 @@ Durable bits kept live here:
   field's; focus flips accent; grow stays exact with the border. Gates:
   tsc 0, 916 tests, build.
 
-### v5.62 — the note clears on a NEW target (disjoint-range rule)
-
-- Derek: "delete the text in the context/intent text field when a new set
-  of text is highlighted." Rule chosen: the note clears when the live
-  target resolves DISJOINT from the last ok-target (lastOkTargetRef,
-  overlap test in the debounced sync). Deliberately NOT position-equality:
-  positions drift as you type inside the passage — an equality rule would
-  wipe the note mid-thought on every keystroke or on clicking back into
-  the same paragraph. Overlap = same working area = keep; disjoint = new
-  text = clear. Focusing the field itself never clears (no editor
-  selectionUpdate fires).
-- check-v562 4/4 (written → kept within passage → cleared on a different
-  paragraph → survives field focus). Gates: tsc 0, 916 tests, build.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.62** — the note clears on a NEW target (disjoint overlap rule)
 - **v5.61** — full-length suggestion cards, ONE scroll
 - **v5.60** — the rewrite target stays PAINTED (blur-proof), + the declutter eye
 - **v5.59** — Action Rewrite v4: editable drafts + linter, the Yours slot + beats, the LOG + calibration loop

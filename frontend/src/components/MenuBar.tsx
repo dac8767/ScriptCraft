@@ -1769,7 +1769,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
            (v0.91's rule) and appears ONLY here (v1.64's one-home rule).
            #2: Add/Remove Scene Numbers folded into one checkable toggle. */
         { separator: true, label: '' },
-        { icon: <FaFileAlt />, label: 'Title Page', action: () => useEditorStore.getState().openTool('titlepage') },
+        /* v5.67: the Title Page is the Pages window's tab — set the tab
+           FIRST so the window opens already on it (no Script flash). */
+        { icon: <FaFileAlt />, label: 'Title Page', action: () => { const st = useEditorStore.getState(); st.setPagesTab('title'); st.openTool('pages'); } },
         { icon: <FaFileSignature />, label: 'Set Draft Number…', action: () => setDraftDialogOpen(true) },
         { separator: true, label: '' },
         {
