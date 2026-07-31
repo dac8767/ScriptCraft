@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.72",
+    "date": "2026-07-31",
+    "changes": [
+      "Pages window: the tabs are now Script / Title / Custom / All, in that order."
+    ]
+  },
+  {
     "version": "5.71",
     "date": "2026-07-31",
     "changes": [

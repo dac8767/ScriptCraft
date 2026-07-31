@@ -1553,17 +1553,17 @@ export function LocationsControls() {
 }
 
 /** v5.67: the Pages window's tabs, in the chrome slot the Characters
- *  window's tabs use (TOOL_CHROME.useTabs). v5.71, Derek: + "All Pages"
- *  (compiles the other three, leading) and the fuller names — labels only,
- *  the persisted ids stay 'script'/'title'/'custom'. */
+ *  window's tabs use (TOOL_CHROME.useTabs). v5.71 added "All Pages";
+ *  v5.72, Derek: short names, All LAST — Script / Title / Custom / All.
+ *  Labels only — the persisted ids never change. */
 export function usePagesTabs(): ToolChromeTab[] {
   const tab = useEditorStore((s) => s.pagesTab);
   const setTab = useEditorStore((s) => s.setPagesTab);
   return [
-    { label: 'All Pages', active: tab === 'all', onSelect: () => setTab('all') },
-    { label: 'Script Pages', active: tab === 'script', onSelect: () => setTab('script') },
-    { label: 'Title Page', active: tab === 'title', onSelect: () => setTab('title') },
-    { label: 'Custom Pages', active: tab === 'custom', onSelect: () => setTab('custom') },
+    { label: 'Script', active: tab === 'script', onSelect: () => setTab('script') },
+    { label: 'Title', active: tab === 'title', onSelect: () => setTab('title') },
+    { label: 'Custom', active: tab === 'custom', onSelect: () => setTab('custom') },
+    { label: 'All', active: tab === 'all', onSelect: () => setTab('all') },
   ];
 }
 
