@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.69",
+    "date": "2026-07-31",
+    "changes": [
+      "Annotation filters: the type buttons now sit on one row after a \"Type:\" label, matching the window's label-then-content format — in the Navigator filter and the Annotations window's filter alike (one shared section behind both)."
+    ]
+  },
+  {
     "version": "5.68",
     "date": "2026-07-31",
     "changes": [

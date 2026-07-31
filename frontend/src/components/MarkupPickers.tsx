@@ -436,17 +436,26 @@ export function TypeGridSection({ done, onDone, types, hidden, onToggle, onShowA
           ))}
         </span>
       </div>
-      <div className="markup-filter-help">Annotation Types: </div>
-      {types.length === 0 && <div className="markup-filter-empty">No annotations yet.</div>}
-      <div className="markup-filter-grid">
-        {types.map((icon) => (
-          <button
-            key={icon}
-            className={`markup-preset${hidden.includes(icon) ? '' : ' active'}`}
-            title={iconLabel(icon)}
-            onClick={() => onToggle(icon)}
-          ><MarkupIcon icon={icon} color={colorFor.get(icon)} /></button>
-        ))}
+      {/* v5.69, Derek: "Type:" with the buttons AFTER it, one row like the
+          rest of the window (was an "Annotation Types:" caption line over a
+          full-width grid). The grid wraps beside the label when there are
+          more types than fit. */}
+      <div className="markup-filter-statusrow markup-filter-typerow">
+        <span className="markup-filter-help">Type: </span>
+        {types.length === 0 ? (
+          <div className="markup-filter-empty">No annotations yet.</div>
+        ) : (
+          <div className="markup-filter-grid">
+            {types.map((icon) => (
+              <button
+                key={icon}
+                className={`markup-preset${hidden.includes(icon) ? '' : ' active'}`}
+                title={iconLabel(icon)}
+                onClick={() => onToggle(icon)}
+              ><MarkupIcon icon={icon} color={colorFor.get(icon)} /></button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="markup-filter-allrow">
         <button className="markup-hl-clear" onClick={onShowAll}>Show all</button>

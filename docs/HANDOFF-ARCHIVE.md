@@ -151,9 +151,41 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.63 and older (newest first)
+## Version history — v5.64 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.64 — Rerun-with-note + the shared-language prompt rule
+
+- Derek: all three suggestions once contained "their fingers drummed on
+  the control panel"; he wants (a) a rerun with "do not use the phrase
+  X" and (b) a rule against variants sharing language.
+- (a) RERUN: the note field was ALWAYS the right channel for negative
+  steers — what was missing was targeting. A Rerun button (results bar,
+  left of Dismiss) re-runs the SAME passage via resolveEditorRange
+  (explicit range → indices → resolveSelection; context re-gathered
+  fresh) against the mapped targetRef, validated by targetIsCurrent
+  (stale → falls back to the live selection). Enter in the note field
+  reruns while results are up (suggests otherwise). suggest/rerun share
+  runRequest; a rerun dismisses the superseded event (log semantics
+  hold). The note survives a rerun (same target = overlap = v5.62 keeps
+  it).
+- (b) PROMPT (Derek-sanctioned craft edit): "Variants must not share
+  language" added to # The three variants — a phrase of the MODEL'S
+  invention may appear in only one variant; wording carried from the
+  writer's original may repeat where a beat survives. Prose kept
+  dash-free (the prompt discipline); cache re-writes once.
+- FIFTH SANDBOX ROLLBACK hit at this batch's start — worst yet: local
+  HEAD AND the origin ref were back at the ancient 7febeb7 while the
+  true origin held v5.63 (everything pushed = nothing lost). Recovery
+  additions to the standing drill: node_modules gutted (TS2307 on
+  @tiptap/extension-link → npm install) AND the apt-installed GTK libs
+  were wiped — re-run `apt-get update && apt-get install -y libgtk-3-dev
+  libwebkit2gtk-4.1-dev` before trusting cargo check.
+- Gates: cargo check, tsc 0, 917 tests (resolveEditorRange holds the
+  range against a wandering caret + carries the note), build,
+  check-v564 4/4 (rule present, scoped, dash-free; targeting live).
+
 
 ### v5.63 — the cards speak the app's visual language (dark block = editable)
 

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.68 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.69 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -204,7 +204,25 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.68 — Navigator filter: the Scene Headings section (HEAD)
+### v5.69 — the type grid rides one row with "Type:" (HEAD)
+
+- Derek (screenshot of the v5.68 pop): "change 'annotation types' to
+  'Type:' show the buttons after that, so the format matches the rest of
+  the window." Changed INSIDE TypeGridSection (MarkupPickers.tsx), so
+  every door — the Navigator filter pop AND the Annotations window's
+  filter — reformats together; nothing forked.
+- The "Annotation Types:" caption line + full-width 6-column grid became
+  a statusrow-format row: "Type:" label, then the buttons. Scoped CSS
+  (.markup-filter-typerow .markup-filter-grid) turns the grid into a
+  wrapping flex in the row's remaining width (base 3px gap still
+  applies; extra types wrap under). The "No annotations yet." empty
+  state sits inline on the row too. Show all / Hide all row unchanged.
+- check-v569 9/9: label text, old caption gone, and a GEOMETRY proof
+  (label/buttons rects overlap vertically, buttons start right of the
+  label) in three states — Navigator empty, Navigator with a type,
+  Annotations window. Gates: tsc 0, 933 tests, build.
+
+### v5.68 — Navigator filter: the Scene Headings section
 
 - Derek (verbatim): "in the navigator filter window, change Filter
   Annotations to 'Annotations'. Above that, add a new section in the
@@ -328,42 +346,12 @@ Durable bits kept live here:
   reset + npm install + Vite; cargo untouched this batch so GTK libs
   not needed.)
 
-### v5.64 — Rerun-with-note + the shared-language prompt rule
-
-- Derek: all three suggestions once contained "their fingers drummed on
-  the control panel"; he wants (a) a rerun with "do not use the phrase
-  X" and (b) a rule against variants sharing language.
-- (a) RERUN: the note field was ALWAYS the right channel for negative
-  steers — what was missing was targeting. A Rerun button (results bar,
-  left of Dismiss) re-runs the SAME passage via resolveEditorRange
-  (explicit range → indices → resolveSelection; context re-gathered
-  fresh) against the mapped targetRef, validated by targetIsCurrent
-  (stale → falls back to the live selection). Enter in the note field
-  reruns while results are up (suggests otherwise). suggest/rerun share
-  runRequest; a rerun dismisses the superseded event (log semantics
-  hold). The note survives a rerun (same target = overlap = v5.62 keeps
-  it).
-- (b) PROMPT (Derek-sanctioned craft edit): "Variants must not share
-  language" added to # The three variants — a phrase of the MODEL'S
-  invention may appear in only one variant; wording carried from the
-  writer's original may repeat where a beat survives. Prose kept
-  dash-free (the prompt discipline); cache re-writes once.
-- FIFTH SANDBOX ROLLBACK hit at this batch's start — worst yet: local
-  HEAD AND the origin ref were back at the ancient 7febeb7 while the
-  true origin held v5.63 (everything pushed = nothing lost). Recovery
-  additions to the standing drill: node_modules gutted (TS2307 on
-  @tiptap/extension-link → npm install) AND the apt-installed GTK libs
-  were wiped — re-run `apt-get update && apt-get install -y libgtk-3-dev
-  libwebkit2gtk-4.1-dev` before trusting cargo check.
-- Gates: cargo check, tsc 0, 917 tests (resolveEditorRange holds the
-  range against a wandering caret + carries the note), build,
-  check-v564 4/4 (rule present, scoped, dash-free; targeting live).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.64** — Rerun-with-note + the shared-language prompt rule
 - **v5.63** — the cards speak the app's visual language (dark block = editable)
 - **v5.62** — the note clears on a NEW target (disjoint overlap rule)
 - **v5.61** — full-length suggestion cards, ONE scroll

@@ -468,6 +468,18 @@
   padding: 2px 4px 4px;
 }
 .markup-filter-allrow { display: flex; gap: 6px; padding: 2px 4px 4px; }
+/* v5.69, Derek: the type buttons ride ONE ROW with their "Type:" label (the
+   window's label-then-content format). The 6-column grid becomes a wrapping
+   flex in the row's remaining width; the base rule's 3px gap still applies,
+   and more types than fit simply wrap. */
+.markup-filter-typerow .markup-filter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+  padding: 2px 0 2px;
+}
+.markup-filter-typerow .markup-filter-empty { padding: 2px 0; }
 
 /* highlight checkbox row */
 .markup-hl-check {
