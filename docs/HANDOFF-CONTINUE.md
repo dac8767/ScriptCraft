@@ -10,6 +10,29 @@
 > the mode, only explicit gestures WRITE it.
 
 
+> QUEUE — NEXT UP (Derek, 2026-07-31, verbatim): **ONE PRESET EXPORT
+> WINDOW.** "I want to combine all of the various preset exports into one
+> tool. this is how it will work: anywhere in the app, if you click export
+> theme preset, export settings preset, export workspace... whatever you
+> choose, they all lead to the same preset export window. In this window,
+> there is a checklist of all the various things that can be exported as
+> presets: workspaces, themes, settings, etc. You check which of these you
+> want to include, and it exports a single file holding the info for the
+> presets for each of the items you selected."
+> Build notes: utils/presets.ts (v4.79) is the foundation — it already
+> compiles customizations/full-preset/themes/outline-presets and owns the
+> `_<type>.json` filename rule, and PresetsPanel/PresetsDialog is the
+> File ▸ Export ▸ Presets window. What this spec ADDS: (a) a per-category
+> CHECKLIST producing ONE combined file (a bundle format with per-section
+> keys — version it), (b) WORKSPACES as an exportable category (not in the
+> v4.79 set; snapshots live in workspacesSlice/viewState), (c) EVERY
+> scattered export door (ThemesTab, outline presets, Settings ▸ Backup,
+> Customize footer, any workspace export) OPENS THIS WINDOW instead of
+> running its own flow — a door may PRE-CHECK its own category but they all
+> land in the one window. Import side: Derek's spec covers EXPORT; ask (or
+> spec separately) whether import becomes the mirror-image checklist of the
+> combined file before building that half.
+
 > QUEUE — WAITING on Derek: the ribbon default preset (he will send a Full
 > Preset export to bake in as the shipped defaults). Otherwise clear; the
 > standing what's-left:
