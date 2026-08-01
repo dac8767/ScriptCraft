@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.77 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.78 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,7 +227,37 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.77 — Locations: a pin is a PLACE (HEAD)
+### v5.78 — Locations map: six follow-ups (HEAD)
+
+Derek's list, in his numbers:
+1. One sidebar row per PLACE, not per script location — `locationRows()` in
+   utils/locationPlaces (pure, 6 tests). The row carries a count badge.
+2. The expanded row lists its script locations as a field, each detachable
+   (the last one isn't — a place with no name is nothing).
+3. "+ Connect a script location" in that row, a portalled list of the
+   locations not yet placed.
+4. "+ Add Pin" drops one in the middle and opens its dropdown. Clicking the
+   map still works — "instead of JUST clicking on screen".
+5. THE PIN JUMP, root cause: the whole capsule was centred on the point, so
+   a longer label dragged the marker sideways — the driver measured the
+   marker going from 4.5% to **-3.3%** of the map (off it) when a name was
+   attached. The MARKER is now anchored on the point (12px into the capsule)
+   and the label hangs off it; in the right-hand half the capsule flips so
+   the label reaches inward. Same driver measurement now: 7.8% → 7.8%.
+6. `locked` on the place, toggled from the pin dropdown AND the sidebar.
+   movePlace() refuses a locked pin, so no caller can move one.
+
+TWO BUGS THE CHECK FOUND, both mine, both fixed:
+- Dragging a pin dropped a SECOND pin: the drag ends with a mouseup on the
+  map, and the browser then fires a click on the common ancestor. A guard
+  swallows exactly that click.
+- A locked pin couldn't open its own dropdown (the early return killed the
+  press), so it could never be unlocked. A locked press now still counts as
+  a click; it just never moves.
+
+check-v578 18/18, check-v577 still 37/37. Gates: tsc 0, 1007 tests, build.
+
+### v5.77 — Locations: a pin is a PLACE
 
 - Derek's brief: rotate the background on import and then lock it; an
   options button in the HEADER to replace/delete it; click the map to drop

@@ -10,6 +10,7 @@ import {
   addPlaceField, setPlaceField, removePlaceField, renameScriptLocation,
   pinnedPlaces, unplacedLocations, placeForLocation, placeLabel, locationLabel,
   migratePins, readPlaces, emptyPlace, nextRotation, rotatedRatio, dropFraction, clampFraction, mergePlaces,
+  locationRows, togglePlaceLock,
   type LocationPlace,
 } from './locationPlaces';
 
@@ -242,7 +243,7 @@ describe('readPlaces', () => {
     const saved = [{ id: 'p1', scriptNames: ['a'], displayName: 'Home', description: 'd', fields: [{ id: 'f1', label: 'L', value: 'V' }], x: 0.5, y: 0.25 }];
     expect(readPlaces(saved)[0]).toEqual({
       id: 'p1', scriptNames: ['A'], displayName: 'Home', description: 'd',
-      fields: [{ id: 'f1', label: 'L', value: 'V' }], x: 0.5, y: 0.25,
+      fields: [{ id: 'f1', label: 'L', value: 'V' }], x: 0.5, y: 0.25, locked: false,
     });
   });
 
@@ -250,7 +251,7 @@ describe('readPlaces', () => {
     expect(readPlaces(null)).toEqual([]);
     expect(readPlaces([{ noId: true }])).toEqual([]);
     expect(readPlaces([{ id: 'p1' }])[0]).toEqual({
-      id: 'p1', scriptNames: [], displayName: '', description: '', fields: [], x: null, y: null,
+      id: 'p1', scriptNames: [], displayName: '', description: '', fields: [], x: null, y: null, locked: false,
     });
   });
 });
@@ -320,5 +321,68 @@ describe('mergePlaces — "assign to an existing pin"', () => {
     const places = [place('p1')];
     expect(mergePlaces(places, 'p1', 'p1')).toBe(places);
     expect(mergePlaces(places, 'p1', 'nope')).toBe(places);
+  });
+});
+
+describe('locationRows — one row per PLACE (v5.78)', () => {
+  const loc = (name: string, scenes: number[]) => ({ name, sceneIndices: scenes });
+
+  it('collapses several script locations on one pin into ONE row', () => {
+    const places = [place('p1', { scriptNames: ['BELKADAN - SPACE', 'BELKADAN - SURFACE'], displayName: 'Belkadan' })];
+    const rows = locationRows([loc('BELKADAN - SPACE', [0, 1]), loc('BELKADAN - SURFACE', [2])], places);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ label: 'Belkadan', scriptNames: ['BELKADAN - SPACE', 'BELKADAN - SURFACE'] });
+  });
+
+  it('adds up the scenes of every location on the row', () => {
+    const places = [place('p1', { scriptNames: ['A', 'B'] })];
+    expect(locationRows([loc('A', [0, 1]), loc('B', [2])], places)[0].scenes).toBe(3);
+  });
+
+  it('leaves unattached locations as their own rows, in script order', () => {
+    const places = [place('p1', { scriptNames: ['B'] })];
+    const rows = locationRows([loc('A', [0]), loc('B', [1]), loc('C', [2])], places);
+    expect(rows.map((r) => r.label)).toEqual(['A', 'B', 'C']);
+  });
+
+  it('ranks a merged row where its FIRST location sits in the script', () => {
+    const places = [place('p1', { scriptNames: ['C', 'A'], displayName: 'Both' })];
+    const rows = locationRows([loc('A', [0]), loc('B', [1]), loc('C', [2])], places);
+    expect(rows.map((r) => r.label)).toEqual(['Both', 'B']);
+  });
+
+  it('includes a place the writer created that the script has no name for', () => {
+    const places = [place('p9', { displayName: 'The Old Mill' })];
+    const rows = locationRows([loc('A', [0])], places);
+    expect(rows.map((r) => r.label)).toEqual(['A', 'The Old Mill']);
+  });
+
+  it('does not invent a row for an empty, unpinned place', () => {
+    expect(locationRows([], [place('p1', { x: null, y: null })])).toEqual([]);
+  });
+});
+
+describe('lock (v5.78)', () => {
+  it('a locked pin refuses to move', () => {
+    const places = [place('p1', { x: 0.2, y: 0.2, locked: true })];
+    expect(movePlace(places, 'p1', 0.9, 0.9)).toBe(places);
+  });
+
+  it('an unlocked pin still moves', () => {
+    expect(movePlace([place('p1', { x: 0.2, y: 0.2 })], 'p1', 0.9, 0.9)[0]).toMatchObject({ x: 0.9, y: 0.9 });
+  });
+
+  it('toggles both ways, and ignores an unknown pin', () => {
+    let places = [place('p1')];
+    places = togglePlaceLock(places, 'p1');
+    expect(places[0].locked).toBe(true);
+    places = togglePlaceLock(places, 'p1');
+    expect(places[0].locked).toBe(false);
+    expect(togglePlaceLock(places, 'nope')).toBe(places);
+  });
+
+  it('survives a save/load round-trip', () => {
+    expect(readPlaces([{ id: 'p1', x: 0.1, y: 0.1, locked: true }])[0].locked).toBe(true);
+    expect(readPlaces([{ id: 'p2' }])[0].locked).toBe(false);
   });
 });

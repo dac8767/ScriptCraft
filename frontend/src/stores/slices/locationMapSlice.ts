@@ -19,7 +19,7 @@ import type { StateCreator } from 'zustand';
 import type { EditorState } from '../editorStore';
 import {
   addPlaceAt, attachLocation, detachLocation, updatePlace, movePlace, removePlace, unpinPlace,
-  addPlaceField, setPlaceField, removePlaceField, renameScriptLocation, mergePlaces,
+  addPlaceField, setPlaceField, removePlaceField, renameScriptLocation, mergePlaces, togglePlaceLock,
   type LocationPlace, type LocationMapImage, type LocationCustomField,
 } from '../../utils/locationPlaces';
 
@@ -53,6 +53,8 @@ export interface LocationMapSlice {
   addLocationPlaceField: (placeId: string, label: string) => void;
   setLocationPlaceField: (placeId: string, fieldId: string, patch: Partial<Omit<LocationCustomField, 'id'>>) => void;
   removeLocationPlaceField: (placeId: string, fieldId: string) => void;
+  /** v5.78, Derek: lock a pin so a stray drag can't move it. */
+  toggleLocationPlaceLock: (placeId: string) => void;
   /** "Assign to an existing pin" — the two become one place. */
   mergeLocationPlaces: (fromId: string, toId: string) => void;
   /** Called by the shared heading rename so places follow their location. */
@@ -87,6 +89,7 @@ export const createLocationMapSlice: StateCreator<EditorState, [], [], LocationM
   addLocationPlaceField: (placeId, label) => set((s) => ({ locationPlaces: addPlaceField(s.locationPlaces, placeId, label) })),
   setLocationPlaceField: (placeId, fieldId, patch) => set((s) => ({ locationPlaces: setPlaceField(s.locationPlaces, placeId, fieldId, patch) })),
   removeLocationPlaceField: (placeId, fieldId) => set((s) => ({ locationPlaces: removePlaceField(s.locationPlaces, placeId, fieldId) })),
+  toggleLocationPlaceLock: (placeId) => set((s) => ({ locationPlaces: togglePlaceLock(s.locationPlaces, placeId) })),
   mergeLocationPlaces: (fromId, toId) => set((s) => ({ locationPlaces: mergePlaces(s.locationPlaces, fromId, toId) })),
   renameLocationInPlaces: (from, to) => set((s) => ({ locationPlaces: renameScriptLocation(s.locationPlaces, from, to) })),
 });

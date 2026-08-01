@@ -152,7 +152,7 @@ try {
   await page.waitForTimeout(200);
 
   // ── 6. the sidebar: display name, description, custom field ─────────
-  await page.click(`.locmap-rail-row:has-text("${firstLoc}")`);
+  await page.click('.locmap-rail-row:has(.locmap-rail-badge)');
   await page.waitForSelector('.locmap-rail-detail', { timeout: 5000 });
   ok(true, 'clicking a sidebar location expands it');
   const labels = await page.$$eval('.locmap-rail-detail .locmap-field-label', (els) => els.map((e) => e.textContent.trim()));

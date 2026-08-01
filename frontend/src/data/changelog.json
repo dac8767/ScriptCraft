@@ -1,5 +1,17 @@
 [
   {
+    "version": "5.78",
+    "date": "2026-08-01",
+    "changes": [
+      "Locations that share a pin are now ONE row in the sidebar, with a count — not one row each.",
+      "Opening that row lists its script locations, and connects another one from there.",
+      "A + Add Pin button drops a pin in the middle of the map; clicking the map still works too.",
+      "Fixed: attaching a location moved the pin. The marker now stays exactly on its point whatever the label says, and labels near the right edge turn inward.",
+      "Fixed: dragging a pin dropped a second pin where you let go.",
+      "Pins can be locked — from the pin's dropdown or the sidebar — so a stray drag can't move them. A locked pin still opens its dropdown, which is where it unlocks."
+    ]
+  },
+  {
     "version": "5.77",
     "date": "2026-08-01",
     "changes": [

@@ -23,7 +23,11 @@
  * will not load; that is what v5.76 fixed and what this must keep doing.
  */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { FaMapMarkerAlt, FaRegImage, FaChevronRight, FaChevronDown, FaRegTrashAlt, FaUndo } from 'react-icons/fa';
+import {
+  FaMapMarkerAlt, FaRegImage, FaChevronRight, FaChevronDown, FaRegTrashAlt, FaUndo,
+  FaLock, FaLockOpen, FaTimes,
+} from 'react-icons/fa';
+import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { resolveImageUrl } from '../utils/imageAsset';
@@ -34,7 +38,7 @@ import LocationPinMenu from './LocationPinMenu';
 import { importLocationMap } from './LocationMapOptions';
 import { renameLocationInScript } from '../utils/renameLocationInScript';
 import {
-  pinnedPlaces, unplacedLocations, placeForLocation, placeLabel, dropFraction, rotatedRatio,
+  pinnedPlaces, unplacedLocations, locationRows, placeLabel, dropFraction, rotatedRatio,
   type LocationMapImage, type LocationPlace,
 } from '../utils/locationPlaces';
 
@@ -95,6 +99,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
   const setField = useEditorStore((s) => s.setLocationPlaceField);
   const removeField = useEditorStore((s) => s.removeLocationPlaceField);
   const mergePlaces = useEditorStore((s) => s.mergeLocationPlaces);
+  const toggleLock = useEditorStore((s) => s.toggleLocationPlaceLock);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -102,7 +107,13 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
   const [menuFor, setMenuFor] = useState<{ id: string; top: number; left: number } | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [mapFailed, setMapFailed] = useState(false);
-  const draggingRef = useRef<{ id: string; moved: boolean } | null>(null);
+  /** The sidebar's "connect a script location" list (Derek #3). */
+  const [attachTo, setAttachTo] = useState<{ id: string; top: number; left: number } | null>(null);
+  const draggingRef = useRef<{ id: string; moved: boolean; locked: boolean } | null>(null);
+  /* A pin drag ends with a mouseup on the MAP, and the browser then fires a
+     click on their common ancestor — which dropped a second, unwanted pin
+     wherever the drag was released. This swallows exactly that click. */
+  const swallowNextClickRef = useRef(false);
 
   /* ── sizing the map ───────────────────────────────────────────────────
      The stage must be EXACTLY the image's box: that is what makes a pin's
@@ -164,7 +175,18 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
       left: Math.min(clientX, Math.max(8, window.innerWidth - 250)),
     });
 
+  /* Derek #4: a button, not only a click on the map. It drops the pin in the
+     middle of the view and opens its dropdown, so the flow is the same as a
+     click — then drag it where it belongs (unless it's locked). */
+  const addPinFromButton = useCallback(() => {
+    if (importing) return;
+    const id = addPin(0.5, 0.5);
+    const r = stageRef.current?.getBoundingClientRect();
+    openMenuAt(id, r ? r.left + r.width / 2 : 200, r ? r.top + r.height / 2 : 200);
+  }, [addPin, importing]);
+
   const onCanvasClick = useCallback((e: React.MouseEvent) => {
+    if (swallowNextClickRef.current) { swallowNextClickRef.current = false; return; }
     if (importing || !stageRef.current) return;
     // Only a click on the MAP itself places a pin — not one on a pin, or on
     // the empty canvas around the image.
@@ -182,12 +204,14 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
     if (importing) return;
     e.stopPropagation();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    draggingRef.current = { id: place.id, moved: false };
+    // A LOCKED pin still tracks the press — that is how its dropdown opens,
+    // and the dropdown is where it gets unlocked. It just never moves.
+    draggingRef.current = { id: place.id, moved: false, locked: !!place.locked };
   }, [importing]);
 
   const onPinMove = useCallback((e: React.PointerEvent) => {
     const drag = draggingRef.current;
-    if (!drag || !stageRef.current) return;
+    if (!drag || drag.locked || !stageRef.current) return;
     drag.moved = true;
     const { x, y } = dropFraction(stageRef.current.getBoundingClientRect(), e.clientX, e.clientY);
     movePin(drag.id, x, y);
@@ -196,7 +220,9 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
   const endPinDrag = useCallback((e: React.PointerEvent, place: LocationPlace) => {
     const drag = draggingRef.current;
     draggingRef.current = null;
-    if (drag && !drag.moved) openMenuAt(place.id, e.clientX, e.clientY);
+    if (!drag) return;
+    if (drag.moved) swallowNextClickRef.current = true;   // …the drag's own click
+    else openMenuAt(place.id, e.clientX, e.clientY);
   }, []);
 
   // ── the pin menu's actions ───────────────────────────────────────────
@@ -218,31 +244,19 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
   }, [editor]);
 
   // ── the sidebar ──────────────────────────────────────────────────────
-  /** Every script location, plus any place the writer made that the script
-   *  has no name for ("create a new location" in the pin menu). */
-  const sidebarRows = useMemo(() => {
-    const rows = locations.map((loc) => ({
-      key: loc.name,
-      scriptName: loc.name as string | null,
-      place: placeForLocation(places, loc.name),
-      scenes: loc.sceneIndices.length,
-    }));
-    for (const p of places) {
-      if (p.scriptNames.length === 0 && (p.displayName.trim() || p.description.trim())) {
-        rows.push({ key: p.id, scriptName: null, place: p, scenes: 0 });
-      }
-    }
-    return rows;
-  }, [locations, places]);
+  /* Derek #1: "when multiple script locations are connected to one pin, just
+     show that single location in the side panel" — locationRows collapses a
+     place's locations into ONE row (utils/locationPlaces, tested there). */
+  const rows = useMemo(() => locationRows(locations, places), [locations, places]);
 
   /** A sidebar row needs a place before it can hold a display name. One is
    *  made on demand — an untouched location costs nothing in the file. */
-  const placeFor = useCallback((scriptName: string | null, existing?: LocationPlace): string | null => {
+  const placeFor = useCallback((scriptNames: string[], existing?: LocationPlace): string | null => {
     if (existing) return existing.id;
-    if (!scriptName) return null;
+    if (scriptNames.length === 0) return null;
     const id = addPin(0, 0);
     updatePlaceIn(id, { x: null, y: null });   // it exists, but it isn't on the map
-    attachLocation(id, scriptName);
+    scriptNames.forEach((n) => attachLocation(id, n));
     return id;
   }, [addPin, updatePlaceIn, attachLocation]);
 
@@ -262,39 +276,33 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
         }}
       />
 
-      {/* ── the sidebar: every location, expandable ─────────────────── */}
+      {/* ── the sidebar: one row per PLACE, expandable ──────────────── */}
       <div className="locmap-rail">
         <div className="locmap-rail-head">
           Locations
-          <span className="locmap-rail-count">{sidebarRows.length}</span>
+          <span className="locmap-rail-count">{rows.length}</span>
         </div>
         <div className="locmap-rail-list">
-          {sidebarRows.length === 0 ? (
+          {rows.length === 0 ? (
             <div className="navigator-empty">
               No locations yet. Scene headings like &ldquo;INT. COFFEE SHOP - DAY&rdquo; will appear here.
             </div>
-          ) : sidebarRows.map((row) => {
+          ) : rows.map((row) => {
             const isOpen = expanded === row.key;
             const place = row.place;
-            // THIS row's label: the display name when there is one, else this
-            // row's OWN script name. (placeLabel would give the place's FIRST
-            // script name, so two locations sharing a pin both read as the
-            // first one — which is what the sidebar did before this line.)
-            const display = place?.displayName.trim() || '';
-            const label = display || row.scriptName || placeLabel(place, '');
-            // When a display name is standing in for several script
-            // locations, each row still says which one IT is.
-            const sub = display && row.scriptName && (place?.scriptNames.length ?? 0) > 1 ? row.scriptName : '';
             const pinned = !!place && place.x !== null;
             return (
               <div key={row.key} className={`locmap-rail-item${isOpen ? ' locmap-rail-item-open' : ''}`}>
                 <div className="locmap-rail-row" onClick={() => setExpanded(isOpen ? null : row.key)}>
                   <span className="locmap-rail-chevron">{isOpen ? <FaChevronDown /> : <FaChevronRight />}</span>
                   <FaMapMarkerAlt className={`locmap-rail-icon${pinned ? ' locmap-rail-icon-pinned' : ''}`} />
-                  <span className="locmap-rail-name" title={row.scriptName || label}>
-                    {label}
-                    {sub && <span className="locmap-rail-sub"> · {sub}</span>}
-                  </span>
+                  <span className="locmap-rail-name" title={row.scriptNames.join(', ') || row.label}>{row.label}</span>
+                  {/* A row standing for several script locations says so with
+                      a count, rather than repeating one of their names. */}
+                  {row.scriptNames.length > 1 && (
+                    <span className="locmap-rail-badge" title={row.scriptNames.join(', ')}>{row.scriptNames.length}</span>
+                  )}
+                  {pinned && place?.locked && <FaLock className="locmap-rail-lock" title="This pin is locked" />}
                   {row.scenes > 0 && <span className="locmap-rail-scenes">{row.scenes}</span>}
                 </div>
                 {isOpen && (
@@ -302,20 +310,48 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
                     {/* Derek: the display name "overrides what the location
                         name looks like in the location window. it does not
                         change anything in the script" — so the script's own
-                        name is shown underneath, and the two never blur. */}
+                        names are listed below, and the two never blur. */}
                     <label className="locmap-field-label">Display Name</label>
                     <input
                       className="locmap-field-input"
-                      placeholder={row.scriptName || 'Name in the Locations window'}
+                      placeholder={row.scriptNames[0] || 'Name in the Locations window'}
                       value={place?.displayName ?? ''}
                       onChange={(e) => {
-                        const id = placeFor(row.scriptName, place);
+                        const id = placeFor(row.scriptNames, place);
                         if (id) updatePlaceIn(id, { displayName: e.target.value });
                       }}
                     />
-                    {row.scriptName && (
-                      <div className="locmap-field-note">In the script: {row.scriptName}</div>
-                    )}
+
+                    {/* Derek #2: the row's script locations, as a field —
+                        #3: and this is where another one is attached. */}
+                    <label className="locmap-field-label">Script Locations</label>
+                    <div className="locmap-attached-list">
+                      {row.scriptNames.length === 0 && (
+                        <div className="locmap-field-note">Not in the script — this place is yours alone.</div>
+                      )}
+                      {row.scriptNames.map((name) => (
+                        <div key={name} className="locmap-attached-row">
+                          <span className="locmap-attached-name" title={name}>{name}</span>
+                          {row.scriptNames.length > 1 && (
+                            <button
+                              className="locmap-attached-remove"
+                              title={`Disconnect ${name} from this place`}
+                              onClick={() => detachLocation(name)}
+                            ><FaTimes /></button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      className="locmap-add-field"
+                      disabled={available.length === 0}
+                      title={available.length ? undefined : 'Every location is already placed'}
+                      onClick={(e) => {
+                        const id = placeFor(row.scriptNames, place);
+                        const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                        if (id) setAttachTo({ id, top: r.bottom + 4, left: r.left });
+                      }}
+                    >+ Connect a script location</button>
 
                     <label className="locmap-field-label">Description</label>
                     <textarea
@@ -323,7 +359,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
                       rows={3}
                       value={place?.description ?? ''}
                       onChange={(e) => {
-                        const id = placeFor(row.scriptName, place);
+                        const id = placeFor(row.scriptNames, place);
                         if (id) updatePlaceIn(id, { description: e.target.value });
                       }}
                     />
@@ -353,10 +389,21 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
                     <button
                       className="locmap-add-field"
                       onClick={() => {
-                        const id = placeFor(row.scriptName, place);
+                        const id = placeFor(row.scriptNames, place);
                         if (id) void addCustomField(id);
                       }}
                     >+ Add custom field</button>
+
+                    {/* Derek #6: the lock lives here as well as in the pin's
+                        own dropdown — same one flag, both places. */}
+                    {pinned && place && (
+                      <button
+                        className={`locmap-add-field${place.locked ? ' locmap-locked' : ''}`}
+                        onClick={() => toggleLock(place.id)}
+                      >
+                        {place.locked ? <><FaLock /> Pin locked — click to unlock</> : <><FaLockOpen /> Lock this pin&rsquo;s position</>}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -394,6 +441,15 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
                 </button>
               </div>
             )}
+            {/* Derek #4 */}
+            <div className="locmap-actionbar">
+              <button className="locmap-tool-btn" onClick={addPinFromButton} title="Drop a pin in the middle of the map">
+                + Add Pin
+              </button>
+              <span className="locmap-pin-count">
+                {drawnPins.length} pinned{drawnPins.length > 0 && ' · click the map to add another'}
+              </span>
+            </div>
             <div className="locmap-canvas" ref={canvasRef}>
               <div
                 className={`locmap-scroll${importing ? '' : ' locmap-scroll-placing'}`}
@@ -425,7 +481,17 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
                     return (
                       <div
                         key={place.id}
-                        className={`locmap-pin${place.scriptNames.length === 0 ? ' locmap-pin-empty' : ''}`}
+                        /* Derek #5: "when I attach a location to a pin, the pin
+                           jumps off the screen." The whole capsule used to be
+                           CENTRED on the point, so a longer label dragged the
+                           marker sideways — attaching a name moved the marker
+                           from 4.5% to -3.3% of the map in the driver. Now the
+                           MARKER sits on the point and the label hangs off it,
+                           flipping to the left in the right-hand half so it
+                           never runs off the edge either. */
+                        className={`locmap-pin${place.scriptNames.length === 0 ? ' locmap-pin-empty' : ''}`
+                          + ((place.x ?? 0) > 0.5 ? ' locmap-pin-flip' : '')
+                          + (place.locked ? ' locmap-pin-locked' : '')}
                         style={{ left: `${(place.x ?? 0) * 100}%`, top: `${(place.y ?? 0) * 100}%` }}
                         onPointerDown={(e) => startPinDrag(e, place)}
                         onPointerMove={onPinMove}
@@ -433,11 +499,12 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
                         onClick={(e) => e.stopPropagation()}
                         onDoubleClick={() => { if (first) onGoToScene(first.sceneIndices[0]); }}
                         title={place.scriptNames.length
-                          ? `${label} — click for options, double-click to go to the scene`
+                          ? `${label} — click for options, double-click to go to the scene${place.locked ? ' (locked)' : ''}`
                           : 'Click to choose which location this is'}
                       >
                         <FaMapMarkerAlt className="locmap-pin-icon" />
                         <span className="locmap-pin-label">{label}</span>
+                        {place.locked && <FaLock className="locmap-pin-lockmark" />}
                         {place.scriptNames.length > 1 && (
                           <span className="locmap-pin-badge">{place.scriptNames.length}</span>
                         )}
@@ -451,6 +518,28 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
         )}
       </div>
 
+      {/* Derek #3: connect another script location from the SIDEBAR. */}
+      {attachTo && createPortal(
+        <>
+          <div className="locmap-menu-veil" onPointerDown={() => setAttachTo(null)} />
+          <div className="locmap-pin-menu" style={{ top: attachTo.top, left: attachTo.left }}>
+            <div className="locmap-pin-menu-subhead">Connect which location?</div>
+            {available.length === 0 && <div className="locmap-pin-menu-empty">Every location is already placed.</div>}
+            {available.map((loc) => (
+              <button
+                key={loc.name}
+                className="locmap-pin-menu-item"
+                onClick={() => { attachLocation(attachTo.id, loc.name); setAttachTo(null); }}
+              >
+                <span className="locmap-pin-menu-item-name">{loc.name}</span>
+                <span className="locmap-pin-menu-item-count">{loc.sceneIndices.length}</span>
+              </button>
+            ))}
+          </div>
+        </>,
+        document.body,
+      )}
+
       {menuFor && menuPlace && (
         <LocationPinMenu
           place={menuPlace}
@@ -462,6 +551,8 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
           onCreate={(displayName) => updatePlaceIn(menuPlace.id, { displayName })}
           onRenameInScript={renameInScript}
           onMergeInto={(targetId) => mergeInto(menuPlace.id, targetId)}
+          locked={!!menuPlace.locked}
+          onToggleLock={() => toggleLock(menuPlace.id)}
           onUnpin={() => unpinPlace(menuPlace.id)}
           onClose={() => setMenuFor(null)}
         />

@@ -21,7 +21,7 @@
  */
 import { useCallback, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FaRegTrashAlt } from 'react-icons/fa';
+import { FaRegTrashAlt, FaLock, FaLockOpen } from 'react-icons/fa';
 import { promptDialog } from './ConfirmDialog';
 import { placeLabel, type LocationPlace } from '../utils/locationPlaces';
 
@@ -41,12 +41,15 @@ interface Props {
   /** Move this pin's script locations onto another pin, and drop this one. */
   onMergeInto: (targetPlaceId: string) => void;
   onUnpin: () => void;
+  /** v5.78, Derek: lock the pin's position — same flag the sidebar shows. */
+  locked: boolean;
+  onToggleLock: () => void;
   onClose: () => void;
 }
 
 export default function LocationPinMenu({
   place, places, available, pos,
-  onAttach, onDetach, onCreate, onRenameInScript, onMergeInto, onUnpin, onClose,
+  onAttach, onDetach, onCreate, onRenameInScript, onMergeInto, onUnpin, locked, onToggleLock, onClose,
 }: Props) {
   const [sub, setSub] = useState<'none' | 'attach' | 'merge' | 'rename'>('none');
   const otherPins = useMemo(
@@ -121,6 +124,9 @@ export default function LocationPinMenu({
                 Assign to an existing pin…
               </button>
             )}
+            <button className="locmap-pin-menu-item" onClick={() => { onToggleLock(); onClose(); }}>
+              {locked ? <><FaLock /> Unlock this pin&rsquo;s position</> : <><FaLockOpen /> Lock this pin&rsquo;s position</>}
+            </button>
             <button className="locmap-pin-menu-item locmap-pin-menu-danger" onClick={() => { onUnpin(); onClose(); }}>
               Remove this pin
             </button>

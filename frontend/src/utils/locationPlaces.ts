@@ -39,6 +39,9 @@ export interface LocationPlace {
   /** Pin position, 0..1 of the map image. null ⇒ not on the map. */
   x: number | null;
   y: number | null;
+  /** v5.78, Derek: a locked pin can't be dragged. Once a place is where it
+   *  belongs, the next click near it shouldn't be able to nudge it. */
+  locked?: boolean;
 }
 
 /** The map image + how it was rotated when it was imported. */
@@ -78,7 +81,7 @@ export function newPlaceId(places: LocationPlace[]): string {
 }
 
 export function emptyPlace(id: string, x: number | null = null, y: number | null = null): LocationPlace {
-  return { id, scriptNames: [], displayName: '', description: '', fields: [], x, y };
+  return { id, scriptNames: [], displayName: '', description: '', fields: [], x, y, locked: false };
 }
 
 /** The place a script location belongs to, if any. */
@@ -147,8 +150,17 @@ export function updatePlace(
   return places.map((p) => (p.id === placeId ? { ...p, ...patch } : p));
 }
 
+/** Moving a LOCKED place is a no-op — the lock is the whole point. */
 export function movePlace(places: LocationPlace[], placeId: string, x: number, y: number): LocationPlace[] {
+  const place = places.find((p) => p.id === placeId);
+  if (!place || place.locked) return places;
   return updatePlace(places, placeId, { x: clampFraction(x), y: clampFraction(y) });
+}
+
+export function togglePlaceLock(places: LocationPlace[], placeId: string): LocationPlace[] {
+  const place = places.find((p) => p.id === placeId);
+  if (!place) return places;
+  return updatePlace(places, placeId, { locked: !place.locked });
 }
 
 export function removePlace(places: LocationPlace[], placeId: string): LocationPlace[] {
@@ -250,6 +262,57 @@ export function pinnedPlaces(places: LocationPlace[], locationNames: string[]): 
     .sort((a, b) => rank(a) - rank(b));
 }
 
+/**
+ * The sidebar's rows. Derek, v5.78: "when multiple script locations are
+ * connected to one pin, just show that single location in the side panel" —
+ * so a PLACE is one row however many script locations it carries, and the
+ * expanded row is where those locations are listed.
+ *
+ * Order follows the script: a place ranks by its earliest location, and a
+ * location with no place keeps its own position in the list.
+ */
+export interface LocationRow {
+  key: string;
+  /** The place this row is about, when there is one. */
+  place?: LocationPlace;
+  /** Script locations this row covers (one, unless they share a pin). */
+  scriptNames: string[];
+  /** What to call it: display name, else the (first) script name. */
+  label: string;
+  /** Scenes across every script location on this row. */
+  scenes: number;
+}
+
+export function locationRows<T extends { name: string; sceneIndices: number[] }>(
+  locations: T[], places: LocationPlace[],
+): LocationRow[] {
+  const rows: LocationRow[] = [];
+  const done = new Set<string>();
+  for (const loc of locations) {
+    if (done.has(key(loc.name))) continue;
+    const place = placeForLocation(places, loc.name);
+    if (!place) {
+      rows.push({ key: loc.name, scriptNames: [loc.name], label: loc.name, scenes: loc.sceneIndices.length });
+      done.add(key(loc.name));
+      continue;
+    }
+    // One row for the whole place, counting every location it carries.
+    const names = place.scriptNames.filter((n) => locations.some((l) => key(l.name) === key(n)));
+    names.forEach((n) => done.add(key(n)));
+    const scenes = names.reduce(
+      (sum, n) => sum + (locations.find((l) => key(l.name) === key(n))?.sceneIndices.length || 0), 0,
+    );
+    rows.push({ key: place.id, place, scriptNames: names, label: placeLabel(place, loc.name), scenes });
+  }
+  // Places the writer created that the script has no name for.
+  for (const p of places) {
+    if (p.scriptNames.length === 0 && (p.displayName.trim() || p.description.trim() || p.x !== null)) {
+      rows.push({ key: p.id, place: p, scriptNames: [], label: placeLabel(p, 'Unnamed place'), scenes: 0 });
+    }
+  }
+  return rows;
+}
+
 /** Script locations not yet on any pin — what the "attach" menu offers. */
 export function unplacedLocations<T extends { name: string }>(locations: T[], places: LocationPlace[]): T[] {
   const taken = new Set(places.filter((p) => p.x !== null).flatMap((p) => p.scriptNames.map(key)));
@@ -291,6 +354,7 @@ export function readPlaces(raw: unknown): LocationPlace[] {
         : [],
       x: typeof r.x === 'number' ? clampFraction(r.x) : null,
       y: typeof r.y === 'number' ? clampFraction(r.y) : null,
+      locked: r.locked === true,
     });
   }
   return out;

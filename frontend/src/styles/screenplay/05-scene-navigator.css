@@ -1253,9 +1253,15 @@
 .locmap-img { display: block; width: 100%; height: 100%; }
 .locmap-img-loading { width: 240px; height: 160px; background: var(--fd-overlay-subtle); border-radius: 4px; }
 
+/* v5.78, Derek: "when I attach a location to a pin, the pin jumps off the
+   screen." The capsule used to be CENTRED on the point, so a longer label
+   dragged the marker sideways — measured at 4.5% → -3.3% of the map when a
+   name was attached. Now the MARKER sits on the point (12px in from the
+   capsule's leading edge) and the label hangs off it; in the right-hand half
+   the capsule flips so the label reaches inward instead of off the edge. */
 .locmap-pin {
   position: absolute;
-  transform: translate(-50%, -100%);   /* the point of the pin marks the spot */
+  transform: translate(-12px, -100%);
   display: flex; align-items: center; gap: 4px;
   padding: 2px 6px 2px 4px;
   line-height: 1.2;
@@ -1457,3 +1463,52 @@
    with no way to tell the rows apart. */
 .locmap-rail-sub { font-size: 10px; color: var(--fd-text-muted); font-weight: 400; }
 .location-name-sub { font-size: 10px; color: var(--fd-text-muted); font-weight: 400; }
+.locmap-pin-flip { transform: translate(calc(-100% + 12px), -100%); }
+/* A locked pin says so, and doesn't offer the grab cursor. */
+.locmap-pin-locked { cursor: default; border-style: solid; }
+.locmap-pin-lockmark { flex: 0 0 auto; font-size: 8px; color: var(--fd-text-muted); }
+
+/* ── the map's action bar (v5.78: "+ Add Pin") ─────────────────────── */
+.locmap-actionbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  flex: 0 0 auto;
+  border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
+}
+
+/* ── the sidebar's attached-locations field (v5.78) ────────────────── */
+.locmap-attached-list { display: flex; flex-direction: column; gap: 3px; }
+.locmap-attached-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 6px;
+  background: var(--fd-overlay-subtle);
+  border: 1px solid var(--fd-border);
+  border-radius: 3px;
+}
+.locmap-attached-name {
+  flex: 1; min-width: 0;
+  font-size: 11px; color: var(--fd-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.locmap-attached-remove {
+  flex: 0 0 auto;
+  background: none; border: none; padding: 1px 2px;
+  color: var(--fd-text-muted); font-size: 10px; cursor: pointer;
+}
+.locmap-attached-remove:hover { color: var(--fd-danger, #e05252); }
+/* A row that stands for several script locations carries their count. */
+.locmap-rail-badge {
+  flex: 0 0 auto;
+  min-width: 15px; padding: 0 4px;
+  font-size: 9px; font-weight: 700; line-height: 15px; text-align: center;
+  color: #fff; background: var(--fd-accent);
+  border-radius: 8px;
+}
+.locmap-rail-lock { flex: 0 0 auto; font-size: 9px; color: var(--fd-text-muted); }
+.locmap-add-field:disabled { opacity: .45; cursor: default; border-style: dashed; }
+.locmap-add-field:disabled:hover { border-color: var(--fd-border); color: var(--fd-text-secondary, var(--fd-text)); }
+/* The lock button reads as ON when it is on. */
+.locmap-add-field.locmap-locked {
+  border-style: solid; border-color: var(--fd-accent); color: var(--fd-accent);
+}
+.locmap-add-field svg { margin-right: 5px; vertical-align: -1px; }
