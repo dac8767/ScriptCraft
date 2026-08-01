@@ -151,9 +151,27 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.69 and older (newest first)
+## Version history — v5.70 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.70 — "…all types" labels + the Navigator filter's Reset
+
+- Derek: (1) "make it clear that 'Show all' and 'Hide all' apply to the
+  annotation types only" — renamed IN TypeGridSection ("Show all types" /
+  "Hide all types"), so both doors (Navigator filter, Annotations
+  window's filter) say it. (2) "add a button to the navigator filter
+  menu called 'Reset'… resets everything back to the default options" —
+  a divider row at the menu's foot; onClick writes
+  EMPTY_NAV_SCENE_FILTERS + EMPTY_MARKUP_FILTERS — the SAME constants
+  the store initializes from, so "default" cannot drift from a fresh
+  session. Navigator-only (the ask named that menu); the annotation half
+  is the shared markupFilters, so Reset also resets the Annotations
+  panel/ribbon view — v5.46's one-filter design, working as intended.
+- check-v570 8/8 (labels in both doors, all five controls dirtied →
+  chip 5 → Reset → store defaults, visible control states, chip gone,
+  no Reset added elsewhere). Gates: tsc 0, 933 tests, build.
+
 
 ### v5.69 — the type grid rides one row with "Type:"
 

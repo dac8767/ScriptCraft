@@ -1,5 +1,16 @@
 [
   {
+    "version": "5.75",
+    "date": "2026-08-01",
+    "changes": [
+      "The Locations window has List and Map tabs. List is the location list exactly as it was.",
+      "Map: upload a map — a world, a city, a floor plan — and drag locations from the rail onto it to pin them.",
+      "Drag a pin to move it, click one to jump to that location's first scene, or take it off with the pin's ×.",
+      "Pins are stored as positions on the map itself, so they stay on their landmark at any window size, and the map and pins are saved with the script.",
+      "Renaming a location in the list moves its pin with it."
+    ]
+  },
+  {
     "version": "5.74",
     "date": "2026-07-31",
     "changes": [

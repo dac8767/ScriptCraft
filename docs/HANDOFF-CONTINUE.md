@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.74 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.75 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,7 +227,54 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.74 — ONE title page, three renderers reconciled (HEAD)
+### v5.75 — Locations: List / Map tabs, with pins (HEAD)
+
+- Derek: "add the tabs List and Map to the locations window. the current
+  locations info will go under list. in the map tab, allow the user to
+  upload a map, which acts as a background in the tab, and then the user
+  can pin locations from the list onto the map."
+- SHAPE: `useLocationsTabs` in SceneNavigator, registered in ToolDock's
+  TOOL_CHROME like usePagesTabs — same chrome slot, no second tab
+  mechanism. List renders exactly what the window rendered before.
+  `LocationMapTab.tsx` is the Map tab: a rail of not-yet-pinned locations
+  beside the map. The rail reads the SAME filtered/sorted `locations` the
+  list does, so the window's Filter/Sort/Search drive both tabs instead of
+  going decorative on one.
+- DATA: `utils/locationPins.ts` holds the rules, pure and tested (20
+  tests) — upsert/remove/rename/visible/unpinned/dropFraction.
+  `stores/slices/locationMapSlice.ts` holds image + pins;
+  `locationsTab` sits in sceneNavSlice with pagesTab (view state,
+  per machine) while image+pins are SCRIPT data, saved as
+  `_locationMapImage` / `_locationPins` in composeSaveContent and read
+  back at BOTH load sites in ScreenplayEditor.
+- Pins carry FRACTIONS of the map image (0..1), never pixels — a pixel
+  offset slides off its landmark the moment the window resizes.
+- Renaming a location moves its pin (handleRenameSubmit calls
+  renameLocationPin); a pin whose location disappears is kept in the data
+  but not drawn, so retyping the heading brings it back.
+- Images follow the app's existing two-path rule: a project uploads an
+  ASSET, local-only stores a data URL; `resolveImageUrl` reads both.
+- THREE LAYOUT BUGS the check caught, all mine, all now fixed:
+  1. `max-width/max-height: 100%` leaves the image contributing its
+     NATURAL width to layout — a wide map sized the whole tab and pushed
+     it out of a narrowed window. The map is now MEASURED: a
+     ResizeObserver on the canvas + the image's aspect ratio give the
+     stage an explicit px size.
+  2. Measuring the canvas while the map sized the canvas fed back on
+     itself. The scroll layer is now ABSOLUTE (`inset: 0`) inside the
+     canvas, so the map contributes no intrinsic width to any ancestor.
+  3. A CENTRED flex item that overflows can't be scrolled back to on the
+     start side — the top of a tall map, and any pin on it, was
+     unreachable. `margin: auto` centres and keeps the overflow reachable.
+- WebKit: every dragstart calls dataTransfer.setData() (CLAUDE.md §4).
+- check-v575 20/20 drives the real chrome tabs, uploads a real PNG through
+  the real file input, drags from the rail, and reads back where the pin
+  landed. NOTE for future checks: DragEvent clientX/clientY are INTEGERS,
+  so a tiny fixture image can't express a fractional drop — use a
+  realistically sized one. Gates: tsc 0, 972 tests, build. TENTH rollback
+  at batch start.
+
+### v5.74 — ONE title page, three renderers reconciled
 
 - Derek, after v5.73: "the title page in the title page tool, and the
   title page in the Page > All view still do not match." True — v5.73
@@ -334,28 +381,12 @@ Durable bits kept live here:
   on the title, controls on All, Script still script-only).
   Gates: tsc 0, 938 tests, build.
 
-### v5.70 — "…all types" labels + the Navigator filter's Reset
-
-- Derek: (1) "make it clear that 'Show all' and 'Hide all' apply to the
-  annotation types only" — renamed IN TypeGridSection ("Show all types" /
-  "Hide all types"), so both doors (Navigator filter, Annotations
-  window's filter) say it. (2) "add a button to the navigator filter
-  menu called 'Reset'… resets everything back to the default options" —
-  a divider row at the menu's foot; onClick writes
-  EMPTY_NAV_SCENE_FILTERS + EMPTY_MARKUP_FILTERS — the SAME constants
-  the store initializes from, so "default" cannot drift from a fresh
-  session. Navigator-only (the ask named that menu); the annotation half
-  is the shared markupFilters, so Reset also resets the Annotations
-  panel/ribbon view — v5.46's one-filter design, working as intended.
-- check-v570 8/8 (labels in both doors, all five controls dirtied →
-  chip 5 → Reset → store defaults, visible control states, chip gone,
-  no Reset added elsewhere). Gates: tsc 0, 933 tests, build.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.70** — Pages: the Custom tab
 - **v5.69** — the type grid rides one row with "Type:"
 - **v5.68** — Navigator filter: the Scene Headings section
 - **v5.67** — Pages window tabs: Script / Title Page / Custom; the tool retirement

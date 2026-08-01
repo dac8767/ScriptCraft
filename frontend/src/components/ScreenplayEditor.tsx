@@ -3043,6 +3043,12 @@ const ScreenplayEditor: React.FC = () => {
             if (custFields.length > 0) {
               store.setCharacterCustomFields(custFields as import('../stores/editorStore').CharacterCustomField[]);
             }
+            // v5.75: the Locations Map tab — image + pins.
+            store.setLocationMapImage(
+              c._locationMapImage && typeof c._locationMapImage === 'object'
+                ? c._locationMapImage as import('../utils/locationPins').LocationMapImage : null,
+            );
+            store.setLocationPins(parseAttr(c._locationPins) as import('../utils/locationPins').LocationPin[]);
             const beatsArr = parseAttr(c._beats);
             store.setBeats(beatsArr as import('../stores/editorStore').BeatInfo[]);
             const beatColsArr = parseAttr(c._beatColumns);
@@ -3468,6 +3474,12 @@ const ScreenplayEditor: React.FC = () => {
           if (custFields2.length > 0) {
             store.setCharacterCustomFields(custFields2 as import('../stores/editorStore').CharacterCustomField[]);
           }
+          // v5.75: the Locations Map tab — image + pins.
+          store.setLocationMapImage(
+            c._locationMapImage && typeof c._locationMapImage === 'object'
+              ? c._locationMapImage as import('../utils/locationPins').LocationMapImage : null,
+          );
+          store.setLocationPins(parseAttr2(c._locationPins) as import('../utils/locationPins').LocationPin[]);
           const beatsArr2 = parseAttr2(c._beats);
           store.setBeats(beatsArr2 as import('../stores/editorStore').BeatInfo[]);
           const beatCols2 = parseAttr2(c._beatColumns);

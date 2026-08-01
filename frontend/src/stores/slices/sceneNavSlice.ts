@@ -54,6 +54,14 @@ export interface SceneNavSlice {
    *  render in the window CHROME while the body switches on the value. */
   pagesTab: PagesTab;
   setPagesTab: (t: PagesTab) => void;
+  /** v5.75, Derek: the Locations window's header TABS — List (the location
+   *  list, everything the window held before) and Map (an uploaded map with
+   *  the locations pinned onto it). Same shape as pagesTab: persisted per
+   *  machine, and in the store because the tabs render in the window CHROME
+   *  while the body switches on the value. The map's DATA — image and pins —
+   *  is script data and lives in locationMapSlice instead. */
+  locationsTab: LocationsTab;
+  setLocationsTab: (t: LocationsTab) => void;
   /** v5.68: the Navigator filter's Scene Headings section — INT./EXT.,
    *  location, contains-text. Ephemeral like navFilter; in the store because
    *  the controls live in the chrome popover and the list in the body. */
@@ -82,6 +90,8 @@ export type LocationSort = 'scene' | 'name' | 'count';
  *  script pages and custom pages in document order). Ids persist; labels are
  *  usePagesTabs' business ("Script Pages" etc. — renamed v5.71). */
 export type PagesTab = 'script' | 'title' | 'custom' | 'all';
+/** v5.75: the Locations window's tabs. */
+export type LocationsTab = 'list' | 'map';
 
 /** v5.08: the grid is `repeat(<count>, 1fr)` — the number IS the meaning.
  *  (v4.94's pagesThumbPx set a column min-width and let auto-fill derive the
@@ -129,6 +139,11 @@ export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlic
   setPagesTab: (t) => {
     saveViewState({ pagesTab: t });
     set({ pagesTab: t });
+  },
+  locationsTab: (_vs.locationsTab as LocationsTab) ?? 'list',
+  setLocationsTab: (t) => {
+    saveViewState({ locationsTab: t });
+    set({ locationsTab: t });
   },
   navSceneFilters: EMPTY_NAV_SCENE_FILTERS,
   setNavSceneFilters: (f) => set({ navSceneFilters: f }),

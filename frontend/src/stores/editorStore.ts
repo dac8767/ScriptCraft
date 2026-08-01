@@ -11,6 +11,7 @@ import { createTypewriterSlice, type TypewriterSlice } from './slices/typewriter
 import { createNotesSlice, type NotesSlice } from './slices/notesSlice';
 import { createMarkupsSlice, DEFAULT_MARKUP_PRESETS, type MarkupsSlice } from './slices/markupsSlice';
 import { createSceneNavSlice, type SceneNavSlice } from './slices/sceneNavSlice';
+import { createLocationMapSlice, type LocationMapSlice } from './slices/locationMapSlice';
 import { createWorkspacesSlice, type WorkspacesSlice } from './slices/workspacesSlice';
 import { createViewPrefsSlice, type ViewPrefsSlice } from './slices/viewPrefsSlice';
 import { createSpellGrammarSlice, type SpellGrammarSlice } from './slices/spellGrammarSlice';
@@ -958,7 +959,7 @@ export interface BeatInfo {
 
 export type BeatArrangeMode = 'auto' | 'custom';
 
-export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, TypewriterSlice, NotesSlice, MarkupsSlice, SceneNavSlice, WorkspacesSlice, ViewPrefsSlice, SpellGrammarSlice, BeatsOutlineSlice {
+export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, TypewriterSlice, NotesSlice, MarkupsSlice, SceneNavSlice, LocationMapSlice, WorkspacesSlice, ViewPrefsSlice, SpellGrammarSlice, BeatsOutlineSlice {
   /** v5.25: Customize ▸ Markups — the predefined icon+color combos the
    *  markup popover offers. Persisted; defaults in markupsSlice. */
   markupPresets: { icon: string; color: string }[];
@@ -1443,6 +1444,7 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     set({ markupPresets: p });
   },
   ...createSceneNavSlice(set, get, api),
+  ...createLocationMapSlice(set, get, api),
   ...createWorkspacesSlice(set, get, api),
   ...createViewPrefsSlice(set, get, api),
   ...createSpellGrammarSlice(set, get, api),

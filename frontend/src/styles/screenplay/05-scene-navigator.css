@@ -1128,3 +1128,167 @@
    floating, fullscreen). The opaque panel bg above is only for the legacy
    overlay presentation. */
 .scene-navigator-embed { background: transparent; }
+
+/* ══════════ LOCATIONS ▸ MAP TAB (v5.75) ══════════════════════════════
+   Derek: upload a map, drag locations from the list onto it. Rail of
+   unplaced locations + the map itself. The STAGE is sized by the image
+   (inline-block, image display:block) so a pin's percentage coordinates
+   are percentages OF THE MAP, not of the surrounding box — that is what
+   keeps a pin on its landmark when the window resizes. */
+.locmap {
+  flex: 1;
+  /* Both mins at 0: a flex item defaults to min-width/min-height AUTO and so
+     refuses to shrink below its content. With a wide map inside, that let the
+     IMAGE dictate the tab's width — the whole tab was pushed out of a
+     narrowed window, map and pins with it. */
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  overflow: hidden;
+}
+.locmap-rail {
+  /* Proportional, so the map still gets most of the room when the window is
+     DOCKED (320px) rather than fullscreen — a fixed 200px rail would leave a
+     stamp-sized map in a side panel. */
+  width: clamp(116px, 30%, 200px);
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--fd-border);
+  background: var(--fd-overlay-subtle);
+}
+.locmap-rail-head {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 12px;
+  font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--fd-text-muted);
+  border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
+}
+.locmap-rail-count { margin-left: auto; opacity: .8; }
+.locmap-rail-list { flex: 1; overflow-y: auto; min-height: 0; padding-bottom: 6px; }
+.locmap-rail-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 12px;
+  font-size: 12px; color: var(--fd-text);
+  border-bottom: 1px solid var(--fd-overlay-subtle);
+  cursor: grab;
+}
+.locmap-rail-item:hover { background: var(--fd-overlay-subtle); }
+.locmap-rail-item:active { cursor: grabbing; }
+/* No map yet — the rows are still listed, but they aren't draggable, so
+   they must not pretend to be (a grab cursor on a dead row is exactly the
+   silent no-op this project keeps rooting out). */
+.locmap-rail-item-idle { cursor: default; opacity: .55; }
+.locmap-rail-icon { flex: 0 0 auto; color: var(--fd-text-muted); font-size: 11px; }
+.locmap-rail-name {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.locmap-rail-scenes { flex: 0 0 auto; font-size: 11px; color: var(--fd-text-muted); }
+
+.locmap-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.locmap-toolbar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px;
+  border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
+  flex: 0 0 auto;
+}
+.locmap-tool-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px;
+  font-size: 11px;
+  color: var(--fd-text);
+  background: var(--fd-overlay-subtle);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.locmap-tool-btn:hover { border-color: var(--fd-accent); color: var(--fd-accent); }
+.locmap-pin-count { margin-left: auto; font-size: 11px; color: var(--fd-text-muted); }
+
+/* The canvas takes its size from the WINDOW (flex, both mins 0) and holds an
+   absolutely-positioned scroll layer. That layering is what keeps the map out
+   of intrinsic sizing: an abs-positioned subtree contributes no width to its
+   ancestors, so a 4000px map can't size the tab — and the measured fit can't
+   feed back on itself. */
+.locmap-canvas {
+  position: relative;
+  flex: 1; min-height: 0; min-width: 0;
+  overflow: hidden;
+}
+.locmap-scroll {
+  position: absolute; inset: 0;
+  display: flex;
+  overflow: auto;
+  /* Extra room at the top: a pin draws ABOVE its point, like a real map pin,
+     so one dropped on the map's top edge needs somewhere to be. */
+  padding: 26px 16px 16px;
+}
+/* The drop target lights up while a location is over it — the only cue
+   that the drag will actually land. */
+.locmap-scroll-over { background: rgba(74, 158, 255, .08); box-shadow: inset 0 0 0 2px var(--fd-accent); }
+/* margin:auto — NOT align/justify-center. A CENTRED flex item that overflows
+   its container can't be scrolled back to on the start side, so the top of a
+   tall map (and any pin on it) was unreachable. margin:auto centres the same
+   way and keeps the overflow reachable.
+   The stage's aspect-ratio comes from the loaded image (LocationMapTab), so
+   max-width/max-height fit the map to the tab while the stage box stays
+   exactly the image box — the invariant every pin coordinate rests on. */
+.locmap-stage {
+  position: relative;
+  margin: auto;                    /* centres, and keeps overflow reachable */
+  line-height: 0;
+  flex: 0 0 auto;
+  /* width/height come from LocationMapTab as PIXELS — see the sizing note
+     there. Percentages would let the image's natural size leak into the
+     layout and blow the tab open. */
+  max-width: 100%;
+  max-height: 100%;
+}
+/* The image fills the stage exactly; the stage was computed to the image's
+   own aspect ratio, so nothing is letterboxed inside it. */
+.locmap-img { display: block; width: 100%; height: 100%; }
+.locmap-img-loading { width: 240px; height: 160px; background: var(--fd-overlay-subtle); border-radius: 4px; }
+
+.locmap-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);   /* the point of the pin marks the spot */
+  display: flex; align-items: center; gap: 4px;
+  padding: 2px 6px 2px 4px;
+  line-height: 1.2;
+  background: var(--fd-panel-bg, var(--fd-bg));
+  border: 1px solid var(--fd-accent);
+  border-radius: 11px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, .35);
+  cursor: grab;
+  white-space: nowrap;
+}
+.locmap-pin:active { cursor: grabbing; }
+.locmap-pin-icon { color: var(--fd-accent); font-size: 11px; flex: 0 0 auto; }
+.locmap-pin-label { font-size: 11px; color: var(--fd-text); max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.locmap-pin-remove {
+  border: none; background: none; padding: 0 1px;
+  font-size: 13px; line-height: 1;
+  color: var(--fd-text-muted); cursor: pointer;
+  opacity: 0;                          /* appears on hover — one per pin */
+}
+.locmap-pin:hover .locmap-pin-remove { opacity: 1; }
+.locmap-pin-remove:hover { color: var(--fd-danger, #e05252); }
+
+.locmap-empty {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 24px; text-align: center;
+}
+.locmap-empty-icon { font-size: 30px; color: var(--fd-text-muted); opacity: .6; }
+.locmap-empty-title { font-size: 13px; font-weight: 600; color: var(--fd-text); }
+.locmap-empty-text { font-size: 12px; color: var(--fd-text-muted); max-width: 320px; margin: 0; }
+.locmap-add-btn {
+  margin-top: 4px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: #fff; background: var(--fd-accent);
+  border: none; border-radius: 4px; cursor: pointer;
+}
+.locmap-add-btn:hover { filter: brightness(1.08); }

@@ -66,6 +66,8 @@ export interface ViewState {
   scenesViewMode?: 'list' | 'cards';
   /** v5.67: the Pages window's header tab. v5.71: + 'all' (All Pages). */
   pagesTab?: 'script' | 'title' | 'custom' | 'all';
+  /** v5.75: the Locations window's header tab (List / Map). */
+  locationsTab?: 'list' | 'map';
   /** v5.03: the scene list's resizable column widths, in px. The synopsis
    *  column takes the remainder, so these two describe the whole table. */
   sceneColWidths?: { head: number; metrics: number };

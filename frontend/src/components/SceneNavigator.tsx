@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import { useEditorStore, EMPTY_SCENE_FILTERS, type SceneFilters } from '../stores/editorStore';
+import LocationMapTab from './LocationMapTab';
 import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlice';
 import { PAGES_PER_ROW_MIN, PAGES_PER_ROW_MAX } from '../stores/slices/sceneNavSlice';
 import { computeSceneLengths, computePageBlocks, type PageBlockInfo, type PageContentInfo } from '../editor/pagination';
@@ -393,6 +394,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const locSearch = useEditorStore((s) => s.locationSearch);
   const locFilter = useEditorStore((s) => s.locationFilter);
   const locSort = useEditorStore((s) => s.locationSort);
+  const locationsTab = useEditorStore((s) => s.locationsTab);
   const locations = useMemo(
     () => visibleLocations(allLocations, { search: locSearch, filter: locFilter, sort: locSort }),
     [allLocations, locSearch, locFilter, locSort],
@@ -877,6 +879,10 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     });
 
     if (tr.steps.length > 0) editor.view.dispatch(tr);
+    // v5.75: the Map tab's pin follows the rename. Pins are keyed by
+    // location name, so without this the heading rewrite would orphan the
+    // pin and it would silently drop off the map.
+    useEditorStore.getState().renameLocationPin(oldName, newName);
     setRenamingLocation(null);
     setExpandedLocation(newName.toUpperCase());
   }, [editor, renamingLocation, renameValue]);
@@ -1429,7 +1435,14 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
       )}
 
       {/* ── Locations tab ────────────────────────────────────────────── */}
-      {activeTab === 'locations' && (
+      {/* v5.75, Derek: List / Map. The list below is the List tab, unchanged;
+          the Map tab renders the uploaded map with the same locations pinned
+          onto it — and reads the SAME filtered/sorted `locations`, so the
+          window's Filter/Sort/Search drive both tabs. */}
+      {activeTab === 'locations' && locationsTab === 'map' && (
+        <LocationMapTab locations={locations} onGoToScene={goToScene} />
+      )}
+      {activeTab === 'locations' && locationsTab === 'list' && (
         <>
           <div className="navigator-list">
             {locations.length === 0 ? (
@@ -1592,6 +1605,18 @@ export function usePagesTabs(): ToolChromeTab[] {
     { label: 'Title', active: tab === 'title', onSelect: () => setTab('title') },
     { label: 'Custom', active: tab === 'custom', onSelect: () => setTab('custom') },
     { label: 'All', active: tab === 'all', onSelect: () => setTab('all') },
+  ];
+}
+
+/** v5.75, Derek: the Locations window's tabs — List (everything the window
+ *  held before) and Map (an uploaded map with locations pinned onto it).
+ *  Same chrome slot as the Pages and Characters tabs. */
+export function useLocationsTabs(): ToolChromeTab[] {
+  const tab = useEditorStore((s) => s.locationsTab);
+  const setTab = useEditorStore((s) => s.setLocationsTab);
+  return [
+    { label: 'List', active: tab === 'list', onSelect: () => setTab('list') },
+    { label: 'Map', active: tab === 'map', onSelect: () => setTab('map') },
   ];
 }
 

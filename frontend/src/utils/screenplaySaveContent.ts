@@ -56,6 +56,12 @@ export function composeSaveContent(doc: Record<string, unknown>): Record<string,
     _markups: store.markups,
     _generalNotes: store.generalNotes,
     _shelf: store.shelfCards,
+    // v5.75: the Locations Map tab — the map image REFERENCE (asset id, or a
+    // data URL when local-only) and where each location sits on it. Script
+    // data, so it rides in the file like beats and notes rather than in
+    // localStorage, which would lose the map on another machine.
+    _locationMapImage: store.locationMapImage,
+    _locationPins: store.locationPins,
     _tags: store.tags,
     _tagCategories: store.tagCategories,
     _characterProfiles: store.characterProfiles,
