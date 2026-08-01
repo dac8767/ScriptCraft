@@ -1,5 +1,5 @@
 /**
- * LocationMapTab (v5.75) — the Locations window's Map tab.
+ * LocationMapTab (v5.75/v5.76) — the Locations window's Map tab.
  *
  * Derek: "allow the user to upload a map, which acts as a background in the
  * tab, and then the user can pin locations from the list onto the map."
@@ -9,10 +9,13 @@
  * filtered/sorted list the List tab shows — the window's Filter/Sort/Search
  * keep working here rather than becoming decorative on this tab.
  *
- * The map image is a plain <img> inside a `position: relative` stage that is
- * sized BY that image, so the stage box and the image box are the same box
- * and a pin at (0.5, 0.5) is on the middle of the map at every window size.
- * Pins carry fractions, never pixels (utils/locationPins).
+ * The map sits in a stage whose pixel size is MEASURED to the image's own
+ * aspect ratio (see the sizing note below), so the stage box and the image
+ * box are the same box and a pin at (0.5, 0.5) is on the middle of the map at
+ * every window size. Pins carry fractions, never pixels (utils/locationPins).
+ *
+ * v5.76: the image itself loads through AssetImage — the app's ONE image
+ * loader — not a private copy. See MapImage.
  *
  * WebKit: every drag handler here calls dataTransfer.setData() — without it
  * WebKit refuses to start the drag and the whole tab is dead in the app while
@@ -25,9 +28,7 @@ import { useProjectStore } from '../stores/projectStore';
 import { useAssetStore } from '../stores/assetStore';
 import { api } from '../services/api';
 import { resolveImageUrl } from '../utils/imageAsset';
-import { authedFetch } from '../services/authedFetch';
-import { isTauri } from '../services/platform';
-import { ImageSourceMenu } from './CharacterAssetMedia';
+import { AssetImage, ImageSourceMenu } from './CharacterAssetMedia';
 import { CharacterImagePickerDialog } from './CharacterImageOverlays';
 import { showToast } from './Toast';
 import { confirmDialog } from './ConfirmDialog';
@@ -49,39 +50,52 @@ interface Props {
   onGoToScene: (sceneIndex: number) => void;
 }
 
-/** The map bitmap, resolved from either an asset id or a data URL. Asset URLs
- *  need an authed fetch (a bare <img src> 401s — see AssetImage). */
-const MapImage: React.FC<{ img: LocationMapImage; onNaturalSize?: (ratio: number) => void }> = ({ img, onNaturalSize }) => {
-  const resolved = useMemo(() => resolveImageUrl(img) || '', [img]);
-  const direct = resolved.startsWith('data:') || resolved.startsWith('blob:') || isTauri() ? resolved : '';
-  const [blobUrl, setBlobUrl] = useState('');
-  React.useEffect(() => {
-    if (!resolved || direct) return;
-    let dead = false;
-    let obj: string | null = null;
-    (async () => {
-      try {
-        const res = await authedFetch(resolved);
-        if (!res.ok) return;
-        obj = URL.createObjectURL(await res.blob());
-        if (dead) { URL.revokeObjectURL(obj); return; }
-        setBlobUrl(obj);
-      } catch { /* the empty stage below is the fallback */ }
-    })();
-    return () => { dead = true; if (obj) URL.revokeObjectURL(obj); };
-  }, [resolved, direct]);
-  const url = direct || blobUrl;
-  if (!url) return <div className="locmap-img-loading" />;
+/**
+ * The map bitmap.
+ *
+ * v5.76, Derek ("the image is not displaying"): an ASSET-backed map goes
+ * through AssetImage — THE app's image loader — not a third hand-rolled one.
+ * It reads the bytes with api.getAssetBytes and hands the <img> a blob URL,
+ * which is the only thing that works on every backend: on the desktop
+ * getAssetUrl returns a convertFileSrc asset:// path that the webview will
+ * not load here, which is exactly why AssetImage exists. v5.75 pointed an
+ * <img src> straight at that URL and got a broken-image box.
+ *
+ * A local-only map (no project) has no asset — it carries a data: URL, which
+ * every webview loads directly.
+ */
+const MapImage: React.FC<{
+  img: LocationMapImage;
+  onNaturalSize?: (ratio: number) => void;
+  onFailed?: () => void;
+}> = ({ img, onNaturalSize, onFailed }) => {
+  const reportSize = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const el = e.currentTarget;
+    if (el.naturalWidth && el.naturalHeight) onNaturalSize?.(el.naturalWidth / el.naturalHeight);
+  }, [onNaturalSize]);
+
+  if (img.assetId && img.projectId) {
+    return (
+      <AssetImage
+        projectId={img.projectId}
+        assetId={img.assetId}
+        className="locmap-img"
+        alt="Location map"
+        onLoad={reportSize}
+        onFailed={onFailed}
+      />
+    );
+  }
+  const direct = resolveImageUrl(img) || '';
+  if (!direct) return <div className="locmap-img-loading" />;
   return (
     <img
       className="locmap-img"
-      src={url}
+      src={direct}
       alt="Location map"
       draggable={false}
-      onLoad={(e) => {
-        const el = e.currentTarget;
-        if (el.naturalWidth && el.naturalHeight) onNaturalSize?.(el.naturalWidth / el.naturalHeight);
-      }}
+      onLoad={reportSize}
+      onError={onFailed}
     />
   );
 };
@@ -114,6 +128,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene }) => {
      the image reports its aspect ratio, and the stage gets an explicit pixel
      size that can't leak upward. */
   const [mapRatio, setMapRatio] = useState<number | null>(null);
+  const [mapFailed, setMapFailed] = useState(false);
   const [canvasBox, setCanvasBox] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
   React.useEffect(() => {
@@ -132,9 +147,13 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene }) => {
     const pad = 32;                                  // breathing room for edge pins
     const availW = Math.max(40, canvasBox.w - pad);
     const availH = Math.max(40, canvasBox.h - pad);
-    if (!mapRatio || !canvasBox.w || !canvasBox.h) return undefined;
-    const w = Math.min(availW, availH * mapRatio);
-    return { width: Math.round(w), height: Math.round(w / mapRatio) };
+    if (!canvasBox.w || !canvasBox.h) return undefined;
+    // Before the image reports its shape (and when it can't load at all) the
+    // stage still needs a box — otherwise the placeholder has nowhere to
+    // render and the tab looks empty rather than busy or broken.
+    const ratio = mapRatio || 4 / 3;
+    const w = Math.min(availW, availH * ratio);
+    return { width: Math.round(w), height: Math.round(w / ratio) };
   }, [mapRatio, canvasBox]);
 
   const names = useMemo(() => locations.map((l) => l.name), [locations]);
@@ -170,6 +189,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene }) => {
         setMapImage({ src: dataUrl, filename: file.name });
       }
       setMapRatio(null);            // a new map re-measures on load
+      setMapFailed(false);
       showToast('Map added', 'success');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Could not add the map', 'error');
@@ -295,7 +315,19 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene }) => {
               {/* The stage is sized BY the image, so a pin's fractions are
                   fractions OF THE MAP — not of the surrounding box. */}
                 <div className="locmap-stage" ref={stageRef} style={stageSize}>
-                  <MapImage img={mapImage} onNaturalSize={setMapRatio} />
+                  {mapFailed ? (
+                    <div className="locmap-broken">
+                      <FaRegImage className="locmap-empty-icon" />
+                      <div className="locmap-empty-title">This map couldn&rsquo;t be loaded</div>
+                      <p className="locmap-empty-text">
+                        The image file may have been moved or deleted. Replace it to
+                        put the map back &mdash; the pins are kept.
+                      </p>
+                      <button className="locmap-add-btn" onClick={openSourceMenu}>Replace Map</button>
+                    </div>
+                  ) : (
+                    <MapImage img={mapImage} onNaturalSize={setMapRatio} onFailed={() => setMapFailed(true)} />
+                  )}
                 {drawnPins.map((pin) => {
                   const scene = sceneOf(pin.name);
                   return (

@@ -1292,3 +1292,14 @@
   border: none; border-radius: 4px; cursor: pointer;
 }
 .locmap-add-btn:hover { filter: brightness(1.08); }
+/* v5.76: a map whose file has gone says so, in place, with the way out —
+   a broken-image icon in the corner of an empty tab explains nothing. */
+.locmap-broken {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 20px; text-align: center;
+  line-height: 1.4;
+  background: var(--fd-overlay-subtle);
+  border: 1px dashed var(--fd-border);
+  border-radius: 4px;
+}

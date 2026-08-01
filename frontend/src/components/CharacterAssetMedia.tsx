@@ -12,7 +12,13 @@ import { api } from '../services/api';
 export const AssetImage: React.FC<{
   projectId: string; assetId: string; className?: string; alt?: string;
   onClick?: (e: React.MouseEvent) => void;
-}> = ({ projectId, assetId, className, alt, onClick }) => {
+  /** v5.76: the loaded <img>, for callers that need its natural size (the
+   *  Locations map fits its pin stage to the image's aspect ratio). */
+  onLoad?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
+  /** v5.76: told when the bytes can't be read, so a caller can show its own
+   *  message instead of this component's one-character "!" box. */
+  onFailed?: () => void;
+}> = ({ projectId, assetId, className, alt, onClick, onLoad, onFailed }) => {
   const [url, setUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const objRef = useRef<string | null>(null);
@@ -31,16 +37,16 @@ export const AssetImage: React.FC<{
         objRef.current = obj;
         setUrl(obj);
       } catch {
-        if (!dead) setFailed(true);
+        if (!dead) { setFailed(true); onFailed?.(); }
       }
     })();
     return () => { dead = true; };
-  }, [projectId, assetId]);
+  }, [projectId, assetId, onFailed]);
   // Revoke the last blob URL only when the component leaves for good.
   useEffect(() => () => { if (objRef.current) URL.revokeObjectURL(objRef.current); }, []);
   if (failed) return <div className={`char-profile-image-broken ${className ?? ''}`} title="Image unavailable">!</div>;
   if (!url) return <div className={`char-profile-image-loading ${className ?? ''}`} />;
-  return <img src={url} className={className} alt={alt} onClick={onClick} />;
+  return <img src={url} className={className} alt={alt} onClick={onClick} onLoad={onLoad} />;
 };
 
 /** v4.23, Derek: play an uploaded voice-reference clip. Loads bytes → blob URL

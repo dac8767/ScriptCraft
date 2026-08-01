@@ -3,7 +3,7 @@
 // input, drags a location out of the rail onto the map, and reads back where
 // the pin landed — the whole chain Derek asked for, in the app.
 import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
-import { writeFileSync } from 'fs';
+import { writeFileSync, readFileSync } from 'fs';
 
 // A realistically sized map (800x600). NOT a 2x1 test pixel: DragEvent's
 // clientX/clientY are INTEGERS, so on a 1px-tall image every drop rounds to
@@ -160,6 +160,47 @@ try {
   await page.waitForTimeout(200);
   ok((await pins()).length === 0, 'the pin\'s × takes it off the map');
   ok(await page.$$eval('.locmap-rail-item', (e) => e.length) === railCount, 'and it returns to the rail');
+
+  // ── v5.76: an ASSET-backed map (what Derek's desktop build had) ────
+  // The bytes are served through the app's shared loader, so stubbing the
+  // asset fetch proves the whole path: AssetImage -> getAssetBytes -> blob
+  // URL -> <img>. v5.75 pointed an <img src> at the raw asset URL instead,
+  // which the desktop webview would not load.
+  const png = readFileSync(MAP_PATH).toString('base64');
+  await page.evaluate((b64) => {
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const realFetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (url && url.includes('/assets/')) {
+        return Promise.resolve(new Response(bytes, { status: 200, headers: { 'Content-Type': 'image/png' } }));
+      }
+      return realFetch(input, init);
+    };
+    window.__scStore.getState().setLocationMapImage({ assetId: 'a1', projectId: 'p1', filename: 'map.png' });
+  }, png);
+  await page.waitForTimeout(700);
+  const assetImg = await page.evaluate(() => {
+    const img = document.querySelector('.locmap-stage img.locmap-img');
+    const broken = !!document.querySelector('.locmap-broken');
+    return { has: !!img, blob: img ? img.src.startsWith('blob:') : false, broken };
+  });
+  ok(assetImg.has && assetImg.blob,
+    `an asset map loads through the shared loader as a blob URL (img:${assetImg.has} blob:${assetImg.blob})`);
+  ok(!assetImg.broken, 'and it is NOT the broken-image state');
+
+  // ── a map whose bytes can't be read explains itself ────────────────
+  await page.evaluate(() => {
+    window.fetch = () => Promise.reject(new Error('gone'));
+    window.__scStore.getState().setLocationMapImage({ assetId: 'missing', projectId: 'p1' });
+  });
+  await page.waitForTimeout(700);
+  const brokenPanel = await page.evaluate(() => {
+    const el = document.querySelector('.locmap-broken');
+    return { shown: !!el, text: el ? el.textContent.slice(0, 40) : '', hasReplace: !!el?.querySelector('button') };
+  });
+  ok(brokenPanel.shown && brokenPanel.hasReplace,
+    `an unreadable map says so, with a way out ("${brokenPanel.text.trim()}")`);
 
   // ── the tab choice persists; the List tab is untouched ─────────────
   await goto('List');

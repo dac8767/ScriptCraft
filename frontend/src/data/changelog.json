@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.76",
+    "date": "2026-08-01",
+    "changes": [
+      "Fixed: an uploaded location map showed a broken-image box instead of the map. It now loads the same way character portraits do, which is the only way that works on the desktop app.",
+      "A map whose image file has gone missing now says so in the tab, with a Replace button — the pins are kept."
+    ]
+  },
+  {
     "version": "5.75",
     "date": "2026-08-01",
     "changes": [

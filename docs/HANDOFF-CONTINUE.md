@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.75 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.76 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,7 +227,35 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.75 — Locations: List / Map tabs, with pins (HEAD)
+### v5.76 — the map image actually displays (HEAD)
+
+- Derek, on the v5.75 build: "the image is not displaying" — a broken-image
+  box where the map should be.
+- ROOT CAUSE: v5.75's MapImage was a THIRD hand-rolled image loader. On the
+  desktop `getAssetUrl` returns a `convertFileSrc` asset:// path that the
+  webview will not load from an <img src> here — which is the entire reason
+  `AssetImage` exists (api.ts says it outright: "fetching getAssetUrl
+  directly does NOT [work]"). Character portraits have always gone through
+  AssetImage → `api.getAssetBytes` → blob URL, which every backend
+  implements. The map now does too; the private loader is deleted.
+- AssetImage gained two passthroughs — `onLoad` (the map needs the natural
+  size for its stage fit) and `onFailed` (so a caller can show its own
+  message instead of the one-character "!" box).
+- A map whose bytes can't be read now renders a stated panel — "This map
+  couldn't be loaded… Replace it — the pins are kept" — rather than a
+  broken icon. The stage also keeps a 4:3 box before the image reports its
+  shape, so loading/failed states have somewhere to render.
+- check-v575 is 23/23: the two new cases stub the asset fetch to prove the
+  asset path resolves to a blob: URL through the shared loader, then reject
+  it to prove the failure panel appears.
+- STILL CARRYING THE SAME FLAW, reported not fixed: `TpImageThumb` in
+  TitlePageEditor is the OTHER private loader (authedFetch + a raw
+  asset:// <img src> on Tauri), so title-page IMAGES are likely just as
+  broken on the desktop. Same one-line class of fix; it needs AssetImage to
+  take a style/size passthrough, which is surgery on a shared component for
+  an unasked change. Next pass.
+
+### v5.75 — Locations: List / Map tabs, with pins
 
 - Derek: "add the tabs List and Map to the locations window. the current
   locations info will go under list. in the map tab, allow the user to
