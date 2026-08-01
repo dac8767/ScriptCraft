@@ -32,7 +32,7 @@ import { FullscreenIcon, CloseIcon, RestoreIcon } from './uiIcons';
 import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
 import { showToast } from './Toast';
 import { useProjectStore } from '../stores/projectStore';
-import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, PagesControls, usePagesTabs, LocationsTitleExtra, LocationsControls, useLocationsTabs, StructureTitleExtra, type NavTab } from './SceneNavigator';
+import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, PagesControls, usePagesTabs, LocationsTitleExtra, LocationsControls, StructureTitleExtra, type NavTab } from './SceneNavigator';
 import NavigatorTool, { NavigatorControls } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
@@ -360,9 +360,10 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   pages: { TitleExtra: PagesTitleExtra, useTabs: usePagesTabs, Controls: PagesControls },
   // v4.92, Derek: Locations gains Filter · Sort · Search — its header strip
   // held nothing but the window buttons and read as crushed.
-  // v5.75, Derek: + List / Map tabs (useLocationsTabs) — the Map tab holds an
-  // uploaded map with the locations pinned onto it.
-  locations: { TitleExtra: LocationsTitleExtra, useTabs: useLocationsTabs, Controls: LocationsControls },
+  // v5.75/v5.77, Derek: List / Map is the cluster's VIEW dropdown (not a tab
+  // strip), and the Map view adds its own options button — both inside
+  // LocationsControls.
+  locations: { TitleExtra: LocationsTitleExtra, Controls: LocationsControls },
   structure: { TitleExtra: StructureTitleExtra },
   // v4.32 batch-v8 #12: Production Tags — count, eye toggle as the window
   // action, View/Manage tabs (Manage carries the pending-selection dot).

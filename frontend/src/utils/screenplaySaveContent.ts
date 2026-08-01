@@ -61,7 +61,10 @@ export function composeSaveContent(doc: Record<string, unknown>): Record<string,
     // data, so it rides in the file like beats and notes rather than in
     // localStorage, which would lose the map on another machine.
     _locationMapImage: store.locationMapImage,
-    _locationPins: store.locationPins,
+    // v5.77: places, not pins — one place can carry several script locations
+    // plus its display name / description / fields. v5.75's `_locationPins`
+    // is still READ on load (migratePins) but no longer written.
+    _locationPlaces: store.locationPlaces,
     _tags: store.tags,
     _tagCategories: store.tagCategories,
     _characterProfiles: store.characterProfiles,

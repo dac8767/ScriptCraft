@@ -1,5 +1,19 @@
 [
   {
+    "version": "5.77",
+    "date": "2026-08-01",
+    "changes": [
+      "Locations: List and Map are now the header's View dropdown instead of tabs.",
+      "A newly imported map can be rotated before you commit to it — once you press Set Rotation it's fixed, because every pin afterwards is placed against that orientation.",
+      "A map options button in the header replaces or deletes the background. Deleting it keeps your pins.",
+      "Click anywhere on the map to drop a pin, then pick which script location it stands for — or create a new location that isn't in the script yet.",
+      "A pin can carry SEVERAL script locations: BELKADAN - SPACE and BELKADAN - SURFACE can be one place. The pin's dropdown leads with the display name and lists every attached location under it.",
+      "The pin dropdown can also rename a location across every scene heading, or assign this pin's locations onto an existing pin.",
+      "The sidebar lists every location; clicking one opens a display name, a description and + Add custom field.",
+      "The display name is what the Locations window calls the place, in both views — it never changes the script, and each row still shows its own script name."
+    ]
+  },
+  {
     "version": "5.76",
     "date": "2026-08-01",
     "changes": [

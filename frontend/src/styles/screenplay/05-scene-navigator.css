@@ -1167,20 +1167,22 @@
 }
 .locmap-rail-count { margin-left: auto; opacity: .8; }
 .locmap-rail-list { flex: 1; overflow-y: auto; min-height: 0; padding-bottom: 6px; }
-.locmap-rail-item {
+/* v5.77: the sidebar lists EVERY location and each row opens (display name,
+   description, custom fields) — the Characters window's shape, in a rail. */
+.locmap-rail-item { border-bottom: 1px solid var(--fd-overlay-subtle); }
+.locmap-rail-row {
   display: flex; align-items: center; gap: 7px;
-  padding: 7px 12px;
+  padding: 7px 10px;
   font-size: 12px; color: var(--fd-text);
-  border-bottom: 1px solid var(--fd-overlay-subtle);
-  cursor: grab;
+  cursor: pointer;
 }
-.locmap-rail-item:hover { background: var(--fd-overlay-subtle); }
-.locmap-rail-item:active { cursor: grabbing; }
-/* No map yet — the rows are still listed, but they aren't draggable, so
-   they must not pretend to be (a grab cursor on a dead row is exactly the
-   silent no-op this project keeps rooting out). */
-.locmap-rail-item-idle { cursor: default; opacity: .55; }
+.locmap-rail-row:hover { background: var(--fd-overlay-subtle); }
+.locmap-rail-item-open > .locmap-rail-row { background: var(--fd-overlay-subtle); font-weight: 600; }
+.locmap-rail-chevron { flex: 0 0 auto; font-size: 9px; color: var(--fd-text-muted); display: flex; }
 .locmap-rail-icon { flex: 0 0 auto; color: var(--fd-text-muted); font-size: 11px; }
+/* A pinned location's marker takes the accent — the rail says at a glance
+   what is already on the map. */
+.locmap-rail-icon-pinned { color: var(--fd-accent); }
 .locmap-rail-name {
   flex: 1; min-width: 0;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -1303,3 +1305,155 @@
   border: 1px dashed var(--fd-border);
   border-radius: 4px;
 }
+
+/* ══════════ LOCATIONS ▸ MAP: v5.77 ═══════════════════════════════════ */
+
+/* ── the sidebar's expanded detail ─────────────────────────────────── */
+.locmap-rail-detail {
+  padding: 4px 10px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+  background: var(--fd-bg);
+}
+.locmap-field-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--fd-text-muted);
+  margin-top: 6px;
+}
+.locmap-field-input {
+  width: 100%; box-sizing: border-box;
+  padding: 5px 7px;
+  font-size: 12px; font-family: inherit;
+  color: var(--fd-text);
+  background: var(--fd-overlay-subtle);
+  border: 1px solid var(--fd-border);
+  border-radius: 3px;
+}
+.locmap-field-input:focus { border-color: var(--fd-accent); outline: none; }
+.locmap-field-textarea { resize: vertical; line-height: 1.4; }
+/* The script's own name, stated under the display name — Derek: the display
+   name "does not change anything in the script", so both are visible. */
+.locmap-field-note { font-size: 10px; color: var(--fd-text-muted); font-style: italic; }
+.locmap-custom-field { display: flex; flex-direction: column; gap: 3px; }
+.locmap-custom-label-row { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
+.locmap-custom-label {
+  flex: 1; min-width: 0;
+  padding: 2px 4px;
+  background: none; border: 1px solid transparent; border-radius: 3px;
+}
+.locmap-custom-label:hover, .locmap-custom-label:focus {
+  border-color: var(--fd-border); background: var(--fd-overlay-subtle); outline: none;
+}
+.locmap-custom-remove {
+  flex: 0 0 auto;
+  background: none; border: none; padding: 2px;
+  color: var(--fd-text-muted); font-size: 11px; cursor: pointer;
+}
+.locmap-custom-remove:hover { color: var(--fd-danger, #e05252); }
+.locmap-add-field {
+  margin-top: 8px; padding: 5px 8px;
+  font-size: 11px; color: var(--fd-text-secondary, var(--fd-text));
+  background: none;
+  border: 1px dashed var(--fd-border); border-radius: 3px;
+  cursor: pointer;
+}
+.locmap-add-field:hover { border-color: var(--fd-accent); color: var(--fd-accent); }
+
+/* ── the import bar (rotation, once) ───────────────────────────────── */
+.locmap-import-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px;
+  flex: 0 0 auto;
+  background: rgba(74, 158, 255, .1);
+  border-bottom: 1px solid var(--fd-accent);
+}
+.locmap-import-text { flex: 1; min-width: 0; font-size: 11px; color: var(--fd-text); }
+.locmap-import-confirm { margin-top: 0; padding: 5px 12px; }
+
+/* ── the map, rotated ──────────────────────────────────────────────── */
+/* The wrap is the stage's own box; the rotator inside it carries the turn.
+   A quarter turn swaps the image's width and height, which is why the
+   rotated box is sized in JS from the measured stage. */
+.locmap-img-wrap { position: absolute; inset: 0; overflow: hidden; }
+.locmap-img-rot { width: 100%; height: 100%; }
+.locmap-img-rot > img, .locmap-img-rot > div { width: 100%; height: 100%; }
+/* Clicking the map drops a pin, so the map says so with its cursor. */
+.locmap-scroll-placing .locmap-stage { cursor: crosshair; }
+
+/* ── pins ──────────────────────────────────────────────────────────── */
+/* A pin with no location yet is dashed: it is a question, not a fact. */
+.locmap-pin-empty { border-style: dashed; opacity: .9; }
+.locmap-pin-badge {
+  flex: 0 0 auto;
+  min-width: 14px; padding: 0 3px;
+  font-size: 9px; font-weight: 700; line-height: 14px; text-align: center;
+  color: #fff; background: var(--fd-accent);
+  border-radius: 7px;
+}
+
+/* ── the pin dropdown ──────────────────────────────────────────────── */
+/* Portalled to <body>: a menu inside the panel is clipped by the panel. */
+.locmap-menu-veil { position: fixed; inset: 0; z-index: 9998; }
+.locmap-pin-menu {
+  position: fixed;
+  z-index: 9999;
+  min-width: 234px; max-width: 300px;
+  max-height: 340px; overflow-y: auto;
+  padding: 6px;
+  background: var(--fd-panel-bg, var(--fd-bg));
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .45);
+}
+/* Derek: "the drop down should have the display name at the top, and then a
+   list of all attached script locations below it." */
+.locmap-pin-menu-title {
+  padding: 4px 8px 6px;
+  font-size: 13px; font-weight: 700; color: var(--fd-text);
+  overflow: hidden; text-overflow: ellipsis;
+}
+.locmap-pin-menu-attached { display: flex; flex-direction: column; gap: 2px; padding: 0 4px 4px; }
+.locmap-pin-menu-attached-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 4px;
+  border-radius: 3px;
+  background: var(--fd-overlay-subtle);
+}
+.locmap-pin-menu-attached-name {
+  flex: 1; min-width: 0;
+  font-size: 11px; color: var(--fd-text-secondary, var(--fd-text));
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.locmap-pin-menu-detach {
+  background: none; border: none; padding: 1px 2px;
+  color: var(--fd-text-muted); font-size: 10px; cursor: pointer;
+}
+.locmap-pin-menu-detach:hover { color: var(--fd-danger, #e05252); }
+.locmap-pin-menu-empty { padding: 2px 8px 6px; font-size: 11px; font-style: italic; color: var(--fd-text-muted); }
+.locmap-pin-menu-sep { height: 1px; margin: 4px 2px; background: var(--fd-border); }
+.locmap-pin-menu-subhead {
+  padding: 4px 8px;
+  font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--fd-text-muted);
+}
+.locmap-pin-menu-item {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px; text-align: left;
+  color: var(--fd-text); background: none; border: none; border-radius: 3px;
+  cursor: pointer;
+}
+.locmap-pin-menu-item:hover:not(:disabled) { background: var(--fd-overlay-subtle); color: var(--fd-accent); }
+.locmap-pin-menu-item:disabled { opacity: .4; cursor: default; }
+.locmap-pin-menu-item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.locmap-pin-menu-item-count { flex: 0 0 auto; font-size: 10px; color: var(--fd-text-muted); }
+.locmap-pin-menu-danger:hover:not(:disabled) { color: var(--fd-danger, #e05252); }
+.locmap-pin-menu-list { display: flex; flex-direction: column; }
+/* The header's map-options button sits in the control cluster, so it wears
+   the cluster's own button shape. */
+.locmap-options-btn { display: inline-flex; align-items: center; justify-content: center; }
+/* When one display name covers several script locations, each row still
+   states which one it is — otherwise the sidebar shows the same word twice
+   with no way to tell the rows apart. */
+.locmap-rail-sub { font-size: 10px; color: var(--fd-text-muted); font-weight: 400; }
+.location-name-sub { font-size: 10px; color: var(--fd-text-muted); font-weight: 400; }

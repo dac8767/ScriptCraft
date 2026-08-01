@@ -3,6 +3,9 @@ import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import { useEditorStore, EMPTY_SCENE_FILTERS, type SceneFilters } from '../stores/editorStore';
 import LocationMapTab from './LocationMapTab';
+import LocationMapOptions from './LocationMapOptions';
+import { locationLabel } from '../utils/locationPlaces';
+import { renameLocationInScript } from '../utils/renameLocationInScript';
 import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlice';
 import { PAGES_PER_ROW_MIN, PAGES_PER_ROW_MAX } from '../stores/slices/sceneNavSlice';
 import { computeSceneLengths, computePageBlocks, type PageBlockInfo, type PageContentInfo } from '../editor/pagination';
@@ -21,7 +24,7 @@ import { useSceneReorder } from '../utils/useSceneReorder';
 import { ControlDropdown, ControlSearch, PerRowStepper, type ToolChromeTab } from './ToolControls';
 import { SceneReorderBar } from './IndexCards';
 import { LuLayoutGrid, LuList } from 'react-icons/lu';
-import { FaChevronRight, FaChevronDown, FaEllipsisV, FaHashtag } from 'react-icons/fa';
+import { FaChevronRight, FaChevronDown, FaEllipsisV, FaHashtag, FaMapMarkerAlt } from 'react-icons/fa';
 
 interface SceneNavigatorProps {
   editor: Editor | null;
@@ -395,6 +398,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const locFilter = useEditorStore((s) => s.locationFilter);
   const locSort = useEditorStore((s) => s.locationSort);
   const locationsTab = useEditorStore((s) => s.locationsTab);
+  const places = useEditorStore((s) => s.locationPlaces);
   const locations = useMemo(
     () => visibleLocations(allLocations, { search: locSearch, filter: locFilter, sort: locSort }),
     [allLocations, locSearch, locFilter, locSort],
@@ -856,33 +860,10 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     }
     const oldName = renamingLocation;
     const newName = renameValue.trim();
-    if (oldName === newName) { setRenamingLocation(null); return; }
-
-    const { doc, schema, tr } = editor.state;
-    const sceneHeadingType = schema.nodes.sceneHeading;
-    if (!sceneHeadingType) { setRenamingLocation(null); return; }
-
-    doc.descendants((node, pos) => {
-      if (node.type.name !== 'sceneHeading') return true;
-      const heading = node.textContent;
-      const parsed = parseHeading(heading);
-      if (parsed.location.toUpperCase() !== oldName.toUpperCase()) return true;
-      let newHeading = parsed.preamble;
-      if (parsed.prefix) newHeading += parsed.prefix + ' ';
-      newHeading += newName;
-      if (parsed.timeOfDay) {
-        const usesDot = /\.\s*\w+\.?\s*$/.test(heading) && !/\s-\s/.test(heading);
-        newHeading += usesDot ? '. ' + parsed.timeOfDay + '.' : ' - ' + parsed.timeOfDay;
-      }
-      tr.insertText(newHeading, pos + 1, pos + 1 + heading.length);
-      return true;
-    });
-
-    if (tr.steps.length > 0) editor.view.dispatch(tr);
-    // v5.75: the Map tab's pin follows the rename. Pins are keyed by
-    // location name, so without this the heading rewrite would orphan the
-    // pin and it would silently drop off the map.
-    useEditorStore.getState().renameLocationPin(oldName, newName);
+    // v5.77: ONE heading rewriter, shared with the Map view's "change the
+    // name in the script" (utils/renameLocationInScript) — it also moves the
+    // map's places onto the new name.
+    if (oldName !== newName) renameLocationInScript(editor, oldName, newName);
     setRenamingLocation(null);
     setExpandedLocation(newName.toUpperCase());
   }, [editor, renamingLocation, renameValue]);
@@ -1440,7 +1421,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
           onto it — and reads the SAME filtered/sorted `locations`, so the
           window's Filter/Sort/Search drive both tabs. */}
       {activeTab === 'locations' && locationsTab === 'map' && (
-        <LocationMapTab locations={locations} onGoToScene={goToScene} />
+        <LocationMapTab locations={locations} onGoToScene={goToScene} editor={editor} />
       )}
       {activeTab === 'locations' && locationsTab === 'list' && (
         <>
@@ -1463,7 +1444,17 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                         panel's own accordion rows. */}
                     <div className="location-header" onClick={() => setExpandedLocation(isExpanded ? null : key)}>
                       <span className="location-chevron">{isExpanded ? <FaChevronDown /> : <FaChevronRight />}</span>
-                      <span className="location-name">{loc.name}</span>
+                      {/* v5.77: a display name set on the Map view overrides the
+                          label HERE too — "the location window" is both views.
+                          When one display name covers several script locations,
+                          each row still states which one it is, so the list
+                          can't show the same word three times. */}
+                      <span className="location-name" title={loc.name}>
+                        {locationLabel(places, loc.name)}
+                        {locationLabel(places, loc.name) !== loc.name && (
+                          <span className="location-name-sub"> · {loc.name}</span>
+                        )}
+                      </span>
                       <span className="location-scene-count">{loc.sceneIndices.length}</span>
                     </div>
                     {isExpanded && (
@@ -1553,6 +1544,8 @@ export function LocationsTitleExtra() {
  *  ControlDropdown/ControlSearch parts, as the Scenes header — and they drive
  *  the store fields the list body reads, so none of them is decorative. */
 export function LocationsControls() {
+  const view = useEditorStore((s) => s.locationsTab);
+  const setView = useEditorStore((s) => s.setLocationsTab);
   const search = useEditorStore((s) => s.locationSearch);
   const setSearch = useEditorStore((s) => s.setLocationSearch);
   const filter = useEditorStore((s) => s.locationFilter);
@@ -1575,6 +1568,22 @@ export function LocationsControls() {
   ];
   return (
     <>
+      {/* v5.77, Derek: List / Map is the header's VIEW dropdown, not a tab
+          strip — the same control (and the same two options) the Characters
+          window's Relationships view uses. */}
+      <ControlDropdown
+        title="View"
+        icon={view === 'map' ? <FaMapMarkerAlt /> : <LuList />}
+        current={view === 'map' ? 'Map' : 'List'}
+        items={[
+          { label: 'List', active: view === 'list', onSelect: () => setView('list') },
+          { label: 'Map', active: view === 'map', onSelect: () => setView('map') },
+        ]}
+      />
+      {/* The map's own actions live behind ONE options button, and only on
+          the Map view — a Replace/Delete pair that does nothing in List view
+          would be the decorative-control failure this app keeps rooting out. */}
+      {view === 'map' && <LocationMapOptions />}
       <ControlDropdown
         label="Filter"
         current={filter === 'all' ? undefined : FILTERS.find((f) => f.id === filter)?.label}
@@ -1605,18 +1614,6 @@ export function usePagesTabs(): ToolChromeTab[] {
     { label: 'Title', active: tab === 'title', onSelect: () => setTab('title') },
     { label: 'Custom', active: tab === 'custom', onSelect: () => setTab('custom') },
     { label: 'All', active: tab === 'all', onSelect: () => setTab('all') },
-  ];
-}
-
-/** v5.75, Derek: the Locations window's tabs — List (everything the window
- *  held before) and Map (an uploaded map with locations pinned onto it).
- *  Same chrome slot as the Pages and Characters tabs. */
-export function useLocationsTabs(): ToolChromeTab[] {
-  const tab = useEditorStore((s) => s.locationsTab);
-  const setTab = useEditorStore((s) => s.setLocationsTab);
-  return [
-    { label: 'List', active: tab === 'list', onSelect: () => setTab('list') },
-    { label: 'Map', active: tab === 'map', onSelect: () => setTab('map') },
   ];
 }
 

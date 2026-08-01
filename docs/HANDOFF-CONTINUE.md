@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.76 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.77 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,7 +227,43 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.76 — the map image actually displays (HEAD)
+### v5.77 — Locations: a pin is a PLACE (HEAD)
+
+- Derek's brief: rotate the background on import and then lock it; an
+  options button in the HEADER to replace/delete it; click the map to drop
+  a pin and pick (or create) its location; the sidebar lists every location
+  and opens display name / description / + Add custom field; the dropdown
+  can rename in the script; and a pin can carry SEVERAL script locations
+  ("BELKADAN - SPACE and BELKADAN - SURFACE would be the same location").
+  Mid-batch: "change list and map from tabs to the View button format".
+- MODEL CHANGE: `utils/locationPlaces.ts` replaces locationPins. A PLACE
+  owns the spot — scriptNames[], displayName, description, fields[], x/y —
+  and script locations attach TO it. That one shape answers every one of
+  Derek's asks; a name-keyed pin could not have held two locations.
+  45 pure tests. v5.75's flat pins migrate on load (`migratePins`).
+- The display name is window-only, in BOTH views. Where one display name
+  covers several script locations, each row appends its own script name —
+  otherwise the list showed the same word three times, which the driver
+  screenshot caught after the unit tests were green.
+- Rotation locks because pin fractions are measured against the image AS
+  SHOWN; a later turn would move every pin off its landmark. The stage is
+  measured against the ROTATED ratio (rotatedRatio), and a quarter turn
+  swaps the box, which check-v577 asserts by geometry.
+- ONE heading rewriter: `utils/renameLocationInScript.ts`, shared by the
+  List view's Rename Location and the pin dropdown's "change the name in
+  the script". It also moves the places onto the new name.
+- `mergePlaces` (the "assign to an existing pin" action) carries the
+  source's display name / description / custom fields onto the target when
+  the target's are empty, then drops the source pin. The first cut just
+  re-attached the names and left an empty pin sitting on the map — the
+  driver check caught it.
+- Chrome: no tab strip. `LocationsControls` now leads with a View dropdown
+  (List/Map, the same control the Characters window's Relationships view
+  uses) and, on Map only, `LocationMapOptions`.
+- check-v577 37/37 drives all of it through the real UI. Gates: tsc 0,
+  1017 tests, build.
+
+### v5.76 — the map image actually displays
 
 - Derek, on the v5.75 build: "the image is not displaying" — a broken-image
   box where the map should be.

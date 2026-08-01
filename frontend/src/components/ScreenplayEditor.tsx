@@ -123,6 +123,7 @@ import { pluginRegistry } from '../plugins/registry';
 import { createTrackChangesPlugin, trackChangesPluginKey } from '../editor/trackChanges';
 import type { VersionInfo } from '../services/api';
 import { resolveHFFields, composeSaveContent, stripSaveExtras, resolveSpellCheckOnLoad } from '../utils/screenplaySaveContent';
+import { readPlaces, migratePins } from '../utils/locationPlaces';
 import { migrateShelfCards } from '../utils/shelfMigrate';
 
 import { randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, SCENE_PREFIX_OPTIONS, SAMPLE_CONTENT, resolvePickedElement } from './screenplayEditorConstants';
@@ -3046,9 +3047,14 @@ const ScreenplayEditor: React.FC = () => {
             // v5.75: the Locations Map tab — image + pins.
             store.setLocationMapImage(
               c._locationMapImage && typeof c._locationMapImage === 'object'
-                ? c._locationMapImage as import('../utils/locationPins').LocationMapImage : null,
+                ? c._locationMapImage as import('../utils/locationPlaces').LocationMapImage : null,
             );
-            store.setLocationPins(parseAttr(c._locationPins) as import('../utils/locationPins').LocationPin[]);
+            store.setLocationPlaces(
+              c._locationPlaces
+                ? readPlaces(c._locationPlaces)
+                // v5.75 files hold flat `{name,x,y}` pins — read them as places.
+                : migratePins(parseAttr(c._locationPins) as Array<{ name?: string; x?: number; y?: number }>),
+            );
             const beatsArr = parseAttr(c._beats);
             store.setBeats(beatsArr as import('../stores/editorStore').BeatInfo[]);
             const beatColsArr = parseAttr(c._beatColumns);
@@ -3477,9 +3483,14 @@ const ScreenplayEditor: React.FC = () => {
           // v5.75: the Locations Map tab — image + pins.
           store.setLocationMapImage(
             c._locationMapImage && typeof c._locationMapImage === 'object'
-              ? c._locationMapImage as import('../utils/locationPins').LocationMapImage : null,
+              ? c._locationMapImage as import('../utils/locationPlaces').LocationMapImage : null,
           );
-          store.setLocationPins(parseAttr2(c._locationPins) as import('../utils/locationPins').LocationPin[]);
+          store.setLocationPlaces(
+              c._locationPlaces
+                ? readPlaces(c._locationPlaces)
+                // v5.75 files hold flat `{name,x,y}` pins — read them as places.
+                : migratePins(parseAttr2(c._locationPins) as Array<{ name?: string; x?: number; y?: number }>),
+            );
           const beatsArr2 = parseAttr2(c._beats);
           store.setBeats(beatsArr2 as import('../stores/editorStore').BeatInfo[]);
           const beatCols2 = parseAttr2(c._beatColumns);
