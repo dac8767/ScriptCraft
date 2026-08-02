@@ -1,7 +1,7 @@
 // devtools/check-scene-narrow.mjs — v5.09: docked (narrow) the synopsis field
 // and figures fold behind a per-scene caret; fullscreen (wide) keeps the full
 // five-column table. Plus the card view's always-on 0:00 time estimate.
-import { launch, boot, seedScript, openTool, fullscreen, waitScenes, shot, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, fullscreen, waitScenes, shot, SCENES_4, settle } from './driver.mjs';
 
 const results = [];
 const check = (name, got, want) => {
@@ -36,7 +36,7 @@ check('no sub-items before a caret click', r.subItems, 0);
 // a hit area worth aiming at. Row clicks must do nothing; double-click jumps.
 const rowHead = (await page.$$('.scene-row-narrow .scene-heading-label'))[1];
 await rowHead.click();
-await page.waitForTimeout(200);
+await settle(page);
 check('row click does NOT open the fold', await page.$$eval('.scene-sub-item', (e) => e.length), 0);
 const caretBox = await (await page.$('.scene-caret-btn')).boundingBox();
 check('caret hit area ≥ 24px wide', caretBox.width >= 24, true);
@@ -65,7 +65,7 @@ await page.keyboard.type('Folded synopsis.');
 await page.keyboard.press('Enter');
 await page.waitForTimeout(900);
 await caret.click();                       // collapse
-await page.waitForTimeout(200);
+await settle(page);
 await caret.click();                       // reopen
 await page.waitForSelector('.scene-sub-item', { timeout: 4000 });
 check('typed synopsis survives fold/unfold',

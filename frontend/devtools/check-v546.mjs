@@ -2,7 +2,7 @@
 // annotation grid (titled), Scene #, Design coexists with everything,
 // edge-resize on every window (grips gone), File-menu moves, live checklist
 // mirroring with icon-sized checkboxes, working in-window Insert Link/Image.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -59,7 +59,7 @@ await page.evaluate(() => {
   [...document.querySelectorAll('.markup-filter-pop .markup-filter-seg button')]
     .find((b) => b.textContent === 'All')?.click();
 });
-await page.waitForTimeout(120);
+await settle(page);
 const doneAll = await page.evaluate(() => window.__scStore.getState().markupFilters.done);
 /* retired: the shared visibility store was reworked */
 await page.keyboard.press('Escape');
@@ -111,7 +111,7 @@ await page.screenshot({ path: `${SHOTS}/v546-checklist.png` });
 await page.click('.markup-win-close');
 await page.waitForSelector('.fs-confirm-overlay', { timeout: 4000 });
 await page.click('.fs-confirm-ok');
-await page.waitForTimeout(200);
+await settle(page);
 const afterDiscard = await page.evaluate(() => {
   const st = window.__scStore.getState();
   const m = st.markups[st.markups.length - 1];
@@ -128,7 +128,7 @@ await page.click('.markup-mini-bar button[title="Insert link"]');
 await page.waitForSelector('.markup-insert-row input', { timeout: 4000 });
 await page.fill('.markup-insert-row input', 'https://example.com/spec');
 await page.click('.markup-insert-row button[type="submit"]');
-await page.waitForTimeout(150);
+await settle(page);
 const linked = await page.evaluate(() =>
   JSON.stringify(window.__scStore.getState().markupMiniEditor.getJSON()).includes('"href":"https://example.com/spec"'));
 ok(linked, 'Insert Link writes a real link into the annotation (no window.prompt)');
@@ -143,7 +143,7 @@ await page.click('.markup-img-menu .markup-scrap-item:has-text("From URL")');
 await page.waitForSelector('.markup-insert-row input', { timeout: 4000 });
 await page.fill('.markup-insert-row input', 'https://example.com/pic.png');
 await page.click('.markup-insert-row button[type="submit"]');
-await page.waitForTimeout(150);
+await settle(page);
 const imaged = await page.evaluate(() =>
   JSON.stringify(window.__scStore.getState().markupMiniEditor.getJSON()).includes('pic.png'));
 ok(imaged, 'From URL inserts the image node');
@@ -200,7 +200,7 @@ ok(Math.abs(dz2.w - dz.w - 60) < 8 && Math.abs(dz.left - dz2.left - 60) < 8,
 // window, then save-close the annotation window (its Save); design stays up
 await dragFrom(page, '.dz-header', -950, 150);
 await page.click('.markup-save');
-await page.waitForTimeout(200);
+await settle(page);
 
 // ── Design survives floats; floats survive Design ────────────────────────
 await page.evaluate(() => {

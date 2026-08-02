@@ -2,7 +2,7 @@
 // (default AND persisted layouts); the Annotations panel Filter sits right,
 // left of Search; the pick prompt is a persistent centered banner (Escape
 // cancels); the Navigator's Scene # became a View menu with three toggles.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -98,7 +98,7 @@ const afterPick = await page.evaluate(() => ({
 }));
 ok(!afterPick.banner && afterPick.n === 1, 'highlighting text places the annotation and clears the banner');
 await page.click('.markup-save');
-await page.waitForTimeout(200);
+await settle(page);
 
 // ── Navigator: the View menu drives numbers / annotations / headings ─────
 await openTool(page, 'Navigator');
@@ -123,12 +123,12 @@ const before = await counts();
 await page.evaluate(() => {
   [...document.querySelectorAll('.tool-ctl-menu button')].find((b) => b.textContent.trim() === 'Scene Headings')?.click();
 });
-await page.waitForTimeout(200);
+await settle(page);
 const noScenes = await counts();
 await page.evaluate(() => {
   [...document.querySelectorAll('.tool-ctl-menu button')].find((b) => b.textContent.trim() === 'Annotations')?.click();
 });
-await page.waitForTimeout(200);
+await settle(page);
 const noAnnos = await counts();
 ok(before.sceneRows >= 4 && noScenes.sceneRows === 0,
   `Scene Headings toggle hides the scene rows (${before.sceneRows} → ${noScenes.sceneRows})`);
@@ -140,7 +140,7 @@ await page.evaluate(() => {
   btns.find((b) => b.textContent.trim() === 'Scene Headings')?.click();
   btns.find((b) => b.textContent.trim() === 'Annotations')?.click();
 });
-await page.waitForTimeout(200);
+await settle(page);
 const restored = await counts();
 ok(restored.sceneRows >= 4 && restored.annoRows >= 1, 'toggling back restores both row kinds');
 await page.screenshot({ path: `${SHOTS}/v551-view-menu.png` });

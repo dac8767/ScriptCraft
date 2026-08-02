@@ -62,16 +62,31 @@ export async function launch(opts = {}) {
 /** App booted, storage cleared, startup dialogs gone. Event-driven: waits on
  *  the editor existing, not on a stopwatch. */
 export async function boot(page) {
+  /* ONE load, not two. This used to load the app, clear localStorage, and
+     reload — so every check paid the app's startup cost twice, ~49 times
+     over. An init script runs before any page script on the FIRST load, so
+     the app comes up with clean storage the first time and the reload goes. */
+  await page.addInitScript(() => {
+    /* ONCE, on the first load only. An init script runs before every
+       navigation, so an unguarded clear() also wipes whatever a check seeded
+       into localStorage before its own reload — check-v551 seeds a stale
+       toolbar layout and reloads to watch it migrate, and lost it. The marker
+       lives in sessionStorage, which survives a reload but not a new page. */
+    try {
+      if (!sessionStorage.getItem('__driver_cleared')) {
+        localStorage.clear();
+        sessionStorage.setItem('__driver_cleared', '1');
+      }
+    } catch { /* storage unavailable on the very first navigation */ }
+  });
   await page.goto(VITE_URL, { waitUntil: 'domcontentloaded' });
-  await page.evaluate(() => localStorage.clear());
-  await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.ProseMirror', { timeout: 25000 });
   // Startup dialogs (launcher etc.) — dismiss until none within a beat.
   for (let i = 0; i < 5; i++) {
     const overlay = await page.$('.dialog-overlay');
     if (!overlay) break;
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(150);
+    await settle(page);
   }
   // The DEV editor handle must be up before seedScript can run.
   await page.waitForFunction(() => Boolean(window.__scEditor), { timeout: 10000 });

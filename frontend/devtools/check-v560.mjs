@@ -3,7 +3,7 @@
 // survive both, and the target must stay VISIBLY painted (the decoration)
 // through panel focus and floating-window opens. Plus the new declutter eye:
 // same button as the Scrapbook's, hides every other sidebar tool.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -41,7 +41,7 @@ ok(afterOpen.hl > 0 && afterOpen.target.includes('Target: 1 action paragraph'),
 
 // ── the reported case: focus the note field — the highlight must stay ────
 await page.click('.rw-note');
-await page.waitForTimeout(300);
+await settle(page);
 const afterFocus = await page.evaluate(() => ({
   sel: { from: window.__scEditor.state.selection.from, to: window.__scEditor.state.selection.to },
   hl: document.querySelectorAll('.ProseMirror .rw-target-hl').length,
@@ -59,7 +59,7 @@ await page.evaluate(() => {
   const s = window.__scStore.getState();
   s.closeTool('rewrite');
 });
-await page.waitForTimeout(200);
+await settle(page);
 await page.evaluate(() => {
   const s = window.__scStore.getState();
   s.setToolMode('rewrite', 'floating');
@@ -86,7 +86,7 @@ await page.evaluate(() => {
   s.closeTool('rewrite');
   s.setToolMode('rewrite', 'docked');
 });
-await page.waitForTimeout(200);
+await settle(page);
 await openTool(page, 'Action Rewrite');
 await page.waitForSelector('.rw-tool', { timeout: 8000 });
 const before = await page.evaluate(() => ({
@@ -97,7 +97,7 @@ const before = await page.evaluate(() => ({
 ok(before.eye && before.right > 1 && before.left,
   `declutter eye present; both sidebars populated (${before.right} right rows)`);
 await page.click('.fs-nb-declutter');
-await page.waitForTimeout(300);
+await settle(page);
 const decluttered = await page.evaluate(() => ({
   right: [...document.querySelectorAll('.tool-dock-right .tool-dock-item')].map((e) => e.textContent.trim()),
   left: !!document.querySelector('.tool-dock-left'),
@@ -106,7 +106,7 @@ ok(decluttered.right.length === 1 && decluttered.right[0].includes('Action Rewri
   'declutter: only Action Rewrite remains, the other sidebar hides');
 await page.screenshot({ path: `${SHOTS}/v560-declutter.png` });
 await page.click('.fs-nb-declutter');
-await page.waitForTimeout(300);
+await settle(page);
 const restored = await page.evaluate(() => ({
   right: document.querySelectorAll('.tool-dock-right .tool-dock-item').length,
   left: !!document.querySelector('.tool-dock-left'),

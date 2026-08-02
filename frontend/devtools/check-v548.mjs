@@ -3,7 +3,7 @@
 // Escape cancels); the remove-highlight button is gone; the window's title
 // bar carries STATUS + DELETE (warned) instead of the ⋮; preview icons
 // center on their labels; the Design pop-out re-seats on screen.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -18,7 +18,7 @@ await openTool(page, 'Annotations');
 // ── no selection → arm the pick, prompt, place on the next selection ─────
 await page.evaluate(() => window.__scEditor.chain().setTextSelection(2).run());
 await page.click('.markups-add-btn');
-await page.waitForTimeout(250);
+await settle(page);
 const armed = await page.evaluate(() => ({
   pick: window.__scStore.getState().markupCreatePick,
   count: window.__scStore.getState().markups.length,
@@ -30,12 +30,12 @@ ok(armed.pick && armed.count === 0 && !armed.popover,
 /* retired: the toast text was rewritten */
 // Escape stands down
 await page.keyboard.press('Escape');
-await page.waitForTimeout(150);
+await settle(page);
 const cancelled = await page.evaluate(() => window.__scStore.getState().markupCreatePick);
 ok(!cancelled, 'Escape cancels the pick');
 // re-arm, then a real selection places the annotation
 await page.click('.markups-add-btn');
-await page.waitForTimeout(150);
+await settle(page);
 await page.evaluate(() => {
   window.__scEditor.chain().focus().setTextSelection({ from: 30, to: 55 }).run();
   window.__scEditor.view.dom.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
@@ -68,7 +68,7 @@ ok(!winChrome.hlDel, 'the remove-highlight button is gone');
 ok(!winChrome.dots && winChrome.status && winChrome.del,
   'the title bar carries STATUS + DELETE, no ⋮ menu');
 await page.click('.markup-win-status');
-await page.waitForTimeout(150);
+await settle(page);
 const doneNow = await page.evaluate(() => {
   const st = window.__scStore.getState();
   return {
@@ -93,13 +93,13 @@ await page.screenshot({ path: `${SHOTS}/v548-window.png` });
 await page.click('.markup-win-delete');
 await page.waitForSelector('.fs-confirm-overlay', { timeout: 4000 });
 await page.click('.fs-confirm-cancel');
-await page.waitForTimeout(150);
+await settle(page);
 const survived = await page.evaluate(() => window.__scStore.getState().markups.length);
 ok(survived === 1, 'Cancel in the warning keeps the annotation');
 await page.click('.markup-win-delete');
 await page.waitForSelector('.fs-confirm-overlay', { timeout: 4000 });
 await page.click('.fs-confirm-ok');
-await page.waitForTimeout(250);
+await settle(page);
 const afterDel = await page.evaluate(() => ({
   count: window.__scStore.getState().markups.length,
   span: !!document.querySelector('.script-markup-highlight'),
@@ -118,7 +118,7 @@ const direct = await page.evaluate(() => {
 });
 ok(direct.n === 1 && direct.anchor === 'range', 'a selected add creates the range annotation directly');
 await page.click('.markup-save');
-await page.waitForTimeout(200);
+await settle(page);
 
 // ── Design pop-out lands ON screen after a dock cycle ────────────────────
 await page.click('[data-tool-row="design"]');

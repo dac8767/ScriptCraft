@@ -7,7 +7,7 @@
  * must start at ONE x. That is what a fixed-track grid buys and what `auto`
  * tracks would quietly lose.
  */
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log('  ✓', m); } else { fail++; console.log('  ✗ FAIL', m); } };
 const { browser, page } = await launch({ width: 1400, height: 900, dpr: 2 });
@@ -38,7 +38,7 @@ try {
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 2 + 90, box.y + box.height / 2, { steps: 8 });
   await page.mouse.up();
-  await page.waitForTimeout(300);
+  await settle(page);
   const xs2 = await page.$$eval('.location-desc-field', (e) => [...new Set(e.map((x) => Math.round(x.getBoundingClientRect().x)))]);
   ok(xs2.length === 1 && xs2[0] > xs[0] + 40, `#5 dragging it widens the column (${xs[0]} → ${xs2[0]})`);
 } catch (e) { console.log('  ✗ SCRIPT ERROR:', e.message); fail++; }

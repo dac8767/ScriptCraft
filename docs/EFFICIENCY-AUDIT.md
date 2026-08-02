@@ -212,3 +212,56 @@ archived after exactly that. Half-repairing a check is worse than parking it.
   with a full-suite run either side, and revert per file if any turns red.
 - **~6s of boot × 49 files.** One browser serving many checks from a seeded
   snapshot is the next real cut, and it wants doing deliberately.
+
+
+## v5.87 — the last two levers, and where it stops
+
+Full suite: **551 passed, 0 failed, 154s** (from ~15 min serial this morning).
+
+### boot() was loading the app twice
+
+`goto` → `localStorage.clear()` → `reload`. Every check paid the app's whole
+startup cost twice, 49 times over. An init script clears storage before the
+first load instead, so the reload is gone — but it must clear ONCE: an
+unguarded init script runs before EVERY navigation, and check-v551 seeds a
+stale toolbar layout then reloads to watch it migrate. It lost its seed and
+went red. The marker lives in sessionStorage: survives a reload, not a new
+page. The suite caught this within one run of introducing it, which is the
+argument for running it either side of a change like this.
+
+### 157 fixed sleeps replaced with settle()
+
+Every `waitForTimeout(n)` with n ≤ 300 became `settle(page)` — two animation
+frames, ~30ms, waiting for the thing the sleep was guessing at. 47 longer
+sleeps are left alone: those wait for something real (a debounce, a save, an
+animation), and two frames would be a flake, not a speed-up.
+
+### Where the per-check cost now goes
+
+| | |
+|---|---|
+| launch the browser | 0.24s |
+| **load the app (Vite dev)** | **2.40s** |
+| seed the script | 0.25s |
+| open a tool | 0.37s |
+
+### Why the shared-boot harness was NOT built
+
+The 2.4s is the app loading through Vite's dev server — hundreds of module
+requests. Two ways to cut it, both rejected:
+
+1. **Serve a built bundle.** Loads far faster, but `window.__scEditor` and
+   `window.__scStore` — which every check drives — are behind
+   `import.meta.env.DEV`, false in any build. Getting them into a bundle
+   means widening a production-safety guard so the checks can go faster.
+   Not worth it: that guard is why nothing ships with a live handle on the
+   editor.
+2. **One page serving many checks.** Saves the 2.4s per file, but the runner
+   spawns a process per file, so it means every check becoming a function the
+   runner calls with a shared page — a rewrite of 49 files, and each one
+   inheriting whatever DOM state the last left behind. The reload between
+   checks is what makes them independent.
+
+**The returns have flattened.** 15 min → 154s came from parallelism, a
+fail-fast timeout, one wasted page load and 157 sleeps. The next 60s costs
+either a weakened guard or a 49-file rewrite. Stop here; spend it on the app.

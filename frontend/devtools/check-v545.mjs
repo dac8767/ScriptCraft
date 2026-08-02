@@ -1,7 +1,7 @@
 // devtools/check-v545.mjs — AI Writer: the footer button exists ONLY in the
 // side panel (new text), never popped out; the tool is gone from the Tools
 // menu. Pages header: + Add Page left, Go to page + Pages per row RIGHT.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -54,7 +54,7 @@ await page.screenshot({ path: `${SHOTS}/v545-aiwriter-docked.png` });
 
 // ── popped out: no button at all ─────────────────────────────────────────
 await page.evaluate(() => window.__scStore.getState().setToolMode('aiwriter', 'floating'));
-await page.waitForTimeout(300);
+await settle(page);
 const floated = await page.evaluate(() => ({
   body: !!document.querySelector('.fs-aiwriter'),
   btn: !!document.querySelector('.fs-aiwriter-remove'),
@@ -66,9 +66,9 @@ await page.screenshot({ path: `${SHOTS}/v545-aiwriter-float.png` });
 
 // ── back in the panel, the button removes-and-stashes ────────────────────
 await page.evaluate(() => window.__scStore.getState().setToolMode('aiwriter', 'docked'));
-await page.waitForTimeout(250);
+await settle(page);
 await page.click('.fs-aiwriter-remove');
-await page.waitForTimeout(250);
+await settle(page);
 const gone = await page.evaluate(() => ({
   body: !!document.querySelector('.fs-aiwriter'),
   row: [...document.querySelectorAll('.tool-dock-item')].some((r) => r.textContent.includes('AI Writer')),

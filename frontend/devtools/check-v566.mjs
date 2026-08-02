@@ -1,7 +1,7 @@
 // devtools/check-v566.mjs — the Focus "?" rides the window header (popover
 // works from there), and the new Focus Design knobs actually move the panel
 // (no dead sliders): side padding, section spacing, indent.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -38,7 +38,7 @@ await page.evaluate(() => {
   s.setDesignVar('focusSectionGap', 30);
   s.setDesignVar('focusIndent', 36);
 });
-await page.waitForTimeout(200);
+await settle(page);
 const after = await page.evaluate(() => {
   const tw = getComputedStyle(document.querySelector('.fs-typewriter'));
   const sub = getComputedStyle(document.querySelector('.fs-typewriter-subgroup'));
@@ -55,7 +55,7 @@ await page.evaluate(() => {
   const s = window.__scStore.getState();
   s.resetDesignVar('focusPad'); s.resetDesignVar('focusSectionGap'); s.resetDesignVar('focusIndent');
 });
-await page.waitForTimeout(200);
+await settle(page);
 ok(await page.evaluate(() => getComputedStyle(document.querySelector('.fs-typewriter')).paddingLeft) === '12px',
   'reset returns the built-in value');
 

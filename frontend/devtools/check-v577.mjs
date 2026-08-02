@@ -2,7 +2,7 @@
 // View dropdown (not tabs) → import → rotate → lock → click to pin → pick a
 // location → merge two locations onto one pin → sidebar display name +
 // custom field. Every step goes through the real UI.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 
 const MAP_PATH = writeMapFixture('/tmp/check-v577-map.png');
@@ -21,7 +21,7 @@ const setView = async (label) => {
   // open TOGGLES it shut, which is what a blind click would do here.
   if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]');
   await page.click(`.tool-ctl-menu .tool-ctl-menu-item:text-is("${label}")`);
-  await page.waitForTimeout(250);
+  await settle(page);
 };
 /** Click the map at fractions of the stage. */
 /* v5.81: a pin is placed by ARMING "+ Add Pin" and then clicking — a bare
@@ -33,7 +33,7 @@ const clickMap = async (xf, yf) => {
     return { x: b.x, y: b.y, w: b.width, h: b.height };
   });
   await page.mouse.click(box.x + box.w * xf, box.y + box.h * yf);
-  await page.waitForTimeout(250);
+  await settle(page);
 };
 const menuItem = (text) => page.click(`.locmap-pin-menu .locmap-pin-menu-item:text-is("${text}")`);
 
@@ -78,7 +78,7 @@ try {
   await page.click('.locmap-import-bar .locmap-tool-btn');       // 270
   await page.click('.locmap-import-bar .locmap-tool-btn');       // 0 — upright again
   await page.click('.locmap-import-confirm');
-  await page.waitForTimeout(300);
+  await settle(page);
   ok((await state()).map.rotationLocked === true, 'Set Rotation locks it');
   ok(await page.$('.locmap-import-bar') === null, 'and the rotation bar is gone for good');
 
@@ -90,7 +90,7 @@ try {
   ok(JSON.stringify(opts) === JSON.stringify(['Replace Map', 'Rotate 90 degrees', 'Delete Map']),
     `options offer the map actions (${opts.join(' · ')})`);
   await page.mouse.click(5, 5);
-  await page.waitForTimeout(200);
+  await settle(page);
 
   // ── 4. click the map → a pin + its dropdown ─────────────────────────
   await clickMap(0.3, 0.4);
@@ -106,7 +106,7 @@ try {
   ok(offered.length > 0, `the dropdown lists the script's locations (${offered.length})`);
   const firstLoc = offered[0];
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has(.locmap-pin-menu-item-name)');
-  await page.waitForTimeout(250);
+  await settle(page);
   ok((await state()).places[0].scriptNames[0] === firstLoc, `picking one attaches it (${firstLoc})`);
   ok(await page.$('.locmap-pin-menu') === null, 'and the dropdown closes');
   ok((await page.$eval('.locmap-pin .locmap-pin-label', (e) => e.textContent.trim())) === firstLoc,
@@ -120,7 +120,7 @@ try {
   await menuItem('Connect to location…');
   const second = (await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item-name', (els) => els.map((e) => e.textContent.trim())))[0];
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has(.locmap-pin-menu-item-name)');
-  await page.waitForTimeout(250);
+  await settle(page);
   const merged = (await state()).places[0];
   ok(merged.scriptNames.length === 2 && merged.scriptNames.includes(second),
     `two script locations share one pin (${merged.scriptNames.join(' + ')})`);
@@ -129,7 +129,7 @@ try {
   const listed = await page.$$eval('.locmap-pin-menu-attached-name', (els) => els.map((e) => e.textContent.trim()));
   ok(listed.length === 2, `and the dropdown lists BOTH attached script locations (${listed.join(', ')})`);
   await page.mouse.click(5, 5);
-  await page.waitForTimeout(200);
+  await settle(page);
 
   // ── 6. the sidebar: display name, description, custom field ─────────
   await page.click('.locmap-rail-row:has(.locmap-rail-badge)');
@@ -139,7 +139,7 @@ try {
   ok(labels.includes('Display Name') && labels.includes('Description'),
     `it reveals the fields (${labels.join(', ')})`);
   await page.fill('.locmap-rail-detail .locmap-field-input', 'Belkadan');
-  await page.waitForTimeout(300);
+  await settle(page);
   const withDisplay = (await state()).places.find((p) => p.scriptNames.includes(firstLoc));
   ok(withDisplay?.displayName === 'Belkadan', 'the display name is stored');
   ok((await page.$eval('.locmap-pin .locmap-pin-label', (e) => e.textContent.trim())) === 'Belkadan',
@@ -163,7 +163,7 @@ try {
   await menuItem('Connect to location…');
   const thirdLoc = (await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item-name', (els) => els.map((e) => e.textContent.trim())))[0];
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has(.locmap-pin-menu-item-name)');
-  await page.waitForTimeout(250);
+  await settle(page);
   ok((await state()).places.length === 2, `a second pin carries ${thirdLoc}`);
 
   const pins = await page.$$('.locmap-pin');
@@ -171,7 +171,7 @@ try {
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
   await menuItem('Assign to an existing pin…');
   await page.click('.locmap-pin-menu .locmap-pin-menu-list .locmap-pin-menu-item');
-  await page.waitForTimeout(300);
+  await settle(page);
   const afterMerge = (await state()).places;
   ok(afterMerge.length === 1,
     `merging leaves ONE pin (${afterMerge.length}) carrying ${afterMerge[0].scriptNames.length} script locations`);
@@ -204,14 +204,14 @@ try {
   await page.click('.char-upload-menu .char-upload-menu-item:text-is("Delete Map")');
   await page.waitForSelector('.fs-confirm-box', { timeout: 5000 });
   await page.click('.fs-confirm-ok');
-  await page.waitForTimeout(300);
+  await settle(page);
   ok((await state()).map === null, 'the options button deletes the background');
   ok((await state()).places.length === placesBefore, 'and the pins survive it');
   await page.setInputFiles('.locmap input[type="file"]', MAP_PATH);
   await page.waitForSelector('.locmap-import-bar', { timeout: 8000 });
   ok(true, 'a replacement map gets its own rotation pass');
   await page.click('.locmap-import-confirm');
-  await page.waitForTimeout(300);
+  await settle(page);
 
   // ── 7. the List view names the SCRIPT's location ────────────────────
   /* v5.85 REVERSED this, at Derek's word: "always show the full location name

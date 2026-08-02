@@ -2,7 +2,7 @@
 // Design docks BACK (regression fix) and still coexists; Notes: caret beside
 // the checkbox, no helper text, no strikethrough; annotation icon row: the
 // current combo IS the picker trigger.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -77,10 +77,10 @@ const stepper = await page.evaluate(() => {
 ok(stepper.two && stepper.stacked, 'the stepper is an Up button stacked on a Down button');
 /* retired: the stepper became the shared PerRowStepper in v5.50 */
 await page.click('.fs-updown .fs-updown-btn >> nth=0');
-await page.waitForTimeout(120);
+await settle(page);
 const nUp = await page.evaluate(() => window.__scStore.getState().pagesPerRow);
 await page.click('.fs-updown .fs-updown-btn >> nth=1');
-await page.waitForTimeout(120);
+await settle(page);
 const nDown = await page.evaluate(() => window.__scStore.getState().pagesPerRow);
 ok(nUp === 4 && nDown === 3, `Up increments, Down decrements (3→${nUp}→${nDown})`);
 await page.screenshot({ path: `${SHOTS}/v547-pages.png` });
@@ -105,9 +105,9 @@ ok(docked.slot === 'design' && docked.mode === 'docked' && !docked.win && docked
   `dropping the Design window on a panel DOCKS it (slot ${docked.slot}, mode ${docked.mode})`);
 await page.screenshot({ path: `${SHOTS}/v547-design-docked.png` });
 await page.click('[data-tool-row="design"]');   // toggle closed
-await page.waitForTimeout(200);
+await settle(page);
 await page.click('[data-tool-row="design"]');   // reopen — the docked home is honored
-await page.waitForTimeout(300);
+await settle(page);
 const reopened = await page.evaluate(() => ({
   slot: window.__scStore.getState().activeToolRight,
   win: window.__scStore.getState().designPanelOpen,
@@ -151,12 +151,12 @@ const noteLi = await page.evaluate(() => {
 ok(noteLi.grow === '1' && noteLi.divW > noteLi.liW * 0.6,
   `the text area fills the row beside the box (${Math.round(noteLi.divW)}/${Math.round(noteLi.liW)}px)`);
 await page.mouse.click(noteLi.liRect.x, noteLi.liRect.y);
-await page.waitForTimeout(150);
+await settle(page);
 const caret = await page.evaluate(() =>
   !!document.activeElement?.closest?.('.swn-note-editor'));
 ok(caret, 'clicking beside the checkbox lands the caret in the note');
 await page.click('.swn-note-editor ul[data-type="taskList"] li > label input');
-await page.waitForTimeout(200);
+await settle(page);
 const noteStrike = await page.evaluate(() => {
   const div = document.querySelector('.swn-note-editor li[data-checked="true"] > div');
   return div ? getComputedStyle(div).textDecorationLine : 'missing';
@@ -177,7 +177,7 @@ await page.evaluate(() => {
     }],
   }, true);
 });
-await page.waitForTimeout(250);
+await settle(page);
 const annoStrike = await page.evaluate(() => {
   const div = document.querySelector('.markup-mini-editor li[data-checked="true"] > div');
   return div ? getComputedStyle(div).textDecorationLine : 'missing';
@@ -186,7 +186,7 @@ ok(annoStrike === 'none', `a checked annotation item gets NO strikethrough (${an
 
 // while the edit window is open, annotations show whatever the toggle says
 await page.evaluate(() => window.__scStore.getState().setMarkupsVisible(false));
-await page.waitForTimeout(300);
+await settle(page);
 const whileOpen = await page.evaluate(() => ({
   icons: document.querySelectorAll('.markup-margin-icon').length,
   vis: window.__scStore.getState().markupsVisible,
@@ -207,11 +207,11 @@ await page.waitForSelector('.markup-icon-pop', { timeout: 4000 });
 ok(true, 'clicking the current icon opens the icon/color picker');
 await page.screenshot({ path: `${SHOTS}/v547-icon-picker.png` });
 await page.keyboard.press('Escape');   // close the picker
-await page.waitForTimeout(150);
+await settle(page);
 
 // closing the window reverts to the chosen (hidden) state
 await page.click('.markup-save');
-await page.waitForTimeout(300);
+await settle(page);
 const afterClose = await page.evaluate(() => ({
   icons: document.querySelectorAll('.markup-margin-icon').length,
   vis: window.__scStore.getState().markupsVisible,

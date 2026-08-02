@@ -12,7 +12,7 @@
  *
  * The List view's table (#5) is check-v581-list.
  */
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 const MAP = writeMapFixture('/tmp/map-land.png', 800, 600);
 let pass = 0, fail = 0;
@@ -37,7 +37,7 @@ try {
   });
   const g0 = await geom();
   await page.click('.locmap-addpin-btn');
-  await page.waitForTimeout(250);
+  await settle(page);
   const g1 = await geom();
   ok(g0.top === g1.top, `#1 arming does NOT move the map (top ${g0.top} → ${g1.top}, bar ${g0.barH} → ${g1.barH}px)`);
 
@@ -54,19 +54,19 @@ try {
     `#1 the pin lands where it was clicked (clicked ${cx},${cy} → tip ${tip.x},${tip.y})`);
 
   await page.mouse.click(6, 6).catch(() => {});
-  await page.waitForTimeout(200);
+  await settle(page);
   const before = await page.evaluate(() => window.__scStore.getState().locationPlaces.length);
   await page.mouse.click(cx + 20, cy + 12);
-  await page.waitForTimeout(300);
+  await settle(page);
   const after = await page.evaluate(() => window.__scStore.getState().locationPlaces.length);
   ok(before === after, `#2 a plain click no longer drops a pin (${before} → ${after})`);
   await page.click('.locmap-addpin-btn');
   await page.mouse.click(cx + 20, cy + 12);
-  await page.waitForTimeout(300);
+  await settle(page);
   ok(await page.evaluate(() => window.__scStore.getState().locationPlaces.length) === after + 1,
     '#2 pressing + Add Pin again places the next one');
   await page.mouse.click(6, 6).catch(() => {});
-  await page.waitForTimeout(200);
+  await settle(page);
 
   // ── #3 Map Options ────────────────────────────────────────────────
   const optBtn = await page.$('.locmap-mapopts-btn');
@@ -83,13 +83,13 @@ try {
   ok(JSON.stringify(items) === JSON.stringify(['Replace Map', 'Rotate 90 degrees', 'Delete Map']),
     `#3 offering ${items.join(' · ')}`);
   await page.click('.locmap-mapopts-menu button:text-is("Replace Map")');
-  await page.waitForTimeout(200);
+  await settle(page);
   const subs = await page.$$eval('.locmap-mapopts-menu button', (e) => e.map((x) => x.textContent.trim()));
   ok(subs.includes('From local device…') && subs.includes('From Asset Manager…'),
     `#3 Replace Map opens its two sources (${subs.join(' · ')})`);
   await page.keyboard.press('Escape').catch(() => {});
   await page.mouse.click(6, 6).catch(() => {});
-  await page.waitForTimeout(200);
+  await settle(page);
 
   // rotate carries the pins round with the picture
   const beforeRot = await page.evaluate(() => window.__scStore.getState().locationPlaces.map((p) => [Math.round(p.x*100)/100, Math.round(p.y*100)/100]));
@@ -106,28 +106,28 @@ try {
 
   // ── #4 sidebar lock + delete ──────────────────────────────────────
   await page.mouse.click(6, 6).catch(() => {});
-  await page.waitForTimeout(150);
+  await settle(page);
   // a row may already be open from an earlier step, and clicking an open
   // row folds it shut — collapse first, then open the pinned one.
   if (await page.$('.locmap-rail-item-open')) {
     await page.click('.locmap-rail-item-open .locmap-rail-row');
-    await page.waitForTimeout(200);
+    await settle(page);
   }
   await page.locator('.locmap-rail-row:has(.locmap-rail-icon-pinned) .locmap-rail-name').first().click();
   await page.waitForSelector('.locmap-rail-detail');
   /* v5.85, Derek: the lock/delete pair moved off the expanded row into the
      row header's PIN-icon menu — same two actions, one gesture earlier. */
   await page.mouse.click(6, 6).catch(() => {});
-  await page.waitForTimeout(150);
+  await settle(page);
   await page.click('.locmap-rail-item:has(.locmap-rail-detail) .locmap-rail-btn[title="Pin options"]');
   await page.waitForSelector('.locmap-pin-menu');
   const tools = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
   ok(tools.length === 2 && /Lock pin/.test(tools[0]) && tools[1] === 'Delete pin',
     `#4 the pin menu carries the lock and the delete (${tools.join(' · ')})`);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has-text("Lock pin")');
-  await page.waitForTimeout(250);
+  await settle(page);
   await page.mouse.click(6, 6).catch(() => {});
-  await page.waitForTimeout(150);
+  await settle(page);
   await page.click('.locmap-rail-item:has(.locmap-rail-detail) .locmap-rail-btn[title="Pin options"]');
   await page.waitForSelector('.locmap-pin-menu');
   ok(await page.$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => /Unlock pin/.test(e.textContent)),

@@ -2,7 +2,7 @@
 // Enter adds lines to the SAME page, the page is excluded from numbering
 // (headers stay consecutive), the Pages tool shows and adds them, and the
 // Fountain export never carries their text.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -17,7 +17,7 @@ await seedScript(page, SCENES_4);
 await page.evaluate(() => window.__scEditor.chain().setTextSelection(60).run());
 await page.click('.menu-item:has-text("Insert")');
 await page.click('.menu-dropdown-item:has(span:text-is("Custom Page"))');
-await page.waitForTimeout(300);
+await settle(page);
 
 const afterInsert = await page.evaluate(() => {
   const doc = window.__scEditor.getJSON();
@@ -32,7 +32,7 @@ ok(afterInsert.cursorIn === 'customPage', `and the cursor is ON it (${afterInser
 await page.keyboard.type('THINGS TO FIX');
 await page.keyboard.press('Enter');
 await page.keyboard.type('- the ending needs a reversal');
-await page.waitForTimeout(200);
+await settle(page);
 const lines = await page.evaluate(() => {
   const doc = window.__scEditor.getJSON();
   const cp = (doc.content ?? []).filter((n) => n.type === 'customPage');

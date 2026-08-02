@@ -3,7 +3,7 @@
 // filter grids draw each type in its annotation's color; a one-checkbox
 // list never shows the big Navigator icon; + Add Annotation is a bare +
 // leading the panel header.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -60,12 +60,12 @@ ok(chrome && !chrome.apply && chrome.foot.join(',') === 'Cancel,OK',
   `no Apply in the hex row; footer holds Cancel + OK (${chrome?.foot.join(' / ')})`);
 
 await page.fill('.markup-icon-pop .color-picker-hex', '#12ab34');
-await page.waitForTimeout(150);
+await settle(page);
 ok(await page.evaluate(() => window.__scStore.getState().markups[0].color === '#12ab34'),
   'typing a full hex auto-applies the color (no Apply click)');
 
 await page.click('.markup-icon-pop-left .markup-icon-pop-row .markup-preset');
-await page.waitForTimeout(120);
+await settle(page);
 const afterPreset = await page.evaluate(() => ({
   open: !!document.querySelector('.markup-icon-pop'),
   m: (({ icon, color }) => ({ icon, color }))(window.__scStore.getState().markups[0]),
@@ -109,7 +109,7 @@ const preview = await page.evaluate(() => ({
 ok(preview.check && preview.content === 'stored',
   `a lone empty checkbox is STORED as content and previews as ☐ (${preview.content})`);
 await page.click('.markup-save');
-await page.waitForTimeout(200);
+await settle(page);
 
 await openTool(page, 'Navigator');
 await page.waitForSelector('.fs-nav-list', { timeout: 6000 });

@@ -3,7 +3,7 @@
 // nodes, then both renderings are read out of the live DOM and compared
 // block by block (align / weight / caps / size-ratio), plus the geometry
 // (both centered on the PAPER, not on the asymmetric printable box).
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 
 const { browser, page } = await launch({ width: 1500, height: 950 });
 let pass = 0, fail = 0;
@@ -73,7 +73,7 @@ try {
     ['Based On', 'based on the book "Vector Prime" by R. A. Salvatore'],
     ['Draft', '1st Draft'],
   ]) ok(await setField(label, value), `filled ${label}`);
-  await page.waitForTimeout(300);
+  await settle(page);
 
   const preview = await readLines('.tp-scale-page', ':scope > div', '.tp-scale-page');
   await page.click('.tp-editor-dialog .dialog-actions .dialog-primary');   // Apply

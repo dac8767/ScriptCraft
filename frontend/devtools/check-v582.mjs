@@ -7,7 +7,7 @@
  * two agree: the MENU's corner and the pin's marker must describe the same
  * point, across map shapes and window sizes.
  */
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 
 const MAPS = {
@@ -23,7 +23,7 @@ async function run(label, { map, w, h, fullscreen = true, rotate = false }) {
   try {
     await boot(page); await seedScript(page, SCENES_4); await openTool(page, 'Locations');
     if (fullscreen) { await page.click('button[title="Fullscreen"]'); await page.waitForSelector('.fs-tool-takeover'); }
-    await page.waitForTimeout(300);
+    await settle(page);
     if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]').catch(() => {});
     await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")').catch(() => {});
     await page.waitForSelector('.locmap', { timeout: 8000 });
@@ -42,7 +42,7 @@ async function run(label, { map, w, h, fullscreen = true, rotate = false }) {
       const cx = Math.round(b.x + b.w * fx), cy = Math.round(b.y + b.h * fy);
       await page.click('.locmap-addpin-btn');
       await page.mouse.move(cx, cy);
-      await page.waitForTimeout(120);
+      await settle(page);
       // the GHOST must already be on the point the pin will take
       const ghostTip = await page.evaluate(() => {
         const g = document.querySelector('.locmap-pin-ghost');
@@ -51,7 +51,7 @@ async function run(label, { map, w, h, fullscreen = true, rotate = false }) {
         return [Math.round(m.left + m.width / 2), Math.round(m.bottom)];
       });
       await page.mouse.click(cx, cy);
-      await page.waitForTimeout(300);
+      await settle(page);
       const res = await page.evaluate(() => {
         const pins = document.querySelectorAll('.locmap-pin:not(.locmap-pin-ghost)');
         const pin = pins[pins.length - 1];
@@ -69,7 +69,7 @@ async function run(label, { map, w, h, fullscreen = true, rotate = false }) {
       if (res.menu) ok(Math.abs(res.menu[0] - cx) <= 260 && Math.abs(res.menu[1] - (cy + 10)) <= 300,
         `${label} @(${fx},${fy}) the menu opens at the same click`);
       await page.mouse.click(4, 4).catch(() => {});
-      await page.waitForTimeout(150);
+      await settle(page);
     }
     ok(await page.$eval('.locmap-img-wrap', (el) => getComputedStyle(el).pointerEvents) === 'none',
       `${label} the picture takes no pointer events — the stage is the target`);
@@ -96,7 +96,7 @@ console.log(`\ncheck-v582: ${pass} passed, ${fail} failed`);
   try {
     await boot(page); await seedScript(page, SCENES_4); await openTool(page, 'Locations');
     await page.click('button[title="Fullscreen"]'); await page.waitForSelector('.fs-tool-takeover');
-    await page.waitForTimeout(300);
+    await settle(page);
     if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]').catch(() => {});
     await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")').catch(() => {});
     await page.waitForSelector('.locmap', { timeout: 8000 });
@@ -108,9 +108,9 @@ console.log(`\ncheck-v582: ${pass} passed, ${fail} failed`);
     const cx = Math.round(b.x + b.w * 0.5), cy = Math.round(b.y + b.h * 0.5);
     await page.click('.locmap-addpin-btn');
     await page.mouse.click(cx, cy);
-    await page.waitForTimeout(300);
+    await settle(page);
     await page.mouse.click(4, 4).catch(() => {});
-    await page.waitForTimeout(200);
+    await settle(page);
     const before = await page.evaluate(() => { const p = window.__scStore.getState().locationPlaces[0]; return [Math.round(p.x*1000), Math.round(p.y*1000)]; });
     // press the pin, wobble 2px, release — a trackpad click
     const pin = await page.$eval('.locmap-pin:not(.locmap-pin-ghost)', (el) => { const r = el.getBoundingClientRect(); return { x: r.x + r.width/2, y: r.y + r.height/2 }; });
@@ -118,18 +118,18 @@ console.log(`\ncheck-v582: ${pass} passed, ${fail} failed`);
     await page.mouse.down();
     await page.mouse.move(pin.x + 2, pin.y + 1);
     await page.mouse.up();
-    await page.waitForTimeout(300);
+    await settle(page);
     const after = await page.evaluate(() => { const p = window.__scStore.getState().locationPlaces[0]; return [Math.round(p.x*1000), Math.round(p.y*1000)]; });
     ok(before[0] === after[0] && before[1] === after[1], `a 2px click wobble does not move the pin (${before} → ${after})`);
     ok(await page.$('.locmap-pin-menu') !== null, 'and the press still opens its dropdown');
     // a real drag still moves it
     await page.mouse.click(4, 4).catch(() => {});
-    await page.waitForTimeout(200);
+    await settle(page);
     await page.mouse.move(pin.x, pin.y);
     await page.mouse.down();
     await page.mouse.move(pin.x + 60, pin.y + 40, { steps: 8 });
     await page.mouse.up();
-    await page.waitForTimeout(300);
+    await settle(page);
     const dragged = await page.evaluate(() => { const p = window.__scStore.getState().locationPlaces[0]; return [Math.round(p.x*1000), Math.round(p.y*1000)]; });
     ok(dragged[0] !== after[0] || dragged[1] !== after[1], `a real drag still moves it (${after} → ${dragged})`);
   } catch (e) { console.log('  ✗ SCRIPT ERROR (wobble):', e.message); fail++; }
@@ -148,7 +148,7 @@ console.log(`\ncheck-v582 total: ${pass} passed, ${fail} failed`);
   try {
     await boot(page); await seedScript(page, SCENES_4); await openTool(page, 'Locations');
     await page.click('button[title="Fullscreen"]'); await page.waitForSelector('.fs-tool-takeover');
-    await page.waitForTimeout(300);
+    await settle(page);
     if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]').catch(() => {});
     await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")').catch(() => {});
     await page.waitForSelector('.locmap', { timeout: 8000 });
@@ -167,7 +167,7 @@ console.log(`\ncheck-v582 total: ${pass} passed, ${fail} failed`);
     const cx = Math.round(b.x + b.w * 0.34), cy = Math.round(b.y + b.h * 0.33);
     await page.click('.locmap-addpin-btn');
     await page.mouse.move(cx, cy);
-    await page.waitForTimeout(150);
+    await settle(page);
     await page.mouse.click(cx, cy);
     await page.waitForTimeout(350);
     const res = await page.evaluate(() => {
@@ -196,7 +196,7 @@ console.log(`\ncheck-v582 with the v5.83 guard: ${pass} passed, ${fail} failed`)
   try {
     await boot(page); await seedScript(page, SCENES_4); await openTool(page, 'Locations');
     await page.click('button[title="Fullscreen"]'); await page.waitForSelector('.fs-tool-takeover');
-    await page.waitForTimeout(300);
+    await settle(page);
     if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]').catch(() => {});
     await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")').catch(() => {});
     await page.waitForSelector('.locmap', { timeout: 8000 });

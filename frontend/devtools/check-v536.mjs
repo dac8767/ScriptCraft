@@ -1,7 +1,7 @@
 // devtools/check-v536.mjs — Derek's Notes v2: one rich-text card kind, the
 // tool renamed "Notes", no checklist button, "Notes per row:" over an
 // equal-height row grid (the misalignment fix), and drag-reorder that works.
-import { launch, boot, seedScript, openTool, fullscreen, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, fullscreen, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -49,12 +49,12 @@ ok(rich.checks === 2, `the migrated checklist renders as a real task list (${ric
 
 // ── fullscreen: "Notes per row:" stepper + equal-height row grid ─────────
 await fullscreen(page);
-await page.waitForTimeout(200);
+await settle(page);
 const stepLabel = await page.evaluate(() =>
   document.querySelector('.fs-tool-takeover .tool-action-label')?.textContent);
 ok(stepLabel === 'Notes per row:', `the stepper says "Notes per row:" (${stepLabel})`);
 await page.click('.fs-tool-takeover button[title="More notes per row (smaller cards)"]');
-await page.waitForTimeout(150);
+await settle(page);
 const grid = await page.evaluate(() => {
   const scroll = document.querySelector('.fs-tool-takeover .swn-scroll');
   const cs = getComputedStyle(scroll);
@@ -85,7 +85,7 @@ const dragEnv = await page.evaluate(() => {
   return { cards: cards.length, started: true };
 });
 console.log(`  (drag env: ${JSON.stringify(dragEnv)})`);
-await page.waitForTimeout(80);   // the deferred dragId write lands
+await settle(page);   // the deferred dragId write lands
 await page.evaluate(() => {
   const cards = document.querySelectorAll('.fs-tool-takeover .swn-card');
   const grip = cards[3]?.querySelector('.swn-drag-grip');
@@ -95,7 +95,7 @@ await page.evaluate(() => {
   target.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: dt }));
   grip?.dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: dt }));
 });
-await page.waitForTimeout(200);
+await settle(page);
 const order = await page.evaluate(() =>
   window.__scStore.getState().shelfCards.map((c) => c.id).join(''));
 ok(order === 'dabc', `drag-reorder moved D before A (${order})`);
@@ -105,7 +105,7 @@ ok(await page.evaluate(() => window.__scStore.getState().stickySort) === 'manual
 // ── rich editing writes content + the plain-text mirror ──────────────────
 await page.click('.fs-tool-takeover .swn-card:nth-of-type(2) .swn-note-editor .ProseMirror');
 await page.keyboard.type(' plus typed words');
-await page.waitForTimeout(200);
+await settle(page);
 const edited = await page.evaluate(() => {
   const c = window.__scStore.getState().shelfCards.find((x) => x.id === 'a');
   return { text: c.text, hasContent: !!c.content };
@@ -120,7 +120,7 @@ const barVisible = await page.evaluate(() => {
 });
 ok(barVisible, 'the rich toolbar shows while the card has focus');
 await page.click('.fs-tool-takeover .swn-card:nth-of-type(2) button[title="Checklist"]');
-await page.waitForTimeout(200);
+await settle(page);
 const nowChecklist = await page.evaluate(() => {
   const c = window.__scStore.getState().shelfCards.find((x) => x.id === 'a');
   return JSON.stringify(c.content).includes('taskList');

@@ -3,7 +3,7 @@
 // wears `dialog-btn dialog-btn-primary` now, so the proof is computed-style
 // EQUALITY against a real dialog-primary probe — not hardcoded colors.
 // Active state must STAY amber (unapplied order ≠ available action).
-import { launch, boot, seedScript, openTool, waitScenes, shot, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, waitScenes, shot, SCENES_4, settle } from './driver.mjs';
 
 const results = [];
 const check = (n, got, want) => {
@@ -44,7 +44,7 @@ await shot(page, '.tool-action-row', new URL('./last-reorder-btn.png', import.me
 // Active = amber, still visually distinct from the primary blue.
 await page.click('.scene-reorder-btn');
 await page.mouse.move(10, 10);   // un-hover: :hover would read the hover shade
-await page.waitForTimeout(200);
+await settle(page);
 const active = await page.evaluate(() => {
   const btn = document.querySelector('.scene-reorder-btn');
   return { cls: btn.className.includes('active'), bg: getComputedStyle(btn).backgroundColor };

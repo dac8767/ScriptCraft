@@ -4,7 +4,7 @@
  * unreachable, and the description typed in the List view would be stranded
  * on it, out of sight. The target absorbs it and the husk goes.
  */
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 const MAP = writeMapFixture('/tmp/check-v577-map.png');
 let pass = 0, fail = 0;
@@ -13,10 +13,10 @@ const { browser, page } = await launch({ width: 1500, height: 950 });
 try {
   await boot(page); await seedScript(page, SCENES_4); await openTool(page, 'Locations');
   await page.click('button[title="Fullscreen"]'); await page.waitForSelector('.fs-tool-takeover');
-  await page.waitForTimeout(300);
+  await settle(page);
   // write a description in the LIST view, then pin that location on the map
   await page.fill('.location-group:first-child .location-desc-field', 'Star-field prologue');
-  await page.waitForTimeout(300);
+  await settle(page);
   const name = await page.$eval('.location-group:first-child .location-name', (e) => e.textContent.trim());
   if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]');
   await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")');
@@ -28,7 +28,7 @@ try {
   const b = await page.$eval('.locmap-stage', (el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
   await page.click('.locmap-addpin-btn');
   await page.mouse.click(b.x + b.w * 0.4, b.y + b.h * 0.4);
-  await page.waitForTimeout(250);
+  await settle(page);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:text-is("Connect to location…")');
   await page.click(`.locmap-pin-menu .locmap-pin-menu-item:has-text("${name}")`);
   await page.waitForTimeout(350);

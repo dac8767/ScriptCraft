@@ -1,7 +1,7 @@
 // devtools/check-v543.mjs — the panel Filter is ONE section again: its
 // status toggle and type buttons drive the SCRIPT and the WINDOW together,
 // and the dropdown is wide enough for the whole Status row.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -52,7 +52,7 @@ await page.evaluate(() => {
   [...document.querySelectorAll('.markup-filter-pop .markup-filter-seg button')]
     .find((b) => b.textContent === 'Complete')?.click();
 });
-await page.waitForTimeout(120);
+await settle(page);
 let both = await page.evaluate(() => {
   const s = window.__scStore.getState();
   return { script: s.markupScriptDone, win: s.markupFilters.done };
@@ -61,7 +61,7 @@ ok(both.script === 'done' && both.win === 'done',
   `the status toggle writes script AND window (${both.script}/${both.win})`);
 
 await page.evaluate(() => document.querySelector('.markup-filter-pop .markup-filter-grid button')?.click());
-await page.waitForTimeout(120);
+await settle(page);
 both = await page.evaluate(() => {
   const s = window.__scStore.getState();
   return { script: s.markupHiddenIcons.length, win: s.markupFilters.hiddenIcons.length };
@@ -74,9 +74,9 @@ await page.evaluate(() => {
   const s = window.__scStore.getState();
   s.setMarkupFilters({ ...s.markupFilters, hiddenIcons: [] });   // window-side cleared; script still hides it
 });
-await page.waitForTimeout(120);
+await settle(page);
 await page.evaluate(() => document.querySelector('.markup-filter-pop .markup-filter-grid button')?.click());
-await page.waitForTimeout(120);
+await settle(page);
 both = await page.evaluate(() => {
   const s = window.__scStore.getState();
   return { script: s.markupHiddenIcons.length, win: s.markupFilters.hiddenIcons.length };
@@ -88,7 +88,7 @@ await page.evaluate(() => {
   [...document.querySelectorAll('.markup-filter-pop .markup-filter-allrow button')]
     .find((b) => b.textContent === 'Hide all')?.click();
 });
-await page.waitForTimeout(120);
+await settle(page);
 both = await page.evaluate(() => {
   const s = window.__scStore.getState();
   return { script: s.markupHiddenIcons.length, win: s.markupFilters.hiddenIcons.length };
@@ -97,7 +97,7 @@ both = await page.evaluate(() => {
 
 // ── context menu: the APP menu owns the whole script area ────────────────
 await page.keyboard.press('Escape');
-await page.waitForTimeout(150);
+await settle(page);
 const ctxPrevented = await page.evaluate(() => {
   const area = document.querySelector('.editor-main');
   const r = area.getBoundingClientRect();
@@ -108,7 +108,7 @@ const ctxPrevented = await page.evaluate(() => {
   area.dispatchEvent(ev);
   return ev.defaultPrevented;
 });
-await page.waitForTimeout(200);   // React flushes the menu render
+await settle(page);   // React flushes the menu render
 const ctxMenu = await page.evaluate(() => !!document.querySelector('.script-context-menu'));
 ok(ctxPrevented && ctxMenu,
   `right-click on the script backdrop opens the APP menu, native suppressed (${ctxPrevented}/${ctxMenu})`);
@@ -123,7 +123,7 @@ ok(!ctxAway, 'outside the script area the handler stays out of the way');
 
 // ── Return to Editor is gone — the × does the job ────────────────────────
 await openTool(page, 'Scrapbook');
-await page.waitForTimeout(300);
+await settle(page);
 const ret = await page.evaluate(() => ({
   btn: !!document.querySelector('.rib-scrapbook-return'),
   text: [...document.querySelectorAll('button')].some((b) => b.textContent.includes('Return to Editor')),

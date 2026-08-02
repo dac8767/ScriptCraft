@@ -1,3 +1,4 @@
+import { settle } from './driver.mjs';
 // devtools/check-ribbon-kinds.mjs — v5.14: mixed titled/untitled ribbon.
 // Untitled two-row sections auto-stretch to a titled section's total height:
 // bases level, untitled button tops level with the titled TITLE's top. The
@@ -41,7 +42,7 @@ await page.addInitScript(() => {
 });
 await page.goto('http://localhost:5199/', { waitUntil: 'domcontentloaded' });
 await page.waitForSelector('.ProseMirror', { timeout: 25000 });
-for (let i = 0; i < 5; i++) { if (!(await page.$('.dialog-overlay'))) break; await page.keyboard.press('Escape'); await page.waitForTimeout(150); }
+for (let i = 0; i < 5; i++) { if (!(await page.$('.dialog-overlay'))) break; await page.keyboard.press('Escape'); await settle(page); }
 await page.waitForSelector('.toolbar-ribbon .rib-kind-untitled', { timeout: 8000 });
 
 const read = () => page.evaluate(() => {
@@ -88,7 +89,7 @@ const openGroup = async (groupLabel) => {
   const group = page.locator('.dz-group', { hasText: groupLabel }).first();
   if (await group.locator('.dz-row').count() > 0) return;
   await group.locator('.dz-group-head').first().click();
-  await page.waitForTimeout(250);
+  await settle(page);
 };
 const setKnob = async (groupLabel, rowLabel, value) => {
   const num = page.locator('.dz-group', { hasText: groupLabel })
@@ -96,7 +97,7 @@ const setKnob = async (groupLabel, rowLabel, value) => {
   await num.click({ clickCount: 3 });
   await page.keyboard.type(String(value));
   await page.keyboard.press('Enter');
-  await page.waitForTimeout(250);
+  await settle(page);
 };
 await openGroup('Ribbon: Untitled Sections');
 await setKnob('Ribbon: Untitled Sections', 'Section scale', 80);
@@ -146,7 +147,7 @@ check('single-row icon size applies',
 const barBefore = await page.$eval('.toolbar-ribbon', (el) => el.getBoundingClientRect().height);
 await openGroup('Ribbon: Titled Sections');
 await setKnob('Ribbon: Titled Sections', 'Bottom padding', 16);
-await page.waitForTimeout(300);
+await settle(page);
 const clip = await page.evaluate(() => {
   const bar = document.querySelector('.toolbar-ribbon').getBoundingClientRect();
   const title = document.querySelector('.rib-kind-titled .rib-sec-title').getBoundingClientRect();

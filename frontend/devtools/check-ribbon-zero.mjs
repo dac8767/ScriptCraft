@@ -1,3 +1,4 @@
+import { settle } from './driver.mjs';
 // devtools/check-ribbon-zero.mjs — v5.16, Derek: "make sure that 0 is
 // actually 0 for all options." Seeds every ribbon spacing knob at zero and
 // asserts the computed layout carries ZERO of each — no hidden +3s, no hard
@@ -46,7 +47,7 @@ await page.addInitScript(() => {
 });
 await page.goto('http://localhost:5199/', { waitUntil: 'domcontentloaded' });
 await page.waitForSelector('.ProseMirror', { timeout: 25000 });
-for (let i = 0; i < 5; i++) { if (!(await page.$('.dialog-overlay'))) break; await page.keyboard.press('Escape'); await page.waitForTimeout(150); }
+for (let i = 0; i < 5; i++) { if (!(await page.$('.dialog-overlay'))) break; await page.keyboard.press('Escape'); await settle(page); }
 await page.waitForSelector('.toolbar-ribbon .rib-kind-titled', { timeout: 8000 });
 
 const r = await page.evaluate(() => {

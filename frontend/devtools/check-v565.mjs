@@ -2,7 +2,7 @@
 // view with real keystrokes: type lowercase mid-heading, the letters land
 // uppercased IN PLACE and the caret advances one step per letter instead of
 // jumping to the heading's end.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
   if (cond) { pass++; console.log(`  ✓ ${label}`); }
@@ -25,7 +25,7 @@ await page.evaluate(() => {
   ed.chain().focus().setTextSelection(1 + 'EXT. SPACE C'.length).run();
 });
 await page.keyboard.type('ruiser', { delay: 40 });
-await page.waitForTimeout(300);
+await settle(page);
 const after = await page.evaluate(() => ({
   heading: window.__scEditor.state.doc.firstChild.textContent,
   head: window.__scEditor.state.selection.head,
@@ -37,7 +37,7 @@ ok(after.head === 1 + 'EXT. SPACE CRUISER'.length,
 
 // and the word can be finished/continued mid-heading repeatedly
 await page.keyboard.type('s', { delay: 40 });
-await page.waitForTimeout(200);
+await settle(page);
 const again = await page.evaluate(() => ({
   heading: window.__scEditor.state.doc.firstChild.textContent,
   head: window.__scEditor.state.selection.head,

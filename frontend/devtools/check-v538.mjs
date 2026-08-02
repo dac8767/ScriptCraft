@@ -1,7 +1,7 @@
 // devtools/check-v538.mjs — Scenes cards: a name that would truncate pushes
 // the page/time metrics to a SECOND row; a name that fits keeps them beside
 // it on one row.
-import { launch, boot, seedScript, openTool, fullscreen, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, fullscreen, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -20,7 +20,7 @@ await openTool(page, 'Scenes');
 await fullscreen(page);
 await page.evaluate(() => window.__scStore.setState({ scenesViewMode: 'cards' }));
 await page.waitForSelector('.index-card', { timeout: 10000 });
-await page.waitForTimeout(300);
+await settle(page);
 
 const rows = await page.evaluate(() => {
   const cards = [...document.querySelectorAll('.index-card')];

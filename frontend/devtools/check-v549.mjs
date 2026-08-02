@@ -2,7 +2,7 @@
 // (right edge on the right panel's left edge, fresh open and after a dock
 // cycle); the annotation previews stack left-aligned with Save pinned to
 // the section's bottom-right (the foot row is gone).
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -50,7 +50,7 @@ const edC = await page.evaluate(() => {
 await page.mouse.move(rowC.x, rowC.y); await page.mouse.down();
 await page.mouse.move(edC.x, edC.y, { steps: 8 }); await page.mouse.up();
 await page.waitForSelector('.dz-panel', { timeout: 4000 });
-await page.waitForTimeout(200);
+await settle(page);
 seat = await seatGap();
 ok(seat && seat.gap >= 0 && seat.gap <= 12 && seat.onScreen,
   `after a dock cycle the pop-out kisses the edge again (gap ${seat?.gap?.toFixed(0)}px)`);
@@ -124,14 +124,14 @@ const spin = await page.evaluate(() => {
 ok(spin.framed && spin.tight, 'the arrows share ONE button frame, tight together');
 ok(spin.numGap < 5, `the number sits snug beside the arrows (gap ${spin.numGap.toFixed(1)}px)`);
 await page.fill('.fs-perrow-input', '6');
-await page.waitForTimeout(150);
+await settle(page);
 const typed = await page.evaluate(() => ({
   n: window.__scStore.getState().pagesPerRow,
   cols: getComputedStyle(document.querySelector('.page-thumbnails-grid')).getPropertyValue('--pages-per-row').trim(),
 }));
 ok(typed.n === 6 && typed.cols === '6', `typing 6 sets pages per row (store ${typed.n}, grid ${typed.cols})`);
 await page.fill('.fs-perrow-input', '3');
-await page.waitForTimeout(120);
+await settle(page);
 await page.screenshot({ path: `${SHOTS}/v549-stepper.png` });
 
 console.log(`\n${pass} passed, ${fail} failed`);

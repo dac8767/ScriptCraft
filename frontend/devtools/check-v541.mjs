@@ -2,7 +2,7 @@
 // current-first Used row, draggable + compact combo picker, ribbon
 // formatting drives the annotation editor, no nav icon for lists, and the
 // shape-limit toast at the attempted move (panel foot text gone).
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -65,7 +65,7 @@ await page.click('button[title="Checklist"]');
 await page.keyboard.type('one');
 await page.keyboard.press('Enter');
 await page.keyboard.type('two');
-await page.waitForTimeout(200);
+await settle(page);
 ok(await page.evaluate(() => !document.querySelector('.markup-pop-preview .fs-nav-markup-icon')),
   'checklist annotation: the nav preview shows NO icon');
 ok(await page.evaluate(() => !!document.querySelector('.markup-margin-preview')),
@@ -77,7 +77,7 @@ await page.evaluate(() => {
   mini.chain().setTextSelection({ from: 0, to: mini.state.doc.content.size }).run();
 });
 await page.click('button[title="Bold (⌘B)"]');
-await page.waitForTimeout(150);
+await settle(page);
 const fmt = await page.evaluate(() => {
   const mini = window.__scStore.getState().markupMiniEditor;
   return {
@@ -110,7 +110,7 @@ await page.mouse.move(bar.x + bar.width / 2, bar.y + bar.height / 2);
 await page.mouse.down();
 await page.mouse.move(bar.x + bar.width / 2 - 90, bar.y + bar.height / 2 - 60, { steps: 4 });
 await page.mouse.up();
-await page.waitForTimeout(120);
+await settle(page);
 const after = await page.evaluate(() => {
   const r = document.querySelector('.markup-icon-pop').getBoundingClientRect();
   return { top: Math.round(r.top), left: Math.round(r.left) };
@@ -155,7 +155,7 @@ await page.mouse.move(row.x + row.width / 2, row.y + row.height / 2);
 await page.mouse.down();
 await page.mouse.move(editorBox.x + 200, editorBox.y + 300, { steps: 6 });
 await page.mouse.up();
-await page.waitForTimeout(250);
+await settle(page);
 const toast = await page.evaluate(() => ({
   toasted: document.body.textContent.includes('This window only appears in the side panel'),
   mode: window.__scStore.getState().toolMode.markups ?? 'docked',

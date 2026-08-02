@@ -2,7 +2,7 @@
 // lookups group senses by part of speech, chips chain (with Back), the
 // script caret drives the lookup, ⇄ replaces the script word in place with
 // case kept, fallbacks and misses speak up, and the Tools menu lists it.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -40,7 +40,7 @@ await page.screenshot({ path: `${SHOTS}/v553-happy.png` });
 // ── chip click chains the lookup; Back walks the trail ───────────────────
 const firstWord = await page.evaluate(() => document.querySelector('.thes-word')?.textContent);
 await page.click('.thes-word');
-await page.waitForTimeout(200);
+await settle(page);
 const chained = await page.evaluate(() => ({
   input: document.querySelector('.thes-input')?.value,
   backOn: !document.querySelector('.thes-back')?.disabled,
@@ -48,7 +48,7 @@ const chained = await page.evaluate(() => ({
 ok(chained.input === firstWord && chained.backOn,
   `clicking “${firstWord}” chains the lookup and arms Back`);
 await page.click('.thes-back');
-await page.waitForTimeout(200);
+await settle(page);
 ok(await page.evaluate(() => document.querySelector('.thes-input')?.value) === 'happy',
   'Back returns to “happy”');
 
@@ -93,12 +93,12 @@ await page.screenshot({ path: `${SHOTS}/v553-replaced.png` });
 // ── fallbacks and misses say what happened ───────────────────────────────
 await page.fill('.thes-input', 'Hoping');
 await page.press('.thes-input', 'Enter');
-await page.waitForTimeout(200);
+await settle(page);
 const note = await page.evaluate(() => document.querySelector('.thes-note')?.textContent ?? '');
 ok(note.includes('hope'), `“Hoping” falls back with a note (${note.trim()})`);
 await page.fill('.thes-input', 'zzzqqq');
 await page.press('.thes-input', 'Enter');
-await page.waitForTimeout(200);
+await settle(page);
 ok(await page.evaluate(() => (document.querySelector('.thes-status')?.textContent ?? '').includes('No synonyms')),
   'a miss reports “No synonyms found”');
 

@@ -8,7 +8,7 @@
  * Hiding must never be a one-way door, so the Filter menu's way back is
  * asserted too.
  */
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 
 const MAP = writeMapFixture('/tmp/check-v577-map.png');
@@ -19,7 +19,7 @@ const { browser, page } = await launch({ width: 1500, height: 950 });
 try {
   await boot(page); await seedScript(page, SCENES_4); await openTool(page, 'Locations');
   await page.click('button[title="Fullscreen"]'); await page.waitForSelector('.fs-tool-takeover');
-  await page.waitForTimeout(300);
+  await settle(page);
 
   // ── the List view ───────────────────────────────────────────────────
   const names = await page.$$eval('.location-group .location-name', (e) => e.map((x) => x.textContent.trim()));
@@ -35,21 +35,21 @@ try {
     s.attachLocationToPlace(id, 'SPACE - BELKADAN');
     s.updateLocationPlace(id, { displayName: 'Belkadan System' });
   });
-  await page.waitForTimeout(300);
+  await settle(page);
   const ungrouped = await page.$$eval('.location-group .location-name', (e) => e.map((x) => x.textContent.trim()));
   ok(ungrouped.includes('SPACE - OPENING SCROLL') && !ungrouped.includes('Belkadan System'),
     '#3 ungrouped, each location still stands under its own name');
   ok(await page.$('.location-group-head') === null, '#3 and there are no group headings');
 
   await page.click('.tool-action-row button:text-is("Group")');
-  await page.waitForTimeout(300);
+  await settle(page);
   const heads = await page.$$eval('.location-group-head', (e) => e.map((x) => x.textContent.trim()));
   ok(heads.some((h) => h.includes('Belkadan System')), `#3 Group folds them under the display name (${heads.join(' · ')})`);
   const groupedNames = await page.$$eval('.location-group .location-name', (e) => e.map((x) => x.textContent.trim()));
   ok(groupedNames.includes('SPACE - OPENING SCROLL') && groupedNames.includes('SPACE - BELKADAN'),
     '#3 and the rows underneath still carry the FULL script names');
   await page.click('.tool-action-row button:text-is("Group")');
-  await page.waitForTimeout(250);
+  await settle(page);
 
   // ── the map sidebar's two row menus ─────────────────────────────────
   if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]');
@@ -73,7 +73,7 @@ try {
   // hide it — the row leaves the list, and the Filter brings it back
   const before = await page.$$eval('.locmap-rail-item', (e) => e.length);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:text-is("Hide from locations list")');
-  await page.waitForTimeout(300);
+  await settle(page);
   const after = await page.$$eval('.locmap-rail-item', (e) => e.length);
   ok(after === before - 1, `#1 hiding takes the row out of the list (${before} → ${after})`);
   ok(await page.evaluate(() => window.__scStore.getState().locationPlaces.some((p) => p.hidden)),
@@ -84,9 +84,9 @@ try {
   const filterItems = await page.$$eval('.tool-ctl-menu .tool-ctl-menu-item', (e) => e.map((x) => x.textContent.trim()));
   ok(filterItems.includes('Show hidden locations'), `#1 the Filter menu offers the way back (${filterItems.join(' · ')})`);
   await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Show hidden locations")');
-  await page.waitForTimeout(300);
+  await settle(page);
   await page.mouse.click(6, 6).catch(() => {});
-  await page.waitForTimeout(200);
+  await settle(page);
   ok(await page.$$eval('.locmap-rail-item', (e) => e.length) === before,
     '#1 and the hidden row comes back');
   ok(await page.$('.locmap-rail-item-hidden') !== null, '#1 marked as hidden while it is shown');
@@ -97,7 +97,7 @@ try {
   const backItems = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
   ok(backItems.includes('Show in locations list'), `#1 and the menu now offers to show it (${backItems.join(' · ')})`);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:text-is("Show in locations list")');
-  await page.waitForTimeout(300);
+  await settle(page);
   ok(!(await page.evaluate(() => window.__scStore.getState().locationPlaces.some((p) => p.hidden))), '#1 unhidden again');
 
   // ── the pin menu ────────────────────────────────────────────────────
@@ -107,21 +107,21 @@ try {
   ok(pinItems.length === 2 && /Lock pin/.test(pinItems[0]) && pinItems[1] === 'Delete pin',
     `#2 the pin menu offers ${pinItems.join(' · ')}`);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has-text("Lock pin")');
-  await page.waitForTimeout(300);
+  await settle(page);
   ok(await page.evaluate(() => window.__scStore.getState().locationPlaces.some((p) => p.locked)), '#2 it locks the pin');
   await page.click('.locmap-rail-item:has(.locmap-rail-icon-pinned) .locmap-rail-btn[title="Pin options"]');
   await page.waitForSelector('.locmap-pin-menu');
   const locked = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
   ok(/Unlock pin/.test(locked[0]), `#2 and then offers to unlock (${locked[0]})`);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has-text("Unlock pin")');
-  await page.waitForTimeout(250);
+  await settle(page);
 
   // delete the pin
   const pinnedBefore = await page.evaluate(() => window.__scStore.getState().locationPlaces.filter((p) => p.x !== null).length);
   await page.click('.locmap-rail-item:has(.locmap-rail-icon-pinned) .locmap-rail-btn[title="Pin options"]');
   await page.waitForSelector('.locmap-pin-menu');
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:text-is("Delete pin")');
-  await page.waitForTimeout(300);
+  await settle(page);
   const pinnedAfter = await page.evaluate(() => window.__scStore.getState().locationPlaces.filter((p) => p.x !== null).length);
   ok(pinnedAfter === pinnedBefore - 1, `#2 Delete pin takes it off the map (${pinnedBefore} → ${pinnedAfter})`);
 
