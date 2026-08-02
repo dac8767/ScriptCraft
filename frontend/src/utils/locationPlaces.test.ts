@@ -10,7 +10,7 @@ import {
   addPlaceField, setPlaceField, removePlaceField, renameScriptLocation,
   pinnedPlaces, unplacedLocations, placeForLocation, placeLabel, locationLabel,
   migratePins, readPlaces, emptyPlace, nextRotation, rotatedRatio, dropFraction, clampFraction, mergePlaces,
-  locationRows, togglePlaceLock, connectTargets, rotatePlacesClockwise, absorbOrphanPlaces, offsetFraction,
+  locationRows, togglePlaceLock, connectTargets, rotatePlacesClockwise, absorbOrphanPlaces, offsetFraction, rawFraction, pickFraction,
   type LocationPlace,
 } from './locationPlaces';
 
@@ -509,5 +509,43 @@ describe('offsetFraction — the point comes from the event itself (v5.82)', () 
   it('refuses offsets that are not numbers', () => {
     expect(offsetFraction(NaN, 10, 906, 877)).toBeNull();
     expect(offsetFraction(10, undefined as unknown as number, 906, 877)).toBeNull();
+  });
+});
+
+describe('pickFraction — one bad axis cannot spoil the point (v5.83)', () => {
+  it('takes each axis from the first reading that puts the click on the map', () => {
+    // Derek's failure: reading A has a sound x and a nonsense y (the click
+    // reads as ABOVE the map); reading B is sound. x from A, y from B.
+    expect(pickFraction([{ x: 0.34, y: -0.33 }, { x: 0.34, y: 0.33 }]))
+      .toEqual({ x: 0.34, y: 0.33 });
+  });
+
+  it('keeps the first reading when it is entirely sound', () => {
+    expect(pickFraction([{ x: 0.2, y: 0.8 }, { x: 0.9, y: 0.9 }])).toEqual({ x: 0.2, y: 0.8 });
+  });
+
+  it('falls back to the first reading, clamped, when none is plausible', () => {
+    expect(pickFraction([{ x: -0.5, y: 2 }, { x: -0.4, y: 3 }])).toEqual({ x: 0, y: 1 });
+  });
+
+  it('ignores readings that could not be taken', () => {
+    expect(pickFraction([null, { x: 0.5, y: 0.5 }, null])).toEqual({ x: 0.5, y: 0.5 });
+  });
+
+  it('survives having nothing at all', () => {
+    expect(pickFraction([null])).toEqual({ x: 0, y: 0 });
+  });
+
+  it('accepts the edges — a click on the border is a real click', () => {
+    expect(pickFraction([{ x: 0, y: 1 }])).toEqual({ x: 0, y: 1 });
+  });
+});
+
+describe('rawFraction — unclamped, so a wrong box can be caught', () => {
+  it('reports a click above the box as negative', () => {
+    expect(rawFraction({ left: 0, top: 500, width: 900, height: 800 }, 300, 100)!.y).toBeCloseTo(-0.5);
+  });
+  it('refuses a box with no size', () => {
+    expect(rawFraction({ left: 0, top: 0, width: 0, height: 800 }, 1, 1)).toBeNull();
   });
 });

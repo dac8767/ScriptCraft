@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.83",
+    "date": "2026-08-02",
+    "changes": [
+      "A new pin can no longer be put on the map's edge by a bad measurement. Where you clicked is now worked out three independent ways, and each direction is taken from a reading that actually puts the click on the map — so one wrong reading can't decide it.",
+      "If any reading does disagree, the app now says so in the developer console instead of quietly moving the pin."
+    ]
+  },
+  {
     "version": "5.82",
     "date": "2026-08-02",
     "changes": [

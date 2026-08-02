@@ -39,7 +39,8 @@ import LocationPinMenu from './LocationPinMenu';
 import LocationMapOptions, { importLocationMap } from './LocationMapOptions';
 import { renameLocationInScript } from '../utils/renameLocationInScript';
 import {
-  pinnedPlaces, locationRows, connectTargets, placeLabel, dropFraction, offsetFraction, rotatedRatio,
+  pinnedPlaces, locationRows, connectTargets, placeLabel, dropFraction,
+  offsetFraction, rawFraction, pickFraction, rotatedRatio,
   type LocationMapImage, type LocationPlace,
 } from '../utils/locationPlaces';
 
@@ -203,11 +204,46 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
    */
   const pointFor = useCallback((e: React.MouseEvent, stage: HTMLElement) => {
     const native = e.nativeEvent as PointerEvent;
-    if (e.target === stage) {
-      const f = offsetFraction(native.offsetX, native.offsetY, stage.offsetWidth, stage.offsetHeight);
-      if (f) return f;
+    const w = stage.offsetWidth;
+    const h = stage.offsetHeight;
+
+    // (1) the event's own offsets inside the stage — no second measurement
+    //     to be out of step with, when the stage is the target.
+    const byOffset = e.target === stage
+      ? offsetFraction(native.offsetX, native.offsetY, w, h)
+      : null;
+
+    // (2) the stage's own client rect — what v5.78-v5.81 used alone.
+    const byRect = rawFraction(stage.getBoundingClientRect(), e.clientX, e.clientY);
+
+    // (3) the stage's LAYOUT position inside its scroll parent. It reaches
+    //     the same place by a different route — offsetTop/offsetLeft and the
+    //     parent's rect — so it stands when the stage's own rect does not.
+    const parent = stage.offsetParent as HTMLElement | null;
+    const pr = parent?.getBoundingClientRect();
+    const byLayout = pr
+      ? rawFraction(
+        { left: pr.left + stage.offsetLeft - (parent as HTMLElement).scrollLeft,
+          top: pr.top + stage.offsetTop - (parent as HTMLElement).scrollTop,
+          width: w, height: h },
+        e.clientX, e.clientY,
+      )
+      : null;
+
+    const point = pickFraction([byOffset, byRect, byLayout]);
+
+    /* If a reading disagreed, say so where a developer can see it. This bug
+       took two rounds to place because nothing in the app ever said "the map
+       measured itself somewhere the click was not" — it just quietly put the
+       pin on the edge. The numbers name themselves now. */
+    const off = (r: { x: number; y: number } | null) => r && (r.x < 0 || r.x > 1 || r.y < 0 || r.y > 1);
+    if (off(byRect) || off(byLayout) || off(byOffset)) {
+      console.warn('[locmap] a reading put an on-map click off the map — using the ones that agree', {
+        chosen: point, byOffset, byRect, byLayout, client: [e.clientX, e.clientY], stage: [w, h],
+        target: (e.target as HTMLElement).className,
+      });
     }
-    return dropFraction(stage.getBoundingClientRect(), e.clientX, e.clientY);
+    return point;
   }, []);
 
 

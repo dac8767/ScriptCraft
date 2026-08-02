@@ -118,6 +118,41 @@ export function locationLabel(places: LocationPlace[], name: string): string {
  * as the event: there is no second measurement to disagree with. Returns
  * null when it cannot be trusted, so the caller can fall back.
  */
+/**
+ * A raw (unclamped) reading of where a point sits inside a box, as fractions.
+ * Raw is the point: a click that lands ON the stage cannot honestly be at
+ * -0.4 or 1.7, so an out-of-range reading is PROOF that the box it came from
+ * is wrong — see pickFraction.
+ */
+export function rawFraction(
+  box: { left: number; top: number; width: number; height: number },
+  clientX: number, clientY: number,
+): { x: number; y: number } | null {
+  if (!box.width || !box.height) return null;
+  const x = (clientX - box.left) / box.width;
+  const y = (clientY - box.top) / box.height;
+  return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
+}
+
+/**
+ * Choose the point from several independent readings — PER AXIS (v5.83).
+ *
+ * Derek's bug, twice over: the pin's x was right and its y was pinned to the
+ * map's top edge. One reading of the stage's box was half-wrong — its left
+ * and width sound, its top not — so trusting any single reading whole is the
+ * mistake. Each axis is taken from the first reading that puts the click
+ * INSIDE the map, which a click on the map must be. Nothing plausible? Then
+ * the first reading, clamped, exactly as before.
+ */
+export function pickFraction(readings: Array<{ x: number; y: number } | null>): { x: number; y: number } {
+  const live = readings.filter((r): r is { x: number; y: number } => !!r);
+  const sane = (v: number) => v >= 0 && v <= 1;
+  const first = live[0];
+  const x = live.find((r) => sane(r.x))?.x ?? first?.x ?? 0;
+  const y = live.find((r) => sane(r.y))?.y ?? first?.y ?? 0;
+  return { x: clampFraction(x), y: clampFraction(y) };
+}
+
 export function offsetFraction(
   offsetX: number, offsetY: number, width: number, height: number,
 ): { x: number; y: number } | null {

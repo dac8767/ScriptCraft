@@ -131,3 +131,51 @@ console.log(`\ncheck-v582: ${pass} passed, ${fail} failed`);
   await browser.close();
 }
 console.log(`\ncheck-v582 total: ${pass} passed, ${fail} failed`);
+
+/* ── Derek's failure, manufactured (v5.83) ────────────────────────────
+   His pin's x was right and its y sat on the map's top edge — the shape of
+   a stage measurement whose left/width are sound and whose TOP is not. That
+   cannot be reproduced in Chromium, so here it is forced: the stage's client
+   rect is made to report a top 400px below the truth, exactly the lie the
+   symptom implies. The pin must still land under the cursor.                */
+{
+  const { browser, page } = await launch({ width: 1731, height: 1113 });
+  try {
+    await boot(page); await seedScript(page, SCENES_4); await openTool(page, 'Locations');
+    await page.click('button[title="Fullscreen"]'); await page.waitForSelector('.fs-tool-takeover');
+    await page.waitForTimeout(300);
+    if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]').catch(() => {});
+    await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")').catch(() => {});
+    await page.waitForSelector('.locmap', { timeout: 8000 });
+    await page.setInputFiles('.locmap input[type="file"]', MAPS.square);
+    await page.waitForSelector('.locmap-import-bar', { timeout: 8000 });
+    await page.click('.locmap-import-confirm');
+    await page.waitForTimeout(400);
+    const b = await page.$eval('.locmap-stage', (el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+    await page.evaluate(() => {
+      const stage = document.querySelector('.locmap-stage');
+      const real = stage.getBoundingClientRect.bind(stage);
+      Object.defineProperty(stage, 'getBoundingClientRect', {
+        value: () => { const r = real(); return new DOMRect(r.x, r.y + 400, r.width, r.height); },
+      });
+    });
+    const cx = Math.round(b.x + b.w * 0.34), cy = Math.round(b.y + b.h * 0.33);
+    await page.click('.locmap-addpin-btn');
+    await page.mouse.move(cx, cy);
+    await page.waitForTimeout(150);
+    await page.mouse.click(cx, cy);
+    await page.waitForTimeout(350);
+    const res = await page.evaluate(() => {
+      const p = window.__scStore.getState().locationPlaces.filter((q) => q.x !== null).pop();
+      const pin = document.querySelector('.locmap-pin:not(.locmap-pin-ghost)');
+      const m = pin?.querySelector('.locmap-pin-icon')?.getBoundingClientRect();
+      return { stored: [Math.round(p.x * 1000) / 1000, Math.round(p.y * 1000) / 1000],
+               tip: m ? [Math.round(m.left + m.width / 2), Math.round(m.bottom)] : null };
+    });
+    ok(res.stored[1] > 0.05, `a lying rect cannot pin the marker to the top edge (y ${res.stored[1]})`);
+    ok(Math.abs(res.tip[0] - cx) <= 4 && Math.abs(res.tip[1] - cy) <= 6,
+      `and the pin still lands on the click (Δ ${res.tip[0] - cx},${res.tip[1] - cy})`);
+  } catch (e) { console.log('  ✗ SCRIPT ERROR (lying rect):', e.message); fail++; }
+  await browser.close();
+}
+console.log(`\ncheck-v582 with the v5.83 guard: ${pass} passed, ${fail} failed`);
