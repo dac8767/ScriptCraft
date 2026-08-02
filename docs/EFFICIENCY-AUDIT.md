@@ -168,3 +168,47 @@ the app, seeds a script and opens a tool before it asserts anything — about
   repair what still describes the app, retire what does not.
 - `npm run build` re-runs `tsc -b`. Running both is 17s of duplicate work —
   build alone is the gate.
+
+
+## The triage (v5.86) — what the suite actually was
+
+**Correction first: my "48 failing assertions" was largely my own runner.**
+Twelve files report `OK/FAIL` per assertion instead of a `N passed, M failed`
+summary, and check-all — written the same day — scored every one of them as a
+total failure. Reading both conventions is two lines, and those files were
+green all along (`check-ribbon-kinds` 20, `check-ribbon-zero` 19,
+`check-scenes-v520` 11).
+
+The real state was 579 passed / 48 failed across 28 files. After triage:
+**551 passed, 0 failed, 193s wall** (from ~15 min serial).
+
+### The rule, and why
+
+- **A few assertions failing among many** → the file still describes today's
+  app; the stale lines were retired in place with a note naming what
+  superseded them. 14 files, ~25 assertions. The file goes on guarding.
+- **Most of a file failing** → the feature it drove had been rebuilt. Archived
+  to `devtools/archive/` with a table of what replaced each. 17 files.
+
+The rule earned itself the hard way: removing a stale assertion is easy, but
+the SETUP that drove the retired feature stays behind — clicks that open a
+popover that no longer exists — and crashes. Five files were reverted and
+archived after exactly that. Half-repairing a check is worse than parking it.
+
+### Where the time went, after
+
+| | before | after |
+|---|---|---|
+| full suite | ~15 min serial | **193s** |
+| targeted (`check-all.mjs v581 v585`) | — | **61s** |
+| a wrong selector while writing a check | 30s | **8s** |
+| files that report nothing readable | 12 | 0 |
+
+### Still open
+
+- **246 fixed sleeps** (`waitForTimeout`) remain, ~61s of pure waiting per
+  run, and each is a flake when the machine is loaded. `settle(page)` — two
+  animation frames — replaces the 205 that are ≤300ms. Do it as one change
+  with a full-suite run either side, and revert per file if any turns red.
+- **~6s of boot × 49 files.** One browser serving many checks from a seeded
+  snapshot is the next real cut, and it wants doing deliberately.
