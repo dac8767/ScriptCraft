@@ -106,6 +106,27 @@ export function locationLabel(places: LocationPlace[], name: string): string {
 }
 
 /**
+ * Where a pointer landed on the map, taken from the event's OWN offsets
+ * inside the stage rather than from a client rect (v5.82).
+ *
+ * Derek: "the window is appearing in the correct location where I clicked.
+ * the pin is appearing off the map." The menu is placed from clientX/clientY
+ * and was right; the pin was placed from clientY minus a measured rect top,
+ * and was not — so the rect and the event disagreed about where the stage
+ * was, and the negative result clamped the pin to the top edge. offsetX and
+ * offsetY are measured against the target element itself, in the same pass
+ * as the event: there is no second measurement to disagree with. Returns
+ * null when it cannot be trusted, so the caller can fall back.
+ */
+export function offsetFraction(
+  offsetX: number, offsetY: number, width: number, height: number,
+): { x: number; y: number } | null {
+  if (!Number.isFinite(offsetX) || !Number.isFinite(offsetY)) return null;
+  if (!width || !height) return null;
+  return { x: clampFraction(offsetX / width), y: clampFraction(offsetY / height) };
+}
+
+/**
  * Connecting a location to a pin MOVES it off whatever place held it before
  * — and a place left with no locations and no pin is unreachable: it shows
  * as a stray "Unnamed place" row, and whatever was written on it (the

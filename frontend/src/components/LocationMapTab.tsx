@@ -39,7 +39,7 @@ import LocationPinMenu from './LocationPinMenu';
 import LocationMapOptions, { importLocationMap } from './LocationMapOptions';
 import { renameLocationInScript } from '../utils/renameLocationInScript';
 import {
-  pinnedPlaces, locationRows, connectTargets, placeLabel, dropFraction, rotatedRatio,
+  pinnedPlaces, locationRows, connectTargets, placeLabel, dropFraction, offsetFraction, rotatedRatio,
   type LocationMapImage, type LocationPlace,
 } from '../utils/locationPlaces';
 
@@ -115,7 +115,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
      land before committing, rather than finding out afterwards. */
   const [placing, setPlacing] = useState(false);
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);
-  const draggingRef = useRef<{ id: string; moved: boolean; locked: boolean } | null>(null);
+  const draggingRef = useRef<{ id: string; moved: boolean; locked: boolean; x0: number; y0: number } | null>(null);
   /* A pin drag ends with a mouseup on the MAP, and the browser then fires a
      click on their common ancestor — which dropped a second, unwanted pin
      wherever the drag was released. Ignoring map clicks for a moment after a
@@ -185,6 +185,32 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
   );
 
   // ── placing and moving pins ──────────────────────────────────────────
+  /**
+   * The point a pointer event lands on, in stage fractions.
+   *
+   * v5.82, Derek: "the window is appearing in the correct location where I
+   * clicked. the pin is appearing off the map." The menu comes from
+   * clientX/clientY and was right; the pin came from clientY minus the stage
+   * rect's top and was pinned to the map's top edge — so the RECT and the
+   * EVENT disagreed about where the stage was, and a negative result clamped
+   * to 0. Two measurements, one of them stale.
+   *
+   * So there is only one now: the map image is pointer-transparent, which
+   * makes the stage itself the target of every map click, and offsetX/offsetY
+   * are that event's own position inside that element — nothing to be out of
+   * step with. The rect is kept only as a fallback for events that land
+   * somewhere else (a drag, whose pointer is captured by the pin).
+   */
+  const pointFor = useCallback((e: React.MouseEvent, stage: HTMLElement) => {
+    const native = e.nativeEvent as PointerEvent;
+    if (e.target === stage) {
+      const f = offsetFraction(native.offsetX, native.offsetY, stage.offsetWidth, stage.offsetHeight);
+      if (f) return f;
+    }
+    return dropFraction(stage.getBoundingClientRect(), e.clientX, e.clientY);
+  }, []);
+
+
   const openMenuAt = (id: string, clientX: number, clientY: number) =>
     setMenuFor({
       id,
@@ -212,9 +238,12 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
   const trackGhost = useCallback((e: React.PointerEvent) => {
     if (!placing || !stageRef.current) return;
     const target = e.target as HTMLElement;
-    if (!target.closest('.locmap-stage')) { setGhost(null); return; }
-    setGhost(dropFraction(stageRef.current.getBoundingClientRect(), e.clientX, e.clientY));
-  }, [placing]);
+    const stage = target.closest('.locmap-stage') as HTMLElement | null;
+    if (!stage) { setGhost(null); return; }
+    // The ghost is placed by the SAME reckoning as the pin, so where the
+    // ghost sits is where the pin lands — no second opinion.
+    setGhost(pointFor(e, stage));
+  }, [placing, pointFor]);
 
   const onCanvasClick = useCallback((e: React.MouseEvent) => {
     if (swallowClickRef.current) { swallowClickRef.current = false; return; }
@@ -225,13 +254,17 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
     // Only a click on the MAP itself places a pin — not one on a pin, or on
     // the empty canvas around the image.
     const target = e.target as HTMLElement;
-    if (!target.closest('.locmap-stage') || target.closest('.locmap-pin')) return;
-    const { x, y } = dropFraction(stageRef.current.getBoundingClientRect(), e.clientX, e.clientY);
+    // The stage that RECEIVED the click, not whichever one the ref happens to
+    // hold — they are the same in every case I can reproduce, and when they
+    // are not, the one under the cursor is the true one.
+    const stage = target.closest('.locmap-stage') as HTMLElement | null;
+    if (!stage || target.closest('.locmap-pin')) return;
+    const { x, y } = pointFor(e, stage);
     const id = addPin(x, y);
     setPlacing(false);
     setGhost(null);
     openMenuAt(id, e.clientX, e.clientY);
-  }, [addPin, importing, placing]);
+  }, [addPin, importing, placing, pointFor]);
 
   /** Pins move by POINTER drag, not HTML5 drag: a pin is also a click target
    *  (it opens its menu), and a pointer drag tells the two apart by whether
@@ -242,12 +275,20 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     // A LOCKED pin still tracks the press — that is how its dropdown opens,
     // and the dropdown is where it gets unlocked. It just never moves.
-    draggingRef.current = { id: place.id, moved: false, locked: !!place.locked };
+    // The start point is kept so a PRESS can be told from a DRAG: a trackpad
+    // click almost always wobbles a pixel or two, and treating that as a drag
+    // both nudged the pin and swallowed the click that should have opened its
+    // dropdown.
+    draggingRef.current = { id: place.id, moved: false, locked: !!place.locked, x0: e.clientX, y0: e.clientY };
   }, [importing]);
+
+  /** How far the pointer must travel before a press becomes a drag. */
+  const DRAG_SLOP = 3;
 
   const onPinMove = useCallback((e: React.PointerEvent) => {
     const drag = draggingRef.current;
     if (!drag || drag.locked || !stageRef.current) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < DRAG_SLOP) return;
     drag.moved = true;
     const { x, y } = dropFraction(stageRef.current.getBoundingClientRect(), e.clientX, e.clientY);
     movePin(drag.id, x, y);

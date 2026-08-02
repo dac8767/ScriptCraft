@@ -10,7 +10,7 @@ import {
   addPlaceField, setPlaceField, removePlaceField, renameScriptLocation,
   pinnedPlaces, unplacedLocations, placeForLocation, placeLabel, locationLabel,
   migratePins, readPlaces, emptyPlace, nextRotation, rotatedRatio, dropFraction, clampFraction, mergePlaces,
-  locationRows, togglePlaceLock, connectTargets, rotatePlacesClockwise, absorbOrphanPlaces,
+  locationRows, togglePlaceLock, connectTargets, rotatePlacesClockwise, absorbOrphanPlaces, offsetFraction,
   type LocationPlace,
 } from './locationPlaces';
 
@@ -489,5 +489,25 @@ describe('absorbOrphanPlaces — a moved location keeps its writing (v5.81)', ()
   it('never eats the target itself', () => {
     const places = [place('target', { scriptNames: [], x: null, y: null })];
     expect(absorbOrphanPlaces(places, 'target')).toHaveLength(1);
+  });
+});
+
+describe('offsetFraction — the point comes from the event itself (v5.82)', () => {
+  it('turns offsets inside the stage into fractions', () => {
+    expect(offsetFraction(453, 402, 906, 877)).toEqual({ x: 0.5, y: expect.closeTo(0.458, 3) });
+  });
+
+  it('clamps to the box', () => {
+    expect(offsetFraction(-4, 1200, 906, 877)).toEqual({ x: 0, y: 1 });
+  });
+
+  it('refuses a box with no size — the caller falls back', () => {
+    expect(offsetFraction(10, 10, 0, 877)).toBeNull();
+    expect(offsetFraction(10, 10, 906, 0)).toBeNull();
+  });
+
+  it('refuses offsets that are not numbers', () => {
+    expect(offsetFraction(NaN, 10, 906, 877)).toBeNull();
+    expect(offsetFraction(10, undefined as unknown as number, 906, 877)).toBeNull();
   });
 });

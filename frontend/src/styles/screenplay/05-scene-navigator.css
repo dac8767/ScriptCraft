@@ -1393,7 +1393,12 @@
 /* The wrap is the stage's own box; the rotator inside it carries the turn.
    A quarter turn swaps the image's width and height, which is why the
    rotated box is sized in JS from the measured stage. */
-.locmap-img-wrap { position: absolute; inset: 0; overflow: hidden; }
+/* v5.82: the picture takes no pointer events, so the STAGE is the target of
+   every click on the map. That is what lets the pin be placed from the
+   event's own offsets inside the stage instead of from a separately measured
+   rect — see pointFor in LocationMapTab. Pins are siblings of this wrapper,
+   so they still take their own clicks. */
+.locmap-img-wrap { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .locmap-img-rot { width: 100%; height: 100%; }
 .locmap-img-rot > img, .locmap-img-rot > div { width: 100%; height: 100%; }
 /* Clicking the map drops a pin, so the map says so with its cursor. */

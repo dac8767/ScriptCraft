@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.82",
+    "date": "2026-08-02",
+    "changes": [
+      "Fixed: a pin could still land at the top edge of the map instead of where you clicked, while the dropdown opened in the right place. The dropdown was placed from the click itself; the pin was placed from a separately measured position of the map, and when the two disagreed the pin was pushed to the edge. The pin now comes from the same click the dropdown does.",
+      "The ghost pin and the placed pin are worked out the same way, so where the ghost sits is where the pin lands.",
+      "Fixed: a trackpad click on a pin counted as a tiny drag — it nudged the pin and swallowed the click that should have opened its dropdown."
+    ]
+  },
+  {
     "version": "5.81",
     "date": "2026-08-02",
     "changes": [
