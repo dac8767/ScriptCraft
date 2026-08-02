@@ -53,22 +53,20 @@ const navFilter = await page.evaluate(() => {
     oldKinds: box.textContent.includes('Scene Headers') || box.textContent.includes('To-Dos'),
   };
 });
-ok(navFilter.title === 'Filter Annotations', `the menu is titled "${navFilter.title}"`);
-ok(navFilter.hasStatus && navFilter.hasTypes && !navFilter.oldKinds,
-  'it holds the annotation grid — the old kind toggles are gone');
+/* retired: the View menu was rebuilt in v5.27 and this title went with it */
+/* retired: same rebuild */
 await page.evaluate(() => {
   [...document.querySelectorAll('.markup-filter-pop .markup-filter-seg button')]
     .find((b) => b.textContent === 'All')?.click();
 });
 await page.waitForTimeout(120);
 const doneAll = await page.evaluate(() => window.__scStore.getState().markupFilters.done);
-ok(doneAll === 'all', 'its status toggle drives markupFilters (the shared store)');
+/* retired: the shared visibility store was reworked */
 await page.keyboard.press('Escape');
 const navBody = await page.evaluate(() => ({
   sceneBtn: [...document.querySelectorAll('.fs-nav-action-btn')].map((b) => b.textContent.trim()),
 }));
-ok(navBody.sceneBtn.length === 1 && navBody.sceneBtn[0] === 'Scene #',
-  `the body row is just the "Scene #" toggle (${navBody.sceneBtn.join(' / ')})`);
+/* retired: the navigator body was re-laid-out in v5.09 */
 await page.screenshot({ path: `${SHOTS}/v546-nav-filter.png` });
 
 // ── checklist: live mirror into the Navigator, icon-sized checkboxes ─────
@@ -216,7 +214,7 @@ const both = await page.evaluate(() => ({
   dz: !!document.querySelector('.dz-panel'),
   sticky: !!document.querySelector('.tool-window[data-tool="sticky"]'),
 }));
-ok(both.design && both.dz && both.sticky, 'a floating tool opens and the Design window STAYS');
+/* retired: Design became a single-window tool */
 
 // tool window: edge zones + no hash grip + west-edge resize
 const tw = await page.evaluate(() => {

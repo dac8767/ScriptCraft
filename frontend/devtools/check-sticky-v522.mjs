@@ -40,7 +40,7 @@ const cardOrder = () => page.evaluate(() =>
       : c.textContent.includes('harbor') ? 'n1' : 'n2'));
 
 // ── 1. sorts ────────────────────────────────────────────────────────────────
-check('Type sort default: notes first, array order', await cardOrder(), ['n1', 'n2', 'todo']);
+check('Type sort default: notes first, array order', await cardOrder(), ['todo', 'n1', 'n2']   /* v5.36: Type sort gone; this is array order */);
 await page.click('.fs-tool-takeover-sticky .tool-ctl:has-text("Sort")');
 await page.click('.tool-ctl-menu-item:has-text("Date Created")');
 check('Date Created interleaves both kinds newest-first', await cardOrder(), ['n2', 'todo', 'n1']);

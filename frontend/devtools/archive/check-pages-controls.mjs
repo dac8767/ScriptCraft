@@ -34,7 +34,7 @@ const check = (name, got, want) => {
 
 let r = await read();
 check('label', r.label, 'Pages per row:');
-check('goto label', r.gotoLabel, 'Go to page:');
+check('goto label', r.gotoLabel, 'Go to page #');   // the colon became a # later
 check('placeholder removed', r.placeholder, '');
 check('default count', r.count, '3');
 check('grid columns = count', r.cols, 3);

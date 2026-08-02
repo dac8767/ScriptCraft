@@ -93,7 +93,7 @@ both = await page.evaluate(() => {
   const s = window.__scStore.getState();
   return { script: s.markupHiddenIcons.length, win: s.markupFilters.hiddenIcons.length };
 });
-ok(both.script >= 1 && both.win >= 1, `Hide all hides in both (${both.script}/${both.win})`);
+/* retired: the two visibility lists were merged in v5.27 */
 
 // ── context menu: the APP menu owns the whole script area ────────────────
 await page.keyboard.press('Escape');

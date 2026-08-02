@@ -41,7 +41,8 @@ check('add buttons are compact (26px)', btnH, '26px');
 await page.click('.tool-window[data-tool="sticky"] .tool-ctl:has-text("Sort")');
 const sortItems = await page.evaluate(() =>
   [...document.querySelectorAll('.tool-ctl-menu .tool-ctl-menu-item')].map((i) => i.textContent));
-check('Sort lists Type · Date Created · Manual', sortItems, ['Type', 'Date Created', 'Manual']);
+// v5.36: the Type sort died with the note KINDS; Manual leads now.
+check('Sort lists Manual · Date Created', sortItems, ['Manual', 'Date Created']);
 // ControlDropdown closes on an outside PRESS (not Escape). NOT a click into
 // the editor — clicking the script MINIMIZES the open tool window by design
 // (v1.77) — so press on document.body instead.
@@ -58,7 +59,7 @@ const stepper = await page.evaluate(() => {
     rightGap: grp ? Math.round(rr.right - grp.getBoundingClientRect().right) : null,
   };
 });
-check('popped shape shows "# of Columns:" right-aligned', { l: stepper.label, ok: stepper.rightGap <= 12 }, { l: '# of Columns:', ok: true });
+check('popped shape shows "# of Columns:" right-aligned', { l: stepper.label, ok: stepper.rightGap <= 12 }, { l: 'Notes per row:'   /* renamed in v5.50 */, ok: true });
 await page.click('.tool-window[data-tool="sticky"] button[title="More columns (smaller cards)"]');
 const cols = await page.$eval('.tool-window[data-tool="sticky"] .swn-scroll', (el) =>
   getComputedStyle(el).columnCount);

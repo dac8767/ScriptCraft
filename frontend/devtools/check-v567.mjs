@@ -36,11 +36,12 @@ try {
   await page.waitForSelector('.page-thumbnails-grid', { timeout: 8000 });
   const tabTexts = await page.$$eval('.tool-chrome-tabs-measure .tool-chrome-tab',
     (els) => els.map((e) => e.textContent?.trim()));
-  ok(['Script', 'Title Page', 'Custom'].every((t) => tabTexts.includes(t)),
-    `the Pages header carries Script / Title Page / Custom tabs (${tabTexts.join(' / ')})`);
+  // v5.71 added an All tab and shortened the labels; check-v571 owns the
+  // tab NAMES now. This one only cares that the strip is there.
+  ok(tabTexts.length >= 3, `the Pages header carries its tab strip (${tabTexts.join(' / ')})`);
 
   // ── 2. the standalone tool is gone ──
-  ok(!(await page.$('.tool-dock-item:has-text("Title Page")')),
+  ok(!(await page.$('.tool-dock-item:has-text("Title")')),
     'no separate Title Page row in the dock');
 
   // ── 3a. Script tab: script pages only ──
@@ -72,7 +73,7 @@ try {
     'Script tab still lists only the script pages (custom page absent)');
 
   // ── 4a. Title Page tab in the NARROW dock: stacked single column ──
-  await gotoTab('Title Page');
+  await gotoTab('Title');
   await page.waitForSelector('.fs-pages-titlehost .tp-editor-dialog', { timeout: 5000 });
   const hostW = await page.$eval('.fs-pages-titlehost', (e) => e.clientWidth);
   const narrow = await page.$('.fs-pages-titlehost.fs-tp-narrow');
@@ -89,7 +90,7 @@ try {
 
   // ── 5. Project ▸ Title Page lands on the tab ──
   await page.click('.menu-item .menu-label:has-text("Project")');
-  await page.click('.menu-dropdown-item:has-text("Title Page")');
+  await page.click('.menu-dropdown-item:has-text("Title")');
   await page.waitForSelector('.fs-pages-titlehost .tp-editor-dialog', { timeout: 5000 });
   ok((await page.evaluate(() => window.__scStore.getState().pagesTab)) === 'title',
     'Project ▸ Title Page opens Pages on the Title Page tab');

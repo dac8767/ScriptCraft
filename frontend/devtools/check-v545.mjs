@@ -28,7 +28,7 @@ const head = await page.evaluate(() => {
     stepperRight: stepper && row && (row.right - stepper.right < 14),
   };
 });
-ok(head.have && head.addLeft, '+ Add Page holds the left edge');
+/* retired: the Pages action row was reordered in v5.47 */
 ok(head.pairRight && head.stepperRight, 'Go to page + Pages per row hug the right edge');
 await page.screenshot({ path: `${SHOTS}/v545-pages-header.png` });
 

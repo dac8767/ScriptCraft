@@ -17,7 +17,7 @@ await boot(page);
 await seedScript(page, SCENES_4);
 
 // ── 1. open the Markups window, make a RANGE markup ───────────────────────
-await openTool(page, 'Markups');
+await openTool(page, 'Annotations');   // renamed from Markups in v5.25
 ok(await page.$('.markups-add-btn') !== null, 'Markups window has the + Markup Script button');
 
 // select a run of text inside scene 3's first action line

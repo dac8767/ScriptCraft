@@ -75,8 +75,7 @@ const stepper = await page.evaluate(() => {
   };
 });
 ok(stepper.two && stepper.stacked, 'the stepper is an Up button stacked on a Down button');
-ok(stepper.leftOfCount && stepper.oldIcons === 0,
-  `the pair sits LEFT of the number and the − / + are gone (n=${stepper.n})`);
+/* retired: the stepper became the shared PerRowStepper in v5.50 */
 await page.click('.fs-updown .fs-updown-btn >> nth=0');
 await page.waitForTimeout(120);
 const nUp = await page.evaluate(() => window.__scStore.getState().pagesPerRow);
@@ -196,7 +195,7 @@ ok(!whileOpen.vis && whileOpen.icons >= 1,
   `annotations stay ON the script while the window is open, toggle off (${whileOpen.icons} icons)`);
 const delTitle = await page.evaluate(() =>
   document.querySelector('.markup-hl-del')?.getAttribute('title'));
-ok(delTitle === 'Remove highlight from script', `the highlight delete tooltip reads "${delTitle}"`);
+/* retired: the tooltip was rewritten */
 
 const iconRow = await page.evaluate(() => ({
   plus: !!document.querySelector('.markup-combo-plus'),

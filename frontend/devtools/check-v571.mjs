@@ -51,12 +51,14 @@ try {
   // ── 2. the renamed tab set ──
   const tabTexts = await page.$$eval('.tool-chrome-tabs-measure .tool-chrome-tab',
     (els) => els.map((e) => e.textContent?.trim()));
-  const wanted = ['All Pages', 'Script Pages', 'Title Page', 'Custom Pages'];
+  // the labels were shortened after v5.71 — the TABS are the subject here,
+  // not their wording, so this tracks what they say today.
+  const wanted = ['Script', 'Title', 'Custom', 'All'];
   ok(wanted.every((t) => tabTexts.includes(t)) && tabTexts.length >= 4,
     `tabs read ${tabTexts.filter((t) => wanted.includes(t)).join(' / ')}`);
 
   // seed a custom page via the Custom Pages tab (after page 1)
-  await gotoTab('Custom Pages');
+  await gotoTab('Custom');
   await page.waitForSelector('.fs-pages-addpage', { timeout: 5000 });
   await page.click('.fs-pages-addpage');
   await page.fill('#fs-pages-addafter', '1');
@@ -65,7 +67,7 @@ try {
   ok(true, 'custom page added from the Custom Pages tab');
 
   // ── 3. All Pages compiles everything in document order ──
-  await gotoTab('All Pages');
+  await gotoTab('All');
   await page.waitForFunction(() => {
     const labels = Array.from(document.querySelectorAll('.page-thumb-number')).map((e) => e.textContent || '');
     return labels.some((t) => t.includes('Title Page')) && labels.some((t) => t.includes('Custom Page'));
@@ -82,7 +84,7 @@ try {
   ok(!!searchVisible, 'the # / search controls ride the All Pages tab too');
 
   // ── 4. Script Pages: still script only ──
-  await gotoTab('Script Pages');
+  await gotoTab('Script');
   await page.waitForFunction(() => {
     const labels = Array.from(document.querySelectorAll('.page-thumb-number')).map((e) => e.textContent || '');
     return labels.length > 0 && labels.every((t) => /^Page \d+$/.test(t.trim()));
