@@ -213,16 +213,17 @@ try {
   await page.click('.locmap-import-confirm');
   await page.waitForTimeout(300);
 
-  // ── 7. the List view shows the display name too ─────────────────────
+  // ── 7. the List view names the SCRIPT's location ────────────────────
+  /* v5.85 REVERSED this, at Derek's word: "always show the full location name
+     (not the display name)". The display name is a grouping HEADING now — the
+     Group button folds locations under it — never a stand-in for what the
+     script says on the page. */
   await setView('List');
-  const listNames = await page.$$eval('.location-name', (els) => els.map((e) => e.textContent.trim()));
-  ok(listNames.some((n) => n.startsWith('Belkadan')),
-    `the List view uses the display name as well (${listNames.slice(0, 2).join(' / ')})`);
-  // …and still says WHICH script location each row is, so a shared display
-  // name doesn't turn the list into the same word repeated.
-  const subs = await page.$$eval('.location-name-sub', (els) => els.map((e) => e.textContent.trim()));
-  ok(subs.length > 0 && new Set(subs).size === subs.length,
-    `each row names its own script location (${subs.join(' | ')})`);
+  const listNames = await page.$$eval('.location-group .location-name', (els) => els.map((e) => e.textContent.trim()));
+  ok(listNames.length > 0 && listNames.every((n) => n === n.toUpperCase()),
+    `the List view shows the script's own names (${listNames.slice(0, 2).join(' / ')})`);
+  ok(!listNames.some((n) => n.startsWith('Belkadan')),
+    'and never substitutes the display name for them');
 } catch (e) {
   console.log('  ✗ SCRIPT ERROR:', e.message);
   fail++;

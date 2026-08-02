@@ -1643,3 +1643,41 @@
   color: var(--fd-text); background: rgba(0, 0, 0, .72);
   border: 1px solid var(--fd-accent); border-radius: 4px;
 }
+
+/* ── the sidebar row's two icon menus (v5.85) ──────────────────────── */
+/* Quiet until the row is under the pointer — the row is for reading first,
+   and two lit icons on every line would shout over the names. */
+.locmap-rail-btn {
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  background: none; border: none; border-radius: 4px;
+  color: var(--fd-text-muted); font-size: 12px; cursor: pointer;
+  opacity: 0;
+}
+.locmap-rail-row:hover .locmap-rail-btn,
+.locmap-rail-btn:focus-visible { opacity: 1; }
+.locmap-rail-btn:hover { color: var(--fd-accent); background: var(--fd-overlay-subtle); }
+/* A row that IS hidden keeps its buttons visible — otherwise the only way
+   back is to hover a row you were told is hidden. */
+.locmap-rail-item-hidden .locmap-rail-btn { opacity: .6; }
+.locmap-rail-item-hidden .locmap-rail-name { opacity: .55; font-style: italic; }
+
+/* ── grouped list headings (v5.85) ─────────────────────────────────── */
+/* The display name, said ONCE, above the script's own names. */
+.location-group-head {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 12px 6px 14px;
+  font-size: 11px; font-weight: 700; letter-spacing: .03em;
+  text-transform: uppercase;
+  color: var(--fd-accent);
+  background: var(--fd-overlay-subtle);
+  border-bottom: 1px solid var(--fd-hairline);
+}
+.location-group-head-icon { font-size: 11px; opacity: .9; }
+.location-group-head-count {
+  font-size: 10px; font-weight: 600;
+  color: var(--fd-text-muted);
+  background: var(--fd-overlay-light);
+  padding: 1px 6px; border-radius: 7px;
+}

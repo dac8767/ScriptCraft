@@ -105,17 +105,34 @@ try {
     `#3 and the pins turn with it (${JSON.stringify(beforeRot[0])} → ${JSON.stringify(afterRot.pins[0])})`);
 
   // ── #4 sidebar lock + delete ──────────────────────────────────────
-  await page.click('.locmap-rail-row:has(.locmap-rail-icon-pinned)');
+  await page.mouse.click(6, 6).catch(() => {});
+  await page.waitForTimeout(150);
+  // a row may already be open from an earlier step, and clicking an open
+  // row folds it shut — collapse first, then open the pinned one.
+  if (await page.$('.locmap-rail-item-open')) {
+    await page.click('.locmap-rail-item-open .locmap-rail-row');
+    await page.waitForTimeout(200);
+  }
+  await page.locator('.locmap-rail-row:has(.locmap-rail-icon-pinned) .locmap-rail-name').first().click();
   await page.waitForSelector('.locmap-rail-detail');
-  const tools = await page.$$eval('.locmap-pin-tools .locmap-pin-tool', (e) => e.map((x) => x.getAttribute('title')));
-  ok(tools.length === 2 && tools[0] === "Lock pin's location" && tools[1] === 'Delete this pin',
-    `#4 the row shows a lock icon and a delete (${tools.join(' · ')})`);
-  ok(await page.$eval('.locmap-pin-tools .locmap-pin-tool', (e) => e.textContent.trim() === ''),
-    '#4 icon only — no sentence on the button');
-  await page.click('.locmap-pin-tools .locmap-pin-tool');
+  /* v5.85, Derek: the lock/delete pair moved off the expanded row into the
+     row header's PIN-icon menu — same two actions, one gesture earlier. */
+  await page.mouse.click(6, 6).catch(() => {});
+  await page.waitForTimeout(150);
+  await page.click('.locmap-rail-item:has(.locmap-rail-detail) .locmap-rail-btn[title="Pin options"]');
+  await page.waitForSelector('.locmap-pin-menu');
+  const tools = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
+  ok(tools.length === 2 && /Lock pin/.test(tools[0]) && tools[1] === 'Delete pin',
+    `#4 the pin menu carries the lock and the delete (${tools.join(' · ')})`);
+  await page.click('.locmap-pin-menu .locmap-pin-menu-item:has-text("Lock pin")');
   await page.waitForTimeout(250);
-  ok(await page.$eval('.locmap-pin-tools .locmap-pin-tool', (e) => e.getAttribute('title')) === "Unlock pin's location",
+  await page.mouse.click(6, 6).catch(() => {});
+  await page.waitForTimeout(150);
+  await page.click('.locmap-rail-item:has(.locmap-rail-detail) .locmap-rail-btn[title="Pin options"]');
+  await page.waitForSelector('.locmap-pin-menu');
+  ok(await page.$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => /Unlock pin/.test(e.textContent)),
     '#4 and it flips to Unlock once locked');
+  await page.mouse.click(6, 6).catch(() => {});
 
   // ── #6 no title/count in the map sidebar ──────────────────────────
   ok(await page.$('.locmap-rail-head') === null, '#6 the sidebar LOCATIONS title and count are gone');

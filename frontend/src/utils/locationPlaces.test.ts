@@ -10,7 +10,7 @@ import {
   addPlaceField, setPlaceField, removePlaceField, renameScriptLocation,
   pinnedPlaces, unplacedLocations, placeForLocation, placeLabel, locationLabel,
   migratePins, readPlaces, emptyPlace, nextRotation, rotatedRatio, dropFraction, clampFraction, mergePlaces,
-  locationRows, togglePlaceLock, connectTargets, rotatePlacesClockwise, absorbOrphanPlaces, offsetFraction, rawFraction, pickFraction,
+  locationRows, togglePlaceLock, connectTargets, rotatePlacesClockwise, absorbOrphanPlaces, offsetFraction, rawFraction, pickFraction, locationListEntries, isLocationHidden,
   type LocationPlace,
 } from './locationPlaces';
 
@@ -243,7 +243,7 @@ describe('readPlaces', () => {
     const saved = [{ id: 'p1', scriptNames: ['a'], displayName: 'Home', description: 'd', fields: [{ id: 'f1', label: 'L', value: 'V' }], x: 0.5, y: 0.25 }];
     expect(readPlaces(saved)[0]).toEqual({
       id: 'p1', scriptNames: ['A'], displayName: 'Home', description: 'd',
-      fields: [{ id: 'f1', label: 'L', value: 'V' }], x: 0.5, y: 0.25, locked: false,
+      fields: [{ id: 'f1', label: 'L', value: 'V' }], x: 0.5, y: 0.25, locked: false, hidden: false,
     });
   });
 
@@ -251,7 +251,8 @@ describe('readPlaces', () => {
     expect(readPlaces(null)).toEqual([]);
     expect(readPlaces([{ noId: true }])).toEqual([]);
     expect(readPlaces([{ id: 'p1' }])[0]).toEqual({
-      id: 'p1', scriptNames: [], displayName: '', description: '', fields: [], x: null, y: null, locked: false,
+      id: 'p1', scriptNames: [], displayName: '', description: '', fields: [], x: null, y: null,
+      locked: false, hidden: false,
     });
   });
 });
@@ -547,5 +548,44 @@ describe('rawFraction — unclamped, so a wrong box can be caught', () => {
   });
   it('refuses a box with no size', () => {
     expect(rawFraction({ left: 0, top: 0, width: 0, height: 800 }, 1, 1)).toBeNull();
+  });
+});
+
+describe('locationListEntries — the list view (v5.85)', () => {
+  const loc = (name: string) => ({ name, sceneIndices: [0] });
+
+  it('ungrouped: one entry per location, each under its own name', () => {
+    const places = [place('p1', { scriptNames: ['A', 'B'], displayName: 'Belkadan' })];
+    const out = locationListEntries([loc('A'), loc('B')], places, false);
+    expect(out.map((e) => e.locations[0].name)).toEqual(['A', 'B']);
+    expect(out.every((e) => !e.groupLabel)).toBe(true);
+  });
+
+  it('grouped: locations sharing a display name come out together under it', () => {
+    const places = [place('p1', { scriptNames: ['A', 'B'], displayName: 'Belkadan' })];
+    const out = locationListEntries([loc('A'), loc('B'), loc('C')], places, true);
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({ groupLabel: 'Belkadan' });
+    expect(out[0].locations.map((l) => l.name)).toEqual(['A', 'B']);
+    expect(out[1].locations.map((l) => l.name)).toEqual(['C']);
+  });
+
+  it('grouped: a place with no display name does not invent one', () => {
+    const places = [place('p1', { scriptNames: ['A', 'B'] })];
+    const out = locationListEntries([loc('A'), loc('B')], places, true);
+    expect(out.every((e) => !e.groupLabel)).toBe(true);
+    expect(out).toHaveLength(2);
+  });
+
+  it('hides what is hidden, and shows it again on request', () => {
+    const places = [place('p1', { scriptNames: ['B'], hidden: true })];
+    expect(locationListEntries([loc('A'), loc('B')], places, false).map((e) => e.locations[0].name)).toEqual(['A']);
+    expect(locationListEntries([loc('A'), loc('B')], places, false, true).map((e) => e.locations[0].name)).toEqual(['A', 'B']);
+  });
+
+  it('isLocationHidden reads the place the location sits on', () => {
+    const places = [place('p1', { scriptNames: ['A'], hidden: true })];
+    expect(isLocationHidden(places, 'a')).toBe(true);
+    expect(isLocationHidden(places, 'B')).toBe(false);
   });
 });

@@ -62,6 +62,13 @@ export interface SceneNavSlice {
    *  is script data and lives in locationMapSlice instead. */
   locationsTab: LocationsTab;
   setLocationsTab: (t: LocationsTab) => void;
+  /** v5.85, Derek: the List view's "Group" button — group the locations by
+   *  their display name, or list every one on its own. */
+  locationsGrouped: boolean;
+  setLocationsGrouped: (v: boolean) => void;
+  /** Hidden locations are out of the lists until this says otherwise. */
+  showHiddenLocations: boolean;
+  setShowHiddenLocations: (v: boolean) => void;
   /** v5.68: the Navigator filter's Scene Headings section — INT./EXT.,
    *  location, contains-text. Ephemeral like navFilter; in the store because
    *  the controls live in the chrome popover and the list in the body. */
@@ -140,6 +147,10 @@ export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlic
     saveViewState({ pagesTab: t });
     set({ pagesTab: t });
   },
+  locationsGrouped: _vs.locationsGrouped === true,
+  setLocationsGrouped: (v) => { saveViewState({ locationsGrouped: v }); set({ locationsGrouped: v }); },
+  showHiddenLocations: false,
+  setShowHiddenLocations: (v) => set({ showHiddenLocations: v }),
   locationsTab: (_vs.locationsTab as LocationsTab) ?? 'list',
   setLocationsTab: (t) => {
     saveViewState({ locationsTab: t });

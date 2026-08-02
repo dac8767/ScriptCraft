@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import { useEditorStore, EMPTY_SCENE_FILTERS, type SceneFilters } from '../stores/editorStore';
 import LocationMapTab from './LocationMapTab';
-import { locationLabel, placeDescription } from '../utils/locationPlaces';
+import { placeDescription, locationListEntries } from '../utils/locationPlaces';
 import { renameLocationInScript } from '../utils/renameLocationInScript';
 import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlice';
 import { PAGES_PER_ROW_MIN, PAGES_PER_ROW_MAX } from '../stores/slices/sceneNavSlice';
@@ -20,7 +20,7 @@ import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
 import { parseHeading, computeSceneFilterDetails, sceneFilterOptions, filterSceneIndices, countActiveSceneFilters, type SceneFilterDetail } from '../utils/sceneFilters';
 import { useSceneReorder } from '../utils/useSceneReorder';
-import { ControlDropdown, ControlSearch, PerRowStepper, type ToolChromeTab } from './ToolControls';
+import { ControlDropdown, ControlSearch, PerRowStepper, ToolActionRow, type ToolChromeTab } from './ToolControls';
 import { SceneReorderBar } from './IndexCards';
 import { LuLayoutGrid, LuList } from 'react-icons/lu';
 import { FaChevronRight, FaChevronDown, FaEllipsisV, FaHashtag, FaMapMarkerAlt } from 'react-icons/fa';
@@ -402,9 +402,21 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const locationsTab = useEditorStore((s) => s.locationsTab);
   const places = useEditorStore((s) => s.locationPlaces);
   const setLocationDescriptionFor = useEditorStore((s) => s.setLocationDescriptionFor);
+  const grouped = useEditorStore((s) => s.locationsGrouped);
+  const setGrouped = useEditorStore((s) => s.setLocationsGrouped);
+  const showHiddenLocations = useEditorStore((s) => s.showHiddenLocations);
   const locations = useMemo(
     () => visibleLocations(allLocations, { search: locSearch, filter: locFilter, sort: locSort }),
     [allLocations, locSearch, locFilter, locSort],
+  );
+
+  /* v5.85: what the List view actually renders — grouped under display names
+     or flat, with hidden locations left out unless the Filter says otherwise.
+     One pure helper (utils/locationPlaces, tested there) so the Map view's
+     sidebar and this list cannot drift about what "hidden" means. */
+  const listEntries = useMemo(
+    () => locationListEntries(locations, places, grouped, showHiddenLocations),
+    [locations, places, grouped, showHiddenLocations],
   );
 
   useEffect(() => {
@@ -1432,6 +1444,24 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
       )}
       {activeTab === 'locations' && locationsTab === 'list' && (
         <>
+          {/* v5.85, Derek: "add a button Group in the header, which toggles
+              whether the locations are organized/grouped together by the
+              display name or not." It sits where every tool's OWN actions
+              sit — the first row of the body, left-aligned and button-shaped
+              (the v5.01 rule) — which is also where the Map view's + Add Pin
+              row is, so the two views' controls line up. */}
+          {locations.length > 0 && (
+            <ToolActionRow>
+              <button
+                className={`tool-action-btn${grouped ? ' active' : ''}`}
+                aria-pressed={grouped}
+                title={grouped
+                  ? 'Listing locations grouped under their display names'
+                  : 'Group locations that share a display name'}
+                onClick={() => setGrouped(!grouped)}
+              >Group</button>
+            </ToolActionRow>
+          )}
           {locations.length > 0 && (
             <div className="location-list-header location-header">
               <span className="location-chevron" />
@@ -1454,7 +1484,18 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                 &ldquo;INT. COFFEE SHOP - DAY&rdquo; will appear here.
               </div>
             ) : (
-              locations.map((loc) => {
+              listEntries.map((entry) => (
+                <React.Fragment key={entry.groupLabel ? `g:${entry.placeId}` : `l:${entry.locations[0].name}`}>
+                  {/* A group says its display name ONCE, above the locations
+                      it stands for — the names below stay the script's own. */}
+                  {entry.groupLabel && (
+                    <div className="location-group-head">
+                      <FaMapMarkerAlt className="location-group-head-icon" />
+                      {entry.groupLabel}
+                      <span className="location-group-head-count">{entry.locations.length}</span>
+                    </div>
+                  )}
+                  {entry.locations.map((loc) => {
                 const key = loc.name.toUpperCase();
                 const isExpanded = expandedLocation === key;
                 const isRenaming = renamingLocation === key;
@@ -1466,17 +1507,11 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                         panel's own accordion rows. */}
                     <div className="location-header" onClick={() => setExpandedLocation(isExpanded ? null : key)}>
                       <span className="location-chevron">{isExpanded ? <FaChevronDown /> : <FaChevronRight />}</span>
-                      {/* v5.77: a display name set on the Map view overrides the
-                          label HERE too — "the location window" is both views.
-                          When one display name covers several script locations,
-                          each row still states which one it is, so the list
-                          can't show the same word three times. */}
-                      <span className="location-name" title={loc.name}>
-                        {locationLabel(places, loc.name)}
-                        {locationLabel(places, loc.name) !== loc.name && (
-                          <span className="location-name-sub"> · {loc.name}</span>
-                        )}
-                      </span>
+                      {/* v5.85, Derek: "always show the full location name (not
+                          the display name)." The display name is a HEADING
+                          when Group is on — never a stand-in for what the
+                          script actually says on the page. */}
+                      <span className="location-name" title={loc.name}>{loc.name}</span>
                       {/* v5.81, Derek: the Scenes table's shape — name, an
                           adjustable Description field, then the count. The
                           field writes the place's OWN description, the same
@@ -1530,7 +1565,9 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                     )}
                   </div>
                 );
-              })
+                  })}
+                </React.Fragment>
+              ))
             )}
           </div>
         </>
@@ -1588,6 +1625,8 @@ export function LocationsControls() {
   const filter = useEditorStore((s) => s.locationFilter);
   const setFilter = useEditorStore((s) => s.setLocationFilter);
   const sort = useEditorStore((s) => s.locationSort);
+  const showHidden = useEditorStore((s) => s.showHiddenLocations);
+  const setShowHidden = useEditorStore((s) => s.setShowHiddenLocations);
   const setSort = useEditorStore((s) => s.setLocationSort);
 
   const FILTERS: { id: LocationFilter; label: string }[] = [
@@ -1623,9 +1662,15 @@ export function LocationsControls() {
       <ControlDropdown
         label="Filter"
         current={filter === 'all' ? undefined : FILTERS.find((f) => f.id === filter)?.label}
-        chip={filter === 'all' ? 0 : 1}
+        chip={(filter === 'all' ? 0 : 1) + (showHidden ? 1 : 0)}
         title="Show only interior or exterior locations"
-        items={FILTERS.map((f) => ({ label: f.label, active: filter === f.id, onSelect: () => setFilter(f.id) }))}
+        items={[
+          ...FILTERS.map((f) => ({ label: f.label, active: filter === f.id, onSelect: () => setFilter(f.id) })),
+          /* v5.85: hiding a location must never be a one-way door — this is
+             the way back to one, from either view. */
+          { label: 'Show hidden locations', active: showHidden, keepOpen: true,
+            onSelect: () => setShowHidden(!useEditorStore.getState().showHiddenLocations) },
+        ]}
       />
       <ControlDropdown
         label="Sort"

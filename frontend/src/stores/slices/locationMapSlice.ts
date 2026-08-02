@@ -51,6 +51,8 @@ export interface LocationMapSlice {
    *  name is known — the place is created (unpinned) if it has none yet, so
    *  writing a description never depends on having pinned the map first. */
   setLocationDescriptionFor: (scriptName: string, description: string) => void;
+  /** v5.85: keep the place and its pin, take it out of the lists. */
+  toggleLocationPlaceHidden: (placeId: string) => void;
   updateLocationPlace: (placeId: string, patch: Partial<Omit<LocationPlace, 'id'>>) => void;
   /** Put a script location on this place (taking it off any other). */
   attachLocationToPlace: (placeId: string, name: string) => void;
@@ -81,6 +83,9 @@ export const createLocationMapSlice: StateCreator<EditorState, [], [], LocationM
       locationPlaces: rotatePlacesClockwise(s.locationPlaces),
     };
   }),
+  toggleLocationPlaceHidden: (placeId) => set((s) => ({
+    locationPlaces: s.locationPlaces.map((p) => (p.id === placeId ? { ...p, hidden: !p.hidden } : p)),
+  })),
   setLocationDescriptionFor: (scriptName, description) => set((s) => {
     const existing = s.locationPlaces.find(
       (p) => p.scriptNames.some((n) => n.trim().toUpperCase() === scriptName.trim().toUpperCase()),

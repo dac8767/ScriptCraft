@@ -42,6 +42,10 @@ export interface LocationPlace {
   /** v5.78, Derek: a locked pin can't be dragged. Once a place is where it
    *  belongs, the next click near it shouldn't be able to nudge it. */
   locked?: boolean;
+  /** v5.85, Derek: "hide from locations list" — the place keeps its pin and
+   *  everything written on it, and simply stops taking up a row in the
+   *  lists. Never a delete: the Filter menu brings hidden ones back. */
+  hidden?: boolean;
 }
 
 /** The map image + how it was rotated when it was imported. */
@@ -81,7 +85,7 @@ export function newPlaceId(places: LocationPlace[]): string {
 }
 
 export function emptyPlace(id: string, x: number | null = null, y: number | null = null): LocationPlace {
-  return { id, scriptNames: [], displayName: '', description: '', fields: [], x, y, locked: false };
+  return { id, scriptNames: [], displayName: '', description: '', fields: [], x, y, locked: false, hidden: false };
 }
 
 /** The place a script location belongs to, if any. */
@@ -446,6 +450,47 @@ export function connectTargets<T extends { name: string; sceneIndices: number[] 
   return { scriptLocations, groups };
 }
 
+/** Is this script location hidden from the lists? (v5.85) */
+export function isLocationHidden(places: LocationPlace[], name: string): boolean {
+  return placeForLocation(places, name)?.hidden === true;
+}
+
+/**
+ * The list view's rows (v5.85, Derek): "always show the full location name
+ * (not the display name)", and a Group toggle that "organises them together
+ * by the display name".
+ *
+ * Grouped, the locations that share a place come out under that place's
+ * display name, in one entry; ungrouped, every location stands alone. Either
+ * way each location shows ITS OWN name — the display name is a heading, never
+ * a substitute for what the script actually says.
+ */
+export interface LocationListEntry<T> {
+  /** The place's display name — set only on a grouped entry of 2+. */
+  groupLabel?: string;
+  placeId?: string;
+  locations: T[];
+}
+
+export function locationListEntries<T extends { name: string }>(
+  locations: T[], places: LocationPlace[], grouped: boolean, showHidden = false,
+): Array<LocationListEntry<T>> {
+  const shown = locations.filter((l) => showHidden || !isLocationHidden(places, l.name));
+  if (!grouped) return shown.map((l) => ({ locations: [l] }));
+  const out: Array<LocationListEntry<T>> = [];
+  const done = new Set<string>();
+  for (const loc of shown) {
+    if (done.has(key(loc.name))) continue;
+    const place = placeForLocation(places, loc.name);
+    const label = place?.displayName.trim();
+    if (!place || !label) { done.add(key(loc.name)); out.push({ locations: [loc] }); continue; }
+    const mates = shown.filter((l) => place.scriptNames.some((n) => key(n) === key(l.name)));
+    mates.forEach((l) => done.add(key(l.name)));
+    out.push({ groupLabel: label, placeId: place.id, locations: mates });
+  }
+  return out;
+}
+
 /** Script locations not yet on any pin — what the "attach" menu offers. */
 export function unplacedLocations<T extends { name: string }>(locations: T[], places: LocationPlace[]): T[] {
   const taken = new Set(places.filter((p) => p.x !== null).flatMap((p) => p.scriptNames.map(key)));
@@ -488,6 +533,7 @@ export function readPlaces(raw: unknown): LocationPlace[] {
       x: typeof r.x === 'number' ? clampFraction(r.x) : null,
       y: typeof r.y === 'number' ? clampFraction(r.y) : null,
       locked: r.locked === true,
+      hidden: r.hidden === true,
     });
   }
   return out;

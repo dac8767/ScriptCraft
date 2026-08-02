@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.85",
+    "date": "2026-08-02",
+    "changes": [
+      "Each row in the map sidebar now carries two icon buttons: a map icon for the place — Connect to location, Hide from locations list — and a pin icon for where it sits — Lock/Unlock pin, Delete pin.",
+      "Hiding a location keeps it and its pin; it only leaves the lists. \"Show hidden locations\" in the Filter menu brings it back.",
+      "The Locations list always shows the script's own location name now. A new \"Group\" button folds locations that share a display name under it, with the display name as the heading."
+    ]
+  },
+  {
     "version": "5.84",
     "date": "2026-08-02",
     "changes": [
