@@ -115,7 +115,7 @@ export function NavigatorControls() {
             } },
         ]}
       />
-      <button ref={btn} className={`tool-ctl markup-ctl-filter${open ? ' open' : ''}`} title="Filter annotations"
+      <button ref={btn} data-ctl="filter" className={`tool-ctl markup-ctl-filter${open ? ' open' : ''}`} title="Filter annotations"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}>
         <span className="tool-ctl-label">Filter</span>

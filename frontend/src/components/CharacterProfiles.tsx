@@ -107,10 +107,6 @@ export function CharControls() {
   return (
     <>
       <ControlDropdown
-        label="Sort"
-        items={CHAR_SORTS.map(([id, label]) => ({ label, active: sortBy === id, onSelect: () => setSortBy(id) }))}
-      />
-      <ControlDropdown
         title="View"
         icon={viewMode === 'cards' ? <LuLayoutGrid /> : <LuList />}
         current={viewMode === 'cards' ? 'Cards' : 'List'}
@@ -118,6 +114,10 @@ export function CharControls() {
           { label: 'Cards', active: viewMode === 'cards', onSelect: () => setViewMode('cards') },
           { label: 'List', active: viewMode === 'list', onSelect: () => setViewMode('list') },
         ]}
+      />
+      <ControlDropdown
+        label="Sort"
+        items={CHAR_SORTS.map(([id, label]) => ({ label, active: sortBy === id, onSelect: () => setSortBy(id) }))}
       />
       <ControlSearch value={search} onChange={setSearch} placeholder="Search characters..." />
     </>

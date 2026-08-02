@@ -1767,12 +1767,22 @@ export function SceneControls() {
 
   return (
     <>
+      <ControlDropdown
+        title="View"
+        current={cardsView ? 'Cards' : 'List'}
+        icon={cardsView ? <LuLayoutGrid /> : <LuList />}
+        items={[
+          { label: 'List', active: !cardsView, onSelect: () => setMode('list') },
+          { label: 'Cards', active: cardsView, onSelect: () => setMode('cards') },
+        ]}
+      />
       {/* v5.01, Derek: Reorder LEFT this cluster — a tool's own action belongs
           in the first row of its body (ToolActionRow in ScenesTool), not among
           the Filter / View / Search controls every tool shares. */}
       <button
         ref={btnRef}
         className={`tool-ctl${open ? ' open' : ''}`}
+        data-ctl="filter"
         title="Filter"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={toggle}
@@ -1843,15 +1853,6 @@ export function SceneControls() {
         </div>,
         document.body,
       )}
-      <ControlDropdown
-        title="View"
-        current={cardsView ? 'Cards' : 'List'}
-        icon={cardsView ? <LuLayoutGrid /> : <LuList />}
-        items={[
-          { label: 'List', active: !cardsView, onSelect: () => setMode('list') },
-          { label: 'Cards', active: cardsView, onSelect: () => setMode('cards') },
-        ]}
-      />
       <ControlSearch value={search} onChange={setSearch} placeholder="Search headings & synopses..." />
     </>
   );

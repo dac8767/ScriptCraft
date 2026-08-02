@@ -1,8 +1,17 @@
 /**
  * v4.27, Derek's window template: the row-2 control cluster every tool window
  * shares — quiet Airtable-style text controls, in the fixed order
- * Filter / Sort / View / Search. Tools compose these primitives in their
- * TOOL_CHROME entry (ToolDock); nothing here is tool-specific.
+ * View / Filter / Sort / Search (v5.80, Derek: "for all windows, put the
+ * header buttons in this order (if they're present in that window)").
+ * Tools compose these primitives in their TOOL_CHROME entry (ToolDock);
+ * nothing here is tool-specific.
+ *
+ * The order is a RULE, and a rule nobody can check is a rule that drifts —
+ * it already had, two windows deep. So every control stamps itself with the
+ * slot it fills (`data-ctl`), and ToolControls.order.test.tsx renders each
+ * window's real cluster and asserts the stamps come out in this sequence.
+ * A new control that skips the stamp is invisible to the guard, so the
+ * hand-rolled ones (Scenes/Navigator/Annotations' Filter) carry it too.
  *
  * - ControlDropdown: text trigger (optional icon / count chip / current-value
  *   label) opening a portalled menu — fixed position, measured from the
@@ -64,6 +73,17 @@ export function PerRowStepper({ value, min, max, onChange, labelledBy, moreTitle
       />
     </>
   );
+}
+
+/** The canonical left-to-right order of the shared header controls. */
+export const CHROME_CONTROL_ORDER = ['view', 'filter', 'sort', 'search'] as const;
+export type ChromeControlSlot = typeof CHROME_CONTROL_ORDER[number];
+
+/** Which slot a control fills, read from the name it already shows/announces
+ *  — no second list to keep in step with the first. */
+export function chromeSlotOf(name?: string): ChromeControlSlot | undefined {
+  const n = (name ?? '').trim().toLowerCase();
+  return (CHROME_CONTROL_ORDER as readonly string[]).includes(n) ? (n as ChromeControlSlot) : undefined;
 }
 
 export interface ControlDropdownItem {
@@ -145,6 +165,7 @@ export const ControlDropdown: React.FC<{
       <button
         ref={btnRef}
         className={`tool-ctl${pos ? ' open' : ''}`}
+        data-ctl={chromeSlotOf(label ?? title)}
         title={title ?? label}
         onClick={toggle}
         onPointerDown={(e) => e.stopPropagation()}
@@ -224,6 +245,7 @@ export const ControlSearch: React.FC<{
     return (
       <button
         className="tool-ctl tool-ctl-search-btn"
+        data-ctl="search"
         title="Search"
         onClick={() => setOpen(true)}
       >
@@ -232,7 +254,7 @@ export const ControlSearch: React.FC<{
     );
   }
   return (
-    <span className="tool-ctl-search-field">
+    <span className="tool-ctl-search-field" data-ctl="search">
       <LuSearch className="tool-ctl-search-glass" aria-hidden />
       <input
         ref={inputRef}

@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.80",
+    "date": "2026-08-02",
+    "changes": [
+      "Every tool window's header buttons are now in one order — View, Filter, Sort, Search — whichever of them that window has. Characters and Scenes had drifted."
+    ]
+  },
+  {
     "version": "5.79",
     "date": "2026-08-01",
     "changes": [

@@ -106,7 +106,7 @@ export function MarkupsControls() {
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); useEditorStore.getState().setMarkupAddRequest(true); }}
       ><FaPlus /></button>
-      <button ref={filterBtn} className={`tool-ctl markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Filter annotations (script and window together)"
+      <button ref={filterBtn} data-ctl="filter" className={`tool-ctl markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Filter annotations (script and window together)"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setFilterOpen((v) => !v); }}>
         <span className="tool-ctl-label">Filter</span>
