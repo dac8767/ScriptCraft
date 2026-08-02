@@ -40,12 +40,25 @@ const run = (file) => new Promise((resolve) => {
   child.stdout.on('data', (d) => { out += d; });
   child.stderr.on('data', (d) => { out += d; });
   child.on('close', () => {
-    const tail = out.trim().split('\n').filter((l) => /passed,/.test(l)).pop() || 'NO RESULT';
-    const m = tail.match(/(\d+) passed, (\d+) failed/);
-    resolve({
-      file, out, secs: ((Date.now() - started) / 1000).toFixed(1),
-      passed: m ? +m[1] : 0, failed: m ? +m[2] : 1, line: tail,
-    });
+    /* Two reporting conventions grew up in here: the newer checks print a
+       "N passed, M failed" summary, the older ones only print OK/FAIL (or
+       ✓/✗) per assertion. Reading both is a two-line job; rewriting twelve
+       files to agree is churn — and a check that reports "NO RESULT" is a
+       check nobody reads. */
+    const lines = out.trim().split('\n');
+    const tail = lines.filter((l) => /\d+ passed, \d+ failed/.test(l)).pop();
+    const m = tail?.match(/(\d+) passed, (\d+) failed/);
+    let passed, failed, line;
+    if (m) { [passed, failed, line] = [+m[1], +m[2], tail]; }
+    else {
+      passed = lines.filter((l) => /^\s*(✓|OK\s)/.test(l)).length;
+      failed = lines.filter((l) => /^\s*(✗|FAIL\s)/.test(l)).length;
+      const crashed = /Error:|SCRIPT ERROR/.test(out) && !passed && !failed;
+      if (crashed) failed = 1;
+      line = passed + failed ? `${passed} passed, ${failed} failed` : 'NO ASSERTIONS';
+      if (!passed && !failed) failed = 1;
+    }
+    resolve({ file, out, secs: ((Date.now() - started) / 1000).toFixed(1), passed, failed, line });
   });
 });
 
@@ -74,7 +87,7 @@ await Promise.all(Array.from({ length: LIMIT }, async () => {
 const failed = results.filter((r) => r.failed);
 for (const r of failed) {
   console.log(`\n──── ${r.file} ────`);
-  console.log(r.out.split('\n').filter((l) => /✗|ERROR/.test(l)).join('\n'));
+  console.log(r.out.split('\n').filter((l) => /✗|FAIL |ERROR|Error:/.test(l)).slice(0, 12).join('\n'));
 }
 const wall = ((Date.now() - started) / 1000).toFixed(1);
 const cpu = results.reduce((s, r) => s + +r.secs, 0).toFixed(1);

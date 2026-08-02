@@ -49,6 +49,13 @@ export async function launch(opts = {}) {
     deviceScaleFactor: opts.dpr ?? 1,
   });
   page.on('pageerror', (e) => console.log('PAGEERROR:', e.message));
+  /* FAIL FAST. Playwright waits 30s before admitting a selector will never
+     match — and a check that needs more than a few seconds for one click is
+     broken, not slow. Every wrong guess while writing a check used to cost
+     half a minute; now it costs eight seconds. Raise it locally with
+     page.setDefaultTimeout() in the rare check that genuinely waits. */
+  page.setDefaultTimeout(opts.timeout ?? 8000);
+  page.setDefaultNavigationTimeout(opts.timeout ?? 15000);
   return { browser, page };
 }
 
@@ -134,4 +141,63 @@ export async function shot(page, selector, path, maxH = 340) {
   const b = await el?.boundingBox();
   if (!b || b.width < 2 || b.height < 2) { console.log(`(no box for ${selector})`); return; }
   await page.screenshot({ path, clip: { x: Math.max(0, b.x), y: Math.max(0, b.y), width: b.width, height: Math.min(b.height, maxH) } });
+}
+
+// ── gestures (v5.86) ───────────────────────────────────────────────────
+// The same handful of interactions were being re-invented in every check,
+// each time with its own brittle selector — and the same trap sprung every
+// time: a menu left open covers the screen with an invisible backdrop, so the
+// NEXT click in the check hits the veil and times out. Three separate checks
+// lost time to exactly that in one afternoon. These do it once.
+
+/** Two animation frames — what "the DOM has caught up" actually means.
+ *  Replaces waitForTimeout(300) guesses: same certainty, ~30ms not 300. */
+export async function settle(page) {
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+}
+
+const MENUS = '.locmap-menu-veil, .tool-ctl-menu, .locmap-pin-menu, .char-upload-menu';
+
+/** Close whatever is open — menus, their veils, popovers — and prove it. */
+export async function dismiss(page) {
+  if (!(await page.$(MENUS))) return;
+  await page.keyboard.press('Escape').catch(() => {});
+  await settle(page);
+  if (await page.$(MENUS)) {
+    await page.mouse.click(4, 4).catch(() => {});   // Escape doesn't close them all
+    await settle(page);
+  }
+  await page.waitForSelector(MENUS, { state: 'detached', timeout: 3000 }).catch(() => {});
+}
+
+/** Open a menu from its trigger, with the screen cleared first. Returns the
+ *  menu's item labels, which is what a check almost always wants next. */
+export async function openMenu(page, trigger, menuSel = '.locmap-pin-menu') {
+  await dismiss(page);
+  await page.click(trigger);
+  await page.waitForSelector(menuSel);
+  await settle(page);
+  return page.$$eval(`${menuSel} button, ${menuSel} .tool-ctl-menu-item`,
+    (els) => els.map((e) => e.textContent.trim()).filter(Boolean));
+}
+
+/** Click an item in the open menu by its exact text. */
+export async function menuItem(page, text, menuSel = '.locmap-pin-menu') {
+  await page.click(`${menuSel} :text-is("${text}")`);
+  await settle(page);
+}
+
+/** Expand a Locations sidebar row and wait for its detail. Collapses whatever
+ *  was open first — clicking an ALREADY-open row folds it, which is how this
+ *  went wrong twice. `match` is a :has() fragment, e.g. '.locmap-rail-badge'. */
+export async function expandRailRow(page, match = '') {
+  await dismiss(page);
+  if (await page.$('.locmap-rail-item-open')) {
+    await page.click('.locmap-rail-item-open .locmap-rail-name');
+    await settle(page);
+  }
+  const sel = match ? `.locmap-rail-row:has(${match}) .locmap-rail-name` : '.locmap-rail-row .locmap-rail-name';
+  await page.locator(sel).first().click();
+  await page.waitForSelector('.locmap-rail-detail');
+  await settle(page);
 }
