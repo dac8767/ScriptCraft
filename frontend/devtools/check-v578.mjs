@@ -127,7 +127,7 @@ try {
     `#3 the sidebar connects another location (${third} — now ${(await places())[0].scriptNames.length})`);
 
   // ── 6. the lock, from the sidebar AND the pin dropdown ──────────────
-  await page.click('.locmap-rail-detail .locmap-add-field:has-text("Lock this pin")');
+  await page.click('.locmap-rail-detail .locmap-pin-tool[title="Lock pin\u2019s location"], .locmap-rail-detail .locmap-pin-tool[title="Lock pin\'s location"]');
   await page.waitForTimeout(250);
   ok((await places())[0].locked === true, '#6 the sidebar locks the pin');
   const lockedX = (await places())[0].x;

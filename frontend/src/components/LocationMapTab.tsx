@@ -3,7 +3,8 @@
  *
  * Derek's v5.77 brief:
  *  - rotate the background ON IMPORT only, then the rotation is fixed;
- *  - map actions behind one options button in the HEADER (LocationMapOptions);
+ *  - map actions behind the "Map Options" button on the + Add Pin row
+ *    (LocationMapOptions, moved out of the header in v5.81);
  *  - click the map to drop a pin, then a dropdown picks (or creates) the
  *    location it stands for (LocationPinMenu);
  *  - the sidebar lists EVERY location; clicking one opens display name,
@@ -35,7 +36,7 @@ import { AssetImage } from './CharacterAssetMedia';
 import { promptDialog } from './ConfirmDialog';
 import { showToast } from './Toast';
 import LocationPinMenu from './LocationPinMenu';
-import { importLocationMap } from './LocationMapOptions';
+import LocationMapOptions, { importLocationMap } from './LocationMapOptions';
 import { renameLocationInScript } from '../utils/renameLocationInScript';
 import {
   pinnedPlaces, locationRows, connectTargets, placeLabel, dropFraction, rotatedRatio,
@@ -217,7 +218,10 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
 
   const onCanvasClick = useCallback((e: React.MouseEvent) => {
     if (swallowClickRef.current) { swallowClickRef.current = false; return; }
-    if (importing || !stageRef.current) return;
+    // v5.81, Derek: "after placing a pin, you have to press + Add Pin again to
+    // make another one" — the map is a placing surface only while ARMED.
+    // Otherwise a click on it is just a click.
+    if (!placing || importing || !stageRef.current) return;
     // Only a click on the MAP itself places a pin — not one on a pin, or on
     // the empty canvas around the image.
     const target = e.target as HTMLElement;
@@ -227,7 +231,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
     setPlacing(false);
     setGhost(null);
     openMenuAt(id, e.clientX, e.clientY);
-  }, [addPin, importing]);
+  }, [addPin, importing, placing]);
 
   /** Pins move by POINTER drag, not HTML5 drag: a pin is also a click target
    *  (it opens its menu), and a pointer drag tells the two apart by whether
@@ -310,10 +314,9 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
 
       {/* ── the sidebar: one row per PLACE, expandable ──────────────── */}
       <div className="locmap-rail">
-        <div className="locmap-rail-head">
-          Locations
-          <span className="locmap-rail-count">{rows.length}</span>
-        </div>
+        {/* v5.81, Derek: no "LOCATIONS" title and no count here — the window
+            header carries both, and saying it twice is the duplication this
+            app keeps rooting out. */}
         <div className="locmap-rail-list">
           {rows.length === 0 ? (
             <div className="navigator-empty">
@@ -424,15 +427,26 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
                       }}
                     >+ Add custom field</button>
 
-                    {/* Derek #6: the lock lives here as well as in the pin's
-                        own dropdown — same one flag, both places. */}
+    {/* v5.81, Derek: "just show a lock/unlock icon (depending on current
+                        state)… add a delete button next to it." Two icons, their
+                        meaning in the tooltip — the lock reads as its own state and
+                        the row stops spending a full line on a sentence. */}
                     {pinned && place && (
-                      <button
-                        className={`locmap-add-field${place.locked ? ' locmap-locked' : ''}`}
-                        onClick={() => toggleLock(place.id)}
-                      >
-                        {place.locked ? <><FaLock /> Pin locked — click to unlock</> : <><FaLockOpen /> Lock this pin&rsquo;s position</>}
-                      </button>
+                      <div className="locmap-pin-tools">
+                        <button
+                          className={`locmap-pin-tool${place.locked ? ' locmap-pin-tool-on' : ''}`}
+                          title={place.locked ? "Unlock pin's location" : "Lock pin's location"}
+                          aria-label={place.locked ? "Unlock pin's location" : "Lock pin's location"}
+                          aria-pressed={place.locked}
+                          onClick={() => toggleLock(place.id)}
+                        >{place.locked ? <FaLock /> : <FaLockOpen />}</button>
+                        <button
+                          className="locmap-pin-tool locmap-pin-tool-danger"
+                          title="Delete this pin"
+                          aria-label="Delete this pin"
+                          onClick={() => unpinPlace(place.id)}
+                        ><FaRegTrashAlt /></button>
+                      </div>
                     )}
                   </div>
                 )}
@@ -471,14 +485,25 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
                 </button>
               </div>
             )}
+            {/* v5.81, ROOT CAUSE of "the pin does not appear where I clicked":
+                this row used to say "Click the map to set the pin" while armed
+                — a longer label, which WRAPPED the row in a narrow window and
+                pushed the map 21px down. The click landed correctly on the map
+                as it then sat; placing disarmed, the label shrank back, the row
+                un-wrapped and the map (pin and all) jumped up. The label never
+                changes now, the row cannot wrap, and the hint has its own
+                single-line lane — so nothing under the cursor moves between
+                the press and the pin. */}
             <div className="locmap-actionbar">
               <button
                 className={`locmap-add-btn locmap-addpin-btn${placing ? ' locmap-addpin-armed' : ''}`}
                 onClick={armPin}
+                aria-pressed={placing}
                 title={placing ? 'Click the map to set the pin, or press Escape' : 'Add a pin — it follows the cursor until you click'}
-              >{placing ? 'Click the map to set the pin' : '+ Add Pin'}</button>
+              >+ Add Pin</button>
+              <LocationMapOptions />
               <span className="locmap-pin-count">
-                {drawnPins.length} pinned{placing && ' · Escape to cancel'}
+                {placing ? 'Click the map to set the pin · Esc to cancel' : `${drawnPins.length} pinned`}
               </span>
             </div>
             <div className="locmap-canvas" ref={canvasRef}>

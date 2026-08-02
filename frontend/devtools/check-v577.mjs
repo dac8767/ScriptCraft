@@ -24,7 +24,10 @@ const setView = async (label) => {
   await page.waitForTimeout(250);
 };
 /** Click the map at fractions of the stage. */
+/* v5.81: a pin is placed by ARMING "+ Add Pin" and then clicking — a bare
+   click on the map is just a click now. */
 const clickMap = async (xf, yf) => {
+  if (await page.$('.locmap-addpin-btn')) await page.click('.locmap-addpin-btn');
   const box = await page.$eval('.locmap-stage', (el) => {
     const b = el.getBoundingClientRect();
     return { x: b.x, y: b.y, w: b.width, h: b.height };
@@ -52,13 +55,11 @@ try {
   await page.waitForSelector('.locmap', { timeout: 8000 });
   ok(true, 'the Map view renders');
 
-  // ── 2. the header's options button ──────────────────────────────────
-  ok(await page.$('.locmap-options-btn') !== null, 'the map options button is in the header');
-  await page.click('.locmap-options-btn');
-  const opts = await page.$$eval('.char-upload-menu .char-upload-menu-item', (els) => els.map((e) => e.textContent.trim()));
-  ok(opts.some((o) => /background/i.test(o)), `options offer the background actions (${opts.join(' · ')})`);
-  await page.keyboard.press('Escape');
-  await page.mouse.click(5, 5);
+  // ── 2. v5.81: the map options moved OUT of the header, onto the
+  //    + Add Pin row — so before a map exists there is no options button
+  //    at all, only the empty state's Add Map.
+  ok(await page.$('.tool-fs-header .locmap-mapopts-btn') === null,
+    'the map options button is no longer in the header');
 
   // ── 3. import → rotate → lock ───────────────────────────────────────
   await page.setInputFiles('.locmap input[type="file"]', MAP_PATH);
@@ -80,6 +81,16 @@ try {
   await page.waitForTimeout(300);
   ok((await state()).map.rotationLocked === true, 'Set Rotation locks it');
   ok(await page.$('.locmap-import-bar') === null, 'and the rotation bar is gone for good');
+
+  // the options now live on the action row, in Derek's words
+  ok(await page.$('.locmap-actionbar .locmap-mapopts-btn') !== null,
+    'Map Options sits on the + Add Pin row');
+  await page.click('.locmap-mapopts-btn');
+  const opts = await page.$$eval('.char-upload-menu .char-upload-menu-item', (els) => els.map((e) => e.textContent.trim()));
+  ok(JSON.stringify(opts) === JSON.stringify(['Replace Map', 'Rotate 90 degrees', 'Delete Map']),
+    `options offer the map actions (${opts.join(' · ')})`);
+  await page.mouse.click(5, 5);
+  await page.waitForTimeout(200);
 
   // ── 4. click the map → a pin + its dropdown ─────────────────────────
   await clickMap(0.3, 0.4);
@@ -189,8 +200,8 @@ try {
 
   // ── 6d. deleting the background keeps the pins ──────────────────────
   const placesBefore = (await state()).places.length;
-  await page.click('.locmap-options-btn');
-  await page.click('.char-upload-menu .char-upload-menu-item:text-is("Delete background")');
+  await page.click('.locmap-mapopts-btn');
+  await page.click('.char-upload-menu .char-upload-menu-item:text-is("Delete Map")');
   await page.waitForSelector('.fs-confirm-box', { timeout: 5000 });
   await page.click('.fs-confirm-ok');
   await page.waitForTimeout(300);

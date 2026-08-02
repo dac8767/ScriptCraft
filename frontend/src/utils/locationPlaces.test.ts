@@ -10,7 +10,7 @@ import {
   addPlaceField, setPlaceField, removePlaceField, renameScriptLocation,
   pinnedPlaces, unplacedLocations, placeForLocation, placeLabel, locationLabel,
   migratePins, readPlaces, emptyPlace, nextRotation, rotatedRatio, dropFraction, clampFraction, mergePlaces,
-  locationRows, togglePlaceLock, connectTargets,
+  locationRows, togglePlaceLock, connectTargets, rotatePlacesClockwise, absorbOrphanPlaces,
   type LocationPlace,
 } from './locationPlaces';
 
@@ -428,5 +428,66 @@ describe('connectTargets — "+ Connect to location" (v5.79)', () => {
     const t = connectTargets([loc('A', [0])], [], null);
     expect(t.scriptLocations.map((s) => s.name)).toEqual(['A']);
     expect(t.groups).toEqual([]);
+  });
+});
+
+describe('rotatePlacesClockwise — pins turn with the map (v5.81)', () => {
+  it('carries a pin round with the picture', () => {
+    const [p] = rotatePlacesClockwise([place('p1', { x: 0.25, y: 0.10 })]);
+    expect(p.x).toBeCloseTo(0.90);
+    expect(p.y).toBeCloseTo(0.25);
+  });
+
+  it('leaves the centre where it is', () => {
+    const [p] = rotatePlacesClockwise([place('p1', { x: 0.5, y: 0.5 })]);
+    expect(p.x).toBeCloseTo(0.5);
+    expect(p.y).toBeCloseTo(0.5);
+  });
+
+  it('comes back to the start after four turns', () => {
+    let ps = [place('p1', { x: 0.2, y: 0.7 })];
+    for (let i = 0; i < 4; i++) ps = rotatePlacesClockwise(ps);
+    expect(ps[0].x).toBeCloseTo(0.2);
+    expect(ps[0].y).toBeCloseTo(0.7);
+  });
+
+  it('ignores places that were never pinned', () => {
+    const [p] = rotatePlacesClockwise([place('p1', { x: null, y: null })]);
+    expect(p.x).toBeNull();
+  });
+});
+
+describe('absorbOrphanPlaces — a moved location keeps its writing (v5.81)', () => {
+  it('carries the emptied place’s description over to the target', () => {
+    const places = [
+      place('target', { scriptNames: ['A'], x: 0.4, y: 0.4 }),
+      place('husk', { scriptNames: [], x: null, y: null, description: 'Ash-choked jungle' }),
+    ];
+    const out = absorbOrphanPlaces(places, 'target');
+    expect(out).toHaveLength(1);
+    expect(out[0].description).toBe('Ash-choked jungle');
+  });
+
+  it('does not overwrite a description the target already has', () => {
+    const places = [
+      place('target', { scriptNames: ['A'], x: 0.4, y: 0.4, description: 'Mine' }),
+      place('husk', { scriptNames: [], x: null, y: null, description: 'Theirs' }),
+    ];
+    expect(absorbOrphanPlaces(places, 'target')[0].description).toBe('Mine');
+  });
+
+  it('keeps a place that still holds a location', () => {
+    const places = [place('target', { scriptNames: ['A'] }), place('other', { scriptNames: ['B'] })];
+    expect(absorbOrphanPlaces(places, 'target')).toHaveLength(2);
+  });
+
+  it('keeps an empty place that is still ON the map — a pin waiting to be named', () => {
+    const places = [place('target', { scriptNames: ['A'] }), place('fresh', { scriptNames: [], x: 0.5, y: 0.5 })];
+    expect(absorbOrphanPlaces(places, 'target')).toHaveLength(2);
+  });
+
+  it('never eats the target itself', () => {
+    const places = [place('target', { scriptNames: [], x: null, y: null })];
+    expect(absorbOrphanPlaces(places, 'target')).toHaveLength(1);
   });
 });

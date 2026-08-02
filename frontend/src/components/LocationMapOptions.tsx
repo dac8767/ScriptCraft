@@ -1,14 +1,11 @@
 /**
- * LocationMapOptions (v5.77) — the Map view's options button, in the window
- * header's control cluster.
+ * LocationMapOptions (v5.77) — the Map view's options menu.
  *
- * Derek: "add an expanded options button in the header. one of the options is
- * to delete the background. another is to replace it."
- *
- * It lives in the CHROME (beside View / Filter / Sort / Search) rather than
- * on a toolbar inside the map, which is where v5.75 put Replace and Remove —
- * the body is for content, the header is for controls, and that is how every
- * other window here is arranged.
+ * v5.81, Derek: it moved OUT of the header cluster and down beside + Add Pin,
+ * with the word "Map Options" instead of an ellipsis icon, offering
+ * Replace Map (from the device or the Asset Manager) · Rotate 90 degrees ·
+ * Delete Map. Both are map-wide actions, so they sit together on one row —
+ * and the header cluster stays the four shared controls (v5.80's rule).
  *
  * The file input lives here too: the same button both replaces the map and
  * imports the first one, so the picking machinery belongs with the menu that
@@ -16,7 +13,7 @@
  * gets its own one-time rotation pass (see LocationMapTab).
  */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { FaEllipsisH } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { createPortal } from 'react-dom';
 import { useEditorStore } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -68,10 +65,15 @@ export default function LocationMapOptions() {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [assetFilter, setAssetFilter] = useState('');
+  /* Replace Map opens a SUB-list rather than a second floating layer — the
+     same one-panel-at-a-time shape the pin dropdown uses. */
+  const [sub, setSub] = useState<'replace' | null>(null);
+  const rotateMap = useEditorStore((s) => s.rotateLocationMap);
 
   const open = useCallback(() => {
     const r = btnRef.current?.getBoundingClientRect();
-    if (r) setPos({ top: r.bottom + 4, left: Math.max(8, r.right - 200) });
+    setSub(null);
+    if (r) setPos({ top: r.bottom + 4, left: Math.max(8, Math.min(r.left, window.innerWidth - 220)) });
   }, []);
 
   const handleFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,8 +91,8 @@ export default function LocationMapOptions() {
 
   const deleteMap = useCallback(async () => {
     if (!(await confirmDialog(
-      'Delete the map background? The pins and everything written on them are kept, and reappear if you add a map again.',
-      { title: 'Delete Background', confirmLabel: 'Delete', danger: true },
+      'Delete the map? The pins and everything written on them are kept, and reappear if you add a map again.',
+      { title: 'Delete Map', confirmLabel: 'Delete Map', danger: true },
     ))) return;
     setMapImage(null);
   }, [setMapImage]);
@@ -104,20 +106,42 @@ export default function LocationMapOptions() {
       <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
       <button
         ref={btnRef}
-        className="tool-ctl locmap-options-btn"
-        title="Map options"
+        className={`locmap-tool-btn locmap-mapopts-btn${pos ? ' open' : ''}`}
+        title="Replace, rotate or delete the map"
         onClick={() => (pos ? setPos(null) : open())}
-      ><FaEllipsisH /></button>
+      >Map Options</button>
       {pos && createPortal(
         <>
           {/* A click anywhere else closes it — the menu is portalled to
               <body> because a panel clips absolutely-positioned children
               (the AddMenu lesson). */}
           <div className="locmap-menu-veil" onPointerDown={() => setPos(null)} />
-          <div className="char-upload-menu" style={{ top: pos.top, left: pos.left }}>
-            {item(mapImage ? 'Replace background…' : 'Add background…', () => fileRef.current?.click())}
-            {currentProject && item('From Asset Manager…', () => { void openAssetPicker(); })}
-            {mapImage && item('Delete background', () => { void deleteMap(); })}
+          <div className="char-upload-menu locmap-mapopts-menu" style={{ top: pos.top, left: pos.left }}>
+            {sub === 'replace' ? (
+              <>
+                <button className="char-upload-menu-item locmap-mapopts-back" onClick={() => setSub(null)}>
+                  <FaChevronLeft /> Replace Map
+                </button>
+                {item('From local device…', () => fileRef.current?.click())}
+                {/* Always offered, never silently missing: without a project
+                    there is no asset library to pick from, so the item says
+                    so instead of vanishing. */}
+                <button
+                  className="char-upload-menu-item"
+                  disabled={!currentProject}
+                  title={currentProject ? undefined : 'Save this script to a project to use the Asset Manager'}
+                  onClick={() => { setPos(null); void openAssetPicker(); }}
+                >From Asset Manager…</button>
+              </>
+            ) : (
+              <>
+                <button className="char-upload-menu-item locmap-mapopts-more" onClick={() => setSub('replace')}>
+                  {mapImage ? 'Replace Map' : 'Add Map'}<FaChevronRight />
+                </button>
+                {mapImage && item('Rotate 90 degrees', () => rotateMap())}
+                {mapImage && item('Delete Map', () => { void deleteMap(); })}
+              </>
+            )}
           </div>
         </>,
         document.body,

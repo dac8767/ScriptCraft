@@ -1271,8 +1271,11 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    *  row — the heading column and the metrics column; the synopsis column
    *  takes whatever is left, so two numbers describe the whole table.
    *  Persisted with the other view state. */
-  sceneColWidths: { head: number; metrics: number };
-  setSceneColWidth: (key: 'head' | 'metrics', px: number) => void;
+  /** Drag-resized column widths. `locName` (v5.81) is the Locations list's
+   *  name column — the same table shape as the Scenes list, so it shares the
+   *  same store field and the same resize handler. */
+  sceneColWidths: { head: number; metrics: number; locName: number };
+  setSceneColWidth: (key: 'head' | 'metrics' | 'locName', px: number) => void;
   /** v5.04: "take the editor to this document position." A doc position, or
    *  null when nothing is pending.
    *
@@ -2065,7 +2068,10 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   pendingEditorScroll: null,
   requestEditorScroll: (pos) => set({ pendingEditorScroll: pos }),
   clearEditorScroll: () => set((s) => (s.pendingEditorScroll === null ? {} : { pendingEditorScroll: null })),
-  sceneColWidths: (_vs.sceneColWidths as { head: number; metrics: number }) ?? { head: 320, metrics: 104 },
+  /* Per-KEY defaults, not a whole-object fallback: a saved view-state from
+     before locName existed would otherwise leave it undefined and the column
+     would resolve to `undefinedpx`. */
+  sceneColWidths: { head: 320, metrics: 104, locName: 240, ...((_vs.sceneColWidths as object) ?? {}) },
   setSceneColWidth: (key, px) => set((s) => {
     const sceneColWidths = { ...s.sceneColWidths, [key]: Math.round(px) };
     saveViewState({ sceneColWidths });

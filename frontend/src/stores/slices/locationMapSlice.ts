@@ -20,6 +20,7 @@ import type { EditorState } from '../editorStore';
 import {
   addPlaceAt, attachLocation, detachLocation, updatePlace, movePlace, removePlace, unpinPlace,
   addPlaceField, setPlaceField, removePlaceField, renameScriptLocation, mergePlaces, togglePlaceLock,
+  rotatePlacesClockwise, absorbOrphanPlaces,
   type LocationPlace, type LocationMapImage, type LocationCustomField,
 } from '../../utils/locationPlaces';
 
@@ -46,6 +47,10 @@ export interface LocationMapSlice {
   /** Take the pin off the map, keeping whatever the writer wrote on it. */
   unpinLocationPlace: (placeId: string) => void;
   removeLocationPlace: (placeId: string) => void;
+  /** Write a script location's description from the LIST view, where only the
+   *  name is known — the place is created (unpinned) if it has none yet, so
+   *  writing a description never depends on having pinned the map first. */
+  setLocationDescriptionFor: (scriptName: string, description: string) => void;
   updateLocationPlace: (placeId: string, patch: Partial<Omit<LocationPlace, 'id'>>) => void;
   /** Put a script location on this place (taking it off any other). */
   attachLocationToPlace: (placeId: string, name: string) => void;
@@ -64,10 +69,27 @@ export interface LocationMapSlice {
 export const createLocationMapSlice: StateCreator<EditorState, [], [], LocationMapSlice> = (set, get) => ({
   locationMapImage: null,
   setLocationMapImage: (img) => set({ locationMapImage: img }),
+  /* v5.81, Derek: Rotate 90 degrees is a Map Options item, so it no longer
+     stops at the import pass — and once pins exist, turning the picture
+     without turning THEM would slide every pin off its feature. The pins
+     ride round with the map. */
   rotateLocationMap: () => set((s) => {
     const img = s.locationMapImage;
-    if (!img || img.rotationLocked) return {};
-    return { locationMapImage: { ...img, rotation: ((img.rotation || 0) + 90) % 360 } };
+    if (!img) return {};
+    return {
+      locationMapImage: { ...img, rotation: ((img.rotation || 0) + 90) % 360 },
+      locationPlaces: rotatePlacesClockwise(s.locationPlaces),
+    };
+  }),
+  setLocationDescriptionFor: (scriptName, description) => set((s) => {
+    const existing = s.locationPlaces.find(
+      (p) => p.scriptNames.some((n) => n.trim().toUpperCase() === scriptName.trim().toUpperCase()),
+    );
+    if (existing) return { locationPlaces: updatePlace(s.locationPlaces, existing.id, { description }) };
+    const { places, id } = addPlaceAt(s.locationPlaces, 0, 0);
+    return {
+      locationPlaces: updatePlace(attachLocation(places, id, scriptName), id, { description, x: null, y: null }),
+    };
   }),
   lockLocationMapRotation: () => set((s) => (
     s.locationMapImage ? { locationMapImage: { ...s.locationMapImage, rotationLocked: true } } : {}
@@ -84,7 +106,13 @@ export const createLocationMapSlice: StateCreator<EditorState, [], [], LocationM
   unpinLocationPlace: (placeId) => set((s) => ({ locationPlaces: unpinPlace(s.locationPlaces, placeId) })),
   removeLocationPlace: (placeId) => set((s) => ({ locationPlaces: removePlace(s.locationPlaces, placeId) })),
   updateLocationPlace: (placeId, patch) => set((s) => ({ locationPlaces: updatePlace(s.locationPlaces, placeId, patch) })),
-  attachLocationToPlace: (placeId, name) => set((s) => ({ locationPlaces: attachLocation(s.locationPlaces, placeId, name) })),
+  /* absorbOrphanPlaces: moving a location off its old place can leave that
+     place with nothing — no locations, no pin. The target takes over what it
+     was carrying and the husk goes, so a description written in the List
+     view survives being pinned on the map. */
+  attachLocationToPlace: (placeId, name) => set((s) => ({
+    locationPlaces: absorbOrphanPlaces(attachLocation(s.locationPlaces, placeId, name), placeId),
+  })),
   detachLocationFromPlace: (name) => set((s) => ({ locationPlaces: detachLocation(s.locationPlaces, name) })),
   addLocationPlaceField: (placeId, label) => set((s) => ({ locationPlaces: addPlaceField(s.locationPlaces, placeId, label) })),
   setLocationPlaceField: (placeId, fieldId, patch) => set((s) => ({ locationPlaces: setPlaceField(s.locationPlaces, placeId, fieldId, patch) })),

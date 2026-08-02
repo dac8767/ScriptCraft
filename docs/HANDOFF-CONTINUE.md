@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.79 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.81 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,7 +227,7 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.79 — connect-to-location, the pin anchor, and cursor placement (HEAD)
+### v5.79 — connect-to-location, the pin anchor, and cursor placement
 
 Derek's three:
 1. "+ Connect to location" (renamed), listing ALL script locations plus the

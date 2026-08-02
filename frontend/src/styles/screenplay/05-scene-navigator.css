@@ -77,7 +77,10 @@
 }
 .scene-num-cell       { grid-area: num; }
 .scene-heading-text   { grid-area: head; }
-.scene-synopsis-field { grid-area: synopsis; }
+/* Placement belongs to the SCENES grid, not to the class: the Locations list
+   (v5.81) wears .scene-synopsis-field for the same field LOOK, and an
+   unscoped `grid-area: synopsis` placed it in a phantom track there. */
+.scene-heading-row .scene-synopsis-field { grid-area: synopsis; }
 .scene-metrics        { grid-area: metrics; }
 .scene-length         { grid-area: icon; }
 /* v5.09, Derek: docked in a side panel there is no room for the three
@@ -417,19 +420,30 @@
 .location-group {
   border-bottom: 1px solid var(--fd-overlay-subtle);
 }
+/* v5.81, Derek: "make the format the same as the scene view" — so the row is
+   a GRID with the same fixed-or-fr tracks the Scenes table uses: caret, a
+   drag-resized name column, the Description field taking the slack, and the
+   count. Fixed tracks are the point — `auto` would size to each row's own
+   text and the Description field would start at a different x on every line. */
 .location-header {
-  display: flex;
+  display: grid;
+  grid-template-columns:
+    16px                                     /* caret            */
+    minmax(0, var(--loc-col-name, 240px))    /* location name — drag-resized */
+    minmax(0, 1fr)                           /* description   — takes the slack */
+    auto;                                    /* times used       */
   align-items: center;
+  column-gap: 22px;                          /* the Scenes gutter — grips centre on it */
   padding: 8px 12px;
   cursor: pointer;
-  gap: 6px;
   transition: background 0.1s;
+  min-width: 0;
 }
 .location-header:hover {
   background: var(--fd-overlay-subtle);
 }
 .location-name {
-  flex: 1;
+  position: relative;
   font-size: 14px;
   font-family: var(--screenplay-font);
   color: var(--fd-text);
@@ -1534,4 +1548,81 @@
   pointer-events: none;
   opacity: .75;
   border-style: dashed;
+}
+
+/* ── the map's action row (v5.81) ──────────────────────────────────── */
+/* Fixed height, and NOTHING in it may wrap. A row that changes height moves
+   the map under the cursor, which is exactly how a pin ended up 26px above
+   the click it came from. */
+.locmap-actionbar {
+  flex-wrap: nowrap;
+  min-height: 37px;
+  align-items: center;
+  gap: 8px;
+}
+.locmap-actionbar > * { flex: 0 0 auto; }
+.locmap-pin-count {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+/* Map Options reads as the quieter sibling of the blue + Add Pin. */
+.locmap-mapopts-btn { white-space: nowrap; }
+.locmap-mapopts-btn.open { background: var(--fd-overlay-subtle); color: var(--fd-text); }
+.locmap-mapopts-menu { min-width: 200px; }
+.locmap-mapopts-more,
+.locmap-mapopts-back { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.locmap-mapopts-back { color: var(--fd-text-muted); }
+
+/* ── the expanded row's pin tools (v5.81) ──────────────────────────── */
+/* Icons, not sentences: the lock shows the state it is IN, and the tooltip
+   says what pressing it does. */
+.locmap-pin-tools { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.locmap-pin-tool {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 26px;
+  background: var(--fd-overlay-subtle);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.locmap-pin-tool:hover { color: var(--fd-text); border-color: var(--fd-accent); }
+.locmap-pin-tool-on { color: var(--fd-accent); border-color: var(--fd-accent); }
+.locmap-pin-tool-danger:hover { color: var(--fd-danger, #e05252); border-color: var(--fd-danger, #e05252); }
+
+/* ── the Locations list header + row parts (v5.81) ─────────────────── */
+/* Same shape as .scene-list-header: it wears .location-header, so a resized
+   column cannot line up in the header and miss in the rows. */
+.location-list-header {
+  flex-shrink: 0;
+  cursor: default;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--fd-text-muted);
+  border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
+  user-select: none;
+}
+.location-list-header:hover { background: none; }
+.location-list-header .location-name { font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+/* The rows clip their name with an ellipsis; the HEADER must not, because the
+   drag grip is an absolutely-positioned child of this cell and a clipped
+   child is laid out but NOT hit-testable — the grip drew in the right place
+   and swallowed nothing. (Same family as the portalled-menu footgun.) */
+.location-list-header .location-name { overflow: visible; }
+.location-desc-head { font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+/* The field is the Scenes synopsis field — same class, same look, so the two
+   tables can't drift apart. */
+.location-desc-field { width: 100%; min-width: 0; }
+/* "Times used:" then the count that was already in this window. */
+.location-times {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--fd-text-muted);
+  white-space: nowrap;
 }

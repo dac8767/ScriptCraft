@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import { useEditorStore, EMPTY_SCENE_FILTERS, type SceneFilters } from '../stores/editorStore';
 import LocationMapTab from './LocationMapTab';
-import LocationMapOptions from './LocationMapOptions';
-import { locationLabel } from '../utils/locationPlaces';
+import { locationLabel, placeDescription } from '../utils/locationPlaces';
 import { renameLocationInScript } from '../utils/renameLocationInScript';
 import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlice';
 import { PAGES_PER_ROW_MIN, PAGES_PER_ROW_MAX } from '../stores/slices/sceneNavSlice';
@@ -285,9 +284,12 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const sceneColWidths = useEditorStore((s) => s.sceneColWidths);
   const setSceneColWidth = useEditorStore((s) => s.setSceneColWidth);
   const COL_LIMITS = { head: { min: 90, max: 900, varName: '--scene-col-head', dir: 1 },
-                       metrics: { min: 74, max: 260, varName: '--scene-metrics-w', dir: -1 } } as const;
+                       metrics: { min: 74, max: 260, varName: '--scene-metrics-w', dir: -1 },
+                       // v5.81: the Locations list is the same table, so it
+                       // resizes through the same handler — not a second one.
+                       locName: { min: 120, max: 620, varName: '--loc-col-name', dir: 1 } } as const;
 
-  const startColResize = (key: 'head' | 'metrics') => (e: React.PointerEvent) => {
+  const startColResize = (key: keyof typeof COL_LIMITS) => (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();                       // the header sits on the row; don't start a row drag
     const { min, max, varName, dir } = COL_LIMITS[key];
@@ -399,6 +401,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const locSort = useEditorStore((s) => s.locationSort);
   const locationsTab = useEditorStore((s) => s.locationsTab);
   const places = useEditorStore((s) => s.locationPlaces);
+  const setLocationDescriptionFor = useEditorStore((s) => s.setLocationDescriptionFor);
   const locations = useMemo(
     () => visibleLocations(allLocations, { search: locSearch, filter: locFilter, sort: locSort }),
     [allLocations, locSearch, locFilter, locSort],
@@ -873,7 +876,11 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     <div
       className="scene-navigator scene-navigator-embed"
       ref={navRootRef}
-      style={{ '--scene-col-head': `${sceneColWidths.head}px`, '--scene-metrics-w': `${sceneColWidths.metrics}px` } as React.CSSProperties}
+      style={{
+        '--scene-col-head': `${sceneColWidths.head}px`,
+        '--scene-metrics-w': `${sceneColWidths.metrics}px`,
+        '--loc-col-name': `${sceneColWidths.locName}px`,
+      } as React.CSSProperties}
     >
 
       {/* ── Scenes tab ───────────────────────────────────────────────── */}
@@ -1425,6 +1432,21 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
       )}
       {activeTab === 'locations' && locationsTab === 'list' && (
         <>
+          {locations.length > 0 && (
+            <div className="location-list-header location-header">
+              <span className="location-chevron" />
+              <span className="location-name">
+                Location
+                <span
+                  className="scene-col-grip"
+                  title="Drag to resize"
+                  onPointerDown={startColResize('locName')}
+                />
+              </span>
+              <span className="location-desc-head">Description</span>
+              <span className="location-times" />
+            </div>
+          )}
           <div className="navigator-list">
             {locations.length === 0 ? (
               <div className="navigator-empty">
@@ -1455,7 +1477,22 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                           <span className="location-name-sub"> · {loc.name}</span>
                         )}
                       </span>
-                      <span className="location-scene-count">{loc.sceneIndices.length}</span>
+                      {/* v5.81, Derek: the Scenes table's shape — name, an
+                          adjustable Description field, then the count. The
+                          field writes the place's OWN description, the same
+                          one the Map view's sidebar edits: one description
+                          per location, two ways in. */}
+                      <input
+                        className="scene-synopsis-field location-desc-field"
+                        placeholder="Description..."
+                        value={placeDescription(places, loc.name)}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setLocationDescriptionFor(loc.name, e.target.value)}
+                      />
+                      <span className="location-times">
+                        Times used:
+                        <span className="location-scene-count">{loc.sceneIndices.length}</span>
+                      </span>
                     </div>
                     {isExpanded && (
                       <div className="location-detail">
@@ -1580,10 +1617,9 @@ export function LocationsControls() {
           { label: 'Map', active: view === 'map', onSelect: () => setView('map') },
         ]}
       />
-      {/* The map's own actions live behind ONE options button, and only on
-          the Map view — a Replace/Delete pair that does nothing in List view
-          would be the decorative-control failure this app keeps rooting out. */}
-      {view === 'map' && <LocationMapOptions />}
+      {/* v5.81, Derek: the map's own actions moved OUT of the header, down
+          beside + Add Pin as a "Map Options" button — see LocationMapOptions.
+          The header keeps the four shared controls and nothing else. */}
       <ControlDropdown
         label="Filter"
         current={filter === 'all' ? undefined : FILTERS.find((f) => f.id === filter)?.label}

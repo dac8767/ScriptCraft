@@ -105,6 +105,40 @@ export function locationLabel(places: LocationPlace[], name: string): string {
   return display || name;
 }
 
+/**
+ * Connecting a location to a pin MOVES it off whatever place held it before
+ * — and a place left with no locations and no pin is unreachable: it shows
+ * as a stray "Unnamed place" row, and whatever was written on it (the
+ * description typed in the List view, say) is stranded there out of sight.
+ *
+ * So the target absorbs what the emptied place was carrying — description
+ * and custom fields it doesn't already have — and the husk is dropped. A
+ * place that still holds a location, or still sits on the map, is never
+ * touched: those are real places the writer put there.
+ */
+export function absorbOrphanPlaces(places: LocationPlace[], targetId: string): LocationPlace[] {
+  const orphans = places.filter((p) => p.id !== targetId && p.scriptNames.length === 0 && p.x === null);
+  if (orphans.length === 0) return places;
+  const kept = places.filter((p) => !orphans.includes(p));
+  return kept.map((p) => {
+    if (p.id !== targetId) return p;
+    let next = p;
+    for (const o of orphans) {
+      if (!next.description.trim() && o.description.trim()) next = { ...next, description: o.description };
+      const missing = o.fields.filter((f) => !next.fields.some((g) => g.label.trim().toUpperCase() === f.label.trim().toUpperCase()));
+      if (missing.length) next = { ...next, fields: [...next.fields, ...missing] };
+    }
+    return next;
+  });
+}
+
+/** The description written for a script location, wherever it lives (v5.81).
+ *  The Locations LIST edits the same text the Map view's sidebar does — one
+ *  description per place, two ways in. */
+export function placeDescription(places: LocationPlace[], name: string): string {
+  return placeForLocation(places, name)?.description ?? '';
+}
+
 /** Drop a new pin. Returns the places and the new place's id. */
 export function addPlaceAt(
   places: LocationPlace[], x: number, y: number,
@@ -311,6 +345,16 @@ export function locationRows<T extends { name: string; sceneIndices: number[] }>
     }
   }
   return rows;
+}
+
+/**
+ * A quarter turn moves the pins with the picture (v5.81). Rotating the map
+ * and leaving the pins on their old fractions would slide every one of them
+ * off its feature — the pin belongs to the PLACE on the map, not to a corner
+ * of the frame. Clockwise: the point (x, y) lands at (1 - y, x).
+ */
+export function rotatePlacesClockwise(places: LocationPlace[]): LocationPlace[] {
+  return places.map((p) => (p.x === null || p.y === null ? p : { ...p, x: 1 - p.y, y: p.x }));
 }
 
 /**

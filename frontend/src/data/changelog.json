@@ -1,5 +1,17 @@
 [
   {
+    "version": "5.81",
+    "date": "2026-08-02",
+    "changes": [
+      "Fixed: a pin appeared above the map instead of where you clicked. Arming \"+ Add Pin\" made the button's row taller, which pushed the map down; placing the pin shrank the row again and the map jumped back up under it. The row's height no longer changes.",
+      "One press of \"+ Add Pin\", one pin — clicking the map otherwise is just a click.",
+      "Map Options moved out of the window header down beside \"+ Add Pin\": Replace Map (from your device or the Asset Manager), Rotate 90 degrees, and Delete Map with a warning first.",
+      "Rotating the map now turns the pins with it, so each one stays on its own feature.",
+      "The map sidebar's lock is a lock/unlock icon with a delete button beside it, and its redundant \"LOCATIONS\" title and count are gone — the window header already says both.",
+      "The Locations list is the same table as Scenes: the location, a drag-resizable Description column, and \"Times used:\". The description is the same one the map sidebar shows, and it now follows its location onto the map instead of being left behind."
+    ]
+  },
+  {
     "version": "5.80",
     "date": "2026-08-02",
     "changes": [
