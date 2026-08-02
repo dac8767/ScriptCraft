@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.78 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.79 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,7 +227,36 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v5.78 — Locations map: six follow-ups (HEAD)
+### v5.79 — connect-to-location, the pin anchor, and cursor placement (HEAD)
+
+Derek's three:
+1. "+ Connect to location" (renamed), listing ALL script locations plus the
+   location GROUPS. `connectTargets()` in utils/locationPlaces (6 tests):
+   every location minus the ones this place already has, each carrying a
+   `from` label when it sits on another pin; groups are the other places
+   that are named or already multi-location, and picking one MERGES. The pin
+   dropdown now renders the SAME list — one connect list, two entry points.
+2. "locking an items position moves the pin off the map." ROOT CAUSE: v5.78
+   anchored the marker with `translate(-100% + 12px)` for right-half pins but
+   never reversed the capsule's children, so the marker (the first child)
+   stayed on the LEFT — a pin stored at 79.9% drew at 63.6%, and locking it
+   (a lock glyph widens the capsule) pushed it to 61.8%. `row-reverse` on
+   .locmap-pin-flip puts the marker at the anchored edge: 79.9% → 80.2%, and
+   locking moves it 0.0%.
+3. "+ Add Pin" is the blue button and ARMS placement — a dashed ghost pin
+   rides the cursor and the click sets it down; Escape cancels.
+
+ONE MORE BUG, found by the check: the guard that swallows a pin-drag's own
+trailing click could outlive the gesture. When a drag ended ON the pin, no
+canvas click ever arrived to clear the flag, so the writer's NEXT genuine
+click was eaten. A time window traded one race for another; the flag is now
+cleared by whichever comes first, the drag's click or the next press.
+
+devtools/mapFixture.mjs — the PNG generator both checks were carrying a copy
+of, now one module (the container restarts, /tmp doesn't survive).
+check-v578 30/30, check-v577 37/37. Gates: tsc 0, 1013 tests, build.
+
+### v5.78 — Locations map: six follow-ups
 
 Derek's list, in his numbers:
 1. One sidebar row per PLACE, not per script location — `locationRows()` in

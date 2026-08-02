@@ -313,6 +313,39 @@ export function locationRows<T extends { name: string; sceneIndices: number[] }>
   return rows;
 }
 
+/**
+ * What "+ Connect to location" offers (v5.79, Derek: "the list should include
+ * all script locations, plus any location groups — locations linked together
+ * with one display name").
+ *
+ * Script locations are ALL of them, not just the unplaced ones: connecting a
+ * location that already sits somewhere else is exactly how a writer says
+ * "actually, that's here". Groups are the other places that stand for more
+ * than their own name — a display name, or several locations already linked —
+ * and picking one MERGES this place into it.
+ */
+export interface ConnectTargets {
+  scriptLocations: Array<{ name: string; scenes: number; from?: string }>;
+  groups: Array<{ id: string; label: string; scriptNames: string[] }>;
+}
+
+export function connectTargets<T extends { name: string; sceneIndices: number[] }>(
+  locations: T[], places: LocationPlace[], selfId: string | null,
+): ConnectTargets {
+  const self = places.find((p) => p.id === selfId);
+  const mine = new Set((self?.scriptNames ?? []).map(key));
+  const scriptLocations = locations
+    .filter((l) => !mine.has(key(l.name)))
+    .map((l) => {
+      const on = places.find((p) => p.id !== selfId && p.scriptNames.some((n) => key(n) === key(l.name)));
+      return { name: l.name, scenes: l.sceneIndices.length, ...(on ? { from: placeLabel(on, l.name) } : {}) };
+    });
+  const groups = places
+    .filter((p) => p.id !== selfId && (p.displayName.trim() !== '' || p.scriptNames.length > 1))
+    .map((p) => ({ id: p.id, label: placeLabel(p, 'Unnamed place'), scriptNames: [...p.scriptNames] }));
+  return { scriptLocations, groups };
+}
+
 /** Script locations not yet on any pin — what the "attach" menu offers. */
 export function unplacedLocations<T extends { name: string }>(locations: T[], places: LocationPlace[]): T[] {
   const taken = new Set(places.filter((p) => p.x !== null).flatMap((p) => p.scriptNames.map(key)));

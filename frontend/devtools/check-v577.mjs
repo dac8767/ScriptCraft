@@ -3,40 +3,9 @@
 // location → merge two locations onto one pin → sidebar display name +
 // custom field. Every step goes through the real UI.
 import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
-import { writeFileSync } from 'fs';
-import { deflateSync } from 'zlib';
+import { writeMapFixture } from './mapFixture.mjs';
 
-// A 800x600 map. Real size matters: DragEvent/pointer coords are integers,
-// so a tiny fixture can't express a fractional position.
-const W = 800, H = 600;
-const raw = Buffer.alloc((W * 4 + 1) * H);
-for (let y = 0; y < H; y++) {
-  const row = y * (W * 4 + 1);
-  for (let x = 0; x < W; x++) {
-    const i = row + 1 + x * 4;
-    raw[i] = 40 + ((x / W) * 120) | 0; raw[i + 1] = 60 + ((y / H) * 90) | 0; raw[i + 2] = 90; raw[i + 3] = 255;
-  }
-}
-const crcTable = [...Array(256)].map((_, n) => {
-  let c = n;
-  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-  return c >>> 0;
-});
-const chunk = (type, data) => {
-  const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
-  const body = Buffer.concat([Buffer.from(type, 'ascii'), data]);
-  let crc = 0xffffffff;
-  for (const b of body) crc = crcTable[(crc ^ b) & 0xff] ^ (crc >>> 8);
-  const crcBuf = Buffer.alloc(4); crcBuf.writeUInt32BE((crc ^ 0xffffffff) >>> 0);
-  return Buffer.concat([len, body, crcBuf]);
-};
-const ihdr = Buffer.alloc(13);
-ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(H, 4); ihdr[8] = 8; ihdr[9] = 6;
-const MAP_PATH = '/tmp/check-v577-map.png';
-writeFileSync(MAP_PATH, Buffer.concat([
-  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-  chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0)),
-]));
+const MAP_PATH = writeMapFixture('/tmp/check-v577-map.png');
 
 const { browser, page } = await launch({ width: 1500, height: 950 });
 let pass = 0, fail = 0;
@@ -121,7 +90,7 @@ try {
     `the pin lands where it was clicked (${pin0.x.toFixed(2)}, ${pin0.y.toFixed(2)})`);
 
   // pick an existing location
-  await menuItem('Add a script location…');
+  await menuItem('Connect to location…');
   const offered = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item-name', (els) => els.map((e) => e.textContent.trim()));
   ok(offered.length > 0, `the dropdown lists the script's locations (${offered.length})`);
   const firstLoc = offered[0];
@@ -137,7 +106,7 @@ try {
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
   const title = await page.$eval('.locmap-pin-menu-title', (e) => e.textContent.trim());
   ok(title === firstLoc, `the dropdown leads with the display name (${title})`);
-  await menuItem('Add a script location…');
+  await menuItem('Connect to location…');
   const second = (await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item-name', (els) => els.map((e) => e.textContent.trim())))[0];
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has(.locmap-pin-menu-item-name)');
   await page.waitForTimeout(250);
@@ -180,7 +149,7 @@ try {
   // A SECOND pin, with its own location, then merged onto the first.
   await clickMap(0.7, 0.7);
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
-  await menuItem('Add a script location…');
+  await menuItem('Connect to location…');
   const thirdLoc = (await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item-name', (els) => els.map((e) => e.textContent.trim())))[0];
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has(.locmap-pin-menu-item-name)');
   await page.waitForTimeout(250);

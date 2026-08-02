@@ -10,7 +10,7 @@ import {
   addPlaceField, setPlaceField, removePlaceField, renameScriptLocation,
   pinnedPlaces, unplacedLocations, placeForLocation, placeLabel, locationLabel,
   migratePins, readPlaces, emptyPlace, nextRotation, rotatedRatio, dropFraction, clampFraction, mergePlaces,
-  locationRows, togglePlaceLock,
+  locationRows, togglePlaceLock, connectTargets,
   type LocationPlace,
 } from './locationPlaces';
 
@@ -384,5 +384,49 @@ describe('lock (v5.78)', () => {
   it('survives a save/load round-trip', () => {
     expect(readPlaces([{ id: 'p1', x: 0.1, y: 0.1, locked: true }])[0].locked).toBe(true);
     expect(readPlaces([{ id: 'p2' }])[0].locked).toBe(false);
+  });
+});
+
+describe('connectTargets — "+ Connect to location" (v5.79)', () => {
+  const loc = (name: string, scenes: number[]) => ({ name, sceneIndices: scenes });
+
+  it('offers EVERY script location, not just the unplaced ones', () => {
+    const places = [place('p1', { scriptNames: ['A'] }), place('p2', { scriptNames: ['B'] })];
+    const t = connectTargets([loc('A', [0]), loc('B', [1]), loc('C', [2])], places, 'p1');
+    expect(t.scriptLocations.map((s) => s.name)).toEqual(['B', 'C']);
+  });
+
+  it('says where a location would be moved FROM', () => {
+    const places = [place('p1', { scriptNames: ['A'] }), place('p2', { scriptNames: ['B'], displayName: 'Bridge' })];
+    const t = connectTargets([loc('A', [0]), loc('B', [1])], places, 'p1');
+    expect(t.scriptLocations[0]).toMatchObject({ name: 'B', from: 'Bridge' });
+  });
+
+  it('leaves out the locations this place already has', () => {
+    const places = [place('p1', { scriptNames: ['A', 'B'] })];
+    expect(connectTargets([loc('A', [0]), loc('B', [1])], places, 'p1').scriptLocations).toEqual([]);
+  });
+
+  it('offers location GROUPS — a display name, or several linked locations', () => {
+    const places = [
+      place('self'),
+      place('g1', { scriptNames: ['A'], displayName: 'Belkadan' }),   // named ⇒ a group
+      place('g2', { scriptNames: ['B', 'C'] }),                       // linked ⇒ a group
+      place('p3', { scriptNames: ['D'] }),                            // just a location
+    ];
+    const t = connectTargets([loc('A', [0]), loc('B', [1]), loc('C', [2]), loc('D', [3])], places, 'self');
+    expect(t.groups.map((g) => g.id)).toEqual(['g1', 'g2']);
+    expect(t.groups[0]).toMatchObject({ label: 'Belkadan', scriptNames: ['A'] });
+  });
+
+  it('never offers the place itself', () => {
+    const places = [place('p1', { displayName: 'Me', scriptNames: ['A', 'B'] })];
+    expect(connectTargets([loc('A', [0])], places, 'p1').groups).toEqual([]);
+  });
+
+  it('copes with no place yet (a row that has never been touched)', () => {
+    const t = connectTargets([loc('A', [0])], [], null);
+    expect(t.scriptLocations.map((s) => s.name)).toEqual(['A']);
+    expect(t.groups).toEqual([]);
   });
 });

@@ -38,7 +38,7 @@ import LocationPinMenu from './LocationPinMenu';
 import { importLocationMap } from './LocationMapOptions';
 import { renameLocationInScript } from '../utils/renameLocationInScript';
 import {
-  pinnedPlaces, unplacedLocations, locationRows, placeLabel, dropFraction, rotatedRatio,
+  pinnedPlaces, locationRows, connectTargets, placeLabel, dropFraction, rotatedRatio,
   type LocationMapImage, type LocationPlace,
 } from '../utils/locationPlaces';
 
@@ -109,11 +109,20 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
   const [mapFailed, setMapFailed] = useState(false);
   /** The sidebar's "connect a script location" list (Derek #3). */
   const [attachTo, setAttachTo] = useState<{ id: string; top: number; left: number } | null>(null);
+  /* v5.79, Derek: "+ Add Pin" arms placement and the pin rides the cursor
+     until a click sets it down — so the writer sees exactly where it will
+     land before committing, rather than finding out afterwards. */
+  const [placing, setPlacing] = useState(false);
+  const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);
   const draggingRef = useRef<{ id: string; moved: boolean; locked: boolean } | null>(null);
   /* A pin drag ends with a mouseup on the MAP, and the browser then fires a
      click on their common ancestor — which dropped a second, unwanted pin
-     wherever the drag was released. This swallows exactly that click. */
-  const swallowNextClickRef = useRef(false);
+     wherever the drag was released. Ignoring map clicks for a moment after a
+     drag swallows exactly that one — but a TIME window is either too short
+     to be sure or long enough to eat a quick genuine click. So the flag is
+     cleared by whichever comes first: the drag's own click, or the next
+     press. It can never outlive one gesture. */
+  const swallowClickRef = useRef(false);
 
   /* ── sizing the map ───────────────────────────────────────────────────
      The stage must be EXACTLY the image's box: that is what makes a pin's
@@ -165,7 +174,14 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
   const hasMap = !!mapImage;
   const importing = hasMap && !mapImage?.rotationLocked;
   const drawnPins = useMemo(() => pinnedPlaces(places, locations.map((l) => l.name)), [places, locations]);
-  const available = useMemo(() => unplacedLocations(locations, places), [locations, places]);
+  const connectable = useMemo(
+    () => connectTargets(locations, places, attachTo?.id ?? null),
+    [locations, places, attachTo],
+  );
+  const menuTargets = useMemo(
+    () => connectTargets(locations, places, menuFor?.id ?? null),
+    [locations, places, menuFor],
+  );
 
   // ── placing and moving pins ──────────────────────────────────────────
   const openMenuAt = (id: string, clientX: number, clientY: number) =>
@@ -175,18 +191,32 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
       left: Math.min(clientX, Math.max(8, window.innerWidth - 250)),
     });
 
-  /* Derek #4: a button, not only a click on the map. It drops the pin in the
-     middle of the view and opens its dropdown, so the flow is the same as a
-     click — then drag it where it belongs (unless it's locked). */
-  const addPinFromButton = useCallback(() => {
+  /* Derek: the button ARMS placement — the pin then follows the cursor over
+     the map and the next click sets it down. Pressing it again (or Escape)
+     calls it off. */
+  const armPin = useCallback(() => {
     if (importing) return;
-    const id = addPin(0.5, 0.5);
-    const r = stageRef.current?.getBoundingClientRect();
-    openMenuAt(id, r ? r.left + r.width / 2 : 200, r ? r.top + r.height / 2 : 200);
-  }, [addPin, importing]);
+    setPlacing((v) => !v);
+    setGhost(null);
+  }, [importing]);
+
+  React.useEffect(() => {
+    if (!placing) return;
+    const off = (e: KeyboardEvent) => { if (e.key === 'Escape') { setPlacing(false); setGhost(null); } };
+    window.addEventListener('keydown', off);
+    return () => window.removeEventListener('keydown', off);
+  }, [placing]);
+
+  /** While armed, the ghost pin tracks the pointer across the map. */
+  const trackGhost = useCallback((e: React.PointerEvent) => {
+    if (!placing || !stageRef.current) return;
+    const target = e.target as HTMLElement;
+    if (!target.closest('.locmap-stage')) { setGhost(null); return; }
+    setGhost(dropFraction(stageRef.current.getBoundingClientRect(), e.clientX, e.clientY));
+  }, [placing]);
 
   const onCanvasClick = useCallback((e: React.MouseEvent) => {
-    if (swallowNextClickRef.current) { swallowNextClickRef.current = false; return; }
+    if (swallowClickRef.current) { swallowClickRef.current = false; return; }
     if (importing || !stageRef.current) return;
     // Only a click on the MAP itself places a pin — not one on a pin, or on
     // the empty canvas around the image.
@@ -194,6 +224,8 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
     if (!target.closest('.locmap-stage') || target.closest('.locmap-pin')) return;
     const { x, y } = dropFraction(stageRef.current.getBoundingClientRect(), e.clientX, e.clientY);
     const id = addPin(x, y);
+    setPlacing(false);
+    setGhost(null);
     openMenuAt(id, e.clientX, e.clientY);
   }, [addPin, importing]);
 
@@ -221,7 +253,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
     const drag = draggingRef.current;
     draggingRef.current = null;
     if (!drag) return;
-    if (drag.moved) swallowNextClickRef.current = true;   // …the drag's own click
+    if (drag.moved) swallowClickRef.current = true;   // …swallow the drag's own click
     else openMenuAt(place.id, e.clientX, e.clientY);
   }, []);
 
@@ -344,14 +376,12 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
                     </div>
                     <button
                       className="locmap-add-field"
-                      disabled={available.length === 0}
-                      title={available.length ? undefined : 'Every location is already placed'}
                       onClick={(e) => {
                         const id = placeFor(row.scriptNames, place);
                         const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
                         if (id) setAttachTo({ id, top: r.bottom + 4, left: r.left });
                       }}
-                    >+ Connect a script location</button>
+                    >+ Connect to location</button>
 
                     <label className="locmap-field-label">Description</label>
                     <textarea
@@ -441,19 +471,25 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
                 </button>
               </div>
             )}
-            {/* Derek #4 */}
             <div className="locmap-actionbar">
-              <button className="locmap-tool-btn" onClick={addPinFromButton} title="Drop a pin in the middle of the map">
-                + Add Pin
-              </button>
+              <button
+                className={`locmap-add-btn locmap-addpin-btn${placing ? ' locmap-addpin-armed' : ''}`}
+                onClick={armPin}
+                title={placing ? 'Click the map to set the pin, or press Escape' : 'Add a pin — it follows the cursor until you click'}
+              >{placing ? 'Click the map to set the pin' : '+ Add Pin'}</button>
               <span className="locmap-pin-count">
-                {drawnPins.length} pinned{drawnPins.length > 0 && ' · click the map to add another'}
+                {drawnPins.length} pinned{placing && ' · Escape to cancel'}
               </span>
             </div>
             <div className="locmap-canvas" ref={canvasRef}>
               <div
-                className={`locmap-scroll${importing ? '' : ' locmap-scroll-placing'}`}
+                className={`locmap-scroll${importing ? '' : ' locmap-scroll-placing'}${placing ? ' locmap-scroll-armed' : ''}`}
                 onClick={onCanvasClick}
+                /* A new press is a new gesture: whatever the last drag left
+                   armed is stale by now. */
+                onPointerDown={() => { swallowClickRef.current = false; }}
+                onPointerMove={trackGhost}
+                onPointerLeave={() => setGhost(null)}
               >
                 <div className="locmap-stage" ref={stageRef} style={stageSize}>
                   {mapFailed ? (
@@ -473,6 +509,17 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
                     </div>
                   )}
 
+                  {/* the pin riding the cursor — not a place yet, just a promise */}
+                  {placing && ghost && (
+                    <div
+                      className={`locmap-pin locmap-pin-ghost${ghost.x > 0.5 ? ' locmap-pin-flip' : ''}`}
+                      style={{ left: `${ghost.x * 100}%`, top: `${ghost.y * 100}%` }}
+                    >
+                      <FaMapMarkerAlt className="locmap-pin-icon" />
+                      <span className="locmap-pin-label">New pin</span>
+                    </div>
+                  )}
+
                   {!importing && drawnPins.map((place) => {
                     const first = place.scriptNames
                       .map((n) => locations.find((l) => l.name.toUpperCase() === n.toUpperCase()))
@@ -481,6 +528,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
                     return (
                       <div
                         key={place.id}
+                        data-place-id={place.id}
                         /* Derek #5: "when I attach a location to a pin, the pin
                            jumps off the screen." The whole capsule used to be
                            CENTRED on the point, so a longer label dragged the
@@ -518,23 +566,49 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
         )}
       </div>
 
-      {/* Derek #3: connect another script location from the SIDEBAR. */}
+      {/* Connect to location — v5.79, Derek: EVERY script location (moving one
+          that already sits elsewhere is how you say "actually, it's here"),
+          plus the location GROUPS, where picking one merges this place into
+          that group. */}
       {attachTo && createPortal(
         <>
           <div className="locmap-menu-veil" onPointerDown={() => setAttachTo(null)} />
           <div className="locmap-pin-menu" style={{ top: attachTo.top, left: attachTo.left }}>
-            <div className="locmap-pin-menu-subhead">Connect which location?</div>
-            {available.length === 0 && <div className="locmap-pin-menu-empty">Every location is already placed.</div>}
-            {available.map((loc) => (
+            <div className="locmap-pin-menu-subhead">Script locations</div>
+            {connectable.scriptLocations.length === 0 && (
+              <div className="locmap-pin-menu-empty">Every location is already here.</div>
+            )}
+            {connectable.scriptLocations.map((loc) => (
               <button
                 key={loc.name}
                 className="locmap-pin-menu-item"
+                title={loc.from ? `Currently on ${loc.from} — this moves it here` : undefined}
                 onClick={() => { attachLocation(attachTo.id, loc.name); setAttachTo(null); }}
               >
                 <span className="locmap-pin-menu-item-name">{loc.name}</span>
-                <span className="locmap-pin-menu-item-count">{loc.sceneIndices.length}</span>
+                {loc.from && <span className="locmap-pin-menu-item-from">on {loc.from}</span>}
+                <span className="locmap-pin-menu-item-count">{loc.scenes}</span>
               </button>
             ))}
+            {connectable.groups.length > 0 && (
+              <>
+                <div className="locmap-pin-menu-sep" />
+                <div className="locmap-pin-menu-subhead">Location groups</div>
+                {connectable.groups.map((g) => (
+                  <button
+                    key={g.id}
+                    className="locmap-pin-menu-item"
+                    title={`Join ${g.label}${g.scriptNames.length ? ` (${g.scriptNames.join(', ')})` : ''}`}
+                    onClick={() => { mergePlaces(attachTo.id, g.id); setAttachTo(null); }}
+                  >
+                    <span className="locmap-pin-menu-item-name">{g.label}</span>
+                    {g.scriptNames.length > 0 && (
+                      <span className="locmap-pin-menu-item-count">{g.scriptNames.length}</span>
+                    )}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
         </>,
         document.body,
@@ -544,7 +618,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
         <LocationPinMenu
           place={menuPlace}
           places={places}
-          available={available}
+          targets={menuTargets}
           pos={{ top: menuFor.top, left: menuFor.left }}
           onAttach={(name) => attachLocation(menuPlace.id, name)}
           onDetach={(name) => detachLocation(name)}

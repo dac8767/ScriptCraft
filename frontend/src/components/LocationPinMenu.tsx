@@ -23,14 +23,17 @@ import { useCallback, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FaRegTrashAlt, FaLock, FaLockOpen } from 'react-icons/fa';
 import { promptDialog } from './ConfirmDialog';
-import { placeLabel, type LocationPlace } from '../utils/locationPlaces';
+import { placeLabel, type LocationPlace, type ConnectTargets } from '../utils/locationPlaces';
 
 interface Props {
   place: LocationPlace;
   /** Every place, so the menu can offer the OTHER pins to merge onto. */
   places: LocationPlace[];
-  /** Script locations not yet on the map — what this pin can adopt. */
-  available: Array<{ name: string; sceneIndices: number[] }>;
+  /** v5.79: the SAME list the sidebar's "+ Connect to location" offers —
+   *  every script location, not just the unplaced ones, so connecting one
+   *  that already sits elsewhere ("actually, it's here") works from the pin
+   *  too, and the item is never dead while the script has locations. */
+  targets: ConnectTargets;
   pos: { top: number; left: number };
   onAttach: (name: string) => void;
   onDetach: (name: string) => void;
@@ -48,7 +51,7 @@ interface Props {
 }
 
 export default function LocationPinMenu({
-  place, places, available, pos,
+  place, places, targets, pos,
   onAttach, onDetach, onCreate, onRenameInScript, onMergeInto, onUnpin, locked, onToggleLock, onClose,
 }: Props) {
   const [sub, setSub] = useState<'none' | 'attach' | 'merge' | 'rename'>('none');
@@ -107,10 +110,10 @@ export default function LocationPinMenu({
           <>
             <button
               className="locmap-pin-menu-item"
-              disabled={available.length === 0}
-              title={available.length ? undefined : 'Every location is already on the map'}
+              disabled={targets.scriptLocations.length === 0}
+              title={targets.scriptLocations.length ? undefined : 'This place already has every location'}
               onClick={() => setSub('attach')}
-            >Add a script location…</button>
+            >Connect to location…</button>
             <button className="locmap-pin-menu-item" onClick={() => { void create(); }}>
               Create a new location…
             </button>
@@ -135,17 +138,36 @@ export default function LocationPinMenu({
 
         {sub === 'attach' && (
           <div className="locmap-pin-menu-list">
-            <div className="locmap-pin-menu-subhead">Add which location?</div>
-            {available.map((loc) => (
+            <div className="locmap-pin-menu-subhead">Script locations</div>
+            {targets.scriptLocations.map((loc) => (
               <button
                 key={loc.name}
                 className="locmap-pin-menu-item"
+                title={loc.from ? `Currently on ${loc.from} — this moves it here` : undefined}
                 onClick={() => { onAttach(loc.name); onClose(); }}
               >
                 <span className="locmap-pin-menu-item-name">{loc.name}</span>
-                <span className="locmap-pin-menu-item-count">{loc.sceneIndices.length}</span>
+                {loc.from && <span className="locmap-pin-menu-item-from">on {loc.from}</span>}
+                <span className="locmap-pin-menu-item-count">{loc.scenes}</span>
               </button>
             ))}
+            {targets.groups.length > 0 && (
+              <>
+                <div className="locmap-pin-menu-sep" />
+                <div className="locmap-pin-menu-subhead">Location groups</div>
+                {targets.groups.map((g) => (
+                  <button
+                    key={g.id}
+                    className="locmap-pin-menu-item"
+                    title={`Join ${g.label}`}
+                    onClick={() => { onMergeInto(g.id); onClose(); }}
+                  >
+                    <span className="locmap-pin-menu-item-name">{g.label}</span>
+                    {g.scriptNames.length > 0 && <span className="locmap-pin-menu-item-count">{g.scriptNames.length}</span>}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
         )}
 

@@ -1,5 +1,16 @@
 [
   {
+    "version": "5.79",
+    "date": "2026-08-01",
+    "changes": [
+      "\"+ Connect to location\" now lists EVERY script location — including ones already on the map, saying which pin they'd move from — plus your location groups, where picking one joins this place to that group.",
+      "The pin dropdown offers the same list, so connecting works the same way from either place.",
+      "Fixed: a pin in the right half of the map drew well left of its own point, and locking it moved it further — it could slide off the map. The marker now sits exactly on its point whichever way the label runs.",
+      "+ Add Pin is a blue button and arms placement: the pin follows the cursor and a click sets it down. Escape cancels.",
+      "Fixed: after dragging a pin, the next click on the map could be ignored."
+    ]
+  },
+  {
     "version": "5.78",
     "date": "2026-08-01",
     "changes": [

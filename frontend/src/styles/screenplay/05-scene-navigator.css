@@ -1261,7 +1261,7 @@
    the capsule flips so the label reaches inward instead of off the edge. */
 .locmap-pin {
   position: absolute;
-  transform: translate(-12px, -100%);
+  transform: translate(calc(-1 * var(--locmap-pin-anchor, 12px)), -100%);
   display: flex; align-items: center; gap: 4px;
   padding: 2px 6px 2px 4px;
   line-height: 1.2;
@@ -1463,7 +1463,17 @@
    with no way to tell the rows apart. */
 .locmap-rail-sub { font-size: 10px; color: var(--fd-text-muted); font-weight: 400; }
 .location-name-sub { font-size: 10px; color: var(--fd-text-muted); font-weight: 400; }
-.locmap-pin-flip { transform: translate(calc(-100% + 12px), -100%); }
+/* v5.79: the flipped capsule must also REVERSE its children, or the marker
+   (the first child) stays on the left while the transform anchors the right
+   edge — a right-half pin drew 16 points of the map away from its own point,
+   and locking it (which widens the capsule by a lock glyph) slid it further.
+   With row-reverse the marker sits at the anchored edge, so the capsule can
+   grow all it likes and the point stays put. */
+.locmap-pin-flip {
+  flex-direction: row-reverse;
+  padding: 2px 4px 2px 6px;
+  transform: translate(calc(-100% + var(--locmap-pin-anchor, 12px)), -100%);
+}
 /* A locked pin says so, and doesn't offer the grab cursor. */
 .locmap-pin-locked { cursor: default; border-style: solid; }
 .locmap-pin-lockmark { flex: 0 0 auto; font-size: 8px; color: var(--fd-text-muted); }
@@ -1512,3 +1522,16 @@
   border-style: solid; border-color: var(--fd-accent); color: var(--fd-accent);
 }
 .locmap-add-field svg { margin-right: 5px; vertical-align: -1px; }
+
+/* ── "+ Add Pin" (v5.79) ───────────────────────────────────────────── */
+/* Derek: the blue button format. Armed, it says what it is waiting for. */
+.locmap-addpin-btn { margin-top: 0; padding: 5px 12px; }
+.locmap-addpin-armed { background: var(--fd-accent); box-shadow: 0 0 0 3px rgba(74, 158, 255, .25); }
+/* Armed, the whole map is a target — the crosshair says so, and the ghost
+   pin shows exactly where the click will land. */
+.locmap-scroll-armed .locmap-stage { cursor: crosshair; }
+.locmap-pin-ghost {
+  pointer-events: none;
+  opacity: .75;
+  border-style: dashed;
+}

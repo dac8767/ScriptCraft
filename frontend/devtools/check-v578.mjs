@@ -1,7 +1,8 @@
 // check-v578 — Derek's six follow-ups on the Locations map.
 import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { writeMapFixture } from './mapFixture.mjs';
 
-const MAP = '/tmp/check-v577-map.png';     // written by check-v577
+const MAP = writeMapFixture('/tmp/check-v577-map.png');
 const { browser, page } = await launch({ width: 1500, height: 950 });
 let pass = 0, fail = 0;
 const ok = (cond, label) => { console.log(`${cond ? '  ✓' : '  ✗ FAIL'} ${label}`); cond ? pass++ : fail++; };
@@ -36,13 +37,33 @@ try {
   const startRows = await rowCount();
 
   // ── 4. "+ Add Pin" ──────────────────────────────────────────────────
-  ok(await page.$('.locmap-actionbar button') !== null, '#4 there is an "+ Add Pin" button');
-  await page.click('.locmap-actionbar button');
+  ok(await page.$('.locmap-addpin-btn') !== null, '#4 there is a blue "+ Add Pin" button');
+  const blue = await page.$eval('.locmap-addpin-btn', (el) => getComputedStyle(el).backgroundColor);
+  ok(blue !== 'rgba(0, 0, 0, 0)' && blue !== 'transparent', `#4 in the blue button format (${blue})`);
+  await page.click('.locmap-addpin-btn');
+  await page.waitForTimeout(200);
+  ok((await places()).length === 0, '#4 arming does NOT place a pin yet');
+
+  // the pin rides the cursor
+  const b0 = await stageBox();
+  await page.mouse.move(b0.x + b0.w * 0.4, b0.y + b0.h * 0.4);
+  await page.waitForTimeout(150);
+  const ghost = await page.$('.locmap-pin-ghost');
+  ok(ghost !== null, '#4 a ghost pin follows the cursor');
+  const g1 = await page.$eval('.locmap-pin-ghost', (el) => el.getBoundingClientRect().x);
+  await page.mouse.move(b0.x + b0.w * 0.6, b0.y + b0.h * 0.4);
+  await page.waitForTimeout(150);
+  const g2 = await page.$eval('.locmap-pin-ghost', (el) => el.getBoundingClientRect().x);
+  ok(Math.abs(g2 - g1) > 50, `#4 and it moves with the cursor (${Math.round(g1)} → ${Math.round(g2)})`);
+
+  // clicking sets it
+  await page.mouse.click(b0.x + b0.w * 0.5, b0.y + b0.h * 0.5);
   await page.waitForTimeout(250);
-  ok((await places()).length === 1, '#4 the button drops a pin');
-  ok(await page.$('.locmap-pin-menu') !== null, '#4 and opens its dropdown');
+  ok((await places()).length === 1, '#4 clicking the map sets the pin');
+  ok(await page.$('.locmap-pin-ghost') === null, '#4 and the ghost is gone');
+  ok(await page.$('.locmap-pin-menu') !== null, '#4 the new pin opens its dropdown');
   const centred = (await places())[0];
-  ok(Math.abs(centred.x - 0.5) < 0.01 && Math.abs(centred.y - 0.5) < 0.01, '#4 in the middle of the map');
+  ok(Math.abs(centred.x - 0.5) < 0.03 && Math.abs(centred.y - 0.5) < 0.03, '#4 where the cursor was');
 
   // ── 5. attaching must NOT move the marker ───────────────────────────
   await page.mouse.click(5, 5);                       // close the menu
@@ -67,7 +88,7 @@ try {
   const beforeAttach = await markerAt();
   await page.click('.locmap-pin');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
-  await menuItem('Add a script location…');
+  await menuItem('Connect to location…');
   const attached = (await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item-name', (e) => e.map((x) => x.textContent.trim())))[0];
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has(.locmap-pin-menu-item-name)');
   await page.waitForTimeout(300);
@@ -79,7 +100,7 @@ try {
   // ── 1. one sidebar row per PLACE ────────────────────────────────────
   await page.click('.locmap-pin');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
-  await menuItem('Add a script location…');
+  await menuItem('Connect to location…');
   const second = (await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item-name', (e) => e.map((x) => x.textContent.trim())))[0];
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has(.locmap-pin-menu-item-name)');
   await page.waitForTimeout(300);
@@ -97,7 +118,7 @@ try {
     `#2 the expanded row lists both script locations (${listed.join(', ')})`);
 
   // ── 3. connect another script location FROM THE SIDEBAR ─────────────
-  await page.click('.locmap-rail-detail .locmap-add-field:has-text("Connect a script location")');
+  await page.click('.locmap-rail-detail .locmap-add-field:has-text("Connect to location")');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
   const third = (await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item-name', (e) => e.map((x) => x.textContent.trim())))[0];
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has(.locmap-pin-menu-item-name)');
@@ -123,6 +144,62 @@ try {
   ok((await places())[0].locked === false, '#6 and unlocks it again');
   await dragPinTo(0.75, 0.7);
   ok(Math.abs((await places())[0].x - 0.75) < 0.05, '#6 an unlocked pin drags normally again');
+  // ── v5.79 #2: a pin in the RIGHT half draws on its own point, and
+  //             locking it (which widens the capsule) doesn't move it ──
+  const b4 = await stageBox();
+  const idsBefore = new Set((await places()).map((p) => p.id));
+  await page.click('.locmap-addpin-btn');
+  await page.mouse.click(b4.x + b4.w * 0.85, b4.y + b4.h * 0.35);
+  await page.waitForTimeout(250);
+  await menuItem('Connect to location…');
+  await page.click('.locmap-pin-menu .locmap-pin-menu-item:has(.locmap-pin-menu-item-name)');
+  await page.waitForTimeout(300);
+  // by ID, not by position — an earlier pin was dragged into the right half too
+  const rightPin = (await places()).find((p) => !idsBefore.has(p.id));
+  const drawnAt = await page.evaluate((id) => {
+    const el = [...document.querySelectorAll('.locmap-pin')].find((n) => n.dataset.placeId === id);
+    const s = el.closest('.locmap-stage').getBoundingClientRect();
+    const m = el.querySelector('.locmap-pin-icon').getBoundingClientRect();
+    return Math.round(((m.left + m.width / 2) - s.left) / s.width * 1000) / 10;
+  }, rightPin.id);
+  ok(Math.abs(drawnAt - rightPin.x * 100) < 1.5,
+    `#2 a right-half pin draws ON its point (stored ${(rightPin.x * 100).toFixed(1)}%, drawn ${drawnAt}%)`);
+  await page.evaluate((id) => window.__scStore.getState().toggleLocationPlaceLock(id), rightPin.id);
+  await page.waitForTimeout(300);
+  const afterLock = await page.evaluate((id) => {
+    const el = [...document.querySelectorAll('.locmap-pin')].find((n) => n.dataset.placeId === id);
+    const s = el.closest('.locmap-stage').getBoundingClientRect();
+    const m = el.querySelector('.locmap-pin-icon').getBoundingClientRect();
+    return Math.round(((m.left + m.width / 2) - s.left) / s.width * 1000) / 10;
+  }, rightPin.id);
+  ok(Math.abs(afterLock - drawnAt) < 0.5, `#2 and LOCKING it does not move it (${drawnAt}% → ${afterLock}%)`);
+
+  // ── v5.79 #1: "+ Connect to location" lists every script location AND
+  //             the location groups ────────────────────────────────────
+  // A GROUP is "locations linked together with one display name" — give the
+  // other pin a display name so one exists to be offered.
+  await page.evaluate((id) => window.__scStore.getState().updateLocationPlace(id, { displayName: 'The Bridge' }), rightPin.id);
+  await page.waitForTimeout(250);
+
+  // (the row may already be open from the earlier assertions — clicking an
+  //  open row closes it, so only open it if it isn't)
+  if (!(await page.$('.locmap-rail-detail'))) await page.click('.locmap-rail-row:has(.locmap-rail-badge)');
+  await page.waitForSelector('.locmap-rail-detail', { timeout: 5000 });
+  const connectBtn = await page.$eval('.locmap-rail-detail .locmap-add-field', (e) => e.textContent.trim());
+  ok(connectBtn === '+ Connect to location', `#1 the button reads "${connectBtn}"`);
+  await page.click('.locmap-rail-detail .locmap-add-field:has-text("Connect to location")');
+  await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
+  const heads = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-subhead', (e) => e.map((x) => x.textContent.trim()));
+  ok(heads.includes('Script locations') && heads.includes('Location groups'),
+    `#1 the list has both sections (${heads.join(' / ')})`);
+  const groupNames = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item-name', (e) => e.map((x) => x.textContent.trim()));
+  ok(groupNames.includes('The Bridge'), `#1 and the group is offered by its display name (${groupNames.join(', ')})`);
+  const offered = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item-name', (e) => e.map((x) => x.textContent.trim()));
+  const alreadyPlaced = (await places()).filter((p) => p.x !== null).flatMap((p) => p.scriptNames);
+  ok(offered.some((o) => alreadyPlaced.includes(o)),
+    `#1 including locations that are already on the map (${offered.join(', ')})`);
+  const fromHints = await page.$$eval('.locmap-pin-menu-item-from', (e) => e.map((x) => x.textContent.trim()));
+  ok(fromHints.length > 0, `#1 and it says where one would move from (${fromHints.join(', ')})`);
 } catch (e) {
   console.log('  ✗ SCRIPT ERROR:', e.message);
   fail++;
