@@ -77,11 +77,16 @@ async function run(label, { map, w, h, fullscreen = true, rotate = false }) {
   await browser.close();
 }
 
-await run('1731×1113 square', { map: 'square', w: 1731, h: 1113 });
-await run('tall map', { map: 'tall', w: 1440, h: 900 });
-await run('wide map', { map: 'wide', w: 1200, h: 1000 });
-await run('rotated 90°', { map: 'square', w: 1440, h: 900, rotate: true });
-await run('floating window', { map: 'square', w: 1440, h: 900, fullscreen: false });
+/* Each shape drives its OWN browser, so they have nothing to share and no
+   reason to queue: running them together turns the sum of five waits into
+   one. (The suite's wall time is its slowest FILE — this file was it.) */
+await Promise.all([
+  run('1731×1113 square', { map: 'square', w: 1731, h: 1113 }),
+  run('tall map', { map: 'tall', w: 1440, h: 900 }),
+  run('wide map', { map: 'wide', w: 1200, h: 1000 }),
+  run('rotated 90°', { map: 'square', w: 1440, h: 900, rotate: true }),
+  run('floating window', { map: 'square', w: 1440, h: 900, fullscreen: false }),
+]);
 console.log(`\ncheck-v582: ${pass} passed, ${fail} failed`);
 
 // A press that wobbles (every trackpad click) must still be a PRESS: the pin

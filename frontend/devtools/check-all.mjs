@@ -17,6 +17,7 @@ import { cpus } from 'os';
 
 const args = process.argv.slice(2);
 const serial = args.includes('--serial');
+const jobsArg = args.find((a) => a.startsWith('--jobs='));
 const picks = args.filter((a) => !a.startsWith('--'));
 
 const files = readdirSync(new URL('.', import.meta.url))
@@ -24,9 +25,13 @@ const files = readdirSync(new URL('.', import.meta.url))
   .filter((f) => picks.length === 0 || picks.some((p) => f.includes(p)))
   .sort();
 
-/* Each check drives a real browser, so the cap is about CPU, not politeness.
-   Half the cores keeps the machine usable and still finishes in one wave. */
-const LIMIT = serial ? 1 : Math.max(2, Math.min(files.length, Math.floor(cpus().length / 2)));
+/* A check spends most of its life WAITING — for the page to settle, for a
+   selector, for an animation — not burning CPU. So the useful concurrency is
+   higher than the core count suggests; measured on this 4-core box, 4 at a
+   time beats 2. --jobs=N to override. */
+const LIMIT = serial ? 1
+  : jobsArg ? Math.max(1, +jobsArg.split('=')[1] || 1)
+  : Math.max(2, Math.min(files.length, cpus().length));
 
 const run = (file) => new Promise((resolve) => {
   const started = Date.now();

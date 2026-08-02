@@ -122,3 +122,49 @@ chats (see `docs/AREA-MAP.md`).
 4. Tier 2 dead CSS, cluster-by-cluster
 5. Tier 3 `<Modal>` + small dedups
 6. Slice `editorStore` + extract `ScreenplayEditor` hooks (Tier 4) — unlocks full parallelism
+
+---
+
+## v5.85 — why a round takes as long as it does (measured, 4-core box)
+
+Derek: "updates are getting slow again."
+
+| step | cost |
+|---|---|
+| `npx tsc -b` | 17s |
+| `npm test` (1055 tests) | 39s |
+| `npm run build` (runs tsc again) | 21s |
+| ONE browser check, 3 assertions | 7.3s — of which ~6s is fixed boot |
+| all 66 `check-*.mjs`, serially | ~15 min |
+
+**The fixed cost is the whole story.** Every check launches a browser, loads
+the app, seeds a script and opens a tool before it asserts anything — about
+6s — and there are 66 of them. The assertions themselves are nearly free.
+
+### What changed
+
+- **`devtools/check-all.mjs`** runs the files CONCURRENTLY and warms the dev
+  server first (Vite compiles on demand; without a warm-up several checks
+  each pay the same cold compile). 933s of work → 490s wall.
+- **Targeted runs**: `node devtools/check-all.mjs v581 v585` — 6 files in 77s
+  instead of 15 minutes. Iterate targeted; run the suite once before pushing.
+- **The suite's wall time is its slowest FILE**, not its total. check-v582
+  drove seven browser sessions back to back and set the floor at 62s; its
+  independent scenarios now run together — 39s, and the whole suite's floor
+  drops with it. Keep a check file to one browser session, or Promise.all
+  the sessions inside it.
+- Concurrency past ~4 buys nothing here (77s at 4 jobs, 80s at 6): the long
+  pole is one file, not the queue.
+
+### Still on the table
+
+- **~6s of boot per check, 66 times over.** One browser serving many checks
+  from a pre-seeded snapshot would take a large bite out of ~400s of pure
+  setup. It means reworking every check's preamble, so it wants doing once,
+  deliberately.
+- **48 assertions across the older checks fail because the app deliberately
+  changed** (Pages tabs in v567/v571, the display-name-in-the-list that v5.85
+  reverses). Each stale selector costs a 30s timeout as well as trust. Triage:
+  repair what still describes the app, retire what does not.
+- `npm run build` re-runs `tsc -b`. Running both is 17s of duplicate work —
+  build alone is the gate.
