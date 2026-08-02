@@ -179,3 +179,54 @@ console.log(`\ncheck-v582 total: ${pass} passed, ${fail} failed`);
   await browser.close();
 }
 console.log(`\ncheck-v582 with the v5.83 guard: ${pass} passed, ${fail} failed`);
+
+/* ── every reading lying (v5.84) ──────────────────────────────────────
+   pickFraction saves the day when ONE reading is wrong. This is the harder
+   case Derek's app seems to be in: the stage's geometry is misreported to
+   BOTH the rect and the layout route, and the offsets are unavailable. The
+   pin is then placed wrong — and must correct itself onto the click by
+   looking at where it actually landed.                                    */
+{
+  const { browser, page } = await launch({ width: 1731, height: 1113 });
+  try {
+    await boot(page); await seedScript(page, SCENES_4); await openTool(page, 'Locations');
+    await page.click('button[title="Fullscreen"]'); await page.waitForSelector('.fs-tool-takeover');
+    await page.waitForTimeout(300);
+    if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]').catch(() => {});
+    await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")').catch(() => {});
+    await page.waitForSelector('.locmap', { timeout: 8000 });
+    await page.setInputFiles('.locmap input[type="file"]', MAPS.square);
+    await page.waitForSelector('.locmap-import-bar', { timeout: 8000 });
+    await page.click('.locmap-import-confirm');
+    await page.waitForTimeout(400);
+    const b = await page.$eval('.locmap-stage', (el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+    // sabotage EVERY route: the stage and its scroll parent both report a
+    // top 400px low, and the map image takes clicks again so the offsets
+    // are measured against the wrong element.
+    await page.evaluate(() => {
+      for (const sel of ['.locmap-stage', '.locmap-scroll']) {
+        const el = document.querySelector(sel);
+        const real = el.getBoundingClientRect.bind(el);
+        Object.defineProperty(el, 'getBoundingClientRect', {
+          value: () => { const r = real(); return new DOMRect(r.x, r.y + 400, r.width, r.height); },
+        });
+      }
+      document.querySelector('.locmap-img-wrap').style.pointerEvents = 'auto';
+    });
+    const cx = Math.round(b.x + b.w * 0.34), cy = Math.round(b.y + b.h * 0.33);
+    await page.click('.locmap-addpin-btn');
+    await page.mouse.click(cx, cy);
+    await page.waitForTimeout(500);
+    const res = await page.evaluate(() => {
+      const pin = document.querySelector('.locmap-pin:not(.locmap-pin-ghost)');
+      const m = pin?.querySelector('.locmap-pin-icon')?.getBoundingClientRect();
+      const p = window.__scStore.getState().locationPlaces.filter((q) => q.x !== null).pop();
+      return { tip: m ? [Math.round(m.left + m.width / 2), Math.round(m.bottom)] : null,
+               stored: [Math.round(p.x * 1000) / 1000, Math.round(p.y * 1000) / 1000] };
+    });
+    ok(res.stored[1] > 0.05, `with every reading lying, the pin does not sit on the top edge (y ${res.stored[1]})`);
+    ok(Math.abs(res.tip[1] - cy) <= 6, `it corrects itself onto the click (Δy ${res.tip[1] - cy})`);
+  } catch (e) { console.log('  ✗ SCRIPT ERROR (all lying):', e.message); fail++; }
+  await browser.close();
+}
+console.log(`\ncheck-v582 with the v5.84 self-correction: ${pass} passed, ${fail} failed`);

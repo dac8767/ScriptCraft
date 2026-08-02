@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.84",
+    "date": "2026-08-02",
+    "changes": [
+      "A new pin now checks itself: after it is drawn, the app compares where the marker actually is against where you clicked, and moves it onto the click if they differ. It no longer matters which measurement of the map is wrong.",
+      "Temporary: the map shows a small readout of the last placement's numbers. It is there to identify a fault that cannot be reproduced outside Derek's machine, and comes out once it has."
+    ]
+  },
+  {
     "version": "5.83",
     "date": "2026-08-02",
     "changes": [
