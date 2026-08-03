@@ -32,7 +32,8 @@ import { FullscreenIcon, CloseIcon, RestoreIcon } from './uiIcons';
 import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
 import { showToast } from './Toast';
 import { useProjectStore } from '../stores/projectStore';
-import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, PagesControls, usePagesTabs, LocationsTitleExtra, LocationsControls, StructureTitleExtra, type NavTab } from './SceneNavigator';
+import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, PagesControls, usePagesTabs, LocationsTitleExtra, LocationsControls, StructureTitleExtra, visibleLocations, groupByLocation, type NavTab } from './SceneNavigator';
+import LocationMapRail from './LocationMapRail';
 import NavigatorTool, { NavigatorControls } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
 import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
@@ -459,7 +460,7 @@ export function ToolFullscreenTakeover({ editor, scrollContainer }: {
         />
       </div>
       <div className="fs-tool-takeover-body">
-        <ToolContent id={id} editor={editor} scrollContainer={scrollContainer} />
+        <ToolContent id={id} editor={editor} scrollContainer={scrollContainer} inTakeover />
       </div>
     </div>
   );
@@ -492,8 +493,10 @@ export const dockWidthFor = (
 /** Shared tool-content renderer (docked and temporary windows).
  *  (v5.67: the onClose prop is gone — its one reader was the hosted Title
  *  Page modal, retired into the Pages window's tab.) */
-export function ToolContent({ id, editor, scrollContainer }: {
+export function ToolContent({ id, editor, scrollContainer, inTakeover = false }: {
   id: ToolId; editor: Editor | null; scrollContainer?: HTMLDivElement | null;
+  /** True inside the fullscreen takeover — a body may render differently there. */
+  inTakeover?: boolean;
 }) {
   const { currentProject } = useProjectStore();
   switch (id) {
@@ -506,7 +509,7 @@ export function ToolContent({ id, editor, scrollContainer }: {
     case 'pages':
     case 'structure':
     case 'locations':
-      return <SceneNavigator editor={editor} scrollContainer={scrollContainer} view={id as NavTab} />;
+      return <SceneNavigator editor={editor} scrollContainer={scrollContainer} view={id as NavTab} inTakeover={inTakeover} />;
     case 'characters':
       return <CharacterProfiles editor={editor} projectId={currentProject?.id || ''} embedded />;
     case 'assets':
@@ -747,6 +750,39 @@ interface ToolDockProps {
   scrollContainer?: HTMLDivElement | null;
 }
 
+
+/** v5.97, Derek: the Locations window fullscreen ON THE MAP puts its rail
+ *  here, in the side panel — the way the Scrapbook's navigator shows while
+ *  its surface owns the editor. Rendered by the dock DIRECTLY rather than
+ *  by activating the locations tool, because entering a panel slot clears
+ *  fullscreen (openFromRow's own comment explains that machinery) — the two
+ *  states fight, and this panel is about where the rail STANDS, not about
+ *  which tool is open. */
+function FullscreenMapRailPanel() {
+  const scenes = useEditorStore((s) => s.scenes);
+  const search = useEditorStore((s) => s.locationSearch);
+  const filter = useEditorStore((s) => s.locationFilter);
+  const sort = useEditorStore((s) => s.locationSort);
+  const group = useEditorStore((s) => s.locationGroupFilter);
+  const places = useEditorStore((s) => s.locationPlaces);
+  const nameUpper = useEditorStore((s) => s.panelNameCase === 'upper');
+  const all = React.useMemo(() => groupByLocation(scenes), [scenes]);
+  const locations = React.useMemo(
+    () => visibleLocations(all, { search, filter, sort, places, group }),
+    [all, search, filter, sort, places, group],
+  );
+  return (
+    <div className="tool-inline tool-inline-solo locmap-rail-panel" data-tool="locations-rail">
+      <div className="tool-inline-header">
+        <span className={`tool-dock-label${nameUpper ? ' tool-name-upper' : ''}`}>Locations</span>
+      </div>
+      <div className="tool-inline-body locmap-rail-panel-body">
+        <LocationMapRail locations={locations} standalone />
+      </div>
+    </div>
+  );
+}
+
 export default function ToolDock({ side, editor, scrollContainer }: ToolDockProps) {
   const nameUpper = useEditorStore((s) => s.panelNameCase === 'upper');
   const {
@@ -793,6 +829,8 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   // chevron. `activeId` still decides which tool renders INLINE in this panel —
   // a different question, and a side-specific one.
   const { toolSizes, setToolSize, toolMode, setToolMode, panelSizeMode, chromeCustomPx, setChromeCustomPx, setPanelSizeMode, uiResizeLocked, panelItemScale, isToolOpen, closeTool } = useEditorStore();
+  const fsTool = useEditorStore((s) => s.fullscreenTool);
+  const locationsTabNow = useEditorStore((s) => s.locationsTab);
   const dockW = dockWidthFor(side, panelSizeMode[side], chromeCustomPx[side === 'left' ? 'panelLeft' : 'panelRight']);
   // v0.66: by DEFAULT every window opens INSIDE its side panel (inline),
   // pushing the dock's remaining items down — so nothing floats over the
@@ -1066,6 +1104,8 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
       // v2.77: the edge's vertical axis scales the dock items via this var.
       style={{ ['--dock-scale' as string]: itemScale }}
     >
+      {/* v5.97: fullscreen map — the rail stands in this panel. */}
+      {side === 'left' && fsTool === 'locations' && locationsTabNow === 'map' && <FullscreenMapRailPanel />}
       {/* v2.55: the sizing lock removes the grab edge — no dead controls. */}
       {!uiResizeLocked && (
         <div

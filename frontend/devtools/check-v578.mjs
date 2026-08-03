@@ -1,5 +1,5 @@
 // check-v578 — Derek's six follow-ups on the Locations map.
-import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle, dismiss } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 
 /* Switch the Locations window's View dropdown. */
@@ -74,7 +74,7 @@ try {
   ok(Math.abs(centred.x - 0.5) < 0.03 && Math.abs(centred.y - 0.5) < 0.03, '#4 where the cursor was');
 
   // ── 5. attaching must NOT move the marker ───────────────────────────
-  await page.mouse.click(5, 5);                       // close the menu
+  await dismiss(page);
   await settle(page);
   // put the pin near the left edge, where the old bug pushed it off
   const box = await stageBox();
@@ -139,9 +139,14 @@ try {
   // ── 3. connect another script location FROM THE SIDEBAR ─────────────
   /* v5.85: "Connect to location" moved out of the expanded detail into the
      row's MAP-icon menu. */
-  await page.mouse.click(6, 6).catch(() => {});
+  await dismiss(page);
   await settle(page);
-  await page.click('.locmap-rail-detail button[title="Map options"]');
+  if (!(await page.$('.locmap-rail-detail'))) {
+    await page.click('.locmap-rail-row:has(.locmap-rail-badge) .locmap-rail-name');
+    await page.waitForSelector('.locmap-rail-detail', { timeout: 5000 });
+    await settle(page);
+  }
+  await page.click('.locmap-rail-detail button:has-text("Map Options")');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:text-is("Connect to location…")');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
@@ -153,9 +158,9 @@ try {
 
   // ── 6. the lock, from the sidebar AND the pin dropdown ──────────────
   /* v5.85: the lock lives in the row's PIN-icon menu now. */
-  await page.mouse.click(6, 6).catch(() => {});
+  await dismiss(page);
   await settle(page);
-  await page.click('.locmap-rail-detail button[title="Pin options"]');
+  await page.click('.locmap-rail-detail button:has-text("Pin Options")');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has-text("Lock pin")');
   await settle(page);
@@ -215,17 +220,17 @@ try {
   //  open row closes it, so only open it if it isn't)
   if (!(await page.$('.locmap-rail-detail'))) await page.click('.locmap-rail-row:has(.locmap-rail-badge)');
   await page.waitForSelector('.locmap-rail-detail', { timeout: 5000 });
-  await page.mouse.click(6, 6).catch(() => {});
+  await dismiss(page);
   await settle(page);
-  await page.click('.locmap-rail-detail button[title="Map options"]');
+  await page.click('.locmap-rail-detail button:has-text("Map Options")');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
   const connectBtn = await page.$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.textContent.trim());
   ok(connectBtn === 'Connect to location…', `#1 the map menu leads with "${connectBtn}"`);
   /* v5.85: "Connect to location" moved out of the expanded detail into the
      row's MAP-icon menu. */
-  await page.mouse.click(6, 6).catch(() => {});
+  await dismiss(page);
   await settle(page);
-  await page.click('.locmap-rail-detail button[title="Map options"]');
+  await page.click('.locmap-rail-detail button:has-text("Map Options")');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:text-is("Connect to location…")');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });

@@ -2,7 +2,7 @@
 // View dropdown (not tabs) → import → rotate → lock → click to pin → pick a
 // location → merge two locations onto one pin → sidebar display name +
 // custom field. Every step goes through the real UI.
-import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle, dismiss } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 
 const MAP_PATH = writeMapFixture('/tmp/check-v577-map.png');
@@ -89,7 +89,7 @@ try {
   const opts = await page.$$eval('.char-upload-menu .char-upload-menu-item', (els) => els.map((e) => e.textContent.trim()));
   ok(JSON.stringify(opts) === JSON.stringify(['Replace Map', 'Rotate 90 degrees', 'Delete Map']),
     `options offer the map actions (${opts.join(' · ')})`);
-  await page.mouse.click(5, 5);
+  await dismiss(page);
   await settle(page);
 
   // ── 4. click the map → a pin + its dropdown ─────────────────────────
@@ -128,7 +128,7 @@ try {
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
   const listed = await page.$$eval('.locmap-pin-menu-attached-name', (els) => els.map((e) => e.textContent.trim()));
   ok(listed.length === 2, `and the dropdown lists BOTH attached script locations (${listed.join(', ')})`);
-  await page.mouse.click(5, 5);
+  await dismiss(page);
   await settle(page);
 
   // ── 6. the fields live in the LIST panel now (v5.96, Derek: "the
@@ -139,9 +139,12 @@ try {
   await page.waitForSelector('.locplace-details', { timeout: 5000 });
   ok(true, 'expanding a list row reveals the place details');
   const labels = await page.$$eval('.locplace-details .locmap-field-label', (els) => els.map((e) => e.textContent.trim()));
-  ok(labels.includes('Display Name') && labels.includes('Description'),
+  ok(labels.includes('Location Group') && labels.includes('Description'),
     `it reveals the fields (${labels.join(', ')})`);
+  /* v5.97: a group is CREATED, not typed into thin air. */
+  await page.click('.locplace-details button:has-text("Create a group")');
   await page.fill('.locplace-details .locmap-field-input', 'Belkadan');
+  await page.keyboard.press('Enter');
   await settle(page);
   const withDisplay = (await state()).places.find((p) => p.scriptNames.includes(firstLoc));
   ok(withDisplay?.displayName === 'Belkadan', 'the display name is stored');

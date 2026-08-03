@@ -1,5 +1,17 @@
 [
   {
+    "version": "5.97",
+    "date": "2026-08-03",
+    "changes": [
+      "The scene list is out of the expanded location row.",
+      "Fullscreen on the map, the location list stands in the side panel — the way the Scrapbook's navigator does — and the map takes the full width.",
+      "\"Display Name\" is \"Location Group\" now: create a group, or add the location to one that exists. Ungroup dissolves the name; the locations stay connected.",
+      "Location custom fields ask their scope, like character fields: this location only, or all locations.",
+      "The filter's INT. and EXT. sit on one row as toggles — selecting one shows only it; neither (or both) shows everything.",
+      "The filter can narrow to a single location group, or to No Group."
+    ]
+  },
+  {
     "version": "5.96",
     "date": "2026-08-03",
     "changes": [

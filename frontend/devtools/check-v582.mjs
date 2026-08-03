@@ -7,7 +7,7 @@
  * two agree: the MENU's corner and the pin's marker must describe the same
  * point, across map shapes and window sizes.
  */
-import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle, dismiss } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 
 const MAPS = {
@@ -35,7 +35,7 @@ async function run(label, { map, w, h, fullscreen = true, rotate = false }) {
       await page.click('.locmap-mapopts-btn');
       await page.click('.locmap-mapopts-menu button:text-is("Rotate 90 degrees")');
       await page.waitForTimeout(400);
-      await page.mouse.click(4, 4).catch(() => {});
+      await dismiss(page);
     }
     const b = await page.$eval('.locmap-stage', (el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
     for (const [fx, fy] of [[0.53, 0.46], [0.12, 0.08], [0.9, 0.93]]) {
@@ -68,7 +68,7 @@ async function run(label, { map, w, h, fullscreen = true, rotate = false }) {
       // the menu is placed from clientX/clientY — pin and menu must agree
       if (res.menu) ok(Math.abs(res.menu[0] - cx) <= 260 && Math.abs(res.menu[1] - (cy + 10)) <= 300,
         `${label} @(${fx},${fy}) the menu opens at the same click`);
-      await page.mouse.click(4, 4).catch(() => {});
+      await dismiss(page);
       await settle(page);
     }
     ok(await page.$eval('.locmap-img-wrap', (el) => getComputedStyle(el).pointerEvents) === 'none',
@@ -109,7 +109,7 @@ console.log(`\ncheck-v582: ${pass} passed, ${fail} failed`);
     await page.click('.locmap-addpin-btn');
     await page.mouse.click(cx, cy);
     await settle(page);
-    await page.mouse.click(4, 4).catch(() => {});
+    await dismiss(page);
     await settle(page);
     const before = await page.evaluate(() => { const p = window.__scStore.getState().locationPlaces[0]; return [Math.round(p.x*1000), Math.round(p.y*1000)]; });
     // press the pin, wobble 2px, release — a trackpad click
@@ -123,7 +123,7 @@ console.log(`\ncheck-v582: ${pass} passed, ${fail} failed`);
     ok(before[0] === after[0] && before[1] === after[1], `a 2px click wobble does not move the pin (${before} → ${after})`);
     ok(await page.$('.locmap-pin-menu') !== null, 'and the press still opens its dropdown');
     // a real drag still moves it
-    await page.mouse.click(4, 4).catch(() => {});
+    await dismiss(page);
     await settle(page);
     await page.mouse.move(pin.x, pin.y);
     await page.mouse.down();

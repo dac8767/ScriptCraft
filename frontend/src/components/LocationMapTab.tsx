@@ -25,10 +25,8 @@
  */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  FaMapMarkerAlt, FaRegImage, FaChevronRight, FaChevronDown, FaUndo, FaRegMap, FaRegEyeSlash,
-  FaLock, FaLockOpen,
+  FaMapMarkerAlt, FaRegImage, FaUndo, FaLock,
 } from 'react-icons/fa';
-import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { resolveImageUrl } from '../utils/imageAsset';
@@ -36,9 +34,10 @@ import { AssetImage } from './CharacterAssetMedia';
 import { showToast } from './Toast';
 import LocationPinMenu from './LocationPinMenu';
 import LocationMapOptions, { importLocationMap } from './LocationMapOptions';
+import LocationMapRail from './LocationMapRail';
 import { renameLocationInScript } from '../utils/renameLocationInScript';
 import {
-  pinnedPlaces, locationRows, connectTargets, placeLabel, dropFraction,
+  pinnedPlaces, connectTargets, placeLabel, dropFraction,
   offsetFraction, rawFraction, pickFraction, rotatedRatio,
   type LocationMapImage, type LocationPlace,
 } from '../utils/locationPlaces';
@@ -49,6 +48,10 @@ interface LocationLike {
 }
 
 interface Props {
+  /** True in the FULLSCREEN takeover: the rail renders in the side panel
+   *  window instead (v5.97, Derek — "just like how the navigator for the
+   *  scrapbook appears in the side panel window"). */
+  hideRail?: boolean;
   /** The window's already filtered/sorted locations — the List view's list. */
   locations: LocationLike[];
   onGoToScene: (sceneIndex: number) => void;
@@ -85,7 +88,7 @@ const MapImage: React.FC<{
   );
 };
 
-const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => {
+const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor, hideRail = false }) => {
   const mapImage = useEditorStore((s) => s.locationMapImage);
   const rotateMap = useEditorStore((s) => s.rotateLocationMap);
   const lockRotation = useEditorStore((s) => s.lockLocationMapRotation);
@@ -98,23 +101,17 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
   const detachLocation = useEditorStore((s) => s.detachLocationFromPlace);
   const mergePlaces = useEditorStore((s) => s.mergeLocationPlaces);
   const toggleLock = useEditorStore((s) => s.toggleLocationPlaceLock);
-  const toggleHidden = useEditorStore((s) => s.toggleLocationPlaceHidden);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [menuFor, setMenuFor] = useState<{ id: string; top: number; left: number } | null>(null);
-  const [expanded, setExpanded] = useState<string | null>(null);
   const [mapFailed, setMapFailed] = useState(false);
   /** The sidebar's "connect a script location" list (Derek #3). */
-  const [attachTo, setAttachTo] = useState<{ id: string; top: number; left: number } | null>(null);
   /* v5.85, Derek: each sidebar row carries two icon buttons — a MAP icon for
      what the place is (connect a location, hide it from the lists) and a PIN
      icon for where it sits (lock, delete). Both open the same small portalled
      menu; `kind` says which set of items it holds. */
-  const [rowMenu, setRowMenu] = useState<
-    { kind: 'map' | 'pin'; rowKey: string; names: string[]; place?: LocationPlace; top: number; left: number } | null
-  >(null);
   /* v5.79, Derek: "+ Add Pin" arms placement and the pin rides the cursor
      until a click sets it down — so the writer sees exactly where it will
      land before committing, rather than finding out afterwards. */
@@ -180,10 +177,6 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
   const hasMap = !!mapImage;
   const importing = hasMap && !mapImage?.rotationLocked;
   const drawnPins = useMemo(() => pinnedPlaces(places, locations.map((l) => l.name)), [places, locations]);
-  const connectable = useMemo(
-    () => connectTargets(locations, places, attachTo?.id ?? null),
-    [locations, places, attachTo],
-  );
   const menuTargets = useMemo(
     () => connectTargets(locations, places, menuFor?.id ?? null),
     [locations, places, menuFor],
@@ -403,22 +396,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
   /* Derek #1: "when multiple script locations are connected to one pin, just
      show that single location in the side panel" — locationRows collapses a
      place's locations into ONE row (utils/locationPlaces, tested there). */
-  const showHidden = useEditorStore((s) => s.showHiddenLocations);
-  const rows = useMemo(
-    () => locationRows(locations, places).filter((r) => showHidden || !r.place?.hidden),
-    [locations, places, showHidden],
-  );
 
-  /** A sidebar row needs a place before it can hold a display name. One is
-   *  made on demand — an untouched location costs nothing in the file. */
-  const placeFor = useCallback((scriptNames: string[], existing?: LocationPlace): string | null => {
-    if (existing) return existing.id;
-    if (scriptNames.length === 0) return null;
-    const id = addPin(0, 0);
-    updatePlaceIn(id, { x: null, y: null });   // it exists, but it isn't on the map
-    scriptNames.forEach((n) => attachLocation(id, n));
-    return id;
-  }, [addPin, updatePlaceIn, attachLocation]);
 
   return (
     <div className="locmap">
@@ -431,72 +409,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
         }}
       />
 
-      {/* ── the sidebar: one row per PLACE, expandable ──────────────── */}
-      <div className="locmap-rail">
-        {/* v5.81, Derek: no "LOCATIONS" title and no count here — the window
-            header carries both, and saying it twice is the duplication this
-            app keeps rooting out. */}
-        <div className="locmap-rail-list">
-          {rows.length === 0 ? (
-            <div className="navigator-empty">
-              No locations yet. Scene headings like &ldquo;INT. COFFEE SHOP - DAY&rdquo; will appear here.
-            </div>
-          ) : rows.map((row) => {
-            const isOpen = expanded === row.key;
-            const place = row.place;
-            const pinned = !!place && place.x !== null;
-            return (
-              <div
-                key={row.key}
-                className={`locmap-rail-item${isOpen ? ' locmap-rail-item-open' : ''}${place?.hidden ? ' locmap-rail-item-hidden' : ''}`}
-              >
-                <div className="locmap-rail-row" onClick={() => setExpanded(isOpen ? null : row.key)}>
-                  <span className="locmap-rail-chevron">{isOpen ? <FaChevronDown /> : <FaChevronRight />}</span>
-                  <FaMapMarkerAlt className={`locmap-rail-icon${pinned ? ' locmap-rail-icon-pinned' : ''}`} />
-                  <span className="locmap-rail-name" title={row.scriptNames.join(', ') || row.label}>{row.label}</span>
-                  {/* A row standing for several script locations says so with
-                      a count, rather than repeating one of their names. */}
-                  {row.scriptNames.length > 1 && (
-                    <span className="locmap-rail-badge" title={row.scriptNames.join(', ')}>{row.scriptNames.length}</span>
-                  )}
-                  {pinned && place?.locked && <FaLock className="locmap-rail-lock" title="This pin is locked" />}
-                  {place?.hidden && <FaRegEyeSlash className="locmap-rail-lock" title="Hidden from the locations list" />}
-                  {row.scenes > 0 && <span className="locmap-rail-scenes">{row.scenes}</span>}
-                </div>
-                {isOpen && (
-                  <div className="locmap-rail-detail">
-                    {/* v5.96, Derek: the options buttons live in the TOP ROW
-                        of the expanded row's body — and the editing fields
-                        that were here moved to the Locations panel
-                        (LocationPlaceDetails). The map keeps pins and
-                        options; the panel keeps knowledge. */}
-                    <div className="locmap-detail-actions">
-                      <button
-                        className="locmap-tool-btn"
-                        title="Map options"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                          setRowMenu({ kind: 'map', rowKey: row.key, names: row.scriptNames, place, top: r.bottom + 4, left: Math.max(8, r.left) });
-                        }}
-                      ><FaRegMap /> Map Options</button>
-                      <button
-                        className="locmap-tool-btn"
-                        title="Pin options"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                          setRowMenu({ kind: 'pin', rowKey: row.key, names: row.scriptNames, place, top: r.bottom + 4, left: Math.max(8, r.left) });
-                        }}
-                      ><FaMapMarkerAlt /> Pin Options</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {!hideRail && <LocationMapRail locations={locations} />}
 
       {/* ── the map ────────────────────────────────────────────────── */}
       <div className="locmap-main">
@@ -633,102 +546,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
         )}
       </div>
 
-      {/* v5.85: the row menus. Two short lists rather than one long one —
-          the map icon is about WHAT the place is, the pin icon about WHERE
-          it sits. */}
-      {rowMenu && createPortal(
-        <>
-          <div className="locmap-menu-veil" onPointerDown={() => setRowMenu(null)} />
-          <div className="locmap-pin-menu" style={{ top: rowMenu.top, left: rowMenu.left }}>
-            {rowMenu.kind === 'map' ? (
-              <>
-                <button
-                  className="locmap-pin-menu-item"
-                  onClick={() => {
-                    const id = placeFor(rowMenu.names, rowMenu.place);
-                    setRowMenu(null);
-                    if (id) setAttachTo({ id, top: rowMenu.top, left: rowMenu.left });
-                  }}
-                >Connect to location…</button>
-                <button
-                  className="locmap-pin-menu-item"
-                  onClick={() => {
-                    const id = placeFor(rowMenu.names, rowMenu.place);
-                    if (id) toggleHidden(id);
-                    setRowMenu(null);
-                  }}
-                >{rowMenu.place?.hidden ? 'Show in locations list' : 'Hide from locations list'}</button>
-              </>
-            ) : (
-              <>
-                <button
-                  className="locmap-pin-menu-item"
-                  disabled={!rowMenu.place || rowMenu.place.x === null}
-                  title={rowMenu.place && rowMenu.place.x !== null ? undefined : 'This location has no pin on the map yet'}
-                  onClick={() => { if (rowMenu.place) toggleLock(rowMenu.place.id); setRowMenu(null); }}
-                >
-                  {rowMenu.place?.locked ? <><FaLock /> Unlock pin&rsquo;s position</> : <><FaLockOpen /> Lock pin&rsquo;s position</>}
-                </button>
-                <button
-                  className="locmap-pin-menu-item locmap-pin-menu-danger"
-                  disabled={!rowMenu.place || rowMenu.place.x === null}
-                  title={rowMenu.place && rowMenu.place.x !== null ? undefined : 'This location has no pin on the map yet'}
-                  onClick={() => { if (rowMenu.place) unpinPlace(rowMenu.place.id); setRowMenu(null); }}
-                >Delete pin</button>
-              </>
-            )}
-          </div>
-        </>,
-        document.body,
-      )}
 
-      {/* Connect to location — v5.79, Derek: EVERY script location (moving one
-          that already sits elsewhere is how you say "actually, it's here"),
-          plus the location GROUPS, where picking one merges this place into
-          that group. */}
-      {attachTo && createPortal(
-        <>
-          <div className="locmap-menu-veil" onPointerDown={() => setAttachTo(null)} />
-          <div className="locmap-pin-menu" style={{ top: attachTo.top, left: attachTo.left }}>
-            <div className="locmap-pin-menu-subhead">Script locations</div>
-            {connectable.scriptLocations.length === 0 && (
-              <div className="locmap-pin-menu-empty">Every location is already here.</div>
-            )}
-            {connectable.scriptLocations.map((loc) => (
-              <button
-                key={loc.name}
-                className="locmap-pin-menu-item"
-                title={loc.from ? `Currently on ${loc.from} — this moves it here` : undefined}
-                onClick={() => { attachLocation(attachTo.id, loc.name); setAttachTo(null); }}
-              >
-                <span className="locmap-pin-menu-item-name">{loc.name}</span>
-                {loc.from && <span className="locmap-pin-menu-item-from">on {loc.from}</span>}
-                <span className="locmap-pin-menu-item-count">{loc.scenes}</span>
-              </button>
-            ))}
-            {connectable.groups.length > 0 && (
-              <>
-                <div className="locmap-pin-menu-sep" />
-                <div className="locmap-pin-menu-subhead">Location groups</div>
-                {connectable.groups.map((g) => (
-                  <button
-                    key={g.id}
-                    className="locmap-pin-menu-item"
-                    title={`Join ${g.label}${g.scriptNames.length ? ` (${g.scriptNames.join(', ')})` : ''}`}
-                    onClick={() => { mergePlaces(attachTo.id, g.id); setAttachTo(null); }}
-                  >
-                    <span className="locmap-pin-menu-item-name">{g.label}</span>
-                    {g.scriptNames.length > 0 && (
-                      <span className="locmap-pin-menu-item-count">{g.scriptNames.length}</span>
-                    )}
-                  </button>
-                ))}
-              </>
-            )}
-          </div>
-        </>,
-        document.body,
-      )}
 
       {menuFor && menuPlace && (
         <LocationPinMenu

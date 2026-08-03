@@ -31,6 +31,10 @@ export interface SceneNavSlice {
   /** 'all' | 'int' | 'ext' — read off each scene heading's prefix. */
   locationFilter: LocationFilter;
   setLocationFilter: (v: LocationFilter) => void;
+  /** v5.97: filter to one location group — a place id, 'no-group' for the
+   *  ungrouped, or null for everything. */
+  locationGroupFilter: string | null;
+  setLocationGroupFilter: (v: string | null) => void;
   /** 'scene' = first appearance — the order you meet the locations reading
    *  the script, which is the order the list has always used. v4.93, Derek
    *  named it "scene order"; it was labelled "Script order" before, and the
@@ -91,7 +95,9 @@ export interface SceneNavSlice {
   setScenesTableMinW: (v: number) => void;
 }
 
-export type LocationFilter = 'all' | 'int' | 'ext';
+/** v5.97, Derek: INT./EXT. are independent toggles on one row — selecting
+ *  one means "only show this"; neither (or both) shows everything. */
+export type LocationFilter = { int: boolean; ext: boolean };
 export type LocationSort = 'scene' | 'name' | 'count';
 /** v5.71: + 'all' — the All Pages tab compiles the other three (title page,
  *  script pages and custom pages in document order). Ids persist; labels are
@@ -134,8 +140,10 @@ export const createSceneNavSlice: StateCreator<EditorState, [], [], SceneNavSlic
   setNavShowKinds: (v) => set({ navShowKinds: v }),
   locationSearch: '',
   setLocationSearch: (v) => set({ locationSearch: v }),
-  locationFilter: 'all',
+  locationFilter: { int: false, ext: false },
   setLocationFilter: (v) => set({ locationFilter: v }),
+  locationGroupFilter: null,
+  setLocationGroupFilter: (v) => set({ locationGroupFilter: v }),
   locationSort: 'scene',
   setLocationSort: (v) => set({ locationSort: v }),
   pagesSearch: '',

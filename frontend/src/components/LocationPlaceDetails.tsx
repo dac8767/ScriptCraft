@@ -15,24 +15,27 @@
  * A row needs a place before it can hold any of this; one is made on demand
  * (unpinned — x/y null), so an untouched location costs nothing in the file.
  */
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FaTimes, FaRegTrashAlt } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { usePopup } from '../hooks/usePopup';
-import { promptDialog } from './ConfirmDialog';
+import { promptWithCheckbox } from './ConfirmDialog';
 import { connectTargets, type LocationPlace } from '../utils/locationPlaces';
 
 interface Props {
   /** The visible (filtered/sorted) locations — what the connect menu offers. */
   locations: Array<{ name: string; sceneIndices: number[] }>;
+  /** EVERY script location — "apply to all locations" means all of them,
+   *  not just the ones the current filter lets through. */
+  allLocations?: Array<{ name: string; sceneIndices: number[] }>;
   /** The script locations this row stands for (one, unless it is a group). */
   scriptNames: string[];
   /** The row's place, if it already has one. */
   place?: LocationPlace;
 }
 
-export const LocationPlaceDetails: React.FC<Props> = ({ locations, scriptNames, place }) => {
+export const LocationPlaceDetails: React.FC<Props> = ({ locations, scriptNames, place, allLocations = locations }) => {
   /* The details are the PLACE's, not the row's: a place holding two script
      locations shows both, whichever of its rows was expanded — otherwise a
      shared place under-reports its own membership. */
@@ -63,24 +66,125 @@ export const LocationPlaceDetails: React.FC<Props> = ({ locations, scriptNames, 
     [locations, places, place],
   );
 
+  /* v5.97, Derek: same as the character custom field — the name and the
+     scope are ONE question. Applied to all, every location gets the field:
+     places are created on demand for locations that never had one, and a
+     place holding several locations gets it ONCE. */
   const addCustomField = useCallback(async () => {
-    const label = await promptDialog('New field name:', '', { title: 'New Custom Field', confirmLabel: 'Add' });
-    const id = placeFor();
-    if (id && label && label.trim()) addField(id, label.trim());
-  }, [placeFor, addField]);
+    const res = await promptWithCheckbox('New field name:', '', {
+      title: 'New Custom Field',
+      confirmLabel: 'Add',
+      checkboxLabel: 'Apply to all locations?',
+    });
+    if (!res || !res.value.trim()) return;
+    const label = res.value.trim();
+    if (!res.checked) {
+      const id = placeFor();
+      if (id) addField(id, label);
+      return;
+    }
+    const st = useEditorStore.getState();
+    const seen = new Set<string>();
+    for (const l of allLocations) {
+      let p = st.locationPlaces.find((q) => q.scriptNames.some((n) => n.trim().toUpperCase() === l.name.trim().toUpperCase()));
+      if (!p) {
+        const id = st.addLocationPin(0, 0);
+        st.updateLocationPlace(id, { x: null, y: null });
+        st.attachLocationToPlace(id, l.name);
+        p = st.locationPlaces.find((q) => q.id === id);
+      }
+      if (p && !seen.has(p.id)) {
+        seen.add(p.id);
+        if (!p.fields.some((f) => f.label.trim().toUpperCase() === label.toUpperCase())) st.addLocationPlaceField(p.id, label);
+      }
+    }
+  }, [placeFor, addField, allLocations]);
+
+  /* v5.97, Derek: "you either create a group or attach a location to a
+     group" — the free-text field only appears once a group EXISTS (typing a
+     name into thin air was the old display-name model). */
+  const [creatingGroup, setCreatingGroup] = useState(false);
+  const groupMenu = usePopup({ width: 230 });
+  const namedGroups = useMemo(
+    () => places.filter((p) => p.id !== place?.id && p.displayName.trim()),
+    [places, place],
+  );
+  const inGroup = !!place?.displayName.trim();
 
   return (
     <div className="locplace-details">
-      <label className="locmap-field-label">Display Name</label>
-      <input
-        className="locmap-field-input"
-        placeholder={names[0] || 'Name in the Locations window'}
-        value={place?.displayName ?? ''}
-        onChange={(e) => {
-          const id = placeFor();
-          if (id) updatePlace(id, { displayName: e.target.value });
-        }}
-      />
+      <label className="locmap-field-label">Location Group</label>
+      {inGroup && place ? (
+        <div className="locplace-group-row">
+          <input
+            className="locmap-field-input"
+            title="Rename this group — the name shows everywhere the group does"
+            value={place.displayName}
+            onChange={(e) => updatePlace(place.id, { displayName: e.target.value })}
+          />
+          <button
+            className="locmap-add-field"
+            title="Dissolve the group's name — the locations stay connected"
+            onClick={() => updatePlace(place.id, { displayName: '' })}
+          >Ungroup</button>
+        </div>
+      ) : creatingGroup ? (
+        <input
+          autoFocus
+          className="locmap-field-input"
+          placeholder="Group name"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setCreatingGroup(false);
+            if (e.key === 'Enter') {
+              const v = (e.target as HTMLInputElement).value.trim();
+              const id = placeFor();
+              if (v && id) updatePlace(id, { displayName: v });
+              setCreatingGroup(false);
+            }
+          }}
+          onBlur={(e) => {
+            const v = e.target.value.trim();
+            const id = v ? placeFor() : null;
+            if (v && id) updatePlace(id, { displayName: v });
+            setCreatingGroup(false);
+          }}
+        />
+      ) : (
+        <div className="locplace-group-row">
+          <button className="locmap-add-field" onClick={() => setCreatingGroup(true)}>+ Create a group</button>
+          <button
+            ref={(el) => { groupMenu.triggerRef.current = el; }}
+            className="locmap-add-field"
+            disabled={namedGroups.length === 0}
+            title={namedGroups.length ? 'Join an existing group' : 'No groups yet — create one first'}
+            onClick={() => groupMenu.toggle()}
+          >+ Add to group</button>
+        </div>
+      )}
+      {groupMenu.pos && createPortal(
+        <div
+          ref={(el) => { groupMenu.popupRef.current = el; }}
+          className="locmap-pin-menu"
+          style={{ top: groupMenu.pos.top, left: groupMenu.pos.left }}
+        >
+          <div className="locmap-pin-menu-subhead">Add to which group?</div>
+          {namedGroups.map((g) => (
+            <button
+              key={g.id}
+              className="locmap-pin-menu-item"
+              onClick={() => {
+                const id = placeFor();
+                if (id) mergePlaces(id, g.id);
+                groupMenu.close();
+              }}
+            >
+              <span className="locmap-pin-menu-item-name">{g.displayName}</span>
+              {g.scriptNames.length > 0 && <span className="locmap-pin-menu-item-count">{g.scriptNames.length}</span>}
+            </button>
+          ))}
+        </div>,
+        document.body,
+      )}
 
       <label className="locmap-field-label">Script Locations</label>
       <div className="locmap-attached-list">

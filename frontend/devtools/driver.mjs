@@ -177,7 +177,7 @@ export async function settle(page) {
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 }
 
-const MENUS = '.locmap-menu-veil, .tool-ctl-menu, .locmap-pin-menu, .char-upload-menu';
+const MENUS = '.locmap-menu-veil, .tool-ctl-menu, .locmap-pin-menu, .char-upload-menu, .menu-dropdown';
 
 /** Close whatever is open — menus, their veils, popovers — and prove it. */
 export async function dismiss(page) {
@@ -185,10 +185,23 @@ export async function dismiss(page) {
   await page.keyboard.press('Escape').catch(() => {});
   await settle(page);
   if (await page.$(MENUS)) {
-    await page.mouse.click(4, 4).catch(() => {});   // Escape doesn't close them all
+    /* NOT a corner click. (4,4) lands on the MENU BAR and opens File —
+       a dropdown over whatever the check touches next. A synthetic
+       pointerdown reaches the popups' own dismissal paths without
+       touching any real control: veil menus close from a press ON the
+       veil; usePopup menus close from any capture-phase press outside. */
+    await page.evaluate(() => {
+      const veil = document.querySelector('.locmap-menu-veil');
+      (veil ?? document.body).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    }).catch(() => {});
     await settle(page);
   }
   await page.waitForSelector(MENUS, { state: 'detached', timeout: 3000 }).catch(() => {});
+  // and if the corner-click of an OLDER check already opened the app menu:
+  if (await page.$('.menu-dropdown')) {
+    await page.keyboard.press('Escape').catch(() => {});
+    await settle(page);
+  }
 }
 
 /** Open a menu from its trigger, with the screen cleared first. Returns the

@@ -3,8 +3,9 @@ import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import { useEditorStore, EMPTY_SCENE_FILTERS, type SceneFilters } from '../stores/editorStore';
 import LocationMapTab from './LocationMapTab';
-import { placeDescription, locationListEntries, placeForLocation } from '../utils/locationPlaces';
+import { placeDescription, locationListEntries, placeForLocation, type LocationPlace } from '../utils/locationPlaces';
 import LocationPlaceDetails from './LocationPlaceDetails';
+import LocationMapRail from './LocationMapRail';
 import { renameLocationInScript } from '../utils/renameLocationInScript';
 import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlice';
 import { PAGES_PER_ROW_MIN, PAGES_PER_ROW_MAX } from '../stores/slices/sceneNavSlice';
@@ -22,6 +23,7 @@ import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../
 import { parseHeading, computeSceneFilterDetails, sceneFilterOptions, filterSceneIndices, countActiveSceneFilters, type SceneFilterDetail } from '../utils/sceneFilters';
 import { useSceneReorder } from '../utils/useSceneReorder';
 import { ControlDropdown, ControlSearch, PerRowStepper, type ToolChromeTab } from './ToolControls';
+import { usePopup } from '../hooks/usePopup';
 import { SceneReorderBar } from './IndexCards';
 import { LuLayoutGrid, LuList } from 'react-icons/lu';
 import { FaChevronRight, FaChevronDown, FaEllipsisV, FaHashtag, FaMapMarkerAlt } from 'react-icons/fa';
@@ -31,6 +33,8 @@ interface SceneNavigatorProps {
   scrollContainer?: HTMLDivElement | null;
   /** Which view to render — each view is now its own tool in the left dock. */
   view: NavTab;
+  /** True inside the fullscreen takeover (ToolDock threads it). */
+  inTakeover?: boolean;
 }
 
 export type NavTab = 'scenes' | 'pages' | 'locations' | 'structure';
@@ -49,7 +53,7 @@ interface LocationGroup {
   preambles: string[];
 }
 
-function groupByLocation(scenes: Array<{ heading: string }>): LocationGroup[] {
+export function groupByLocation(scenes: Array<{ heading: string }>): LocationGroup[] {
   const map = new Map<string, LocationGroup>();
   scenes.forEach((scene, index) => {
     const parsed = parseHeading(scene.heading);
@@ -85,14 +89,26 @@ function groupByLocation(scenes: Array<{ heading: string }>): LocationGroup[] {
  *  the same way would be two controls doing one job. */
 export function visibleLocations(
   all: LocationGroup[],
-  { search, filter, sort }: { search: string; filter: LocationFilter; sort: LocationSort },
+  { search, filter, sort, places = [], group = null }: {
+    search: string; filter: LocationFilter; sort: LocationSort;
+    places?: LocationPlace[]; group?: string | null;
+  },
 ): LocationGroup[] {
   const q = search.trim().toLowerCase();
   const kept = all.filter((loc) => {
     if (q && !loc.name.toLowerCase().includes(q)) return false;
-    if (filter === 'all') return true;
-    const wanted = filter === 'int' ? 'INT' : 'EXT';
-    return loc.prefixes.some((p) => (p || '').toUpperCase().includes(wanted));
+    /* v5.97: INT./EXT. are toggles — exactly one selected narrows; neither
+       or both shows everything (selecting means "only show this"). */
+    if (filter.int !== filter.ext) {
+      const wanted = filter.int ? 'INT' : 'EXT';
+      if (!loc.prefixes.some((p) => (p || '').toUpperCase().includes(wanted))) return false;
+    }
+    if (group) {
+      const place = placeForLocation(places, loc.name);
+      if (group === 'no-group') { if (place?.displayName.trim()) return false; }
+      else if (place?.id !== group) return false;
+    }
+    return true;
   });
   if (sort === 'name') return [...kept].sort((a, b) => a.name.localeCompare(b.name));
   // Most-used first; ties keep scene order, so the list never shuffles at random.
@@ -212,7 +228,7 @@ const LINE_HEIGHT_PX = 12 * (96 / 72); // 16px — matches pagination LINE_HEIGH
 
 // ── Main component ──────────────────────────────────────────────────────
 
-const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer, view }) => {
+const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer, view, inTakeover = false }) => {
   const { scenes, updateSceneSynopsis } = useEditorStore();
   const pageLayout = useEditorStore((s) => s.pageLayout);
   const fontFamily = useEditorStore((s) => s.fontFamily);
@@ -400,14 +416,16 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const locSearch = useEditorStore((s) => s.locationSearch);
   const locFilter = useEditorStore((s) => s.locationFilter);
   const locSort = useEditorStore((s) => s.locationSort);
+  const locGroupFilter = useEditorStore((s) => s.locationGroupFilter);
   const locationsTab = useEditorStore((s) => s.locationsTab);
+  const fsTool = useEditorStore((s) => s.fullscreenTool);
   const places = useEditorStore((s) => s.locationPlaces);
   const setLocationDescriptionFor = useEditorStore((s) => s.setLocationDescriptionFor);
   const grouped = useEditorStore((s) => s.locationsGrouped);
   const showHiddenLocations = useEditorStore((s) => s.showHiddenLocations);
   const locations = useMemo(
-    () => visibleLocations(allLocations, { search: locSearch, filter: locFilter, sort: locSort }),
-    [allLocations, locSearch, locFilter, locSort],
+    () => visibleLocations(allLocations, { search: locSearch, filter: locFilter, sort: locSort, places, group: locGroupFilter }),
+    [allLocations, locSearch, locFilter, locSort, places, locGroupFilter],
   );
 
   /* v5.85: what the List view actually renders — grouped under display names
@@ -1440,7 +1458,12 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
           onto it — and reads the SAME filtered/sorted `locations`, so the
           window's Filter/Sort/Search drive both tabs. */}
       {activeTab === 'locations' && locationsTab === 'map' && (
-        <LocationMapTab locations={locations} onGoToScene={goToScene} editor={editor} />
+        fsTool === 'locations' && !inTakeover
+          /* v5.97, Derek: fullscreen map — this docked instance IS the side
+             panel, and it shows the rail (the scrapbook-navigator pattern).
+             The takeover instance shows the map with no rail of its own. */
+          ? <LocationMapRail locations={locations} standalone />
+          : <LocationMapTab locations={locations} onGoToScene={goToScene} editor={editor} hideRail={inTakeover} />
       )}
       {activeTab === 'locations' && locationsTab === 'list' && (
         <>
@@ -1518,6 +1541,7 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                             home for what a place knows. */}
                         <LocationPlaceDetails
                           locations={locations}
+                          allLocations={allLocations}
                           scriptNames={[loc.name]}
                           place={placeForLocation(places, loc.name)}
                         />
@@ -1537,20 +1561,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                             Rename Location
                           </button>
                         )}
-                        <div className="location-scenes">
-                          {loc.sceneIndices.map((sceneIdx, i) => (
-                            <div key={sceneIdx} className="location-scene-item" onClick={(e) => { e.stopPropagation(); goToScene(sceneIdx); }}>
-                              <span className="location-scene-num">{sceneIdx + 1}.</span>
-                              <div className="location-scene-info">
-                                <div className="location-scene-top">
-                                  <span className="location-scene-prefix">{loc.prefixes[i]}</span>
-                                  {loc.times[i] && <span className="location-scene-time">{loc.times[i]}</span>}
-                                </div>
-                                {loc.preambles[i] && <div className="location-scene-preamble">{loc.preambles[i]}</div>}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
                       </div>
                     )}
                   </div>
@@ -1620,12 +1630,13 @@ export function LocationsControls() {
   const showHidden = useEditorStore((s) => s.showHiddenLocations);
   const setShowHidden = useEditorStore((s) => s.setShowHiddenLocations);
   const setSort = useEditorStore((s) => s.setLocationSort);
+  const groupFilter = useEditorStore((s) => s.locationGroupFilter);
+  const setGroupFilter = useEditorStore((s) => s.setLocationGroupFilter);
+  const places = useEditorStore((s) => s.locationPlaces);
+  const filterPop = usePopup({ width: 220 });
+  const namedGroups = useMemo(() => places.filter((p) => p.displayName.trim()), [places]);
+  const filterChips = (filter.int !== filter.ext ? 1 : 0) + (groupFilter ? 1 : 0) + (showHidden ? 1 : 0);
 
-  const FILTERS: { id: LocationFilter; label: string }[] = [
-    { id: 'all', label: 'All' },
-    { id: 'int', label: 'Interior' },
-    { id: 'ext', label: 'Exterior' },
-  ];
   const SORTS: { id: LocationSort; label: string }[] = [
     // v4.93, Derek: "Scene order" — the order the locations turn up reading
     // the script. Same ordering that was called "Script order"; the app's own
@@ -1667,19 +1678,72 @@ export function LocationsControls() {
           <span className="tool-ctl-label">Group</span>
         </button>
       )}
-      <ControlDropdown
-        label="Filter"
-        current={filter === 'all' ? undefined : FILTERS.find((f) => f.id === filter)?.label}
-        chip={(filter === 'all' ? 0 : 1) + (showHidden ? 1 : 0)}
-        title="Show only interior or exterior locations"
-        items={[
-          ...FILTERS.map((f) => ({ label: f.label, active: filter === f.id, onSelect: () => setFilter(f.id) })),
-          /* v5.85: hiding a location must never be a one-way door — this is
-             the way back to one, from either view. */
-          { label: 'Show hidden locations', active: showHidden, keepOpen: true,
-            onSelect: () => setShowHidden(!useEditorStore.getState().showHiddenLocations) },
-        ]}
-      />
+      {/* v5.97, Derek: INT. and EXT. sit on ONE ROW as toggles — selecting
+          one means "only show this"; neither (or both) shows everything.
+          The menu also filters to a location GROUP, and keeps the way back
+          for hidden locations. Hand-rolled because a chip row is not a
+          menu-item list; dismissal comes from usePopup like every popup. */}
+      <button
+        ref={(el) => { filterPop.triggerRef.current = el; }}
+        data-ctl="filter"
+        className={`tool-ctl${filterPop.isOpen ? ' open' : ''}`}
+        title="Filter locations"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); filterPop.toggle(); }}
+      >
+        <span className="tool-ctl-label">Filter</span>
+        {filterChips > 0 && <span className="tool-ctl-chip">{filterChips}</span>}
+      </button>
+      {filterPop.pos && createPortal(
+        <div
+          ref={(el) => { filterPop.popupRef.current = el; }}
+          className="tool-ctl-menu locfilter-pop"
+          style={{ top: filterPop.pos.top, left: filterPop.pos.left }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <div className="locfilter-row">
+            <button
+              className={`locfilter-chip${filter.int ? ' active' : ''}`}
+              aria-pressed={filter.int}
+              onClick={() => setFilter({ ...filter, int: !filter.int })}
+            >INT.</button>
+            <button
+              className={`locfilter-chip${filter.ext ? ' active' : ''}`}
+              aria-pressed={filter.ext}
+              onClick={() => setFilter({ ...filter, ext: !filter.ext })}
+            >EXT.</button>
+          </div>
+          {namedGroups.length > 0 && (
+            <>
+              <div className="locmap-pin-menu-sep" />
+              <div className="locmap-pin-menu-subhead">Group</div>
+              <button
+                className={`tool-ctl-menu-item${groupFilter === null ? ' active' : ''}`}
+                onClick={() => setGroupFilter(null)}
+              >All groups</button>
+              {namedGroups.map((g) => (
+                <button
+                  key={g.id}
+                  className={`tool-ctl-menu-item${groupFilter === g.id ? ' active' : ''}`}
+                  onClick={() => setGroupFilter(groupFilter === g.id ? null : g.id)}
+                >{g.displayName}</button>
+              ))}
+              <button
+                className={`tool-ctl-menu-item${groupFilter === 'no-group' ? ' active' : ''}`}
+                onClick={() => setGroupFilter(groupFilter === 'no-group' ? null : 'no-group')}
+              >No Group</button>
+            </>
+          )}
+          <div className="locmap-pin-menu-sep" />
+          {/* v5.85: hiding a location must never be a one-way door — this is
+              the way back to one, from either view. */}
+          <button
+            className={`tool-ctl-menu-item${showHidden ? ' active' : ''}`}
+            onClick={() => setShowHidden(!useEditorStore.getState().showHiddenLocations)}
+          >Show hidden locations</button>
+        </div>,
+        document.body,
+      )}
       <ControlDropdown
         label="Sort"
         current={sort === 'scene' ? undefined : SORTS.find((s) => s.id === sort)?.label}

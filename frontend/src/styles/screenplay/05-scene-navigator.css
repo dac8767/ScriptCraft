@@ -1633,3 +1633,27 @@
 .locmap-detail-actions .locmap-tool-btn { display: flex; align-items: center; gap: 5px; }
 /* The details block reads the same in the panel as it did on the map. */
 .locplace-details { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+
+/* ── v5.97: the rail as a side panel, group row, filter chips ───────── */
+/* The rail standing alone in a side panel takes the panel's width. */
+.locmap-rail-standalone { width: 100%; min-width: 0; border-right: none; flex: 1; }
+/* Location Group: name + Ungroup on one line; create/join side by side. */
+.locplace-group-row { display: flex; gap: 6px; align-items: center; }
+.locplace-group-row .locmap-field-input { flex: 1; min-width: 0; }
+/* The filter's INT./EXT. chips — one row, toggles. */
+.locfilter-pop { padding: 8px; min-width: 200px; }
+.locfilter-row { display: flex; gap: 6px; padding: 2px 4px 6px; }
+.locfilter-chip {
+  flex: 1;
+  padding: 4px 0;
+  font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  color: var(--fd-text-muted);
+  background: var(--fd-overlay-subtle);
+  border: 1px solid var(--fd-border); border-radius: 4px;
+  cursor: pointer;
+}
+.locfilter-chip:hover { color: var(--fd-text); border-color: var(--fd-accent); }
+.locfilter-chip.active { color: #fff; background: var(--fd-accent); border-color: var(--fd-accent); }
+/* The rail panel the left dock hosts while the map is fullscreen. */
+.locmap-rail-panel { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.locmap-rail-panel-body { display: flex; min-height: 0; overflow-y: auto; }
