@@ -713,7 +713,6 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
   opacity: 0.55;
 }
 
-
 /* ── The Markups tool window ─────────────────────────────────────────────── */
 .markups-panel {
   display: flex;

@@ -997,7 +997,6 @@
 .beat-custom-canvas::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
 .beat-custom-canvas::-webkit-scrollbar-thumb:hover { background: #666; }
 
-
 /* ── v4.35 batch-v9 #2: reorder-bar note ────────────────────────────────
    Filters/search are suspended while reordering — the pending list must
    hold EVERY scene, since Apply rewrites the whole document order — so the

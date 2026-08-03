@@ -82,7 +82,6 @@
   width: 150px;
 }
 
-
 /* v0.39: Customize category headers */
 .fs-customize-cat {
   font-size: 12px;
@@ -95,7 +94,6 @@
   margin: 18px 0 10px;
 }
 .fs-customize-cat:first-child { margin-top: 0; }
-
 
 /* v0.40: Settings > Layout sub-tabs + toolbar sub-item checkboxes */
 .prefs-subtabs { display: flex; gap: 6px; margin-bottom: 14px; }

@@ -293,3 +293,51 @@ and passed through a wider door. The splits that paid off were the ones with
 a real boundary: a lifecycle (collab), a device concern (file association), a
 self-contained interaction (panel resize). The ones that did not pay off were
 slices of a render tree, which is not a boundary at all.
+
+
+## v5.92 — the dead-CSS pass: 202 lines cut, 315 candidates DECLINED
+
+A static sweep found 2,538 class selectors and 315 with no reference anywhere
+in the repo. **Only 23 of them were removed.** The other 292 were left, and
+the reason is the point of this entry.
+
+### Why a blanket sweep is unsafe here
+
+The candidate list contained provably-wrong entries — classes nothing in this
+repo writes because something ELSE applies them:
+
+- `recharts-cartesian-axis-line`, `recharts-pie-label-text`, … — the charting
+  library emits these.
+- `ProseMirror-focused`, `ProseMirror-selectednode`, `is-editor-empty` — TipTap
+  and its Placeholder extension emit these.
+- `pv-sceneHeading`, `page-thumb-transition`, `diff-el-character`,
+  `track-change-deleted-dialogue`, `grammar-style` — built by concatenation
+  from a type or severity, and a regex only catches the construction patterns
+  it was taught.
+
+Two of those categories were caught by inspection. **The existence of two
+categories I caught is evidence for a third I did not**, and the failure mode
+— an unstyled control, in a build that compiles and passes every test — is
+exactly the silent kind this project treats as the cardinal sin.
+
+### What WAS removed, and the rule that made it safe
+
+Only CSS whose component is provably gone, each verified against the source
+and the history that removed it:
+
+- `mob-acc-*`, `mobile-accessory-bar` — MobileAccessoryBar was deleted; only
+  a tombstone comment remained.
+- `locmap-pin-tool*`, `locmap-rail-head`, `locmap-rail-count` — replaced by
+  the row menus in v5.85.
+- `locmap-options-btn` — the button moved to the action row in v5.81.
+- `locmap-toolbar`, `locmap-pin-remove`, `locmap-scroll-over`,
+  `locmap-locked`, `locmap-rail-sub` — superseded across v5.75–v5.85.
+
+And the cutting tool only removes a rule when EVERY class in its selector
+list is dead. A rule shared with a live selector stays, because losing one
+live selector out of a group is precisely the silent breakage being avoided.
+
+**If this is picked up again:** the safe unit of work is "a component was
+deleted — remove its styles", done per removal, not "the analyser says 315
+classes are unused". The second framing is how a UI loses its styling in a
+way no test can see.

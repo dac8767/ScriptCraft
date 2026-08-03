@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.92",
+    "date": "2026-08-03",
+    "changes": [
+      "Removed 202 lines of stylesheet belonging to controls that no longer exist."
+    ]
+  },
+  {
     "version": "5.91",
     "date": "2026-08-02",
     "changes": [

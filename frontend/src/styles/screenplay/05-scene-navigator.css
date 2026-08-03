@@ -794,7 +794,6 @@
   cursor: default;
 }
 
-
 /* ── Status bar timing ── */
 .status-timing {
   color: var(--fd-text-muted);
@@ -1048,7 +1047,6 @@
   font-style: italic;
 }
 
-
 /* v4.24 batch 7: the merged Scenes tool — List (scene list) / Cards (index
    cards). v4.27: the in-body toggle is gone (the window's View control
    switches views); these just host whichever view is active. */
@@ -1172,14 +1170,6 @@
   border-right: 1px solid var(--fd-border);
   background: var(--fd-overlay-subtle);
 }
-.locmap-rail-head {
-  display: flex; align-items: center; gap: 6px;
-  padding: 7px 12px;
-  font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-  color: var(--fd-text-muted);
-  border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
-}
-.locmap-rail-count { margin-left: auto; opacity: .8; }
 .locmap-rail-list { flex: 1; overflow-y: auto; min-height: 0; padding-bottom: 6px; }
 /* v5.77: the sidebar lists EVERY location and each row opens (display name,
    description, custom fields) — the Characters window's shape, in a rail. */
@@ -1204,12 +1194,6 @@
 .locmap-rail-scenes { flex: 0 0 auto; font-size: 11px; color: var(--fd-text-muted); }
 
 .locmap-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.locmap-toolbar {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 10px;
-  border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
-  flex: 0 0 auto;
-}
 .locmap-tool-btn {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 4px 9px;
@@ -1241,9 +1225,6 @@
      so one dropped on the map's top edge needs somewhere to be. */
   padding: 26px 16px 16px;
 }
-/* The drop target lights up while a location is over it — the only cue
-   that the drag will actually land. */
-.locmap-scroll-over { background: rgba(74, 158, 255, .08); box-shadow: inset 0 0 0 2px var(--fd-accent); }
 /* margin:auto — NOT align/justify-center. A CENTRED flex item that overflows
    its container can't be scrolled back to on the start side, so the top of a
    tall map (and any pin on it) was unreachable. margin:auto centres the same
@@ -1289,14 +1270,7 @@
 .locmap-pin:active { cursor: grabbing; }
 .locmap-pin-icon { color: var(--fd-accent); font-size: 11px; flex: 0 0 auto; }
 .locmap-pin-label { font-size: 11px; color: var(--fd-text); max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
-.locmap-pin-remove {
-  border: none; background: none; padding: 0 1px;
-  font-size: 13px; line-height: 1;
-  color: var(--fd-text-muted); cursor: pointer;
-  opacity: 0;                          /* appears on hover — one per pin */
-}
 .locmap-pin:hover .locmap-pin-remove { opacity: 1; }
-.locmap-pin-remove:hover { color: var(--fd-danger, #e05252); }
 
 .locmap-empty {
   flex: 1;
@@ -1474,13 +1448,6 @@
 .locmap-pin-menu-item-count { flex: 0 0 auto; font-size: 10px; color: var(--fd-text-muted); }
 .locmap-pin-menu-danger:hover:not(:disabled) { color: var(--fd-danger, #e05252); }
 .locmap-pin-menu-list { display: flex; flex-direction: column; }
-/* The header's map-options button sits in the control cluster, so it wears
-   the cluster's own button shape. */
-.locmap-options-btn { display: inline-flex; align-items: center; justify-content: center; }
-/* When one display name covers several script locations, each row still
-   states which one it is — otherwise the sidebar shows the same word twice
-   with no way to tell the rows apart. */
-.locmap-rail-sub { font-size: 10px; color: var(--fd-text-muted); font-weight: 400; }
 .location-name-sub { font-size: 10px; color: var(--fd-text-muted); font-weight: 400; }
 /* v5.79: the flipped capsule must also REVERSE its children, or the marker
    (the first child) stays on the left while the transform anchors the right
@@ -1582,24 +1549,6 @@
 .locmap-mapopts-back { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .locmap-mapopts-back { color: var(--fd-text-muted); }
 
-/* ── the expanded row's pin tools (v5.81) ──────────────────────────── */
-/* Icons, not sentences: the lock shows the state it is IN, and the tooltip
-   says what pressing it does. */
-.locmap-pin-tools { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
-.locmap-pin-tool {
-  display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 26px;
-  background: var(--fd-overlay-subtle);
-  border: 1px solid var(--fd-border);
-  border-radius: 4px;
-  color: var(--fd-text-muted);
-  font-size: 12px;
-  cursor: pointer;
-}
-.locmap-pin-tool:hover { color: var(--fd-text); border-color: var(--fd-accent); }
-.locmap-pin-tool-on { color: var(--fd-accent); border-color: var(--fd-accent); }
-.locmap-pin-tool-danger:hover { color: var(--fd-danger, #e05252); border-color: var(--fd-danger, #e05252); }
-
 /* ── the Locations list header + row parts (v5.81) ─────────────────── */
 /* Same shape as .scene-list-header: it wears .location-header, so a resized
    column cannot line up in the header and miss in the rows. */
@@ -1631,7 +1580,6 @@
   font-size: 11px; color: var(--fd-text-muted);
   white-space: nowrap;
 }
-
 
 /* ── the sidebar row's two icon menus (v5.85) ──────────────────────── */
 /* Quiet until the row is under the pointer — the row is for reading first,

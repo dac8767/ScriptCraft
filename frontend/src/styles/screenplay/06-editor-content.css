@@ -448,7 +448,6 @@ div[data-type="dialogue"].is-empty::before,
 div[data-type="parenthetical"].is-empty::before,
 div[data-type="lyrics"].is-empty::before { font-style: italic; }
 
-
 /* ====================================================================
    PAGE BREAK SEPARATOR — Final Draft Page View
    ====================================================================
@@ -564,6 +563,4 @@ div[data-type="lyrics"].is-empty::before { font-style: italic; }
   padding-left: 3.5in; /* character indent from page edge */
   box-sizing: border-box;
 }
-
-
 

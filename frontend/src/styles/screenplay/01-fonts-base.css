@@ -73,7 +73,6 @@
   --fd-dialog-bg: #333;
   --fd-input-bg: rgba(0,0,0,.2);
 
-
   /* v0.83: toolbar button surface. Every theme sets its own so a button looks
      native to the theme instead of a fixed blue chip on all of them. */
   --fd-btn-bg: #2c5e98;
