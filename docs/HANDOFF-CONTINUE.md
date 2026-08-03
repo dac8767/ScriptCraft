@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.94 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.95 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row

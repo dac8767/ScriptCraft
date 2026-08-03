@@ -55,7 +55,13 @@ export async function launch(opts = {}) {
      half a minute; now it costs eight seconds. Raise it locally with
      page.setDefaultTimeout() in the rare check that genuinely waits. */
   page.setDefaultTimeout(opts.timeout ?? 8000);
-  page.setDefaultNavigationTimeout(opts.timeout ?? 15000);
+  /* NAVIGATION gets far more room than an action does, and the distinction
+     matters. A selector that will never match should fail in 8s. But a page
+     load is I/O against a dev server that may be serving nine browsers at
+     once (the runner's 4 files × check-v582's own 5 shapes) — that is slow,
+     not broken, and failing it fast just produces noise. Measured: three
+     goto timeouts at 15s under full load, none at 45s. */
+  page.setDefaultNavigationTimeout(opts.navTimeout ?? 45000);
   return { browser, page };
 }
 

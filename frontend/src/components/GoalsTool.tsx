@@ -19,6 +19,7 @@ import { createPortal } from 'react-dom';
 import { FaRegQuestionCircle } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore, type WritingGoal } from '../stores/editorStore';
+import { usePopup } from '../hooks/usePopup';
 import { useVomitStore } from '../stores/vomitStore';
 import { vomitFloorFor } from '../editor/extensions/VomitLock';
 import { computeOverviewStats } from '../utils/scriptStatistics';
@@ -103,27 +104,13 @@ export function GoalsHeaderExtra() {
   // v1.92: while Vomit Draft locks the script, the window is JUST the lock
   // readout — the kind tabs and helper hide with everything else.
   const locked = useVomitStore((s) => !!s.session);
-  const [helpOpen, setHelpOpen] = useState(false);
+  /* v5.95: the help popup uses the shared usePopup — it gains a capture-phase
+     outside press (a bubble listener never heard presses on controls that
+     guard themselves), dismissal on scroll, and Escape. It had none of the
+     three. */
   const helpBtnRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
-
-  useEffect(() => {
-    if (!helpOpen) return;
-    const close = (e: PointerEvent) => {
-      const t = e.target as HTMLElement;
-      if (!t.closest('.fs-help-pop') && t !== helpBtnRef.current) setHelpOpen(false);
-    };
-    document.addEventListener('pointerdown', close);
-    return () => document.removeEventListener('pointerdown', close);
-  }, [helpOpen]);
-
-  const toggleHelp = () => {
-    if (!helpOpen && helpBtnRef.current) {
-      const r = helpBtnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 6, left: Math.max(8, Math.min(r.left - 120, window.innerWidth - 288)) });
-    }
-    setHelpOpen((v) => !v);
-  };
+  const { pos, isOpen: helpOpen, toggle: togglePopup, popupRef } = usePopup({ width: 280, gap: 6 });
+  const toggleHelp = () => togglePopup(helpBtnRef.current);
 
   // After every hook — an early return above them is the documented crash.
   if (locked) return null;
@@ -141,7 +128,7 @@ export function GoalsHeaderExtra() {
       </span>
       <button ref={helpBtnRef} className="fs-help-btn" title="About Goals" onClick={toggleHelp}><FaRegQuestionCircle /></button>
       {helpOpen && pos && createPortal(
-        <div className="fs-help-pop" style={{ top: pos.top, left: pos.left }}>
+        <div ref={(el) => { popupRef.current = el; }} className="fs-help-pop" style={{ top: pos.top, left: pos.left }}>
           Set a target and keep it in view while you write — a word count, a
           page count, or a timed session. Progress shows here and in the
           status bar, and lights up when you hit it. Vomit Draft Mode locks

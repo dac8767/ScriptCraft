@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.95",
+    "date": "2026-08-03",
+    "changes": [
+      "Pop-up menus share one set of rules now. The Goals help pop-up gained three behaviours it never had: it closes when you press elsewhere, when you scroll, and on Escape.",
+      "Groundwork: the remaining nineteen pop-ups can now adopt the same rules one at a time."
+    ]
+  },
+  {
     "version": "5.94",
     "date": "2026-08-03",
     "changes": [

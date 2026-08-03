@@ -21,6 +21,7 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { usePopup } from '../hooks/usePopup';
 import { LuSearch } from 'react-icons/lu';
 import { FaCaretDown, FaChevronUp, FaChevronDown } from 'react-icons/fa';
 
@@ -121,49 +122,19 @@ export const ControlDropdown: React.FC<{
   caret?: boolean;
   items: ControlDropdownItem[];
 }> = ({ label, current, icon, chip, title, caret, items }) => {
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  /* v5.95: the dismissal rules moved to hooks/usePopup — the comments that
+     were here (capture phase, the scroll grace window) live with them now,
+     and 19 other popups get the same behaviour instead of their own. */
+  const { pos, toggle: togglePopup, close, triggerRef, popupRef } = usePopup({ width: 200 });
   const btnRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    if (!pos) return;
-    // Grace window: the opening click can emit a scroll a frame later
-    // (focus scroll / anchoring) — without it the menu dies the frame it
-    // opens. Genuine user scrolling still dismisses.
-    const openedAt = performance.now();
-    const closeNow = () => setPos(null);
-    // v5.20, Derek: "opening the second closes the first." The close must
-    // run in the CAPTURE phase with an explicit outside test: sibling header
-    // controls (this one included) stopPropagation on pointerdown as the
-    // window-drag guard, so a bubble-phase listener never heard presses on
-    // them and two menus could sit open side by side. Capture runs before
-    // any stopPropagation; clicks inside the menu or on the trigger are
-    // exempt (the trigger's own onClick toggles).
-    const close = (e: PointerEvent) => {
-      const t = e.target as Node;
-      if (btnRef.current?.contains(t)) return;
-      const el = t instanceof Element ? t : (t as ChildNode).parentElement;
-      if (el?.closest('.tool-ctl-menu')) return;
-      setPos(null);
-    };
-    const closeOnScroll = () => { if (performance.now() - openedAt > 150) setPos(null); };
-    window.addEventListener('pointerdown', close, true);
-    window.addEventListener('resize', closeNow);
-    window.addEventListener('scroll', closeOnScroll, true);
-    return () => {
-      window.removeEventListener('pointerdown', close, true);
-      window.removeEventListener('resize', closeNow);
-      window.removeEventListener('scroll', closeOnScroll, true);
-    };
-  }, [pos]);
   const toggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (pos) { setPos(null); return; }
-    const r = btnRef.current?.getBoundingClientRect();
-    if (r) setPos({ top: r.bottom + 4, left: Math.min(r.left, window.innerWidth - 200) });
+    togglePopup(btnRef.current);
   };
   return (
     <>
       <button
-        ref={btnRef}
+        ref={(el) => { btnRef.current = el; triggerRef.current = el; }}
         className={`tool-ctl${pos ? ' open' : ''}`}
         data-ctl={chromeSlotOf(label ?? title)}
         title={title ?? label}
@@ -177,12 +148,17 @@ export const ControlDropdown: React.FC<{
         {chip !== undefined && chip > 0 && <span className="tool-ctl-chip">{chip}</span>}
       </button>
       {pos && createPortal(
-        <div className="tool-ctl-menu" style={{ top: pos.top, left: pos.left }} onPointerDown={(e) => e.stopPropagation()}>
+        <div
+          ref={(el) => { popupRef.current = el; }}
+          className="tool-ctl-menu"
+          style={{ top: pos.top, left: pos.left }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           {items.map((it) => (
             <button
               key={it.label}
               className={`tool-ctl-menu-item${it.active ? ' active' : ''}`}
-              onClick={() => { if (!it.keepOpen) setPos(null); it.onSelect(); }}
+              onClick={() => { if (!it.keepOpen) close(); it.onSelect(); }}
             >
               {it.label}
             </button>
