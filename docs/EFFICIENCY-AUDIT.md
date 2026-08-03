@@ -108,9 +108,12 @@ chats (see `docs/AREA-MAP.md`).
 - [ ] **`stores/editorStore.ts` (3,099)** → per-domain slices. Start with the 3 fattest/most-independent: **chrome-customization**, **beats/outline**, **spell/grammar**. Then update `docs/lanes.json` (`editorStore:<domain>` → `own:<slice>`) so the checker frees those lanes.
 - [~] **`components/ScreenplayEditor.tsx` (4,743 → 4,619)** → hooks. DONE: `useTouchGestures` (hooks/useTouch), **`usePanelResize`** (v5.88, +4 tests), **`useFileAssociation`** (v5.88). `useFileDrop` — the state it named is already gone; only a tombstone comment remained. **`useCollaboration`** (v5.89 — 335 lines out; the 326 refs closed over only 4 component-scope names). LEFT: the `<EditorDialogs>` host.
 - [x] **`data/changelog.ts` (2,783 → 72)** → data array moved to `changelog.json` (359 versions / 573 items), imported statically; the file is now just types + tag logic + `APP_VERSION`. Source-scanning win done. *(Optional follow-up: make it a lazy `import()` in MenuBar to also drop it from the initial bundle — deferred as it touches the MenuBar spine file.)*
-- [ ] **`components/MenuBar.tsx` (2,824)** → per-menu builder modules + a `menuActions` module + split out Diagnostics
+- [x] ~~**`components/MenuBar.tsx`** → per-menu builder modules~~ **ATTEMPTED AND REVERTED (v5.90). Do not re-attempt as specified.**
+  - Diagnostics is ALREADY split (`DiagnosticsDialog` is its own module; only the open/close state remains here, which is correct).
+  - Per-menu builders were tried and backed out. A first scan suggested clean seams — View "needs 5 things", Tools "needs none" — and that scan was WRONG: it counted only top-level `const` declarations and missed props, store destructuring and hook returns. Measured properly by compiling the extracted modules, **View needs 43 context fields**, Project 14, Format 11. Threading 43 fields through a ctx object to move 216 lines makes the call site worse than the thing it replaces.
+  - **The lesson for any future split here:** free-variable analysis must come from the COMPILER (extract, build, read the "Cannot find name" errors), not from a regex over declarations. A regex undercounts, and undercounting is how a refactor gets started that should not have been.
 - [ ] **`components/Toolbar.tsx` (2,116)** → the 32-case render switch. NOTE (v5.88): this is not the mechanical move the line implies — every case closes over component state (`scrapbookOpen`, `editor`, a dozen handlers), so lifting it means threading a ~30-field context object. Do it by DOMAIN group (format / insert / view), each taking a narrow slice, not as one flat map.
-- [ ] **`components/CharacterProfiles.tsx` (1,931)** → one component per tab + `useCharacterScan` + a shared asset-media module
+- [x] **`components/CharacterProfiles.tsx`** → the valuable parts are DONE: `utils/characterScan` (extracted + tested) and `CharacterAssetMedia` (its own module). Per-tab components were measured (v5.90) and are not worth it: the Relationships tab is 20 lines and From Script is 85; the file's weight is shared handlers and `renderCharacterFields`, which belong to no single tab.
 
 ---
 
@@ -265,3 +268,28 @@ requests. Two ways to cut it, both rejected:
 **The returns have flattened.** 15 min → 154s came from parallelism, a
 fail-fast timeout, one wasted page load and 157 sleeps. The next 60s costs
 either a weakened guard or a 49-file rewrite. Stop here; spend it on the app.
+
+
+## v5.90 — where the splitting stops, and why
+
+Three hooks came out of ScreenplayEditor (v5.88–v5.89) and were worth it:
+each was a coherent unit that closed over almost nothing. The rest of the
+list was measured and mostly declined:
+
+| item | verdict |
+|---|---|
+| `useCollaboration` | **done** — 335 lines, 4 free names |
+| `usePanelResize`, `useFileAssociation` | **done** — small, and now tested |
+| `<EditorDialogs>` host | **declined** — 105 lines of pure JSX for a 24-prop interface, no testability gain |
+| MenuBar per-menu builders | **attempted, reverted** — View needs 43 ctx fields, not the 5 a regex claimed |
+| MenuBar Diagnostics | **already done** |
+| CharacterProfiles per tab | **declined** — tabs are 20 and 85 lines; the real extractions already landed |
+| Toolbar 32-case switch | **declined** — every case closes over component state (~30 fields) |
+
+**The pattern across all of them:** a long file is not automatically a
+badly-structured one. These components are long because they coordinate a lot
+of state, and coordination does not move — it only gets renamed to "context"
+and passed through a wider door. The splits that paid off were the ones with
+a real boundary: a lifecycle (collab), a device concern (file association), a
+self-contained interaction (panel resize). The ones that did not pay off were
+slices of a render tree, which is not a boundary at all.
