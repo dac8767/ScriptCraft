@@ -106,10 +106,10 @@ Do incrementally, one extraction per commit. This is also what unblocks parallel
 chats (see `docs/AREA-MAP.md`).
 
 - [ ] **`stores/editorStore.ts` (3,099)** → per-domain slices. Start with the 3 fattest/most-independent: **chrome-customization**, **beats/outline**, **spell/grammar**. Then update `docs/lanes.json` (`editorStore:<domain>` → `own:<slice>`) so the checker frees those lanes.
-- [ ] **`components/ScreenplayEditor.tsx` (4,558)** → extract hooks: `useCollaboration`, `useTouchGestures`, `usePanelResize`, `useFileDrop`, `useFileAssociation`; one `<EditorDialogs>` host for the modal cluster
+- [~] **`components/ScreenplayEditor.tsx` (4,743 → 4,619)** → hooks. DONE: `useTouchGestures` (hooks/useTouch), **`usePanelResize`** (v5.88, +4 tests), **`useFileAssociation`** (v5.88). `useFileDrop` — the state it named is already gone; only a tombstone comment remained. LEFT: `useCollaboration` (326 refs, its own session) and the `<EditorDialogs>` host.
 - [x] **`data/changelog.ts` (2,783 → 72)** → data array moved to `changelog.json` (359 versions / 573 items), imported statically; the file is now just types + tag logic + `APP_VERSION`. Source-scanning win done. *(Optional follow-up: make it a lazy `import()` in MenuBar to also drop it from the initial bundle — deferred as it touches the MenuBar spine file.)*
 - [ ] **`components/MenuBar.tsx` (2,824)** → per-menu builder modules + a `menuActions` module + split out Diagnostics
-- [ ] **`components/Toolbar.tsx` (2,078)** → the 32-case render switch → a token→renderer map module
+- [ ] **`components/Toolbar.tsx` (2,116)** → the 32-case render switch. NOTE (v5.88): this is not the mechanical move the line implies — every case closes over component state (`scrapbookOpen`, `editor`, a dozen handlers), so lifting it means threading a ~30-field context object. Do it by DOMAIN group (format / insert / view), each taking a narrow slice, not as one flat map.
 - [ ] **`components/CharacterProfiles.tsx` (1,931)** → one component per tab + `useCharacterScan` + a shared asset-media module
 
 ---

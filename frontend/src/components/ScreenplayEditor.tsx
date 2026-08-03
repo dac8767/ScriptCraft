@@ -114,6 +114,8 @@ import JoinCollabDialog from './JoinCollabDialog';
 import CompareVersionPicker from './CompareVersionPicker';
 import ZoomPanel from './ZoomPanel';
 import { useIsTouchDevice, useSwipeEdge, usePinchZoom } from '../hooks/useTouch';
+import { usePanelResize } from '../hooks/usePanelResize';
+import { useFileAssociation } from '../hooks/useFileAssociation';
 import { useSettingsStore } from '../stores/settingsStore';
 import { startCollabSync, stopCollabSync } from '../services/collabSync';
 import { collabAuthApi, setLogoutCollabTeardown, setLogoutEditorReset, isCollabAuthenticated } from '../services/collabAuth';
@@ -195,46 +197,13 @@ const ScreenplayEditor: React.FC = () => {
     setCollabActivityLog((prev) => [...prev.slice(-49), { time: new Date(), message }]);
   }, []);
 
-  // ── Panel resize state ──
-  const [navWidth, setNavWidth] = useState(240);
-  const [rightPanelWidth, setRightPanelWidth] = useState(300);
+  // ── Panel resize (hooks/usePanelResize) ──
+  const { navWidth, rightPanelWidth, onResizePointerDown: handleResizePointerDown } = usePanelResize();
 
   // Sync nav width to store for floating menu positioning
   useEffect(() => {
     useEditorStore.getState().setNavPanelWidth(navigatorOpen ? 300 : 0);
   }, [navWidth, navigatorOpen]);
-  const resizingRef = useRef<'left' | 'right' | null>(null);
-  const resizeStartXRef = useRef(0);
-  const resizeStartWidthRef = useRef(0);
-
-  const handleResizePointerDown = useCallback((side: 'left' | 'right', e: React.PointerEvent) => {
-    e.preventDefault();
-    resizingRef.current = side;
-    resizeStartXRef.current = e.clientX;
-    resizeStartWidthRef.current = side === 'left' ? navWidth : rightPanelWidth;
-
-    const handlePointerMove = (ev: PointerEvent) => {
-      const delta = ev.clientX - resizeStartXRef.current;
-      if (resizingRef.current === 'left') {
-        setNavWidth(Math.max(160, Math.min(500, resizeStartWidthRef.current + delta)));
-      } else {
-        setRightPanelWidth(Math.max(200, Math.min(600, resizeStartWidthRef.current - delta)));
-      }
-    };
-
-    const handlePointerUp = () => {
-      resizingRef.current = null;
-      document.removeEventListener('pointermove', handlePointerMove);
-      document.removeEventListener('pointerup', handlePointerUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-
-    document.addEventListener('pointermove', handlePointerMove);
-    document.addEventListener('pointerup', handlePointerUp);
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  }, [navWidth, rightPanelWidth]);
 
   const rightPanelVisible = shelfOpen || characterProfilesOpen || tagsPanelOpen || locationDatabaseOpen;
 
@@ -3753,110 +3722,8 @@ const ScreenplayEditor: React.FC = () => {
     }
   }, [editor, setDocumentTitle, setCurrentProject, setCurrentScriptId]);
 
-  useEffect(() => {
-    if (!editor) return;
-
-    let cancelled = false;
-    let unlistenFn: (() => void) | null = null;
-    let handledPath: string | null = null;
-    let pollTimer: ReturnType<typeof setTimeout> | null = null;
-    let invokeRef: ((cmd: string) => Promise<string | null>) | null = null;
-
-    (async () => {
-      const { isTauri } = await import('../services/platform');
-      if (!isTauri() || cancelled) return;
-
-      const { invoke } = await import('@tauri-apps/api/core');
-      invokeRef = (cmd: string) => invoke<string | null>(cmd);
-
-      // Set up event listener FIRST to catch re-emitted events from Rust.
-      // Use window-scoped listener so emit_to(label) only reaches THIS window
-      // and doesn't replace content in other open windows.
-      try {
-        const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-        const currentWindow = getCurrentWebviewWindow();
-        const unlisten = await currentWindow.listen<string>('open-file', (event) => {
-          if (!cancelled && event.payload !== handledPath) {
-            console.log('[file-assoc] open-file event:', event.payload);
-            handledPath = event.payload;
-            handleExternalFile(event.payload);
-          }
-        });
-        if (cancelled) {
-          unlisten();
-        } else {
-          unlistenFn = unlisten;
-        }
-      } catch (err) {
-        console.error('Failed to listen for open-file events:', err);
-      }
-
-      // Check for a file passed at launch — poll a few times because
-      // on cold start RunEvent::Opened may fire after the WebView loads
-      const pollPending = async (attempt: number) => {
-        if (cancelled || handledPath) return;
-        try {
-          const pending = await invoke<string | null>('get_opened_file');
-          if (pending && !cancelled && pending !== handledPath) {
-            console.log(`[file-assoc] pending file (attempt ${attempt}):`, pending);
-            handledPath = pending;
-            handleExternalFile(pending);
-            return;
-          }
-        } catch (err) {
-          console.error('get_opened_file failed:', err);
-        }
-        // Retry up to 5 times over ~3 seconds for cold-start timing
-        if (attempt < 5 && !cancelled && !handledPath) {
-          pollTimer = setTimeout(() => pollPending(attempt + 1), 600);
-        }
-      };
-      pollPending(1);
-    })();
-
-    // On iOS/Android warm start, RunEvent::Opened fires in Rust but the
-    // Tauri JS event may not reach the listener reliably. When the app
-    // returns to foreground, re-check the pending file state.
-    const onVisibilityChange = async () => {
-      if (document.visibilityState !== 'visible' || cancelled || !invokeRef) return;
-      try {
-        // On Android, check for warm-start "Open with" intents first.
-        // onNewIntent() stores the URI in a companion-object field.
-        const { getOS } = await import('../services/platform');
-        if (getOS() === 'android') {
-          try {
-            const newIntent = await invokeRef('android_check_new_intent');
-            if (newIntent && newIntent !== handledPath) {
-              console.log('[file-assoc] Android new intent:', newIntent);
-              handledPath = newIntent;
-              handleExternalFile(newIntent);
-              return;
-            }
-          } catch (err) {
-            console.error('[file-assoc] android_check_new_intent failed:', err);
-            showToast(`Open with failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
-          }
-        }
-        // Fallback: check pending file state (works on all platforms)
-        const pending = await invokeRef('get_opened_file');
-        if (pending && pending !== handledPath) {
-          console.log('[file-assoc] foreground check found pending file:', pending);
-          handledPath = pending;
-          handleExternalFile(pending);
-        }
-      } catch (err) {
-        console.error('[file-assoc] foreground check failed:', err);
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
-
-    return () => {
-      cancelled = true;
-      unlistenFn?.();
-      if (pollTimer) clearTimeout(pollTimer);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-    };
-  }, [editor, handleExternalFile]);
+  // The OS hands us a file — hooks/useFileAssociation owns how it arrives.
+  useFileAssociation(!!editor, handleExternalFile);
 
   const handleSaveAsComplete = useCallback(
     async (
