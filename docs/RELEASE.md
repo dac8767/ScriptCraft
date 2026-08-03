@@ -1,6 +1,6 @@
 # Release Checklist
 
-Step-by-step guide for publishing a new OpenDraft release.
+Step-by-step guide for publishing a new ScriptCraft release.
 
 ---
 
@@ -77,7 +77,7 @@ Write the feature list / changelog for this version in:
 All HTML pages in `user-manual/` have a footer with the version:
 
 ```html
-OpenDraft User Manual · vX.Y.Z · Made by Proteus Technologies
+ScriptCraft User Manual · vX.Y.Z · Made by Proteus Technologies
 ```
 
 Update the version in the footer of every `.html` file in `user-manual/`.
