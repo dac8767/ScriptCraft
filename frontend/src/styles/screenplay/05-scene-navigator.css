@@ -1632,17 +1632,6 @@
   white-space: nowrap;
 }
 
-/* ── TEMPORARY placement diagnostic (v5.84) ────────────────────────────
-   Remove with the `diag` state in LocationMapTab once the report is in. */
-.locmap-diag {
-  position: absolute; left: 10px; bottom: 8px; z-index: 5;
-  pointer-events: none;
-  max-width: calc(100% - 20px);
-  padding: 5px 8px;
-  font-family: ui-monospace, Menlo, monospace; font-size: 10px; line-height: 1.5;
-  color: var(--fd-text); background: rgba(0, 0, 0, .72);
-  border: 1px solid var(--fd-accent); border-radius: 4px;
-}
 
 /* ── the sidebar row's two icon menus (v5.85) ──────────────────────── */
 /* Quiet until the row is under the pointer — the row is for reading first,

@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.91",
+    "date": "2026-08-02",
+    "changes": [
+      "The temporary placement readout is off the map. It went on to catch a fault that could not be reproduced here; no pin has landed in the wrong place since, so it has done its job."
+    ]
+  },
+  {
     "version": "5.85",
     "date": "2026-08-02",
     "changes": [

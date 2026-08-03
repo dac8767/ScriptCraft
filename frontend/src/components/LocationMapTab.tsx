@@ -31,7 +31,6 @@ import {
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
-import { APP_VERSION } from '../data/changelog';
 import { resolveImageUrl } from '../utils/imageAsset';
 import { AssetImage } from './CharacterAssetMedia';
 import { promptDialog } from './ConfirmDialog';
@@ -124,15 +123,6 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
      until a click sets it down — so the writer sees exactly where it will
      land before committing, rather than finding out afterwards. */
   const [placing, setPlacing] = useState(false);
-  /* v5.84, TEMPORARY (remove once the placement report comes back): the last
-     placement's numbers, shown on the map. Three rounds of "the pin is not
-     where I clicked" have run out of things to deduce from a screenshot —
-     this puts the readings IN the screenshot. Its presence also says which
-     build is running. */
-  const [diag, setDiag] = useState<{
-    click: [number, number]; readings: string; chosen: [number, number];
-    drawn?: [number, number]; error?: [number, number];
-  } | null>(null);
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);
   const draggingRef = useRef<{ id: string; moved: boolean; locked: boolean; x0: number; y0: number } | null>(null);
   /* A pin drag ends with a mouseup on the MAP, and the browser then fires a
@@ -249,13 +239,6 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
       : null;
 
     const point = pickFraction([byOffset, byRect, byLayout]);
-    const show = (r: { x: number; y: number } | null) =>
-      (r ? `${r.x.toFixed(3)},${r.y.toFixed(3)}` : '—');
-    setDiag({
-      click: [Math.round(e.clientX), Math.round(e.clientY)],
-      readings: `off ${show(byOffset)} · rect ${show(byRect)} · lay ${show(byLayout)} · box ${w}×${h}`,
-      chosen: [Math.round(point.x * 1000) / 1000, Math.round(point.y * 1000) / 1000],
-    });
 
     /* If a reading disagreed, say so where a developer can see it. This bug
        took two rounds to place because nothing in the app ever said "the map
@@ -353,7 +336,6 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
       const m = mark.getBoundingClientRect();
       const dx = clientX - (m.left + m.width / 2);
       const dy = clientY - m.bottom;
-      setDiag((d) => (d ? { ...d, drawn: [Math.round(m.left + m.width / 2), Math.round(m.bottom)], error: [Math.round(dx), Math.round(dy)] } : d));
       /* A DEAD BAND, not a perfectionist: the marker's glyph sits a few px
          inside its box, and chasing that would drag every pin off the spot
          the ghost showed. Only a gross error — the bug's error is ~290px —
@@ -731,16 +713,6 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
                   })}
                 </div>
               </div>
-              {/* v5.84, TEMPORARY diagnostic — see the `diag` state. Absolutely
-                  positioned so it cannot change the row heights (the v5.81
-                  lesson) and pointer-transparent so it cannot take a click. */}
-              {diag && (
-                <div className="locmap-diag">
-                  <b>v{APP_VERSION} placement</b> · click {diag.click[0]},{diag.click[1]} · {diag.readings}
-                  <br />chosen {diag.chosen[0]},{diag.chosen[1]}
-                  {diag.drawn && <> · drawn {diag.drawn[0]},{diag.drawn[1]} · off by {diag.error?.[0]},{diag.error?.[1]}px</>}
-                </div>
-              )}
             </div>
           </>
         )}
