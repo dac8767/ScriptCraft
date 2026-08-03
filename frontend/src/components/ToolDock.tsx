@@ -1104,8 +1104,6 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
       // v2.77: the edge's vertical axis scales the dock items via this var.
       style={{ ['--dock-scale' as string]: itemScale }}
     >
-      {/* v5.97: fullscreen map — the rail stands in this panel. */}
-      {side === 'left' && fsTool === 'locations' && locationsTabNow === 'map' && <FullscreenMapRailPanel />}
       {/* v2.55: the sizing lock removes the grab edge — no dead controls. */}
       {!uiResizeLocked && (
         <div
@@ -1121,6 +1119,8 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
         </div>
       )}
       <div className={`tool-dock${iconsMode ? ' tool-dock-iconrail' : ''}${solo ? ' tool-dock-scrapbook-solo' : ''}`} style={{ width: dockW }}>
+        {/* v5.97: fullscreen map — the rail stands in this panel, first. */}
+        {side === 'left' && fsTool === 'locations' && locationsTabNow === 'map' && <FullscreenMapRailPanel />}
         {/* v3.07's collapse chevron row was REMOVED in v3.25 at Derek's
             request — panels hide from View > Toolbars; the edge strips
             (fs-panel-expand) still re-open a collapsed panel. */}

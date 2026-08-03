@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.98",
+    "date": "2026-08-03",
+    "changes": [
+      "Fixed: the fullscreen map's side-panel location list rendered as a second column beside the tool list, doubling the left side and squeezing the map. It sits inside the panel now, and the map takes the full width."
+    ]
+  },
+  {
     "version": "5.97",
     "date": "2026-08-03",
     "changes": [

@@ -245,6 +245,8 @@ await browser.close();
     await settle(p2);
     ok(await p2.$('.fs-tool-takeover .locmap-rail') === null, '#v597-2 the takeover holds no rail');
     ok(await p2.$('.locmap-rail-panel .locmap-rail') !== null, '#v597-2 the rail stands in the side panel');
+    ok(await p2.$('.tool-dock .locmap-rail-panel') !== null,
+      '#v597-2 INSIDE the dock column — not a second column beside it (the v5.97 screenshot bug)');
     await p2.click('.locmap-rail-panel .locmap-rail-row .locmap-rail-name');
     await p2.waitForSelector('.locmap-rail-panel .locmap-rail-detail');
     ok(await p2.$('.locmap-rail-panel .locmap-rail-detail button:has-text("Map Options")') !== null,
