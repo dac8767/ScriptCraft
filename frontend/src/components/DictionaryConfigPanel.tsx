@@ -4,6 +4,7 @@ import { useEditorStore } from '../stores/editorStore';
 import { spellChecker, PROJECT_DICT_TARGET } from '../editor/spellchecker';
 import { BUILTIN, CATALOG, findLanguage } from '../editor/languageCatalog';
 import { confirmDialog } from './ConfirmDialog';
+import { Modal } from './Modal';
 
 /** Subscribe to spellChecker.onChange so React re-renders when its state changes. */
 function useSpellCheckerVersion(): number {
@@ -232,12 +233,7 @@ const LanguageInstallerDialog: React.FC<{ onClose: () => void }> = ({ onClose })
   };
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div
-        className="dialog-box"
-        onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 560, minWidth: 440, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
-      >
+    <Modal onClose={onClose} boxClassName="">
         <div className="dialog-header">Add Language</div>
         <div className="dialog-body" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 16 }}>
           <div style={helpTextStyle}>
@@ -391,8 +387,7 @@ const LanguageInstallerDialog: React.FC<{ onClose: () => void }> = ({ onClose })
         <div className="dialog-footer">
           <button className="dialog-primary" onClick={onClose}>Done</button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

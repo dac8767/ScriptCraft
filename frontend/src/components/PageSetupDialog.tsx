@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useEditorStore, DEFAULT_PAGE_LAYOUT, DEFAULT_HEADER_CONTENT, DEFAULT_FOOTER_CONTENT } from '../stores/editorStore';
 import type { PageLayout, HeaderFooterContent } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { Modal } from './Modal';
 
 interface PageSetupDialogProps {
   onClose: () => void;
@@ -364,15 +365,10 @@ const PageSetupDialog: React.FC<PageSetupDialogProps> = ({ onClose, embedded = f
   if (embedded) return body;
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div
-        className="dialog-box page-setup-dialog"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal onClose={onClose} boxClassName="page-setup-dialog">
         <div className="dialog-header">Page Setup</div>
         {body}
-      </div>
-    </div>
+    </Modal>
   );
 };
 

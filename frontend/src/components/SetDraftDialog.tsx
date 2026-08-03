@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { showToast } from './Toast';
+import { Modal } from './Modal';
 
 /* ─────────────────────────────────────────────────────────────────────────
    Set Draft Number (Edit → Set Draft Number…)
@@ -82,15 +83,7 @@ export default function SetDraftDialog({ open, onClose, editor }: {
   };
 
   return (
-    <div
-      className="dialog-overlay"
-      onMouseDown={(e) => {
-        // Close only when the press STARTS on the overlay — a text-selection
-        // drag that ends outside the box must not dismiss the dialog.
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="dialog-box ws-dialog" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} boxClassName="ws-dialog">
         <div className="dialog-header">Set Draft Number</div>
         <div className="dialog-body">
           <div className="dialog-row">
@@ -116,7 +109,6 @@ export default function SetDraftDialog({ open, onClose, editor }: {
           <button onClick={onClose}>Cancel</button>
           <button className="dialog-primary" onClick={apply} disabled={!finalLabel}>Apply</button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

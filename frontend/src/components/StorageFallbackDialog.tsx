@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { useStorageStatusStore } from '../stores/storageStatusStore';
+import { Modal } from './Modal';
 
 const StorageFallbackDialog: React.FC = () => {
   const { mode, errorReason, acknowledged, acknowledge } = useStorageStatusStore();
@@ -22,14 +23,7 @@ const StorageFallbackDialog: React.FC = () => {
     : 'ScriptCraft could not open its local database and the file-based fallback also failed. Your changes will be saved in the browser only and may be lost if storage is cleared.';
 
   return (
-    <div className="dialog-overlay" onClick={acknowledge}>
-      <div
-        className="dialog-box"
-        style={{ maxWidth: 480 }}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
+    <Modal onClose={acknowledge} boxClassName="">
         <div className="dialog-header">{heading}</div>
         <div className="dialog-body">
           <p style={{ margin: '0 0 12px' }}>{explanation}</p>
@@ -68,8 +62,7 @@ const StorageFallbackDialog: React.FC = () => {
             Continue
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

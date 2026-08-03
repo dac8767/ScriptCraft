@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useProjectStore } from '../stores/projectStore';
 import { api } from '../services/api';
 import type { VersionInfo } from '../services/api';
+import { Modal } from './Modal';
 
 function relativeTime(dateStr: string): string {
   const date = new Date(dateStr);
@@ -52,11 +53,7 @@ const CompareVersionPicker: React.FC<CompareVersionPickerProps> = ({
   }, [loadVersions]);
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div
-        className="dialog-box compare-version-dialog"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal onClose={onClose} boxClassName="compare-version-dialog">
         <div className="dialog-header">Compare with Version</div>
         <div className="dialog-body">
           {!currentProject && (
@@ -90,8 +87,7 @@ const CompareVersionPicker: React.FC<CompareVersionPickerProps> = ({
         <div className="dialog-actions">
           <button onClick={onClose}>Cancel</button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

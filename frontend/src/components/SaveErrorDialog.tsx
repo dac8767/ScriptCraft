@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { useSaveErrorStore } from '../stores/saveErrorStore';
+import { Modal } from './Modal';
 
 const SOURCE_LABELS: Record<string, string> = {
   'auto-save': 'Auto-save failed',
@@ -28,14 +29,7 @@ const SaveErrorDialog: React.FC = () => {
   const localTime = new Date(error.at).toLocaleTimeString();
 
   return (
-    <div className="dialog-overlay" onClick={clearError}>
-      <div
-        className="dialog-box"
-        style={{ maxWidth: 480 }}
-        onClick={(e) => e.stopPropagation()}
-        role="alertdialog"
-        aria-modal="true"
-      >
+    <Modal onClose={clearError} boxClassName="">
         <div className="dialog-header">{heading}</div>
         <div className="dialog-body">
           {/*
@@ -92,8 +86,7 @@ const SaveErrorDialog: React.FC = () => {
             I understand
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

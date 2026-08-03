@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.94",
+    "date": "2026-08-03",
+    "changes": [
+      "Twenty-one dialogs now share one shell. Nine of them could not be closed with Escape at all before — Page Setup, Compare Versions, the dictionary panels, the grammar rules panel and the storage warnings among them.",
+      "Selecting text inside a dialog and releasing the mouse outside it no longer closes the dialog and discards what you were doing."
+    ]
+  },
+  {
     "version": "5.93",
     "date": "2026-08-03",
     "changes": [

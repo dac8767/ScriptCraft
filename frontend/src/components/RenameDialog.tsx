@@ -12,6 +12,7 @@ import { scriptApi } from '../services/scriptApi';
 import { useProjectStore } from '../stores/projectStore';
 import { useEditorStore } from '../stores/editorStore';
 import { showToast } from './Toast';
+import { Modal } from './Modal';
 
 export default function RenameDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { currentProject, currentScriptId, setCurrentProject, isCloudScript } = useProjectStore();
@@ -60,15 +61,7 @@ export default function RenameDialog({ open, onClose }: { open: boolean; onClose
   };
 
   return (
-    <div
-      className="dialog-overlay"
-      onMouseDown={(e) => {
-        // Close only when the press STARTS on the overlay — a text-selection
-        // drag that ends outside the box must not dismiss the dialog.
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="dialog-box ws-dialog" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} boxClassName="ws-dialog">
         <div className="dialog-header">Rename</div>
         <div className="dialog-body">
           {noDoc ? (
@@ -101,7 +94,6 @@ export default function RenameDialog({ open, onClose }: { open: boolean; onClose
             {saving ? 'Renaming…' : 'Rename'}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

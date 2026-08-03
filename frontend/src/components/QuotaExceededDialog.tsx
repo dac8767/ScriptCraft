@@ -9,6 +9,7 @@
 import React from 'react';
 import type { QuotaErrorDetail } from '../services/api';
 import { pluginRegistry } from '../plugins/registry';
+import { Modal } from './Modal';
 
 interface QuotaExceededDialogProps {
   detail: QuotaErrorDetail;
@@ -22,12 +23,7 @@ const QuotaExceededDialog: React.FC<QuotaExceededDialogProps> = ({ detail, onClo
     | undefined;
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div
-        className="dialog-box"
-        style={{ maxWidth: 420 }}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal onClose={onClose} boxClassName="">
         <div className="dialog-header">Free plan limit reached</div>
         <div className="dialog-body">
           <p style={{ margin: '0 0 12px' }}>{detail.message}</p>
@@ -48,8 +44,7 @@ const QuotaExceededDialog: React.FC<QuotaExceededDialogProps> = ({ detail, onClo
             </button>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

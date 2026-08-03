@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { confirmDialog, promptDialog } from './ConfirmDialog';
 import { showToast } from './Toast';
+import { Modal } from './Modal';
 
 interface DictionaryLibraryProps {
   onClose: () => void;
@@ -99,12 +100,7 @@ const DictionaryLibrary: React.FC<DictionaryLibraryProps> = ({ onClose }) => {
   const selectedWords = selected ? customDictionaries[selected] ?? [] : [];
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div
-        className="dialog-box"
-        onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 720, minWidth: 560, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
-      >
+    <Modal onClose={onClose} boxClassName="">
         <div className="dialog-header">Dictionary Library</div>
         <div className="dialog-body" style={{ display: 'flex', gap: 12, padding: 16, overflow: 'hidden', flex: 1, minHeight: 360 }}>
           {/* Left column: list of dictionaries */}
@@ -244,8 +240,7 @@ const DictionaryLibrary: React.FC<DictionaryLibraryProps> = ({ onClose }) => {
         <div className="dialog-footer">
           <button className="dialog-primary" onClick={onClose}>Done</button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

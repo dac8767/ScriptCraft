@@ -9,6 +9,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { isDesktopTauri } from '../services/platform';
+import { Modal } from './Modal';
 
 const DISMISS_KEY = 'opendraft.oneDriveWarning.dismissed';
 
@@ -47,14 +48,7 @@ const OneDriveWarningDialog: React.FC = () => {
   };
 
   return (
-    <div className="dialog-overlay" onClick={dismiss}>
-      <div
-        className="dialog-box"
-        style={{ maxWidth: 520 }}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
+    <Modal onClose={dismiss} boxClassName="">
         <div className="dialog-header">OneDrive interference detected</div>
         <div className="dialog-body">
           <p style={{ margin: '0 0 12px' }}>
@@ -101,8 +95,7 @@ const OneDriveWarningDialog: React.FC = () => {
             Continue
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

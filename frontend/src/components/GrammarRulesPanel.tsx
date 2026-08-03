@@ -4,6 +4,7 @@ import { RETEXT_CATEGORIES, RETEXT_CATEGORY_META } from '../editor/grammar/retex
 import { HARPER_CATEGORIES, HARPER_CATEGORY_META } from '../editor/grammar/harperProvider';
 import DictionaryLibrary from './DictionaryLibrary';
 import DictionaryConfigPanel from './DictionaryConfigPanel';
+import { Modal } from './Modal';
 
 interface GrammarRulesPanelProps {
   onClose: () => void;
@@ -97,12 +98,7 @@ const GrammarRulesPanel: React.FC<GrammarRulesPanelProps> = ({ onClose }) => {
 
   return (
     <>
-      <div className="dialog-overlay" onClick={onClose}>
-        <div
-          className="dialog-box"
-          onClick={(e) => e.stopPropagation()}
-          style={{ maxWidth: 640, width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
-        >
+      <Modal onClose={onClose} boxClassName="">
           <div className="dialog-header">Grammar &amp; Spelling Settings</div>
           <div
             style={{
@@ -146,8 +142,7 @@ const GrammarRulesPanel: React.FC<GrammarRulesPanelProps> = ({ onClose }) => {
           <div className="dialog-footer">
             <button className="dialog-primary" onClick={onClose}>Done</button>
           </div>
-        </div>
-      </div>
+      </Modal>
       {dictionaryLibraryOpen && (
         <DictionaryLibrary onClose={() => setDictionaryLibraryOpen(false)} />
       )}
