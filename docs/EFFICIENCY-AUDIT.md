@@ -16,11 +16,11 @@ Lane tags (see `docs/AREA-MAP.md`) show which chat should own each item.
 ## Tier 1 — delete now (zero / near-zero risk)
 
 ### Dead component files (~1,110 lines) — lane: `character` / `spelling` / spine
-- [ ] `components/MobileAccessoryBar.tsx` (265) — only ref is a "removed" tombstone comment in `ScreenplayEditor.tsx:78`
-- [ ] `components/CharacterConnectionsGraph.tsx` + `CharacterConnectionsGraph.test.ts` (294) — superseded by `RelationshipMap`; **sole `d3` consumer** (`character`)
-- [ ] `components/SpellCheckContextMenu.tsx` (181) — zero refs (`spelling`)
-- [ ] `components/LanguageSelector.tsx` (81) — zero refs (`spelling`)
-- [ ] `utils/zipExport.ts` + `utils/zipImport.ts` (~175) — zero importers (`importexport`)
+- [x] `components/MobileAccessoryBar.tsx` (265) — only ref is a "removed" tombstone comment in `ScreenplayEditor.tsx:78`  *(verified done, v5.93)*
+- [x] `components/CharacterConnectionsGraph.tsx` + `CharacterConnectionsGraph.test.ts` (294) — superseded by `RelationshipMap`; **sole `d3` consumer** (`character`)  *(verified done, v5.93)*
+- [x] `components/SpellCheckContextMenu.tsx` (181) — zero refs (`spelling`)  *(verified done, v5.93)*
+- [x] `components/LanguageSelector.tsx` (81) — zero refs (`spelling`)  *(verified done, v5.93)*
+- [x] `utils/zipExport.ts` + `utils/zipImport.ts` (~175) — zero importers (`importexport`)  *(verified done, v5.93)*
 - [x] `editor/sceneReorder.ts` (127) — zero importers (spine/schema)
 - [~] `editor/extensions/index.ts` — NOT dead after all: imported by `ScreenplayEditor.tsx:35` via the directory path `../editor/extensions`. Kept.
 
@@ -31,14 +31,14 @@ Lane tags (see `docs/AREA-MAP.md`) show which chat should own each item.
 - [ ] dead branches: `'scriptnotes'` (`Toolbar.tsx:634,1276`, `editorStore.ts`), unreachable `case 'structure'` (`ToolDock.tsx`)
 
 ### Repo hygiene
-- [ ] Delete the **80 `freescript-v0_*.zip`** (7.6 MB) from the working tree — referenced by nothing but "don't use these" docs. *(History purge to shrink the 63 MB `.git` is a separate, optional op — needs a force-push + re-clone on the Mac.)*
-- [ ] Backend sidecar remnants: `backend/desktop_entry.py`, `backend/opendraft-api.spec`, `pyinstaller` in `backend/requirements.txt` (Docker already strips it)
-- [ ] Vestigial root `package-lock.json` (89-byte, still named "FreeScript")
+- [x] Delete the **80 `freescript-v0_*.zip`** (7.6 MB) from the working tree — referenced by nothing but "don't use these" docs. *(History purge to shrink the 63 MB `.git` is a separate, optional op — needs a force-push + re-clone on the Mac.)*  *(verified done, v5.93)*
+- [x] Backend sidecar remnants: `backend/desktop_entry.py`, `backend/opendraft-api.spec`, `pyinstaller` in `backend/requirements.txt` (Docker already strips it)  *(verified done, v5.93)*
+- [x] Vestigial root `package-lock.json` (89-byte, still named "FreeScript")  *(verified done, v5.93)*
 
 ### npm — lane: `importexport` / build
-- [ ] Drop `d3` (after deleting `CharacterConnectionsGraph`)
+- [x] Drop `d3` (after deleting `CharacterConnectionsGraph`)  *(verified done, v5.93)*
 - [ ] Drop test-only `esbuild` + `@xmldom/xmldom` (used only by `test-script/*.mjs`); verify-then-drop `@types/dompurify`
-- [ ] **Move `html2canvas` from devDependencies → dependencies** — it's imported by production `utils/screenshot.ts` (real packaging bug)
+- [x] **Move `html2canvas` from devDependencies → dependencies** — it's imported by production `utils/screenshot.ts` (real packaging bug)  *(verified done, v5.93)*
 
 ### Stale / mis-branded docs & scripts
 - [x] `docs/desktop-build.md` — defunct Python-sidecar build; **deleted**, README link repointed to `DESKTOP-RELEASE.md`
@@ -80,10 +80,10 @@ prefixes so far (0 TS/TSX hits — safe to remove *as individual rules*):
   `.fs-timefield` (live) untouched; `note-item-flash`/`note-item-media` proved
   LIVE and stay.
 - [x] `09-script-notes.css` — DONE: 47 rules (501→229).
-- [ ] `24-notebook.css` — ~313 (old ribbon editor `ribed-*`/`ruv-*`) (`notebook`)
-- [ ] `10-character-profiles.css` — ~203 (`character`)
-- [ ] `03-toolbar.css` — ~182 (mostly the duplicate project block + `zoom-menu-*`) (`toolbar`)
-- [ ] smaller: `19-sticky-notes.css`, `05-scene-navigator.css`, `13-production-tags.css`, `18-elements-templates.css`, `06-editor-content.css`, `25-confirm-outline-tabs.css`, `20-tool-dock.css`, `23-toolbar-zones.css`
+- [~] `24-notebook.css` — ~313 (old ribbon editor `ribed-*`/`ruv-*`) (`notebook`)
+- [~] `10-character-profiles.css` — ~203 (`character`)
+- [~] `03-toolbar.css` — ~182 (mostly the duplicate project block + `zoom-menu-*`) (`toolbar`)
+- [~] smaller: `19-sticky-notes.css`, `05-scene-navigator.css`, `13-production-tags.css`, `18-elements-templates.css`, `06-editor-content.css`, `25-confirm-outline-tabs.css`, `20-tool-dock.css`, `23-toolbar-zones.css`
 
 Confirmed still USED (do **not** remove): `.rel-map-toolbar-label`, `.rel-map-toolbar-hint`.
 
@@ -105,14 +105,14 @@ Confirmed still USED (do **not** remove): `.rel-map-toolbar-label`, `.rel-map-to
 Do incrementally, one extraction per commit. This is also what unblocks parallel
 chats (see `docs/AREA-MAP.md`).
 
-- [ ] **`stores/editorStore.ts` (3,099)** → per-domain slices. Start with the 3 fattest/most-independent: **chrome-customization**, **beats/outline**, **spell/grammar**. Then update `docs/lanes.json` (`editorStore:<domain>` → `own:<slice>`) so the checker frees those lanes.
+- [x] **`stores/editorStore.ts`** → per-domain slices. DONE: 10 slices in `stores/slices/`. **chrome-customization was deliberately NOT sliced** (Derek's call — it IS the store's core; see HANDOFF-CONTINUE §0.6). Then update `docs/lanes.json` (`editorStore:<domain>` → `own:<slice>`) so the checker frees those lanes.
 - [~] **`components/ScreenplayEditor.tsx` (4,743 → 4,619)** → hooks. DONE: `useTouchGestures` (hooks/useTouch), **`usePanelResize`** (v5.88, +4 tests), **`useFileAssociation`** (v5.88). `useFileDrop` — the state it named is already gone; only a tombstone comment remained. **`useCollaboration`** (v5.89 — 335 lines out; the 326 refs closed over only 4 component-scope names). LEFT: the `<EditorDialogs>` host.
 - [x] **`data/changelog.ts` (2,783 → 72)** → data array moved to `changelog.json` (359 versions / 573 items), imported statically; the file is now just types + tag logic + `APP_VERSION`. Source-scanning win done. *(Optional follow-up: make it a lazy `import()` in MenuBar to also drop it from the initial bundle — deferred as it touches the MenuBar spine file.)*
 - [x] ~~**`components/MenuBar.tsx`** → per-menu builder modules~~ **ATTEMPTED AND REVERTED (v5.90). Do not re-attempt as specified.**
   - Diagnostics is ALREADY split (`DiagnosticsDialog` is its own module; only the open/close state remains here, which is correct).
   - Per-menu builders were tried and backed out. A first scan suggested clean seams — View "needs 5 things", Tools "needs none" — and that scan was WRONG: it counted only top-level `const` declarations and missed props, store destructuring and hook returns. Measured properly by compiling the extracted modules, **View needs 43 context fields**, Project 14, Format 11. Threading 43 fields through a ctx object to move 216 lines makes the call site worse than the thing it replaces.
   - **The lesson for any future split here:** free-variable analysis must come from the COMPILER (extract, build, read the "Cannot find name" errors), not from a regex over declarations. A regex undercounts, and undercounting is how a refactor gets started that should not have been.
-- [ ] **`components/Toolbar.tsx` (2,116)** → the 32-case render switch. NOTE (v5.88): this is not the mechanical move the line implies — every case closes over component state (`scrapbookOpen`, `editor`, a dozen handlers), so lifting it means threading a ~30-field context object. Do it by DOMAIN group (format / insert / view), each taking a narrow slice, not as one flat map.
+- [x] ~~**`components/Toolbar.tsx`** → token→renderer map~~ **DECLINED (v5.90).** NOTE (v5.88): this is not the mechanical move the line implies — every case closes over component state (`scrapbookOpen`, `editor`, a dozen handlers), so lifting it means threading a ~30-field context object. Do it by DOMAIN group (format / insert / view), each taking a narrow slice, not as one flat map.
 - [x] **`components/CharacterProfiles.tsx`** → the valuable parts are DONE: `utils/characterScan` (extracted + tested) and `CharacterAssetMedia` (its own module). Per-tab components were measured (v5.90) and are not worth it: the Relationships tab is 20 lines and From Script is 85; the file's weight is shared handlers and `renderCharacterFields`, which belong to no single tab.
 
 ---
@@ -294,6 +294,12 @@ a real boundary: a lifecycle (collab), a device concern (file association), a
 self-contained interaction (panel resize). The ones that did not pay off were
 slices of a render tree, which is not a boundary at all.
 
+
+> **The CSS cluster boxes below/above are marked `[~]`, not `[x]`:** the v5.92
+> pass removed only the styles of provably-deleted components. The bulk in
+> those files (`ribed-*`, `ruv-*`, character-profile leftovers) is in the 292
+> candidates DECLINED for the reasons in that section — they are not "still to
+> do", they are "do not do this by analyser".
 
 ## v5.92 — the dead-CSS pass: 202 lines cut, 315 candidates DECLINED
 
