@@ -5,6 +5,7 @@
 // renders these only while open; associate/close land back there as callbacks.
 import type { Asset } from '../stores/assetStore';
 import { AssetImage } from './CharacterAssetMedia';
+import { Modal } from './Modal';
 
 interface CharacterImagePickerDialogProps {
   /** Character the image is being picked for (the parent's imagePickerFor). */
@@ -24,8 +25,7 @@ export function CharacterImagePickerDialog({
   onAssociate, onClose,
 }: CharacterImagePickerDialogProps) {
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div className="dialog-box char-image-picker-dialog" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} boxClassName="char-image-picker-dialog">
         <div className="dialog-header">
           Select Image for {forName}
           <button className="char-profiles-close" onClick={onClose}>&times;</button>
@@ -63,7 +63,6 @@ export function CharacterImagePickerDialog({
               })
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

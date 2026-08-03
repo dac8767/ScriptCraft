@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { FaColumns, FaEdit, FaRegTrashAlt, FaCheck, FaChevronUp, FaChevronDown } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
+import { Modal } from './Modal';
 
 /* ─────────────────────────────────────────────────────────────────────────
    Workspace dialogs (View → Workspaces)
@@ -39,8 +40,7 @@ export function SaveWorkspaceDialog({ open, onClose }: { open: boolean; onClose:
   };
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div className="dialog-box ws-dialog" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} boxClassName="ws-dialog">
         <div className="dialog-header">
           <FaColumns className="ws-dialog-header-icon" /> Save Workspace
         </div>
@@ -73,8 +73,7 @@ export function SaveWorkspaceDialog({ open, onClose }: { open: boolean; onClose:
             {exists ? 'Replace' : 'Save'}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

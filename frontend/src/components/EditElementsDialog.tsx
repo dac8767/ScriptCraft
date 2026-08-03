@@ -23,6 +23,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useFormattingTemplateStore, DUAL_DIALOGUE_ID, DEFAULT_TRANSITIONS } from '../stores/formattingTemplateStore';
 import { DndColumns } from './CustomizePanelsDialog';
+import { Modal } from './Modal';
 
 /** Elements a script can't function without — reorderable, never hidable. */
 const REQUIRED_IDS = ['sceneHeading', 'action', 'character', 'dialogue'];
@@ -323,14 +324,12 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
   if (!open) return null;
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div className="dialog-box fs-customize-dialog" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose ?? (() => {})} boxClassName="fs-customize-dialog">
         <div className="dialog-header">
           Edit Elements
           <button className="fs-dialog-x" onClick={onClose} title="Close">&times;</button>
         </div>
         {body}
-      </div>
-    </div>
+    </Modal>
   );
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useShortcutStore } from '../stores/shortcutStore';
 import { SHORTCUT_COMMANDS, formatCombo } from './shortcuts';
+import { Modal } from './Modal';
 
 /**
  * HelpReferenceDialog — Help menu content, ported from ScriptCraft v5.5's
@@ -130,8 +131,7 @@ interface Props {
 export default function HelpReferenceDialog({ kind, open, onClose }: Props) {
   if (!open) return null;
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div className="dialog-box fs-help-dialog" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} boxClassName="fs-help-dialog">
         <div className="dialog-header">
           {kind === 'shortcuts' ? 'Keyboard Shortcuts' : 'Knowledge Base'}
           <button className="fs-dialog-x" onClick={onClose} title="Close">&times;</button>
@@ -153,7 +153,6 @@ export default function HelpReferenceDialog({ kind, open, onClose }: Props) {
             >Edit Keyboard Shortcuts...</button>
           </div>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 }

@@ -24,6 +24,7 @@ import { saveFile, openTextFile } from '../utils/fileOps';
 import { confirmDialog } from './ConfirmDialog';
 import { showToast } from './Toast';
 import { extractThemes } from './ThemesTab';
+import { Modal } from './Modal';
 
 const JSON_FILTER = [{ name: 'ScriptCraft Preset', extensions: ['json'] }];
 
@@ -257,8 +258,7 @@ export default function PresetsPanel({ showImports = true }: { showImports?: boo
 export function PresetsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   if (!open) return null;
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div className="dialog-box fs-presets-dialog" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} boxClassName="fs-presets-dialog">
         <div className="dialog-header">
           Presets
           <button className="fs-dialog-x" onClick={onClose} title="Close">&times;</button>
@@ -266,7 +266,6 @@ export function PresetsDialog({ open, onClose }: { open: boolean; onClose: () =>
         <div className="dialog-body">
           <PresetsPanel />
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

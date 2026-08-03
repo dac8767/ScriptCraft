@@ -24,6 +24,7 @@ import {
   disconnectGDrive, disconnectOneDrive,
 } from '../services/saveLocations';
 import { redirectUri } from '../services/oauthPkce';
+import { Modal } from './Modal';
 
 /* ─────────────────────────────────────────────────────────────────────────
    Settings (File → Settings…)
@@ -776,8 +777,7 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
   if (!open) return null;
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div className="dialog-box prefs-dialog" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} boxClassName="prefs-dialog">
         <div className="dialog-header">
           Settings
           <button className="fs-dialog-x" onClick={onClose} title="Close">&times;</button>
@@ -843,7 +843,6 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
             {tab === 'defaults' && <DefaultsTab />}
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

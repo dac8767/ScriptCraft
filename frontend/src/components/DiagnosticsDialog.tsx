@@ -4,6 +4,7 @@
 // keeps only the open flag.
 import React, { useCallback, useEffect, useState } from 'react';
 import { showToast } from './Toast';
+import { Modal } from './Modal';
 
 const DiagRow: React.FC<{ label: string; value: string; mono?: boolean }> = ({ label, value, mono }) => (
   <tr>
@@ -48,8 +49,7 @@ export function DiagnosticsDialog({ onClose }: { onClose: () => void }) {
   }, [report]);
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div className="dialog-box about-dialog" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} boxClassName="about-dialog">
         <div className="dialog-header">Diagnostics</div>
         <div className="dialog-body about-body">
           <p style={{ margin: 0, fontSize: 13, color: 'var(--fd-text-secondary)' }}>
@@ -108,7 +108,6 @@ export function DiagnosticsDialog({ onClose }: { onClose: () => void }) {
           </button>
           <button className="dialog-primary" onClick={onClose}>Close</button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
