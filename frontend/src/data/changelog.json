@@ -1,5 +1,14 @@
 [
   {
+    "version": "5.96",
+    "date": "2026-08-03",
+    "changes": [
+      "Map view: expanding a sidebar location now shows two buttons in the top row of its body — Map Options and Pin Options. The editing fields that were in the sidebar moved to the Locations panel: expand any location in the list and everything the place knows is there — display name, its script locations, Connect to location, description, and custom fields.",
+      "List view: the Group button lives in the window header now, right of the View control, and lights up while grouping is on.",
+      "Grouped, every location has a home: anything that doesn't belong to a named group gathers under \"No Group\" at the end of the list."
+    ]
+  },
+  {
     "version": "5.95",
     "date": "2026-08-03",
     "changes": [

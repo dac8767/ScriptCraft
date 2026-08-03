@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import { useEditorStore, EMPTY_SCENE_FILTERS, type SceneFilters } from '../stores/editorStore';
 import LocationMapTab from './LocationMapTab';
-import { placeDescription, locationListEntries } from '../utils/locationPlaces';
+import { placeDescription, locationListEntries, placeForLocation } from '../utils/locationPlaces';
+import LocationPlaceDetails from './LocationPlaceDetails';
 import { renameLocationInScript } from '../utils/renameLocationInScript';
 import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlice';
 import { PAGES_PER_ROW_MIN, PAGES_PER_ROW_MAX } from '../stores/slices/sceneNavSlice';
@@ -20,7 +21,7 @@ import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
 import { parseHeading, computeSceneFilterDetails, sceneFilterOptions, filterSceneIndices, countActiveSceneFilters, type SceneFilterDetail } from '../utils/sceneFilters';
 import { useSceneReorder } from '../utils/useSceneReorder';
-import { ControlDropdown, ControlSearch, PerRowStepper, ToolActionRow, type ToolChromeTab } from './ToolControls';
+import { ControlDropdown, ControlSearch, PerRowStepper, type ToolChromeTab } from './ToolControls';
 import { SceneReorderBar } from './IndexCards';
 import { LuLayoutGrid, LuList } from 'react-icons/lu';
 import { FaChevronRight, FaChevronDown, FaEllipsisV, FaHashtag, FaMapMarkerAlt } from 'react-icons/fa';
@@ -403,7 +404,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   const places = useEditorStore((s) => s.locationPlaces);
   const setLocationDescriptionFor = useEditorStore((s) => s.setLocationDescriptionFor);
   const grouped = useEditorStore((s) => s.locationsGrouped);
-  const setGrouped = useEditorStore((s) => s.setLocationsGrouped);
   const showHiddenLocations = useEditorStore((s) => s.showHiddenLocations);
   const locations = useMemo(
     () => visibleLocations(allLocations, { search: locSearch, filter: locFilter, sort: locSort }),
@@ -1444,24 +1444,6 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
       )}
       {activeTab === 'locations' && locationsTab === 'list' && (
         <>
-          {/* v5.85, Derek: "add a button Group in the header, which toggles
-              whether the locations are organized/grouped together by the
-              display name or not." It sits where every tool's OWN actions
-              sit — the first row of the body, left-aligned and button-shaped
-              (the v5.01 rule) — which is also where the Map view's + Add Pin
-              row is, so the two views' controls line up. */}
-          {locations.length > 0 && (
-            <ToolActionRow>
-              <button
-                className={`tool-action-btn${grouped ? ' active' : ''}`}
-                aria-pressed={grouped}
-                title={grouped
-                  ? 'Listing locations grouped under their display names'
-                  : 'Group locations that share a display name'}
-                onClick={() => setGrouped(!grouped)}
-              >Group</button>
-            </ToolActionRow>
-          )}
           {locations.length > 0 && (
             <div className="location-list-header location-header">
               <span className="location-chevron" />
@@ -1485,11 +1467,11 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
               </div>
             ) : (
               listEntries.map((entry) => (
-                <React.Fragment key={entry.groupLabel ? `g:${entry.placeId}` : `l:${entry.locations[0].name}`}>
+                <React.Fragment key={entry.groupLabel ? `g:${entry.placeId ?? 'no-group'}` : `l:${entry.locations[0].name}`}>
                   {/* A group says its display name ONCE, above the locations
                       it stands for — the names below stay the script's own. */}
                   {entry.groupLabel && (
-                    <div className="location-group-head">
+                    <div className={`location-group-head${entry.placeId ? '' : ' location-group-head-none'}`}>
                       <FaMapMarkerAlt className="location-group-head-icon" />
                       {entry.groupLabel}
                       <span className="location-group-head-count">{entry.locations.length}</span>
@@ -1531,6 +1513,14 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                     </div>
                     {isExpanded && (
                       <div className="location-detail">
+                        {/* v5.96, Derek: the information from the Map view's
+                            sidebar lives HERE now — the panel is the one
+                            home for what a place knows. */}
+                        <LocationPlaceDetails
+                          locations={locations}
+                          scriptNames={[loc.name]}
+                          place={placeForLocation(places, loc.name)}
+                        />
                         {isRenaming ? (
                           <div className="location-rename-row">
                             <input
@@ -1625,6 +1615,8 @@ export function LocationsControls() {
   const filter = useEditorStore((s) => s.locationFilter);
   const setFilter = useEditorStore((s) => s.setLocationFilter);
   const sort = useEditorStore((s) => s.locationSort);
+  const grouped = useEditorStore((s) => s.locationsGrouped);
+  const setGrouped = useEditorStore((s) => s.setLocationsGrouped);
   const showHidden = useEditorStore((s) => s.showHiddenLocations);
   const setShowHidden = useEditorStore((s) => s.setShowHiddenLocations);
   const setSort = useEditorStore((s) => s.setLocationSort);
@@ -1658,7 +1650,23 @@ export function LocationsControls() {
       />
       {/* v5.81, Derek: the map's own actions moved OUT of the header, down
           beside + Add Pin as a "Map Options" button — see LocationMapOptions.
-          The header keeps the four shared controls and nothing else. */}
+          v5.96, Derek: Group is the ONE exception to the four-control rule,
+          by his word — "move the group button into the header, to the right
+          of the view button". List view only: grouping means nothing to the
+          map, and a dead toggle is the decorative-control sin. */}
+      {view === 'list' && (
+        <button
+          className={`tool-ctl${grouped ? ' tool-ctl-on' : ''}`}
+          aria-pressed={grouped}
+          title={grouped
+            ? 'Grouped by display name — click to list every location on its own'
+            : 'Group locations that share a display name'}
+          onClick={() => setGrouped(!grouped)}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <span className="tool-ctl-label">Group</span>
+        </button>
+      )}
       <ControlDropdown
         label="Filter"
         current={filter === 'all' ? undefined : FILTERS.find((f) => f.id === filter)?.label}

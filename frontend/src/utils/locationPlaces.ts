@@ -472,22 +472,31 @@ export interface LocationListEntry<T> {
   locations: T[];
 }
 
+/** The heading ungrouped locations gather under when grouping is on
+ *  (v5.96, Derek: "add any item that does not have a group to 'No Group'"). */
+export const NO_GROUP_LABEL = 'No Group';
+
 export function locationListEntries<T extends { name: string }>(
   locations: T[], places: LocationPlace[], grouped: boolean, showHidden = false,
 ): Array<LocationListEntry<T>> {
   const shown = locations.filter((l) => showHidden || !isLocationHidden(places, l.name));
   if (!grouped) return shown.map((l) => ({ locations: [l] }));
   const out: Array<LocationListEntry<T>> = [];
+  const loose: T[] = [];
   const done = new Set<string>();
   for (const loc of shown) {
     if (done.has(key(loc.name))) continue;
     const place = placeForLocation(places, loc.name);
     const label = place?.displayName.trim();
-    if (!place || !label) { done.add(key(loc.name)); out.push({ locations: [loc] }); continue; }
+    if (!place || !label) { done.add(key(loc.name)); loose.push(loc); continue; }
     const mates = shown.filter((l) => place.scriptNames.some((n) => key(n) === key(l.name)));
     mates.forEach((l) => done.add(key(l.name)));
     out.push({ groupLabel: label, placeId: place.id, locations: mates });
   }
+  /* Grouped, everything has a home: what belongs to no group gathers under
+     "No Group" at the end — a mixed list of headed groups and bare rows
+     reads as rows that ESCAPED their groups. */
+  if (loose.length) out.push({ groupLabel: NO_GROUP_LABEL, locations: loose });
   return out;
 }
 

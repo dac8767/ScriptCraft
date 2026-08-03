@@ -131,17 +131,22 @@ try {
   await page.mouse.click(5, 5);
   await settle(page);
 
-  // ── 6. the sidebar: display name, description, custom field ─────────
-  await page.click('.locmap-rail-row:has(.locmap-rail-badge)');
-  await page.waitForSelector('.locmap-rail-detail', { timeout: 5000 });
-  ok(true, 'clicking a sidebar location expands it');
-  const labels = await page.$$eval('.locmap-rail-detail .locmap-field-label', (els) => els.map((e) => e.textContent.trim()));
+  // ── 6. the fields live in the LIST panel now (v5.96, Derek: "the
+  //       information ... should be moved to the location side panel") ──
+  await setView('List');
+  await settle(page);
+  await page.click(`.location-group:has-text("${firstLoc}") .location-name`);
+  await page.waitForSelector('.locplace-details', { timeout: 5000 });
+  ok(true, 'expanding a list row reveals the place details');
+  const labels = await page.$$eval('.locplace-details .locmap-field-label', (els) => els.map((e) => e.textContent.trim()));
   ok(labels.includes('Display Name') && labels.includes('Description'),
     `it reveals the fields (${labels.join(', ')})`);
-  await page.fill('.locmap-rail-detail .locmap-field-input', 'Belkadan');
+  await page.fill('.locplace-details .locmap-field-input', 'Belkadan');
   await settle(page);
   const withDisplay = (await state()).places.find((p) => p.scriptNames.includes(firstLoc));
   ok(withDisplay?.displayName === 'Belkadan', 'the display name is stored');
+  await setView('Map');
+  await page.waitForSelector('.locmap-pin', { timeout: 5000 });
   ok((await page.$eval('.locmap-pin .locmap-pin-label', (e) => e.textContent.trim())) === 'Belkadan',
     'the pin now shows the display name');
   const scriptUnchanged = await page.evaluate((name) => {
@@ -154,7 +159,12 @@ try {
   }, firstLoc);
   ok(scriptUnchanged, 'and the SCRIPT still says the original name — the display name is window-only');
 
-  ok(await page.$('.locmap-add-field') !== null, 'the expanded row offers "+ Add custom field"');
+  await setView('List');
+  await settle(page);
+  ok(await page.$('.locplace-details button:has-text("Add custom field")') !== null,
+    'the panel offers "+ Add custom field" (v5.96: it lives in the List panel)');
+  await setView('Map');
+  await page.waitForSelector('.locmap-stage', { timeout: 5000 });
 
   // ── 6b. "Assign to an existing pin" — the merge Derek asked for ─────
   // A SECOND pin, with its own location, then merged onto the first.

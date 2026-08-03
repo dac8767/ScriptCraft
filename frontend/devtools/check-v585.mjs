@@ -11,6 +11,22 @@
 import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 
+/* v5.96: the option buttons live in the expanded row's BODY. Expanding an
+   already-open row folds it, so collapse-first, expand, then press. */
+async function railOption(page, rowSel, title) {
+  if (await page.$('.locmap-rail-item-open')) {
+    await page.click('.locmap-rail-item-open .locmap-rail-name');
+    await settle(page);
+  }
+  await page.locator(`${rowSel} .locmap-rail-name`).first().click();
+  await page.waitForSelector('.locmap-rail-detail');
+  await settle(page);
+  await page.click(`.locmap-rail-detail button[title="${title}"]`);
+  await page.waitForSelector('.locmap-pin-menu');
+  await settle(page);
+}
+
+
 const MAP = writeMapFixture('/tmp/check-v577-map.png');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log('  ✓', m); } else { fail++; console.log('  ✗ FAIL', m); } };
@@ -26,7 +42,11 @@ try {
   ok(names.length > 0 && names.every((n) => n === n.toUpperCase()),
     `#3 the list shows the script's own names (${names.slice(0, 2).join(' · ')})`);
 
-  ok(await page.$('.tool-action-row button:text-is("Group")') !== null, '#3 there is a Group button');
+  ok(await page.$('.tool-fs-header button:has-text("Group")') !== null,
+    '#3 the Group button sits in the HEADER (v5.96), right of View');
+  const headerOrder = await page.$$eval('.tool-fs-header .tool-ctl', (els) => els.map((e) => e.textContent.trim()).filter(Boolean));
+  ok(headerOrder.indexOf('Group') > headerOrder.findIndex((t) => /List|Map/.test(t)),
+    `#3 to the right of the View control (${headerOrder.slice(0, 3).join(' · ')})`);
   // give two locations one display name so grouping has something to do
   await page.evaluate(() => {
     const s = window.__scStore.getState();
@@ -41,14 +61,17 @@ try {
     '#3 ungrouped, each location still stands under its own name');
   ok(await page.$('.location-group-head') === null, '#3 and there are no group headings');
 
-  await page.click('.tool-action-row button:text-is("Group")');
+  await page.click('.tool-fs-header button:has-text("Group")');
   await settle(page);
   const heads = await page.$$eval('.location-group-head', (e) => e.map((x) => x.textContent.trim()));
   ok(heads.some((h) => h.includes('Belkadan System')), `#3 Group folds them under the display name (${heads.join(' · ')})`);
+  ok(heads.some((h) => h.includes('No Group')),
+    `#3 and everything without a group gathers under "No Group" (v5.96)`);
+  ok(heads[heads.length - 1].includes('No Group'), '#3 with No Group at the end');
   const groupedNames = await page.$$eval('.location-group .location-name', (e) => e.map((x) => x.textContent.trim()));
   ok(groupedNames.includes('SPACE - OPENING SCROLL') && groupedNames.includes('SPACE - BELKADAN'),
     '#3 and the rows underneath still carry the FULL script names');
-  await page.click('.tool-action-row button:text-is("Group")');
+  await page.click('.tool-fs-header button:has-text("Group")');
   await settle(page);
 
   // ── the map sidebar's two row menus ─────────────────────────────────
@@ -60,11 +83,15 @@ try {
   await page.click('.locmap-import-confirm');
   await page.waitForTimeout(400);
 
-  const btns = await page.$$eval('.locmap-rail-item:first-child .locmap-rail-btn', (e) => e.map((x) => x.title));
+  // v5.96: the options are the TOP ROW of the expanded row's body.
+  await page.click('.locmap-rail-item:first-child .locmap-rail-name');
+  await page.waitForSelector('.locmap-rail-detail');
+  const btns = await page.$$eval('.locmap-rail-detail .locmap-detail-actions button', (e) => e.map((x) => x.title));
   ok(JSON.stringify(btns) === JSON.stringify(['Map options', 'Pin options']),
-    `#1/#2 every row carries a map icon and a pin icon (${btns.join(' · ')})`);
-
-  await page.click('.locmap-rail-item:first-child .locmap-rail-btn[title="Map options"]');
+    `#1/#2 the expanded row's body leads with the two option buttons (${btns.join(' · ')})`);
+  const detailKids = await page.$eval('.locmap-rail-detail', (el) => el.children.length);
+  ok(detailKids === 1, `#4 and the body holds ONLY them — the fields moved to the panel (${detailKids} child)`);
+  await page.click('.locmap-rail-detail button[title="Map options"]');
   await page.waitForSelector('.locmap-pin-menu');
   const mapItems = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
   ok(JSON.stringify(mapItems) === JSON.stringify(['Connect to location…', 'Hide from locations list']),
@@ -92,8 +119,7 @@ try {
   ok(await page.$('.locmap-rail-item-hidden') !== null, '#1 marked as hidden while it is shown');
 
   // unhide through the same menu
-  await page.click('.locmap-rail-item-hidden .locmap-rail-btn[title="Map options"]');
-  await page.waitForSelector('.locmap-pin-menu');
+  await railOption(page, '.locmap-rail-item-hidden', 'Map options');
   const backItems = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
   ok(backItems.includes('Show in locations list'), `#1 and the menu now offers to show it (${backItems.join(' · ')})`);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:text-is("Show in locations list")');
@@ -101,16 +127,14 @@ try {
   ok(!(await page.evaluate(() => window.__scStore.getState().locationPlaces.some((p) => p.hidden))), '#1 unhidden again');
 
   // ── the pin menu ────────────────────────────────────────────────────
-  await page.click('.locmap-rail-item:has(.locmap-rail-icon-pinned) .locmap-rail-btn[title="Pin options"]');
-  await page.waitForSelector('.locmap-pin-menu');
+  await railOption(page, '.locmap-rail-item:has(.locmap-rail-icon-pinned)', 'Pin options');
   const pinItems = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
   ok(pinItems.length === 2 && /Lock pin/.test(pinItems[0]) && pinItems[1] === 'Delete pin',
     `#2 the pin menu offers ${pinItems.join(' · ')}`);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has-text("Lock pin")');
   await settle(page);
   ok(await page.evaluate(() => window.__scStore.getState().locationPlaces.some((p) => p.locked)), '#2 it locks the pin');
-  await page.click('.locmap-rail-item:has(.locmap-rail-icon-pinned) .locmap-rail-btn[title="Pin options"]');
-  await page.waitForSelector('.locmap-pin-menu');
+  await railOption(page, '.locmap-rail-item:has(.locmap-rail-icon-pinned)', 'Pin options');
   const locked = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
   ok(/Unlock pin/.test(locked[0]), `#2 and then offers to unlock (${locked[0]})`);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has-text("Unlock pin")');
@@ -118,16 +142,14 @@ try {
 
   // delete the pin
   const pinnedBefore = await page.evaluate(() => window.__scStore.getState().locationPlaces.filter((p) => p.x !== null).length);
-  await page.click('.locmap-rail-item:has(.locmap-rail-icon-pinned) .locmap-rail-btn[title="Pin options"]');
-  await page.waitForSelector('.locmap-pin-menu');
+  await railOption(page, '.locmap-rail-item:has(.locmap-rail-icon-pinned)', 'Pin options');
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:text-is("Delete pin")');
   await settle(page);
   const pinnedAfter = await page.evaluate(() => window.__scStore.getState().locationPlaces.filter((p) => p.x !== null).length);
   ok(pinnedAfter === pinnedBefore - 1, `#2 Delete pin takes it off the map (${pinnedBefore} → ${pinnedAfter})`);
 
   // a row with no pin says so rather than pretending
-  await page.click('.locmap-rail-item:not(:has(.locmap-rail-icon-pinned)) .locmap-rail-btn[title="Pin options"]');
-  await page.waitForSelector('.locmap-pin-menu');
+  await railOption(page, '.locmap-rail-item:not(:has(.locmap-rail-icon-pinned))', 'Pin options');
   ok(await page.$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.disabled),
     '#2 an unpinned row offers the items disabled, not silently dead');
 } catch (e) { console.log('  ✗ SCRIPT ERROR:', e.message); fail++; }

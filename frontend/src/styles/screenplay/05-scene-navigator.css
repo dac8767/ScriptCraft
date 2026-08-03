@@ -1618,3 +1618,18 @@
   background: var(--fd-overlay-light);
   padding: 1px 6px; border-radius: 7px;
 }
+
+/* ── v5.96: Group in the header, No Group, the rail's action row ────── */
+/* The header's Group toggle, lit while grouping is on. */
+.tool-ctl-on { color: var(--fd-accent); }
+.tool-ctl-on .tool-ctl-label { color: var(--fd-accent); }
+/* "No Group" is a bucket, not a place — same shape as a group heading,
+   none of the accent. */
+.location-group-head-none { color: var(--fd-text-muted); }
+.location-group-head-none .location-group-head-icon { display: none; }
+/* The expanded map row's body: the two option buttons, first row, left-
+   aligned — the v5.01 rule for a tool's own actions. */
+.locmap-detail-actions { display: flex; gap: 6px; }
+.locmap-detail-actions .locmap-tool-btn { display: flex; align-items: center; gap: 5px; }
+/* The details block reads the same in the panel as it did on the map. */
+.locplace-details { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }

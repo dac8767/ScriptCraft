@@ -25,15 +25,14 @@
  */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  FaMapMarkerAlt, FaRegImage, FaChevronRight, FaChevronDown, FaRegTrashAlt, FaUndo, FaRegMap, FaRegEyeSlash,
-  FaLock, FaLockOpen, FaTimes,
+  FaMapMarkerAlt, FaRegImage, FaChevronRight, FaChevronDown, FaUndo, FaRegMap, FaRegEyeSlash,
+  FaLock, FaLockOpen,
 } from 'react-icons/fa';
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { resolveImageUrl } from '../utils/imageAsset';
 import { AssetImage } from './CharacterAssetMedia';
-import { promptDialog } from './ConfirmDialog';
 import { showToast } from './Toast';
 import LocationPinMenu from './LocationPinMenu';
 import LocationMapOptions, { importLocationMap } from './LocationMapOptions';
@@ -97,9 +96,6 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
   const updatePlaceIn = useEditorStore((s) => s.updateLocationPlace);
   const attachLocation = useEditorStore((s) => s.attachLocationToPlace);
   const detachLocation = useEditorStore((s) => s.detachLocationFromPlace);
-  const addField = useEditorStore((s) => s.addLocationPlaceField);
-  const setField = useEditorStore((s) => s.setLocationPlaceField);
-  const removeField = useEditorStore((s) => s.removeLocationPlaceField);
   const mergePlaces = useEditorStore((s) => s.mergeLocationPlaces);
   const toggleLock = useEditorStore((s) => s.toggleLocationPlaceLock);
   const toggleHidden = useEditorStore((s) => s.toggleLocationPlaceHidden);
@@ -424,11 +420,6 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
     return id;
   }, [addPin, updatePlaceIn, attachLocation]);
 
-  const addCustomField = useCallback(async (placeId: string) => {
-    const label = await promptDialog('New field name:', '', { title: 'New Custom Field', confirmLabel: 'Add' });
-    if (label && label.trim()) addField(placeId, label.trim());
-  }, [addField]);
-
   return (
     <div className="locmap">
       <input
@@ -471,110 +462,34 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor }) => 
                   {pinned && place?.locked && <FaLock className="locmap-rail-lock" title="This pin is locked" />}
                   {place?.hidden && <FaRegEyeSlash className="locmap-rail-lock" title="Hidden from the locations list" />}
                   {row.scenes > 0 && <span className="locmap-rail-scenes">{row.scenes}</span>}
-                  {/* v5.85: the row's two menus. They stop the click from
-                      reaching the row, which would fold it shut underneath. */}
-                  <button
-                    className="locmap-rail-btn"
-                    title="Map options"
-                    aria-label="Map options"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                      setRowMenu({ kind: 'map', rowKey: row.key, names: row.scriptNames, place, top: r.bottom + 4, left: Math.max(8, r.left - 120) });
-                    }}
-                  ><FaRegMap /></button>
-                  <button
-                    className="locmap-rail-btn"
-                    title="Pin options"
-                    aria-label="Pin options"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                      setRowMenu({ kind: 'pin', rowKey: row.key, names: row.scriptNames, place, top: r.bottom + 4, left: Math.max(8, r.left - 120) });
-                    }}
-                  ><FaMapMarkerAlt /></button>
                 </div>
                 {isOpen && (
                   <div className="locmap-rail-detail">
-                    {/* Derek: the display name "overrides what the location
-                        name looks like in the location window. it does not
-                        change anything in the script" — so the script's own
-                        names are listed below, and the two never blur. */}
-                    <label className="locmap-field-label">Display Name</label>
-                    <input
-                      className="locmap-field-input"
-                      placeholder={row.scriptNames[0] || 'Name in the Locations window'}
-                      value={place?.displayName ?? ''}
-                      onChange={(e) => {
-                        const id = placeFor(row.scriptNames, place);
-                        if (id) updatePlaceIn(id, { displayName: e.target.value });
-                      }}
-                    />
-
-                    {/* Derek #2: the row's script locations, as a field —
-                        #3: and this is where another one is attached. */}
-                    <label className="locmap-field-label">Script Locations</label>
-                    <div className="locmap-attached-list">
-                      {row.scriptNames.length === 0 && (
-                        <div className="locmap-field-note">Not in the script — this place is yours alone.</div>
-                      )}
-                      {row.scriptNames.map((name) => (
-                        <div key={name} className="locmap-attached-row">
-                          <span className="locmap-attached-name" title={name}>{name}</span>
-                          {row.scriptNames.length > 1 && (
-                            <button
-                              className="locmap-attached-remove"
-                              title={`Disconnect ${name} from this place`}
-                              onClick={() => detachLocation(name)}
-                            ><FaTimes /></button>
-                          )}
-                        </div>
-                      ))}
+                    {/* v5.96, Derek: the options buttons live in the TOP ROW
+                        of the expanded row's body — and the editing fields
+                        that were here moved to the Locations panel
+                        (LocationPlaceDetails). The map keeps pins and
+                        options; the panel keeps knowledge. */}
+                    <div className="locmap-detail-actions">
+                      <button
+                        className="locmap-tool-btn"
+                        title="Map options"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                          setRowMenu({ kind: 'map', rowKey: row.key, names: row.scriptNames, place, top: r.bottom + 4, left: Math.max(8, r.left) });
+                        }}
+                      ><FaRegMap /> Map Options</button>
+                      <button
+                        className="locmap-tool-btn"
+                        title="Pin options"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                          setRowMenu({ kind: 'pin', rowKey: row.key, names: row.scriptNames, place, top: r.bottom + 4, left: Math.max(8, r.left) });
+                        }}
+                      ><FaMapMarkerAlt /> Pin Options</button>
                     </div>
-                    {/* (v5.85: "+ Connect to location" moved into the row's
-                        MAP menu — one way in, not two.) */}
-
-                    <label className="locmap-field-label">Description</label>
-                    <textarea
-                      className="locmap-field-input locmap-field-textarea"
-                      rows={3}
-                      value={place?.description ?? ''}
-                      onChange={(e) => {
-                        const id = placeFor(row.scriptNames, place);
-                        if (id) updatePlaceIn(id, { description: e.target.value });
-                      }}
-                    />
-
-                    {place?.fields.map((f) => (
-                      <div key={f.id} className="locmap-custom-field">
-                        <div className="locmap-custom-label-row">
-                          <input
-                            className="locmap-field-label locmap-custom-label"
-                            value={f.label}
-                            title="Rename this field"
-                            onChange={(e) => setField(place.id, f.id, { label: e.target.value })}
-                          />
-                          <button
-                            className="locmap-custom-remove" title="Remove this field"
-                            onClick={() => removeField(place.id, f.id)}
-                          ><FaRegTrashAlt /></button>
-                        </div>
-                        <textarea
-                          className="locmap-field-input locmap-field-textarea"
-                          rows={2}
-                          value={f.value}
-                          onChange={(e) => setField(place.id, f.id, { value: e.target.value })}
-                        />
-                      </div>
-                    ))}
-                    <button
-                      className="locmap-add-field"
-                      onClick={() => {
-                        const id = placeFor(row.scriptNames, place);
-                        if (id) void addCustomField(id);
-                      }}
-                    >+ Add custom field</button>
-
                   </div>
                 )}
               </div>

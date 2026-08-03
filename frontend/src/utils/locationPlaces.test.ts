@@ -10,7 +10,7 @@ import {
   addPlaceField, setPlaceField, removePlaceField, renameScriptLocation,
   pinnedPlaces, unplacedLocations, placeForLocation, placeLabel, locationLabel,
   migratePins, readPlaces, emptyPlace, nextRotation, rotatedRatio, dropFraction, clampFraction, mergePlaces,
-  locationRows, togglePlaceLock, connectTargets, rotatePlacesClockwise, absorbOrphanPlaces, offsetFraction, rawFraction, pickFraction, locationListEntries, isLocationHidden,
+  locationRows, togglePlaceLock, connectTargets, rotatePlacesClockwise, absorbOrphanPlaces, offsetFraction, rawFraction, pickFraction, locationListEntries, isLocationHidden, NO_GROUP_LABEL,
   type LocationPlace,
 } from './locationPlaces';
 
@@ -567,14 +567,25 @@ describe('locationListEntries — the list view (v5.85)', () => {
     expect(out).toHaveLength(2);
     expect(out[0]).toMatchObject({ groupLabel: 'Belkadan' });
     expect(out[0].locations.map((l) => l.name)).toEqual(['A', 'B']);
+    // v5.96, Derek: what has no group gathers under "No Group" at the end.
+    expect(out[1]).toMatchObject({ groupLabel: NO_GROUP_LABEL });
     expect(out[1].locations.map((l) => l.name)).toEqual(['C']);
+    expect(out[1].placeId).toBeUndefined();
   });
 
-  it('grouped: a place with no display name does not invent one', () => {
+  it('grouped: a place with no display name is NOT a group — its locations land in No Group', () => {
     const places = [place('p1', { scriptNames: ['A', 'B'] })];
     const out = locationListEntries([loc('A'), loc('B')], places, true);
-    expect(out.every((e) => !e.groupLabel)).toBe(true);
-    expect(out).toHaveLength(2);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ groupLabel: NO_GROUP_LABEL });
+    expect(out[0].locations.map((l) => l.name)).toEqual(['A', 'B']);
+  });
+
+  it('grouped with nothing loose: no empty No Group bucket', () => {
+    const places = [place('p1', { scriptNames: ['A'], displayName: 'Belkadan' })];
+    const out = locationListEntries([loc('A')], places, true);
+    expect(out).toHaveLength(1);
+    expect(out[0].groupLabel).toBe('Belkadan');
   });
 
   it('hides what is hidden, and shows it again on request', () => {
