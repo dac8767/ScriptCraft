@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.93",
+    "date": "2026-08-03",
+    "changes": [
+      "Dialogs share one shell now. The first three moved onto it — About, Changelog and Mores & Continueds — and all three gained two things they never had: Escape closes them, and selecting text inside one no longer dismisses it when you release the mouse outside.",
+      "Dropped two build-only dependencies that only a single inspection script used."
+    ]
+  },
+  {
     "version": "5.92",
     "date": "2026-08-03",
     "changes": [

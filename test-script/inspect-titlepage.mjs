@@ -1,4 +1,9 @@
 // Compile docxExporter.ts via esbuild and run it to produce a real .docx,
+//
+// NOTE (v5.93): esbuild and @xmldom/xmldom are no longer devDependencies —
+// nothing but this script used them, and a dependency carried for one
+// inspection tool is a dependency the app installs on every machine forever.
+// To run this:  npx --yes -p esbuild -p @xmldom/xmldom node inspect-titlepage.mjs
 // then inspect the OOXML to see what's going on with the title page layout
 // and the body section's first paragraph.
 

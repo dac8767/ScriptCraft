@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useEditorStore, resolveMoresContds, DEFAULT_MORES_CONTDS } from '../stores/editorStore';
+import { Modal } from './Modal';
 
 interface Props {
   onClose: () => void;
@@ -191,12 +192,10 @@ const MoresContdsDialog: React.FC<Props> = ({ onClose, embedded = false }) => {
   if (embedded) return body;
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div className="tp-editor-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 540 }}>
+    <Modal onClose={onClose} boxClass="tp-editor-dialog" boxStyle={{ maxWidth: 540 }}>
         <div className="dialog-header">Mores &amp; Continueds</div>
         {body}
-      </div>
-    </div>
+    </Modal>
   );
 };
 

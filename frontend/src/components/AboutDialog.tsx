@@ -5,6 +5,7 @@ import React from 'react';
 import { openInBrowser, DONATE_URL } from '../services/external';
 import { APP_VERSION } from '../data/changelog';
 import { getCompatEntries } from '../services/compat';
+import { Modal } from './Modal';
 
 /** v4.76, Derek: every About link routes through openInBrowser — the raw
  *  target="_blank" anchors stalled (or died) in the desktop WebView, while
@@ -21,8 +22,7 @@ const Ext: React.FC<{ href: string; children: React.ReactNode }> = ({ href, chil
 
 export function AboutDialog({ onClose, onShowChangelog }: { onClose: () => void; onShowChangelog: () => void }) {
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div className="dialog-box about-dialog" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} boxClassName="about-dialog">
         <div className="dialog-header">About ScriptCraft</div>
         <div className="dialog-body about-body">
           <img className="about-logo" src="/splash-logo.png" alt="ScriptCraft" />
@@ -157,7 +157,6 @@ export function AboutDialog({ onClose, onShowChangelog }: { onClose: () => void;
           </button>
           <button className="dialog-primary" onClick={onClose}>Close</button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

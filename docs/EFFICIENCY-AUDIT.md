@@ -25,10 +25,18 @@ Lane tags (see `docs/AREA-MAP.md`) show which chat should own each item.
 - [~] `editor/extensions/index.ts` — NOT dead after all: imported by `ScreenplayEditor.tsx:35` via the directory path `../editor/extensions`. Kept.
 
 ### Dead functions / store actions (~180 lines)
-- [ ] `getEffectiveFormatting` `utils/effectiveFormatting.ts:102` (~64) — `templates`
-- [ ] wrappers: `parseFDX` (`fdxParser.ts`), `downloadPDF` (`pdfExporter.ts`), `getCompat` (`services/compat.ts`), `demoMessage` (`demoInfo.ts`), `hasCustomTitlebar` (`platform.ts`), `isPaginationContinuous` (`pagination.ts`), `jsdelivrUrls` (`languageCatalog.ts`), `vomitLockActive` (`vomitStore.ts`)
-- [ ] ~13 never-called `editorStore` actions: `addCharacter`, `add/update/deleteGeneralNote`, `setShelfTab`, `toggleBeatBoard`, `clearMirrorStatuses`, `clearReferredTag`, and the unused `setToolbar*` setters (keep the *fields*, drop the setters) — spine
-- [ ] dead branches: `'scriptnotes'` (`Toolbar.tsx:634,1276`, `editorStore.ts`), unreachable `case 'structure'` (`ToolDock.tsx`)
+- [x] `getEffectiveFormatting` — gone (verified v5.93)
+- [x] wrappers (`parseFDX`, `downloadPDF`, `getCompat`, `demoMessage`, `hasCustomTitlebar`, `isPaginationContinuous`, `jsdelivrUrls`, `vomitLockActive`) — all gone (verified v5.93; only the real implementations `parseFDXFull` / `getCompatEntries` remain)
+- [x] ~13 never-called `editorStore` actions — all gone (verified v5.93; none of the named symbols exists)
+- [!] ~~dead branches: `'scriptnotes'`, unreachable `case 'structure'`~~ **THIS ENTRY IS WRONG — DO NOT ACT ON IT (checked v5.93).**
+  - `'scriptnotes'` is a **legacy id kept ON PURPOSE**: it stays in the `ToolId`
+    union so a persisted layout naming it still typechecks, and `openTool`
+    REMAPS it to `'sticky'`. The code says so in three comments. Removing it
+    orphans saved user layouts — the exact failure CLAUDE.md warns about.
+  - `case 'structure'` is **reachable**: `'structure'` is a live ToolId
+    (editorStore.ts:382) and the case renders SceneNavigator with the others.
+  - Kept as a marker because an audit line that would cause harm is worth more
+    visible than deleted.
 
 ### Repo hygiene
 - [x] Delete the **80 `freescript-v0_*.zip`** (7.6 MB) from the working tree — referenced by nothing but "don't use these" docs. *(History purge to shrink the 63 MB `.git` is a separate, optional op — needs a force-push + re-clone on the Mac.)*  *(verified done, v5.93)*

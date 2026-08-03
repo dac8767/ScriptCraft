@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { CHANGELOG, APP_VERSION, ALL_TAGS, TAG_META, tagsFor, type ChangeTag } from '../data/changelog';
 import { formatAppDate, parseISODate } from '../utils/dateFormat';
 import { useSettingsStore } from '../stores/settingsStore';
+import { Modal } from './Modal';
 
 export function ChangelogDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   // v1.56: changelog filters — keyword, tags (any-match), and a date range.
@@ -17,8 +18,7 @@ export function ChangelogDialog({ open, onClose }: { open: boolean; onClose: () 
 
   if (!open) return null;
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div className="dialog-box fs-changelog-dialog" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} boxClassName="fs-changelog-dialog">
         <div className="dialog-header">
           Changelog
           <button className="fs-dialog-x" onClick={onClose} title="Close">&times;</button>
@@ -96,7 +96,6 @@ export function ChangelogDialog({ open, onClose }: { open: boolean; onClose: () 
             })()}
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
