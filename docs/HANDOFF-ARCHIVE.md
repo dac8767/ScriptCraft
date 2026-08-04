@@ -151,9 +151,45 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.73 and older (newest first)
+## Version history — v5.74 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.74 — ONE title page, three renderers reconciled
+
+- Derek, after v5.73: "the title page in the title page tool, and the
+  title page in the Page > All view still do not match." True — v5.73
+  fixed the thumbnail against the EDITOR's CSS, but the Title tab's
+  preview is a THIRD hand-written renderer, and all three disagreed.
+- ROOT CAUSE + FIX: `titleLineStyle(field, {sizePt, shiftPx})` in
+  utils/titlePageLayout.ts is now THE definition of a title-page line;
+  TitlePageEditor's renderSpecLine and SceneNavigator's getBlockStyle both
+  render from it (the editor CSS is the third renderer and is kept in step
+  by hand — comments in all three say so). `titlePaperShiftPx(layout)` is
+  the paper-centering correction, applied by both containers.
+- THREE REAL BUGS THIS SURFACED:
+  1. title2's size lives in **tpTitleFontSize** on the node (that's what
+     titlePageBlockSpecs writes, and what renderHTML / computeBreaks /
+     pdfExporter read). v5.73 read tpTitle2FontSize → title2 previewed at
+     12pt. The v5.73 TEST passed because its fixture set the attr no real
+     node carries — fixture now built the way the builder builds.
+  2. The preview page was a hardcoded 8.5x11in with 1in/1.5in margins and
+     NO paper shift: A4 or custom margins previewed as Letter, and its
+     centered title sat 0.25in right of the paper's centre. It now takes
+     pageWidth/Height + all four margins + the shift from pageLayout.
+  3. `.title-page-author { line-height: 1.5 }` was the odd one out — the
+     paginator, the preview, the thumbnail and the PDF all count a credit
+     line on the 12pt grid. Removed.
+- STILL DIVERGENT, REPORTED NOT FIXED: pdfExporter treats **title2** as a
+  plain 12pt line (`isTitle = field === 'title'`), so the printed PDF
+  neither uppercases nor enlarges it. One-line change, but it moves print
+  output and can't be verified in this sandbox — queued for its own pass.
+- check-v574 14/14: fills the REAL form, clicks Apply, reads BOTH live
+  renderings and compares block by block (text/align/weight/caps/wrap +
+  size as a multiple of that rendering's own body line — the two are
+  transform-scaled differently, so raw px cannot be compared), then
+  proves each centres the title on the paper. Gates: tsc 0, 952 tests
+  (+9 titleLineStyle), build. NINTH rollback at batch start.
 
 ### v5.73 — the title-page THUMBNAIL shows the true format
 

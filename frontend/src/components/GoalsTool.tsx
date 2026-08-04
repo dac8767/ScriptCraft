@@ -24,6 +24,7 @@ import { useVomitStore } from '../stores/vomitStore';
 import { vomitFloorFor } from '../editor/extensions/VomitLock';
 import { computeOverviewStats } from '../utils/scriptStatistics';
 import { useSettingsStore } from '../stores/settingsStore';
+import type { ToolChromeTab } from './ToolControls';
 import TimeField from './TimeField';
 import { showToast } from './Toast';
 
@@ -93,16 +94,33 @@ export function useGoalProgress(words: number, pages: number) {
 }
 
 
-/** v1.85: the window-header controls — the Words/Pages/Time tabs and the ?
- *  helper. Rendered by the chrome (TOOL_CHROME Controls slot), so the state lives
- *  in the store (goalKind). The helper popover PORTALS to document.body and
- *  positions from the button — a child of the header row could never escape
- *  the panel's overflow (the AddMenu lesson). */
-export function GoalsHeaderExtra() {
+/** v6.02, Derek: "make the tabs in the Goal window aligned left, just like
+ *  all other tabs in headers of windows." The Words/Pages/Time buttons were
+ *  a bespoke `fs-goal-tabs` cluster living in the CONTROLS slot — the right
+ *  side of the header. Registering them through TOOL_CHROME's useTabs slot
+ *  instead puts them where every window's tabs go (left), in the shared
+ *  ChromeTabs rendering, with nothing Goals-specific left to drift. */
+export function useGoalTabs(): ToolChromeTab[] {
   const kind = useEditorStore((s) => s.goalKind);
   const setKind = useEditorStore((s) => s.setGoalKind);
   // v1.92: while Vomit Draft locks the script, the window is JUST the lock
-  // readout — the kind tabs and helper hide with everything else.
+  // readout — the tabs hide with everything else.
+  const locked = useVomitStore((s) => !!s.session);
+  if (locked) return [];
+  return (['words', 'pages', 'time'] as const).map((k) => ({
+    label: k[0].toUpperCase() + k.slice(1),
+    active: kind === k,
+    onSelect: () => setKind(k),
+  }));
+}
+
+/** v1.85: the window-header ? helper (the tabs moved to useGoalTabs, v6.02).
+ *  The popover PORTALS to document.body and positions from the button — a
+ *  child of the header row could never escape the panel's overflow (the
+ *  AddMenu lesson). */
+export function GoalsHeaderExtra() {
+  // v1.92: while Vomit Draft locks the script, the window is JUST the lock
+  // readout — the helper hides with everything else.
   const locked = useVomitStore((s) => !!s.session);
   /* v5.95: the help popup uses the shared usePopup — it gains a capture-phase
      outside press (a bubble listener never heard presses on controls that
@@ -117,15 +135,6 @@ export function GoalsHeaderExtra() {
 
   return (
     <span className="fs-goal-headerctl">
-      <span className="fs-goal-tabs">
-        {(['words', 'pages', 'time'] as const).map((k) => (
-          <button
-            key={k}
-            className={kind === k ? 'active' : ''}
-            onClick={() => setKind(k)}
-          >{k[0].toUpperCase() + k.slice(1)}</button>
-        ))}
-      </span>
       <button ref={helpBtnRef} className="fs-help-btn" title="About Goals" onClick={toggleHelp}><FaRegQuestionCircle /></button>
       {helpOpen && pos && createPortal(
         <div ref={(el) => { popupRef.current = el; }} className="fs-help-pop" style={{ top: pos.top, left: pos.left }}>

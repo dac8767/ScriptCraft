@@ -1,5 +1,13 @@
 [
   {
+    "version": "6.02",
+    "date": "2026-08-04",
+    "changes": [
+      "The Goals window's Words / Pages / Time tabs sit on the left of the header now, like every other window's tabs (and collapse into the same labeled dropdown when the window is narrow).",
+      "Fixed: the Customize window opens on the tab you used last — remembered across restarts. It never worked because every menu door forced it back to a fixed tab on the way in; the plain \"Customize…\" doors no longer steer it, and the targeted ones (Customize Themes…, Customize Elements…) still land on their tab."
+    ]
+  },
+  {
     "version": "6.01",
     "date": "2026-08-04",
     "changes": [

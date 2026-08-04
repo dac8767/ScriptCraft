@@ -412,10 +412,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   const [customizeOpen, setCustomizeOpen] = useState(false);
   // v4.79: the Presets window (File ▸ Import/Export ▸ Presets…).
   const [presetsOpen, setPresetsOpen] = useState(false);
+  // v6.02, Derek: no tab passed = the window opens on its remembered last
+  // tab. Only the targeted doors (Customize Themes…, …Elements…, the
+  // context-menu door) still steer it.
   const [customizeTab, setCustomizeTab] =
-    useState<'toolbar' | 'panels' | 'elements' | 'themes' | 'context'>('elements');
-  const openCustomize = (tab: typeof customizeTab) => {
-    setCustomizeTab(tab);
+    useState<'toolbar' | 'panels' | 'elements' | 'themes' | 'context' | null>(null);
+  const openCustomize = (tab?: NonNullable<typeof customizeTab>) => {
+    setCustomizeTab(tab ?? null);
     setCustomizeOpen(true);
   };
   const [prefsOpen, setPrefsOpen] = useState(false);
@@ -596,7 +599,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     const onCmd = (e: Event) => {
       const id = (e as CustomEvent).detail as string;
       switch (id) {
-        case 'customize': openCustomize('elements'); break;
+        case 'customize': openCustomize(); break;   // v6.02: remembered tab
         case 'customizeContextMenu': openCustomize('context'); break;
         // v4.30 #3: hotkeys live in Settings now
         case 'customizeShortcuts': useEditorStore.getState().openPreferences('keys'); break;
@@ -1050,9 +1053,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     actualSize: () => setZoomLevel(100),
     fitPage: () => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'fitPage' })),
     fitWidth: () => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'fitWidth' })),
-    // v4.22, Derek: the ribbon Customize button lands on the Editor tab (top of
-    // the list) rather than Menu Bar / Toolbar.
-    customize: () => openCustomize('elements'),
+    // v6.02, Derek: the ribbon Customize button opens on the remembered
+    // last-used tab (superseding v4.22's fixed Editor-tab landing).
+    customize: () => openCustomize(),
 
     bold: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(),
     italic: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(),
@@ -2431,7 +2434,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         </div>
       </div>
     )}
-    <CustomizePanelsDialog open={customizeOpen} category={customizeTab} onClose={() => setCustomizeOpen(false)} />
+    <CustomizePanelsDialog open={customizeOpen} category={customizeTab ?? undefined} onClose={() => setCustomizeOpen(false)} />
     <PresetsDialog open={presetsOpen} onClose={() => setPresetsOpen(false)} />
     <SaveWorkspaceDialog open={saveWorkspaceOpen} onClose={() => setSaveWorkspaceOpen(false)} />
     <EditWorkspacesDialog open={editWorkspacesOpen} onClose={() => setEditWorkspacesOpen(false)} />

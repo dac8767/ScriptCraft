@@ -36,7 +36,7 @@ import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, PagesC
 import LocationMapRail from './LocationMapRail';
 import NavigatorTool, { NavigatorControls } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
-import GoalsTool, { GoalsHeaderExtra } from './GoalsTool';
+import GoalsTool, { GoalsHeaderExtra, useGoalTabs } from './GoalsTool';
 import CharacterProfiles, { CharTitleExtra, useCharTabs, CharControls } from './CharacterProfiles';
 import { ChromeTabs, ControlDropdown, type ToolChromeTab } from './ToolControls';
 import { StickyNotesTool, FragmentsTool, StickyTitleExtra, StickyControls, SnippetsTitleExtra } from './StickyNotes';
@@ -373,7 +373,9 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   // cluster. (v5.27: the header eye is retired — View menu + ribbon toggle
   // + the per-type "Show in Script" grid cover visibility.)
   markups: { TitleExtra: MarkupsTitleExtra, Controls: MarkupsControls },
-  goals: { Controls: GoalsHeaderExtra },
+  // v6.02, Derek: the Words/Pages/Time tabs go through useTabs like every
+  // other window's — left-aligned, shared rendering. The ? stays a control.
+  goals: { useTabs: useGoalTabs, Controls: GoalsHeaderExtra },
   notebook: { Controls: NotebookHeaderExtra },   // v2.05: declutter + create buttons
   rewrite: { Controls: RewriteHeaderControls },  // v5.60: the same declutter eye
   typewriter: { Controls: FocusHeaderControls }, // v5.66: the "?" in the header

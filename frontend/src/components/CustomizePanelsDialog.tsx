@@ -88,6 +88,22 @@ const TAB_HINTS: Record<string, React.ReactNode> = {
 
 
 const CUSTOMIZE_SIZE_KEY = 'opendraft:customizeSize';
+/* v6.02, Derek (a long-standing ask): the window REMEMBERS its last tab and
+   reopens on it. It never worked because every "Customize…" menu entry
+   passed an explicit category ('elements'), and the open-effect below
+   forces any passed category — so the memory was overwritten on the way in,
+   every time. Now the generic doors pass nothing, and the last-used tab is
+   persisted here (surviving app restarts), next to the remembered size. */
+const CUSTOMIZE_TAB_KEY = 'opendraft:customizeTab';
+type CustomizeCat = 'toolbar' | 'qat' | 'panels' | 'elements' | 'themes' | 'context' | 'markups';
+const CUSTOMIZE_CATS: readonly CustomizeCat[] =
+  ['toolbar', 'qat', 'panels', 'elements', 'themes', 'context', 'markups'];
+function lastUsedCat(): CustomizeCat | null {
+  try {
+    const v = localStorage.getItem(CUSTOMIZE_TAB_KEY);
+    return v && (CUSTOMIZE_CATS as readonly string[]).includes(v) ? (v as CustomizeCat) : null;
+  } catch { return null; }
+}
 
 const DEFAULT_PANEL_SPACER = 50;   // v0.86 (the toolbar's lives in tokenMeta.ts)
 
@@ -532,10 +548,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // React ('Rendered more hooks than during the previous render').
   const { toolbarLeft: tbLeftRaw, toolbarRight: tbRightRaw, setToolbarZones, toolbarZonesSet } = useEditorStore();
   const { panelDividers, setPanelDividers, panelNameCase } = useEditorStore();
-  // v4.22, Derek: default landing is the Editor tab (top of the list).
   // v4.28, Derek: the Menu Bar tab is GONE — the menus always live in the
   // macOS menu bar now; there is nothing to place or reorder in-window.
-  const [activeCatState, setActiveCat] = React.useState<'toolbar' | 'qat' | 'panels' | 'elements' | 'themes' | 'context' | 'markups'>(category ?? 'elements');
+  // v6.02: an explicit category wins; otherwise the remembered last tab
+  // (v4.22's 'elements' default only for a first-ever open).
+  const [activeCatState, setActiveCat] = React.useState<CustomizeCat>(category ?? lastUsedCat() ?? 'elements');
   // v4.64, Derek: Settings lists the customize tabs directly in ITS sidebar
   // (no inner tab rail) — soloCategory pins this instance to one tab.
   const activeCat = soloCategory ?? activeCatState;
@@ -580,10 +597,19 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
 
   // `category` seeds useState only on first mount, but this dialog stays mounted
   // and merely toggles `open` — so without this, opening it from "Customize
-  // Themes" would land on whatever tab was used last.
+  // Themes" would land on whatever tab was used last. (Generic doors pass NO
+  // category since v6.02, so plain "Customize…" lands on the remembered tab.)
   React.useEffect(() => {
     if (open && category) setActiveCat(category);
   }, [open, category]);
+  // v6.02: remember the tab — every change, targeted opens included (a tab
+  // you were sent to IS the one you used last). Solo instances are pinned
+  // panes inside Settings/Guided Setup, not the Customize window; they
+  // neither read nor write the memory.
+  React.useEffect(() => {
+    if (soloCategory) return;
+    try { localStorage.setItem(CUSTOMIZE_TAB_KEY, activeCatState); } catch { /* quota */ }
+  }, [activeCatState, soloCategory]);
   // v3.36, Derek: while the Toolbar tab is open, the REAL ribbon bar becomes
   // the editor (drop surface + handles). Closing the window, or leaving the
   // tab, locks the layout. The store flag drives Toolbar's edit rendering.
