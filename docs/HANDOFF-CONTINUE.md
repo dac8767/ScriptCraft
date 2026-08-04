@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.02 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.03 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,28 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.03 — the Thesaurus is WordNet proper, with definitions
+
+- Derek: "is there a different open source thesaurus tool? … the
+  thesaurus should also show the word definitions." MyThes th_en_US_v2
+  has NO definitions in the file, so showing them meant a data swap:
+  `public/thesaurus/wn_en_31.dat` (20.2MB, 147k lemmas, 207k senses) is
+  generated from Princeton WordNet 3.1 (wordnet-db npm tarball) by
+  `devtools/build-thesaurus.mjs` — regeneration instructions in its
+  header; the artifact is COMMITTED (same precedent as the old .dat).
+- Format: MyThes-shaped with a GLOSS as sense field[1] —
+  `(pos)|gloss|syn|…|ant (antonym)`. Examples are stripped from glosses
+  (a third of the bytes). thesaurus.ts reads field[1] as
+  `ThesaurusSense.gloss`; gloss-only senses are KEPT (the definition is
+  content); lookup chain/qualifier grammar unchanged. UI: `.thes-def`
+  line above the chips per sense.
+- check-v553 was pinned to MyThes ("inhabit" as occupy's first synonym)
+  — now data-agnostic (captures the first chip, counts dynamically), +
+  a definitions assertion. AboutDialog entry → "Princeton WordNet
+  lexical database"; public/thesaurus licenses swapped to the WordNet
+  3.0 license text (covers 3.1), README rewritten.
+- Gates: tsc 0, 1081 tests (2 new), build, checks 581/0.
+
 ### v6.02 — Goals tabs go left; Customize finally remembers its tab
 
 - Goals: the Words/Pages/Time buttons were a bespoke `fs-goal-tabs`
@@ -439,58 +461,12 @@ check-v578 18/18, check-v577 still 37/37. Gates: tsc 0, 1007 tests, build.
   take a style/size passthrough, which is surgery on a shared component for
   an unasked change. Next pass.
 
-### v5.75 — Locations: List / Map tabs, with pins
-
-- Derek: "add the tabs List and Map to the locations window. the current
-  locations info will go under list. in the map tab, allow the user to
-  upload a map, which acts as a background in the tab, and then the user
-  can pin locations from the list onto the map."
-- SHAPE: `useLocationsTabs` in SceneNavigator, registered in ToolDock's
-  TOOL_CHROME like usePagesTabs — same chrome slot, no second tab
-  mechanism. List renders exactly what the window rendered before.
-  `LocationMapTab.tsx` is the Map tab: a rail of not-yet-pinned locations
-  beside the map. The rail reads the SAME filtered/sorted `locations` the
-  list does, so the window's Filter/Sort/Search drive both tabs instead of
-  going decorative on one.
-- DATA: `utils/locationPins.ts` holds the rules, pure and tested (20
-  tests) — upsert/remove/rename/visible/unpinned/dropFraction.
-  `stores/slices/locationMapSlice.ts` holds image + pins;
-  `locationsTab` sits in sceneNavSlice with pagesTab (view state,
-  per machine) while image+pins are SCRIPT data, saved as
-  `_locationMapImage` / `_locationPins` in composeSaveContent and read
-  back at BOTH load sites in ScreenplayEditor.
-- Pins carry FRACTIONS of the map image (0..1), never pixels — a pixel
-  offset slides off its landmark the moment the window resizes.
-- Renaming a location moves its pin (handleRenameSubmit calls
-  renameLocationPin); a pin whose location disappears is kept in the data
-  but not drawn, so retyping the heading brings it back.
-- Images follow the app's existing two-path rule: a project uploads an
-  ASSET, local-only stores a data URL; `resolveImageUrl` reads both.
-- THREE LAYOUT BUGS the check caught, all mine, all now fixed:
-  1. `max-width/max-height: 100%` leaves the image contributing its
-     NATURAL width to layout — a wide map sized the whole tab and pushed
-     it out of a narrowed window. The map is now MEASURED: a
-     ResizeObserver on the canvas + the image's aspect ratio give the
-     stage an explicit px size.
-  2. Measuring the canvas while the map sized the canvas fed back on
-     itself. The scroll layer is now ABSOLUTE (`inset: 0`) inside the
-     canvas, so the map contributes no intrinsic width to any ancestor.
-  3. A CENTRED flex item that overflows can't be scrolled back to on the
-     start side — the top of a tall map, and any pin on it, was
-     unreachable. `margin: auto` centres and keeps the overflow reachable.
-- WebKit: every dragstart calls dataTransfer.setData() (CLAUDE.md §4).
-- check-v575 20/20 drives the real chrome tabs, uploads a real PNG through
-  the real file input, drags from the rail, and reads back where the pin
-  landed. NOTE for future checks: DragEvent clientX/clientY are INTEGERS,
-  so a tiny fixture image can't express a fractional drop — use a
-  realistically sized one. Gates: tsc 0, 972 tests, build. TENTH rollback
-  at batch start.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.75** — Locations: List / Map tabs, with pins
 - **v5.74** — ONE title page, three renderers reconciled
 - **v5.73** — the title-page THUMBNAIL shows the true format
 - **v5.72** — Pages tabs: Script / Title / Custom / All

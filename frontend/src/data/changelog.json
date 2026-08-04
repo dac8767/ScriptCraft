@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.03",
+    "date": "2026-08-04",
+    "changes": [
+      "The Thesaurus runs on Princeton WordNet itself now, and every sense shows its definition above the synonyms — so choosing between senses no longer means guessing from the synonym list. Antonyms still sit on their own row, everything still lives on your machine."
+    ]
+  },
+  {
     "version": "6.02",
     "date": "2026-08-04",
     "changes": [

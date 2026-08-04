@@ -1,8 +1,9 @@
 /**
- * v5.53: the Thesaurus data layer — the MyThes walk/parse, the qualifier
- * grammar (four suffixes, audited over th_en_US_v2), the lookup fallback
- * ordering ("hoping" must reach "hope" before "hop"), and the editor-side
- * helpers (word at caret, case dressing).
+ * v5.53: the Thesaurus data layer — the file walk/parse, the qualifier
+ * grammar, the lookup fallback ordering ("hoping" must reach "hope" before
+ * "hop"), and the editor-side helpers (word at caret, case dressing).
+ * v6.03: the format grew a GLOSS as each sense line's first field (WordNet
+ * definitions) — field[1] is the definition, synonyms follow.
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -13,20 +14,22 @@ import {
 const FIXTURE = [
   'UTF-8',
   'big|2',
-  '(adj)|large|sizable (similar term)|small (antonym)',
-  '(noun)|bigness (generic term)',
+  '(adj)|above average in size|large|sizable (similar term)|small (antonym)',
+  '(noun)||bigness (generic term)',
   'café|1',
-  '(noun)|coffeehouse|coffee shop (generic term)',
+  '(noun)|a small restaurant selling drinks|coffeehouse|coffee shop (generic term)',
   'hop|1',
-  '(verb)|skip|bounce (similar term)',
+  '(verb)|jump lightly|skip|bounce (similar term)',
   'hope|1',
-  '(verb)|trust|desire (generic term)',
+  '(verb)|expect and wish|trust|desire (generic term)',
   'run|1',
-  '(verb)|sprint|dash (similar term)',
+  '(verb)|move fast on foot|sprint|dash (similar term)',
   'walk|1',
-  '(verb)|amble|stroll (similar term)',
+  '(verb)|advance on foot|amble|stroll (similar term)',
   "o'clock|1",
-  '(adv)|of the clock',
+  '(adv)|according to the clock|of the clock',
+  'ort|1',
+  '(noun)|a scrap of leftover food',
 ].join('\n');
 
 describe('buildThesaurusIndex + readThesaurusEntry', () => {
@@ -34,7 +37,7 @@ describe('buildThesaurusIndex + readThesaurusEntry', () => {
 
   it('indexes every head word and none of the sense lines', () => {
     expect([...idx.keys()].sort()).toEqual(
-      ['big', 'café', 'hop', 'hope', "o'clock", 'run', 'walk'].sort());
+      ['big', 'café', 'hop', 'hope', "o'clock", 'ort', 'run', 'walk'].sort());
   });
 
   it('parses senses with pos labels and strips the qualifier suffixes', () => {
@@ -44,6 +47,19 @@ describe('buildThesaurusIndex + readThesaurusEntry', () => {
     expect(entry.senses[0].pos).toBe('(adj)');
     expect(entry.senses[0].words.map((w) => w.word)).toEqual(['large', 'sizable', 'small']);
     expect(entry.senses[1].words).toEqual([{ word: 'bigness' }]);
+  });
+
+  it('carries each sense\'s definition, and an empty gloss stays empty', () => {
+    const entry = readThesaurusEntry(FIXTURE, idx.get('big')!)!;
+    expect(entry.senses[0].gloss).toBe('above average in size');
+    expect(entry.senses[1].gloss).toBe('');
+  });
+
+  it('keeps a gloss-only sense — the definition is content on its own', () => {
+    const entry = readThesaurusEntry(FIXTURE, idx.get('ort')!)!;
+    expect(entry.senses).toHaveLength(1);
+    expect(entry.senses[0].gloss).toBe('a scrap of leftover food');
+    expect(entry.senses[0].words).toEqual([]);
   });
 
   it('keeps the antonym flag and only that qualifier', () => {
@@ -94,7 +110,7 @@ describe('createThesaurus (the API the tool uses)', () => {
   const api = createThesaurus(FIXTURE);
 
   it('reports its size and resolves direct hits', () => {
-    expect(api.size).toBe(7);
+    expect(api.size).toBe(8);
     expect(api.lookup('walk')!.entry.senses[0].words[0].word).toBe('amble');
   });
 

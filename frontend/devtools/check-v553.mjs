@@ -1,7 +1,9 @@
-// devtools/check-v553.mjs — the Thesaurus tool: local MyThes data loads,
-// lookups group senses by part of speech, chips chain (with Back), the
-// script caret drives the lookup, ⇄ replaces the script word in place with
-// case kept, fallbacks and misses speak up, and the Tools menu lists it.
+// devtools/check-v553.mjs — the Thesaurus tool: the local WordNet data
+// loads (v6.03: wn_en_31 with per-sense DEFINITIONS; MyThes before that),
+// lookups group senses by part of speech with a definition each, chips
+// chain (with Back), the script caret drives the lookup, ⇄ replaces the
+// script word in place with case kept, fallbacks and misses speak up, and
+// the Tools menu lists it.
 import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
@@ -35,6 +37,11 @@ const happy = await page.evaluate(() => ({
 ok(happy.senses >= 3 && happy.poses.includes('adj.'),
   `"happy" returns ${happy.senses} senses incl. adj. (${happy.words.slice(0, 3).join(', ')}…)`);
 ok(happy.useButtons === 0, 'no replace buttons before a script word is targeted');
+// v6.03, Derek: each sense shows its DEFINITION
+const defs = await page.evaluate(() =>
+  [...document.querySelectorAll('.thes-def')].map((e) => e.textContent.trim()).filter(Boolean));
+ok(defs.length >= 3 && defs.some((d) => /joy|pleasure/.test(d)),
+  `#v603 senses carry definitions (${defs.length}, e.g. “${(defs[0] ?? '').slice(0, 42)}…”)`);
 await page.screenshot({ path: `${SHOTS}/v553-happy.png` });
 
 // ── chip click chains the lookup; Back walks the trail ───────────────────
@@ -75,19 +82,21 @@ ok(scripted.input === 'occupy' && scripted.context.includes('occupy') && scripte
   `caret in “occupy” auto-looks it up, targets it, shows ⇄ (${scripted.useButtons} chips)`);
 
 // ── replace in place, case kept ──────────────────────────────────────────
-const counts = () => page.evaluate(() => {
-  const t = window.__scEditor.getText();
-  return { occupy: (t.match(/occupy/g) ?? []).length, inhabit: (t.match(/inhabit/g) ?? []).length };
-});
-const before = await counts();
+// (v6.03: the FIRST synonym, whatever the data ranks first — the old check
+// hardcoded MyThes's "inhabit" and would pin the tool to one data file.)
+const countOf = (w) => page.evaluate((word) =>
+  window.__scEditor.getText().split(word).length - 1, w);
 const synonym = await page.evaluate(() => document.querySelector('.thes-word')?.textContent);
+const beforeOcc = await countOf('occupy');
+const beforeSyn = await countOf(synonym);
 await page.click('.thes-use');
 await page.waitForTimeout(600);
-const after = await counts();
-ok(synonym === 'inhabit' && after.occupy === before.occupy - 1 && after.inhabit === before.inhabit + 1,
-  `⇄ replaced one “occupy” with “${synonym}” (${before.occupy}→${after.occupy} occurrences)`);
+const afterOcc = await countOf('occupy');
+const afterSyn = await countOf(synonym);
+ok(afterOcc === beforeOcc - 1 && afterSyn === beforeSyn + 1,
+  `⇄ replaced one “occupy” with “${synonym}” (${beforeOcc}→${afterOcc} occurrences)`);
 const followed = await page.evaluate(() => document.querySelector('.thes-input')?.value);
-ok(followed === 'inhabit', 'after the replace the tool follows onto the new word');
+ok(followed === synonym, 'after the replace the tool follows onto the new word');
 await page.screenshot({ path: `${SHOTS}/v553-replaced.png` });
 
 // ── fallbacks and misses say what happened ───────────────────────────────

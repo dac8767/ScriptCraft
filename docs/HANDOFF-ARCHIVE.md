@@ -151,9 +151,56 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.74 and older (newest first)
+## Version history — v5.75 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.75 — Locations: List / Map tabs, with pins
+
+- Derek: "add the tabs List and Map to the locations window. the current
+  locations info will go under list. in the map tab, allow the user to
+  upload a map, which acts as a background in the tab, and then the user
+  can pin locations from the list onto the map."
+- SHAPE: `useLocationsTabs` in SceneNavigator, registered in ToolDock's
+  TOOL_CHROME like usePagesTabs — same chrome slot, no second tab
+  mechanism. List renders exactly what the window rendered before.
+  `LocationMapTab.tsx` is the Map tab: a rail of not-yet-pinned locations
+  beside the map. The rail reads the SAME filtered/sorted `locations` the
+  list does, so the window's Filter/Sort/Search drive both tabs instead of
+  going decorative on one.
+- DATA: `utils/locationPins.ts` holds the rules, pure and tested (20
+  tests) — upsert/remove/rename/visible/unpinned/dropFraction.
+  `stores/slices/locationMapSlice.ts` holds image + pins;
+  `locationsTab` sits in sceneNavSlice with pagesTab (view state,
+  per machine) while image+pins are SCRIPT data, saved as
+  `_locationMapImage` / `_locationPins` in composeSaveContent and read
+  back at BOTH load sites in ScreenplayEditor.
+- Pins carry FRACTIONS of the map image (0..1), never pixels — a pixel
+  offset slides off its landmark the moment the window resizes.
+- Renaming a location moves its pin (handleRenameSubmit calls
+  renameLocationPin); a pin whose location disappears is kept in the data
+  but not drawn, so retyping the heading brings it back.
+- Images follow the app's existing two-path rule: a project uploads an
+  ASSET, local-only stores a data URL; `resolveImageUrl` reads both.
+- THREE LAYOUT BUGS the check caught, all mine, all now fixed:
+  1. `max-width/max-height: 100%` leaves the image contributing its
+     NATURAL width to layout — a wide map sized the whole tab and pushed
+     it out of a narrowed window. The map is now MEASURED: a
+     ResizeObserver on the canvas + the image's aspect ratio give the
+     stage an explicit px size.
+  2. Measuring the canvas while the map sized the canvas fed back on
+     itself. The scroll layer is now ABSOLUTE (`inset: 0`) inside the
+     canvas, so the map contributes no intrinsic width to any ancestor.
+  3. A CENTRED flex item that overflows can't be scrolled back to on the
+     start side — the top of a tall map, and any pin on it, was
+     unreachable. `margin: auto` centres and keeps the overflow reachable.
+- WebKit: every dragstart calls dataTransfer.setData() (CLAUDE.md §4).
+- check-v575 20/20 drives the real chrome tabs, uploads a real PNG through
+  the real file input, drags from the rail, and reads back where the pin
+  landed. NOTE for future checks: DragEvent clientX/clientY are INTEGERS,
+  so a tiny fixture image can't express a fractional drop — use a
+  realistically sized one. Gates: tsc 0, 972 tests, build. TENTH rollback
+  at batch start.
 
 ### v5.74 — ONE title page, three renderers reconciled
 

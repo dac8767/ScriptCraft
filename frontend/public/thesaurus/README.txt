@@ -1,20 +1,16 @@
-ScriptCraft Thesaurus data (v5.53)
-==================================
+Thesaurus data for ScriptCraft
+==============================
 
-th_en_US_v2.dat — the MyThes English (US) thesaurus, the dataset shipped by
-OpenOffice.org and LibreOffice (lingucomponent project), derived from
-Princeton University's WordNet. Fetched verbatim from the LibreOffice
-dictionaries repository (github.com/LibreOffice/dictionaries, en/).
+wn_en_31.dat — generated from the Princeton WordNet 3.1 database
+(dict files as distributed by the wordnet-db npm package). Each head
+word lists its senses with the WordNet gloss (definition, example
+sentences stripped), synonyms from the synset, and lexical antonyms
+marked "(antonym)".
 
-Format: line 1 names the encoding (UTF-8); then repeating blocks of a head
-line `word|senseCount` followed by senseCount lines `(pos)|synonym|…`.
-Synonyms may carry a qualifier suffix: (generic term), (similar term),
-(related term), or (antonym). ~146k head words. The app parses this file
-locally (frontend/src/utils/thesaurus.ts) — no network is involved.
+Generator: frontend/devtools/build-thesaurus.mjs (instructions in its
+header). License: WordNet_license.txt (Princeton WordNet 3.0 license,
+which covers the 3.1 database release).
 
-Licenses (shipped alongside, verbatim from upstream):
-- WordNet_license.txt — the Princeton WordNet 2.1 license for the data.
-- license.txt — the LibreOffice en-dictionaries license collection.
-
-The index file (th_en_US_v2.idx) upstream generates at build time is not
-needed — the app derives the index from the .dat in one pass at load.
+History: up to v6.02 this directory shipped the MyThes th_en_US_v2
+thesaurus (LibreOffice's, WordNet-derived). It carried no definitions,
+so v6.03 moved to WordNet itself.

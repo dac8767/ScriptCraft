@@ -157,13 +157,21 @@ export default function ThesaurusTool({ editor }: { editor: Editor | null }) {
     return (
       <div key={i} className="thes-sense">
         <span className="thes-pos">{POS_LABELS[sense.pos] ?? sense.pos}</span>
-        <div className="thes-words">
-          {syns.map((w) => chip(w.word, false))}
-          {ants.length > 0 && (
-            <span className="thes-ant-row">
-              <span className="thes-ant-label" title="Antonyms">ant.</span>
-              {ants.map((w) => chip(w.word, true))}
-            </span>
+        <div className="thes-body">
+          {/* v6.03, Derek: the sense's DEFINITION rides above its synonyms —
+              WordNet's gloss, so picking between senses no longer means
+              guessing from the synonyms alone. */}
+          {sense.gloss && <div className="thes-def">{sense.gloss}</div>}
+          {(syns.length > 0 || ants.length > 0) && (
+            <div className="thes-words">
+              {syns.map((w) => chip(w.word, false))}
+              {ants.length > 0 && (
+                <span className="thes-ant-row">
+                  <span className="thes-ant-label" title="Antonyms">ant.</span>
+                  {ants.map((w) => chip(w.word, true))}
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>

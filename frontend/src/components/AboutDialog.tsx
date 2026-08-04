@@ -76,11 +76,13 @@ export function AboutDialog({ onClose, onShowChangelog }: { onClose: () => void;
             <Ext href="https://fastapi.tiangolo.com">FastAPI</Ext>,{' '}
             <Ext href="https://www.dulwich.io">Dulwich</Ext>,{' '}
             <Ext href="https://alembic.sqlalchemy.org">Alembic</Ext>, and the{' '}
-            {/* v5.53: the Thesaurus tool's data — MyThes en_US from the
-                OpenOffice/LibreOffice lingucomponent project, derived from
-                Princeton's WordNet (license ships in public/thesaurus/). */}
-            <Ext href="https://wordnet.princeton.edu">WordNet</Ext>-based{' '}
-            MyThes English thesaurus.
+            {/* v6.03: the Thesaurus tool's data — Princeton WordNet 3.1
+                directly (senses, synonyms, and definitions; license ships
+                in public/thesaurus/). It replaced the MyThes file, which
+                carried no definitions. */}
+            Princeton{' '}
+            <Ext href="https://wordnet.princeton.edu">WordNet</Ext>{' '}
+            lexical database (thesaurus &amp; definitions).
           </div>
 
 
