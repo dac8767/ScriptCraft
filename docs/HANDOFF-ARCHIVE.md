@@ -151,9 +151,39 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.70 and older (newest first)
+## Version history — v5.71 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.71 — All Pages tab, tab renames, the collapsed-tabs caret
+
+- Derek, three asks. (1) CARET: every window whose header tabs collapse
+  into the narrow-dock dropdown now shows a trailing ▾ — a `caret` prop
+  on ControlDropdown, set by HeaderTabs' collapsed branch, so ALL tabbed
+  windows (Characters, Tags, Pages) get it from the one shared spot.
+  (2) ALL PAGES: a leading Pages tab compiling the other three — title
+  page + script pages + custom pages in document order. (3) RENAMES:
+  "Script Pages" / "Title Page" / "Custom Pages" — labels only, the
+  persisted pagesTab ids stay 'script'/'title'/'custom' (+ new 'all').
+- Pagination: computePageBlocks grew opts.includeTitlePage — the v5.13
+  title carve, instead of discarding the region, re-emits it as an
+  UNNUMBERED first page (isTitle, pageNumber 0); titlePage nodes render
+  only on that bound (the per-node guard keeps them off script pages).
+  The DEFAULT call still emits nothing — pageThumbnails.test pins both
+  behaviors (11 tests incl. 5 new).
+- SceneNavigator: pageContentAll (flagged call) is the ONE computation;
+  pageContent derives by dropping the title entry, so every existing
+  consumer (posAfterScriptPage, goToPageNumber, lastScriptPage, scroll
+  sync, tool count) keeps v5.13 semantics with ZERO new guards. Only the
+  All grid and posAfterEntry read the full list — so dropping a dragged
+  custom onto the title thumb lands it "after the title page" (= before
+  page 1), which is the only legal spot there anyway. Controls (#/search)
+  and the scroll-sync/goto effects run on Script AND All. The custom
+  position note stays Custom-tab-only (All SHOWS the position).
+- check-v571 12/12 (carets in two windows, renamed set, document order
+  Title | Page 1 | Custom | Page 2, real title text in the thumb, no ⋮
+  on the title, controls on All, Script still script-only).
+  Gates: tsc 0, 938 tests, build.
 
 ### v5.70 — "…all types" labels + the Navigator filter's Reset
 

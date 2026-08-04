@@ -765,7 +765,6 @@ function FullscreenMapRailPanel() {
   const sort = useEditorStore((s) => s.locationSort);
   const group = useEditorStore((s) => s.locationGroupFilter);
   const places = useEditorStore((s) => s.locationPlaces);
-  const nameUpper = useEditorStore((s) => s.panelNameCase === 'upper');
   const all = React.useMemo(() => groupByLocation(scenes), [scenes]);
   const locations = React.useMemo(
     () => visibleLocations(all, { search, filter, sort, places, group }),
@@ -773,9 +772,6 @@ function FullscreenMapRailPanel() {
   );
   return (
     <div className="tool-inline tool-inline-solo locmap-rail-panel" data-tool="locations-rail">
-      <div className="tool-inline-header">
-        <span className={`tool-dock-label${nameUpper ? ' tool-name-upper' : ''}`}>Locations</span>
-      </div>
       <div className="tool-inline-body locmap-rail-panel-body">
         <LocationMapRail locations={locations} standalone />
       </div>
@@ -1119,8 +1115,6 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
         </div>
       )}
       <div className={`tool-dock${iconsMode ? ' tool-dock-iconrail' : ''}${solo ? ' tool-dock-scrapbook-solo' : ''}`} style={{ width: dockW }}>
-        {/* v5.97: fullscreen map — the rail stands in this panel, first. */}
-        {side === 'left' && fsTool === 'locations' && locationsTabNow === 'map' && <FullscreenMapRailPanel />}
         {/* v3.07's collapse chevron row was REMOVED in v3.25 at Derek's
             request — panels hide from View > Toolbars; the edge strips
             (fs-panel-expand) still re-open a collapsed panel. */}
@@ -1215,6 +1209,12 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
                 <span className="tool-dock-item-actions"><chrome.WindowActions /></span>
               )}
             </div>
+            {/* v5.99, Derek: fullscreen on the map, the rail sits UNDER the
+                Locations row — in whichever panel the writer keeps it. The
+                row is the label, so the panel carries no second header. */}
+            {t.id === 'locations' && fsTool === 'locations' && locationsTabNow === 'map' && (
+              <FullscreenMapRailPanel />
+            )}
             {isOpenInline && (
               <div className={`tool-inline${side === 'right' ? ' tool-inline-right' : ''}${solo ? ' tool-inline-solo' : ''}`} data-tool={t.id}>
                 {/* The window's own header strip — tabs left, controls right,

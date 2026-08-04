@@ -247,6 +247,12 @@ await browser.close();
     ok(await p2.$('.locmap-rail-panel .locmap-rail') !== null, '#v597-2 the rail stands in the side panel');
     ok(await p2.$('.tool-dock .locmap-rail-panel') !== null,
       '#v597-2 INSIDE the dock column — not a second column beside it (the v5.97 screenshot bug)');
+    // v5.99, Derek: the panel hangs UNDER the Locations row, in whichever
+    // dock holds the tool — not pinned to the top of the left panel.
+    ok(await p2.$eval('.locmap-rail-panel', (el) => el.previousElementSibling?.getAttribute('data-tool-row')) === 'locations',
+      '#v599 the panel sits directly under the Locations row');
+    ok(await p2.$('.locmap-rail-panel .tool-inline-header') === null,
+      '#v599 no second "Locations" header — the row above is the label');
     await p2.click('.locmap-rail-panel .locmap-rail-row .locmap-rail-name');
     await p2.waitForSelector('.locmap-rail-panel .locmap-rail-detail');
     ok(await p2.$('.locmap-rail-panel .locmap-rail-detail button:has-text("Map Options")') !== null,

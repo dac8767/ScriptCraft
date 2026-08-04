@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.98 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v5.99 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,26 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v5.99 — the fullscreen map's rail hangs under the Locations ROW
+
+- Derek (screenshot): the v5.97 side-panel rail was hardcoded to the LEFT
+  dock; his Locations window docks RIGHT. Fix: `FullscreenMapRailPanel`
+  renders inside ToolDock's rows loop, directly under the
+  `t.id === 'locations'` row — rows are side-filtered, so the panel lands
+  in whichever dock holds the tool. Its internal "Locations" header is
+  GONE; the row above is the label. Gate: `fsTool === 'locations' &&
+  locationsTabNow === 'map'`.
+- Why the dock renders the panel itself instead of auto-docking the tool
+  scrapbook-style: measured in v5.97 — `setActiveTool` on a panel slot
+  CLEARS fullscreenTool. Direct render = no store writes, and the panel
+  leaves with fullscreen.
+- check-v585 `#v599` pins it: `.locmap-rail-panel`'s
+  `previousElementSibling` is `[data-tool-row="locations"]`, and the
+  panel holds no `.tool-inline-header`.
+- NOTE: v5.80–v5.98 have no sections here (fast-batch era) —
+  `changelog.json` is the per-version record for that stretch.
+- Gates: tsc 0, 1079 tests, build, checks 577/0.
 
 ### v5.79 — connect-to-location, the pin anchor, and cursor placement
 
@@ -474,41 +494,12 @@ check-v578 18/18, check-v577 still 37/37. Gates: tsc 0, 1007 tests, build.
   for the drill: restart Vite FROM frontend/ — a root-started Vite
   serves 404 and the driver reports ERR_HTTP_RESPONSE_CODE_FAILURE.
 
-### v5.71 — All Pages tab, tab renames, the collapsed-tabs caret
-
-- Derek, three asks. (1) CARET: every window whose header tabs collapse
-  into the narrow-dock dropdown now shows a trailing ▾ — a `caret` prop
-  on ControlDropdown, set by HeaderTabs' collapsed branch, so ALL tabbed
-  windows (Characters, Tags, Pages) get it from the one shared spot.
-  (2) ALL PAGES: a leading Pages tab compiling the other three — title
-  page + script pages + custom pages in document order. (3) RENAMES:
-  "Script Pages" / "Title Page" / "Custom Pages" — labels only, the
-  persisted pagesTab ids stay 'script'/'title'/'custom' (+ new 'all').
-- Pagination: computePageBlocks grew opts.includeTitlePage — the v5.13
-  title carve, instead of discarding the region, re-emits it as an
-  UNNUMBERED first page (isTitle, pageNumber 0); titlePage nodes render
-  only on that bound (the per-node guard keeps them off script pages).
-  The DEFAULT call still emits nothing — pageThumbnails.test pins both
-  behaviors (11 tests incl. 5 new).
-- SceneNavigator: pageContentAll (flagged call) is the ONE computation;
-  pageContent derives by dropping the title entry, so every existing
-  consumer (posAfterScriptPage, goToPageNumber, lastScriptPage, scroll
-  sync, tool count) keeps v5.13 semantics with ZERO new guards. Only the
-  All grid and posAfterEntry read the full list — so dropping a dragged
-  custom onto the title thumb lands it "after the title page" (= before
-  page 1), which is the only legal spot there anyway. Controls (#/search)
-  and the scroll-sync/goto effects run on Script AND All. The custom
-  position note stays Custom-tab-only (All SHOWS the position).
-- check-v571 12/12 (carets in two windows, renamed set, document order
-  Title | Page 1 | Custom | Page 2, real title text in the thumb, no ⋮
-  on the title, controls on All, Script still script-only).
-  Gates: tsc 0, 938 tests, build.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.71** — All Pages tab, tab renames, the collapsed-tabs caret
 - **v5.70** — Pages: the Custom tab
 - **v5.69** — the type grid rides one row with "Type:"
 - **v5.68** — Navigator filter: the Scene Headings section

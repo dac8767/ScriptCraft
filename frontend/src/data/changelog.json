@@ -1,5 +1,12 @@
 [
   {
+    "version": "5.99",
+    "date": "2026-08-04",
+    "changes": [
+      "Fixed: the fullscreen map's location list always appeared in the LEFT side panel. It hangs directly under the Locations row now, in whichever panel you keep the Locations window — and without a second \"Locations\" header, since the row above is the label."
+    ]
+  },
+  {
     "version": "5.98",
     "date": "2026-08-03",
     "changes": [
