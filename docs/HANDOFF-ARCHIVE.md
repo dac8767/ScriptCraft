@@ -151,9 +151,38 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.72 and older (newest first)
+## Version history — v5.73 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.73 — the title-page THUMBNAIL shows the true format
+
+- Derek (screenshot of the All tab): "the small version of the title page
+  in this window should display the true format." It was drawing title
+  pages as body elements — action indents, left aligned, no weight/caps/
+  size — because PageBlockInfo carried only {typeName, text, lines, pos},
+  and the real look lives in `.title-page` / `.title-page-<field>` CSS
+  keyed off the node's `field` attr, which never reached the preview.
+- pagination.ts: blocks now carry titleField, fontSizePt (title vs title2
+  read their OWN size attrs — the same split renderHTML makes) and
+  imageLines. SceneNavigator's getBlockStyle takes the BLOCK (not a type
+  name) and, for titlePage, reproduces: per-field alignment (title/
+  title2/author/date center, draft left, contact/copyright right), bold +
+  uppercase titles, the custom size with its 12pt-slot-snapped
+  line-height, and the paper-centering shift ((right-left)/2) that the CSS
+  applies — without it a centered title lands (1.5in-0.76in)/2 right of
+  the paper's true center. The comment in each place says KEEP IN STEP:
+  one look, two renderers (editor CSS + this inline style).
+- FIXED ALONGSIDE (same feature, real bug): the title-region carve counted
+  only titlePage nodes, but computeBreaks counts the leading run of
+  titlePage OR screenplayImage as the title page — so a title-page logo
+  previewed at the top of script page 1. The carve now matches
+  computeBreaks (guarded: no titlePage in the run ⇒ a leading image is
+  ordinary body content, untouched), and an image block reserves its
+  paginator line budget instead of collapsing to one blank line.
+- check-v573 11/11 — computed styles AND geometry (title box center vs the
+  paper's center, 0.00px off; draft inside the left margin; script pages
+  unchanged). Gates: tsc 0, 943 tests (+5), build.
 
 ### v5.72 — Pages tabs: Script / Title / Custom / All
 

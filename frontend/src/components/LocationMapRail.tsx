@@ -103,38 +103,38 @@ export const LocationMapRail: React.FC<Props> = ({ locations, allLocations = loc
           </div>
           {isOpen && (
             <div className="locmap-rail-detail">
-              {/* v5.96, Derek: the options buttons live in the TOP ROW
-                  of the expanded row's body. */}
-              <div className="locmap-detail-actions">
-                <button
-                  className="locmap-tool-btn"
-                  title="Map options"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                    setRowMenu({ kind: 'map', rowKey: row.key, names: row.scriptNames, place, top: r.bottom + 4, left: Math.max(8, r.left) });
-                  }}
-                ><FaRegMap /> Map Options</button>
-                <button
-                  className="locmap-tool-btn"
-                  title="Pin options"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                    setRowMenu({ kind: 'pin', rowKey: row.key, names: row.scriptNames, place, top: r.bottom + 4, left: Math.max(8, r.left) });
-                  }}
-                ><FaMapMarkerAlt /> Pin Options</button>
-              </div>
               {/* v6.00, Derek: "the drop down info for each item in the
                   location list view should be in the side panel info of the
                   location map view" — the SAME details block the List view's
                   expanded rows render (v5.96's extraction pays off here:
-                  one component, two homes, they cannot drift). */}
+                  one component, two homes, they cannot drift).
+                  v6.01: the block owns the leading actions row — Map and Pin
+                  ride in via `actions`, ahead of its own Group button. */}
               <LocationPlaceDetails
                 locations={locations}
                 allLocations={allLocations}
                 scriptNames={row.scriptNames}
                 place={place}
+                actions={<>
+                  <button
+                    className="locmap-tool-btn"
+                    title="Map options"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                      setRowMenu({ kind: 'map', rowKey: row.key, names: row.scriptNames, place, top: r.bottom + 4, left: Math.max(8, r.left) });
+                    }}
+                  ><FaRegMap /> Map</button>
+                  <button
+                    className="locmap-tool-btn"
+                    title="Pin options"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                      setRowMenu({ kind: 'pin', rowKey: row.key, names: row.scriptNames, place, top: r.bottom + 4, left: Math.max(8, r.left) });
+                    }}
+                  ><FaMapMarkerAlt /> Pin</button>
+                </>}
               />
             </div>
           )}

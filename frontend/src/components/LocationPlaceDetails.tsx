@@ -17,7 +17,7 @@
  */
 import React, { useCallback, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FaTimes, FaRegTrashAlt } from 'react-icons/fa';
+import { FaTimes, FaRegTrashAlt, FaLink } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { usePopup } from '../hooks/usePopup';
 import { promptWithCheckbox } from './ConfirmDialog';
@@ -33,9 +33,13 @@ interface Props {
   scriptNames: string[];
   /** The row's place, if it already has one. */
   place?: LocationPlace;
+  /** v6.01, Derek: extra buttons for the leading actions row — the Map rail
+   *  passes its Map and Pin buttons so all three share ONE row, built here.
+   *  The row always ends with Group (the old "+ Connect to location"). */
+  actions?: React.ReactNode;
 }
 
-export const LocationPlaceDetails: React.FC<Props> = ({ locations, scriptNames, place, allLocations = locations }) => {
+export const LocationPlaceDetails: React.FC<Props> = ({ locations, scriptNames, place, allLocations = locations, actions }) => {
   /* The details are the PLACE's, not the row's: a place holding two script
      locations shows both, whichever of its rows was expanded — otherwise a
      shared place under-reports its own membership. */
@@ -113,6 +117,18 @@ export const LocationPlaceDetails: React.FC<Props> = ({ locations, scriptNames, 
 
   return (
     <div className="locplace-details">
+      {/* v6.01, Derek: "move the Connect to location button to the same row
+          as map options and pin options. change the name to Group." One row,
+          composed here so both homes (List dropdown, Map rail) get it. */}
+      <div className="locmap-detail-actions">
+        {actions}
+        <button
+          ref={(el) => { connect.triggerRef.current = el; }}
+          className="locmap-tool-btn"
+          title="Connect this location to others — connected locations form a group"
+          onClick={() => connect.toggle()}
+        ><FaLink /> Group</button>
+      </div>
       <label className="locmap-field-label">Location Group</label>
       {inGroup && place ? (
         <div className="locplace-group-row">
@@ -204,11 +220,6 @@ export const LocationPlaceDetails: React.FC<Props> = ({ locations, scriptNames, 
           </div>
         ))}
       </div>
-      <button
-        ref={(el) => { connect.triggerRef.current = el; }}
-        className="locmap-add-field"
-        onClick={() => connect.toggle()}
-      >+ Connect to location</button>
       {connect.pos && createPortal(
         <div
           ref={(el) => { connect.popupRef.current = el; }}

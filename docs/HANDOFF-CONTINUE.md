@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.00 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.01 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,30 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.01 — one leading row: Map · Pin · Group
+
+- Derek: Connect-to-location joins the options row; the three read "Map",
+  "Pin", "Group". Built INSIDE LocationPlaceDetails (new `actions` prop):
+  the block always opens with `.locmap-detail-actions`, ending in its own
+  Group button (`FaLink`, `.locmap-tool-btn`, opens the v5.79 connect
+  menu); the rail passes Map/Pin in via `actions`. So the List dropdown
+  leads with [Group] and the rail with [Map · Pin · Group] — one row, one
+  builder. The old `+ Connect to location` `.locmap-add-field` button is
+  gone from under Script Locations.
+- NAMING NOTE: the Locations HEADER also has a "Group" control (v5.85's
+  list-grouping toggle). Two "Group"s, different jobs — both named by
+  Derek (v5.85, v6.01). If he ever flags the collision, the row button is
+  the newer naming.
+- The rail's Map MENU keeps its "Connect to location…" item — same list,
+  two entry points (the standing v5.79 pattern).
+- checks: v578/v581/v585 rail-button selectors →
+  `.locmap-detail-actions button:text-is("Map"|"Pin")`; v585 asserts the
+  row order [Map, Pin, Group], the block-owns-the-row structure, and that
+  no "+ Connect to location" button remains. The map SURFACE's
+  `.locmap-mapopts-btn` ("Map Options" beside + Add Pin, Derek's v5.90
+  naming) is deliberately UNTOUCHED.
+- Gates: tsc 0, 1079 tests, build, checks 580/0.
 
 ### v6.00 — the rail's expanded rows carry the List view's details block
 
@@ -474,40 +498,12 @@ check-v578 18/18, check-v577 still 37/37. Gates: tsc 0, 1007 tests, build.
   proves each centres the title on the paper. Gates: tsc 0, 952 tests
   (+9 titleLineStyle), build. NINTH rollback at batch start.
 
-### v5.73 — the title-page THUMBNAIL shows the true format
-
-- Derek (screenshot of the All tab): "the small version of the title page
-  in this window should display the true format." It was drawing title
-  pages as body elements — action indents, left aligned, no weight/caps/
-  size — because PageBlockInfo carried only {typeName, text, lines, pos},
-  and the real look lives in `.title-page` / `.title-page-<field>` CSS
-  keyed off the node's `field` attr, which never reached the preview.
-- pagination.ts: blocks now carry titleField, fontSizePt (title vs title2
-  read their OWN size attrs — the same split renderHTML makes) and
-  imageLines. SceneNavigator's getBlockStyle takes the BLOCK (not a type
-  name) and, for titlePage, reproduces: per-field alignment (title/
-  title2/author/date center, draft left, contact/copyright right), bold +
-  uppercase titles, the custom size with its 12pt-slot-snapped
-  line-height, and the paper-centering shift ((right-left)/2) that the CSS
-  applies — without it a centered title lands (1.5in-0.76in)/2 right of
-  the paper's true center. The comment in each place says KEEP IN STEP:
-  one look, two renderers (editor CSS + this inline style).
-- FIXED ALONGSIDE (same feature, real bug): the title-region carve counted
-  only titlePage nodes, but computeBreaks counts the leading run of
-  titlePage OR screenplayImage as the title page — so a title-page logo
-  previewed at the top of script page 1. The carve now matches
-  computeBreaks (guarded: no titlePage in the run ⇒ a leading image is
-  ordinary body content, untouched), and an image block reserves its
-  paginator line budget instead of collapsing to one blank line.
-- check-v573 11/11 — computed styles AND geometry (title box center vs the
-  paper's center, 0.00px off; draft inside the left margin; script pages
-  unchanged). Gates: tsc 0, 943 tests (+5), build.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.73** — the title-page THUMBNAIL shows the true format
 - **v5.72** — Pages tabs: Script / Title / Custom / All
 - **v5.71** — All Pages tab, tab renames, the collapsed-tabs caret
 - **v5.70** — Pages: the Custom tab

@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.01",
+    "date": "2026-08-04",
+    "changes": [
+      "The expanded location's buttons read Map · Pin · Group on one row — Group is the old \"+ Connect to location\", moved up beside them. The List view's dropdown leads with the same Group button."
+    ]
+  },
+  {
     "version": "6.00",
     "date": "2026-08-04",
     "changes": [

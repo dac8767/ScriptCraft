@@ -11,7 +11,8 @@
 import { launch, boot, seedScript, openTool, SCENES_4, settle, dismiss } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 
-/* v5.96: the option buttons live in the expanded row's BODY. Expanding an
+/* v5.96: the option buttons live in the expanded row's BODY (v6.01: named
+   just "Map" / "Pin", riding the details block's actions row). Expanding an
    already-open row folds it, so collapse-first, expand, then press. */
 async function railOption(page, rowSel, title) {
   await dismiss(page);   // an open filter/menu popup covers the rail's rows
@@ -22,7 +23,7 @@ async function railOption(page, rowSel, title) {
   await page.locator(`${rowSel} .locmap-rail-name`).first().click();
   await page.waitForSelector('.locmap-rail-detail');
   await settle(page);
-  await page.click(`.locmap-rail-detail button:has-text("${title}")`);
+  await page.click(`.locmap-rail-detail .locmap-detail-actions button:text-is("${title}")`);
   await page.waitForSelector('.locmap-pin-menu');
   await settle(page);
 }
@@ -91,15 +92,21 @@ try {
     '#map the rail stands in the side panel (the scrapbook pattern)');
   await page.click('.locmap-rail-panel .locmap-rail-item:first-child .locmap-rail-name');
   await page.waitForSelector('.locmap-rail-detail');
-  const btns = await page.$$eval('.locmap-rail-detail .locmap-detail-actions button', (e) => e.map((x) => x.title));
-  ok(JSON.stringify(btns) === JSON.stringify(['Map options', 'Pin options']),
-    `#1/#2 the expanded row's body leads with the two option buttons (${btns.join(' · ')})`);
-  /* v6.00, Derek: the List view's dropdown block rides along under the
-     buttons — the body is [actions, LocationPlaceDetails], nothing else. */
+  /* v6.01, Derek: ONE leading row — "Map", "Pin", then "Group" (the old
+     "+ Connect to location"), inside the shared details block. */
+  const btns = await page.$$eval('.locmap-rail-detail .locmap-detail-actions button', (e) => e.map((x) => x.textContent.trim()));
+  ok(JSON.stringify(btns) === JSON.stringify(['Map', 'Pin', 'Group']),
+    `#v601 the expanded row leads with Map · Pin · Group (${btns.join(' · ')})`);
+  /* v6.00, Derek: the List view's dropdown block IS the body — and it opens
+     with the actions row, so the buttons and the details cannot drift. */
   const detailKids = await page.$eval('.locmap-rail-detail', (el) => [...el.children].map((c) => c.className.split(' ')[0]));
-  ok(JSON.stringify(detailKids) === JSON.stringify(['locmap-detail-actions', 'locplace-details']),
-    `#v600 the body leads with the buttons, then the List view's details block (${detailKids.join(' · ')})`);
-  await page.click('.locmap-rail-detail button:has-text("Map Options")');
+  ok(JSON.stringify(detailKids) === JSON.stringify(['locplace-details']),
+    `#v600 the body IS the List view's details block (${detailKids.join(' · ')})`);
+  ok(await page.$eval('.locplace-details', (el) => el.firstElementChild?.className.includes('locmap-detail-actions')),
+    '#v601 which opens with the actions row');
+  ok(await page.$$eval('.locplace-details button', (els) => !els.some((b) => b.textContent.includes('Connect to location'))),
+    '#v601 no "+ Connect to location" button below — Group in the row replaced it');
+  await page.click('.locmap-rail-detail .locmap-detail-actions button:text-is("Map")');
   await page.waitForSelector('.locmap-pin-menu');
   const mapItems = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
   ok(JSON.stringify(mapItems) === JSON.stringify(['Connect to location…', 'Hide from locations list']),
@@ -127,7 +134,7 @@ try {
   ok(await page.$('.locmap-rail-item-hidden') !== null, '#1 marked as hidden while it is shown');
 
   // unhide through the same menu
-  await railOption(page, '.locmap-rail-item-hidden', 'Map Options');
+  await railOption(page, '.locmap-rail-item-hidden', 'Map');
   const backItems = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
   ok(backItems.includes('Show in locations list'), `#1 and the menu now offers to show it (${backItems.join(' · ')})`);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:text-is("Show in locations list")');
@@ -135,14 +142,14 @@ try {
   ok(!(await page.evaluate(() => window.__scStore.getState().locationPlaces.some((p) => p.hidden))), '#1 unhidden again');
 
   // ── the pin menu ────────────────────────────────────────────────────
-  await railOption(page, '.locmap-rail-item:has(.locmap-rail-icon-pinned)', 'Pin Options');
+  await railOption(page, '.locmap-rail-item:has(.locmap-rail-icon-pinned)', 'Pin');
   const pinItems = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
   ok(pinItems.length === 2 && /Lock pin/.test(pinItems[0]) && pinItems[1] === 'Delete pin',
     `#2 the pin menu offers ${pinItems.join(' · ')}`);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has-text("Lock pin")');
   await settle(page);
   ok(await page.evaluate(() => window.__scStore.getState().locationPlaces.some((p) => p.locked)), '#2 it locks the pin');
-  await railOption(page, '.locmap-rail-item:has(.locmap-rail-icon-pinned)', 'Pin Options');
+  await railOption(page, '.locmap-rail-item:has(.locmap-rail-icon-pinned)', 'Pin');
   const locked = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
   ok(/Unlock pin/.test(locked[0]), `#2 and then offers to unlock (${locked[0]})`);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has-text("Unlock pin")');
@@ -150,14 +157,14 @@ try {
 
   // delete the pin
   const pinnedBefore = await page.evaluate(() => window.__scStore.getState().locationPlaces.filter((p) => p.x !== null).length);
-  await railOption(page, '.locmap-rail-item:has(.locmap-rail-icon-pinned)', 'Pin Options');
+  await railOption(page, '.locmap-rail-item:has(.locmap-rail-icon-pinned)', 'Pin');
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:text-is("Delete pin")');
   await settle(page);
   const pinnedAfter = await page.evaluate(() => window.__scStore.getState().locationPlaces.filter((p) => p.x !== null).length);
   ok(pinnedAfter === pinnedBefore - 1, `#2 Delete pin takes it off the map (${pinnedBefore} → ${pinnedAfter})`);
 
   // a row with no pin says so rather than pretending
-  await railOption(page, '.locmap-rail-item:not(:has(.locmap-rail-icon-pinned))', 'Pin Options');
+  await railOption(page, '.locmap-rail-item:not(:has(.locmap-rail-icon-pinned))', 'Pin');
   ok(await page.$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.disabled),
     '#2 an unpinned row offers the items disabled, not silently dead');
 } catch (e) { console.log('  ✗ SCRIPT ERROR:', e.message); fail++; }
@@ -258,7 +265,7 @@ await browser.close();
       '#v599 no second "Locations" header — the row above is the label');
     await p2.click('.locmap-rail-panel .locmap-rail-row .locmap-rail-name');
     await p2.waitForSelector('.locmap-rail-panel .locmap-rail-detail');
-    ok(await p2.$('.locmap-rail-panel .locmap-rail-detail button:has-text("Map Options")') !== null,
+    ok(await p2.$('.locmap-rail-panel .locmap-rail-detail .locmap-detail-actions button:text-is("Map")') !== null,
       '#v597-2 and its rows still open their option buttons');
     ok(await p2.$('.locmap-rail-panel .locplace-details .locmap-field-textarea') !== null,
       '#v600 the panel rail carries the List view\'s details — description and all');

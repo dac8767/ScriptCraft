@@ -119,7 +119,7 @@ try {
      row header's PIN-icon menu — same two actions, one gesture earlier. */
   await dismiss(page);
   await settle(page);
-  await page.click('.locmap-rail-detail button:has-text("Pin Options")');
+  await page.click('.locmap-rail-detail .locmap-detail-actions button:text-is("Pin")');
   await page.waitForSelector('.locmap-pin-menu');
   const tools = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
   ok(tools.length === 2 && /Lock pin/.test(tools[0]) && tools[1] === 'Delete pin',
@@ -128,7 +128,7 @@ try {
   await settle(page);
   await dismiss(page);
   await settle(page);
-  await page.click('.locmap-rail-detail button:has-text("Pin Options")');
+  await page.click('.locmap-rail-detail .locmap-detail-actions button:text-is("Pin")');
   await page.waitForSelector('.locmap-pin-menu');
   ok(await page.$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => /Unlock pin/.test(e.textContent)),
     '#4 and it flips to Unlock once locked');
