@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v5.99 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.00 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,27 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.00 — the rail's expanded rows carry the List view's details block
+
+- Derek: "the drop down info for each item in the location list view
+  should be in the side panel info of the location map view." The rail's
+  expanded detail now renders `LocationPlaceDetails` under the Map/Pin
+  Options buttons — the SAME component the List view's dropdowns render
+  (v5.96's extraction pays off: one block, two homes, cannot drift). New
+  `allLocations` prop threaded rail-ward from all three render sites
+  (SceneNavigator standalone, LocationMapTab, ToolDock's
+  FullscreenMapRailPanel — which passes its `all` memo) so "apply to all
+  locations" means ALL, not the filtered view.
+- Deliberately NOT included: the List dropdown's Rename Location button.
+  It needs the `editor` instance and renames ONE script location — a rail
+  row can stand for a whole group, so "rename" is ambiguous there. Told
+  Derek; List view keeps it.
+- check-v585: the old `#4 body holds ONLY the buttons` assertion (v5.96's
+  moved-to-the-panel rule) is REWRITTEN to assert
+  `[locmap-detail-actions, locplace-details]`, + a fullscreen-panel
+  textarea assertion.
+- Gates: tsc 0, 1079 tests, build, checks 578/0.
 
 ### v5.99 — the fullscreen map's rail hangs under the Locations ROW
 
@@ -482,23 +503,12 @@ check-v578 18/18, check-v577 still 37/37. Gates: tsc 0, 1007 tests, build.
   paper's center, 0.00px off; draft inside the left margin; script pages
   unchanged). Gates: tsc 0, 943 tests (+5), build.
 
-### v5.72 — Pages tabs: Script / Title / Custom / All
-
-- Derek: "change the name of the tabs again so they are Script, Title,
-  Custom, All. and put the tabs in that order." One edit in usePagesTabs
-  (labels + order; ids untouched). check-v572 5/5 (exact strip order +
-  each tab still lands on its view). Gates: tsc 0, 938 tests, build.
-- EIGHTH sandbox rollback hit at this batch's start (stale tree at
-  7febeb7 while origin held v5.71) — standing drill ran: reset --hard
-  origin, npm install (TS2307 symptom), Vite restart. One new wrinkle
-  for the drill: restart Vite FROM frontend/ — a root-started Vite
-  serves 404 and the driver reports ERR_HTTP_RESPONSE_CODE_FAILURE.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v5.72** — Pages tabs: Script / Title / Custom / All
 - **v5.71** — All Pages tab, tab renames, the collapsed-tabs caret
 - **v5.70** — Pages: the Custom tab
 - **v5.69** — the type grid rides one row with "Type:"

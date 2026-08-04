@@ -54,6 +54,9 @@ interface Props {
   hideRail?: boolean;
   /** The window's already filtered/sorted locations — the List view's list. */
   locations: LocationLike[];
+  /** EVERY script location, unfiltered — the rail's details block scopes
+   *  "apply to all locations" to this. */
+  allLocations?: LocationLike[];
   onGoToScene: (sceneIndex: number) => void;
   editor: Editor | null;
 }
@@ -88,7 +91,7 @@ const MapImage: React.FC<{
   );
 };
 
-const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor, hideRail = false }) => {
+const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene, editor, hideRail = false }) => {
   const mapImage = useEditorStore((s) => s.locationMapImage);
   const rotateMap = useEditorStore((s) => s.rotateLocationMap);
   const lockRotation = useEditorStore((s) => s.lockLocationMapRotation);
@@ -409,7 +412,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, onGoToScene, editor, hideR
         }}
       />
 
-      {!hideRail && <LocationMapRail locations={locations} />}
+      {!hideRail && <LocationMapRail locations={locations} allLocations={allLocations} />}
 
       {/* ── the map ────────────────────────────────────────────────── */}
       <div className="locmap-main">

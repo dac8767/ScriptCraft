@@ -94,8 +94,11 @@ try {
   const btns = await page.$$eval('.locmap-rail-detail .locmap-detail-actions button', (e) => e.map((x) => x.title));
   ok(JSON.stringify(btns) === JSON.stringify(['Map options', 'Pin options']),
     `#1/#2 the expanded row's body leads with the two option buttons (${btns.join(' · ')})`);
-  const detailKids = await page.$eval('.locmap-rail-detail', (el) => el.children.length);
-  ok(detailKids === 1, `#4 and the body holds ONLY them — the fields moved to the panel (${detailKids} child)`);
+  /* v6.00, Derek: the List view's dropdown block rides along under the
+     buttons — the body is [actions, LocationPlaceDetails], nothing else. */
+  const detailKids = await page.$eval('.locmap-rail-detail', (el) => [...el.children].map((c) => c.className.split(' ')[0]));
+  ok(JSON.stringify(detailKids) === JSON.stringify(['locmap-detail-actions', 'locplace-details']),
+    `#v600 the body leads with the buttons, then the List view's details block (${detailKids.join(' · ')})`);
   await page.click('.locmap-rail-detail button:has-text("Map Options")');
   await page.waitForSelector('.locmap-pin-menu');
   const mapItems = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
@@ -257,6 +260,8 @@ await browser.close();
     await p2.waitForSelector('.locmap-rail-panel .locmap-rail-detail');
     ok(await p2.$('.locmap-rail-panel .locmap-rail-detail button:has-text("Map Options")') !== null,
       '#v597-2 and its rows still open their option buttons');
+    ok(await p2.$('.locmap-rail-panel .locplace-details .locmap-field-textarea') !== null,
+      '#v600 the panel rail carries the List view\'s details — description and all');
     // leaving fullscreen brings the inline rail back
     await p2.click('.tool-fs-header button[title="Return to editor"]');
     await settle(p2);

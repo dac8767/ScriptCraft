@@ -773,7 +773,7 @@ function FullscreenMapRailPanel() {
   return (
     <div className="tool-inline tool-inline-solo locmap-rail-panel" data-tool="locations-rail">
       <div className="tool-inline-body locmap-rail-panel-body">
-        <LocationMapRail locations={locations} standalone />
+        <LocationMapRail locations={locations} allLocations={all} standalone />
       </div>
     </div>
   );

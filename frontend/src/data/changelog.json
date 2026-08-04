@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.00",
+    "date": "2026-08-04",
+    "changes": [
+      "The map view's location list carries the same expanded details as the List view now — Location Group, script locations, Connect to location, description, and custom fields, right under the Map Options and Pin Options buttons. One block, both views; editing it in either place edits the same location."
+    ]
+  },
+  {
     "version": "5.99",
     "date": "2026-08-04",
     "changes": [

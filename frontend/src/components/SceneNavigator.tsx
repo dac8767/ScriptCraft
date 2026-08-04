@@ -1462,8 +1462,8 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
           /* v5.97, Derek: fullscreen map — this docked instance IS the side
              panel, and it shows the rail (the scrapbook-navigator pattern).
              The takeover instance shows the map with no rail of its own. */
-          ? <LocationMapRail locations={locations} standalone />
-          : <LocationMapTab locations={locations} onGoToScene={goToScene} editor={editor} hideRail={inTakeover} />
+          ? <LocationMapRail locations={locations} allLocations={allLocations} standalone />
+          : <LocationMapTab locations={locations} allLocations={allLocations} onGoToScene={goToScene} editor={editor} hideRail={inTakeover} />
       )}
       {activeTab === 'locations' && locationsTab === 'list' && (
         <>

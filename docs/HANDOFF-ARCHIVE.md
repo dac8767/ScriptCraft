@@ -151,9 +151,21 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.71 and older (newest first)
+## Version history — v5.72 and older (newest first)
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
+
+### v5.72 — Pages tabs: Script / Title / Custom / All
+
+- Derek: "change the name of the tabs again so they are Script, Title,
+  Custom, All. and put the tabs in that order." One edit in usePagesTabs
+  (labels + order; ids untouched). check-v572 5/5 (exact strip order +
+  each tab still lands on its view). Gates: tsc 0, 938 tests, build.
+- EIGHTH sandbox rollback hit at this batch's start (stale tree at
+  7febeb7 while origin held v5.71) — standing drill ran: reset --hard
+  origin, npm install (TS2307 symptom), Vite restart. One new wrinkle
+  for the drill: restart Vite FROM frontend/ — a root-started Vite
+  serves 404 and the driver reports ERR_HTTP_RESPONSE_CODE_FAILURE.
 
 ### v5.71 — All Pages tab, tab renames, the collapsed-tabs caret
 

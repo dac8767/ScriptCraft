@@ -15,6 +15,7 @@ import {
   FaLock, FaLockOpen,
 } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
+import LocationPlaceDetails from './LocationPlaceDetails';
 import {
   locationRows, connectTargets, type LocationPlace,
 } from '../utils/locationPlaces';
@@ -22,11 +23,14 @@ import {
 interface Props {
   /** The filtered/sorted script locations — same list the map pins read. */
   locations: Array<{ name: string; sceneIndices: number[] }>;
+  /** EVERY script location — the details block's "apply to all locations"
+   *  means all of them, not just what the filter lets through. */
+  allLocations?: Array<{ name: string; sceneIndices: number[] }>;
   /** True when the rail IS a side panel (fullscreen map) — full width. */
   standalone?: boolean;
 }
 
-export const LocationMapRail: React.FC<Props> = ({ locations, standalone = false }) => {
+export const LocationMapRail: React.FC<Props> = ({ locations, allLocations = locations, standalone = false }) => {
   const places = useEditorStore((s) => s.locationPlaces);
   const addPin = useEditorStore((s) => s.addLocationPin);
   const updatePlaceIn = useEditorStore((s) => s.updateLocationPlace);
@@ -100,10 +104,7 @@ export const LocationMapRail: React.FC<Props> = ({ locations, standalone = false
           {isOpen && (
             <div className="locmap-rail-detail">
               {/* v5.96, Derek: the options buttons live in the TOP ROW
-                  of the expanded row's body — and the editing fields
-                  that were here moved to the Locations panel
-                  (LocationPlaceDetails). The map keeps pins and
-                  options; the panel keeps knowledge. */}
+                  of the expanded row's body. */}
               <div className="locmap-detail-actions">
                 <button
                   className="locmap-tool-btn"
@@ -124,6 +125,17 @@ export const LocationMapRail: React.FC<Props> = ({ locations, standalone = false
                   }}
                 ><FaMapMarkerAlt /> Pin Options</button>
               </div>
+              {/* v6.00, Derek: "the drop down info for each item in the
+                  location list view should be in the side panel info of the
+                  location map view" — the SAME details block the List view's
+                  expanded rows render (v5.96's extraction pays off here:
+                  one component, two homes, they cannot drift). */}
+              <LocationPlaceDetails
+                locations={locations}
+                allLocations={allLocations}
+                scriptNames={row.scriptNames}
+                place={place}
+              />
             </div>
           )}
         </div>
