@@ -106,7 +106,7 @@ export default function LocationMapOptions() {
       <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
       <button
         ref={btnRef}
-        className={`locmap-tool-btn locmap-mapopts-btn${pos ? ' open' : ''}`}
+        className={`locmap-add-btn locmap-mapopts-btn${pos ? ' open' : ''}`}
         title="Replace, rotate or delete the map"
         onClick={() => (pos ? setPos(null) : open())}
       >Map Options</button>

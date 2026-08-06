@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
+import AddCustomPageDialog from './AddCustomPageDialog';
 import { MarkupIcon } from './markupIcons';
 import { iconLabel as markupIconLabel } from './MarkupPickers';
 import EditElementsDialog from './EditElementsDialog';
@@ -92,8 +93,6 @@ import { scriptApi } from '../services/scriptApi';
 import { mirrorSave, mirrorSnapshot } from '../services/saveLocations';
 import { useSettingsStore } from '../stores/settingsStore';
 import { clearEditorHistory } from '../editor/clearHistory';
-import { insertCustomPage } from '../editor/extensions';
-import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
 import { importWorkspacesFromFile } from '../utils/workspaceImport';
 import { composeSaveContent } from '../utils/screenplaySaveContent';
 import { openTextFile, openBinaryFile } from '../utils/fileOps';
@@ -409,6 +408,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
 
   // ── Page Setup ──
   const [pageSetupOpen, setPageSetupOpen] = useState(false);
+  // v6.05: Insert ▸ Custom Page… asks WHERE (the caret lied — see the item).
+  const [addPageOpen, setAddPageOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   // v4.79: the Presets window (File ▸ Import/Export ▸ Presets…).
   const [presetsOpen, setPresetsOpen] = useState(false);
@@ -1662,21 +1663,15 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         },
         { icon: <FaImage />, label: 'Insert Image…', action: () => useEditorStore.getState().imageInsertHandler?.() },
         // v5.40, Derek: custom pages — non-script pages the script flows
-        // around; not counted in page numbering.
-        { icon: <FaRegFileAlt />, label: 'Custom Page', action: () => { if (editor) insertCustomPage(editor); } },
+        // around; not counted in page numbering. v6.05: the item opens the
+        // "where?" dialog — inserting at the caret put the page inside the
+        // title region on a fresh script, where nothing ever showed.
+        { icon: <FaRegFileAlt />, label: 'Custom Page…', action: () => { if (editor) setAddPageOpen(true); } },
         { separator: true, label: '' },
-        { icon: <FaListOl />, label: 'Section', action: () => insertOutlineLine('# ') },
-        { icon: <FaListOl />, label: 'Marker', action: () => insertOutlineLine('⚑ ') },
-        // v4.33: creates the note on the current selection/element and opens
-        // its highlight popover (the Notes window is general-only now).
-        { icon: <FaRegStickyNote />, label: 'Note', action: () => {
-          if (!editor) return;
-          const noteId = createScriptNoteAtSelection(editor);
-          if (noteId) useEditorStore.getState().setNotePopoverId(noteId);
-          else useEditorStore.getState().openTool('sticky');
-        } },
-        { icon: <FaCheckSquare />, label: 'To-Do List', action: () => insertOutlineLine('[ ] ') },
-        { separator: true, label: '' },
+        /* v6.05, Derek: "the insert menu still has old buttons" — Section,
+           Marker, Note and To-Do List are gone from here. They belong to
+           their tools (Outline, Notes, To-Do) and the ribbon/context menu;
+           the Insert menu keeps document-level inserts only. */
         // v3.25, Derek: moved here from Project (ex-Production menu).
         { icon: <FaTags />, label: 'Production Tags', action: () => useEditorStore.getState().openTool('tags') },
       ],
@@ -2435,6 +2430,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       </div>
     )}
     <CustomizePanelsDialog open={customizeOpen} category={customizeTab ?? undefined} onClose={() => setCustomizeOpen(false)} />
+    {addPageOpen && editor && <AddCustomPageDialog editor={editor} onClose={() => setAddPageOpen(false)} />}
     <PresetsDialog open={presetsOpen} onClose={() => setPresetsOpen(false)} />
     <SaveWorkspaceDialog open={saveWorkspaceOpen} onClose={() => setSaveWorkspaceOpen(false)} />
     <EditWorkspacesDialog open={editWorkspacesOpen} onClose={() => setEditWorkspacesOpen(false)} />

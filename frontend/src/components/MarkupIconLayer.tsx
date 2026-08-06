@@ -58,11 +58,16 @@ export default function MarkupIconLayer({ editor, container }: {
   const createPick = useEditorStore((s) => s.markupCreatePick);
   useEffect(() => {
     if (!createPick || !editor) return;
-    const dom = editor.view.dom;
+    /* v6.05, Derek: "when I select text, nothing happens." The listener sat
+       on the EDITOR's dom — a drag that RELEASES outside the page (sweeping
+       into the margin, the commonest way to select to a line end) fired
+       mouseup on some other element and the armed pick never heard it.
+       Document-level capture hears the release wherever it lands; the
+       ProseMirror selection tells us whether script text was picked. */
     const onUp = () => {
       window.setTimeout(() => {
         const sel = editor.state.selection;
-        if (sel.empty) return;
+        if (sel.empty || !editor.state.doc.textBetween(sel.from, sel.to, ' ').trim()) return;
         useEditorStore.getState().setMarkupCreatePick(false);
         createMarkupAtSelection(editor);
       }, 0);
@@ -70,10 +75,10 @@ export default function MarkupIconLayer({ editor, container }: {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') useEditorStore.getState().setMarkupCreatePick(false);
     };
-    dom.addEventListener('mouseup', onUp);
+    document.addEventListener('mouseup', onUp, true);
     document.addEventListener('keydown', onKey, true);
     return () => {
-      dom.removeEventListener('mouseup', onUp);
+      document.removeEventListener('mouseup', onUp, true);
       document.removeEventListener('keydown', onKey, true);
     };
   }, [createPick, editor]);

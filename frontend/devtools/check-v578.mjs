@@ -31,6 +31,9 @@ try {
   await boot(page);
   await seedScript(page, SCENES_4);
   await openTool(page, 'Locations');
+  // v6.04: rows merge by place only while GROUPED — this check's flows
+  // (the count badge, shared-place rows) are written for that state.
+  await page.evaluate(() => window.__scStore.getState().setLocationsGrouped(true));
   await page.click('button[title="Fullscreen"]');
   await page.waitForSelector('.fs-tool-takeover', { timeout: 8000 });
   if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]');
@@ -235,7 +238,7 @@ try {
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:text-is("Connect to location…")');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
   const heads = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-subhead', (e) => e.map((x) => x.textContent.trim()));
-  ok(heads.includes('Script locations') && heads.includes('Location groups'),
+  ok(heads.includes('Script locations') && heads.includes('Other Groups'),
     `#1 the list has both sections (${heads.join(' / ')})`);
   const groupNames = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item-name', (e) => e.map((x) => x.textContent.trim()));
   ok(groupNames.includes('The Bridge'), `#1 and the group is offered by its display name (${groupNames.join(', ')})`);

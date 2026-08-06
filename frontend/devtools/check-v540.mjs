@@ -13,10 +13,14 @@ const { browser, page } = await launch();
 await boot(page);
 await seedScript(page, SCENES_4);
 
-// cursor at the end of scene 1's short run, then Insert ▸ Custom Page
-await page.evaluate(() => window.__scEditor.chain().setTextSelection(60).run());
+// v6.05: Insert ▸ Custom Page… asks WHERE now (the caret lied — on a fresh
+// script it sat in the title region and the page landed where nothing
+// shows). Add it after page 1 through the dialog.
 await page.click('.menu-item:has-text("Insert")');
-await page.click('.menu-dropdown-item:has(span:text-is("Custom Page"))');
+await page.click('.menu-dropdown-item:has(span:text-is("Custom Page…"))');
+await page.waitForSelector('.fs-addpage-dialog', { timeout: 5000 });
+await page.fill('.fs-addpage-num', '1');
+await page.click('.fs-addpage-dialog button:text-is("Add Page")');
 await settle(page);
 
 const afterInsert = await page.evaluate(() => {

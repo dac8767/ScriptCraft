@@ -562,3 +562,11 @@
   color: #fff;
 }
 
+
+/* ── Insert ▸ Custom Page… — the "where?" window (v6.05) ─────────────── */
+.fs-addpage-dialog { width: 340px; }
+.fs-addpage-body { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 16px; }
+.fs-addpage-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.fs-addpage-num { width: 52px; text-align: center; }
+.fs-addpage-of { color: var(--fd-text-muted); }
+.fs-addpage-hint { font-size: 11px; line-height: 1.4; color: var(--fd-text-muted); }

@@ -1541,9 +1541,20 @@
   text-overflow: ellipsis;
   text-align: right;
 }
-/* Map Options reads as the quieter sibling of the blue + Add Pin. */
-.locmap-mapopts-btn { white-space: nowrap; }
-.locmap-mapopts-btn.open { background: var(--fd-overlay-subtle); color: var(--fd-text); }
+/* Map Options wears the SAME blue format as + Add Pin (v6.04, Derek). */
+.locmap-mapopts-btn { margin-top: 0; padding: 5px 12px; white-space: nowrap; }
+.locmap-mapopts-btn.open { filter: brightness(1.18); }
+
+/* v6.04: the Ungrouped/Grouped pair — one segmented control, both views. */
+.loc-group-toggle { display: inline-flex; flex: 0 0 auto; }
+.loc-group-toggle .locmap-tool-btn { border-radius: 0; white-space: nowrap; }
+.loc-group-toggle .locmap-tool-btn:first-child { border-radius: 4px 0 0 4px; }
+.loc-group-toggle .locmap-tool-btn:last-child { border-radius: 0 4px 4px 0; margin-left: -1px; }
+.loc-group-toggle .locmap-tool-btn.loc-group-on {
+  background: var(--fd-accent);
+  border-color: var(--fd-accent);
+  color: #fff;
+}
 .locmap-mapopts-menu { min-width: 200px; }
 .locmap-mapopts-more,
 .locmap-mapopts-back { display: flex; align-items: center; justify-content: space-between; gap: 8px; }

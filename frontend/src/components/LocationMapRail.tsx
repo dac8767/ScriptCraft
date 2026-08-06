@@ -40,6 +40,7 @@ export const LocationMapRail: React.FC<Props> = ({ locations, allLocations = loc
   const toggleHidden = useEditorStore((s) => s.toggleLocationPlaceHidden);
   const unpinPlace = useEditorStore((s) => s.unpinLocationPlace);
   const showHidden = useEditorStore((s) => s.showHiddenLocations);
+  const grouped = useEditorStore((s) => s.locationsGrouped);
 
   const [expanded, setExpanded] = useState<string | null>(null);
   const [rowMenu, setRowMenu] = useState<
@@ -48,8 +49,8 @@ export const LocationMapRail: React.FC<Props> = ({ locations, allLocations = loc
   const [attachTo, setAttachTo] = useState<{ id: string; top: number; left: number } | null>(null);
 
   const rows = useMemo(
-    () => locationRows(locations, places).filter((r) => showHidden || !r.place?.hidden),
-    [locations, places, showHidden],
+    () => locationRows(locations, places, { grouped }).filter((r) => showHidden || !r.place?.hidden),
+    [locations, places, showHidden, grouped],
   );
   const connectable = useMemo(
     () => connectTargets(locations, places, attachTo?.id ?? null),
@@ -218,7 +219,7 @@ export const LocationMapRail: React.FC<Props> = ({ locations, allLocations = loc
       {connectable.groups.length > 0 && (
         <>
           <div className="locmap-pin-menu-sep" />
-          <div className="locmap-pin-menu-subhead">Location groups</div>
+          <div className="locmap-pin-menu-subhead">Other Groups</div>
           {connectable.groups.map((g) => (
             <button
               key={g.id}

@@ -585,6 +585,25 @@ export interface PageContentInfo {
   isTitle?: boolean;
 }
 
+/** v6.05: "after script page N" as a doc position — the next page's first
+ *  block (doc end when N is the last page); 0 = before script page 1. The
+ *  v5.44 boundary math, extracted PURE so the Pages tool and the Insert
+ *  menu's Custom Page dialog resolve positions through ONE function. Null
+ *  when no such script page exists. */
+export function posAfterScriptPageIn(pages: PageContentInfo[], n: number, docEnd: number): number | null {
+  const script = pages.filter((p) => !p.isTitle);
+  if (n === 0) {
+    const first = script.find((p) => p.blocks.length > 0);
+    return first ? first.blocks[0].docPos : 0;
+  }
+  const idx = script.findIndex((p) => !p.isCustom && p.pageNumber === n);
+  if (idx < 0) return null;
+  for (let i = idx + 1; i < script.length; i++) {
+    if (script[i].blocks.length > 0) return script[i].blocks[0].docPos;
+  }
+  return docEnd;
+}
+
 /**
  * Compute content blocks per page for page-preview thumbnails.
  * Uses the same break algorithm as the pagination plugin for accuracy.

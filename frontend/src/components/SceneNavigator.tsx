@@ -9,7 +9,7 @@ import LocationMapRail from './LocationMapRail';
 import { renameLocationInScript } from '../utils/renameLocationInScript';
 import type { LocationFilter, LocationSort } from '../stores/slices/sceneNavSlice';
 import { PAGES_PER_ROW_MIN, PAGES_PER_ROW_MAX } from '../stores/slices/sceneNavSlice';
-import { computeSceneLengths, computePageBlocks, type PageBlockInfo, type PageContentInfo } from '../editor/pagination';
+import { computeSceneLengths, computePageBlocks, posAfterScriptPageIn, type PageBlockInfo, type PageContentInfo } from '../editor/pagination';
 import {
   insertCustomPage, insertCustomPageAt, moveCustomPage, deleteCustomPage,
 } from '../editor/extensions';
@@ -22,7 +22,8 @@ import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
 import { parseHeading, computeSceneFilterDetails, sceneFilterOptions, filterSceneIndices, countActiveSceneFilters, type SceneFilterDetail } from '../utils/sceneFilters';
 import { useSceneReorder } from '../utils/useSceneReorder';
-import { ControlDropdown, ControlSearch, PerRowStepper, type ToolChromeTab } from './ToolControls';
+import { ControlDropdown, ControlSearch, PerRowStepper, ToolActionRow, type ToolChromeTab } from './ToolControls';
+import LocationsGroupToggle from './LocationsGroupToggle';
 import { usePopup } from '../hooks/usePopup';
 import { SceneReorderBar } from './IndexCards';
 import { LuLayoutGrid, LuList } from 'react-icons/lu';
@@ -544,16 +545,9 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
      these two, so they cannot disagree. */
   const posAfterScriptPage = useCallback((n: number): number | null => {
     if (!editor) return null;
-    if (n === 0) {
-      const first = pageContent.find((p) => p.blocks.length > 0);
-      return first ? first.blocks[0].docPos : 0;
-    }
-    const idx = pageContent.findIndex((p) => !p.isCustom && p.pageNumber === n);
-    if (idx < 0) return null;
-    for (let i = idx + 1; i < pageContent.length; i++) {
-      if (pageContent[i].blocks.length > 0) return pageContent[i].blocks[0].docPos;
-    }
-    return editor.state.doc.content.size;
+    // v6.05: the math lives in pagination.posAfterScriptPageIn — shared with
+    // the Insert menu's Custom Page dialog, so the two doors cannot disagree.
+    return posAfterScriptPageIn(pageContent, n, editor.state.doc.content.size);
   }, [editor, pageContent]);
 
   const posAfterEntry = useCallback((entry: PageContentInfo): number | null => {
@@ -1467,6 +1461,10 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
       )}
       {activeTab === 'locations' && locationsTab === 'list' && (
         <>
+          {/* v6.04, Derek: the Group control left the header — it's the
+              Ungrouped/Grouped toggle on the body's first row now (the
+              v5.01 action-row rule), mirrored at the top of the Map view. */}
+          <ToolActionRow><LocationsGroupToggle /></ToolActionRow>
           {locations.length > 0 && (
             <div className="location-list-header location-header">
               <span className="location-chevron" />
@@ -1625,8 +1623,6 @@ export function LocationsControls() {
   const filter = useEditorStore((s) => s.locationFilter);
   const setFilter = useEditorStore((s) => s.setLocationFilter);
   const sort = useEditorStore((s) => s.locationSort);
-  const grouped = useEditorStore((s) => s.locationsGrouped);
-  const setGrouped = useEditorStore((s) => s.setLocationsGrouped);
   const showHidden = useEditorStore((s) => s.showHiddenLocations);
   const setShowHidden = useEditorStore((s) => s.setShowHiddenLocations);
   const setSort = useEditorStore((s) => s.setLocationSort);
@@ -1661,23 +1657,10 @@ export function LocationsControls() {
       />
       {/* v5.81, Derek: the map's own actions moved OUT of the header, down
           beside + Add Pin as a "Map Options" button — see LocationMapOptions.
-          v5.96, Derek: Group is the ONE exception to the four-control rule,
-          by his word — "move the group button into the header, to the right
-          of the view button". List view only: grouping means nothing to the
-          map, and a dead toggle is the decorative-control sin. */}
-      {view === 'list' && (
-        <button
-          className={`tool-ctl${grouped ? ' tool-ctl-on' : ''}`}
-          aria-pressed={grouped}
-          title={grouped
-            ? 'Grouped by display name — click to list every location on its own'
-            : 'Group locations that share a display name'}
-          onClick={() => setGrouped(!grouped)}
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          <span className="tool-ctl-label">Group</span>
-        </button>
-      )}
+          v6.04, Derek: the v5.96 header Group button moved out too — it's
+          the Ungrouped/Grouped toggle on the body's first row now
+          (LocationsGroupToggle), in BOTH views. The header keeps the four
+          shared controls only. */}
       {/* v5.97, Derek: INT. and EXT. sit on ONE ROW as toggles — selecting
           one means "only show this"; neither (or both) shows everything.
           The menu also filters to a location GROUP, and keeps the way back

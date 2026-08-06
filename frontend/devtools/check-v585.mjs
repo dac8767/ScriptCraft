@@ -44,11 +44,15 @@ try {
   ok(names.length > 0 && names.every((n) => n === n.toUpperCase()),
     `#3 the list shows the script's own names (${names.slice(0, 2).join(' · ')})`);
 
-  ok(await page.$('.tool-fs-header button:has-text("Group")') !== null,
-    '#3 the Group button sits in the HEADER (v5.96), right of View');
-  const headerOrder = await page.$$eval('.tool-fs-header .tool-ctl', (els) => els.map((e) => e.textContent.trim()).filter(Boolean));
-  ok(headerOrder.indexOf('Group') > headerOrder.findIndex((t) => /List|Map/.test(t)),
-    `#3 to the right of the View control (${headerOrder.slice(0, 3).join(' · ')})`);
+  /* v6.04, Derek: the Group control left the header for the body's first
+     row — an Ungrouped/Grouped pair (the v5.01 action-row rule). */
+  ok(await page.$('.tool-fs-header button:has-text("Group")') === null,
+    '#v604 no Group control in the header any more');
+  const segs = await page.$$eval('.tool-action-row .loc-group-toggle button', (els) => els.map((e) => e.textContent.trim()));
+  ok(JSON.stringify(segs) === JSON.stringify(['Ungrouped', 'Grouped']),
+    `#v604 the body's first row carries the Ungrouped/Grouped toggle (${segs.join(' · ')})`);
+  ok(await page.$eval('.loc-group-toggle button:text-is("Ungrouped")', (e) => e.className.includes('loc-group-on')),
+    '#v604 Ungrouped is the active side by default');
   // give two locations one display name so grouping has something to do
   await page.evaluate(() => {
     const s = window.__scStore.getState();
@@ -63,7 +67,7 @@ try {
     '#3 ungrouped, each location still stands under its own name');
   ok(await page.$('.location-group-head') === null, '#3 and there are no group headings');
 
-  await page.click('.tool-fs-header button:has-text("Group")');
+  await page.click('.loc-group-toggle button:text-is("Grouped")');
   await settle(page);
   const heads = await page.$$eval('.location-group-head', (e) => e.map((x) => x.textContent.trim()));
   ok(heads.some((h) => h.includes('Belkadan System')), `#3 Group folds them under the display name (${heads.join(' · ')})`);
@@ -73,7 +77,7 @@ try {
   const groupedNames = await page.$$eval('.location-group .location-name', (e) => e.map((x) => x.textContent.trim()));
   ok(groupedNames.includes('SPACE - OPENING SCROLL') && groupedNames.includes('SPACE - BELKADAN'),
     '#3 and the rows underneath still carry the FULL script names');
-  await page.click('.tool-fs-header button:has-text("Group")');
+  await page.click('.loc-group-toggle button:text-is("Ungrouped")');
   await settle(page);
 
   // ── the map sidebar's two row menus ─────────────────────────────────
@@ -84,6 +88,10 @@ try {
   await page.waitForSelector('.locmap-import-bar');
   await page.click('.locmap-import-confirm');
   await page.waitForTimeout(400);
+  // v6.04: the map view carries the same Ungrouped/Grouped pair — fold the
+  // rows by place; everything below expects the merged (grouped) rail.
+  await page.click('.locmap .loc-group-toggle button:text-is("Grouped")');
+  await settle(page);
 
   // v5.97: fullscreen map — the rail lives in the LEFT PANEL now.
   ok(await page.$('.fs-tool-takeover .locmap-rail') === null,

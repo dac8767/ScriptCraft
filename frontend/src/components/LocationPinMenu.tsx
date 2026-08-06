@@ -154,7 +154,7 @@ export default function LocationPinMenu({
             {targets.groups.length > 0 && (
               <>
                 <div className="locmap-pin-menu-sep" />
-                <div className="locmap-pin-menu-subhead">Location groups</div>
+                <div className="locmap-pin-menu-subhead">Other Groups</div>
                 {targets.groups.map((g) => (
                   <button
                     key={g.id}

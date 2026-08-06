@@ -1,5 +1,17 @@
 [
   {
+    "version": "6.04",
+    "date": "2026-08-04",
+    "changes": [
+      "Locations map: the Map Options button wears the same blue format as + Add Pin.",
+      "The Group dropdown's second section is \"Other Groups\" now.",
+      "Grouping is an Ungrouped / Grouped toggle on the first row of the Locations window body — in the List view and at the top of the Map view alike. Ungrouped, the map's location list shows every script location on its own row; Grouped folds connected locations back into one row per place.",
+      "The Insert menu dropped its old Section, Marker, Note and To-Do List entries — those live with their tools.",
+      "Fixed: Insert ▸ Custom Page did nothing visible on a fresh script (it inserted at the caret, which sat inside the title page region). It opens a small window now asking where the page goes — after which page — and inserts through the same machinery as the Pages tool.",
+      "Fixed: an armed annotation (the + button with nothing selected) ignored your selection if the mouse release landed outside the page edge. It hears the release anywhere now — select the text and the annotation window opens."
+    ]
+  },
+  {
     "version": "6.03",
     "date": "2026-08-04",
     "changes": [

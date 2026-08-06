@@ -379,12 +379,23 @@ export interface LocationRow {
 
 export function locationRows<T extends { name: string; sceneIndices: number[] }>(
   locations: T[], places: LocationPlace[],
+  opts: { grouped?: boolean } = {},
 ): LocationRow[] {
+  const grouped = opts.grouped !== false;
   const rows: LocationRow[] = [];
   const done = new Set<string>();
   for (const loc of locations) {
     if (done.has(key(loc.name))) continue;
     const place = placeForLocation(places, loc.name);
+    /* v6.04, Derek: the Ungrouped/Grouped toggle reaches the map's list too.
+       Ungrouped, every script location stands on its own row — it still
+       knows its place (pin state, lock, details), it just doesn't fold in
+       with the other locations sharing that place. */
+    if (!grouped && place) {
+      rows.push({ key: loc.name, place, scriptNames: [loc.name], label: loc.name, scenes: loc.sceneIndices.length });
+      done.add(key(loc.name));
+      continue;
+    }
     if (!place) {
       rows.push({ key: loc.name, scriptNames: [loc.name], label: loc.name, scenes: loc.sceneIndices.length });
       done.add(key(loc.name));

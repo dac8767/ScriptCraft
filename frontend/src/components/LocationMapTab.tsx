@@ -35,6 +35,7 @@ import { showToast } from './Toast';
 import LocationPinMenu from './LocationPinMenu';
 import LocationMapOptions, { importLocationMap } from './LocationMapOptions';
 import LocationMapRail from './LocationMapRail';
+import LocationsGroupToggle from './LocationsGroupToggle';
 import { renameLocationInScript } from '../utils/renameLocationInScript';
 import {
   pinnedPlaces, connectTargets, placeLabel, dropFraction,
@@ -460,6 +461,9 @@ const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene,
                 title={placing ? 'Click the map to set the pin, or press Escape' : 'Add a pin — it follows the cursor until you click'}
               >+ Add Pin</button>
               <LocationMapOptions />
+              {/* v6.04, Derek: the same Ungrouped/Grouped pair the List view
+                  carries — here it folds/unfolds the sidebar's rows. */}
+              <LocationsGroupToggle />
               <span className="locmap-pin-count">
                 {placing ? 'Click the map to set the pin · Esc to cancel' : `${drawnPins.length} pinned`}
               </span>
