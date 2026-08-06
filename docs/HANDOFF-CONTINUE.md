@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.04 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.05 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,20 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.05 — the crushed-header fix (chrome-less windows)
+
+- Derek (screenshots: Snippets, Thesaurus): the docked strip's height
+  comes from IN-FLOW chrome (tabs/controls); the ⛶/× are pinned out of
+  flow (v4.90). No chrome → strip = padding only (9px) and the buttons
+  overflowed the body. Swept ALL windows via a measuring probe: five
+  crushed (fragments/highlights/aiwriter/thesaurus/workspaces), Focus at
+  24px, rest 29px. FIX: `.tool-inline-header` min-height =
+  calc(20px + pad-top + pad-bottom + hairline) — knob-aware, so it
+  tracks the Design paddings instead of hardcoding 29. Re-swept: every
+  window 29px (characters 53 = its legit two-row wrap). Floating-only
+  tools (analytics/design/feedback) have title-bearing headers — fine.
+- Gates: tsc 0, 1081 tests, build, checks 582/0.
 
 ### v6.04 — locations toggle everywhere, the Insert menu diet, two dead-flow fixes
 

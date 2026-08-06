@@ -562,6 +562,14 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
   border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
   background: var(--fd-navigator-bg);
   flex-shrink: 0;
+  /* v6.05, Derek: "certain windows have their header crushed." The strip's
+     height comes from its IN-FLOW chrome (tabs/controls); the action buttons
+     are pinned out of flow (v4.90). A window with NO header controls —
+     Snippets, Thesaurus, Highlights, AI Writer, Workspaces — collapsed to
+     its padding (9px) and the ⛶/× overflowed onto the body. Reserve the
+     standard strip height: 20px of content + the same pad/hairline knobs a
+     controls-bearing strip resolves to, so every window's header matches. */
+  min-height: calc(20px + var(--dz-toolwin-pad-top, 4px) + var(--dz-toolwin-pad-bottom, 4px) + var(--fd-hairline-w, 1px));
 }
 /* the controls span doubles as the flex spacer — packs right, fills the row.
    v4.90: it must be allowed to SHRINK here, unlike .tool-chrome-right in a

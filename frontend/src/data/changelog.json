@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.05",
+    "date": "2026-08-04",
+    "changes": [
+      "Fixed: windows without header controls — Snippets, Thesaurus, Highlights, AI Writer, Workspaces — had their header strip crushed to a sliver, with the fullscreen and close buttons spilling over the body. Every window's header now holds the standard height; all windows were swept and measured to confirm."
+    ]
+  },
+  {
     "version": "6.04",
     "date": "2026-08-04",
     "changes": [
