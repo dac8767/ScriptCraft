@@ -30,28 +30,18 @@ import type { JSONContent } from '@tiptap/react';
 import { isWorkingNoteNode } from './workingNotes';
 import { DEFAULT_HEADER_CONTENT, DEFAULT_FOOTER_CONTENT } from '../stores/editorStore';
 import type { PageLayout, HeaderFooterContent } from '../stores/editorStore';
+import { LINE_HEIGHT_PT, FD_INDENTS, SPACE_BEFORE } from './screenplayMetrics';
 
-// --- Layout constants (mirror pdfExporter.ts) ---
+// --- Layout constants ---
+// Text geometry comes from utils/screenplayMetrics (v6.33) — the ONE source
+// shared with the paginator and PDF exporter. This file's local copy had
+// already drifted (its sceneHeading space-before missed the v6.30 change
+// to 2), which is exactly why the copies died.
 
 const TWIPS_PER_INCH = 1440;
 const TWIPS_PER_POINT = 20;
-const LINE_HEIGHT_PT = 12;
 const FONT_FAMILY = 'Courier Prime';
 const FONT_SIZE_HALFPT = 24; // 12pt
-
-const FD_INDENTS: Record<string, [number, number]> = {
-  sceneHeading: [1.50, 7.50], action: [1.50, 7.50], character: [3.50, 7.50],
-  dialogue: [2.50, 6.00], parenthetical: [3.00, 5.50], transition: [5.50, 7.50],
-  general: [1.50, 7.50], shot: [1.50, 7.50], newAct: [1.50, 7.50],
-  endOfAct: [1.50, 7.50], lyrics: [2.50, 6.00], showEpisode: [1.50, 7.50],
-  castList: [1.50, 7.50],
-};
-
-const SPACE_BEFORE: Record<string, number> = {
-  sceneHeading: 1, action: 1, character: 1, dialogue: 0,
-  parenthetical: 0, transition: 1, general: 0, shot: 1,
-  newAct: 2, endOfAct: 2, lyrics: 0, showEpisode: 1, castList: 0,
-};
 
 const UPPERCASE_TYPES = new Set([
   'sceneHeading', 'character', 'transition', 'shot', 'newAct', 'endOfAct', 'castList',
@@ -135,9 +125,11 @@ interface IndentTwips {
 
 function indentForType(typeName: string, layout: PageLayout): IndentTwips {
   const indents = FD_INDENTS[typeName] || FD_INDENTS.general;
-  const leftIn = indents[0] - layout.leftMargin;
+  const leftIn = Math.max(0, indents[0] - layout.leftMargin);
   const rightContentEdgeIn = layout.pageWidth - layout.rightMargin;
-  const rightIn = rightContentEdgeIn - indents[1];
+  // Clamped like screenplayMetrics.columnFor: a narrower page layout pins
+  // full-width columns to its own content edge instead of going negative.
+  const rightIn = Math.max(0, rightContentEdgeIn - indents[1]);
   return {
     left: Math.round(leftIn * TWIPS_PER_INCH),
     right: Math.round(rightIn * TWIPS_PER_INCH),

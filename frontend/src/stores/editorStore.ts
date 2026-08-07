@@ -290,8 +290,9 @@ export const DEFAULT_PAGE_LAYOUT: PageLayout = {
   bottomMargin: 72,
   headerMargin: 36,
   footerMargin: 36,
-  leftMargin: 1.50,       // Final Draft default LeftIndent for Action
-  rightMargin: 1.00,      // 8.5 - 7.50 (default RightIndent)
+  leftMargin: 1.50,       // default LeftIndent for Action
+  rightMargin: 0.70,      // 8.5 - 7.80 content edge (v6.33: measured from
+                          // Derek's reference — 63 chars of 10-cpi Courier)
   headerContent: { ...DEFAULT_HEADER_CONTENT },
   footerContent: { ...DEFAULT_FOOTER_CONTENT },
   headerStartPage: 2,
@@ -299,18 +300,25 @@ export const DEFAULT_PAGE_LAYOUT: PageLayout = {
   moresContds: { ...DEFAULT_MORES_CONTDS },
 };
 
-/** v0.12 migration: the app default moved from OpenDraft's inherited A4-ish
- * geometry (8.26 x 11.69, right margin 0.76") to US Letter (8.5 x 11, right
- * margin 1.0" — Final Draft's US defaults). Documents whose saved layout
- * carries the exact old-default signature were never customized in Page
- * Setup, so upgrade them; anything deliberately chosen (including the A4
- * preset, which is 8.27) doesn't match and is left alone. */
+/** Default-layout migrations. A saved layout carrying the EXACT signature of
+ * an old app default was never customized in Page Setup, so it upgrades to
+ * the current default; anything deliberately chosen (including the A4
+ * preset, which is 8.27) doesn't match and is left alone.
+ *  - v0.12: OpenDraft's inherited A4-ish geometry (8.26 x 11.69, rm 0.76")
+ *    → US Letter (8.5 x 11, rm 1.0").
+ *  - v6.33: right margin 1.0" → 0.7" (content edge 7.8" — measured from
+ *    Derek's reference program: 63 chars of true 10-cpi Courier). The steps
+ *    CHAIN, so an untouched A4-era document lands on the current default. */
 export function migratePageLayout(l: PageLayout): PageLayout {
   const eq = (a: number, b: number) => Math.abs(a - b) < 0.005;
-  if (eq(l.pageWidth, 8.26) && eq(l.pageHeight, 11.69) && eq(l.leftMargin, 1.5) && eq(l.rightMargin, 0.76)) {
-    return { ...l, pageWidth: 8.5, pageHeight: 11, rightMargin: 1.0 };
+  let out = l;
+  if (eq(out.pageWidth, 8.26) && eq(out.pageHeight, 11.69) && eq(out.leftMargin, 1.5) && eq(out.rightMargin, 0.76)) {
+    out = { ...out, pageWidth: 8.5, pageHeight: 11, rightMargin: 1.0 };
   }
-  return l;
+  if (eq(out.pageWidth, 8.5) && eq(out.pageHeight, 11) && eq(out.leftMargin, 1.5) && eq(out.rightMargin, 1.0)) {
+    out = { ...out, rightMargin: 0.7 };
+  }
+  return out;
 }
 
 export interface SceneInfo {

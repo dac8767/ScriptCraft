@@ -120,6 +120,11 @@ function generateRuleProperties(
   // Alignment
   props.push(`text-align: ${rule.textAlign};`);
 
+  // v6.33: the break-spaces phantom-space allowance (see 06-editor-content
+  // .screenplay-element) belongs to left-aligned wrapping elements only —
+  // right/center-aligned ink must anchor to the true column edge.
+  props.push(`margin-right: ${rule.textAlign === 'left' ? '-14px' : '0'};`);
+
   // Margin
   if (rule.marginTop > 0) {
     props.push(`margin-top: ${rule.marginTop}pt;`);

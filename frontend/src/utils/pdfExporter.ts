@@ -7,15 +7,18 @@ import { DEFAULT_HEADER_CONTENT, DEFAULT_FOOTER_CONTENT, resolveMoresContds } fr
 import type { PageLayout, HeaderFooterContent } from '../stores/editorStore';
 import { resolveImageUrl, loadImageData } from './imageAsset';
 import { isWorkingNoteNode } from './workingNotes';
+import {
+  LINE_HEIGHT_PT, PTS_PER_INCH, FD_CHAR_WIDTH_PT, SPACE_BEFORE, columnFor,
+} from './screenplayMetrics';
 
 /* v6.32, Derek ("the text exports as Courier Std"): jsPDF's builtin
    'courier' is the PDF-standard font — viewers substitute Courier Std,
    which is NOT the face the app shows. The app's bundled Courier Prime
    TTFs (public/fonts, all four weights) are embedded into every export so
-   paper matches screen. charSpace already derives from getTextWidth('M'),
-   so the FD 10.33-cpi layout is unchanged — only the glyphs. If the font
-   files can't load (shouldn't happen — same origin), the builtin stays as
-   a fallback rather than failing the export. */
+   paper matches screen. charSpace derives from getTextWidth('M'), so the
+   10-cpi grid (screenplayMetrics, v6.33) holds whatever face installs. If
+   the font files can't load (shouldn't happen — same origin), the builtin
+   stays as a fallback rather than failing the export. */
 const PRIME_STYLES: [string, string][] = [
   ['CourierPrime-Regular.ttf', 'normal'],
   ['CourierPrime-Bold.ttf', 'bold'],
@@ -56,34 +59,12 @@ async function installExportFont(pdf: jsPDF): Promise<string> {
   return 'CourierPrime';
 }
 
-// --- Constants matching pagination.ts ---
-
-const LINE_HEIGHT_PT = 12;
-const PTS_PER_INCH = 72;
-const FD_CPI = 10.33; // Final Draft Courier characters per inch
-const FD_CHAR_WIDTH_PT = PTS_PER_INCH / FD_CPI; // ≈6.97pt per character
-
-// Final Draft absolute indents from page edge (inches)
-const FD_INDENTS: Record<string, [number, number]> = {
-  sceneHeading: [1.50, 7.50], action: [1.50, 7.50], character: [3.50, 7.50],
-  dialogue: [2.50, 6.00], parenthetical: [3.00, 5.50], transition: [5.50, 7.50],
-  general: [1.50, 7.50], shot: [1.50, 7.50], newAct: [1.50, 7.50],
-  endOfAct: [1.50, 7.50], lyrics: [2.50, 6.00], showEpisode: [1.50, 7.50],
-  castList: [1.50, 7.50],
-};
-
-// Characters per line — matches pagination.ts exactly
-const CHARS_PER_LINE: Record<string, number> = {};
-for (const [type, [l, r]] of Object.entries(FD_INDENTS)) {
-  CHARS_PER_LINE[type] = Math.round((r - l) * FD_CPI);
-}
-
-// Space before each element type (in lines) — matches pagination.ts & CSS margin-top values
-const SPACE_BEFORE: Record<string, number> = {
-  sceneHeading: 2, action: 1, character: 1, dialogue: 0,
-  parenthetical: 0, transition: 1, general: 0, shot: 1,
-  newAct: 2, endOfAct: 2, lyrics: 0, showEpisode: 1, castList: 0,
-};
+// --- Text geometry: ONE source, shared with the paginator (v6.33) ---
+// src/utils/screenplayMetrics.ts holds the measured numbers: true 10 cpi
+// Courier (7.2pt per character), full-width columns 1.5"→7.8" (63 chars —
+// Derek's reference page, measured). columnFor() clamps those columns to the
+// document's page layout, so imported/custom margins wrap identically here,
+// on screen, and in the page count.
 
 // Types that render in uppercase (CSS text-transform: uppercase)
 const UPPERCASE_TYPES = new Set([
@@ -106,7 +87,7 @@ const DIALOGUE_BLOCK_TYPES = new Set(['dialogue', 'parenthetical', 'lyrics']);
 
 // --- Text run types ---
 
-interface TextRun {
+export interface TextRun {
   text: string;
   bold: boolean;
   italic: boolean;
@@ -176,9 +157,10 @@ function setFontStyle(pdf: jsPDF, bold: boolean, italic: boolean): void {
 
 /**
  * Word-wrap text runs using character counting (monospace).
- * Uses CHARS_PER_LINE to match editor pagination exactly.
+ * Same greedy fit as screenplayMetrics.getTextLines — the paginator's count
+ * and these rendered lines must never disagree.
  */
-function wordWrapRuns(
+export function wordWrapRuns(
   runs: TextRun[],
   maxChars: number,
   forceUppercase: boolean,
@@ -217,37 +199,43 @@ function wordWrapRuns(
   let currentLine: TextRun[] = [];
   let currentLineChars = 0;
 
-  for (const word of words) {
-    const wordLen = word.text.length;
-
-    if (currentLine.length === 0) {
-      currentLine.push({ text: word.text, bold: word.bold, italic: word.italic, underline: word.underline });
-      currentLineChars = wordLen;
-    } else if (currentLineChars + wordLen <= maxChars) {
-      const last = currentLine[currentLine.length - 1];
-      if (last.bold === word.bold && last.italic === word.italic && last.underline === word.underline) {
-        last.text += word.text;
-      } else {
-        currentLine.push({ text: word.text, bold: word.bold, italic: word.italic, underline: word.underline });
-      }
-      currentLineChars += wordLen;
-    } else {
-      if (currentLine.length > 0) {
-        const lastRun = currentLine[currentLine.length - 1];
-        lastRun.text = lastRun.text.replace(/ +$/, '');
-      }
-      lines.push(currentLine);
-      const trimmedWord = word.text.replace(/^ +/, '');
-      currentLine = [{ text: trimmedWord, bold: word.bold, italic: word.italic, underline: word.underline }];
-      currentLineChars = trimmedWord.length;
+  const pushLine = () => {
+    if (currentLine.length > 0) {
+      const lastRun = currentLine[currentLine.length - 1];
+      lastRun.text = lastRun.text.replace(/ +$/, '');
     }
+    lines.push(currentLine);
+    currentLine = [];
+    currentLineChars = 0;
+  };
+
+  for (const word of words) {
+    /* Each word carries its trailing space (the gap to the NEXT word), so the
+       fit decision must use the VISIBLE length only. Counting that space made
+       every full line wrap one word early (v6.33, Derek's "of" on a third
+       row) — the paginator's getTextLines never counted it. */
+    const visLen = word.text.replace(/ +$/, '').length;
+    if (currentLine.length > 0 && currentLineChars + visLen > maxChars) {
+      pushLine();
+    }
+    let text = currentLine.length === 0 ? word.text.replace(/^ +/, '') : word.text;
+    // A single word longer than the column hard-splits — the paginator counts
+    // it that way, and a browser breaks the overflow too.
+    while (currentLine.length === 0 && text.replace(/ +$/, '').length > maxChars) {
+      lines.push([{ text: text.slice(0, maxChars), bold: word.bold, italic: word.italic, underline: word.underline }]);
+      text = text.slice(maxChars);
+    }
+    if (text.replace(/ +$/, '').length === 0 && currentLine.length === 0) continue;
+    const last = currentLine[currentLine.length - 1];
+    if (last && last.bold === word.bold && last.italic === word.italic && last.underline === word.underline) {
+      last.text += text;
+    } else {
+      currentLine.push({ text, bold: word.bold, italic: word.italic, underline: word.underline });
+    }
+    currentLineChars += text.length;
   }
 
-  if (currentLine.length > 0) {
-    const lastRun = currentLine[currentLine.length - 1];
-    lastRun.text = lastRun.text.replace(/ +$/, '');
-    lines.push(currentLine);
-  }
+  if (currentLine.length > 0) pushLine();
 
   return lines.length > 0 ? lines : [[{ text: '', bold: false, italic: false, underline: false }]];
 }
@@ -344,7 +332,10 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
   pdf.setFont(EXPORT_FONT, 'normal');
   pdf.setFontSize(12);
 
-  // Character spacing adjustment: make jsPDF Courier match FD Courier (10.33 CPI)
+  // Character pitch: true 10 cpi (7.2pt/char, the measured reference). With
+  // Courier Prime's natural 0.6em advance this is 0 — no tracking. It stays
+  // a derivation so a fallback face with different metrics still lands on
+  // the exact 10-cpi grid the layout math assumes.
   const baseCharWidth = pdf.getTextWidth('M');
   const charSpace = FD_CHAR_WIDTH_PT - baseCharWidth;
 
@@ -512,11 +503,10 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
        5.5in column and right alignment. */
     const fadeIn = typeName === 'transition'
       && isLeftTransition(node.runs.map((r) => r.text).join(''));
-    const indents = fadeIn ? (FD_INDENTS.action || FD_INDENTS.general)
-      : (FD_INDENTS[typeName] || FD_INDENTS.general);
-    const leftPt = indents[0] * PTS_PER_INCH;
-    const rightPt = indents[1] * PTS_PER_INCH;
-    const maxChars = fadeIn ? (CHARS_PER_LINE.action || 62) : (CHARS_PER_LINE[typeName] || 62);
+    const col = columnFor(fadeIn ? 'action' : typeName, layout);
+    const leftPt = col.leftIn * PTS_PER_INCH;
+    const rightPt = col.rightIn * PTS_PER_INCH;
+    const maxChars = col.chars;
     const forceUpper = UPPERCASE_TYPES.has(typeName);
 
     const spaceBefore = isFirstElement ? 0 : (SPACE_BEFORE[typeName] ?? 0);
@@ -537,7 +527,7 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
       let j = i + 1;
       while (j < nodes.length && DIALOGUE_BLOCK_TYPES.has(nodes[j].typeName)) {
         const dNode = nodes[j];
-        const dMaxChars = CHARS_PER_LINE[dNode.typeName] || 36;
+        const dMaxChars = columnFor(dNode.typeName, layout).chars;
         const dSb = (SPACE_BEFORE[dNode.typeName] ?? 0) * LINE_HEIGHT_PT;
         const dLines = wordWrapRuns(dNode.runs, dMaxChars, UPPERCASE_TYPES.has(dNode.typeName));
         dialogueBlockHeight += dSb + dLines.length * LINE_HEIGHT_PT;
@@ -552,7 +542,7 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
     if (typeName === 'sceneHeading' && i + 1 < nodes.length) {
       keepWithNext = true;
       const nNode = nodes[i + 1];
-      const nMaxChars = CHARS_PER_LINE[nNode.typeName] || 62;
+      const nMaxChars = columnFor(nNode.typeName, layout).chars;
       const nSb = (SPACE_BEFORE[nNode.typeName] ?? 0) * LINE_HEIGHT_PT;
       const nLines = wordWrapRuns(nNode.runs, nMaxChars, UPPERCASE_TYPES.has(nNode.typeName));
       nextElementHeight = nSb + nLines.length * LINE_HEIGHT_PT;
@@ -583,10 +573,10 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
         while (dIdx < dialogueBlockNodes.length) {
           const dNodeIdx = dialogueBlockNodes[dIdx];
           const dNode = nodes[dNodeIdx];
-          const dIndents = FD_INDENTS[dNode.typeName] || FD_INDENTS.general;
-          const dLeftPt = dIndents[0] * PTS_PER_INCH;
-          const dRightPt = dIndents[1] * PTS_PER_INCH;
-          const dMaxChars = CHARS_PER_LINE[dNode.typeName] || 36;
+          const dCol = columnFor(dNode.typeName, layout);
+          const dLeftPt = dCol.leftIn * PTS_PER_INCH;
+          const dRightPt = dCol.rightIn * PTS_PER_INCH;
+          const dMaxChars = dCol.chars;
           const dSb = (SPACE_BEFORE[dNode.typeName] ?? 0) * LINE_HEIGHT_PT;
           const dWrapped = wordWrapRuns(dNode.runs, dMaxChars, UPPERCASE_TYPES.has(dNode.typeName));
           const dHeight = dSb + dWrapped.length * LINE_HEIGHT_PT;
@@ -604,8 +594,7 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
         // Check if we still have dialogue nodes to render on next page
         if (dIdx < dialogueBlockNodes.length) {
           // Render (MORE) indicator
-          const moreIndents = FD_INDENTS.character || FD_INDENTS.general;
-          const moreLeftPt = moreIndents[0] * PTS_PER_INCH;
+          const moreLeftPt = columnFor('character', layout).leftIn * PTS_PER_INCH;
           if (mc.dialogueBreakContd && currentY + LINE_HEIGHT_PT <= usableBottomPt) {
             setFontStyle(pdf, false, false);
             pdf.text(mc.moreText, moreLeftPt, currentY + LINE_HEIGHT_PT, { charSpace });
@@ -615,8 +604,7 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
 
           // Render CONT'D character name
           const charName = node.plainText.trim().toUpperCase();
-          const contdIndents = FD_INDENTS.character || FD_INDENTS.general;
-          const contdLeftPt = contdIndents[0] * PTS_PER_INCH;
+          const contdLeftPt = columnFor('character', layout).leftIn * PTS_PER_INCH;
           if (mc.dialogueBreakContd) {
             setFontStyle(pdf, false, false);
             pdf.text(`${charName} ${mc.contdText}`, contdLeftPt, currentY + LINE_HEIGHT_PT, { charSpace });
@@ -627,10 +615,10 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
           while (dIdx < dialogueBlockNodes.length) {
             const dNodeIdx = dialogueBlockNodes[dIdx];
             const dNode = nodes[dNodeIdx];
-            const dIndents = FD_INDENTS[dNode.typeName] || FD_INDENTS.general;
-            const dLeftPt = dIndents[0] * PTS_PER_INCH;
-            const dRightPt = dIndents[1] * PTS_PER_INCH;
-            const dMaxChars = CHARS_PER_LINE[dNode.typeName] || 36;
+            const dCol = columnFor(dNode.typeName, layout);
+            const dLeftPt = dCol.leftIn * PTS_PER_INCH;
+            const dRightPt = dCol.rightIn * PTS_PER_INCH;
+            const dMaxChars = dCol.chars;
             const dSb = (SPACE_BEFORE[dNode.typeName] ?? 0) * LINE_HEIGHT_PT;
             const dWrapped = wordWrapRuns(dNode.runs, dMaxChars, UPPERCASE_TYPES.has(dNode.typeName));
             const dHeight = dSb + dWrapped.length * LINE_HEIGHT_PT;
@@ -685,12 +673,13 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
       const y = currentY + LINE_HEIGHT_PT; // baseline of first line
       setFontStyle(pdf, true, false); // bold like scene heading
       pdf.setFontSize(12);
-      // Left side: just inside left margin
-      const leftNumX = 1.0 * PTS_PER_INCH;
-      pdf.text(sceneNum, leftNumX, y, { charSpace });
-      // Right side: near right margin, right-aligned
+      // Both sides anchor 0.15in off the heading column — the same geometry
+      // as the editor's ::before/::after scene numbers.
+      const hCol = columnFor('sceneHeading', layout);
       const numWidth = sceneNum.length * FD_CHAR_WIDTH_PT;
-      const rightNumX = 7.75 * PTS_PER_INCH - numWidth;
+      const leftNumX = (hCol.leftIn - 0.15) * PTS_PER_INCH - numWidth;
+      pdf.text(sceneNum, leftNumX, y, { charSpace });
+      const rightNumX = (hCol.rightIn + 0.15) * PTS_PER_INCH;
       pdf.text(sceneNum, rightNumX, y, { charSpace });
     }
 
@@ -702,10 +691,10 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
       for (let dIdx = 1; dIdx < dialogueBlockNodes.length; dIdx++) {
         const dNodeIdx = dialogueBlockNodes[dIdx];
         const dNode = nodes[dNodeIdx];
-        const dIndents = FD_INDENTS[dNode.typeName] || FD_INDENTS.general;
-        const dLeftPt = dIndents[0] * PTS_PER_INCH;
-        const dRightPt = dIndents[1] * PTS_PER_INCH;
-        const dMaxChars = CHARS_PER_LINE[dNode.typeName] || 36;
+        const dCol = columnFor(dNode.typeName, layout);
+        const dLeftPt = dCol.leftIn * PTS_PER_INCH;
+        const dRightPt = dCol.rightIn * PTS_PER_INCH;
+        const dMaxChars = dCol.chars;
         const dSb = (SPACE_BEFORE[dNode.typeName] ?? 0) * LINE_HEIGHT_PT;
         const dWrapped = wordWrapRuns(dNode.runs, dMaxChars, UPPERCASE_TYPES.has(dNode.typeName));
 
@@ -760,15 +749,35 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
     /* v6.32, Derek ("Clicking Print in the File menu still does nothing"):
        the v6.30 iframe fallback ALSO dies silently on the Mac — WKWebView
        doesn't render PDFs in iframes, so onload fires against nothing and
-       print() shows no dialog. On Tauri there is no in-webview road to the
-       print panel without a native opener plugin; the DETERMINISTIC path is
-       the proven native save dialog + a toast that says exactly what to do.
+       print() shows no dialog. There is no in-webview road to the print
+       panel for a generated PDF on Tauri.
+       v6.33, Derek ("it did not open the print menu"): so the shell grew
+       the opener plugin. The print copy is written under app data and
+       handed to the OS PDF viewer — Preview opens on the exact export, one
+       ⌘P from the real print dialog (a viewer that honors the embedded
+       autoPrint() flag, like Acrobat, opens the dialog itself). The v6.32
+       save-dialog path stays as the fallback if the opener refuses.
        (Browsers keep the real popup print below.) */
     const { isDesktopTauri } = await import('../services/platform');
     if (isDesktopTauri()) {
-      await saveFile(new Uint8Array(pdf.output('arraybuffer')), filename, [{ name: 'PDF', extensions: ['pdf'] }]);
       const { showToast } = await import('../components/Toast');
-      showToast('Print-ready PDF saved — open it and press ⌘P to print. (Exact margins, page numbers included.)', 'info');
+      try {
+        const [{ writeFile, mkdir, exists, BaseDirectory }, { openPath }, { appDataDir }] = await Promise.all([
+          import('@tauri-apps/plugin-fs'),
+          import('@tauri-apps/plugin-opener'),
+          import('@tauri-apps/api/path'),
+        ]);
+        if (!(await exists('print', { baseDir: BaseDirectory.AppData }))) {
+          await mkdir('print', { baseDir: BaseDirectory.AppData, recursive: true });
+        }
+        await writeFile(`print/${filename}`, new Uint8Array(pdf.output('arraybuffer')), { baseDir: BaseDirectory.AppData });
+        await openPath(`${await appDataDir()}/print/${filename}`);
+        showToast('Opened in your PDF viewer — press ⌘P there to print.', 'info');
+      } catch (e) {
+        console.error('Print open failed, falling back to the save dialog:', e);
+        await saveFile(new Uint8Array(pdf.output('arraybuffer')), filename, [{ name: 'PDF', extensions: ['pdf'] }]);
+        showToast('Print-ready PDF saved — open it and press ⌘P to print.', 'info');
+      }
       return;
     }
     const win = window.open(url, '_blank');

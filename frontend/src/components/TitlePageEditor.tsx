@@ -368,13 +368,24 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
   useEffect(() => {
     const el = previewBoxRef.current;
     if (!el) return;
-    const compute = () => setFitScale(Math.max(0.1, (el.clientWidth - 20) / (pageLayout.pageWidth * 96)));
+    /* v6.33, Derek: Fit must satisfy BOTH axes — width alone let a short
+       window crop the page bottom. The scale is the smaller of the two
+       ratios, measured against the scroll viewport (the box minus the zoom
+       bar), so the whole page lands inside the preview. */
+    const compute = () => {
+      const availW = el.clientWidth - 20;
+      const scroll = previewScrollRef.current;
+      const availH = (scroll ? scroll.clientHeight : el.clientHeight - 40) - 20;
+      const wScale = availW / (pageLayout.pageWidth * 96);
+      const hScale = availH / (pageLayout.pageHeight * 96);
+      setFitScale(Math.max(0.1, Math.min(wScale, hScale)));
+    };
     compute();
     if (typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(compute);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [pageLayout.pageWidth, pageLayout.pageHeight]);
   const tpScale = tpZoom === 'fit' ? fitScale : tpZoom;
   /** One title-page block, at page geometry: 12pt line grid; enlarged titles
    *  occupy ceil(size/12) grid lines per wrapped line — the paginator's math. */

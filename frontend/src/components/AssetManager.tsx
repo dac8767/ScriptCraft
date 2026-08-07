@@ -8,11 +8,47 @@ import type { Asset } from '../stores/assetStore';
 import AssetViewer from './AssetViewer';
 import { api } from '../services/api';
 import { showToast } from './Toast';
+import { useAssetDisplayUrl } from '../utils/useAssetDisplayUrl';
 
 interface AssetManagerProps {
   projectId: string;
   embedded?: boolean;
 }
+
+const getMimeIcon = (mime: string): React.ReactNode => {
+  if (mime.startsWith('image/')) return <FaRegImage />;
+  if (mime.startsWith('audio/')) return <FaMusic />;
+  if (mime.startsWith('video/')) return <FaFilm />;
+  if (mime === 'application/pdf') return <FaRegFileAlt />;
+  if (mime.startsWith('text/')) return <FaRegFile />;
+  return <FaRegFolder />;
+};
+
+/** List thumbnail with the v6.33 self-healing source: direct URL first,
+ *  bytes→blob on error, and an honest missing-file icon if both fail. */
+const AssetThumb: React.FC<{ projectId: string; asset: Asset; onPreview: () => void }> = ({
+  projectId, asset, onPreview,
+}) => {
+  const { url, missing, onError } = useAssetDisplayUrl(projectId, asset.id, asset.filename, asset.mime_type);
+  if (missing) {
+    return (
+      <span className="asset-thumb-missing" title="Image file not found on disk — re-upload this asset">
+        {getMimeIcon(asset.mime_type)}
+      </span>
+    );
+  }
+  return (
+    <img
+      className="asset-thumb"
+      src={url}
+      alt=""
+      loading="lazy"
+      title="Click to preview"
+      onClick={onPreview}
+      onError={onError}
+    />
+  );
+};
 
 const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false }) => {
   const { assets, setAssets, assetManagerOpen, setAssetManagerOpen } = useAssetStore();
@@ -163,15 +199,6 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
     return nameMatch && tagMatch;
   });
 
-  const getMimeIcon = (mime: string): React.ReactNode => {
-    if (mime.startsWith('image/')) return <FaRegImage />;
-    if (mime.startsWith('audio/')) return <FaMusic />;
-    if (mime.startsWith('video/')) return <FaFilm />;
-    if (mime === 'application/pdf') return <FaRegFileAlt />;
-    if (mime.startsWith('text/')) return <FaRegFile />;
-    return <FaRegFolder />;
-  };
-
   const formatSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -260,13 +287,10 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
                         (click = the same full preview as the name). Other
                         types keep their mime icon. */}
                     {asset.mime_type.startsWith('image/') ? (
-                      <img
-                        className="asset-thumb"
-                        src={api.getAssetUrl(projectId, asset.id, asset.filename)}
-                        alt=""
-                        loading="lazy"
-                        title="Click to preview"
-                        onClick={() => setPreviewAsset(asset)}
+                      <AssetThumb
+                        projectId={projectId}
+                        asset={asset}
+                        onPreview={() => setPreviewAsset(asset)}
                       />
                     ) : (
                       <span title={asset.mime_type}>{getMimeIcon(asset.mime_type)}</span>

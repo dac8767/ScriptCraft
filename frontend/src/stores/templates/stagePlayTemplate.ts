@@ -9,7 +9,14 @@
  */
 
 import type { FormattingTemplate, StarterNode } from '../formattingTypes';
-import { rule, disabled } from './_helpers';
+import { rule as baseRule, disabled } from './_helpers';
+
+/** Stage play keeps its historical 7.5" content edge. The v6.33 move of the
+ * shared default to 7.8" is a SCREENPLAY measurement (Derek's film-format
+ * reference); theater formatting stays where it was. Explicit per-rule
+ * overrides below still win. */
+const rule: typeof baseRule = (id, label, isBuiltIn, overrides) =>
+  baseRule(id, label, isBuiltIn, { rightIndent: 7.50, ...overrides });
 
 export const STAGE_PLAY_ID = '__stage_play__';
 

@@ -966,14 +966,14 @@ pub fn run() {
         )
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        // v6.33: opener — File ▸ Print writes the export PDF to app data and
+        // opens it in the OS PDF viewer, one ⌘P from the real print dialog
+        // (WKWebView has no in-webview road to printing a generated PDF).
+        .plugin(tauri_plugin_opener::init())
         // ── Asset protocol: serve local files for convertFileSrc() URLs ──
-        .register_uri_scheme_protocol("asset", |_app, request| {
+        .register_uri_scheme_protocol("asset", |ctx, request| {
             let uri = request.uri();
             let raw_path = uri.path();
-            // Decode percent-encoded path and strip leading slash
-            let decoded = percent_decode_str(raw_path).decode_utf8_lossy();
-            let file_path_str = decoded.trim_start_matches('/');
-            let file_path = std::path::Path::new(file_path_str);
 
             // Build a Response without unwrapping — a panic here aborts the
             // whole process because [profile.release] panic = "abort".
@@ -987,8 +987,47 @@ pub fn run() {
                         tauri::http::Response::new(Vec::new())
                     })
             };
-            match std::fs::read(file_path) {
-                Ok(data) => build_response(200, guess_mime(file_path), data),
+
+            /* v6.33, Derek ("the images are still broken in the asset
+               manager"): convertFileSrc() percent-encodes the WHOLE absolute
+               path as one segment, so uri.path() is "/%2FUsers%2F…" and
+               decoding yields "//Users/…". trim_start_matches('/') strips
+               EVERY leading slash, leaving a RELATIVE path that
+               std::fs::read resolved against the process cwd — a packaged
+               app launched from Finder (cwd "/") happens to survive that,
+               but under `tauri dev` (cwd = src-tauri) every asset read
+               404'd. Re-anchor the path as absolute; Windows drive paths
+               ("C:/…") carry no leading slash. */
+            let decoded = percent_decode_str(raw_path).decode_utf8_lossy();
+            let trimmed = decoded.trim_start_matches('/');
+            #[cfg(windows)]
+            let file_path_str = trimmed.to_string();
+            #[cfg(not(windows))]
+            let file_path_str = format!("/{}", trimmed);
+
+            // Serve ONLY files under the app data dir — every
+            // convertFileSrc() consumer builds appDataDir paths (assets).
+            // Canonicalize before the check so "../" cannot escape it.
+            let canonical = match std::fs::canonicalize(&file_path_str) {
+                Ok(p) => p,
+                Err(e) => {
+                    eprintln!("[asset] Failed to resolve {}: {}", file_path_str, e);
+                    return build_response(404, "text/plain", Vec::new());
+                }
+            };
+            let in_scope = ctx
+                .app_handle()
+                .path()
+                .app_data_dir()
+                .ok()
+                .and_then(|b| std::fs::canonicalize(b).ok())
+                .map_or(false, |b| canonical.starts_with(&b));
+            if !in_scope {
+                eprintln!("[asset] Refused out-of-scope path {}", file_path_str);
+                return build_response(403, "text/plain", Vec::new());
+            }
+            match std::fs::read(&canonical) {
+                Ok(data) => build_response(200, guess_mime(&canonical), data),
                 Err(e) => {
                     eprintln!("[asset] Failed to read {}: {}", file_path_str, e);
                     build_response(404, "text/plain", Vec::new())

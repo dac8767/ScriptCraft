@@ -28,9 +28,20 @@
   font-family: var(--screenplay-font);
   font-size: var(--screenplay-font-size);
   line-height: var(--screenplay-line-height);
-  /* Adjust letter-spacing so Courier New matches Final Draft Courier width.
-     FD: 62 chars in 6.0" = 9.29px/char. Courier New: 9.60px/char. Diff: -0.31px */
-  letter-spacing: -0.31px;
+  /* v6.33: NO letter-spacing. Derek's reference page measures out to true
+     10 cpi — 12pt Courier at its natural 0.6em advance (9.6px/char) — with
+     full-width columns 1.5"→7.8" (63 chars). The old -0.31px squeeze chased
+     "62 chars in 6.0''", and WKWebView's quantization of fractional spacing
+     made the same paragraph wrap differently on Derek's Mac than here.
+     Column widths are exact character multiples (63 × 9.6px = the action
+     column), so the -2px margin buys float slack: a full line must never
+     tip over the edge from rounding dust. Wrap capacity must match
+     utils/screenplayMetrics CHARS_PER_LINE — change them together. */
+  letter-spacing: normal;
+  /* macOS WebKit's default smoothing darkens glyph stems noticeably next to
+     a PDF render of the same face (v6.33, Derek: "how much darker the text
+     is"). Antialiased matches print weight. */
+  -webkit-font-smoothing: antialiased;
   color: #000;
   outline: none;
   overflow: visible;
@@ -41,7 +52,25 @@
 .screenplay-element {
   margin: 0; padding: 0;
   font-family: inherit; font-size: inherit; line-height: 1;
+  /* v6.33 — the phantom-space allowance. ProseMirror sets `white-space:
+     break-spaces`, under which a soft-wrapped line must ALSO fit the space
+     it breaks at (spaces never hang; measured flip in Chromium: exactly
+     capacity+1 advances). Columns are exact character multiples (63 × 9.6px
+     = the 6.3" action column), so without this every line wrapped one word
+     early — Derek's "of" on a third row. One space (9.6px) + float slack.
+     The space is invisible, so ink still ends at the 7.8" content edge.
+     Right/center-aligned elements RESET this (below and in templateCss) —
+     their ink anchors to the true edge and they don't soft-wrap in
+     practice. Wrap capacity must match utils/screenplayMetrics
+     CHARS_PER_LINE — change them together. */
+  margin-right: -14px;
 }
+.transition, .new-act, .end-of-act, .show-episode,
+.dual-dialogue .screenplay-element, .sp-image,
+.screenplay-element[class*="title-page"] {
+  margin-right: 0;
+}
+.transition.transition-left { margin-right: -14px; }
 
 /* Scene Heading: TWO blank lines before (24pt) — the spec-standard gap
    (v6.30, Derek's side-by-side against another program; Final Draft's
@@ -79,12 +108,14 @@
 /* Action */
 .action { margin-top: 12pt; }
 
-/* Character: FDX LeftIndent=3.50, RightIndent=7.50 */
+/* Character: LeftIndent=3.50, RightIndent=7.80 (v6.33: full-width columns
+   run to the 7.8" content edge — utils/screenplayMetrics FD_INDENTS; a
+   narrower page layout clamps via the calc going negative → 0). */
 .character {
   text-transform: uppercase;
   margin-top: 12pt;
   padding-left: calc(3.50in - var(--pl, 1.50in));
-  padding-right: calc(var(--pw, 8.26in) - 7.50in - var(--pr, 0.76in));
+  padding-right: calc(var(--pw, 8.26in) - 7.80in - var(--pr, 0.76in));
 }
 
 /* Parenthetical: FDX LeftIndent=3.00, RightIndent=5.50 */
@@ -112,7 +143,7 @@
 .transition.transition-left {
   text-align: left;
   padding-left: 0;
-  padding-right: calc(var(--pw, 8.26in) - 7.50in - var(--pr, 0.76in));
+  padding-right: calc(var(--pw, 8.26in) - 7.80in - var(--pr, 0.76in));
 }
 
 /* General */

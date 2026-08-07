@@ -460,6 +460,16 @@
 .asset-row:hover { background: rgba(74, 158, 255, 0.05); }
 .asset-cell-icon { padding: 8px 10px; font-size: 16px; width: 48px; }
 /* v6.30, Derek: inline image thumbnails in the asset list. */
+/* v6.33: both fallbacks failed → the file is gone from disk; muted icon
+   with an explanatory tooltip instead of an eternal broken-image glyph. */
+.asset-thumb-missing {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.45;
+  cursor: help;
+}
+
 .asset-thumb {
   display: block;
   width: 38px; height: 38px;

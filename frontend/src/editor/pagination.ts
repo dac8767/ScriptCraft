@@ -4,6 +4,13 @@ import type { Node as PmNode } from '@tiptap/pm/model';
 import type { PageLayout } from '../stores/editorStore';
 import { resolveMoresContds } from '../stores/editorStore';
 import { workingNoteKind } from '../utils/workingNotes';
+import {
+  LINE_HEIGHT_PT, CHARS_PER_LINE, SPACE_BEFORE, columnFor, getTextLines,
+} from '../utils/screenplayMetrics';
+
+// Re-export: getTextLines lived here before v6.33; its test and callers
+// still import it from this module.
+export { getTextLines };
 
 export const paginationPluginKey = new PluginKey('pagination');
 
@@ -75,36 +82,10 @@ function getElementId(node: PmNode): string {
   return node.type.name;
 }
 
-const LINE_HEIGHT_PT = 12;
-
-// Final Draft Courier ≈ 10.33 chars/inch
-const FD_CPI = 10.33;
-
-// Final Draft absolute indents from page edge (inches)
-const FD_INDENTS: Record<string, [number, number]> = {
-  sceneHeading: [1.50, 7.50], action: [1.50, 7.50], character: [3.50, 7.50],
-  dialogue: [2.50, 6.00], parenthetical: [3.00, 5.50], transition: [5.50, 7.50],
-  general: [1.50, 7.50], shot: [1.50, 7.50], newAct: [1.50, 7.50],
-  endOfAct: [1.50, 7.50], lyrics: [2.50, 6.00], showEpisode: [1.50, 7.50],
-  castList: [1.50, 7.50],
-};
-
-const CHARS_PER_LINE: Record<string, number> = {};
-for (const [type, [l, r]] of Object.entries(FD_INDENTS)) {
-  CHARS_PER_LINE[type] = Math.round((r - l) * FD_CPI);
-}
-
-// Space before each element type in lines
-// v6.30: sceneHeading is 2 — the spec-standard double blank line (matches
-// the CSS 24pt margin and the PDF exporter; keep all three in step).
-const SPACE_BEFORE: Record<string, number> = {
-  sceneHeading: 2, action: 1, character: 1, dialogue: 0,
-  parenthetical: 0, transition: 1, general: 0, shot: 1,
-  newAct: 2, endOfAct: 2, lyrics: 0, showEpisode: 1, castList: 0,
-  // titlePage intentionally 0: title-page blocks have no CSS margin (the CSS
-  // was carrying a 12pt margin the estimator couldn't see — removed), so each
-  // block is exactly its text lines. Spacing comes from blank spacer blocks.
-};
+// Text geometry — LINE_HEIGHT_PT, CHARS_PER_LINE, SPACE_BEFORE, columnFor
+// and getTextLines all come from utils/screenplayMetrics (v6.33): ONE source
+// shared with the PDF exporter, measured against Derek's reference page
+// (true 10 cpi Courier, full-width columns 1.5"→7.8" = 63 chars).
 
 const DIALOGUE_BLOCK_TYPES = new Set(['dialogue', 'parenthetical', 'lyrics']);
 
@@ -222,22 +203,11 @@ export function createPaginationPlugin(
  * than the line wraps within itself (rare in screenplay text; over-counting it
  * only makes a page break a hair early, which the measured fill then tops up).
  */
-export function getTextLines(text: string, cpl: number): number {
-  if (text.length === 0) return 1;
-  if (cpl <= 0) return 1;
-  let lines = 1;
-  let col = 0;
-  for (const word of text.split(' ')) {
-    const w = word.length;
-    if (col !== 0 && col + 1 + w > cpl) { lines++; col = w; }
-    else { col = col === 0 ? w : col + 1 + w; }
-    while (col > cpl) { lines++; col -= cpl; }
-  }
-  return lines;
-}
-
-/** Title-page blocks span the full printable width (~62 chars at 12pt). */
-const TITLE_CPL = 62;
+/** Title-page blocks span the full printable width, but they RESET the
+ *  break-spaces phantom-space allowance (mostly centered — see
+ *  06-editor-content), so their soft-wrap capacity is one below the action
+ *  column's. */
+const TITLE_CPL = CHARS_PER_LINE.action - 1;
 
 /**
  * Line cost of a title-page block at a given font size, in 12pt line slots.
@@ -257,6 +227,7 @@ export function titlePageBlockLines(text: string, sizePt: number): number {
 
 export function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHints = EMPTY_HINTS): PaginationState {
   const { linesPerPage } = getPageMetrics(layout);
+  const cplFor = (t: string) => columnFor(t, layout).chars;
 
   interface NodeInfo {
     typeName: string; elementId: string; spaceBefore: number; text: string;
@@ -394,7 +365,7 @@ export function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHi
       customRun = null;
     }
 
-    const cpl = CHARS_PER_LINE[node.typeName] || 62;
+    const cpl = cplFor(node.typeName);
     const textLines = node.fixedLines !== undefined
       ? node.fixedLines
       : getTextLines(node.text, cpl) * node.lineMul;
@@ -408,14 +379,14 @@ export function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHi
       let j = i + 1;
       while (j < nodes.length && DIALOGUE_BLOCK_TYPES.has(nodes[j].typeName)) {
         const dn = nodes[j];
-        const dc = CHARS_PER_LINE[dn.typeName] || 36;
+        const dc = cplFor(dn.typeName);
         blockLines += dn.spaceBefore + getTextLines(dn.text, dc) * dn.lineMul;
         j++;
       }
       blockEnd = j - 1;
     } else if (node.typeName === 'sceneHeading' && i + 1 < nodes.length) {
       const nn = nodes[i + 1];
-      const nc = CHARS_PER_LINE[nn.typeName] || 62;
+      const nc = cplFor(nn.typeName);
       blockLines += nn.spaceBefore + getTextLines(nn.text, nc) * nn.lineMul;
       blockEnd = i + 1;
     }
@@ -435,7 +406,7 @@ export function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHi
 
       // Try to split character+dialogue blocks
       if (node.typeName === 'character' && blockEnd > i) {
-        const charLines = node.spaceBefore + getTextLines(node.text, CHARS_PER_LINE[node.typeName] || 41);
+        const charLines = node.spaceBefore + getTextLines(node.text, cplFor(node.typeName));
 
         const MIN_DL = 2; // FD: at least 2 lines of dialogue on each side of split
 
@@ -446,7 +417,7 @@ export function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHi
           let fittedDL = 0;
           for (let j = i + 1; j <= blockEnd; j++) {
             const dn = nodes[j];
-            const dc = CHARS_PER_LINE[dn.typeName] || 36;
+            const dc = cplFor(dn.typeName);
             const dl = getTextLines(dn.text, dc);
             const dnTotal = dn.spaceBefore + dl;
             if (fittedLines + dnTotal <= remaining) {
@@ -462,7 +433,7 @@ export function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHi
           let remainDL = 0;
           for (let j = lastFittedNode + 1; j <= blockEnd; j++) {
             const dn = nodes[j];
-            const dc = CHARS_PER_LINE[dn.typeName] || 36;
+            const dc = cplFor(dn.typeName);
             remainDL += getTextLines(dn.text, dc);
           }
 
@@ -483,7 +454,7 @@ export function computeBreaks(doc: PmNode, layout: PageLayout, hints: TemplateHi
             for (let j = splitIdx; j <= blockEnd; j++) {
               if (j >= nodes.length) break;
               const dn = nodes[j];
-              const dc = CHARS_PER_LINE[dn.typeName] || 36;
+              const dc = cplFor(dn.typeName);
               lineCount += (j === splitIdx ? getTextLines(dn.text, dc) : dn.spaceBefore + getTextLines(dn.text, dc));
             }
             i = blockEnd + 1;
@@ -531,7 +502,7 @@ export function computeSceneLengths(doc: PmNode, layout: PageLayout): number[] {
 
   doc.forEach((node) => {
     const typeName = node.type.name;
-    const cpl = CHARS_PER_LINE[typeName] || 62;
+    const cpl = columnFor(typeName, layout).chars;
     const textLines = getTextLines(node.textContent || '', cpl);
     const sb = nodeIdx === 0 ? 0 : (SPACE_BEFORE[typeName] ?? 0);
 
@@ -730,7 +701,7 @@ export function computePageBlocks(doc: PmNode, layout: PageLayout, opts?: { incl
       // spacing" — including titlePage nodes that sit mid-document. The
       // v5.71 title bound is the one place they DO render.
       if (node.typeName === 'titlePage' && !pb.isTitle) continue;
-      const cpl = CHARS_PER_LINE[node.typeName] || 62;
+      const cpl = columnFor(node.typeName, layout).chars;
       const textLines = getTextLines(node.text, cpl);
       const sb = firstOnPage ? 0 : (SPACE_BEFORE[node.typeName] ?? 0);
       firstOnPage = false;

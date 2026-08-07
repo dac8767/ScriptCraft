@@ -151,7 +151,26 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.27 and older (newest first)
+## Version history — v6.28 and older (newest first)
+
+### v6.28 — PDF import: the legacy pdf.js build for WKWebView
+
+- Derek's screenshot: "PDF import failed: undefined is not a function
+  (near '...value of readableStream...')" — that phrasing is WEBKIT's.
+  The modern pdfjs-dist build assumes engine features Tauri's WKWebView
+  lacks (ReadableStream async iteration among them). pdfImporter now
+  imports `pdfjs-dist/legacy/build/pdf.mjs` AND the legacy worker —
+  BOTH must switch together; a modern worker throws the same way off
+  the main thread. Same API, transpiled + polyfilled; types resolve
+  through the exports map (tsc clean, no shim needed).
+- The import pipeline had ZERO end-to-end coverage — how this shipped
+  unnoticed. check-v628 (4) drives parsePdfScreenplay on a hand-built
+  one-page PDF through the REAL worker: pages, text layer, screenplay
+  classification. (True WKWebView behavior is only observable on
+  Derek's Mac — the check pins the pipeline and the legacy wiring;
+  Chromium runs both builds, so green here + the documented
+  legacy-build contract is the case for the fix.)
+- Gates: tsc 0, 1091 tests, build, checks 672/0.
 
 ### v6.27 — Title tab scales with its window; Asset Manager menu no-op
 

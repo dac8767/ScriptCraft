@@ -1,5 +1,18 @@
 [
  {
+  "version": "6.33",
+  "date": "2026-08-07",
+  "changes": [
+   "Text now wraps exactly like the reference program. Measured from the comparison page: true 10-characters-per-inch Courier with full-width lines running 1.5\" to 7.8\" — 63 characters, where ScriptCraft was fitting 60–61. The letter-spacing squeeze is gone, the right margin default is 0.7\", and the editor, the page count, and PDF/Word exports now share ONE geometry source, so the same paragraph breaks on the same words everywhere. The sample line — \"…cafeteria. He hears a\" — ends its rows exactly as the reference does.",
+   "Fixed: the PDF exporter wrapped one word early on full lines — it counted each word's trailing space when deciding fit. That, plus the narrower column, is why \"of\" landed on a third row.",
+   "Fixed: Asset Manager images were still broken. Real cause found in the desktop shell's file-serving code: it stripped every leading slash from the decoded path, turning it relative — reads worked only by luck of the working directory. Paths are re-anchored (and locked to the app's own data folder). If a stored file is ever genuinely missing, the list now says so instead of showing an eternal broken-image glyph — and thumbnails self-heal by re-reading bytes through the proven storage road if the file protocol ever misbehaves again.",
+   "File ▸ Print on the desktop now writes the print-ready PDF and OPENS it in your PDF viewer — Preview comes up on the exact export, one ⌘P from the real print dialog. (The desktop shell gains a small opener plugin; first launch after updating recompiles it.) If opening fails, the save dialog fallback remains.",
+   "Editor text renders at print weight on macOS (antialiased smoothing) and Courier Prime now leads the font stack — the same face embedded in exports, so screen and paper match. The perceived darkness vs the reference is mostly the reference using a thinner Courier cut; the squeeze removal and smoothing close most of the gap.",
+   "Title Page editor: Fit now respects both width and height — the whole page always lands inside the preview.",
+   "Scene numbers in exports anchor 0.15\" off the heading column on both sides, matching the editor exactly."
+  ]
+ },
+ {
   "version": "6.32",
   "date": "2026-08-07",
   "changes": [

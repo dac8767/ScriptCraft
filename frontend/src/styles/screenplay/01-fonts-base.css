@@ -87,7 +87,10 @@
   --page-margin-left: 1.25in;      /* LeftIndent of body elements */
   --page-margin-right: 1.25in;     /* 8.5" - 7.25" RightIndent */
 
-  --screenplay-font: 'Courier Final Draft', 'Courier Prime', 'Courier New', 'Courier', monospace;
+  /* v6.33: Courier Prime LEADS — it is the face embedded in every PDF export
+     (v6.32), so the screen must show the same glyphs as the paper. A locally
+     installed Courier Final Draft no longer hijacks the editor look. */
+  --screenplay-font: 'Courier Prime', 'Courier Final Draft', 'Courier New', 'Courier', monospace;
   --screenplay-font-size: 12pt;
   --screenplay-line-height: 1;
 

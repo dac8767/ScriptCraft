@@ -28,7 +28,11 @@ export function rule(
     textAlign: 'left',
     marginTop: 0,
     leftIndent: 1.50,
-    rightIndent: 7.50,
+    // v6.33: full-width columns run to the 7.8" content edge (63 chars of
+    // 10-cpi Courier — utils/screenplayMetrics). Stage play keeps its own
+    // explicit 7.50 overrides; this default feeds the screenplay-standard
+    // templates.
+    rightIndent: 7.80,
     nextOnEnter: id,
     nextOnTab: null,
     placeholder: '',

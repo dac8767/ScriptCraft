@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Asset } from '../stores/assetStore';
 import { api } from '../services/api';
+import { useAssetDisplayUrl } from '../utils/useAssetDisplayUrl';
 
 interface AssetViewerProps {
   asset: Asset;
@@ -11,10 +12,23 @@ interface AssetViewerProps {
 const AssetViewer: React.FC<AssetViewerProps> = ({ asset, projectId, onClose }) => {
   const assetUrl = api.getAssetUrl(projectId, asset.id, asset.filename);
   const mime = asset.mime_type;
+  // v6.33: images ride the self-healing source (direct URL → bytes → blob),
+  // with an honest missing-file message instead of an eternal broken glyph.
+  const img = useAssetDisplayUrl(projectId, asset.id, asset.filename, mime);
 
   const renderPreview = () => {
     if (mime.startsWith('image/')) {
-      return <img src={assetUrl} alt={asset.original_name} className="asset-viewer-image" />;
+      if (img.missing) {
+        return (
+          <div className="asset-viewer-fallback">
+            <div className="asset-viewer-filename">{asset.original_name}</div>
+            <div className="asset-viewer-meta">
+              Image file not found on disk — re-upload this asset.
+            </div>
+          </div>
+        );
+      }
+      return <img src={img.url} onError={img.onError} alt={asset.original_name} className="asset-viewer-image" />;
     }
     if (mime === 'application/pdf') {
       // Use ?disposition=inline for backend URLs; asset:// protocol serves inline by default

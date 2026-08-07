@@ -80,6 +80,9 @@ describe('generateTemplateCss — built-in element, fully styled', () => {
         '  text-decoration: underline line-through;',
         '  text-transform: uppercase;',
         '  text-align: left;',
+        // v6.33: left-aligned rules carry the break-spaces phantom-space
+        // allowance; right/center anchor to the true edge (margin-right: 0).
+        '  margin-right: -14px;',
         '  margin-top: 24pt;',
         '  padding-left: calc(2in - var(--pl, 1.5in));',
         '  padding-right: calc(var(--pw, 8.5in) - 6in - var(--pr, 1in));',
@@ -119,6 +122,7 @@ describe('generateTemplateCss — custom element, default styling', () => {
         '  text-decoration: none;',
         '  text-transform: none;',
         '  text-align: center;',
+        '  margin-right: 0;',
         '  margin-top: 0;',
         '  padding-left: 0;',
         '  padding-right: 0;',

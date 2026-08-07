@@ -1347,6 +1347,15 @@
   "label": "Left"
  },
  {
+  "text": "Image file not found on disk — re-upload this asset",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/AssetManager.tsx"
+  ]
+ },
+ {
   "text": "Image placement",
   "kind": "tooltip",
   "sites": 1,

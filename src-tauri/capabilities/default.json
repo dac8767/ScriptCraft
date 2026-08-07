@@ -397,6 +397,17 @@
     },
     "dialog:default",
     "dialog:allow-confirm",
-    "dialog:allow-ask"
+    "dialog:allow-ask",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        {
+          "path": "$APPDATA/print/*"
+        },
+        {
+          "path": "$APPDATA/print/**"
+        }
+      ]
+    }
   ]
 }

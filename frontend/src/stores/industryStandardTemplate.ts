@@ -30,7 +30,10 @@ function rule(
     textAlign: 'left',
     marginTop: 0,
     leftIndent: 1.50,
-    rightIndent: 7.50,
+    // v6.33: full-width columns run to the 7.8" content edge — 63 chars of
+    // true 10-cpi Courier, measured from Derek's reference page. Must match
+    // utils/screenplayMetrics FD_INDENTS.
+    rightIndent: 7.80,
     nextOnEnter: id,
     nextOnTab: null,
     placeholder: '',
