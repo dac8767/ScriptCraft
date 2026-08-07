@@ -151,7 +151,71 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.17 and older (newest first)
+## Version history — v6.19 and older (newest first)
+
+### v6.19 — Thesaurus over the selection + context-menu entry; Analytics header tabs
+
+- Derek (two asks, one ship): (1) "if I already have a word highlighted,
+  and then I open the thesaurus tool, it should open with the thesaurus
+  info for that word … Add thesaurus as an option in the context menu."
+  (2) "move the analytics tab options into the header of the analytics
+  window."
+- Thesaurus: the follow-the-script effect only listened for
+  selectionUpdate/update — the selection the tool OPENED OVER was never
+  looked up. One `sync()` at effect setup fixes it (and covers the data
+  file finishing after mount, since the effect re-runs when `api`
+  lands). Context menu: registry entry `{ id: 'thesaurus', label:
+  'Thesaurus', group: 'Tools' }` + a section that `openTool('thesaurus')`s
+  — ContextMenuTab picks it up automatically (registry-driven).
+- Analytics: `analyticsTab` + setter in editorStore (session memory,
+  like goalKind — NOT persisted), `useAnalyticsTabs()` exported from
+  AnalyticsTool, `analytics: { useTabs: useAnalyticsTabs }` in
+  TOOL_CHROME. The in-body `.fs-analytics-tabs` strip and its CSS are
+  GONE (22-tools-extra.css). Narrow windows collapse the header tabs
+  into the dropdown via the v6.16 machinery.
+- Check-writing traps hit (both selector semantics): Playwright
+  `:text-is` attributes exact-text to the DEEPEST element — a
+  span-wrapped label (`.ctx-item > span`) never matches on the parent,
+  target the span. And header tab buttons are `.tool-chrome-tab`, not
+  `.chrome-tab`.
+- FALLOUT: check-v606 grabbed the analytics header's CENTER to drag it
+  onto a panel — the new tabs sit there now, and a mousedown on a tab
+  button is a click, not a drag (5 asserts red). The check grabs
+  `.tool-window-title` instead, which is also what a real user drags.
+  Any future header-drag check: grab the title, never the center.
+- checks: check-v619 (4 — mount lookup, definitions, menu item, menu
+  open looks up too), check-v619-analytics (4 — four header tabs, no
+  body strip, tab click drives data-show, active mark).
+- Gates: tsc 0, 1084 tests, build, checks 621/0 (+8).
+
+### v6.18 — paste fills the active element: action is the schema's fallback
+
+- Derek: pasting with an action active "adds it below the action element,
+  which makes the paragraph spacing incorrect." Root cause: SCHEMA ORDER
+  decides where ProseMirror puts content with no matching parse rule —
+  external-clipboard paragraphs, plain text lines, dropped snippet text —
+  and CustomElement registered before Action in ScreenplayEditor's
+  extension array. The fallback minted ATTRLESS custom elements (no
+  customTypeId → no template rule → wrong margins). `Action` now
+  registers FIRST among the block nodes (big comment at the site); the
+  old Action slot in the line-1304 list is gone. Empty-doc fill
+  (createAndFill) moves from attrless customElement to action too —
+  no in-repo callers depended on it.
+- What this yields: paste into an empty active action REPLACES it with
+  action blocks (both clipboard flavors); caret-mid-text paste merges
+  para 1 into the element and continues as action; typed screenplay
+  HTML (div[data-type=…]) still parses by its own rules; internal
+  copies unchanged. Snippet DROPS (v6.17) now land as action too —
+  same fallback.
+- Keymap note: Action carries the Tab→character split; registering it
+  earlier keeps it ahead of TabHandlerExtension (registered later
+  either way), so precedence is unchanged — check-v618 asserts the
+  split still works.
+- check-v618 (7) pins: plain-text fill, no customElement, no leftover
+  empty action, external <p> HTML, mid-text merge, dialogue parse rule,
+  Tab from action.
+- Gates: tsc 0, 1084 tests, build, checks 613/0 (+7: check-v618).
+
 
 ### v6.17 — a dragged snippet drops its TEXT into the script
 

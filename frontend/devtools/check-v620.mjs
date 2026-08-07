@@ -17,8 +17,9 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓', m); } else { fail++
 async function overrideRow(dflt, value) {
   await page.fill('.htw-panel .dz-search-input', dflt);
   await settle(page);
-  await page.fill(`.htw-panel .ht-input[value="${dflt}"]`, value);
-  await page.keyboard.press('Enter');
+  await page.fill(`.htw-panel .ht-input[data-ht-for="${dflt}"]`, value);
+  // Enter makes a NEW LINE now (v6.24) — commit happens on blur.
+  await page.evaluate(() => document.activeElement?.blur());
   await settle(page);
 }
 
@@ -81,8 +82,8 @@ try {
   // 5 ── the script's element hint (Action...) through ht()
   await page.fill('.htw-panel .dz-search-input', 'Action...');
   await settle(page);
-  await page.fill('.htw-panel .ht-input[value="Action..."]', 'Describe the mayhem…');
-  await page.keyboard.press('Enter');
+  await page.fill('.htw-panel .ht-input[data-ht-for="Action..."]', 'Describe the mayhem…');
+  await page.evaluate(() => document.activeElement?.blur());
   await settle(page);
   await page.evaluate(() => {
     const ed = window.__scEditor;

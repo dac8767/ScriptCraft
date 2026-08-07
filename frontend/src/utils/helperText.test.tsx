@@ -76,6 +76,14 @@ describe('installHelperTextDom', () => {
     expect(btn.getAttribute('title')).toBe('Shut');
   });
 
+  it('carries line breaks through to the attribute (v6.24 multi-line)', async () => {
+    document.body.innerHTML = '<button title="Fullscreen">x</button>';
+    teardown = installHelperTextDom();
+    useEditorStore.getState().setHelperTextOverride('Fullscreen', 'Big mode\nFills the screen');
+    await flush();
+    expect(document.querySelector('button')!.getAttribute('title')).toBe('Big mode\nFills the screen');
+  });
+
   it('leaves un-overridden attributes alone', async () => {
     document.body.innerHTML = '<button title="Keep me">x</button>';
     teardown = installHelperTextDom();

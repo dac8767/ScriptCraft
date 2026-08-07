@@ -877,6 +877,7 @@ body.fs-tool-dragging { cursor: grabbing; }
 /* v4.31 (icon audit): the note-row kind icon — was the memo emoji. */
 .fs-nav-kind-icon { margin-right: 4px; vertical-align: -1px; font-size: 11px; }
 .fs-nav-empty {
+  white-space: pre-line;  /* v6.24: helper text may carry line breaks */
   padding: 10px 12px;
   font-size: 12px;
   color: var(--fd-text-muted);
@@ -1094,8 +1095,15 @@ body.fs-tool-dragging { cursor: grabbing; }
   outline: none;
 }
 .fs-goal-timemode-label { min-width: 62px; }
-.fs-goal-startrow { justify-content: flex-end; }
-.fs-goal-startrow .fs-goal-start:disabled { opacity: .5; cursor: default; }
+/* v6.23: ONE Start/Stop, top-left of the body; Show in rides the row's
+   right edge. (The per-tab .fs-goal-startrow rows are gone.) */
+.fs-goal-toprow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.fs-goal-main:disabled { opacity: .5; cursor: default; }
 .fs-goal-quick-label { font-size: 12px; color: var(--fd-text); }
 .fs-goal-quick {
   display: flex;
@@ -1387,6 +1395,7 @@ body.fs-tool-dragging { cursor: grabbing; }
 }
 .fs-help-btn:hover { color: var(--fd-text); border-color: var(--fd-accent, #4a90d9); }
 .fs-help-pop {
+  white-space: pre-line;  /* v6.24: helper text may carry line breaks */
   position: fixed;
   z-index: 100001;
   width: 280px;
@@ -1449,15 +1458,11 @@ body.fs-tool-dragging { cursor: grabbing; }
   margin-top: auto;
   padding-top: 10px;
   border-top: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
-  /* v6.21, Derek: ONE row — Show in left, Vomit right (the caption
-     tightened to fit; the full sentence is its hover text). */
+  /* v6.23: the footer holds ONLY the Vomit checkbox — one row by
+     construction (Show in moved to the top row). */
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
 }
-.fs-goal-vomit { flex: 0 0 auto; }
 /* v6.21: the current word/page total riding the Reach row's right edge. */
 .fs-goal-nowcount {
   margin-left: auto;

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.22 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.24 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,59 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.24 — Helper Text: areas, on-screen found-in, hide, go-there, line breaks
+
+- Derek (five mid-turn asks): (a) found-in ON SCREEN, not hover; (b) a
+  show/hide per row to clear reviewed items; (c) rows ORGANIZED by where
+  they're found; (d) a go-there button per row that opens the surface
+  WITHOUT closing the window; (e) LINE BREAKS in helper text.
+- Areas: the generator stamps `area` per entry (AREA_RULES on source
+  paths — ribbon/QAT/menus/context/status/chrome/editor + one area per
+  tool window; unmatched → "Everything Else", visible not silent). The
+  section renders collapsible area groups, Derek's surfaces first, all
+  open by default. NOTE: the Quick Access Toolbar group is legitimately
+  ABSENT — its tooltips are computed from the QAT registry, no literals.
+- Hidden: `helperTextHidden` (persisted, viewState) — the eye-slash
+  hides a row; the "Hidden (N)" chip shows exactly those, each with a
+  put-it-back eye. Never data loss.
+- Go-there: utils/helperTextDestinations.ts maps the entry's first file
+  → openTool(id) / setDesignPanelOpen / openPreferences. Menus, the
+  context menu and Customize have NO button — Customize's open flag is
+  MenuBar-LOCAL state (no store channel), menus have no programmatic
+  open. The row's found-in still names the place.
+- Line breaks: the row editor is an auto-growing TEXTAREA (Enter = new
+  line, blur commits, Escape reverts; `data-ht-for` targets rows in
+  checks — textareas have no value ATTRIBUTE, the old [value=]
+  selectors go nowhere). white-space: pre-line on .hover-tip,
+  .swn-hint, .fs-nav-empty, .fs-help-pop so breaks render; a
+  single-line input's placeholder just runs lines together.
+- CHECK TRAP: the row buttons must NOT share .dz-reset — querySelector
+  ('.dz-reset') in check-v620 clicked the go-there button. New buttons
+  are .ht-iconbtn (styles grouped with .dz-reset in CSS).
+- checks: check-v624 (12), check-v620 still 9 (blur-commit now).
+- Gates: tsc 0, 1091 tests, build, checks 659/0.
+
+### v6.23 — Goals: ONE Start/Stop top-left; Show in beside it; count quick starts
+
+- Derek: footer was still 2 rows (his screenshot); Start moves to the
+  BODY's top-left and becomes Stop while a goal runs; the Header/Footer
+  toggle rides that same row aligned right; quick starts for the Words
+  and Pages tabs.
+- `.fs-goal-toprow` (space-between): ONE `.fs-goal-main` button —
+  ▶ Start / ■ Stop / Dismiss (done) — Start fires the ACTIVE tab's
+  configured shape (time: for/until; count: reach/relative);
+  the per-tab .fs-goal-startrow rows are GONE. progressBlock lost its
+  stop button (one control per action); the vomit-locked branch keeps
+  its own stop below the block.
+- Quick starts (count tabs) launch RELATIVE goals from the current
+  position: words [250,500,1000,2000,5000], pages [1,2,3,5,10]
+  (baseline captured at click). The footer holds ONLY the Vomit
+  checkbox — one row by construction.
+- CHECK TRAP: a reach goal the script has already met completes
+  INSTANTLY (the button reads Dismiss, not Stop) — aim above the
+  current total before asserting Start→Stop. check-v621 (12) pins the
+  whole shape.
+
 ### v6.22 — Helper Text: its own window, with the control's face on every row
 
 - Derek (items 5–7 of the batch): rows must show WHICH control they
@@ -315,74 +368,13 @@ Durable bits kept live here:
   viewState.
 - Gates: tsc 0, 1090 tests, build, checks 632/0 (+11).
 
-### v6.19 — Thesaurus over the selection + context-menu entry; Analytics header tabs
-
-- Derek (two asks, one ship): (1) "if I already have a word highlighted,
-  and then I open the thesaurus tool, it should open with the thesaurus
-  info for that word … Add thesaurus as an option in the context menu."
-  (2) "move the analytics tab options into the header of the analytics
-  window."
-- Thesaurus: the follow-the-script effect only listened for
-  selectionUpdate/update — the selection the tool OPENED OVER was never
-  looked up. One `sync()` at effect setup fixes it (and covers the data
-  file finishing after mount, since the effect re-runs when `api`
-  lands). Context menu: registry entry `{ id: 'thesaurus', label:
-  'Thesaurus', group: 'Tools' }` + a section that `openTool('thesaurus')`s
-  — ContextMenuTab picks it up automatically (registry-driven).
-- Analytics: `analyticsTab` + setter in editorStore (session memory,
-  like goalKind — NOT persisted), `useAnalyticsTabs()` exported from
-  AnalyticsTool, `analytics: { useTabs: useAnalyticsTabs }` in
-  TOOL_CHROME. The in-body `.fs-analytics-tabs` strip and its CSS are
-  GONE (22-tools-extra.css). Narrow windows collapse the header tabs
-  into the dropdown via the v6.16 machinery.
-- Check-writing traps hit (both selector semantics): Playwright
-  `:text-is` attributes exact-text to the DEEPEST element — a
-  span-wrapped label (`.ctx-item > span`) never matches on the parent,
-  target the span. And header tab buttons are `.tool-chrome-tab`, not
-  `.chrome-tab`.
-- FALLOUT: check-v606 grabbed the analytics header's CENTER to drag it
-  onto a panel — the new tabs sit there now, and a mousedown on a tab
-  button is a click, not a drag (5 asserts red). The check grabs
-  `.tool-window-title` instead, which is also what a real user drags.
-  Any future header-drag check: grab the title, never the center.
-- checks: check-v619 (4 — mount lookup, definitions, menu item, menu
-  open looks up too), check-v619-analytics (4 — four header tabs, no
-  body strip, tab click drives data-show, active mark).
-- Gates: tsc 0, 1084 tests, build, checks 621/0 (+8).
-
-### v6.18 — paste fills the active element: action is the schema's fallback
-
-- Derek: pasting with an action active "adds it below the action element,
-  which makes the paragraph spacing incorrect." Root cause: SCHEMA ORDER
-  decides where ProseMirror puts content with no matching parse rule —
-  external-clipboard paragraphs, plain text lines, dropped snippet text —
-  and CustomElement registered before Action in ScreenplayEditor's
-  extension array. The fallback minted ATTRLESS custom elements (no
-  customTypeId → no template rule → wrong margins). `Action` now
-  registers FIRST among the block nodes (big comment at the site); the
-  old Action slot in the line-1304 list is gone. Empty-doc fill
-  (createAndFill) moves from attrless customElement to action too —
-  no in-repo callers depended on it.
-- What this yields: paste into an empty active action REPLACES it with
-  action blocks (both clipboard flavors); caret-mid-text paste merges
-  para 1 into the element and continues as action; typed screenplay
-  HTML (div[data-type=…]) still parses by its own rules; internal
-  copies unchanged. Snippet DROPS (v6.17) now land as action too —
-  same fallback.
-- Keymap note: Action carries the Tab→character split; registering it
-  earlier keeps it ahead of TabHandlerExtension (registered later
-  either way), so precedence is unchanged — check-v618 asserts the
-  split still works.
-- check-v618 (7) pins: plain-text fill, no customElement, no leftover
-  empty action, external <p> HTML, mid-text merge, dialogue parse rule,
-  Tab from action.
-- Gates: tsc 0, 1084 tests, build, checks 613/0 (+7: check-v618).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.19** — Thesaurus over the selection + context-menu entry; Analytics header tabs
+- **v6.18** — paste fills the active element: action is the schema's fallback
 - **v6.17** — a dragged snippet drops its TEXT into the script
 - **v6.16** — collapsed tabs expand back; Working Notes menu gone
 - **v6.15** — Goals: Show in Toolbar/Footer, relative count goals, footer

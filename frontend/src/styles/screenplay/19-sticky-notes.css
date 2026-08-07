@@ -152,6 +152,7 @@
   padding: 6px 0 4px;
 }
 .swn-hint {
+  white-space: pre-line;  /* v6.24: helper text may carry line breaks */
   padding: 6px 14px;
   font-size: 12px;
   color: var(--fd-text-muted);

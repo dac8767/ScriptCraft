@@ -285,9 +285,6 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
           🔒 Vomit Draft Mode — previous text is locked until the goal is done.
         </div>
       )}
-      <button className="fs-goal-stop" onClick={stopGoal}>
-        {progress.done ? 'Dismiss' : 'Stop current goal'}
-      </button>
     </div>
   );
 
@@ -301,15 +298,48 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
             <div className={`fs-goal-vomit-note${pulse ? ' blocked' : ''}`}>
               🔒 Vomit Draft Mode — previous text is locked.
             </div>
-            <button className="fs-goal-stop" onClick={stopGoal}>End Vomit Draft Mode</button>
           </div>
         )}
+        <button className="fs-goal-stop" onClick={stopGoal}>
+          {progress?.done ? 'Dismiss' : 'End Vomit Draft Mode'}
+        </button>
       </div>
     );
   }
 
+  const startActive = () => {
+    if (kind === 'time') { if (timeMode === 'until') startUntil(); else startTime(target); }
+    else startCount();
+  };
+  const startDisabled = !goal && kind === 'time' && timeMode === 'until' && !/^\d{2}:\d{2}$/.test(untilTime);
+
   return (
     <div className="fs-goals">
+      {/* v6.23, Derek: ONE Start at the top-left — it becomes Stop while a
+          goal runs (Dismiss once it's done); the Header/Footer placement
+          toggle shares the row, aligned right. */}
+      <div className="fs-goal-toprow">
+        <button
+          className="fs-goal-start fs-goal-main"
+          disabled={startDisabled}
+          onClick={() => (goal ? stopGoal() : startActive())}
+        >{goal ? (progress?.done ? 'Dismiss' : '■ Stop') : '▶ Start'}</button>
+        <div className="fs-goal-showin">
+          <span className="fs-goal-showin-label">Show in:</span>
+          <span className="loc-group-toggle" role="group" aria-label="Where the goal readout shows">
+            <button
+              className={`locmap-tool-btn${goalShowIn === 'toolbar' ? ' loc-group-on' : ''}`}
+              aria-pressed={goalShowIn === 'toolbar'}
+              onClick={() => setGoalShowIn('toolbar')}
+            >Header</button>
+            <button
+              className={`locmap-tool-btn${goalShowIn === 'footer' ? ' loc-group-on' : ''}`}
+              aria-pressed={goalShowIn === 'footer'}
+              onClick={() => setGoalShowIn('footer')}
+            >Footer</button>
+          </span>
+        </div>
+      </div>
       {progressBlock}
 
       {kind === 'time' ? (
@@ -345,13 +375,6 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
             />
             <span>minutes</span>
           </label>
-          <div className="fs-goal-row fs-goal-startrow">
-            <button
-              className="fs-goal-start"
-              disabled={timeMode === 'until' && !/^\d{2}:\d{2}$/.test(untilTime)}
-              onClick={() => (timeMode === 'until' ? startUntil() : startTime(target))}
-            >▶ Start</button>
-          </div>
           <b className="fs-goal-quick-label">Quick start</b>
           <div className="fs-goal-quick">
             {[5, 15, 30, 60, 120].map((m) => (
@@ -403,8 +426,17 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
             />
             <span>{kind === 'pages' ? 'Pages' : 'Words'}</span>
           </label>
-          <div className="fs-goal-row fs-goal-startrow">
-            <button className="fs-goal-start" onClick={startCount}>▶ Start</button>
+          <b className="fs-goal-quick-label">Quick start</b>
+          <div className="fs-goal-quick">
+            {(kind === 'pages' ? [1, 2, 3, 5, 10] : [250, 500, 1000, 2000, 5000]).map((n) => (
+              <button
+                key={n}
+                onClick={() => {
+                  setGoal({ kind, target: n, mode: 'relative', baseline: current });
+                  startLock(null);
+                }}
+              >{n.toLocaleString()} {kind === 'pages' ? (n === 1 ? 'page' : 'pages') : 'words'}</button>
+            ))}
           </div>
           <p className="fs-goal-current">
             {countMode === 'relative'
@@ -414,27 +446,10 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
         </>
       )}
 
-      {/* v6.15, Derek: the window FOOTER — "Show in:" (where the running
-          goal's readout lives: the ribbon toolbar or the status-bar footer)
-          and the Vomit Draft checkbox, both shared by every tab. */}
+      {/* v6.23: the FOOTER is just the Vomit checkbox — Show in moved to
+          the top row. (v1.82: one checkbox that applies to whatever goal
+          you start next.) */}
       <div className="fs-goal-footer">
-        <div className="fs-goal-showin">
-          <span className="fs-goal-showin-label">Show in:</span>
-          <span className="loc-group-toggle" role="group" aria-label="Where the goal readout shows">
-            <button
-              className={`locmap-tool-btn${goalShowIn === 'toolbar' ? ' loc-group-on' : ''}`}
-              aria-pressed={goalShowIn === 'toolbar'}
-              onClick={() => setGoalShowIn('toolbar')}
-            >Header</button>
-            <button
-              className={`locmap-tool-btn${goalShowIn === 'footer' ? ' loc-group-on' : ''}`}
-              aria-pressed={goalShowIn === 'footer'}
-              onClick={() => setGoalShowIn('footer')}
-            >Footer</button>
-          </span>
-        </div>
-        {/* v1.82: the old Vomit Draft tool — one checkbox that applies to
-            whatever goal you start next. */}
         <label className="fs-goal-vomit" title="Lock previous text until the goal is done">
           <input
             type="checkbox"

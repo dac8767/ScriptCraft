@@ -465,6 +465,9 @@ body.fs-writing-focus::before {
   z-index: 9500;
   max-width: 320px;
   padding: 4px 8px;
+  /* v6.24: helper text may carry line breaks (the Helper Text editor
+     allows them) — honor them in the bubble. */
+  white-space: pre-line;
   border-radius: 5px;
   background: var(--fd-tooltip-bg, #1f1f1f);
   color: var(--fd-tooltip-text, #f2f2f2);

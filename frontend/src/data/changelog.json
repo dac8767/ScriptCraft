@@ -1,5 +1,23 @@
 [
   {
+    "version": "6.24",
+    "date": "2026-08-07",
+    "changes": [
+      "Helper Text: the list is organized by where things are found — Ribbon Toolbar, Menus, Status Bar, each tool window, and so on — in collapsible groups.",
+      "Helper Text: the found-in info is written on each row now (not just on hover), and every row has a hide button so items you've reviewed can be cleared from the list — the Hidden view lists them and puts them back.",
+      "Helper Text: rows that live in an openable window carry a go-there button — it opens that window without closing Helper Text.",
+      "Helper Text: line breaks are allowed — the edit field grows as you type (Enter makes a new line), and multi-line text renders its breaks in tooltips and hints."
+    ]
+  },
+  {
+    "version": "6.23",
+    "date": "2026-08-07",
+    "changes": [
+      "Goals: one ▶ Start button at the top-left of the window — it becomes ■ Stop while a goal runs (Dismiss when it's done) and starts whatever the current tab is set to. The Header/Footer choice sits on the same row, right-aligned, and the footer is just the Vomit Draft checkbox now.",
+      "Goals: the Words and Pages tabs have Quick start rows — one click starts a write-this-much-more goal from wherever the script stands (250–5,000 words, 1–10 pages)."
+    ]
+  },
+  {
     "version": "6.22",
     "date": "2026-08-07",
     "changes": [

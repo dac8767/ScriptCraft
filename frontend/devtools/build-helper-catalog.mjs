@@ -32,6 +32,44 @@ const HT_RE = /\bht\(\s*(?:'((?:[^'\\]|\\.)+)'|"((?:[^"\\]|\\.)+)")\s*[),]/g;
 
 // The terminator ([\s/>]) is REQUIRED — a bare \b also matches the end of
 // the sliced window, which once minted truncated names (FaDotCi, FaR).
+/* v6.24, Derek: "organize the helper text tool items by where they are
+   found: ribbon toolbar, menu, side panel, quick access toolbar, etc" —
+   every entry carries an `area` derived from its source file. First match
+   wins; unmatched files land in "Everything Else" (visible, not silent —
+   map them when they matter). */
+export const AREA_RULES = [
+  [/Toolbar\.tsx$/, 'Ribbon Toolbar'],
+  [/TitleBar\.tsx$/, 'Quick Access Toolbar'],
+  [/MenuBar\.tsx$/, 'Menus'],
+  [/ScriptContextMenu\.tsx$/, 'Context Menu'],
+  [/StatusBar\.tsx$/, 'Status Bar'],
+  [/(ToolDock|ToolControls|EdgeResize)\.tsx$/, 'Side Panel & Window Chrome'],
+  [/NavigatorTool\.tsx$/, 'Navigator Window'],
+  [/(SceneNavigator|SceneCard|scene)/i, 'Scenes / Pages / Locations Windows'],
+  [/Location/, 'Scenes / Pages / Locations Windows'],
+  [/(CharacterProfiles|CharacterRelationship|char)/i, 'Characters Window'],
+  [/(StickyNotes|StickyCard|ScriptNotes)/, 'Notes & Snippets Windows'],
+  [/(MarkupsPanel|markupIcons|MarkupsCustomizeTab|MarkupIconLayer)/, 'Annotations Window'],
+  [/BeatBoard/, 'Outline Window'],
+  [/GoalsTool/, 'Goals Window'],
+  [/TypewriterTool/, 'Focus Window'],
+  [/(AnalyticsTool|GenderAnalysisTool|ScriptStatistics)/, 'Analytics Window'],
+  [/ThesaurusTool/, 'Thesaurus Window'],
+  [/NotebookTool/, 'Scrapbook Window'],
+  [/RewriteTool/, 'Action Rewrite Window'],
+  [/TagsPanel/, 'Production Tags Window'],
+  [/(SpellCheckPanel|Spell)/i, 'Spelling & Grammar'],
+  [/(DesignPanel|HelperText)/, 'Design & Helper Text'],
+  [/(WorkspacesTool|workspace)/i, 'Workspaces'],
+  [/FeedbackTool/, 'Feedback Window'],
+  [/(CustomizePanelsDialog|customizeResets|ContextMenuTab|AddMenu)/, 'Customize Window'],
+  [/(PreferencesDialog|SettingsPage|PageSetupDialog|GuidedSetup)/, 'Settings & Setup'],
+  [/(Dialog|Modal)/, 'Dialogs'],
+  [/(ScreenplayEditor|editor\/|TitlePageEditor|PreviewSidebar)/, 'Editor & Preview'],
+];
+export const FALLBACK_AREA = 'Everything Else';
+const areaFor = (rel) => (AREA_RULES.find(([re]) => re.test(rel)) ?? [null, FALLBACK_AREA])[1];
+
 const ICON_RE = /<((?:Fa|Lu)[A-Z]\w*)[\s/>]/;
 const TEXT_CHILD_RE = />\s*([A-Za-z][^<>{}|]{0,40}?)\s*</;
 
@@ -61,8 +99,10 @@ export function buildCatalog() {
   const add = (text, kind, file, ctx = {}) => {
     if (!text || !text.trim()) return;
     if (!/[a-zA-Z]/.test(text)) return;            // pure glyphs aren't editable text
+    const rel = relative(ROOT, file);
     const e = entries.get(text) ?? { kinds: new Set(), files: new Set(), n: 0 };
-    e.kinds.add(kind); e.files.add(relative(ROOT, file)); e.n++;
+    e.kinds.add(kind); e.files.add(rel); e.n++;
+    if (!e.area) e.area = areaFor(rel);
     if (!e.icon && ctx.icon) e.icon = ctx.icon;
     if (!e.label && ctx.label) e.label = ctx.label;
     entries.set(text, e);
@@ -81,6 +121,7 @@ export function buildCatalog() {
       text,
       kind: [...e.kinds].sort((a, b) => KIND_ORDER[a] - KIND_ORDER[b])[0],
       sites: e.n,
+      area: e.area,
       where: [...e.files].sort().slice(0, 6),
       ...(e.icon ? { icon: e.icon } : {}),
       ...(e.label ? { label: e.label } : {}),

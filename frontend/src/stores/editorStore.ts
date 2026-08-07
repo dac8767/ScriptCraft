@@ -1233,6 +1233,10 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   helperTextOverrides: Record<string, string>;
   setHelperTextOverride: (text: string, value: string | null) => void;
   resetAllHelperText: () => void;
+  /** v6.24: rows cleared from the Helper Text list ("checked off") —
+   *  recallable via the window's Hidden view. Persisted. */
+  helperTextHidden: string[];
+  toggleHelperTextHidden: (text: string) => void;
   preferencesRequest: { open: boolean; tab?: 'saveloc' | 'keys' };
   openPreferences: (tab?: 'saveloc' | 'keys') => void;
   closePreferences: () => void;
@@ -1757,6 +1761,14 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     saveViewState({ helperTextOverrides: {} });
     set({ helperTextOverrides: {} });
   },
+  helperTextHidden: (_vs.helperTextHidden as string[]) ?? [],
+  toggleHelperTextHidden: (text) => set((s) => {
+    const helperTextHidden = s.helperTextHidden.includes(text)
+      ? s.helperTextHidden.filter((t) => t !== text)
+      : [...s.helperTextHidden, text];
+    saveViewState({ helperTextHidden });
+    return { helperTextHidden };
+  }),
   goalShowIn: (_vs.goalShowIn as 'toolbar' | 'footer') ?? 'footer',
   setGoalShowIn: (v) => { saveViewState({ goalShowIn: v }); set({ goalShowIn: v }); },
   preferencesRequest: { open: false },
