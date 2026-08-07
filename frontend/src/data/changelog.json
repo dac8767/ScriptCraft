@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.11",
+    "date": "2026-08-07",
+    "changes": [
+      "The Characters window's List view is the same table the Scenes and Locations lists use: a Character column you can drag-resize, an inline Description field on every row (it writes the same description the full profile edits, as plain text), and \"Times used:\" with the scene count. Clicking a row still expands the full profile beneath it."
+    ]
+  },
+  {
     "version": "6.10",
     "date": "2026-08-07",
     "changes": [

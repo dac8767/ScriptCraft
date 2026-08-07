@@ -150,6 +150,35 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   const currentScriptId = useProjectStore((s) => s.currentScriptId);
   const { assets, setAssets } = useAssetStore();
 
+  /* v6.11: the list-view name column — same store + limits family as the
+     Scenes/Locations grips (COL_LIMITS in SceneNavigator registers
+     'charName'; this is that entry's handler, living where its column
+     renders). */
+  const charNameW = useEditorStore((s) => s.sceneColWidths.charName);
+  const setSceneColWidth = useEditorStore((s) => s.setSceneColWidth);
+  const listRootRef = React.useRef<HTMLDivElement>(null);
+  const startCharColResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startW = charNameW;
+    const grip = e.currentTarget as HTMLElement;
+    grip.setPointerCapture(e.pointerId);
+    let w = startW;
+    const onMove = (ev: PointerEvent) => {
+      w = Math.max(120, Math.min(620, startW + (ev.clientX - startX)));
+      listRootRef.current?.style.setProperty('--char-col-name', `${w}px`);
+    };
+    const onUp = () => {
+      grip.releasePointerCapture(e.pointerId);
+      grip.removeEventListener('pointermove', onMove);
+      grip.removeEventListener('pointerup', onUp);
+      setSceneColWidth('charName', w);
+    };
+    grip.addEventListener('pointermove', onMove);
+    grip.addEventListener('pointerup', onUp);
+  };
+
   // v4.27 window template: tab, view modes and search are STORE state now —
   // the window chrome (frame row 2, dock accordion, fullscreen header) drives
   // them from outside the panel body. One source; chrome and body can't drift.
@@ -1398,8 +1427,26 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       {/* Character list — v4.41: the view mode rides the container so ONE
           stylesheet serves every shape: cards = a responsive auto-fill grid
           (one column in a 300px panel — the familiar docked look — more
-          columns as the window or fullscreen widens); list = stacked rows. */}
-      <div className={`char-profiles-list char-view-${viewMode}`}>
+          columns as the window or fullscreen widens); list = stacked rows.
+          v6.11, Derek: the LIST view is the same table the Scenes and
+          Locations lists use — shared .location-header grid, the name
+          column drag-resized through the shared sceneColWidths store. */}
+      <div
+        ref={listRootRef}
+        className={`char-profiles-list char-view-${viewMode}`}
+        style={{ ['--char-col-name' as string]: `${charNameW}px` }}
+      >
+        {viewMode === 'list' && allCharacters.length > 0 && (
+          <div className="location-list-header location-header">
+            <span className="location-chevron" />
+            <span className="location-name">
+              Character
+              <span className="scene-col-grip" title="Drag to resize" onPointerDown={startCharColResize} />
+            </span>
+            <span className="location-desc-head">Description</span>
+            <span className="location-times" />
+          </div>
+        )}
         {allCharacters.length === 0 ? (
           <div className="char-profiles-empty">
             {searchQuery
@@ -1432,7 +1479,29 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                     </button>
                   </div>
                 )}
-                {/* Header row */}
+                {/* Header row — v6.11, Derek: the LIST view renders the SAME
+                    table row the Scenes and Locations lists use (shared
+                    .location-header grid); Cards view keeps the card bar. */}
+                {!isCardsView ? (
+                  <div className="location-header" onClick={() => setExpandedChar(isExpanded ? null : name)}>
+                    <span className="location-chevron">{isExpanded ? <FaChevronDown /> : <FaChevronRight />}</span>
+                    <span className="location-name" title={name}>{name}</span>
+                    {/* One description per character, two doors: this writes
+                        the same profile field the expanded editor does
+                        (plain text — inline edits drop rich formatting). */}
+                    <input
+                      className="scene-synopsis-field location-desc-field"
+                      placeholder="Description..."
+                      value={stripHtml(profile.description || '')}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => upsertCharacterProfile(name, { description: e.target.value })}
+                    />
+                    <span className="location-times">
+                      Times used:
+                      <span className="location-scene-count">{stats?.sceneCount ?? 0}</span>
+                    </span>
+                  </div>
+                ) : (
                 <div
                   className="char-profile-row"
                   onClick={() => setExpandedChar(isExpanded ? null : name)}
@@ -1539,6 +1608,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
                   )}
                   </div>
                 </div>
+                )}
 
                 {/* Expanded detail (v4.24 batch 3, reworked v4.25, Derek):
                     Cards view — always expanded — shows the ESSENTIALS only:

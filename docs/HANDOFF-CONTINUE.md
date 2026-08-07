@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.10 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.11 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,21 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.11 — the Characters list is the shared table
+
+- List view rows render the SAME `.location-header` grid the Scenes and
+  Locations tables use — the grid's name track reads a cascading
+  `--table-name-w` var so ONE template serves all three
+  (`.char-profiles-list` overrides it to `--char-col-name`). Cards view
+  untouched; expansion still opens the full inline profile.
+- The name column registered as `charName` in sceneColWidths (persisted)
+  + COL_LIMITS; CharacterProfiles carries its own grip handler writing
+  the same store. The inline Description field writes
+  profile.description as PLAIN text (stripHtml projection — an inline
+  edit of a previously rich description drops its formatting; the
+  expanded editor stays rich).
+- Gates: tsc 0, 1081 tests, build, checks 594/0.
 
 ### v6.10 — the Highlights tool is retired
 

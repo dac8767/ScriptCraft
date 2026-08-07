@@ -426,10 +426,14 @@
    count. Fixed tracks are the point — `auto` would size to each row's own
    text and the Description field would start at a different x on every line. */
 .location-header {
+  /* v6.11: the name track reads a CASCADING var so a third table (the
+     Characters list) rides this ONE grid template with its own remembered
+     width — no copied template to drift. */
+  --table-name-w: var(--loc-col-name, 240px);
   display: grid;
   grid-template-columns:
     16px                                     /* caret            */
-    minmax(0, var(--loc-col-name, 240px))    /* location name — drag-resized */
+    minmax(0, var(--table-name-w))           /* name — drag-resized */
     minmax(0, 1fr)                           /* description   — takes the slack */
     auto;                                    /* times used       */
   align-items: center;
@@ -439,6 +443,9 @@
   transition: background 0.1s;
   min-width: 0;
 }
+/* v6.11, Derek: the Characters list wears the same table. */
+.char-profiles-list .location-header { --table-name-w: var(--char-col-name, 170px); }
+.char-view-list .char-profile-card { border-radius: 0; }
 .location-header:hover {
   background: var(--fd-overlay-subtle);
 }

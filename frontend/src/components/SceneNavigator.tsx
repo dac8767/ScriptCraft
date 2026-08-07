@@ -305,7 +305,11 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                        metrics: { min: 74, max: 260, varName: '--scene-metrics-w', dir: -1 },
                        // v5.81: the Locations list is the same table, so it
                        // resizes through the same handler — not a second one.
-                       locName: { min: 120, max: 620, varName: '--loc-col-name', dir: 1 } } as const;
+                       locName: { min: 120, max: 620, varName: '--loc-col-name', dir: 1 },
+                       // v6.11: the Characters list is the same table again —
+                       // its grip rides the same store through COL_LIMITS
+                       // (CharacterProfiles renders it; the registry is one).
+                       charName: { min: 120, max: 620, varName: '--char-col-name', dir: 1 } } as const;
 
   const startColResize = (key: keyof typeof COL_LIMITS) => (e: React.PointerEvent) => {
     e.preventDefault();
