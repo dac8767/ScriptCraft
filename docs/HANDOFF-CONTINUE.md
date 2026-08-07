@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.17 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.18 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,34 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.18 — paste fills the active element: action is the schema's fallback
+
+- Derek: pasting with an action active "adds it below the action element,
+  which makes the paragraph spacing incorrect." Root cause: SCHEMA ORDER
+  decides where ProseMirror puts content with no matching parse rule —
+  external-clipboard paragraphs, plain text lines, dropped snippet text —
+  and CustomElement registered before Action in ScreenplayEditor's
+  extension array. The fallback minted ATTRLESS custom elements (no
+  customTypeId → no template rule → wrong margins). `Action` now
+  registers FIRST among the block nodes (big comment at the site); the
+  old Action slot in the line-1304 list is gone. Empty-doc fill
+  (createAndFill) moves from attrless customElement to action too —
+  no in-repo callers depended on it.
+- What this yields: paste into an empty active action REPLACES it with
+  action blocks (both clipboard flavors); caret-mid-text paste merges
+  para 1 into the element and continues as action; typed screenplay
+  HTML (div[data-type=…]) still parses by its own rules; internal
+  copies unchanged. Snippet DROPS (v6.17) now land as action too —
+  same fallback.
+- Keymap note: Action carries the Tab→character split; registering it
+  earlier keeps it ahead of TabHandlerExtension (registered later
+  either way), so precedence is unchanged — check-v618 asserts the
+  split still works.
+- check-v618 (7) pins: plain-text fill, no customElement, no leftover
+  empty action, external <p> HTML, mid-text merge, dialogue parse rule,
+  Tab from action.
+- Gates: tsc 0, 1084 tests, build, checks 613/0 (+7: check-v618).
+
 ### v6.17 — a dragged snippet drops its TEXT into the script
 
 - Derek: dragging a snippet into the script inserted
@@ -318,25 +346,12 @@ Durable bits kept live here:
   Action Rewrite.
 - Gates: tsc 0, 1081 tests, build, checks 594/0.
 
-### v6.13 — Characters polish: flat list rows, quieter cards, List first
-
-- List view: `.char-view-list .char-profile-card` = no border/background,
-  ONE bottom hairline (`--fd-overlay-subtle` — the exact .navigator-scene
-  divider). The light-theme card rule scoped to `.char-view-cards`.
-- Cards: background = color-mix 5% text over navigator-bg (a lifted
-  surface — it MATCHED the window before); outline dimmed 45%→22% (hover
-  75%→45%); radius default 6→4 — and the designTokens registry default
-  moved WITH it (the token guard test caught the drift: registry and CSS
-  fallback are one source, keep them equal).
-- View menu order: List above Cards (menu order only; cards stays the
-  stored default view).
-- Gates: tsc 0, 1081 tests, build, checks 594/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.13** — Characters polish: flat list rows, quieter cards, List first
 - **v6.12** — Characters header: Filter everywhere, Sort+Search on Relationships
 - **v6.11** — the Characters list is the shared table
 - **v6.10** — the Highlights tool is retired

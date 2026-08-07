@@ -151,7 +151,22 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.12 and older (newest first)
+## Version history — v6.13 and older (newest first)
+
+### v6.13 — Characters polish: flat list rows, quieter cards, List first
+
+- List view: `.char-view-list .char-profile-card` = no border/background,
+  ONE bottom hairline (`--fd-overlay-subtle` — the exact .navigator-scene
+  divider). The light-theme card rule scoped to `.char-view-cards`.
+- Cards: background = color-mix 5% text over navigator-bg (a lifted
+  surface — it MATCHED the window before); outline dimmed 45%→22% (hover
+  75%→45%); radius default 6→4 — and the designTokens registry default
+  moved WITH it (the token guard test caught the drift: registry and CSS
+  fallback are one source, keep them equal).
+- View menu order: List above Cards (menu order only; cards stays the
+  stored default view).
+- Gates: tsc 0, 1081 tests, build, checks 594/0.
+
 
 ### v6.12 — Characters header: Filter everywhere, Sort+Search on Relationships
 

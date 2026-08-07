@@ -1257,6 +1257,17 @@ const ScreenplayEditor: React.FC = () => {
       Subscript, Superscript,
       Highlight.configure({ multicolor: true }),
       TextStyle, Color, FontFamily, FontSize,
+      /* Action is registered FIRST among the block nodes ON PURPOSE (v6.18,
+         Derek: pasting with an action active put the text "below" it with
+         wrong spacing). Schema order decides where ProseMirror puts content
+         with no matching parse rule — external-clipboard paragraphs, plain
+         text lines, dropped snippet text. That fallback used to be
+         CustomElement (registered here), which minted ATTRLESS custom
+         elements: no customTypeId, no template rule, wrong margins. The
+         fallback block of a screenplay is action. Keep Action ahead of
+         CustomElement (and of every other textblock) or the bug returns —
+         check-v618 pins it. */
+      Action,
       FormatOverride, CustomElement, ScreenplayImage,
       // Use History in normal mode, Collaboration in collab mode
       ...(collabMode ? collabExtensions : [History.configure({ newGroupDelay: 150 })]),
@@ -1301,7 +1312,7 @@ const ScreenplayEditor: React.FC = () => {
         includeChildren: true,
         showOnlyCurrent: true,
       }),
-      SceneHeading, Action, Character, Dialogue, Parenthetical,
+      SceneHeading, Character, Dialogue, Parenthetical,
       Transition, General, Shot, NewAct, EndOfAct, Lyrics,
       ShowEpisode, CastList, DualDialogue, DualDialogueColumn, TitlePage, CustomPage, CustomPageKeymap,
       AvBlock, AvRow, AvCell, AvPara, AvShot, AvDirection, AvKeymap,

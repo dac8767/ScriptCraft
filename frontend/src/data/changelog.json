@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.18",
+    "date": "2026-08-07",
+    "changes": [
+      "Fixed: pasting into the script with an action element active no longer drops the text below it as an unstyled block with the wrong spacing. Pasted paragraphs — from plain text or another app — now land as proper action elements, filling the active empty element in place; pasting mid-sentence joins the first paragraph into the element you're in. Dropped snippets follow the same rule."
+    ]
+  },
+  {
     "version": "6.17",
     "date": "2026-08-07",
     "changes": [
