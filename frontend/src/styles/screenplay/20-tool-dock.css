@@ -1441,3 +1441,28 @@ body.fs-tool-dragging { cursor: grabbing; }
 
 /* v4.24, Derek (Customize > Side Panels): panel display names in ALL CAPS. */
 .tool-name-upper { text-transform: uppercase; }
+
+/* ── v6.15: the Goals window footer + the ribbon goal chip ───────────── */
+/* The window is a flex column so the footer pins to the bottom. */
+.fs-goals { display: flex; flex-direction: column; }
+.fs-goal-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fs-goal-showin { display: flex; align-items: center; gap: 8px; }
+.fs-goal-showin-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--fd-text-muted);
+}
+/* The ribbon-mounted chip parks at the right edge and centers in the row. */
+.toolbar-goalchip {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 0 6px;
+}

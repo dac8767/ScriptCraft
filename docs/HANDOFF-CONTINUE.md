@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.14 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.15 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,29 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.15 — Goals: Show in Toolbar/Footer, relative count goals, footer
+
+- WritingGoal grew `mode: 'reach'|'relative'` + `baseline`;
+  useGoalProgress measures GROWTH for relative goals (label "N / M kind
+  written"). Words/Pages tabs are radio pairs (Reach page:/word: vs
+  Finish N Pages / Write N Words); startCount captures baseline=current.
+- goalShowIn ('footer' default, persisted) + ONE `GoalChip`
+  (GoalsTool.tsx) mounted by StatusBar (footer mode) and the ribbon
+  (toolbar mode, `.toolbar-goalchip`, right edge; `useGoalWords(editor)`
+  computes words there). NOTE: the status bar's center cluster hides
+  during ANY takeover (pre-existing v-old gate) — the footer chip never
+  renders in fullscreen; the ribbon chip does.
+- Quick start [5,15,30,60,120]; footer row (`.fs-goal-footer`,
+  margin-top auto) holds Show in + the Vomit checkbox; the ? helper is
+  GONE (GoalsHeaderExtra deleted; goals chrome = useTabs only — the
+  ToolControls.order guard therefore iterates one fewer window: 1081→
+  1080 tests, explained, not a loss).
+- REGRESSION FIX (v6.10 fallout, Derek's screenshot): saved layouts
+  carrying b:highlightColor rendered an EMPTY priority block outside the
+  Scrapbook → measured as CSS-hidden → the overflow three-dot appeared.
+  The token is filtered from the live list unless the Scrapbook is open.
+- Gates: tsc 0, 1080 tests, build, checks 594/0.
 
 ### v6.14 — Derek's menu reorganization
 

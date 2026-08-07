@@ -36,7 +36,7 @@ import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, PagesC
 import LocationMapRail from './LocationMapRail';
 import NavigatorTool, { NavigatorControls } from './NavigatorTool';
 import AnalyticsTool from './AnalyticsTool';
-import GoalsTool, { GoalsHeaderExtra, useGoalTabs } from './GoalsTool';
+import GoalsTool, { useGoalTabs } from './GoalsTool';
 import CharacterProfiles, { CharTitleExtra, useCharTabs, CharControls } from './CharacterProfiles';
 import { ChromeTabs, ControlDropdown, type ToolChromeTab } from './ToolControls';
 import { StickyNotesTool, FragmentsTool, StickyTitleExtra, StickyControls, SnippetsTitleExtra } from './StickyNotes';
@@ -372,8 +372,9 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   // + the per-type "Show in Script" grid cover visibility.)
   markups: { TitleExtra: MarkupsTitleExtra, Controls: MarkupsControls },
   // v6.02, Derek: the Words/Pages/Time tabs go through useTabs like every
-  // other window's — left-aligned, shared rendering. The ? stays a control.
-  goals: { useTabs: useGoalTabs, Controls: GoalsHeaderExtra },
+  // other window's. (v6.15: the ? helper is gone — the window explains
+  // itself; the header carries tabs only.)
+  goals: { useTabs: useGoalTabs },
   notebook: { Controls: NotebookHeaderExtra },   // v2.05: declutter + create buttons
   rewrite: { Controls: RewriteHeaderControls },  // v5.60: the same declutter eye
   typewriter: { Controls: FocusHeaderControls }, // v5.66: the "?" in the header

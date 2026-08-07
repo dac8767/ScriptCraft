@@ -692,6 +692,12 @@ export function toolConfigFor(
 export interface WritingGoal {
   kind: 'words' | 'pages' | 'time';
   target: number;
+  /** v6.15, Derek: count goals come in two shapes — 'reach' (hit an absolute
+   *  document total, the original behavior) or 'relative' ("Finish N Pages" /
+   *  "Write N Words": complete when the total grows by N past `baseline`,
+   *  the count captured when the goal started). */
+  mode?: 'reach' | 'relative';
+  baseline?: number;
   /** time goals: total seconds + wall-clock end */
   total?: number;
   endsAt?: number;
@@ -1212,6 +1218,10 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   /** v1.85: which goal kind the Goals window shows — lives here because the
    *  Words/Pages/Time tabs render in the window HEADER (chrome slot). */
   goalKind: 'words' | 'pages' | 'time';
+  /** v6.15, Derek: where the running goal's readout lives — the status bar
+   *  (footer, the original home) or the ribbon toolbar. */
+  goalShowIn: 'toolbar' | 'footer';
+  setGoalShowIn: (v: 'toolbar' | 'footer') => void;
   setGoalKind: (v: 'words' | 'pages' | 'time') => void;
   preferencesRequest: { open: boolean; tab?: 'saveloc' | 'keys' };
   openPreferences: (tab?: 'saveloc' | 'keys') => void;
@@ -1723,6 +1733,8 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   },
   goalKind: 'time',
   setGoalKind: (v) => set({ goalKind: v }),
+  goalShowIn: (_vs.goalShowIn as 'toolbar' | 'footer') ?? 'footer',
+  setGoalShowIn: (v) => { saveViewState({ goalShowIn: v }); set({ goalShowIn: v }); },
   preferencesRequest: { open: false },
   openPreferences: (tab) => set({ preferencesRequest: { open: true, tab } }),
   closePreferences: () => set({ preferencesRequest: { open: false } }),

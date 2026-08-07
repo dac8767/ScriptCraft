@@ -4,7 +4,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { computeSceneTiming, formatRuntime } from '../utils/scriptTiming';
 import { computeOverviewStats } from '../utils/scriptStatistics';
-import { useGoalProgress } from './GoalsTool';
+import { GoalChip } from './GoalsTool';
 import { computeScriptStructure } from '../utils/scriptStructure';
 import AuthIndicator from './AuthIndicator';
 import { useNotebookStore } from '../stores/notebookStore';
@@ -32,7 +32,6 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
     draftLabel,
     saveStatus,
     goal,
-    setActiveTool,
   } = useEditorStore();
   const mirrorStatuses = useEditorStore((s) => s.mirrorStatuses);
   const { saveToCloud, saveToGDrive, saveToOneDrive } = useSettingsStore();
@@ -78,7 +77,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
     try { return computeOverviewStats(editorDoc as any, pageCount).totalWords; }
     catch { return 0; }
   }, [editorDoc, goal, pageCount]);
-  const goalProgress = useGoalProgress(goalWords, pageCount);
+  const goalShowIn = useEditorStore((s) => s.goalShowIn);
 
   const currentAct = useMemo(() => {
     if (!editorDoc) return '';
@@ -140,21 +139,9 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
       </div>
       <div className="status-right">
         {!takeoverActive && <>
-        {goal && goalProgress && (
-          <button
-            className={`status-item status-goal${goalProgress.done ? ' done' : ''}`}
-            title={goalProgress.done ? 'Goal complete — click to clear it' : 'Writing goal — click to open Goals'}
-            onClick={() => {
-              if (goalProgress.done) {
-                useEditorStore.getState().incrementGoalsCompleted();
-                useEditorStore.getState().setGoal(null);
-              } else setActiveTool('goals');
-            }}
-          >
-            <span className="status-goal-track"><span style={{ width: `${goalProgress.pct}%` }} /></span>
-            {goalProgress.label}
-          </button>
-        )}
+        {/* v6.15, Derek: the readout renders here only in Footer mode —
+            Toolbar mode mounts the SAME GoalChip in the ribbon. */}
+        {goalShowIn === 'footer' && <GoalChip variant="status" words={goalWords} />}
         {currentAct && (
           <span className="status-item status-acts" title="Act structure">
             {currentAct}

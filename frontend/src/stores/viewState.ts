@@ -75,6 +75,7 @@ export interface ViewState {
   charFilterHasImage?: boolean;
   charFilterHasDesc?: boolean;
   relSort?: string;
+  goalShowIn?: string;
   /** v5.85: the Locations List view's Group toggle. */
   locationsGrouped?: boolean;
   /** v5.12: below this tool width the scene list compresses to caret rows.

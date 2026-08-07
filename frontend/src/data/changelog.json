@@ -1,5 +1,15 @@
 [
   {
+    "version": "6.15",
+    "date": "2026-08-07",
+    "changes": [
+      "Goals: every tab has \"Show in:\" — Footer keeps the goal readout in the status bar as before; Toolbar parks the same chip at the right end of the ribbon.",
+      "Goals: the Words and Pages tabs are an either/or like Time — \"Reach page:\" / \"Reach word:\" (the absolute total, as before) or \"Finish N Pages\" / \"Write N Words\", which completes when the script grows by that much from wherever it stood when you pressed Start.",
+      "Goals: a 60 min quick-start joined the Time tab, the Vomit Draft checkbox lives in the window footer, and the ? button is gone.",
+      "Fixed: a stray three-dot \"More format options\" button appeared at the ribbon's right edge for layouts that still carried the retired highlighter — the empty slot measured as a hidden item and summoned the overflow menu. The retired token is filtered out entirely now."
+    ]
+  },
+  {
     "version": "6.14",
     "date": "2026-08-07",
     "changes": [

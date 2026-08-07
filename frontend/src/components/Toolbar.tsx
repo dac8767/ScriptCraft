@@ -49,6 +49,7 @@ import { smartUndo, smartRedo, useEditorStore } from '../stores/editorStore';
 import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
 import { createMarkupAtSelection } from '../utils/markupActions';
 import { insertCustomPage } from '../editor/extensions';
+import { GoalChip, useGoalWords } from './GoalsTool';
 import { AnnotationShowMenu } from './MarkupPickers';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
@@ -105,6 +106,9 @@ const FONT_SIZES = [8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60
 // Priority 4 = font style & colors (bold/italic/underline/strike/sub/super + colors + language)
 // Priority 5 = font face & size
 const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
+  // v6.15: the ribbon-mounted goal readout (Show in: Toolbar).
+  const goalShowIn = useEditorStore((st) => st.goalShowIn);
+  const goalChipWords = useGoalWords(editor);
   const {
     activeElement,
     setActiveElement,
@@ -772,7 +776,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     zonesReady ? toolbarRight : DEFAULT_TOOLBAR_RIGHT,
   );
   // v2.95: one ribbon sequence — normalize folds any legacy right zone in.
-  const leftTokens = zones.left;
+  // v6.15, Derek ("a three-dot 'More format options' appeared and is not
+  // removable"): the retired script-highlighter (v6.10) renders NOTHING
+  // outside the Scrapbook, and its empty priority block measured as a
+  // CSS-hidden item — which is exactly what summons the overflow menu. A
+  // token whose control doesn't exist right now is filtered out entirely,
+  // so nothing empty is ever measured.
+  const leftTokens = scrapbookOpen
+    ? zones.left
+    : zones.left.filter((t) => t.replace(/^2!/, '') !== 'b:highlightColor');
 
   if (toolbarMode === 'hidden') return null;
 
@@ -2008,6 +2020,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         </React.Fragment>
       ))}
       </>}
+      {/* v6.15, Derek: "Show in: Toolbar" — the SAME GoalChip the status bar
+          mounts, parked at the ribbon's right edge while a goal runs. */}
+      {goalShowIn === 'toolbar' && (
+        <span className="toolbar-goalchip"><GoalChip variant="toolbar" words={goalChipWords} /></span>
+      )}
     </div>
 
     {/* Overflow 3-dot menu — beside the ribbon, spanning its height */}
