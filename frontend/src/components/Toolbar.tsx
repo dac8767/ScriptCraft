@@ -189,7 +189,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
   // Color picker state
   const [textColorOpen, setTextColorOpen] = useState(false);
-  const [bgColorOpen, setBgColorOpen] = useState(false);
   // v3.21: the color pickers are PORTALLED (the ribbon clips overflow, so an
   // absolute popup inside it is invisible — the "dead button" report).
   // Fixed coordinates measured from the trigger, per the AddMenu rule.
@@ -220,8 +219,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   }, [tableGridOpen]);
   const [currentTextColor, setCurrentTextColor] = useState<string>('#000000');
   // v1.83: the highlighter color is store state — Format > Highlighting shares it.
-  const currentBgColor = useEditorStore((s) => s.highlightColor);
-  const setCurrentBgColor = useEditorStore((s) => s.setHighlightColor);
   const markupsVisible = useEditorStore((s) => s.markupsVisible);
   const setMarkupsVisible = useEditorStore((s) => s.setMarkupsVisible);
 
@@ -1160,7 +1157,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
               setColorPopAnchor({ top: r.bottom + 4, left: r.left });
               setTextColorOpen(!textColorOpen);
-              setBgColorOpen(false);
             }}
           >
             {/* v3.25, Derek: the A ALWAYS wears the picked color — black when
@@ -1194,42 +1190,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           )}
         </div>
       );
-      case 'highlightColor': return (
-        <div className="toolbar-group" style={{ position: 'relative' }}>
-          <button
-            className="toolbar-btn"
-            title="Highlight Color"
-            disabled={locked.backgroundColor}
-            onClick={(e) => {
-              if (locked.backgroundColor) return;
-              const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              setColorPopAnchor({ top: r.bottom + 4, left: r.left });
-              setBgColorOpen(!bgColorOpen);
-              setTextColorOpen(false);
-            }}
-          >
-            <FaHighlighter style={{ color: currentBgColor }} />
-          </button>
-          {showPopups && bgColorOpen && colorPopAnchor && createPortal(
-            <div style={{ position: 'fixed', top: colorPopAnchor.top, left: colorPopAnchor.left, zIndex: 2147483647 }}>
-              <ColorPicker
-                value={currentBgColor}
-                onChange={(color) => {
-                  setCurrentBgColor(color || '#ffff00');
-                  if (color) {
-                    editor?.chain().focus(undefined, { scrollIntoView: false }).toggleHighlight({ color }).run();
-                  } else {
-                    editor?.chain().focus(undefined, { scrollIntoView: false }).unsetHighlight().run();
-                  }
-                  setBgColorOpen(false);
-                }}
-                onClose={() => setBgColorOpen(false)}
-              />
-            </div>,
-            document.body,
-          )}
-        </div>
-      );
+      // v6.10, Derek: SCRIPT highlighting is the Annotations tool's job now —
+      // the ribbon highlighter no longer applies the old `highlight` mark.
+      // The key survives for the Scrapbook: while a Scrapbook box is focused
+      // the v2.69 branch above renders this as the box-background picker;
+      // outside the Scrapbook the item renders nothing.
+      case 'highlightColor': return null;
       case 'alignLeft': return (
         <button
           className={`toolbar-btn ${editor?.isActive({ textAlign: 'left' }) ? 'active' : ''}`}

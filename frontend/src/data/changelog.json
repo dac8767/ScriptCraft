@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.10",
+    "date": "2026-08-07",
+    "changes": [
+      "The Highlights tool is gone — highlighting lives in the Annotations tool now. The tool window, its Tools-menu entry, the Format ▸ Highlighting submenu and the ribbon's script highlighter are all removed. Old-style highlights in existing scripts still render (the mark stays), and the Scrapbook keeps its text-background picker (the ribbon item is \"Box Background (Scrapbook)\" now, shown only while the Scrapbook is open)."
+    ]
+  },
+  {
     "version": "6.09",
     "date": "2026-08-07",
     "changes": [

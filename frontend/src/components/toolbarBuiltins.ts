@@ -64,7 +64,9 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   { key: 'subscript', label: 'Subscript', priority: '4', desktopOnly: true, unlisted: true },
   { key: 'superscript', label: 'Superscript', priority: '4', desktopOnly: true, unlisted: true },
   { key: 'textColor', label: 'Text Color', priority: '4', desktopOnly: true },
-  { key: 'highlightColor', label: 'Highlight Color', priority: '4', desktopOnly: true },
+  // v6.10: script highlighting retired (Annotations owns it) — the key
+  // survives as the Scrapbook's box-background picker only.
+  { key: 'highlightColor', label: 'Box Background (Scrapbook)', priority: '4', desktopOnly: true },
   { key: 'alignLeft', label: 'Align Left', priority: '3', desktopOnly: true },
   { key: 'alignCenter', label: 'Align Center', priority: '3', desktopOnly: true },
   { key: 'alignRight', label: 'Align Right', priority: '3', desktopOnly: true },
@@ -121,7 +123,7 @@ export const DEFAULT_TOOLBAR_LEFT: string[] = [
   'c:copy', 'c:paste', 'r:def-1', 'b:undo', 'b:redo',
   '2!d:def-a',
   'b:fontFamily', 'b:fontSize', 'r:def-2',
-  'b:bold', 'b:italic', 'b:underline', 'b:textColor', 'b:highlightColor',
+  'b:bold', 'b:italic', 'b:underline', 'b:textColor',
   'b:alignLeft', 'b:alignCenter', 'b:alignRight', 'b:alignJustify',
   '2!d:def-b',
   'b:element',

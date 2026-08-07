@@ -380,7 +380,7 @@ export type ShelfCardType = 'comment' | 'todo' | 'snippet';
 /** Tools available in the tool docks (Photoshop-style panel lists). */
 export type ToolId =
   | 'navigator' | 'scenes' | 'pages' | 'structure' | 'locations' | 'characters'
-  | 'beatboard' | 'tags' | 'highlights' | 'projects' | 'assets' | 'markups'
+  | 'beatboard' | 'tags' | 'projects' | 'assets' | 'markups'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
   | 'spelling' | 'history' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
   | 'notebook' | 'design' | 'workspaces' | 'feedback' | 'thesaurus' | 'rewrite'
@@ -575,7 +575,6 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   markups: { side: 'right', enabled: true },
   fragments: { side: 'right', enabled: true },
   beatboard: { side: 'right', enabled: true },
-  highlights: { side: 'right', enabled: true },
   goals: { side: 'right', enabled: true },
   typewriter: { side: 'right', enabled: true },
   aiwriter: { side: 'right', enabled: true },
@@ -594,7 +593,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
  *  within each panel. 'Reset to Default' restores exactly this. */
 export const DEFAULT_TOOL_ORDER: string[] = [
   'navigator', 'scenes', 'pages', 'characters', 'locations', 'spelling', 'assets',
-  'sticky', 'markups', 'fragments', 'beatboard', 'highlights', 'goals', 'typewriter', 'aiwriter', 'thesaurus', 'rewrite', 'notebook', 'analytics',
+  'sticky', 'markups', 'fragments', 'beatboard', 'goals', 'typewriter', 'aiwriter', 'thesaurus', 'rewrite', 'notebook', 'analytics',
   'tags',
 ];
 
@@ -1210,8 +1209,6 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   restoreCustomizations: (snap: Record<string, unknown>) => void;
   /** v1.83: the CURRENT text-highlighter color — one source shared by the
    *  toolbar highlighter button and Format > Highlighting. Persisted. */
-  highlightColor: string;
-  setHighlightColor: (v: string) => void;
   /** v1.85: which goal kind the Goals window shows — lives here because the
    *  Words/Pages/Time tabs render in the window HEADER (chrome slot). */
   goalKind: 'words' | 'pages' | 'time';
@@ -1713,11 +1710,6 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     patch.toolbarZonesSet = true;
     saveViewState(patch as Partial<ViewState>);
     set(patch as Partial<EditorState>);
-  },
-  highlightColor: (_vs.highlightColor as string) ?? '#ffff00',
-  setHighlightColor: (v) => {
-    saveViewState({ highlightColor: v });
-    set({ highlightColor: v });
   },
   goalKind: 'time',
   setGoalKind: (v) => set({ goalKind: v }),

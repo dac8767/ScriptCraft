@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.09 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.10 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,23 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.10 — the Highlights tool is retired
+
+- Removed: ALL_TOOLS entry + case + chrome (ToolDock), ToolId member,
+  DEFAULT_TOOL_CONFIG/ORDER entries, Tools-menu group entry, the whole
+  Format ▸ Highlighting submenu (palette const, pick/jump helpers, the
+  hidden color input), HighlightsTool.tsx, its CSS block.
+- KEPT deliberately: the `highlight` MARK (saved scripts render); the
+  ribbon key 'highlightColor' — it doubles as the Scrapbook's v2.69
+  box-background picker, so the script case renders NULL and the
+  registry label is now "Box Background (Scrapbook)"; store
+  highlightColor state removed (the scrapbook branch is self-contained);
+  'b:highlightColor' dropped from the DEFAULT layout only (placed copies
+  keep their scrapbook function — no forced migration).
+- Probe: no dock row / Tools entry / Format submenu; legacy mark still
+  applies and renders.
+- Gates: tsc 0, 1081 tests, build, checks 594/0.
 
 ### v6.09 — Preview: Script Options + Include Annotations…
 

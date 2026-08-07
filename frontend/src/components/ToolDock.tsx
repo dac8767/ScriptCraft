@@ -21,7 +21,7 @@ import SpellCheckPanel from './SpellCheckPanel';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard,
-  FaStream, FaTags, FaHighlighter, FaBoxes, FaSpellCheck, FaHistory,
+  FaStream, FaTags, FaBoxes, FaSpellCheck, FaHistory,
   FaKeyboard, FaRobot, FaBook, FaBookOpen, FaSlidersH, FaColumns,
   FaCommentDots, FaChevronRight, FaChevronDown, FaMarker, FaMagic,
 } from 'react-icons/fa';
@@ -40,8 +40,6 @@ import GoalsTool, { GoalsHeaderExtra, useGoalTabs } from './GoalsTool';
 import CharacterProfiles, { CharTitleExtra, useCharTabs, CharControls } from './CharacterProfiles';
 import { ChromeTabs, ControlDropdown, type ToolChromeTab } from './ToolControls';
 import { StickyNotesTool, FragmentsTool, StickyTitleExtra, StickyControls, SnippetsTitleExtra } from './StickyNotes';
-import { HighlightsTitleExtra } from './HighlightsTool';
-import HighlightsTool from './HighlightsTool';
 import { DesignPanelDocked } from './DesignPanel';
 import WorkspacesTool from './WorkspacesTool';
 import FeedbackTool, { FeedbackShotControls } from './FeedbackTool';
@@ -101,7 +99,8 @@ export const ALL_TOOLS: ToolDef[] = [
   // v5.27, Derek: the tool wears a marker pen, not a flag.
   { id: 'markups', label: 'Annotations', icon: <FaMarker />, defaultSize: { w: 320, h: 420 }, group: 2 },
   { id: 'fragments', label: 'Snippets', icon: <FaRegClipboard />, defaultSize: { w: 300, h: 312 }, group: 2 },
-  { id: 'highlights', label: 'Highlights', icon: <FaHighlighter />, defaultSize: { w: 300, h: 312 }, group: 2 },
+  // v6.10: 'highlights' RETIRED — highlighting is the Annotations tool's job
+  // (the `highlight` mark stays registered so old scripts render).
   { id: 'tags', label: 'Production Tags', icon: <FaTags />, defaultSize: { w: 340, h: 336 }, group: 2 },
   // v0.94: Analytics opens FLOATING at its natural size — squeezed into a 300px
   // panel there's nothing to read. noPanelFit only changes the DEFAULT: the
@@ -352,7 +351,6 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   sticky: { TitleExtra: StickyTitleExtra, Controls: StickyControls },
   // v4.32 batch-v8 #12: Snippets + Highlights — count beside the title.
   fragments: { TitleExtra: SnippetsTitleExtra },
-  highlights: { TitleExtra: HighlightsTitleExtra },
   // v4.32 batch-v8 #11/#12: counts beside the title; their in-body title
   // rows are gone (Structure counts acts).
   // v4.94, Derek: Pages gains a header search and the two preview-scaling
@@ -540,8 +538,6 @@ export function ToolContent({ id, editor, scrollContainer, inTakeover = false }:
       return <RewriteTool editor={editor} />;
     case 'fragments':
       return <FragmentsTool editor={editor} />;
-    case 'highlights':
-      return <HighlightsTool editor={editor} scrollContainer={scrollContainer ?? null} />;
     case 'tags':
       return <TagsPanel editor={editor} embedded />;
     case 'beatboard':
