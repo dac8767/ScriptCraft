@@ -99,6 +99,13 @@ export default function ThesaurusTool({ editor }: { editor: Editor | null }) {
     };
     editor.on('selectionUpdate', sync);
     editor.on('update', sync);
+    /* v6.19, Derek: "if I already have a word highlighted, and then I open
+       the thesaurus tool, it should open with the thesaurus info for that
+       word." The listeners above only fire on LATER selection changes — run
+       one sync now so the selection the tool opened over is looked up too
+       (this also covers the data file finishing its load after mount, since
+       the effect re-runs when `api` lands). */
+    sync();
     return () => {
       window.clearTimeout(t);
       editor.off('selectionUpdate', sync);

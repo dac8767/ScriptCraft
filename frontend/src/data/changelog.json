@@ -1,5 +1,13 @@
 [
   {
+    "version": "6.19",
+    "date": "2026-08-07",
+    "changes": [
+      "Thesaurus: opening the tool with a word already highlighted looks that word up right away — no more open-first, select-after. The editor's right-click menu also gained a Thesaurus entry, customizable like every other context-menu item.",
+      "Analytics: the Overview / Scenes / Dialogue / Gender tabs moved into the window header, like every other tabbed window."
+    ]
+  },
+  {
     "version": "6.18",
     "date": "2026-08-07",
     "changes": [

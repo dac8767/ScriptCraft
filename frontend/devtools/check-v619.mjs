@@ -55,7 +55,10 @@ try {
   await page.waitForSelector('.script-context-menu');
   const items = await page.$$eval('.script-context-menu .ctx-item', (els) => els.map((e) => e.textContent.trim()));
   ok(items.includes('Thesaurus'), `context menu lists Thesaurus (${items.length} items)`);
-  await page.click('.script-context-menu .ctx-item:text-is("Thesaurus")');
+  /* :text-is on .ctx-item never matches — the label sits in a nested <span>
+     and Playwright attributes exact-text to the DEEPEST element. Target the
+     span; the click bubbles to the item's onClick. */
+  await page.click('.script-context-menu .ctx-item span:text-is("Thesaurus")');
   await page.waitForSelector('.thesaurus-tool');
   await page.waitForSelector('.thes-sense', { timeout: 6000 });
   const input2 = await page.$eval('.thes-input', (el) => el.value);

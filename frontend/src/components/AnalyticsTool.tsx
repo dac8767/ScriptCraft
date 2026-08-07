@@ -7,11 +7,16 @@
  * plus the ScriptCraft assignment table (parity bars, two-plus-female-speakers
  * count; assignments write to Character Profiles).
  *
- * Tab filtering works via the data-sec attribute each statistics section
- * carries — the active tab shows only its sections (CSS attribute match).
+ * v6.19, Derek: the tabs render in the WINDOW HEADER (the shared chrome
+ * slot, like Goals/Characters), so the active tab lives in the store
+ * (analyticsTab) and useAnalyticsTabs feeds TOOL_CHROME — the body only
+ * filters its sections. Tab filtering works via the data-sec attribute each
+ * statistics section carries — the active tab shows only its sections (CSS
+ * attribute match).
  */
-import { useState } from 'react';
 import type { Editor } from '@tiptap/react';
+import { useEditorStore } from '../stores/editorStore';
+import type { ToolChromeTab } from './ToolControls';
 import ScriptStatistics from './ScriptStatistics';
 import GenderAnalysisTool from './GenderAnalysisTool';
 
@@ -22,24 +27,26 @@ const TABS = [
   ['gender', 'Gender'],
 ] as const;
 
-type AnalyticsTab = typeof TABS[number][0];
+/** Header tabs for the Analytics window (TOOL_CHROME.useTabs). */
+export function useAnalyticsTabs(): ToolChromeTab[] {
+  const tab = useEditorStore((s) => s.analyticsTab);
+  const setTab = useEditorStore((s) => s.setAnalyticsTab);
+  return TABS.map(([key, label]) => ({
+    label,
+    active: tab === key,
+    onSelect: () => setTab(key),
+  }));
+}
 
 interface AnalyticsToolProps {
   editor: Editor | null;
 }
 
 export default function AnalyticsTool({ editor }: AnalyticsToolProps) {
-  const [tab, setTab] = useState<AnalyticsTab>('overview');
+  const tab = useEditorStore((s) => s.analyticsTab);
 
   return (
     <div className="fs-analytics">
-      <div className="fs-analytics-tabs">
-        {TABS.map(([key, label]) => (
-          <button key={key} className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>
-            {label}
-          </button>
-        ))}
-      </div>
       {editor ? (
         <div className="fs-analytics-stats" data-show={tab}>
           <ScriptStatistics editor={editor} embedded />

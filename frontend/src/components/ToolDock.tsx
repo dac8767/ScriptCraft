@@ -35,7 +35,7 @@ import { useProjectStore } from '../stores/projectStore';
 import SceneNavigator, { SceneTitleExtra, SceneControls, PagesTitleExtra, PagesControls, usePagesTabs, LocationsTitleExtra, LocationsControls, StructureTitleExtra, visibleLocations, groupByLocation, type NavTab } from './SceneNavigator';
 import LocationMapRail from './LocationMapRail';
 import NavigatorTool, { NavigatorControls } from './NavigatorTool';
-import AnalyticsTool from './AnalyticsTool';
+import AnalyticsTool, { useAnalyticsTabs } from './AnalyticsTool';
 import GoalsTool, { useGoalTabs } from './GoalsTool';
 import CharacterProfiles, { CharTitleExtra, useCharTabs, CharControls } from './CharacterProfiles';
 import { ChromeTabs, ControlDropdown, type ToolChromeTab } from './ToolControls';
@@ -387,6 +387,8 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   // other window's. (v6.15: the ? helper is gone — the window explains
   // itself; the header carries tabs only.)
   goals: { useTabs: useGoalTabs },
+  // v6.19, Derek: the Analytics tab options ride the window header too.
+  analytics: { useTabs: useAnalyticsTabs },
   notebook: { Controls: NotebookHeaderExtra },   // v2.05: declutter + create buttons
   rewrite: { Controls: RewriteHeaderControls },  // v5.60: the same declutter eye
   typewriter: { Controls: FocusHeaderControls }, // v5.66: the "?" in the header

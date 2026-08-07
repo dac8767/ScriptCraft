@@ -55,6 +55,7 @@ export const CONTEXT_MENU_SECTIONS: { id: string; label: string; group: ContextM
   // v5.26: label renamed with the tool (the id is a persisted menu-order key).
   { id: 'markupScript', label: 'Add Annotation', group: 'Insert' },
   { id: 'tagAs', label: 'Tag as…', group: 'Context Menu' },
+  { id: 'thesaurus', label: 'Thesaurus', group: 'Tools' },
   { id: 'spelling', label: 'Spelling Tools', group: 'Context Menu' },
 ];
 
@@ -787,6 +788,15 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
           }}>
             <span>Move to Snippets</span>
           </div></>) : null,
+    /* v6.19, Derek: open the Thesaurus over the current selection — the
+       tool's mount sync looks the word up (caret-word counts too, same rule
+       as its follow-the-script behavior). */
+    thesaurus: (<><div className="ctx-item" onClick={() => {
+            useEditorStore.getState().openTool('thesaurus');
+            onClose();
+          }}>
+            <span>Thesaurus</span>
+          </div></>),
     insertSection: (<><div className="ctx-item" onClick={() => {
         editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '# ' }] }).run();
         onClose();

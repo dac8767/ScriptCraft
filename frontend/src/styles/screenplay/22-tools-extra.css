@@ -97,29 +97,8 @@
   flex: 1;
   min-height: 0;
 }
-/* v4.35 batch-v9 #6: the Goals-style segmented look, app-wide. */
-.fs-analytics-tabs {
-  display: inline-flex;
-  align-self: flex-start;
-  margin: 8px 10px;
-  border: 1px solid var(--fd-border);
-  border-radius: 5px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.fs-analytics-tabs button {
-  background: none;
-  border: none;
-  color: var(--fd-text-muted);
-  font-size: 11.5px;
-  font-weight: 600;
-  padding: 5px 12px;
-  cursor: pointer;
-}
-.fs-analytics-tabs button.active {
-  background: var(--fd-accent, #4a90d9);
-  color: #fff;
-}
+/* v6.19: the Analytics tab strip left the body for the window header
+   (TOOL_CHROME useTabs) — the old .fs-analytics-tabs styles went with it. */
 .fs-analytics-stats {
   flex: 1;
   min-height: 0;

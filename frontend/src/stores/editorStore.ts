@@ -1223,6 +1223,10 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   goalShowIn: 'toolbar' | 'footer';
   setGoalShowIn: (v: 'toolbar' | 'footer') => void;
   setGoalKind: (v: 'words' | 'pages' | 'time') => void;
+  /** v6.19, Derek: the Analytics tabs render in the window HEADER (chrome
+   *  slot), so the active tab lives here like goalKind — session memory. */
+  analyticsTab: 'overview' | 'scenes' | 'dialogue' | 'gender';
+  setAnalyticsTab: (v: 'overview' | 'scenes' | 'dialogue' | 'gender') => void;
   preferencesRequest: { open: boolean; tab?: 'saveloc' | 'keys' };
   openPreferences: (tab?: 'saveloc' | 'keys') => void;
   closePreferences: () => void;
@@ -1733,6 +1737,8 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   },
   goalKind: 'time',
   setGoalKind: (v) => set({ goalKind: v }),
+  analyticsTab: 'overview',
+  setAnalyticsTab: (v) => set({ analyticsTab: v }),
   goalShowIn: (_vs.goalShowIn as 'toolbar' | 'footer') ?? 'footer',
   setGoalShowIn: (v) => { saveViewState({ goalShowIn: v }); set({ goalShowIn: v }); },
   preferencesRequest: { open: false },

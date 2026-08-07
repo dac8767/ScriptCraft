@@ -151,7 +151,26 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.13 and older (newest first)
+## Version history — v6.14 and older (newest first)
+
+### v6.14 — Derek's menu reorganization
+
+- Bar: File · Edit · View · Format · Project · Tools · Production · Help
+  (Insert REMOVED; Production un-merged from Project — the v3.24 merge
+  undone). PROJECT_MENU_GROUPS/TOOL_MENU_GROUPS now hold his exact
+  orders; Project tail = Set Draft Number… / Title Page / Custom Page…;
+  Tools tail = the S&G submenu (moved from Project) + Thesaurus.
+  Production = Revision Mode / Production Tags / Lock Scene Numbers /
+  Lock Pages(unreleased-gated). Edit tail = Insert Image… + Insert
+  Element (the ex-Insert Element submenu, renamed; Customize Elements…
+  rides inside). View leads with Customize… again (v4.86 removed it;
+  Derek asked it back — the v6.02 remembered-tab door). Action Rewrite
+  ('rewrite') moved into Help ▸ Developer; menu items for
+  thesaurus/rewrite pull icon+label from ALL_TOOLS (no second registry).
+- checks: v540 walks Project ▸ Custom Page…; v554 asserts Developer ▸
+  Action Rewrite.
+- Gates: tsc 0, 1081 tests, build, checks 594/0.
+
 
 ### v6.13 — Characters polish: flat list rows, quieter cards, List first
 

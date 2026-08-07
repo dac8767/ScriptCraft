@@ -16,9 +16,12 @@ try {
     return JSON.stringify({ temp: s.tempTool, mode: s.toolMode.analytics ?? null });
   }));
 
-  // drag the window header onto the RIGHT panel
-  const head = await page.$eval('.tool-window .tool-window-header', (el) => {
-    const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + 10 };
+  // drag the window header onto the RIGHT panel. Grab the TITLE, not the
+  // header's center — v6.19 put the Overview/Scenes/Dialogue/Gender tabs in
+  // the header, and a mousedown on a tab BUTTON is a click, not a drag
+  // (same as any real user: you drag by the title or empty header).
+  const head = await page.$eval('.tool-window .tool-window-title', (el) => {
+    const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   });
   const dock = await page.$eval('.tool-dock-wrap.tool-dock-right', (el) => {
     const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 };

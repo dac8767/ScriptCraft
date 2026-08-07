@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.18 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.19 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,41 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.19 — Thesaurus over the selection + context-menu entry; Analytics header tabs
+
+- Derek (two asks, one ship): (1) "if I already have a word highlighted,
+  and then I open the thesaurus tool, it should open with the thesaurus
+  info for that word … Add thesaurus as an option in the context menu."
+  (2) "move the analytics tab options into the header of the analytics
+  window."
+- Thesaurus: the follow-the-script effect only listened for
+  selectionUpdate/update — the selection the tool OPENED OVER was never
+  looked up. One `sync()` at effect setup fixes it (and covers the data
+  file finishing after mount, since the effect re-runs when `api`
+  lands). Context menu: registry entry `{ id: 'thesaurus', label:
+  'Thesaurus', group: 'Tools' }` + a section that `openTool('thesaurus')`s
+  — ContextMenuTab picks it up automatically (registry-driven).
+- Analytics: `analyticsTab` + setter in editorStore (session memory,
+  like goalKind — NOT persisted), `useAnalyticsTabs()` exported from
+  AnalyticsTool, `analytics: { useTabs: useAnalyticsTabs }` in
+  TOOL_CHROME. The in-body `.fs-analytics-tabs` strip and its CSS are
+  GONE (22-tools-extra.css). Narrow windows collapse the header tabs
+  into the dropdown via the v6.16 machinery.
+- Check-writing traps hit (both selector semantics): Playwright
+  `:text-is` attributes exact-text to the DEEPEST element — a
+  span-wrapped label (`.ctx-item > span`) never matches on the parent,
+  target the span. And header tab buttons are `.tool-chrome-tab`, not
+  `.chrome-tab`.
+- FALLOUT: check-v606 grabbed the analytics header's CENTER to drag it
+  onto a panel — the new tabs sit there now, and a mousedown on a tab
+  button is a click, not a drag (5 asserts red). The check grabs
+  `.tool-window-title` instead, which is also what a real user drags.
+  Any future header-drag check: grab the title, never the center.
+- checks: check-v619 (4 — mount lookup, definitions, menu item, menu
+  open looks up too), check-v619-analytics (4 — four header tabs, no
+  body strip, tab click drives data-show, active mark).
+- Gates: tsc 0, 1084 tests, build, checks 621/0 (+8).
+
 ### v6.18 — paste fills the active element: action is the schema's fallback
 
 - Derek: pasting with an action active "adds it below the action element,
@@ -328,29 +363,12 @@ Durable bits kept live here:
   The token is filtered from the live list unless the Scrapbook is open.
 - Gates: tsc 0, 1080 tests, build, checks 594/0.
 
-### v6.14 — Derek's menu reorganization
-
-- Bar: File · Edit · View · Format · Project · Tools · Production · Help
-  (Insert REMOVED; Production un-merged from Project — the v3.24 merge
-  undone). PROJECT_MENU_GROUPS/TOOL_MENU_GROUPS now hold his exact
-  orders; Project tail = Set Draft Number… / Title Page / Custom Page…;
-  Tools tail = the S&G submenu (moved from Project) + Thesaurus.
-  Production = Revision Mode / Production Tags / Lock Scene Numbers /
-  Lock Pages(unreleased-gated). Edit tail = Insert Image… + Insert
-  Element (the ex-Insert Element submenu, renamed; Customize Elements…
-  rides inside). View leads with Customize… again (v4.86 removed it;
-  Derek asked it back — the v6.02 remembered-tab door). Action Rewrite
-  ('rewrite') moved into Help ▸ Developer; menu items for
-  thesaurus/rewrite pull icon+label from ALL_TOOLS (no second registry).
-- checks: v540 walks Project ▸ Custom Page…; v554 asserts Developer ▸
-  Action Rewrite.
-- Gates: tsc 0, 1081 tests, build, checks 594/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.14** — Derek's menu reorganization
 - **v6.13** — Characters polish: flat list rows, quieter cards, List first
 - **v6.12** — Characters header: Filter everywhere, Sort+Search on Relationships
 - **v6.11** — the Characters list is the shared table
