@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.17",
+    "date": "2026-08-07",
+    "changes": [
+      "Fixed: dragging a snippet into the script pasted its internal id — a UUID — instead of its words. The drag now carries the snippet's text, line breaks intact, and the card stays on its shelf. A note card dragged into the script arrives as its readable text too."
+    ]
+  },
+  {
     "version": "6.16",
     "date": "2026-08-07",
     "changes": [

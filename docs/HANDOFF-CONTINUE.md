@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.16 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.17 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,29 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.17 — a dragged snippet drops its TEXT into the script
+
+- Derek: dragging a snippet into the script inserted
+  "0d855902-f95d-4227-b7ce-39e146b8f1e5". The card grip's text/plain
+  payload had been the card's UUID since v5.24 — set ONLY to satisfy
+  WebKit's no-data-no-drag rule — and text/plain is exactly what
+  ProseMirror pastes on an external drop. Nothing ever read the id
+  (reorder tracks `dragId` in React state; NotebookTool's readers match
+  their own ids and no-op on anything else), so the payload was free.
+- `cardDragText(card)` (StickyCard.tsx, exported): snippets carry
+  `card.text` VERBATIM (multi-line survives, \n → blocks on drop);
+  notes flatten their rich HTML via the shared stripHtml; empty text
+  falls back to a single space so WebKit still starts the drag. The
+  card SURVIVES the drop (copy, not move).
+- Tests: StickyCard.dragText.test.tsx (4 — payload rules; NOTE the
+  repo runs vitest 4, where environmentMatchGlobs is dead config: a
+  jsdom component test MUST carry `// @vitest-environment jsdom` as its
+  first line, which every existing .test.tsx already does). check-v617
+  (6) runs the REAL handlers: dragstart on the grip with a fresh
+  DataTransfer, the app writes its payload, the same DataTransfer rides
+  a drop onto .ProseMirror — text lands, both lines, no UUID, card kept.
+- Gates: tsc 0, 1084 tests, build, checks 606/0 (+6: check-v617).
+
 ### v6.16 — collapsed tabs expand back; Working Notes menu gone
 
 - Derek: "if the window size is expanded to a point where all of the tabs
@@ -309,28 +332,12 @@ Durable bits kept live here:
   stored default view).
 - Gates: tsc 0, 1081 tests, build, checks 594/0.
 
-### v6.12 — Characters header: Filter everywhere, Sort+Search on Relationships
-
-- Profiles Filter (multi-toggle ControlDropdown, keepOpen): In script
-  only / With an image / With a description — applied in the
-  allCharacters memo. Store: charFilterInScript/HasImage/HasDesc
-  (persisted), setCharFilter.
-- Relationships: Filter by rel.type (dynamic list from the data + All
-  types), Sort character|type (persisted relSort), Search REUSES
-  charSearchQuery (one box, matches either endpoint). ONE processed
-  array (visibleRelationships memo in CharacterProfiles) feeds the tab —
-  list AND map. Creation writes the unfiltered store.
-- Both tabs hold the View/Filter/Sort/Search order (data-ctl guard
-  passes). Pre-existing quirk noted while probing: a relationship naming
-  a character with no script cue shows placeholder selects (options come
-  from script names) — untouched.
-- Gates: tsc 0, 1081 tests, build, checks 594/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.12** — Characters header: Filter everywhere, Sort+Search on Relationships
 - **v6.11** — the Characters list is the shared table
 - **v6.10** — the Highlights tool is retired
 - **v6.09** — Preview: Script Options + Include Annotations…

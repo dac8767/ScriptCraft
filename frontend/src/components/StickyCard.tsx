@@ -30,6 +30,21 @@ import { SHELF_COLORS, SHELF_DEFAULT_COLOR, useEditorStore } from '../stores/edi
 import { useNotebookStore } from '../stores/notebookStore';
 import { readableTextOn } from '../utils/palettes';
 import { migrateShelfCards } from '../utils/shelfMigrate';
+import { stripHtml } from '../utils/stripHtml';
+
+/** The drag payload for a card: its TEXT, because text/plain is what
+ *  ProseMirror pastes when a card is dropped in the script. v6.17, Derek:
+ *  dragging a snippet into the editor inserted the card's UUID — the id had
+ *  been the payload since v5.24, when setData was added only to satisfy
+ *  WebKit's won't-start-a-drag-without-data rule (CLAUDE.md §4). Nothing
+ *  reads the payload on reorder (the lists track dragId in state), so the
+ *  id was never load-bearing. Snippets carry script text verbatim
+ *  (multi-line survives); notes flatten their rich HTML; never empty, or
+ *  WebKit refuses the drag. */
+export function cardDragText(card: ShelfCard): string {
+  const text = card.type === 'snippet' ? (card.text || '') : stripHtml(card.text || '');
+  return text || ' ';
+}
 
 /** Shared date formatter for card headers. */
 export const formatDate = (iso: string) => {
@@ -232,7 +247,7 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
           // pass bare closures, and WebKit refuses to START a drag without
           // dataTransfer data (the house footgun, CLAUDE.md §4) — so the
           // grip sets its own payload; no caller can forget it again.
-          e.dataTransfer.setData('text/plain', card.id);
+          e.dataTransfer.setData('text/plain', cardDragText(card));
           e.dataTransfer.effectAllowed = 'move';
           onDragStart(e);
         }}
