@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.26",
+    "date": "2026-08-07",
+    "changes": [
+      "Title Page: the Contact field is four rows tall — room for name, agency, email and phone without scrolling."
+    ]
+  },
+  {
     "version": "6.25",
     "date": "2026-08-07",
     "changes": [

@@ -570,7 +570,7 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
                 value={data.tpContact}
                 onChange={(e) => setField('tpContact', e.target.value)}
                 placeholder="Name\nAgency\nemail@example.com\n(310) 555-0100"
-                rows={3}
+                rows={4}
               />
             </div>
             )}

@@ -151,7 +151,23 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.20 and older (newest first)
+## Version history — v6.21 and older (newest first)
+
+### v6.21 — Goals: the current total on the Reach rows; one-row footer; Header/Footer
+
+- Derek (items 1–4): the Reach word/page rows carry the script's
+  CURRENT total right-aligned (`.fs-goal-nowcount`, margin-left auto,
+  tabular-nums — reads `current`, the same source the explainer line
+  uses); the footer is ONE row (flex row space-between; the Vomit
+  caption tightened to "Vomit Draft Mode", its full sentence is now the
+  label's hover text — which the Helper Text editor can edit); the
+  placement toggle reads Header / Footer — the STORED value keeps the
+  name 'toolbar' (persisted in viewState; renaming it orphans saved
+  choices). The header chip already hugged the ribbon's right edge
+  (margin-left auto, 12px = the bar's padding) — verified, not changed.
+- check-v621 (6) pins: both tabs' totals, right alignment, one-row
+  footer, the Header|Footer labels, the chip's right-edge seat.
+
 
 ### v6.20 — the Helper Text editor (Design window)
 

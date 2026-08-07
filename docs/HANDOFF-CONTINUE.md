@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.25 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.26 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,12 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.26 — Title Page: the Contact field is 4 rows
+
+- Derek: one-liner — the tpContact textarea in TitlePageEditor grew
+  rows 3 → 4 (matches its own four-line placeholder). No CSS cap on
+  .props-textarea, so `rows` is the height. Probe-verified live (74px).
+
 ### v6.25 — Goals spacing: the phantom row was DOUBLE bottom padding
 
 - Derek: space below Start/Stop; space before Quick start; "there is a
@@ -329,26 +335,12 @@ Durable bits kept live here:
 - Gates: tsc 0, 1090 tests, build, checks 641/0 (shared run with
   v6.21: +6 check-v621, +3 net as check-v620 grew 6→9).
 
-### v6.21 — Goals: the current total on the Reach rows; one-row footer; Header/Footer
-
-- Derek (items 1–4): the Reach word/page rows carry the script's
-  CURRENT total right-aligned (`.fs-goal-nowcount`, margin-left auto,
-  tabular-nums — reads `current`, the same source the explainer line
-  uses); the footer is ONE row (flex row space-between; the Vomit
-  caption tightened to "Vomit Draft Mode", its full sentence is now the
-  label's hover text — which the Helper Text editor can edit); the
-  placement toggle reads Header / Footer — the STORED value keeps the
-  name 'toolbar' (persisted in viewState; renaming it orphans saved
-  choices). The header chip already hugged the ribbon's right edge
-  (margin-left auto, 12px = the bar's padding) — verified, not changed.
-- check-v621 (6) pins: both tabs' totals, right alignment, one-row
-  footer, the Header|Footer labels, the chip's right-edge seat.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.21** — Goals: the current total on the Reach rows; one-row footer; Header/Footer
 - **v6.20** — the Helper Text editor (Design window)
 - **v6.19** — Thesaurus over the selection + context-menu entry; Analytics header tabs
 - **v6.18** — paste fills the active element: action is the schema's fallback
