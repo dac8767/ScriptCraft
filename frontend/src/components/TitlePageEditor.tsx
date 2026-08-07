@@ -569,7 +569,10 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
                 className="props-textarea"
                 value={data.tpContact}
                 onChange={(e) => setField('tpContact', e.target.value)}
-                placeholder="Name\nAgency\nemail@example.com\n(310) 555-0100"
+                // eslint-disable-next-line -- a JS string, not a JSX attr
+                // literal: attr strings keep the backslash, so the ghost text
+                // showed a literal \n (v6.27)
+                placeholder={'Name\nAgency\nemail@example.com\n(310) 555-0100'}
                 rows={4}
               />
             </div>

@@ -151,7 +151,38 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.21 and older (newest first)
+## Version history — v6.22 and older (newest first)
+
+### v6.22 — Helper Text: its own window, with the control's face on every row
+
+- Derek (items 5–7 of the batch): rows must show WHICH control they
+  belong to; the section leaves the Design window for its OWN window
+  under Help ▸ Developer; every row shows at once (no cap).
+- Window: `HelperTextWindow.tsx` — dz-panel shell (drag by header,
+  EdgeResizeZones, portal), own search + kind chips, ALL rows.
+  Store flag `helperTextWindowOpen` (designSlice, session-only).
+  Menu: Help ▸ Developer ▸ Helper Text… (FaRegEdit). DesignPanel lost
+  the group, its filter plumbing and the 'helper-text' collapsed id.
+- Row context: the generator captures, per tooltip site, the control's
+  ICON component (`<Fa…/<Lu…` — the two packs in use) and/or first
+  visible TEXT child from the JSX after the attribute; entries carry
+  `icon`/`label`, files stay in `where`. Icons render through the
+  GENERATED `src/data/helperTextIcons.ts` (imports exactly the named
+  icons — tree-shaking stays honest; regenerated with the catalog).
+  388 strings, ~150 with icon/label context; the rest show their source
+  file's name. TRAP fixed in the scan: a bare `\b` after the icon-name
+  regex also matched the END of the sliced window and minted truncated
+  names (FaDotCi, FaR) — the terminator `[\s/>]` is required.
+- check-v620 re-pointed at the window (9): menu path opens it — EXACT
+  item text there, the Developer parent row's textContent contains the
+  whole nested submenu so a substring match clicks the parent — 388
+  rows, no cap note, 91 icons, group gone from Design, live tooltip/
+  hint overrides, reset, persistence. check-helper-catalog still guards
+  drift (regen: node devtools/build-helper-catalog.mjs — writes BOTH
+  files now).
+- Gates: tsc 0, 1090 tests, build, checks 641/0 (shared run with
+  v6.21: +6 check-v621, +3 net as check-v620 grew 6→9).
+
 
 ### v6.21 — Goals: the current total on the Reach rows; one-row footer; Header/Footer
 

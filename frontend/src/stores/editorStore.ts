@@ -532,6 +532,13 @@ function migrateNotebookInline(
 
 /** Tools that never dock — they always open as a floating window. */
 export const ALWAYS_FLOAT: ToolId[] = ['analytics'];
+/** Tools that never render in a dock — they open as their own windows.
+ *  ONE list (v6.27: moved here from ToolDock so openTool asks the SAME
+ *  question the dock answers — it used to seat these in a panel slot the
+ *  dock refuses to render: File > Asset Manager was a silent no-op, and the
+ *  invisible slot made the NEXT click a toggle-closed no-op too). Read by
+ *  the dock, Customize > Side Panels, and openTool. */
+export const PANEL_EXCLUDED_IDS: ToolId[] = ['assets', 'spelling'];
 
 /** v4.35: tools with NO fullscreen button — the Scrapbook (its surface IS a
  *  forced takeover). v4.81: moved here from ToolDock so openTool's
@@ -1866,6 +1873,15 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
      * Now the menu opens a tool wherever it actually lives: docked if it's in a
      * panel, floating only if it isn't.
      */
+    // v6.27: panel-excluded tools NEVER seat in a slot — they are windows.
+    // Clear any stale slot a pre-fix click left behind (it was invisible,
+    // and isToolOpen counted it, turning the next open into a toggle-close).
+    if (PANEL_EXCLUDED_IDS.includes(tool)) {
+      const patch: Partial<EditorState> = { ...closeOtherFloats(s, tool), tempTool: tool };
+      if (s.activeTool === tool) { patch.activeTool = null; saveViewState({ activeTool: null }); }
+      if (s.activeToolRight === tool) { patch.activeToolRight = null; saveViewState({ activeToolRight: null }); }
+      return patch;
+    }
     const cfg = toolConfigFor(s.toolConfig, tool);
     if (cfg && cfg.enabled) {
       const left = cfg.side === 'left';

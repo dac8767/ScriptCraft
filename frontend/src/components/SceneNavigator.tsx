@@ -695,7 +695,9 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
   useEffect(() => {
     if (activeTab !== 'pages' || pagesTab !== 'title' || !tpHostRef.current) return;
     const host = tpHostRef.current;
-    const decide = () => setTpNarrow(host.clientWidth > 0 && host.clientWidth < 560);
+    /* v6.27: the form column has a real 400px floor now — below 700 the
+       side-by-side preview would be a sliver, so stack sooner. */
+    const decide = () => setTpNarrow(host.clientWidth > 0 && host.clientWidth < 700);
     decide();
     if (typeof ResizeObserver === 'undefined') return;   // jsdom
     const ro = new ResizeObserver(decide);

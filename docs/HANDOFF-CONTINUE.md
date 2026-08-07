@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.26 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.27 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,34 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.27 — Title tab scales with its window; Asset Manager menu no-op
+
+- Derek (two reports): (1) "the title page tool does not scale with the
+  title page window … the info column also has a scroll bar." (2)
+  "nothing happens when clicking Asset Manager in the File menu."
+- Title tab: NOTHING overrode the modal's `width: min(780px, 96vw)` in
+  the Pages tab, so a big window framed a capped box in grey.
+  `.fs-modal-as-panel .tp-editor-dialog` now fills the host (dialog
+  chrome stripped — the window frame is the chrome). Columns:
+  `minmax(400px,460px) minmax(0,1fr)` — the form fits its fields, the
+  preview takes the rest and its Fit zoom re-scales (the ResizeObserver
+  was already there). The h-scrollbar's cause: BARE `1fr` field tracks
+  keep min-content floors (a date input, a long placeholder) —
+  `minmax(0,1fr)` lets fields shrink. Narrow hosts stack at <700 (was
+  560; the form's new floor would have left a sliver preview between).
+  BONUS: the Contact placeholder showed a literal \n — JSX ATTRIBUTE
+  strings keep the backslash; it is a JS-string expression now.
+- Asset Manager: openTool seated panel-EXCLUDED tools in a panel slot
+  the dock refuses to render — invisible, and isToolOpen counted the
+  stale slot so the NEXT click toggle-closed nothing. Exactly the
+  two-sources bug openTool's own v1.10 comment warns about.
+  PANEL_EXCLUDED_IDS ('assets','spelling') LIVES IN editorStore now
+  (ToolDock imports + re-exports); openTool floats excluded tools as
+  windows and clears any stale slot. Spelling shared the bug (Tools ▸
+  Spelling & Grammar ▸ Spell Check Panel).
+- check-v627 (8) pins all of it. Gates: tsc 0, 1091 tests, build,
+  checks 668/0.
+
 ### v6.26 — Title Page: the Contact field is 4 rows
 
 - Derek: one-liner — the tpContact textarea in TitlePageEditor grew
@@ -305,41 +333,12 @@ Durable bits kept live here:
   current total before asserting Start→Stop. check-v621 (12) pins the
   whole shape.
 
-### v6.22 — Helper Text: its own window, with the control's face on every row
-
-- Derek (items 5–7 of the batch): rows must show WHICH control they
-  belong to; the section leaves the Design window for its OWN window
-  under Help ▸ Developer; every row shows at once (no cap).
-- Window: `HelperTextWindow.tsx` — dz-panel shell (drag by header,
-  EdgeResizeZones, portal), own search + kind chips, ALL rows.
-  Store flag `helperTextWindowOpen` (designSlice, session-only).
-  Menu: Help ▸ Developer ▸ Helper Text… (FaRegEdit). DesignPanel lost
-  the group, its filter plumbing and the 'helper-text' collapsed id.
-- Row context: the generator captures, per tooltip site, the control's
-  ICON component (`<Fa…/<Lu…` — the two packs in use) and/or first
-  visible TEXT child from the JSX after the attribute; entries carry
-  `icon`/`label`, files stay in `where`. Icons render through the
-  GENERATED `src/data/helperTextIcons.ts` (imports exactly the named
-  icons — tree-shaking stays honest; regenerated with the catalog).
-  388 strings, ~150 with icon/label context; the rest show their source
-  file's name. TRAP fixed in the scan: a bare `\b` after the icon-name
-  regex also matched the END of the sliced window and minted truncated
-  names (FaDotCi, FaR) — the terminator `[\s/>]` is required.
-- check-v620 re-pointed at the window (9): menu path opens it — EXACT
-  item text there, the Developer parent row's textContent contains the
-  whole nested submenu so a substring match clicks the parent — 388
-  rows, no cap note, 91 icons, group gone from Design, live tooltip/
-  hint overrides, reset, persistence. check-helper-catalog still guards
-  drift (regen: node devtools/build-helper-catalog.mjs — writes BOTH
-  files now).
-- Gates: tsc 0, 1090 tests, build, checks 641/0 (shared run with
-  v6.21: +6 check-v621, +3 net as check-v620 grew 6→9).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.22** — Helper Text: its own window, with the control's face on every row
 - **v6.21** — Goals: the current total on the Reach rows; one-row footer; Header/Footer
 - **v6.20** — the Helper Text editor (Design window)
 - **v6.19** — Thesaurus over the selection + context-menu entry; Analytics header tabs

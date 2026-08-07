@@ -271,7 +271,9 @@
    scroller the hand can pan (and the preview stays fully in view while the
    form scrolls). The mobile stack below reverts to one body scroller. */
 .tp-editor-body {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  /* v6.27, Derek: the info column is sized to FIT its fields (no
+     horizontal scroll bar, ever) and the preview takes everything else. */
+  display: grid; grid-template-columns: minmax(400px, 460px) minmax(0, 1fr); gap: 20px;
   padding: 16px; overflow: hidden; flex: 1; min-height: 0;
 }
 .tp-editor-body > .tp-editor-form { overflow-y: auto; min-height: 0; }
@@ -280,7 +282,9 @@
    edge — give the row real padding all round. */
 .tp-editor-dialog .dialog-actions { padding: 12px 16px 16px; }
 .tp-editor-form {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;
+  /* v6.27: minmax(0,1fr) - bare 1fr keeps min-content floors (a date
+     input, a long placeholder) that overflowed the column sideways. */
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 16px;
   align-content: start;
 }
 /* Title / Title Line 2 each share their row with their point-size select: the
@@ -367,6 +371,15 @@
 /* Docked/floating tool window: the frame's own header already says
    "Title Page" — the embedded dialog's caption row would say it twice. */
 .fs-modal-as-panel .tp-editor-dialog > .dialog-header { display: none; }
+/* v6.27, Derek ("the title page tool does not scale with the window"): in
+   the Pages tab the editor FILLS the host - the modal's 780px cap and its
+   dialog chrome belong to the modal only. The preview column takes the
+   extra room and its Fit zoom re-scales with it (ResizeObserver). */
+.fs-modal-as-panel .tp-editor-dialog {
+  width: 100%; height: 100%;
+  max-width: none; max-height: none;
+  border: none; border-radius: 0; box-shadow: none; background: transparent;
+}
 
 /* Title Page dialog — mobile: stack form above preview, single-column fields,
    so it fits the screen without horizontal scroll. */

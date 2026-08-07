@@ -1,5 +1,13 @@
 [
   {
+    "version": "6.27",
+    "date": "2026-08-07",
+    "changes": [
+      "Title Page: the editor scales with the Pages window now — the form column is sized to fit its fields (no more horizontal scroll bar), the preview takes all the remaining room and re-fits as you resize, and narrow windows stack the two columns. The Contact field's ghost text also shows its four example lines properly instead of literal \\n.",
+      "Fixed: File ▸ Asset Manager did nothing. It was being seated in a side-panel slot that panels refuse to render — invisible, and the leftover slot made the next click a silent no-op too. It opens as its own window now, as does Tools ▸ Spelling & Grammar ▸ Spell Check Panel, which shared the bug."
+    ]
+  },
+  {
     "version": "6.26",
     "date": "2026-08-07",
     "changes": [

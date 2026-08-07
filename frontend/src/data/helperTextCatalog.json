@@ -3075,15 +3075,6 @@
   ]
  },
  {
-  "text": "Name\\nAgency\\nemail@example.com\\n(310) 555-0100",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Editor & Preview",
-  "where": [
-   "components/TitlePageEditor.tsx"
-  ]
- },
- {
   "text": "New dictionary",
   "kind": "placeholder",
   "sites": 1,

@@ -483,8 +483,11 @@ export function ToolFullscreenTakeover({ editor, scrollContainer }: {
 
 /** v3.73, Derek: tools that are NOT offered as side-panel tools and never
  *  render in a dock — they open from the Tools menu / as their own windows.
- *  ONE list, read by the dock AND Customize > Side Panels. */
-export const PANEL_EXCLUDED_IDS: ToolId[] = ['assets', 'spelling'];
+ *  ONE list, read by the dock AND Customize > Side Panels — and, since
+ *  v6.27, by openTool: it LIVES in editorStore now (re-exported here for
+ *  the existing importers). */
+import { PANEL_EXCLUDED_IDS } from '../stores/editorStore';
+export { PANEL_EXCLUDED_IDS };
 
 const MIN_W = 240;
 const MIN_H = 260;
