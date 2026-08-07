@@ -570,18 +570,29 @@
   gap: var(--rib-gap, 2px);
 }
 div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; align-items: center; }
+/* v6.08, Derek: EVERY big two-row button matches exactly — same icon→label
+   distance, and the icon and label highlight TOGETHER. The wrapper wears the
+   one-block format (rib-tall-btn's padding/gap), the label is a real
+   .rib-tall-label child (the old ::after label had its own font and no hover),
+   and the wrapper is the single hover surface — the inner control's own hover
+   paint is turned off so there's never an icon-only highlight box. */
 .toolbar-priority-block.rib-tall {
   flex-direction: column;
   justify-content: center;
   gap: 3px;
+  padding: 3px 8px;
+  border-radius: 6px;
 }
-/* the item's name, drawn under whatever control the block holds */
-.toolbar-priority-block.rib-tall::after {
-  content: attr(data-riblabel);
-  font-size: 10px;
-  line-height: 1.1;
-  color: var(--fd-text);
-  white-space: nowrap;
+.toolbar-priority-block.rib-tall:hover { background: var(--fd-overlay-light); }
+.toolbar-priority-block.rib-tall .toolbar-btn:hover { background: transparent; border-color: transparent; }
+/* Inside a big button the inner control is the ICON ZONE — the same fixed
+   box .rib-tall-icon has, so the flex gap alone sets the icon→label distance
+   (3px, identical to the one-block buttons). */
+.toolbar-priority-block.rib-tall .toolbar-btn {
+  padding-top: 0;
+  padding-bottom: 0;
+  height: auto;
+  min-height: var(--dz-toolbar-big-icon, 26px);
 }
 .rib-single .toolbar-btn {
   width: auto;

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.07 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.08 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,23 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.08 — big ribbon buttons: one geometry, one hover box
+
+- Derek (screenshots): icon→label distance varied and some big buttons
+  hover-highlighted the icon alone. TWO SHAPES existed: one-block
+  `.rib-tall-btn` (label inside — commands/tools/customize/lock) vs
+  wrapper builtins (`.toolbar-priority-block.rib-tall`) whose label was a
+  CSS ::after (own 10px font, outside the inner button's hover box).
+- FIX: the wrapper's label is a REAL `.rib-tall-label` child now (one
+  class, one knob); the wrapper wears rib-tall-btn's padding/gap and IS
+  the hover surface (`--fd-overlay-light`), with the inner control's own
+  hover paint turned off; inner `.toolbar-btn`s lose vertical padding so
+  the icon zone = the 26px box and the 3px flex gap alone sets the
+  distance — measured equal across both shapes incl. the Font Size
+  select and popup-hosting builtins (check-v608: 3px everywhere, hover
+  box contains the label, no inner solo box).
+- Gates: tsc 0, 1081 tests, build, checks 589/0 + v608 5/0.
 
 ### v6.07 — the temp window's drag teleport
 

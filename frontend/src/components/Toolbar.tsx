@@ -1531,14 +1531,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           className={cls}
           data-key={def.key}
           {...(def.priority ? { 'data-priority': def.priority } : {})}
-          // v2.97, Derek: in a one-row section every item is a BIG BUTTON —
-          // large icon with its name underneath (drawn by CSS from this).
-          // v3.38: the `view` control already draws its own "Editor View:"
-          // caption, so the underneath label would repeat the name — skip it
-          // for any builtin that captions itself.
-          {...(tall && def.key !== 'view' ? { 'data-riblabel': riblabel } : {})}
         >
           {renderBuiltinControl(def.key, false, showPopups)}
+          {/* v2.97, Derek: in a one-row section every item is a BIG BUTTON —
+              large icon with its name underneath.
+              v3.38: the `view` control captions itself — no second label.
+              v6.08, Derek ("make sure all highlight the text and icon
+              together… match exactly"): the label is a REAL element wearing
+              the same .rib-tall-label class as the one-block buttons — the
+              old CSS ::after label had its own font rule, its own spacing,
+              and sat outside the hover surface. One class, one geometry,
+              and the whole block is the hover target (03-toolbar.css). */}
+          {tall && def.key !== 'view' && <span className="rib-tall-label">{riblabel}</span>}
         </div>
         {def.key === 'zoomIn' && (
           <div className="toolbar-group zoom-mobile-group">

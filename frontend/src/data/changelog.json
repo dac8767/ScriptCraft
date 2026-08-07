@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.08",
+    "date": "2026-08-07",
+    "changes": [
+      "The big two-row ribbon buttons all wear one exact format now: the same distance between icon and name on every button, and hovering any of them highlights the icon and name together as one block. Before, buttons built from the toolbar's built-in controls drew their name outside the button — so the hover box wrapped only the icon, and the spacing drifted from the pinned-tool buttons."
+    ]
+  },
+  {
     "version": "6.07",
     "date": "2026-08-07",
     "changes": [
