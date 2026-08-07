@@ -151,7 +151,29 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.22 and older (newest first)
+## Version history — v6.23 and older (newest first)
+
+### v6.23 — Goals: ONE Start/Stop top-left; Show in beside it; count quick starts
+
+- Derek: footer was still 2 rows (his screenshot); Start moves to the
+  BODY's top-left and becomes Stop while a goal runs; the Header/Footer
+  toggle rides that same row aligned right; quick starts for the Words
+  and Pages tabs.
+- `.fs-goal-toprow` (space-between): ONE `.fs-goal-main` button —
+  ▶ Start / ■ Stop / Dismiss (done) — Start fires the ACTIVE tab's
+  configured shape (time: for/until; count: reach/relative);
+  the per-tab .fs-goal-startrow rows are GONE. progressBlock lost its
+  stop button (one control per action); the vomit-locked branch keeps
+  its own stop below the block.
+- Quick starts (count tabs) launch RELATIVE goals from the current
+  position: words [250,500,1000,2000,5000], pages [1,2,3,5,10]
+  (baseline captured at click). The footer holds ONLY the Vomit
+  checkbox — one row by construction.
+- CHECK TRAP: a reach goal the script has already met completes
+  INSTANTLY (the button reads Dismiss, not Stop) — aim above the
+  current total before asserting Start→Stop. check-v621 (12) pins the
+  whole shape.
+
 
 ### v6.22 — Helper Text: its own window, with the control's face on every row
 

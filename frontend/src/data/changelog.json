@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.28",
+    "date": "2026-08-07",
+    "changes": [
+      "Fixed: importing a PDF failed with \"undefined is not a function (near '...value of readableStream...')\". The PDF engine's modern build assumes browser features the desktop app's WebKit doesn't have — it runs on the compatibility build now, same import, same results."
+    ]
+  },
+  {
     "version": "6.27",
     "date": "2026-08-07",
     "changes": [

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.27 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.28 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,25 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.28 — PDF import: the legacy pdf.js build for WKWebView
+
+- Derek's screenshot: "PDF import failed: undefined is not a function
+  (near '...value of readableStream...')" — that phrasing is WEBKIT's.
+  The modern pdfjs-dist build assumes engine features Tauri's WKWebView
+  lacks (ReadableStream async iteration among them). pdfImporter now
+  imports `pdfjs-dist/legacy/build/pdf.mjs` AND the legacy worker —
+  BOTH must switch together; a modern worker throws the same way off
+  the main thread. Same API, transpiled + polyfilled; types resolve
+  through the exports map (tsc clean, no shim needed).
+- The import pipeline had ZERO end-to-end coverage — how this shipped
+  unnoticed. check-v628 (4) drives parsePdfScreenplay on a hand-built
+  one-page PDF through the REAL worker: pages, text layer, screenplay
+  classification. (True WKWebView behavior is only observable on
+  Derek's Mac — the check pins the pipeline and the legacy wiring;
+  Chromium runs both builds, so green here + the documented
+  legacy-build contract is the case for the fix.)
+- Gates: tsc 0, 1091 tests, build, checks 672/0.
+
 ### v6.27 — Title tab scales with its window; Asset Manager menu no-op
 
 - Derek (two reports): (1) "the title page tool does not scale with the
@@ -312,32 +331,12 @@ Durable bits kept live here:
 - checks: check-v624 (12), check-v620 still 9 (blur-commit now).
 - Gates: tsc 0, 1091 tests, build, checks 659/0.
 
-### v6.23 — Goals: ONE Start/Stop top-left; Show in beside it; count quick starts
-
-- Derek: footer was still 2 rows (his screenshot); Start moves to the
-  BODY's top-left and becomes Stop while a goal runs; the Header/Footer
-  toggle rides that same row aligned right; quick starts for the Words
-  and Pages tabs.
-- `.fs-goal-toprow` (space-between): ONE `.fs-goal-main` button —
-  ▶ Start / ■ Stop / Dismiss (done) — Start fires the ACTIVE tab's
-  configured shape (time: for/until; count: reach/relative);
-  the per-tab .fs-goal-startrow rows are GONE. progressBlock lost its
-  stop button (one control per action); the vomit-locked branch keeps
-  its own stop below the block.
-- Quick starts (count tabs) launch RELATIVE goals from the current
-  position: words [250,500,1000,2000,5000], pages [1,2,3,5,10]
-  (baseline captured at click). The footer holds ONLY the Vomit
-  checkbox — one row by construction.
-- CHECK TRAP: a reach goal the script has already met completes
-  INSTANTLY (the button reads Dismiss, not Stop) — aim above the
-  current total before asserting Start→Stop. check-v621 (12) pins the
-  whole shape.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.23** — Goals: ONE Start/Stop top-left; Show in beside it; count quick starts
 - **v6.22** — Helper Text: its own window, with the control's face on every row
 - **v6.21** — Goals: the current total on the Reach rows; one-row footer; Header/Footer
 - **v6.20** — the Helper Text editor (Design window)

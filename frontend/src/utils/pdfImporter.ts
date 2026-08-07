@@ -15,8 +15,15 @@
  * Scanned PDFs have no text layer at all — that surfaces as a clear error,
  * not an empty script.
  */
-import * as pdfjs from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+/* v6.28, Derek ("PDF import failed: undefined is not a function (near
+   '...value of readableStream...')"): the MODERN pdf.js build assumes
+   engine features Tauri's WKWebView doesn't have (ReadableStream async
+   iteration and friends — that error text is WebKit's). The LEGACY build
+   is pdf.js's own answer for exactly these engines; same API, transpiled
+   + polyfilled. Both the main module and the worker must switch together
+   — a modern worker throws the same way off the main thread. */
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import { classifyParagraph } from './pdfClassify';
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
