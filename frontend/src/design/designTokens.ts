@@ -218,7 +218,7 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     id: 'characters',
     label: 'Characters',
     tokens: [
-      { id: 'charCardRadius', label: 'Card corner radius', cssVar: '--dz-char-card-radius', unit: 'px', min: 0, max: 20, step: 1, def: 6 },
+      { id: 'charCardRadius', label: 'Card corner radius', cssVar: '--dz-char-card-radius', unit: 'px', min: 0, max: 20, step: 1, def: 4 },
       { id: 'charCardBorder', label: 'Card outline width', cssVar: '--dz-char-card-border', unit: 'px', min: 0, max: 6, step: 1, def: 1 },
       // v4.22, Derek: spacing of the character card header's right-side items
       // (line/scene count, the % ring, the expand button).

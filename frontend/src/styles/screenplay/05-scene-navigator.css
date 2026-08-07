@@ -445,7 +445,20 @@
 }
 /* v6.11, Derek: the Characters list wears the same table. */
 .char-profiles-list .location-header { --table-name-w: var(--char-col-name, 170px); }
-.char-view-list .char-profile-card { border-radius: 0; }
+/* v6.13, Derek: list rows carry NO card box — the Scenes look exactly:
+   flat rows on the window background, a faint line between them (the same
+   --fd-overlay-subtle divider .navigator-scene draws). */
+.char-view-list .char-profile-card {
+  border: none;
+  border-bottom: 1px solid var(--fd-overlay-subtle);
+  border-radius: 0;
+  background: transparent;
+  margin-bottom: 0;
+}
+.char-view-list .char-profile-card:hover {
+  border-color: transparent;
+  border-bottom-color: var(--fd-overlay-subtle);
+}
 .location-header:hover {
   background: var(--fd-overlay-subtle);
 }

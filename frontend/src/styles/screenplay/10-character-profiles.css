@@ -369,19 +369,23 @@
    DISTINCT outline (the old --fd-border was near-invisible on the surface).
    color-mix falls back to the plain border on older WebKit. */
 .char-profile-card {
-  background: var(--fd-dropdown-bg);
+  /* v6.13, Derek: the card sits on its OWN surface — a step lighter than
+     the window background, so cards read as cards (they matched the window
+     before). The overlay var keeps it theme-aware. */
+  background: color-mix(in srgb, var(--fd-text) 5%, var(--fd-navigator-bg));
   /* v4.26: outline width + corner radius are Design knobs (the border-color
-     override below only touches color — the shorthand's var width holds). */
+     override below only touches color — the shorthand's var width holds).
+     v6.13, Derek: quieter outline — dimmer color, tighter radius default. */
   border: var(--dz-char-card-border, 1px) solid var(--fd-border);
-  border-color: color-mix(in srgb, var(--fd-text-muted) 45%, transparent);
-  border-radius: var(--dz-char-card-radius, 6px);
+  border-color: color-mix(in srgb, var(--fd-text-muted) 22%, transparent);
+  border-radius: var(--dz-char-card-radius, 4px);
   margin-bottom: 4px;
   overflow: hidden;
   transition: border-color .15s;
 }
 .char-profile-card:hover {
-  border-color: #555;
-  border-color: color-mix(in srgb, var(--fd-text-muted) 75%, transparent);
+  border-color: #444;
+  border-color: color-mix(in srgb, var(--fd-text-muted) 45%, transparent);
 }
 /* Orphaned character (removed from script) */
 .char-profile-card.char-orphaned { opacity: .7; border-color: #553333; }

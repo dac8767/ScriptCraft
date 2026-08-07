@@ -351,15 +351,16 @@
 [data-theme="light"] .beat-link-preview {
   background: rgba(0, 0, 0, 0.03);
 }
-/* Light theme: profile cards */
-[data-theme="light"] .char-profile-card {
+/* Light theme: profile cards (v6.13: CARDS view only — list rows are flat
+   Scenes-style rows on the window background in both themes) */
+[data-theme="light"] .char-view-cards .char-profile-card {
   background: #ffffff;
   /* v4.24 batch 4: distinct outline in light mode too (color-mix falls back
      to the plain border on older WebKit). */
   border-color: var(--fd-border);
   border-color: color-mix(in srgb, var(--fd-text-muted) 45%, transparent);
 }
-[data-theme="light"] .char-profile-card:hover {
+[data-theme="light"] .char-view-cards .char-profile-card:hover {
   border-color: #888;
 }
 /* Light theme: MiniRichText editor */

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.12 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.13 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,20 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.13 — Characters polish: flat list rows, quieter cards, List first
+
+- List view: `.char-view-list .char-profile-card` = no border/background,
+  ONE bottom hairline (`--fd-overlay-subtle` — the exact .navigator-scene
+  divider). The light-theme card rule scoped to `.char-view-cards`.
+- Cards: background = color-mix 5% text over navigator-bg (a lifted
+  surface — it MATCHED the window before); outline dimmed 45%→22% (hover
+  75%→45%); radius default 6→4 — and the designTokens registry default
+  moved WITH it (the token guard test caught the drift: registry and CSS
+  fallback are one source, keep them equal).
+- View menu order: List above Cards (menu order only; cards stays the
+  stored default view).
+- Gates: tsc 0, 1081 tests, build, checks 594/0.
 
 ### v6.12 — Characters header: Filter everywhere, Sort+Search on Relationships
 

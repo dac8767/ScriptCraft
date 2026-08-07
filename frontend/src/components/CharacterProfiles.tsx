@@ -149,8 +149,10 @@ export function CharControls() {
         icon={viewMode === 'cards' ? <LuLayoutGrid /> : <LuList />}
         current={viewMode === 'cards' ? 'Cards' : 'List'}
         items={[
-          { label: 'Cards', active: viewMode === 'cards', onSelect: () => setViewMode('cards') },
+          // v6.13, Derek: List leads the menu (Cards stays the default VIEW
+          // for existing writers — this is menu order only).
           { label: 'List', active: viewMode === 'list', onSelect: () => setViewMode('list') },
+          { label: 'Cards', active: viewMode === 'cards', onSelect: () => setViewMode('cards') },
         ]}
       />
       <ControlDropdown
