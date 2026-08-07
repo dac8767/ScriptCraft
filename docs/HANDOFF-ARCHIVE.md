@@ -151,7 +151,36 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.26 and older (newest first)
+## Version history — v6.27 and older (newest first)
+
+### v6.27 — Title tab scales with its window; Asset Manager menu no-op
+
+- Derek (two reports): (1) "the title page tool does not scale with the
+  title page window … the info column also has a scroll bar." (2)
+  "nothing happens when clicking Asset Manager in the File menu."
+- Title tab: NOTHING overrode the modal's `width: min(780px, 96vw)` in
+  the Pages tab, so a big window framed a capped box in grey.
+  `.fs-modal-as-panel .tp-editor-dialog` now fills the host (dialog
+  chrome stripped — the window frame is the chrome). Columns:
+  `minmax(400px,460px) minmax(0,1fr)` — the form fits its fields, the
+  preview takes the rest and its Fit zoom re-scales (the ResizeObserver
+  was already there). The h-scrollbar's cause: BARE `1fr` field tracks
+  keep min-content floors (a date input, a long placeholder) —
+  `minmax(0,1fr)` lets fields shrink. Narrow hosts stack at <700 (was
+  560; the form's new floor would have left a sliver preview between).
+  BONUS: the Contact placeholder showed a literal \n — JSX ATTRIBUTE
+  strings keep the backslash; it is a JS-string expression now.
+- Asset Manager: openTool seated panel-EXCLUDED tools in a panel slot
+  the dock refuses to render — invisible, and isToolOpen counted the
+  stale slot so the NEXT click toggle-closed nothing. Exactly the
+  two-sources bug openTool's own v1.10 comment warns about.
+  PANEL_EXCLUDED_IDS ('assets','spelling') LIVES IN editorStore now
+  (ToolDock imports + re-exports); openTool floats excluded tools as
+  windows and clears any stale slot. Spelling shared the bug (Tools ▸
+  Spelling & Grammar ▸ Spell Check Panel).
+- check-v627 (8) pins all of it. Gates: tsc 0, 1091 tests, build,
+  checks 668/0.
+
 
 ### v6.26 — Title Page: the Contact field is 4 rows
 

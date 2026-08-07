@@ -80,6 +80,11 @@ try {
   ok(at('CUT TO')?.x > 400, `exported CUT TO: right-aligned (${at('CUT TO')?.x}pt)`);
   const gap = at('FADE IN').y - at('INT. COSTUME').y;
   ok(gap === 36, `exported heading sits 2 blank lines below (${gap}pt)`);
+  // v6.32, Derek ("exports as Courier Std"): the app's own Courier Prime is
+  // EMBEDDED — its name sits in the font descriptors; builtin courier would
+  // leave viewers substituting Courier Std.
+  const bytes = readFileSync(file).toString('latin1');
+  ok(bytes.includes('CourierPrime'), 'Courier Prime is embedded in the export');
 } catch (e) {
   console.log('PROBE ERROR:', e.message);
 } finally { await browser.close(); }

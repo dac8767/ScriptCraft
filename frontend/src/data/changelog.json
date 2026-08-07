@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.32",
+  "date": "2026-08-07",
+  "changes": [
+   "Fixed: images in the Asset Manager showed a broken question mark, in the list and in the preview. The desktop app's file protocol for reading stored assets was never switched on — it is now, scoped to the app's own assets folder.",
+   "Fixed: File ▸ Print on the desktop app now saves a print-ready PDF through the normal save dialog and says so — the in-app print window can't open in the desktop shell, and the previous attempts failed silently. Exact margins and page numbers; open the file and press ⌘P.",
+   "Exports now embed Courier Prime — the same face the app shows — instead of leaving PDF viewers to substitute Courier Std. Layout and character widths are unchanged."
+  ]
+ },
+ {
   "version": "6.31",
   "date": "2026-08-07",
   "changes": [

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.31 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.32 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,34 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.32 — asset protocol ON; Tauri print = save+toast; Courier Prime embedded
+
+- Derek's three reports, root causes:
+  (a) BROKEN ASSET IMAGES ("?" in list AND viewer — so pre-dating the
+  v6.31 thumbs): local-storage builds asset:// URLs via convertFileSrc,
+  the CSP allows asset://localhost — but tauri.conf.json NEVER ENABLED
+  the protocol. `app.security.assetProtocol { enable, scope:
+  ["$APPDATA/assets/**"] }` added — config only, no Rust, scope exactly
+  the assets tree (the fs-scope caution stands). NOT verifiable in this
+  sandbox (no WKWebView) — structural fix, flagged to Derek.
+  (b) PRINT still dead on Tauri: the v6.30 iframe fallback dies
+  silently too — WKWebView doesn't render PDFs in iframes, onload fires
+  against nothing, print() shows no dialog. Tauri branch is now
+  DETERMINISTIC: isDesktopTauri() → saveFile (proven native dialog) +
+  toast saying press ⌘P. Browsers keep the real popup print. The next
+  step up needs tauri-plugin-opener (Rust dep — Derek's machine must
+  compile/test; offered, not shipped).
+  (c) "Exports as Courier Std": jsPDF's builtin 'courier' is the PDF
+  standard font — viewers substitute. The app's bundled Courier Prime
+  TTFs (all 4 weights) are EMBEDDED per export (fetch → VFS → addFont,
+  cached; builtin only as load-failure fallback). charSpace derives
+  from getTextWidth so the FD 10.33-cpi layout is unchanged.
+  check-v630 asserts CourierPrime in the export bytes (9).
+- In-app text size re-verified 12pt on a 12pt grid (check-v630); his
+  "size still not matching" was measured against a pre-pull build —
+  the v6.30 heading spacing + this font embed are the deltas.
+- Gates: tsc 0, 1092 tests, build, checks 686/0.
+
 ### v6.31 — Asset Manager: inline image thumbnails
 
 - Derek: "show a preview of the image in the asset manager" — image
@@ -313,39 +341,12 @@ Durable bits kept live here:
   legacy-build contract is the case for the fix.)
 - Gates: tsc 0, 1091 tests, build, checks 672/0.
 
-### v6.27 — Title tab scales with its window; Asset Manager menu no-op
-
-- Derek (two reports): (1) "the title page tool does not scale with the
-  title page window … the info column also has a scroll bar." (2)
-  "nothing happens when clicking Asset Manager in the File menu."
-- Title tab: NOTHING overrode the modal's `width: min(780px, 96vw)` in
-  the Pages tab, so a big window framed a capped box in grey.
-  `.fs-modal-as-panel .tp-editor-dialog` now fills the host (dialog
-  chrome stripped — the window frame is the chrome). Columns:
-  `minmax(400px,460px) minmax(0,1fr)` — the form fits its fields, the
-  preview takes the rest and its Fit zoom re-scales (the ResizeObserver
-  was already there). The h-scrollbar's cause: BARE `1fr` field tracks
-  keep min-content floors (a date input, a long placeholder) —
-  `minmax(0,1fr)` lets fields shrink. Narrow hosts stack at <700 (was
-  560; the form's new floor would have left a sliver preview between).
-  BONUS: the Contact placeholder showed a literal \n — JSX ATTRIBUTE
-  strings keep the backslash; it is a JS-string expression now.
-- Asset Manager: openTool seated panel-EXCLUDED tools in a panel slot
-  the dock refuses to render — invisible, and isToolOpen counted the
-  stale slot so the NEXT click toggle-closed nothing. Exactly the
-  two-sources bug openTool's own v1.10 comment warns about.
-  PANEL_EXCLUDED_IDS ('assets','spelling') LIVES IN editorStore now
-  (ToolDock imports + re-exports); openTool floats excluded tools as
-  windows and clears any stale slot. Spelling shared the bug (Tools ▸
-  Spelling & Grammar ▸ Spell Check Panel).
-- check-v627 (8) pins all of it. Gates: tsc 0, 1091 tests, build,
-  checks 668/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.27** — Title tab scales with its window; Asset Manager menu no-op
 - **v6.26** — Title Page: the Contact field is 4 rows
 - **v6.25** — Goals spacing: the phantom row was DOUBLE bottom padding
 - **v6.24** — Helper Text: areas, on-screen found-in, hide, go-there, line breaks

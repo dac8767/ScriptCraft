@@ -8,6 +8,54 @@ import type { PageLayout, HeaderFooterContent } from '../stores/editorStore';
 import { resolveImageUrl, loadImageData } from './imageAsset';
 import { isWorkingNoteNode } from './workingNotes';
 
+/* v6.32, Derek ("the text exports as Courier Std"): jsPDF's builtin
+   'courier' is the PDF-standard font — viewers substitute Courier Std,
+   which is NOT the face the app shows. The app's bundled Courier Prime
+   TTFs (public/fonts, all four weights) are embedded into every export so
+   paper matches screen. charSpace already derives from getTextWidth('M'),
+   so the FD 10.33-cpi layout is unchanged — only the glyphs. If the font
+   files can't load (shouldn't happen — same origin), the builtin stays as
+   a fallback rather than failing the export. */
+const PRIME_STYLES: [string, string][] = [
+  ['CourierPrime-Regular.ttf', 'normal'],
+  ['CourierPrime-Bold.ttf', 'bold'],
+  ['CourierPrime-Italic.ttf', 'italic'],
+  ['CourierPrime-BoldItalic.ttf', 'bolditalic'],
+];
+let primeFontsB64: Map<string, string> | null | undefined;
+async function loadPrimeFonts(): Promise<Map<string, string> | null> {
+  if (primeFontsB64 !== undefined) return primeFontsB64;
+  try {
+    const entries = await Promise.all(PRIME_STYLES.map(async ([file]) => {
+      const res = await fetch(`/fonts/${file}`);
+      if (!res.ok) throw new Error(`${file}: ${res.status}`);
+      const buf = new Uint8Array(await res.arrayBuffer());
+      let bin = '';
+      const CHUNK = 0x8000;
+      for (let i = 0; i < buf.length; i += CHUNK) {
+        bin += String.fromCharCode(...buf.subarray(i, i + CHUNK));
+      }
+      return [file, btoa(bin)] as [string, string];
+    }));
+    primeFontsB64 = new Map(entries);
+  } catch (err) {
+    console.warn('Courier Prime embed unavailable — exports fall back to builtin Courier:', err);
+    primeFontsB64 = null;
+  }
+  return primeFontsB64;
+}
+
+/** Register Courier Prime on a jsPDF instance; returns the font NAME to use. */
+async function installExportFont(pdf: jsPDF): Promise<string> {
+  const fonts = await loadPrimeFonts();
+  if (!fonts) return 'courier';
+  for (const [file, style] of PRIME_STYLES) {
+    pdf.addFileToVFS(file, fonts.get(file)!);
+    pdf.addFont(file, 'CourierPrime', style);
+  }
+  return 'CourierPrime';
+}
+
 // --- Constants matching pagination.ts ---
 
 const LINE_HEIGHT_PT = 12;
@@ -110,15 +158,19 @@ function getPlainText(runs: TextRun[]): string {
   return runs.map((r) => r.text).join('');
 }
 
+/** The face every export text call uses — CourierPrime once installed,
+ *  builtin courier only as the load-failure fallback (installExportFont). */
+let EXPORT_FONT = 'courier';
+
 function setFontStyle(pdf: jsPDF, bold: boolean, italic: boolean): void {
   if (bold && italic) {
-    pdf.setFont('courier', 'bolditalic');
+    pdf.setFont(EXPORT_FONT, 'bolditalic');
   } else if (bold) {
-    pdf.setFont('courier', 'bold');
+    pdf.setFont(EXPORT_FONT, 'bold');
   } else if (italic) {
-    pdf.setFont('courier', 'italic');
+    pdf.setFont(EXPORT_FONT, 'italic');
   } else {
-    pdf.setFont('courier', 'normal');
+    pdf.setFont(EXPORT_FONT, 'normal');
   }
 }
 
@@ -286,7 +338,10 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
     format: [pageWidthPt, pageHeightPt],
   });
 
-  pdf.setFont('courier', 'normal');
+  // Embed Courier Prime BEFORE anything measures — charSpace derives from
+  // getTextWidth below, so the layout adapts to whichever face installed.
+  EXPORT_FONT = await installExportFont(pdf);
+  pdf.setFont(EXPORT_FONT, 'normal');
   pdf.setFontSize(12);
 
   // Character spacing adjustment: make jsPDF Courier match FD Courier (10.33 CPI)
@@ -381,7 +436,7 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
         const align: 'left' | 'center' | 'right' =
           it.field === 'draft' ? 'left' : (it.field === 'contact' || it.field === 'copyright') ? 'right' : 'center';
         const lineH = isTitle ? (it.titleSize || 12) : LINE_HEIGHT_PT;
-        pdf.setFont('courier', isTitle ? 'bold' : 'normal');
+        pdf.setFont(EXPORT_FONT, isTitle ? 'bold' : 'normal');
         pdf.setFontSize(isTitle ? (it.titleSize || 12) : 12);
         const x = align === 'left' ? leftX : align === 'right' ? rightX : centerX;
         const lines = (it.text || '').split('\n');
@@ -702,6 +757,20 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
        PDF and prints it — WebKit prints a PDF frame at the PDF's own page
        size, not reflowed HTML, so no shrink; (3) the frame never loads →
        save the print copy through the proven export dialog and SAY SO. */
+    /* v6.32, Derek ("Clicking Print in the File menu still does nothing"):
+       the v6.30 iframe fallback ALSO dies silently on the Mac — WKWebView
+       doesn't render PDFs in iframes, so onload fires against nothing and
+       print() shows no dialog. On Tauri there is no in-webview road to the
+       print panel without a native opener plugin; the DETERMINISTIC path is
+       the proven native save dialog + a toast that says exactly what to do.
+       (Browsers keep the real popup print below.) */
+    const { isDesktopTauri } = await import('../services/platform');
+    if (isDesktopTauri()) {
+      await saveFile(new Uint8Array(pdf.output('arraybuffer')), filename, [{ name: 'PDF', extensions: ['pdf'] }]);
+      const { showToast } = await import('../components/Toast');
+      showToast('Print-ready PDF saved — open it and press ⌘P to print. (Exact margins, page numbers included.)', 'info');
+      return;
+    }
     const win = window.open(url, '_blank');
     if (win) return;
     await new Promise<void>((resolve) => {
