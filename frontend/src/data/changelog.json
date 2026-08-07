@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.07",
+    "date": "2026-08-07",
+    "changes": [
+      "Fixed: dragging the Analytics window (or any temporary tool window) teleported it half its width leftward on the first move, leaving the grab cursor floating off the window's right edge. Temporary windows are CSS-centered; the drag now clears that centering the moment it takes over, so the window tracks the pointer exactly. The same fix covers resizing them by an edge."
+    ]
+  },
+  {
     "version": "6.06",
     "date": "2026-08-07",
     "changes": [

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.06 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.07 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,18 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.07 — the temp window's drag teleport
+
+- Derek: "the hand grabber shoots to the right, off the window."
+  `.tool-window-temp` is CSS-centered (left:50% + translateX(-50%));
+  startDrag/beginEdgeResize measure baseLeft from the VISUAL rect and
+  switch to explicit left/top — but the transform survived, so the first
+  move re-applied -50% and the window jumped half its width left, cursor
+  parked off its right edge. FIX: both conversions set
+  `transform:'none'` (and left/top at drag START, so no first-move
+  flash). check-v606 gained the 1:1 tracking assertion (40px for 40px).
+- Gates: tsc 0, 1081 tests, build, checks 589/0.
 
 ### v6.06 — dropping Analytics on a panel actually docks it
 

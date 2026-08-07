@@ -591,6 +591,9 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
     el.style.left = `${baseLeft}px`;
     el.style.right = 'auto';
     el.style.top = `${baseTop}px`;
+    // v6.07: same as the header drag — a temp window's centering transform
+    // must not survive the switch to explicit left/top.
+    el.style.transform = 'none';
     let w = el.offsetWidth;
     let h = el.offsetHeight;
     startEdgeResize(e, zone, {
@@ -665,6 +668,17 @@ export function ToolWindowFrame({ tool, onClose, temporary, side, children }: {
     const parent = el.offsetParent?.getBoundingClientRect() ?? ({ left: 0, top: 0 } as DOMRect);
     const baseLeft = rect.left - parent.left;
     const baseTop = rect.top - parent.top;
+    /* v6.07, Derek ("the hand shoots to the right, off the window"): the
+       TEMP window is CSS-centered — left:50% + translateX(-50%). baseLeft is
+       measured from the VISUAL rect, so the transform must go the moment we
+       switch to explicit left/top; left alone kept the -50% shift and
+       teleported the window half its width leftward at the first move,
+       parking the grab point off its right edge for the whole drag. Setting
+       all four here (not in onMove) means no first-move flash either. */
+    el.style.left = `${baseLeft}px`;
+    el.style.top = `${baseTop}px`;
+    el.style.right = 'auto';
+    el.style.transform = 'none';
     const zones = !tool.neverDock && !PANEL_EXCLUDED_IDS.includes(tool.id)
       ? (['left', 'right'] as const).flatMap((s) => {
           // an icon rail has no inline shape to receive the window

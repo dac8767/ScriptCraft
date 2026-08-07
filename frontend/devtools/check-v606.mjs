@@ -25,6 +25,15 @@ try {
   });
   await page.mouse.move(head.x, head.y);
   await page.mouse.down();
+  /* v6.07: the temp window is CSS-centered (translateX(-50%)) — the switch
+     to explicit left/top must kill the transform, or the window teleports
+     half its width leftward on the first move and the grab point floats off
+     its right edge for the whole drag. Assert 1:1 tracking. */
+  const before = await page.$eval('.tool-window', (el) => el.getBoundingClientRect().left);
+  await page.mouse.move(head.x + 40, head.y, { steps: 2 });
+  await settle(page);
+  const shift = (await page.$eval('.tool-window', (el) => el.getBoundingClientRect().left)) - before;
+  ok(Math.abs(shift - 40) <= 2, `#v607 the window tracks the pointer 1:1 — no teleport (moved ${Math.round(shift)}px for 40px)`);
   await page.mouse.move(dock.x, dock.y, { steps: 12 });
   await settle(page);
   await page.mouse.up();
