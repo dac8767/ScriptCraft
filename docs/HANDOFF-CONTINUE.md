@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.13 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.14 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,24 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.14 — Derek's menu reorganization
+
+- Bar: File · Edit · View · Format · Project · Tools · Production · Help
+  (Insert REMOVED; Production un-merged from Project — the v3.24 merge
+  undone). PROJECT_MENU_GROUPS/TOOL_MENU_GROUPS now hold his exact
+  orders; Project tail = Set Draft Number… / Title Page / Custom Page…;
+  Tools tail = the S&G submenu (moved from Project) + Thesaurus.
+  Production = Revision Mode / Production Tags / Lock Scene Numbers /
+  Lock Pages(unreleased-gated). Edit tail = Insert Image… + Insert
+  Element (the ex-Insert Element submenu, renamed; Customize Elements…
+  rides inside). View leads with Customize… again (v4.86 removed it;
+  Derek asked it back — the v6.02 remembered-tab door). Action Rewrite
+  ('rewrite') moved into Help ▸ Developer; menu items for
+  thesaurus/rewrite pull icon+label from ALL_TOOLS (no second registry).
+- checks: v540 walks Project ▸ Custom Page…; v554 asserts Developer ▸
+  Action Rewrite.
+- Gates: tsc 0, 1081 tests, build, checks 594/0.
 
 ### v6.13 — Characters polish: flat list rows, quieter cards, List first
 

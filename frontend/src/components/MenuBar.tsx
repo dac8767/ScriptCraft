@@ -17,31 +17,14 @@ import { ALL_TOOLS } from './ToolDock';
 
 /** Project menu: script structure / story elements / project management. */
 const PROJECT_MENU_GROUPS: string[][] = [
-  ['navigator', 'pages', 'scenes'],
-  ['locations', 'characters'],
-  // v5.46, Derek: 'assets' moved to the FILE menu (with Script History).
-  // 'projects' stays out — the Project Manager lives under File.
-  // v1.63: 'spelling' is NOT a plain item here anymore — Spelling & Grammar
-  // is the extensive submenu appended to the Project menu below (one version,
-  // one home; the docked panel now carries the full feature set).
-  // v3.24: 'titlepage' is out of the windows groups — the merged-in
-  // Production block heads with Title Page (one home, per v1.64's rule).
+  // v6.14, Derek's menu reorg: the Project menu's window list, his order.
+  ['navigator', 'pages', 'scenes', 'locations', 'characters', 'fragments'],
 ];
-/** Tools menu: story planning / writing aids / production & analysis. */
+/** Tools menu (v6.14, Derek's menu reorg — his order; Spelling & Grammar's
+ *  submenu and the Thesaurus are appended after these in the menu itself,
+ *  and Action Rewrite lives under Help ▸ Developer now). */
 const TOOL_MENU_GROUPS: string[][] = [
-  // v4.24 batch 7: 'indexcards' retired — it's the Scenes tool's Cards view.
-  ['beatboard'],
-  // v5.21: 'todo' retired — To-Do lives in the merged Sticky Notes tool.
-  // v6.10: 'highlights' retired — highlighting lives in Annotations.
-  ['sticky', 'fragments'],
-  // 'tags' is intentionally absent: Production Tags opens from the
-  // Production menu (its conceptual home); the window itself remains a
-  // dockable Tool in Customize.
-  // v5.45, Derek: 'aiwriter' is out of this menu — its doors are the dock
-  // row and Customize ▸ Panels (where the footer's remove stashes it).
-  // v5.53: + the Thesaurus (local MyThes/WordNet data).
-  // v5.54: + Action Rewrite (AI action-line rewrites, BYO key).
-  ['analytics', 'goals', 'typewriter', 'thesaurus', 'rewrite', 'notebook'],
+  ['beatboard', 'sticky', 'notebook', 'markups', 'goals', 'typewriter', 'analytics'],
 ];
 /* (v6.10: the v1.83 Format ▸ Highlighting palette is GONE — highlighting is
    the Annotations tool's job now. The `highlight` MARK stays registered so
@@ -1377,15 +1360,48 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
            survives here — it's navigation, like Go to Page. */
         { icon: <FaHashtag />, label: 'Go to Page…', shortcut: sc('goToPage'), action: () => setGoToPageOpen(true) },
         { icon: <FaPencilAlt />, label: 'Go to Last Edited', action: () => shortcutActionsRef.current.lastEditLocation?.() },
+        { separator: true, label: '' },
+        // v6.14, Derek: the Insert menu is GONE — its document-level
+        // inserts live here now.
+        { icon: <FaImage />, label: 'Insert Image…', action: () => useEditorStore.getState().imageInsertHandler?.() },
+        {
+          icon: <FaListOl />, label: 'Insert Element',
+          children: [
+            // Dual Dialogue lives inside the Element list, immediately after
+            // Dialogue (v0.62) — it's an element choice, not a separate insert.
+            ...pickableElements
+              .flatMap((r) => {
+                const shortcuts: Record<string, string> = {
+                  sceneHeading: `${mod}1`, action: `${mod}2`, character: `${mod}3`, dialogue: `${mod}4`,
+                  parenthetical: `${mod}5`, transition: `${mod}6`, general: `${mod}7`, shot: `${mod}8`,
+                };
+                // Dual Dialogue arrives from the canonical list like any other
+                // element; it just runs a command instead of setting a node.
+                if (r.id === 'dualDialogue') {
+                  return [{
+                    icon: <FaColumns />,
+                    label: r.label,
+                    shortcut: sc('dualDialogue'),
+                    action: () => (editor as any)?.commands?.toggleDualDialogue(),
+                  }];
+                }
+                // v2.04: every menu item wears an icon (Derek's audit).
+                return [{ icon: <FaTextHeight />, label: r.label, shortcut: shortcuts[r.id], action: () => setElement(r.id as any) }];
+              }),
+            { separator: true, label: '' },
+            { icon: <FaWrench />, label: 'Customize Elements…', action: () => openCustomize('elements') },
+          ],
+        },
       ],
     },
     {
       label: 'View',
       items: [
-        /* v4.86, Derek: Customize… and Design… are GONE from View. Both are
-           tools with their own buttons (Customize on the ribbon, Design in
-           the Tools list), and View is about what you're looking at, not the
-           windows that reshape the app. (They led View from v2.58/v3.25.) */
+        /* v4.86 removed Customize from View; v6.14, Derek: it's BACK by his
+           ask — "Add 'Customize' to the view menu". Opens on the remembered
+           last-used tab (the v6.02 generic door). Design stays out. */
+        { icon: <FaWrench />, label: 'Customize…', action: () => openCustomize() },
+        { separator: true, label: '' },
         {
           icon: <FaColumns />, label: 'Workspaces',
           children: [
@@ -1596,52 +1612,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       ],
     },
     {
-      label: 'Insert',
-      items: [
-        {
-          icon: <FaListOl />, label: 'Element',
-          children: [
-            // Dual Dialogue lives inside the Element list, immediately after
-            // Dialogue (v0.62) — it's an element choice, not a separate insert.
-            ...pickableElements
-              .flatMap((r) => {
-                const shortcuts: Record<string, string> = {
-                  sceneHeading: `${mod}1`, action: `${mod}2`, character: `${mod}3`, dialogue: `${mod}4`,
-                  parenthetical: `${mod}5`, transition: `${mod}6`, general: `${mod}7`, shot: `${mod}8`,
-                };
-                // Dual Dialogue arrives from the canonical list like any other
-                // element; it just runs a command instead of setting a node.
-                if (r.id === 'dualDialogue') {
-                  return [{
-                    icon: <FaColumns />,
-                    label: r.label,
-                    shortcut: sc('dualDialogue'),
-                    action: () => (editor as any)?.commands?.toggleDualDialogue(),
-                  }];
-                }
-                // v2.04: every menu item wears an icon (Derek's audit).
-                return [{ icon: <FaTextHeight />, label: r.label, shortcut: shortcuts[r.id], action: () => setElement(r.id as any) }];
-              }),
-            { separator: true, label: '' },
-            { icon: <FaWrench />, label: 'Customize Elements…', action: () => openCustomize('elements') },
-          ],
-        },
-        { icon: <FaImage />, label: 'Insert Image…', action: () => useEditorStore.getState().imageInsertHandler?.() },
-        // v5.40, Derek: custom pages — non-script pages the script flows
-        // around; not counted in page numbering. v6.05: the item opens the
-        // "where?" dialog — inserting at the caret put the page inside the
-        // title region on a fresh script, where nothing ever showed.
-        { icon: <FaRegFileAlt />, label: 'Custom Page…', action: () => { if (editor) setAddPageOpen(true); } },
-        { separator: true, label: '' },
-        /* v6.05, Derek: "the insert menu still has old buttons" — Section,
-           Marker, Note and To-Do List are gone from here. They belong to
-           their tools (Outline, Notes, To-Do) and the ribbon/context menu;
-           the Insert menu keeps document-level inserts only. */
-        // v3.25, Derek: moved here from Project (ex-Production menu).
-        { icon: <FaTags />, label: 'Production Tags', action: () => useEditorStore.getState().openTool('tags') },
-      ],
-    },
-    {
       label: 'Format',
       items: [
         // v0.87: Style and Alignment were submenus in a menu with barely anything
@@ -1684,47 +1654,16 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               action: () => useEditorStore.getState().openTool(t.id),
             })),
         ]),
-        // v1.63: the one Spelling & Grammar, moved here from Tools. The panel
-        // item opens the dockable window (which now has the full feature set);
-        // the rest is the extensive submenu it always had.
-        {
-          icon: <FaSpellCheck />, label: 'Spelling & Grammar',
-          children: [
-            { icon: <FaSpellCheck />, label: 'Spell Check Panel', action: () => useEditorStore.getState().openTool('spelling') },
-            { separator: true, label: '' },
-            { icon: <FaSpellCheck />, label: 'Auto Spell Check', checked: spellCheckEnabled, action: toggleSpellCheck },
-            { icon: <FaSpellCheck />, label: 'Spell Check…', shortcut: 'F7', action: () => setSpellModalOpen(true) },
-            { separator: true, label: '' },
-            { icon: <FaSpellCheck />, label: 'Auto Writing Suggestions', checked: grammarCheckEnabled, action: toggleGrammarCheck },
-            { icon: <FaSpellCheck />, label: 'Writing Suggestions…', shortcut: '⇧F7', action: () => setGrammarModalOpen(true) },
-            /* v3.24 reorg #6: Grammar & Spelling Settings moved to the
-               Settings dialog (it's configuration, not workflow). */
-          ],
-        },
-        /* v5.46, Derek: Script History (and Asset Manager) moved to the
-           FILE menu — file management sits with the file. */
-        /* v3.24, Derek's menu reorg #1: the Production menu merged in —
-           everything below was that menu. Title Page heads the block
-           (v0.91's rule) and appears ONLY here (v1.64's one-home rule).
-           #2: Add/Remove Scene Numbers folded into one checkable toggle. */
         { separator: true, label: '' },
-        /* v5.67: the Title Page is the Pages window's tab — set the tab
-           FIRST so the window opens already on it (no Script flash). */
-        { icon: <FaFileAlt />, label: 'Title Page', action: () => { const st = useEditorStore.getState(); st.setPagesTab('title'); st.openTool('pages'); } },
+        /* v6.14, Derek's menu reorg: the Project menu ends with the
+           document-level items, his order — Set Draft Number, Title Page
+           (v5.67: the Pages window's tab — set the tab FIRST so the window
+           opens already on it), Custom Page (the v6.05 "where?" dialog,
+           ex-Insert). Spelling & Grammar moved to Tools; Revision Mode and
+           the locks moved to the NEW Production menu below. */
         { icon: <FaFileSignature />, label: 'Set Draft Number…', action: () => setDraftDialogOpen(true) },
-        { separator: true, label: '' },
-        {
-          icon: <FaLock />,
-          label: 'Lock Scene Numbers',
-          checked: sceneNumbersLocked,
-          action: () => setSceneNumbersLocked(!sceneNumbersLocked),
-          disabled: !sceneNumbersVisible,
-        },
-        // v1.34: Lock Pages is UNRELEASED — same Developer toggle as Help's.
-        ...(showUnreleasedTools ? [{ icon: <FaLock />, label: 'Lock Pages', disabled: true }] : []),
-        { icon: <FaToggleOn />, label: 'Revision Mode', checked: revisionMode, action: () => setRevisionMode(!revisionMode) },
-        /* v3.25, Derek: Production Tags moved to Insert — tagging is
-           something you do TO the script, alongside markers and notes. */
+        { icon: <FaFileAlt />, label: 'Title Page', action: () => { const st = useEditorStore.getState(); st.setPagesTab('title'); st.openTool('pages'); } },
+        { icon: <FaRegFileAlt />, label: 'Custom Page…', action: () => { if (editor) setAddPageOpen(true); } },
       ],
     },
     {
@@ -1741,6 +1680,42 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
               action: () => useEditorStore.getState().openTool(t.id),
             })),
         ]),
+        { separator: true, label: '' },
+        {
+          icon: <FaSpellCheck />, label: 'Spelling & Grammar',
+          children: [
+            { icon: <FaSpellCheck />, label: 'Spell Check Panel', action: () => useEditorStore.getState().openTool('spelling') },
+            { separator: true, label: '' },
+            { icon: <FaSpellCheck />, label: 'Auto Spell Check', checked: spellCheckEnabled, action: toggleSpellCheck },
+            { icon: <FaSpellCheck />, label: 'Spell Check…', shortcut: 'F7', action: () => setSpellModalOpen(true) },
+            { separator: true, label: '' },
+            { icon: <FaSpellCheck />, label: 'Auto Writing Suggestions', checked: grammarCheckEnabled, action: toggleGrammarCheck },
+            { icon: <FaSpellCheck />, label: 'Writing Suggestions…', shortcut: '⇧F7', action: () => setGrammarModalOpen(true) },
+            /* v3.24 reorg #6: Grammar & Spelling Settings moved to the
+               Settings dialog (it's configuration, not workflow). */
+          ],
+        },
+        ...ALL_TOOLS.filter((t) => t.id === 'thesaurus').map((t) => ({
+          icon: t.icon, label: t.label, action: () => useEditorStore.getState().openTool(t.id),
+        })),
+      ],
+    },
+    {
+      label: 'Production',
+      items: [
+        // v6.14, Derek's menu reorg: Production stands on its own again
+        // (the v3.24 merge into Project is undone), his order.
+        { icon: <FaToggleOn />, label: 'Revision Mode', checked: revisionMode, action: () => setRevisionMode(!revisionMode) },
+        { icon: <FaTags />, label: 'Production Tags', action: () => useEditorStore.getState().openTool('tags') },
+        {
+          icon: <FaLock />,
+          label: 'Lock Scene Numbers',
+          checked: sceneNumbersLocked,
+          action: () => setSceneNumbersLocked(!sceneNumbersLocked),
+          disabled: !sceneNumbersVisible,
+        },
+        // v1.34: Lock Pages is UNRELEASED — same Developer toggle as Help's.
+        ...(showUnreleasedTools ? [{ icon: <FaLock />, label: 'Lock Pages', disabled: true }] : []),
       ],
     },
   ];
@@ -1792,6 +1767,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             label: 'Diagnostics',
             action: () => setDiagnosticsOpen(true),
           },
+          // v6.14, Derek: Action Rewrite lives here now (out of Tools).
+          ...ALL_TOOLS.filter((t) => t.id === 'rewrite').map((t) => ({
+            icon: t.icon, label: t.label, action: () => useEditorStore.getState().openTool(t.id),
+          })),
           /* v1.34: the switch for features that exist but aren't finished
            * (Collaboration, Lock Pages). One flag, read wherever an
            * unreleased item renders — not a per-feature checkbox list. */

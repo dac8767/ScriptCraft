@@ -16,7 +16,7 @@ await seedScript(page, SCENES_4);
 // v6.05: Insert ▸ Custom Page… asks WHERE now (the caret lied — on a fresh
 // script it sat in the title region and the page landed where nothing
 // shows). Add it after page 1 through the dialog.
-await page.click('.menu-item:has-text("Insert")');
+await page.click('.menu-item:has-text("Project")');   // v6.14: Custom Page lives in Project now
 await page.click('.menu-dropdown-item:has(span:text-is("Custom Page…"))');
 await page.waitForSelector('.fs-addpage-dialog', { timeout: 5000 });
 await page.fill('.fs-addpage-num', '1');

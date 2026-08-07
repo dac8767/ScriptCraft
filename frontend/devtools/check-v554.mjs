@@ -66,15 +66,19 @@ ok(refused.includes("doesn't rewrite dialogue") || refused.includes('Select acti
   `non-action selection shows the refusal reason (${refused.trim()})`);
 await page.screenshot({ path: `${SHOTS}/v554-panel.png` });
 
-// ── Tools menu lists it ──────────────────────────────────────────────────
+// ── v6.14: Action Rewrite lives under Help ▸ Developer now ───────────────
 await page.evaluate(() => {
   [...document.querySelectorAll('.menu-item')].find((m) =>
-    m.querySelector('.menu-label')?.textContent.trim() === 'Tools')?.click();
+    m.querySelector('.menu-label')?.textContent.trim() === 'Help')?.click();
 });
 await page.waitForSelector('.menu-dropdown', { timeout: 4000 });
+await page.evaluate(() => {
+  [...document.querySelectorAll('.menu-dropdown-item')].find((b) => b.textContent.includes('Developer'))?.click();
+});
+await page.waitForTimeout(250);
 ok(await page.evaluate(() =>
   [...document.querySelectorAll('.menu-dropdown-item')].some((b) => b.textContent.includes('Action Rewrite'))),
-  'Tools menu lists Action Rewrite');
+  'Help ▸ Developer lists Action Rewrite');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await browser.close();

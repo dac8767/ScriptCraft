@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.14",
+    "date": "2026-08-07",
+    "changes": [
+      "The menus are reorganized. Project: Navigator, Pages, Scenes, Locations, Characters, Snippets, Set Draft Number, Title Page, Custom Page. Tools: Outline, Notes, Scrapbook, Annotations, Goals, Focus, Analytics, Spelling & Grammar, Thesaurus. Production stands on its own again: Revision Mode, Production Tags, Lock Scene Numbers, Lock Pages. Insert Image and Insert Element moved into Edit, and the Insert menu is gone. Customize… returned to the top of the View menu, and Action Rewrite lives under Help ▸ Developer."
+    ]
+  },
+  {
     "version": "6.13",
     "date": "2026-08-07",
     "changes": [
