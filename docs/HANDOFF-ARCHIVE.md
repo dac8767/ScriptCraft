@@ -151,7 +151,346 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v5.76 and older (newest first)
+## Version history — v6.11 and older (newest first)
+
+### v6.11 — the Characters list is the shared table
+
+- List view rows render the SAME `.location-header` grid the Scenes and
+  Locations tables use — the grid's name track reads a cascading
+  `--table-name-w` var so ONE template serves all three
+  (`.char-profiles-list` overrides it to `--char-col-name`). Cards view
+  untouched; expansion still opens the full inline profile.
+- The name column registered as `charName` in sceneColWidths (persisted)
+  + COL_LIMITS; CharacterProfiles carries its own grip handler writing
+  the same store. The inline Description field writes
+  profile.description as PLAIN text (stripHtml projection — an inline
+  edit of a previously rich description drops its formatting; the
+  expanded editor stays rich).
+- Gates: tsc 0, 1081 tests, build, checks 594/0.
+
+### v6.10 — the Highlights tool is retired
+
+- Removed: ALL_TOOLS entry + case + chrome (ToolDock), ToolId member,
+  DEFAULT_TOOL_CONFIG/ORDER entries, Tools-menu group entry, the whole
+  Format ▸ Highlighting submenu (palette const, pick/jump helpers, the
+  hidden color input), HighlightsTool.tsx, its CSS block.
+- KEPT deliberately: the `highlight` MARK (saved scripts render); the
+  ribbon key 'highlightColor' — it doubles as the Scrapbook's v2.69
+  box-background picker, so the script case renders NULL and the
+  registry label is now "Box Background (Scrapbook)"; store
+  highlightColor state removed (the scrapbook branch is self-contained);
+  'b:highlightColor' dropped from the DEFAULT layout only (placed copies
+  keep their scrapbook function — no forced migration).
+- Probe: no dock row / Tools entry / Format submenu; legacy mark still
+  applies and renders.
+- Gates: tsc 0, 1081 tests, build, checks 594/0.
+
+### v6.09 — Preview: Script Options + Include Annotations…
+
+- Renames per Derek; the old Include toggles (sections/notes/scene
+  numbers/to-dos) are REMOVED: working notes hard-hide in Preview
+  (previewOpts keys deleted; ScreenplayEditor's page classes and the
+  pagination hide flags treat previewMode as unconditional), and scene
+  numbers follow the EDITOR's sceneNumbersVisible (preview page class +
+  exportPDF both read it — one source).
+- Include Annotations…: previewOpts.annotationIcons (session-only, like
+  the other preview opts) + togglePreviewAnnotationIcon. Rows = the
+  CURRENT types (markupPresets deduped by icon, MarkupIcon glyph in its
+  preset color). MarkupIconLayer's span effect stamps
+  `.markup-preview-hidden` (neutralize rule mirrors markup-type-hidden)
+  on excluded types while previewMode; the page-level markups-hidden
+  class no longer applies in preview. The margin icon layer was already
+  preview-gated.
+- Gates: tsc 0, 1081 tests, build, checks 594/0.
+
+### v6.08 — big ribbon buttons: one geometry, one hover box
+
+- Derek (screenshots): icon→label distance varied and some big buttons
+  hover-highlighted the icon alone. TWO SHAPES existed: one-block
+  `.rib-tall-btn` (label inside — commands/tools/customize/lock) vs
+  wrapper builtins (`.toolbar-priority-block.rib-tall`) whose label was a
+  CSS ::after (own 10px font, outside the inner button's hover box).
+- FIX: the wrapper's label is a REAL `.rib-tall-label` child now (one
+  class, one knob); the wrapper wears rib-tall-btn's padding/gap and IS
+  the hover surface (`--fd-overlay-light`), with the inner control's own
+  hover paint turned off; inner `.toolbar-btn`s lose vertical padding so
+  the icon zone = the 26px box and the 3px flex gap alone sets the
+  distance — measured equal across both shapes incl. the Font Size
+  select and popup-hosting builtins (check-v608: 3px everywhere, hover
+  box contains the label, no inner solo box).
+- Gates: tsc 0, 1081 tests, build, checks 589/0 + v608 5/0.
+
+### v6.07 — the temp window's drag teleport
+
+- Derek: "the hand grabber shoots to the right, off the window."
+  `.tool-window-temp` is CSS-centered (left:50% + translateX(-50%));
+  startDrag/beginEdgeResize measure baseLeft from the VISUAL rect and
+  switch to explicit left/top — but the transform survived, so the first
+  move re-applied -50% and the window jumped half its width left, cursor
+  parked off its right edge. FIX: both conversions set
+  `transform:'none'` (and left/top at drag START, so no first-move
+  flash). check-v606 gained the 1:1 tracking assertion (40px for 40px).
+- Gates: tsc 0, 1081 tests, build, checks 589/0.
+
+### v6.06 — dropping Analytics on a panel actually docks it
+
+- Derek: drag-drop into the panel left the floating window open (closing
+  it by hand then showed the tool docked). ROOT CAUSE: openTool's v1.2
+  `ALWAYS_FLOAT` early-out (`['analytics']`) predates the explicit-mode
+  machinery — dockInto wrote toolMode='docked' and the early-out floated
+  a tempTool anyway. FIX mirrors design's v5.47 rule: the early-out is
+  SKIPPED when config.enabled && toolMode==='docked' (an explicit dock
+  gesture stands); it falls through to the normal docked open, which
+  also clears tempTool. Dragging back out rewrites mode and the
+  always-float default resumes.
+- check-v606 (new, 6 assertions): real pointer drag of the window header
+  onto the right dock — window leaves, inline appears, mode docked, temp
+  null; row close/reopen stays docked.
+- Gates: tsc 0, 1081 tests, build, checks 588/0.
+
+### v6.05 — the crushed-header fix (chrome-less windows)
+
+- Derek (screenshots: Snippets, Thesaurus): the docked strip's height
+  comes from IN-FLOW chrome (tabs/controls); the ⛶/× are pinned out of
+  flow (v4.90). No chrome → strip = padding only (9px) and the buttons
+  overflowed the body. Swept ALL windows via a measuring probe: five
+  crushed (fragments/highlights/aiwriter/thesaurus/workspaces), Focus at
+  24px, rest 29px. FIX: `.tool-inline-header` min-height =
+  calc(20px + pad-top + pad-bottom + hairline) — knob-aware, so it
+  tracks the Design paddings instead of hardcoding 29. Re-swept: every
+  window 29px (characters 53 = its legit two-row wrap). Floating-only
+  tools (analytics/design/feedback) have title-bearing headers — fine.
+- Gates: tsc 0, 1081 tests, build, checks 582/0.
+
+### v6.04 — locations toggle everywhere, the Insert menu diet, two dead-flow fixes
+
+- Map Options = `.locmap-add-btn` (Add Pin's blue); "Location groups"
+  subhead → "Other Groups" (3 files). Group left the header for an
+  Ungrouped/Grouped pair (`LocationsGroupToggle`, own file — imported by
+  SceneNavigator AND LocationMapTab, avoiding the import cycle) in the
+  List body's action row and the map's actionbar. `locationRows` grew
+  `{grouped}`: ungrouped = one row per script location (still knows its
+  place); the rail reads `locationsGrouped`. DEFAULT false → the rail
+  now starts split (list unchanged); v578/v585 set/click Grouped first.
+- Insert menu: Section/Marker/Note/To-Do List entries REMOVED (tools/
+  ribbon keep the features). Custom Page → `AddCustomPageDialog` ("after
+  page N of M", 0 = before page 1) → `posAfterScriptPageIn` — the v5.44
+  boundary math extracted PURE into pagination.ts, shared with the Pages
+  tool's callback so the two doors cannot disagree. ROOT CAUSE of "does
+  not actually add": the caret sat in the TITLE region on a fresh doc
+  and the node landed where pagination never shows it.
+- Armed annotation pick: the mouseup listener moved from editor.view.dom
+  to DOCUMENT capture — releasing a selection sweep past the page edge
+  never reached the old one ("select text → nothing happens").
+- check-v540 drives the dialog now; v578 expects "Other Groups".
+- Gates: tsc 0, 1081 tests, build, checks 582/0.
+
+### v6.03 — the Thesaurus is WordNet proper, with definitions
+
+- Derek: "is there a different open source thesaurus tool? … the
+  thesaurus should also show the word definitions." MyThes th_en_US_v2
+  has NO definitions in the file, so showing them meant a data swap:
+  `public/thesaurus/wn_en_31.dat` (20.2MB, 147k lemmas, 207k senses) is
+  generated from Princeton WordNet 3.1 (wordnet-db npm tarball) by
+  `devtools/build-thesaurus.mjs` — regeneration instructions in its
+  header; the artifact is COMMITTED (same precedent as the old .dat).
+- Format: MyThes-shaped with a GLOSS as sense field[1] —
+  `(pos)|gloss|syn|…|ant (antonym)`. Examples are stripped from glosses
+  (a third of the bytes). thesaurus.ts reads field[1] as
+  `ThesaurusSense.gloss`; gloss-only senses are KEPT (the definition is
+  content); lookup chain/qualifier grammar unchanged. UI: `.thes-def`
+  line above the chips per sense.
+- check-v553 was pinned to MyThes ("inhabit" as occupy's first synonym)
+  — now data-agnostic (captures the first chip, counts dynamically), +
+  a definitions assertion. AboutDialog entry → "Princeton WordNet
+  lexical database"; public/thesaurus licenses swapped to the WordNet
+  3.0 license text (covers 3.1), README rewritten.
+- Gates: tsc 0, 1081 tests (2 new), build, checks 581/0.
+
+### v6.02 — Goals tabs go left; Customize finally remembers its tab
+
+- Goals: the Words/Pages/Time buttons were a bespoke `fs-goal-tabs`
+  cluster in the CONTROLS slot (right). Now `useGoalTabs()` registers
+  them through TOOL_CHROME's useTabs — shared ChromeTabs, left-aligned,
+  and in a narrow dock they collapse into the labeled ▾ dropdown like
+  every other window (v4.53 two-stage overflow; Derek asked for that
+  caret himself in v5.71, so the collapse is expected behavior, not a
+  regression). Vomit-lock hides them by returning []. Bespoke CSS gone.
+- Customize last-tab memory (Derek: "a long time ago I asked… this has
+  never worked"). ROOT CAUSE: every menu door called
+  `openCustomize('elements'|…)` and the dialog's open-effect forces any
+  passed category — the memory was overwritten on the way in, and
+  nothing persisted anyway. FIX: generic doors ('customize' command,
+  ribbon button) pass NOTHING; `opendraft:customizeTab` in localStorage
+  (beside the v0.84 size key) persists every tab change and seeds the
+  dialog. Targeted doors (Customize Themes…/Elements…/Context) still
+  steer — and become the new memory. `soloCategory` instances
+  (Settings, Guided Setup) neither read nor write it.
+- Probe-verified: switch→close→reopen, RELOAD→reopen, targeted→becomes
+  memory. No devtools check drives the Customize dialog's tab rail (only
+  ribbon-item ids named 'customize'), so no check updates were needed.
+- Gates: tsc 0, 1079 tests, build, checks 580/0.
+
+### v6.01 — one leading row: Map · Pin · Group
+
+- Derek: Connect-to-location joins the options row; the three read "Map",
+  "Pin", "Group". Built INSIDE LocationPlaceDetails (new `actions` prop):
+  the block always opens with `.locmap-detail-actions`, ending in its own
+  Group button (`FaLink`, `.locmap-tool-btn`, opens the v5.79 connect
+  menu); the rail passes Map/Pin in via `actions`. So the List dropdown
+  leads with [Group] and the rail with [Map · Pin · Group] — one row, one
+  builder. The old `+ Connect to location` `.locmap-add-field` button is
+  gone from under Script Locations.
+- NAMING NOTE: the Locations HEADER also has a "Group" control (v5.85's
+  list-grouping toggle). Two "Group"s, different jobs — both named by
+  Derek (v5.85, v6.01). If he ever flags the collision, the row button is
+  the newer naming.
+- The rail's Map MENU keeps its "Connect to location…" item — same list,
+  two entry points (the standing v5.79 pattern).
+- checks: v578/v581/v585 rail-button selectors →
+  `.locmap-detail-actions button:text-is("Map"|"Pin")`; v585 asserts the
+  row order [Map, Pin, Group], the block-owns-the-row structure, and that
+  no "+ Connect to location" button remains. The map SURFACE's
+  `.locmap-mapopts-btn` ("Map Options" beside + Add Pin, Derek's v5.90
+  naming) is deliberately UNTOUCHED.
+- Gates: tsc 0, 1079 tests, build, checks 580/0.
+
+### v6.00 — the rail's expanded rows carry the List view's details block
+
+- Derek: "the drop down info for each item in the location list view
+  should be in the side panel info of the location map view." The rail's
+  expanded detail now renders `LocationPlaceDetails` under the Map/Pin
+  Options buttons — the SAME component the List view's dropdowns render
+  (v5.96's extraction pays off: one block, two homes, cannot drift). New
+  `allLocations` prop threaded rail-ward from all three render sites
+  (SceneNavigator standalone, LocationMapTab, ToolDock's
+  FullscreenMapRailPanel — which passes its `all` memo) so "apply to all
+  locations" means ALL, not the filtered view.
+- Deliberately NOT included: the List dropdown's Rename Location button.
+  It needs the `editor` instance and renames ONE script location — a rail
+  row can stand for a whole group, so "rename" is ambiguous there. Told
+  Derek; List view keeps it.
+- check-v585: the old `#4 body holds ONLY the buttons` assertion (v5.96's
+  moved-to-the-panel rule) is REWRITTEN to assert
+  `[locmap-detail-actions, locplace-details]`, + a fullscreen-panel
+  textarea assertion.
+- Gates: tsc 0, 1079 tests, build, checks 578/0.
+
+### v5.99 — the fullscreen map's rail hangs under the Locations ROW
+
+- Derek (screenshot): the v5.97 side-panel rail was hardcoded to the LEFT
+  dock; his Locations window docks RIGHT. Fix: `FullscreenMapRailPanel`
+  renders inside ToolDock's rows loop, directly under the
+  `t.id === 'locations'` row — rows are side-filtered, so the panel lands
+  in whichever dock holds the tool. Its internal "Locations" header is
+  GONE; the row above is the label. Gate: `fsTool === 'locations' &&
+  locationsTabNow === 'map'`.
+- Why the dock renders the panel itself instead of auto-docking the tool
+  scrapbook-style: measured in v5.97 — `setActiveTool` on a panel slot
+  CLEARS fullscreenTool. Direct render = no store writes, and the panel
+  leaves with fullscreen.
+- check-v585 `#v599` pins it: `.locmap-rail-panel`'s
+  `previousElementSibling` is `[data-tool-row="locations"]`, and the
+  panel holds no `.tool-inline-header`.
+- NOTE: v5.80–v5.98 have no sections here (fast-batch era) —
+  `changelog.json` is the per-version record for that stretch.
+- Gates: tsc 0, 1079 tests, build, checks 577/0.
+
+### v5.79 — connect-to-location, the pin anchor, and cursor placement
+
+Derek's three:
+1. "+ Connect to location" (renamed), listing ALL script locations plus the
+   location GROUPS. `connectTargets()` in utils/locationPlaces (6 tests):
+   every location minus the ones this place already has, each carrying a
+   `from` label when it sits on another pin; groups are the other places
+   that are named or already multi-location, and picking one MERGES. The pin
+   dropdown now renders the SAME list — one connect list, two entry points.
+2. "locking an items position moves the pin off the map." ROOT CAUSE: v5.78
+   anchored the marker with `translate(-100% + 12px)` for right-half pins but
+   never reversed the capsule's children, so the marker (the first child)
+   stayed on the LEFT — a pin stored at 79.9% drew at 63.6%, and locking it
+   (a lock glyph widens the capsule) pushed it to 61.8%. `row-reverse` on
+   .locmap-pin-flip puts the marker at the anchored edge: 79.9% → 80.2%, and
+   locking moves it 0.0%.
+3. "+ Add Pin" is the blue button and ARMS placement — a dashed ghost pin
+   rides the cursor and the click sets it down; Escape cancels.
+
+ONE MORE BUG, found by the check: the guard that swallows a pin-drag's own
+trailing click could outlive the gesture. When a drag ended ON the pin, no
+canvas click ever arrived to clear the flag, so the writer's NEXT genuine
+click was eaten. A time window traded one race for another; the flag is now
+cleared by whichever comes first, the drag's click or the next press.
+
+devtools/mapFixture.mjs — the PNG generator both checks were carrying a copy
+of, now one module (the container restarts, /tmp doesn't survive).
+check-v578 30/30, check-v577 37/37. Gates: tsc 0, 1013 tests, build.
+
+### v5.78 — Locations map: six follow-ups
+
+Derek's list, in his numbers:
+1. One sidebar row per PLACE, not per script location — `locationRows()` in
+   utils/locationPlaces (pure, 6 tests). The row carries a count badge.
+2. The expanded row lists its script locations as a field, each detachable
+   (the last one isn't — a place with no name is nothing).
+3. "+ Connect a script location" in that row, a portalled list of the
+   locations not yet placed.
+4. "+ Add Pin" drops one in the middle and opens its dropdown. Clicking the
+   map still works — "instead of JUST clicking on screen".
+5. THE PIN JUMP, root cause: the whole capsule was centred on the point, so
+   a longer label dragged the marker sideways — the driver measured the
+   marker going from 4.5% to **-3.3%** of the map (off it) when a name was
+   attached. The MARKER is now anchored on the point (12px into the capsule)
+   and the label hangs off it; in the right-hand half the capsule flips so
+   the label reaches inward. Same driver measurement now: 7.8% → 7.8%.
+6. `locked` on the place, toggled from the pin dropdown AND the sidebar.
+   movePlace() refuses a locked pin, so no caller can move one.
+
+TWO BUGS THE CHECK FOUND, both mine, both fixed:
+- Dragging a pin dropped a SECOND pin: the drag ends with a mouseup on the
+  map, and the browser then fires a click on the common ancestor. A guard
+  swallows exactly that click.
+- A locked pin couldn't open its own dropdown (the early return killed the
+  press), so it could never be unlocked. A locked press now still counts as
+  a click; it just never moves.
+
+check-v578 18/18, check-v577 still 37/37. Gates: tsc 0, 1007 tests, build.
+
+### v5.77 — Locations: a pin is a PLACE
+
+- Derek's brief: rotate the background on import and then lock it; an
+  options button in the HEADER to replace/delete it; click the map to drop
+  a pin and pick (or create) its location; the sidebar lists every location
+  and opens display name / description / + Add custom field; the dropdown
+  can rename in the script; and a pin can carry SEVERAL script locations
+  ("BELKADAN - SPACE and BELKADAN - SURFACE would be the same location").
+  Mid-batch: "change list and map from tabs to the View button format".
+- MODEL CHANGE: `utils/locationPlaces.ts` replaces locationPins. A PLACE
+  owns the spot — scriptNames[], displayName, description, fields[], x/y —
+  and script locations attach TO it. That one shape answers every one of
+  Derek's asks; a name-keyed pin could not have held two locations.
+  45 pure tests. v5.75's flat pins migrate on load (`migratePins`).
+- The display name is window-only, in BOTH views. Where one display name
+  covers several script locations, each row appends its own script name —
+  otherwise the list showed the same word three times, which the driver
+  screenshot caught after the unit tests were green.
+- Rotation locks because pin fractions are measured against the image AS
+  SHOWN; a later turn would move every pin off its landmark. The stage is
+  measured against the ROTATED ratio (rotatedRatio), and a quarter turn
+  swaps the box, which check-v577 asserts by geometry.
+- ONE heading rewriter: `utils/renameLocationInScript.ts`, shared by the
+  List view's Rename Location and the pin dropdown's "change the name in
+  the script". It also moves the places onto the new name.
+- `mergePlaces` (the "assign to an existing pin" action) carries the
+  source's display name / description / custom fields onto the target when
+  the target's are empty, then drops the source pin. The first cut just
+  re-attached the names and left an empty pin sitting on the map — the
+  driver check caught it.
+- Chrome: no tab strip. `LocationsControls` now leads with a View dropdown
+  (List/Map, the same control the Characters window's Relationships view
+  uses) and, on Map only, `LocationMapOptions`.
+- check-v577 37/37 drives all of it through the real UI. Gates: tsc 0,
+  1017 tests, build.
+
 
 New arrivals from HANDOFF-CONTINUE.md §1 are inserted at the TOP of this list.
 

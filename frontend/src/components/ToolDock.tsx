@@ -214,12 +214,24 @@ export function naturalWidth(el: HTMLElement): number {
   // was firing all along; the arithmetic was self-defeating.) Real spacing in
   // this row is right-margin anyway (the title's --dz-toolwin-title-gap).
   const cs = getComputedStyle(el);
-  if (cs.flexWrap === 'wrap' && el.children.length > 0) {
+  /* v6.16, Derek ("expanding never brings the tabs back"): the DOCKED
+     strip's controls span is a flex-GROW spacer (v4.90) — its stretched
+     offsetWidth absorbs every free pixel, so counting it made `need` track
+     the row's width and the fit test could never succeed once the tabs
+     collapsed. Same self-defeating arithmetic v4.91 killed for the auto
+     margin, through the width this time: a grow container's natural width
+     is the SUM OF ITS CHILDREN, and an empty grow spacer wants nothing. */
+  const grows = (parseFloat(cs.flexGrow) || 0) > 0;
+  if ((cs.flexWrap === 'wrap' || grows) && el.children.length > 0) {
     const gap = parseFloat(cs.columnGap) || 0;
     let w = 0;
     for (const c of el.children) w += naturalWidth(c as HTMLElement);
     return w + gap * Math.max(0, el.children.length - 1)
       + (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0)
+      + (parseFloat(cs.marginRight) || 0);
+  }
+  if (grows) {
+    return (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0)
       + (parseFloat(cs.marginRight) || 0);
   }
   return el.offsetWidth + (parseFloat(cs.marginRight) || 0);

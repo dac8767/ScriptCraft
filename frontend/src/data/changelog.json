@@ -1,5 +1,13 @@
 [
   {
+    "version": "6.16",
+    "date": "2026-08-07",
+    "changes": [
+      "Fixed: when a window's header tabs had collapsed into the dropdown, widening the window never brought the tabs back — in the side panel or popped out. The header's stretchy spacer was being measured at its stretched width, so the space the tabs needed always appeared to grow with the window and the fit test could never pass.",
+      "The Working Notes submenu is gone from the View menu."
+    ]
+  },
+  {
     "version": "6.15",
     "date": "2026-08-07",
     "changes": [

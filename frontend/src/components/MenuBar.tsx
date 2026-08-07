@@ -82,8 +82,6 @@ import { HELP_FORMS } from '../data/helpForms';
 import type { MenuSection as PluginMenuSection } from '../plugins/registry';
 import {
   FaExternalLinkAlt,
-  FaRegStickyNote,
-  FaCheckSquare,
   FaFile,
   FaFileImport,
   FaFolderOpen,
@@ -132,7 +130,7 @@ import {
   FaFileSignature,
   FaRegClone, FaStream,   FaEdit,
   FaTags,
-  FaFlag, FaMarker, FaRegEyeSlash, FaRegEye, FaCheck, FaWrench,
+  FaMarker, FaRegEyeSlash, FaRegEye, FaCheck, FaWrench,
   FaBug,
   FaRulerHorizontal,
   FaPencilAlt, FaCoffee, FaBoxOpen,
@@ -197,11 +195,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     previewMode,
     outlineBarOpen, setOutlineBarOpen,
     rulersVisible,
-    notesVisible, setNotesVisible,
-    scriptTodosVisible, setScriptTodosVisible,
-    markersVisible, setMarkersVisible,
-    sectionsVisible, setSectionsVisible,
-    tagsVisible, setTagsVisible,
     markupsVisible, setMarkupsVisible,
     markupHiddenIcons, setMarkupHiddenIcons,
     markupScriptDone, setMarkupScriptDone,
@@ -1461,82 +1454,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         },
         { separator: true, label: '' },
         /* v3.24 reorg #5: Lock All / Reset All Sizing moved into the
-           Customize window (they're customization controls; the per-surface
-           resets already live there). */
-        { separator: true, label: '' },
-        {
-          /**
-           * v1.4 — everything you can put IN the script that isn't part of the
-           * script. v3.25, Derek's rule: every on/off pair is ONE checkable
-           * item with a stable label — the check column shows the state.
-           * None of these ever reach Preview, print or export.
-           */
-          icon: <FaRegEye />, label: 'Working Notes',
-          children: [
-            /* v4.86, Derek: back to CHECK items — a stable "Show …" label with
-               a checkmark when it's on, the shape Show Rulers already had.
-               (v4.22 had swapped these to Show/Hide label toggles; a label that
-               rewrites itself makes you read the menu to learn the state, and
-               the two styles sat side by side in the same menu.) The rule for
-               anything added here: stable label + `checked`, never a label that
-               flips between Show and Hide. */
-            {
-              icon: <FaRegStickyNote />,
-              label: 'Show Notes in Script',
-              checked: notesVisible,
-              action: () => setNotesVisible(!notesVisible),
-            },
-            {
-              icon: <FaCheckSquare />,
-              label: 'Show To-Do Lists in Script',
-              checked: scriptTodosVisible,
-              action: () => setScriptTodosVisible(!scriptTodosVisible),
-            },
-            {
-              icon: <FaFlag />,
-              label: 'Show Markers in Script',
-              checked: markersVisible,
-              action: () => setMarkersVisible(!markersVisible),
-            },
-            {
-              icon: <FaListOl />,
-              label: 'Show Sections in Script',
-              checked: sectionsVisible,
-              action: () => setSectionsVisible(!sectionsVisible),
-            },
-            {
-              icon: <FaTags />,
-              label: 'Show Tags in Script',
-              checked: tagsVisible,
-              action: () => setTagsVisible(!tagsVisible),
-            },
-            {
-              icon: <FaMarker />,
-              label: 'Show Annotations in Script',
-              checked: markupsVisible,
-              action: () => setMarkupsVisible(!markupsVisible),
-            },
-            { separator: true, label: '' },
-            {
-              icon: <FaRegEye />,
-              label: 'Show All in Script',
-              action: () => {
-                setNotesVisible(true); setScriptTodosVisible(true);
-                setMarkersVisible(true); setSectionsVisible(true); setTagsVisible(true);
-                setMarkupsVisible(true);
-              },
-            },
-            {
-              icon: <FaRegEyeSlash />,
-              label: 'Hide All in Script',
-              action: () => {
-                setNotesVisible(false); setScriptTodosVisible(false);
-                setMarkersVisible(false); setSectionsVisible(false); setTagsVisible(false);
-                setMarkupsVisible(false);
-              },
-            },
-          ],
-        },
+           Customize window. v6.16, Derek: the Working Notes submenu is gone
+           too — the per-kind Show-in-Script toggles live with their tools;
+           the annotation set keeps its submenu below. */
         {
           /* v5.28, Derek: the annotation view options as a submenu — the
              same state the Annotations window's Show button drives (status
