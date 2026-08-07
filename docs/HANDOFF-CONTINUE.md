@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.08 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.09 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,24 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.09 — Preview: Script Options + Include Annotations…
+
+- Renames per Derek; the old Include toggles (sections/notes/scene
+  numbers/to-dos) are REMOVED: working notes hard-hide in Preview
+  (previewOpts keys deleted; ScreenplayEditor's page classes and the
+  pagination hide flags treat previewMode as unconditional), and scene
+  numbers follow the EDITOR's sceneNumbersVisible (preview page class +
+  exportPDF both read it — one source).
+- Include Annotations…: previewOpts.annotationIcons (session-only, like
+  the other preview opts) + togglePreviewAnnotationIcon. Rows = the
+  CURRENT types (markupPresets deduped by icon, MarkupIcon glyph in its
+  preset color). MarkupIconLayer's span effect stamps
+  `.markup-preview-hidden` (neutralize rule mirrors markup-type-hidden)
+  on excluded types while previewMode; the page-level markups-hidden
+  class no longer applies in preview. The margin icon layer was already
+  preview-gated.
+- Gates: tsc 0, 1081 tests, build, checks 594/0.
 
 ### v6.08 — big ribbon buttons: one geometry, one hover box
 

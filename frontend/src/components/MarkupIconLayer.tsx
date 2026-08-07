@@ -90,13 +90,19 @@ export default function MarkupIconLayer({ editor, container }: {
   const scriptFiltered = (m: { icon: string; done: boolean }) =>
     !editOpen && (markupHiddenIcons.includes(m.icon)
       || (markupScriptDone !== 'all' && (markupScriptDone === 'done') !== m.done));
+  // v6.09, Derek: Preview includes annotations BY TYPE — the sidebar's
+  // "Include Annotations…" list holds the icon ids whose highlights show.
+  const pvIcons = useEditorStore((s) => s.previewOpts.annotationIcons);
   useEffect(() => {
     for (const m of markups) {
       const spans = document.querySelectorAll(`.script-markup-highlight[data-markup-id="${CSS.escape(m.id)}"]`);
-      spans.forEach((el) => el.classList.toggle('markup-type-hidden', scriptFiltered(m)));
+      spans.forEach((el) => {
+        el.classList.toggle('markup-type-hidden', scriptFiltered(m));
+        el.classList.toggle('markup-preview-hidden', previewMode && !pvIcons.includes(m.icon));
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [markups, markupHiddenIcons, markupScriptDone, editOpen, tick]);
+  }, [markups, markupHiddenIcons, markupScriptDone, editOpen, tick, previewMode, pvIcons]);
 
   useEffect(() => {
     if (!editor || !container || (!markupsVisible && !editOpen) || previewMode) { setSpots([]); return; }

@@ -49,6 +49,12 @@
   background-color: transparent !important;
   cursor: text;
 }
+/* v6.09: in Preview, only the types checked under "Include Annotations…"
+   keep their highlight — the rest neutralize exactly like a hidden type. */
+.script-markup-highlight.markup-preview-hidden {
+  background-color: transparent !important;
+  cursor: text;
+}
 
 /* v5.51, Derek: the pick-to-place banner — top of the editor section,
    centered, BIG, and it stays until text is selected (Esc cancels). A

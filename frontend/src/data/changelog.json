@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.09",
+    "date": "2026-08-07",
+    "changes": [
+      "Preview: \"Template Options\" is \"Script Options\" now, and the include list is \"Include Annotations…\" — one row per current annotation type (with its icon), checking a type shows its highlights in the preview. The old include toggles are gone: sections, markers, notes and script to-dos never appear in Preview, and scene numbers follow the editor's own scene-number setting."
+    ]
+  },
+  {
     "version": "6.08",
     "date": "2026-08-07",
     "changes": [

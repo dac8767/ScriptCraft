@@ -15,11 +15,18 @@ export interface ViewPrefsSlice {
   /** File > Preview: read-only formatted presentation (markup hidden, chrome minimized) */
   previewMode: boolean;
   /** Preview sidebar options (File > Preview) */
+  /** v6.09, Derek: the old Include list (sections/notes/scene numbers/
+   *  to-dos) is GONE — working notes are unconditionally hidden in Preview
+   *  now (the §4 they-never-leave-the-app rule, with no override), and
+   *  scene numbers follow the editor's own toggle. What Preview can include
+   *  is ANNOTATIONS, by type: `annotationIcons` holds the icon ids whose
+   *  highlights show (empty = none, the spec default). */
   previewOpts: {
-    sections: boolean; notes: boolean; sceneNumbers: boolean; todos: boolean;
     doubleSpaceHeaders: boolean; boldHeaders: boolean; underlineHeaders: boolean;
+    annotationIcons: string[];
   };
-  setPreviewOpt: (key: keyof EditorState['previewOpts'], value: boolean) => void;
+  setPreviewOpt: (key: 'doubleSpaceHeaders' | 'boldHeaders' | 'underlineHeaders', value: boolean) => void;
+  togglePreviewAnnotationIcon: (icon: string) => void;
   setPreviewMode: (v: boolean) => void;
 
   /** View > Preview: hide outline sections / script to-do lines in the script */
@@ -81,10 +88,18 @@ export const createViewPrefsSlice: StateCreator<EditorState, [], [], ViewPrefsSl
   previewMode: false,
   setPreviewMode: (v) => set({ previewMode: v }),
   previewOpts: {
-    sections: false, notes: false, sceneNumbers: false, todos: false,
     doubleSpaceHeaders: false, boldHeaders: true, underlineHeaders: false,
+    annotationIcons: [],
   },
   setPreviewOpt: (key, value) => set((s) => ({ previewOpts: { ...s.previewOpts, [key]: value } })),
+  togglePreviewAnnotationIcon: (icon) => set((s) => ({
+    previewOpts: {
+      ...s.previewOpts,
+      annotationIcons: s.previewOpts.annotationIcons.includes(icon)
+        ? s.previewOpts.annotationIcons.filter((i) => i !== icon)
+        : [...s.previewOpts.annotationIcons, icon],
+    },
+  })),
   markupsVisible: _vs.markupsVisible ?? true,
   setMarkupsVisible: (v) => {
     saveViewState({ markupsVisible: v });

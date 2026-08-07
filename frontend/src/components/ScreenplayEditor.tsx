@@ -2319,8 +2319,10 @@ const ScreenplayEditor: React.FC = () => {
   // overlays must remeasure — every time any of these flip. (Root cause of the
   // v0.28 page misalignment in Page View and Preview.)
   useEffect(() => {
-    const hideSections = previewMode ? !previewOpts.sections : !sectionsVisible;
-    const hideTodos = previewMode ? !previewOpts.todos : !scriptTodosVisible;
+    // v6.09: Preview hides working notes UNCONDITIONALLY now (the include
+    // toggles are gone — Preview's Include list is annotations-only).
+    const hideSections = previewMode ? true : !sectionsVisible;
+    const hideTodos = previewMode ? true : !scriptTodosVisible;
     const doubleSpaceHeaders = previewMode && previewOpts.doubleSpaceHeaders;
     // The title page shows in Preview (and in print/PDF, which build from it) —
     // never in the Page or Continuous views you actually write in.
@@ -4059,7 +4061,7 @@ const ScreenplayEditor: React.FC = () => {
                 }}
               >
                 <div
-                  className={`page${!tagsVisible || previewMode ? ' tags-hidden' : ''}${previewMode ? (previewOpts.notes ? '' : ' notes-hidden') : (!notesVisible ? ' notes-hidden' : '')}${isHistoryMode ? ' history-readonly' : ''}${previewMode ? (previewOpts.sceneNumbers ? ' show-scene-numbers' : '') : (sceneNumbersVisible ? ' show-scene-numbers' : '')}${previewMode ? (previewOpts.sections ? '' : ' hide-sections') : (!sectionsVisible ? ' hide-sections' : '')}${previewMode ? (previewOpts.sections ? '' : ' hide-markers') : (!markersVisible ? ' hide-markers' : '')}${previewMode ? (previewOpts.todos ? '' : ' hide-script-todos') : (!scriptTodosVisible ? ' hide-script-todos' : '')}${previewMode || (!markupsVisible && !markupEditOpen) ? ' markups-hidden' : ''}${previewMode && previewOpts.doubleSpaceHeaders ? ' pv-hdr-double' : ''}${previewMode && !previewOpts.boldHeaders ? ' pv-hdr-plain' : ''}${previewMode && previewOpts.underlineHeaders ? ' pv-hdr-underline' : ''}`}
+                  className={`page${!tagsVisible || previewMode ? ' tags-hidden' : ''}${previewMode || !notesVisible ? ' notes-hidden' : ''}${isHistoryMode ? ' history-readonly' : ''}${sceneNumbersVisible ? ' show-scene-numbers' : ''}${previewMode || !sectionsVisible ? ' hide-sections' : ''}${previewMode || !markersVisible ? ' hide-markers' : ''}${previewMode || !scriptTodosVisible ? ' hide-script-todos' : ''}${!previewMode && !markupsVisible && !markupEditOpen ? ' markups-hidden' : ''}${previewMode && previewOpts.doubleSpaceHeaders ? ' pv-hdr-double' : ''}${previewMode && !previewOpts.boldHeaders ? ' pv-hdr-plain' : ''}${previewMode && previewOpts.underlineHeaders ? ' pv-hdr-underline' : ''}`}
                   ref={pageRef}
                   style={{
                     fontFamily: `'${fontFamily}', 'Courier New', Courier, monospace`,

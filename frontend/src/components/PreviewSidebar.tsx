@@ -5,9 +5,10 @@
  *   INCLUDE…         — which working annotations show in the preview
  *   EXPORT           — Save As PDF / .fountain / Final Draft / Plain text
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
+import { MarkupIcon } from './markupIcons';
 import { downloadFDX } from '../utils/fdxExporter';
 import { downloadFountain, exportFountain } from '../utils/fountainExporter';
 import { exportPDF } from '../utils/pdfExporter';
@@ -24,6 +25,23 @@ function Check({ label, value, onChange }: { label: string; value: boolean; onCh
 
 export default function PreviewSidebar({ editor }: { editor: Editor | null }) {
   const { previewOpts, setPreviewOpt, documentTitle, pageLayout } = useEditorStore();
+  const toggleAnnotIcon = useEditorStore((s) => s.togglePreviewAnnotationIcon);
+  const presets = useEditorStore((s) => s.markupPresets);
+  /* The CURRENT annotation types — the preset list, one row per distinct
+     icon (a color variant of the same icon is the same TYPE here). */
+  const annotationTypes = useMemo(() => {
+    const seen = new Set<string>();
+    const out: { icon: string; color: string; label: string }[] = [];
+    for (const p of presets) {
+      if (seen.has(p.icon)) continue;
+      seen.add(p.icon);
+      const label = p.icon.startsWith('emoji:')
+        ? p.icon.slice(6)
+        : p.icon.charAt(0).toUpperCase() + p.icon.slice(1);
+      out.push({ icon: p.icon, color: p.color, label });
+    }
+    return out;
+  }, [presets]);
   const [busy, setBusy] = useState<string | null>(null);
 
   const run = async (kind: string, fn: () => Promise<void>) => {
@@ -42,7 +60,9 @@ export default function PreviewSidebar({ editor }: { editor: Editor | null }) {
   const exportPdf = () => run('pdf', async () => {
     const s = useEditorStore.getState();
     await exportPDF(editor!.getJSON(), documentTitle, pageLayout, {
-      sceneNumbersVisible: previewOpts.sceneNumbers,
+      // v6.09: the Include list is annotations-only now — scene numbers in
+      // the PDF follow the editor's own scene-number toggle.
+      sceneNumbersVisible: s.sceneNumbersVisible,
       documentTitle: s.documentTitle,
       revisionColor: s.revisionMode ? s.revisionColor : '',
     });
@@ -70,17 +90,34 @@ export default function PreviewSidebar({ editor }: { editor: Editor | null }) {
 
   return (
     <div className="preview-sidebar">
-      <div className="pv-section-title">Template Options</div>
+      <div className="pv-section-title">Script Options</div>
       <Check label="Double-space scene headers" value={previewOpts.doubleSpaceHeaders} onChange={(v) => setPreviewOpt('doubleSpaceHeaders', v)} />
       <Check label="Bold scene headers" value={previewOpts.boldHeaders} onChange={(v) => setPreviewOpt('boldHeaders', v)} />
       <Check label="Underline scene headers" value={previewOpts.underlineHeaders} onChange={(v) => setPreviewOpt('underlineHeaders', v)} />
       <p className="pv-hint">Spec convention: plain headers, no scene numbers, right edge ragged.</p>
 
-      <div className="pv-section-title">Include…</div>
-      <Check label="Sections & markers" value={previewOpts.sections} onChange={(v) => setPreviewOpt('sections', v)} />
-      <Check label="Notes" value={previewOpts.notes} onChange={(v) => setPreviewOpt('notes', v)} />
-      <Check label="Scene numbers" value={previewOpts.sceneNumbers} onChange={(v) => setPreviewOpt('sceneNumbers', v)} />
-      <Check label="Script to-dos" value={previewOpts.todos} onChange={(v) => setPreviewOpt('todos', v)} />
+      {/* v6.09, Derek: the old include toggles (sections, notes, scene
+          numbers, to-dos) are gone — working notes never show in Preview,
+          and scene numbers follow the editor's own toggle. What CAN be
+          included is annotations, by type: the CURRENT types from
+          Customize ▸ Annotations (one row per distinct icon). */}
+      <div className="pv-section-title">Include Annotations…</div>
+      {annotationTypes.map((t) => (
+        <label key={t.icon} className="pv-check pv-annot-check">
+          <span className="pv-annot-name">
+            <span className="pv-annot-icon"><MarkupIcon icon={t.icon} color={t.color} /></span>
+            {t.label}
+          </span>
+          <input
+            type="checkbox"
+            checked={previewOpts.annotationIcons.includes(t.icon)}
+            onChange={() => toggleAnnotIcon(t.icon)}
+          />
+        </label>
+      ))}
+      {annotationTypes.length === 0 && (
+        <p className="pv-hint">No annotation types yet — add them in Customize&nbsp;▸&nbsp;Annotations.</p>
+      )}
 
       <div className="pv-section-title">Export</div>
       <button className="pv-export-primary" onClick={exportPdf} disabled={!!busy}>
