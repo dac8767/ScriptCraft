@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.20 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.22 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,51 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.22 — Helper Text: its own window, with the control's face on every row
+
+- Derek (items 5–7 of the batch): rows must show WHICH control they
+  belong to; the section leaves the Design window for its OWN window
+  under Help ▸ Developer; every row shows at once (no cap).
+- Window: `HelperTextWindow.tsx` — dz-panel shell (drag by header,
+  EdgeResizeZones, portal), own search + kind chips, ALL rows.
+  Store flag `helperTextWindowOpen` (designSlice, session-only).
+  Menu: Help ▸ Developer ▸ Helper Text… (FaRegEdit). DesignPanel lost
+  the group, its filter plumbing and the 'helper-text' collapsed id.
+- Row context: the generator captures, per tooltip site, the control's
+  ICON component (`<Fa…/<Lu…` — the two packs in use) and/or first
+  visible TEXT child from the JSX after the attribute; entries carry
+  `icon`/`label`, files stay in `where`. Icons render through the
+  GENERATED `src/data/helperTextIcons.ts` (imports exactly the named
+  icons — tree-shaking stays honest; regenerated with the catalog).
+  388 strings, ~150 with icon/label context; the rest show their source
+  file's name. TRAP fixed in the scan: a bare `\b` after the icon-name
+  regex also matched the END of the sliced window and minted truncated
+  names (FaDotCi, FaR) — the terminator `[\s/>]` is required.
+- check-v620 re-pointed at the window (9): menu path opens it — EXACT
+  item text there, the Developer parent row's textContent contains the
+  whole nested submenu so a substring match clicks the parent — 388
+  rows, no cap note, 91 icons, group gone from Design, live tooltip/
+  hint overrides, reset, persistence. check-helper-catalog still guards
+  drift (regen: node devtools/build-helper-catalog.mjs — writes BOTH
+  files now).
+- Gates: tsc 0, 1090 tests, build, checks 641/0 (shared run with
+  v6.21: +6 check-v621, +3 net as check-v620 grew 6→9).
+
+### v6.21 — Goals: the current total on the Reach rows; one-row footer; Header/Footer
+
+- Derek (items 1–4): the Reach word/page rows carry the script's
+  CURRENT total right-aligned (`.fs-goal-nowcount`, margin-left auto,
+  tabular-nums — reads `current`, the same source the explainer line
+  uses); the footer is ONE row (flex row space-between; the Vomit
+  caption tightened to "Vomit Draft Mode", its full sentence is now the
+  label's hover text — which the Helper Text editor can edit); the
+  placement toggle reads Header / Footer — the STORED value keeps the
+  name 'toolbar' (persisted in viewState; renaming it orphans saved
+  choices). The header chip already hugged the ribbon's right edge
+  (margin-left auto, 12px = the bar's padding) — verified, not changed.
+- check-v621 (6) pins: both tabs' totals, right alignment, one-row
+  footer, the Header|Footer labels, the chip's right-edge seat.
+
 ### v6.20 — the Helper Text editor (Design window)
 
 - Derek: "create a new item in the dev window called 'Helper Text' …
@@ -333,61 +378,13 @@ Durable bits kept live here:
   Tab from action.
 - Gates: tsc 0, 1084 tests, build, checks 613/0 (+7: check-v618).
 
-### v6.17 — a dragged snippet drops its TEXT into the script
-
-- Derek: dragging a snippet into the script inserted
-  "0d855902-f95d-4227-b7ce-39e146b8f1e5". The card grip's text/plain
-  payload had been the card's UUID since v5.24 — set ONLY to satisfy
-  WebKit's no-data-no-drag rule — and text/plain is exactly what
-  ProseMirror pastes on an external drop. Nothing ever read the id
-  (reorder tracks `dragId` in React state; NotebookTool's readers match
-  their own ids and no-op on anything else), so the payload was free.
-- `cardDragText(card)` (StickyCard.tsx, exported): snippets carry
-  `card.text` VERBATIM (multi-line survives, \n → blocks on drop);
-  notes flatten their rich HTML via the shared stripHtml; empty text
-  falls back to a single space so WebKit still starts the drag. The
-  card SURVIVES the drop (copy, not move).
-- Tests: StickyCard.dragText.test.tsx (4 — payload rules; NOTE the
-  repo runs vitest 4, where environmentMatchGlobs is dead config: a
-  jsdom component test MUST carry `// @vitest-environment jsdom` as its
-  first line, which every existing .test.tsx already does). check-v617
-  (6) runs the REAL handlers: dragstart on the grip with a fresh
-  DataTransfer, the app writes its payload, the same DataTransfer rides
-  a drop onto .ProseMirror — text lands, both lines, no UUID, card kept.
-- Gates: tsc 0, 1084 tests, build, checks 606/0 (+6: check-v617).
-
-### v6.16 — collapsed tabs expand back; Working Notes menu gone
-
-- Derek: "if the window size is expanded to a point where all of the tabs
-  would fit, this drop down is supposed to automatically change into the
-  tab format… both a popped out window and a window in the side panel."
-  Root cause in `naturalWidth()` (ToolDock.tsx): the docked strip's
-  controls span is a flex-GROW spacer (v4.90) — its STRETCHED offsetWidth
-  absorbs every free pixel, so `need` tracked the row's width and the fit
-  test could never pass once the tabs collapsed. Same self-defeating
-  arithmetic v4.91 killed for the auto margin, through the width this
-  time. Fix: a grow container's natural width is the SUM of its children
-  (the flex-wrap treatment), and an empty grow spacer wants nothing
-  (padding + right margin only).
-- check-v616 (6/6) pins collapse→expand→collapse in BOTH shapes: left
-  panel 250→700→250px (setPanelSizeMode('left','custom') +
-  setChromeCustomPx('panelLeft', …)) and floating window 360→900→360px
-  (setToolSize). Characters is the fixture — real tabs + a controls
-  cluster.
-- Derek (mid-ship): the View menu's WORKING NOTES submenu is removed —
-  the six Show-…-in-Script checks and Show/Hide All. Store state and the
-  tools' own toggles live on; the Annotations submenu right below stays.
-  (nativeMenuSync.test still lists the label — it's a sample string for
-  the ampersand escape, not a menu reference.)
-- Handoff hygiene: §1 had grown to 21 fully-written sections (the cap
-  above says 4–5) — v5.77…v6.11 moved verbatim to the archive.
-- Gates: tsc 0, 1080 tests, build, checks 600/0 (+6: check-v616).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.17** — a dragged snippet drops its TEXT into the script
+- **v6.16** — collapsed tabs expand back; Working Notes menu gone
 - **v6.15** — Goals: Show in Toolbar/Footer, relative count goals, footer
 - **v6.14** — Derek's menu reorganization
 - **v6.13** — Characters polish: flat list rows, quieter cards, List first

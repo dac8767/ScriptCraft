@@ -151,7 +151,58 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.15 and older (newest first)
+## Version history — v6.17 and older (newest first)
+
+### v6.17 — a dragged snippet drops its TEXT into the script
+
+- Derek: dragging a snippet into the script inserted
+  "0d855902-f95d-4227-b7ce-39e146b8f1e5". The card grip's text/plain
+  payload had been the card's UUID since v5.24 — set ONLY to satisfy
+  WebKit's no-data-no-drag rule — and text/plain is exactly what
+  ProseMirror pastes on an external drop. Nothing ever read the id
+  (reorder tracks `dragId` in React state; NotebookTool's readers match
+  their own ids and no-op on anything else), so the payload was free.
+- `cardDragText(card)` (StickyCard.tsx, exported): snippets carry
+  `card.text` VERBATIM (multi-line survives, \n → blocks on drop);
+  notes flatten their rich HTML via the shared stripHtml; empty text
+  falls back to a single space so WebKit still starts the drag. The
+  card SURVIVES the drop (copy, not move).
+- Tests: StickyCard.dragText.test.tsx (4 — payload rules; NOTE the
+  repo runs vitest 4, where environmentMatchGlobs is dead config: a
+  jsdom component test MUST carry `// @vitest-environment jsdom` as its
+  first line, which every existing .test.tsx already does). check-v617
+  (6) runs the REAL handlers: dragstart on the grip with a fresh
+  DataTransfer, the app writes its payload, the same DataTransfer rides
+  a drop onto .ProseMirror — text lands, both lines, no UUID, card kept.
+- Gates: tsc 0, 1084 tests, build, checks 606/0 (+6: check-v617).
+
+### v6.16 — collapsed tabs expand back; Working Notes menu gone
+
+- Derek: "if the window size is expanded to a point where all of the tabs
+  would fit, this drop down is supposed to automatically change into the
+  tab format… both a popped out window and a window in the side panel."
+  Root cause in `naturalWidth()` (ToolDock.tsx): the docked strip's
+  controls span is a flex-GROW spacer (v4.90) — its STRETCHED offsetWidth
+  absorbs every free pixel, so `need` tracked the row's width and the fit
+  test could never pass once the tabs collapsed. Same self-defeating
+  arithmetic v4.91 killed for the auto margin, through the width this
+  time. Fix: a grow container's natural width is the SUM of its children
+  (the flex-wrap treatment), and an empty grow spacer wants nothing
+  (padding + right margin only).
+- check-v616 (6/6) pins collapse→expand→collapse in BOTH shapes: left
+  panel 250→700→250px (setPanelSizeMode('left','custom') +
+  setChromeCustomPx('panelLeft', …)) and floating window 360→900→360px
+  (setToolSize). Characters is the fixture — real tabs + a controls
+  cluster.
+- Derek (mid-ship): the View menu's WORKING NOTES submenu is removed —
+  the six Show-…-in-Script checks and Show/Hide All. Store state and the
+  tools' own toggles live on; the Annotations submenu right below stays.
+  (nativeMenuSync.test still lists the label — it's a sample string for
+  the ampersand escape, not a menu reference.)
+- Handoff hygiene: §1 had grown to 21 fully-written sections (the cap
+  above says 4–5) — v5.77…v6.11 moved verbatim to the archive.
+- Gates: tsc 0, 1080 tests, build, checks 600/0 (+6: check-v616).
+
 
 ### v6.15 — Goals: Show in Toolbar/Footer, relative count goals, footer
 

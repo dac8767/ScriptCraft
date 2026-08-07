@@ -128,7 +128,7 @@ import {
   FaToggleOn,
   FaLock,
   FaFileSignature,
-  FaRegClone, FaStream,   FaEdit,
+  FaRegClone, FaStream,   FaEdit, FaRegEdit,
   FaTags,
   FaMarker, FaRegEyeSlash, FaRegEye, FaCheck, FaWrench,
   FaBug,
@@ -1691,6 +1691,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           ...ALL_TOOLS.filter((t) => t.id === 'rewrite').map((t) => ({
             icon: t.icon, label: t.label, action: () => useEditorStore.getState().openTool(t.id),
           })),
+          {
+            // v6.22, Derek: the Helper Text editor's own window.
+            icon: <FaRegEdit />,
+            label: 'Helper Text…',
+            action: () => useEditorStore.getState().setHelperTextWindowOpen(true),
+          },
           /* v1.34: the switch for features that exist but aren't finished
            * (Collaboration, Lock Pages). One flag, read wherever an
            * unreleased item renders — not a per-feature checkbox list. */

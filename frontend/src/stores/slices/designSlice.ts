@@ -21,6 +21,10 @@ export interface DesignSlice {
   resetAllDesign: () => void;
   designPanelOpen: boolean;
   setDesignPanelOpen: (v: boolean) => void;
+  /** v6.22, Derek: the Helper Text editor is its OWN window now (Help ▸
+   *  Developer ▸ Helper Text…) — session flag, like a dialog. */
+  helperTextWindowOpen: boolean;
+  setHelperTextWindowOpen: (v: boolean) => void;
 }
 
 /** v4.46: toolWinHeaderPad split into four per-side knobs — a saved override
@@ -66,4 +70,6 @@ export const createDesignSlice: StateCreator<EditorState, [], [], DesignSlice> =
   }),
   designPanelOpen: false,
   setDesignPanelOpen: (v) => set({ designPanelOpen: v }),
+  helperTextWindowOpen: false,
+  setHelperTextWindowOpen: (v) => set({ helperTextWindowOpen: v }),
 });

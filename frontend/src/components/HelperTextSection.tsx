@@ -1,36 +1,57 @@
 /**
- * HelperTextSection (v6.20) — the Design window's "Helper Text" group.
- * Derek: "edit every single piece of helper text in the app … blank lists
- * and fields, hover text, helper text for buttons and windows, the ? button
- * text."
+ * HelperTextSection (v6.20; own window since v6.22) — the guts of the Helper
+ * Text editor. Derek: "edit every single piece of helper text in the app …
+ * blank lists and fields, hover text, helper text for buttons and windows,
+ * the ? button text."
  *
  * Lists every string the generated catalog knows (tooltips, field
  * placeholders, content hints — devtools/build-helper-catalog.mjs) with an
- * edit field per row. Overrides are keyed by the DEFAULT string
- * (helperTextOverrides in the store): editing "Delete" retitles every
- * Delete tooltip at once — they were the same string on purpose. Delivery
- * is utils/helperText.ts: the DOM applier for title/placeholder, ht()/useHt()
- * for rendered hints.
+ * edit field per row — ALL of them at once (v6.22; the 60-row cap is gone).
+ * Each row leads with the control it belongs to: the control's ICON and/or
+ * visible text where the scan found one (v6.22), else the source file's
+ * name. Overrides key on the DEFAULT string (helperTextOverrides): editing
+ * "Delete" retitles every Delete tooltip at once — they were the same
+ * string on purpose. Delivery is utils/helperText.ts: the DOM applier for
+ * title/placeholder, ht()/useHt() for rendered hints.
  */
 import { useState } from 'react';
 import { LuRotateCcw } from 'react-icons/lu';
 import { useEditorStore } from '../stores/editorStore';
+import { HELPER_ICONS } from '../data/helperTextIcons';
 import catalog from '../data/helperTextCatalog.json';
 
-export interface HelperEntry { text: string; kind: string; sites: number; where: string[] }
+export interface HelperEntry {
+  text: string; kind: string; sites: number; where: string[];
+  icon?: string; label?: string;
+}
 
 const KIND_LABEL: Record<string, string> = {
   tooltip: 'Hover', placeholder: 'Field', hint: 'Hint',
 };
 const KIND_FILTERS = ['all', 'tooltip', 'placeholder', 'hint'] as const;
-const SHOW_CAP = 60;
 
 export const HELPER_CATALOG = catalog as HelperEntry[];
 
-/** The catalog rows matching the Design window's search box. */
+/** The catalog rows matching the window's search box. */
 export function filterHelperCatalog(q: string): HelperEntry[] {
   if (!q) return HELPER_CATALOG;
-  return HELPER_CATALOG.filter((e) => e.text.toLowerCase().includes(q));
+  return HELPER_CATALOG.filter((e) =>
+    e.text.toLowerCase().includes(q)
+    || e.label?.toLowerCase().includes(q)
+    || e.where.some((w) => w.toLowerCase().includes(q)));
+}
+
+/** "Which control is this?" — icon + visible text when the scan found them,
+ *  else the source file's basename. */
+function RowContext({ entry }: { entry: HelperEntry }) {
+  const Icon = entry.icon ? HELPER_ICONS[entry.icon] : null;
+  const fallback = entry.where[0]?.replace(/^components\//, '').replace(/\.tsx?$/, '');
+  return (
+    <span className="ht-ctx" title={`Found in: ${entry.where.join(', ')}`}>
+      {Icon && <span className="ht-ctx-icon"><Icon /></span>}
+      <span className="ht-ctx-label">{entry.label ?? fallback}</span>
+    </span>
+  );
 }
 
 function HelperRow({ entry }: { entry: HelperEntry }) {
@@ -49,8 +70,8 @@ function HelperRow({ entry }: { entry: HelperEntry }) {
   return (
     <div className={`dz-row ht-row${edited ? ' dz-row-on' : ''}`}>
       <div className="ht-row-head">
+        <RowContext entry={entry} />
         <span className="ht-kind">{KIND_LABEL[entry.kind] ?? entry.kind}</span>
-        {edited && <span className="ht-default" title="The app's own text">{entry.text}</span>}
         <button
           className="dz-reset"
           title={edited ? 'Reset to the app’s own text' : 'Default'}
@@ -58,6 +79,7 @@ function HelperRow({ entry }: { entry: HelperEntry }) {
           onClick={() => { setDraft(null); setOverride(entry.text, null); }}
         ><LuRotateCcw /></button>
       </div>
+      {edited && <div className="ht-default" title="The app’s own text">{entry.text}</div>}
       <input
         className="ht-input"
         value={shown}
@@ -79,7 +101,6 @@ export function HelperTextSection({ entries }: { entries: HelperEntry[] }) {
   const [kind, setKind] = useState<(typeof KIND_FILTERS)[number]>('all');
 
   const visible = kind === 'all' ? entries : entries.filter((e) => e.kind === kind);
-  const shown = visible.slice(0, SHOW_CAP);
   const editedCount = Object.keys(overrides).length;
 
   return (
@@ -100,13 +121,9 @@ export function HelperTextSection({ entries }: { entries: HelperEntry[] }) {
           </button>
         )}
       </div>
-      {shown.map((e) => <HelperRow key={e.text} entry={e} />)}
-      {visible.length > SHOW_CAP && (
-        <div className="dz-hint ht-more">
-          {visible.length - SHOW_CAP} more — search above to narrow the list.
-        </div>
-      )}
-      {visible.length === 0 && <div className="dz-hint ht-more">Nothing in this group matches.</div>}
+      {/* v6.22, Derek: EVERY row renders — no cap, no "N more" note. */}
+      {visible.map((e) => <HelperRow key={e.text} entry={e} />)}
+      {visible.length === 0 && <div className="dz-hint ht-more">Nothing matches.</div>}
     </>
   );
 }

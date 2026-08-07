@@ -376,6 +376,12 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
               onFocus={() => setCountMode('reach')}
               onChange={(e) => setTarget(Math.max(1, Number(e.target.value) || 1))}
             />
+            {/* v6.21, Derek: the CURRENT total rides the Reach row, right-
+                aligned — you set an absolute target while looking at where
+                the script stands. */}
+            <span className="fs-goal-nowcount" title={`Current ${kind === 'pages' ? 'page count' : 'word count'}`}>
+              {current.toLocaleString()}
+            </span>
           </label>
           <label className={`fs-goal-timemode${countMode === 'relative' ? ' active' : ''}`}>
             <input
@@ -419,7 +425,7 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
               className={`locmap-tool-btn${goalShowIn === 'toolbar' ? ' loc-group-on' : ''}`}
               aria-pressed={goalShowIn === 'toolbar'}
               onClick={() => setGoalShowIn('toolbar')}
-            >Toolbar</button>
+            >Header</button>
             <button
               className={`locmap-tool-btn${goalShowIn === 'footer' ? ' loc-group-on' : ''}`}
               aria-pressed={goalShowIn === 'footer'}
@@ -429,14 +435,14 @@ export default function GoalsTool({ editor }: GoalsToolProps) {
         </div>
         {/* v1.82: the old Vomit Draft tool — one checkbox that applies to
             whatever goal you start next. */}
-        <label className="fs-goal-vomit">
+        <label className="fs-goal-vomit" title="Lock previous text until the goal is done">
           <input
             type="checkbox"
             disabled={!editor}
             checked={vomitMode}
             onChange={(e) => setVomitMode(e.target.checked)}
           />
-          <span>Vomit Draft Mode — lock previous text until the goal is done</span>
+          <span>Vomit Draft Mode</span>
         </label>
       </div>
     </div>

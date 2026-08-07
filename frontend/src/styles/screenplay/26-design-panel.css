@@ -177,12 +177,33 @@
   border: 1px solid var(--fd-border); border-radius: 4px;
   padding: 1px 5px;
 }
-.ht-default {
+/* v6.22: the row leads with the CONTROL it belongs to — icon + visible
+   text where the scan found one, else the source file's name. */
+.ht-ctx {
   flex: 1; min-width: 0;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.ht-ctx-icon {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center;
+  font-size: 12px; color: var(--fd-text-muted);
+}
+.ht-ctx-label {
+  min-width: 0;
+  font-size: 11px; font-weight: 600; color: var(--fd-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ht-default {
+  margin-top: 3px;
   font-size: 10.5px; color: var(--fd-text-muted);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .ht-row-head .dz-reset { margin-left: auto; }
+.ht-row-head .ht-kind { margin-left: auto; }
+.ht-row-head .ht-kind + .dz-reset { margin-left: 0; }
+/* v6.22: the Helper Text window (dz-panel shell, own default size). */
+.htw-panel { display: flex; flex-direction: column; }
+.htw-panel .dz-body { flex: 1; }
 .ht-input {
   width: 100%;
   margin-top: 4px;

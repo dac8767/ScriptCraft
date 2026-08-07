@@ -5,7 +5,8 @@
   "sites": 1,
   "where": [
    "components/TypewriterTool.tsx"
-  ]
+  ],
+  "icon": "FaRegQuestionCircle"
  },
  {
   "text": "About this tab",
@@ -13,7 +14,8 @@
   "sites": 1,
   "where": [
    "components/CustomizePanelsDialog.tsx"
-  ]
+  ],
+  "icon": "FaRegQuestionCircle"
  },
  {
   "text": "Act structure",
@@ -29,7 +31,8 @@
   "sites": 1,
   "where": [
    "components/ScreenplayEditor.tsx"
-  ]
+  ],
+  "label": "Activity"
  },
  {
   "text": "Add a custom page — the script flows around it",
@@ -45,7 +48,8 @@
   "sites": 1,
   "where": [
    "components/CustomizePanelsDialog.tsx"
-  ]
+  ],
+  "label": "Add Divider"
  },
  {
   "text": "Add a divider line to the left panel",
@@ -77,7 +81,8 @@
   "sites": 1,
   "where": [
    "components/CustomizePanelsDialog.tsx"
-  ]
+  ],
+  "label": "Add Spacer"
  },
  {
   "text": "Add a spacer to the left panel",
@@ -93,7 +98,8 @@
   "sites": 1,
   "where": [
    "components/TitlePageEditor.tsx"
-  ]
+  ],
+  "icon": "FaRegImage"
  },
  {
   "text": "Add an item, divider, spacer or section here",
@@ -109,7 +115,8 @@
   "sites": 1,
   "where": [
    "components/MarkupsPanel.tsx"
-  ]
+  ],
+  "icon": "FaPlus"
  },
  {
   "text": "Add Annotation",
@@ -117,7 +124,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaMarker"
  },
  {
   "text": "Add as a character with the detected description and age",
@@ -149,7 +157,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaAlignCenter"
  },
  {
   "text": "Align Left",
@@ -157,7 +166,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaAlignLeft"
  },
  {
   "text": "Align Right",
@@ -165,7 +175,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaAlignRight"
  },
  {
   "text": "Align Split — sections after this hug the right edge",
@@ -173,7 +184,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaExchangeAlt"
  },
  {
   "text": "Annotation Visibility",
@@ -181,7 +193,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaMarker"
  },
  {
   "text": "Antonyms",
@@ -189,7 +202,8 @@
   "sites": 1,
   "where": [
    "components/ThesaurusTool.tsx"
-  ]
+  ],
+  "label": "ant."
  },
  {
   "text": "Apply an outline structure, or save your own",
@@ -197,7 +211,8 @@
   "sites": 1,
   "where": [
    "components/BeatBoard.tsx"
-  ]
+  ],
+  "label": "Presets…"
  },
  {
   "text": "Apply this workspace",
@@ -205,7 +220,8 @@
   "sites": 1,
   "where": [
    "components/WorkspacesTool.tsx"
-  ]
+  ],
+  "icon": "FaColumns"
  },
  {
   "text": "Attach image",
@@ -213,7 +229,8 @@
   "sites": 1,
   "where": [
    "components/BeatBoard.tsx"
-  ]
+  ],
+  "icon": "FaPaperclip"
  },
  {
   "text": "Audio unavailable",
@@ -221,7 +238,8 @@
   "sites": 1,
   "where": [
    "components/CharacterAssetMedia.tsx"
-  ]
+  ],
+  "label": "Voice clip unavailable"
  },
  {
   "text": "Back",
@@ -229,7 +247,8 @@
   "sites": 1,
   "where": [
    "components/ThesaurusTool.tsx"
-  ]
+  ],
+  "icon": "FaArrowLeft"
  },
  {
   "text": "Back to project",
@@ -245,7 +264,9 @@
   "sites": 1,
   "where": [
    "components/TreatmentEditor.tsx"
-  ]
+  ],
+  "icon": "FaQuoteLeft",
+  "label": "Initializing editor…"
  },
  {
   "text": "Bold",
@@ -256,7 +277,9 @@
    "components/MiniRichText.tsx",
    "components/TemplateEditorDialog.tsx",
    "components/TreatmentEditor.tsx"
-  ]
+  ],
+  "icon": "FaBold",
+  "label": "B"
  },
  {
   "text": "Bold (⌘B)",
@@ -273,7 +296,8 @@
   "where": [
    "components/MiniRichText.tsx",
    "components/TreatmentEditor.tsx"
-  ]
+  ],
+  "icon": "FaListUl"
  },
  {
   "text": "Buy me a coffee",
@@ -290,7 +314,8 @@
   "where": [
    "components/WorkspaceDialogs.tsx",
    "components/WorkspacesTool.tsx"
-  ]
+  ],
+  "icon": "FaEdit"
  },
  {
   "text": "Cancel reorder",
@@ -298,7 +323,8 @@
   "sites": 1,
   "where": [
    "components/IndexCards.tsx"
-  ]
+  ],
+  "label": "Cancel"
  },
  {
   "text": "Card color",
@@ -306,7 +332,8 @@
   "sites": 1,
   "where": [
    "components/BeatBoard.tsx"
-  ]
+  ],
+  "icon": "FaPaperclip"
  },
  {
   "text": "Choose a color",
@@ -322,7 +349,8 @@
   "sites": 1,
   "where": [
    "components/SaveAsDialog.tsx"
-  ]
+  ],
+  "label": "Additional save locations:"
  },
  {
   "text": "Choose which outline the bar shows",
@@ -375,7 +403,7 @@
  {
   "text": "Close",
   "kind": "tooltip",
-  "sites": 18,
+  "sites": 19,
   "where": [
    "components/ChangelogDialog.tsx",
    "components/CharacterProfiles.tsx",
@@ -383,7 +411,9 @@
    "components/DesignPanel.tsx",
    "components/EditElementsDialog.tsx",
    "components/GuidedSetupDialog.tsx"
-  ]
+  ],
+  "icon": "LuSearch",
+  "label": "Transition text"
  },
  {
   "text": "Close diff",
@@ -391,7 +421,8 @@
   "sites": 1,
   "where": [
    "components/ScriptDiffView.tsx"
-  ]
+  ],
+  "label": "No differences."
  },
  {
   "text": "Close search",
@@ -431,7 +462,8 @@
   "sites": 1,
   "where": [
    "components/WorkspacesTool.tsx"
-  ]
+  ],
+  "icon": "FaCheck"
  },
  {
   "text": "Connect this location to others — connected locations form a group",
@@ -439,7 +471,9 @@
   "sites": 1,
   "where": [
    "components/LocationPlaceDetails.tsx"
-  ]
+  ],
+  "icon": "FaLink",
+  "label": "Group"
  },
  {
   "text": "Copy invite link",
@@ -463,7 +497,8 @@
   "sites": 1,
   "where": [
    "components/StickyCard.tsx"
-  ]
+  ],
+  "icon": "FaCopy"
  },
  {
   "text": "Current theme",
@@ -471,7 +506,8 @@
   "sites": 1,
   "where": [
    "components/ThemesTab.tsx"
-  ]
+  ],
+  "label": "Custom"
  },
  {
   "text": "Custom color",
@@ -505,7 +541,8 @@
   "sites": 1,
   "where": [
    "components/BeatBoard.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Delete",
@@ -516,7 +553,8 @@
    "components/StickyCard.tsx",
    "components/WorkspaceDialogs.tsx",
    "components/WorkspacesTool.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Delete annotation",
@@ -524,7 +562,8 @@
   "sites": 1,
   "where": [
    "components/MarkupPopover.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Delete beat",
@@ -532,7 +571,8 @@
   "sites": 1,
   "where": [
    "components/BeatBoard.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Delete custom category",
@@ -540,7 +580,8 @@
   "sites": 1,
   "where": [
    "components/TagsPanel.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Delete entity and all occurrences",
@@ -548,7 +589,8 @@
   "sites": 1,
   "where": [
    "components/TagsPanel.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Delete note",
@@ -556,7 +598,8 @@
   "sites": 1,
   "where": [
    "components/ScriptNotePopover.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Delete page",
@@ -564,7 +607,8 @@
   "sites": 1,
   "where": [
    "components/NotebookTool.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Delete relationship",
@@ -572,7 +616,8 @@
   "sites": 1,
   "where": [
    "components/CharacterRelationshipsTab.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Delete section",
@@ -580,7 +625,8 @@
   "sites": 1,
   "where": [
    "components/BeatBoard.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Delete section (pages move to the top level)",
@@ -588,7 +634,8 @@
   "sites": 1,
   "where": [
    "components/NotebookTool.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Delete this theme",
@@ -596,7 +643,8 @@
   "sites": 1,
   "where": [
    "components/ThemesTab.tsx"
-  ]
+  ],
+  "label": "Delete"
  },
  {
   "text": "Discard this capture",
@@ -604,7 +652,8 @@
   "sites": 1,
   "where": [
    "components/FeedbackTool.tsx"
-  ]
+  ],
+  "icon": "FaTimes"
  },
  {
   "text": "Dissolve the group's name — the locations stay connected",
@@ -612,7 +661,8 @@
   "sites": 1,
   "where": [
    "components/LocationPlaceDetails.tsx"
-  ]
+  ],
+  "label": "Ungroup"
  },
  {
   "text": "Double-click to go to this scene",
@@ -644,7 +694,8 @@
   "sites": 1,
   "where": [
    "components/AssetManager.tsx"
-  ]
+  ],
+  "icon": "FaDownload"
  },
  {
   "text": "Download the PNG (screenshot folder, or Downloads) — then upload it to the form",
@@ -652,7 +703,8 @@
   "sites": 1,
   "where": [
    "components/FeedbackTool.tsx"
-  ]
+  ],
+  "icon": "FaDownload"
  },
  {
   "text": "Drag sideways: panel width · drag up/down: item size",
@@ -685,7 +737,8 @@
   "where": [
    "components/CustomizePanelsDialog.tsx",
    "components/MarkupPickers.tsx"
-  ]
+  ],
+  "label": "Drop items here"
  },
  {
   "text": "Drag to move this boundary (resizes the previous section)",
@@ -721,7 +774,8 @@
    "components/CharacterProfiles.tsx",
    "components/SceneNavigator.tsx",
    "editor/extensions/ScreenplayImageView.tsx"
-  ]
+  ],
+  "label": "Description"
  },
  {
   "text": "Drag to resize — the new height becomes this tool's default",
@@ -753,7 +807,8 @@
   "sites": 1,
   "where": [
    "components/ThemesTab.tsx"
-  ]
+  ],
+  "label": "Edit"
  },
  {
   "text": "Editor View",
@@ -785,7 +840,8 @@
   "sites": 1,
   "where": [
    "components/LocationsGroupToggle.tsx"
-  ]
+  ],
+  "label": "Ungrouped"
  },
  {
   "text": "Expand synopsis",
@@ -833,7 +889,8 @@
   "sites": 1,
   "where": [
    "components/CharacterScanTab.tsx"
-  ]
+  ],
+  "label": "Classify…"
  },
  {
   "text": "Fill card",
@@ -849,7 +906,8 @@
   "sites": 1,
   "where": [
    "components/SceneNavigator.tsx"
-  ]
+  ],
+  "label": "Filter"
  },
  {
   "text": "Filter annotations",
@@ -857,7 +915,8 @@
   "sites": 1,
   "where": [
    "components/NavigatorTool.tsx"
-  ]
+  ],
+  "label": "Filter"
  },
  {
   "text": "Filter annotations (script and window together)",
@@ -865,7 +924,8 @@
   "sites": 1,
   "where": [
    "components/MarkupsPanel.tsx"
-  ]
+  ],
+  "label": "Filter"
  },
  {
   "text": "Filter by tag",
@@ -873,7 +933,8 @@
   "sites": 1,
   "where": [
    "components/ChangelogDialog.tsx"
-  ]
+  ],
+  "label": "All tags"
  },
  {
   "text": "Filter locations",
@@ -881,7 +942,8 @@
   "sites": 1,
   "where": [
    "components/SceneNavigator.tsx"
-  ]
+  ],
+  "label": "Filter"
  },
  {
   "text": "Find & Replace (⌘F)",
@@ -889,7 +951,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "LuSearch"
  },
  {
   "text": "Fit all characters to screen",
@@ -897,7 +960,8 @@
   "sites": 1,
   "where": [
    "components/RelationshipMap.tsx"
-  ]
+  ],
+  "label": "Fit"
  },
  {
   "text": "Fit the preview column",
@@ -905,7 +969,9 @@
   "sites": 1,
   "where": [
    "components/TitlePageEditor.tsx"
-  ]
+  ],
+  "icon": "FaSearchPlus",
+  "label": "Fit"
  },
  {
   "text": "Fit the whole ruler to the visible width",
@@ -913,7 +979,8 @@
   "sites": 1,
   "where": [
    "components/OutlineBar.tsx"
-  ]
+  ],
+  "icon": "FaArrowsAltH"
  },
  {
   "text": "Font Family",
@@ -945,7 +1012,9 @@
   "sites": 1,
   "where": [
    "components/BeatBoard.tsx"
-  ]
+  ],
+  "icon": "FaRegQuestionCircle",
+  "label": "Freeform"
  },
  {
   "text": "Fullscreen",
@@ -962,7 +1031,8 @@
   "sites": 1,
   "where": [
    "components/SettingsPage.tsx"
-  ]
+  ],
+  "label": "System Settings"
  },
  {
   "text": "Go to Page (⌘G)",
@@ -970,7 +1040,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaHashtag"
  },
  {
   "text": "Go to page #",
@@ -978,7 +1049,8 @@
   "sites": 1,
   "where": [
    "components/SceneNavigator.tsx"
-  ]
+  ],
+  "icon": "FaHashtag"
  },
  {
   "text": "Grammar & Spelling Settings",
@@ -986,7 +1058,8 @@
   "sites": 1,
   "where": [
    "components/SpellCheckPanel.tsx"
-  ]
+  ],
+  "label": "Settings…"
  },
  {
   "text": "Has notes",
@@ -1010,7 +1083,8 @@
   "sites": 1,
   "where": [
    "components/EditElementsDialog.tsx"
-  ]
+  ],
+  "label": "Hide All"
  },
  {
   "text": "Hide every item",
@@ -1018,7 +1092,8 @@
   "sites": 1,
   "where": [
    "components/ContextMenuTab.tsx"
-  ]
+  ],
+  "label": "Hide All"
  },
  {
   "text": "Hide every non-required element",
@@ -1026,7 +1101,8 @@
   "sites": 1,
   "where": [
    "components/EditElementsDialog.tsx"
-  ]
+  ],
+  "label": "Hide All"
  },
  {
   "text": "Hide every Quick Access button",
@@ -1034,7 +1110,8 @@
   "sites": 1,
   "where": [
    "components/CustomizePanelsDialog.tsx"
-  ]
+  ],
+  "label": "Hide All"
  },
  {
   "text": "Hide every toolbar item (re-add items from the palette)",
@@ -1042,7 +1119,8 @@
   "sites": 1,
   "where": [
    "components/CustomizePanelsDialog.tsx"
-  ]
+  ],
+  "label": "Hide All"
  },
  {
   "text": "Hide everything in both panels",
@@ -1050,7 +1128,8 @@
   "sites": 1,
   "where": [
    "components/CustomizePanelsDialog.tsx"
-  ]
+  ],
+  "label": "Hide All"
  },
  {
   "text": "Hide this element",
@@ -1084,7 +1163,8 @@
    "components/CharacterProfiles.tsx",
    "components/FormatPanel.tsx",
    "components/MarkupPopover.tsx"
-  ]
+  ],
+  "label": "Reset"
  },
  {
   "text": "Highlight text in the script and link it to this annotation",
@@ -1108,7 +1188,8 @@
   "sites": 1,
   "where": [
    "components/BeatBoard.tsx"
-  ]
+  ],
+  "icon": "FaRegQuestionCircle"
  },
  {
   "text": "Icon color",
@@ -1124,7 +1205,8 @@
   "sites": 1,
   "where": [
    "components/TitlePageEditor.tsx"
-  ]
+  ],
+  "label": "Left"
  },
  {
   "text": "Image placement",
@@ -1132,7 +1214,8 @@
   "sites": 1,
   "where": [
    "components/TitlePageEditor.tsx"
-  ]
+  ],
+  "label": "Top"
  },
  {
   "text": "Image unavailable",
@@ -1156,7 +1239,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaRegFileAlt"
  },
  {
   "text": "Italic",
@@ -1167,7 +1251,9 @@
    "components/MiniRichText.tsx",
    "components/TemplateEditorDialog.tsx",
    "components/TreatmentEditor.tsx"
-  ]
+  ],
+  "icon": "FaItalic",
+  "label": "I"
  },
  {
   "text": "Italic (⌘I)",
@@ -1183,7 +1269,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaAlignJustify"
  },
  {
   "text": "Keep it",
@@ -1199,7 +1286,8 @@
   "sites": 1,
   "where": [
    "components/GuidedSetupDialog.tsx"
-  ]
+  ],
+  "label": "Skip for now"
  },
  {
   "text": "Load customization choices from a file — this replaces your current ones",
@@ -1207,7 +1295,8 @@
   "sites": 1,
   "where": [
    "components/CustomizePanelsDialog.tsx"
-  ]
+  ],
+  "label": "Import…"
  },
  {
   "text": "Load themes from a theme file, or copy them out of another project",
@@ -1223,7 +1312,17 @@
   "sites": 1,
   "where": [
    "components/LocationsGroupToggle.tsx"
-  ]
+  ],
+  "label": "Grouped"
+ },
+ {
+  "text": "Lock previous text until the goal is done",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/GoalsTool.tsx"
+  ],
+  "label": "Vomit Draft Mode"
  },
  {
   "text": "Look up",
@@ -1231,7 +1330,9 @@
   "sites": 1,
   "where": [
    "components/ThesaurusTool.tsx"
-  ]
+  ],
+  "icon": "FaSearch",
+  "label": "In script:"
  },
  {
   "text": "Manual lets you drag any order; Date Created shows newest first",
@@ -1247,7 +1348,8 @@
   "sites": 1,
   "where": [
    "components/ScriptStatistics.tsx"
-  ]
+  ],
+  "label": "TOTAL"
  },
  {
   "text": "Map options",
@@ -1263,7 +1365,8 @@
   "sites": 1,
   "where": [
    "components/MenuBar.tsx"
-  ]
+  ],
+  "icon": "FaBars"
  },
  {
   "text": "More formatting options",
@@ -1271,7 +1374,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaEllipsisV"
  },
  {
   "text": "More notes per row (smaller cards)",
@@ -1287,7 +1391,8 @@
   "sites": 1,
   "where": [
    "components/MarkupPickers.tsx"
-  ]
+  ],
+  "icon": "FaEllipsisV"
  },
  {
   "text": "Move down",
@@ -1295,7 +1400,8 @@
   "sites": 1,
   "where": [
    "components/WorkspaceDialogs.tsx"
-  ]
+  ],
+  "icon": "FaChevronDown"
  },
  {
   "text": "Move up",
@@ -1303,7 +1409,8 @@
   "sites": 1,
   "where": [
    "components/WorkspaceDialogs.tsx"
-  ]
+  ],
+  "icon": "FaChevronUp"
  },
  {
   "text": "Navigate to first occurrence",
@@ -1335,7 +1442,8 @@
   "sites": 1,
   "where": [
    "components/NotebookTool.tsx"
-  ]
+  ],
+  "icon": "FaRegEdit"
  },
  {
   "text": "New section",
@@ -1343,7 +1451,8 @@
   "sites": 1,
   "where": [
    "components/NotebookTool.tsx"
-  ]
+  ],
+  "icon": "FaFolderPlus"
  },
  {
   "text": "Next image",
@@ -1359,7 +1468,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaStickyNote"
  },
  {
   "text": "Numbered list",
@@ -1367,7 +1477,8 @@
   "sites": 1,
   "where": [
    "components/TreatmentEditor.tsx"
-  ]
+  ],
+  "icon": "FaListOl"
  },
  {
   "text": "On: a beat's color fills its whole card, in every outline tab. Off: just a thin stripe on the card's edge.",
@@ -1375,7 +1486,8 @@
   "sites": 1,
   "where": [
    "components/BeatBoard.tsx"
-  ]
+  ],
+  "label": "Show beat color on all tabs"
  },
  {
   "text": "Open annotation",
@@ -1431,7 +1543,8 @@
   "sites": 1,
   "where": [
    "components/ThemesTab.tsx"
-  ]
+  ],
+  "label": "Preview"
  },
  {
   "text": "Previous image",
@@ -1447,7 +1560,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaTags"
  },
  {
   "text": "Re-seeds the colors below from this base",
@@ -1463,7 +1577,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaRedo"
  },
  {
   "text": "Redo (Ctrl+Shift+Z)",
@@ -1471,7 +1586,9 @@
   "sites": 1,
   "where": [
    "components/IndexCards.tsx"
-  ]
+  ],
+  "icon": "FaRedo",
+  "label": "Cancel"
  },
  {
   "text": "Remove",
@@ -1488,7 +1605,8 @@
   "sites": 1,
   "where": [
    "components/TemplateEditorDialog.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Remove from the Quick Access Toolbar",
@@ -1512,7 +1630,8 @@
   "sites": 2,
   "where": [
    "components/BeatBoard.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Remove preview",
@@ -1520,7 +1639,8 @@
   "sites": 1,
   "where": [
    "components/BeatBoard.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Remove relationship",
@@ -1528,7 +1648,8 @@
   "sites": 1,
   "where": [
    "components/CharacterProfiles.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Remove the align split",
@@ -1560,7 +1681,8 @@
   "sites": 1,
   "where": [
    "components/LocationPlaceDetails.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Remove this language",
@@ -1576,7 +1698,8 @@
   "sites": 1,
   "where": [
    "components/TagsPanel.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Remove this section",
@@ -1592,7 +1715,8 @@
   "sites": 1,
   "where": [
    "components/KeyboardShortcutsTab.tsx"
-  ]
+  ],
+  "label": "Clear"
  },
  {
   "text": "Remove voice profile",
@@ -1600,7 +1724,8 @@
   "sites": 1,
   "where": [
    "components/CharacterProfiles.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Rename",
@@ -1609,7 +1734,8 @@
   "where": [
    "components/WorkspaceDialogs.tsx",
    "components/WorkspacesTool.tsx"
-  ]
+  ],
+  "icon": "FaEdit"
  },
  {
   "text": "Rename this field",
@@ -1617,7 +1743,8 @@
   "sites": 1,
   "where": [
    "components/LocationPlaceDetails.tsx"
-  ]
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Rename this group — the name shows everywhere the group does",
@@ -1633,7 +1760,8 @@
   "sites": 1,
   "where": [
    "components/CharacterProfiles.tsx"
-  ]
+  ],
+  "label": "Replace"
  },
  {
   "text": "Replace, rotate or delete the map",
@@ -1641,7 +1769,8 @@
   "sites": 1,
   "where": [
    "components/LocationMapOptions.tsx"
-  ]
+  ],
+  "label": "Map Options"
  },
  {
   "text": "Reset every customization to the defaults — sizes, toolbar layout, Quick Access, menu bar, panels, outline bar",
@@ -1657,7 +1786,8 @@
   "sites": 1,
   "where": [
    "components/BeatBoard.tsx"
-  ]
+  ],
+  "icon": "LuRotateCcw"
  },
  {
   "text": "Restore every shortcut to its default",
@@ -1665,7 +1795,8 @@
   "sites": 1,
   "where": [
    "components/KeyboardShortcutsTab.tsx"
-  ]
+  ],
+  "label": "Reset All Shortcuts"
  },
  {
   "text": "Restore the default shortcut",
@@ -1673,7 +1804,8 @@
   "sites": 1,
   "where": [
    "components/KeyboardShortcutsTab.tsx"
-  ]
+  ],
+  "label": "Reset"
  },
  {
   "text": "Restore this version",
@@ -1681,7 +1813,8 @@
   "sites": 1,
   "where": [
    "components/VersionHistory.tsx"
-  ]
+  ],
+  "label": "Restore"
  },
  {
   "text": "Revoke this invite",
@@ -1689,7 +1822,8 @@
   "sites": 1,
   "where": [
    "components/ShareDialog.tsx"
-  ]
+  ],
+  "label": "Revoke"
  },
  {
   "text": "Rotate 90° clockwise",
@@ -1697,7 +1831,9 @@
   "sites": 1,
   "where": [
    "components/LocationMapTab.tsx"
-  ]
+  ],
+  "icon": "FaUndo",
+  "label": "Rotate"
  },
  {
   "text": "Run the same passage again — add a note first to steer it (e.g. avoid a phrase)",
@@ -1705,7 +1841,8 @@
   "sites": 1,
   "where": [
    "components/RewriteTool.tsx"
-  ]
+  ],
+  "label": "Rerun"
  },
  {
   "text": "Save (⌘S)",
@@ -1713,7 +1850,9 @@
   "sites": 1,
   "where": [
    "components/TreatmentEditor.tsx"
-  ]
+  ],
+  "icon": "FaSave",
+  "label": "Save"
  },
  {
   "text": "Save every customization choice to a file",
@@ -1721,7 +1860,8 @@
   "sites": 1,
   "where": [
    "components/CustomizePanelsDialog.tsx"
-  ]
+  ],
+  "label": "Export…"
  },
  {
   "text": "Save name",
@@ -1730,7 +1870,8 @@
   "where": [
    "components/WorkspaceDialogs.tsx",
    "components/WorkspacesTool.tsx"
-  ]
+  ],
+  "icon": "FaCheck"
  },
  {
   "text": "Save your custom themes to a file",
@@ -1746,7 +1887,9 @@
   "sites": 1,
   "where": [
    "components/LocationDatabase.tsx"
-  ]
+  ],
+  "icon": "LuRotateCcw",
+  "label": "Discover"
  },
  {
   "text": "Screenshot a selected area — it appears above the form, ready to copy or download",
@@ -1754,7 +1897,8 @@
   "sites": 1,
   "where": [
    "components/FeedbackTool.tsx"
-  ]
+  ],
+  "icon": "FaCrop"
  },
  {
   "text": "Screenshot the whole window — it appears above the form, ready to copy or download",
@@ -1762,7 +1906,8 @@
   "sites": 1,
   "where": [
    "components/FeedbackTool.tsx"
-  ]
+  ],
+  "icon": "FaCamera"
  },
  {
   "text": "Search",
@@ -1770,7 +1915,8 @@
   "sites": 1,
   "where": [
    "components/ToolControls.tsx"
-  ]
+  ],
+  "icon": "LuSearch"
  },
  {
   "text": "Section",
@@ -1794,7 +1940,8 @@
   "sites": 1,
   "where": [
    "components/BeatBoard.tsx"
-  ]
+  ],
+  "label": "Sections"
  },
  {
   "text": "Select for compare",
@@ -1810,7 +1957,8 @@
   "sites": 1,
   "where": [
    "components/OutlineBar.tsx"
-  ]
+  ],
+  "icon": "FaFileExport"
  },
  {
   "text": "Show every built-in transition",
@@ -1818,7 +1966,8 @@
   "sites": 1,
   "where": [
    "components/EditElementsDialog.tsx"
-  ]
+  ],
+  "label": "Show All"
  },
  {
   "text": "Show every element",
@@ -1826,7 +1975,8 @@
   "sites": 1,
   "where": [
    "components/EditElementsDialog.tsx"
-  ]
+  ],
+  "label": "Show All"
  },
  {
   "text": "Show every item",
@@ -1834,7 +1984,8 @@
   "sites": 1,
   "where": [
    "components/ContextMenuTab.tsx"
-  ]
+  ],
+  "label": "Show All"
  },
  {
   "text": "Show every Quick Access button",
@@ -1842,7 +1993,8 @@
   "sites": 1,
   "where": [
    "components/CustomizePanelsDialog.tsx"
-  ]
+  ],
+  "label": "Show All"
  },
  {
   "text": "Show in its default panel",
@@ -1882,7 +2034,8 @@
   "sites": 1,
   "where": [
    "components/CharacterProfiles.tsx"
-  ]
+  ],
+  "label": "Voice Profile"
  },
  {
   "text": "Show this element",
@@ -1948,7 +2101,9 @@
    "components/FormatPanel.tsx",
    "components/TemplateEditorDialog.tsx",
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaStrikethrough",
+  "label": "S"
  },
  {
   "text": "Subscript",
@@ -1957,7 +2112,9 @@
   "where": [
    "components/FormatPanel.tsx",
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaSubscript",
+  "label": "X"
  },
  {
   "text": "Superscript",
@@ -1966,7 +2123,9 @@
   "where": [
    "components/FormatPanel.tsx",
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaSuperscript",
+  "label": "X"
  },
  {
   "text": "Target pages for this section on the Outline Bar",
@@ -1982,7 +2141,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaHighlighter"
  },
  {
   "text": "Text color",
@@ -1990,7 +2150,8 @@
   "sites": 1,
   "where": [
    "components/FormatPanel.tsx"
-  ]
+  ],
+  "label": "Reset"
  },
  {
   "text": "Text Color",
@@ -2009,7 +2170,7 @@
   ]
  },
  {
-  "text": "The app's own text",
+  "text": "The app’s own text",
   "kind": "tooltip",
   "sites": 1,
   "where": [
@@ -2022,7 +2183,8 @@
   "sites": 1,
   "where": [
    "components/LocationMapRail.tsx"
-  ]
+  ],
+  "icon": "FaRegEyeSlash"
  },
  {
   "text": "Title Page",
@@ -2030,7 +2192,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaFileAlt"
  },
  {
   "text": "Underline",
@@ -2041,7 +2204,9 @@
    "components/MiniRichText.tsx",
    "components/TemplateEditorDialog.tsx",
    "components/TreatmentEditor.tsx"
-  ]
+  ],
+  "icon": "FaUnderline",
+  "label": "U"
  },
  {
   "text": "Underline (⌘U)",
@@ -2057,7 +2222,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaUndo"
  },
  {
   "text": "Undo (Ctrl+Z)",
@@ -2065,7 +2231,8 @@
   "sites": 1,
   "where": [
    "components/IndexCards.tsx"
-  ]
+  ],
+  "icon": "FaUndo"
  },
  {
   "text": "Upload a voice-reference audio clip for this character",
@@ -2090,7 +2257,8 @@
   "where": [
    "components/CharacterProfiles.tsx",
    "components/SceneNavigator.tsx"
-  ]
+  ],
+  "icon": "LuWaypoints"
  },
  {
   "text": "View this version in the editor (read-only)",
@@ -2098,7 +2266,8 @@
   "sites": 1,
   "where": [
    "components/VersionHistory.tsx"
-  ]
+  ],
+  "label": "View"
  },
  {
   "text": "Working offline — click to sign in and save to the server",
@@ -2106,7 +2275,9 @@
   "sites": 1,
   "where": [
    "components/AuthIndicator.tsx"
-  ]
+  ],
+  "icon": "FaCloud",
+  "label": "Local only"
  },
  {
   "text": "Zoom",
@@ -2123,7 +2294,8 @@
   "where": [
    "components/TitlePageEditor.tsx",
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaSearchPlus"
  },
  {
   "text": "Zoom options",
@@ -2131,7 +2303,8 @@
   "sites": 1,
   "where": [
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaChevronDown"
  },
  {
   "text": "Zoom out",
@@ -2140,7 +2313,9 @@
   "where": [
    "components/TitlePageEditor.tsx",
    "components/Toolbar.tsx"
-  ]
+  ],
+  "icon": "FaSearchMinus",
+  "label": "Fit"
  },
  {
   "text": ".aff URL",
@@ -2732,6 +2907,14 @@
   "sites": 1,
   "where": [
    "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Search helper text…",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/HelperTextWindow.tsx"
   ]
  },
  {

@@ -1449,9 +1449,21 @@ body.fs-tool-dragging { cursor: grabbing; }
   margin-top: auto;
   padding-top: 10px;
   border-top: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
+  /* v6.21, Derek: ONE row — Show in left, Vomit right (the caption
+     tightened to fit; the full sentence is its hover text). */
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.fs-goal-vomit { flex: 0 0 auto; }
+/* v6.21: the current word/page total riding the Reach row's right edge. */
+.fs-goal-nowcount {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--fd-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 .fs-goal-showin { display: flex; align-items: center; gap: 8px; }
 .fs-goal-showin-label {

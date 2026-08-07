@@ -1,5 +1,21 @@
 [
   {
+    "version": "6.22",
+    "date": "2026-08-07",
+    "changes": [
+      "Helper Text moved into its own window — Help ▸ Developer ▸ Helper Text… — with search, kind filters and every string shown at once (no more \"N more\" note).",
+      "Each helper-text row now leads with the control it belongs to: the button's icon and visible text where there is one, otherwise the window it lives in — so you can tell which item you're editing."
+    ]
+  },
+  {
+    "version": "6.21",
+    "date": "2026-08-07",
+    "changes": [
+      "Goals: the Reach word / Reach page rows show the script's current total, right-aligned — set an absolute target while looking at where you stand.",
+      "Goals: the window footer is one row, and the readout placement options are named Header / Footer now. In the header, the goal chip sits at the right edge of the ribbon."
+    ]
+  },
+  {
     "version": "6.20",
     "date": "2026-08-07",
     "changes": [
