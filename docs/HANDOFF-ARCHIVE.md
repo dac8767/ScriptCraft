@@ -151,7 +151,33 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.24 and older (newest first)
+## Version history — v6.26 and older (newest first)
+
+### v6.26 — Title Page: the Contact field is 4 rows
+
+- Derek: one-liner — the tpContact textarea in TitlePageEditor grew
+  rows 3 → 4 (matches its own four-line placeholder). No CSS cap on
+  .props-textarea, so `rows` is the height. Probe-verified live (74px).
+
+### v6.25 — Goals spacing: the phantom row was DOUBLE bottom padding
+
+- Derek: space below Start/Stop; space before Quick start; "there is a
+  whole row at the bottom below the vomit draft row."
+- The phantom row: `.fs-goals` padded 12px below the footer AND the
+  window body carries the GLOBAL bottom inset (the toolWinPadBottom
+  design knob, default 18) — 30px read as an empty row. The pane's own
+  bottom padding is GONE (12px 12px 0); the footer sits flush on the
+  pane bottom and the global inset is the only gap, same as every
+  window's last row. check-v621 pins footerFlush (13 asserts now).
+- Spacing: `.fs-goal-toprow` margin-bottom 12; `.fs-goal-quick-label`
+  display block + margin-top 16 (covers the Time tab too).
+- goals defaultSize h 264 → 400 — the v6.23 layout (top row + quick
+  starts + footer) never fit 264 and clipped the footer entirely on a
+  fresh install; saved sizes are untouched.
+- The footer hairline can LOOK like it stops partway — it is full width
+  (measured 604/604); --fd-hairline at 1px on this background is just
+  near-invisible. Not a defect; do not "fix" the width.
+
 
 ### v6.24 — Helper Text: areas, on-screen found-in, hide, go-there, line breaks
 

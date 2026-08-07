@@ -43,11 +43,13 @@
   font-family: inherit; font-size: inherit; line-height: 1;
 }
 
-/* Scene Heading: FDX SpaceBefore=12pt (1 line) */
+/* Scene Heading: TWO blank lines before (24pt) — the spec-standard gap
+   (v6.30, Derek's side-by-side against another program; Final Draft's
+   Scene Heading default is Space Before 2). Was 12pt/1 line. */
 .scene-heading {
   text-transform: uppercase;
   font-weight: bold;
-  margin-top: 12pt;
+  margin-top: 24pt;
   position: relative;
 }
 .scene-heading:first-child { margin-top: 0; }
@@ -103,6 +105,13 @@
   text-align: right;
   margin-top: 12pt;
   padding-left: calc(5.50in - var(--pl, 1.50in));
+}
+/* v6.30, Derek + the standard: FADE IN: is the OPENING transition — left
+   margin, no transition indent. The class is a live decoration
+   (Transition.ts), same predicate the PDF exporter uses. */
+.transition.transition-left {
+  text-align: left;
+  padding-left: 0;
   padding-right: calc(var(--pw, 8.26in) - 7.50in - var(--pr, 0.76in));
 }
 

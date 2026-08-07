@@ -63,6 +63,23 @@ try {
   });
   const popup = await popupP;
   ok(popup.url().startsWith('blob:'), `Print opens the exact-layout PDF (${popup.url().slice(0, 24)}…)`);
+  await popup.close();
+
+  // v6.30, Derek ("clicking File > Print does nothing"): Tauri returns null
+  // from window.open WITHOUT throwing — the blocked branch must print via a
+  // hidden iframe holding the same PDF, never a silent nothing.
+  await page.evaluate(() => { window.open = () => null; });
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.menu-item')].find((m) =>
+      m.querySelector('.menu-label')?.textContent.trim() === 'File')?.click();
+  });
+  await page.waitForSelector('.menu-dropdown');
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.menu-dropdown-item')].find((b) => b.textContent.trim().startsWith('Print'))?.click();
+  });
+  await page.waitForSelector('iframe[data-print-frame]', { state: 'attached', timeout: 8000 });
+  const frameSrc = await page.$eval('iframe[data-print-frame]', (f) => f.src);
+  ok(frameSrc.startsWith('blob:'), 'blocked window.open falls back to the hidden print frame (Tauri path)');
 } catch (e) {
   console.log('PROBE ERROR:', e.message);
   await page.screenshot({ path: '/tmp/v629-err.png' }).catch(() => {});

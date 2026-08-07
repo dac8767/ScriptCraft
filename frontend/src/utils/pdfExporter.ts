@@ -1,6 +1,7 @@
 // PDF exporter using jsPDF — renders script with Final Draft formatting
 // All constants match pagination.ts and screenplay.css for exact visual parity
 import jsPDF from 'jspdf';
+import { isLeftTransition } from './transitions';
 import type { JSONContent } from '@tiptap/react';
 import { DEFAULT_HEADER_CONTENT, DEFAULT_FOOTER_CONTENT, resolveMoresContds } from '../stores/editorStore';
 import type { PageLayout, HeaderFooterContent } from '../stores/editorStore';
@@ -31,7 +32,7 @@ for (const [type, [l, r]] of Object.entries(FD_INDENTS)) {
 
 // Space before each element type (in lines) — matches pagination.ts & CSS margin-top values
 const SPACE_BEFORE: Record<string, number> = {
-  sceneHeading: 1, action: 1, character: 1, dialogue: 0,
+  sceneHeading: 2, action: 1, character: 1, dialogue: 0,
   parenthetical: 0, transition: 1, general: 0, shot: 1,
   newAct: 2, endOfAct: 2, lyrics: 0, showEpisode: 1, castList: 0,
 };
@@ -450,10 +451,17 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
       i++;
       continue;
     }
-    const indents = FD_INDENTS[typeName] || FD_INDENTS.general;
+    /* v6.30: FADE IN: is the OPENING transition — action margin, action
+       width, left-aligned (utils/transitions; the editor decoration and
+       this branch share the predicate). Every other transition keeps the
+       5.5in column and right alignment. */
+    const fadeIn = typeName === 'transition'
+      && isLeftTransition(node.runs.map((r) => r.text).join(''));
+    const indents = fadeIn ? (FD_INDENTS.action || FD_INDENTS.general)
+      : (FD_INDENTS[typeName] || FD_INDENTS.general);
     const leftPt = indents[0] * PTS_PER_INCH;
     const rightPt = indents[1] * PTS_PER_INCH;
-    const maxChars = CHARS_PER_LINE[typeName] || 62;
+    const maxChars = fadeIn ? (CHARS_PER_LINE.action || 62) : (CHARS_PER_LINE[typeName] || 62);
     const forceUpper = UPPERCASE_TYPES.has(typeName);
 
     const spaceBefore = isFirstElement ? 0 : (SPACE_BEFORE[typeName] ?? 0);
@@ -686,7 +694,47 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
 
   if (options?.print) {
     pdf.autoPrint();
-    window.open(pdf.output('bloburl'), '_blank');
+    const url = String(pdf.output('bloburl'));   // jsPDF types this as URL; DOM wants string
+    /* v6.30, Derek ("clicking File > Print does nothing"): Tauri BLOCKS
+       window.open — it returns null WITHOUT throwing, so v6.29's popup
+       silently vanished there (fine in a browser). Cascade, nothing silent:
+       (1) popup where allowed; (2) blocked → a hidden iframe holds the SAME
+       PDF and prints it — WebKit prints a PDF frame at the PDF's own page
+       size, not reflowed HTML, so no shrink; (3) the frame never loads →
+       save the print copy through the proven export dialog and SAY SO. */
+    const win = window.open(url, '_blank');
+    if (win) return;
+    await new Promise<void>((resolve) => {
+      const frame = document.createElement('iframe');
+      frame.setAttribute('data-print-frame', '1');
+      frame.style.cssText = 'position:fixed;right:0;bottom:0;width:2px;height:2px;visibility:hidden;';
+      let settled = false;
+      const giveUp = window.setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        frame.remove();
+        void saveFile(new Uint8Array(pdf.output('arraybuffer')), filename, [{ name: 'PDF', extensions: ['pdf'] }])
+          .then(async () => {
+            const { showToast } = await import('../components/Toast');
+            showToast('Print preview unavailable — saved a print-ready PDF instead. Open it and press ⌘P.', 'info');
+          })
+          .finally(() => resolve());
+      }, 2500);
+      frame.onload = () => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(giveUp);
+        try {
+          frame.contentWindow?.focus();
+          frame.contentWindow?.print();
+        } catch {
+          frame.remove();
+        }
+        resolve();
+      };
+      frame.src = url;
+      document.body.appendChild(frame);
+    });
     return;
   }
   await saveFile(new Uint8Array(pdf.output('arraybuffer')), filename, [{ name: 'PDF', extensions: ['pdf'] }]);
@@ -750,7 +798,10 @@ function renderElement(
   charSpace: number,
 ): void {
   const isCentered = CENTERED_TYPES.has(typeName);
-  const isRightAligned = RIGHT_ALIGNED_TYPES.has(typeName);
+  /* v6.30: FADE IN: is the opening transition — LEFT margin (same
+     predicate as the editor's decoration, utils/transitions). */
+  const firstLineText = wrappedLines[0]?.map((r) => r.text).join('') ?? '';
+  const isRightAligned = RIGHT_ALIGNED_TYPES.has(typeName) && !isLeftTransition(firstLineText);
   const maxWidthPt = rightPt - leftPt;
 
   for (let lineIdx = 0; lineIdx < wrappedLines.length; lineIdx++) {

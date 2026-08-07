@@ -95,8 +95,10 @@ for (const [type, [l, r]] of Object.entries(FD_INDENTS)) {
 }
 
 // Space before each element type in lines
+// v6.30: sceneHeading is 2 — the spec-standard double blank line (matches
+// the CSS 24pt margin and the PDF exporter; keep all three in step).
 const SPACE_BEFORE: Record<string, number> = {
-  sceneHeading: 1, action: 1, character: 1, dialogue: 0,
+  sceneHeading: 2, action: 1, character: 1, dialogue: 0,
   parenthetical: 0, transition: 1, general: 0, shot: 1,
   newAct: 2, endOfAct: 2, lyrics: 0, showEpisode: 1, castList: 0,
   // titlePage intentionally 0: title-page blocks have no CSS margin (the CSS

@@ -256,7 +256,21 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
               {filtered.map((asset) => (
                 <tr key={asset.id} className="asset-row">
                   <td className="asset-cell-icon">
-                    <span title={asset.mime_type}>{getMimeIcon(asset.mime_type)}</span>
+                    {/* v6.30, Derek: images show a real THUMBNAIL in the list
+                        (click = the same full preview as the name). Other
+                        types keep their mime icon. */}
+                    {asset.mime_type.startsWith('image/') ? (
+                      <img
+                        className="asset-thumb"
+                        src={api.getAssetUrl(projectId, asset.id, asset.filename)}
+                        alt=""
+                        loading="lazy"
+                        title="Click to preview"
+                        onClick={() => setPreviewAsset(asset)}
+                      />
+                    ) : (
+                      <span title={asset.mime_type}>{getMimeIcon(asset.mime_type)}</span>
+                    )}
                   </td>
                   <td
                     className="asset-cell-name"

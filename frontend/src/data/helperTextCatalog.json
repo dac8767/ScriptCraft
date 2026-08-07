@@ -431,7 +431,7 @@
  {
   "text": "Click to preview",
   "kind": "tooltip",
-  "sites": 1,
+  "sites": 2,
   "area": "Everything Else",
   "where": [
    "components/AssetManager.tsx"

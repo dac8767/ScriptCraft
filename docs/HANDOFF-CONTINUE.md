@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.29 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.31 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,48 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.31 — Asset Manager: inline image thumbnails
+
+- Derek: "show a preview of the image in the asset manager" — image
+  assets render a real 38px `<img>` thumbnail in the list's icon cell
+  (api.getAssetUrl, lazy-loaded, click = the same AssetViewer the name
+  opens). Other types keep their mime icon.
+- TEST TRAP: the component re-fetches on mount — the api MOCK must
+  serve the fixtures (vi.hoisted), or listAssets() overwrites whatever
+  the test seeded into the store. AssetManager.thumbs.test.tsx (1).
+
+### v6.30 — formatting verified against the standard; Print's silent Tauri no-op
+
+- Derek's side-by-side (another program vs ScriptCraft, same text) +
+  the StudioBinder reference. MEASURED verdicts:
+  (a) FONT was never wrong — Courier (Courier Final Draft → Prime
+  fallback) at 12pt on an exact 12pt line grid, FD-matched
+  letter-spacing. The "different font look" was density.
+  (b) The density: SCENE HEADINGS carried ONE blank line; the spec (and
+  his other program) uses TWO. Fixed in all three renderers + template:
+  editor CSS 24pt, pagination SPACE_BEFORE 2, pdfExporter 2,
+  industryStandardTemplate marginTop 24. (Genre templates — sitcom,
+  stage — keep their own spacing on purpose.) Pages repaginate ~10%
+  longer; that is the correct standard.
+  (c) FADE IN: is the OPENING transition — LEFT margin, action column;
+  every other transition stays right. ONE predicate
+  (utils/transitions.isLeftTransition) shared by the editor decoration
+  (Transition.ts — a decoration, not renderHTML, so typing flips it
+  live) and the pdfExporter (indent choice at the caller, line 454ish —
+  renderElement alone only fixed alignment INSIDE the transition
+  column).
+- PRINT ("clicking File > Print does nothing"): v6.29's window.open
+  returns NULL in Tauri WITHOUT throwing — the fallback never fired, a
+  silent no-op shipped. Cascade now: popup → blocked? hidden
+  iframe[data-print-frame] holding the same PDF prints it (WebKit
+  prints a PDF frame at the PDF's own page size) → frame never loads?
+  saveFile + a toast that SAYS so. check-v629 stubs window.open=null
+  and pins the frame branch (7 asserts).
+- checks: check-v630 (8 — editor classes/margins/font, live flip, and
+  the export GEOMETRY parsed in node: FADE IN x=108, CUT TO right,
+  heading gap 36pt).
+- Gates: tsc 0, 1092 tests, build, checks 685/0.
+
 ### v6.29 — Print through the exporter; the goal chip's Header = the TITLE BAR
 
 - Derek's shrunken-print PDF, MEASURED: Producer "macOS Quartz
@@ -299,36 +341,13 @@ Durable bits kept live here:
 - check-v627 (8) pins all of it. Gates: tsc 0, 1091 tests, build,
   checks 668/0.
 
-### v6.26 — Title Page: the Contact field is 4 rows
-
-- Derek: one-liner — the tpContact textarea in TitlePageEditor grew
-  rows 3 → 4 (matches its own four-line placeholder). No CSS cap on
-  .props-textarea, so `rows` is the height. Probe-verified live (74px).
-
-### v6.25 — Goals spacing: the phantom row was DOUBLE bottom padding
-
-- Derek: space below Start/Stop; space before Quick start; "there is a
-  whole row at the bottom below the vomit draft row."
-- The phantom row: `.fs-goals` padded 12px below the footer AND the
-  window body carries the GLOBAL bottom inset (the toolWinPadBottom
-  design knob, default 18) — 30px read as an empty row. The pane's own
-  bottom padding is GONE (12px 12px 0); the footer sits flush on the
-  pane bottom and the global inset is the only gap, same as every
-  window's last row. check-v621 pins footerFlush (13 asserts now).
-- Spacing: `.fs-goal-toprow` margin-bottom 12; `.fs-goal-quick-label`
-  display block + margin-top 16 (covers the Time tab too).
-- goals defaultSize h 264 → 400 — the v6.23 layout (top row + quick
-  starts + footer) never fit 264 and clipped the footer entirely on a
-  fresh install; saved sizes are untouched.
-- The footer hairline can LOOK like it stops partway — it is full width
-  (measured 604/604); --fd-hairline at 1px on this background is just
-  near-invisible. Not a defect; do not "fix" the width.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.26** — Title Page: the Contact field is 4 rows
+- **v6.25** — Goals spacing: the phantom row was DOUBLE bottom padding
 - **v6.24** — Helper Text: areas, on-screen found-in, hide, go-there, line breaks
 - **v6.23** — Goals: ONE Start/Stop top-left; Show in beside it; count quick starts
 - **v6.22** — Helper Text: its own window, with the control's face on every row

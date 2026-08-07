@@ -51,7 +51,7 @@ export const INDUSTRY_STANDARD_TEMPLATE: FormattingTemplate = {
     sceneHeading: rule('sceneHeading', 'Scene Heading', {
       bold: true,
       textTransform: 'uppercase',
-      marginTop: 12,
+      marginTop: 24,   // v6.30: the spec-standard TWO blank lines
       nextOnEnter: 'action',
       nextOnTab: 'action',
       placeholder: 'INT./EXT. LOCATION - TIME',
