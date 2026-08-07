@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.12",
+    "date": "2026-08-07",
+    "changes": [
+      "The Characters window header grew its missing controls. Profiles: a Filter (In script only · With an image · With a description). Relationships: Filter (by relationship type), Sort (Character A–Z or Type) and Search — the search matches either character's name, and the list and map both obey all three."
+    ]
+  },
+  {
     "version": "6.11",
     "date": "2026-08-07",
     "changes": [

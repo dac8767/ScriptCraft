@@ -90,18 +90,56 @@ export function CharControls() {
   const setRelView = useEditorStore((s) => s.setRelViewMode);
   const search = useEditorStore((s) => s.charSearchQuery);
   const setSearch = useEditorStore((s) => s.setCharSearchQuery);
+  // v6.12, Derek: Filter on Profiles AND Relationships; Sort + Search on
+  // Relationships too. Same View / Filter / Sort / Search order as every
+  // window (the v5.80 rule; ControlDropdown stamps data-ctl for the guard).
+  const fInScript = useEditorStore((s) => s.charFilterInScript);
+  const fHasImage = useEditorStore((s) => s.charFilterHasImage);
+  const fHasDesc = useEditorStore((s) => s.charFilterHasDesc);
+  const setCharFilter = useEditorStore((s) => s.setCharFilter);
+  const relTypeFilter = useEditorStore((s) => s.relTypeFilter);
+  const setRelTypeFilter = useEditorStore((s) => s.setRelTypeFilter);
+  const relSort = useEditorStore((s) => s.relSort);
+  const setRelSort = useEditorStore((s) => s.setRelSort);
+  const relationships = useEditorStore((s) => s.characterRelationships);
+  const relTypes = useMemo(
+    () => [...new Set(relationships.map((r) => r.type).filter(Boolean))].sort(),
+    [relationships],
+  );
   if (activeTab === 'setup') return null; // From Script has no list to control
   if (activeTab === 'relationships') {
     return (
-      <ControlDropdown
-        title="View"
-        icon={relView === 'map' ? <LuWaypoints /> : <LuList />}
-        current={relView === 'map' ? 'Map' : 'List'}
-        items={[
-          { label: 'List', active: relView === 'list', onSelect: () => setRelView('list') },
-          { label: 'Map', active: relView === 'map', onSelect: () => setRelView('map') },
-        ]}
-      />
+      <>
+        <ControlDropdown
+          title="View"
+          icon={relView === 'map' ? <LuWaypoints /> : <LuList />}
+          current={relView === 'map' ? 'Map' : 'List'}
+          items={[
+            { label: 'List', active: relView === 'list', onSelect: () => setRelView('list') },
+            { label: 'Map', active: relView === 'map', onSelect: () => setRelView('map') },
+          ]}
+        />
+        <ControlDropdown
+          label="Filter"
+          chip={relTypeFilter ? 1 : 0}
+          items={[
+            { label: 'All types', active: relTypeFilter === null, onSelect: () => setRelTypeFilter(null) },
+            ...relTypes.map((t) => ({
+              label: t,
+              active: relTypeFilter === t,
+              onSelect: () => setRelTypeFilter(relTypeFilter === t ? null : t),
+            })),
+          ]}
+        />
+        <ControlDropdown
+          label="Sort"
+          items={[
+            { label: 'Character (A–Z)', active: relSort === 'character', onSelect: () => setRelSort('character') },
+            { label: 'Type', active: relSort === 'type', onSelect: () => setRelSort('type') },
+          ]}
+        />
+        <ControlSearch value={search} onChange={setSearch} placeholder="Search relationships..." />
+      </>
     );
   }
   return (
@@ -113,6 +151,15 @@ export function CharControls() {
         items={[
           { label: 'Cards', active: viewMode === 'cards', onSelect: () => setViewMode('cards') },
           { label: 'List', active: viewMode === 'list', onSelect: () => setViewMode('list') },
+        ]}
+      />
+      <ControlDropdown
+        label="Filter"
+        chip={(fInScript ? 1 : 0) + (fHasImage ? 1 : 0) + (fHasDesc ? 1 : 0)}
+        items={[
+          { label: 'In script only', active: fInScript, keepOpen: true, onSelect: () => setCharFilter('inScript', !fInScript) },
+          { label: 'With an image', active: fHasImage, keepOpen: true, onSelect: () => setCharFilter('hasImage', !fHasImage) },
+          { label: 'With a description', active: fHasDesc, keepOpen: true, onSelect: () => setCharFilter('hasDesc', !fHasDesc) },
         ]}
       />
       <ControlDropdown
@@ -540,6 +587,29 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     return filterScanList(scanResults, referredTags, profileNames);
   }, [scanResults, referredTags, characterProfiles]);
 
+  // v6.12: the Profiles header's Filter dimensions (read by allCharacters).
+  const filterInScript = useEditorStore((s) => s.charFilterInScript);
+  const filterHasImage = useEditorStore((s) => s.charFilterHasImage);
+  const filterHasDesc = useEditorStore((s) => s.charFilterHasDesc);
+
+  /* v6.12, Derek: the Relationships header's Filter / Sort / Search shape
+     what the tab shows — list AND map read this one processed array.
+     Creation still writes through the unfiltered store. */
+  const relTypeFilter = useEditorStore((s) => s.relTypeFilter);
+  const relSort = useEditorStore((s) => s.relSort);
+  const visibleRelationships = useMemo(() => {
+    let list = characterRelationships;
+    if (relTypeFilter) list = list.filter((r) => r.type === relTypeFilter);
+    if (searchQuery) {
+      const q = searchQuery.toUpperCase();
+      list = list.filter((r) =>
+        r.characterA.toUpperCase().includes(q) || r.characterB.toUpperCase().includes(q));
+    }
+    return [...list].sort((a, b) => relSort === 'type'
+      ? (a.type || '').localeCompare(b.type || '') || a.characterA.localeCompare(b.characterA)
+      : a.characterA.localeCompare(b.characterA) || a.characterB.localeCompare(b.characterB));
+  }, [characterRelationships, relTypeFilter, searchQuery, relSort]);
+
   // Characters that have a profile but are no longer detected in the script.
   const orphanedNames = useMemo(() => {
     return new Set(
@@ -564,6 +634,13 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
       const q = searchQuery.toUpperCase();
       list = list.filter((n) => n.includes(q));
     }
+    // v6.12, Derek: the header's Filter dimensions.
+    if (filterInScript) list = list.filter((n) => scriptCharacterNames.has(n));
+    if (filterHasImage || filterHasDesc) {
+      const byName = new Map(characterProfiles.map((p) => [p.name, p]));
+      if (filterHasImage) list = list.filter((n) => (byName.get(n)?.images?.length ?? 0) > 0);
+      if (filterHasDesc) list = list.filter((n) => stripHtml(byName.get(n)?.description || '').trim().length > 0);
+    }
 
     list.sort((a, b) => {
       const sa = charStats.get(a);
@@ -587,7 +664,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     });
 
     return list;
-  }, [characterProfiles, scriptCharacterNames, searchQuery, sortBy, charStats]);
+  }, [characterProfiles, scriptCharacterNames, searchQuery, sortBy, charStats, filterInScript, filterHasImage, filterHasDesc]);
 
   // v4.24 batch-v2 #6: publish the count the panel shows so the window
   // chrome's title (CharTitleExtra) displays the same number.
@@ -1378,7 +1455,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         <CharacterRelationshipsTab
           relViewMode={relViewMode}
           currentScriptId={currentScriptId}
-          characterRelationships={characterRelationships}
+          characterRelationships={visibleRelationships}
           upsertCharacterRelationship={upsertCharacterRelationship}
           deleteCharacterRelationship={deleteCharacterRelationship}
           existingCharNames={existingCharNames}

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.11 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.12 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,23 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.12 — Characters header: Filter everywhere, Sort+Search on Relationships
+
+- Profiles Filter (multi-toggle ControlDropdown, keepOpen): In script
+  only / With an image / With a description — applied in the
+  allCharacters memo. Store: charFilterInScript/HasImage/HasDesc
+  (persisted), setCharFilter.
+- Relationships: Filter by rel.type (dynamic list from the data + All
+  types), Sort character|type (persisted relSort), Search REUSES
+  charSearchQuery (one box, matches either endpoint). ONE processed
+  array (visibleRelationships memo in CharacterProfiles) feeds the tab —
+  list AND map. Creation writes the unfiltered store.
+- Both tabs hold the View/Filter/Sort/Search order (data-ctl guard
+  passes). Pre-existing quirk noted while probing: a relationship naming
+  a character with no script cue shows placeholder selects (options come
+  from script names) — untouched.
+- Gates: tsc 0, 1081 tests, build, checks 594/0.
 
 ### v6.11 — the Characters list is the shared table
 

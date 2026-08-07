@@ -1318,6 +1318,16 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   charActiveTab: 'profiles' | 'relationships' | 'setup';
   setCharActiveTab: (t: 'profiles' | 'relationships' | 'setup') => void;
   charViewMode: 'cards' | 'list';
+  /** v6.12, Derek: the Characters header's Filter — Profiles dimensions. */
+  charFilterInScript: boolean;
+  charFilterHasImage: boolean;
+  charFilterHasDesc: boolean;
+  setCharFilter: (key: 'inScript' | 'hasImage' | 'hasDesc', v: boolean) => void;
+  /** v6.12: Relationships tab — filter by relationship type, sort. */
+  relTypeFilter: string | null;
+  setRelTypeFilter: (v: string | null) => void;
+  relSort: 'character' | 'type';
+  setRelSort: (v: 'character' | 'type') => void;
   setCharViewMode: (m: 'cards' | 'list') => void;
   relViewMode: 'list' | 'map';
   setRelViewMode: (m: 'list' | 'map') => void;
@@ -2081,6 +2091,18 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     return { sceneColWidths };
   }),
   charViewMode: (_vs.charViewMode as 'cards' | 'list') ?? 'cards',
+  charFilterInScript: _vs.charFilterInScript === true,
+  charFilterHasImage: _vs.charFilterHasImage === true,
+  charFilterHasDesc: _vs.charFilterHasDesc === true,
+  setCharFilter: (key, v) => {
+    const field = key === 'inScript' ? 'charFilterInScript' : key === 'hasImage' ? 'charFilterHasImage' : 'charFilterHasDesc';
+    saveViewState({ [field]: v });
+    set({ [field]: v } as Partial<EditorState>);
+  },
+  relTypeFilter: null,
+  setRelTypeFilter: (v) => set({ relTypeFilter: v }),
+  relSort: (_vs.relSort as 'character' | 'type') ?? 'character',
+  setRelSort: (v) => { saveViewState({ relSort: v }); set({ relSort: v }); },
   setCharViewMode: (m) => { saveViewState({ charViewMode: m }); set({ charViewMode: m }); },
   relViewMode: (_vs.relViewMode as 'list' | 'map') ?? 'list',
   setRelViewMode: (m) => { saveViewState({ relViewMode: m }); set({ relViewMode: m }); },
