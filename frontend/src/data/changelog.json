@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.25",
+    "date": "2026-08-07",
+    "changes": [
+      "Goals: breathing room below the Start button and above the Quick start section, and the empty band under the Vomit Draft row is gone — the pane was stacking its own bottom padding on the window's, which read as a phantom row. The window's default size also grew to fit the new layout."
+    ]
+  },
+  {
     "version": "6.24",
     "date": "2026-08-07",
     "changes": [

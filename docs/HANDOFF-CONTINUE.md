@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.24 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.25 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,25 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.25 — Goals spacing: the phantom row was DOUBLE bottom padding
+
+- Derek: space below Start/Stop; space before Quick start; "there is a
+  whole row at the bottom below the vomit draft row."
+- The phantom row: `.fs-goals` padded 12px below the footer AND the
+  window body carries the GLOBAL bottom inset (the toolWinPadBottom
+  design knob, default 18) — 30px read as an empty row. The pane's own
+  bottom padding is GONE (12px 12px 0); the footer sits flush on the
+  pane bottom and the global inset is the only gap, same as every
+  window's last row. check-v621 pins footerFlush (13 asserts now).
+- Spacing: `.fs-goal-toprow` margin-bottom 12; `.fs-goal-quick-label`
+  display block + margin-top 16 (covers the Time tab too).
+- goals defaultSize h 264 → 400 — the v6.23 layout (top row + quick
+  starts + footer) never fit 264 and clipped the footer entirely on a
+  fresh install; saved sizes are untouched.
+- The footer hairline can LOOK like it stops partway — it is full width
+  (measured 604/604); --fd-hairline at 1px on this background is just
+  near-invisible. Not a defect; do not "fix" the width.
+
 ### v6.24 — Helper Text: areas, on-screen found-in, hide, go-there, line breaks
 
 - Derek (five mid-turn asks): (a) found-in ON SCREEN, not hover; (b) a
@@ -325,54 +344,12 @@ Durable bits kept live here:
 - check-v621 (6) pins: both tabs' totals, right alignment, one-row
   footer, the Header|Footer labels, the chip's right-edge seat.
 
-### v6.20 — the Helper Text editor (Design window)
-
-- Derek: "create a new item in the dev window called 'Helper Text' …
-  edit every single piece of helper text in the app … blank lists and
-  fields, hover text, helper text for buttons and windows, the ? button
-  text." ("Dev window" read as the DESIGN window — the only live
-  dev-ish surface since the Dev Picker's v3.25 removal — and said so in
-  the delivery.)
-- ONE mechanism, keyed by the DEFAULT STRING (`helperTextOverrides` in
-  editorStore, persisted via viewState): editing "Delete" retitles
-  every Delete tooltip — same-string sites were the same on purpose,
-  and per-site ids on 500 call sites would be unmaintainable.
-- Delivery paths (utils/helperText.ts):
-  (1) `installHelperTextDom()` (App root) — a MutationObserver swaps
-  `title`/`placeholder` attributes whose value matches an overridden
-  default, remembers the original in `data-ht-orig-*`, converges when
-  React writes the literal back, restores on removal. Covers all ~365
-  attribute strings with ZERO call-site churn — including TipTap node
-  views and portals — and composes with HoverTooltip, which reads the
-  same attribute. (2) `ht()`/`useHt()` for RENDERED hints: empty-list
-  texts (Navigator, Analytics, Gender, Notes/Snippets, Thesaurus idle),
-  the Focus ? popover body, and the ELEMENT HINT map in ScreenplayEditor
-  — template-provided placeholders route through ht() too, so the
-  Helper Text row never silently loses to the template path.
-- Catalog: `devtools/build-helper-catalog.mjs` scans src for
-  title=/placeholder= literals and ht('…') calls →
-  `src/data/helperTextCatalog.json` (386: 263 tooltips, 102
-  placeholders, 21 hints). `check-helper-catalog.mjs` (5) fails the
-  suite on drift — regenerate with the build script. The CODE is the
-  source; more hints join by wrapping them in ht().
-- UI: DesignPanel grows a "Helper Text" collapsed group (search box
-  shared with the tokens; kind chips All/Hovers/Fields/Hints; rows show
-  a kind badge + the app's own text once overridden + a full-width
-  field; per-row reset, section Reset helper text (N); 60-row cap with
-  a refine-the-search note). New CSS tail in 26-design-panel.css.
-- vitest 4 reminder: jsdom tests need `// @vitest-environment jsdom`
-  (helperText.test.tsx, 6 tests — swap/restore/converge/added-nodes).
-- check-v620 (6): edit Fullscreen tooltip → live button retitles;
-  Design's own search placeholder changes; the empty action's script
-  hint shows the override; reset restores; overrides persist in
-  viewState.
-- Gates: tsc 0, 1090 tests, build, checks 632/0 (+11).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.20** — the Helper Text editor (Design window)
 - **v6.19** — Thesaurus over the selection + context-menu entry; Analytics header tabs
 - **v6.18** — paste fills the active element: action is the schema's fallback
 - **v6.17** — a dragged snippet drops its TEXT into the script

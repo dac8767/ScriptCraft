@@ -978,7 +978,11 @@ body.fs-tool-dragging { cursor: grabbing; }
 
 /* ── Goals tool ── */
 .fs-goals {
-  padding: 12px;
+  /* v6.25, Derek ("a whole row at the bottom below the vomit draft row"):
+     no bottom padding of our own — the window body already carries the
+     global bottom inset (the toolWinPadBottom design knob), and the two
+     stacked made an empty row under the footer. */
+  padding: 12px 12px 0;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -1096,15 +1100,18 @@ body.fs-tool-dragging { cursor: grabbing; }
 }
 .fs-goal-timemode-label { min-width: 62px; }
 /* v6.23: ONE Start/Stop, top-left of the body; Show in rides the row's
-   right edge. (The per-tab .fs-goal-startrow rows are gone.) */
+   right edge. (The per-tab .fs-goal-startrow rows are gone.)
+   v6.25, Derek: breathing room below the row. */
 .fs-goal-toprow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  margin-bottom: 12px;
 }
 .fs-goal-main:disabled { opacity: .5; cursor: default; }
-.fs-goal-quick-label { font-size: 12px; color: var(--fd-text); }
+/* v6.25, Derek: space between the goal options and Quick start. */
+.fs-goal-quick-label { display: block; margin-top: 16px; font-size: 12px; color: var(--fd-text); }
 .fs-goal-quick {
   display: flex;
   gap: 6px;
@@ -1459,7 +1466,9 @@ body.fs-tool-dragging { cursor: grabbing; }
   padding-top: 10px;
   border-top: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
   /* v6.23: the footer holds ONLY the Vomit checkbox — one row by
-     construction (Show in moved to the top row). */
+     construction (Show in moved to the top row). v6.25: NO padding of its
+     own below the row — the window body's global bottom inset is the gap,
+     same as every other window's last row. */
   display: flex;
   align-items: center;
 }

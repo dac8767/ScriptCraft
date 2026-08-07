@@ -151,7 +151,51 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.19 and older (newest first)
+## Version history — v6.20 and older (newest first)
+
+### v6.20 — the Helper Text editor (Design window)
+
+- Derek: "create a new item in the dev window called 'Helper Text' …
+  edit every single piece of helper text in the app … blank lists and
+  fields, hover text, helper text for buttons and windows, the ? button
+  text." ("Dev window" read as the DESIGN window — the only live
+  dev-ish surface since the Dev Picker's v3.25 removal — and said so in
+  the delivery.)
+- ONE mechanism, keyed by the DEFAULT STRING (`helperTextOverrides` in
+  editorStore, persisted via viewState): editing "Delete" retitles
+  every Delete tooltip — same-string sites were the same on purpose,
+  and per-site ids on 500 call sites would be unmaintainable.
+- Delivery paths (utils/helperText.ts):
+  (1) `installHelperTextDom()` (App root) — a MutationObserver swaps
+  `title`/`placeholder` attributes whose value matches an overridden
+  default, remembers the original in `data-ht-orig-*`, converges when
+  React writes the literal back, restores on removal. Covers all ~365
+  attribute strings with ZERO call-site churn — including TipTap node
+  views and portals — and composes with HoverTooltip, which reads the
+  same attribute. (2) `ht()`/`useHt()` for RENDERED hints: empty-list
+  texts (Navigator, Analytics, Gender, Notes/Snippets, Thesaurus idle),
+  the Focus ? popover body, and the ELEMENT HINT map in ScreenplayEditor
+  — template-provided placeholders route through ht() too, so the
+  Helper Text row never silently loses to the template path.
+- Catalog: `devtools/build-helper-catalog.mjs` scans src for
+  title=/placeholder= literals and ht('…') calls →
+  `src/data/helperTextCatalog.json` (386: 263 tooltips, 102
+  placeholders, 21 hints). `check-helper-catalog.mjs` (5) fails the
+  suite on drift — regenerate with the build script. The CODE is the
+  source; more hints join by wrapping them in ht().
+- UI: DesignPanel grows a "Helper Text" collapsed group (search box
+  shared with the tokens; kind chips All/Hovers/Fields/Hints; rows show
+  a kind badge + the app's own text once overridden + a full-width
+  field; per-row reset, section Reset helper text (N); 60-row cap with
+  a refine-the-search note). New CSS tail in 26-design-panel.css.
+- vitest 4 reminder: jsdom tests need `// @vitest-environment jsdom`
+  (helperText.test.tsx, 6 tests — swap/restore/converge/added-nodes).
+- check-v620 (6): edit Fullscreen tooltip → live button retitles;
+  Design's own search placeholder changes; the empty action's script
+  hint shows the override; reset restores; overrides persist in
+  viewState.
+- Gates: tsc 0, 1090 tests, build, checks 632/0 (+11).
+
 
 ### v6.19 — Thesaurus over the selection + context-menu entry; Analytics header tabs
 

@@ -41,6 +41,8 @@ try {
       sameRow: br && sr ? Math.abs(br.top + br.height / 2 - (sr.top + sr.height / 2)) < 8 : false,
       labels: [...document.querySelectorAll('.fs-goal-showin button')].map((b) => b.textContent).join('|'),
       footerKids: footer ? footer.children.length : -1,
+      footerFlush: footer ? Math.abs(footer.getBoundingClientRect().bottom
+        - footer.closest('.fs-goals').getBoundingClientRect().bottom) < 2 : false,
       quick: [...document.querySelectorAll('.fs-goal-quick button')].map((b) => b.textContent.trim()),
     };
   });
@@ -51,6 +53,7 @@ try {
   ok(t.showinRight && t.sameRow, 'Show in rides the same row, aligned right');
   ok(t.labels === 'Header|Footer', `the options read Header / Footer (${t.labels})`);
   ok(t.footerKids === 1, 'the footer is just the Vomit checkbox — one row');
+  ok(t.footerFlush, 'and it sits flush at the pane bottom — no phantom row (v6.25)');
   ok(t.quick.length === 5 && t.quick[1] === '500 words', `Words tab has a Quick start row (${t.quick.join(', ')})`);
 
   // Start → Stop → cleared. Aim ABOVE the current total first — a reach

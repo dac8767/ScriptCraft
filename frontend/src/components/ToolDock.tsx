@@ -106,7 +106,7 @@ export const ALL_TOOLS: ToolDef[] = [
   // panel there's nothing to read. noPanelFit only changes the DEFAULT: the
   // pop-in button still docks it, and that choice is remembered.
   { id: 'analytics', label: 'Analytics', icon: <FaChartBar />, defaultSize: { w: 620, h: 384 }, group: 3, noPanelFit: true },
-  { id: 'goals', label: 'Goals', icon: <FaBullseye />, defaultSize: { w: 340, h: 264 }, group: 3 },
+  { id: 'goals', label: 'Goals', icon: <FaBullseye />, defaultSize: { w: 340, h: 400 }, group: 3 },   // v6.25: fits the v6.23 layout (top row + quick starts + footer)
   // v1.82: Vomit Draft is a MODE of Goals now — no separate tool. The 'vomit'
   // ToolId stays in the type so persisted configs typecheck (scriptnotes
   // precedent); absence from ALL_TOOLS removes it everywhere it showed.
