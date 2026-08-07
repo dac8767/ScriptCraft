@@ -1,0 +1,63 @@
+/* check-v606 — v6.06, Derek: dropping the floating Analytics window on a
+   side panel must DOCK it (window leaves, tool lands inline, mode kept).
+   The v1.2 ALWAYS_FLOAT early-out used to re-float it over the gesture. */
+import { launch, boot, seedScript, SCENES_4, settle } from './driver.mjs';
+
+const { browser, page } = await launch({ width: 1500, height: 950 });
+let pass = 0, fail = 0;
+const ok = (c, m) => { if (c) { pass++; console.log("  ✓", m); } else { fail++; console.log("  ✗ FAIL", m); } };
+try {
+  await boot(page); await seedScript(page, SCENES_4);
+  await page.evaluate(() => window.__scStore.getState().openTool('analytics'));
+  await settle(page);
+  ok(await page.$('.tool-window') !== null, 'analytics opens floating (its default shape)');
+  console.log('  pre-drag:', await page.evaluate(() => {
+    const s = window.__scStore.getState();
+    return JSON.stringify({ temp: s.tempTool, mode: s.toolMode.analytics ?? null });
+  }));
+
+  // drag the window header onto the RIGHT panel
+  const head = await page.$eval('.tool-window .tool-window-header', (el) => {
+    const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + 10 };
+  });
+  const dock = await page.$eval('.tool-dock-wrap.tool-dock-right', (el) => {
+    const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  });
+  await page.mouse.move(head.x, head.y);
+  await page.mouse.down();
+  await page.mouse.move(dock.x, dock.y, { steps: 12 });
+  await settle(page);
+  await page.mouse.up();
+  await settle(page);
+
+  const after = await page.evaluate(() => {
+    const s = window.__scStore.getState();
+    return {
+      floating: !!document.querySelector('.tool-window'),
+      inline: !!document.querySelector('.tool-inline[data-tool="analytics"]'),
+      temp: s.tempTool, mode: s.toolMode.analytics,
+      right: s.activeToolRight,
+    };
+  });
+  console.log('  post-drop:', JSON.stringify(after));
+  ok(!after.floating, 'the floating window LEFT on drop');
+  ok(after.inline, 'and the tool renders inside the panel');
+  ok(after.mode === 'docked' && after.temp === null, 'mode docked, no temp window');
+
+  // close from the row, reopen from the row — the dock is remembered
+  await page.click('[data-tool-row="analytics"]');
+  await settle(page);
+  ok(!(await page.evaluate(() => window.__scStore.getState().isToolOpen('analytics'))), 'row click closes it');
+  await page.click('[data-tool-row="analytics"]');
+  await settle(page);
+  const re = await page.evaluate(() => ({
+    inline: !!document.querySelector('.tool-inline[data-tool="analytics"]'),
+    floating: !!document.querySelector('.tool-window'),
+  }));
+  ok(re.inline && !re.floating, 'reopening from the row lands in the panel, not a window');
+  await page.screenshot({ path: '/tmp/v606-docked.png' });
+} catch (e) {
+  console.log('PROBE ERROR:', e.message);
+  await page.screenshot({ path: '/tmp/v606-err.png' }).catch(() => {});
+} finally { await browser.close(); }
+console.log(`\ncheck-v606: ${pass} passed, ${fail} failed`);

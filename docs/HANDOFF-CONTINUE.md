@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.05 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.06 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,22 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.06 — dropping Analytics on a panel actually docks it
+
+- Derek: drag-drop into the panel left the floating window open (closing
+  it by hand then showed the tool docked). ROOT CAUSE: openTool's v1.2
+  `ALWAYS_FLOAT` early-out (`['analytics']`) predates the explicit-mode
+  machinery — dockInto wrote toolMode='docked' and the early-out floated
+  a tempTool anyway. FIX mirrors design's v5.47 rule: the early-out is
+  SKIPPED when config.enabled && toolMode==='docked' (an explicit dock
+  gesture stands); it falls through to the normal docked open, which
+  also clears tempTool. Dragging back out rewrites mode and the
+  always-float default resumes.
+- check-v606 (new, 6 assertions): real pointer drag of the window header
+  onto the right dock — window leaves, inline appears, mode docked, temp
+  null; row close/reopen stays docked.
+- Gates: tsc 0, 1081 tests, build, checks 588/0.
 
 ### v6.05 — the crushed-header fix (chrome-less windows)
 

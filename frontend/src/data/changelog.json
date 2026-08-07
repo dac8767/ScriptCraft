@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.06",
+    "date": "2026-08-07",
+    "changes": [
+      "Fixed: dropping the Analytics window on a side panel left the window open — the drop registered, but Analytics' old always-open-as-a-window rule immediately re-floated it. An explicit dock now wins: the window leaves, the tool lands in the panel, and it reopens there until you drag it back out."
+    ]
+  },
+  {
     "version": "6.05",
     "date": "2026-08-04",
     "changes": [

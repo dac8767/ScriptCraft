@@ -1789,7 +1789,18 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     // v1.2: Analytics always opens as its own window. It's far taller than a
     // panel, so docking it just meant a cramped column you had to scroll — the
     // window is the only shape it actually works in.
-    if (ALWAYS_FLOAT.includes(tool)) return { ...closeOtherFloats(s, tool), tempTool: tool };
+    // v6.06, Derek ("i drag the window, drop it, but the window stays open"):
+    // this early-out predates the explicit-mode machinery and swallowed the
+    // v4.39 drop-to-dock gesture — dockInto wrote toolMode='docked' and this
+    // line floated a temp window anyway. Same rule as design (v5.47): an
+    // EXPLICIT dock gesture is honored; the always-float default applies only
+    // while no dock gesture stands.
+    if (ALWAYS_FLOAT.includes(tool)) {
+      const aCfg = toolConfigFor(s.toolConfig, tool);
+      if (!(aCfg.enabled && s.toolMode[tool] === 'docked')) {
+        return { ...closeOtherFloats(s, tool), tempTool: tool };
+      }
+    }
     /**
      * v1.10 — ask the SAME question the dock asks.
      *
