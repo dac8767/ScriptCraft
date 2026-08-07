@@ -59,6 +59,7 @@
    the document title sits centered where macOS used to draw it. The whole
    row is a Tauri drag region. */
 .fs-titlebar {
+  position: relative;   /* v6.29: anchors the right-edge goal chip */
   display: flex;
   align-items: center;
   height: 28px;
@@ -115,6 +116,20 @@
 }
 /* the rest of the row stays a plain drag surface */
 .fs-titlebar-balance { flex: 1; min-width: 78px; align-self: stretch; position: relative; z-index: 1; pointer-events: none; }
+
+/* v6.29, Derek: Show in Header = the TITLE BAR — the chip sits absolute at
+   the bar's right edge (the centering counterweight stays untouched) and
+   re-enables pointer events above the full-bar drag layer. */
+.fs-titlebar-goal {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+}
+.fs-titlebar-goal .status-goal { font-size: 11px; }
 /* Buy Me a Coffee — the widget's look, drawn locally. v3.18, Derek's config:
    pill #FFDD00, black outline/text, white cup. Lives in the About dialog's
    footer row, left of Close. Brand button, so the monotone-icon rule

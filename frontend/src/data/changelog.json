@@ -1,5 +1,13 @@
 [
-  {
+ {
+  "version": "6.29",
+  "date": "2026-08-07",
+  "changes": [
+   "Fixed: printing shrank the page. The system print dialog was fitting our full 8.5\u00d711 page inside its own printer margins \u2014 the double-margin effect. File \u25b8 Print now renders the same exact-layout PDF the exporter makes and opens it with the print dialog ready, so paper matches the file (page numbers included). Exporting was never affected \u2014 the exported file has exact margins and true 12pt type.",
+   "Goals: \"Show in: Header\" now means the actual app header \u2014 the title-bar line with the script name and quick access toolbar \u2014 with the chip at its right edge."
+  ]
+ },
+{
     "version": "6.28",
     "date": "2026-08-07",
     "changes": [

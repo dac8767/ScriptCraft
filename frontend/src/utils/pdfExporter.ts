@@ -232,6 +232,14 @@ export interface PDFExportOptions {
   documentTitle?: string;
   /** Current revision color for {revision} field */
   revisionColor?: string;
+  /** v6.29, Derek ("printing a page shrinks the actual page down"): PRINT
+   *  through this exporter instead of window.print(). WKWebView ignores the
+   *  print stylesheet's `@page margin: 0`, so the OS dialog laid our full
+   *  page inside its own printer margins and scaled it to fit (his sample:
+   *  everything ×0.74, "double margins"). With `print`, the SAME
+   *  exact-layout PDF opens with the print dialog queued instead of saving
+   *  to a file — one rendering path for paper and file. */
+  print?: boolean;
 }
 
 /** Resolve dynamic field placeholders in header/footer text */
@@ -676,6 +684,11 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
     }
   }
 
+  if (options?.print) {
+    pdf.autoPrint();
+    window.open(pdf.output('bloburl'), '_blank');
+    return;
+  }
   await saveFile(new Uint8Array(pdf.output('arraybuffer')), filename, [{ name: 'PDF', extensions: ['pdf'] }]);
 }
 

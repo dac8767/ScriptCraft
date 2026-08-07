@@ -50,6 +50,7 @@ import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
 import { createMarkupAtSelection } from '../utils/markupActions';
 import { insertCustomPage } from '../editor/extensions';
 import { GoalChip, useGoalWords } from './GoalsTool';
+import { showTitleBar } from './TitleBar';
 import { AnnotationShowMenu } from './MarkupPickers';
 import type { ElementType } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
@@ -2020,9 +2021,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         </React.Fragment>
       ))}
       </>}
-      {/* v6.15, Derek: "Show in: Toolbar" — the SAME GoalChip the status bar
-          mounts, parked at the ribbon's right edge while a goal runs. */}
-      {goalShowIn === 'toolbar' && (
+      {/* v6.15: "Show in: Header" mounts the SAME GoalChip the status bar
+          uses. v6.29, Derek: its header home is the TITLE BAR (script name +
+          QAT row) — this ribbon seat only remains where no title bar exists
+          (browser dev, non-Mac), so the chip lives in exactly one place. */}
+      {goalShowIn === 'toolbar' && !showTitleBar() && (
         <span className="toolbar-goalchip"><GoalChip variant="toolbar" words={goalChipWords} /></span>
       )}
     </div>

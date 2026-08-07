@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.28 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.29 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,31 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.29 — Print through the exporter; the goal chip's Header = the TITLE BAR
+
+- Derek's shrunken-print PDF, MEASURED: Producer "macOS Quartz
+  PDFContext" (the PRINT dialog, not our exporter), font 8.9pt =
+  12×0.743, left margin 2.21in = 1.09in printer margin + 1.5in script
+  margin ×0.743 — window.print() in WKWebView ignores 16-print.css's
+  `@page { margin: 0 }`, so the OS laid our full page inside its own
+  printer margins and scaled to fit ("double margins", exactly his
+  theory). Our jsPDF exporter measured EXACT: 108pt margin, 12pt font,
+  612×792. FIX: File ▸ Print renders the SAME exporter PDF and opens it
+  with autoPrint queued (blob: popup; falls back to window.print() only
+  if the PDF path throws) — one rendering path for paper and file.
+  exportPDF grew `print?: boolean`.
+- Goal chip: Derek: "the app header is the same line with the quick
+  action toolbar and the script name" — Show in: Header now mounts the
+  chip in the TITLE BAR, absolute at its right edge (the centering
+  counterweight untouched; `.fs-titlebar` gained position:relative;
+  pointer-events re-enabled above the drag layer). The ribbon seat
+  remains ONLY where no title bar exists (browser/non-Mac), gated by
+  showTitleBar() — one chip, one place. Stored value stays 'toolbar'.
+- CHECK TRAP: the DEV titlebar flag must be set AFTER boot() + reload —
+  the driver's first-load init script clears localStorage and init
+  scripts run in add order (its clear is once per session).
+- check-v629 (4). Gates: tsc 0, 1091 tests, build, checks 676/0.
+
 ### v6.28 — PDF import: the legacy pdf.js build for WKWebView
 
 - Derek's screenshot: "PDF import failed: undefined is not a function
@@ -299,43 +324,12 @@ Durable bits kept live here:
   (measured 604/604); --fd-hairline at 1px on this background is just
   near-invisible. Not a defect; do not "fix" the width.
 
-### v6.24 — Helper Text: areas, on-screen found-in, hide, go-there, line breaks
-
-- Derek (five mid-turn asks): (a) found-in ON SCREEN, not hover; (b) a
-  show/hide per row to clear reviewed items; (c) rows ORGANIZED by where
-  they're found; (d) a go-there button per row that opens the surface
-  WITHOUT closing the window; (e) LINE BREAKS in helper text.
-- Areas: the generator stamps `area` per entry (AREA_RULES on source
-  paths — ribbon/QAT/menus/context/status/chrome/editor + one area per
-  tool window; unmatched → "Everything Else", visible not silent). The
-  section renders collapsible area groups, Derek's surfaces first, all
-  open by default. NOTE: the Quick Access Toolbar group is legitimately
-  ABSENT — its tooltips are computed from the QAT registry, no literals.
-- Hidden: `helperTextHidden` (persisted, viewState) — the eye-slash
-  hides a row; the "Hidden (N)" chip shows exactly those, each with a
-  put-it-back eye. Never data loss.
-- Go-there: utils/helperTextDestinations.ts maps the entry's first file
-  → openTool(id) / setDesignPanelOpen / openPreferences. Menus, the
-  context menu and Customize have NO button — Customize's open flag is
-  MenuBar-LOCAL state (no store channel), menus have no programmatic
-  open. The row's found-in still names the place.
-- Line breaks: the row editor is an auto-growing TEXTAREA (Enter = new
-  line, blur commits, Escape reverts; `data-ht-for` targets rows in
-  checks — textareas have no value ATTRIBUTE, the old [value=]
-  selectors go nowhere). white-space: pre-line on .hover-tip,
-  .swn-hint, .fs-nav-empty, .fs-help-pop so breaks render; a
-  single-line input's placeholder just runs lines together.
-- CHECK TRAP: the row buttons must NOT share .dz-reset — querySelector
-  ('.dz-reset') in check-v620 clicked the go-there button. New buttons
-  are .ht-iconbtn (styles grouped with .dz-reset in CSS).
-- checks: check-v624 (12), check-v620 still 9 (blur-commit now).
-- Gates: tsc 0, 1091 tests, build, checks 659/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.24** — Helper Text: areas, on-screen found-in, hide, go-there, line breaks
 - **v6.23** — Goals: ONE Start/Stop top-left; Show in beside it; count quick starts
 - **v6.22** — Helper Text: its own window, with the control's face on every row
 - **v6.21** — Goals: the current total on the Reach rows; one-row footer; Header/Footer

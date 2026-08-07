@@ -21,6 +21,7 @@ import { LuSearch } from 'react-icons/lu';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore, smartUndo, smartRedo } from '../stores/editorStore';
 import { isDesktopTauri } from '../services/platform';
+import { GoalChip, useGoalWords } from './GoalsTool';
 
 const emit = (id: string) =>
   window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: id }));
@@ -63,6 +64,13 @@ export const showTitleBar = (): boolean =>
 const TitleBar: React.FC<{ editor: Editor | null }> = ({ editor }) => {
   const title = useEditorStore((s) => s.documentTitle);
   const qatItems = useEditorStore((s) => s.qatItems);
+  /* v6.29, Derek: "the app header is the same line with the quick action
+     toolbar and the script name" — Show in: Header parks the goal chip
+     HERE, absolute at the bar's right edge so the title's centering
+     counterweight is untouched. (The stored value keeps the name
+     'toolbar' — persisted.) */
+  const goalShowIn = useEditorStore((s) => s.goalShowIn);
+  const goalWords = useGoalWords(editor);
   if (!showTitleBar()) return null;
   return (
     <div className="fs-titlebar">
@@ -96,6 +104,9 @@ const TitleBar: React.FC<{ editor: Editor | null }> = ({ editor }) => {
       {/* right counterweight keeps the title centered against the QAT.
           (v3.15: the donate button moved into About ScriptCraft.) */}
       <div className="fs-titlebar-balance" />
+      {goalShowIn === 'toolbar' && (
+        <span className="fs-titlebar-goal"><GoalChip variant="toolbar" words={goalWords} /></span>
+      )}
     </div>
   );
 };

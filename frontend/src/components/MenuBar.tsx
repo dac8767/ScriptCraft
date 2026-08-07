@@ -1010,7 +1010,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     importLocal: () => { if (!isCollabGuest) confirmOrRun(handleImport); },
     save: () => { if (!isCollabGuest) handleSave(); },
     saveAs: () => { if (!isCollabGuest) handleSaveAs(); },
-    print: () => window.print(),
+    print: () => { void handlePrint(); },
     preview: () => useEditorStore.getState().setPreviewMode(true),
     exportPDF: () => { void handleExportPDF(); },
     exportFDX: () => { void handleExportFDX(); },
@@ -1137,6 +1137,27 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
       showToast(`Export failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
     }
   }, [editor, documentTitle]);
+
+  /* v6.29, Derek: Print renders the SAME exact-layout PDF the exporter
+     makes and opens it with the print dialog queued — window.print() let
+     the OS shrink the page inside its own printer margins (WKWebView
+     ignores our zero @page margins). Falls back to window.print() only if
+     the PDF path itself throws. */
+  const handlePrint = useCallback(async () => {
+    if (!editor) { window.print(); return; }
+    try {
+      const store = useEditorStore.getState();
+      await exportPDF(editor.getJSON(), documentTitle, pageLayout, {
+        sceneNumbersVisible: store.sceneNumbersVisible,
+        documentTitle: store.documentTitle,
+        revisionColor: store.revisionMode ? store.revisionColor : '',
+        print: true,
+      });
+    } catch (err) {
+      console.error('Print via PDF failed:', err);
+      window.print();
+    }
+  }, [editor, documentTitle, pageLayout]);
 
   const handleExportPDF = useCallback(async () => {
     if (!editor) return;
@@ -1289,7 +1310,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaBoxOpen />, label: 'Presets…', action: () => setPresetsOpen(true) },
           ],
         },
-        { icon: <FaPrint />, label: 'Print…', shortcut: sc('print'), action: () => setTimeout(() => window.print(), 60) },
+        { icon: <FaPrint />, label: 'Print…', shortcut: sc('print'), action: () => { void handlePrint(); } },
         // v5.46, Derek: Asset Manager and Script History moved here from the
         // Project menu — they manage the FILE's belongings and its history.
         { separator: true, label: '' },

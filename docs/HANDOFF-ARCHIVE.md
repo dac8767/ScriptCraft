@@ -151,7 +151,40 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.23 and older (newest first)
+## Version history — v6.24 and older (newest first)
+
+### v6.24 — Helper Text: areas, on-screen found-in, hide, go-there, line breaks
+
+- Derek (five mid-turn asks): (a) found-in ON SCREEN, not hover; (b) a
+  show/hide per row to clear reviewed items; (c) rows ORGANIZED by where
+  they're found; (d) a go-there button per row that opens the surface
+  WITHOUT closing the window; (e) LINE BREAKS in helper text.
+- Areas: the generator stamps `area` per entry (AREA_RULES on source
+  paths — ribbon/QAT/menus/context/status/chrome/editor + one area per
+  tool window; unmatched → "Everything Else", visible not silent). The
+  section renders collapsible area groups, Derek's surfaces first, all
+  open by default. NOTE: the Quick Access Toolbar group is legitimately
+  ABSENT — its tooltips are computed from the QAT registry, no literals.
+- Hidden: `helperTextHidden` (persisted, viewState) — the eye-slash
+  hides a row; the "Hidden (N)" chip shows exactly those, each with a
+  put-it-back eye. Never data loss.
+- Go-there: utils/helperTextDestinations.ts maps the entry's first file
+  → openTool(id) / setDesignPanelOpen / openPreferences. Menus, the
+  context menu and Customize have NO button — Customize's open flag is
+  MenuBar-LOCAL state (no store channel), menus have no programmatic
+  open. The row's found-in still names the place.
+- Line breaks: the row editor is an auto-growing TEXTAREA (Enter = new
+  line, blur commits, Escape reverts; `data-ht-for` targets rows in
+  checks — textareas have no value ATTRIBUTE, the old [value=]
+  selectors go nowhere). white-space: pre-line on .hover-tip,
+  .swn-hint, .fs-nav-empty, .fs-help-pop so breaks render; a
+  single-line input's placeholder just runs lines together.
+- CHECK TRAP: the row buttons must NOT share .dz-reset — querySelector
+  ('.dz-reset') in check-v620 clicked the go-there button. New buttons
+  are .ht-iconbtn (styles grouped with .dz-reset in CSS).
+- checks: check-v624 (12), check-v620 still 9 (blur-commit now).
+- Gates: tsc 0, 1091 tests, build, checks 659/0.
+
 
 ### v6.23 — Goals: ONE Start/Stop top-left; Show in beside it; count quick starts
 
