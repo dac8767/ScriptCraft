@@ -1227,6 +1227,12 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    *  slot), so the active tab lives here like goalKind — session memory. */
   analyticsTab: 'overview' | 'scenes' | 'dialogue' | 'gender';
   setAnalyticsTab: (v: 'overview' | 'scenes' | 'dialogue' | 'gender') => void;
+  /** v6.20, Derek's Helper Text editor (Design window): overrides keyed by
+   *  the DEFAULT string — editing "Delete" retitles every Delete tooltip.
+   *  Persisted. null value = remove the override. */
+  helperTextOverrides: Record<string, string>;
+  setHelperTextOverride: (text: string, value: string | null) => void;
+  resetAllHelperText: () => void;
   preferencesRequest: { open: boolean; tab?: 'saveloc' | 'keys' };
   openPreferences: (tab?: 'saveloc' | 'keys') => void;
   closePreferences: () => void;
@@ -1739,6 +1745,18 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   setGoalKind: (v) => set({ goalKind: v }),
   analyticsTab: 'overview',
   setAnalyticsTab: (v) => set({ analyticsTab: v }),
+  helperTextOverrides: (_vs.helperTextOverrides as Record<string, string>) ?? {},
+  setHelperTextOverride: (text, value) => set((s) => {
+    const helperTextOverrides = { ...s.helperTextOverrides };
+    if (value === null || value === text) delete helperTextOverrides[text];
+    else helperTextOverrides[text] = value;
+    saveViewState({ helperTextOverrides });
+    return { helperTextOverrides };
+  }),
+  resetAllHelperText: () => {
+    saveViewState({ helperTextOverrides: {} });
+    set({ helperTextOverrides: {} });
+  },
   goalShowIn: (_vs.goalShowIn as 'toolbar' | 'footer') ?? 'footer',
   setGoalShowIn: (v) => { saveViewState({ goalShowIn: v }); set({ goalShowIn: v }); },
   preferencesRequest: { open: false },

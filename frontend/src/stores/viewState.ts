@@ -76,6 +76,9 @@ export interface ViewState {
   charFilterHasDesc?: boolean;
   relSort?: string;
   goalShowIn?: string;
+  /** v6.20, Derek's Helper Text editor: overrides keyed by the DEFAULT
+   *  string — one edit applies everywhere that exact text appears. */
+  helperTextOverrides?: Record<string, string>;
   /** v5.85: the Locations List view's Group toggle. */
   locationsGrouped?: boolean;
   /** v5.12: below this tool width the scene list compresses to caret rows.

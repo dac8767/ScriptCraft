@@ -15,6 +15,7 @@ import { LuRotateCcw, LuSearch } from 'react-icons/lu';
 import { FaCopy, FaCheck, FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { DESIGN_GROUPS, buildOverrideCss, type DesignToken } from '../design/designTokens';
+import { HelperTextSection, filterHelperCatalog } from './HelperTextSection';
 import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
 
 // Round to the token's step so the number input doesn't show float noise.
@@ -133,7 +134,7 @@ export function DesignPanelBody() {
   const collapsedIds = useEditorStore((s) => s.designCollapsedGroups);
   const setCollapsedIds = useEditorStore((s) => s.setDesignCollapsedGroups);
   const collapsed = useMemo(
-    () => new Set(collapsedIds ?? DESIGN_GROUPS.map((g) => g.id)),
+    () => new Set(collapsedIds ?? [...DESIGN_GROUPS.map((g) => g.id), 'helper-text']),
     [collapsedIds],
   );
   const [copied, setCopied] = useState(false);
@@ -145,6 +146,9 @@ export function DesignPanelBody() {
       tokens: q ? g.tokens.filter((t) => t.label.toLowerCase().includes(q) || g.label.toLowerCase().includes(q)) : g.tokens,
     }))
     .filter((g) => g.tokens.length > 0);
+  // v6.20: the Helper Text group searches with the same box.
+  const helperEntries = filterHelperCatalog(q);
+  const helperMatches = q ? helperEntries.length > 0 || 'helper text'.includes(q) : true;
 
   const overrideCount = Object.keys(designVars).filter((k) => designVars[k] !== undefined).length;
 
@@ -196,7 +200,19 @@ export function DesignPanelBody() {
             </div>
           );
         })}
-        {groups.length === 0 && <div className="dz-empty">No settings match “{query}”.</div>}
+        {/* v6.20, Derek: the Helper Text editor — every catalogued tooltip,
+            field placeholder and content hint, editable. Same collapsed-
+            group persistence as the token groups. */}
+        {helperMatches && (
+          <div className="dz-group">
+            <button className="dz-group-head" onClick={() => toggleGroup('helper-text')}>
+              {collapsed.has('helper-text') && !q ? <FaChevronRight /> : <FaChevronDown />}
+              <span>Helper Text</span>
+            </button>
+            {!(collapsed.has('helper-text') && !q) && <HelperTextSection entries={helperEntries} />}
+          </div>
+        )}
+        {groups.length === 0 && !helperMatches && <div className="dz-empty">No settings match “{query}”.</div>}
       </div>
 
       <div className="dz-footer">

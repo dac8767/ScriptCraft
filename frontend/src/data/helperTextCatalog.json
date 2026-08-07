@@ -1,0 +1,3142 @@
+[
+ {
+  "text": "About Focus",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TypewriterTool.tsx"
+  ]
+ },
+ {
+  "text": "About this tab",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Act structure",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/StatusBar.tsx"
+  ]
+ },
+ {
+  "text": "Activity Log",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "Add a custom page — the script flows around it",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Add a divider (a thin line) to the end — drag it into place",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Add a divider line to the left panel",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Add a section or a beat",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/OutlineBar.tsx"
+  ]
+ },
+ {
+  "text": "Add a section, divider, spacer, alignment split or item here",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Add a spacer (blank gap) to the end — drag it into place",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Add a spacer to the left panel",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Add an image to the title page",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "Add an item, divider, spacer or section here",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Add annotation",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/MarkupsPanel.tsx"
+  ]
+ },
+ {
+  "text": "Add Annotation",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Add as a character with the detected description and age",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterScanTab.tsx"
+  ]
+ },
+ {
+  "text": "Add custom element",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TemplateEditorDialog.tsx"
+  ]
+ },
+ {
+  "text": "Add to the Quick Access Toolbar",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Align Center",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Align Left",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Align Right",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Align Split — sections after this hug the right edge",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Annotation Visibility",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Antonyms",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ThesaurusTool.tsx"
+  ]
+ },
+ {
+  "text": "Apply an outline structure, or save your own",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Apply this workspace",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/WorkspacesTool.tsx"
+  ]
+ },
+ {
+  "text": "Attach image",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Audio unavailable",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterAssetMedia.tsx"
+  ]
+ },
+ {
+  "text": "Back",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ThesaurusTool.tsx"
+  ]
+ },
+ {
+  "text": "Back to project",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TreatmentEditor.tsx"
+  ]
+ },
+ {
+  "text": "Block quote",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TreatmentEditor.tsx"
+  ]
+ },
+ {
+  "text": "Bold",
+  "kind": "tooltip",
+  "sites": 4,
+  "where": [
+   "components/FormatPanel.tsx",
+   "components/MiniRichText.tsx",
+   "components/TemplateEditorDialog.tsx",
+   "components/TreatmentEditor.tsx"
+  ]
+ },
+ {
+  "text": "Bold (⌘B)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Bullet list",
+  "kind": "tooltip",
+  "sites": 2,
+  "where": [
+   "components/MiniRichText.tsx",
+   "components/TreatmentEditor.tsx"
+  ]
+ },
+ {
+  "text": "Buy me a coffee",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/AboutDialog.tsx"
+  ]
+ },
+ {
+  "text": "Cancel",
+  "kind": "tooltip",
+  "sites": 3,
+  "where": [
+   "components/WorkspaceDialogs.tsx",
+   "components/WorkspacesTool.tsx"
+  ]
+ },
+ {
+  "text": "Cancel reorder",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/IndexCards.tsx"
+  ]
+ },
+ {
+  "text": "Card color",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Choose a color",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ThemesTab.tsx"
+  ]
+ },
+ {
+  "text": "Choose a folder",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/SaveAsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Choose which outline the bar shows",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/OutlineBar.tsx"
+  ]
+ },
+ {
+  "text": "Click to edit",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TagsPanel.tsx"
+  ]
+ },
+ {
+  "text": "Click to edit tags",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/AssetManager.tsx"
+  ]
+ },
+ {
+  "text": "Click to navigate to first appearance",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Click to preview",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/AssetManager.tsx"
+  ]
+ },
+ {
+  "text": "Click to type an exact zoom",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Close",
+  "kind": "tooltip",
+  "sites": 18,
+  "where": [
+   "components/ChangelogDialog.tsx",
+   "components/CharacterProfiles.tsx",
+   "components/CustomizePanelsDialog.tsx",
+   "components/DesignPanel.tsx",
+   "components/EditElementsDialog.tsx",
+   "components/GuidedSetupDialog.tsx"
+  ]
+ },
+ {
+  "text": "Close diff",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ScriptDiffView.tsx"
+  ]
+ },
+ {
+  "text": "Close search",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ToolControls.tsx"
+  ]
+ },
+ {
+  "text": "Close the Scrapbook",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/NotebookTool.tsx"
+  ]
+ },
+ {
+  "text": "Close this outline variation (beats are kept)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Close without saving",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/MarkupPopover.tsx"
+  ]
+ },
+ {
+  "text": "Confirm delete",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/WorkspacesTool.tsx"
+  ]
+ },
+ {
+  "text": "Connect this location to others — connected locations form a group",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/LocationPlaceDetails.tsx"
+  ]
+ },
+ {
+  "text": "Copy invite link",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ShareDialog.tsx"
+  ]
+ },
+ {
+  "text": "Copy the image — then paste it into the form's attachment field",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/FeedbackTool.tsx"
+  ]
+ },
+ {
+  "text": "Copy to clipboard",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/StickyCard.tsx"
+  ]
+ },
+ {
+  "text": "Current theme",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ThemesTab.tsx"
+  ]
+ },
+ {
+  "text": "Custom color",
+  "kind": "tooltip",
+  "sites": 3,
+  "where": [
+   "components/MarkupsCustomizeTab.tsx",
+   "components/StickyCard.tsx",
+   "components/SynopsisModal.tsx"
+  ]
+ },
+ {
+  "text": "Custom page options",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Customize ScriptCraft",
+  "kind": "tooltip",
+  "sites": 2,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Default size",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Delete",
+  "kind": "tooltip",
+  "sites": 4,
+  "where": [
+   "components/AssetManager.tsx",
+   "components/StickyCard.tsx",
+   "components/WorkspaceDialogs.tsx",
+   "components/WorkspacesTool.tsx"
+  ]
+ },
+ {
+  "text": "Delete annotation",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/MarkupPopover.tsx"
+  ]
+ },
+ {
+  "text": "Delete beat",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Delete custom category",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TagsPanel.tsx"
+  ]
+ },
+ {
+  "text": "Delete entity and all occurrences",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TagsPanel.tsx"
+  ]
+ },
+ {
+  "text": "Delete note",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ScriptNotePopover.tsx"
+  ]
+ },
+ {
+  "text": "Delete page",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/NotebookTool.tsx"
+  ]
+ },
+ {
+  "text": "Delete relationship",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterRelationshipsTab.tsx"
+  ]
+ },
+ {
+  "text": "Delete section",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Delete section (pages move to the top level)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/NotebookTool.tsx"
+  ]
+ },
+ {
+  "text": "Delete this theme",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ThemesTab.tsx"
+  ]
+ },
+ {
+  "text": "Discard this capture",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/FeedbackTool.tsx"
+  ]
+ },
+ {
+  "text": "Dissolve the group's name — the locations stay connected",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/LocationPlaceDetails.tsx"
+  ]
+ },
+ {
+  "text": "Double-click to go to this scene",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Double-click to open this annotation in the script",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/MarkupsPanel.tsx"
+  ]
+ },
+ {
+  "text": "Double-click to rename",
+  "kind": "tooltip",
+  "sites": 2,
+  "where": [
+   "components/NotebookTool.tsx"
+  ]
+ },
+ {
+  "text": "Download",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/AssetManager.tsx"
+  ]
+ },
+ {
+  "text": "Download the PNG (screenshot folder, or Downloads) — then upload it to the form",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/FeedbackTool.tsx"
+  ]
+ },
+ {
+  "text": "Drag sideways: panel width · drag up/down: item size",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ToolDock.tsx"
+  ]
+ },
+ {
+  "text": "Drag to change the page span",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/OutlineBar.tsx"
+  ]
+ },
+ {
+  "text": "Drag to change this section's page budget",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/OutlineBar.tsx"
+  ]
+ },
+ {
+  "text": "Drag to move",
+  "kind": "tooltip",
+  "sites": 2,
+  "where": [
+   "components/CustomizePanelsDialog.tsx",
+   "components/MarkupPickers.tsx"
+  ]
+ },
+ {
+  "text": "Drag to move this boundary (resizes the previous section)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/OutlineBar.tsx"
+  ]
+ },
+ {
+  "text": "Drag to move this section",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Drag to reorder",
+  "kind": "tooltip",
+  "sites": 3,
+  "where": [
+   "components/IndexCards.tsx",
+   "components/SceneNavigator.tsx",
+   "components/StickyCard.tsx"
+  ]
+ },
+ {
+  "text": "Drag to resize",
+  "kind": "tooltip",
+  "sites": 5,
+  "where": [
+   "components/CharacterProfiles.tsx",
+   "components/SceneNavigator.tsx",
+   "editor/extensions/ScreenplayImageView.tsx"
+  ]
+ },
+ {
+  "text": "Drag to resize — the new height becomes this tool's default",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ToolDock.tsx"
+  ]
+ },
+ {
+  "text": "Drag to resize this spacer",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Drag to scroll — drag an end to zoom",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/OutlineBar.tsx"
+  ]
+ },
+ {
+  "text": "Edit this theme",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ThemesTab.tsx"
+  ]
+ },
+ {
+  "text": "Editor View",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Element",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Estimated runtime",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/StatusBar.tsx"
+  ]
+ },
+ {
+  "text": "Every location on its own row",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/LocationsGroupToggle.tsx"
+  ]
+ },
+ {
+  "text": "Expand synopsis",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/IndexCards.tsx"
+  ]
+ },
+ {
+  "text": "Expand the left panel",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "Expand the right panel",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "Expand this character into a larger window",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Fewer notes per row (bigger cards)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/StickyNotes.tsx"
+  ]
+ },
+ {
+  "text": "File this away so it leaves the list",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterScanTab.tsx"
+  ]
+ },
+ {
+  "text": "Fill card",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Filter",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Filter annotations",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/NavigatorTool.tsx"
+  ]
+ },
+ {
+  "text": "Filter annotations (script and window together)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/MarkupsPanel.tsx"
+  ]
+ },
+ {
+  "text": "Filter by tag",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ChangelogDialog.tsx"
+  ]
+ },
+ {
+  "text": "Filter locations",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Find & Replace (⌘F)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Fit all characters to screen",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/RelationshipMap.tsx"
+  ]
+ },
+ {
+  "text": "Fit the preview column",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "Fit the whole ruler to the visible width",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/OutlineBar.tsx"
+  ]
+ },
+ {
+  "text": "Font Family",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/FontPicker.tsx"
+  ]
+ },
+ {
+  "text": "Font Size",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Font Size (Scrapbook)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Freeform — jumps to a Freeform tab (or creates one); each tab keeps its arrangement",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Fullscreen",
+  "kind": "tooltip",
+  "sites": 2,
+  "where": [
+   "components/CharacterProfiles.tsx",
+   "components/ToolDock.tsx"
+  ]
+ },
+ {
+  "text": "Go back",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/SettingsPage.tsx"
+  ]
+ },
+ {
+  "text": "Go to Page (⌘G)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Go to page #",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Grammar & Spelling Settings",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/SpellCheckPanel.tsx"
+  ]
+ },
+ {
+  "text": "Has notes",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TagsPanel.tsx"
+  ]
+ },
+ {
+  "text": "Hidden from the locations list",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/LocationMapRail.tsx"
+  ]
+ },
+ {
+  "text": "Hide every built-in transition (custom ones stay)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/EditElementsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Hide every item",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ContextMenuTab.tsx"
+  ]
+ },
+ {
+  "text": "Hide every non-required element",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/EditElementsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Hide every Quick Access button",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Hide every toolbar item (re-add items from the palette)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Hide everything in both panels",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Hide this element",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/EditElementsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Hide this item",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ContextMenuTab.tsx"
+  ]
+ },
+ {
+  "text": "Hide this theme",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ThemesTab.tsx"
+  ]
+ },
+ {
+  "text": "Highlight color",
+  "kind": "tooltip",
+  "sites": 3,
+  "where": [
+   "components/CharacterProfiles.tsx",
+   "components/FormatPanel.tsx",
+   "components/MarkupPopover.tsx"
+  ]
+ },
+ {
+  "text": "Highlight text in the script and link it to this annotation",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/MarkupPopover.tsx"
+  ]
+ },
+ {
+  "text": "Home save location",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/StatusBar.tsx"
+  ]
+ },
+ {
+  "text": "How to use the Outline",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Icon color",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/MarkupsCustomizeTab.tsx"
+  ]
+ },
+ {
+  "text": "Image alignment",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "Image placement",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "Image unavailable",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterAssetMedia.tsx"
+  ]
+ },
+ {
+  "text": "Imported icon",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/MarkupPickers.tsx"
+  ]
+ },
+ {
+  "text": "Insert Custom Page",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Italic",
+  "kind": "tooltip",
+  "sites": 4,
+  "where": [
+   "components/FormatPanel.tsx",
+   "components/MiniRichText.tsx",
+   "components/TemplateEditorDialog.tsx",
+   "components/TreatmentEditor.tsx"
+  ]
+ },
+ {
+  "text": "Italic (⌘I)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Justify",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Keep it",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/WorkspaceDialogs.tsx"
+  ]
+ },
+ {
+  "text": "Leave this step at its default",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/GuidedSetupDialog.tsx"
+  ]
+ },
+ {
+  "text": "Load customization choices from a file — this replaces your current ones",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Load themes from a theme file, or copy them out of another project",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ThemesTab.tsx"
+  ]
+ },
+ {
+  "text": "Locations that share a group fold together",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/LocationsGroupToggle.tsx"
+  ]
+ },
+ {
+  "text": "Look up",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ThesaurusTool.tsx"
+  ]
+ },
+ {
+  "text": "Manual lets you drag any order; Date Created shows newest first",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/StickyNotes.tsx"
+  ]
+ },
+ {
+  "text": "Manual override",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ScriptStatistics.tsx"
+  ]
+ },
+ {
+  "text": "Map options",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/LocationMapRail.tsx"
+  ]
+ },
+ {
+  "text": "Menu (drag to reposition)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/MenuBar.tsx"
+  ]
+ },
+ {
+  "text": "More formatting options",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "More notes per row (smaller cards)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/StickyNotes.tsx"
+  ]
+ },
+ {
+  "text": "More options",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/MarkupPickers.tsx"
+  ]
+ },
+ {
+  "text": "Move down",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/WorkspaceDialogs.tsx"
+  ]
+ },
+ {
+  "text": "Move up",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/WorkspaceDialogs.tsx"
+  ]
+ },
+ {
+  "text": "Navigate to first occurrence",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TagsPanel.tsx"
+  ]
+ },
+ {
+  "text": "Navigate to this occurrence",
+  "kind": "tooltip",
+  "sites": 2,
+  "where": [
+   "components/TagsPanel.tsx"
+  ]
+ },
+ {
+  "text": "New outline variation",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "New page",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/NotebookTool.tsx"
+  ]
+ },
+ {
+  "text": "New section",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/NotebookTool.tsx"
+  ]
+ },
+ {
+  "text": "Next image",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Notes",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Numbered list",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TreatmentEditor.tsx"
+  ]
+ },
+ {
+  "text": "On: a beat's color fills its whole card, in every outline tab. Off: just a thin stripe on the card's edge.",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Open annotation",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/MarkupIconLayer.tsx"
+  ]
+ },
+ {
+  "text": "Open the Outline window (popped out)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/OutlineBar.tsx"
+  ]
+ },
+ {
+  "text": "Optional note to the rewriter — it guides interpretation, never overrides the craft rules",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/RewriteTool.tsx"
+  ]
+ },
+ {
+  "text": "Order the locations",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Page estimate — how many pages this beat spans on the Outline Bar",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Pin options",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/LocationMapRail.tsx"
+  ]
+ },
+ {
+  "text": "Preview without saving",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ThemesTab.tsx"
+  ]
+ },
+ {
+  "text": "Previous image",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Production Tags",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Re-seeds the colors below from this base",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ThemesTab.tsx"
+  ]
+ },
+ {
+  "text": "Redo (⇧⌘Z)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Redo (Ctrl+Shift+Z)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/IndexCards.tsx"
+  ]
+ },
+ {
+  "text": "Remove",
+  "kind": "tooltip",
+  "sites": 2,
+  "where": [
+   "components/DictionaryConfigPanel.tsx",
+   "components/DictionaryLibrary.tsx"
+  ]
+ },
+ {
+  "text": "Remove element",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TemplateEditorDialog.tsx"
+  ]
+ },
+ {
+  "text": "Remove from the Quick Access Toolbar",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Remove from the toolbar",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Remove image",
+  "kind": "tooltip",
+  "sites": 2,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Remove preview",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Remove relationship",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Remove the align split",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Remove the row split",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Remove this divider — the sections sit flush",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Remove this field",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/LocationPlaceDetails.tsx"
+  ]
+ },
+ {
+  "text": "Remove this language",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/DictionaryConfigPanel.tsx"
+  ]
+ },
+ {
+  "text": "Remove this occurrence",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TagsPanel.tsx"
+  ]
+ },
+ {
+  "text": "Remove this section",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Remove this shortcut",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/KeyboardShortcutsTab.tsx"
+  ]
+ },
+ {
+  "text": "Remove voice profile",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Rename",
+  "kind": "tooltip",
+  "sites": 2,
+  "where": [
+   "components/WorkspaceDialogs.tsx",
+   "components/WorkspacesTool.tsx"
+  ]
+ },
+ {
+  "text": "Rename this field",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/LocationPlaceDetails.tsx"
+  ]
+ },
+ {
+  "text": "Rename this group — the name shows everywhere the group does",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/LocationPlaceDetails.tsx"
+  ]
+ },
+ {
+  "text": "Replace voice clip",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Replace, rotate or delete the map",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/LocationMapOptions.tsx"
+  ]
+ },
+ {
+  "text": "Reset every customization to the defaults — sizes, toolbar layout, Quick Access, menu bar, panels, outline bar",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/customizeResets.tsx"
+  ]
+ },
+ {
+  "text": "Reset image size",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Restore every shortcut to its default",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/KeyboardShortcutsTab.tsx"
+  ]
+ },
+ {
+  "text": "Restore the default shortcut",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/KeyboardShortcutsTab.tsx"
+  ]
+ },
+ {
+  "text": "Restore this version",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/VersionHistory.tsx"
+  ]
+ },
+ {
+  "text": "Revoke this invite",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ShareDialog.tsx"
+  ]
+ },
+ {
+  "text": "Rotate 90° clockwise",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/LocationMapTab.tsx"
+  ]
+ },
+ {
+  "text": "Run the same passage again — add a note first to steer it (e.g. avoid a phrase)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/RewriteTool.tsx"
+  ]
+ },
+ {
+  "text": "Save (⌘S)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/TreatmentEditor.tsx"
+  ]
+ },
+ {
+  "text": "Save every customization choice to a file",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Save name",
+  "kind": "tooltip",
+  "sites": 2,
+  "where": [
+   "components/WorkspaceDialogs.tsx",
+   "components/WorkspacesTool.tsx"
+  ]
+ },
+ {
+  "text": "Save your custom themes to a file",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ThemesTab.tsx"
+  ]
+ },
+ {
+  "text": "Scan scripts and auto-create location entries",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/LocationDatabase.tsx"
+  ]
+ },
+ {
+  "text": "Screenshot a selected area — it appears above the form, ready to copy or download",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/FeedbackTool.tsx"
+  ]
+ },
+ {
+  "text": "Screenshot the whole window — it appears above the form, ready to copy or download",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/FeedbackTool.tsx"
+  ]
+ },
+ {
+  "text": "Search",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ToolControls.tsx"
+  ]
+ },
+ {
+  "text": "Section",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ToolDock.tsx"
+  ]
+ },
+ {
+  "text": "Section title — leave blank for none",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Sections — jumps to a Sections tab (or creates one); each tab keeps its arrangement",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Select for compare",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/VersionHistory.tsx"
+  ]
+ },
+ {
+  "text": "Send to Script — insert each beat as a section line (# …)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/OutlineBar.tsx"
+  ]
+ },
+ {
+  "text": "Show every built-in transition",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/EditElementsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Show every element",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/EditElementsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Show every item",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ContextMenuTab.tsx"
+  ]
+ },
+ {
+  "text": "Show every Quick Access button",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Show in its default panel",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Show the divider between these sections",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Show the scenes this character appears in",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Show this character's relationships",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Show this character's voice profile",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Show this element",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/EditElementsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Show this item",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ContextMenuTab.tsx"
+  ]
+ },
+ {
+  "text": "Show this theme",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ThemesTab.tsx"
+  ]
+ },
+ {
+  "text": "Show this transition",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/EditElementsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Shrink to a floating window",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ToolDock.tsx"
+  ]
+ },
+ {
+  "text": "Start a new paragraph",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/RewriteTool.tsx"
+  ]
+ },
+ {
+  "text": "Sticky color",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/StickyCard.tsx"
+  ]
+ },
+ {
+  "text": "Strikethrough",
+  "kind": "tooltip",
+  "sites": 3,
+  "where": [
+   "components/FormatPanel.tsx",
+   "components/TemplateEditorDialog.tsx",
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Subscript",
+  "kind": "tooltip",
+  "sites": 2,
+  "where": [
+   "components/FormatPanel.tsx",
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Superscript",
+  "kind": "tooltip",
+  "sites": 2,
+  "where": [
+   "components/FormatPanel.tsx",
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Target pages for this section on the Outline Bar",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Text Background Color (Scrapbook) — None removes it",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Text color",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/FormatPanel.tsx"
+  ]
+ },
+ {
+  "text": "Text Color",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Text Color (Scrapbook)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "The app's own text",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/HelperTextSection.tsx"
+  ]
+ },
+ {
+  "text": "This pin is locked",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/LocationMapRail.tsx"
+  ]
+ },
+ {
+  "text": "Title Page",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Underline",
+  "kind": "tooltip",
+  "sites": 4,
+  "where": [
+   "components/FormatPanel.tsx",
+   "components/MiniRichText.tsx",
+   "components/TemplateEditorDialog.tsx",
+   "components/TreatmentEditor.tsx"
+  ]
+ },
+ {
+  "text": "Underline (⌘U)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Undo (⌘Z)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Undo (Ctrl+Z)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/IndexCards.tsx"
+  ]
+ },
+ {
+  "text": "Upload a voice-reference audio clip for this character",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "video",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/ScriptNotes.tsx"
+  ]
+ },
+ {
+  "text": "View",
+  "kind": "tooltip",
+  "sites": 4,
+  "where": [
+   "components/CharacterProfiles.tsx",
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "View this version in the editor (read-only)",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/VersionHistory.tsx"
+  ]
+ },
+ {
+  "text": "Working offline — click to sign in and save to the server",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/AuthIndicator.tsx"
+  ]
+ },
+ {
+  "text": "Zoom",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Zoom in",
+  "kind": "tooltip",
+  "sites": 2,
+  "where": [
+   "components/TitlePageEditor.tsx",
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Zoom options",
+  "kind": "tooltip",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Zoom out",
+  "kind": "tooltip",
+  "sites": 2,
+  "where": [
+   "components/TitlePageEditor.tsx",
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": ".aff URL",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/DictionaryConfigPanel.tsx"
+  ]
+ },
+ {
+  "text": ".dic URL",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/DictionaryConfigPanel.tsx"
+  ]
+ },
+ {
+  "text": "(CONT'D)",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/MoresContdsDialog.tsx"
+  ]
+ },
+ {
+  "text": "(MORE)",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/MoresContdsDialog.tsx"
+  ]
+ },
+ {
+  "text": "3-5 representative lines from the script...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "A weary detective in his 50s, haunted by a cold case...",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "a word or words",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/NavigatorTool.tsx"
+  ]
+ },
+ {
+  "text": "Add a word",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/DictionaryConfigPanel.tsx",
+   "components/DictionaryLibrary.tsx"
+  ]
+ },
+ {
+  "text": "Add details: description, requirements, budget notes...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TagsPanel.tsx"
+  ]
+ },
+ {
+  "text": "At least 8 characters",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/SettingsPage.tsx"
+  ]
+ },
+ {
+  "text": "Author Name",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "auto",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/FormatPanel.tsx"
+  ]
+ },
+ {
+  "text": "Azure Application (client) ID",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/PreferencesDialog.tsx"
+  ]
+ },
+ {
+  "text": "Beat title...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Category name...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TagsPanel.tsx"
+  ]
+ },
+ {
+  "text": "Center",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/PageSetupDialog.tsx"
+  ]
+ },
+ {
+  "text": "Character history, motivations, secrets...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Confirm password",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/CollabLoginDialog.tsx",
+   "components/SettingsPage.tsx"
+  ]
+ },
+ {
+  "text": "Copyright 2026 Author Name",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "Current password",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/SettingsPage.tsx"
+  ]
+ },
+ {
+  "text": "DELETE",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/SettingsPage.tsx"
+  ]
+ },
+ {
+  "text": "Describe the relationship...",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/InlineRelForm.tsx",
+   "components/RelationshipMap.tsx"
+  ]
+ },
+ {
+  "text": "Describe this beat...",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Describe what changed...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/MenuBar.tsx"
+  ]
+ },
+ {
+  "text": "Description...",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/CharacterProfiles.tsx",
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Description…",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/CharacterRelationshipsTab.tsx"
+  ]
+ },
+ {
+  "text": "Display name (e.g. Hindi)",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/DictionaryConfigPanel.tsx"
+  ]
+ },
+ {
+  "text": "Divider label (optional)",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "e.g. CONFIDENTIAL",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "e.g. First Draft, Shooting Draft",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/SetDraftDialog.tsx"
+  ]
+ },
+ {
+  "text": "e.g. MATCH CUT TO:",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/EditElementsDialog.tsx"
+  ]
+ },
+ {
+  "text": "e.g. Second Draft",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/PreferencesDialog.tsx",
+   "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "e.g. Writing, Outlining, Editing",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/WorkspaceDialogs.tsx"
+  ]
+ },
+ {
+  "text": "Educated, uses legal terms, street slang...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Element name",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TemplateEditorDialog.tsx"
+  ]
+ },
+ {
+  "text": "Entity name...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TagsPanel.tsx"
+  ]
+ },
+ {
+  "text": "Filter by keyword",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/NavigatorTool.tsx"
+  ]
+ },
+ {
+  "text": "Filter by keyword…",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/ChangelogDialog.tsx"
+  ]
+ },
+ {
+  "text": "Filter by name...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/CharacterImageOverlays.tsx"
+  ]
+ },
+ {
+  "text": "First Draft",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/SaveAsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Google OAuth Client ID (…apps.googleusercontent.com)",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/PreferencesDialog.tsx"
+  ]
+ },
+ {
+  "text": "Group name",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/LocationPlaceDetails.tsx"
+  ]
+ },
+ {
+  "text": "How does this character change through the story...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "https://…",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/MarkupPopover.tsx"
+  ]
+ },
+ {
+  "text": "https://…/image.png",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/MarkupPopover.tsx"
+  ]
+ },
+ {
+  "text": "https://example.com/collab/... or paste token",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/JoinCollabDialog.tsx"
+  ]
+ },
+ {
+  "text": "https://your-host.example.com",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/SettingsPage.tsx"
+  ]
+ },
+ {
+  "text": "inherit",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TemplateEditorDialog.tsx"
+  ]
+ },
+ {
+  "text": "Language code (e.g. hi_IN)",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/DictionaryConfigPanel.tsx"
+  ]
+ },
+ {
+  "text": "Left",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/PageSetupDialog.tsx"
+  ]
+ },
+ {
+  "text": "Look up a word…",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/ThesaurusTool.tsx"
+  ]
+ },
+ {
+  "text": "Min 8 chars, upper + lower + digit",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/CollabLoginDialog.tsx",
+   "components/ResetPasswordRoute.tsx"
+  ]
+ },
+ {
+  "text": "mm",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TimeField.tsx"
+  ]
+ },
+ {
+  "text": "Name\\nAgency\\nemail@example.com\\n(310) 555-0100",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "New dictionary",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/DictionaryLibrary.tsx"
+  ]
+ },
+ {
+  "text": "Optional description",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TemplateEditorDialog.tsx"
+  ]
+ },
+ {
+  "text": "Optional second title line",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "Password",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/CollabLoginDialog.tsx",
+   "components/SettingsPage.tsx"
+  ]
+ },
+ {
+  "text": "Person's name (e.g., John)",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/ShareDialog.tsx"
+  ]
+ },
+ {
+  "text": "Project name",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/RenameDialog.tsx"
+  ]
+ },
+ {
+  "text": "Re-enter password",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/ResetPasswordRoute.tsx"
+  ]
+ },
+ {
+  "text": "Repeat new password",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/SettingsPage.tsx"
+  ]
+ },
+ {
+  "text": "Replace with...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/SearchReplace.tsx"
+  ]
+ },
+ {
+  "text": "Research links, themes to keep present, notes to self…",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/ScriptNotePopover.tsx"
+  ]
+ },
+ {
+  "text": "Right",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/PageSetupDialog.tsx"
+  ]
+ },
+ {
+  "text": "Save current layout as…",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/WorkspacesTool.tsx"
+  ]
+ },
+ {
+  "text": "Says 'you see' often, clears throat before lying...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Script name",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/RenameDialog.tsx",
+   "components/SaveAsDialog.tsx"
+  ]
+ },
+ {
+  "text": "SCRIPT TITLE",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "Search annotations",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/MarkupsPanel.tsx"
+  ]
+ },
+ {
+  "text": "Search by name...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/AssetManager.tsx"
+  ]
+ },
+ {
+  "text": "Search characters...",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Search headings & synopses...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Search items…",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/RibbonPalette.tsx",
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Search languages…",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/DictionaryConfigPanel.tsx"
+  ]
+ },
+ {
+  "text": "Search locations…",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/LocationDatabase.tsx",
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Search notes…",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/StickyNotes.tsx"
+  ]
+ },
+ {
+  "text": "Search pages…",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Search relationships...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Search scripts…",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/OpenFile.tsx"
+  ]
+ },
+ {
+  "text": "Search settings…",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/DesignPanel.tsx"
+  ]
+ },
+ {
+  "text": "Search text...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/SearchReplace.tsx"
+  ]
+ },
+ {
+  "text": "Section name...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Short sentences, formal tone, uses contractions...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Shown when element is empty",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TemplateEditorDialog.tsx"
+  ]
+ },
+ {
+  "text": "sk-ant-…",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/RewriteTool.tsx"
+  ]
+ },
+ {
+  "text": "Synopsis contains...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "tag1, tag2, ...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/AssetManager.tsx"
+  ]
+ },
+ {
+  "text": "Template name",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TemplateEditorDialog.tsx"
+  ]
+ },
+ {
+  "text": "the novel by...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "title",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "transparent",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TemplateEditorDialog.tsx"
+  ]
+ },
+ {
+  "text": "Treatment title…",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TreatmentEditor.tsx"
+  ]
+ },
+ {
+  "text": "Untitled",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/NotebookTool.tsx"
+  ]
+ },
+ {
+  "text": "Untitled Script",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/GuidedSetupDialog.tsx",
+   "components/NewScriptDialog.tsx"
+  ]
+ },
+ {
+  "text": "WGAw #123456",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "What’s this beat for? Anything that must stay?",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/RewriteTool.tsx"
+  ]
+ },
+ {
+  "text": "Write a synopsis for this scene...",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/SynopsisModal.tsx"
+  ]
+ },
+ {
+  "text": "wss://your-host.example.com",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/SettingsPage.tsx"
+  ]
+ },
+ {
+  "text": "you@example.com",
+  "kind": "placeholder",
+  "sites": 5,
+  "where": [
+   "components/CollabLoginDialog.tsx",
+   "components/SettingsPage.tsx"
+  ]
+ },
+ {
+  "text": "Your name",
+  "kind": "placeholder",
+  "sites": 2,
+  "where": [
+   "components/CollabLoginDialog.tsx",
+   "components/SettingsPage.tsx"
+  ]
+ },
+ {
+  "text": "Your password",
+  "kind": "placeholder",
+  "sites": 1,
+  "where": [
+   "components/SettingsPage.tsx"
+  ]
+ },
+ {
+  "text": "(direction)",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "ACT ONE",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "Action...",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "Cast...",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "CHARACTER NAME",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "Click a word in the script — or type one above — to see its synonyms.",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/ThesaurusTool.tsx"
+  ]
+ },
+ {
+  "text": "CUT TO:",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "Dialogue...",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "END OF ACT",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "Focus mode keeps the line you're typing on fixed on screen — the page scrolls, your eyes don't. This window stays open while you write.",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/TypewriterTool.tsx"
+  ]
+ },
+ {
+  "text": "INT./EXT. LOCATION - TIME",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "Lyrics...",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "No speaking roles yet.",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/GenderAnalysisTool.tsx"
+  ]
+ },
+ {
+  "text": "Notes to self, research links, themes to keep present. Hit + Add Note above.",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/StickyNotes.tsx"
+  ]
+ },
+ {
+  "text": "Nothing matches the search.",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/StickyNotes.tsx"
+  ]
+ },
+ {
+  "text": "Open a script to see analytics.",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/AnalyticsTool.tsx"
+  ]
+ },
+ {
+  "text": "Scene headings, acts, script notes, and to-dos will show up here as you write.",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/NavigatorTool.tsx"
+  ]
+ },
+ {
+  "text": "Select text in the Editor and press ⌥⌘X to cut it here, or ⌥⌘C to copy it over.",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/StickyNotes.tsx"
+  ]
+ },
+ {
+  "text": "SHOT DESCRIPTION",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "SHOW TITLE",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "Text...",
+  "kind": "hint",
+  "sites": 1,
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ }
+]

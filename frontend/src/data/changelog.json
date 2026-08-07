@@ -1,5 +1,12 @@
 [
   {
+    "version": "6.20",
+    "date": "2026-08-07",
+    "changes": [
+      "The Design window gained a Helper Text section: every hover tooltip, field ghost text, empty-list hint, the script's element hints (Action…, CHARACTER NAME, …) and the ? help text — 386 strings, searchable, each editable with its own reset. Edits apply live everywhere the text appears, persist across restarts, and Reset helper text puts everything back."
+    ]
+  },
+  {
     "version": "6.19",
     "date": "2026-08-07",
     "changes": [

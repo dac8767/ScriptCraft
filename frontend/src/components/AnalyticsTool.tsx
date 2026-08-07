@@ -16,6 +16,7 @@
  */
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
+import { useHt } from '../utils/helperText';
 import type { ToolChromeTab } from './ToolControls';
 import ScriptStatistics from './ScriptStatistics';
 import GenderAnalysisTool from './GenderAnalysisTool';
@@ -44,6 +45,7 @@ interface AnalyticsToolProps {
 
 export default function AnalyticsTool({ editor }: AnalyticsToolProps) {
   const tab = useEditorStore((s) => s.analyticsTab);
+  const ht = useHt();
 
   return (
     <div className="fs-analytics">
@@ -57,7 +59,7 @@ export default function AnalyticsTool({ editor }: AnalyticsToolProps) {
           )}
         </div>
       ) : (
-        <div className="fs-nav-empty">Open a script to see analytics.</div>
+        <div className="fs-nav-empty">{ht('Open a script to see analytics.')}</div>
       )}
     </div>
   );

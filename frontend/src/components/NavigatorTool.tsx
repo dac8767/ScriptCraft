@@ -20,6 +20,7 @@ import { countActiveNavSceneFilters, EMPTY_NAV_SCENE_FILTERS, navSceneHeadingMat
 import { EMPTY_MARKUP_FILTERS } from '../stores/slices/markupsSlice';
 import { findMarkupPos, markupContentLines, markupNavLines, markupIsList, type MarkupNavLine } from '../utils/markupActions';
 import { MarkupIcon } from './markupIcons';
+import { useHt } from '../utils/helperText';
 import { MarkupNavLineSpans } from './MarkupNavLines';
 import { TypeGridSection, useTypesInUse, useSeat, useDismiss } from './MarkupPickers';
 
@@ -197,6 +198,7 @@ export function NavigatorControls() {
    moved into the window HEADER (NavigatorControls), text only.) */
 
 export default function NavigatorTool({ editor, scrollContainer }: NavigatorToolProps) {
+  const ht = useHt();
   const { notes, setNotePopoverId } = useEditorStore();
   const markups = useEditorStore((s) => s.markups);
   const mkFilters = useEditorStore((s) => s.markupFilters);
@@ -354,7 +356,7 @@ export default function NavigatorTool({ editor, scrollContainer }: NavigatorTool
       <div className="fs-nav-list">
         {visible.length === 0 && (
           <div className="fs-nav-empty">
-            Scene headings, acts, script notes, and to-dos will show up here as you write.
+            {ht('Scene headings, acts, script notes, and to-dos will show up here as you write.')}
           </div>
         )}
         {visible.map((it, idx) => (

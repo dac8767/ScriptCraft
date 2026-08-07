@@ -151,7 +151,31 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.14 and older (newest first)
+## Version history — v6.15 and older (newest first)
+
+### v6.15 — Goals: Show in Toolbar/Footer, relative count goals, footer
+
+- WritingGoal grew `mode: 'reach'|'relative'` + `baseline`;
+  useGoalProgress measures GROWTH for relative goals (label "N / M kind
+  written"). Words/Pages tabs are radio pairs (Reach page:/word: vs
+  Finish N Pages / Write N Words); startCount captures baseline=current.
+- goalShowIn ('footer' default, persisted) + ONE `GoalChip`
+  (GoalsTool.tsx) mounted by StatusBar (footer mode) and the ribbon
+  (toolbar mode, `.toolbar-goalchip`, right edge; `useGoalWords(editor)`
+  computes words there). NOTE: the status bar's center cluster hides
+  during ANY takeover (pre-existing v-old gate) — the footer chip never
+  renders in fullscreen; the ribbon chip does.
+- Quick start [5,15,30,60,120]; footer row (`.fs-goal-footer`,
+  margin-top auto) holds Show in + the Vomit checkbox; the ? helper is
+  GONE (GoalsHeaderExtra deleted; goals chrome = useTabs only — the
+  ToolControls.order guard therefore iterates one fewer window: 1081→
+  1080 tests, explained, not a loss).
+- REGRESSION FIX (v6.10 fallout, Derek's screenshot): saved layouts
+  carrying b:highlightColor rendered an EMPTY priority block outside the
+  Scrapbook → measured as CSS-hidden → the overflow three-dot appeared.
+  The token is filtered from the live list unless the Scrapbook is open.
+- Gates: tsc 0, 1080 tests, build, checks 594/0.
+
 
 ### v6.14 — Derek's menu reorganization
 

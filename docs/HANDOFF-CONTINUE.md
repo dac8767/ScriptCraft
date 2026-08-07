@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.19 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.20 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,49 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.20 — the Helper Text editor (Design window)
+
+- Derek: "create a new item in the dev window called 'Helper Text' …
+  edit every single piece of helper text in the app … blank lists and
+  fields, hover text, helper text for buttons and windows, the ? button
+  text." ("Dev window" read as the DESIGN window — the only live
+  dev-ish surface since the Dev Picker's v3.25 removal — and said so in
+  the delivery.)
+- ONE mechanism, keyed by the DEFAULT STRING (`helperTextOverrides` in
+  editorStore, persisted via viewState): editing "Delete" retitles
+  every Delete tooltip — same-string sites were the same on purpose,
+  and per-site ids on 500 call sites would be unmaintainable.
+- Delivery paths (utils/helperText.ts):
+  (1) `installHelperTextDom()` (App root) — a MutationObserver swaps
+  `title`/`placeholder` attributes whose value matches an overridden
+  default, remembers the original in `data-ht-orig-*`, converges when
+  React writes the literal back, restores on removal. Covers all ~365
+  attribute strings with ZERO call-site churn — including TipTap node
+  views and portals — and composes with HoverTooltip, which reads the
+  same attribute. (2) `ht()`/`useHt()` for RENDERED hints: empty-list
+  texts (Navigator, Analytics, Gender, Notes/Snippets, Thesaurus idle),
+  the Focus ? popover body, and the ELEMENT HINT map in ScreenplayEditor
+  — template-provided placeholders route through ht() too, so the
+  Helper Text row never silently loses to the template path.
+- Catalog: `devtools/build-helper-catalog.mjs` scans src for
+  title=/placeholder= literals and ht('…') calls →
+  `src/data/helperTextCatalog.json` (386: 263 tooltips, 102
+  placeholders, 21 hints). `check-helper-catalog.mjs` (5) fails the
+  suite on drift — regenerate with the build script. The CODE is the
+  source; more hints join by wrapping them in ht().
+- UI: DesignPanel grows a "Helper Text" collapsed group (search box
+  shared with the tokens; kind chips All/Hovers/Fields/Hints; rows show
+  a kind badge + the app's own text once overridden + a full-width
+  field; per-row reset, section Reset helper text (N); 60-row cap with
+  a refine-the-search note). New CSS tail in 26-design-panel.css.
+- vitest 4 reminder: jsdom tests need `// @vitest-environment jsdom`
+  (helperText.test.tsx, 6 tests — swap/restore/converge/added-nodes).
+- check-v620 (6): edit Fullscreen tooltip → live button retitles;
+  Design's own search placeholder changes; the empty action's script
+  hint shows the override; reset restores; overrides persist in
+  viewState.
+- Gates: tsc 0, 1090 tests, build, checks 632/0 (+11).
+
 ### v6.19 — Thesaurus over the selection + context-menu entry; Analytics header tabs
 
 - Derek (two asks, one ship): (1) "if I already have a word highlighted,
@@ -340,34 +383,12 @@ Durable bits kept live here:
   above says 4–5) — v5.77…v6.11 moved verbatim to the archive.
 - Gates: tsc 0, 1080 tests, build, checks 600/0 (+6: check-v616).
 
-### v6.15 — Goals: Show in Toolbar/Footer, relative count goals, footer
-
-- WritingGoal grew `mode: 'reach'|'relative'` + `baseline`;
-  useGoalProgress measures GROWTH for relative goals (label "N / M kind
-  written"). Words/Pages tabs are radio pairs (Reach page:/word: vs
-  Finish N Pages / Write N Words); startCount captures baseline=current.
-- goalShowIn ('footer' default, persisted) + ONE `GoalChip`
-  (GoalsTool.tsx) mounted by StatusBar (footer mode) and the ribbon
-  (toolbar mode, `.toolbar-goalchip`, right edge; `useGoalWords(editor)`
-  computes words there). NOTE: the status bar's center cluster hides
-  during ANY takeover (pre-existing v-old gate) — the footer chip never
-  renders in fullscreen; the ribbon chip does.
-- Quick start [5,15,30,60,120]; footer row (`.fs-goal-footer`,
-  margin-top auto) holds Show in + the Vomit checkbox; the ? helper is
-  GONE (GoalsHeaderExtra deleted; goals chrome = useTabs only — the
-  ToolControls.order guard therefore iterates one fewer window: 1081→
-  1080 tests, explained, not a loss).
-- REGRESSION FIX (v6.10 fallout, Derek's screenshot): saved layouts
-  carrying b:highlightColor rendered an EMPTY priority block outside the
-  Scrapbook → measured as CSS-hidden → the overflow three-dot appeared.
-  The token is filtered from the live list unless the Scrapbook is open.
-- Gates: tsc 0, 1080 tests, build, checks 594/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.15** — Goals: Show in Toolbar/Footer, relative count goals, footer
 - **v6.14** — Derek's menu reorganization
 - **v6.13** — Characters polish: flat list rows, quieter cards, List first
 - **v6.12** — Characters header: Filter everywhere, Sort+Search on Relationships

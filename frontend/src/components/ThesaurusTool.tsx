@@ -21,6 +21,7 @@ import {
   loadThesaurus, wordAt, matchCase, POS_LABELS,
   type ThesaurusApi, type ThesaurusEntry, type ThesaurusSense,
 } from '../utils/thesaurus';
+import { useHt } from '../utils/helperText';
 
 interface ScriptTarget { from: number; to: number; word: string }
 
@@ -49,6 +50,7 @@ function scriptWordAtSelection(editor: Editor): ScriptTarget | null {
 }
 
 export default function ThesaurusTool({ editor }: { editor: Editor | null }) {
+  const ht = useHt();
   const [api, setApi] = useState<ThesaurusApi | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [input, setInput] = useState('');
@@ -224,7 +226,7 @@ export default function ThesaurusTool({ editor }: { editor: Editor | null }) {
         )}
         {api && state.status === 'idle' && (
           <div className="thes-status">
-            Click a word in the script — or type one above — to see its synonyms.
+            {ht('Click a word in the script — or type one above — to see its synonyms.')}
           </div>
         )}
         {api && state.status === 'none' && (

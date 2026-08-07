@@ -31,10 +31,9 @@ import { cardMatchesSearch, STICKY_SORT_LABEL, type StickySort } from './ListCon
 import { ControlDropdown, ControlSearch, ToolActionRow } from './ToolControls';
 import { CircleMinusIcon, CirclePlusIcon } from './uiIcons';
 import { uuid } from '../utils/uuid';
+import { useHt } from '../utils/helperText';
 
 
-const NOTE_HINT = 'Notes to self, research links, themes to keep present. Hit + Add Note above.';
-const SNIPPET_HINT = 'Select text in the Editor and press ⌥⌘X to cut it here, or ⌥⌘C to copy it over.';
 
 /** Build a snippet card from editor text (used by the capture shortcuts). */
 export function makeSnippetCard(text: string): ShelfCard {
@@ -58,6 +57,7 @@ function useCardOps() {
 
 function SnippetList() {
   const { shelfCards, setShelfCards, update, remove } = useCardOps();
+  const ht = useHt();
   const [dragId, setDragId] = useState<string | null>(null);
   const [startArmed, setStartArmed] = useState(false);
   const [endArmed, setEndArmed] = useState(false);
@@ -101,7 +101,7 @@ function SnippetList() {
 
   return (
     <div className="swn-scroll">
-      {visible.length === 0 && <div className="swn-hint">{SNIPPET_HINT}</div>}
+      {visible.length === 0 && <div className="swn-hint">{ht('Select text in the Editor and press ⌥⌘X to cut it here, or ⌥⌘C to copy it over.')}</div>}
       {dragId && visible.length > 0 && (
         <div
           className={'swn-drop-zone' + (startArmed ? ' armed' : '')}
@@ -154,6 +154,7 @@ interface EditorToolProps {
  */
 function NotesList({ perRow = 1 }: { perRow?: number }) {
   const { shelfCards, setShelfCards, update, remove } = useCardOps();
+  const ht = useHt();
   const sort = useEditorStore((s) => s.stickySort);
   const setSort = useEditorStore((s) => s.setStickySort);
   const search = useEditorStore((s) => s.stickySearch);
@@ -201,7 +202,7 @@ function NotesList({ perRow = 1 }: { perRow?: number }) {
     setEndArmed(false);
   };
 
-  const emptyHint = search.trim() ? 'Nothing matches the search.' : NOTE_HINT;
+  const emptyHint = search.trim() ? ht('Nothing matches the search.') : ht('Notes to self, research links, themes to keep present. Hit + Add Note above.');
 
   return (
     <div

@@ -63,6 +63,7 @@ import TitleBar from './TitleBar';
 import BeatBoard from './BeatBoard';
 import ScriptStatistics from './ScriptStatistics';
 import { makeSnippetCard } from './StickyNotes';
+import { ht } from '../utils/helperText';
 import LocationDatabase, { parseLocationFromHeading } from './LocationDatabase';
 import FormatPanel from './FormatPanel';
 import StatusBar from './StatusBar';
@@ -1278,25 +1279,32 @@ const ScreenplayEditor: React.FC = () => {
           const tplStore = useFormattingTemplateStore.getState();
           const tpl = tplStore.getActiveTemplate();
           // For custom elements, use customTypeId attribute
+          /* v6.20: template-provided hints route through ht() too — the
+             Helper Text row must never silently lose to the template path
+             (the active template's strings mirror the defaults unless the
+             user edited them, and user-edited ones are already theirs). */
           if (node.type.name === 'customElement') {
             const customTypeId = node.attrs?.customTypeId;
             if (customTypeId && tpl.rules[customTypeId]) {
-              return tpl.rules[customTypeId].placeholder || '';
+              return ht(tpl.rules[customTypeId].placeholder || '');
             }
             return '';
           }
           // For built-in elements, check template rule
           if (tpl.rules[node.type.name]?.placeholder) {
-            return tpl.rules[node.type.name].placeholder;
+            return ht(tpl.rules[node.type.name].placeholder);
           }
-          // Fallback defaults
+          /* Fallback defaults. v6.20: each hint reads through ht() so the
+             Design window's Helper Text section can override it — the map
+             is rebuilt per call and the decoration repaints on every doc/
+             selection change, so an edit shows the next time it paints. */
           const m: Record<string, string> = {
-            sceneHeading: 'INT./EXT. LOCATION - TIME', action: 'Action...',
-            character: 'CHARACTER NAME', dialogue: 'Dialogue...',
-            parenthetical: '(direction)', transition: 'CUT TO:',
-            general: 'Text...', shot: 'SHOT DESCRIPTION',
-            newAct: 'ACT ONE', endOfAct: 'END OF ACT',
-            lyrics: 'Lyrics...', showEpisode: 'SHOW TITLE', castList: 'Cast...',
+            sceneHeading: ht('INT./EXT. LOCATION - TIME'), action: ht('Action...'),
+            character: ht('CHARACTER NAME'), dialogue: ht('Dialogue...'),
+            parenthetical: ht('(direction)'), transition: ht('CUT TO:'),
+            general: ht('Text...'), shot: ht('SHOT DESCRIPTION'),
+            newAct: ht('ACT ONE'), endOfAct: ht('END OF ACT'),
+            lyrics: ht('Lyrics...'), showEpisode: ht('SHOW TITLE'), castList: ht('Cast...'),
           };
           return m[node.type.name] || '';
         },

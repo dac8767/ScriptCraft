@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route } from 'react-router';
 import ScreenplayEditor from './components/ScreenplayEditor';
 import TreatmentEditor from './components/TreatmentEditor';
@@ -16,11 +17,16 @@ import ResetPasswordRoute from './components/ResetPasswordRoute';
 import OAuthCallback from './components/OAuthCallback';
 import { FeedbackFrameHost } from './components/FeedbackTool';
 import { pluginRegistry } from './plugins/registry';
+import { installHelperTextDom } from './utils/helperText';
 import './styles/screenplay.css';
 import './styles/avScript.css';
 
 function App() {
   const pluginRoutes = pluginRegistry.getRoutes();
+  // v6.20: Derek's Helper Text overrides — one applier swaps title/placeholder
+  // attributes app-wide (incl. TipTap node views and portals); HoverTooltip
+  // reads the same attributes, so custom tooltips pick the overrides up too.
+  useEffect(() => installHelperTextDom(), []);
 
   return (
     <>

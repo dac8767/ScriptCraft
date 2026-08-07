@@ -16,6 +16,7 @@ import { FaRegQuestionCircle } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { centerCaretLine, refreshTypewriterChrome } from '../editor/extensions/TypewriterScroll';
+import { useHt } from '../utils/helperText';
 
 /** Highlight tints — rendered ~30% over the white page, so mid-brightness
  *  hues read best. The color input at the end covers everything else. */
@@ -26,6 +27,7 @@ const HIGHLIGHT_COLORS = ['#4a9eff', '#f5d90a', '#34c759', '#ff9f0a', '#ff6ba9',
  *  fixed from the button rect (top/left, never bottom), because a child of
  *  the panel could never escape its overflow. */
 export function FocusHeaderControls() {
+  const ht = useHt();
   const [helpOpen, setHelpOpen] = useState(false);
   const helpBtnRef = useRef<HTMLButtonElement>(null);
   const [helpPos, setHelpPos] = useState<{ top: number; left: number } | null>(null);
@@ -65,8 +67,7 @@ export function FocusHeaderControls() {
       ><FaRegQuestionCircle /></button>
       {helpOpen && helpPos && createPortal(
         <div className="fs-help-pop" style={{ top: helpPos.top, left: helpPos.left }}>
-          Focus mode keeps the line you're typing on fixed on screen — the
-          page scrolls, your eyes don't. This window stays open while you write.
+          {ht("Focus mode keeps the line you're typing on fixed on screen — the page scrolls, your eyes don't. This window stays open while you write.")}
         </div>,
         document.body,
       )}

@@ -11,6 +11,7 @@ import { useMemo, useState, useEffect } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { computeCharacterDialogue, extractSceneData } from '../utils/scriptStatistics';
+import { useHt } from '../utils/helperText';
 
 const G = ['Male', 'Female', 'Other', 'Unassigned'] as const;
 type Gender = typeof G[number];
@@ -32,6 +33,7 @@ interface GenderAnalysisToolProps {
 }
 
 export default function GenderAnalysisTool({ editor }: GenderAnalysisToolProps) {
+  const ht = useHt();
   const { characterProfiles, upsertCharacterProfile } = useEditorStore();
   const [docTick, setDocTick] = useState(0);
 
@@ -155,7 +157,7 @@ export default function GenderAnalysisTool({ editor }: GenderAnalysisToolProps) 
             </tr>
           ))}
           {charStats.length === 0 && (
-            <tr><td colSpan={7} className="fs-nav-empty">No speaking roles yet.</td></tr>
+            <tr><td colSpan={7} className="fs-nav-empty">{ht('No speaking roles yet.')}</td></tr>
           )}
         </tbody>
       </table>
