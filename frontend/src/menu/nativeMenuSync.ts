@@ -190,9 +190,6 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
         text: 'About ScriptCraft',
         action: () => { window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'about' })); },
       }),
-      // (v6.43, Derek: Settings… moved OUT of the app menu into File —
-      // second-to-last item there, mirrored from MenuBar's list like every
-      // other File item. Reverses v4.22.)
       await PredefinedMenuItem.new({ item: 'Separator' }),
       await PredefinedMenuItem.new({ item: 'Services' }),
       await PredefinedMenuItem.new({ item: 'Separator' }),
@@ -200,6 +197,15 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
       await PredefinedMenuItem.new({ item: 'HideOthers' }),
       await PredefinedMenuItem.new({ item: 'ShowAll' }),
       await PredefinedMenuItem.new({ item: 'Separator' }),
+      // v6.44, Derek: "Settings should be the second to last item in the
+      // ScriptCraft menu" — directly above Quit. (v6.43 briefly moved it to
+      // File on a misread; the ⌘, combo also lives in the shortcut registry
+      // so it shows in Keyboard Shortcuts.)
+      await MenuItem.new({
+        text: 'Settings…',
+        accelerator: 'CmdOrCtrl+Comma',
+        action: () => { window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'settings' })); },
+      }),
       await PredefinedMenuItem.new({ text: 'Quit ScriptCraft', item: 'Quit' }),
     ] as never[],
   });

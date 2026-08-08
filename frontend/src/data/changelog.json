@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.44",
+  "date": "2026-08-08",
+  "changes": [
+   "File ▸ Print: another crash cause removed — the print job was being created with an empty print configuration, the one step all three crashing builds shared (before the dialog ever differed between them). It now uses the system's shared print settings, the way every working macOS print path does.",
+   "If printing ever fails again, the app now writes a step-by-step trace to a small file as it goes — the last line of that file names the exact step that died, so the next fix comes from evidence, not deduction.",
+   "Settings… sits second-to-last in the ScriptCraft menu, directly above Quit (it briefly moved to the File menu in v6.43 — that's reversed)."
+  ]
+ },
+ {
   "version": "6.43",
   "date": "2026-08-08",
   "changes": [

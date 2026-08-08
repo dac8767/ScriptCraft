@@ -1311,12 +1311,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
           const t = ALL_TOOLS.find((x) => x.id === 'assets');
           return t ? [{ icon: t.icon, label: t.label, action: () => useEditorStore.getState().openTool('assets') }] : [];
         })(),
-        // v6.43, Derek: "move settings so it is the second to last item in
-        // the [File] menu" — one place, BOTH menu modes (it left the macOS
-        // app menu; nativeMenuSync mirrors this list). Script History stays
-        // the last item.
-        { separator: true, label: '' },
-        { icon: <FaWrench />, label: 'Settings…', shortcut: sc('settings'), action: () => setPrefsOpen(true) },
+        // v6.44, Derek: Settings… is second-to-last in the macOS SCRIPTCRAFT
+        // menu (nativeMenuSync's app menu — above Quit). In-window menus have
+        // no app menu, so it sits here, second-to-last in File.
+        ...(nativeMenus ? [] : [
+          { separator: true, label: '' },
+          { icon: <FaWrench />, label: 'Settings…', shortcut: sc('settings'), action: () => setPrefsOpen(true) },
+        ]),
         {
           icon: <FaCodeBranch />, label: 'Script History',
           children: [

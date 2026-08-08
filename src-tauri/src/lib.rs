@@ -965,11 +965,31 @@ thread_local! {
     > = const { std::cell::RefCell::new(None) };
 }
 
+/// v6.44 — crash breadcrumbs. Every print attempt rewrites
+/// app-data/print/print-debug.log, one fsync'd line per step. A crash keeps
+/// the file: its LAST line names the step that died, which pins the faulty
+/// call without needing Console.app. (Four rounds in: this ends the
+/// remote-diagnosis guessing for good.)
+#[cfg(target_os = "macos")]
+fn print_breadcrumb(dir: &std::path::Path, first: bool, msg: &str) {
+    use std::io::Write;
+    let p = dir.join("print-debug.log");
+    let f = if first {
+        std::fs::File::create(&p)
+    } else {
+        std::fs::OpenOptions::new().create(true).append(true).open(&p)
+    };
+    if let Ok(mut f) = f {
+        let _ = writeln!(f, "{}", msg);
+        let _ = f.sync_all();
+    }
+}
+
 #[cfg(target_os = "macos")]
 #[tauri::command]
 async fn print_pdf_dialog(app: tauri::AppHandle, path: String) -> Result<(), String> {
     use objc2::{AnyThread, MainThreadMarker};
-    use objc2_app_kit::NSWindow;
+    use objc2_app_kit::{NSPrintInfo, NSWindow};
     use objc2_foundation::{NSString, NSURL};
     use objc2_pdf_kit::{PDFDocument, PDFPrintScalingMode};
 
@@ -995,34 +1015,51 @@ async fn print_pdf_dialog(app: tauri::AppHandle, path: String) -> Result<(), Str
 
     let (tx, rx) = std::sync::mpsc::channel::<Result<(), String>>();
     let path_str = canonical.to_string_lossy().into_owned();
+    let crumb_dir = base.clone();
+    print_breadcrumb(&crumb_dir, true, "start");
     app.run_on_main_thread(move || {
+        print_breadcrumb(&crumb_dir, false, "main-thread");
         let result: Result<(), String> = objc2::exception::catch(move || {
             let mtm = MainThreadMarker::new().ok_or("not on the main thread")?;
             unsafe {
                 let url = NSURL::fileURLWithPath(&NSString::from_str(&path_str));
                 let doc = PDFDocument::initWithURL(PDFDocument::alloc(), &url)
                     .ok_or("could not open the PDF for printing")?;
+                print_breadcrumb(&crumb_dir, false, "doc-loaded");
+                /* v6.44 — the ONE call every crashing round shared (modal
+                   v6.36, sheet v6.37, kept-alive sheet v6.43): creating the
+                   operation with a NIL print info. The header marks the
+                   parameter nullable, but every working PDFKit example
+                   passes [NSPrintInfo sharedPrintInfo] — and a crash INSIDE
+                   creation explains all three rounds failing identically,
+                   before any dialog logic diverged. Pass the real thing. */
+                let info = NSPrintInfo::sharedPrintInfo();
+                print_breadcrumb(&crumb_dir, false, "printinfo");
                 let op = doc
                     .printOperationForPrintInfo_scalingMode_autoRotate(
-                        None,
+                        Some(&info),
                         PDFPrintScalingMode::PageScaleNone,
                         true,
                         mtm,
                     )
                     .ok_or("no print operation available")?;
+                print_breadcrumb(&crumb_dir, false, "op-created");
                 op.setShowsPrintPanel(true);
                 op.setShowsProgressPanel(true);
                 let win: &NSWindow = &*(win_ptr as *mut NSWindow);
+                print_breadcrumb(&crumb_dir, false, "presenting-sheet");
                 op.runOperationModalForWindow_delegate_didRunSelector_contextInfo(
                     win,
                     None,
                     None,
                     std::ptr::null_mut(),
                 );
+                print_breadcrumb(&crumb_dir, false, "sheet-scheduled");
                 // Keep the operation + document alive PAST this closure —
                 // the sheet only presents after we return (see the header
                 // comment). Replaced on the next print; released then.
                 ACTIVE_PRINT.with(|slot| *slot.borrow_mut() = Some((op, doc)));
+                print_breadcrumb(&crumb_dir, false, "kept-alive");
                 Ok(())
             }
         })

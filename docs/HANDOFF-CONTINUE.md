@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.43 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.44 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,33 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.44 — print round 4: nil NSPrintInfo + BREADCRUMBS; Settings→app menu
+
+- Derek: "print still crashes" (no crash log supplied). Re-derived from
+  the FAILURE PATTERN: v6.36 (modal) / v6.37 (sheet+catch) / v6.43
+  (kept-alive) all crashed IDENTICALLY — so the fault predates where they
+  differ. The one shared call: `printOperationForPrintInfo_…(None, …)` —
+  operation CREATION with a NIL print info. The header marks it nullable;
+  every working PDFKit example passes sharedPrintInfo; a SIGSEGV inside
+  creation is invisible to exception::catch and shows no dialog. Now
+  passes `NSPrintInfo::sharedPrintInfo()` (signature verified from the
+  registry source — NO mtm arg; darwin scratch crate + Linux cargo check
+  both clean).
+- INSTRUMENTATION, the real insurance: every print attempt REWRITES
+  app-data/print/print-debug.log, one fsync'd line per step (start /
+  main-thread / doc-loaded / printinfo / op-created / presenting-sheet /
+  sheet-scheduled / kept-alive). After any crash the LAST LINE names the
+  dying step — ask Derek for `cat "$HOME/Library/Application
+  Support/com.freedraft.app/print/print-debug.log"` BEFORE the next
+  theory. If sharedPrintInfo didn't fix it, plan B is an OUT-OF-PROCESS
+  print helper (sidecar binary doing the PDFKit dance — a SIGSEGV then
+  kills only the helper), declared to Derek.
+- Settings…: Derek clarified "second to last item in the SCRIPTCRAFT
+  menu" — v6.43 misread it as File. Now: app menu, directly above Quit
+  (hardcoded ⌘, accelerator there; registry keeps Mod+, for Keyboard
+  Shortcuts + in-window). In-window File keeps it second-to-last (no app
+  menu exists there); the nativeMenus gate is back.
+
 ### v6.43 — the print crash's TRUE root cause; Settings→File; standard window buttons
 
 - PRINT CRASH ROUND 3 (survived v6.37): ROOT CAUSE — a LIFETIME bug, not
@@ -369,37 +396,12 @@ Durable bits kept live here:
   files. If Derek ever wants collaboration back: `git log` around
   v6.39→v6.40, it's one revert away plus npm install.
 
-### v6.39 — map rotation unlocked; the map is a CANVAS now (WKWebView)
-
-- Derek: (1) remove the import bar ("Turn the map upright…", Rotate, Set
-  Rotation) — rotation is changeable in Options now; (2) "rotating the
-  map in the location window still makes it disappear" (SURVIVED v6.38's
-  160px floor on his Mac).
-- (2) ROOT CAUSE UNREACHABLE IN CHROMIUM: probes rendered the CSS
-  quarter-turn correctly in docked AND fullscreen shapes, so the vanish
-  is WKWebView mishandling the construct (absolute box-swap +
-  translate(-50%,-50%) rotate()). Fix: MapImage DRAWS the bitmap onto a
-  dpr-scaled canvas (translate/rotate/drawImage, quarter-swapped draw
-  box) — no CSS transform left to mis-render. Bytes load via
-  api.getAssetBytes → blob URL (AssetImage's rule) with callback refs
-  (v6.38's refetch lesson); a failed load unmounts to the broken box and
-  a rotation remounts = retry. `.locmap-img` is the canvas now — checks
-  wait on `canvas.locmap-img` (the loading box shares the stage's 4/3).
-- (1) `importing` gates, lockLocationMapRotation, the import bar and its
-  CSS are GONE; importLocationMap + the asset picker set
-  rotationLocked: true (the field is vestigial — saved scripts carry it,
-  nothing reads it). Pins render and place from the first moment.
-  rotateLocationMap already turned pins with the map (v5.81) — that's
-  what makes any-time rotation safe.
-- Checks v577 (rotate flow = Options ▸ Rotate 90 degrees ×4),
-  v578/v581/v581-orphan/v582 (×4 sites)/v585: the import-bar setup step
-  became waitForSelector('canvas.locmap-img'). All green + v638.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.39** — map rotation via Options any time; the map became a CANVAS (WKWebView vanish)
 - **v6.38** — the ten-item batch: helper text window/blank overrides, snippet buttons, map floor + header Options + rail ⋮, panel zoom
 - **v6.37** — print hotfix: async command + sheet + ObjC exception catch
 - **v6.36** — Print = the real system dialog via PDFKit (crashed; fixed v6.37)

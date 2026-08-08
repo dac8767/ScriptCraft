@@ -151,7 +151,33 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.38 and older (newest first)
+## Version history — v6.39 and older (newest first)
+
+### v6.39 — map rotation unlocked; the map is a CANVAS now (WKWebView)
+
+- Derek: (1) remove the import bar ("Turn the map upright…", Rotate, Set
+  Rotation) — rotation is changeable in Options now; (2) "rotating the
+  map in the location window still makes it disappear" (SURVIVED v6.38's
+  160px floor on his Mac).
+- (2) ROOT CAUSE UNREACHABLE IN CHROMIUM: probes rendered the CSS
+  quarter-turn correctly in docked AND fullscreen shapes, so the vanish
+  is WKWebView mishandling the construct (absolute box-swap +
+  translate(-50%,-50%) rotate()). Fix: MapImage DRAWS the bitmap onto a
+  dpr-scaled canvas (translate/rotate/drawImage, quarter-swapped draw
+  box) — no CSS transform left to mis-render. Bytes load via
+  api.getAssetBytes → blob URL (AssetImage's rule) with callback refs
+  (v6.38's refetch lesson); a failed load unmounts to the broken box and
+  a rotation remounts = retry. `.locmap-img` is the canvas now — checks
+  wait on `canvas.locmap-img` (the loading box shares the stage's 4/3).
+- (1) `importing` gates, lockLocationMapRotation, the import bar and its
+  CSS are GONE; importLocationMap + the asset picker set
+  rotationLocked: true (the field is vestigial — saved scripts carry it,
+  nothing reads it). Pins render and place from the first moment.
+  rotateLocationMap already turned pins with the map (v5.81) — that's
+  what makes any-time rotation safe.
+- Checks v577 (rotate flow = Options ▸ Rotate 90 degrees ×4),
+  v578/v581/v581-orphan/v582 (×4 sites)/v585: the import-bar setup step
+  became waitForSelector('canvas.locmap-img'). All green + v638.
 
 ### v6.38 — Derek's ten-item batch (helper text, snippets, locations map, panel zoom)
 
