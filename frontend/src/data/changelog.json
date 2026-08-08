@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.35",
+  "date": "2026-08-08",
+  "changes": [
+   "Annotations: the on-page icon moved from the right margin to the left — centered in the left margin band, clear of the page edge, the text, and the scene-number zone."
+  ]
+ },
+ {
   "version": "6.34",
   "date": "2026-08-08",
   "changes": [

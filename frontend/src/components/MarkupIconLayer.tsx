@@ -1,11 +1,13 @@
 /**
  * v5.25/v5.26: the annotation margin layer — each annotation's icon ON the
- * page, horizontally CENTERED in the right margin (the white part), and
- * vertically seated on the row where it was added: a cursor-made annotation
- * rides its element's first line; a selection-made one centers on the
- * selected text (v5.26, Derek's #12). Rendered as absolutely-positioned
- * children INSIDE the editor's scroll container so they ride the content;
- * positions recompute on doc / annotation changes, not on scroll.
+ * page, horizontally CENTERED in the LEFT margin (v6.35, Derek: moved from
+ * the right; the 1.5" left margin holds it clear of both the page edge and
+ * the text, and clear of the scene-number zone near the text), vertically
+ * seated on the row where it was added: a cursor-made annotation rides its
+ * element's first line; a selection-made one centers on the selected text
+ * (v5.26, Derek's #12). Rendered as absolutely-positioned children INSIDE
+ * the editor's scroll container so they ride the content; positions
+ * recompute on doc / annotation changes, not on scroll.
  *
  * Also v5.26: annotation TYPES hidden via "Show in Script" (or a ⋮ menu)
  * drop their icons here AND have their highlight tint neutralized — the
@@ -109,10 +111,10 @@ export default function MarkupIconLayer({ editor, container }: {
     const crect = container.getBoundingClientRect();
     const page = container.querySelector('.page');
     const prect = page?.getBoundingClientRect();
-    // Rendered right-margin width: layout inches × 96, scaled by the page's
+    // Rendered LEFT-margin width: layout inches × 96, scaled by the page's
     // on-screen size (zoom). The icon centers inside that band, ON the page.
     const scale = prect ? prect.width / (pageLayout.pageWidth * 96) : 1;
-    const marginPx = pageLayout.rightMargin * 96 * scale;
+    const marginPx = pageLayout.leftMargin * 96 * scale;
     const next: IconSpot[] = [];
     for (const m of markups) {
       if (scriptFiltered(m)) continue;
@@ -143,8 +145,8 @@ export default function MarkupIconLayer({ editor, container }: {
         id: m.id,
         top: centerY - crect.top + container.scrollTop - iconPx / 2,
         left: prect
-          ? prect.right - crect.left + container.scrollLeft - marginPx / 2 - iconPx / 2
-          : crect.width - 40 + container.scrollLeft,
+          ? prect.left - crect.left + container.scrollLeft + marginPx / 2 - iconPx / 2
+          : 8 + container.scrollLeft,
         icon: m.icon,
         color: m.color,
         done: m.done,

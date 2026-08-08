@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.34 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.35 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,18 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.35 — annotation icons in the LEFT margin
+
+- Derek: "for annotations, move the on-page icon to the left margin from
+  the right." MarkupIconLayer's one position formula flips: the icon now
+  centers in the LEFT margin band (page edge → 1.5" text start; center
+  0.75" ± half an icon), clear of the page edge, the text, and the
+  scene-number zone that hugs the text (1.0–1.35"). No other consumer
+  assumed the right side (check-v547 only counts icons).
+- check-v635 (4: renders, centers in the band, left of the text column,
+  left half of the page). check-v547 re-run 19/0.
+- Gates: tsc 0, 1103 tests, build.
+
 ### v6.34 — the launcher restores package-lock.json too (Derek's aborted pull)
 
 - Derek's v6.33 pull ABORTED: "Your local changes … would be overwritten
@@ -371,43 +383,12 @@ Durable bits kept live here:
   serve the fixtures (vi.hoisted), or listAssets() overwrites whatever
   the test seeded into the store. AssetManager.thumbs.test.tsx (1).
 
-### v6.30 — formatting verified against the standard; Print's silent Tauri no-op
-
-- Derek's side-by-side (another program vs ScriptCraft, same text) +
-  the StudioBinder reference. MEASURED verdicts:
-  (a) FONT was never wrong — Courier (Courier Final Draft → Prime
-  fallback) at 12pt on an exact 12pt line grid, FD-matched
-  letter-spacing. The "different font look" was density.
-  (b) The density: SCENE HEADINGS carried ONE blank line; the spec (and
-  his other program) uses TWO. Fixed in all three renderers + template:
-  editor CSS 24pt, pagination SPACE_BEFORE 2, pdfExporter 2,
-  industryStandardTemplate marginTop 24. (Genre templates — sitcom,
-  stage — keep their own spacing on purpose.) Pages repaginate ~10%
-  longer; that is the correct standard.
-  (c) FADE IN: is the OPENING transition — LEFT margin, action column;
-  every other transition stays right. ONE predicate
-  (utils/transitions.isLeftTransition) shared by the editor decoration
-  (Transition.ts — a decoration, not renderHTML, so typing flips it
-  live) and the pdfExporter (indent choice at the caller, line 454ish —
-  renderElement alone only fixed alignment INSIDE the transition
-  column).
-- PRINT ("clicking File > Print does nothing"): v6.29's window.open
-  returns NULL in Tauri WITHOUT throwing — the fallback never fired, a
-  silent no-op shipped. Cascade now: popup → blocked? hidden
-  iframe[data-print-frame] holding the same PDF prints it (WebKit
-  prints a PDF frame at the PDF's own page size) → frame never loads?
-  saveFile + a toast that SAYS so. check-v629 stubs window.open=null
-  and pins the frame branch (7 asserts).
-- checks: check-v630 (8 — editor classes/margins/font, live flip, and
-  the export GEOMETRY parsed in node: FADE IN x=108, CUT TO right,
-  heading gap 36pt).
-- Gates: tsc 0, 1092 tests, build, checks 685/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.30** — formatting verified against the standard; Print's silent Tauri no-op
 - **v6.29** — Print through the exporter; the goal chip's Header = the TITLE BAR
 - **v6.28** — PDF import: the legacy pdf.js build for WKWebView
 - **v6.27** — Title tab scales with its window; Asset Manager menu no-op

@@ -151,7 +151,39 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.29 and older (newest first)
+## Version history — v6.30 and older (newest first)
+
+### v6.30 — formatting verified against the standard; Print's silent Tauri no-op
+
+- Derek's side-by-side (another program vs ScriptCraft, same text) +
+  the StudioBinder reference. MEASURED verdicts:
+  (a) FONT was never wrong — Courier (Courier Final Draft → Prime
+  fallback) at 12pt on an exact 12pt line grid, FD-matched
+  letter-spacing. The "different font look" was density.
+  (b) The density: SCENE HEADINGS carried ONE blank line; the spec (and
+  his other program) uses TWO. Fixed in all three renderers + template:
+  editor CSS 24pt, pagination SPACE_BEFORE 2, pdfExporter 2,
+  industryStandardTemplate marginTop 24. (Genre templates — sitcom,
+  stage — keep their own spacing on purpose.) Pages repaginate ~10%
+  longer; that is the correct standard.
+  (c) FADE IN: is the OPENING transition — LEFT margin, action column;
+  every other transition stays right. ONE predicate
+  (utils/transitions.isLeftTransition) shared by the editor decoration
+  (Transition.ts — a decoration, not renderHTML, so typing flips it
+  live) and the pdfExporter (indent choice at the caller, line 454ish —
+  renderElement alone only fixed alignment INSIDE the transition
+  column).
+- PRINT ("clicking File > Print does nothing"): v6.29's window.open
+  returns NULL in Tauri WITHOUT throwing — the fallback never fired, a
+  silent no-op shipped. Cascade now: popup → blocked? hidden
+  iframe[data-print-frame] holding the same PDF prints it (WebKit
+  prints a PDF frame at the PDF's own page size) → frame never loads?
+  saveFile + a toast that SAYS so. check-v629 stubs window.open=null
+  and pins the frame branch (7 asserts).
+- checks: check-v630 (8 — editor classes/margins/font, live flip, and
+  the export GEOMETRY parsed in node: FADE IN x=108, CUT TO right,
+  heading gap 36pt).
+- Gates: tsc 0, 1092 tests, build, checks 685/0.
 
 ### v6.29 — Print through the exporter; the goal chip's Header = the TITLE BAR
 
