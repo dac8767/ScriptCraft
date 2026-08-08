@@ -42,7 +42,8 @@ ndk-context = "0.1"
 # exact objc2 generation already in the tree (wry/tao pull objc2 0.6.4 and
 # the 0.3.2 framework crates), so only objc2-pdf-kit is new to the lockfile.
 [target.'cfg(target_os = "macos")'.dependencies]
-objc2 = "=0.6.4"
+# "exception": NSException → Err instead of process abort (v6.37 print crash).
+objc2 = { version = "=0.6.4", features = ["exception"] }
 objc2-foundation = "=0.3.2"
 objc2-app-kit = "=0.3.2"
 objc2-pdf-kit = "=0.3.2"

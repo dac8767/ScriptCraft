@@ -924,17 +924,27 @@ fn open_url(url: String) -> Result<(), String> {
 /// v6.36, Derek ("it opens it in a pdf view first. it should not do that"):
 /// File ▸ Print runs the REAL macOS print dialog on the just-written export
 /// PDF — PDFKit builds the print operation, the system panel comes straight
-/// up, no viewer in between. The setup result reports back over a channel
-/// BEFORE the modal dialog blocks the main thread, so a bad file surfaces
-/// as an Err the frontend can fall back on, while success resolves as the
-/// dialog appears. Body verified against aarch64-apple-darwin with the
-/// pinned objc2 crates (this sandbox cross-checks types; it cannot run it).
+/// up, no viewer in between.
+///
+/// v6.37, Derek ("File > Print made the app crash") — the v6.36 shape had
+/// two faults, both fixed here:
+///  (1) the command was SYNC, and Tauri runs sync commands ON THE MAIN
+///      THREAD — so rx.recv() blocked the very thread the print closure
+///      was queued to run on. The command is async now (off-main).
+///  (2) runOperation() spun an APP-MODAL nested run loop inside the event
+///      loop callback. The panel now presents as a SHEET on the main
+///      window — present-and-return, no nested modal loop.
+/// Everything AppKit/PDFKit is additionally wrapped in
+/// objc2::exception::catch, so a raised NSException reports back as an Err
+/// (the frontend falls back to opening the file) instead of terminating
+/// the process. Body verified against aarch64-apple-darwin with the pinned
+/// objc2 crates (this sandbox cross-checks types; it cannot run it — the
+/// exception-helper C shim compiles only on Derek's machine).
 #[cfg(target_os = "macos")]
 #[tauri::command]
-fn print_pdf_dialog(app: tauri::AppHandle, path: String) -> Result<(), String> {
-    use objc2::rc::Retained;
+async fn print_pdf_dialog(app: tauri::AppHandle, path: String) -> Result<(), String> {
     use objc2::{AnyThread, MainThreadMarker};
-    use objc2_app_kit::NSPrintOperation;
+    use objc2_app_kit::NSWindow;
     use objc2_foundation::{NSString, NSURL};
     use objc2_pdf_kit::{PDFDocument, PDFPrintScalingMode};
 
@@ -952,10 +962,16 @@ fn print_pdf_dialog(app: tauri::AppHandle, path: String) -> Result<(), String> {
         return Err("refusing to print outside the app's print folder".to_string());
     }
 
+    let win_ptr = app
+        .get_webview_window("main")
+        .ok_or("no main window to print from")?
+        .ns_window()
+        .map_err(|e| e.to_string())? as usize;
+
     let (tx, rx) = std::sync::mpsc::channel::<Result<(), String>>();
     let path_str = canonical.to_string_lossy().into_owned();
     app.run_on_main_thread(move || {
-        let setup: Result<Retained<NSPrintOperation>, String> = (|| {
+        let result: Result<(), String> = objc2::exception::catch(move || {
             let mtm = MainThreadMarker::new().ok_or("not on the main thread")?;
             unsafe {
                 let url = NSURL::fileURLWithPath(&NSString::from_str(&path_str));
@@ -971,22 +987,28 @@ fn print_pdf_dialog(app: tauri::AppHandle, path: String) -> Result<(), String> {
                     .ok_or("no print operation available")?;
                 op.setShowsPrintPanel(true);
                 op.setShowsProgressPanel(true);
-                Ok(op)
+                let win: &NSWindow = &*(win_ptr as *mut NSWindow);
+                op.runOperationModalForWindow_delegate_didRunSelector_contextInfo(
+                    win,
+                    None,
+                    None,
+                    std::ptr::null_mut(),
+                );
+                Ok(())
             }
-        })();
-        match setup {
-            Ok(op) => {
-                let _ = tx.send(Ok(()));
-                op.runOperation();
-            }
-            Err(e) => {
-                let _ = tx.send(Err(e));
-            }
-        }
+        })
+        .map_err(|e| format!("print raised an exception: {:?}", e))
+        .and_then(|inner| inner);
+        let _ = tx.send(result);
     })
     .map_err(|e| e.to_string())?;
-    rx.recv_timeout(std::time::Duration::from_secs(5))
-        .map_err(|e| format!("print dispatch failed: {}", e))?
+    // The sheet presents and returns; this resolves as it appears.
+    tauri::async_runtime::spawn_blocking(move || {
+        rx.recv_timeout(std::time::Duration::from_secs(5))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| format!("print dispatch failed: {}", e))?
 }
 
 /// Non-macOS: no native PDF print dialog here — the frontend falls back to

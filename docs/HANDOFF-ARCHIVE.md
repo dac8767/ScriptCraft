@@ -151,7 +151,35 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.31 and older (newest first)
+## Version history — v6.32 and older (newest first)
+
+### v6.32 — asset protocol ON; Tauri print = save+toast; Courier Prime embedded
+
+- Derek's three reports, root causes:
+  (a) BROKEN ASSET IMAGES ("?" in list AND viewer — so pre-dating the
+  v6.31 thumbs): local-storage builds asset:// URLs via convertFileSrc,
+  the CSP allows asset://localhost — but tauri.conf.json NEVER ENABLED
+  the protocol. `app.security.assetProtocol { enable, scope:
+  ["$APPDATA/assets/**"] }` added — config only, no Rust, scope exactly
+  the assets tree (the fs-scope caution stands). NOT verifiable in this
+  sandbox (no WKWebView) — structural fix, flagged to Derek.
+  (b) PRINT still dead on Tauri: the v6.30 iframe fallback dies
+  silently too — WKWebView doesn't render PDFs in iframes, onload fires
+  against nothing, print() shows no dialog. Tauri branch is now
+  DETERMINISTIC: isDesktopTauri() → saveFile (proven native dialog) +
+  toast saying press ⌘P. Browsers keep the real popup print. The next
+  step up needs tauri-plugin-opener (Rust dep — Derek's machine must
+  compile/test; offered, not shipped).
+  (c) "Exports as Courier Std": jsPDF's builtin 'courier' is the PDF
+  standard font — viewers substitute. The app's bundled Courier Prime
+  TTFs (all 4 weights) are EMBEDDED per export (fetch → VFS → addFont,
+  cached; builtin only as load-failure fallback). charSpace derives
+  from getTextWidth so the FD 10.33-cpi layout is unchanged.
+  check-v630 asserts CourierPrime in the export bytes (9).
+- In-app text size re-verified 12pt on a 12pt grid (check-v630); his
+  "size still not matching" was measured against a pre-pull build —
+  the v6.30 heading spacing + this font embed are the deltas.
+- Gates: tsc 0, 1092 tests, build, checks 686/0.
 
 ### v6.31 — Asset Manager: inline image thumbnails
 

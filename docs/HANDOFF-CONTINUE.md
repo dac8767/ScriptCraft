@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.36 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.37 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,28 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.37 — HOTFIX: v6.36's native print CRASHED the app
+
+- Derek: "File > Print made the app crash." Two faults in the v6.36
+  command, both fixed:
+  (1) it was a SYNC command — Tauri runs sync commands ON THE MAIN
+      THREAD, so rx.recv() blocked the very thread the print closure was
+      queued to run on. Async now (off-main; recv via spawn_blocking).
+  (2) runOperation() spun an APP-MODAL nested run loop inside the tao
+      event-loop callback. The panel now presents as a SHEET on the main
+      window (runOperationModalForWindow…, ns_window() from the tauri
+      WebviewWindow) — present-and-return, no nested loop.
+  Plus: the whole AppKit/PDFKit body is wrapped in
+  objc2::exception::catch (objc2 "exception" feature; the helper crate
+  was ALREADY in the lock) — an NSException now reports back as Err and
+  the frontend falls back to opening the file, instead of the process
+  terminating. catch()'s signature was verified from the registry source
+  (the C shim can't cross-compile here); the sheet body re-verified
+  against aarch64-apple-darwin.
+- LESSON (Rust-side commands): sync #[tauri::command] = main thread.
+  Anything that dispatches to the main thread AND waits must be async.
+- Frontend untouched (the invoke + fallback chain already fit).
+
 ### v6.36 — Print = the REAL system dialog (PDFKit), no viewer
 
 - Derek on v6.33's openPath flow: "it opens it in a pdf view first. it
@@ -377,39 +399,12 @@ Durable bits kept live here:
 - Gates: tsc 0, 1103 tests, build, cargo check clean (in-sandbox — GTK
   headers apt-installed; caught the UriSchemeContext error), checks 698/0.
 
-### v6.32 — asset protocol ON; Tauri print = save+toast; Courier Prime embedded
-
-- Derek's three reports, root causes:
-  (a) BROKEN ASSET IMAGES ("?" in list AND viewer — so pre-dating the
-  v6.31 thumbs): local-storage builds asset:// URLs via convertFileSrc,
-  the CSP allows asset://localhost — but tauri.conf.json NEVER ENABLED
-  the protocol. `app.security.assetProtocol { enable, scope:
-  ["$APPDATA/assets/**"] }` added — config only, no Rust, scope exactly
-  the assets tree (the fs-scope caution stands). NOT verifiable in this
-  sandbox (no WKWebView) — structural fix, flagged to Derek.
-  (b) PRINT still dead on Tauri: the v6.30 iframe fallback dies
-  silently too — WKWebView doesn't render PDFs in iframes, onload fires
-  against nothing, print() shows no dialog. Tauri branch is now
-  DETERMINISTIC: isDesktopTauri() → saveFile (proven native dialog) +
-  toast saying press ⌘P. Browsers keep the real popup print. The next
-  step up needs tauri-plugin-opener (Rust dep — Derek's machine must
-  compile/test; offered, not shipped).
-  (c) "Exports as Courier Std": jsPDF's builtin 'courier' is the PDF
-  standard font — viewers substitute. The app's bundled Courier Prime
-  TTFs (all 4 weights) are EMBEDDED per export (fetch → VFS → addFont,
-  cached; builtin only as load-failure fallback). charSpace derives
-  from getTextWidth so the FD 10.33-cpi layout is unchanged.
-  check-v630 asserts CourierPrime in the export bytes (9).
-- In-app text size re-verified 12pt on a 12pt grid (check-v630); his
-  "size still not matching" was measured against a pre-pull build —
-  the v6.30 heading spacing + this font embed are the deltas.
-- Gates: tsc 0, 1092 tests, build, checks 686/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.32** — asset protocol ON; Tauri print = save+toast; Courier Prime embedded
 - **v6.31** — Asset Manager: inline image thumbnails
 - **v6.30** — formatting verified against the standard; Print's silent Tauri no-op
 - **v6.29** — Print through the exporter; the goal chip's Header = the TITLE BAR

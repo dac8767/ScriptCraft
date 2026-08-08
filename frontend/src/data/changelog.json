@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.37",
+  "date": "2026-08-08",
+  "changes": [
+   "Fixed: File ▸ Print crashed the app. The print dialog was being run as an app-blocking loop from inside the window system's own event handling, and errors from macOS's print machinery could kill the process outright. The dialog now presents as a sheet on the main window, the work runs off the main thread, and any macOS-side error falls back to opening the PDF instead of crashing."
+  ]
+ },
+ {
   "version": "6.36",
   "date": "2026-08-08",
   "changes": [
