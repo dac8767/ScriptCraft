@@ -5,13 +5,6 @@ import { platformFetch } from './platform';
 import { authedFetch } from './authedFetch';
 import { getDeviceInfo, getDeviceId } from './deviceId';
 
-// ── URL helpers ──
-
-function getCollabHttpBase(): string {
-  const wsUrl = useSettingsStore.getState().collabServerUrl;
-  return wsUrl.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:');
-}
-
 // ── HTTP helpers ──
 
 /** Convert `TypeError: Failed to fetch` (network / CORS) into an actionable
@@ -109,41 +102,6 @@ async function backendAuthedRequest<T>(path: string, options?: RequestInit): Pro
     throw wrapNetworkError(err, 'the ScriptCraft backend');
   }
   if (!res.ok) throw await parseError(res, 'Auth');
-  return res.json();
-}
-
-/**
- * Collab-server HTTP — used ONLY for endpoints that live on the collab
- * server itself (reset-document, close-document, revoke-my-sessions). Auth
- * endpoints go through backendAuthRequest above.
- */
-async function collabRequest<T>(path: string, options?: RequestInit): Promise<T> {
-  const base = getCollabHttpBase();
-  let res: Response;
-  try {
-    res = await platformFetch(`${base}${path}`, {
-      ...options,
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-    });
-  } catch (err) {
-    throw wrapNetworkError(err, 'the collaboration server');
-  }
-  if (!res.ok) throw await parseError(res, 'Collab');
-  return res.json();
-}
-
-async function collabAuthedRequest<T>(path: string, options?: RequestInit): Promise<T> {
-  const base = getCollabHttpBase();
-  let res: Response;
-  try {
-    res = await authedFetch(`${base}${path}`, {
-      ...options,
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-    });
-  } catch (err) {
-    throw wrapNetworkError(err, 'the collaboration server');
-  }
-  if (!res.ok) throw await parseError(res, 'Collab');
   return res.json();
 }
 
@@ -318,59 +276,7 @@ export const collabAuthApi = {
 
   getServerConfig: () =>
     backendAuthRequest<CollabServerConfig>('/config'),
-
-  /** Test reachability of the *collab* server directly (used by Settings to
-   * show connection status for the websocket host). Auth flows don't depend
-   * on this — they go through the backend proxy. */
-  testConnection: async (): Promise<boolean> => {
-    try {
-      const base = getCollabHttpBase();
-      const res = await platformFetch(`${base}/health`);
-      return res.ok;
-    } catch {
-      return false;
-    }
-  },
-
-  /** Reset a document's persisted Yjs state on the collab server (called by host before starting a new session) */
-  resetDocument: (documentName: string, token: string) =>
-    collabRequest<{ status: string }>('/api/reset-document', {
-      method: 'POST',
-      body: JSON.stringify({ documentName, token }),
-    }),
-
-  /** Close all connections for a document (called by host after ending a session) */
-  closeDocument: (documentName: string) =>
-    collabRequest<{ status: string }>('/api/close-document', {
-      method: 'POST',
-      body: JSON.stringify({ documentName }),
-    }),
-
-  /** Revoke all collab sessions created by the authenticated user (called on logout) */
-  revokeMyCollabSessions: () =>
-    collabAuthedRequest<{ message: string }>('/api/collab/my-sessions', { method: 'DELETE' }),
 };
-
-// ── Helper: check if current auth is valid (token present and not expired) ──
-
-export function isCollabAuthenticated(): boolean {
-  const { collabAuth } = useSettingsStore.getState();
-  if (!collabAuth.accessToken) return false;
-  try {
-    const payload = JSON.parse(atob(collabAuth.accessToken.split('.')[1]));
-    if (payload.exp && payload.exp * 1000 < Date.now()) {
-      // Token expired — clear it
-      console.log('[collabAuth] Access token expired, clearing auth');
-      useSettingsStore.getState().clearCollabAuth();
-      return false;
-    }
-  } catch {
-    // Malformed token
-    useSettingsStore.getState().clearCollabAuth();
-    return false;
-  }
-  return true;
-}
 
 // ── Helper: handle auth response and store tokens ──
 
@@ -383,16 +289,6 @@ export function handleAuthResponse(response: AuthResponse): CollabAuth {
   console.log('[collabAuth] Authenticated as', auth.user?.displayName);
   useSettingsStore.getState().setCollabAuth(auth);
   return auth;
-}
-
-/**
- * Callback set by ScreenplayEditor to tear down an active collab session.
- * Called by performLogout before revoking tokens.
- */
-let _onLogoutCollabTeardown: (() => Promise<void>) | null = null;
-
-export function setLogoutCollabTeardown(fn: (() => Promise<void>) | null): void {
-  _onLogoutCollabTeardown = fn;
 }
 
 /**
@@ -411,27 +307,17 @@ export function setLogoutEditorReset(fn: (() => Promise<void>) | null): void {
 export async function performLogout(): Promise<void> {
   const { collabAuth, clearCollabAuth } = useSettingsStore.getState();
 
-  // 1. End any active collab session in the editor
-  if (_onLogoutCollabTeardown) {
-    try { await _onLogoutCollabTeardown(); } catch { /* best-effort */ }
-  }
-
-  // 2. Flush any pending cloud save and reset the editor to a blank file.
+  // 1. Flush any pending cloud save and reset the editor to a blank file.
   //    Runs while the access token is still valid.
   if (_onLogoutEditorReset) {
     try { await _onLogoutEditorReset(); } catch { /* best-effort */ }
   }
 
-  // 3. Revoke all collab invite links this user created on the server
-  if (collabAuth.accessToken) {
-    try { await collabAuthApi.revokeMyCollabSessions(); } catch { /* best-effort */ }
-  }
-
-  // 4. Revoke the refresh token on the server
+  // 2. Revoke the refresh token on the server
   if (collabAuth.refreshToken) {
     try { await collabAuthApi.logout(collabAuth.refreshToken); } catch { /* best-effort */ }
   }
 
-  // 5. Clear local auth state
+  // 3. Clear local auth state
   clearCollabAuth();
 }

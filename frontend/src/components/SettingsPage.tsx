@@ -9,27 +9,9 @@ import { showToast } from './Toast';
 import { getApiBase } from '../config';
 import { getDeviceId } from '../services/deviceId';
 
-const EXPIRY_OPTIONS = [
-  { label: '30 minutes', hours: 0.5 },
-  { label: '1 hour', hours: 1 },
-  { label: '6 hours', hours: 6 },
-  { label: '12 hours', hours: 12 },
-  { label: '24 hours', hours: 24 },
-  { label: '48 hours', hours: 48 },
-  { label: '7 days', hours: 168 },
-  { label: '30 days', hours: 720 },
-];
-
 const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const navigate = useNavigate();
-  const {
-    collabServerUrl, setCollabServerUrl,
-    collabAuth, defaultInviteExpiry, setDefaultInviteExpiry,
-  } = useSettingsStore();
-
-  // ── Local form state ──
-  const [urlInput, setUrlInput] = useState(collabServerUrl);
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+  const { collabAuth } = useSettingsStore();
 
   // ScriptCraft Cloud (HTTP backend) URL — distinct from the collab WebSocket
   // server. On Tauri custom schemes the same-origin default doesn't work, so
@@ -100,12 +82,10 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
   const [serverConfig, setServerConfig] = useState<CollabServerConfig | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  // Load server config when URL is saved
+  // Load the auth server's feature config (Google sign-in, 2FA availability)
   useEffect(() => {
-    if (collabServerUrl) {
-      collabAuthApi.getServerConfig().then(setServerConfig).catch(() => setServerConfig(null));
-    }
-  }, [collabServerUrl]);
+    collabAuthApi.getServerConfig().then(setServerConfig).catch(() => setServerConfig(null));
+  }, []);
 
   const isLoggedIn = Boolean(collabAuth.accessToken && collabAuth.user);
   // Demo flag comes from the backend's DEMO_MODE env var (see /api/demo-info).
@@ -113,18 +93,6 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
   useEffect(() => {
     initDemoInfo().then((info) => setIsDemoServer(Boolean(info.demo))).catch(() => {});
   }, []);
-
-  // ── URL handlers ──
-
-  const handleSaveUrl = () => {
-    const trimmed = urlInput.trim();
-    if (!trimmed.startsWith('ws://') && !trimmed.startsWith('wss://')) {
-      showToast('URL must start with ws:// or wss://', 'error');
-      return;
-    }
-    setCollabServerUrl(trimmed);
-    showToast('Collaboration server URL saved', 'success');
-  };
 
   const handleSaveCloudApi = () => {
     const trimmed = cloudApiInput.trim().replace(/\/+$/, '');
@@ -159,26 +127,6 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
       setCloudApiStatus('fail');
     }
     setTimeout(() => setCloudApiStatus('idle'), 3000);
-  };
-
-  const handleTestConnection = async () => {
-    setConnectionStatus('testing');
-    // Test the URL currently in the input field, not the last saved value
-    try {
-      const { platformFetch } = await import('../services/platform');
-      const httpUrl = urlInput.trim().replace(/^wss:/, 'https:').replace(/^ws:/, 'http:');
-      const res = await platformFetch(`${httpUrl}/health`);
-      setConnectionStatus(res.ok ? 'ok' : 'fail');
-      if (!res.ok) {
-        showToast(`Server returned HTTP ${res.status}`, 'error');
-      }
-    } catch (err: any) {
-      console.error('[SettingsPage] Test connection failed:', err);
-      setConnectionStatus('fail');
-      const msg = typeof err === 'string' ? err : (err?.message || String(err));
-      showToast(`Connection error: ${msg}`, 'error');
-    }
-    setTimeout(() => setConnectionStatus('idle'), 5000);
   };
 
   // ── Auth handlers ──
@@ -526,52 +474,6 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
 
       )}
       <div className="settings-content">
-        {/* ── Collaboration Server URL ── */}
-        <section className="settings-section">
-          <h2 className="settings-section-title">Collaboration Server</h2>
-          <p className="settings-section-desc">
-            Configure the collaboration server URL. Use <code>wss://</code> for encrypted connections
-            or <code>ws://</code> for local networks.
-          </p>
-
-          <div className="settings-row">
-            <label>Server URL</label>
-            <div className="settings-url-row">
-              <input
-                className="dialog-input settings-url-input"
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-                placeholder="wss://your-host.example.com"
-                onKeyDown={(e) => handleKeyDown(e, handleSaveUrl)}
-              />
-              <button className="dialog-btn dialog-btn-primary" onClick={handleSaveUrl}>
-                Save
-              </button>
-              <button
-                className="dialog-btn"
-                onClick={handleTestConnection}
-                disabled={connectionStatus === 'testing'}
-              >
-                {connectionStatus === 'testing' ? 'Testing...' :
-                  connectionStatus === 'ok' ? 'Connected' :
-                    connectionStatus === 'fail' ? 'Failed' : 'Test'}
-              </button>
-            </div>
-            {connectionStatus === 'ok' && (
-              <div className="settings-status settings-status-ok">Server is reachable</div>
-            )}
-            {connectionStatus === 'fail' && (
-              <div className="settings-status settings-status-fail">Cannot reach server</div>
-            )}
-            {urlInput.startsWith('wss://') && (
-              <div className="settings-hint">TLS/SSL encryption is active (wss://)</div>
-            )}
-            {urlInput.startsWith('ws://') && (
-              <div className="settings-hint">No encryption (ws://). Suitable for local networks only.</div>
-            )}
-          </div>
-        </section>
-
         {/* ── ScriptCraft Cloud API URL ── */}
         <section className="settings-section">
           <h2 className="settings-section-title">ScriptCraft Cloud Server</h2>
@@ -617,19 +519,19 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
           </div>
         </section>
 
-        {/* ── Collab Account ── */}
+        {/* ── ScriptCraft Account ── */}
         <section className="settings-section">
-          <h2 className="settings-section-title">Collaboration Account</h2>
+          <h2 className="settings-section-title">ScriptCraft Account</h2>
           <p className="settings-section-desc">
-            Sign in to the collaboration server to use real-time editing features.
-            An account is only required for collaboration — all other features work offline.
+            Sign in to use the Cloud save location. An account is only required
+            for Cloud saves — everything else works offline.
           </p>
 
           {isDemoServer && (
             <div className="settings-demo-notice">
-              <strong>Demo Server:</strong> This is a shared demo server. Registered accounts and
-              collaboration data are automatically removed every hour. For persistent use,
-              deploy your own collab server or upgrade to the paid version.
+              <strong>Demo Server:</strong> This is a shared demo server. Registered
+              accounts and their data are automatically removed every hour. For
+              persistent use, deploy your own server or upgrade to the paid version.
             </div>
           )}
 
@@ -1120,29 +1022,6 @@ const SettingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
             )}
           </section>
         )}
-
-        {/* ── Invite Defaults ── */}
-        <section className="settings-section">
-          <h2 className="settings-section-title">Invite Defaults</h2>
-          <p className="settings-section-desc">
-            Default settings for new collaboration invites.
-          </p>
-
-          <div className="settings-row">
-            <label>Default Token Expiry</label>
-            <select
-              className="dialog-input settings-select"
-              value={defaultInviteExpiry}
-              onChange={(e) => setDefaultInviteExpiry(Number(e.target.value))}
-            >
-              {EXPIRY_OPTIONS.map((opt) => (
-                <option key={opt.hours} value={opt.hours}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </section>
 
         {/* ── Reset All Settings ── */}
         <section className="settings-section">

@@ -114,8 +114,6 @@ import {
   FaFileAlt,
   FaImage,
   FaAdjust,
-  FaUserFriends,
-  FaSignInAlt,
   FaBars,
   FaInfoCircle,
   FaKeyboard,
@@ -149,10 +147,6 @@ import {
 
 interface MenuBarProps {
   editor: Editor | null;
-  onCollaborate?: () => void;
-  onJoinCollab?: () => void;
-  isCollabActive?: boolean;
-  isCollabGuest?: boolean;
 }
 
 interface MenuItem {
@@ -179,7 +173,7 @@ interface MenuSection {
   items: MenuItem[];
 }
 
-const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, isCollabActive, isCollabGuest }) => {
+const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   // v4.28, Derek: the menus ALWAYS live in the macOS menu bar on desktop —
@@ -1005,11 +999,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
   };
   const shortcutActions: Record<string, () => void> = {
     lastEditLocation: jumpToLastEdit,
-    newScreenplay: () => { if (!isCollabGuest) handleNewScreenplay(); },
-    openFile: () => { if (!isCollabGuest) confirmOrRun(() => setOpenFileOpen(true)); },
-    importLocal: () => { if (!isCollabGuest) confirmOrRun(handleImport); },
-    save: () => { if (!isCollabGuest) handleSave(); },
-    saveAs: () => { if (!isCollabGuest) handleSaveAs(); },
+    newScreenplay: () => { handleNewScreenplay(); },
+    openFile: () => { confirmOrRun(() => setOpenFileOpen(true)); },
+    importLocal: () => { confirmOrRun(handleImport); },
+    save: () => { handleSave(); },
+    saveAs: () => { handleSaveAs(); },
     print: () => { void handlePrint(); },
     preview: () => useEditorStore.getState().setPreviewMode(true),
     exportPDF: () => { void handleExportPDF(); },
@@ -1051,8 +1045,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
     // v2.98, Derek: the REST of the menus — every remaining action becomes
     // ribbon-pinnable through the same bus. Pickers and dialogs with their
     // own flows (Workspaces, Theme, Element) stay menu-only.
-    importDocx: () => { if (!isCollabGuest) handleImportDocx(); },
-    importPdf: () => { if (!isCollabGuest) handleImportPdf(); },
+    importDocx: () => { handleImportDocx(); },
+    importPdf: () => { handleImportPdf(); },
     exportOdraft: () => { void handleExportOdraft(); },
     insertImage: () => useEditorStore.getState().imageInsertHandler?.(),
     insertMarker: () => insertOutlineLine('⚑ '),
@@ -1258,7 +1252,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
           icon: <span className="menu-txt-icon" aria-hidden="true">+</span>,
           label: 'New Script…',
           shortcut: sc('newScreenplay'),
-          disabled: isCollabGuest,
           action: handleNewScreenplay,
         },
         { separator: true, label: '' },
@@ -1267,10 +1260,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
            file on disk (the old Local File child). */
         {
           icon: <FaFolderOpen />, label: 'Open…', shortcut: sc('openFile'),
-          action: () => confirmOrRun(() => setOpenFileOpen(true)), disabled: isCollabGuest,
+          action: () => confirmOrRun(() => setOpenFileOpen(true)),
         },
         { separator: true, label: '' },
-        { icon: <FaSave />, label: 'Save', shortcut: sc('save'), action: handleSave, disabled: isCollabGuest },
+        { icon: <FaSave />, label: 'Save', shortcut: sc('save'), action: handleSave },
         {
           /*
            * v1.17: Save As opens the SAVE AS DIALOG.
@@ -1282,7 +1275,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
            * instead. Same word, two different jobs, and the wrong one wired up.
            */
           icon: <FaSave />, label: 'Save As…', shortcut: sc('saveAs'),
-          action: () => setSaveAsOpen(true), disabled: isCollabGuest,
+          action: () => setSaveAsOpen(true),
         },
         { icon: <FaEdit />, label: 'Rename…', action: () => setRenameOpen(true) },
         { separator: true, label: '' },
@@ -1293,20 +1286,20 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         {
           icon: <FaFileImport />, label: 'Import',
           children: [
-            { icon: <FaFileCode />, label: 'Final Draft / Fountain / ScriptCraft…', action: () => confirmOrRun(handleImport), disabled: isCollabGuest },
-            { icon: <FaFileWord />, label: 'Microsoft Word (.docx)…', action: handleImportDocx, disabled: isCollabGuest },
-            { icon: <FaFilePdf />, label: 'PDF (.pdf)…', action: handleImportPdf, disabled: isCollabGuest },
+            { icon: <FaFileCode />, label: 'Final Draft / Fountain / ScriptCraft…', action: () => confirmOrRun(handleImport) },
+            { icon: <FaFileWord />, label: 'Microsoft Word (.docx)…', action: handleImportDocx },
+            { icon: <FaFilePdf />, label: 'PDF (.pdf)…', action: handleImportPdf },
             { icon: <FaBoxOpen />, label: 'Presets…', action: () => setPresetsOpen(true) },
           ],
         },
         {
           icon: <FaFileExport />, label: 'Export',
           children: [
-            { icon: <FaFileCode />, label: 'Final Draft (.fdx)…', action: handleExportFDX, disabled: isCollabGuest },
-            { icon: <FaFileAlt />, label: 'Fountain (.fountain)…', action: handleExportFountain, disabled: isCollabGuest },
+            { icon: <FaFileCode />, label: 'Final Draft (.fdx)…', action: handleExportFDX },
+            { icon: <FaFileAlt />, label: 'Fountain (.fountain)…', action: handleExportFountain },
             { icon: <FaFilePdf />, label: 'PDF…', action: handleExportPDF },
             { icon: <FaFileWord />, label: 'Microsoft Word (.docx)…', action: handleExportDocx },
-            { icon: <FaFile />, label: 'ScriptCraft (.odraft)…', action: handleExportOdraft, disabled: isCollabGuest },
+            { icon: <FaFile />, label: 'ScriptCraft (.odraft)…', action: handleExportOdraft },
             { icon: <FaBoxOpen />, label: 'Presets…', action: () => setPresetsOpen(true) },
           ],
         },
@@ -1320,10 +1313,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
         })(),
         {
           icon: <FaCodeBranch />, label: 'Script History',
-          disabled: isCollabGuest,
           children: [
-            { icon: <FaUpload />, label: 'Take Auto Save…', action: handleCheckinOpen, disabled: isCollabGuest },
-            { icon: <FaHistory />, label: 'Auto Saves', action: () => setVersionHistoryOpen(true), disabled: isCollabGuest },
+            { icon: <FaUpload />, label: 'Take Auto Save…', action: handleCheckinOpen },
+            { icon: <FaHistory />, label: 'Auto Saves', action: () => setVersionHistoryOpen(true) },
             { separator: true, label: '' },
             {
               icon: <FaExchangeAlt />,
@@ -1335,18 +1327,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             { icon: <FaFileSignature />, label: 'Compare with Auto Save…', action: () => setCompareVersionOpen(true) },
           ],
         },
-        // v1.34: Collaboration is UNRELEASED — hidden unless the Developer
-        // toggle (Help > Developer > Show Unreleased Tools) is on.
-        ...(showUnreleasedTools ? [
-          { separator: true, label: '' },
-          {
-            icon: <FaUserFriends />, label: 'Collaboration',
-            children: [
-              { icon: <FaUserFriends />, label: isCollabActive ? '\u2713 Collaborate…' : 'Collaborate…', action: onCollaborate, disabled: isCollabGuest },
-              { icon: <FaSignInAlt />, label: 'Join Collaboration…', action: onJoinCollab, disabled: isCollabGuest },
-            ],
-          },
-        ] : []),
         // Settings lives in the ScriptCraft app menu under native macOS menus
         // (the platform convention — see nativeMenuSync). In-window menus have
         // no app menu, so it stays in File there.
@@ -1719,8 +1699,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor, onCollaborate, onJoinCollab, 
             action: () => useEditorStore.getState().setHelperTextWindowOpen(true),
           },
           /* v1.34: the switch for features that exist but aren't finished
-           * (Collaboration, Lock Pages). One flag, read wherever an
-           * unreleased item renders — not a per-feature checkbox list. */
+           * (Lock Pages; Collaboration until v6.40 removed it). One flag,
+           * read wherever an unreleased item renders. */
           {
             icon: <FaToggleOn />,
             label: 'Show Unreleased Tools',

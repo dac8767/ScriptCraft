@@ -45,14 +45,13 @@ export function AboutDialog({ onClose, onShowChangelog }: { onClose: () => void;
               library — or adding/swapping one — updates this list in the SAME
               change. Audited v4.76: everything below is still shipped;
               html2canvas-pro (screenshots, v4.70) and pdf.js (PDF import)
-              joined. */}
+              joined. v6.40: Yjs & Hocuspocus left with the Collaboration
+              removal. */}
           <div className="about-credit about-oss">
             Made possible by open source:{' '}
             <Ext href="https://react.dev">React</Ext>,{' '}
             <Ext href="https://tiptap.dev">TipTap</Ext> /{' '}
             <Ext href="https://prosemirror.net">ProseMirror</Ext>,{' '}
-            <Ext href="https://yjs.dev">Yjs</Ext> &{' '}
-            <Ext href="https://tiptap.dev/hocuspocus">Hocuspocus</Ext>,{' '}
             <Ext href="https://vite.dev">Vite</Ext>,{' '}
             <Ext href="https://www.typescriptlang.org">TypeScript</Ext>,{' '}
             <Ext href="https://zustand.docs.pmnd.rs">Zustand</Ext>,{' '}

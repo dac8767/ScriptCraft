@@ -1,19 +1,10 @@
-// v4.24: ScreenplayEditor static config — collaboration cursor colors, the
-// element-type maps, autofill option lists, and the demo doc — lifted out of the
-// 4.5k-line component. Pure data (+ one trivial color picker); no React, no state.
+// v4.24: ScreenplayEditor static config — the element-type maps, autofill
+// option lists, and the demo doc — lifted out of the 4.5k-line component.
+// Pure data; no React, no state.
 // The DEFAULT_NEXT_TYPE / ALL_ELEMENT_TYPES pair is exactly the "two lists that
 // drift apart" footgun (CLAUDE.md §3), so screenplayEditorConstants.test.ts locks
 // them in sync.
 import type { ElementType } from '../stores/editorStore';
-
-// Vibrant dark colors for collaboration cursors and avatars
-export const COLLAB_COLORS = [
-  '#7C3AED', '#DC2626', '#D97706', '#059669', '#2563EB',
-  '#DB2777', '#7C2D12', '#4338CA', '#0E7490', '#9333EA',
-];
-export function randomCollabColor() {
-  return COLLAB_COLORS[Math.floor(Math.random() * COLLAB_COLORS.length)];
-}
 
 // Default next element type when pressing Enter
 export const DEFAULT_NEXT_TYPE: Record<string, string> = {

@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 
 import logging
 
-from app.api import scripts, auth, export, projects, versions, assets, collab, link_preview, formatting_templates, locations
+from app.api import scripts, auth, export, projects, versions, assets, link_preview, formatting_templates, locations
 from app.security import validate_path_params
 from app.config import COLLAB_JWT_SECRET, PROJECTS_DIR_BASE, BASE_DIR, DEMO_MODE
 from app.dependencies import require_verified_user
@@ -85,12 +85,6 @@ app.include_router(projects.router, prefix="/api/projects", tags=["projects"], d
 app.include_router(versions.router, prefix="/api/projects", tags=["versions"], dependencies=_user_scoped)
 app.include_router(assets.router, prefix="/api/projects", tags=["assets"], dependencies=_user_scoped)
 app.include_router(locations.router, prefix="/api/projects", tags=["locations"], dependencies=_user_scoped)
-# Collab session management writes to a shared JSON file, so anonymous access
-# would let anyone invite to / revoke sessions for any project. The frontend
-# normally talks directly to the collab-server for invites; these routes are
-# kept for legacy callers and require a verified user.
-app.include_router(collab.router, prefix="/api/collab", tags=["collab"], dependencies=_user_scoped)
-
 # Not user-scoped: export stubs, link previews, shared formatting templates.
 app.include_router(export.router, prefix="/api/export", tags=["export"])
 app.include_router(link_preview.router, prefix="/api/link", tags=["link-preview"])

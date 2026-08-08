@@ -151,7 +151,19 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.34 and older (newest first)
+## Version history — v6.35 and older (newest first)
+
+### v6.35 — annotation icons in the LEFT margin
+
+- Derek: "for annotations, move the on-page icon to the left margin from
+  the right." MarkupIconLayer's one position formula flips: the icon now
+  centers in the LEFT margin band (page edge → 1.5" text start; center
+  0.75" ± half an icon), clear of the page edge, the text, and the
+  scene-number zone that hugs the text (1.0–1.35"). No other consumer
+  assumed the right side (check-v547 only counts icons).
+- check-v635 (4: renders, centers in the band, left of the text column,
+  left half of the page). check-v547 re-run 19/0.
+- Gates: tsc 0, 1103 tests, build.
 
 ### v6.34 — the launcher restores package-lock.json too (Derek's aborted pull)
 

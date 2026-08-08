@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.39 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.40 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,49 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.40 — Collaboration REMOVED (Derek: "remove all Collaborate or Collaboration Server functionality")
+
+- THE LINE THAT MATTERS: `collabAuth`/`CollabLoginDialog`/`/auth/*` are the
+  ACCOUNT system (Cloud saves, sign-in, 2FA, devices) — the identity
+  provider merely began life on the collab server, and the names + the
+  `opendraft:collabAuth` storage key STAY (renaming orphans signed-in
+  users). Everything session/share/sync is GONE.
+- Deleted: hooks/useCollaboration, services/collabSync, ShareDialog,
+  JoinCollabDialog, backend app/api/collab.py + services/collab_service.py,
+  start_collab.sh, user-manual/collaboration.html (+ sidebar/nav links),
+  COLLAB_COLORS. ScreenplayEditor lost the /collab/:token route (App.tsx
+  too), banner, start/stop/switch/join handlers, collabExtensions
+  (History is unconditional now — line was `...(collabMode ? ...)`),
+  editorKey (only collab set it), isCollabGuest guards (~12 sites).
+  MenuBar lost the File ▸ Collaboration submenu + guest disables;
+  showUnreleasedTools stays (Lock Pages still reads it).
+- Settings: "Collaboration Server" + "Invite Defaults" sections gone
+  (SettingsPage); account sections retitled "ScriptCraft Account"
+  (SettingsPage + PreferencesDialog; save row now "Cloud - ScriptCraft
+  Account"). settingsStore lost collabServerUrl + defaultInviteExpiry
+  (+ their opendraft:* keys); config.ts lost getCollabWsUrl.
+- collabAuth.ts kept ONLY the account api (register/login/2FA/devices/
+  getServerConfig via the backend proxy); collabRequest/testConnection/
+  reset-close-document/revokeMyCollabSessions/isCollabAuthenticated/
+  setLogoutCollabTeardown removed; performLogout is 3 steps now. The four
+  storage adapters dropped the 5 collab methods + CollabSession in
+  lockstep (api/local-storage/fallback/file-fallback).
+- npm: @hocuspocus/provider, @tiptap/extension-collaboration{,-cursor},
+  yjs, y-prosemirror, y-protocols uninstalled → About's open-source list
+  dropped Yjs & Hocuspocus (v4.76 standing rule). Helper catalog
+  REGENERATED (dialog strings left). CSS: collab blocks out of 16-print/
+  15-responsive/17-settings (login dialog's .collab-forgot-link/.collab-
+  remember-* stay — account UI). Tests 1103→1102 (randomCollabColor).
+- collab-server/ is now an AUTH-ONLY server (server.ts rewritten:
+  no Hocuspocus/Yjs/ws/upgrade path, /api/collab + reset/close-document
+  gone; /auth + /health stay; deps ws/yjs/@hocuspocus/* dropped;
+  `tsc --noEmit` verified). deploy/ configs still name the service
+  "collab" — renaming the service id across compose/Caddy/supervisord
+  was deliberately NOT done (infra rename, no behavior change).
+- lanes.json "collab" lane → "Auth / Cloud / Settings" minus deleted
+  files. If Derek ever wants collaboration back: `git log` around
+  v6.39→v6.40, it's one revert away plus npm install.
+
 ### v6.39 — map rotation unlocked; the map is a CANVAS now (WKWebView)
 
 - Derek: (1) remove the import bar ("Turn the map upright…", Rotate, Set
@@ -354,23 +397,12 @@ Durable bits kept live here:
 - checks: check-v629 (browser print paths) 5/0 re-run; check-v633 12/0.
 - Gates: tsc 0, 1103 tests, build.
 
-### v6.35 — annotation icons in the LEFT margin
-
-- Derek: "for annotations, move the on-page icon to the left margin from
-  the right." MarkupIconLayer's one position formula flips: the icon now
-  centers in the LEFT margin band (page edge → 1.5" text start; center
-  0.75" ± half an icon), clear of the page edge, the text, and the
-  scene-number zone that hugs the text (1.0–1.35"). No other consumer
-  assumed the right side (check-v547 only counts icons).
-- check-v635 (4: renders, centers in the band, left of the text column,
-  left half of the page). check-v547 re-run 19/0.
-- Gates: tsc 0, 1103 tests, build.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.35** — annotation icons moved to the LEFT margin band (0.75" center)
 - **v6.34** — `npm run desktop` restores package-lock.json too; Cargo.toml dirt = unknown origin
 - **v6.33** — the MEASURED wrap geometry (63 chars); the asset handler's cwd bug; Print opens
 - **v6.32** — asset protocol ON; Tauri print = save+toast; Courier Prime embedded

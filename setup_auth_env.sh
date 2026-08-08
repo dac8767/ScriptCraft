@@ -116,4 +116,4 @@ APP_URL=http://localhost:5173
 EOF
 
 echo ""
-echo "Done. Restart start_backend.sh and start_collab.sh to pick up the new env."
+echo "Done. Restart start_backend.sh (and the auth server, if running) to pick up the new env."

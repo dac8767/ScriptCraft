@@ -39,7 +39,6 @@ function App() {
         <Route path="/project/:projectId/edit/:scriptId" element={<ScreenplayEditor />} />
         <Route path="/project/:projectId/treatment/:scriptId" element={<TreatmentEditor />} />
         <Route path="/project/:projectId/history/:scriptId/:commitHash" element={<ScreenplayEditor />} />
-        <Route path="/collab/:collabToken" element={<ScreenplayEditor />} />
         <Route path="/settings" element={<SettingsPage />} />
         {pluginRoutes.map((r) => (
           <Route key={r.path} path={r.path} element={<r.component />} />

@@ -266,7 +266,7 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
   return (
     <div className="prefs-general">
       <section>
-        <h3>Collaborator Account</h3>
+        <h3>ScriptCraft Account</h3>
         {signedIn ? (
           <div className="prefs-account-row">
             <span>
@@ -276,7 +276,7 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
           </div>
         ) : (
           <div className="prefs-account-row">
-            <span>Not signed in — the Cloud save location and collaboration need an account.</span>
+            <span>Not signed in — the Cloud save location needs an account.</span>
             <button
               className="dialog-primary"
               onClick={() => window.dispatchEvent(new CustomEvent('opendraft:auth-required'))}
@@ -308,7 +308,7 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
         </label>
         <label className="prefs-check-row">
           <input type="checkbox" checked={saveToCloud} onChange={(e) => setSaveToCloud(e.target.checked)} />
-          <span>Cloud - Collaborator Account{!signedIn ? ' — sign in above first' : ''}</span>
+          <span>Cloud - ScriptCraft Account{!signedIn ? ' — sign in above first' : ''}</span>
         </label>
         <label className="prefs-check-row">
           <input type="checkbox" checked={saveToGDrive} onChange={(e) => setSaveToGDrive(e.target.checked)} disabled={!gConnected} />

@@ -87,21 +87,6 @@ export const API_BASE: string = computeApiBase();
 /** Server root without the /api suffix (used for asset URLs, etc.) */
 export const SERVER_BASE: string = API_BASE.replace(/\/api$/, '');
 
-/** WebSocket URL for the Hocuspocus collaboration server.
- *  Reads from localStorage (settings store) first, then falls back
- *  to the VITE env var, then to the default.
- */
-// Empty until ScriptCraft's own collab server is deployed (set
-// VITE_COLLAB_WS_URL at build time, e.g. wss://collab.scriptcraft.com).
-const DEFAULT_COLLAB_WS = import.meta.env.VITE_COLLAB_WS_URL || '';
-export function getCollabWsUrl(): string {
-  const stored = localStorage.getItem('opendraft:collabServerUrl');
-  if (stored) return stored;
-  return DEFAULT_COLLAB_WS;
-}
-// Static alias kept for backward-compatible imports
-export const COLLAB_WS_URL: string = DEFAULT_COLLAB_WS;
-
 /**
  * Get the URL for an asset.
  *

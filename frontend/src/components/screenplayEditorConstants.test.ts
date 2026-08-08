@@ -9,7 +9,7 @@
  * catch it at test time instead of as a dead Enter key in the running app.
  */
 import { describe, it, expect } from 'vitest';
-import { COLLAB_COLORS, randomCollabColor, DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, allowedElementsAfter, resolvePickedElement } from './screenplayEditorConstants';
+import { DEFAULT_NEXT_TYPE, ALL_ELEMENT_TYPES, allowedElementsAfter, resolvePickedElement } from './screenplayEditorConstants';
 
 describe('element-type maps stay in sync', () => {
   it('every built-in element type has an Enter → next-type mapping', () => {
@@ -97,13 +97,5 @@ describe('allowedElementsAfter', () => {
     // unlisted prevs still use the generic fallback
     expect(allowedElementsAfter('shot', custom)('action')).toBe(true);
     expect(allowedElementsAfter('shot', custom)('parenthetical')).toBe(false);
-  });
-});
-
-describe('randomCollabColor', () => {
-  it('always returns a color from the palette', () => {
-    for (let i = 0; i < 50; i++) {
-      expect(COLLAB_COLORS).toContain(randomCollabColor());
-    }
   });
 });

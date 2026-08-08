@@ -29,16 +29,6 @@
   ]
  },
  {
-  "text": "Activity Log",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Editor & Preview",
-  "where": [
-   "components/ScreenplayEditor.tsx"
-  ],
-  "label": "Activity"
- },
- {
   "text": "Add a custom page — the script flows around it",
   "kind": "tooltip",
   "sites": 1,
@@ -528,15 +518,6 @@
   ],
   "icon": "FaLink",
   "label": "Group"
- },
- {
-  "text": "Copy invite link",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Dialogs",
-  "where": [
-   "components/ShareDialog.tsx"
-  ]
  },
  {
   "text": "Copy the image — then paste it into the form's attachment field",
@@ -2067,27 +2048,6 @@
   "label": "Restore"
  },
  {
-  "text": "Revoke this invite",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Dialogs",
-  "where": [
-   "components/ShareDialog.tsx"
-  ],
-  "label": "Revoke"
- },
- {
-  "text": "Rotate 90° clockwise",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Scenes / Pages / Locations Windows",
-  "where": [
-   "components/LocationMapTab.tsx"
-  ],
-  "icon": "FaUndo",
-  "label": "Rotate"
- },
- {
   "text": "Run the same passage again — add a note first to steer it (e.g. avoid a phrase)",
   "kind": "tooltip",
   "sites": 1,
@@ -3025,15 +2985,6 @@
   ]
  },
  {
-  "text": "https://example.com/collab/... or paste token",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Dialogs",
-  "where": [
-   "components/JoinCollabDialog.tsx"
-  ]
- },
- {
   "text": "https://your-host.example.com",
   "kind": "placeholder",
   "sites": 1,
@@ -3132,15 +3083,6 @@
   "where": [
    "components/CollabLoginDialog.tsx",
    "components/SettingsPage.tsx"
-  ]
- },
- {
-  "text": "Person's name (e.g., John)",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Dialogs",
-  "where": [
-   "components/ShareDialog.tsx"
   ]
  },
  {
@@ -3505,15 +3447,6 @@
   "area": "Dialogs",
   "where": [
    "components/SynopsisModal.tsx"
-  ]
- },
- {
-  "text": "wss://your-host.example.com",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Settings & Setup",
-  "where": [
-   "components/SettingsPage.tsx"
   ]
  },
  {

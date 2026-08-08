@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.40",
+  "date": "2026-08-08",
+  "changes": [
+   "Collaboration is REMOVED. The unreleased real-time collaboration feature — the File ▸ Collaboration menu, invite links, the live-session banner, the Collaboration Server and Invite Defaults settings sections, and the sync machinery behind them — is gone from the app entirely. Your ScriptCraft account, Cloud saves, and sign-in are unaffected (they never depended on collaboration; the settings sections are now titled 'ScriptCraft Account')."
+  ]
+ },
+ {
   "version": "6.39",
   "date": "2026-08-08",
   "changes": [

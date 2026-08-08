@@ -17,11 +17,9 @@ export interface CollabAuth {
 }
 
 interface SettingsState {
-  // Collab server URL (ws:// or wss://)
-  collabServerUrl: string;
-  setCollabServerUrl: (url: string) => void;
-
-  // Collab auth state
+  // Account auth state (the sign-in behind Cloud saves — historically named
+  // "collab" because the identity provider began life as the collab server;
+  // the name persists in localStorage, so it stays)
   collabAuth: CollabAuth;
   setCollabAuth: (auth: CollabAuth) => void;
   clearCollabAuth: () => void;
@@ -31,10 +29,6 @@ interface SettingsState {
   // "logged in" if the server hasn't confirmed it yet (e.g. offline boot).
   authVerified: boolean;
   setAuthVerified: (verified: boolean) => void;
-
-  // Default invite expiry (hours)
-  defaultInviteExpiry: number;
-  setDefaultInviteExpiry: (hours: number) => void;
 
   // Settings dialog open state
   settingsOpen: boolean;
@@ -154,9 +148,7 @@ interface SettingsState {
   setOnedriveClientId: (id: string) => void;
 }
 
-const STORAGE_KEY_URL = 'opendraft:collabServerUrl';
 const STORAGE_KEY_AUTH = 'opendraft:collabAuth';
-const STORAGE_KEY_EXPIRY = 'opendraft:defaultInviteExpiry';
 const STORAGE_KEY_FORMATS = 'opendraft:enabledScriptFormats';
 const STORAGE_KEY_FORMATS_INIT = 'opendraft:formatPreferencesInitialized';
 const STORAGE_KEY_AUTOLOAD = 'opendraft:autoLoadLastScript';
@@ -237,12 +229,6 @@ function loadEnabledScriptFormats(): string[] {
   return [];
 }
 
-// Empty until ScriptCraft's own collab server is deployed. Set
-// VITE_COLLAB_WS_URL at build time (e.g. wss://collab.scriptcraft.com), or
-// point at a self-hosted server in Settings. Never default to a third
-// party's infrastructure — the desktop app must not phone home.
-const DEFAULT_COLLAB_URL = (import.meta.env.VITE_COLLAB_WS_URL as string | undefined) || '';
-
 function loadAuth(): CollabAuth {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_AUTH);
@@ -252,13 +238,6 @@ function loadAuth(): CollabAuth {
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
-  collabServerUrl: localStorage.getItem(STORAGE_KEY_URL) || DEFAULT_COLLAB_URL,
-  setCollabServerUrl: (url) => {
-    localStorage.setItem(STORAGE_KEY_URL, url);
-    set({ collabServerUrl: url });
-  },
-
-
   collabAuth: loadAuth(),
   setCollabAuth: (auth) => {
     localStorage.setItem(STORAGE_KEY_AUTH, JSON.stringify(auth));
@@ -277,12 +256,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   authVerified: false,
   setAuthVerified: (verified) => set({ authVerified: verified }),
-
-  defaultInviteExpiry: parseInt(localStorage.getItem(STORAGE_KEY_EXPIRY) || '1', 10),
-  setDefaultInviteExpiry: (hours) => {
-    localStorage.setItem(STORAGE_KEY_EXPIRY, String(hours));
-    set({ defaultInviteExpiry: hours });
-  },
 
   settingsOpen: false,
   setSettingsOpen: (open) => set({ settingsOpen: open }),
