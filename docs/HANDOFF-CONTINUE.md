@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.44 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.45 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,22 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.45 — Upload Voice Clip removed from the character window
+
+- Derek: "remove the 'upload voice clip' tool from the character window."
+  SCOPE READ: the TOOL, not the section — the Voice Profile photo-row
+  toggle and its Speech Pattern / Vocabulary fields STAY (they're
+  writing fields); renderVoiceButton (upload / player+Replace+Remove),
+  the handlers, the hidden audio input, and AssetAudio (CharacterProfiles
+  was its only consumer) are gone. `.char-profile-voice-btn` CSS KEPT —
+  the Relationships/Appears-in/Voice-Profile toggles wear it; the
+  player-row CSS block (28 lines) removed. characterProfile.voiceProfile
+  stays in the type (saved scripts carry it; annotated HISTORICAL like
+  rotationLocked). Helper catalog regenerated (366).
+- Print (v6.44) still awaits Derek's verdict — if it crashed again, ask
+  for `cat "$HOME/Library/Application Support/com.freedraft.app/print/
+  print-debug.log"` FIRST; plan B (out-of-process helper) is declared.
+
 ### v6.44 — print round 4: nil NSPrintInfo + BREADCRUMBS; Settings→app menu
 
 - Derek: "print still crashes" (no crash log supplied). Re-derived from
@@ -353,54 +369,12 @@ Durable bits kept live here:
   StatusBar's enabledMirrors ignores both local mirrors — pre-existing
   gaps, flag to Derek if he wants them surfaced.
 
-### v6.40 — Collaboration REMOVED (Derek: "remove all Collaborate or Collaboration Server functionality")
-
-- THE LINE THAT MATTERS: `collabAuth`/`CollabLoginDialog`/`/auth/*` are the
-  ACCOUNT system (Cloud saves, sign-in, 2FA, devices) — the identity
-  provider merely began life on the collab server, and the names + the
-  `opendraft:collabAuth` storage key STAY (renaming orphans signed-in
-  users). Everything session/share/sync is GONE.
-- Deleted: hooks/useCollaboration, services/collabSync, ShareDialog,
-  JoinCollabDialog, backend app/api/collab.py + services/collab_service.py,
-  start_collab.sh, user-manual/collaboration.html (+ sidebar/nav links),
-  COLLAB_COLORS. ScreenplayEditor lost the /collab/:token route (App.tsx
-  too), banner, start/stop/switch/join handlers, collabExtensions
-  (History is unconditional now — line was `...(collabMode ? ...)`),
-  editorKey (only collab set it), isCollabGuest guards (~12 sites).
-  MenuBar lost the File ▸ Collaboration submenu + guest disables;
-  showUnreleasedTools stays (Lock Pages still reads it).
-- Settings: "Collaboration Server" + "Invite Defaults" sections gone
-  (SettingsPage); account sections retitled "ScriptCraft Account"
-  (SettingsPage + PreferencesDialog; save row now "Cloud - ScriptCraft
-  Account"). settingsStore lost collabServerUrl + defaultInviteExpiry
-  (+ their opendraft:* keys); config.ts lost getCollabWsUrl.
-- collabAuth.ts kept ONLY the account api (register/login/2FA/devices/
-  getServerConfig via the backend proxy); collabRequest/testConnection/
-  reset-close-document/revokeMyCollabSessions/isCollabAuthenticated/
-  setLogoutCollabTeardown removed; performLogout is 3 steps now. The four
-  storage adapters dropped the 5 collab methods + CollabSession in
-  lockstep (api/local-storage/fallback/file-fallback).
-- npm: @hocuspocus/provider, @tiptap/extension-collaboration{,-cursor},
-  yjs, y-prosemirror, y-protocols uninstalled → About's open-source list
-  dropped Yjs & Hocuspocus (v4.76 standing rule). Helper catalog
-  REGENERATED (dialog strings left). CSS: collab blocks out of 16-print/
-  15-responsive/17-settings (login dialog's .collab-forgot-link/.collab-
-  remember-* stay — account UI). Tests 1103→1102 (randomCollabColor).
-- collab-server/ is now an AUTH-ONLY server (server.ts rewritten:
-  no Hocuspocus/Yjs/ws/upgrade path, /api/collab + reset/close-document
-  gone; /auth + /health stay; deps ws/yjs/@hocuspocus/* dropped;
-  `tsc --noEmit` verified). deploy/ configs still name the service
-  "collab" — renaming the service id across compose/Caddy/supervisord
-  was deliberately NOT done (infra rename, no behavior change).
-- lanes.json "collab" lane → "Auth / Cloud / Settings" minus deleted
-  files. If Derek ever wants collaboration back: `git log` around
-  v6.39→v6.40, it's one revert away plus npm install.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.40** — Collaboration removed end-to-end (account system KEPT then; see v6.42)
 - **v6.39** — map rotation via Options any time; the map became a CANVAS (WKWebView vanish)
 - **v6.38** — the ten-item batch: helper text window/blank overrides, snippet buttons, map floor + header Options + rail ⋮, panel zoom
 - **v6.37** — print hotfix: async command + sheet + ObjC exception catch

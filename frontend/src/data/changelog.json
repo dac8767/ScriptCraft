@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.45",
+  "date": "2026-08-08",
+  "changes": [
+   "Characters: the Upload Voice Clip tool is removed from the character window. The Voice Profile section keeps its Speech Pattern and Vocabulary fields; already-uploaded clips stay in your saved files and the Asset Manager, they just no longer have a player here."
+  ]
+ },
+ {
   "version": "6.44",
   "date": "2026-08-08",
   "changes": [

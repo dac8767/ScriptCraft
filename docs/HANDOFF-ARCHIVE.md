@@ -151,7 +151,50 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.39 and older (newest first)
+## Version history — v6.40 and older (newest first)
+
+### v6.40 — Collaboration REMOVED (Derek: "remove all Collaborate or Collaboration Server functionality")
+
+- THE LINE THAT MATTERS: `collabAuth`/`CollabLoginDialog`/`/auth/*` are the
+  ACCOUNT system (Cloud saves, sign-in, 2FA, devices) — the identity
+  provider merely began life on the collab server, and the names + the
+  `opendraft:collabAuth` storage key STAY (renaming orphans signed-in
+  users). Everything session/share/sync is GONE.
+- Deleted: hooks/useCollaboration, services/collabSync, ShareDialog,
+  JoinCollabDialog, backend app/api/collab.py + services/collab_service.py,
+  start_collab.sh, user-manual/collaboration.html (+ sidebar/nav links),
+  COLLAB_COLORS. ScreenplayEditor lost the /collab/:token route (App.tsx
+  too), banner, start/stop/switch/join handlers, collabExtensions
+  (History is unconditional now — line was `...(collabMode ? ...)`),
+  editorKey (only collab set it), isCollabGuest guards (~12 sites).
+  MenuBar lost the File ▸ Collaboration submenu + guest disables;
+  showUnreleasedTools stays (Lock Pages still reads it).
+- Settings: "Collaboration Server" + "Invite Defaults" sections gone
+  (SettingsPage); account sections retitled "ScriptCraft Account"
+  (SettingsPage + PreferencesDialog; save row now "Cloud - ScriptCraft
+  Account"). settingsStore lost collabServerUrl + defaultInviteExpiry
+  (+ their opendraft:* keys); config.ts lost getCollabWsUrl.
+- collabAuth.ts kept ONLY the account api (register/login/2FA/devices/
+  getServerConfig via the backend proxy); collabRequest/testConnection/
+  reset-close-document/revokeMyCollabSessions/isCollabAuthenticated/
+  setLogoutCollabTeardown removed; performLogout is 3 steps now. The four
+  storage adapters dropped the 5 collab methods + CollabSession in
+  lockstep (api/local-storage/fallback/file-fallback).
+- npm: @hocuspocus/provider, @tiptap/extension-collaboration{,-cursor},
+  yjs, y-prosemirror, y-protocols uninstalled → About's open-source list
+  dropped Yjs & Hocuspocus (v4.76 standing rule). Helper catalog
+  REGENERATED (dialog strings left). CSS: collab blocks out of 16-print/
+  15-responsive/17-settings (login dialog's .collab-forgot-link/.collab-
+  remember-* stay — account UI). Tests 1103→1102 (randomCollabColor).
+- collab-server/ is now an AUTH-ONLY server (server.ts rewritten:
+  no Hocuspocus/Yjs/ws/upgrade path, /api/collab + reset/close-document
+  gone; /auth + /health stay; deps ws/yjs/@hocuspocus/* dropped;
+  `tsc --noEmit` verified). deploy/ configs still name the service
+  "collab" — renaming the service id across compose/Caddy/supervisord
+  was deliberately NOT done (infra rename, no behavior change).
+- lanes.json "collab" lane → "Auth / Cloud / Settings" minus deleted
+  files. If Derek ever wants collaboration back: `git log` around
+  v6.39→v6.40, it's one revert away plus npm install.
 
 ### v6.39 — map rotation unlocked; the map is a CANVAS now (WKWebView)
 

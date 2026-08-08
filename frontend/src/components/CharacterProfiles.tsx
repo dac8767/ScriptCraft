@@ -20,7 +20,7 @@ import { toTitleCaseName, lastNameOf, joinName, escapeRegExp } from '../utils/ch
 import { buildScanList, filterScanList, type ScannedCharacter } from '../utils/characterScan';
 import { useWindowTabMemory } from '../utils/windowTabMemory';
 import { InlineRelForm, REL_DYNAMICS } from './InlineRelForm';
-import { AssetImage, AssetAudio, ImageSourceMenu } from './CharacterAssetMedia';
+import { AssetImage, ImageSourceMenu } from './CharacterAssetMedia';
 import { promptWithCheckbox } from './ConfirmDialog';
 
 // Default colors for auto-assignment (VIBGYOR palette)
@@ -288,10 +288,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadTargetRef = useRef<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  // v4.23, Derek: Voice Profile — an uploaded audio reference clip per character.
-  const voiceInputRef = useRef<HTMLInputElement>(null);
-  const voiceTargetRef = useRef<string | null>(null);
-  const [voiceUploading, setVoiceUploading] = useState(false);
 
   // Fetch project assets when image picker opens
   const fetchAssets = useCallback(async () => {
@@ -899,34 +895,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
     fileInputRef.current?.click();
   }, []);
 
-  // ── Voice Profile: upload / replace / remove an audio reference clip ──
-  const handleUploadVoice = useCallback(async (charName: string, file: File) => {
-    if (!projectId) return;
-    setVoiceUploading(true);
-    try {
-      const data = await api.uploadAsset(projectId, file, [`voice:${charName}`]);
-      const assetId = data.id || data.asset?.id;
-      if (assetId) upsertCharacterProfile(charName, { voiceProfile: assetId });
-      showToast('Voice profile uploaded', 'success');
-    } catch (err) {
-      showToast(`Voice upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`, 'error');
-    } finally {
-      setVoiceUploading(false);
-    }
-  }, [projectId, upsertCharacterProfile]);
-
-  const handleVoiceSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    const charName = voiceTargetRef.current;
-    if (file && charName) handleUploadVoice(charName, file);
-    e.target.value = '';
-  }, [handleUploadVoice]);
-
-  const triggerVoiceUpload = useCallback((charName: string) => {
-    voiceTargetRef.current = charName;
-    voiceInputRef.current?.click();
-  }, []);
-
   /** v4.22, Derek: First / Last name fields. Shown Title Case (the script is all
    *  caps); editing either surfaces an "Update name in script" button that pushes
    *  the change back. ONE renderer, used by both the card expansion and the modal
@@ -1064,43 +1032,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
           </>
         )}
       </div>
-    );
-  };
-
-  /** Voice Profile: either an upload button or the loaded player + remove. */
-  const renderVoiceButton = (charName: string) => {
-    if (!projectId) return null;
-    const prof = getProfile(charName);
-    const voiceId = prof.voiceProfile;
-    if (voiceId) {
-      return (
-        <div className="char-profile-voice">
-          <AssetAudio projectId={projectId} assetId={voiceId} />
-          <button
-            className="char-profile-voice-replace"
-            title="Replace voice clip"
-            onClick={() => triggerVoiceUpload(charName)}
-          >Replace</button>
-          <button
-            className="char-profile-voice-remove"
-            title="Remove voice profile"
-            onClick={() => upsertCharacterProfile(charName, { voiceProfile: undefined })}
-          ><FaRegTrashAlt /></button>
-        </div>
-      );
-    }
-    return (
-      <button
-        className="char-profile-voice-btn"
-        disabled={voiceUploading}
-        title="Upload a voice-reference audio clip for this character"
-        onClick={() => triggerVoiceUpload(charName)}
-      >
-        {/* v4.26 batch-v4 #5: this control lives INSIDE the Voice Profile
-            section now — labeling it "Voice Profile" there would be the
-            duplicate Derek flagged. */}
-        {voiceUploading ? 'Uploading…' : 'Upload Voice Clip'}
-      </button>
     );
   };
 
@@ -1296,7 +1227,9 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         {openScenes[charName] && renderScenesBlock(charName)}
         {openVoice[charName] && (
           <div className="char-profile-voice-fields">
-            {renderVoiceButton(charName)}
+            {/* v6.45, Derek: the Upload Voice Clip tool is GONE — the section
+                keeps its writing fields. (voiceProfile stays in saved data,
+                unread.) */}
             <label className="char-profile-label">Speech Pattern</label>
             <MiniRichText
               value={prof.speechPattern || ''}
@@ -1412,15 +1345,6 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
         style={{ display: 'none' }}
         onChange={handleFileSelect}
       />
-      {/* Hidden file input for voice-profile audio uploads (v4.23) */}
-      <input
-        ref={voiceInputRef}
-        type="file"
-        accept="audio/*"
-        style={{ display: 'none' }}
-        onChange={handleVoiceSelect}
-      />
-
       {/* (v4.35: the fullscreen header rows are gone — the generic
           ToolFullscreenTakeover provides row 1 and row 2 for every tool.) */}
       {/* Legacy slide-in overlay (context menu → Character Profile...): no

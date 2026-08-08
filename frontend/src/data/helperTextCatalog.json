@@ -250,16 +250,6 @@
   "icon": "FaPaperclip"
  },
  {
-  "text": "Audio unavailable",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Characters Window",
-  "where": [
-   "components/CharacterAssetMedia.tsx"
-  ],
-  "label": "Voice clip unavailable"
- },
- {
   "text": "Back",
   "kind": "tooltip",
   "sites": 1,
@@ -1938,16 +1928,6 @@
   "label": "Clear"
  },
  {
-  "text": "Remove voice profile",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Characters Window",
-  "where": [
-   "components/CharacterProfiles.tsx"
-  ],
-  "icon": "FaRegTrashAlt"
- },
- {
   "text": "Rename",
   "kind": "tooltip",
   "sites": 2,
@@ -1976,16 +1956,6 @@
   "where": [
    "components/LocationPlaceDetails.tsx"
   ]
- },
- {
-  "text": "Replace voice clip",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Characters Window",
-  "where": [
-   "components/CharacterProfiles.tsx"
-  ],
-  "label": "Replace"
  },
  {
   "text": "Replace, rotate or delete the map",
@@ -2489,15 +2459,6 @@
    "components/IndexCards.tsx"
   ],
   "icon": "FaUndo"
- },
- {
-  "text": "Upload a voice-reference audio clip for this character",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Characters Window",
-  "where": [
-   "components/CharacterProfiles.tsx"
-  ]
  },
  {
   "text": "View",

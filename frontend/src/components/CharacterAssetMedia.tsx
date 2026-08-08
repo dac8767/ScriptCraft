@@ -56,32 +56,6 @@ export const AssetImage: React.FC<{
   return <img src={url} className={className} alt={alt} onClick={onClick} onLoad={onLoad} />;
 };
 
-/** v4.23, Derek: play an uploaded voice-reference clip. Loads bytes → blob URL
- *  (same reason as AssetImage — the desktop asset URL can't be fetched), then
- *  hands it to a native <audio> element. */
-export const AssetAudio: React.FC<{ projectId: string; assetId: string }> = ({ projectId, assetId }) => {
-  const [url, setUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-  useEffect(() => {
-    let dead = false;
-    let obj: string | null = null;
-    setUrl(null); setFailed(false);
-    (async () => {
-      try {
-        const bytes = await api.getAssetBytes(projectId, assetId);
-        obj = URL.createObjectURL(new Blob([bytes as BlobPart]));
-        if (!dead) setUrl(obj); else URL.revokeObjectURL(obj);
-      } catch {
-        if (!dead) setFailed(true);
-      }
-    })();
-    return () => { dead = true; if (obj) URL.revokeObjectURL(obj); };
-  }, [projectId, assetId]);
-  if (failed) return <span className="char-profile-voice-broken" title="Audio unavailable">Voice clip unavailable</span>;
-  if (!url) return <span className="char-profile-voice-loading">Loading…</span>;
-  return <audio className="char-profile-voice-audio" src={url} controls preload="none" />;
-};
-
 /** v4.26 batch-v5 #3, Derek: the image (or its placeholder) IS the upload
  *  control now — this is the shared source menu it opens, portalled to <body>
  *  and positioned by the caller from the clicked element (panels clip

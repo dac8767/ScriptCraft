@@ -837,6 +837,9 @@ export interface CharacterProfile {
   /** Asset IDs of images associated with this character */
   images: string[];
   /** v4.23: asset ID of an uploaded voice-reference audio clip (ScriptCraft-only). */
+  /** HISTORICAL (v4.23–v6.44): the uploaded voice-reference clip's asset id.
+   *  v6.45 removed the Upload Voice Clip tool; the field stays because saved
+   *  scripts carry it, but nothing reads it any more. */
   voiceProfile?: string;
   /** v4.22: values for user-defined custom fields, keyed by field id. The field
    *  DEFINITIONS (id + title) live in `characterCustomFields` and are shared by
