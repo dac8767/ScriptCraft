@@ -6,14 +6,10 @@ import SettingsPage from './components/SettingsPage';
 import Toast from './components/Toast';
 import ConfirmDialogHost from './components/ConfirmDialog';
 import DemoBanner from './components/DemoBanner';
-import AuthGate from './components/AuthGate';
-import AuthBootstrap from './components/AuthBootstrap';
 import StorageFallbackDialog from './components/StorageFallbackDialog';
 import HoverTooltip from './components/HoverTooltip';
 import SaveErrorDialog from './components/SaveErrorDialog';
 import OneDriveWarningDialog from './components/OneDriveWarningDialog';
-import VerifyEmailRoute from './components/VerifyEmailRoute';
-import ResetPasswordRoute from './components/ResetPasswordRoute';
 import OAuthCallback from './components/OAuthCallback';
 import { FeedbackFrameHost } from './components/FeedbackTool';
 import { pluginRegistry } from './plugins/registry';
@@ -33,8 +29,8 @@ function App() {
       <DemoBanner />
       <Routes>
         <Route path="/" element={<ScreenplayEditor />} />
-        <Route path="/verify" element={<VerifyEmailRoute />} />
-        <Route path="/reset-password" element={<ResetPasswordRoute />} />
+        {/* /oauth-callback stays: it is the landing page for the Google
+            Drive / OneDrive save-location connect popups (oauthPkce). */}
         <Route path="/oauth-callback" element={<OAuthCallback />} />
         <Route path="/project/:projectId/edit/:scriptId" element={<ScreenplayEditor />} />
         <Route path="/project/:projectId/treatment/:scriptId" element={<TreatmentEditor />} />
@@ -47,8 +43,6 @@ function App() {
       <Toast />
       <HoverTooltip />
       <ConfirmDialogHost />
-      <AuthGate />
-      <AuthBootstrap />
       <StorageFallbackDialog />
       <SaveErrorDialog />
       <OneDriveWarningDialog />

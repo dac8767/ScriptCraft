@@ -84,7 +84,6 @@ beforeEach(() => {
   root = createRoot(container);
   useSettingsStore.setState({
     localSaveFolder: '/Users/dcarl/Downloads/',
-    saveToCloud: false,
     saveToGDrive: false,
     saveToOneDrive: false,
     saveToBackupFolder: false,
@@ -139,10 +138,10 @@ describe('Save Script dialog layout (v1.22)', () => {
   });
 
   it('additional save locations flow as wrapping bubbles (v1.45: was one per line)', () => {
-    act(() => { useSettingsStore.setState({ saveToCloud: true, saveToGDrive: true }); });
+    act(() => { useSettingsStore.setState({ saveToGDrive: true, saveToOneDrive: true }); });
     const items = Array.from(container.querySelectorAll('.fs-saveas-locations-list span'));
-    expect(items.map((el) => el.textContent)).toEqual(['ScriptCraft Cloud', 'Google Drive']);
-    act(() => { useSettingsStore.setState({ saveToCloud: false, saveToGDrive: false }); });
+    expect(items.map((el) => el.textContent)).toEqual(['Google Drive', 'OneDrive']);
+    act(() => { useSettingsStore.setState({ saveToGDrive: false, saveToOneDrive: false }); });
     expect(text('.fs-saveas-locations-list')).toBe('None');
   });
 

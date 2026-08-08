@@ -1,27 +1,24 @@
 /**
  * saveLocations — the Save Locations engine (Settings → Save Locations).
  *
- * Manual Save / Save As always writes to the script's home (local backend or
- * cloud, "mode follows the file") and then FANS OUT to every additional
- * enabled destination:
- *   - Cloud       — a mirrored project/script pair on the collab account,
- *                   mapped persistently (separate ID spaces).
+ * Manual Save / Save As always writes to the script's home and then FANS
+ * OUT to every additional enabled destination:
+ *   - Local folders — the chosen device folder(s), as real .odraft files.
  *   - Google Drive— the document JSON written to a ScriptCraft folder
  *                   (drive.file scope: the app only ever sees its own files).
  *   - OneDrive    — same, via Microsoft Graph path addressing.
+ * (v6.42: the account-backed "Cloud" mirror is gone with the account UI.)
  *
  * Snapshots can additionally be copied to one chosen destination.
  * Failures never block the primary save; each failing destination is
  * reported through the blocking acknowledge modal (per Derek's spec).
  */
 import { useSettingsStore } from '../stores/settingsStore';
-import { useProjectStore } from '../stores/projectStore';
 import { useEditorStore } from '../stores/editorStore';
 // Static on purpose: MenuBar/ScreenplayEditor already import odraftFormat
 // statically, so a dynamic import here could never split a chunk — it only
 // produced a build warning on every run (v4.62 audit).
 import { exportOdraft } from '../utils/odraftFormat';
-import { cloudApi } from './cloudApi';
 import { reportSaveError } from '../stores/saveErrorStore';
 import { errText } from '../utils/errText';
 import {
@@ -67,51 +64,10 @@ function mapSet(key: string, m: Record<string, string>): void {
   try { localStorage.setItem(key, JSON.stringify(m)); } catch { /* ignore */ }
 }
 
-const CLOUD_MAP = 'opendraft:saveloc:cloudMirror';
 const GDRIVE_MAP = 'opendraft:saveloc:gdriveFiles';
 
 function safeName(s: string): string {
   return (s || 'Untitled').replace(/[\\/:*?"<>|]/g, '-').slice(0, 120);
-}
-
-/* ── Cloud mirror ──────────────────────────────────────────────────────── */
-
-async function saveToCloudMirror(args: SavePayload): Promise<void> {
-  const { projectId, scriptId, projectName, title, content } = args;
-  // Already a cloud script? Its home save covered it.
-  if (useProjectStore.getState().isCloudScript(projectId, scriptId)) return;
-
-  const map = mapGet(CLOUD_MAP);
-  let cloudProjectId = map[`p:${projectId}`];
-  if (cloudProjectId) {
-    // Verify it still exists; recreate if the user deleted it in the cloud.
-    const projects = await cloudApi.listProjects();
-    if (!projects.some((p) => p.id === cloudProjectId)) cloudProjectId = '';
-  }
-  if (!cloudProjectId) {
-    const projects = await cloudApi.listProjects();
-    const existing = projects.find((p) => p.name.toLowerCase() === projectName.toLowerCase());
-    const project = existing ?? await cloudApi.createProject(projectName);
-    cloudProjectId = project.id;
-    map[`p:${projectId}`] = cloudProjectId;
-    mapSet(CLOUD_MAP, map);
-  }
-
-  const scriptKey = `s:${projectId}/${scriptId}`;
-  let cloudScriptId = map[scriptKey];
-  if (cloudScriptId) {
-    try {
-      await cloudApi.saveScript(cloudProjectId, cloudScriptId, { title, content });
-      return;
-    } catch (err) {
-      // 404 → the mirror script was deleted remotely; fall through and recreate.
-      const msg = err instanceof Error ? err.message : String(err);
-      if (!msg.includes('404')) throw err;
-    }
-  }
-  const created = await cloudApi.createScript(cloudProjectId, { title, content });
-  map[scriptKey] = created.meta.id;
-  mapSet(CLOUD_MAP, map);
 }
 
 /* ── Google Drive ──────────────────────────────────────────────────────── */
@@ -260,7 +216,6 @@ export async function mirrorSave(payload: SavePayload): Promise<void> {
   if (s.saveToBackupFolder && s.backupSaveFolder) {
     jobs.push({ name: 'Local backup', run: () => saveToLocalFolder(payload, s.backupSaveFolder) });
   }
-  if (s.saveToCloud) jobs.push({ name: 'Cloud', run: () => saveToCloudMirror(payload) });
   if (s.saveToGDrive) jobs.push({ name: 'Google Drive', run: () => saveToGDrive(payload) });
   if (s.saveToOneDrive) jobs.push({ name: 'OneDrive', run: () => saveToOneDrive(payload) });
   if (jobs.length === 0) return;
@@ -292,8 +247,7 @@ export async function mirrorSnapshot(args: {
   content: Record<string, unknown>; message: string;
 }): Promise<void> {
   const s = useSettingsStore.getState();
-  const dests: Array<'cloud' | 'gdrive' | 'onedrive' | 'localfolder'> = [];
-  if (s.snapToCloud) dests.push('cloud');
+  const dests: Array<'gdrive' | 'onedrive' | 'localfolder'> = [];
   if (s.snapToGDrive) dests.push('gdrive');
   if (s.snapToOneDrive) dests.push('onedrive');
   // v2.83, Derek: a chosen folder on this device gets a timestamped .odraft.
@@ -311,7 +265,7 @@ export async function mirrorSnapshot(args: {
         await snapshotToGDrive(args.projectName, label, JSON.stringify(args.content));
       } else if (loc === 'onedrive') {
         await snapshotToOneDrive(args.projectName, label, JSON.stringify(args.content));
-      } else if (loc === 'localfolder') {
+      } else {
         // v2.83: write an .odraft into the chosen folder (desktop only —
         // the folder path only exists where a native dialog picked it).
         const { isTauri } = await import('./platform');
@@ -323,26 +277,16 @@ export async function mirrorSnapshot(args: {
         }, args.content);
         const text = await blob.text();
         const safe = label.replace(/[/\\:*?"<>|]/g, '-');
+        // v6.42, Derek: auto saves land in an "Auto Saves" FOLDER at the
+        // chosen location, not loose beside his real files.
+        // (save_text_to_path creates the folder if it's missing.)
         const folder = useSettingsStore.getState().snapLocalFolder.replace(/[/\\]$/, '');
         const { invoke } = await import('@tauri-apps/api/core');
-        await invoke('save_text_to_path', { path: `${folder}/Auto Save — ${safe}.odraft`, contents: text });
-      } else {
-        // Timestamped copy inside the mirrored cloud project.
-        const map = mapGet(CLOUD_MAP);
-        let cloudProjectId = map[`p:${args.projectId}`];
-        if (!cloudProjectId) {
-          const projects = await cloudApi.listProjects();
-          const existing = projects.find((p) => p.name.toLowerCase() === args.projectName.toLowerCase());
-          const project = existing ?? await cloudApi.createProject(args.projectName);
-          cloudProjectId = project.id;
-          map[`p:${args.projectId}`] = cloudProjectId;
-          mapSet(CLOUD_MAP, map);
-        }
-        await cloudApi.createScript(cloudProjectId, { title: `Auto Save — ${label}`, content: args.content });
+        await invoke('save_text_to_path', { path: `${folder}/Auto Saves/Auto Save — ${safe}.odraft`, contents: text });
       }
     } catch (err) {
       console.error(`Snapshot copy to ${loc} failed:`, err);
-      const name = loc === 'gdrive' ? 'Google Drive' : loc === 'onedrive' ? 'OneDrive' : loc === 'localfolder' ? 'Local folder' : 'Cloud';
+      const name = loc === 'gdrive' ? 'Google Drive' : loc === 'onedrive' ? 'OneDrive' : 'Local folder';
       failures.push(`${name}: ${errText(err)}`);
     }
   }));

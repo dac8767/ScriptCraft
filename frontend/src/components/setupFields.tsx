@@ -19,7 +19,6 @@ import { confirmDialog } from './ConfirmDialog';
  *  script was saved with exactly these destinations. */
 export function SaveLocationsField() {
   const {
-    saveToCloud, setSaveToCloud,
     localSaveFolder, setLocalSaveFolder,
     saveToGDrive, setSaveToGDrive,
     saveToOneDrive, setSaveToOneDrive,
@@ -41,10 +40,6 @@ export function SaveLocationsField() {
 
   return (
     <div className="fs-setup-savelocs">
-      <label className="fs-setup-check">
-        <input type="checkbox" checked={saveToCloud} onChange={(e) => setSaveToCloud(e.target.checked)} />
-        <span>ScriptCraft Cloud</span>
-      </label>
       <label className="fs-setup-check">
         <input type="checkbox" checked={saveToGDrive} onChange={(e) => setSaveToGDrive(e.target.checked)} />
         <span>Google Drive</span>

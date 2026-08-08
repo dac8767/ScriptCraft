@@ -17,7 +17,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { FaCloud, FaDesktop, FaFolderOpen } from 'react-icons/fa';
+import { FaFolderOpen } from 'react-icons/fa';
 import { LuSearch } from 'react-icons/lu';
 import { api } from '../services/api';
 import { cloudApi } from '../services/cloudApi';
@@ -89,7 +89,8 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose, onBrowseLocal }) =
   const accessToken = useSettingsStore((s) => s.collabAuth.accessToken);
   const authVerified = useSettingsStore((s) => s.authVerified);
   const signedIn = Boolean(accessToken && authVerified);
-  const [source, setSource] = useState<OpenSource>(WEB_ONLY_CLOUD ? 'cloud' : 'local');
+  // v6.42: no source picker — web builds are cloud-only, the app is local-only.
+  const source: OpenSource = WEB_ONLY_CLOUD ? 'cloud' : 'local';
   const [groups, setGroups] = useState<ProjectWithScripts[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -175,29 +176,9 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose, onBrowseLocal }) =
         <div className="dialog-header">Open</div>
 
         <div className="open-file-controls">
-          {!WEB_ONLY_CLOUD && (
-            <div className="open-file-source-tabs" role="tablist">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={source === 'local'}
-                className={`open-file-source-tab ${source === 'local' ? 'active' : ''}`}
-                onClick={() => setSource('local')}
-              >
-                <FaDesktop /> This device
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={source === 'cloud'}
-                className={`open-file-source-tab ${source === 'cloud' ? 'active' : ''}`}
-                onClick={() => setSource('cloud')}
-              >
-                <FaCloud /> ScriptCraft Cloud
-              </button>
-            </div>
-          )}
-
+          {/* v6.42: the This device / ScriptCraft Cloud source tabs are gone
+              with the account UI — on the app everything is local, and the
+              web build (where cloud is the ONLY source) never showed them. */}
           <div className="open-file-search-row">
             <div className="open-file-search">
               <LuSearch className="open-file-search-icon" aria-hidden="true" />
@@ -228,8 +209,8 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose, onBrowseLocal }) =
         >
           {source === 'cloud' && !signedIn ? (
             <div className="open-file-empty">
-              Sign in to access your ScriptCraft Cloud files. Click the indicator in the
-              menu bar to sign in.
+              Cloud files need a signed-in account, which this build does not
+              offer.
             </div>
           ) : loading ? (
             <div className="open-file-empty">Loading…</div>

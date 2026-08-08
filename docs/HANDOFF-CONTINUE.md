@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.41 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.42 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,47 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.42 — LOCAL-FIRST: account/cloud UI purged; Settings is a WINDOW
+
+- Derek's seven (plus a mid-turn rename). The decisive read: his items
+  2/4/5 flagged the ACCOUNT surfaces v6.40 deliberately kept ("I think
+  this refers to the now disabled collaboration server") — the answer is
+  they were the account system, and they're gone from the UI anyway:
+  no sign-in affordance may remain. SERVICE LAYER KEPT in code
+  (collabAuth api, cloudApi, authedFetch, scriptApi cloud routing,
+  authVerified/collabAuth store fields, /verify /reset-password logic is
+  DELETED though) — UI-less, so nothing can arm it. Revert = git.
+- REMOVED: SettingsPage rewritten (System tab = Reset only; Cloud Server
+  URL + ScriptCraft Account + Account & Security gone, plus the Google
+  Identity helpers); Save Options' account section + BOTH Cloud rows;
+  setupFields' ScriptCraft Cloud row; SaveAs 'ScriptCraft Cloud' chip;
+  StatusBar Cloud mirror + AuthIndicator; AuthGate/AuthBootstrap
+  unmounted; files deleted: AuthGate, AuthBootstrap, AuthIndicator,
+  CollabLoginDialog, VerifyEmailRoute, ResetPasswordRoute (+their
+  routes); OpenFile's This device/Cloud tabs (app=local, web=cloud-only
+  — both single-source); saveLocations lost saveToCloudMirror + cloud
+  snapshot branch; settingsStore lost saveToCloud/snapToCloud (+keys);
+  login CSS culled (auth-indicator cluster, 53 dead settings/collab
+  rules). /oauth-callback STAYS — it's the GDrive/OneDrive PKCE popup
+  lander, NOT account UI.
+- Always-on row: shows + edits localSaveFolder (THE Save As field — one
+  source, two doors) with Choose Folder…; checkbox stays locked.
+- Auto saves: the local-folder branch writes `<folder>/Auto Saves/…`;
+  save_text_to_path (lib.rs) now create_dir_all's parents (cargo check
+  clean). GDrive/OneDrive already used an Auto Saves folder.
+- Settings window: PreferencesDialog swapped Modal for FloatingWindow —
+  NEW shared shell extracted from HelperTextWindow's v6.38 chrome (drag,
+  any-edge EdgeResizeZones, fullscreen, close; htw-* classes are the
+  shared window classes now). HelperTextWindow consumes it too (one
+  shell, no fork). prefs-window CSS: layout flexes, inputs re-enable
+  user-select.
+- Annotations: "Filter" → "Display" (label + title only — the
+  markup-ctl-filter class and data-ctl="filter" are persisted/check ids
+  and keep their names; every check selects by class, verified).
+- check-v642 (16 asserts: window chrome/drag/fullscreen, no account/
+  cloud anywhere, chip = localSaveFolder, System=Reset, Display label,
+  Auto Saves path). v638 re-run 19/0 (shared shell holds).
+
 ### v6.41 — Save Options unlocked + backup location; toolbar toggle retired
 
 - Derek: (1) "OneDrive is locked as a save location even though I haven't
@@ -372,33 +413,12 @@ Durable bits kept live here:
   check-v635 re-run green.
 - Gates: tsc 0, 1103 tests, build, checks 720/0.
 
-### v6.37 — HOTFIX: v6.36's native print CRASHED the app
-
-- Derek: "File > Print made the app crash." Two faults in the v6.36
-  command, both fixed:
-  (1) it was a SYNC command — Tauri runs sync commands ON THE MAIN
-      THREAD, so rx.recv() blocked the very thread the print closure was
-      queued to run on. Async now (off-main; recv via spawn_blocking).
-  (2) runOperation() spun an APP-MODAL nested run loop inside the tao
-      event-loop callback. The panel now presents as a SHEET on the main
-      window (runOperationModalForWindow…, ns_window() from the tauri
-      WebviewWindow) — present-and-return, no nested loop.
-  Plus: the whole AppKit/PDFKit body is wrapped in
-  objc2::exception::catch (objc2 "exception" feature; the helper crate
-  was ALREADY in the lock) — an NSException now reports back as Err and
-  the frontend falls back to opening the file, instead of the process
-  terminating. catch()'s signature was verified from the registry source
-  (the C shim can't cross-compile here); the sheet body re-verified
-  against aarch64-apple-darwin.
-- LESSON (Rust-side commands): sync #[tauri::command] = main thread.
-  Anything that dispatches to the main thread AND waits must be async.
-- Frontend untouched (the invoke + fallback chain already fit).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.37** — print hotfix: async command + sheet + ObjC exception catch
 - **v6.36** — Print = the real system dialog via PDFKit (crashed; fixed v6.37)
 - **v6.35** — annotation icons moved to the LEFT margin band (0.75" center)
 - **v6.34** — `npm run desktop` restores package-lock.json too; Cargo.toml dirt = unknown origin

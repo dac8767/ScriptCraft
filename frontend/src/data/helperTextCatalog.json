@@ -383,6 +383,16 @@
   "label": "Additional save locations:"
  },
  {
+  "text": "Choose which annotations display (script and window together)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Annotations Window",
+  "where": [
+   "components/MarkupsPanel.tsx"
+  ],
+  "label": "Display"
+ },
+ {
   "text": "Choose which outline the bar shows",
   "kind": "tooltip",
   "sites": 1,
@@ -439,7 +449,7 @@
  {
   "text": "Close",
   "kind": "tooltip",
-  "sites": 19,
+  "sites": 18,
   "area": "Dialogs",
   "where": [
    "components/ChangelogDialog.tsx",
@@ -447,9 +457,8 @@
    "components/CustomizePanelsDialog.tsx",
    "components/DesignPanel.tsx",
    "components/EditElementsDialog.tsx",
-   "components/GuidedSetupDialog.tsx"
+   "components/FloatingWindow.tsx"
   ],
-  "icon": "LuSearch",
   "label": "Transition text"
  },
  {
@@ -1023,16 +1032,6 @@
   "area": "Navigator Window",
   "where": [
    "components/NavigatorTool.tsx"
-  ],
-  "label": "Filter"
- },
- {
-  "text": "Filter annotations (script and window together)",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Annotations Window",
-  "where": [
-   "components/MarkupsPanel.tsx"
   ],
   "label": "Filter"
  },
@@ -2522,17 +2521,6 @@
   "label": "View"
  },
  {
-  "text": "Working offline — click to sign in and save to the server",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Everything Else",
-  "where": [
-   "components/AuthIndicator.tsx"
-  ],
-  "icon": "FaCloud",
-  "label": "Local only"
- },
- {
   "text": "Zoom",
   "kind": "tooltip",
   "sites": 1,
@@ -2657,15 +2645,6 @@
   ]
  },
  {
-  "text": "At least 8 characters",
-  "kind": "placeholder",
-  "sites": 2,
-  "area": "Settings & Setup",
-  "where": [
-   "components/SettingsPage.tsx"
-  ]
- },
- {
   "text": "Author Name",
   "kind": "placeholder",
   "sites": 1,
@@ -2729,40 +2708,12 @@
   ]
  },
  {
-  "text": "Confirm password",
-  "kind": "placeholder",
-  "sites": 2,
-  "area": "Dialogs",
-  "where": [
-   "components/CollabLoginDialog.tsx",
-   "components/SettingsPage.tsx"
-  ]
- },
- {
   "text": "Copyright 2026 Author Name",
   "kind": "placeholder",
   "sites": 1,
   "area": "Editor & Preview",
   "where": [
    "components/TitlePageEditor.tsx"
-  ]
- },
- {
-  "text": "Current password",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Settings & Setup",
-  "where": [
-   "components/SettingsPage.tsx"
-  ]
- },
- {
-  "text": "DELETE",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Settings & Setup",
-  "where": [
-   "components/SettingsPage.tsx"
   ]
  },
  {
@@ -2985,15 +2936,6 @@
   ]
  },
  {
-  "text": "https://your-host.example.com",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Settings & Setup",
-  "where": [
-   "components/SettingsPage.tsx"
-  ]
- },
- {
   "text": "inherit",
   "kind": "placeholder",
   "sites": 1,
@@ -3027,16 +2969,6 @@
   "area": "Thesaurus Window",
   "where": [
    "components/ThesaurusTool.tsx"
-  ]
- },
- {
-  "text": "Min 8 chars, upper + lower + digit",
-  "kind": "placeholder",
-  "sites": 2,
-  "area": "Dialogs",
-  "where": [
-   "components/CollabLoginDialog.tsx",
-   "components/ResetPasswordRoute.tsx"
   ]
  },
  {
@@ -3076,40 +3008,12 @@
   ]
  },
  {
-  "text": "Password",
-  "kind": "placeholder",
-  "sites": 2,
-  "area": "Dialogs",
-  "where": [
-   "components/CollabLoginDialog.tsx",
-   "components/SettingsPage.tsx"
-  ]
- },
- {
   "text": "Project name",
   "kind": "placeholder",
   "sites": 1,
   "area": "Dialogs",
   "where": [
    "components/RenameDialog.tsx"
-  ]
- },
- {
-  "text": "Re-enter password",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Everything Else",
-  "where": [
-   "components/ResetPasswordRoute.tsx"
-  ]
- },
- {
-  "text": "Repeat new password",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Settings & Setup",
-  "where": [
-   "components/SettingsPage.tsx"
   ]
  },
  {
@@ -3447,35 +3351,6 @@
   "area": "Dialogs",
   "where": [
    "components/SynopsisModal.tsx"
-  ]
- },
- {
-  "text": "you@example.com",
-  "kind": "placeholder",
-  "sites": 5,
-  "area": "Dialogs",
-  "where": [
-   "components/CollabLoginDialog.tsx",
-   "components/SettingsPage.tsx"
-  ]
- },
- {
-  "text": "Your name",
-  "kind": "placeholder",
-  "sites": 2,
-  "area": "Dialogs",
-  "where": [
-   "components/CollabLoginDialog.tsx",
-   "components/SettingsPage.tsx"
-  ]
- },
- {
-  "text": "Your password",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Settings & Setup",
-  "where": [
-   "components/SettingsPage.tsx"
   ]
  },
  {

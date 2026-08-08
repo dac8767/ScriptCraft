@@ -151,7 +151,29 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.36 and older (newest first)
+## Version history — v6.37 and older (newest first)
+
+### v6.37 — HOTFIX: v6.36's native print CRASHED the app
+
+- Derek: "File > Print made the app crash." Two faults in the v6.36
+  command, both fixed:
+  (1) it was a SYNC command — Tauri runs sync commands ON THE MAIN
+      THREAD, so rx.recv() blocked the very thread the print closure was
+      queued to run on. Async now (off-main; recv via spawn_blocking).
+  (2) runOperation() spun an APP-MODAL nested run loop inside the tao
+      event-loop callback. The panel now presents as a SHEET on the main
+      window (runOperationModalForWindow…, ns_window() from the tauri
+      WebviewWindow) — present-and-return, no nested loop.
+  Plus: the whole AppKit/PDFKit body is wrapped in
+  objc2::exception::catch (objc2 "exception" feature; the helper crate
+  was ALREADY in the lock) — an NSException now reports back as Err and
+  the frontend falls back to opening the file, instead of the process
+  terminating. catch()'s signature was verified from the registry source
+  (the C shim can't cross-compile here); the sheet body re-verified
+  against aarch64-apple-darwin.
+- LESSON (Rust-side commands): sync #[tauri::command] = main thread.
+  Anything that dispatches to the main thread AND waits must be async.
+- Frontend untouched (the invoke + fallback chain already fit).
 
 ### v6.36 — Print = the REAL system dialog (PDFKit), no viewer
 

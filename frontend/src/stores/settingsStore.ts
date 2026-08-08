@@ -126,8 +126,6 @@ interface SettingsState {
   setSaveToBackupFolder: (v: boolean) => void;
   backupSaveFolder: string;
   setBackupSaveFolder: (path: string) => void;
-  saveToCloud: boolean;
-  setSaveToCloud: (v: boolean) => void;
   saveToGDrive: boolean;
   setSaveToGDrive: (v: boolean) => void;
   saveToOneDrive: boolean;
@@ -143,8 +141,6 @@ interface SettingsState {
    *  only). Empty = fall back to the browser download (Downloads folder). */
   screenshotFolder: string;
   setScreenshotFolder: (path: string) => void;
-  snapToCloud: boolean;
-  setSnapToCloud: (v: boolean) => void;
   snapToGDrive: boolean;
   setSnapToGDrive: (v: boolean) => void;
   snapToOneDrive: boolean;
@@ -213,11 +209,9 @@ const SL_KEYS = {
   localFolder: 'opendraft:saveloc:localFolder',
   backupOn: 'opendraft:saveloc:saveToBackupFolder',
   backupFolder: 'opendraft:saveloc:backupFolder',
-  cloud: 'opendraft:saveloc:cloud',
   gdrive: 'opendraft:saveloc:gdrive',
   onedrive: 'opendraft:saveloc:onedrive',
   snaploc: 'opendraft:saveloc:snapshotLocation', // legacy single choice (migrated)
-  snapCloud: 'opendraft:saveloc:snapToCloud',
   snapLocal: 'opendraft:saveloc:snapToLocalFolder',
   snapLocalFolder: 'opendraft:saveloc:snapLocalFolder',
   screenshotFolder: 'opendraft:saveloc:screenshotFolder',
@@ -410,8 +404,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setSaveToBackupFolder: (v) => { try { localStorage.setItem(SL_KEYS.backupOn, v ? '1' : '0'); } catch { /* ignore */ } set({ saveToBackupFolder: v }); },
   backupSaveFolder: localStorage.getItem(SL_KEYS.backupFolder) || '',
   setBackupSaveFolder: (path) => { try { localStorage.setItem(SL_KEYS.backupFolder, path); } catch { /* ignore */ } set({ backupSaveFolder: path }); },
-  saveToCloud: localStorage.getItem(SL_KEYS.cloud) === '1',
-  setSaveToCloud: (v) => { try { localStorage.setItem(SL_KEYS.cloud, v ? '1' : '0'); } catch { /* ignore */ } set({ saveToCloud: v }); },
   saveToGDrive: localStorage.getItem(SL_KEYS.gdrive) === '1',
   setSaveToGDrive: (v) => { try { localStorage.setItem(SL_KEYS.gdrive, v ? '1' : '0'); } catch { /* ignore */ } set({ saveToGDrive: v }); },
   saveToOneDrive: localStorage.getItem(SL_KEYS.onedrive) === '1',
@@ -422,8 +414,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setSnapLocalFolder: (path) => { try { localStorage.setItem(SL_KEYS.snapLocalFolder, path); } catch { /* ignore */ } set({ snapLocalFolder: path }); },
   screenshotFolder: localStorage.getItem(SL_KEYS.screenshotFolder) || '',
   setScreenshotFolder: (path) => { try { localStorage.setItem(SL_KEYS.screenshotFolder, path); } catch { /* ignore */ } set({ screenshotFolder: path }); },
-  snapToCloud: localStorage.getItem(SL_KEYS.snapCloud) === '1' || localStorage.getItem(SL_KEYS.snaploc) === 'cloud',
-  setSnapToCloud: (v) => { try { localStorage.setItem(SL_KEYS.snapCloud, v ? '1' : '0'); localStorage.removeItem(SL_KEYS.snaploc); } catch { /* ignore */ } set({ snapToCloud: v }); },
   snapToGDrive: localStorage.getItem(SL_KEYS.snapGDrive) === '1' || localStorage.getItem(SL_KEYS.snaploc) === 'gdrive',
   setSnapToGDrive: (v) => { try { localStorage.setItem(SL_KEYS.snapGDrive, v ? '1' : '0'); localStorage.removeItem(SL_KEYS.snaploc); } catch { /* ignore */ } set({ snapToGDrive: v }); },
   snapToOneDrive: localStorage.getItem(SL_KEYS.snapOneDrive) === '1' || localStorage.getItem(SL_KEYS.snaploc) === 'onedrive',

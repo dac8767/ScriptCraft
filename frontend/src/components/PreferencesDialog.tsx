@@ -24,7 +24,7 @@ import {
   disconnectGDrive, disconnectOneDrive,
 } from '../services/saveLocations';
 import { redirectUri } from '../services/oauthPkce';
-import { Modal } from './Modal';
+import FloatingWindow from './FloatingWindow';
 
 /* ─────────────────────────────────────────────────────────────────────────
    Settings (File → Settings…)
@@ -234,12 +234,11 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
   const {
     autoSnapshotMinutes, setAutoSnapshotMinutes,
     autoSnapshotKeep, setAutoSnapshotKeep,
-    saveToCloud, setSaveToCloud,
+    localSaveFolder, setLocalSaveFolder,
     saveToGDrive, setSaveToGDrive,
     saveToOneDrive, setSaveToOneDrive,
     saveToBackupFolder, setSaveToBackupFolder,
     backupSaveFolder, setBackupSaveFolder,
-    snapToCloud, setSnapToCloud,
     snapToGDrive, setSnapToGDrive,
     snapToOneDrive, setSnapToOneDrive,
     snapToLocalFolder, setSnapToLocalFolder,
@@ -247,13 +246,11 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
     screenshotFolder, setScreenshotFolder,
     gdriveClientId, setGdriveClientId,
     onedriveClientId, setOnedriveClientId,
-    collabAuth,
   } = useSettingsStore();
   const lastAutoSaveMinutes = React.useRef(autoSnapshotMinutes > 0 ? autoSnapshotMinutes : 5);
   const [gConnected, setGConnected] = useStateReact(gdriveConnected());
   const [oConnected, setOConnected] = useStateReact(onedriveConnected());
   const [busy, setBusy] = useStateReact<string | null>(null);
-  const signedIn = !!collabAuth.user;
 
   const doConnect = async (which: 'g' | 'o') => {
     setBusy(which);
@@ -268,30 +265,6 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
   return (
     <div className="prefs-general">
       <section>
-        <h3>ScriptCraft Account</h3>
-        {signedIn ? (
-          <div className="prefs-account-row">
-            <span>
-              Signed in as <strong>{collabAuth.user!.displayName}</strong>
-              {' '}({collabAuth.user!.email})
-            </span>
-          </div>
-        ) : (
-          <div className="prefs-account-row">
-            <span>Not signed in — the Cloud save location needs an account.</span>
-            <button
-              className="dialog-primary"
-              onClick={() => window.dispatchEvent(new CustomEvent('opendraft:auth-required'))}
-            >Sign In / Create Account</button>
-          </div>
-        )}
-        <p className="prefs-hint">
-          Full account management (sign out, verification, devices) lives in the
-          System tab.
-        </p>
-      </section>
-
-      <section>
         <h3>Draft Number</h3>
         <DraftNumberRow editor={editor} />
       </section>
@@ -304,9 +277,26 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
           copy at the same time. If a secondary location fails, the save still
           succeeds — you'll get an error to acknowledge.
         </p>
+        {/* v6.42, Derek: "i should still be able to change the location of
+            'Local System (always on)'" — the row now shows and edits the
+            device folder that receives the script as a real file: the SAME
+            localSaveFolder Save As's "Location on this device" writes (one
+            field, two doors). The checkbox stays locked — the app's own
+            library copy always saves — but the folder is yours. */}
         <label className="prefs-check-row">
           <input type="checkbox" checked disabled />
-          <span>Local System (always on)</span>
+          <span>
+            Local System (always on)
+            {localSaveFolder ? <code className="prefs-path-chip">{localSaveFolder}</code> : ' — app library only; choose a folder to also save a file you can see'}
+          </span>
+          <button
+            className="prefs-inline-btn"
+            onClick={async (e) => {
+              e.preventDefault();
+              const folder = await pickFolder('Where should ScriptCraft keep this script?');
+              if (folder) setLocalSaveFolder(folder);
+            }}
+          >Choose Folder…</button>
         </label>
         {/* v6.41, Derek: "a second location on the local device" — a folder
             that receives a copy of the script on every save. Checking with no
@@ -345,10 +335,6 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
             label hints still say what a location needs to actually receive
             saves, and an enabled-but-unconnected location reports its failure
             through the save-error surface instead of silently blocking here. */}
-        <label className="prefs-check-row">
-          <input type="checkbox" checked={saveToCloud} onChange={(e) => setSaveToCloud(e.target.checked)} />
-          <span>Cloud - ScriptCraft Account{!signedIn ? ' — sign in above first' : ''}</span>
-        </label>
         <label className="prefs-check-row">
           <input type="checkbox" checked={saveToGDrive} onChange={(e) => setSaveToGDrive(e.target.checked)} />
           <span>Google Drive{!gConnected ? ' — connect below first' : ''}</span>
@@ -407,10 +393,6 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
         </p>
         {/* v6.41: no disabled guards here either — same rule as the script
             save rows above. */}
-        <label className="prefs-check-row">
-          <input type="checkbox" checked={snapToCloud} onChange={(e) => setSnapToCloud(e.target.checked)} />
-          <span>Cloud — timestamped copies{!signedIn ? ' — sign in above first' : ''}</span>
-        </label>
         <label className="prefs-check-row">
           <input type="checkbox" checked={snapToGDrive} onChange={(e) => setSnapToGDrive(e.target.checked)} />
           <span>Google Drive — Auto Saves folder{!gConnected ? ' — connect below first' : ''}</span>
@@ -818,11 +800,13 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
   if (!open) return null;
 
   return (
-    <Modal onClose={onClose} boxClassName="prefs-dialog">
-        <div className="dialog-header">
-          Settings
-          <button className="fs-dialog-x" onClick={onClose} title="Close">&times;</button>
-        </div>
+    <FloatingWindow
+      className="prefs-window"
+      initial={{ w: 900, h: 660 }}
+      min={{ w: 620, h: 420 }}
+      onClose={onClose}
+      title={<span className="tool-window-title">Settings</span>}
+    >
         <div className="prefs-layout">
           <div className="prefs-tabs">
             {TABS.map((t) => (
@@ -884,6 +868,6 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
             {tab === 'defaults' && <DefaultsTab />}
           </div>
         </div>
-    </Modal>
+    </FloatingWindow>
   );
 }

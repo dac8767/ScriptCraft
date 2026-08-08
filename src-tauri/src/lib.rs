@@ -613,6 +613,12 @@ fn get_opened_file(state: tauri::State<PendingFile>) -> Option<String> {
 
 #[tauri::command]
 fn save_text_to_path(path: String, contents: String) -> Result<(), String> {
+    // v6.42: create missing parent folders — auto saves write into an
+    // "Auto Saves" subfolder of the chosen location on first use.
+    if let Some(parent) = std::path::Path::new(&path).parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create {}: {}", parent.display(), e))?;
+    }
     std::fs::write(&path, contents).map_err(|e| format!("Failed to write {}: {}", path, e))
 }
 

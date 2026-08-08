@@ -6,7 +6,6 @@ import { computeSceneTiming, formatRuntime } from '../utils/scriptTiming';
 import { computeOverviewStats } from '../utils/scriptStatistics';
 import { GoalChip } from './GoalsTool';
 import { computeScriptStructure } from '../utils/scriptStructure';
-import AuthIndicator from './AuthIndicator';
 import { useNotebookStore } from '../stores/notebookStore';
 
 const SAVE_STATUS_DISPLAY: Record<string, { label: string; className: string }> = {
@@ -34,8 +33,8 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
     goal,
   } = useEditorStore();
   const mirrorStatuses = useEditorStore((s) => s.mirrorStatuses);
-  const { saveToCloud, saveToGDrive, saveToOneDrive } = useSettingsStore();
-  const enabledMirrors = [saveToCloud && 'Cloud', saveToGDrive && 'Google Drive', saveToOneDrive && 'OneDrive'].filter(Boolean) as string[];
+  const { saveToGDrive, saveToOneDrive } = useSettingsStore();
+  const enabledMirrors = [saveToGDrive && 'Google Drive', saveToOneDrive && 'OneDrive'].filter(Boolean) as string[];
   const mirrorChips: Array<[string, 'saving' | 'saved' | 'error']> = enabledMirrors
     .filter((n) => mirrorStatuses[n])
     .map((n) => [n, mirrorStatuses[n]]);
@@ -163,7 +162,6 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
         </>}
         {/* v2.32, Derek: the Local only / account chip lives down here now,
             not in the menu bar. */}
-        <AuthIndicator />
       </div>
     </div>
   );

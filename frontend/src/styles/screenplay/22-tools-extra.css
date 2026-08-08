@@ -1861,3 +1861,10 @@ body.fs-shot-veil-feedback .fs-tool-takeover-feedback { visibility: hidden !impo
 }
 .scene-reorder-btn.active:hover { background: #f0a95f; border-color: #f0a95f; }
 
+
+/* v6.42, Derek: Settings is a real WINDOW — movable, resizable, standard
+   header (FloatingWindow, the shell shared with Helper Text). The layout
+   already flexes; text inputs re-enable selection under the shell's
+   user-select: none. */
+.prefs-window .prefs-layout { flex: 1; min-height: 0; }
+.prefs-window input, .prefs-window textarea, .prefs-window select { user-select: text; }

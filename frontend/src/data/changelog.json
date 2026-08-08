@@ -1,5 +1,16 @@
 [
  {
+  "version": "6.42",
+  "date": "2026-08-08",
+  "changes": [
+   "Settings is a real window now — drag its header to move it, pull any edge to resize, and use the standard full-screen and close buttons. Same chrome as every other window (one shared shell, also behind the Helper Text window).",
+   "Save Options: the folder for 'Local System (always on)' is changeable — the row shows the chosen folder with a Choose Folder… button. It edits the same folder Save As uses, so the two never disagree. (The checkbox stays on: the app's own library copy always saves.)",
+   "The account and cloud-server surfaces are gone everywhere: the ScriptCraft Account section in Save Options, the 'Cloud' save and autosave options, the System tab's server URL / sign-in / devices sections, the sign-in chip in the status bar, and the Open window's cloud tab. ScriptCraft is fully local (Google Drive and OneDrive copies remain, connected directly to those providers).",
+   "Auto saves to a local folder now land in an 'Auto Saves' folder inside your chosen location instead of loose beside your files. The folder is created automatically.",
+   "Annotations window: the Filter button is named Display."
+  ]
+ },
+ {
   "version": "6.41",
   "date": "2026-08-08",
   "changes": [

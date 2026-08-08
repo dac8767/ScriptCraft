@@ -138,7 +138,6 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   // see what a save is about to do without having to go and look.
   const localSaveFolder = useSettingsStore((st) => st.localSaveFolder);
   const setLocalSaveFolder = useSettingsStore((st) => st.setLocalSaveFolder);
-  const saveToCloud = useSettingsStore((st) => st.saveToCloud);
   const saveToGDrive = useSettingsStore((st) => st.saveToGDrive);
   const saveToOneDrive = useSettingsStore((st) => st.saveToOneDrive);
   const saveToBackupFolder = useSettingsStore((st) => st.saveToBackupFolder);
@@ -147,7 +146,6 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
     // v6.41: the backup folder receives a copy too — the chip list must say
     // everything a save is about to do (mirrorSave's gate is the same pair).
     saveToBackupFolder && !!backupSaveFolder && 'Local backup',
-    saveToCloud && 'ScriptCraft Cloud',
     saveToGDrive && 'Google Drive',
     saveToOneDrive && 'OneDrive',
   ].filter(Boolean) as string[];

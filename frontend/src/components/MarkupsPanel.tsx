@@ -106,10 +106,13 @@ export function MarkupsControls() {
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); useEditorStore.getState().setMarkupAddRequest(true); }}
       ><FaPlus /></button>
-      <button ref={filterBtn} data-ctl="filter" className={`tool-ctl markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Filter annotations (script and window together)"
+      {/* v6.42, Derek: the button says "Display" now — it chooses what
+          displays, in the script and this window together. The class and
+          data-ctl keep their old names: they are persisted/check ids. */}
+      <button ref={filterBtn} data-ctl="filter" className={`tool-ctl markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Choose which annotations display (script and window together)"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setFilterOpen((v) => !v); }}>
-        <span className="tool-ctl-label">Filter</span>
+        <span className="tool-ctl-label">Display</span>
         {chip > 0 && <span className="tool-ctl-chip">{chip}</span>}
       </button>
       {filterOpen && createPortal(
