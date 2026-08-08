@@ -151,7 +151,48 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.41 and older (newest first)
+## Version history — v6.42 and older (newest first)
+
+### v6.42 — LOCAL-FIRST: account/cloud UI purged; Settings is a WINDOW
+
+- Derek's seven (plus a mid-turn rename). The decisive read: his items
+  2/4/5 flagged the ACCOUNT surfaces v6.40 deliberately kept ("I think
+  this refers to the now disabled collaboration server") — the answer is
+  they were the account system, and they're gone from the UI anyway:
+  no sign-in affordance may remain. SERVICE LAYER KEPT in code
+  (collabAuth api, cloudApi, authedFetch, scriptApi cloud routing,
+  authVerified/collabAuth store fields, /verify /reset-password logic is
+  DELETED though) — UI-less, so nothing can arm it. Revert = git.
+- REMOVED: SettingsPage rewritten (System tab = Reset only; Cloud Server
+  URL + ScriptCraft Account + Account & Security gone, plus the Google
+  Identity helpers); Save Options' account section + BOTH Cloud rows;
+  setupFields' ScriptCraft Cloud row; SaveAs 'ScriptCraft Cloud' chip;
+  StatusBar Cloud mirror + AuthIndicator; AuthGate/AuthBootstrap
+  unmounted; files deleted: AuthGate, AuthBootstrap, AuthIndicator,
+  CollabLoginDialog, VerifyEmailRoute, ResetPasswordRoute (+their
+  routes); OpenFile's This device/Cloud tabs (app=local, web=cloud-only
+  — both single-source); saveLocations lost saveToCloudMirror + cloud
+  snapshot branch; settingsStore lost saveToCloud/snapToCloud (+keys);
+  login CSS culled (auth-indicator cluster, 53 dead settings/collab
+  rules). /oauth-callback STAYS — it's the GDrive/OneDrive PKCE popup
+  lander, NOT account UI.
+- Always-on row: shows + edits localSaveFolder (THE Save As field — one
+  source, two doors) with Choose Folder…; checkbox stays locked.
+- Auto saves: the local-folder branch writes `<folder>/Auto Saves/…`;
+  save_text_to_path (lib.rs) now create_dir_all's parents (cargo check
+  clean). GDrive/OneDrive already used an Auto Saves folder.
+- Settings window: PreferencesDialog swapped Modal for FloatingWindow —
+  NEW shared shell extracted from HelperTextWindow's v6.38 chrome (drag,
+  any-edge EdgeResizeZones, fullscreen, close; htw-* classes are the
+  shared window classes now). HelperTextWindow consumes it too (one
+  shell, no fork). prefs-window CSS: layout flexes, inputs re-enable
+  user-select.
+- Annotations: "Filter" → "Display" (label + title only — the
+  markup-ctl-filter class and data-ctl="filter" are persisted/check ids
+  and keep their names; every check selects by class, verified).
+- check-v642 (16 asserts: window chrome/drag/fullscreen, no account/
+  cloud anywhere, chip = localSaveFolder, System=Reset, Display label,
+  Auto Saves path). v638 re-run 19/0 (shared shell holds).
 
 ### v6.41 — Save Options unlocked + backup location; toolbar toggle retired
 

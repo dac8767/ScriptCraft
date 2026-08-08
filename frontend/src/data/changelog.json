@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.47",
+  "date": "2026-08-08",
+  "changes": [
+   "Three new built-in themes, from the palette analysis: Paper (a true paper-white light theme — near-white surfaces, ink-dark text, a deep blue accent), Gruvbox Dark (the warm retro dark palette — cream text and an amber accent on brown-charcoal), and Catppuccin Mocha (the soft blue-purple dark palette with a mauve accent). All three pass the same 4.5:1 text-contrast floor and surface-ladder checks as the existing themes. Pick them in View ▸ Theme, or manage them in Customize ▸ Themes."
+  ]
+ },
+ {
   "version": "6.46",
   "date": "2026-08-08",
   "changes": [

@@ -15,7 +15,8 @@
 
 export type BuiltInThemeId =
   | 'dark' | 'light' | 'sepia' | 'nord' | 'dracula'
-  | 'solarized-dark' | 'solarized-light' | 'midnight';
+  | 'solarized-dark' | 'solarized-light' | 'midnight'
+  | 'paper' | 'gruvbox' | 'catppuccin';
 
 /** Built-ins can be reordered and hidden, but never edited or deleted. */
 export const BUILTIN_THEMES: { id: BuiltInThemeId; label: string; base: 'dark' | 'light' }[] = [
@@ -27,6 +28,10 @@ export const BUILTIN_THEMES: { id: BuiltInThemeId; label: string; base: 'dark' |
   { id: 'solarized-dark', label: 'Solarized Dark', base: 'dark' },
   { id: 'solarized-light', label: 'Solarized Light', base: 'light' },
   { id: 'midnight', label: 'Midnight', base: 'dark' },
+  // v6.47 (the palette report's recommendations, Derek: "add all"):
+  { id: 'paper', label: 'Paper', base: 'light' },
+  { id: 'gruvbox', label: 'Gruvbox Dark', base: 'dark' },
+  { id: 'catppuccin', label: 'Catppuccin Mocha', base: 'dark' },
 ];
 
 export const BUILTIN_IDS = BUILTIN_THEMES.map((t) => t.id) as string[];

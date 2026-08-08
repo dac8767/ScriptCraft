@@ -683,10 +683,49 @@ input.fs-switch:checked::after { left: 15px; }
   --fd-status-bg: #010409; --fd-dropdown-bg: #161b22; --fd-dialog-bg: #161b22;
   --fd-btn-bg: #386aa3; --fd-btn-text: #e6edf3; --fd-btn-hover: #537eaf;
 }
+/* v6.47, Derek ("add all" from the palette report's recommendations):
+   three new built-ins, every value contrast-verified before shipping and
+   ladder-checked (themeLadder.test.ts).
+   - Paper: the true paper-white light writing environment (iA/Ulysses
+     school) the lineup lacked — near-white chrome so the page doesn't glow.
+   - Gruvbox Dark: the first WARM dark (canonical gruvbox bg0_h/bg0/bg1/
+     bg2, fg1 text, gray muted, yellow accent; button = a deepened yellow).
+   - Catppuccin Mocha: canonical crust/mantle/base map EXACTLY onto the
+     status/panels/body ladder; subtext0 muted (7.37:1), mauve accent. */
+[data-theme="paper"] {
+  --fd-bg: #fafaf8; --fd-toolbar-bg: #ffffff; --fd-menu-bg: #fefefc;
+  --fd-menu-hover: #e8e8e4; --fd-accent: #1565c0; --fd-border: #e0e0dc;
+  --fd-text: #202124; --fd-text-muted: #5f6368; --fd-navigator-bg: #f1f1ee;
+  --fd-status-bg: #eaeae6; --fd-dropdown-bg: #fcfcfa; --fd-dialog-bg: #fcfcfa;
+  --fd-input-bg: #ffffff;
+  --fd-overlay-subtle: #f2f2ef; --fd-overlay-light: #ebebe7;
+  --fd-overlay-medium: #e2e2de; --fd-shadow: #c8c8c4;
+  --fd-chrome-separator: rgba(0,0,0,0.04);
+  --fd-chrome-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  --fd-btn-bg: #1565c0; --fd-btn-text: #ffffff; --fd-btn-hover: #357ac8;
+  --anno-win-bg: #eceef0; --anno-win-text: #24262a;
+  --anno-field-bg: #ffffff; --anno-field-text: #1a1a1a;
+}
+[data-theme="gruvbox"] {
+  --fd-bg: #282828; --fd-toolbar-bg: #3c3836; --fd-menu-bg: #3c3836;
+  --fd-menu-hover: #504945; --fd-accent: #d79921; --fd-border: #3c3836;
+  --fd-text: #ebdbb2; --fd-text-muted: #a89984; --fd-navigator-bg: #1d2021;
+  --fd-status-bg: #1b1d1e; --fd-dropdown-bg: #32302f; --fd-dialog-bg: #32302f;
+  --fd-btn-bg: #6f5c12; --fd-btn-text: #ebdbb2; --fd-btn-hover: #857016;
+}
+[data-theme="catppuccin"] {
+  --fd-bg: #1e1e2e; --fd-toolbar-bg: #313244; --fd-menu-bg: #313244;
+  --fd-menu-hover: #45475a; --fd-accent: #cba6f7; --fd-border: #45475a;
+  --fd-text: #cdd6f4; --fd-text-muted: #a6adc8; --fd-navigator-bg: #181825;
+  --fd-status-bg: #11111b; --fd-dropdown-bg: #2a2a3d; --fd-dialog-bg: #2a2a3d;
+  --fd-btn-bg: #655385; --fd-btn-text: #cdd6f4; --fd-btn-hover: #75629b;
+}
 /* Light-family themes keep the light editor chrome behaviors */
 [data-theme="sepia"] .menu-dropdown,
+[data-theme="paper"] .menu-dropdown,
 [data-theme="solarized-light"] .menu-dropdown,
 [data-theme="sepia"] .dialog-box,
+[data-theme="paper"] .dialog-box,
 [data-theme="solarized-light"] .dialog-box {
   background: var(--fd-dropdown-bg);
   color: var(--fd-text);

@@ -39,7 +39,7 @@ const lum = (hex: string) => {
   return 0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255);
 };
 
-const THEMES = ['light', 'sepia', 'nord', 'dracula', 'solarized-dark', 'solarized-light', 'midnight'];
+const THEMES = ['light', 'sepia', 'nord', 'dracula', 'solarized-dark', 'solarized-light', 'midnight', 'paper', 'gruvbox', 'catppuccin'];
 
 describe('theme surface ladder', () => {
   it('the dark (:root) reference itself follows the ladder', () => {

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.46 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.47 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,33 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.47 — three new built-in themes: Paper, Gruvbox Dark, Catppuccin Mocha
+
+- Derek: "do you recommend adding any additional default themes?" → I
+  recommended Paper (a TRUE paper-white light — the stock Light is cool
+  blue-gray, nothing in the set was plain white), Gruvbox Dark (warm dark
+  — every existing dark theme is cool-toned) and Catppuccin Mocha (the
+  soft pastel-dark) → Derek: "add all".
+- The pattern for ANY new built-in theme (three touch points, no more):
+  (1) a `[data-theme="…"]` block in 22-tools-extra.css — placed BEFORE
+  the light-family override block; a LIGHT theme (paper) must also join
+  the light-family `.menu-dropdown` / `.dialog-box` selector lists there;
+  (2) themes.ts — BuiltInThemeId union + a BUILTIN_THEMES `{id,label,
+  base}` row (ThemesTab, MenuBar's View ▸ Theme and editorStore all read
+  that registry — nothing else to update; themeStore.allThemeIds appends
+  builtins missing from the persisted order, so new ones appear even on
+  a machine with a saved order); (3) the id into themeLadder.test.ts
+  THEMES.
+- Values chosen numerically BEFORE writing CSS (same method as v6.46):
+  every text/muted pair ≥4.5:1 on bg+panels; buttons paper #1565c0/white
+  5.75:1, gruvbox #6f5c12/#ebdbb2 4.76:1, catppuccin #655385/#cdd6f4
+  4.64:1 (the palettes' published accents #d79921/#cba6f7 fail as button
+  FILLS under their light text, so fills are custom darker steps; the
+  accents themselves stay authentic). Ladder verified: paper
+  234<241<250≤252≤254≤255, gruvbox 29<31<40≤48≤57, catppuccin
+  18<25<31≤43≤51. Screenshots of all three eyeballed (Vite+Chromium,
+  data-theme swap) before shipping.
+
 ### v6.46 — theme legibility pass (the palette report's S1/S2/S6, applied)
 
 - Derek: "make suggested changes to themes" — SCOPE: only the THEME
@@ -314,52 +341,12 @@ Durable bits kept live here:
 - check-v642 gained the File-menu-tail assert (scope to the ROOT
   .menu-dropdown — a submenu flyout is a second one).
 
-### v6.42 — LOCAL-FIRST: account/cloud UI purged; Settings is a WINDOW
-
-- Derek's seven (plus a mid-turn rename). The decisive read: his items
-  2/4/5 flagged the ACCOUNT surfaces v6.40 deliberately kept ("I think
-  this refers to the now disabled collaboration server") — the answer is
-  they were the account system, and they're gone from the UI anyway:
-  no sign-in affordance may remain. SERVICE LAYER KEPT in code
-  (collabAuth api, cloudApi, authedFetch, scriptApi cloud routing,
-  authVerified/collabAuth store fields, /verify /reset-password logic is
-  DELETED though) — UI-less, so nothing can arm it. Revert = git.
-- REMOVED: SettingsPage rewritten (System tab = Reset only; Cloud Server
-  URL + ScriptCraft Account + Account & Security gone, plus the Google
-  Identity helpers); Save Options' account section + BOTH Cloud rows;
-  setupFields' ScriptCraft Cloud row; SaveAs 'ScriptCraft Cloud' chip;
-  StatusBar Cloud mirror + AuthIndicator; AuthGate/AuthBootstrap
-  unmounted; files deleted: AuthGate, AuthBootstrap, AuthIndicator,
-  CollabLoginDialog, VerifyEmailRoute, ResetPasswordRoute (+their
-  routes); OpenFile's This device/Cloud tabs (app=local, web=cloud-only
-  — both single-source); saveLocations lost saveToCloudMirror + cloud
-  snapshot branch; settingsStore lost saveToCloud/snapToCloud (+keys);
-  login CSS culled (auth-indicator cluster, 53 dead settings/collab
-  rules). /oauth-callback STAYS — it's the GDrive/OneDrive PKCE popup
-  lander, NOT account UI.
-- Always-on row: shows + edits localSaveFolder (THE Save As field — one
-  source, two doors) with Choose Folder…; checkbox stays locked.
-- Auto saves: the local-folder branch writes `<folder>/Auto Saves/…`;
-  save_text_to_path (lib.rs) now create_dir_all's parents (cargo check
-  clean). GDrive/OneDrive already used an Auto Saves folder.
-- Settings window: PreferencesDialog swapped Modal for FloatingWindow —
-  NEW shared shell extracted from HelperTextWindow's v6.38 chrome (drag,
-  any-edge EdgeResizeZones, fullscreen, close; htw-* classes are the
-  shared window classes now). HelperTextWindow consumes it too (one
-  shell, no fork). prefs-window CSS: layout flexes, inputs re-enable
-  user-select.
-- Annotations: "Filter" → "Display" (label + title only — the
-  markup-ctl-filter class and data-ctl="filter" are persisted/check ids
-  and keep their names; every check selects by class, verified).
-- check-v642 (16 asserts: window chrome/drag/fullscreen, no account/
-  cloud anywhere, chip = localSaveFolder, System=Reset, Display label,
-  Auto Saves path). v638 re-run 19/0 (shared shell holds).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.42** — LOCAL-FIRST: account/cloud UI purged (service layer kept in code); Settings became a FloatingWindow; Auto Saves subfolder; Filter→Display
 - **v6.41** — Save Options always editable; Local System (backup location); toolbar toggle retired
 - **v6.40** — Collaboration removed end-to-end (account system KEPT then; see v6.42)
 - **v6.39** — map rotation via Options any time; the map became a CANVAS (WKWebView vanish)
