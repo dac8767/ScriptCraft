@@ -151,7 +151,34 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.43 and older (newest first)
+## Version history — v6.44 and older (newest first)
+
+### v6.44 — print round 4: nil NSPrintInfo + BREADCRUMBS; Settings→app menu
+
+- Derek: "print still crashes" (no crash log supplied). Re-derived from
+  the FAILURE PATTERN: v6.36 (modal) / v6.37 (sheet+catch) / v6.43
+  (kept-alive) all crashed IDENTICALLY — so the fault predates where they
+  differ. The one shared call: `printOperationForPrintInfo_…(None, …)` —
+  operation CREATION with a NIL print info. The header marks it nullable;
+  every working PDFKit example passes sharedPrintInfo; a SIGSEGV inside
+  creation is invisible to exception::catch and shows no dialog. Now
+  passes `NSPrintInfo::sharedPrintInfo()` (signature verified from the
+  registry source — NO mtm arg; darwin scratch crate + Linux cargo check
+  both clean).
+- INSTRUMENTATION, the real insurance: every print attempt REWRITES
+  app-data/print/print-debug.log, one fsync'd line per step (start /
+  main-thread / doc-loaded / printinfo / op-created / presenting-sheet /
+  sheet-scheduled / kept-alive). After any crash the LAST LINE names the
+  dying step — ask Derek for `cat "$HOME/Library/Application
+  Support/com.freedraft.app/print/print-debug.log"` BEFORE the next
+  theory. If sharedPrintInfo didn't fix it, plan B is an OUT-OF-PROCESS
+  print helper (sidecar binary doing the PDFKit dance — a SIGSEGV then
+  kills only the helper), declared to Derek.
+- Settings…: Derek clarified "second to last item in the SCRIPTCRAFT
+  menu" — v6.43 misread it as File. Now: app menu, directly above Quit
+  (hardcoded ⌘, accelerator there; registry keeps Mod+, for Keyboard
+  Shortcuts + in-window). In-window File keeps it second-to-last (no app
+  menu exists there); the nativeMenus gate is back.
 
 ### v6.43 — the print crash's TRUE root cause; Settings→File; standard window buttons
 

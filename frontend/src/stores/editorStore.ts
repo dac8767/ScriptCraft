@@ -1211,10 +1211,16 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   setOutlineBarRows: (rows: OutlineBarRow[]) => void;
   outlineBarLabels: boolean;
   setOutlineBarLabels: (v: boolean) => void;
-  /** v2.46, Derek: "Show beat color on all tabs" — ON paints the whole card
-   *  with the beat's color everywhere; OFF falls back to a thin edge stripe. */
-  beatColorAllTabs: boolean;
-  setBeatColorAllTabs: (v: boolean) => void;
+  /* (v6.49, Derek: the "Show beat color on all tabs" checkbox is GONE — a
+     beat's color always paints the whole card now. The old beatColorAllTabs
+     key may linger in saved view-state blobs; nothing reads it.) */
+  /** v6.49: the Outline header's search + color filter — TRANSIENT view
+   *  state, never saved to the file or persisted. */
+  beatSearch: string;
+  setBeatSearch: (q: string) => void;
+  beatColorFilter: string[];
+  toggleBeatColorFilter: (color: string) => void;
+  clearBeatColorFilter: () => void;
   /** v2.55, Derek: one lock freezes every chrome resize — panel edges, the
    *  bar strips, the outline bar edge, the spacing grips. */
   uiResizeLocked: boolean;
@@ -1699,11 +1705,15 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     saveViewState({ outlineBarLabels: v });
     set({ outlineBarLabels: v });
   },
-  beatColorAllTabs: (_vs.beatColorAllTabs as boolean) ?? true,
-  setBeatColorAllTabs: (v) => {
-    saveViewState({ beatColorAllTabs: v });
-    set({ beatColorAllTabs: v });
-  },
+  beatSearch: '',
+  setBeatSearch: (q) => set({ beatSearch: q }),
+  beatColorFilter: [],
+  toggleBeatColorFilter: (color) => set((s) => ({
+    beatColorFilter: s.beatColorFilter.includes(color)
+      ? s.beatColorFilter.filter((c) => c !== color)
+      : [...s.beatColorFilter, color],
+  })),
+  clearBeatColorFilter: () => set({ beatColorFilter: [] }),
   uiResizeLocked: (_vs.uiResizeLocked as boolean) ?? false,
   setUiResizeLocked: (v) => {
     saveViewState({ uiResizeLocked: v });

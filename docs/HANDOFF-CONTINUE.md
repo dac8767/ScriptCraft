@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.48 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.49 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,39 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.49 — Outline header standardized: View/Filter/Search; actions row in the BODY
+
+- Derek's five: (1) the Arrangement label+buttons → the standard View
+  dropdown (Sections/Freeform; still NAVIGATES per v2.47 — goToArrangement
+  jumps/creates a tab of that arrangement); (2) Presets + "+ Add Section"
+  → the body's FIRST ROW (.beat-board-actions-row, left side; the row
+  renders in window AND takeover, both arrange modes); (3) "Show beat
+  color on all tabs" REMOVED — color always paints the whole card
+  (beatColorAllTabs store field + setter + viewState write deleted; old
+  blobs carry the dead key harmlessly; the edge-stripe branch is gone);
+  (4) header search + color filter — standard cluster, v5.80 CANONICAL
+  ORDER View·Filter·Sort·Search (ToolControls.order.test caught my
+  Filter-first draft — the registry-driven order test works); (5) the
+  v6.48 "Show in Outline Bar" checkbox → the body row's RIGHT edge
+  (margin-left:auto), semantics unchanged (locked while viewed tab feeds
+  the bar). New OutlineBarCheck component; OutlineHeaderControls is now
+  count ("M of N beats" while filtering) · View · Filter · Search · ?.
+- Search/filter machinery: beatSearch + beatColorFilter TRANSIENT store
+  state (editorStore; not saved to file, not viewState); ONE predicate
+  beatMatchesFilter(title/description substring + color set, '' =
+  uncolored) hides cards in sections, Uncategorized AND the freeform
+  canvas (canvas link-drawing already skips missing endpoints); Filter
+  menu lists only colors IN USE (BEAT_COLOR_NAMES) + swatch dots —
+  ControlDropdownItem gained optional `swatch`.
+- CSS unwound with the features: .beat-mode-* rules, the container-type
+  + @container block AND the v6.48 :has() grow workaround (only needed
+  because of that container-type) are all gone — the header cluster
+  contributes real max-content again (v4.86 contract); hc wraps instead
+  of clipping (overflow:hidden dropped).
+- check-v649 (18 asserts). Browser-check lesson recorded: the collapsing
+  search field shifts the cluster mid-click — test Filter BEFORE typing
+  in Search, or the Filter click lands on a moved target.
+
 ### v6.48 — seven-item batch: Themes label/click-to-apply; outline tabs → HEADER; Snapshot rename
 
 - Derek's five + two mid-turn: (1) View ▸ "Theme" → "Themes"; (2) clicking
@@ -345,38 +378,12 @@ Durable bits kept live here:
   for `cat "$HOME/Library/Application Support/com.freedraft.app/print/
   print-debug.log"` FIRST; plan B (out-of-process helper) is declared.
 
-### v6.44 — print round 4: nil NSPrintInfo + BREADCRUMBS; Settings→app menu
-
-- Derek: "print still crashes" (no crash log supplied). Re-derived from
-  the FAILURE PATTERN: v6.36 (modal) / v6.37 (sheet+catch) / v6.43
-  (kept-alive) all crashed IDENTICALLY — so the fault predates where they
-  differ. The one shared call: `printOperationForPrintInfo_…(None, …)` —
-  operation CREATION with a NIL print info. The header marks it nullable;
-  every working PDFKit example passes sharedPrintInfo; a SIGSEGV inside
-  creation is invisible to exception::catch and shows no dialog. Now
-  passes `NSPrintInfo::sharedPrintInfo()` (signature verified from the
-  registry source — NO mtm arg; darwin scratch crate + Linux cargo check
-  both clean).
-- INSTRUMENTATION, the real insurance: every print attempt REWRITES
-  app-data/print/print-debug.log, one fsync'd line per step (start /
-  main-thread / doc-loaded / printinfo / op-created / presenting-sheet /
-  sheet-scheduled / kept-alive). After any crash the LAST LINE names the
-  dying step — ask Derek for `cat "$HOME/Library/Application
-  Support/com.freedraft.app/print/print-debug.log"` BEFORE the next
-  theory. If sharedPrintInfo didn't fix it, plan B is an OUT-OF-PROCESS
-  print helper (sidecar binary doing the PDFKit dance — a SIGSEGV then
-  kills only the helper), declared to Derek.
-- Settings…: Derek clarified "second to last item in the SCRIPTCRAFT
-  menu" — v6.43 misread it as File. Now: app menu, directly above Quit
-  (hardcoded ⌘, accelerator there; registry keeps Mod+, for Keyboard
-  Shortcuts + in-window). In-window File keeps it second-to-last (no app
-  menu exists there); the nativeMenus gate is back.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.44** — print round 4: sharedPrintInfo (nil-NSPrintInfo theory) + fsync breadcrumb log; Settings…→app menu above Quit
 - **v6.43** — print round 3: ACTIVE_PRINT keep-alive (async sheet lifetime); Settings→File (reversed v6.44); standard window buttons on FloatingWindow
 - **v6.42** — LOCAL-FIRST: account/cloud UI purged (service layer kept in code); Settings became a FloatingWindow; Auto Saves subfolder; Filter→Display
 - **v6.41** — Save Options always editable; Local System (backup location); toolbar toggle retired

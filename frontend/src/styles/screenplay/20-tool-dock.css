@@ -620,6 +620,17 @@ body.fs-tool-dragging { cursor: grabbing; }
 }
 .tool-ctl-menu-item:hover { background: var(--fd-hover-bg); }
 .tool-ctl-menu-item.active { color: var(--fd-accent, #4a90d9); font-weight: 600; }
+/* v6.49: an item's color dot (ControlDropdownItem.swatch — the Outline's
+   color filter). Bordered so White/transparent stay visible on any theme. */
+.tool-ctl-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--fd-border);
+  margin-right: 7px;
+  vertical-align: -1px;
+}
 .tool-ctl-search-btn, .fs-pages-goto-btn { padding: 3px 6px; font-size: 13px; }
 .tool-ctl-search-field {
   display: inline-flex;

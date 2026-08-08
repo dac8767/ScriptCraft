@@ -4,7 +4,7 @@
 // viewed one), and the debounced beat undo/redo with smart doc-vs-beat routing.
 //
 // Scope note: the Outline Bar DISPLAY config (outlineBarOpen/Zoom/RowScale/Rows/
-// Labels, beatColorAllTabs) stays in editorStore — it's view-state-persisted
+// Labels) stays in editorStore — it's view-state-persisted
 // render config, a separate concern from this data engine, and lives interleaved
 // with the other chrome/display fields there. The beat/outline TYPES (BeatInfo,
 // BeatColumn, OutlineTabData, OutlineBarRow, BeatLinkPreview, BeatArrangeMode,

@@ -30,7 +30,7 @@ import { readableTextOn } from '../utils/palettes';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 import { confirmDialog, promptDialog } from './ConfirmDialog';
-import type { ToolChromeTab } from './ToolControls';
+import { ControlDropdown, ControlSearch, type ToolChromeTab } from './ToolControls';
 import { showToast } from './Toast';
 import { saveFile, openTextFile } from '../utils/fileOps';
 import { api } from '../services/api';
@@ -41,6 +41,26 @@ export const BEAT_COLORS = [
   '', '#8b5cf6', '#4f46e5', '#2563eb', '#059669',
   '#eab308', '#f97316', '#ef4444', '#000000', '#ffffff',
 ];
+/* v6.49: names for the header Filter menu — one entry per palette color. */
+export const BEAT_COLOR_NAMES: Record<string, string> = {
+  '': 'Uncolored', '#8b5cf6': 'Purple', '#4f46e5': 'Indigo', '#2563eb': 'Blue',
+  '#059669': 'Green', '#eab308': 'Yellow', '#f97316': 'Orange', '#ef4444': 'Red',
+  '#000000': 'Black', '#ffffff': 'White',
+};
+
+/** v6.49: the header search + color filter, one predicate for every render
+ *  path (sections, Uncategorized, freeform canvas) and the header count.
+ *  `colors` holds hex values ('' = uncolored); empty = no color filter. */
+export function beatMatchesFilter(
+  b: Pick<BeatInfo, 'title' | 'description' | 'color'>,
+  search: string,
+  colors: string[],
+): boolean {
+  if (colors.length > 0 && !colors.includes(b.color || '')) return false;
+  const q = search.trim().toLowerCase();
+  if (!q) return true;
+  return b.title.toLowerCase().includes(q) || b.description.toLowerCase().includes(q);
+}
 
 /* ─── Outline presets (v1.89) ───
    One list drives the Presets dropdown; applying one appends its columns in
@@ -410,16 +430,11 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
   );
 
   // v2.44, Derek: the color paints the WHOLE block, not just the edge.
-  // v2.46: unless "Show beat color on all tabs" is off — then a thin edge
-  // stripe keeps the color findable without painting the card.
-  const colorAll = useEditorStore((s) => s.beatColorAllTabs);
-  const wholeColor = Boolean(beat.color) && colorAll;
+  // (v6.49: always — the v2.46 "Show beat color on all tabs" checkbox and
+  // its edge-stripe fallback are gone.)
+  const wholeColor = Boolean(beat.color);
   const cardStyle: React.CSSProperties = {
-    ...(beat.color
-      ? wholeColor
-        ? { background: beat.color, color: readableTextOn(beat.color) }
-        : { borderLeft: `4px solid ${beat.color}` }
-      : {}),
+    ...(wholeColor ? { background: beat.color, color: readableTextOn(beat.color) } : {}),
     ...(beat.cardHeight ? { height: beat.cardHeight, overflow: 'auto' } : {}),
   };
 
@@ -1110,19 +1125,53 @@ export function OutlineTabActions() {
   );
 }
 
+/* v6.48 put a "Show in Outline Bar" checkbox in the header; v6.49 moved it
+   to the body's first row, right-aligned (Derek). Semantics unchanged: it
+   says whether the tab you're LOOKING AT feeds the Outline Bar. Exactly one
+   tab always does, so the box can't be unchecked directly — you check it on
+   another tab instead (the title explains). */
+export function OutlineBarCheck() {
+  const viewedTab = useEditorStore((s) => s.viewedOutlineTab);
+  const barTab = useEditorStore((s) => s.outlineBarTab);
+  const isBarTab = barTab === viewedTab;
+  return (
+    <label
+      className={`beat-bar-check${isBarTab ? ' on' : ''}`}
+      title={isBarTab
+        ? 'The Outline Bar shows this tab. To change that, switch to another tab and check the box there.'
+        : 'Show this tab in the Outline Bar'}
+    >
+      <input
+        type="checkbox"
+        checked={isBarTab}
+        disabled={isBarTab}
+        onChange={() => useEditorStore.getState().setOutlineBarTab(viewedTab)}
+      />
+      Show in Outline Bar
+    </label>
+  );
+}
+
 export function OutlineHeaderControls() {
   const beatCount = useEditorStore((s) => s.beats.length);
   const beatArrangeMode = useEditorStore((s) => s.beatArrangeMode);
   const goToArrangement = useEditorStore((s) => s.goToArrangement);
-  const beatColorAllTabs = useEditorStore((s) => s.beatColorAllTabs);
-  const setBeatColorAllTabs = useEditorStore((s) => s.setBeatColorAllTabs);
-  /* v6.48, Derek: the per-tab ◉ dot is gone — this checkbox says whether the
-     tab you're LOOKING AT is the one the Outline Bar mirrors. Exactly one
-     tab always feeds the bar, so the box can't be unchecked directly: you
-     check it on another tab instead (the title explains). */
-  const viewedTab = useEditorStore((s) => s.viewedOutlineTab);
-  const barTab = useEditorStore((s) => s.outlineBarTab);
-  const isBarTab = barTab === viewedTab;
+  /* v6.49, Derek: search + color filter in the header (standard cluster
+     order Filter · View · Search). Transient store state — the board body
+     reads the same fields to hide non-matching cards. */
+  const beats = useEditorStore((s) => s.beats);
+  const beatSearch = useEditorStore((s) => s.beatSearch);
+  const setBeatSearch = useEditorStore((s) => s.setBeatSearch);
+  const beatColorFilter = useEditorStore((s) => s.beatColorFilter);
+  const { toggleBeatColorFilter, clearBeatColorFilter } = useEditorStore.getState();
+  const filterActive = beatSearch.trim() !== '' || beatColorFilter.length > 0;
+  const shownCount = filterActive
+    ? beats.filter((b) => beatMatchesFilter(b, beatSearch, beatColorFilter)).length
+    : beats.length;
+  // The Filter menu lists the colors this outline actually uses (plus
+  // Uncolored when uncolored beats exist) — like Characters' data-derived
+  // relationship types, not the whole palette.
+  const colorsInUse = BEAT_COLORS.filter((c) => beats.some((b) => (b.color || '') === c));
 
   /* Derek's rule: helper info lives behind a ? button, not on screen. */
   const [helpOpen, setHelpOpen] = useState(false);
@@ -1145,59 +1194,44 @@ export function OutlineHeaderControls() {
     setHelpOpen((v) => !v);
   };
 
-  /* v2.48, Derek: the Arrangement block sits DEAD CENTER in the window
-     header (absolute centering, so it never drifts as the side content
-     changes width); Presets and the add button moved down to the tabs row.
-     The ? still rides at the very end, just left of the window's carets. */
+  /* v6.49, Derek: the header carries the standard control cluster now —
+     Filter · View · Search (+ the ? at the very end). The Arrangement
+     buttons became the View dropdown; Presets/Add and the bar checkbox
+     moved down to the body's first row. */
   return (
     <span className="beat-header-controls">
       <span className="beat-board-info">
-        {beatCount} beat{beatCount !== 1 ? 's' : ''}
+        {filterActive
+          ? `${shownCount} of ${beatCount} beat${beatCount !== 1 ? 's' : ''}`
+          : `${beatCount} beat${beatCount !== 1 ? 's' : ''}`}
       </span>
-      <label
-        className={`beat-bar-check${isBarTab ? ' on' : ''}`}
-        title={isBarTab
-          ? 'The Outline Bar shows this tab. To change that, switch to another tab and check the box there.'
-          : 'Show this tab in the Outline Bar'}
-      >
-        <input
-          type="checkbox"
-          checked={isBarTab}
-          disabled={isBarTab}
-          onChange={() => useEditorStore.getState().setOutlineBarTab(viewedTab)}
-        />
-        Show in Outline Bar
-      </label>
-      {/* v2.46, Derek: whole-card color everywhere, or just an edge stripe. */}
-      <label className="beat-color-alltabs" title="On: a beat's color fills its whole card, in every outline tab. Off: just a thin stripe on the card's edge.">
-        <input
-          type="checkbox"
-          checked={beatColorAllTabs}
-          onChange={(e) => setBeatColorAllTabs(e.target.checked)}
-        />
-        Show beat color on all tabs
-      </label>
-      {/* v2.47, Derek: a tab is bound to its arrangement for life, so this
-          toggle NAVIGATES — it jumps to a tab of the asked-for arrangement,
-          creating one if none exists. */}
-      <span className="beat-mode-center">
-        <span className="beat-mode-label">Arrangement:</span>
-        <div className="beat-mode-toggle">
-          <button
-            className={`beat-mode-btn${beatArrangeMode === 'auto' ? ' active' : ''}`}
-            onClick={() => goToArrangement('auto')}
-            title="Sections — jumps to a Sections tab (or creates one); each tab keeps its arrangement"
-          >Sections</button>
-          <button
-            className={`beat-mode-btn${beatArrangeMode === 'custom' ? ' active' : ''}`}
-            onClick={() => goToArrangement('custom')}
-            title="Freeform — jumps to a Freeform tab (or creates one); each tab keeps its arrangement"
-          >Freeform</button>
-        </div>
-      </span>
-      {/* v6.48, Derek: Presets + the add button live in the HEADER now —
-          the tabs moved up here and their old row is gone (window mode). */}
-      <OutlineTabActions />
+      {/* v5.80's canonical cluster order: View · Filter · Sort · Search.
+          v2.47's rule still holds: a tab is bound to its arrangement for
+          life, so picking a view NAVIGATES — it jumps to a tab of the
+          asked-for arrangement, creating one if none exists. */}
+      <ControlDropdown
+        label="View"
+        current={beatArrangeMode === 'auto' ? 'Sections' : 'Freeform'}
+        items={[
+          { label: 'Sections', active: beatArrangeMode === 'auto', onSelect: () => goToArrangement('auto') },
+          { label: 'Freeform', active: beatArrangeMode === 'custom', onSelect: () => goToArrangement('custom') },
+        ]}
+      />
+      <ControlDropdown
+        label="Filter"
+        chip={beatColorFilter.length}
+        items={[
+          { label: 'All colors', active: beatColorFilter.length === 0, onSelect: clearBeatColorFilter },
+          ...colorsInUse.map((c) => ({
+            label: BEAT_COLOR_NAMES[c] ?? c,
+            active: beatColorFilter.includes(c),
+            keepOpen: true,
+            swatch: c || 'transparent',
+            onSelect: () => toggleBeatColorFilter(c),
+          })),
+        ]}
+      />
+      <ControlSearch value={beatSearch} onChange={setBeatSearch} placeholder="Search beats..." />
       <button ref={helpBtnRef} className="fs-help-btn" title="How to use the Outline" onClick={toggleHelp}><FaRegQuestionCircle /></button>
       {helpOpen && helpPos && createPortal(
         <div className="fs-help-pop" style={{ top: helpPos.top, left: helpPos.left }}>
@@ -1306,6 +1340,16 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const isSingleColumn = sortedColumns.length === 1;
   // v2.23: beats orphaned by a preset override wait in "Uncategorized".
   const orphanBeats = uncategorizedBeats(beats, beatColumns);
+
+  /* v6.49: the header's search + color filter hide non-matching cards in
+     every view — sections, Uncategorized and the freeform canvas alike. */
+  const beatSearch = useEditorStore((s) => s.beatSearch);
+  const beatColorFilter = useEditorStore((s) => s.beatColorFilter);
+  const matchesFilter = useCallback(
+    (b: BeatInfo) => beatMatchesFilter(b, beatSearch, beatColorFilter),
+    [beatSearch, beatColorFilter],
+  );
+  const visibleOrphans = orphanBeats.filter(matchesFilter);
 
   // v2.30: outline variation tabs — one beat pool, many arrangements.
   // (v6.48: the window renders them in its chrome header; only the takeover
@@ -1436,6 +1480,14 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
         </div>
       )}
 
+      {/* v6.49, Derek: the body's FIRST ROW — Presets + Add on the left,
+          "Show in Outline Bar" on the right. Both used to live in the
+          header; the header keeps the standard Filter/View/Search cluster. */}
+      <div className="beat-board-actions-row">
+        <OutlineTabActions />
+        <OutlineBarCheck />
+      </div>
+
       {beatArrangeMode === 'auto' ? (
         <DndContext sensors={sensors} collisionDetection={beatCollisionDetection} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <div className={`beat-board-columns${maximizedColumnId ? ' beat-board-columns-maximized' : ''}`}>
@@ -1448,9 +1500,9 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
                 <div className="beat-column-header">
                   <span className="beat-column-uncat-title">Uncategorized</span>
                 </div>
-                <SortableContext items={orphanBeats.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+                <SortableContext items={visibleOrphans.map((b) => b.id)} strategy={verticalListSortingStrategy}>
                   <div className="beat-column-cards">
-                    {orphanBeats.map((beat) => (
+                    {visibleOrphans.map((beat) => (
                       <SortableBeatCard key={beat.id} beat={beat} onUpdate={updateBeat} onDelete={deleteBeat} />
                     ))}
                   </div>
@@ -1462,7 +1514,9 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
             )}
             {sortedColumns.map((col) => {
               if (maximizedColumnId && maximizedColumnId !== col.id) return null;
-              const colBeats = beats.filter((b) => b.columnId === col.id).sort((a, b) => a.position - b.position);
+              const colBeats = beats
+                .filter((b) => b.columnId === col.id && matchesFilter(b))
+                .sort((a, b) => a.position - b.position);
 
               return <BeatColumnView
                 key={col.id}
@@ -1484,7 +1538,7 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
         </DndContext>
       ) : (
         <CustomCanvas
-          beats={beats}
+          beats={beats.filter(matchesFilter)}
           onUpdateBeat={updateBeat}
           onDeleteBeat={deleteBeat}
         />

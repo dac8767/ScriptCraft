@@ -1,5 +1,15 @@
 [
  {
+  "version": "6.49",
+  "date": "2026-08-08",
+  "changes": [
+   "Outline: the header now carries the standard control set — a View dropdown (Sections / Freeform, replacing the Arrangement label and buttons), a Filter dropdown, and Search.",
+   "Outline: Filter narrows the board by beat color (it lists the colors your outline actually uses, with swatches), and Search matches beat titles and descriptions — in Sections, Uncategorized, and Freeform alike. The beat count reads \"3 of 12 beats\" while either is active.",
+   "Outline: the Presets dropdown and + Add Section moved down into the first row of the window body, and \"Show in Outline Bar\" sits at that row's right edge.",
+   "Outline: the \"Show beat color on all tabs\" checkbox is gone — a beat's color always fills its whole card."
+  ]
+ },
+ {
   "version": "6.48",
   "date": "2026-08-08",
   "changes": [

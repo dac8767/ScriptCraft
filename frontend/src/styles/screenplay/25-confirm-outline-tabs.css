@@ -364,13 +364,12 @@
 .beat-header-controls {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;         /* v6.49: controls wrap in a narrow window (the
+                              old overflow:hidden clipped them instead) */
+  gap: 4px 8px;
   flex: 1;
   min-width: 0;
-  overflow: hidden;
 }
-.beat-header-controls .beat-board-preset { max-width: 160px; }
-.beat-header-controls .beat-board-add-col-btn { white-space: nowrap; }
 /* v2.42: Customize > Outline Bar height field */
 .fs-obrow-height { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--fd-text-muted); }
 .fs-obrow-height input {
@@ -458,37 +457,17 @@
 }
 .fs-titlebar-spacer { flex: none; width: 16px; }
 
-/* ─── v2.43 ─── */
-/* Derek: equal-width Arrangement buttons — the toggle never reflows. */
-.beat-mode-btn { width: 82px; text-align: center; }
-/* v2.48 put the Arrangement block DEAD CENTER (absolute). v6.48 retires
-   that: the header row now also carries the bar checkbox, the Presets
-   dropdown and + Add Section (Derek's v6.48 asks), and an absolute center
-   painted straight over them at most widths. It rides the flow now — the
-   margin-auto pair splits the row into count/checkboxes (left) and
-   Arrangement/Presets/Add (right), with the ? at the very end. (v2.95's
-   narrow-window fallback did exactly this; it's simply always-on now.) */
-.beat-header-controls { position: relative; container-type: inline-size; }
-.beat-mode-center {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-}
-@container (max-width: 960px) {
-  .beat-color-alltabs,
-  .beat-bar-check { flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; }
-}
+/* (v6.49: the v2.43 Arrangement toggle and its v2.48 dead-center block are
+   GONE — the header's standard View dropdown navigates between Sections
+   and Freeform tabs now, and with the container-type that centering needed
+   removed, the v6.48 :has() grow workaround could go too.) */
 .beat-header-controls .fs-help-btn { margin-left: auto; }
-/* v2.48: Presets + add button rode the TABS row (now the takeover's only;
-   in the window they render in the header cluster — see the v6.48 rules). */
+/* v6.49, Derek: Presets + the add button live in the BODY's first row now
+   (left side; "Show in Outline Bar" holds the row's right edge). */
 .beat-tabs-actions {
-  margin-left: auto;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding-bottom: 4px;
 }
 .beat-tabs-actions .beat-board-preset { max-width: 160px; }
 .beat-tabs-actions .beat-board-add-col-btn { white-space: nowrap; }
@@ -526,9 +505,9 @@
   margin: 0;
   z-index: 10000;
 }
-/* v2.46: the "Show beat color on all tabs" option in the Outline header.
-   v6.48: .beat-bar-check ("Show in Outline Bar") wears the same clothes. */
-.beat-color-alltabs,
+/* v6.48's "Show in Outline Bar" checkbox — since v6.49 it sits at the
+   right edge of the body's first row. (v2.46's "Show beat color on all
+   tabs" neighbor is gone — color always paints the whole card.) */
 .beat-bar-check {
   display: inline-flex;
   align-items: center;
@@ -537,30 +516,18 @@
   color: var(--fd-text-muted);
   white-space: nowrap;
   cursor: pointer;
+  margin-left: auto;
 }
-.beat-color-alltabs input,
 .beat-bar-check input { margin: 0; }
 /* Checked = this tab feeds the bar; the box can't be UNchecked (exactly one
    tab always feeds the bar), so it drops the pointer cursor when on. */
 .beat-bar-check.on { cursor: default; color: var(--fd-text); }
-/* v6.48: in the window-header cluster the Presets/Add pair sits in normal
-   flow (the cluster is already right-pinned); the margin-auto is for the
-   takeover's tabs row, where these actions no longer live. */
-.beat-header-controls .beat-tabs-actions { margin-left: 0; padding-bottom: 0; }
-/* v6.48 — pre-existing bug, load-bearing now the tabs live up here:
-   .beat-header-controls is a SIZE CONTAINER (its @container query needs
-   container-type: inline-size), and a size container reports ZERO
-   max-content width. The right band sizes itself by max-content (v4.86), so
-   the whole outline cluster collapsed to 0px and its controls vanished
-   behind the corner buttons. When this cluster is aboard, the band and the
-   controls span GROW into the row's free space instead of sizing by
-   content — the same contract the docked strip already uses (v4.90). */
-.tool-chrome-right:has(.beat-header-controls) {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-.tool-chrome-right:has(.beat-header-controls) .tool-chrome-controls {
-  flex: 1 1 auto;
+/* v6.49: the body's FIRST ROW — Presets/Add left, the bar checkbox right. */
+.beat-board-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 0;
 }
 /* v6.48: the + (new variation) rides INSIDE the header tab strip's pill —
    chrome-tab clothes there, not the board-tab ones. */

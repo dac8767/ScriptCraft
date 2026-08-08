@@ -94,6 +94,8 @@ export interface ControlDropdownItem {
   /** v4.32: multi-toggle menus (Navigator's Filter) stay open on select —
    *  the item re-renders with its new active state instead of closing. */
   keepOpen?: boolean;
+  /** v6.49 (the Outline's color filter): a small color dot before the label. */
+  swatch?: string;
 }
 
 /** One tab of a window's row-2 strip (TOOL_CHROME.useTabs). */
@@ -169,6 +171,7 @@ export const ControlDropdown: React.FC<{
               className={`tool-ctl-menu-item${it.active ? ' active' : ''}`}
               onClick={() => { if (!it.keepOpen) close(); it.onSelect(); }}
             >
+              {it.swatch && <span className="tool-ctl-swatch" style={{ background: it.swatch }} />}
               {it.label}
             </button>
           ))}

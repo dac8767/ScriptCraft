@@ -1114,16 +1114,6 @@
   ]
  },
  {
-  "text": "Freeform — jumps to a Freeform tab (or creates one); each tab keeps its arrangement",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Outline Window",
-  "where": [
-   "components/BeatBoard.tsx"
-  ],
-  "label": "Freeform"
- },
- {
   "text": "Fullscreen",
   "kind": "tooltip",
   "sites": 2,
@@ -1670,16 +1660,6 @@
   "icon": "FaListOl"
  },
  {
-  "text": "On: a beat's color fills its whole card, in every outline tab. Off: just a thin stripe on the card's edge.",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Outline Window",
-  "where": [
-   "components/BeatBoard.tsx"
-  ],
-  "label": "Show beat color on all tabs"
- },
- {
   "text": "Open annotation",
   "kind": "tooltip",
   "sites": 1,
@@ -2124,16 +2104,6 @@
   "where": [
    "components/Toolbar.tsx"
   ]
- },
- {
-  "text": "Sections — jumps to a Sections tab (or creates one); each tab keeps its arrangement",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Outline Window",
-  "where": [
-   "components/BeatBoard.tsx"
-  ],
-  "label": "Sections"
  },
  {
   "text": "Select for compare",
@@ -3056,6 +3026,15 @@
   "area": "Annotations Window",
   "where": [
    "components/MarkupsPanel.tsx"
+  ]
+ },
+ {
+  "text": "Search beats...",
+  "kind": "placeholder",
+  "sites": 1,
+  "area": "Outline Window",
+  "where": [
+   "components/BeatBoard.tsx"
   ]
  },
  {
