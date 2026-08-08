@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.45 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.46 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,21 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.46 — theme legibility pass (the palette report's S1/S2/S6, applied)
+
+- Derek: "make suggested changes to themes" — SCOPE: only the THEME
+  suggestions from the palette-analysis artifact (claude.ai/code/artifact/
+  842e3485-…): S1 sepia (muted #8a7a5f→#6e5f45 5.01:1; accent
+  #a5673f→#7d4a26 5.89:1 — ONE accent slot, so chrome fills deepen with
+  it; tinted-page idea NOT applied, page/export pipeline), S2 solarized-
+  light (text #586e75→#49606a 6.15:1, muted #93a1a1→#657271 4.64:1),
+  S6 dracula muted #8a8fa8→#979db6 5.30:1 + light muted #666→#5d5d5d
+  (5.08:1 on panels). S3/S4/S5/S7 (note red, annotation colors, scene
+  wheel, palettes.ts consolidation) deliberately NOT applied — Derek said
+  "themes". All ratios were verified in the report's build script before
+  shipping. themeLadder.test.ts only orders surfaces — unaffected.
+- The artifact was republished with APPLIED tags on S1/S2/S6 (same URL).
+
 ### v6.45 — Upload Voice Clip removed from the character window
 
 - Derek: "remove the 'upload voice clip' tool from the character window."
@@ -340,40 +355,12 @@ Durable bits kept live here:
   cloud anywhere, chip = localSaveFolder, System=Reset, Display label,
   Auto Saves path). v638 re-run 19/0 (shared shell holds).
 
-### v6.41 — Save Options unlocked + backup location; toolbar toggle retired
-
-- Derek: (1) "OneDrive is locked as a save location even though I haven't
-  connected" — ROOT CAUSE: setup's SaveLocationsField has NO connection
-  guard (tick anything), but PreferencesDialog's rows wore
-  `disabled={!connected}` — written to stop ENABLING unconnected
-  providers, it also blocked DISABLING one. All five guards removed
-  (gdrive/onedrive save; cloud/gdrive/onedrive snapshots); the "— connect
-  below first" label hints stay. An enabled-but-unconnected provider
-  fails through the save-error surface (reportSaveError), not silently.
-- (2) "Local System (backup location)": settingsStore gains
-  saveToBackupFolder (bool) + backupSaveFolder (path) — SEPARATE so
-  unchecking keeps the folder (keys opendraft:saveloc:saveToBackupFolder
-  / :backupFolder; settingsBackup picks them up by prefix scan).
-  mirrorSave adds job 'Local backup' gated on BOTH (checkbox alone can't
-  arm a write into nowhere) reusing saveToLocalFolder(payload, folder).
-  Prefs row = the v2.83 snapshot-folder pattern (check-with-no-folder
-  opens the picker, path chip, Choose Folder…). SaveAsDialog's chips
-  include 'Local backup' under the same gate (tested).
-- (3) "Show/Hide Annotations" toolbar button REMOVED: the
-  toolbarBuiltins row is deleted — normalizeToolbarZones DROPS unknown
-  b: tokens, so saved layouts shed it on next normalize; Toolbar's case +
-  uiIcons entry gone; helper catalog regenerated. Visibility still lives
-  in annotationsMenu + the Annotations window's Show button.
-- NOTE (scout finding, not acted on): localSaveFolder ('This device'
-  mirror, set via Save As/setup) still has NO row in Save Options, and
-  StatusBar's enabledMirrors ignores both local mirrors — pre-existing
-  gaps, flag to Derek if he wants them surfaced.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.41** — Save Options always editable; Local System (backup location); toolbar toggle retired
 - **v6.40** — Collaboration removed end-to-end (account system KEPT then; see v6.42)
 - **v6.39** — map rotation via Options any time; the map became a CANVAS (WKWebView vanish)
 - **v6.38** — the ten-item batch: helper text window/blank overrides, snippet buttons, map floor + header Options + rail ⋮, panel zoom

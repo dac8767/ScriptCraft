@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.46",
+  "date": "2026-08-08",
+  "changes": [
+   "Theme legibility pass (from the palette analysis; only the theme suggestions were applied): Sepia's muted text and accent deepen to meet the 4.5:1 accessibility floor (3.37→5.01 and 3.68→5.89); Solarized Light gets deeper steps of its own hues for text (4.99→6.15) and muted text (2.48→4.64); Dracula's muted text and Light's muted text each move one step (4.46→5.30, 4.43→5.08 on panels). Hues and the character of every theme are unchanged — these are depth adjustments, not new colors. The note-chip, annotation and scene-swatch suggestions were NOT applied."
+  ]
+ },
+ {
   "version": "6.45",
   "date": "2026-08-08",
   "changes": [

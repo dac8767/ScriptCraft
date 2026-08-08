@@ -151,7 +151,36 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.40 and older (newest first)
+## Version history — v6.41 and older (newest first)
+
+### v6.41 — Save Options unlocked + backup location; toolbar toggle retired
+
+- Derek: (1) "OneDrive is locked as a save location even though I haven't
+  connected" — ROOT CAUSE: setup's SaveLocationsField has NO connection
+  guard (tick anything), but PreferencesDialog's rows wore
+  `disabled={!connected}` — written to stop ENABLING unconnected
+  providers, it also blocked DISABLING one. All five guards removed
+  (gdrive/onedrive save; cloud/gdrive/onedrive snapshots); the "— connect
+  below first" label hints stay. An enabled-but-unconnected provider
+  fails through the save-error surface (reportSaveError), not silently.
+- (2) "Local System (backup location)": settingsStore gains
+  saveToBackupFolder (bool) + backupSaveFolder (path) — SEPARATE so
+  unchecking keeps the folder (keys opendraft:saveloc:saveToBackupFolder
+  / :backupFolder; settingsBackup picks them up by prefix scan).
+  mirrorSave adds job 'Local backup' gated on BOTH (checkbox alone can't
+  arm a write into nowhere) reusing saveToLocalFolder(payload, folder).
+  Prefs row = the v2.83 snapshot-folder pattern (check-with-no-folder
+  opens the picker, path chip, Choose Folder…). SaveAsDialog's chips
+  include 'Local backup' under the same gate (tested).
+- (3) "Show/Hide Annotations" toolbar button REMOVED: the
+  toolbarBuiltins row is deleted — normalizeToolbarZones DROPS unknown
+  b: tokens, so saved layouts shed it on next normalize; Toolbar's case +
+  uiIcons entry gone; helper catalog regenerated. Visibility still lives
+  in annotationsMenu + the Annotations window's Show button.
+- NOTE (scout finding, not acted on): localSaveFolder ('This device'
+  mirror, set via Save As/setup) still has NO row in Save Options, and
+  StatusBar's enabledMirrors ignores both local mirrors — pre-existing
+  gaps, flag to Derek if he wants them surfaced.
 
 ### v6.40 — Collaboration REMOVED (Derek: "remove all Collaborate or Collaboration Server functionality")
 

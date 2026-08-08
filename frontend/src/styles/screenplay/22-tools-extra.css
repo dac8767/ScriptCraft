@@ -622,10 +622,15 @@ input.fs-switch:checked::after { left: 15px; }
 
 /* ═══ v0.9: themes ═══ */
 /* v4.49: themed to the dark theme's surface ladder (themeLadder.test.ts). */
+/* v6.46, Derek ("make suggested changes to themes" — the palette report):
+   sepia's muted text measured 3.37:1 and the accent-as-text 3.68:1 against
+   the 4.5:1 AA floor. Muted deepens to #6e5f45 (5.01:1) and the accent to
+   #7d4a26 (5.89:1) — same hue family, legible as text. The report's tinted-
+   page idea is NOT applied (it touches the page/export pipeline). */
 [data-theme="sepia"] {
   --fd-bg: #efe6d5; --fd-toolbar-bg: #f7f0e2; --fd-menu-bg: #f4ecdd;
-  --fd-menu-hover: #ddd0b8; --fd-accent: #a5673f; --fd-border: #d4c5a9;
-  --fd-text: #4a3f2f; --fd-text-muted: #8a7a5f; --fd-navigator-bg: #e7dcc7;
+  --fd-menu-hover: #ddd0b8; --fd-accent: #7d4a26; --fd-border: #d4c5a9;
+  --fd-text: #4a3f2f; --fd-text-muted: #6e5f45; --fd-navigator-bg: #e7dcc7;
   --fd-status-bg: #e0d4bd; --fd-dropdown-bg: #f1e9d9; --fd-dialog-bg: #efe6d5;
   --fd-input-bg: rgba(0, 0, 0, 0.06);
   --fd-overlay-subtle: rgba(0,0,0,.03); --fd-overlay-light: rgba(0,0,0,.06);
@@ -643,7 +648,9 @@ input.fs-switch:checked::after { left: 15px; }
 [data-theme="dracula"] {
   --fd-bg: #282a36; --fd-toolbar-bg: #343747; --fd-menu-bg: #303341;
   --fd-menu-hover: #44475a; --fd-accent: #bd93f9; --fd-border: #44475a;
-  --fd-text: #f8f8f2; --fd-text-muted: #8a8fa8; --fd-navigator-bg: #21222c;
+  /* v6.46: muted was 4.46:1 — one step under AA. Canonical Dracula comment
+     (#6272a4) would be 3.03:1; the invented value was right, just short. */
+  --fd-text: #f8f8f2; --fd-text-muted: #979db6; --fd-navigator-bg: #21222c;
   --fd-status-bg: #191a21; --fd-dropdown-bg: #2b2d3a; --fd-dialog-bg: #282a36;
   --fd-btn-bg: #8063a9; --fd-btn-text: #f8f8f2; --fd-btn-hover: #9178b5;
 }
@@ -657,7 +664,11 @@ input.fs-switch:checked::after { left: 15px; }
 [data-theme="solarized-light"] {
   --fd-bg: #fdf6e3; --fd-toolbar-bg: #fffdf5; --fd-menu-bg: #fffcf1;
   --fd-menu-hover: #e4ddc8; --fd-accent: #268bd2; --fd-border: #d9d2be;
-  --fd-text: #586e75; --fd-text-muted: #93a1a1; --fd-navigator-bg: #eee8d5;
+  /* v6.46: Solarized Light reproduced the spec's famous flaw — body text
+     4.99:1, muted 2.48:1. Deeper steps of the same base hues: text #49606a
+     (6.15:1), muted #657271 (4.64:1). The dark sibling already made this
+     trade (base2 text instead of base0). */
+  --fd-text: #49606a; --fd-text-muted: #657271; --fd-navigator-bg: #eee8d5;
   --fd-status-bg: #e4ddc8; --fd-dropdown-bg: #fffaec; --fd-dialog-bg: #fdf6e3;
   --fd-input-bg: rgba(0, 0, 0, 0.05);
   --fd-overlay-subtle: rgba(0,0,0,.03); --fd-overlay-light: rgba(0,0,0,.06);

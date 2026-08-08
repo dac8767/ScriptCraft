@@ -115,7 +115,9 @@
   --fd-chrome-separator: rgba(0,0,0,0.04);
   --fd-chrome-shadow: 0 1px 3px rgba(0,0,0,0.08);
   --fd-text: #1a1a1a;
-  --fd-text-muted: #666666;
+  /* v6.46: #666 measured 4.43:1 on the panels' #e2e2e2 — a whisker under
+     AA. One step darker clears every light surface (5.08:1 on panels). */
+  --fd-text-muted: #5d5d5d;
   /* v4.49, Derek: every theme follows the DARK theme's surface ladder —
      status < panels/header < body <= cards <= menus <= toolbar (each step
      lighter). Panels were LIGHTER than the body here; toolbar sat below the
