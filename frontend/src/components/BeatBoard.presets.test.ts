@@ -11,6 +11,20 @@ describe('outline presets', () => {
   beforeEach(() => {
     useEditorStore.getState().setBeatColumns([]);
     useEditorStore.getState().setBeats([]);
+    useEditorStore.getState().resetOutlineTabs();
+  });
+
+  /* v6.48, Derek: "when an outline preset is used … make the name of the
+     tab = the preset name". The rename rides applyOutlinePreset itself, so
+     every door (dropdown, override, custom presets) gets it. */
+  it('applying a preset names the viewed tab after it', () => {
+    applyOutlinePreset('3act');
+    const s = useEditorStore.getState();
+    expect(s.outlineTabs.find((t) => t.id === s.viewedOutlineTab)?.name).toBe('3-Act Structure');
+    // override mode renames too
+    applyOutlinePreset('storycircle', 'override');
+    const s2 = useEditorStore.getState();
+    expect(s2.outlineTabs.find((t) => t.id === s2.viewedOutlineTab)?.name).toBe('Story Circle (8 steps)');
   });
 
   it('3-Act Structure adds Act I / Act II / Act III in order, one blank beat each, 40 pages per act', () => {

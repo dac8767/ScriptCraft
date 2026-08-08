@@ -467,7 +467,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     try {
       const result = await api.checkin(currentProject.id, checkinMessage.trim());
       if (result.hash) {
-        showToast(`Version saved: ${result.short_hash}`, 'success');
+        showToast(`Snapshot saved: ${result.short_hash}`, 'success');
         const snapContent = buildSaveContent();
         if (snapContent) {
           void mirrorSnapshot({
@@ -479,10 +479,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
           });
         }
       } else {
-        showToast(result.message || 'No changes to commit', 'success');
+        showToast(result.message || 'No changes since the last snapshot', 'success');
       }
     } catch (err) {
-      showToast(`Check in failed: ${err instanceof Error ? err.message : 'unknown error'}`, 'error');
+      showToast(`Snapshot failed: ${err instanceof Error ? err.message : 'unknown error'}`, 'error');
     } finally {
       setCheckinSaving(false);
       setCheckinOpen(false);
@@ -515,7 +515,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     try {
       const versions = await api.getVersions(currentProject.id);
       if (versions.length === 0) {
-        showToast('No auto saves yet — use Tools > Script History > Take Auto Save first', 'info');
+        showToast('No snapshots yet — use File > Script History > Take Snapshot first', 'info');
         return;
       }
 
@@ -531,9 +531,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         // Script didn't exist at the last check-in (created after the last commit)
         const msg = innerErr instanceof Error ? innerErr.message : '';
         if (msg.includes('404')) {
-          showToast('This script has no auto save yet — use Tools > Script History > Take Auto Save first', 'info');
+          showToast('This script has no snapshot yet — use File > Script History > Take Snapshot first', 'info');
         } else {
-          showToast('Could not load the checked-in version. Try checking in first.', 'error');
+          showToast('Could not load the latest snapshot. Try taking a snapshot first.', 'error');
         }
         return;
       }
@@ -550,7 +550,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         editor.view.dispatch(tr);
       }
     } catch (err) {
-      showToast('Could not load version history. Make sure the backend is running.', 'error');
+      showToast('Could not load the snapshot history. Make sure the backend is running.', 'error');
     }
   }, [
     editor,
@@ -1321,17 +1321,17 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         {
           icon: <FaCodeBranch />, label: 'Script History',
           children: [
-            { icon: <FaUpload />, label: 'Take Auto Save…', action: handleCheckinOpen },
-            { icon: <FaHistory />, label: 'Auto Saves', action: () => setVersionHistoryOpen(true) },
+            { icon: <FaUpload />, label: 'Take Snapshot…', action: handleCheckinOpen },
+            { icon: <FaHistory />, label: 'Snapshots', action: () => setVersionHistoryOpen(true) },
             { separator: true, label: '' },
             {
               icon: <FaExchangeAlt />,
               label: trackChangesEnabled
                 ? '✓ Track Changes'
-                : 'Track Changes Since Last Auto Save',
+                : 'Track Changes Since Last Snapshot',
               action: handleTrackChangesToggle,
             },
-            { icon: <FaFileSignature />, label: 'Compare with Auto Save…', action: () => setCompareVersionOpen(true) },
+            { icon: <FaFileSignature />, label: 'Compare with Snapshot…', action: () => setCompareVersionOpen(true) },
           ],
         },
       ],
@@ -1497,7 +1497,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         },
         { separator: true, label: '' },
         {
-          icon: <FaAdjust />, label: 'Theme',
+          icon: <FaAdjust />, label: 'Themes',
           children: [
             // Built-ins and custom themes, in the user's order, minus hidden ones.
             ...visibleThemes.map(({ id, label }) => ({
@@ -2235,10 +2235,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     {checkinOpen && (
       <div className="dialog-overlay" onClick={() => setCheckinOpen(false)}>
         <div className="dialog-box" onClick={(e) => e.stopPropagation()}>
-          <div className="dialog-header">Check In Version</div>
+          <div className="dialog-header">Take Snapshot</div>
           <div className="dialog-body">
             <div className="dialog-row">
-              <label>Version Description</label>
+              <label>Snapshot Description</label>
               <input
                 ref={checkinInputRef}
                 value={checkinMessage}
@@ -2259,7 +2259,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
               onClick={handleCheckinSubmit}
               disabled={checkinSaving || !checkinMessage.trim()}
             >
-              {checkinSaving ? 'Saving...' : 'Check In'}
+              {checkinSaving ? 'Saving...' : 'Take Snapshot'}
             </button>
           </div>
         </div>

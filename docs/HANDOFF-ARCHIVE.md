@@ -151,7 +151,36 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.42 and older (newest first)
+## Version history — v6.43 and older (newest first)
+
+### v6.43 — the print crash's TRUE root cause; Settings→File; standard window buttons
+
+- PRINT CRASH ROUND 3 (survived v6.37): ROOT CAUSE — a LIFETIME bug, not
+  threading/exceptions. `runOperationModalForWindow…` presents the sheet
+  ASYNCHRONOUSLY and returns at once; the closure then dropped the
+  `Retained<NSPrintOperation>`, so the runloop presented a sheet for a
+  DEALLOCATED operation → SIGSEGV (no ObjC exception involved — nothing
+  for catch to catch, no dialog ever visible; matches Derek's symptom
+  exactly). Fix: a main-thread `thread_local!` slot `ACTIVE_PRINT` keeps
+  (op, doc) alive until the NEXT print replaces them. Type-checked on
+  aarch64-apple-darwin via the scratch crate (scratchpad/print-check —
+  exception::catch omitted there, its C shim needs Apple's toolchain);
+  Linux cargo check clean. RULE, recorded: any AppKit API that presents
+  asynchronously needs its objects kept alive past the presenting call.
+  NOT runnable in this sandbox — if Derek STILL crashes, ask for the
+  macOS crash log (Console.app ▸ Crash Reports) before theorizing again.
+- Settings…: OUT of the macOS app menu (reverses v4.22), INTO File as
+  the SECOND-TO-LAST item (Script History stays last), both menu modes —
+  nativeMenuSync mirrors MenuBar's one list. ⌘, moved to the shortcut
+  REGISTRY (shortcuts.ts defaultCombo 'Mod+,') — the app-menu item had
+  hardcoded it.
+- FloatingWindow (Settings + Helper Text) buttons = THE standard set:
+  char-profiles-fullscreen-btn + FullscreenIcon (RestoreIcon while
+  fullscreen), tool-window-close + CloseIcon — Derek's screenshot caught
+  the Lu-icon lookalikes. check-v638/v642 assert the SVG family now
+  (close count is exactly one).
+- check-v642 gained the File-menu-tail assert (scope to the ROOT
+  .menu-dropdown — a submenu flyout is a second one).
 
 ### v6.42 — LOCAL-FIRST: account/cloud UI purged; Settings is a WINDOW
 

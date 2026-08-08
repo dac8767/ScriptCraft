@@ -48,7 +48,7 @@ import MarkupsPanel, { MarkupsTitleExtra, MarkupsControls } from './MarkupsPanel
 import ThesaurusTool from './ThesaurusTool';
 import RewriteTool, { RewriteHeaderControls } from './RewriteTool';
 import { ScenesTool } from './ScenesTool';
-import BeatBoard, { OutlineHeaderControls } from './BeatBoard';
+import BeatBoard, { OutlineHeaderControls, useOutlineTabs, OutlineTabsExtra } from './BeatBoard';
 import TypewriterTool, { FocusHeaderControls } from './TypewriterTool';
 import AiWriterTool from './AiWriterTool';
 import NotebookTool, { NotebookHeaderExtra } from './NotebookTool';
@@ -187,6 +187,10 @@ export interface ToolChrome {
   /** v5.22: with this set the tabs are user-draggable; called with strip
    *  indices on drop (Sticky Notes persists its order through it). */
   onTabReorder?: (from: number, to: number) => void;
+  /** v6.48: rendered inside the tab strip's host, hugging the last tab —
+   *  the Outline's + (new variation) button. Stays visible when the strip
+   *  collapses into a dropdown. */
+  TabsExtra?: React.FC;
   /** The Filter / Sort / View / Search cluster, in that order. */
   Controls?: React.FC;
 }
@@ -224,9 +228,18 @@ export function naturalWidth(el: HTMLElement): number {
   const grows = (parseFloat(cs.flexGrow) || 0) > 0;
   if ((cs.flexWrap === 'wrap' || grows) && el.children.length > 0) {
     const gap = parseFloat(cs.columnGap) || 0;
-    let w = 0;
-    for (const c of el.children) w += naturalWidth(c as HTMLElement);
-    return w + gap * Math.max(0, el.children.length - 1)
+    /* v6.48: out-of-flow children take NO flex space — the pinned corner
+       actions (already reserved via the row's padding-right) and the
+       Outline's absolute-centered Arrangement block were being summed in,
+       inflating `need` by ~230px and collapsing the tabs in rows that fit. */
+    let w = 0, inFlow = 0;
+    for (const c of el.children) {
+      const pos = getComputedStyle(c as HTMLElement).position;
+      if (pos === 'absolute' || pos === 'fixed') continue;
+      w += naturalWidth(c as HTMLElement);
+      inFlow++;
+    }
+    return w + gap * Math.max(0, inFlow - 1)
       + (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0)
       + (parseFloat(cs.marginRight) || 0);
   }
@@ -291,10 +304,12 @@ function HeaderTabs({ chrome }: { chrome: ToolChrome }) {
         ) : (
           <ChromeTabs tabs={tabs} onReorder={chrome.onTabReorder} />
         )}
+        {chrome.TabsExtra && <chrome.TabsExtra />}
       </span>
       {/* natural-width measurer — never visible, never interactive */}
       <span ref={measureRef} className="tool-chrome-tabs tool-chrome-tabs-measure" aria-hidden>
         <ChromeTabs tabs={tabs} />
+        {chrome.TabsExtra && <chrome.TabsExtra />}
       </span>
     </>
   );
@@ -392,7 +407,10 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   notebook: { Controls: NotebookHeaderExtra },   // v2.05: declutter + create buttons
   rewrite: { Controls: RewriteHeaderControls },  // v5.60: the same declutter eye
   typewriter: { Controls: FocusHeaderControls }, // v5.66: the "?" in the header
-  beatboard: { Controls: OutlineHeaderControls }, // v2.41: count/Arrangement/help
+  // v2.41: count/Arrangement/help. v6.48, Derek: the variation tabs moved up
+  // into the header (rename/close/+ ride the shared strip's optional slots),
+  // and Presets + Add moved into the controls cluster with them.
+  beatboard: { useTabs: useOutlineTabs, TabsExtra: OutlineTabsExtra, Controls: OutlineHeaderControls },
   // v4.70, Derek: screenshot buttons in the Feedback header — the capture
   // lands as a draggable chip above the form (FeedbackTool.tsx).
   feedback: { Controls: FeedbackShotControls },

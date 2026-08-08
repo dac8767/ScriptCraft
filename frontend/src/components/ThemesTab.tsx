@@ -200,9 +200,10 @@ export default function ThemesTab() {
         theme by hand still works; the next system change follows again.
       </p>
       <p className="fs-customize-hint">
-        Drag themes between Shown and Hidden — where you drop one is its place
-        in the View → Theme menu. Built-in themes can be reordered and hidden,
-        but not edited or deleted; the theme you're using can't be hidden.
+        Click a theme to switch to it. Drag themes between Shown and Hidden —
+        where you drop one is its place in the View → Themes menu. Built-in
+        themes can be reordered and hidden, but not edited or deleted; the
+        theme you're using can't be hidden.
       </p>
 
       {/* v1.81: Outlook-style — Shown | Hidden, drag between them. */}
@@ -216,7 +217,16 @@ export default function ThemesTab() {
                 return {
                   key: id,
                   content: (
-                    <span className="fs-customize-tool">
+                    /* v6.48, Derek: clicking a theme SWITCHES to it (the row's
+                       buttons keep their own jobs — the guard skips them). */
+                    <span
+                      className="fs-customize-tool fs-theme-click"
+                      title={theme === id ? undefined : 'Switch to this theme'}
+                      onClick={(e) => {
+                        if ((e.target as HTMLElement).closest('button')) return;
+                        setTheme(id);
+                      }}
+                    >
                       {labelOf(id)}
                       {theme === id && <span className="fs-theme-active-dot" title="Current theme"> ●</span>}
                       {custom && <span className="fs-theme-badge">Custom</span>}
@@ -259,7 +269,17 @@ export default function ThemesTab() {
               rows: hiddenIds.map((id) => ({
                 key: id,
                 content: (
-                  <span className="fs-customize-tool">
+                  /* v6.48: clicking a hidden theme applies it too — and moves
+                     it to Shown, since the active theme can never be hidden. */
+                  <span
+                    className="fs-customize-tool fs-theme-click"
+                    title="Switch to this theme (moves it to Shown)"
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest('button')) return;
+                      setThemeHidden(id, false);
+                      setTheme(id);
+                    }}
+                  >
                     {labelOf(id)}
                     {isCustomTheme(id) && <span className="fs-theme-badge">Custom</span>}
                     <button className="fs-dnd-rowbtn" title="Show this theme" onClick={() => setThemeHidden(id, false)}>+</button>

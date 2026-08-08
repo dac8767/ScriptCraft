@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.47 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.48 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,66 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.48 — seven-item batch: Themes label/click-to-apply; outline tabs → HEADER; Snapshot rename
+
+- Derek's five + two mid-turn: (1) View ▸ "Theme" → "Themes"; (2) clicking
+  a theme row in Customize APPLIES it (ThemesTab rows get onClick +
+  fs-theme-click cursor; buttons exempt via closest('button'); a HIDDEN
+  row applies + unhides — active can never be hidden); (3) applying an
+  outline preset RENAMES the viewed tab to the preset's name (inside
+  applyOutlinePreset itself so every door gets it; resolveOutlinePreset
+  return type gained `name`); (4) `.beat-board-preset` wears the standard
+  dropdown clothes (bg --fd-input-bg, text --fd-text — was transparent);
+  (5) Script History says SNAPSHOT everywhere (labels/dialogs/toasts:
+  Take Snapshot…/Snapshots/Compare with Snapshot…/Track Changes Since
+  Last Snapshot; the Check In dialog → "Take Snapshot"; VersionHistory
+  window title "Snapshots"; CompareVersionPicker; toolbarCommands +
+  shortcuts labels; HelpReference — which ALSO still advertised
+  "ScriptCraft Cloud account", a missed v6.42 surface, now gone). The
+  command IDS were already takeSnapshot/snapshots/compareSnapshot —
+  labels only. On-disk "Auto Saves/Auto Save — …" names KEPT (v6.42
+  spec; shared with timed autosaves; check-v642 asserts them). Stale
+  toast path "Tools > Script History" corrected to File > (it's the File
+  menu's last item). (6) the per-tab ◉ → a "Show in Outline Bar"
+  checkbox in the header — checked+DISABLED when the viewed tab feeds
+  the bar (exactly one tab always does; you check it on another tab,
+  never uncheck), wired to setOutlineBarTab(viewed). (7) outline
+  variation tabs live in the WINDOW HEADER via TOOL_CHROME.useTabs —
+  ToolChromeTab gained optional key/onRename/onClose(+closeTitle)
+  (double-click rename input, × span — strip mode only, like badge);
+  ToolChrome gained TabsExtra (the + button, inside the strip host, so
+  it survives collapse); beatboard chrome = useTabs+TabsExtra+Controls;
+  Presets + Add Section moved INTO OutlineHeaderControls; the in-board
+  .beat-tabs row now renders ONLY in the chrome-less takeover
+  (!embedded); .beat-tab-use CSS retired.
+- TWO PRE-EXISTING header bugs surfaced (the tabs made them load-
+  bearing): (a) .beat-header-controls is a SIZE CONTAINER (container-
+  type: inline-size for its @container query) → reports ZERO max-content
+  → .tool-chrome-right's min-width:max-content sizing collapsed the
+  whole outline cluster to 0px (confirmed on the PRE-change build via
+  stash: cluster w=0 even then). Fix: `.tool-chrome-right:has(
+  .beat-header-controls)` + its .tool-chrome-controls get flex:1 1 auto
+  (the docked strip's v4.90 contract). (b) naturalWidth() counted
+  ABSOLUTE children (the pinned corner actions — already reserved via
+  row padding — and the dead-center Arrangement block), inflating the
+  collapse decision ~230px → tabs collapsed in rows that fit. Fix:
+  skip out-of-flow children in the sum. And the v2.48 absolute
+  DEAD-CENTER Arrangement is retired — it painted OVER the presets/
+  checkbox at most widths now the row is shared; it rides the flow
+  (margin-left:auto), which is exactly v2.95's narrow fallback made
+  permanent.
+- check-v648 (20 asserts: menu labels, flyout snapshot names, theme
+  click applies via Settings cz-themes, header strip/+/no beat-tabs/no
+  dot, checkbox states + bar move, preset bg + rename-on-apply in store
+  AND strip, dblclick rename + Escape). Note for future checks: the
+  in-window menu bar is a TOGGLE (openMenu helper clicks until open);
+  tool window width seeds via toolSizes setState (strip collapses to
+  the v5.71 pill below ~1200px with this many controls — by design).
+- New tests: BeatBoard.presets (rename on apply incl. override),
+  ToolControls.tabs (×/rename affordances; React 19 onBlur = focusout),
+  ThemesTab.click (apply + button-guard + hidden-unhide),
+  BeatBoard.barcheck (checkbox states/move). 1114 vitest.
+
 ### v6.47 — three new built-in themes: Paper, Gruvbox Dark, Catppuccin Mocha
 
 - Derek: "do you recommend adding any additional default themes?" → I
@@ -312,40 +372,12 @@ Durable bits kept live here:
   Shortcuts + in-window). In-window File keeps it second-to-last (no app
   menu exists there); the nativeMenus gate is back.
 
-### v6.43 — the print crash's TRUE root cause; Settings→File; standard window buttons
-
-- PRINT CRASH ROUND 3 (survived v6.37): ROOT CAUSE — a LIFETIME bug, not
-  threading/exceptions. `runOperationModalForWindow…` presents the sheet
-  ASYNCHRONOUSLY and returns at once; the closure then dropped the
-  `Retained<NSPrintOperation>`, so the runloop presented a sheet for a
-  DEALLOCATED operation → SIGSEGV (no ObjC exception involved — nothing
-  for catch to catch, no dialog ever visible; matches Derek's symptom
-  exactly). Fix: a main-thread `thread_local!` slot `ACTIVE_PRINT` keeps
-  (op, doc) alive until the NEXT print replaces them. Type-checked on
-  aarch64-apple-darwin via the scratch crate (scratchpad/print-check —
-  exception::catch omitted there, its C shim needs Apple's toolchain);
-  Linux cargo check clean. RULE, recorded: any AppKit API that presents
-  asynchronously needs its objects kept alive past the presenting call.
-  NOT runnable in this sandbox — if Derek STILL crashes, ask for the
-  macOS crash log (Console.app ▸ Crash Reports) before theorizing again.
-- Settings…: OUT of the macOS app menu (reverses v4.22), INTO File as
-  the SECOND-TO-LAST item (Script History stays last), both menu modes —
-  nativeMenuSync mirrors MenuBar's one list. ⌘, moved to the shortcut
-  REGISTRY (shortcuts.ts defaultCombo 'Mod+,') — the app-menu item had
-  hardcoded it.
-- FloatingWindow (Settings + Helper Text) buttons = THE standard set:
-  char-profiles-fullscreen-btn + FullscreenIcon (RestoreIcon while
-  fullscreen), tool-window-close + CloseIcon — Derek's screenshot caught
-  the Lu-icon lookalikes. check-v638/v642 assert the SVG family now
-  (close count is exactly one).
-- check-v642 gained the File-menu-tail assert (scope to the ROOT
-  .menu-dropdown — a submenu flyout is a second one).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.43** — print round 3: ACTIVE_PRINT keep-alive (async sheet lifetime); Settings→File (reversed v6.44); standard window buttons on FloatingWindow
 - **v6.42** — LOCAL-FIRST: account/cloud UI purged (service layer kept in code); Settings became a FloatingWindow; Auto Saves subfolder; Filter→Display
 - **v6.41** — Save Options always editable; Local System (backup location); toolbar toggle retired
 - **v6.40** — Collaboration removed end-to-end (account system KEPT then; see v6.42)

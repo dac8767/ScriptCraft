@@ -1,5 +1,19 @@
 [
  {
+  "version": "6.48",
+  "date": "2026-08-08",
+  "changes": [
+   "View menu: \"Theme\" is now \"Themes\".",
+   "Customize ▸ Themes: clicking a theme switches the app to it (the row's Edit/Delete/Hide buttons keep their own jobs). Clicking a hidden theme applies it and moves it back to Shown.",
+   "Outline: the variation tabs moved up into the window header, like every other window's tabs — with the + button beside them; double-click a tab to rename it, × closes it. In a narrow window they collapse into the standard dropdown pill.",
+   "Outline: the little ◉ on each tab is gone — a \"Show in Outline Bar\" checkbox in the header now says whether the tab you're viewing feeds the Outline Bar. One tab always does, so the box locks while it's the one shown; check it on another tab to switch.",
+   "Outline: applying a preset names the tab after it (pick 3-Act Structure and the tab says 3-Act Structure).",
+   "Outline: the Presets dropdown wears the same background as every other dropdown (it was transparent).",
+   "Script History: every \"Auto Save\" here is now a \"Snapshot\" — Take Snapshot…, Snapshots, Compare with Snapshot…, Track Changes Since Last Snapshot, plus the dialog and window text. (The timed auto-save feature and its Auto Saves folder on disk keep their names.)",
+   "Fixed: the Outline window header's controls could collapse to nothing in a floating window (a long-standing layout bug the new header tabs exposed), and header tabs across all windows collapsed into the dropdown earlier than the window's width required."
+  ]
+ },
+ {
   "version": "6.47",
   "date": "2026-08-08",
   "changes": [

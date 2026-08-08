@@ -1121,7 +1121,6 @@
   "where": [
    "components/BeatBoard.tsx"
   ],
-  "icon": "FaRegQuestionCircle",
   "label": "Freeform"
  },
  {
@@ -1615,7 +1614,7 @@
  {
   "text": "New outline variation",
   "kind": "tooltip",
-  "sites": 1,
+  "sites": 2,
   "area": "Outline Window",
   "where": [
    "components/BeatBoard.tsx"
@@ -2007,7 +2006,7 @@
   "label": "Reset"
  },
  {
-  "text": "Restore this version",
+  "text": "Restore this snapshot",
   "kind": "tooltip",
   "sites": 1,
   "area": "Everything Else",
@@ -2342,6 +2341,15 @@
   "label": "X"
  },
  {
+  "text": "Switch to this theme (moves it to Shown)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/ThemesTab.tsx"
+  ]
+ },
+ {
   "text": "Target pages for this section on the Outline Bar",
   "kind": "tooltip",
   "sites": 1,
@@ -2472,7 +2480,7 @@
   "icon": "LuWaypoints"
  },
  {
-  "text": "View this version in the editor (read-only)",
+  "text": "View this snapshot in the editor (read-only)",
   "kind": "tooltip",
   "sites": 1,
   "area": "Everything Else",

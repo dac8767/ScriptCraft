@@ -20,7 +20,7 @@ export interface PaletteCategory {
 const PRODUCTION_CMDS = ['titlePage', 'setDraft', 'sceneNumbers', 'lockSceneNumbers', 'revisionMode'];
 const TOOLS_CMDS = ['spellCheck', 'writingSuggestions', 'takeSnapshot', 'snapshots', 'trackChanges', 'compareSnapshot'];
 // v3.73, Derek: pulled from the ribbon palette entirely — Spell Check, Writing
-// Suggestions, Take Auto Save, Compare with Auto Save, and the AI Writer tool.
+// Suggestions, Take Snapshot, Compare with Snapshot, and the AI Writer tool.
 const RIBBON_HIDE = new Set(['c:spellCheck', 'c:writingSuggestions', 'c:takeSnapshot', 'c:compareSnapshot', 't:aiwriter']);
 const PROJECT_CMDS = ['rename'];
 const EDIT_CMDS = ['cut', 'copy', 'paste', 'lastEditLocation'];

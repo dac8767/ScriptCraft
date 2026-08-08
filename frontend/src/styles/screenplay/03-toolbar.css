@@ -993,6 +993,8 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
 }
 .fs-theme-active-dot { color: var(--fd-accent); }
+/* v6.48, Derek: theme rows in Customize apply on click. */
+.fs-theme-click { cursor: pointer; }
 .fs-theme-name-input {
   flex: 1; max-width: 240px; padding: 5px 8px;
   background: var(--fd-input-bg, var(--fd-dropdown-bg));

@@ -235,17 +235,8 @@
   top: 1px;
 }
 .beat-tab-name { overflow: hidden; text-overflow: ellipsis; }
-.beat-tab-use {
-  display: inline-flex;
-  align-items: center;
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 11px;
-  color: var(--fd-text-muted);
-  cursor: pointer;
-}
-.beat-tab-use.on { color: var(--fd-accent); }
+/* (v6.48: the per-tab ◉ bar-picker is gone — the header's "Show in Outline
+   Bar" checkbox owns that choice; .beat-tab-use rules retired with it.) */
 .beat-tab-x {
   background: none;
   border: none;
@@ -470,32 +461,28 @@
 /* ─── v2.43 ─── */
 /* Derek: equal-width Arrangement buttons — the toggle never reflows. */
 .beat-mode-btn { width: 82px; text-align: center; }
-/* v2.48, Derek: the Arrangement block sits DEAD CENTER in the header —
-   absolute centering, so it can't drift as the side content changes. The
-   ? keeps the very end, just left of the window's carets. */
+/* v2.48 put the Arrangement block DEAD CENTER (absolute). v6.48 retires
+   that: the header row now also carries the bar checkbox, the Presets
+   dropdown and + Add Section (Derek's v6.48 asks), and an absolute center
+   painted straight over them at most widths. It rides the flow now — the
+   margin-auto pair splits the row into count/checkboxes (left) and
+   Arrangement/Presets/Add (right), with the ? at the very end. (v2.95's
+   narrow-window fallback did exactly this; it's simply always-on now.) */
 .beat-header-controls { position: relative; container-type: inline-size; }
 .beat-mode-center {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  margin-left: auto;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   white-space: nowrap;
 }
-/* v2.95, Derek: in a NARROW window the absolutely-centered Arrangement block
-   rode on top of the flow content beside it. Below the width where they'd
-   collide, it rejoins the flow (pushed right) — never overlapping. */
 @container (max-width: 960px) {
-  .beat-mode-center {
-    position: static;
-    transform: none;
-    margin-left: auto;
-  }
-  .beat-color-alltabs { flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; }
+  .beat-color-alltabs,
+  .beat-bar-check { flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; }
 }
 .beat-header-controls .fs-help-btn { margin-left: auto; }
-/* v2.48: Presets + add button ride the TABS row, hugging the right edge. */
+/* v2.48: Presets + add button rode the TABS row (now the takeover's only;
+   in the window they render in the header cluster — see the v6.48 rules). */
 .beat-tabs-actions {
   margin-left: auto;
   display: inline-flex;
@@ -539,8 +526,10 @@
   margin: 0;
   z-index: 10000;
 }
-/* v2.46: the "Show beat color on all tabs" option in the Outline header. */
-.beat-color-alltabs {
+/* v2.46: the "Show beat color on all tabs" option in the Outline header.
+   v6.48: .beat-bar-check ("Show in Outline Bar") wears the same clothes. */
+.beat-color-alltabs,
+.beat-bar-check {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -549,7 +538,48 @@
   white-space: nowrap;
   cursor: pointer;
 }
-.beat-color-alltabs input { margin: 0; }
+.beat-color-alltabs input,
+.beat-bar-check input { margin: 0; }
+/* Checked = this tab feeds the bar; the box can't be UNchecked (exactly one
+   tab always feeds the bar), so it drops the pointer cursor when on. */
+.beat-bar-check.on { cursor: default; color: var(--fd-text); }
+/* v6.48: in the window-header cluster the Presets/Add pair sits in normal
+   flow (the cluster is already right-pinned); the margin-auto is for the
+   takeover's tabs row, where these actions no longer live. */
+.beat-header-controls .beat-tabs-actions { margin-left: 0; padding-bottom: 0; }
+/* v6.48 — pre-existing bug, load-bearing now the tabs live up here:
+   .beat-header-controls is a SIZE CONTAINER (its @container query needs
+   container-type: inline-size), and a size container reports ZERO
+   max-content width. The right band sizes itself by max-content (v4.86), so
+   the whole outline cluster collapsed to 0px and its controls vanished
+   behind the corner buttons. When this cluster is aboard, the band and the
+   controls span GROW into the row's free space instead of sizing by
+   content — the same contract the docked strip already uses (v4.90). */
+.tool-chrome-right:has(.beat-header-controls) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tool-chrome-right:has(.beat-header-controls) .tool-chrome-controls {
+  flex: 1 1 auto;
+}
+/* v6.48: the + (new variation) rides INSIDE the header tab strip's pill —
+   chrome-tab clothes there, not the board-tab ones. */
+.tool-chrome-tabs .beat-tab-add {
+  border: none;
+  border-radius: 0;
+  background: var(--fd-overlay-light);
+  color: var(--fd-text-muted);
+  font-size: 13px;
+  padding: 5px 10px;
+}
+.tool-chrome-tabs .beat-tab-add:hover { color: var(--fd-text); background: var(--fd-overlay-medium); }
+/* …except beside the collapsed dropdown, where the strip has no pill box —
+   give the floating + its own little border so it doesn't hang bare. */
+.tool-chrome-tabs-dd .beat-tab-add {
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  margin-left: 4px;
+}
 /* Whole-card color: every control on a colored card reads in the computed
    black/white text color (readableTextOn), not the theme's muted gray. */
 .beat-card-colored .beat-card-title,

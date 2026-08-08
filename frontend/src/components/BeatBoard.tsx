@@ -23,13 +23,14 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
-import { FaRegCircle, FaDotCircle, FaLink, FaPaperclip, FaRegQuestionCircle, FaRegTrashAlt } from 'react-icons/fa';
+import { FaLink, FaPaperclip, FaRegQuestionCircle, FaRegTrashAlt } from 'react-icons/fa';
 import { LuRotateCcw } from 'react-icons/lu';
 import { ExpandIcon, ShrinkIcon } from './uiIcons';
 import { readableTextOn } from '../utils/palettes';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 import { confirmDialog, promptDialog } from './ConfirmDialog';
+import type { ToolChromeTab } from './ToolControls';
 import { showToast } from './Toast';
 import { saveFile, openTextFile } from '../utils/fileOps';
 import { api } from '../services/api';
@@ -103,7 +104,7 @@ export const OUTLINE_PRESETS: OutlinePreset[] = [
 
 /** v2.26: a preset id resolves to a built-in, or (as `custom:<id>`) to one
  *  of the user's saved presets — one lookup for apply/override alike. */
-export function resolveOutlinePreset(presetId: string): { columns: string[]; pages: number[] } | undefined {
+export function resolveOutlinePreset(presetId: string): { name: string; columns: string[]; pages: number[] } | undefined {
   if (presetId.startsWith('custom:')) {
     return useOutlinePresetStore.getState().presets.find((p) => p.id === presetId.slice(7));
   }
@@ -113,6 +114,11 @@ export function resolveOutlinePreset(presetId: string): { columns: string[]; pag
 export function applyOutlinePreset(presetId: string, mode: 'append' | 'override' = 'append'): void {
   const preset = resolveOutlinePreset(presetId);
   if (!preset) return;
+  /* v6.48, Derek: the tab a preset lands in takes the preset's NAME — every
+     door (dropdown, import, tests) goes through here, so the rename rides
+     the apply itself. */
+  const st = useEditorStore.getState();
+  st.renameOutlineTab(st.viewedOutlineTab, preset.name);
   if (mode === 'override') {
     // v2.23: replace the SECTIONS, never the beats. Clearing the columns
     // orphans every existing beat; orphans render in the temporary
@@ -1110,6 +1116,13 @@ export function OutlineHeaderControls() {
   const goToArrangement = useEditorStore((s) => s.goToArrangement);
   const beatColorAllTabs = useEditorStore((s) => s.beatColorAllTabs);
   const setBeatColorAllTabs = useEditorStore((s) => s.setBeatColorAllTabs);
+  /* v6.48, Derek: the per-tab ◉ dot is gone — this checkbox says whether the
+     tab you're LOOKING AT is the one the Outline Bar mirrors. Exactly one
+     tab always feeds the bar, so the box can't be unchecked directly: you
+     check it on another tab instead (the title explains). */
+  const viewedTab = useEditorStore((s) => s.viewedOutlineTab);
+  const barTab = useEditorStore((s) => s.outlineBarTab);
+  const isBarTab = barTab === viewedTab;
 
   /* Derek's rule: helper info lives behind a ? button, not on screen. */
   const [helpOpen, setHelpOpen] = useState(false);
@@ -1141,6 +1154,20 @@ export function OutlineHeaderControls() {
       <span className="beat-board-info">
         {beatCount} beat{beatCount !== 1 ? 's' : ''}
       </span>
+      <label
+        className={`beat-bar-check${isBarTab ? ' on' : ''}`}
+        title={isBarTab
+          ? 'The Outline Bar shows this tab. To change that, switch to another tab and check the box there.'
+          : 'Show this tab in the Outline Bar'}
+      >
+        <input
+          type="checkbox"
+          checked={isBarTab}
+          disabled={isBarTab}
+          onChange={() => useEditorStore.getState().setOutlineBarTab(viewedTab)}
+        />
+        Show in Outline Bar
+      </label>
       {/* v2.46, Derek: whole-card color everywhere, or just an edge stripe. */}
       <label className="beat-color-alltabs" title="On: a beat's color fills its whole card, in every outline tab. Off: just a thin stripe on the card's edge.">
         <input
@@ -1168,12 +1195,16 @@ export function OutlineHeaderControls() {
           >Freeform</button>
         </div>
       </span>
+      {/* v6.48, Derek: Presets + the add button live in the HEADER now —
+          the tabs moved up here and their old row is gone (window mode). */}
+      <OutlineTabActions />
       <button ref={helpBtnRef} className="fs-help-btn" title="How to use the Outline" onClick={toggleHelp}><FaRegQuestionCircle /></button>
       {helpOpen && helpPos && createPortal(
         <div className="fs-help-pop" style={{ top: helpPos.top, left: helpPos.left }}>
           Create sections (Act 1, Act 2…) and drop beats into them — or pick
-          a Preset. Tabs below are separate arrangements of the SAME beats;
-          the ◉ picks which one the Outline Bar shows. Freeform turns the
+          a Preset. The header tabs are separate arrangements of the SAME
+          beats; "Show in Outline Bar" picks which tab the Outline Bar
+          mirrors. Double-click a tab to rename it. Freeform turns the
           board into a mind map: drag cards anywhere; to connect two, push a
           card's link button, then drag from that card onto the other. Click
           a line and press Delete to remove it.
@@ -1181,6 +1212,47 @@ export function OutlineHeaderControls() {
         document.body,
       )}
     </span>
+  );
+}
+
+/* ─── v6.48: the variation tabs live in the WINDOW HEADER (Derek: "move
+   outline tabs to header like all other windows"). The tab DATA feeds the
+   shared ChromeTabs strip via TOOL_CHROME.useTabs; rename (double-click),
+   close (×) and the + button ride the shared strip's optional slots. The
+   takeover view has no chrome, so it keeps an in-board copy of the same
+   row (see BeatBoard below). */
+
+async function confirmCloseOutlineTab(id: string, name: string): Promise<void> {
+  const ok = await confirmDialog(
+    `Close "${name}"? Your beats are safe — they live in every tab. Only this arrangement of sections is deleted.`,
+    { title: 'Close Outline Tab', confirmLabel: 'Close Tab', danger: true },
+  );
+  if (ok) useEditorStore.getState().deleteOutlineTab(id);
+}
+
+export function useOutlineTabs(): ToolChromeTab[] {
+  const outlineTabs = useEditorStore((s) => s.outlineTabs);
+  const viewedTab = useEditorStore((s) => s.viewedOutlineTab);
+  const { switchOutlineTab, renameOutlineTab } = useEditorStore.getState();
+  return outlineTabs.map((t) => ({
+    key: t.id,
+    label: t.name,
+    active: viewedTab === t.id,
+    onSelect: () => switchOutlineTab(t.id),
+    onRename: (name: string) => renameOutlineTab(t.id, name),
+    onClose: outlineTabs.length > 1 ? () => { void confirmCloseOutlineTab(t.id, t.name); } : undefined,
+    closeTitle: 'Close this outline variation (beats are kept)',
+  }));
+}
+
+/** The + (new variation) button, hugging the header tab strip. */
+export function OutlineTabsExtra() {
+  return (
+    <button
+      className="beat-tab-add"
+      title="New outline variation"
+      onClick={() => useEditorStore.getState().addOutlineTab()}
+    >+</button>
   );
 }
 
@@ -1236,22 +1308,12 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const orphanBeats = uncategorizedBeats(beats, beatColumns);
 
   // v2.30: outline variation tabs — one beat pool, many arrangements.
+  // (v6.48: the window renders them in its chrome header; only the takeover
+  // still reads these for its in-board row.)
   const outlineTabs = useEditorStore((s) => s.outlineTabs);
   const viewedTab = useEditorStore((s) => s.viewedOutlineTab);
-  const barTab = useEditorStore((s) => s.outlineBarTab);
-  const { addOutlineTab, switchOutlineTab, renameOutlineTab, deleteOutlineTab, setOutlineBarTab } = useEditorStore.getState();
+  const { addOutlineTab, switchOutlineTab, renameOutlineTab } = useEditorStore.getState();
   const [renamingTab, setRenamingTab] = useState<string | null>(null);
-
-
-  const handleCloseTab = useCallback(async (id: string, name: string) => {
-    const ok = await confirmDialog(
-      `Close "${name}"? Your beats are safe — they live in every tab. Only this arrangement of sections is deleted.`,
-      { title: 'Close Outline Tab', confirmLabel: 'Close Tab', danger: true },
-    );
-    if (ok) deleteOutlineTab(id);
-  }, [deleteOutlineTab]);
-
-
 
   /* v2.45: remember whether Uncategorized was showing when the drag began —
      see keepUncatMounted. */
@@ -1330,54 +1392,49 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
           <OutlineHeaderControls />
         </div>
       )}
-      {/* v2.30: variation tabs, browser-style. One shared pool of beats;
-          each tab is its own arrangement of sections. The ◉ marks the tab
-          the Outline Bar shows. */}
-      <div className="beat-tabs">
-        {outlineTabs.map((t) => (
-          <div
-            key={t.id}
-            className={`beat-tab${viewedTab === t.id ? ' active' : ''}`}
-            onClick={() => switchOutlineTab(t.id)}
-            onDoubleClick={() => setRenamingTab(t.id)}
-            title={viewedTab === t.id ? t.name : `Switch to ${t.name}`}
-          >
-            <button
-              className={`beat-tab-use${barTab === t.id ? ' on' : ''}`}
-              title={barTab === t.id ? 'Shown in the Outline Bar' : 'Use this outline in the Outline Bar'}
-              onClick={(e) => { e.stopPropagation(); setOutlineBarTab(t.id); }}
+      {/* v6.48, Derek: in the Outline WINDOW the variation tabs render in
+          the window header (TOOL_CHROME.useTabs → the shared ChromeTabs
+          strip), so this in-board row only remains for the chrome-less
+          takeover view. The per-tab ◉ is gone from both — the header's
+          "Show in Outline Bar" checkbox owns that choice now, and Presets +
+          Add moved into the header controls. */}
+      {!embedded && (
+        <div className="beat-tabs">
+          {outlineTabs.map((t) => (
+            <div
+              key={t.id}
+              className={`beat-tab${viewedTab === t.id ? ' active' : ''}`}
+              onClick={() => switchOutlineTab(t.id)}
+              onDoubleClick={() => setRenamingTab(t.id)}
+              title={viewedTab === t.id ? t.name : `Switch to ${t.name}`}
             >
-              {barTab === t.id ? <FaDotCircle /> : <FaRegCircle />}
-            </button>
-            {renamingTab === t.id ? (
-              <input
-                autoFocus
-                className="beat-tab-rename"
-                defaultValue={t.name}
-                onClick={(e) => e.stopPropagation()}
-                onBlur={(e) => { renameOutlineTab(t.id, e.target.value); setRenamingTab(null); }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                  if (e.key === 'Escape') setRenamingTab(null);
-                }}
-              />
-            ) : (
-              <span className="beat-tab-name">{t.name}</span>
-            )}
-            {outlineTabs.length > 1 && (
-              <button
-                className="beat-tab-x"
-                title="Close this outline variation (beats are kept)"
-                onClick={(e) => { e.stopPropagation(); void handleCloseTab(t.id, t.name); }}
-              >×</button>
-            )}
-          </div>
-        ))}
-        <button className="beat-tab-add" title="New outline variation" onClick={() => addOutlineTab()}>+</button>
-        {/* v2.48, Derek: Presets + the add button live on this row now,
-            hugging the window's right edge. */}
-        <OutlineTabActions />
-      </div>
+              {renamingTab === t.id ? (
+                <input
+                  autoFocus
+                  className="beat-tab-rename"
+                  defaultValue={t.name}
+                  onClick={(e) => e.stopPropagation()}
+                  onBlur={(e) => { renameOutlineTab(t.id, e.target.value); setRenamingTab(null); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                    if (e.key === 'Escape') setRenamingTab(null);
+                  }}
+                />
+              ) : (
+                <span className="beat-tab-name">{t.name}</span>
+              )}
+              {outlineTabs.length > 1 && (
+                <button
+                  className="beat-tab-x"
+                  title="Close this outline variation (beats are kept)"
+                  onClick={(e) => { e.stopPropagation(); void confirmCloseOutlineTab(t.id, t.name); }}
+                >×</button>
+              )}
+            </div>
+          ))}
+          <button className="beat-tab-add" title="New outline variation" onClick={() => addOutlineTab()}>+</button>
+        </div>
+      )}
 
       {beatArrangeMode === 'auto' ? (
         <DndContext sensors={sensors} collisionDetection={beatCollisionDetection} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>

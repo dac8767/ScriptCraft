@@ -528,6 +528,30 @@ body.fs-tool-dragging { cursor: grabbing; }
   margin-left: 5px;
   vertical-align: middle;
 }
+/* v6.48 (Outline's variation tabs): optional × on a strip tab. A span — a
+   button can't nest inside the tab button. Inherits the tab's text color so
+   it reads on the active tab's accent fill too. */
+.tool-chrome-tab-x {
+  margin-left: 6px;
+  padding: 0 2px;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 3px;
+  opacity: 0.75;
+}
+.tool-chrome-tab-x:hover { opacity: 1; background: var(--fd-overlay-medium); }
+/* v6.48: the in-place rename input (double-click a tab that allows it). */
+.tool-chrome-tab-rename {
+  font-size: var(--dz-toolwin-bar-font, 12px);
+  width: 110px;
+  background: var(--fd-input-bg);
+  color: var(--fd-text);
+  border: 1px solid var(--fd-accent);
+  border-radius: 3px;
+  margin: 2px 4px;
+  padding: 2px 4px;
+  outline: none;
+}
 /* (v4.39: the .tool-chrome-row2 / .tool-inline-header second row and the
    pop-in/pop-out buttons are gone — the single-row header above replaced
    them, and docking is a drag gesture now.) */

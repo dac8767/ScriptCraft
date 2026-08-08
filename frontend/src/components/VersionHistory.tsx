@@ -62,7 +62,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
       const vA = versions.find((v) => v.hash === compareSelection[0]);
       const vB = versions.find((v) => v.hash === compareSelection[1]);
       if (!vA || !vB) {
-        showToast('Selected versions no longer available', 'error');
+        showToast('Selected snapshots no longer available', 'error');
         return;
       }
       // Order: earlier version = A, later = B
@@ -90,7 +90,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
 
       if (!respA && !respB) {
         showToast(
-          `This script does not exist in either selected version.`,
+          `This script does not exist in either selected snapshot.`,
           'error',
         );
         return;
@@ -114,14 +114,14 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
         docB: (respB?.content || emptyDoc) as Record<string, unknown>,
         labelA: respA
           ? `${earlier.short_hash} · ${earlier.message}`
-          : `${earlier.short_hash} · (script not in this version)`,
+          : `${earlier.short_hash} · (script not in this snapshot)`,
         labelB: respB
           ? `${later.short_hash} · ${later.message}`
-          : `${later.short_hash} · (script not in this version)`,
+          : `${later.short_hash} · (script not in this snapshot)`,
       });
     } catch (err) {
       showToast(
-        err instanceof Error ? err.message : 'Failed to load versions for comparison',
+        err instanceof Error ? err.message : 'Failed to load snapshots for comparison',
         'error',
       );
     }
@@ -136,7 +136,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
       const data = await api.getVersions(currentProject.id, currentScriptId || undefined);
       setVersions(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load versions');
+      setError(err instanceof Error ? err.message : 'Failed to load snapshots');
     } finally {
       setLoading(false);
     }
@@ -155,7 +155,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
 
       // Diff against previous commit (or show first commit as-is)
       if (index >= versions.length - 1) {
-        setDiffText('(Initial version -- no previous version to compare against)');
+        setDiffText('(Initial snapshot -- no previous snapshot to compare against)');
         return;
       }
 
@@ -200,13 +200,13 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
             // Script was removed by the restore — go to project view
             setVersionHistoryOpen(false);
             navigate(`/project/${currentProject.id}`, { replace: true });
-            showToast(`Restored to version ${version.short_hash}. The open script no longer exists in this version.`, 'info');
+            showToast(`Restored to snapshot ${version.short_hash}. The open script no longer exists in this snapshot.`, 'info');
             return;
           }
         } else {
           triggerScriptReload();
         }
-        showToast(`Restored to version ${version.short_hash}`, 'success');
+        showToast(`Restored to snapshot ${version.short_hash}`, 'success');
       } catch (err) {
         showToast(`Restore failed: ${err instanceof Error ? err.message : 'unknown error'}`, 'error');
       }
@@ -219,7 +219,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
   return (
     <div className="version-history-panel">
       <div className="version-history-header">
-        <span className="version-history-title">{embedded ? 'Script History' : 'Version History'}</span>
+        <span className="version-history-title">{embedded ? 'Script History' : 'Snapshots'}</span>
         {!embedded && (
           <button
             className="version-history-close"
@@ -242,13 +242,13 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
 
       {error && <div className="version-history-error">{error}</div>}
 
-      {loading && <div className="version-history-loading">Loading versions...</div>}
+      {loading && <div className="version-history-loading">Loading snapshots...</div>}
 
       {currentScriptId && versions.length >= 2 && (
         <div className="version-compare-bar">
           <span className="version-compare-info">
-            {compareSelection.length === 0 && 'Check two versions to compare'}
-            {compareSelection.length === 1 && 'Select one more version to compare'}
+            {compareSelection.length === 0 && 'Check two snapshots to compare'}
+            {compareSelection.length === 1 && 'Select one more snapshot to compare'}
             {compareSelection.length === 2 && 'Ready to compare'}
           </span>
           <button
@@ -273,7 +273,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
         <div className="version-history-list">
           {versions.length === 0 && !loading && currentProject && (
             <div className="version-history-empty">
-              No versions yet. Use File &gt; Check In to save a version.
+              No snapshots yet. Use File &gt; Script History &gt; Take Snapshot to save one.
             </div>
           )}
           {versions.map((v, i) => (
@@ -310,7 +310,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
                         navigate(`/project/${currentProject.id}/history/${currentScriptId}/${v.hash}`);
                       }
                     }}
-                    title="View this version in the editor (read-only)"
+                    title="View this snapshot in the editor (read-only)"
                   >
                     View
                   </button>
@@ -321,7 +321,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
                     e.stopPropagation();
                     handleRestore(v);
                   }}
-                  title="Restore this version"
+                  title="Restore this snapshot"
                 >
                   Restore
                 </button>
@@ -364,11 +364,11 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
       {restoreConfirm && (
         <div className="dialog-overlay" onClick={() => setRestoreConfirm(null)}>
           <div className="dialog-box" onClick={(e) => e.stopPropagation()}>
-            <div className="dialog-header">Restore Version</div>
+            <div className="dialog-header">Restore Snapshot</div>
             <div className="dialog-body">
               <p style={{ margin: 0 }}>
-                Restore to version <strong>{restoreConfirm.short_hash}</strong>?
-                This will create a new version with the restored content.
+                Restore to snapshot <strong>{restoreConfirm.short_hash}</strong>?
+                This will create a new snapshot with the restored content.
               </p>
             </div>
             <div className="dialog-actions">

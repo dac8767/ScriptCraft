@@ -289,20 +289,23 @@
   border-color: var(--fd-accent);
   color: var(--fd-accent);
 }
-/* v1.89: the Presets dropdown wears the add-column button's clothes. */
+/* v6.48, Derek: the Presets dropdown dresses like every other dropdown —
+   the standard input surface + text color (it wore the add-column button's
+   transparent clothes since v1.89, which read as the wrong background). */
 .beat-board-preset {
-  background: transparent;
+  background: var(--fd-input-bg);
   border: 1px solid var(--fd-border);
   border-radius: 4px;
-  color: var(--fd-text-muted);
+  color: var(--fd-text);
   font-size: 12px;
   padding: 4px 8px;
   cursor: pointer;
   white-space: nowrap;
+  outline: none;
 }
-.beat-board-preset:hover {
+.beat-board-preset:hover,
+.beat-board-preset:focus {
   border-color: var(--fd-accent);
-  color: var(--fd-accent);
 }
 .beat-board-preset option { background: var(--fd-dropdown-bg, var(--fd-bg)); color: var(--fd-text); }
 .beat-board-columns {

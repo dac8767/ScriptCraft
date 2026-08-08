@@ -80,7 +80,7 @@ export const SHORTCUT_COMMANDS: ShortcutCommand[] = [
   // ── Tools ──
   { id: 'spellCheck', label: 'Spelling', group: 'Tools', defaultCombo: 'F7', owner: 'app' },
   { id: 'writingSuggestions', label: 'Writing Suggestions', group: 'Tools', defaultCombo: 'Shift+F7', owner: 'app' },
-  { id: 'takeSnapshot', label: 'Take Auto Save', group: 'Tools', defaultCombo: null, owner: 'app' },
+  { id: 'takeSnapshot', label: 'Take Snapshot', group: 'Tools', defaultCombo: null, owner: 'app' },
   { id: 'scriptHistory', label: 'Script History', group: 'Tools', defaultCombo: null, owner: 'app' },
   { id: 'trackChanges', label: 'Track Changes', group: 'Tools', defaultCombo: null, owner: 'app' },
 ];

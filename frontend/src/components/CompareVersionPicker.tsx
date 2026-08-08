@@ -42,7 +42,7 @@ const CompareVersionPicker: React.FC<CompareVersionPickerProps> = ({
       const data = await api.getVersions(currentProject.id);
       setVersions(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load versions');
+      setError(err instanceof Error ? err.message : 'Failed to load snapshots');
     } finally {
       setLoading(false);
     }
@@ -54,17 +54,17 @@ const CompareVersionPicker: React.FC<CompareVersionPickerProps> = ({
 
   return (
     <Modal onClose={onClose} boxClassName="compare-version-dialog">
-        <div className="dialog-header">Compare with Version</div>
+        <div className="dialog-header">Compare with Snapshot</div>
         <div className="dialog-body">
           {!currentProject && (
             <p className="compare-version-empty">No project selected.</p>
           )}
           {error && <p className="compare-version-error">{error}</p>}
-          {loading && <p className="compare-version-loading">Loading versions...</p>}
+          {loading && <p className="compare-version-loading">Loading snapshots...</p>}
 
           {!loading && versions.length === 0 && currentProject && (
             <p className="compare-version-empty">
-              No versions yet. Use File &gt; Check In to save a version.
+              No snapshots yet. Use File &gt; Script History &gt; Take Snapshot to save one.
             </p>
           )}
 

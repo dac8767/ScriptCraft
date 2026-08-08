@@ -101,10 +101,19 @@ export interface ToolChromeTab {
   label: string;
   active: boolean;
   onSelect: () => void;
+  /** v6.48: stable identity for dynamic (user-created) tabs whose labels can
+   *  collide — falls back to the label when absent. */
+  key?: string;
   /** v4.32: attention dot on the tab (e.g. Tags' Manage tab while a selection
    *  is waiting to be tagged). Strip mode only — the collapsed dropdown drops
    *  it (opening the menu is the same gesture the dot invites). */
   badge?: boolean;
+  /** v6.48 (Outline's variation tabs): double-click renames the tab in place.
+   *  Strip mode only, like badge — the collapsed dropdown just switches. */
+  onRename?: (name: string) => void;
+  /** v6.48: a small × on the tab. Strip mode only. */
+  onClose?: () => void;
+  closeTitle?: string;
 }
 
 export const ControlDropdown: React.FC<{
@@ -180,13 +189,32 @@ export const ControlDropdown: React.FC<{
  *  without it (the house footgun). */
 export const ChromeTabs: React.FC<{ tabs: ToolChromeTab[]; onReorder?: (from: number, to: number) => void }> = ({ tabs, onReorder }) => {
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  // v6.48: index of the tab being renamed in place (double-click, when the
+  // tab carries onRename). Keyed by index — a rename can change the label.
+  const [renameIdx, setRenameIdx] = useState<number | null>(null);
   return (
     <>
       {tabs.map((t, i) => (
+        renameIdx === i && t.onRename ? (
+          <input
+            key={t.key ?? t.label}
+            autoFocus
+            className="tool-chrome-tab-rename"
+            defaultValue={t.label}
+            onClick={(e) => e.stopPropagation()}
+            onBlur={(e) => { t.onRename!(e.target.value); setRenameIdx(null); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+              if (e.key === 'Escape') setRenameIdx(null);
+            }}
+          />
+        ) : (
         <button
-          key={t.label}
+          key={t.key ?? t.label}
           className={`tool-chrome-tab${t.active ? ' active' : ''}`}
           onClick={t.onSelect}
+          onDoubleClick={t.onRename ? () => setRenameIdx(i) : undefined}
+          title={t.onRename ? 'Double-click to rename' : undefined}
           draggable={!!onReorder}
           onDragStart={onReorder ? (e) => {
             e.dataTransfer.setData('text/plain', t.label);   // required by WebKit
@@ -203,7 +231,17 @@ export const ChromeTabs: React.FC<{ tabs: ToolChromeTab[]; onReorder?: (from: nu
         >
           {t.label}
           {t.badge && <span className="tool-chrome-tab-dot" />}
+          {/* a span, not a button — buttons can't nest */}
+          {t.onClose && (
+            <span
+              role="button"
+              className="tool-chrome-tab-x"
+              title={t.closeTitle ?? 'Close'}
+              onClick={(e) => { e.stopPropagation(); t.onClose!(); }}
+            >×</span>
+          )}
         </button>
+        )
       ))}
     </>
   );
