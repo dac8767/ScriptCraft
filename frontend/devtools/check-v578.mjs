@@ -40,8 +40,7 @@ try {
   await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")');
   await page.waitForSelector('.locmap', { timeout: 8000 });
   await page.setInputFiles('.locmap input[type="file"]', MAP);
-  await page.waitForSelector('.locmap-import-bar', { timeout: 8000 });
-  await page.click('.locmap-import-confirm');
+  await page.waitForSelector('canvas.locmap-img', { timeout: 8000 });
   await settle(page);
 
   const rowCount = () => page.$$eval('.locmap-rail-item', (e) => e.length);

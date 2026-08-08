@@ -28,15 +28,13 @@ export type { LocationPlace, LocationMapImage, LocationCustomField };
 
 export interface LocationMapSlice {
   /** The uploaded map, as the standard image-reference attrs (asset when a
-   *  project is open, data-URL when local-only) plus its import rotation.
+   *  project is open, data-URL when local-only) plus its rotation.
    *  null = no map yet. */
   locationMapImage: LocationMapImage | null;
   setLocationMapImage: (img: LocationMapImage | null) => void;
-  /** Rotate the map DURING import only — `rotationLocked` closes this for
-   *  good, because pins are placed in the rotated frame. */
+  /** Rotate the map a quarter turn clockwise — any time (v6.39; the old
+   *  import-only lock is gone). The pins turn WITH it, so nothing drifts. */
   rotateLocationMap: () => void;
-  /** Confirm the import: the rotation is now fixed and pinning can start. */
-  lockLocationMapRotation: () => void;
 
   /** Every place on (or off) the map. */
   locationPlaces: LocationPlace[];
@@ -96,10 +94,6 @@ export const createLocationMapSlice: StateCreator<EditorState, [], [], LocationM
       locationPlaces: updatePlace(attachLocation(places, id, scriptName), id, { description, x: null, y: null }),
     };
   }),
-  lockLocationMapRotation: () => set((s) => (
-    s.locationMapImage ? { locationMapImage: { ...s.locationMapImage, rotationLocked: true } } : {}
-  )),
-
   locationPlaces: [],
   setLocationPlaces: (places) => set({ locationPlaces: Array.isArray(places) ? places : [] }),
   addLocationPin: (x, y) => {

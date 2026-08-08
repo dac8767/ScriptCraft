@@ -1,7 +1,8 @@
 // check-v577 — the Locations Map view, driven the way Derek described it:
-// View dropdown (not tabs) → import → rotate → lock → click to pin → pick a
-// location → merge two locations onto one pin → sidebar display name +
-// custom field. Every step goes through the real UI.
+// View dropdown (not tabs) → import → rotate (v6.39: via the header's
+// Options menu, any time — the import-time rotation pass is gone) → click
+// to pin → pick a location → merge two locations onto one pin → sidebar
+// display name + custom field. Every step goes through the real UI.
 import { launch, boot, seedScript, openTool, SCENES_4, settle, dismiss } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 
@@ -60,30 +61,34 @@ try {
   ok(await page.$('.tool-fs-header .locmap-mapopts-btn') !== null,
     'the Options button sits in the header (v6.38)');
 
-  // ── 3. import → rotate → lock ───────────────────────────────────────
+  // ── 3. import → rotate via Options (v6.39: no rotation pass) ────────
   await page.setInputFiles('.locmap input[type="file"]', MAP_PATH);
-  await page.waitForSelector('.locmap-import-bar', { timeout: 8000 });
-  ok(true, 'a fresh import opens the rotation bar');
-  const beforeRot = await page.$eval('.locmap-stage', (el) => el.getBoundingClientRect().width / el.getBoundingClientRect().height);
-  await page.click('.locmap-import-bar .locmap-tool-btn');       // rotate 90°
-  await page.waitForTimeout(350);
-  const afterRot = await page.$eval('.locmap-stage', (el) => el.getBoundingClientRect().width / el.getBoundingClientRect().height);
-  ok((await state()).map.rotation === 90, 'Rotate turns the map 90°');
-  ok(Math.abs(afterRot - 1 / beforeRot) < 0.05,
-    `a quarter turn swaps the map's proportions (${beforeRot.toFixed(2)} → ${afterRot.toFixed(2)})`);
-  ok(await page.$('.locmap-pin') === null, 'no pins can be dropped while the rotation is unset');
-
-  await page.click('.locmap-import-bar .locmap-tool-btn');       // back to 180
-  await page.click('.locmap-import-bar .locmap-tool-btn');       // 270
-  await page.click('.locmap-import-bar .locmap-tool-btn');       // 0 — upright again
-  await page.click('.locmap-import-confirm');
+  // the CANVAS appears once the bitmap is decoded — the stage alone also
+  // exists around the loading placeholder (whose 4/3 matches this fixture)
+  await page.waitForSelector('canvas.locmap-img', { timeout: 8000 });
   await settle(page);
-  ok((await state()).map.rotationLocked === true, 'Set Rotation locks it');
-  ok(await page.$('.locmap-import-bar') === null, 'and the rotation bar is gone for good');
+  ok(await page.$('.locmap-import-bar') === null,
+    'v6.39: no import bar — the map is live the moment it lands');
 
   // v6.38: the action row no longer holds it — the header does.
   ok(await page.$('.locmap-actionbar .locmap-mapopts-btn') === null,
     'the action row no longer holds Map Options (v6.38: header)');
+  const optRotate = async () => {
+    await page.click('.locmap-mapopts-btn');
+    await page.click('.char-upload-menu .char-upload-menu-item:text-is("Rotate 90 degrees")');
+    await page.waitForTimeout(350);
+  };
+  const beforeRot = await page.$eval('.locmap-stage', (el) => el.getBoundingClientRect().width / el.getBoundingClientRect().height);
+  await optRotate();
+  const afterRot = await page.$eval('.locmap-stage', (el) => el.getBoundingClientRect().width / el.getBoundingClientRect().height);
+  ok((await state()).map.rotation === 90, 'Options ▸ Rotate 90 degrees turns the map');
+  ok(Math.abs(afterRot - 1 / beforeRot) < 0.05,
+    `a quarter turn swaps the map's proportions (${beforeRot.toFixed(2)} → ${afterRot.toFixed(2)})`);
+  await optRotate();                                             // 180
+  await optRotate();                                             // 270
+  await optRotate();                                             // 0 — upright again
+  ok((await state()).map.rotation === 0, 'three more turns bring it back upright');
+
   await page.click('.locmap-mapopts-btn');
   const opts = await page.$$eval('.char-upload-menu .char-upload-menu-item', (els) => els.map((e) => e.textContent.trim()));
   ok(JSON.stringify(opts) === JSON.stringify(['Replace Map', 'Rotate 90 degrees', 'Delete Map']),
@@ -220,9 +225,9 @@ try {
   ok((await state()).map === null, 'the options button deletes the background');
   ok((await state()).places.length === placesBefore, 'and the pins survive it');
   await page.setInputFiles('.locmap input[type="file"]', MAP_PATH);
-  await page.waitForSelector('.locmap-import-bar', { timeout: 8000 });
-  ok(true, 'a replacement map gets its own rotation pass');
-  await page.click('.locmap-import-confirm');
+  await page.waitForSelector('canvas.locmap-img', { timeout: 8000 });
+  ok(await page.$('.locmap-pin') !== null,
+    'a replacement map is live at once, pins already on it (v6.39)');
   await settle(page);
 
   // ── 7. the List view names the SCRIPT's location ────────────────────

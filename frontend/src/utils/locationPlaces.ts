@@ -48,23 +48,25 @@ export interface LocationPlace {
   hidden?: boolean;
 }
 
-/** The map image + how it was rotated when it was imported. */
+/** The map image + its rotation. */
 export interface LocationMapImage {
   assetId?: string | null;
   projectId?: string | null;
   filename?: string | null;
   src?: string | null;
-  /** 0 | 90 | 180 | 270, clockwise. Set once, at import. */
+  /** 0 | 90 | 180 | 270, clockwise. Changeable any time from the Options
+   *  menu (v6.39) — rotateLocationMap turns the pins with the map. */
   rotation?: number;
-  /** Derek: "once the rotation is set, it cannot be changed." True after the
-   *  writer confirms the import — every pin dropped afterwards is placed in
-   *  the rotated frame, so letting it change later would move every pin. */
+  /** HISTORICAL (v5.77–v6.38): rotation used to be settable only during an
+   *  import pass, and this flag closed that pass. v6.39 removed the pass;
+   *  the flag stays in the type because saved scripts carry it, but nothing
+   *  reads it any more. */
   rotationLocked?: boolean;
 }
 
 export const ROTATIONS = [0, 90, 180, 270] as const;
 
-/** Next rotation clockwise (the import bar's only control). */
+/** Next rotation clockwise. */
 export const nextRotation = (r: number): number => ((((r || 0) / 90 + 1) % 4) * 90);
 
 /** A 90°/270° turn swaps the image's width and height. */

@@ -1,36 +1,37 @@
 /**
  * LocationMapTab (v5.75, remodelled v5.77) — the Locations window's Map view.
  *
- * Derek's v5.77 brief:
- *  - rotate the background ON IMPORT only, then the rotation is fixed;
- *  - map actions behind the "Map Options" button on the + Add Pin row
- *    (LocationMapOptions, moved out of the header in v5.81);
+ * Derek's v5.77 brief (as amended since):
+ *  - map actions live in the window header's "Options" menu (v6.38 —
+ *    LocationMapOptions), including "Rotate 90 degrees" (v6.39: rotation is
+ *    changeable at ANY time; rotateLocationMap turns the pins with the map,
+ *    so nothing drifts off its landmark — the old import-time-only lock and
+ *    its "Set Rotation" bar are gone);
  *  - click the map to drop a pin, then a dropdown picks (or creates) the
  *    location it stands for (LocationPinMenu);
  *  - the sidebar lists EVERY location; clicking one opens display name,
  *    description and "+ Add custom field", the Characters window's affordance.
- *
- * Why rotation locks: a pin's position is a fraction of the image AS SHOWN.
- * Rotating afterwards would move every pin off its landmark, so the turn is
- * offered once — during import — and then closed.
  *
  * The map sits in a stage whose pixel size is MEASURED (see the sizing note
  * below) to the image's rotated aspect ratio, so the stage box and the image
  * box are the same box, and a pin at (0.5, 0.5) is on the middle of the map
  * at every window size.
  *
- * The image loads through AssetImage — the app's ONE image loader. On the
- * desktop, getAssetUrl returns a convertFileSrc asset:// path an <img src>
- * will not load; that is what v5.76 fixed and what this must keep doing.
+ * The image is DRAWN ONTO A CANVAS (v6.39). It used to be an <img> inside a
+ * CSS quarter-turn construct (absolute box-swap + translate + rotate), which
+ * rendered fine in Chromium but made the rotated map VANISH in the app's
+ * WKWebView — twice, surviving the v6.38 sizing floor. Canvas rotation is
+ * plain arithmetic (translate, rotate, drawImage); there is no CSS transform
+ * left for a webview to mis-render.
  */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  FaMapMarkerAlt, FaRegImage, FaUndo, FaLock,
+  FaMapMarkerAlt, FaRegImage, FaLock,
 } from 'react-icons/fa';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { resolveImageUrl } from '../utils/imageAsset';
-import { AssetImage } from './CharacterAssetMedia';
+import { api } from '../services/api';
 import { showToast } from './Toast';
 import LocationPinMenu from './LocationPinMenu';
 import { importLocationMap } from './LocationMapOptions';
@@ -62,40 +63,96 @@ interface Props {
   editor: Editor | null;
 }
 
-/** The map bitmap. Asset-backed maps go through AssetImage (bytes → blob URL,
- *  the only path that works on every backend); a local-only map carries a
- *  data: URL that every webview loads directly. */
+/** The map bitmap, drawn onto a CANVAS (v6.39 — see the header comment).
+ *  Asset-backed maps load their bytes through api.getAssetBytes → blob URL
+ *  (the only path that works on every backend — AssetImage's rule); a
+ *  local-only map carries a data: URL every webview decodes directly. The
+ *  canvas fills the stage (`.locmap-img` is 100%×100%), and the draw is
+ *  dpr-scaled so a Retina map stays sharp. */
 const MapImage: React.FC<{
   img: LocationMapImage;
+  rotation: number;
+  width: number;
+  height: number;
   onNaturalSize?: (ratio: number) => void;
   onFailed?: () => void;
-}> = ({ img, onNaturalSize, onFailed }) => {
-  const reportSize = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    const el = e.currentTarget;
-    if (el.naturalWidth && el.naturalHeight) onNaturalSize?.(el.naturalWidth / el.naturalHeight);
-  }, [onNaturalSize]);
+}> = ({ img, rotation, width, height, onNaturalSize, onFailed }) => {
+  const canvasEl = useRef<HTMLCanvasElement>(null);
+  const [bitmap, setBitmap] = useState<HTMLImageElement | null>(null);
+  const objRef = useRef<string | null>(null);
+  // Callbacks ride refs so the load runs only when the IMAGE changes —
+  // v6.38's lesson: inline-arrow deps refetched on every parent render and
+  // a transient failure branded a working map broken.
+  const onNaturalSizeRef = useRef(onNaturalSize);
+  onNaturalSizeRef.current = onNaturalSize;
+  const onFailedRef = useRef(onFailed);
+  onFailedRef.current = onFailed;
 
-  if (img.assetId && img.projectId) {
-    return (
-      <AssetImage
-        projectId={img.projectId} assetId={img.assetId}
-        className="locmap-img" alt="Location map"
-        onLoad={reportSize} onFailed={onFailed}
-      />
-    );
-  }
-  const direct = resolveImageUrl(img) || '';
-  if (!direct) return <div className="locmap-img-loading" />;
-  return (
-    <img className="locmap-img" src={direct} alt="Location map" draggable={false}
-      onLoad={reportSize} onError={onFailed} />
-  );
+  React.useEffect(() => {
+    let dead = false;
+    (async () => {
+      try {
+        let obj: string | null = null;
+        let src: string;
+        if (img.assetId && img.projectId) {
+          const bytes = await api.getAssetBytes(img.projectId, img.assetId);
+          obj = URL.createObjectURL(new Blob([bytes as BlobPart]));
+          src = obj;
+        } else {
+          src = resolveImageUrl(img) || '';
+        }
+        if (!src) throw new Error('no map source');
+        const el = new Image();
+        await new Promise<void>((res, rej) => {
+          el.onload = () => res();
+          el.onerror = () => rej(new Error('map decode failed'));
+          el.src = src;
+        });
+        if (dead) { if (obj) URL.revokeObjectURL(obj); return; }
+        // The PREVIOUS map's blob URL is released only now, when its
+        // replacement is decoded — the old bitmap stays drawable until then.
+        if (objRef.current) URL.revokeObjectURL(objRef.current);
+        objRef.current = obj;
+        setBitmap(el);
+        if (el.naturalWidth && el.naturalHeight) {
+          onNaturalSizeRef.current?.(el.naturalWidth / el.naturalHeight);
+        }
+      } catch {
+        if (!dead) onFailedRef.current?.();
+      }
+    })();
+    return () => { dead = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [img.assetId, img.projectId, img.src]);
+  React.useEffect(() => () => { if (objRef.current) URL.revokeObjectURL(objRef.current); }, []);
+
+  React.useEffect(() => {
+    const canvas = canvasEl.current;
+    if (!canvas || !bitmap || !width || !height) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate(((rotation || 0) * Math.PI) / 180);
+    // The stage box already carries the ROTATED ratio, so on a quarter turn
+    // the image is drawn into that box with its sides swapped — the rotate
+    // then turns it back into exactly the stage.
+    const quarter = ((rotation || 0) / 90) % 2 === 1;
+    const dw = quarter ? height : width;
+    const dh = quarter ? width : height;
+    ctx.drawImage(bitmap, -dw / 2, -dh / 2, dw, dh);
+  }, [bitmap, rotation, width, height]);
+
+  if (!bitmap) return <div className="locmap-img-loading" />;
+  return <canvas ref={canvasEl} className="locmap-img" role="img" aria-label="Location map" />;
 };
 
 const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene, editor, hideRail = false }) => {
   const mapImage = useEditorStore((s) => s.locationMapImage);
-  const rotateMap = useEditorStore((s) => s.rotateLocationMap);
-  const lockRotation = useEditorStore((s) => s.lockLocationMapRotation);
   const places = useEditorStore((s) => s.locationPlaces);
   const addPin = useEditorStore((s) => s.addLocationPin);
   const movePin = useEditorStore((s) => s.moveLocationPin);
@@ -173,26 +230,12 @@ const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene,
   }, [shownRatio, canvasBox]);
 
   /* v6.38: a transient bytes-read failure used to brand the map broken until
-     the image itself changed. A rotation is a fresh draw — clear the flag so
-     the map can come back on its own. */
+     the image itself changed. A rotation clears the flag, which REMOUNTS
+     MapImage (the broken box replaces it while failed) — so turning the map
+     is also its retry. */
   React.useEffect(() => { setMapFailed(false); }, [rotation]);
 
-  /** A quarter turn is drawn by rotating the image inside the stage and
-   *  swapping its box — the stage itself already carries the rotated ratio. */
-  const imgStyle = useMemo((): React.CSSProperties | undefined => {
-    if (!rotation) return undefined;
-    const quarter = (rotation / 90) % 2 === 1;
-    return quarter && stageSize
-      ? {
-        position: 'absolute', top: '50%', left: '50%',
-        width: stageSize.height, height: stageSize.width, maxWidth: 'none',
-        transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-      }
-      : { width: '100%', height: '100%', transform: `rotate(${rotation}deg)` };
-  }, [rotation, stageSize]);
-
   const hasMap = !!mapImage;
-  const importing = hasMap && !mapImage?.rotationLocked;
   const drawnPins = useMemo(() => pinnedPlaces(places, locations.map((l) => l.name)), [places, locations]);
   const menuTargets = useMemo(
     () => connectTargets(locations, places, menuFor?.id ?? null),
@@ -272,10 +315,9 @@ const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene,
      the map and the next click sets it down. Pressing it again (or Escape)
      calls it off. */
   const armPin = useCallback(() => {
-    if (importing) return;
     setPlacing((v) => !v);
     setGhost(null);
-  }, [importing]);
+  }, []);
 
   React.useEffect(() => {
     if (!placing) return;
@@ -300,7 +342,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene,
     // v5.81, Derek: "after placing a pin, you have to press + Add Pin again to
     // make another one" — the map is a placing surface only while ARMED.
     // Otherwise a click on it is just a click.
-    if (!placing || importing || !stageRef.current) return;
+    if (!placing || !stageRef.current) return;
     // Only a click on the MAP itself places a pin — not one on a pin, or on
     // the empty canvas around the image.
     const target = e.target as HTMLElement;
@@ -315,7 +357,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene,
     setGhost(null);
     settlePin(id, e.clientX, e.clientY);
     openMenuAt(id, e.clientX, e.clientY);
-  }, [addPin, importing, placing, pointFor]);
+  }, [addPin, placing, pointFor]);
 
   /**
    * Put the pin ON the click — by looking at where it actually landed.
@@ -359,7 +401,6 @@ const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene,
    *  (it opens its menu), and a pointer drag tells the two apart by whether
    *  it actually moved. */
   const startPinDrag = useCallback((e: React.PointerEvent, place: LocationPlace) => {
-    if (importing) return;
     e.stopPropagation();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     // A LOCKED pin still tracks the press — that is how its dropdown opens,
@@ -369,7 +410,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene,
     // both nudged the pin and swallowed the click that should have opened its
     // dropdown.
     draggingRef.current = { id: place.id, moved: false, locked: !!place.locked, x0: e.clientX, y0: e.clientY };
-  }, [importing]);
+  }, []);
 
   /** How far the pointer must travel before a press becomes a drag. */
   const DRAG_SLOP = 3;
@@ -442,21 +483,9 @@ const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene,
           </div>
         ) : (
           <>
-            {/* Rotation is offered ONCE, while importing. Derek: "once the
-                rotation is set, it cannot be changed." */}
-            {importing && (
-              <div className="locmap-import-bar">
-                <span className="locmap-import-text">
-                  Turn the map upright if you need to — the rotation is fixed once you set it.
-                </span>
-                <button className="locmap-tool-btn" onClick={rotateMap} title="Rotate 90° clockwise">
-                  <FaUndo style={{ transform: 'scaleX(-1)' }} /> Rotate
-                </button>
-                <button className="locmap-add-btn locmap-import-confirm" onClick={lockRotation}>
-                  Set Rotation
-                </button>
-              </div>
-            )}
+            {/* v6.39, Derek: the import-time rotation bar ("Turn the map
+                upright…" + Rotate + Set Rotation) is GONE — rotation lives in
+                the header's Options menu now, changeable at any time. */}
             {/* v5.81, ROOT CAUSE of "the pin does not appear where I clicked":
                 this row used to say "Click the map to set the pin" while armed
                 — a longer label, which WRAPPED the row in a narrow window and
@@ -486,7 +515,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene,
             </div>
             <div className="locmap-canvas" ref={canvasRef}>
               <div
-                className={`locmap-scroll${importing ? '' : ' locmap-scroll-placing'}${placing ? ' locmap-scroll-armed' : ''}`}
+                className={`locmap-scroll locmap-scroll-placing${placing ? ' locmap-scroll-armed' : ''}`}
                 onClick={onCanvasClick}
                 /* A new press is a new gesture: whatever the last drag left
                    armed is stale by now. */
@@ -506,9 +535,11 @@ const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene,
                     </div>
                   ) : (
                     <div className="locmap-img-wrap">
-                      <div className="locmap-img-rot" style={imgStyle}>
-                        <MapImage img={mapImage} onNaturalSize={setMapRatio} onFailed={() => setMapFailed(true)} />
-                      </div>
+                      <MapImage
+                        img={mapImage} rotation={rotation}
+                        width={stageSize?.width ?? 0} height={stageSize?.height ?? 0}
+                        onNaturalSize={setMapRatio} onFailed={() => setMapFailed(true)}
+                      />
                     </div>
                   )}
 
@@ -523,7 +554,7 @@ const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene,
                     </div>
                   )}
 
-                  {!importing && drawnPins.map((place) => {
+                  {drawnPins.map((place) => {
                     const first = place.scriptNames
                       .map((n) => locations.find((l) => l.name.toUpperCase() === n.toUpperCase()))
                       .find(Boolean);

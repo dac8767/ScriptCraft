@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.39",
+  "date": "2026-08-08",
+  "changes": [
+   "Locations ▸ Map: the import-time rotation bar ('Turn the map upright…', Rotate, Set Rotation) is gone — rotation lives in the header's Options menu and can be changed at ANY time. The pins turn with the map, so nothing drifts off its landmark, and a fresh import is ready for pinning immediately.",
+   "Locations ▸ Map: fixed — rotating the map could still make it disappear in the app (it drew fine in ordinary browsers, so this was the desktop engine mishandling the CSS rotation). The map is now DRAWN onto a canvas — the rotation happens in the drawing itself, with no CSS transform left for the engine to get wrong."
+  ]
+ },
+ {
   "version": "6.38",
   "date": "2026-08-08",
   "changes": [

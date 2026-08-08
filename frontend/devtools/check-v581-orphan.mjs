@@ -22,8 +22,7 @@ try {
   await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")');
   await page.waitForSelector('.locmap');
   await page.setInputFiles('.locmap input[type="file"]', MAP);
-  await page.waitForSelector('.locmap-import-bar');
-  await page.click('.locmap-import-confirm');
+  await page.waitForSelector('canvas.locmap-img', { timeout: 8000 });
   await page.waitForTimeout(400);
   const b = await page.$eval('.locmap-stage', (el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
   await page.click('.locmap-addpin-btn');

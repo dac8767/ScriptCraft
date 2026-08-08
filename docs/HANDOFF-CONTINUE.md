@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.38 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.39 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,32 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.39 — map rotation unlocked; the map is a CANVAS now (WKWebView)
+
+- Derek: (1) remove the import bar ("Turn the map upright…", Rotate, Set
+  Rotation) — rotation is changeable in Options now; (2) "rotating the
+  map in the location window still makes it disappear" (SURVIVED v6.38's
+  160px floor on his Mac).
+- (2) ROOT CAUSE UNREACHABLE IN CHROMIUM: probes rendered the CSS
+  quarter-turn correctly in docked AND fullscreen shapes, so the vanish
+  is WKWebView mishandling the construct (absolute box-swap +
+  translate(-50%,-50%) rotate()). Fix: MapImage DRAWS the bitmap onto a
+  dpr-scaled canvas (translate/rotate/drawImage, quarter-swapped draw
+  box) — no CSS transform left to mis-render. Bytes load via
+  api.getAssetBytes → blob URL (AssetImage's rule) with callback refs
+  (v6.38's refetch lesson); a failed load unmounts to the broken box and
+  a rotation remounts = retry. `.locmap-img` is the canvas now — checks
+  wait on `canvas.locmap-img` (the loading box shares the stage's 4/3).
+- (1) `importing` gates, lockLocationMapRotation, the import bar and its
+  CSS are GONE; importLocationMap + the asset picker set
+  rotationLocked: true (the field is vestigial — saved scripts carry it,
+  nothing reads it). Pins render and place from the first moment.
+  rotateLocationMap already turned pins with the map (v5.81) — that's
+  what makes any-time rotation safe.
+- Checks v577 (rotate flow = Options ▸ Rotate 90 degrees ×4),
+  v578/v581/v581-orphan/v582 (×4 sites)/v585: the import-bar setup step
+  became waitForSelector('canvas.locmap-img'). All green + v638.
+
 ### v6.38 — Derek's ten-item batch (helper text, snippets, locations map, panel zoom)
 
 - Ten reports in one stream (several mid-turn). The load-bearing ones:
@@ -340,29 +366,12 @@ Durable bits kept live here:
   left half of the page). check-v547 re-run 19/0.
 - Gates: tsc 0, 1103 tests, build.
 
-### v6.34 — the launcher restores package-lock.json too (Derek's aborted pull)
-
-- Derek's v6.33 pull ABORTED: "Your local changes … would be overwritten
-  by merge: frontend/package-lock.json, src-tauri/Cargo.toml". The
-  launcher runs `npm install` on every start and npm rewrites
-  package-lock.json per-machine (fsevents/optional-dep churn) — it sat
-  dirty for weeks and only collided when a push finally touched it
-  (v6.33's opener dep). Fix: `npm run desktop` now restores
-  frontend/package-lock.json alongside Cargo.lock before pulling (the
-  v5.55 pattern: committed generated files are canonical).
-- Cargo.toml's local change has UNKNOWN origin (nothing on his Mac
-  should edit it — possibly a hand-edit from an old session). NOT added
-  to the auto-restore (it's source, not generated); Derek was given a
-  targeted `git stash push -- <both files>` so the state is preserved,
-  not destroyed. If Cargo.toml turns up dirty AGAIN, something on his
-  machine is regenerating it — find out what before restoring blindly.
-- Gates: tsc 0, 1103 tests, build (changelog/version are src).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.34** — `npm run desktop` restores package-lock.json too; Cargo.toml dirt = unknown origin
 - **v6.33** — the MEASURED wrap geometry (63 chars); the asset handler's cwd bug; Print opens
 - **v6.32** — asset protocol ON; Tauri print = save+toast; Courier Prime embedded
 - **v6.31** — Asset Manager: inline image thumbnails

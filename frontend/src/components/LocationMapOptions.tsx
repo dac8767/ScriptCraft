@@ -9,8 +9,9 @@
  *
  * The file input lives here too: the same button both replaces the map and
  * imports the first one, so the picking machinery belongs with the menu that
- * offers it. Choosing a NEW map clears the rotation lock — the fresh image
- * gets its own one-time rotation pass (see LocationMapTab).
+ * offers it. Rotation is this menu's "Rotate 90 degrees" item, usable at any
+ * time (v6.39 — the import-time Set Rotation pass is gone; the pins turn
+ * with the map, so nothing drifts).
  */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
@@ -35,7 +36,7 @@ export async function importLocationMap(file: File): Promise<boolean> {
       const asset = await api.uploadAsset(currentProject.id, file, ['location-map']);
       store.setLocationMapImage({
         assetId: asset.id, projectId: currentProject.id,
-        filename: asset.filename ?? file.name, rotation: 0, rotationLocked: false,
+        filename: asset.filename ?? file.name, rotation: 0, rotationLocked: true,
       });
     } else {
       const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -44,7 +45,7 @@ export async function importLocationMap(file: File): Promise<boolean> {
         r.onerror = () => reject(r.error);
         r.readAsDataURL(file);
       });
-      store.setLocationMapImage({ src: dataUrl, filename: file.name, rotation: 0, rotationLocked: false });
+      store.setLocationMapImage({ src: dataUrl, filename: file.name, rotation: 0, rotationLocked: true });
     }
     return true;
   } catch (err) {
@@ -165,7 +166,7 @@ export default function LocationMapOptions({ variant }: { variant?: 'header' } =
             const asset = imageAssets.find((a) => a.id === assetId);
             setMapImage({
               assetId, projectId: currentProject.id, filename: asset?.filename ?? null,
-              rotation: 0, rotationLocked: false,
+              rotation: 0, rotationLocked: true,
             });
             setPickerOpen(false);
           }}

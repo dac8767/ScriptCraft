@@ -151,7 +151,25 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.33 and older (newest first)
+## Version history — v6.34 and older (newest first)
+
+### v6.34 — the launcher restores package-lock.json too (Derek's aborted pull)
+
+- Derek's v6.33 pull ABORTED: "Your local changes … would be overwritten
+  by merge: frontend/package-lock.json, src-tauri/Cargo.toml". The
+  launcher runs `npm install` on every start and npm rewrites
+  package-lock.json per-machine (fsevents/optional-dep churn) — it sat
+  dirty for weeks and only collided when a push finally touched it
+  (v6.33's opener dep). Fix: `npm run desktop` now restores
+  frontend/package-lock.json alongside Cargo.lock before pulling (the
+  v5.55 pattern: committed generated files are canonical).
+- Cargo.toml's local change has UNKNOWN origin (nothing on his Mac
+  should edit it — possibly a hand-edit from an old session). NOT added
+  to the auto-restore (it's source, not generated); Derek was given a
+  targeted `git stash push -- <both files>` so the state is preserved,
+  not destroyed. If Cargo.toml turns up dirty AGAIN, something on his
+  machine is regenerating it — find out what before restoring blindly.
+- Gates: tsc 0, 1103 tests, build (changelog/version are src).
 
 ### v6.33 — the MEASURED wrap geometry (63 chars); the asset handler's cwd bug; Print OPENS
 

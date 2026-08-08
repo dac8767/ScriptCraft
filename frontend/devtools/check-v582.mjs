@@ -28,8 +28,7 @@ async function run(label, { map, w, h, fullscreen = true, rotate = false }) {
     await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")').catch(() => {});
     await page.waitForSelector('.locmap', { timeout: 8000 });
     await page.setInputFiles('.locmap input[type="file"]', MAPS[map]);
-    await page.waitForSelector('.locmap-import-bar', { timeout: 8000 });
-    await page.click('.locmap-import-confirm');
+    await page.waitForSelector('canvas.locmap-img', { timeout: 8000 });
     await page.waitForTimeout(500);
     if (rotate) {
       await page.click('.locmap-mapopts-btn');
@@ -101,8 +100,7 @@ console.log(`\ncheck-v582: ${pass} passed, ${fail} failed`);
     await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")').catch(() => {});
     await page.waitForSelector('.locmap', { timeout: 8000 });
     await page.setInputFiles('.locmap input[type="file"]', MAPS.square);
-    await page.waitForSelector('.locmap-import-bar', { timeout: 8000 });
-    await page.click('.locmap-import-confirm');
+    await page.waitForSelector('canvas.locmap-img', { timeout: 8000 });
     await page.waitForTimeout(400);
     const b = await page.$eval('.locmap-stage', (el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
     const cx = Math.round(b.x + b.w * 0.5), cy = Math.round(b.y + b.h * 0.5);
@@ -153,8 +151,7 @@ console.log(`\ncheck-v582 total: ${pass} passed, ${fail} failed`);
     await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")').catch(() => {});
     await page.waitForSelector('.locmap', { timeout: 8000 });
     await page.setInputFiles('.locmap input[type="file"]', MAPS.square);
-    await page.waitForSelector('.locmap-import-bar', { timeout: 8000 });
-    await page.click('.locmap-import-confirm');
+    await page.waitForSelector('canvas.locmap-img', { timeout: 8000 });
     await page.waitForTimeout(400);
     const b = await page.$eval('.locmap-stage', (el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
     await page.evaluate(() => {
@@ -201,8 +198,7 @@ console.log(`\ncheck-v582 with the v5.83 guard: ${pass} passed, ${fail} failed`)
     await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")').catch(() => {});
     await page.waitForSelector('.locmap', { timeout: 8000 });
     await page.setInputFiles('.locmap input[type="file"]', MAPS.square);
-    await page.waitForSelector('.locmap-import-bar', { timeout: 8000 });
-    await page.click('.locmap-import-confirm');
+    await page.waitForSelector('canvas.locmap-img', { timeout: 8000 });
     await page.waitForTimeout(400);
     const b = await page.$eval('.locmap-stage', (el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
     // sabotage EVERY route: the stage and its scroll parent both report a
