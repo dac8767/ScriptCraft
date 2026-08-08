@@ -946,6 +946,25 @@ fn open_url(url: String) -> Result<(), String> {
 /// the process. Body verified against aarch64-apple-darwin with the pinned
 /// objc2 crates (this sandbox cross-checks types; it cannot run it — the
 /// exception-helper C shim compiles only on Derek's machine).
+/// v6.43 — THE REMAINING CRASH (Derek: "File > Print still makes the app
+/// crash", surviving v6.37's async/sheet/catch fix): the sheet variant of
+/// NSPrintOperation presents ASYNCHRONOUSLY — `runOperationModalForWindow…`
+/// schedules the sheet and returns at once. The closure then ended and
+/// DROPPED the `Retained` operation, so the runloop presented a sheet for a
+/// deallocated object: a use-after-free SIGSEGV that no ObjC exception catch
+/// can intercept, before any dialog became visible. The operation (and its
+/// document) now live in a main-thread slot until the NEXT print replaces
+/// them — the classic keep-alive AppKit expects from this API.
+#[cfg(target_os = "macos")]
+thread_local! {
+    static ACTIVE_PRINT: std::cell::RefCell<
+        Option<(
+            objc2::rc::Retained<objc2_app_kit::NSPrintOperation>,
+            objc2::rc::Retained<objc2_pdf_kit::PDFDocument>,
+        )>,
+    > = const { std::cell::RefCell::new(None) };
+}
+
 #[cfg(target_os = "macos")]
 #[tauri::command]
 async fn print_pdf_dialog(app: tauri::AppHandle, path: String) -> Result<(), String> {
@@ -1000,6 +1019,10 @@ async fn print_pdf_dialog(app: tauri::AppHandle, path: String) -> Result<(), Str
                     None,
                     std::ptr::null_mut(),
                 );
+                // Keep the operation + document alive PAST this closure —
+                // the sheet only presents after we return (see the header
+                // comment). Replaced on the next print; released then.
+                ACTIVE_PRINT.with(|slot| *slot.borrow_mut() = Some((op, doc)));
                 Ok(())
             }
         })

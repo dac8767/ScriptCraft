@@ -30,12 +30,15 @@ try {
     const p = document.querySelector('.htw-panel');
     return {
       header: !!p?.querySelector('.tool-window-header .tool-window-title'),
-      fsBtn: !!p?.querySelector('.htw-fsbtn'),
-      close: [...(p?.querySelectorAll('.tool-window-close') ?? [])].length >= 2,
+      // v6.43: the fullscreen button wears the STANDARD tool-window classes
+      // and SVG icons (char-profiles-fullscreen-btn + FullscreenIcon), not a
+      // lookalike — so the close count is exactly one.
+      fsBtn: !!p?.querySelector('.htw-fsbtn.char-profiles-fullscreen-btn svg'),
+      close: !!p?.querySelector('.tool-window-close svg'),
     };
   });
   ok(htw.header, 'Helper Text window wears the tool-window header classes');
-  ok(htw.fsBtn && htw.close, 'header carries fullscreen AND close buttons');
+  ok(htw.fsBtn && htw.close, 'header carries the STANDARD fullscreen and close buttons (SVG icon family)');
   await page.click('.htw-fsbtn');
   await settle(page);
   const fsRect = await page.evaluate(() => {

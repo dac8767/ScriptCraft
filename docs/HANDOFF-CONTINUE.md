@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.42 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.43 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,35 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.43 — the print crash's TRUE root cause; Settings→File; standard window buttons
+
+- PRINT CRASH ROUND 3 (survived v6.37): ROOT CAUSE — a LIFETIME bug, not
+  threading/exceptions. `runOperationModalForWindow…` presents the sheet
+  ASYNCHRONOUSLY and returns at once; the closure then dropped the
+  `Retained<NSPrintOperation>`, so the runloop presented a sheet for a
+  DEALLOCATED operation → SIGSEGV (no ObjC exception involved — nothing
+  for catch to catch, no dialog ever visible; matches Derek's symptom
+  exactly). Fix: a main-thread `thread_local!` slot `ACTIVE_PRINT` keeps
+  (op, doc) alive until the NEXT print replaces them. Type-checked on
+  aarch64-apple-darwin via the scratch crate (scratchpad/print-check —
+  exception::catch omitted there, its C shim needs Apple's toolchain);
+  Linux cargo check clean. RULE, recorded: any AppKit API that presents
+  asynchronously needs its objects kept alive past the presenting call.
+  NOT runnable in this sandbox — if Derek STILL crashes, ask for the
+  macOS crash log (Console.app ▸ Crash Reports) before theorizing again.
+- Settings…: OUT of the macOS app menu (reverses v4.22), INTO File as
+  the SECOND-TO-LAST item (Script History stays last), both menu modes —
+  nativeMenuSync mirrors MenuBar's one list. ⌘, moved to the shortcut
+  REGISTRY (shortcuts.ts defaultCombo 'Mod+,') — the app-menu item had
+  hardcoded it.
+- FloatingWindow (Settings + Helper Text) buttons = THE standard set:
+  char-profiles-fullscreen-btn + FullscreenIcon (RestoreIcon while
+  fullscreen), tool-window-close + CloseIcon — Derek's screenshot caught
+  the Lu-icon lookalikes. check-v638/v642 assert the SVG family now
+  (close count is exactly one).
+- check-v642 gained the File-menu-tail assert (scope to the ROOT
+  .menu-dropdown — a submenu flyout is a second one).
+
 ### v6.42 — LOCAL-FIRST: account/cloud UI purged; Settings is a WINDOW
 
 - Derek's seven (plus a mid-turn rename). The decisive read: his items
@@ -366,58 +395,12 @@ Durable bits kept live here:
   v578/v581/v581-orphan/v582 (×4 sites)/v585: the import-bar setup step
   became waitForSelector('canvas.locmap-img'). All green + v638.
 
-### v6.38 — Derek's ten-item batch (helper text, snippets, locations map, panel zoom)
-
-- Ten reports in one stream (several mid-turn). The load-bearing ones:
-- HELPER TEXT: the window wears the STANDARD tool-window header classes
-  (+ a local fullscreen toggle — htw-fsbtn); BLANK overrides are real now
-  (HelperTextSection.commit keeps '' — only typing the default verbatim
-  clears; the ↺ reset restores). The "video" row was ScriptNotes' iframe
-  a11y label — build-helper-catalog gained a NOT_HELPER_TEXT exclusion
-  set (regenerate after editing it).
-- SNIPPETS: captureSelectionSnippet (StickyNotes.tsx) is the ONE
-  implementation behind ⌥⌘X/⌥⌘C AND the new window buttons; per-card
-  insert uses editor.view.pasteText → the same paste pipeline as the
-  v6.21 drag (v6.20 fill-active-element applies). StickyCard gained
-  headActions (the card is still THE card). FragmentsTool now consumes
-  its editor prop.
-- LOCATIONS MAP, the rotation "disappear": REPRODUCED — a short canvas
-  + a quarter-turn's flipped ratio fit the stage to a ~20px speck. The
-  stage now keeps ≥160px on its long side and scrolls (the scroll
-  container existed for exactly this). Also: AssetImage re-fetched bytes
-  on EVERY parent re-render (onFailed, an inline arrow, sat in the
-  effect deps — now rides a ref) and a transient failure branded the map
-  broken until the image changed (mapFailed now resets on rotation).
-- LOCATIONS MAP chrome: Map Options → the WINDOW HEADER as "Options"
-  (LocationsControls, map view only — REVERSES v5.81; Derek's call);
-  the Grouped toggle sits at the action bar's RIGHT edge (count
-  stretches between); the rail rows' Map/Pin/Group buttons collapsed
-  into ONE ⋮ menu (locmap-rail-menu-btn) — Connect/Hide/Lock/Delete
-  (the old Group button WAS the connect flow; group create/join stays
-  in the details' Location Group field). LocationPlaceDetails gained
-  hideActionsRow (List view unchanged).
-- PANEL ITEM-SIZE (screenshots): --dock-scale scaled only dock rows.
-  `.tool-inline { zoom: var(--dock-scale, 1) }` scales the OPEN tool —
-  zoom is layout-aware and WebKit+Chromium both honor it. NOTE: a
-  zoomed container KEEPS its outer width (content lays out at
-  width/zoom) — measure INNER elements in checks. Notebook's
-  --nb-tree-scale default reverted to 1 (was defaulting to --dock-scale
-  → would have double-scaled).
-- + Add Section / + Add Beat wear the new shared `.fs-btn-primary`
-  (22-tools-extra.css) — THE standard blue; reuse it for future primary
-  body buttons instead of minting new ones.
-- CHECK UPDATES (superseded specs): v577 + v581 asserted the v5.81
-  "options OUT of the header" — flipped to v6.38; v578/v585 drove the
-  removed Map/Pin detail buttons — they drive the ⋮ menu now (v585's
-  railOption helper, one place). check-v638 (19) covers all ten;
-  check-v635 re-run green.
-- Gates: tsc 0, 1103 tests, build, checks 720/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.38** — the ten-item batch: helper text window/blank overrides, snippet buttons, map floor + header Options + rail ⋮, panel zoom
 - **v6.37** — print hotfix: async command + sheet + ObjC exception catch
 - **v6.36** — Print = the real system dialog via PDFKit (crashed; fixed v6.37)
 - **v6.35** — annotation icons moved to the LEFT margin band (0.75" center)

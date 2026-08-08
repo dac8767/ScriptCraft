@@ -151,7 +151,54 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.37 and older (newest first)
+## Version history — v6.38 and older (newest first)
+
+### v6.38 — Derek's ten-item batch (helper text, snippets, locations map, panel zoom)
+
+- Ten reports in one stream (several mid-turn). The load-bearing ones:
+- HELPER TEXT: the window wears the STANDARD tool-window header classes
+  (+ a local fullscreen toggle — htw-fsbtn); BLANK overrides are real now
+  (HelperTextSection.commit keeps '' — only typing the default verbatim
+  clears; the ↺ reset restores). The "video" row was ScriptNotes' iframe
+  a11y label — build-helper-catalog gained a NOT_HELPER_TEXT exclusion
+  set (regenerate after editing it).
+- SNIPPETS: captureSelectionSnippet (StickyNotes.tsx) is the ONE
+  implementation behind ⌥⌘X/⌥⌘C AND the new window buttons; per-card
+  insert uses editor.view.pasteText → the same paste pipeline as the
+  v6.21 drag (v6.20 fill-active-element applies). StickyCard gained
+  headActions (the card is still THE card). FragmentsTool now consumes
+  its editor prop.
+- LOCATIONS MAP, the rotation "disappear": REPRODUCED — a short canvas
+  + a quarter-turn's flipped ratio fit the stage to a ~20px speck. The
+  stage now keeps ≥160px on its long side and scrolls (the scroll
+  container existed for exactly this). Also: AssetImage re-fetched bytes
+  on EVERY parent re-render (onFailed, an inline arrow, sat in the
+  effect deps — now rides a ref) and a transient failure branded the map
+  broken until the image changed (mapFailed now resets on rotation).
+- LOCATIONS MAP chrome: Map Options → the WINDOW HEADER as "Options"
+  (LocationsControls, map view only — REVERSES v5.81; Derek's call);
+  the Grouped toggle sits at the action bar's RIGHT edge (count
+  stretches between); the rail rows' Map/Pin/Group buttons collapsed
+  into ONE ⋮ menu (locmap-rail-menu-btn) — Connect/Hide/Lock/Delete
+  (the old Group button WAS the connect flow; group create/join stays
+  in the details' Location Group field). LocationPlaceDetails gained
+  hideActionsRow (List view unchanged).
+- PANEL ITEM-SIZE (screenshots): --dock-scale scaled only dock rows.
+  `.tool-inline { zoom: var(--dock-scale, 1) }` scales the OPEN tool —
+  zoom is layout-aware and WebKit+Chromium both honor it. NOTE: a
+  zoomed container KEEPS its outer width (content lays out at
+  width/zoom) — measure INNER elements in checks. Notebook's
+  --nb-tree-scale default reverted to 1 (was defaulting to --dock-scale
+  → would have double-scaled).
+- + Add Section / + Add Beat wear the new shared `.fs-btn-primary`
+  (22-tools-extra.css) — THE standard blue; reuse it for future primary
+  body buttons instead of minting new ones.
+- CHECK UPDATES (superseded specs): v577 + v581 asserted the v5.81
+  "options OUT of the header" — flipped to v6.38; v578/v585 drove the
+  removed Map/Pin detail buttons — they drive the ⋮ menu now (v585's
+  railOption helper, one place). check-v638 (19) covers all ten;
+  check-v635 re-run green.
+- Gates: tsc 0, 1103 tests, build, checks 720/0.
 
 ### v6.37 — HOTFIX: v6.36's native print CRASHED the app
 

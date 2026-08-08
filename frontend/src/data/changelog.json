@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.43",
+  "date": "2026-08-08",
+  "changes": [
+   "File ▸ Print: found and fixed the remaining crash. The print sheet is presented asynchronously, and the app was releasing the print operation the instant it had scheduled the sheet — macOS then tried to show a dialog for an object that no longer existed. The operation now stays alive for the sheet's whole life. (This was a memory-lifetime bug, invisible to the previous fix's error handling.)",
+   "Settings… now lives in the File menu as the second-to-last item (Script History is last), with the standard ⌘, shortcut. It leaves the ScriptCraft app menu.",
+   "The Settings and Helper Text windows wear the exact same full-screen and close buttons as every other window — the standard icon set, not lookalikes."
+  ]
+ },
+ {
   "version": "6.42",
   "date": "2026-08-08",
   "changes": [

@@ -190,13 +190,9 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
         text: 'About ScriptCraft',
         action: () => { window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'about' })); },
       }),
-      // v4.22, Derek: Settings sits second in the app menu (macOS convention),
-      // moved out of File. ⌘, is the platform-standard Settings shortcut.
-      await MenuItem.new({
-        text: 'Settings…',
-        accelerator: 'CmdOrCtrl+Comma',
-        action: () => { window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'settings' })); },
-      }),
+      // (v6.43, Derek: Settings… moved OUT of the app menu into File —
+      // second-to-last item there, mirrored from MenuBar's list like every
+      // other File item. Reverses v4.22.)
       await PredefinedMenuItem.new({ item: 'Separator' }),
       await PredefinedMenuItem.new({ item: 'Services' }),
       await PredefinedMenuItem.new({ item: 'Separator' }),

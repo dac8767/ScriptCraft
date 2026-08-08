@@ -10,7 +10,7 @@
  */
 import React, { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { LuMaximize, LuMinimize } from 'react-icons/lu';
+import { FullscreenIcon, RestoreIcon, CloseIcon } from './uiIcons';
 import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
 
 export default function FloatingWindow({ title, onClose, className, initial, min, children }: {
@@ -64,13 +64,16 @@ export default function FloatingWindow({ title, onClose, className, initial, min
     <div className={`dz-panel htw-panel${fullscreen ? ' htw-fullscreen' : ''}${className ? ` ${className}` : ''}`} style={frame}>
       <div className="tool-window-header htw-header" onPointerDown={startDrag}>
         <span className="tool-header-title">{title}</span>
-        <span className="htw-header-right">
+        {/* v6.43, Derek: the SAME buttons as every tool window — the
+            FullscreenIcon/RestoreIcon/CloseIcon SVG family and the standard
+            classes, not lookalike glyphs (his screenshot caught the drift). */}
+        <span className="tool-chrome-actions htw-header-right">
           <button
-            className="tool-window-close htw-fsbtn"
-            title={fullscreen ? 'Exit full screen' : 'Full screen'}
+            className="char-profiles-fullscreen-btn htw-fsbtn"
+            title={fullscreen ? 'Shrink to a floating window' : 'Fullscreen'}
             onClick={() => setFullscreen((v) => !v)}
-          >{fullscreen ? <LuMinimize /> : <LuMaximize />}</button>
-          <button className="tool-window-close" title="Close" onClick={onClose}>&times;</button>
+          >{fullscreen ? <RestoreIcon /> : <FullscreenIcon />}</button>
+          <button className="tool-window-close" title="Close" onClick={onClose}><CloseIcon /></button>
         </span>
       </div>
       {children}

@@ -25,8 +25,8 @@ try {
     const p = document.querySelector('.prefs-window');
     return {
       header: !!p?.querySelector('.tool-window-header .tool-window-title'),
-      fsBtn: !!p?.querySelector('.htw-fsbtn'),
-      closeBtns: [...(p?.querySelectorAll('.tool-window-close') ?? [])].length >= 2,
+      fsBtn: !!p?.querySelector('.htw-fsbtn.char-profiles-fullscreen-btn svg'),
+      closeBtns: !!p?.querySelector('.tool-window-close svg'),
       resizeZones: [...(p?.querySelectorAll('.fs-edge') ?? [])].length >= 4,
       x: p?.getBoundingClientRect().x,
     };
@@ -104,7 +104,7 @@ try {
   ok(system.titles.length === 1 && system.titles[0] === 'Reset', `System tab holds only Reset (${system.titles.join(', ')})`);
   ok(system.noLogin, 'no login/account/server-URL text anywhere in the System tab');
   await page.evaluate(() => {
-    [...document.querySelectorAll('.prefs-window .tool-window-close')].at(-1)?.click();
+    document.querySelector('.prefs-window .tool-window-close')?.click();
   });
   await settle(page);
 
@@ -122,6 +122,22 @@ try {
   const src = await page.evaluate(async () => (await fetch('/src/services/saveLocations.ts')).text());
   ok(src.includes("/Auto Saves/Auto Save — "), 'mirrorSnapshot writes into the "Auto Saves" folder');
   ok(!src.includes("snapToCloud"), 'mirrorSnapshot has no Cloud destination left');
+
+  // ── v6.43: File menu — Settings… is second-to-last, Script History last ──
+  await page.click('.menu-item:has-text("File")').catch(() => null);
+  await settle(page);
+  const fileTail = await page.evaluate(() => {
+    // the ROOT dropdown only — Script History's hover flyout is a second
+    // .menu-dropdown holding its children
+    const root = document.querySelector('.menu-dropdown');
+    const items = [...(root?.querySelectorAll(':scope > .menu-dropdown-item') ?? [])]
+      .map((el) => el.textContent.trim()).filter(Boolean);
+    return items.slice(-2);
+  });
+  ok(fileTail[0]?.startsWith('Settings') && fileTail[1]?.startsWith('Script History'),
+    `File menu ends …Settings…, Script History (${JSON.stringify(fileTail)})`);
+  await page.keyboard.press('Escape');
+  await settle(page);
 
   // ── the status bar carries no account indicator ──
   const noAuth = await page.evaluate(() => !document.querySelector('.auth-indicator'));

@@ -47,7 +47,9 @@ export const SHORTCUT_COMMANDS: ShortcutCommand[] = [
   { id: 'exportFountain', label: 'Export: Fountain', group: 'File', defaultCombo: null, owner: 'app' },
   { id: 'exportDocx', label: 'Export: Word (.docx)', group: 'File', defaultCombo: null, owner: 'app' },
   { id: 'rename', label: 'Rename', group: 'File', defaultCombo: null, owner: 'app' },
-  { id: 'settings', label: 'Settings', group: 'File', defaultCombo: null, owner: 'app' },
+  // v6.43: ⌘, rides the registry now — the app-menu item that hardcoded it
+  // is gone (Settings… lives in File, second-to-last).
+  { id: 'settings', label: 'Settings', group: 'File', defaultCombo: 'Mod+,', owner: 'app' },
 
   // ── Edit ──
   { id: 'undo', label: 'Undo', group: 'Edit', defaultCombo: 'Mod+Z', owner: 'system' },
