@@ -151,7 +151,17 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.30 and older (newest first)
+## Version history — v6.31 and older (newest first)
+
+### v6.31 — Asset Manager: inline image thumbnails
+
+- Derek: "show a preview of the image in the asset manager" — image
+  assets render a real 38px `<img>` thumbnail in the list's icon cell
+  (api.getAssetUrl, lazy-loaded, click = the same AssetViewer the name
+  opens). Other types keep their mime icon.
+- TEST TRAP: the component re-fetches on mount — the api MOCK must
+  serve the fixtures (vi.hoisted), or listAssets() overwrites whatever
+  the test seeded into the store. AssetManager.thumbs.test.tsx (1).
 
 ### v6.30 — formatting verified against the standard; Print's silent Tauri no-op
 

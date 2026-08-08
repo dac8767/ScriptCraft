@@ -746,33 +746,40 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
        PDF and prints it — WebKit prints a PDF frame at the PDF's own page
        size, not reflowed HTML, so no shrink; (3) the frame never loads →
        save the print copy through the proven export dialog and SAY SO. */
-    /* v6.32, Derek ("Clicking Print in the File menu still does nothing"):
-       the v6.30 iframe fallback ALSO dies silently on the Mac — WKWebView
-       doesn't render PDFs in iframes, so onload fires against nothing and
-       print() shows no dialog. There is no in-webview road to the print
-       panel for a generated PDF on Tauri.
-       v6.33, Derek ("it did not open the print menu"): so the shell grew
-       the opener plugin. The print copy is written under app data and
-       handed to the OS PDF viewer — Preview opens on the exact export, one
-       ⌘P from the real print dialog (a viewer that honors the embedded
-       autoPrint() flag, like Acrobat, opens the dialog itself). The v6.32
-       save-dialog path stays as the fallback if the opener refuses.
-       (Browsers keep the real popup print below.) */
+    /* The Tauri print saga, in order (each step was Derek-rejected):
+       v6.29 popup → window.open returns null silently; v6.30 iframe →
+       WKWebView renders no PDFs in frames; v6.32 save+toast → "did not
+       open the print menu"; v6.33 openPath → "it opens it in a pdf view
+       first. it should not do that."
+       v6.36: the shell's print_pdf_dialog command runs the REAL macOS
+       print dialog on the just-written export via PDFKit — no viewer in
+       between. Fallbacks, nothing silent: command refuses (non-mac /
+       stale shell) → openPath into the OS viewer + toast; that fails →
+       the save dialog + toast. (Browsers keep the real popup print
+       below.) */
     const { isDesktopTauri } = await import('../services/platform');
     if (isDesktopTauri()) {
       const { showToast } = await import('../components/Toast');
       try {
-        const [{ writeFile, mkdir, exists, BaseDirectory }, { openPath }, { appDataDir }] = await Promise.all([
+        const [{ writeFile, mkdir, exists, BaseDirectory }, { appDataDir }] = await Promise.all([
           import('@tauri-apps/plugin-fs'),
-          import('@tauri-apps/plugin-opener'),
           import('@tauri-apps/api/path'),
         ]);
         if (!(await exists('print', { baseDir: BaseDirectory.AppData }))) {
           await mkdir('print', { baseDir: BaseDirectory.AppData, recursive: true });
         }
         await writeFile(`print/${filename}`, new Uint8Array(pdf.output('arraybuffer')), { baseDir: BaseDirectory.AppData });
-        await openPath(`${await appDataDir()}/print/${filename}`);
-        showToast('Opened in your PDF viewer — press ⌘P there to print.', 'info');
+        const fullPath = `${await appDataDir()}/print/${filename}`;
+        try {
+          const { invoke } = await import('@tauri-apps/api/core');
+          await invoke('print_pdf_dialog', { path: fullPath });
+          return; // the system print dialog is up — nothing else to say
+        } catch (e) {
+          console.error('Native print dialog unavailable, opening the viewer instead:', e);
+          const { openPath } = await import('@tauri-apps/plugin-opener');
+          await openPath(fullPath);
+          showToast('Opened in your PDF viewer — press ⌘P there to print.', 'info');
+        }
       } catch (e) {
         console.error('Print open failed, falling back to the save dialog:', e);
         await saveFile(new Uint8Array(pdf.output('arraybuffer')), filename, [{ name: 'PDF', extensions: ['pdf'] }]);

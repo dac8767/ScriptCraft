@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.35 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.36 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,38 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.36 — Print = the REAL system dialog (PDFKit), no viewer
+
+- Derek on v6.33's openPath flow: "it opens it in a pdf view first. it
+  should not do that." The saga's end state: a new `print_pdf_dialog`
+  Tauri command (lib.rs) — macOS PDFKit builds a print operation for the
+  just-written export PDF and runs it with the system panel. Straight
+  from File ▸ Print to the dialog, printing the EXACT exporter output.
+- HOW IT WAS DERISKED FROM A LINUX SANDBOX: `rustup target add
+  aarch64-apple-darwin` + an isolated scratch crate pinning the tree's
+  exact objc2 generation (objc2 =0.6.4, framework crates =0.3.2, NEW
+  objc2-pdf-kit =0.3.2) type-checked the command body against the real
+  darwin target — the compiler corrected two API guesses
+  (printOperationForPrintInfo… takes Option<&NSPrintInfo> + a
+  MainThreadMarker; alloc needs objc2::AnyThread). A full-graph darwin
+  check is impossible here (C deps want an Apple toolchain), so the
+  lib.rs body is VERBATIM from the validated scratch; only the
+  path-containment prelude + run_on_main_thread glue are outside that
+  proof. Setup errors report over an mpsc channel BEFORE runOperation
+  blocks the main thread modally — a bad file surfaces as Err and JS
+  falls back (openPath + toast → save dialog + toast; nothing silent).
+  The command prints ONLY canonical paths under app-data/print.
+- Cargo: [target.'cfg(target_os = "macos")'.dependencies] pins the four
+  objc2 crates to versions ALREADY in the tree — the lock gained only
+  objc2-pdf-kit (+83 additive lines). Linux cargo check clean.
+- MID-BATCH SANDBOX ROLLBACK (the third): local HEAD reverted to
+  b15c8f7 (v6.33) while origin held v6.35; the four v6.36 files were
+  edited on the stale tree. Recovery: targeted stash → fetch →
+  reset --hard origin → pop (clean — v6.34/35 touched none of the four).
+  The standing rule (fetch+compare EVERY turn) caught it.
+- checks: check-v629 (browser print paths) 5/0 re-run; check-v633 12/0.
+- Gates: tsc 0, 1103 tests, build.
+
 ### v6.35 — annotation icons in the LEFT margin
 
 - Derek: "for annotations, move the on-page icon to the left margin from
@@ -373,21 +405,12 @@ Durable bits kept live here:
   the v6.30 heading spacing + this font embed are the deltas.
 - Gates: tsc 0, 1092 tests, build, checks 686/0.
 
-### v6.31 — Asset Manager: inline image thumbnails
-
-- Derek: "show a preview of the image in the asset manager" — image
-  assets render a real 38px `<img>` thumbnail in the list's icon cell
-  (api.getAssetUrl, lazy-loaded, click = the same AssetViewer the name
-  opens). Other types keep their mime icon.
-- TEST TRAP: the component re-fetches on mount — the api MOCK must
-  serve the fixtures (vi.hoisted), or listAssets() overwrites whatever
-  the test seeded into the store. AssetManager.thumbs.test.tsx (1).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.31** — Asset Manager: inline image thumbnails
 - **v6.30** — formatting verified against the standard; Print's silent Tauri no-op
 - **v6.29** — Print through the exporter; the goal chip's Header = the TITLE BAR
 - **v6.28** — PDF import: the legacy pdf.js build for WKWebView

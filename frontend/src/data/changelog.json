@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.36",
+  "date": "2026-08-08",
+  "changes": [
+   "File ▸ Print now opens the system print dialog directly — no PDF viewer in between. The desktop shell prints the exact export through macOS's own PDF engine, so what the dialog shows is the same page the exporter builds: true margins, page numbers, Courier Prime. If the dialog ever can't come up (say, the shell hasn't rebuilt yet), it falls back to opening the PDF, then to the save dialog — never a silent nothing."
+  ]
+ },
+ {
   "version": "6.35",
   "date": "2026-08-08",
   "changes": [

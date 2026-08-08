@@ -921,6 +921,82 @@ fn open_url(url: String) -> Result<(), String> {
     Ok(())
 }
 
+/// v6.36, Derek ("it opens it in a pdf view first. it should not do that"):
+/// File ▸ Print runs the REAL macOS print dialog on the just-written export
+/// PDF — PDFKit builds the print operation, the system panel comes straight
+/// up, no viewer in between. The setup result reports back over a channel
+/// BEFORE the modal dialog blocks the main thread, so a bad file surfaces
+/// as an Err the frontend can fall back on, while success resolves as the
+/// dialog appears. Body verified against aarch64-apple-darwin with the
+/// pinned objc2 crates (this sandbox cross-checks types; it cannot run it).
+#[cfg(target_os = "macos")]
+#[tauri::command]
+fn print_pdf_dialog(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    use objc2::rc::Retained;
+    use objc2::{AnyThread, MainThreadMarker};
+    use objc2_app_kit::NSPrintOperation;
+    use objc2_foundation::{NSString, NSURL};
+    use objc2_pdf_kit::{PDFDocument, PDFPrintScalingMode};
+
+    // Print ONLY what this app just wrote: canonical path under
+    // app-data/print (the asset handler's containment pattern).
+    let canonical =
+        std::fs::canonicalize(&path).map_err(|e| format!("cannot read {}: {}", path, e))?;
+    let base = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("print");
+    let base = std::fs::canonicalize(&base).map_err(|e| e.to_string())?;
+    if !canonical.starts_with(&base) {
+        return Err("refusing to print outside the app's print folder".to_string());
+    }
+
+    let (tx, rx) = std::sync::mpsc::channel::<Result<(), String>>();
+    let path_str = canonical.to_string_lossy().into_owned();
+    app.run_on_main_thread(move || {
+        let setup: Result<Retained<NSPrintOperation>, String> = (|| {
+            let mtm = MainThreadMarker::new().ok_or("not on the main thread")?;
+            unsafe {
+                let url = NSURL::fileURLWithPath(&NSString::from_str(&path_str));
+                let doc = PDFDocument::initWithURL(PDFDocument::alloc(), &url)
+                    .ok_or("could not open the PDF for printing")?;
+                let op = doc
+                    .printOperationForPrintInfo_scalingMode_autoRotate(
+                        None,
+                        PDFPrintScalingMode::PageScaleNone,
+                        true,
+                        mtm,
+                    )
+                    .ok_or("no print operation available")?;
+                op.setShowsPrintPanel(true);
+                op.setShowsProgressPanel(true);
+                Ok(op)
+            }
+        })();
+        match setup {
+            Ok(op) => {
+                let _ = tx.send(Ok(()));
+                op.runOperation();
+            }
+            Err(e) => {
+                let _ = tx.send(Err(e));
+            }
+        }
+    })
+    .map_err(|e| e.to_string())?;
+    rx.recv_timeout(std::time::Duration::from_secs(5))
+        .map_err(|e| format!("print dispatch failed: {}", e))?
+}
+
+/// Non-macOS: no native PDF print dialog here — the frontend falls back to
+/// opening the file in the OS viewer.
+#[cfg(not(target_os = "macos"))]
+#[tauri::command]
+fn print_pdf_dialog(_path: String) -> Result<(), String> {
+    Err("the native print dialog is macOS-only".to_string())
+}
+
 // (v5.21: rebuild_window_menu is GONE with the Window menu itself — it was
 // re-appending a "Window" submenu to the JS-installed app menu, resurrecting
 // a menu the frontend removed in v4.28.)
@@ -1053,6 +1129,7 @@ pub fn run() {
             open_new_window,
             set_window_title,
             open_url,
+            print_pdf_dialog,
             rewrite::rewrite_action_lines,
             rewrite::save_api_key,
             rewrite::has_api_key,

@@ -37,6 +37,16 @@ percent-encoding = "2"
 jni = "0.21"
 ndk-context = "0.1"
 
+# v6.36: File ▸ Print runs the REAL macOS print dialog on the export PDF via
+# PDFKit (print_pdf_dialog in lib.rs) — no viewer in between. Pinned to the
+# exact objc2 generation already in the tree (wry/tao pull objc2 0.6.4 and
+# the 0.3.2 framework crates), so only objc2-pdf-kit is new to the lockfile.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "=0.6.4"
+objc2-foundation = "=0.3.2"
+objc2-app-kit = "=0.3.2"
+objc2-pdf-kit = "=0.3.2"
+
 # v5.54: OS-keychain storage for the Action Rewrite BYO API key (rewrite.rs).
 # Desktop-only — mobile builds compile keyless stubs instead (no keychain
 # store there), which is why this sits in a target table, not [dependencies].
