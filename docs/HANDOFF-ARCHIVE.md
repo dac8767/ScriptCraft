@@ -151,7 +151,32 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.28 and older (newest first)
+## Version history — v6.29 and older (newest first)
+
+### v6.29 — Print through the exporter; the goal chip's Header = the TITLE BAR
+
+- Derek's shrunken-print PDF, MEASURED: Producer "macOS Quartz
+  PDFContext" (the PRINT dialog, not our exporter), font 8.9pt =
+  12×0.743, left margin 2.21in = 1.09in printer margin + 1.5in script
+  margin ×0.743 — window.print() in WKWebView ignores 16-print.css's
+  `@page { margin: 0 }`, so the OS laid our full page inside its own
+  printer margins and scaled to fit ("double margins", exactly his
+  theory). Our jsPDF exporter measured EXACT: 108pt margin, 12pt font,
+  612×792. FIX: File ▸ Print renders the SAME exporter PDF and opens it
+  with autoPrint queued (blob: popup; falls back to window.print() only
+  if the PDF path throws) — one rendering path for paper and file.
+  exportPDF grew `print?: boolean`.
+- Goal chip: Derek: "the app header is the same line with the quick
+  action toolbar and the script name" — Show in: Header now mounts the
+  chip in the TITLE BAR, absolute at its right edge (the centering
+  counterweight untouched; `.fs-titlebar` gained position:relative;
+  pointer-events re-enabled above the drag layer). The ribbon seat
+  remains ONLY where no title bar exists (browser/non-Mac), gated by
+  showTitleBar() — one chip, one place. Stored value stays 'toolbar'.
+- CHECK TRAP: the DEV titlebar flag must be set AFTER boot() + reload —
+  the driver's first-load init script clears localStorage and init
+  scripts run in add order (its clear is once per session).
+- check-v629 (4). Gates: tsc 0, 1091 tests, build, checks 676/0.
 
 ### v6.28 — PDF import: the legacy pdf.js build for WKWebView
 

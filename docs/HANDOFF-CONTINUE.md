@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.33 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.34 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,24 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.34 — the launcher restores package-lock.json too (Derek's aborted pull)
+
+- Derek's v6.33 pull ABORTED: "Your local changes … would be overwritten
+  by merge: frontend/package-lock.json, src-tauri/Cargo.toml". The
+  launcher runs `npm install` on every start and npm rewrites
+  package-lock.json per-machine (fsevents/optional-dep churn) — it sat
+  dirty for weeks and only collided when a push finally touched it
+  (v6.33's opener dep). Fix: `npm run desktop` now restores
+  frontend/package-lock.json alongside Cargo.lock before pulling (the
+  v5.55 pattern: committed generated files are canonical).
+- Cargo.toml's local change has UNKNOWN origin (nothing on his Mac
+  should edit it — possibly a hand-edit from an old session). NOT added
+  to the auto-restore (it's source, not generated); Derek was given a
+  targeted `git stash push -- <both files>` so the state is preserved,
+  not destroyed. If Cargo.toml turns up dirty AGAIN, something on his
+  machine is regenerating it — find out what before restoring blindly.
+- Gates: tsc 0, 1103 tests, build (changelog/version are src).
+
 ### v6.33 — the MEASURED wrap geometry (63 chars); the asset handler's cwd bug; Print OPENS
 
 - Five Derek reports (print, wrap, assets — then darkness and Title-Page
@@ -385,36 +403,12 @@ Durable bits kept live here:
   heading gap 36pt).
 - Gates: tsc 0, 1092 tests, build, checks 685/0.
 
-### v6.29 — Print through the exporter; the goal chip's Header = the TITLE BAR
-
-- Derek's shrunken-print PDF, MEASURED: Producer "macOS Quartz
-  PDFContext" (the PRINT dialog, not our exporter), font 8.9pt =
-  12×0.743, left margin 2.21in = 1.09in printer margin + 1.5in script
-  margin ×0.743 — window.print() in WKWebView ignores 16-print.css's
-  `@page { margin: 0 }`, so the OS laid our full page inside its own
-  printer margins and scaled to fit ("double margins", exactly his
-  theory). Our jsPDF exporter measured EXACT: 108pt margin, 12pt font,
-  612×792. FIX: File ▸ Print renders the SAME exporter PDF and opens it
-  with autoPrint queued (blob: popup; falls back to window.print() only
-  if the PDF path throws) — one rendering path for paper and file.
-  exportPDF grew `print?: boolean`.
-- Goal chip: Derek: "the app header is the same line with the quick
-  action toolbar and the script name" — Show in: Header now mounts the
-  chip in the TITLE BAR, absolute at its right edge (the centering
-  counterweight untouched; `.fs-titlebar` gained position:relative;
-  pointer-events re-enabled above the drag layer). The ribbon seat
-  remains ONLY where no title bar exists (browser/non-Mac), gated by
-  showTitleBar() — one chip, one place. Stored value stays 'toolbar'.
-- CHECK TRAP: the DEV titlebar flag must be set AFTER boot() + reload —
-  the driver's first-load init script clears localStorage and init
-  scripts run in add order (its clear is once per session).
-- check-v629 (4). Gates: tsc 0, 1091 tests, build, checks 676/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.29** — Print through the exporter; the goal chip's Header = the TITLE BAR
 - **v6.28** — PDF import: the legacy pdf.js build for WKWebView
 - **v6.27** — Title tab scales with its window; Asset Manager menu no-op
 - **v6.26** — Title Page: the Contact field is 4 rows

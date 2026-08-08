@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.34",
+  "date": "2026-08-08",
+  "changes": [
+   "Fixed: updating could abort with \"Your local changes would be overwritten by merge\" — the desktop launcher runs npm install on every start, and npm rewrites frontend/package-lock.json slightly differently per machine, leaving it permanently modified. The launcher now restores that file before pulling, the same way it already restores Cargo.lock. (The committed copies are canonical; nothing on the Mac is meant to edit either.)"
+  ]
+ },
+ {
   "version": "6.33",
   "date": "2026-08-07",
   "changes": [
