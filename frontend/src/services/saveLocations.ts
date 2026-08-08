@@ -254,6 +254,12 @@ export async function mirrorSave(payload: SavePayload): Promise<void> {
   if (s.localSaveFolder) {
     jobs.push({ name: 'This device', run: () => saveToLocalFolder(payload, s.localSaveFolder) });
   }
+  /* v6.41, Derek: "Local System (backup location)" — a second folder on this
+     device. Both the checkbox AND a chosen folder are required; the checkbox
+     alone can't silently arm a write into nowhere. */
+  if (s.saveToBackupFolder && s.backupSaveFolder) {
+    jobs.push({ name: 'Local backup', run: () => saveToLocalFolder(payload, s.backupSaveFolder) });
+  }
   if (s.saveToCloud) jobs.push({ name: 'Cloud', run: () => saveToCloudMirror(payload) });
   if (s.saveToGDrive) jobs.push({ name: 'Google Drive', run: () => saveToGDrive(payload) });
   if (s.saveToOneDrive) jobs.push({ name: 'OneDrive', run: () => saveToOneDrive(payload) });

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.40 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.41 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,35 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.41 — Save Options unlocked + backup location; toolbar toggle retired
+
+- Derek: (1) "OneDrive is locked as a save location even though I haven't
+  connected" — ROOT CAUSE: setup's SaveLocationsField has NO connection
+  guard (tick anything), but PreferencesDialog's rows wore
+  `disabled={!connected}` — written to stop ENABLING unconnected
+  providers, it also blocked DISABLING one. All five guards removed
+  (gdrive/onedrive save; cloud/gdrive/onedrive snapshots); the "— connect
+  below first" label hints stay. An enabled-but-unconnected provider
+  fails through the save-error surface (reportSaveError), not silently.
+- (2) "Local System (backup location)": settingsStore gains
+  saveToBackupFolder (bool) + backupSaveFolder (path) — SEPARATE so
+  unchecking keeps the folder (keys opendraft:saveloc:saveToBackupFolder
+  / :backupFolder; settingsBackup picks them up by prefix scan).
+  mirrorSave adds job 'Local backup' gated on BOTH (checkbox alone can't
+  arm a write into nowhere) reusing saveToLocalFolder(payload, folder).
+  Prefs row = the v2.83 snapshot-folder pattern (check-with-no-folder
+  opens the picker, path chip, Choose Folder…). SaveAsDialog's chips
+  include 'Local backup' under the same gate (tested).
+- (3) "Show/Hide Annotations" toolbar button REMOVED: the
+  toolbarBuiltins row is deleted — normalizeToolbarZones DROPS unknown
+  b: tokens, so saved layouts shed it on next normalize; Toolbar's case +
+  uiIcons entry gone; helper catalog regenerated. Visibility still lives
+  in annotationsMenu + the Annotations window's Show button.
+- NOTE (scout finding, not acted on): localSaveFolder ('This device'
+  mirror, set via Save As/setup) still has NO row in Save Options, and
+  StatusBar's enabledMirrors ignores both local mirrors — pre-existing
+  gaps, flag to Derek if he wants them surfaced.
+
 ### v6.40 — Collaboration REMOVED (Derek: "remove all Collaborate or Collaboration Server functionality")
 
 - THE LINE THAT MATTERS: `collabAuth`/`CollabLoginDialog`/`/auth/*` are the
@@ -365,43 +394,12 @@ Durable bits kept live here:
   Anything that dispatches to the main thread AND waits must be async.
 - Frontend untouched (the invoke + fallback chain already fit).
 
-### v6.36 — Print = the REAL system dialog (PDFKit), no viewer
-
-- Derek on v6.33's openPath flow: "it opens it in a pdf view first. it
-  should not do that." The saga's end state: a new `print_pdf_dialog`
-  Tauri command (lib.rs) — macOS PDFKit builds a print operation for the
-  just-written export PDF and runs it with the system panel. Straight
-  from File ▸ Print to the dialog, printing the EXACT exporter output.
-- HOW IT WAS DERISKED FROM A LINUX SANDBOX: `rustup target add
-  aarch64-apple-darwin` + an isolated scratch crate pinning the tree's
-  exact objc2 generation (objc2 =0.6.4, framework crates =0.3.2, NEW
-  objc2-pdf-kit =0.3.2) type-checked the command body against the real
-  darwin target — the compiler corrected two API guesses
-  (printOperationForPrintInfo… takes Option<&NSPrintInfo> + a
-  MainThreadMarker; alloc needs objc2::AnyThread). A full-graph darwin
-  check is impossible here (C deps want an Apple toolchain), so the
-  lib.rs body is VERBATIM from the validated scratch; only the
-  path-containment prelude + run_on_main_thread glue are outside that
-  proof. Setup errors report over an mpsc channel BEFORE runOperation
-  blocks the main thread modally — a bad file surfaces as Err and JS
-  falls back (openPath + toast → save dialog + toast; nothing silent).
-  The command prints ONLY canonical paths under app-data/print.
-- Cargo: [target.'cfg(target_os = "macos")'.dependencies] pins the four
-  objc2 crates to versions ALREADY in the tree — the lock gained only
-  objc2-pdf-kit (+83 additive lines). Linux cargo check clean.
-- MID-BATCH SANDBOX ROLLBACK (the third): local HEAD reverted to
-  b15c8f7 (v6.33) while origin held v6.35; the four v6.36 files were
-  edited on the stale tree. Recovery: targeted stash → fetch →
-  reset --hard origin → pop (clean — v6.34/35 touched none of the four).
-  The standing rule (fetch+compare EVERY turn) caught it.
-- checks: check-v629 (browser print paths) 5/0 re-run; check-v633 12/0.
-- Gates: tsc 0, 1103 tests, build.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.36** — Print = the real system dialog via PDFKit (crashed; fixed v6.37)
 - **v6.35** — annotation icons moved to the LEFT margin band (0.75" center)
 - **v6.34** — `npm run desktop` restores package-lock.json too; Cargo.toml dirt = unknown origin
 - **v6.33** — the MEASURED wrap geometry (63 chars); the asset handler's cwd bug; Print opens

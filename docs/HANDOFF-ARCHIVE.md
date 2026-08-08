@@ -151,7 +151,39 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.35 and older (newest first)
+## Version history — v6.36 and older (newest first)
+
+### v6.36 — Print = the REAL system dialog (PDFKit), no viewer
+
+- Derek on v6.33's openPath flow: "it opens it in a pdf view first. it
+  should not do that." The saga's end state: a new `print_pdf_dialog`
+  Tauri command (lib.rs) — macOS PDFKit builds a print operation for the
+  just-written export PDF and runs it with the system panel. Straight
+  from File ▸ Print to the dialog, printing the EXACT exporter output.
+- HOW IT WAS DERISKED FROM A LINUX SANDBOX: `rustup target add
+  aarch64-apple-darwin` + an isolated scratch crate pinning the tree's
+  exact objc2 generation (objc2 =0.6.4, framework crates =0.3.2, NEW
+  objc2-pdf-kit =0.3.2) type-checked the command body against the real
+  darwin target — the compiler corrected two API guesses
+  (printOperationForPrintInfo… takes Option<&NSPrintInfo> + a
+  MainThreadMarker; alloc needs objc2::AnyThread). A full-graph darwin
+  check is impossible here (C deps want an Apple toolchain), so the
+  lib.rs body is VERBATIM from the validated scratch; only the
+  path-containment prelude + run_on_main_thread glue are outside that
+  proof. Setup errors report over an mpsc channel BEFORE runOperation
+  blocks the main thread modally — a bad file surfaces as Err and JS
+  falls back (openPath + toast → save dialog + toast; nothing silent).
+  The command prints ONLY canonical paths under app-data/print.
+- Cargo: [target.'cfg(target_os = "macos")'.dependencies] pins the four
+  objc2 crates to versions ALREADY in the tree — the lock gained only
+  objc2-pdf-kit (+83 additive lines). Linux cargo check clean.
+- MID-BATCH SANDBOX ROLLBACK (the third): local HEAD reverted to
+  b15c8f7 (v6.33) while origin held v6.35; the four v6.36 files were
+  edited on the stale tree. Recovery: targeted stash → fetch →
+  reset --hard origin → pop (clean — v6.34/35 touched none of the four).
+  The standing rule (fetch+compare EVERY turn) caught it.
+- checks: check-v629 (browser print paths) 5/0 re-run; check-v633 12/0.
+- Gates: tsc 0, 1103 tests, build.
 
 ### v6.35 — annotation icons in the LEFT margin
 

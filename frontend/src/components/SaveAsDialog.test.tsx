@@ -87,6 +87,8 @@ beforeEach(() => {
     saveToCloud: false,
     saveToGDrive: false,
     saveToOneDrive: false,
+    saveToBackupFolder: false,
+    backupSaveFolder: '',
   });
   useEditorStore.setState({ preferencesRequest: { open: false } });
   renderDialog();
@@ -142,6 +144,16 @@ describe('Save Script dialog layout (v1.22)', () => {
     expect(items.map((el) => el.textContent)).toEqual(['ScriptCraft Cloud', 'Google Drive']);
     act(() => { useSettingsStore.setState({ saveToCloud: false, saveToGDrive: false }); });
     expect(text('.fs-saveas-locations-list')).toBe('None');
+  });
+
+  it('the v6.41 backup folder shows as a chip only when armed AND a folder is chosen', () => {
+    // checked with no folder = mirrorSave would skip it, so the chip list skips it too
+    act(() => { useSettingsStore.setState({ saveToBackupFolder: true, backupSaveFolder: '' }); });
+    expect(text('.fs-saveas-locations-list')).toBe('None');
+    act(() => { useSettingsStore.setState({ backupSaveFolder: '/Volumes/Backup/Scripts' }); });
+    const items = Array.from(container.querySelectorAll('.fs-saveas-locations-list span'));
+    expect(items.map((el) => el.textContent)).toEqual(['Local backup']);
+    act(() => { useSettingsStore.setState({ saveToBackupFolder: false, backupSaveFolder: '' }); });
   });
 
   it('the "Saves as:" line lives in the footer, before the buttons, with a spacer between (v1.30)', () => {

@@ -224,8 +224,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   }, [tableGridOpen]);
   const [currentTextColor, setCurrentTextColor] = useState<string>('#000000');
   // v1.83: the highlighter color is store state — Format > Highlighting shares it.
-  const markupsVisible = useEditorStore((s) => s.markupsVisible);
-  const setMarkupsVisible = useEditorStore((s) => s.setMarkupsVisible);
 
   // Track the font/size of the text at current cursor position. Empty string
   // / null indicates the selection spans more than one value ("mixed").
@@ -976,17 +974,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           className="toolbar-btn"
           title="Add Annotation"
           onClick={() => { if (editor) createMarkupAtSelection(editor); }}
-        >
-          <FaMarker />
-        </button>
-      );
-      // v5.33, Derek: same glyph as the side panel's Annotations tool —
-      // the pressed (active) state carries the on/off, like Bold.
-      case 'toggleMarkups': return (
-        <button
-          className={`toolbar-btn ${markupsVisible ? 'active' : ''}`}
-          title={markupsVisible ? 'Hide Annotations' : 'Show Annotations'}
-          onClick={() => setMarkupsVisible(!markupsVisible)}
         >
           <FaMarker />
         </button>

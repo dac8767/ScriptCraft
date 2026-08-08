@@ -47,8 +47,11 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   // v5.25: Annotations — palette-only (like scriptNotes/tags); Derek places
   // them. v5.26: labels renamed with the tool (keys are persisted tokens).
   // v5.28: annotationsMenu opens the per-type script-visibility menu.
+  // v6.41, Derek: toggleMarkups ("Show/Hide Annotations") is REMOVED — the
+  // registry row is gone, so normalizeToolbarZones drops the token from any
+  // saved layout (unknown b: keys are discarded). Visibility still lives in
+  // annotationsMenu and the Annotations window's Show button.
   { key: 'markupScript', label: 'Add Annotation' },
-  { key: 'toggleMarkups', label: 'Show/Hide Annotations' },
   { key: 'annotationsMenu', label: 'Annotation Visibility' },
   // v5.40: custom pages — palette-only, like the annotation buttons.
   { key: 'insertCustomPage', label: 'Insert Custom Page' },

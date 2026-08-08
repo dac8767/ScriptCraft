@@ -119,6 +119,13 @@ interface SettingsState {
   /** v1.16: a folder on this device to keep a copy of the script in. Empty = none. */
   localSaveFolder: string;
   setLocalSaveFolder: (path: string) => void;
+  /** v6.41, Derek: "a second location on the local device" — the Save Options
+   *  row "Local System (backup location)". The checkbox and the chosen folder
+   *  are separate so unchecking keeps the folder for next time. */
+  saveToBackupFolder: boolean;
+  setSaveToBackupFolder: (v: boolean) => void;
+  backupSaveFolder: string;
+  setBackupSaveFolder: (path: string) => void;
   saveToCloud: boolean;
   setSaveToCloud: (v: boolean) => void;
   saveToGDrive: boolean;
@@ -204,6 +211,8 @@ const STORAGE_KEY_AUTOSNAP = 'opendraft:autoSnapshotMinutes';
 const STORAGE_KEY_AUTOSNAP_KEEP = 'opendraft:autoSnapshotKeep';
 const SL_KEYS = {
   localFolder: 'opendraft:saveloc:localFolder',
+  backupOn: 'opendraft:saveloc:saveToBackupFolder',
+  backupFolder: 'opendraft:saveloc:backupFolder',
   cloud: 'opendraft:saveloc:cloud',
   gdrive: 'opendraft:saveloc:gdrive',
   onedrive: 'opendraft:saveloc:onedrive',
@@ -397,6 +406,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try { localStorage.setItem(SL_KEYS.localFolder, path); } catch { /* ignore */ }
     set({ localSaveFolder: path });
   },
+  saveToBackupFolder: localStorage.getItem(SL_KEYS.backupOn) === '1',
+  setSaveToBackupFolder: (v) => { try { localStorage.setItem(SL_KEYS.backupOn, v ? '1' : '0'); } catch { /* ignore */ } set({ saveToBackupFolder: v }); },
+  backupSaveFolder: localStorage.getItem(SL_KEYS.backupFolder) || '',
+  setBackupSaveFolder: (path) => { try { localStorage.setItem(SL_KEYS.backupFolder, path); } catch { /* ignore */ } set({ backupSaveFolder: path }); },
   saveToCloud: localStorage.getItem(SL_KEYS.cloud) === '1',
   setSaveToCloud: (v) => { try { localStorage.setItem(SL_KEYS.cloud, v ? '1' : '0'); } catch { /* ignore */ } set({ saveToCloud: v }); },
   saveToGDrive: localStorage.getItem(SL_KEYS.gdrive) === '1',

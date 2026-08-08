@@ -240,11 +240,9 @@ export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
   goto: <FaHashtag />,
   scriptNotes: <FaStickyNote />,
   tags: <FaTags />,
-  // v5.25: Markups — create at cursor/selection, plus the visibility toggle.
-  // v5.33, Derek: the toggle wears the SAME marker glyph as the side
-  // panel's Annotations tool; pressed state carries the on/off.
+  // v5.25: Markups — create at cursor/selection, plus the visibility menu.
+  // (v6.41: the separate Show/Hide toggle button is retired.)
   markupScript: <FaMarker />,
-  toggleMarkups: <FaMarker />,
   annotationsMenu: <FaMarker />,
   // v5.40: custom pages (non-script, unnumbered)
   insertCustomPage: <FaRegFileAlt />,

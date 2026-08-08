@@ -237,6 +237,8 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
     saveToCloud, setSaveToCloud,
     saveToGDrive, setSaveToGDrive,
     saveToOneDrive, setSaveToOneDrive,
+    saveToBackupFolder, setSaveToBackupFolder,
+    backupSaveFolder, setBackupSaveFolder,
     snapToCloud, setSnapToCloud,
     snapToGDrive, setSnapToGDrive,
     snapToOneDrive, setSnapToOneDrive,
@@ -306,16 +308,53 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
           <input type="checkbox" checked disabled />
           <span>Local System (always on)</span>
         </label>
+        {/* v6.41, Derek: "a second location on the local device" — a folder
+            that receives a copy of the script on every save. Checking with no
+            folder yet opens the picker (the v2.83 pattern); the checkbox and
+            the folder are separate so unchecking keeps the path. */}
+        <label className="prefs-check-row">
+          <input
+            type="checkbox"
+            checked={saveToBackupFolder && !!backupSaveFolder}
+            onChange={async (e) => {
+              if (!e.target.checked) { setSaveToBackupFolder(false); return; }
+              let folder = backupSaveFolder;
+              if (!folder) folder = (await pickFolder()) || '';
+              if (!folder) return;
+              setBackupSaveFolder(folder);
+              setSaveToBackupFolder(true);
+            }}
+          />
+          <span>
+            Local System (backup location)
+            {backupSaveFolder ? <code className="prefs-path-chip">{backupSaveFolder}</code> : ' — choose a folder'}
+          </span>
+          <button
+            className="prefs-inline-btn"
+            onClick={async (e) => {
+              e.preventDefault();
+              const folder = await pickFolder();
+              if (folder) { setBackupSaveFolder(folder); setSaveToBackupFolder(true); }
+            }}
+          >Choose Folder…</button>
+        </label>
+        {/* v6.41, Derek: "Make the save options always editable." OneDrive was
+            checked during document setup (which has no connection guard) and
+            this window's `disabled={!connected}` then refused to UNcheck it —
+            a checkbox you can see but not change. The guards are gone; the
+            label hints still say what a location needs to actually receive
+            saves, and an enabled-but-unconnected location reports its failure
+            through the save-error surface instead of silently blocking here. */}
         <label className="prefs-check-row">
           <input type="checkbox" checked={saveToCloud} onChange={(e) => setSaveToCloud(e.target.checked)} />
           <span>Cloud - ScriptCraft Account{!signedIn ? ' — sign in above first' : ''}</span>
         </label>
         <label className="prefs-check-row">
-          <input type="checkbox" checked={saveToGDrive} onChange={(e) => setSaveToGDrive(e.target.checked)} disabled={!gConnected} />
+          <input type="checkbox" checked={saveToGDrive} onChange={(e) => setSaveToGDrive(e.target.checked)} />
           <span>Google Drive{!gConnected ? ' — connect below first' : ''}</span>
         </label>
         <label className="prefs-check-row">
-          <input type="checkbox" checked={saveToOneDrive} onChange={(e) => setSaveToOneDrive(e.target.checked)} disabled={!oConnected} />
+          <input type="checkbox" checked={saveToOneDrive} onChange={(e) => setSaveToOneDrive(e.target.checked)} />
           <span>OneDrive{!oConnected ? ' — connect below first' : ''}</span>
         </label>
       </section>
@@ -366,16 +405,18 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
           Real .odraft files, one per auto save, named with the date and time —
           in a folder you pick (for Finder, Time Machine, or a synced folder).
         </p>
+        {/* v6.41: no disabled guards here either — same rule as the script
+            save rows above. */}
         <label className="prefs-check-row">
-          <input type="checkbox" checked={snapToCloud} onChange={(e) => setSnapToCloud(e.target.checked)} disabled={!signedIn} />
+          <input type="checkbox" checked={snapToCloud} onChange={(e) => setSnapToCloud(e.target.checked)} />
           <span>Cloud — timestamped copies{!signedIn ? ' — sign in above first' : ''}</span>
         </label>
         <label className="prefs-check-row">
-          <input type="checkbox" checked={snapToGDrive} onChange={(e) => setSnapToGDrive(e.target.checked)} disabled={!gConnected} />
+          <input type="checkbox" checked={snapToGDrive} onChange={(e) => setSnapToGDrive(e.target.checked)} />
           <span>Google Drive — Auto Saves folder{!gConnected ? ' — connect below first' : ''}</span>
         </label>
         <label className="prefs-check-row">
-          <input type="checkbox" checked={snapToOneDrive} onChange={(e) => setSnapToOneDrive(e.target.checked)} disabled={!oConnected} />
+          <input type="checkbox" checked={snapToOneDrive} onChange={(e) => setSnapToOneDrive(e.target.checked)} />
           <span>OneDrive — Auto Saves folder{!oConnected ? ' — connect below first' : ''}</span>
         </label>
         <p className="prefs-hint">

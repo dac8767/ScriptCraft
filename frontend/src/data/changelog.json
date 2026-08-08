@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.41",
+  "date": "2026-08-08",
+  "changes": [
+   "Save Options are always editable: fixed — a cloud location picked during document setup (OneDrive, Google Drive, Cloud) could show checked but LOCKED in Settings, impossible to uncheck until you connected. No checkbox in Save Options disables itself any more; the row hints still say what a location needs before it can actually receive saves.",
+   "New save location: 'Local System (backup location)' — a second folder on this device that receives a copy of the script on every save. Checking it opens the folder picker; the chosen path shows beside the row, and the Save window's location chips include it.",
+   "The 'Show/Hide Annotations' button is removed from the ribbon toolbar options (annotation visibility still lives in the Annotation Visibility menu and the Annotations window)."
+  ]
+ },
+ {
   "version": "6.40",
   "date": "2026-08-08",
   "changes": [
